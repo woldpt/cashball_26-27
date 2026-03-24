@@ -303,12 +303,13 @@ function App() {
                          {matchResults.results.filter(m => teams.find(t => t.id === m.homeTeamId)?.division === div).map((match, idx) => {
                             const hInfo = teams.find(t => t.id === match.homeTeamId);
                             const aInfo = teams.find(t => t.id === match.awayTeamId);
-                            const currentHome = match.events.filter(e => e.minute <= liveMinute && e.type === 'goal' && e.team === 'home');
-                            const currentAway = match.events.filter(e => e.minute <= liveMinute && e.type === 'goal' && e.team === 'away');
+                            const matchEvents = match.events || [];
+                            const currentHome = matchEvents.filter(e => e.minute <= liveMinute && e.type === 'goal' && e.team === 'home');
+                            const currentAway = matchEvents.filter(e => e.minute <= liveMinute && e.type === 'goal' && e.team === 'away');
                             
-                            const maxEvents = match.events.filter(e => e.minute <= liveMinute);
+                            const maxEvents = matchEvents.filter(e => e.minute <= liveMinute);
                             const scorersList = maxEvents.filter(e => e.type==='goal').sort((a,b) => a.minute - b.minute).map(g => {
-                               const nameMatch = g.text.match(/do (.*?) \(/);
+                               const nameMatch = g.text ? g.text.match(/do (.*?) \(/) : null;
                                return `${nameMatch ? nameMatch[1] : 'Jgdr'} ${g.minute}'`;
                             }).join(', ');
 
@@ -347,18 +348,18 @@ function App() {
                        <div className="bg-[#008000] border border-black p-[1px]">
                          <table className="w-full text-[11px] font-bold text-right border-collapse">
                            <tbody>
-                             {teams.filter(t => t.division === div).sort((a,b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against)).map((t, idx) => {
+                             {teams.filter(t => t.division === div).sort((a,b) => (b.points||0) - (a.points||0) || ((b.goals_for||0) - (b.goals_against||0)) - ((a.goals_for||0) - (a.goals_against||0))).map((t, idx) => {
                                const colors = ['bg-white text-black', 'bg-red-600 text-white', 'bg-black text-white', 'bg-blue-600 text-white', 'bg-zinc-400 text-black', 'bg-yellow-400 text-black'];
-                               const bgC = colors[t.id % colors.length];
+                               const bgC = colors[(t.id || 0) % colors.length];
                                return (
                                  <tr key={t.id} className="border-b border-black">
                                    <td className={`text-left uppercase px-1 w-[40%] truncate border-r border-black font-black ${bgC}`}>{t.name}</td>
-                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{t.wins + t.draws + t.losses}</td>
-                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{t.wins}</td>
-                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{t.draws}</td>
-                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{t.losses}</td>
-                                   <td className="w-12 text-center border-r border-black bg-white/20 tracking-widest text-white">{t.goals_for} : {t.goals_against}</td>
-                                   <td className="w-6 text-center bg-zinc-900 text-white shadow-inner">{t.points}</td>
+                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{(t.wins||0) + (t.draws||0) + (t.losses||0)}</td>
+                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{t.wins||0}</td>
+                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{t.draws||0}</td>
+                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{t.losses||0}</td>
+                                   <td className="w-12 text-center border-r border-black bg-white/20 tracking-widest text-white">{t.goals_for||0} : {t.goals_against||0}</td>
+                                   <td className="w-6 text-center bg-zinc-900 text-white shadow-inner">{t.points||0}</td>
                                  </tr>
                                );
                              })}
