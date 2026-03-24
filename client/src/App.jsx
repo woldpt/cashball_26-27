@@ -43,7 +43,9 @@ function App() {
   const [me, setMe] = useState(null);
   
   const [name, setName] = useState('');
-  const [roomCode, setRoomCode] = useState('SALA1');
+  const [roomCode, setRoomCode] = useState('');
+  const [isNewRoom, setIsNewRoom] = useState(true);
+  const [availableSaves, setAvailableSaves] = useState([]);
   
   const [matchResults, setMatchResults] = useState(null);
   const [matchweekCount, setMatchweekCount] = useState(0);
@@ -51,6 +53,20 @@ function App() {
   const [marketPairs, setMarketPairs] = useState([]);
   const [tactic, setTactic] = useState({ formation: '4-4-2', style: 'Balanced' });
   
+  useEffect(() => {
+    // Fetch saves on mount
+    fetch('http://localhost:3000/saves')
+      .then(r => r.json())
+      .then(data => {
+         setAvailableSaves(data);
+         if (data.length > 0) {
+            setIsNewRoom(false);
+            setRoomCode(data[0]);
+         }
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     socket.on('teamsData', (data) => setTeams(data));
     socket.on('playerListUpdate', (data) => {
@@ -80,7 +96,6 @@ function App() {
     };
   }, [me]);
 
-  // Sync me state separately
   useEffect(() => {
     if (me && !me.teamId && players.length > 0) {
       const p = players.find(x => x.name === me.name);
@@ -92,8 +107,8 @@ function App() {
 
   const handleJoin = () => {
     if (name && roomCode) {
-      socket.emit('joinGame', { name, roomCode });
-      setMe({ name, roomCode }); // Temporarily set to bypass login screen
+      socket.emit('joinGame', { name, roomCode: roomCode.toUpperCase() });
+      setMe({ name, roomCode: roomCode.toUpperCase() });
     }
   };
 
@@ -114,7 +129,6 @@ function App() {
     socket.emit('setTactic', newTactic);
   };
 
-  // Tactic Highlighter Memo
   const annotatedSquad = useMemo(() => {
     const sorted = [...mySquad].sort((a,b) => (b.skill * (b.form/100)) - (a.skill * (a.form/100)));
     const parts = tactic.formation.split('-');
@@ -137,31 +151,54 @@ function App() {
     return mySquad.map(s => sorted.find(x => x.id === s.id));
   }, [mySquad, tactic.formation]);
 
-  if (!me) {
+  if (!me || !me.teamId) {
     return (
       <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 flex flex-col items-center justify-center font-sans">
         <h1 className="text-6xl font-black text-amber-500 mb-8 drop-shadow-xl tracking-tighter">WSBall <span className="text-zinc-100">2026/27</span></h1>
         <div className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md border border-zinc-800 relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600"></div>
-          <h2 className="text-xl font-bold mb-6 text-zinc-300 uppercase tracking-widest text-center">Juntar à Liga</h2>
+          
+          <div className="flex gap-2 mb-6">
+            <button onClick={() => setIsNewRoom(true)} className={`flex-1 py-3 text-sm font-black uppercase rounded-xl transition-all ${isNewRoom ? 'bg-amber-500 text-zinc-950' : 'bg-zinc-800 text-zinc-400'}`}>Nova Sala</button>
+            <button onClick={() => setIsNewRoom(false)} className={`flex-1 py-3 text-sm font-black uppercase rounded-xl transition-all ${!isNewRoom ? 'bg-amber-500 text-zinc-950' : 'bg-zinc-800 text-zinc-400'}`}>Carregar</button>
+          </div>
+
           <div className="mb-5">
             <label className="block text-[10px] text-base uppercase text-zinc-500 mb-2 font-bold">O teu nome de Treinador</label>
             <input 
               type="text" 
-              className="w-full bg-zinc-950 border border-zinc-800 p-3 rounded-xl text-white text-base outline-none transition-all"
+              className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-zinc-700 focus:ring-2 focus:ring-amber-500"
               value={name} placeholder="Ex: Amorim" onChange={(e) => setName(e.target.value)}
             />
           </div>
-          <div className="mb-8">
-            <label className="block text-[10px] text-base uppercase text-zinc-500 mb-2 font-bold">Código da Sala</label>
-            <input 
-              type="text" 
-              className="w-full bg-zinc-950 border border-zinc-800 p-3 rounded-xl text-white text-base outline-none transition-all"
-              value={roomCode} placeholder="SALA1" onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-            />
-            <p className="text-sm text-zinc-500 mt-2">A equipa será sorteada magicamente da 4ª Divisão.</p>
-          </div>
-          <button onClick={handleJoin} disabled={!name || !roomCode} className="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 py-4 rounded-xl font-black text-lg transition-all active:scale-95">ASSINAR CONTRATO</button>
+
+          {isNewRoom ? (
+            <div className="mb-8">
+              <label className="block text-[10px] text-base uppercase text-zinc-500 mb-2 font-bold">Nome do Novo Jogo (SALA)</label>
+              <input 
+                type="text" 
+                className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-zinc-700 focus:ring-2 focus:ring-amber-500 uppercase"
+                value={roomCode} placeholder="INVERNO" onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+              />
+              <p className="text-sm font-bold text-amber-500 mt-3 text-center bg-amber-500/10 p-2 rounded-lg">Ficarás com um clube mágico da 4ª Divisão!</p>
+            </div>
+          ) : (
+            <div className="mb-8">
+              <label className="block text-[10px] text-base uppercase text-zinc-500 mb-2 font-bold">Salas Gravadas</label>
+              <select 
+                className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none focus:ring-2 focus:ring-amber-500 uppercase"
+                value={roomCode} onChange={(e) => setRoomCode(e.target.value)}
+              >
+                <option value="" disabled>-- Seleciona um Save --</option>
+                {availableSaves.map(save => <option key={save} value={save}>{save}</option>)}
+              </select>
+              {availableSaves.length === 0 && <p className="text-red-400 text-sm mt-2">Nenhum save encontrado no servidor.</p>}
+            </div>
+          )}
+
+          <button onClick={handleJoin} disabled={!name || !roomCode} className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 py-5 rounded-xl font-black text-xl transition-all active:scale-95 border-b-4 border-emerald-700 active:border-b-0">
+            {me ? 'A GERAR CONTRATO...' : 'ASSINAR CONTRATO'}
+          </button>
         </div>
       </div>
     );
@@ -175,7 +212,7 @@ function App() {
       <header className="bg-zinc-900 border-b border-zinc-800 p-4 md:px-8 flex items-center justify-between sticky top-0 shadow-sm z-20">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl md:text-4xl font-black text-amber-500 tracking-tighter">WSBall <span className="text-zinc-100">2026/27</span></h1>
-          <p className="text-base font-bold text-zinc-400 uppercase">| {me.roomCode} | Jornada {matchweekCount + 1}</p>
+          <p className="text-base font-bold text-zinc-400 uppercase">| SALA: {me.roomCode} | Jornada {matchweekCount + 1}</p>
         </div>
         <div className="flex items-center gap-4 hidden md:flex">
           <div className="text-right">
@@ -352,7 +389,7 @@ function App() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-amber-500 font-black text-xl">Lotação do Estádio:</span>
-                    <span className="font-mono text-white text-xl font-bold">{teamInfo?.stadium_capacity?.toLocaleString()} Lugares</span>
+                    <span className="font-mono text-white text-xl font-bold">{teamInfo?.stadium_capacity?.toLocaleString() || 5000} Lugares</span>
                   </div>
                 </div>
               </div>
@@ -363,7 +400,7 @@ function App() {
             <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800 flex flex-col items-center sticky top-[100px]">
               <button 
                 onClick={handleReady}
-                className="w-full py-6 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black rounded-2xl text-2xl transition-all shadow-emerald-500/20 active:scale-95 uppercase tracking-widest relative overflow-hidden"
+                className={`w-full py-6 font-black rounded-2xl text-2xl transition-all uppercase tracking-widest relative overflow-hidden border-b-6 active:border-b-0 active:translate-y-[6px] ${players.find(p => p.name === me.name)?.ready ? 'bg-zinc-800 text-zinc-500 border-zinc-950' : 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400 border-emerald-700'}`}
               >
                 {players.find(p => p.name === me.name)?.ready ? 'MUDAR TÁTICA' : 'JOGAR JORNADA'}
               </button>

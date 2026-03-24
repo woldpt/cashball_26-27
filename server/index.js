@@ -2,11 +2,26 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 const { getGame, getGameBySocket } = require('./gameManager');
 const { simulateDivision } = require('./game/engine');
 
 const app = express();
 app.use(cors());
+
+app.get('/saves', (req, res) => {
+  try {
+    const files = fs.readdirSync(path.join(__dirname, 'db'));
+    const saves = files
+      .filter(f => f.startsWith('game_') && f.endsWith('.db'))
+      .map(f => f.replace('game_', '').replace('.db', ''));
+    res.json(saves);
+  } catch (e) {
+    res.json([]);
+  }
+});
+
 const server = http.createServer(app);
 
 const io = new Server(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
