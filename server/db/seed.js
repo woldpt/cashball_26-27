@@ -1,38 +1,52 @@
 const db = require('./database');
 
 const divisionsData = {
-  1: { teams: ['Benfica', 'FC Porto', 'Sporting CP', 'SC Braga', 'Vitória SC', 'Boavista', 'Famalicão', 'Estoril'], budget: 50000 },
-  2: { teams: ['Marítimo', 'Paços de Ferreira', 'Nacional', 'Leiria', 'Belenenses', 'Feirense', 'Penafiel', 'Mafra'], budget: 35000 },
-  3: { teams: ['Académica', 'Alverca', 'Varzim', 'Felgueiras', 'Braga B', 'Trofense', 'Fafe', 'Sanjoanense'], budget: 25000 },
-  4: { teams: ['Salgueiros', 'Leixões', 'Beira-Mar', 'Vianense', 'Vila Real', 'Mirandela', 'Ponte da Barca', 'Bragança'], budget: 15000 }
+  1: { teams: ['Triunfo FC', 'Atlético do Norte', 'Desportivo Central', 'União da Serra', 'Estrela da Manhã', 'Guerreiros SC', 'Invicta FC', 'Real Clube'], budget: 50000 },
+  2: { teams: ['Academia Sul', 'Leões da Fronteira', 'Bravos de Leste', 'Trovão FC', 'Fénix Azul', 'Pioneiros SC', 'Vanguarda Desportiva', 'Dragões do Vale'], budget: 35000 },
+  3: { teams: ['Titãs do Ouro', 'Alvorada FC', 'Centauros AC', 'Falcões de Ferro', 'Gigantes SC', 'Lobos da Planície', 'Meteoros FC', 'Panteras Negras'], budget: 25000 },
+  4: { teams: ['Águias Douradas', 'Corsários FC', 'Gladiadores SC', 'Tempestade AC', 'Vulcanos FC', 'Zeus Desportivo', 'Cometas SC', 'Piratas do Mar'], budget: 15000 }
 };
 
-const firstNames = ['João', 'Rui', 'Miguel', 'Pedro', 'Nuno', 'Ricardo', 'Tiago', 'Diogo', 'Bruno', 'André', 'Hugo', 'Filipe', 'Carlos', 'José', 'Ruben', 'Gonçalo', 'Francisco'];
-const lastNames = ['Silva', 'Santos', 'Ferreira', 'Pereira', 'Oliveira', 'Costa', 'Rodrigues', 'Martins', 'Gomes', 'Lopes', 'Alves', 'Monteiro', 'Ribeiro', 'Fernandes'];
-const nationalities = ['POR', 'POR', 'POR', 'POR', 'BRA', 'BRA', 'ARG', 'ESP'];
+const firstA = ['Zal', 'Kael', 'Dorn', 'Val', 'Torn', 'Gor', 'Fen', 'Ryn', 'Zan', 'Morg', 'Sil', 'Cor', 'Jax', 'Tor'];
+const firstB = ['is', 'en', 'ar', 'os', 'us', 'ok', 'ir', 'an'];
+const lastA = ['Trovão', 'Flecha', 'Rochedo', 'Vendaval', 'Fogo', 'Aço', 'Sombra', 'Luz', 'Gelo', 'Vento'];
+const lastB = ['Negro', 'Branco', 'Veloz', 'Forte', 'Bravo', 'Leal', 'Cruel', 'Rápido', 'Feroz', 'Eterno'];
+
+const nationalities = ['ZTR', 'VNT', 'BRR', 'PNN', 'MTR', 'LST', 'GNR', 'FRR'];
 const aggressivenessLevels = ['Low', 'Medium', 'Medium', 'Medium', 'High'];
 
 function getRandomName() {
-  const first = firstNames[Math.floor(Math.random() * firstNames.length)];
-  const last = lastNames[Math.floor(Math.random() * lastNames.length)];
-  return `${first} ${last}`;
+  const isFantasy = Math.random() > 0.5;
+  if(isFantasy) {
+     const f = firstA[Math.floor(Math.random() * firstA.length)] + firstB[Math.floor(Math.random() * firstB.length)];
+     return f.charAt(0).toUpperCase() + f.slice(1) + ' ' + lastA[Math.floor(Math.random() * lastA.length)];
+  } else {
+     return lastA[Math.floor(Math.random() * lastA.length)] + ' ' + lastB[Math.floor(Math.random() * lastB.length)];
+  }
 }
 
 db.serialize(() => {
   db.run('DELETE FROM players');
   db.run('DELETE FROM teams');
+  db.run('DELETE FROM managers');
 
-  console.log('Seeding 32 teams and 512 players across 4 divisions...');
+  console.log('Seeding 32 fictitious teams and 512 players across 4 divisions...');
   
-  const insertTeam = db.prepare('INSERT INTO teams (name, division, budget) VALUES (?, ?, ?)');
+  const insertManager = db.prepare('INSERT INTO managers (name, reputation) VALUES (?, ?)');
+  const insertTeam = db.prepare('INSERT INTO teams (name, manager_id, division, budget) VALUES (?, ?, ?, ?)');
   const insertPlayer = db.prepare('INSERT INTO players (name, position, skill, age, form, aggressiveness, nationality, value, wage, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 
   let teamId = 1;
+  let managerId = 1;
   
   for (let div = 1; div <= 4; div++) {
     const data = divisionsData[div];
     data.teams.forEach(teamName => {
-      insertTeam.run(teamName, div, data.budget);
+      // Bot Manager
+      const managerName = 'Mr. ' + getRandomName() + ' (' + teamName.split(' ')[0] + ')';
+      insertManager.run(managerName, 50);
+
+      insertTeam.run(teamName, managerId, div, data.budget);
       
       const teamPositions = ['GK', 'GK', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'MID', 'MID', 'MID', 'MID', 'MID', 'ATK', 'ATK', 'ATK', 'ATK'];
       
@@ -57,13 +71,15 @@ db.serialize(() => {
         insertPlayer.run(name, pos, skill, age, form, agg, nat, value, wage, teamId);
       });
       teamId++;
+      managerId++;
     });
   }
 
+  insertManager.finalize();
   insertTeam.finalize();
   insertPlayer.finalize();
 
-  console.log('Seed complete. Ready for new sim.');
+  console.log('Fictitious seed complete. Ready for new sim.');
 });
 
 db.close();

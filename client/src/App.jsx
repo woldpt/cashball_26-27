@@ -117,7 +117,7 @@ function App() {
   if (!me) {
     return (
       <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 flex flex-col items-center justify-center font-sans tracking-tight">
-        <h1 className="text-6xl font-black text-amber-500 mb-8 drop-shadow-xl tracking-tighter">ELIFOOT <span className="text-zinc-100">98</span></h1>
+        <h1 className="text-6xl font-black text-amber-500 mb-8 drop-shadow-xl tracking-tighter">WSBall <span className="text-zinc-100">2026/27</span></h1>
         <div className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md border border-zinc-800 relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600"></div>
           <h2 className="text-xl font-bold mb-6 text-zinc-300 uppercase tracking-widest text-center">Entrar na Liga</h2>
@@ -156,7 +156,7 @@ function App() {
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-amber-500 selection:text-zinc-900 pb-12 tracking-tight">
       <header className="bg-zinc-900 border-b border-zinc-800 p-4 md:px-8 flex flex-col md:flex-row justify-between items-center z-10 sticky top-0 shadow-sm">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-black text-amber-500 tracking-tighter">ELIFOOT <span className="text-zinc-100">98</span></h1>
+          <h1 className="text-2xl font-black text-amber-500 tracking-tighter">WSBall <span className="text-zinc-100">2026/27</span></h1>
           <div className="h-6 w-px bg-zinc-700 mx-2"></div>
           <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest pl-1">Jornada {matchweekCount + 1}</p>
         </div>
