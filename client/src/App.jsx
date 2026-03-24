@@ -52,6 +52,8 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [marketPairs, setMarketPairs] = useState([]);
   const [tactic, setTactic] = useState({ formation: '4-4-2', style: 'Balanced' });
+  const [liveMinute, setLiveMinute] = useState(90);
+  const [isPlayingMatch, setIsPlayingMatch] = useState(false);
   
   useEffect(() => {
     // Fetch saves on mount
@@ -79,14 +81,10 @@ function App() {
     socket.on('matchResults', (data) => {
       setMatchResults(data);
       setMatchweekCount((prev) => prev + 1);
-      
-      const myResult = data.results.find(r => r.homeTeamId === me?.teamId || r.awayTeamId === me?.teamId);
-      if (myResult && (myResult.homeGoals > 0 || myResult.awayGoals > 0)) {
-        playGoal();
-        setTimeout(playWhistle, 600);
-      } else {
-        playWhistle();
-      }
+      setLiveMinute(0);
+      setIsPlayingMatch(true);
+      setActiveTab('live');
+      playWhistle();
     });
     
     return () => {
@@ -114,6 +112,21 @@ function App() {
       }
     }
   }, [players, me]);
+
+  useEffect(() => {
+    if (isPlayingMatch && liveMinute <= 90) {
+      const timer = setTimeout(() => {
+        setLiveMinute(m => m + 5);
+      }, 500);
+      return () => clearTimeout(timer);
+    } else if (isPlayingMatch && liveMinute > 90) {
+      const timer = setTimeout(() => {
+         setIsPlayingMatch(false);
+         setActiveTab('standings');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isPlayingMatch, liveMinute]);
 
   const handleJoin = () => {
     if (name && roomCode) {
@@ -234,9 +247,9 @@ function App() {
       
       <div className="max-w-[1400px] mx-auto p-4 md:p-8">
         <div className="flex gap-4 mb-8 border-b border-zinc-800 pb-px overflow-x-auto">
-          {['dashboard', 'squad', 'market', 'finances'].map(tab => (
+          {['dashboard', 'live', 'standings', 'squad', 'market', 'finances'].map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-3 font-bold text-base md:text-lg uppercase transition-colors border-b-4 ${activeTab === tab ? 'border-amber-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}>
-              {tab === 'dashboard' ? 'Geral' : tab === 'squad' ? 'Plantel' : tab === 'market' ? 'Mercado' : 'Finanças'}
+              {tab === 'dashboard' ? 'Geral' : tab === 'live' ? 'Jornada' : tab === 'standings' ? 'Tabela' : tab === 'squad' ? 'Plantel' : tab === 'market' ? 'Mercado' : 'Finanças'}
             </button>
           ))}
         </div>
@@ -266,19 +279,95 @@ function App() {
                       <div className="flex items-center justify-center gap-8 mb-8">
                         <div className="text-3xl font-black flex-1 text-right">{teams.find(t => t.id === myMatch.homeTeamId)?.name}</div>
                         <div className="px-6 py-3 bg-zinc-950 border border-zinc-800 rounded-2xl text-6xl font-black text-white shadow-inner flex gap-4">
-                          <span>{myMatch.homeGoals}</span><span className="text-zinc-700">-</span><span>{myMatch.awayGoals}</span>
+                          <span>{myMatch.finalHomeGoals ?? 0}</span><span className="text-zinc-700">-</span><span>{myMatch.finalAwayGoals ?? 0}</span>
                         </div>
                         <div className="text-3xl font-black flex-1 text-left">{teams.find(t => t.id === myMatch.awayTeamId)?.name}</div>
-                      </div>
-                      <div className="bg-zinc-950 rounded-2xl p-6 text-base text-zinc-400 h-[300px] overflow-y-auto space-y-3 border border-zinc-800 font-medium">
-                        {myMatch.narrative.map((event, idx) => {
-                          const bg = event.includes('GOLO') ? "bg-emerald-500/10 text-emerald-400 p-2 rounded-lg -mx-2 font-bold" : event.includes('VERMELHO') ? "bg-red-500/10 text-red-500 p-2 rounded-lg -mx-2 font-bold" : "text-amber-400";
-                          return <div key={idx} className={bg}>{event}</div>
-                        })}
                       </div>
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'live' && matchResults && (
+              <div className="bg-[#008000] min-h-[600px] text-white font-sans p-2 rounded-sm border-[4px] border-zinc-300 shadow-2xl relative overflow-hidden">
+                 <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-600 border-2 border-white shadow-sm flex items-center justify-center font-mono">
+                    <span className="text-[10px] font-black leading-none">{Math.min(liveMinute, 90)}'</span>
+                 </div>
+
+                 <div className="grid grid-cols-1 gap-2 mt-4 px-2 pb-6">
+                   {[1,2,3,4].map(div => (
+                     <div key={div} className="mb-1">
+                       <h3 className="text-yellow-300 font-bold text-sm tracking-tighter mb-[2px]">{div}ª Divisão</h3>
+                       <div className="space-y-[2px]">
+                         {matchResults.results.filter(m => teams.find(t => t.id === m.homeTeamId)?.division === div).map((match, idx) => {
+                            const hInfo = teams.find(t => t.id === match.homeTeamId);
+                            const aInfo = teams.find(t => t.id === match.awayTeamId);
+                            const currentHome = match.events.filter(e => e.minute <= liveMinute && e.type === 'goal' && e.team === 'home');
+                            const currentAway = match.events.filter(e => e.minute <= liveMinute && e.type === 'goal' && e.team === 'away');
+                            
+                            const maxEvents = match.events.filter(e => e.minute <= liveMinute);
+                            const scorersList = maxEvents.filter(e => e.type==='goal').sort((a,b) => a.minute - b.minute).map(g => {
+                               const nameMatch = g.text.match(/do (.*?) \(/);
+                               return `${nameMatch ? nameMatch[1] : 'Jgdr'} ${g.minute}'`;
+                            }).join(', ');
+
+                            const colors = ['bg-white text-black', 'bg-red-600 text-white', 'bg-black text-white', 'bg-blue-600 text-white', 'bg-[#00ff00] text-black', 'bg-yellow-400 text-black'];
+                            const hColor = colors[hInfo?.id % colors.length];
+                            const aColor = colors[aInfo?.id % colors.length];
+
+                            return (
+                              <div key={idx} className="flex items-center text-xs font-bold leading-none py-[2px]">
+                                <div className={`w-32 uppercase truncate px-1 border border-black/20 font-black shadow-sm ${hColor}`}>{hInfo?.name}</div>
+                                <div className="px-2 font-black text-white w-12 text-center drop-shadow-md text-[13px]">{currentHome.length} : {currentAway.length}</div>
+                                <div className={`w-32 uppercase truncate px-1 border border-black/20 font-black shadow-sm ${aColor}`}>{aInfo?.name}</div>
+                                <div className="ml-3 text-[11px] font-normal text-green-100 flex-1 truncate drop-shadow-md">
+                                  {scorersList && `${scorersList}`}
+                                </div>
+                              </div>
+                            );
+                         })}
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+              </div>
+            )}
+
+            {activeTab === 'standings' && (
+              <div className="bg-[#008000] min-h-[600px] text-white font-sans p-4 rounded-sm border-[4px] border-zinc-300 shadow-2xl">
+                 <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-[13px] font-black bg-[#000080] text-white px-2 py-[2px] border-2 border-zinc-300 shadow-black drop-shadow-md">Classificação - {matchweekCount}ª jornada</h2>
+                 </div>
+                 
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
+                   {[1,2,3,4].map(div => (
+                     <div key={div}>
+                       <h3 className="text-yellow-300 font-bold text-lg mb-[2px] drop-shadow-sm">{div}ª Divisão</h3>
+                       <div className="bg-[#008000] border border-black p-[1px]">
+                         <table className="w-full text-[11px] font-bold text-right border-collapse">
+                           <tbody>
+                             {teams.filter(t => t.division === div).sort((a,b) => b.points - a.points || (b.goals_for - b.goals_against) - (a.goals_for - a.goals_against)).map((t, idx) => {
+                               const colors = ['bg-white text-black', 'bg-red-600 text-white', 'bg-black text-white', 'bg-blue-600 text-white', 'bg-zinc-400 text-black', 'bg-yellow-400 text-black'];
+                               const bgC = colors[t.id % colors.length];
+                               return (
+                                 <tr key={t.id} className="border-b border-black">
+                                   <td className={`text-left uppercase px-1 w-[40%] truncate border-r border-black font-black ${bgC}`}>{t.name}</td>
+                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{t.wins + t.draws + t.losses}</td>
+                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{t.wins}</td>
+                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{t.draws}</td>
+                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{t.losses}</td>
+                                   <td className="w-12 text-center border-r border-black bg-white/20 tracking-widest text-white">{t.goals_for} : {t.goals_against}</td>
+                                   <td className="w-6 text-center bg-zinc-900 text-white shadow-inner">{t.points}</td>
+                                 </tr>
+                               );
+                             })}
+                           </tbody>
+                         </table>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
               </div>
             )}
 

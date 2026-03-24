@@ -56,7 +56,7 @@ async function simulateMatch(db, homeTeamId, awayTeamId, homeTactic, awayTactic)
   
   let homeGoals = 0;
   let awayGoals = 0;
-  let narrative = [];
+  let events = [];
   
   for (let minute = 1; minute <= 90; minute++) {
     const chance = Math.random();
@@ -65,12 +65,12 @@ async function simulateMatch(db, homeTeamId, awayTeamId, homeTactic, awayTactic)
         const scorers = home.squad.filter(p => p.position === 'ATK' || p.position === 'MID');
         const scorer = scorers.length > 0 ? scorers[Math.floor(Math.random() * scorers.length)] : home.squad[0];
         homeGoals++;
-        narrative.push(`[${minute}'] GOLO! ${scorer ? scorer.name : 'Jogador'} marca para a equipa da casa!`);
+        events.push({ minute, type: 'goal', team: 'home', text: `[${minute}'] ⚽ GOLO do ${scorer ? scorer.name : 'Jogador'} (Equipa Visitada)!` });
       } else {
         const scorers = away.squad.filter(p => p.position === 'ATK' || p.position === 'MID');
         const scorer = scorers.length > 0 ? scorers[Math.floor(Math.random() * scorers.length)] : away.squad[0];
         awayGoals++;
-        narrative.push(`[${minute}'] GOLO! ${scorer ? scorer.name : 'Jogador'} gela o estádio!`);
+        events.push({ minute, type: 'goal', team: 'away', text: `[${minute}'] ⚽ GOLO do ${scorer ? scorer.name : 'Jogador'} (Equipa Visitante)!` });
       }
     }
     
@@ -85,17 +85,17 @@ async function simulateMatch(db, homeTeamId, awayTeamId, homeTactic, awayTactic)
         if (offender.aggressiveness === 'Low') redProb = 0.01;
         
         if (Math.random() < redProb) {
-          narrative.push(`[${minute}'] CARTÃO VERMELHO DIRETO! ${offender.name} expulso após entrada duríssima!`);
+          events.push({ minute, type: 'red', team: isHomeCard ? 'home' : 'away', text: `[${minute}'] 🟥 VERMELHO DIRETO! ${offender.name} expulso!` });
         } else {
-          narrative.push(`[${minute}'] Cartão Amarelo para ${offender.name}.`);
+          events.push({ minute, type: 'yellow', team: isHomeCard ? 'home' : 'away', text: `[${minute}'] 🟨 Cartão Amarelo para ${offender.name}.` });
         }
       }
     }
   }
   
-  if (narrative.length === 0) narrative.push("Jogo disputado a meio campo.");
+  if (events.length === 0) events.push({ minute: 90, type: 'info', team: 'none', text: `Jogo disputado a meio campo.` });
 
-  return { homeTeamId, awayTeamId, homeGoals, awayGoals, narrative };
+  return { homeTeamId, awayTeamId, finalHomeGoals: homeGoals, finalAwayGoals: awayGoals, events };
 }
 
 async function simulateDivision(game, division) {

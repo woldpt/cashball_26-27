@@ -196,12 +196,35 @@ async function checkAllReady(game) {
     `, async (err) => {
         if (err) console.error("Weekly Loop Err:", err);
         try {
-          const results = await simulateDivision(game, 4);
-          io.to(game.roomCode).emit('matchResults', { matchweek: game.matchweek, results });
-          playerIds.forEach(id => game.players[id].ready = false);
-          game.matchweek++;
-          game.db.all('SELECT * FROM teams', (err, teams) => io.to(game.roomCode).emit('teamsData', teams));
-          io.to(game.roomCode).emit('playerListUpdate', Object.values(game.players));
+          const res1 = await simulateDivision(game, 1);
+          const res2 = await simulateDivision(game, 2);
+          const res3 = await simulateDivision(game, 3);
+          const res4 = await simulateDivision(game, 4);
+          const results = [...res1, ...res2, ...res3, ...res4];
+
+          game.db.serialize(() => {
+            game.db.run("BEGIN TRANSACTION");
+            for (let match of results) {
+               const hG = match.finalHomeGoals;
+               const aG = match.finalAwayGoals;
+               let hPts = 0, aPts = 0;
+               let hW = 0, hD = 0, hL = 0;
+               let aW = 0, aD = 0, aL = 0;
+               if (hG > aG) { hPts = 3; hW = 1; aL = 1; }
+               else if (hG < aG) { aPts = 3; aW = 1; hL = 1; }
+               else { hPts = 1; aPts = 1; hD = 1; aD = 1; }
+               
+               game.db.run('UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?', [hPts, hW, hD, hL, hG, aG, match.homeTeamId]);
+               game.db.run('UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?', [aPts, aW, aD, aL, aG, hG, match.awayTeamId]);
+            }
+            game.db.run("COMMIT", () => {
+              io.to(game.roomCode).emit('matchResults', { matchweek: game.matchweek, results });
+              playerIds.forEach(id => game.players[id].ready = false);
+              game.matchweek++;
+              game.db.all('SELECT * FROM teams', (err, teams) => io.to(game.roomCode).emit('teamsData', teams));
+              io.to(game.roomCode).emit('playerListUpdate', Object.values(game.players));
+            });
+          });
         } catch(e) {
           console.error("Simulation Loop Err:", e);
         }
