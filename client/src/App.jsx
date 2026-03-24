@@ -164,7 +164,7 @@ function App() {
   if (!me || !me.teamId) {
     return (
       <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 flex flex-col items-center justify-center font-sans">
-        <h1 className="text-6xl font-black text-amber-500 mb-8 drop-shadow-xl tracking-tighter">WSBall <span className="text-zinc-100">2026/27</span></h1>
+        <h1 className="text-6xl font-black text-amber-500 mb-8 drop-shadow-xl tracking-tighter">CashBall <span className="text-zinc-100">26/27</span></h1>
         <div className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md border border-zinc-800 relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600"></div>
           
@@ -221,7 +221,7 @@ function App() {
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans pb-12 tracking-tight">
       <header className="bg-zinc-900 border-b border-zinc-800 p-4 md:px-8 flex items-center justify-between sticky top-0 shadow-sm z-20">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl md:text-4xl font-black text-amber-500 tracking-tighter">WSBall <span className="text-zinc-100">2026/27</span></h1>
+          <h1 className="text-2xl md:text-4xl font-black text-amber-500 tracking-tighter">CashBall <span className="text-zinc-100">26/27</span></h1>
           <p className="text-base font-bold text-zinc-400 uppercase">| SALA: {me.roomCode} | Jornada {matchweekCount + 1}</p>
         </div>
         <div className="flex items-center gap-4 hidden md:flex">
