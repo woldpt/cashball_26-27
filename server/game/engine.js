@@ -1,12 +1,9 @@
-const db = require('../db/database');
-
-function getTeamSquad(teamId, formation = '4-4-2') {
+function getTeamSquad(db, teamId, formation = '4-4-2') {
   return new Promise((resolve, reject) => {
     db.all('SELECT * FROM players WHERE team_id = ?', [teamId], (err, rows) => {
       if (err) return reject(err);
       
       const sorted = rows.sort((a, b) => (b.skill * b.form) - (a.skill * a.form));
-      
       const lineup = [];
       const parts = formation.split('-');
       const positions = { 'GK': 1, 'DEF': parseInt(parts[0]), 'MID': parseInt(parts[1]), 'ATK': parseInt(parts[2]) };
@@ -19,7 +16,6 @@ function getTeamSquad(teamId, formation = '4-4-2') {
         }
       });
       
-      // If we don't have exactly 11 players filling those roles, fill with whatever is best
       if (lineup.length < 11) {
          const missing = 11 - lineup.length;
          const remaining = sorted.filter(p => !lineup.includes(p));
@@ -31,11 +27,10 @@ function getTeamSquad(teamId, formation = '4-4-2') {
   });
 }
 
-async function simulateMatch(homeTeamId, awayTeamId, homeTactic, awayTactic) {
-  const homeSquad = await getTeamSquad(homeTeamId, homeTactic.formation);
-  const awaySquad = await getTeamSquad(awayTeamId, awayTactic.formation);
+async function simulateMatch(db, homeTeamId, awayTeamId, homeTactic, awayTactic) {
+  const homeSquad = await getTeamSquad(db, homeTeamId, homeTactic.formation);
+  const awaySquad = await getTeamSquad(db, awayTeamId, awayTactic.formation);
   
-  // Calculate power
   const getPower = (squad, style) => {
     let attack = 0, defense = 0, midfield = 0, gk = 0;
     squad.forEach(p => {
@@ -46,7 +41,6 @@ async function simulateMatch(homeTeamId, awayTeamId, homeTactic, awayTactic) {
       if (p.position === 'ATK') attack += effSkill;
     });
     
-    // Apply style modifiers
     if (style === 'Offensive') { attack *= 1.15; defense *= 0.85; }
     if (style === 'Defensive') { defense *= 1.20; attack *= 0.80; }
     
@@ -56,7 +50,7 @@ async function simulateMatch(homeTeamId, awayTeamId, homeTactic, awayTactic) {
   const home = getPower(homeSquad, homeTactic.style);
   const away = getPower(awaySquad, awayTactic.style);
 
-  const homeBonus = 1.1; // Home team advantage
+  const homeBonus = 1.1; 
   const hStrength = ((home.attack || 10) * 1.5 + (home.midfield || 10) * 1.0 + (home.defense || 10) * 0.5) * homeBonus;
   const aStrength = ((away.attack || 10) * 1.5 + (away.midfield || 10) * 1.0 + (away.defense || 10) * 0.5);
   
@@ -64,11 +58,8 @@ async function simulateMatch(homeTeamId, awayTeamId, homeTactic, awayTactic) {
   let awayGoals = 0;
   let narrative = [];
   
-  // Minute by minute simulation
   for (let minute = 1; minute <= 90; minute++) {
     const chance = Math.random();
-    
-    // 3% chance of a highlight per minute (~2-3 highlights per game)
     if (chance < 0.03) {
       if (Math.random() * (hStrength + aStrength) < hStrength) {
         const scorers = home.squad.filter(p => p.position === 'ATK' || p.position === 'MID');
@@ -83,9 +74,8 @@ async function simulateMatch(homeTeamId, awayTeamId, homeTactic, awayTactic) {
       }
     }
     
-    // Cards simulation
     const cardChance = Math.random();
-    if (cardChance < 0.015) { // 1.5% chance per minute for a card
+    if (cardChance < 0.015) { 
       const isHomeCard = Math.random() > 0.5;
       const squad = isHomeCard ? home.squad : away.squad;
       if (squad.length > 0) {
@@ -103,12 +93,45 @@ async function simulateMatch(homeTeamId, awayTeamId, homeTactic, awayTactic) {
     }
   }
   
-  if (narrative.length === 0) narrative.push("Jogo muito disputado a meio campo, sem grandes oportunidades.");
+  if (narrative.length === 0) narrative.push("Jogo disputado a meio campo.");
 
-  return { homeGoals, awayGoals, narrative };
+  return { homeTeamId, awayTeamId, homeGoals, awayGoals, narrative };
+}
+
+async function simulateDivision(game, division) {
+  return new Promise((resolve) => {
+    game.db.all('SELECT id FROM teams WHERE division = ?', [division], async (err, teams) => {
+      const results = [];
+      const used = new Set();
+      // Simple random matching for the division
+      // In real life, you'd use a fixture calendar
+      for (let i = 0; i < teams.length; i++) {
+        if (!used.has(teams[i].id)) {
+           used.add(teams[i].id);
+           let opponent = teams.find(t => !used.has(t.id) && t.id !== teams[i].id);
+           
+           if (opponent) {
+             used.add(opponent.id);
+             
+             // Find tactics if human
+             const p1 = Object.values(game.players).find(p => p.teamId === teams[i].id);
+             const p2 = Object.values(game.players).find(p => p.teamId === opponent.id);
+             
+             const t1 = p1 ? p1.tactic : { formation: '4-4-2', style: 'Balanced' };
+             const t2 = p2 ? p2.tactic : { formation: '4-4-2', style: 'Balanced' };
+             
+             const r = await simulateMatch(game.db, teams[i].id, opponent.id, t1, t2);
+             results.push(r);
+           }
+        }
+      }
+      resolve(results);
+    });
+  });
 }
 
 module.exports = {
   simulateMatch,
-  getTeamSquad
+  getTeamSquad,
+  simulateDivision
 };

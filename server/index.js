@@ -2,74 +2,81 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const db = require('./db/database');
-const { simulateMatch } = require('./game/engine');
+const { getGame, getGameBySocket } = require('./gameManager');
+const { simulateDivision } = require('./game/engine');
 
 const app = express();
 app.use(cors());
 const server = http.createServer(app);
 
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
-});
-
-let players = {}; // { socketId: { name, teamId, ready } }
-let matchweek = 1;
-
-let globalMarket = [];
-db.all('SELECT * FROM players ORDER BY RANDOM() LIMIT 20', (err, rows) => {
-  if (!err) globalMarket = rows;
-});
+const io = new Server(server, { cors: { origin: '*', methods: ['GET', 'POST'] } });
 
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
-
-  // Send initial data
-  db.all('SELECT * FROM teams', (err, teams) => {
-    socket.emit('teamsData', teams);
-  });
-
   socket.on('joinGame', (data) => {
-    players[socket.id] = { 
-      name: data.name, 
-      teamId: data.teamId, 
-      ready: false,
-      tactic: { formation: '4-4-2', style: 'Balanced' }
-    };
+    const roomCode = data.roomCode.toUpperCase();
+    const game = getGame(roomCode);
+    socket.join(roomCode);
     
-    db.all('SELECT * FROM players WHERE team_id = ?', [data.teamId], (err, squad) => {
-      socket.emit('mySquad', squad);
+    if (Object.keys(game.players).length >= 8) {
+      socket.emit('systemMessage', 'Sala cheia (Máximo 8 Treinadores).');
+      return;
+    }
+
+    const takenTeams = Object.values(game.players).map(p => p.teamId);
+    let query = 'SELECT id, name FROM teams WHERE division = 4';
+    if (takenTeams.length > 0) {
+       query += ` AND id NOT IN (${takenTeams.join(',')})`;
+    }
+    query += ' ORDER BY RANDOM() LIMIT 1';
+
+    game.db.get(query, (err, team) => {
+      if (err || !team) {
+         socket.emit('systemMessage', 'Nenhuma equipa disponível na Divisão 4.');
+         return;
+      }
+      
+      game.players[socket.id] = { 
+        name: data.name, 
+        teamId: team.id, 
+        roomCode: roomCode,
+        ready: false,
+        tactic: { formation: '4-4-2', style: 'Balanced' }
+      };
+
+      game.db.all('SELECT * FROM teams', (err, teams) => {
+        socket.emit('teamsData', teams);
+      });
+      game.db.all('SELECT * FROM players WHERE team_id = ?', [team.id], (err, squad) => {
+        socket.emit('mySquad', squad);
+      });
+      
+      socket.emit('marketUpdate', game.globalMarket);
+      io.to(roomCode).emit('playerListUpdate', Object.values(game.players));
+      socket.emit('systemMessage', `Foste contratado pelo ${team.name} (Divisão 4)!`);
     });
-    
-    socket.emit('marketUpdate', globalMarket);
-    
-    io.emit('playerListUpdate', Object.values(players));
-    console.log(`${data.name} joined with team ${data.teamId}`);
   });
 
   socket.on('buyPlayer', (playerId) => {
-    const playerState = players[socket.id];
-    if (!playerState) return;
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    const playerState = game.players[socket.id];
 
-    db.get('SELECT * FROM players WHERE id = ?', [playerId], (err, player) => {
+    game.db.get('SELECT * FROM players WHERE id = ?', [playerId], (err, player) => {
       if (!player) return;
-      db.get('SELECT budget FROM teams WHERE id = ?', [playerState.teamId], (err, team) => {
+      game.db.get('SELECT budget FROM teams WHERE id = ?', [playerState.teamId], (err, team) => {
         if (!team) return;
         
-        const price = player.value * 1.2; // 20% premium
+        const price = player.value * 1.2;
         if (team.budget >= price) {
-          db.run('UPDATE teams SET budget = budget - ? WHERE id = ?', [price, playerState.teamId], () => {
-             db.run('UPDATE players SET team_id = ? WHERE id = ?', [playerState.teamId, playerId], () => {
-                const index = globalMarket.findIndex(p => p.id === playerId);
-                if (index > -1) globalMarket.splice(index, 1);
+          game.db.run('UPDATE teams SET budget = budget - ? WHERE id = ?', [price, playerState.teamId], () => {
+             game.db.run('UPDATE players SET team_id = ? WHERE id = ?', [playerState.teamId, playerId], () => {
+                const index = game.globalMarket.findIndex(p => p.id === playerId);
+                if (index > -1) game.globalMarket.splice(index, 1);
                 
-                io.emit('marketUpdate', globalMarket);
-                db.all('SELECT * FROM teams', (err, teams) => io.emit('teamsData', teams));
-                db.all('SELECT * FROM players WHERE team_id = ?', [playerState.teamId], (err, squad) => socket.emit('mySquad', squad));
-                socket.emit('systemMessage', `Contrataste ${player.name} por ${price}!`);
+                io.to(game.roomCode).emit('marketUpdate', game.globalMarket);
+                game.db.all('SELECT * FROM teams', (err, teams) => io.to(game.roomCode).emit('teamsData', teams));
+                game.db.all('SELECT * FROM players WHERE team_id = ?', [playerState.teamId], (err, squad) => socket.emit('mySquad', squad));
+                socket.emit('systemMessage', `Contrataste ${player.name} por €${price}!`);
              });
           });
         } else {
@@ -79,60 +86,49 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('setReady', (ready) => {
-    if (players[socket.id]) {
-      players[socket.id].ready = ready;
-      io.emit('playerListUpdate', Object.values(players));
-      checkAllReady();
-    }
-  });
-
   socket.on('setTactic', (tactic) => {
-    if (players[socket.id]) {
-      players[socket.id].tactic = tactic;
+    const game = getGameBySocket(socket.id);
+    if (game) {
+      game.players[socket.id].tactic = tactic;
       socket.emit('systemMessage', `Tática alterada para ${tactic.formation} (${tactic.style})`);
     }
   });
 
+  socket.on('setReady', (ready) => {
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    game.players[socket.id].ready = ready;
+    io.to(game.roomCode).emit('playerListUpdate', Object.values(game.players));
+    checkAllReady(game);
+  });
+
   socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-    delete players[socket.id];
-    io.emit('playerListUpdate', Object.values(players));
+    const game = getGameBySocket(socket.id);
+    if (game) {
+      delete game.players[socket.id];
+      io.to(game.roomCode).emit('playerListUpdate', Object.values(game.players));
+      checkAllReady(game); // Advance if others were waiting on him
+    }
   });
 });
 
-async function checkAllReady() {
-  const playerIds = Object.keys(players);
+async function checkAllReady(game) {
+  const playerIds = Object.keys(game.players);
   if (playerIds.length === 0) return;
 
-  const allReady = playerIds.every(id => players[id].ready);
+  const allReady = playerIds.every(id => game.players[id].ready);
   
   if (allReady) {
-    console.log(`All players ready! Simulating matchweek ${matchweek}...`);
+    console.log(`All players ready in room ${game.roomCode}! Simulating matchweek ${game.matchweek}...`);
     
-    const pList = Object.values(players);
-    let hTeam = 1, aTeam = 2;
-    let hTactic = { formation: '4-4-2', style: 'Balanced' };
-    let aTactic = { formation: '4-4-2', style: 'Balanced' };
-
-    if (pList.length >= 2) {
-       hTeam = pList[0].teamId; hTactic = pList[0].tactic;
-       aTeam = pList[1].teamId; aTactic = pList[1].tactic;
-    } else if (pList.length === 1) {
-       hTeam = pList[0].teamId; hTactic = pList[0].tactic;
-       aTeam = hTeam == 1 ? 2 : 1; 
-    }
-
-    const { simulateMatch } = require('./game/engine');
-    const results = await simulateMatch(hTeam, aTeam, hTactic, aTactic); 
+    // MVP limitation: Only simulating Division 4 matches (where the human players are)
+    const results = await simulateDivision(game, 4);
     
-    io.emit('matchResults', { matchweek, results });
+    io.to(game.roomCode).emit('matchResults', { matchweek: game.matchweek, results });
     
-    // Reset ready status
-    playerIds.forEach(id => players[id].ready = false);
-    matchweek++;
-    
-    io.emit('playerListUpdate', Object.values(players));
+    playerIds.forEach(id => game.players[id].ready = false);
+    game.matchweek++;
+    io.to(game.roomCode).emit('playerListUpdate', Object.values(game.players));
   }
 }
 
