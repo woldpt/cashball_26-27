@@ -27,9 +27,29 @@ function getTeamSquad(db, teamId, formation = '4-4-2') {
   });
 }
 
-async function simulateMatch(db, homeTeamId, awayTeamId, homeTactic, awayTactic) {
-  const homeSquad = await getTeamSquad(db, homeTeamId, homeTactic.formation);
-  const awaySquad = await getTeamSquad(db, awayTeamId, awayTactic.formation);
+async function generateFixturesForDivision(db, division) {
+  return new Promise((resolve) => {
+    db.all('SELECT id FROM teams WHERE division = ?', [division], (err, teams) => {
+      const fixtures = [];
+      const used = new Set();
+      for (let i = 0; i < teams.length; i++) {
+        if (!used.has(teams[i].id)) {
+           used.add(teams[i].id);
+           let opponent = teams.find(t => !used.has(t.id) && t.id !== teams[i].id);
+           if (opponent) {
+             used.add(opponent.id);
+             fixtures.push({ homeTeamId: teams[i].id, awayTeamId: opponent.id, finalHomeGoals: 0, finalAwayGoals: 0, events: [] });
+           }
+        }
+      }
+      resolve(fixtures);
+    });
+  });
+}
+
+async function simulateMatchSegment(db, fixture, homeTactic, awayTactic, startMin, endMin) {
+  const homeSquad = await getTeamSquad(db, fixture.homeTeamId, homeTactic.formation);
+  const awaySquad = await getTeamSquad(db, fixture.awayTeamId, awayTactic.formation);
   
   const getPower = (squad, style) => {
     let attack = 0, defense = 0, midfield = 0, gk = 0;
@@ -54,23 +74,19 @@ async function simulateMatch(db, homeTeamId, awayTeamId, homeTactic, awayTactic)
   const hStrength = ((home.attack || 10) * 1.5 + (home.midfield || 10) * 1.0 + (home.defense || 10) * 0.5) * homeBonus;
   const aStrength = ((away.attack || 10) * 1.5 + (away.midfield || 10) * 1.0 + (away.defense || 10) * 0.5);
   
-  let homeGoals = 0;
-  let awayGoals = 0;
-  let events = [];
-  
-  for (let minute = 1; minute <= 90; minute++) {
+  for (let minute = startMin; minute <= endMin; minute++) {
     const chance = Math.random();
     if (chance < 0.03) {
       if (Math.random() * (hStrength + aStrength) < hStrength) {
         const scorers = home.squad.filter(p => p.position === 'ATK' || p.position === 'MID');
         const scorer = scorers.length > 0 ? scorers[Math.floor(Math.random() * scorers.length)] : home.squad[0];
-        homeGoals++;
-        events.push({ minute, type: 'goal', team: 'home', text: `[${minute}'] ⚽ GOLO do ${scorer ? scorer.name : 'Jogador'} (Equipa Visitada)!` });
+        fixture.finalHomeGoals++;
+        fixture.events.push({ minute, type: 'goal', team: 'home', text: `[${minute}'] ⚽ GOLO! ${scorer ? scorer.name : 'Jogador'}` });
       } else {
         const scorers = away.squad.filter(p => p.position === 'ATK' || p.position === 'MID');
         const scorer = scorers.length > 0 ? scorers[Math.floor(Math.random() * scorers.length)] : away.squad[0];
-        awayGoals++;
-        events.push({ minute, type: 'goal', team: 'away', text: `[${minute}'] ⚽ GOLO do ${scorer ? scorer.name : 'Jogador'} (Equipa Visitante)!` });
+        fixture.finalAwayGoals++;
+        fixture.events.push({ minute, type: 'goal', team: 'away', text: `[${minute}'] ⚽ GOLO! ${scorer ? scorer.name : 'Jogador'}` });
       }
     }
     
@@ -85,53 +101,17 @@ async function simulateMatch(db, homeTeamId, awayTeamId, homeTactic, awayTactic)
         if (offender.aggressiveness === 'Low') redProb = 0.01;
         
         if (Math.random() < redProb) {
-          events.push({ minute, type: 'red', team: isHomeCard ? 'home' : 'away', text: `[${minute}'] 🟥 VERMELHO DIRETO! ${offender.name} expulso!` });
+          fixture.events.push({ minute, type: 'red', team: isHomeCard ? 'home' : 'away', text: `[${minute}'] 🟥 VERMELHO! ${offender.name}` });
         } else {
-          events.push({ minute, type: 'yellow', team: isHomeCard ? 'home' : 'away', text: `[${minute}'] 🟨 Cartão Amarelo para ${offender.name}.` });
+          fixture.events.push({ minute, type: 'yellow', team: isHomeCard ? 'home' : 'away', text: `[${minute}'] 🟨 Amarelo para ${offender.name}` });
         }
       }
     }
   }
-  
-  if (events.length === 0) events.push({ minute: 90, type: 'info', team: 'none', text: `Jogo disputado a meio campo.` });
-
-  return { homeTeamId, awayTeamId, finalHomeGoals: homeGoals, finalAwayGoals: awayGoals, events };
-}
-
-async function simulateDivision(game, division) {
-  return new Promise((resolve) => {
-    game.db.all('SELECT id FROM teams WHERE division = ?', [division], async (err, teams) => {
-      const results = [];
-      const used = new Set();
-      // Simple random matching for the division
-      // In real life, you'd use a fixture calendar
-      for (let i = 0; i < teams.length; i++) {
-        if (!used.has(teams[i].id)) {
-           used.add(teams[i].id);
-           let opponent = teams.find(t => !used.has(t.id) && t.id !== teams[i].id);
-           
-           if (opponent) {
-             used.add(opponent.id);
-             
-             // Find tactics if human
-             const p1 = Object.values(game.players).find(p => p.teamId === teams[i].id);
-             const p2 = Object.values(game.players).find(p => p.teamId === opponent.id);
-             
-             const t1 = p1 ? p1.tactic : { formation: '4-4-2', style: 'Balanced' };
-             const t2 = p2 ? p2.tactic : { formation: '4-4-2', style: 'Balanced' };
-             
-             const r = await simulateMatch(game.db, teams[i].id, opponent.id, t1, t2);
-             results.push(r);
-           }
-        }
-      }
-      resolve(results);
-    });
-  });
 }
 
 module.exports = {
-  simulateMatch,
+  simulateMatchSegment,
   getTeamSquad,
-  simulateDivision
+  generateFixturesForDivision
 };

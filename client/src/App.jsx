@@ -78,10 +78,18 @@ function App() {
     socket.on('marketUpdate', (data) => setMarketPairs(data));
     socket.on('systemMessage', (msg) => alert(msg));
     
+    socket.on('halfTimeResults', (data) => {
+      setMatchResults(data);
+      setLiveMinute(0);
+      setIsPlayingMatch(true);
+      setActiveTab('live');
+      playWhistle();
+    });
+
     socket.on('matchResults', (data) => {
       setMatchResults(data);
       setMatchweekCount((prev) => prev + 1);
-      setLiveMinute(0);
+      setLiveMinute(45);
       setIsPlayingMatch(true);
       setActiveTab('live');
       playWhistle();
@@ -114,19 +122,26 @@ function App() {
   }, [players, me]);
 
   useEffect(() => {
-    if (isPlayingMatch && liveMinute <= 90) {
-      const timer = setTimeout(() => {
-        setLiveMinute(m => m + 5);
-      }, 500);
-      return () => clearTimeout(timer);
-    } else if (isPlayingMatch && liveMinute > 90) {
-      const timer = setTimeout(() => {
-         setIsPlayingMatch(false);
-         setActiveTab('standings');
-      }, 3000);
-      return () => clearTimeout(timer);
+    if (isPlayingMatch) {
+      const matchEvents = matchResults?.results?.[0]?.events || [];
+      const hasSecondHalf = matchEvents.some(e => e.minute > 45);
+
+      if (liveMinute < 45 || (liveMinute >= 45 && liveMinute < 90 && hasSecondHalf)) {
+        const timer = setTimeout(() => {
+          setLiveMinute(m => m + 5);
+        }, 500);
+        return () => clearTimeout(timer);
+      } else if (liveMinute === 45 && !hasSecondHalf) {
+        setIsPlayingMatch(false);
+      } else if (liveMinute > 90) {
+        const timer = setTimeout(() => {
+           setIsPlayingMatch(false);
+           setActiveTab('standings');
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [isPlayingMatch, liveMinute]);
+  }, [isPlayingMatch, liveMinute, matchResults]);
 
   const handleJoin = () => {
     if (name && roomCode) {
@@ -290,16 +305,18 @@ function App() {
             )}
 
             {activeTab === 'live' && matchResults && (
-              <div className="bg-[#008000] min-h-[600px] text-white font-sans p-2 rounded-sm border-[4px] border-zinc-300 shadow-2xl relative overflow-hidden">
-                 <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-600 border-2 border-white shadow-sm flex items-center justify-center font-mono">
-                    <span className="text-[10px] font-black leading-none">{Math.min(liveMinute, 90)}'</span>
+              <div className="bg-zinc-900 min-h-[600px] text-zinc-100 font-sans p-8 rounded-3xl border border-zinc-800 shadow-sm relative overflow-hidden">
+                 <div className="absolute top-6 right-6 flex items-center gap-3">
+                    {isPlayingMatch && <div className="w-4 h-4 rounded-full bg-red-600 animate-pulse"></div>}
+                    <span className="text-3xl font-mono font-black">{Math.min(liveMinute, 90)}'</span>
                  </div>
+                 <h2 className="text-2xl font-black text-amber-500 mb-8 pb-4 border-b border-zinc-800">Jornada em Direto {liveMinute === 45 && !isPlayingMatch ? '(INTERVALO)' : ''}</h2>
 
-                 <div className="grid grid-cols-1 gap-2 mt-4 px-2 pb-6">
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                    {[1,2,3,4].map(div => (
-                     <div key={div} className="mb-1">
-                       <h3 className="text-yellow-300 font-bold text-sm tracking-tighter mb-[2px]">{div}ª Divisão</h3>
-                       <div className="space-y-[2px]">
+                     <div key={div}>
+                       <h3 className="text-zinc-500 font-black uppercase text-sm mb-4">{div}ª Divisão</h3>
+                       <div className="space-y-2">
                          {matchResults.results.filter(m => teams.find(t => t.id === m.homeTeamId)?.division === div).map((match, idx) => {
                             const hInfo = teams.find(t => t.id === match.homeTeamId);
                             const aInfo = teams.find(t => t.id === match.awayTeamId);
@@ -309,21 +326,19 @@ function App() {
                             
                             const maxEvents = matchEvents.filter(e => e.minute <= liveMinute);
                             const scorersList = maxEvents.filter(e => e.type==='goal').sort((a,b) => a.minute - b.minute).map(g => {
-                               const nameMatch = g.text ? g.text.match(/do (.*?) \(/) : null;
+                               const nameMatch = g.text ? g.text.match(/! (.*)$/) : null;
                                return `${nameMatch ? nameMatch[1] : 'Jgdr'} ${g.minute}'`;
                             }).join(', ');
-
-                            const colors = ['bg-white text-black', 'bg-red-600 text-white', 'bg-black text-white', 'bg-blue-600 text-white', 'bg-[#00ff00] text-black', 'bg-yellow-400 text-black'];
-                            const hColor = colors[hInfo?.id % colors.length];
-                            const aColor = colors[aInfo?.id % colors.length];
+                            
+                            const isMyMatch = match.homeTeamId === me.teamId || match.awayTeamId === me.teamId;
 
                             return (
-                              <div key={idx} className="flex items-center text-xs font-bold leading-none py-[2px]">
-                                <div className={`w-32 uppercase truncate px-1 border border-black/20 font-black shadow-sm ${hColor}`}>{hInfo?.name}</div>
-                                <div className="px-2 font-black text-white w-12 text-center drop-shadow-md text-[13px]">{currentHome.length} : {currentAway.length}</div>
-                                <div className={`w-32 uppercase truncate px-1 border border-black/20 font-black shadow-sm ${aColor}`}>{aInfo?.name}</div>
-                                <div className="ml-3 text-[11px] font-normal text-green-100 flex-1 truncate drop-shadow-md">
-                                  {scorersList && `${scorersList}`}
+                              <div key={idx} className={`flex items-center text-sm font-bold bg-zinc-950 rounded-xl px-4 py-3 border ${isMyMatch ? 'border-amber-500 bg-amber-500/10' : 'border-zinc-800/50'}`}>
+                                <div className={`w-32 uppercase truncate font-black text-right pr-4 ${isMyMatch ? 'text-amber-500' : 'text-zinc-300'}`}>{hInfo?.name}</div>
+                                <div className="px-3 py-1 bg-zinc-900 rounded font-black text-white text-center shadow-inner text-base min-w-[50px]">{currentHome.length} - {currentAway.length}</div>
+                                <div className={`w-32 uppercase truncate font-black text-left pl-4 ${isMyMatch ? 'text-amber-500' : 'text-zinc-300'}`}>{aInfo?.name}</div>
+                                <div className="ml-4 text-xs font-medium text-zinc-500 flex-1 truncate">
+                                  {scorersList && `⚽ ${scorersList}`}
                                 </div>
                               </div>
                             );
@@ -336,30 +351,38 @@ function App() {
             )}
 
             {activeTab === 'standings' && (
-              <div className="bg-[#008000] min-h-[600px] text-white font-sans p-4 rounded-sm border-[4px] border-zinc-300 shadow-2xl">
-                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-[13px] font-black bg-[#000080] text-white px-2 py-[2px] border-2 border-zinc-300 shadow-black drop-shadow-md">Classificação - {matchweekCount}ª jornada</h2>
-                 </div>
+              <div className="bg-zinc-900 min-h-[600px] text-zinc-100 font-sans p-8 rounded-3xl border border-zinc-800 shadow-sm relative overflow-hidden">
+                 <h2 className="text-2xl font-black text-amber-500 mb-8 pb-4 border-b border-zinc-800">Classificação Geral (Jornada {matchweekCount})</h2>
                  
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8">
                    {[1,2,3,4].map(div => (
                      <div key={div}>
-                       <h3 className="text-yellow-300 font-bold text-lg mb-[2px] drop-shadow-sm">{div}ª Divisão</h3>
-                       <div className="bg-[#008000] border border-black p-[1px]">
-                         <table className="w-full text-[11px] font-bold text-right border-collapse">
-                           <tbody>
+                       <h3 className="text-zinc-500 font-black uppercase text-sm mb-4">{div}ª Divisão</h3>
+                       <div className="bg-zinc-950 border border-zinc-800 p-2 rounded-xl">
+                         <table className="w-full text-xs font-bold text-right border-collapse">
+                           <thead className="text-zinc-500 border-b border-zinc-800">
+                             <tr>
+                               <th className="text-left p-2">Equipa</th>
+                               <th className="p-2 w-8 text-center">J</th>
+                               <th className="p-2 w-8 text-center">V</th>
+                               <th className="p-2 w-8 text-center text-zinc-600">E</th>
+                               <th className="p-2 w-8 text-center text-red-500/50">D</th>
+                               <th className="p-2 w-16 text-center">G</th>
+                               <th className="p-2 w-10 text-center text-amber-500">Pts</th>
+                             </tr>
+                           </thead>
+                           <tbody className="divide-y divide-zinc-800/50">
                              {teams.filter(t => t.division === div).sort((a,b) => (b.points||0) - (a.points||0) || ((b.goals_for||0) - (b.goals_against||0)) - ((a.goals_for||0) - (a.goals_against||0))).map((t, idx) => {
-                               const colors = ['bg-white text-black', 'bg-red-600 text-white', 'bg-black text-white', 'bg-blue-600 text-white', 'bg-zinc-400 text-black', 'bg-yellow-400 text-black'];
-                               const bgC = colors[(t.id || 0) % colors.length];
+                               const isMe = t.id == me.teamId;
                                return (
-                                 <tr key={t.id} className="border-b border-black">
-                                   <td className={`text-left uppercase px-1 w-[40%] truncate border-r border-black font-black ${bgC}`}>{t.name}</td>
-                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{(t.wins||0) + (t.draws||0) + (t.losses||0)}</td>
-                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{t.wins||0}</td>
-                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{t.draws||0}</td>
-                                   <td className="w-5 text-center border-r border-black bg-white/20 select-none text-white">{t.losses||0}</td>
-                                   <td className="w-12 text-center border-r border-black bg-white/20 tracking-widest text-white">{t.goals_for||0} : {t.goals_against||0}</td>
-                                   <td className="w-6 text-center bg-zinc-900 text-white shadow-inner">{t.points||0}</td>
+                                 <tr key={t.id} className={`hover:bg-zinc-900 transition-colors ${isMe ? 'bg-amber-500/10' : ''}`}>
+                                   <td className={`text-left uppercase p-2 w-[40%] truncate font-black ${isMe ? 'text-amber-500' : 'text-white'}`}>{idx+1}. {t.name}</td>
+                                   <td className="w-8 text-center p-2 text-zinc-400">{(t.wins||0) + (t.draws||0) + (t.losses||0)}</td>
+                                   <td className="w-8 text-center p-2 text-zinc-300">{t.wins||0}</td>
+                                   <td className="w-8 text-center p-2 text-zinc-500">{t.draws||0}</td>
+                                   <td className="w-8 text-center p-2 text-red-400/70">{t.losses||0}</td>
+                                   <td className="w-16 text-center p-2 tracking-widest text-zinc-300">{t.goals_for||0}:{t.goals_against||0}</td>
+                                   <td className="w-10 text-center p-2 text-white bg-zinc-900 rounded font-black">{t.points||0}</td>
                                  </tr>
                                );
                              })}
@@ -523,7 +546,11 @@ function App() {
                 onClick={handleReady}
                 className={`w-full py-6 font-black rounded-2xl text-2xl transition-all uppercase tracking-widest relative overflow-hidden border-b-6 active:border-b-0 active:translate-y-[6px] ${players.find(p => p.name === me.name)?.ready ? 'bg-zinc-800 text-zinc-500 border-zinc-950' : 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400 border-emerald-700'}`}
               >
-                {players.find(p => p.name === me.name)?.ready ? 'CANCELAR PRONTO' : 'JOGAR JORNADA'}
+                {players.find(p => p.name === me.name)?.ready 
+                  ? 'A AGUARDAR OUTROS' 
+                  : (liveMinute === 45 && !isPlayingMatch && matchResults) 
+                    ? '2ª PARTE' 
+                    : 'JOGAR JORNADA'}
               </button>
               <p className="text-xs font-bold text-zinc-500 mt-4 text-center leading-relaxed">Se jogas com amigos, a jornada só avança quando TODOS clicarem.</p>
             </div>

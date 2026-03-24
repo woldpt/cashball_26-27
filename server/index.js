@@ -5,7 +5,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { getGame, getGameBySocket } = require('./gameManager');
-const { simulateDivision } = require('./game/engine');
+const { generateFixturesForDivision, simulateMatchSegment } = require('./game/engine');
 
 const app = express();
 app.use(cors());
@@ -185,54 +185,72 @@ async function checkAllReady(game) {
   const allReady = playerIds.every(id => game.players[id].ready);
   
   if (allReady) {
-    console.log(`All players ready in room ${game.roomCode}! Simulating matchweek ${game.matchweek}...`);
+    console.log(`All players ready in room ${game.roomCode}! Current State: ${game.matchState || 'idle'}`);
     
-    game.db.run(`
-      UPDATE teams 
-      SET budget = budget 
-        - CAST((loan_amount * 0.05) AS INTEGER) 
-        + (stadium_capacity * 10)
-        - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
-    `, async (err) => {
-        if (err) console.error("Weekly Loop Err:", err);
-        try {
-          const res1 = await simulateDivision(game, 1);
-          const res2 = await simulateDivision(game, 2);
-          const res3 = await simulateDivision(game, 3);
-          const res4 = await simulateDivision(game, 4);
-          const results = [...res1, ...res2, ...res3, ...res4];
-
-          game.db.serialize(() => {
-            game.db.run("BEGIN TRANSACTION");
-            for (let match of results) {
-               const hG = match.finalHomeGoals;
-               const aG = match.finalAwayGoals;
-               let hPts = 0, aPts = 0;
-               let hW = 0, hD = 0, hL = 0;
-               let aW = 0, aD = 0, aL = 0;
-               if (hG > aG) { hPts = 3; hW = 1; aL = 1; }
-               else if (hG < aG) { aPts = 3; aW = 1; hL = 1; }
-               else { hPts = 1; aPts = 1; hD = 1; aD = 1; }
-               
-               game.db.run('UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?', [hPts, hW, hD, hL, hG, aG, match.homeTeamId]);
-               game.db.run('UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?', [aPts, aW, aD, aL, aG, hG, match.awayTeamId]);
-            }
-            game.db.run("COMMIT", () => {
-              io.to(game.roomCode).emit('matchResults', { matchweek: game.matchweek, results });
-              playerIds.forEach(id => game.players[id].ready = false);
-              game.matchweek++;
-              game.db.all('SELECT * FROM teams', (err, teams) => io.to(game.roomCode).emit('teamsData', teams));
-              io.to(game.roomCode).emit('playerListUpdate', Object.values(game.players));
-            });
-          });
-        } catch(e) {
-          console.error("Simulation Loop Err:", e);
-        }
-    });
+    if (!game.matchState || game.matchState === 'idle') {
+      game.db.run(`
+        UPDATE teams 
+        SET budget = budget 
+          - CAST((loan_amount * 0.05) AS INTEGER) 
+          + (stadium_capacity * 10)
+          - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
+      `, async (err) => {
+          if (err) console.error("Weekly Loop Err:", err);
+          
+          const f1 = await generateFixturesForDivision(game.db, 1);
+          const f2 = await generateFixturesForDivision(game.db, 2);
+          const f3 = await generateFixturesForDivision(game.db, 3);
+          const f4 = await generateFixturesForDivision(game.db, 4);
+          game.fixtures = [...f1, ...f2, ...f3, ...f4];
+          
+          await processSegment(game, 1, 45, 'halftime');
+      });
+    } else if (game.matchState === 'halftime') {
+       await processSegment(game, 46, 90, 'idle');
+    }
   } else {
-    // Notify users about who is ready
-    const readyCount = playerIds.filter(id => game.players[id].ready).length;
     // Just informative
+  }
+}
+
+async function processSegment(game, startMin, endMin, nextState) {
+  for (let fx of game.fixtures) {
+      const p1 = Object.values(game.players).find(p => p.teamId === fx.homeTeamId);
+      const p2 = Object.values(game.players).find(p => p.teamId === fx.awayTeamId);
+      const t1 = p1 ? p1.tactic : { formation: '4-4-2', style: 'Balanced' };
+      const t2 = p2 ? p2.tactic : { formation: '4-4-2', style: 'Balanced' };
+      await simulateMatchSegment(game.db, fx, t1, t2, startMin, endMin);
+  }
+
+  game.matchState = nextState;
+  const playerIds = Object.keys(game.players);
+
+  if (nextState === 'halftime') {
+      io.to(game.roomCode).emit('halfTimeResults', { matchweek: game.matchweek, results: game.fixtures });
+      playerIds.forEach(id => game.players[id].ready = false);
+      io.to(game.roomCode).emit('playerListUpdate', Object.values(game.players));
+  } else {
+      game.db.serialize(() => {
+        game.db.run("BEGIN TRANSACTION");
+        for (let match of game.fixtures) {
+           const hG = match.finalHomeGoals;
+           const aG = match.finalAwayGoals;
+           let hPts = 0, aPts = 0, hW = 0, hD = 0, hL = 0, aW = 0, aD = 0, aL = 0;
+           if (hG > aG) { hPts = 3; hW = 1; aL = 1; }
+           else if (hG < aG) { aPts = 3; aW = 1; hL = 1; }
+           else { hPts = 1; aPts = 1; hD = 1; aD = 1; }
+           
+           game.db.run('UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?', [hPts, hW, hD, hL, hG, aG, match.homeTeamId]);
+           game.db.run('UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?', [aPts, aW, aD, aL, aG, hG, match.awayTeamId]);
+        }
+        game.db.run("COMMIT", () => {
+          io.to(game.roomCode).emit('matchResults', { matchweek: game.matchweek, results: game.fixtures });
+          playerIds.forEach(id => game.players[id].ready = false);
+          game.matchweek++;
+          game.db.all('SELECT * FROM teams', (err, teams) => io.to(game.roomCode).emit('teamsData', teams));
+          io.to(game.roomCode).emit('playerListUpdate', Object.values(game.players));
+        });
+      });
   }
 }
 
