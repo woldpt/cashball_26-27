@@ -126,6 +126,19 @@ function getMatchLastEventText(events = [], liveMinute = 90) {
   return minuteText ? `${minuteText} ${latest.text || ""}` : latest.text || "";
 }
 
+function loadSavedSession() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem("cashballSession");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.name || !parsed?.password || !parsed?.roomCode) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 const playWhistle = () => {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -146,17 +159,28 @@ const playWhistle = () => {
 };
 
 function App() {
+  const savedSessionRef = React.useRef(loadSavedSession());
+  const savedSession = savedSessionRef.current;
+
   const [teams, setTeams] = useState([]);
   const [players, setPlayers] = useState([]);
   const [mySquad, setMySquad] = useState([]);
-  const [me, setMe] = useState(null);
+  const [me, setMe] = useState(
+    savedSession
+      ? {
+          name: savedSession.name,
+          password: savedSession.password,
+          roomCode: savedSession.roomCode,
+        }
+      : null,
+  );
 
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
-  const [roomCode, setRoomCode] = useState("");
-  const [isNewRoom, setIsNewRoom] = useState(true);
+  const [name, setName] = useState(savedSession?.name || "");
+  const [password, setPassword] = useState(savedSession?.password || "");
+  const [roomCode, setRoomCode] = useState(savedSession?.roomCode || "");
+  const [isNewRoom, setIsNewRoom] = useState(savedSession?.isNewRoom ?? true);
   const [availableSaves, setAvailableSaves] = useState([]);
-  const [joining, setJoining] = useState(false);
+  const [joining, setJoining] = useState(Boolean(savedSession));
   const [disconnected, setDisconnected] = useState(false);
   const [joinError, setJoinError] = useState("");
   const [toasts, setToasts] = useState([]);
@@ -297,6 +321,11 @@ function App() {
       setJoinError(msg);
       setJoining(false);
       setMe(null);
+      try {
+        window.localStorage.removeItem("cashballSession");
+      } catch {
+        // Ignore storage failures.
+      }
       if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
     });
 
@@ -406,6 +435,42 @@ function App() {
   useEffect(() => {
     marketPairsRef.current = marketPairs;
   }, [marketPairs]);
+
+  useEffect(() => {
+    if (!me?.name || !me?.password || !me?.roomCode) return;
+    try {
+      window.localStorage.setItem(
+        "cashballSession",
+        JSON.stringify({
+          name: me.name,
+          password: me.password,
+          roomCode: me.roomCode,
+          isNewRoom,
+        }),
+      );
+    } catch {
+      // Ignore storage failures.
+    }
+  }, [me, isNewRoom]);
+
+  useEffect(() => {
+    if (!savedSession || me?.teamId) return;
+    socket.emit("joinGame", {
+      name: savedSession.name,
+      password: savedSession.password,
+      roomCode: savedSession.roomCode,
+    });
+    joinTimerRef.current = setTimeout(() => {
+      setMe((prev) => (prev && !prev.teamId ? null : prev));
+      setJoining(false);
+      setJoinError(
+        "Sem resposta do servidor. Certifica-te que o servidor está ligado.",
+      );
+    }, 6000);
+    return () => {
+      if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
+    };
+  }, [savedSession, me?.teamId]);
 
   useEffect(() => {
     if (activeTab !== "squad" || !me?.teamId) return;
@@ -739,6 +804,28 @@ function App() {
   }, [marketPairs, marketPositionFilter, marketSort, me?.teamId]);
 
   if (!me || !me.teamId) {
+    if (joining && me) {
+      return (
+        <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 flex flex-col items-center justify-center font-sans">
+          <h1 className="text-6xl font-black text-amber-500 mb-8 drop-shadow-xl tracking-tighter">
+            CashBall <span className="text-zinc-100">26/27</span>
+          </h1>
+          <div className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md border border-zinc-800 relative overflow-hidden shadow-2xl text-center">
+            <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600"></div>
+            <p className="text-xs text-zinc-500 uppercase font-black tracking-widest mb-2">
+              Sessão guardada
+            </p>
+            <p className="text-2xl font-black text-white mb-2">
+              A reconectar...
+            </p>
+            <p className="text-sm text-zinc-400 font-medium">
+              {me.name} · {me.roomCode?.toUpperCase()}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 flex flex-col items-center justify-center font-sans">
         <h1 className="text-6xl font-black text-amber-500 mb-8 drop-shadow-xl tracking-tighter">
