@@ -80,9 +80,17 @@ function buildAutoPositions(
     }
   }
 
-  return Object.fromEntries(
+  const positions = Object.fromEntries(
     lineup.slice(0, 11).map((player) => [player.id, "Titular"]),
   );
+
+  // Pick 5 suplentes from the best remaining available players
+  const subs = sortedPlayers.filter((p) => !lineup.includes(p)).slice(0, 5);
+  subs.forEach((p) => {
+    positions[p.id] = "Suplente";
+  });
+
+  return positions;
 }
 
 function getMatchLastEventText(events = [], liveMinute = 90) {
@@ -231,6 +239,7 @@ function App() {
   const [subsMade, setSubsMade] = useState(0);
   const [swapSource, setSwapSource] = useState(null);
   const [subbedOut, setSubbedOut] = useState([]); // Track players who left the pitch
+  const [openStatusPickerId, setOpenStatusPickerId] = useState(null);
   const meRef = React.useRef(null);
   const selectedTeamRef = React.useRef(null);
   const marketPairsRef = React.useRef([]);
@@ -614,6 +623,14 @@ function App() {
     socket.emit("requestPalmares", { teamId: me.teamId });
   }, [activeTab, me?.teamId]);
 
+  // Close status picker when clicking anywhere outside
+  useEffect(() => {
+    if (!openStatusPickerId) return;
+    const close = () => setOpenStatusPickerId(null);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [openStatusPickerId]);
+
   const handleResolveMatchAction = (playerId) => {
     if (!matchAction) return;
     socket.emit("resolveMatchAction", {
@@ -675,7 +692,7 @@ function App() {
           }
           const newPositions = { ...prevPositions };
           newPositions[currentSource] =
-            targetStatus === "Suplente" ? "Suplente" : "Reserva";
+            targetStatus === "Suplente" ? "Suplente" : "Excluído";
           newPositions[playerId] = "Titular";
           const outgoingId =
             sourceStatus === "Titular" ? currentSource : playerId;
@@ -690,6 +707,18 @@ function App() {
     },
     [subsMade], // eslint-disable-line react-hooks/exhaustive-deps
   );
+
+  // ── SQUAD STATUS PICKER ───────────────────────────────────────────────────
+  const handleSetPlayerStatus = useCallback((playerId, status) => {
+    setTactic((prev) => {
+      const newPositions = { ...prev.positions };
+      newPositions[playerId] = status;
+      const next = { ...prev, positions: newPositions };
+      socket.emit("setTactic", next);
+      return next;
+    });
+    setOpenStatusPickerId(null);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── MARKET ACTIONS ────────────────────────────────────────────────────────
   const buyPlayer = useCallback((playerId) => {
@@ -967,14 +996,22 @@ function App() {
       const isOut = activeTab === "live" && subbedOut.includes(p.id);
       return {
         ...p,
-        status: isOut ? "Out" : tactic.positions[p.id] || "Reserva",
+        status: isOut ? "Out" : tactic.positions[p.id] || "Excluído",
         isSubbedOut: isOut,
       };
     })
     .sort((a, b) => {
-      const order = { Titular: 1, Suplente: 2, Reserva: 3, Out: 4 };
-      return order[a.status] - order[b.status];
+      const posOrder = { GK: 1, DEF: 2, MID: 3, ATK: 4 };
+      const aPos = posOrder[a.position] || 5;
+      const bPos = posOrder[b.position] || 5;
+      if (aPos !== bPos) return aPos - bPos;
+      return a.name.localeCompare(b.name);
     });
+
+  const titulares = mySquad.filter((p) => tactic.positions[p.id] === "Titular");
+  const isLineupComplete =
+    titulares.filter((p) => p.position === "GK").length === 1 &&
+    titulares.filter((p) => p.position !== "GK").length === 10;
 
   const nextMatchOpponent = nextMatchSummary?.opponent || null;
   const nextMatchReferee = nextMatchSummary?.referee || null;
@@ -1670,12 +1707,19 @@ function App() {
                       {annotatedSquad.map((player) => (
                         <tr
                           key={player.id}
-                          onClick={() => handleSubSwap(player.id)}
-                          className={`cursor-pointer hover:bg-zinc-800/50 transition-colors group select-none ${player.status === "Titular" ? "bg-amber-500/5" : ""} ${swapSource === player.id ? "ring-2 ring-inset ring-amber-500 bg-amber-500/20" : ""} ${player.isSubbedOut ? "opacity-30 grayscale cursor-not-allowed" : ""}`}
+                          className={`hover:bg-zinc-800/50 transition-colors group select-none ${player.status === "Titular" ? "bg-emerald-500/5" : player.status === "Suplente" ? "bg-amber-500/5" : ""}`}
                         >
-                          <td className="px-3 py-2.5 text-center text-lg leading-none">
+                          <td
+                            className="px-3 py-2.5 text-center text-lg leading-none relative"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenStatusPickerId((prev) =>
+                                prev === player.id ? null : player.id,
+                              );
+                            }}
+                          >
                             <span
-                              className={`inline-flex items-center justify-center rounded-full ${player.status === "Titular" ? "bg-emerald-500/15" : player.status === "Suplente" ? "bg-amber-500/15" : "bg-zinc-900/80"}`}
+                              className={`cursor-pointer inline-flex items-center justify-center rounded-full ${player.status === "Titular" ? "bg-emerald-500/15" : player.status === "Suplente" ? "bg-amber-500/15" : "bg-zinc-900/80"}`}
                             >
                               {player.status === "Titular"
                                 ? "✅"
@@ -1683,6 +1727,32 @@ function App() {
                                   ? "🟡"
                                   : "❌"}
                             </span>
+                            {openStatusPickerId === player.id && (
+                              <div
+                                className="absolute left-0 top-full z-30 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl p-1 flex flex-col gap-0.5 min-w-32"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {[
+                                  ["Titular", "✅"],
+                                  ["Suplente", "🟡"],
+                                  ["Exclu\u00eddo", "❌"],
+                                ].map(([status, emoji]) => (
+                                  <button
+                                    key={status}
+                                    onClick={() =>
+                                      handleSetPlayerStatus(player.id, status)
+                                    }
+                                    className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 text-left ${
+                                      player.status === status
+                                        ? "bg-zinc-700 text-white"
+                                        : "hover:bg-zinc-700 text-zinc-300"
+                                    }`}
+                                  >
+                                    {emoji} {status}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
                           </td>
                           <td
                             className={`px-3 py-2.5 text-center text-sm tracking-wider ${player.position === "GK" ? "text-yellow-500" : player.position === "DEF" ? "text-blue-500" : "text-green-500"}`}
@@ -2159,20 +2229,31 @@ function App() {
                   </div>
                 </div>
               )}
-              <button
-                onClick={
-                  showHalftimePanel && !isPlayingMatch
-                    ? handleHalftimeReady
-                    : handleReady
-                }
-                className={`w-full py-5 font-black rounded-2xl text-xl transition-all uppercase tracking-widest relative overflow-hidden border-b-6 active:border-b-0 active:translate-y-1.5 ${players.find((p) => p.name === me.name)?.ready ? "bg-zinc-800 text-zinc-500 border-zinc-950" : "bg-emerald-500 text-zinc-950 hover:bg-emerald-400 border-emerald-700"}`}
-              >
-                {players.find((p) => p.name === me.name)?.ready
-                  ? "A AGUARDAR OUTROS"
-                  : showHalftimePanel && !isPlayingMatch
-                    ? "2ª PARTE"
-                    : "JOGAR JORNADA"}
-              </button>
+              {(() => {
+                const isReady = players.find((p) => p.name === me.name)?.ready;
+                const isHalftime = showHalftimePanel && !isPlayingMatch;
+                const isDisabled = !isHalftime && !isReady && !isLineupComplete;
+                return (
+                  <>
+                    <button
+                      onClick={isHalftime ? handleHalftimeReady : handleReady}
+                      disabled={isDisabled}
+                      className={`w-full py-5 font-black rounded-2xl text-xl transition-all uppercase tracking-widest relative overflow-hidden border-b-6 active:border-b-0 active:translate-y-1.5 ${isReady ? "bg-zinc-800 text-zinc-500 border-zinc-950" : isDisabled ? "bg-zinc-800 text-zinc-600 border-zinc-950 cursor-not-allowed opacity-50" : "bg-emerald-500 text-zinc-950 hover:bg-emerald-400 border-emerald-700"}`}
+                    >
+                      {isReady
+                        ? "A AGUARDAR OUTROS"
+                        : isHalftime
+                          ? "2ª PARTE"
+                          : "JOGAR JORNADA"}
+                    </button>
+                    {isDisabled && (
+                      <p className="text-xs font-bold text-red-400 mt-2 text-center">
+                        Escolhe 1 GR + 10 jogadores de campo como Titular
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
               <p className="text-xs font-bold text-zinc-500 mt-4 text-center leading-relaxed">
                 Se jogas com amigos, a jornada só avança quando TODOS clicarem.
               </p>
