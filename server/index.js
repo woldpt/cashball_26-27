@@ -4,23 +4,56 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 const {
   getGame, getGameBySocket, saveGameState,
   getPlayerBySocket, bindSocket, unbindSocket, getPlayerList
 } = require('./gameManager');
 const { generateFixturesForDivision, simulateMatchSegment } = require('./game/engine');
+const { verifyOrCreateManager, recordRoomAccess, getManagerRooms } = require('./auth');
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 
-app.get('/saves', (req, res) => {
+// ── RATE LIMITER ─────────────────────────────────────────────────────────────
+// Protects endpoints that perform I/O from being flooded.
+// Max 30 requests per minute per IP — generous for legitimate clients.
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas tentativas. Tenta novamente em breve.' },
+});
+
+// ── HEALTH CHECK ──────────────────────────────────────────────────────────────
+// Used by Docker healthcheck and monitoring tools to confirm the server is up.
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
+// ── LIST SAVES ────────────────────────────────────────────────────────────────
+// Returns only the room codes that the requesting coach has access to.
+// ?name=<coach> filters to that coach's rooms; omitting it returns all saves.
+app.get('/saves', apiLimiter, async (req, res) => {
   try {
     const files = fs.readdirSync(path.join(__dirname, 'db'));
-    const saves = files
+    const allSaves = files
       .filter(f => f.startsWith('game_') && f.endsWith('.db'))
       .map(f => f.replace('game_', '').replace('.db', ''));
-    res.json(saves);
+
+    const managerName = req.query.name;
+    if (!managerName) {
+      return res.json(allSaves);
+    }
+
+    // Filter to rooms this coach has joined
+    const mySaves = await getManagerRooms(managerName);
+    const filtered = mySaves.filter(r => allSaves.includes(r));
+    res.json(filtered);
   } catch (e) {
+    console.error('[/saves] Error:', e.message);
     res.json([]);
   }
 });
@@ -32,8 +65,28 @@ const io = new Server(server, { cors: { origin: '*', methods: ['GET', 'POST'] } 
 io.on('connection', (socket) => {
 
   // ── JOIN GAME ──────────────────────────────────────────────────────────────
-  socket.on('joinGame', (data) => {
-    const roomCode = data.roomCode.toUpperCase();
+  socket.on('joinGame', async (data) => {
+    const { name, password, roomCode: rawRoom } = data;
+
+    // Basic input validation
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return socket.emit('systemMessage', 'Nome de treinador inválido.');
+    }
+    if (!password || typeof password !== 'string' || password.length === 0) {
+      return socket.emit('joinError', 'A palavra-passe é obrigatória.');
+    }
+    if (!rawRoom || typeof rawRoom !== 'string') {
+      return socket.emit('systemMessage', 'Código de sala inválido.');
+    }
+
+    const roomCode = rawRoom.toUpperCase();
+    const trimmedName = name.trim();
+
+    // Authenticate (or register) the coach before touching the game state
+    const authResult = await verifyOrCreateManager(trimmedName, password);
+    if (!authResult.ok) {
+      return socket.emit('joinError', authResult.error);
+    }
 
     // BUG-04 FIX: Use the callback-based getGame so we only proceed once DB state
     // has been fully loaded (matchweek, matchState, globalMarket).
@@ -41,20 +94,23 @@ io.on('connection', (socket) => {
       socket.join(roomCode);
 
       const connectedCount = Object.values(game.playersByName).filter(p => p.socketId).length;
-      if (connectedCount >= 8 && !game.playersByName[data.name]) {
+      if (connectedCount >= 8 && !game.playersByName[trimmedName]) {
         socket.emit('systemMessage', 'Sala cheia (Máximo 8 Treinadores).');
         return;
       }
 
-      game.db.get('SELECT * FROM managers WHERE name = ?', [data.name], (err, row) => {
+      // Record that this coach has access to this room (idempotent)
+      recordRoomAccess(trimmedName, roomCode);
+
+      game.db.get('SELECT * FROM managers WHERE name = ?', [trimmedName], (err, row) => {
         if (row) {
           game.db.get('SELECT id, name FROM teams WHERE manager_id = ?', [row.id], (err2, t) => {
-            if (t) assignPlayer(game, socket, data.name, t, roomCode);
-            else generateRandomTeam(game, socket, data.name, roomCode, row.id);
+            if (t) assignPlayer(game, socket, trimmedName, t, roomCode);
+            else generateRandomTeam(game, socket, trimmedName, roomCode, row.id);
           });
         } else {
-          game.db.run('INSERT INTO managers (name) VALUES (?)', [data.name], function(err2) {
-            generateRandomTeam(game, socket, data.name, roomCode, this.lastID);
+          game.db.run('INSERT INTO managers (name) VALUES (?)', [trimmedName], function(err2) {
+            generateRandomTeam(game, socket, trimmedName, roomCode, this.lastID);
           });
         }
       });
@@ -237,6 +293,10 @@ io.on('connection', (socket) => {
 
 // ── MATCH FLOW ────────────────────────────────────────────────────────────────
 
+// Guard flag: prevents checkAllReady from starting the weekly loop a second
+// time if it fires while the previous loop's async DB work is still in flight.
+const weeklyLoopRunning = {};
+
 async function checkAllReady(game) {
   // Only consider currently connected players
   const connectedPlayers = getPlayerList(game);
@@ -245,9 +305,16 @@ async function checkAllReady(game) {
   const allReady = connectedPlayers.every(p => p.ready);
   if (!allReady) return;
 
-  console.log(`All players ready in room ${game.roomCode}! matchweek=${game.matchweek} matchState=${game.matchState}`);
+  console.log(`[${game.roomCode}] All players ready — matchweek=${game.matchweek} matchState=${game.matchState}`);
 
   if (game.matchState === 'idle') {
+    // Guard against double-entry while async DB work is in progress
+    if (weeklyLoopRunning[game.roomCode]) return;
+    weeklyLoopRunning[game.roomCode] = true;
+
+    // Lock state immediately so no second call can enter here
+    game.matchState = 'running_first_half';
+
     // Weekly financial loop
     game.db.run(`
       UPDATE teams 
@@ -256,7 +323,13 @@ async function checkAllReady(game) {
         + (stadium_capacity * 10)
         - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
     `, async (err) => {
-        if (err) console.error("Weekly Loop Err:", err);
+        if (err) {
+          console.error(`[${game.roomCode}] Weekly Loop Err:`, err);
+          // Recover: release the lock and reset state so the room is not stuck
+          game.matchState = 'idle';
+          weeklyLoopRunning[game.roomCode] = false;
+          return;
+        }
 
         const mw = game.matchweek;
         const f1 = await generateFixturesForDivision(game.db, 1, mw);
@@ -266,6 +339,7 @@ async function checkAllReady(game) {
         game.fixtures = [...f1, ...f2, ...f3, ...f4];
 
         await processSegment(game, 1, 45, 'halftime');
+        weeklyLoopRunning[game.roomCode] = false;
     });
 
   } else if (game.matchState === 'halftime') {
@@ -285,16 +359,22 @@ async function processSegment(game, startMin, endMin, nextState) {
     await simulateMatchSegment(game.db, fx, t1, t2, startMin, endMin);
   }
 
-  game.matchState = nextState;
-  const connectedPlayers = getPlayerList(game);
-
   if (nextState === 'halftime') {
+    game.matchState = nextState;
+    const connectedPlayers = getPlayerList(game);
     io.to(game.roomCode).emit('halfTimeResults', { matchweek: game.matchweek, results: game.fixtures });
     connectedPlayers.forEach(p => { p.ready = false; });
     io.to(game.roomCode).emit('playerListUpdate', getPlayerList(game));
     saveGameState(game);
 
   } else {
+    // Full-time — update standings in a single DB transaction then advance state.
+    // RACE-CONDITION FIX: game.matchState is set to nextState ('idle') only
+    // INSIDE the COMMIT callback, after the DB has been durably updated.
+    // Previously it was set before the transaction which allowed checkAllReady
+    // to start a new weekly loop while the previous commit was still in flight.
+    const connectedPlayers = getPlayerList(game);
+
     game.db.serialize(() => {
       game.db.run("BEGIN TRANSACTION");
       
@@ -318,21 +398,29 @@ async function processSegment(game, startMin, endMin, nextState) {
 
       game.db.run("COMMIT", (err) => {
         if (err) {
-          console.error('Standings update error:', err);
+          console.error(`[${game.roomCode}] Standings update error:`, err);
           game.db.run('ROLLBACK');
+          // Release state so the room is not permanently stuck
+          game.matchState = 'idle';
           return;
         }
+
+        // Only advance state after a successful commit so that clients always
+        // receive accurate, persisted standings data.
+        game.matchState = nextState;
 
         io.to(game.roomCode).emit('matchResults', { matchweek: game.matchweek, results: game.fixtures });
         connectedPlayers.forEach(p => { p.ready = false; });
         game.matchweek++;
         saveGameState(game);
 
-        game.db.all('SELECT * FROM teams', (err2, teams) => io.to(game.roomCode).emit('teamsData', teams));
-        
-        game.db.all('SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20', (err3, scorers) => {
-           io.to(game.roomCode).emit('topScorers', scorers || []);
-           io.to(game.roomCode).emit('playerListUpdate', getPlayerList(game));
+        game.db.all('SELECT * FROM teams', (err2, teams) => {
+          if (!err2) io.to(game.roomCode).emit('teamsData', teams);
+
+          game.db.all('SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20', (err3, scorers) => {
+             io.to(game.roomCode).emit('topScorers', scorers || []);
+             io.to(game.roomCode).emit('playerListUpdate', getPlayerList(game));
+          });
         });
       });
     });
@@ -341,5 +429,28 @@ async function processSegment(game, startMin, endMin, nextState) {
 
 const PORT = 3000;
 server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+  const portMsg = `Listening on port ${PORT}`;
+  const pad = ' '.repeat(Math.max(0, 35 - portMsg.length));
+  console.log('');
+  console.log('╔══════════════════════════════════════╗');
+  console.log('║   CashBall 26/27 — Backend Server    ║');
+  console.log(`║   ${portMsg}${pad}║`);
+  console.log('╚══════════════════════════════════════╝');
+  console.log('');
+  console.log('[server] Health check available at /health');
+  console.log('[server] Saves listing available at /saves');
+  console.log('[server] Socket.io accepting connections...');
+});
+
+server.on('error', (err) => {
+  console.error('[server] Fatal error:', err.message);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[server] Uncaught exception:', err.message, err.stack);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[server] Unhandled promise rejection:', reason);
 });
