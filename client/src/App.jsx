@@ -68,6 +68,7 @@ function App() {
   const [showHalftimePanel, setShowHalftimePanel] = useState(false);
   const [subsMade, setSubsMade] = useState(0);
   const [swapSource, setSwapSource] = useState(null);
+  const [subbedOut, setSubbedOut] = useState([]); // Track players who left the pitch
   const meRef = React.useRef(null);
   
   useEffect(() => {
@@ -99,11 +100,11 @@ function App() {
       if (data.matchweek) setMatchweekCount(data.matchweek - 1);
     });
 
-    // BUG-11 FIX: halfTimeResults sets showHalftimePanel=true
     socket.on('halfTimeResults', (data) => {
       setMatchResults(data);
       setLiveMinute(0);
       setSubsMade(0);
+      setSubbedOut([]); // Reset substituted-out players for the new match
       setSwapSource(null);
       setShowHalftimePanel(true);
       setIsPlayingMatch(true);
@@ -264,6 +265,10 @@ function App() {
   }, [mySquad, tactic.positions]);
 
   const handleSubSwap = (playerId) => {
+     if (activeTab === 'live' && subbedOut.includes(playerId)) {
+        return; // Cannnot select a player that already left the pitch
+     }
+     
      if (!swapSource) {
         setSwapSource(playerId);
      } else {
@@ -271,17 +276,28 @@ function App() {
            setSwapSource(null);
         } else {
            if (activeTab === 'live' && subsMade >= 3) {
-              alert('Já fizeste as 3 substituições permitidas!');
+              addToast('Já fizeste as 3 substituições permitidas!');
               setSwapSource(null);
               return;
            }
+           
+           const currentSourceStatus = tactic.positions[swapSource] || 'Reserva';
+           const currentTargetStatus = tactic.positions[playerId] || 'Reserva';
+           
+           if (activeTab === 'live') {
+               const goingOutId = currentSourceStatus === 'Titular' ? swapSource : (currentTargetStatus === 'Titular' ? playerId : null);
+               if (goingOutId) {
+                  setSubbedOut(prev => [...prev, goingOutId]);
+               }
+               setSubsMade(s => s + 1);
+           }
+           
            const newPos = { ...tactic.positions };
            const temp = newPos[swapSource];
            newPos[swapSource] = newPos[playerId];
            newPos[playerId] = temp;
            
            updateTactic({ positions: newPos });
-           if (activeTab === 'live') setSubsMade(s => s + 1);
            setSwapSource(null);
         }
      }
@@ -289,10 +305,13 @@ function App() {
 
   const annotatedSquad = useMemo(() => {
     if (!tactic.positions) return [...mySquad].map(p => ({...p, status: 'Reserva'}));
-    const mapped = mySquad.map(p => ({ ...p, status: tactic.positions[p.id] || 'Reserva' }));
-    const s = {Titular:1, Suplente:2, Reserva:3}; 
+    const mapped = mySquad.map(p => {
+       const isOut = activeTab === 'live' && subbedOut.includes(p.id);
+       return { ...p, status: isOut ? 'Out' : (tactic.positions[p.id] || 'Reserva'), isSubbedOut: isOut };
+    });
+    const s = {Titular:1, Suplente:2, Reserva:3, Out:4}; 
     return mapped.sort((a,b) => s[a.status] - s[b.status]);
-  }, [mySquad, tactic.positions]);
+  }, [mySquad, tactic.positions, activeTab, subbedOut]);
 
   if (!me || !me.teamId) {
     return (
@@ -447,9 +466,9 @@ function App() {
                            <h3 className="text-zinc-500 font-black mb-4 uppercase tracking-widest text-center">Banco (Suplentes)</h3>
                            <div className="space-y-2">
                              {annotatedSquad.filter(p => p.status !== 'Titular').map(p => (
-                               <div key={p.id} onClick={() => handleSubSwap(p.id)} className={`p-3 rounded-lg border cursor-pointer font-bold transition-all flex justify-between select-none ${swapSource === p.id ? 'bg-amber-500 text-zinc-950 border-amber-400 scale-[1.02]' : 'bg-zinc-950 border-zinc-800 hover:border-zinc-500 hover:bg-zinc-800'}`}>
+                               <div key={p.id} onClick={() => handleSubSwap(p.id)} className={`p-3 rounded-lg border font-bold transition-all flex justify-between select-none ${p.isSubbedOut ? 'opacity-30 cursor-not-allowed bg-zinc-950 border-zinc-800 grayscale' : (swapSource === p.id ? 'bg-amber-500 text-zinc-950 border-amber-400 scale-[1.02] cursor-pointer' : 'bg-zinc-950 border-zinc-800 hover:border-zinc-500 hover:bg-zinc-800 cursor-pointer')}`}>
                                   <span>{p.name} <span className="text-[10px] opacity-70 ml-2">{p.position}</span></span>
-                                  <span className={`opacity-80 ${p.status==='Suplente'?'text-emerald-400':'text-zinc-600'}`}>{p.status} {p.skill}</span>
+                                  <span className={`opacity-80 ${p.status==='Suplente'?'text-emerald-400':'text-zinc-600'}`}>{p.isSubbedOut ? 'SUBSTITUÍDO' : `${p.status} ${p.skill}`}</span>
                                </div>
                              ))}
                            </div>
@@ -589,9 +608,9 @@ function App() {
                     </thead>
                     <tbody className="divide-y divide-zinc-800/50 font-medium">
                       {annotatedSquad.map(player => (
-                        <tr key={player.id} onClick={() => handleSubSwap(player.id)} className={`cursor-pointer hover:bg-zinc-800/50 transition-colors group select-none ${player.status==='Titular' ? 'bg-amber-500/5' : ''} ${swapSource === player.id ? 'ring-2 ring-inset ring-amber-500 bg-amber-500/20' : ''}`}>
+                        <tr key={player.id} onClick={() => handleSubSwap(player.id)} className={`cursor-pointer hover:bg-zinc-800/50 transition-colors group select-none ${player.status==='Titular' ? 'bg-amber-500/5' : ''} ${swapSource === player.id ? 'ring-2 ring-inset ring-amber-500 bg-amber-500/20' : ''} ${player.isSubbedOut ? 'opacity-30 grayscale cursor-not-allowed' : ''}`}>
                           <td className="p-5">
-                            <span className={`text-xs px-2 py-1 rounded font-black tracking-widest uppercase shadow-sm ${player.status==='Titular' ? 'bg-amber-500 text-zinc-950': player.status==='Suplente' ? 'bg-zinc-700 text-white' : 'text-zinc-600 border border-zinc-800'}`}>{player.status}</span>
+                            <span className={`text-xs px-2 py-1 rounded font-black tracking-widest uppercase shadow-sm ${player.status==='Titular' ? 'bg-amber-500 text-zinc-950': player.isSubbedOut ? 'bg-zinc-900 line-through text-zinc-500 border border-zinc-800' : player.status==='Suplente' ? 'bg-zinc-700 text-white' : 'text-zinc-600 border border-zinc-800'}`}>{player.isSubbedOut ? 'SUBSTITUÍDO' : player.status}</span>
                           </td>
                           <td className={`p-5 font-black text-sm tracking-wider ${player.position === 'GK' ? 'text-yellow-500' : player.position === 'DEF' ? 'text-blue-500' : 'text-green-500'}`}>{player.position}</td>
                           <td className="p-5 font-bold text-white text-lg">{player.name}</td>

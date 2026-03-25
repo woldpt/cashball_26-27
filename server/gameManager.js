@@ -37,17 +37,19 @@ function getGame(roomCode, onReady) {
   activeGames[roomCode] = game;
 
   // Load persisted state — chain DB reads so all values are ready before onReady fires
-  db.get("SELECT value FROM game_state WHERE key = 'matchweek'", (err, row) => {
-    if (row) game.matchweek = parseInt(row.value) || 1;
-
-    db.get("SELECT value FROM game_state WHERE key = 'matchState'", (err2, row2) => {
-      if (row2) game.matchState = row2.value || 'idle';
-
-      // Load free agents for market (only players with no team)
-      db.all('SELECT * FROM players WHERE team_id IS NULL ORDER BY RANDOM() LIMIT 20', (err3, rows) => {
-        if (!err3 && rows) game.globalMarket = rows;
-        game.initialized = true;
-        if (onReady) onReady(game);
+  db.run("CREATE TABLE IF NOT EXISTS game_state (key TEXT PRIMARY KEY, value TEXT)", () => {
+    db.get("SELECT value FROM game_state WHERE key = 'matchweek'", (err, row) => {
+      if (row) game.matchweek = parseInt(row.value) || 1;
+  
+      db.get("SELECT value FROM game_state WHERE key = 'matchState'", (err2, row2) => {
+        if (row2) game.matchState = row2.value || 'idle';
+  
+        // Load free agents for market (only players with no team)
+        db.all('SELECT * FROM players WHERE team_id IS NULL ORDER BY RANDOM() LIMIT 20', (err3, rows) => {
+          if (!err3 && rows) game.globalMarket = rows;
+          game.initialized = true;
+          if (onReady) onReady(game);
+        });
       });
     });
   });
@@ -56,8 +58,12 @@ function getGame(roomCode, onReady) {
 }
 
 function saveGameState(game) {
-  game.db.run("INSERT OR REPLACE INTO game_state (key, value) VALUES ('matchweek', ?)", [String(game.matchweek)]);
-  game.db.run("INSERT OR REPLACE INTO game_state (key, value) VALUES ('matchState', ?)", [game.matchState]);
+  game.db.run("INSERT OR REPLACE INTO game_state (key, value) VALUES ('matchweek', ?)", [String(game.matchweek)], (err) => {
+    if (err) console.error("Error saving matchweek:", err);
+  });
+  game.db.run("INSERT OR REPLACE INTO game_state (key, value) VALUES ('matchState', ?)", [game.matchState], (err) => {
+    if (err) console.error("Error saving matchState:", err);
+  });
 }
 
 // Look up a player entry by socket ID
