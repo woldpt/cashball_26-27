@@ -43,6 +43,7 @@ function App() {
   const [me, setMe] = useState(null);
   
   const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [isNewRoom, setIsNewRoom] = useState(true);
   const [availableSaves, setAvailableSaves] = useState([]);
@@ -72,19 +73,32 @@ function App() {
   const [subbedOut, setSubbedOut] = useState([]); // Track players who left the pitch
   const meRef = React.useRef(null);
   
+  const backendUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_BACKEND_URL) || 'http://localhost:3000';
+
+  // Re-fetch this coach's saved rooms whenever the name changes while in "Carregar" mode.
   useEffect(() => {
-    // Fetch saves on mount
-    fetch('http://localhost:3000/saves')
-      .then(r => r.json())
-      .then(data => {
-         setAvailableSaves(data);
-         if (data.length > 0) {
-            setIsNewRoom(false);
-            setRoomCode(data[0]);
-         }
-      })
-      .catch(() => {});
-  }, []);
+    if (!isNewRoom && name) {
+      const timeout = setTimeout(() => {
+        fetch(`${backendUrl}/saves?name=${encodeURIComponent(name)}`)
+          .then(r => r.json())
+          .then(data => {
+            setAvailableSaves(data);
+            if (data.length > 0 && !roomCode) setRoomCode(data[0]);
+          })
+          .catch(() => {});
+      }, 400);
+      return () => clearTimeout(timeout);
+    } else if (!isNewRoom && !name) {
+      // No name entered yet — show all saves so the dropdown is populated
+      fetch(`${backendUrl}/saves`)
+        .then(r => r.json())
+        .then(data => {
+          setAvailableSaves(data);
+          if (data.length > 0 && !roomCode) setRoomCode(data[0]);
+        })
+        .catch(() => {});
+    }
+  }, [name, isNewRoom]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // BUG-07 FIX: All socket listeners in a single effect with [] dep so they're
   // registered exactly once and cleaned up correctly on unmount.
@@ -97,6 +111,12 @@ function App() {
     socket.on('marketUpdate', (data) => setMarketPairs(data));
     socket.on('topScorers', (data) => setTopScorers(data));
     socket.on('systemMessage', (msg) => addToast(msg));
+    socket.on('joinError', (msg) => {
+      setJoinError(msg);
+      setJoining(false);
+      setMe(null);
+      if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
+    });
     
     socket.on('gameState', (data) => {
       if (data.matchweek) setMatchweekCount(data.matchweek - 1);
@@ -131,8 +151,8 @@ function App() {
       setJoining(false);
       // Re-join on reconnect using the meRef to avoid stale closure
       const currentMe = meRef.current;
-      if (currentMe && currentMe.roomCode && currentMe.name) {
-        socket.emit('joinGame', { name: currentMe.name, roomCode: currentMe.roomCode });
+      if (currentMe && currentMe.roomCode && currentMe.name && currentMe.password) {
+        socket.emit('joinGame', { name: currentMe.name, password: currentMe.password, roomCode: currentMe.roomCode });
       }
     };
     const onDisconnect = () => setDisconnected(true);
@@ -143,8 +163,9 @@ function App() {
     return () => {
       socket.off('teamsData'); socket.off('playerListUpdate');
       socket.off('mySquad'); socket.off('marketUpdate');
-      socket.off('systemMessage'); socket.off('matchResults');
-      socket.off('halfTimeResults'); socket.off('gameState');
+      socket.off('systemMessage'); socket.off('joinError');
+      socket.off('matchResults'); socket.off('halfTimeResults');
+      socket.off('gameState');
       socket.off('connect', onConnect); socket.off('disconnect', onDisconnect);
     };
   }, []); // empty deps — register once only
@@ -189,11 +210,11 @@ function App() {
   }, [isPlayingMatch, liveMinute, matchResults]);
 
   const handleJoin = () => {
-    if (name && roomCode && !joining) {
+    if (name && password && roomCode && !joining) {
       setJoinError('');
       setJoining(true);
-      socket.emit('joinGame', { name, roomCode: roomCode.toUpperCase() });
-      setMe({ name, roomCode: roomCode.toUpperCase() });
+      socket.emit('joinGame', { name, password, roomCode: roomCode.toUpperCase() });
+      setMe({ name, password, roomCode: roomCode.toUpperCase() });
       // Timeout: if no teamId received in 6s, reset and show error
       joinTimerRef.current = setTimeout(() => {
         setMe(prev => (prev && !prev.teamId ? null : prev));
@@ -336,6 +357,18 @@ function App() {
             />
           </div>
 
+          <div className="mb-5">
+            <label className="block text-[10px] text-base uppercase text-zinc-500 mb-2 font-bold">Palavra-passe</label>
+            <input
+              type="password"
+              className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-zinc-700 focus:ring-2 focus:ring-amber-500"
+              value={password} placeholder="••••••••"
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleJoin(); }}
+            />
+            <p className="text-xs text-zinc-600 mt-1 font-bold">Na primeira vez cria a tua conta. Depois usa sempre a mesma palavra-passe.</p>
+          </div>
+
           {isNewRoom ? (
             <div className="mb-8">
               <label className="block text-[10px] text-base uppercase text-zinc-500 mb-2 font-bold">Nome do Novo Jogo (SALA)</label>
@@ -348,7 +381,7 @@ function App() {
             </div>
           ) : (
             <div className="mb-8">
-              <label className="block text-[10px] text-base uppercase text-zinc-500 mb-2 font-bold">Salas Gravadas</label>
+              <label className="block text-[10px] text-base uppercase text-zinc-500 mb-2 font-bold">As tuas Salas Gravadas</label>
               <select 
                 className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none focus:ring-2 focus:ring-amber-500 uppercase"
                 value={roomCode} onChange={(e) => setRoomCode(e.target.value)}
@@ -356,11 +389,11 @@ function App() {
                 <option value="" disabled>-- Seleciona um Save --</option>
                 {availableSaves.map(save => <option key={save} value={save}>{save}</option>)}
               </select>
-              {availableSaves.length === 0 && <p className="text-red-400 text-sm mt-2">Nenhum save encontrado no servidor.</p>}
+              {availableSaves.length === 0 && <p className="text-zinc-500 text-sm mt-2">{name ? 'Nenhum save encontrado para este treinador.' : 'Insere o teu nome para ver os teus saves.'}</p>}
             </div>
           )}
 
-          <button onClick={handleJoin} disabled={!name || !roomCode || joining} className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 py-5 rounded-xl font-black text-xl transition-all active:scale-95 border-b-4 border-emerald-700 active:border-b-0">
+          <button onClick={handleJoin} disabled={!name || !password || !roomCode || joining} className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 py-5 rounded-xl font-black text-xl transition-all active:scale-95 border-b-4 border-emerald-700 active:border-b-0">
             {joining ? 'A GERAR CONTRATO...' : 'ASSINAR CONTRATO'}
           </button>
           {joinError && <p className="text-red-400 text-sm text-center mt-3 font-bold">⚠️ {joinError}</p>}
