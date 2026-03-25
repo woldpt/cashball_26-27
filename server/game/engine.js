@@ -5,6 +5,22 @@ function pickBestPlayer(players = []) {
   )[0];
 }
 
+/**
+ * Weighted random pick for goal scorer.
+ * Stars (MID/ATK with is_star=1) get a 3× weight so they score more often.
+ */
+function weightedPickScorer(players = []) {
+  if (!players.length) return null;
+  const weights = players.map((p) => (p.is_star ? 3 : 1));
+  const total = weights.reduce((s, w) => s + w, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < players.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return players[i];
+  }
+  return players[players.length - 1];
+}
+
 function isPlayerAvailable(player, currentMatchweek = 1) {
   const suspensionUntil = player.suspension_until_matchweek || 0;
   const injuryUntil = player.injury_until_matchweek || 0;
@@ -395,7 +411,11 @@ async function simulateMatchSegment(
       midfield = 0,
       gk = 0;
     squad.forEach((p) => {
-      const effSkill = p.skill * (p.form / 100);
+      const starMult =
+        p.is_star && (p.position === "MID" || p.position === "ATK")
+          ? 1.35
+          : 1.0;
+      const effSkill = p.skill * (p.form / 100) * starMult;
       if (p.position === "GK") gk += effSkill;
       if (p.position === "DEF") defense += effSkill;
       if (p.position === "MID") midfield += effSkill;
@@ -468,9 +488,7 @@ async function simulateMatchSegment(
           (p) => p.position === "ATK" || p.position === "MID",
         );
         const scorer =
-          scorers.length > 0
-            ? scorers[Math.floor(Math.random() * scorers.length)]
-            : home.squad[0];
+          scorers.length > 0 ? weightedPickScorer(scorers) : home.squad[0];
         fixture.finalHomeGoals++;
         fixture.events.push({
           minute,
@@ -490,9 +508,7 @@ async function simulateMatchSegment(
           (p) => p.position === "ATK" || p.position === "MID",
         );
         const scorer =
-          scorers.length > 0
-            ? scorers[Math.floor(Math.random() * scorers.length)]
-            : away.squad[0];
+          scorers.length > 0 ? weightedPickScorer(scorers) : away.squad[0];
         fixture.finalAwayGoals++;
         fixture.events.push({
           minute,

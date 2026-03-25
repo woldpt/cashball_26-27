@@ -161,7 +161,7 @@ db.serialize(() => {
     "INSERT INTO teams (name, manager_id, division, budget, color_primary, color_secondary) VALUES (?, ?, ?, ?, ?, ?)",
   );
   const insertPlayer = db.prepare(
-    "INSERT INTO players (name, position, skill, age, form, aggressiveness, nationality, value, wage, goals, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)",
+    "INSERT INTO players (name, position, skill, age, form, aggressiveness, nationality, value, wage, goals, is_star, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)",
   );
 
   let teamId = 1;
@@ -232,6 +232,9 @@ db.serialize(() => {
 
         const value = skill * 5000;
         const wage = skill * 50;
+        // Stars can only be MID or ATK, ~18% chance per eligible player
+        const isStar =
+          (pos === "MID" || pos === "ATK") && Math.random() < 0.18 ? 1 : 0;
 
         insertPlayer.run(
           name,
@@ -243,6 +246,7 @@ db.serialize(() => {
           nat,
           value,
           wage,
+          isStar,
           teamId,
         );
       });
@@ -266,7 +270,21 @@ db.serialize(() => {
     const nat = nationalities[Math.floor(Math.random() * nationalities.length)];
     const value = skill * 5000;
     const wage = skill * 50;
-    insertPlayer.run(name, pos, skill, age, form, agg, nat, value, wage, null); // team_id = null = free agent
+    const isStar =
+      (pos === "MID" || pos === "ATK") && Math.random() < 0.12 ? 1 : 0;
+    insertPlayer.run(
+      name,
+      pos,
+      skill,
+      age,
+      form,
+      agg,
+      nat,
+      value,
+      wage,
+      isStar,
+      null,
+    ); // team_id = null = free agent
   }
 
   // Initialize game state defaults
