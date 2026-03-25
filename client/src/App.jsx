@@ -372,6 +372,46 @@ function App() {
     }
   };
 
+  const renewPlayerContract = (player) => {
+    const defaultWage = Math.max(
+      Math.round((player.wage || 0) * 1.15),
+      Math.round((player.skill || 0) * 70),
+    );
+    const wage = window.prompt(
+      `Novo salário semanal para ${player.name} (€/semana)`,
+      String(defaultWage),
+    );
+    if (wage === null) return;
+    const offeredWage = Number(wage);
+    if (!Number.isFinite(offeredWage) || offeredWage <= 0) return;
+    socket.emit("renewContract", { playerId: player.id, offeredWage });
+  };
+
+  const listPlayerAuction = (player) => {
+    if (confirm(`Enviar ${player.name} para leilão imediato?`)) {
+      socket.emit("listPlayerForTransfer", {
+        playerId: player.id,
+        mode: "auction",
+      });
+    }
+  };
+
+  const listPlayerFixed = (player) => {
+    const defaultPrice = Math.round((player.value || 0) * 1.1);
+    const price = window.prompt(
+      `Preço fixo para ${player.name} (€)`,
+      String(defaultPrice),
+    );
+    if (price === null) return;
+    const fixedPrice = Number(price);
+    if (!Number.isFinite(fixedPrice) || fixedPrice <= 0) return;
+    socket.emit("listPlayerForTransfer", {
+      playerId: player.id,
+      mode: "fixed",
+      price: fixedPrice,
+    });
+  };
+
   const updateTactic = useCallback((updates) => {
     setTactic((prev) => {
       const newTactic = { ...prev, ...updates };
@@ -1151,6 +1191,9 @@ function App() {
                         <th className="px-4 py-3 font-black w-32 text-center">
                           Forma
                         </th>
+                        <th className="px-4 py-3 font-black w-44 text-center">
+                          Ações
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/50 font-medium">
@@ -1217,6 +1260,44 @@ function App() {
                               </span>
                             </div>
                           </td>
+                          <td className="px-4 py-2.5 text-center">
+                            {player.status === "Titular" ||
+                            player.status === "Suplente" ? (
+                              <div className="flex flex-wrap justify-center gap-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    renewPlayerContract(player);
+                                  }}
+                                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black uppercase"
+                                >
+                                  Renovar
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    listPlayerAuction(player);
+                                  }}
+                                  className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-zinc-950 text-[11px] font-black uppercase"
+                                >
+                                  Leilão
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    listPlayerFixed(player);
+                                  }}
+                                  className="px-3 py-1.5 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white text-[11px] font-black uppercase"
+                                >
+                                  Lista
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-zinc-600 font-bold uppercase">
+                                —
+                              </span>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -1243,7 +1324,12 @@ function App() {
                     {marketPairs
                       .filter((p) => p.team_id !== me.teamId)
                       .map((player) => {
-                        const price = player.value * 1.2;
+                        const isListed =
+                          player.transfer_status &&
+                          player.transfer_status !== "none";
+                        const price = isListed
+                          ? player.transfer_price || player.value * 0.75
+                          : player.value * 1.2;
                         const canAfford = teamInfo?.budget >= price;
                         return (
                           <tr
@@ -1254,8 +1340,22 @@ function App() {
                               {player.position}
                             </td>
                             <td className="px-4 py-3">
-                              <p className="font-bold text-white text-sm md:text-base leading-tight">
-                                {player.name}
+                              <div className="flex items-center gap-2">
+                                <p className="font-bold text-white text-sm md:text-base leading-tight">
+                                  {player.name}
+                                </p>
+                                {isListed && (
+                                  <span
+                                    className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${player.transfer_status === "auction" ? "bg-amber-500 text-zinc-950" : "bg-sky-500 text-zinc-950"}`}
+                                  >
+                                    {player.transfer_status === "auction"
+                                      ? "Leilão"
+                                      : "Lista"}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] uppercase text-zinc-500 font-bold mt-1">
+                                {player.team_name || "Sem clube"}
                               </p>
                             </td>
                             <td className="px-4 py-3 text-center">
@@ -1264,7 +1364,9 @@ function App() {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-right font-mono text-zinc-300 text-sm md:text-base">
-                              {formatCurrency(price)}
+                              {isListed
+                                ? formatCurrency(price)
+                                : formatCurrency(price)}
                             </td>
                             <td className="px-4 py-3 text-right">
                               <button

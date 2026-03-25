@@ -77,6 +77,172 @@ const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] },
 });
 
+function getSeasonEndMatchweek(matchweek) {
+  return Math.ceil(Math.max(1, matchweek) / 14) * 14;
+}
+
+function refreshMarket(game, emitToRoom = true) {
+  game.db.all(
+    `SELECT p.*, t.name as team_name, t.color_primary, t.color_secondary
+     FROM players p
+     LEFT JOIN teams t ON p.team_id = t.id
+     WHERE p.team_id IS NULL OR p.transfer_status != 'none'
+     ORDER BY CASE WHEN p.transfer_status = 'auction' THEN 0 ELSE 1 END, p.transfer_price ASC, p.value ASC, p.skill DESC`,
+    (err, rows) => {
+      if (!err && rows) {
+        game.globalMarket = rows;
+        if (emitToRoom) io.to(game.roomCode).emit("marketUpdate", rows);
+      }
+    },
+  );
+}
+
+function emitSquadForPlayer(game, teamId) {
+  const player = Object.values(game.playersByName).find(
+    (p) => p.teamId === teamId && p.socketId,
+  );
+  if (!player) return;
+  game.db.all(
+    "SELECT * FROM players WHERE team_id = ?",
+    [teamId],
+    (err, squad) => {
+      if (!err) io.to(player.socketId).emit("mySquad", squad || []);
+    },
+  );
+}
+
+function listPlayerOnMarket(game, playerId, mode, price, callback) {
+  game.db.get(
+    "SELECT * FROM players WHERE id = ?",
+    [playerId],
+    (err, player) => {
+      if (err || !player) {
+        if (callback) callback(false, "Jogador inválido.");
+        return;
+      }
+      if (!player.team_id) {
+        if (callback) callback(false, "Jogador já está sem contrato.");
+        return;
+      }
+      const finalPrice = Math.max(
+        0,
+        Math.round(price || player.value * (mode === "auction" ? 0.75 : 1.0)),
+      );
+      game.db.run(
+        "UPDATE players SET transfer_status = ?, transfer_price = ? WHERE id = ?",
+        [mode, finalPrice, playerId],
+        () => {
+          refreshMarket(game);
+          if (callback) callback(true, finalPrice, player);
+        },
+      );
+    },
+  );
+}
+
+function finalizeContractDecision(
+  game,
+  playerId,
+  decision,
+  teamId,
+  currentMatchweek,
+) {
+  game.db.get(
+    "SELECT * FROM players WHERE id = ?",
+    [playerId],
+    (err, player) => {
+      if (err || !player) return;
+
+      if (decision === "accept") {
+        const seasonEnd = getSeasonEndMatchweek(currentMatchweek);
+        const newWage = player.contract_requested_wage || player.wage || 0;
+        game.db.run(
+          "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+          [newWage, seasonEnd, playerId],
+          () => {
+            const coach = Object.values(game.playersByName).find(
+              (p) => p.teamId === teamId && p.socketId,
+            );
+            if (coach)
+              io.to(coach.socketId).emit(
+                "systemMessage",
+                `${player.name} renovou contrato por €${newWage}/sem.`,
+              );
+            emitSquadForPlayer(game, teamId);
+          },
+        );
+      } else {
+        listPlayerOnMarket(
+          game,
+          playerId,
+          "auction",
+          Math.max(
+            player.value * 0.65,
+            (player.contract_requested_wage || player.wage || 0) * 12,
+          ),
+          () => {
+            game.db.run(
+              "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+              [playerId],
+            );
+            const coach = Object.values(game.playersByName).find(
+              (p) => p.teamId === teamId && p.socketId,
+            );
+            if (coach)
+              io.to(coach.socketId).emit(
+                "systemMessage",
+                `${player.name} foi colocado em leilão.`,
+              );
+          },
+        );
+      }
+    },
+  );
+}
+
+function maybeTriggerContractRequest(game, io, player) {
+  if (!player || !player.team_id) return;
+  if (player.transfer_status && player.transfer_status !== "none") return;
+  if (player.contract_request_pending) return;
+
+  const wage = player.wage || 0;
+  const demandBase = Math.max(Math.round((player.skill || 0) * 70), wage + 200);
+  if (wage >= demandBase * 0.85 && Math.random() > 0.08) return;
+
+  const requestedWage = Math.round(demandBase * (1.05 + Math.random() * 0.2));
+  game.db.run(
+    "UPDATE players SET contract_request_pending = 1, contract_requested_wage = ? WHERE id = ?",
+    [requestedWage, player.id],
+    () => {
+      const coach = Object.values(game.playersByName).find(
+        (p) => p.teamId === player.team_id && p.socketId,
+      );
+      if (!coach) {
+        game.db.run(
+          "UPDATE players SET contract_request_pending = 0 WHERE id = ?",
+          [player.id],
+        );
+        return;
+      }
+
+      io.to(coach.socketId).emit("matchActionRequired", {
+        actionId: `contract-${player.id}-${Date.now()}`,
+        type: "contract",
+        teamId: player.team_id,
+        player: {
+          id: player.id,
+          name: player.name,
+          position: player.position,
+          skill: player.skill,
+          form: player.form,
+          wage,
+          requestedWage,
+        },
+      });
+    },
+  );
+}
+
 io.on("connection", (socket) => {
   // ── JOIN GAME ──────────────────────────────────────────────────────────────
   socket.on("joinGame", async (data) => {
@@ -265,25 +431,31 @@ io.on("connection", (socket) => {
           (err2, team) => {
             if (!team) return;
 
-            const price = player.value * 1.2;
+            const listedPrice =
+              player.transfer_status && player.transfer_status !== "none"
+                ? player.transfer_price || Math.round(player.value * 0.8)
+                : Math.round(player.value * 1.2);
+            const price = listedPrice;
             if (team.budget >= price) {
               game.db.run(
                 "UPDATE teams SET budget = budget - ? WHERE id = ?",
                 [price, playerState.teamId],
                 () => {
+                  if (player.team_id && player.team_id !== playerState.teamId) {
+                    game.db.run(
+                      "UPDATE teams SET budget = budget + ? WHERE id = ?",
+                      [price, player.team_id],
+                    );
+                  }
                   game.db.run(
-                    "UPDATE players SET team_id = ? WHERE id = ?",
-                    [playerState.teamId, playerId],
+                    "UPDATE players SET team_id = ?, contract_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+                    [
+                      playerState.teamId,
+                      getSeasonEndMatchweek(game.matchweek),
+                      playerId,
+                    ],
                     () => {
-                      const index = game.globalMarket.findIndex(
-                        (p) => p.id === playerId,
-                      );
-                      if (index > -1) game.globalMarket.splice(index, 1);
-
-                      io.to(game.roomCode).emit(
-                        "marketUpdate",
-                        game.globalMarket,
-                      );
+                      refreshMarket(game);
                       game.db.all("SELECT * FROM teams", (err3, teams) =>
                         io.to(game.roomCode).emit("teamsData", teams),
                       );
@@ -312,6 +484,43 @@ io.on("connection", (socket) => {
     );
   });
 
+  socket.on("listPlayerForTransfer", ({ playerId, mode, price }) => {
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    const playerState = getPlayerBySocket(game, socket.id);
+    if (!playerState) return;
+
+    game.db.get(
+      "SELECT * FROM players WHERE id = ? AND team_id = ?",
+      [playerId, playerState.teamId],
+      (err, player) => {
+        if (!player) return;
+        const finalMode = mode === "auction" ? "auction" : "fixed";
+        const finalPrice =
+          finalMode === "auction"
+            ? Math.max(
+                Math.round(player.value * 0.65),
+                Math.round(player.value * 0.45),
+              )
+            : Math.max(0, Math.round(price || player.value));
+
+        game.db.run(
+          "UPDATE players SET transfer_status = ?, transfer_price = ? WHERE id = ?",
+          [finalMode, finalPrice, playerId],
+          () => {
+            refreshMarket(game);
+            socket.emit(
+              "systemMessage",
+              finalMode === "auction"
+                ? `${player.name} colocado em leilão.`
+                : `${player.name} colocado na lista por €${finalPrice}.`,
+            );
+          },
+        );
+      },
+    );
+  });
+
   // ── SET TACTIC ────────────────────────────────────────────────────────────
   socket.on("setTactic", (tactic) => {
     const game = getGameBySocket(socket.id);
@@ -325,6 +534,57 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("renewContract", ({ playerId, offeredWage }) => {
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    const playerState = getPlayerBySocket(game, socket.id);
+    if (!playerState) return;
+
+    game.db.get(
+      "SELECT * FROM players WHERE id = ? AND team_id = ?",
+      [playerId, playerState.teamId],
+      (err, player) => {
+        if (err || !player) return;
+
+        const demandedWage = Math.max(
+          Math.round((player.skill || 0) * 70),
+          Math.round((player.wage || 0) * 1.15),
+        );
+        const acceptedWage = Math.max(0, Math.round(offeredWage || 0));
+        const seasonEnd = getSeasonEndMatchweek(game.matchweek);
+
+        if (acceptedWage >= demandedWage) {
+          game.db.run(
+            "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
+            [acceptedWage, seasonEnd, playerId],
+            () => {
+              refreshMarket(game);
+              emitSquadForPlayer(game, playerState.teamId);
+              socket.emit(
+                "systemMessage",
+                `${player.name} renovou até ao fim da época por €${acceptedWage}/sem.`,
+              );
+            },
+          );
+        } else {
+          const auctionPrice = Math.max(
+            Math.round(player.value * 0.65),
+            demandedWage * 12,
+          );
+          listPlayerOnMarket(game, playerId, "auction", auctionPrice, () => {
+            game.db.run(
+              "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+              [playerId],
+            );
+            socket.emit(
+              "systemMessage",
+              `${player.name} recusou e foi para leilão.`,
+            );
+          });
+        }
+      },
+    );
+  });
   // ── BUILD STADIUM ─────────────────────────────────────────────────────────
   socket.on("buildStadium", () => {
     const game = getGameBySocket(socket.id);

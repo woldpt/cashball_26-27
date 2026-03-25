@@ -41,6 +41,11 @@ CREATE TABLE IF NOT EXISTS players (
   injury_weeks INTEGER DEFAULT 0,
   suspension_until_matchweek INTEGER DEFAULT 0,
   injury_until_matchweek INTEGER DEFAULT 0,
+  contract_until_matchweek INTEGER DEFAULT 0,
+  contract_request_pending INTEGER DEFAULT 0,
+  contract_requested_wage INTEGER DEFAULT 0,
+  transfer_status TEXT DEFAULT 'none',
+  transfer_price INTEGER DEFAULT 0,
   team_id INTEGER,
   FOREIGN KEY(team_id) REFERENCES teams(id)
 );

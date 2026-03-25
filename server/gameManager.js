@@ -19,6 +19,11 @@ function ensurePlayerSchema(db, onDone) {
       ["injury_weeks", "INTEGER DEFAULT 0"],
       ["suspension_until_matchweek", "INTEGER DEFAULT 0"],
       ["injury_until_matchweek", "INTEGER DEFAULT 0"],
+      ["contract_until_matchweek", "INTEGER DEFAULT 0"],
+      ["contract_request_pending", "INTEGER DEFAULT 0"],
+      ["contract_requested_wage", "INTEGER DEFAULT 0"],
+      ["transfer_status", "TEXT DEFAULT 'none'"],
+      ["transfer_price", "INTEGER DEFAULT 0"],
     ];
 
     const missing = required.filter(([name]) => !existing.has(name));
@@ -101,9 +106,9 @@ function getGame(roomCode, onReady) {
               (err2, row2) => {
                 if (row2) game.matchState = row2.value || "idle";
 
-                // Load free agents for market (only players with no team)
+                // Load free agents and transfer-listed players for market
                 db.all(
-                  "SELECT * FROM players WHERE team_id IS NULL ORDER BY RANDOM() LIMIT 20",
+                  "SELECT * FROM players WHERE team_id IS NULL OR transfer_status != 'none' ORDER BY RANDOM() LIMIT 40",
                   (err3, rows) => {
                     if (!err3 && rows) game.globalMarket = rows;
                     game.initialized = true;
