@@ -166,6 +166,29 @@ const playWhistle = () => {
   }
 };
 
+const playNotification = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1100].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.13);
+      gain.gain.setValueAtTime(0.07, ctx.currentTime + i * 0.13);
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        ctx.currentTime + i * 0.13 + 0.22,
+      );
+      osc.start(ctx.currentTime + i * 0.13);
+      osc.stop(ctx.currentTime + i * 0.13 + 0.22);
+    });
+  } catch {
+    // ignore
+  }
+};
+
 function App() {
   const savedSessionRef = React.useRef(loadSavedSession());
   const savedSession = savedSessionRef.current;
@@ -243,6 +266,8 @@ function App() {
   const meRef = React.useRef(null);
   const selectedTeamRef = React.useRef(null);
   const marketPairsRef = React.useRef([]);
+  // goalFlashRef: { [key]: timestamp } – key = `${homeId}_${awayId}_home|away`
+  const goalFlashRef = React.useRef({});
 
   const backendUrl =
     (typeof import.meta !== "undefined" && import.meta.env?.VITE_BACKEND_URL) ||
@@ -358,7 +383,6 @@ function App() {
       setShowHalftimePanel(true);
       setIsPlayingMatch(true);
       setActiveTab("live");
-      playWhistle();
     });
 
     socket.on("matchActionRequired", (data) => {
@@ -380,7 +404,6 @@ function App() {
       setLiveMinute(45);
       setIsPlayingMatch(true);
       setActiveTab("live");
-      playWhistle();
     });
 
     // BUG-15 FIX: Track socket connection state
@@ -523,6 +546,34 @@ function App() {
       }
     }
   }, [isPlayingMatch, liveMinute, matchResults, showHalftimePanel]);
+
+  // Detect per-minute events: flash goal score & play notification for human matches
+  useEffect(() => {
+    if (!isPlayingMatch || !matchResults?.results || liveMinute < 1) return;
+    matchResults.results.forEach((match) => {
+      const events = (match.events || []).filter(
+        (e) => e.minute === liveMinute,
+      );
+      if (!events.length) return;
+      // Track goal flashes (all matches)
+      events.forEach((e) => {
+        if (e.type === "goal") {
+          const key = `${match.homeTeamId}_${match.awayTeamId}_${e.team}`;
+          goalFlashRef.current[key] = Date.now();
+        }
+      });
+      // Sound only for matches involving a human coach
+      const hasHuman = players.some(
+        (p) => p.teamId === match.homeTeamId || p.teamId === match.awayTeamId,
+      );
+      if (hasHuman) {
+        const notifiable = events.some((e) =>
+          ["goal", "red", "injury"].includes(e.type),
+        );
+        if (notifiable) playNotification();
+      }
+    });
+  }, [liveMinute]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!mySquad.length) return;
@@ -1423,35 +1474,83 @@ function App() {
                               match.homeTeamId === me.teamId ||
                               match.awayTeamId === me.teamId;
 
+                            const flashHome =
+                              goalFlashRef.current[
+                                `${match.homeTeamId}_${match.awayTeamId}_home`
+                              ];
+                            const flashAway =
+                              goalFlashRef.current[
+                                `${match.homeTeamId}_${match.awayTeamId}_away`
+                              ];
+                            const now = Date.now();
+                            const homeFlashing =
+                              flashHome && now - flashHome < 3500;
+                            const awayFlashing =
+                              flashAway && now - flashAway < 3500;
+
                             return (
                               <div
                                 key={idx}
-                                className={`flex items-center gap-2 text-[11px] font-bold bg-zinc-950 rounded border ${isMyMatch ? "border-amber-500 bg-amber-500/10 ring-1 ring-amber-500" : "border-zinc-800"}`}
+                                className={`text-[11px] bg-zinc-950 rounded border ${isMyMatch ? "border-amber-500 bg-amber-500/10 ring-1 ring-amber-500" : "border-zinc-800"}`}
                               >
-                                <div
-                                  style={{
-                                    backgroundColor: hInfo?.color_primary,
-                                    color: hInfo?.color_secondary,
-                                  }}
-                                  className="w-32 md:w-40 uppercase truncate font-black text-right px-2 py-1 rounded-l"
-                                >
-                                  {hInfo?.name}
+                                {/* Line 1: teams + score */}
+                                <div className="flex items-center">
+                                  <div
+                                    style={{
+                                      backgroundColor: hInfo?.color_primary,
+                                      color: hInfo?.color_secondary,
+                                    }}
+                                    className="flex-1 uppercase truncate font-black text-right px-2 py-1 rounded-tl"
+                                  >
+                                    {hInfo?.name}
+                                  </div>
+                                  <div className="px-2 py-1 bg-zinc-900 text-white text-center font-normal min-w-10 flex gap-0.5 items-center justify-center">
+                                    <span
+                                      style={{
+                                        color: homeFlashing
+                                          ? "#ef4444"
+                                          : "white",
+                                        fontWeight: homeFlashing
+                                          ? "bold"
+                                          : "normal",
+                                        transition:
+                                          "color 2.5s ease, font-weight 0.1s",
+                                      }}
+                                    >
+                                      {currentHome.length}
+                                    </span>
+                                    <span className="mx-0.5">-</span>
+                                    <span
+                                      style={{
+                                        color: awayFlashing
+                                          ? "#ef4444"
+                                          : "white",
+                                        fontWeight: awayFlashing
+                                          ? "bold"
+                                          : "normal",
+                                        transition:
+                                          "color 2.5s ease, font-weight 0.1s",
+                                      }}
+                                    >
+                                      {currentAway.length}
+                                    </span>
+                                  </div>
+                                  <div
+                                    style={{
+                                      backgroundColor: aInfo?.color_primary,
+                                      color: aInfo?.color_secondary,
+                                    }}
+                                    className="flex-1 uppercase truncate font-black text-left px-2 py-1 rounded-tr"
+                                  >
+                                    {aInfo?.name}
+                                  </div>
                                 </div>
-                                <div className="px-2 py-1 bg-zinc-900 text-white text-center font-black min-w-10">
-                                  {currentHome.length} - {currentAway.length}
-                                </div>
-                                <div
-                                  style={{
-                                    backgroundColor: aInfo?.color_primary,
-                                    color: aInfo?.color_secondary,
-                                  }}
-                                  className="w-32 md:w-40 uppercase truncate font-black text-left px-2 py-1 rounded-r"
-                                >
-                                  {aInfo?.name}
-                                </div>
-                                <div className="ml-1 flex-1 min-w-0 px-1 py-1 text-zinc-400 truncate opacity-80">
-                                  {lastEventText}
-                                </div>
+                                {/* Line 2: last event */}
+                                {lastEventText ? (
+                                  <div className="px-2 py-0.5 text-zinc-400 truncate text-center border-t border-zinc-800/60">
+                                    {lastEventText}
+                                  </div>
+                                ) : null}
                               </div>
                             );
                           })}
