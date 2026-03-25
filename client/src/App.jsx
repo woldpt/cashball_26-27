@@ -61,6 +61,7 @@ function App() {
   const [matchResults, setMatchResults] = useState(null);
   const [matchweekCount, setMatchweekCount] = useState(0);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [topScorers, setTopScorers] = useState([]);
   const [marketPairs, setMarketPairs] = useState([]);
   const [tactic, setTactic] = useState({ formation: '4-4-2', style: 'Balanced' });
   const [liveMinute, setLiveMinute] = useState(90);
@@ -94,6 +95,7 @@ function App() {
     });
     socket.on('mySquad', (data) => setMySquad(data));
     socket.on('marketUpdate', (data) => setMarketPairs(data));
+    socket.on('topScorers', (data) => setTopScorers(data));
     socket.on('systemMessage', (msg) => addToast(msg));
     
     socket.on('gameState', (data) => {
@@ -406,39 +408,58 @@ function App() {
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
           <div className="xl:col-span-3">
             {activeTab === 'dashboard' && (
-              <div className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800 shadow-sm">
-                    <p className="text-sm text-zinc-500 uppercase font-black tracking-widest mb-2">Clube</p>
-                    <p className="text-3xl font-black">{teamInfo?.name}</p>
-                    <p className="text-lg font-semibold text-amber-500 mt-1">Divisão {teamInfo?.division}</p>
-                  </div>
-                  <div className="bg-amber-500 p-6 rounded-3xl border border-amber-400 text-zinc-950 flex flex-col justify-center items-center">
-                    <p className="text-sm uppercase font-black tracking-widest opacity-80 mb-1">Classificação</p>
-                    <p className="text-6xl font-black">{(() => {
-                      const divTeams = teams.filter(t => t.division === teamInfo?.division).sort((a,b) => (b.points||0) - (a.points||0) || ((b.goals_for||0)-(b.goals_against||0)) - ((a.goals_for||0)-(a.goals_against||0)));
-                      const pos = divTeams.findIndex(t => t.id === me.teamId) + 1;
-                      return pos > 0 ? `${pos}º` : '-';
-                    })()}</p>
-                  </div>
-                </div>
-                
-                {myMatch && (
-                  <div className="bg-zinc-900 rounded-3xl border border-zinc-800 shadow-sm overflow-hidden">
-                    <div className="bg-zinc-800/50 p-5 border-b border-zinc-800 flex justify-between">
-                      <h3 className="font-bold text-white text-lg tracking-widest uppercase">Último Jogo (Jornada {matchResults.matchweek})</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-zinc-900 p-4 rounded-xl border border-zinc-800 shadow-sm flex flex-col items-center justify-center text-center">
+                      <p className="text-xs text-zinc-500 uppercase font-black tracking-widest mb-1">Clube</p>
+                      <p className="text-xl font-black">{teamInfo?.name}</p>
+                      <p className="text-sm font-semibold text-amber-500 mt-1">Divisão {teamInfo?.division}</p>
                     </div>
-                    <div className="p-8">
-                      <div className="flex items-center justify-center gap-8 mb-8">
-                        <div className="text-3xl font-black flex-1 text-right">{teams.find(t => t.id === myMatch.homeTeamId)?.name}</div>
-                        <div className="px-6 py-3 bg-zinc-950 border border-zinc-800 rounded-2xl text-6xl font-black text-white shadow-inner flex gap-4">
-                          <span>{myMatch.finalHomeGoals ?? 0}</span><span className="text-zinc-700">-</span><span>{myMatch.finalAwayGoals ?? 0}</span>
+                    <div className="bg-amber-500 p-4 rounded-xl border border-amber-400 text-zinc-950 flex flex-col justify-center items-center">
+                      <p className="text-xs uppercase font-black tracking-widest opacity-80 mb-1">Classificação</p>
+                      <p className="text-4xl font-black">{(() => {
+                        const divTeams = teams.filter(t => t.division === teamInfo?.division).sort((a,b) => (b.points||0) - (a.points||0) || ((b.goals_for||0)-(b.goals_against||0)) - ((a.goals_for||0)-(a.goals_against||0)));
+                        const pos = divTeams.findIndex(t => t.id === me.teamId) + 1;
+                        return pos > 0 ? `${pos}º` : '-';
+                      })()}</p>
+                    </div>
+                  </div>
+                  
+                  {myMatch && (
+                    <div className="bg-zinc-900 rounded-xl border border-zinc-800 shadow-sm overflow-hidden">
+                      <div className="bg-zinc-800/50 p-3 border-b border-zinc-800 flex justify-between">
+                        <h3 className="font-bold text-white text-sm tracking-widest uppercase">Último Jogo</h3>
+                      </div>
+                      <div className="p-4">
+                        <div className="flex items-center justify-center gap-4">
+                          <div className="text-lg font-black flex-1 text-right truncate">{teams.find(t => t.id === myMatch.homeTeamId)?.name}</div>
+                          <div className="px-4 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-3xl font-black text-white shadow-inner flex gap-2">
+                            <span>{myMatch.finalHomeGoals ?? 0}</span><span className="text-zinc-700">-</span><span>{myMatch.finalAwayGoals ?? 0}</span>
+                          </div>
+                          <div className="text-lg font-black flex-1 text-left truncate">{teams.find(t => t.id === myMatch.awayTeamId)?.name}</div>
                         </div>
-                        <div className="text-3xl font-black flex-1 text-left">{teams.find(t => t.id === myMatch.awayTeamId)?.name}</div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+
+                <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-4 shadow-sm max-h-[400px] overflow-y-auto">
+                    <h3 className="text-amber-500 font-black mb-3 uppercase tracking-widest text-sm border-b border-zinc-800 pb-2 flex items-center gap-2">🏆 Melhores Marcadores</h3>
+                    {topScorers.length === 0 ? (
+                       <p className="text-sm text-zinc-500 font-bold">Nenhum golo marcado ainda.</p>
+                    ) : (
+                       <ul className="space-y-2">
+                          {topScorers.map((scorer, i) => (
+                             <li key={scorer.id} className="flex justify-between items-center text-sm p-2 rounded-lg bg-zinc-950 border border-zinc-800/50">
+                                <span className="font-bold text-white w-48 truncate">{i+1}. {scorer.name}</span>
+                                <span className="text-[10px] text-zinc-500 uppercase truncate max-w-[100px] hidden md:inline">{scorer.team_name || 'Ag. Livre'}</span>
+                                <span className="text-emerald-400 font-black text-base">{scorer.goals}</span>
+                             </li>
+                          ))}
+                       </ul>
+                    )}
+                </div>
               </div>
             )}
 
@@ -491,8 +512,8 @@ function App() {
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                    {[1,2,3,4].map(div => (
                      <div key={div}>
-                       <h3 className="text-zinc-500 font-black uppercase text-sm mb-4">{div}ª Divisão</h3>
-                       <div className="space-y-2">
+                       <h3 className="text-zinc-500 font-black uppercase text-xs mb-2 border-b border-zinc-800/50">{div}ª Divisão</h3>
+                       <div className="space-y-1">
                          {matchResults.results.filter(m => teams.find(t => t.id === m.homeTeamId)?.division === div).map((match, idx) => {
                             const hInfo = teams.find(t => t.id === match.homeTeamId);
                             const aInfo = teams.find(t => t.id === match.awayTeamId);
@@ -509,11 +530,11 @@ function App() {
                             const isMyMatch = match.homeTeamId === me.teamId || match.awayTeamId === me.teamId;
 
                             return (
-                              <div key={idx} className={`flex items-center text-sm font-bold bg-zinc-950 rounded-xl px-4 py-3 border ${isMyMatch ? 'border-amber-500 bg-amber-500/10' : 'border-zinc-800/50'}`}>
-                                <div className={`w-32 uppercase truncate font-black text-right pr-4 ${isMyMatch ? 'text-amber-500' : 'text-zinc-300'}`}>{hInfo?.name}</div>
-                                <div className="px-3 py-1 bg-zinc-900 rounded font-black text-white text-center shadow-inner text-base min-w-[50px]">{currentHome.length} - {currentAway.length}</div>
-                                <div className={`w-32 uppercase truncate font-black text-left pl-4 ${isMyMatch ? 'text-amber-500' : 'text-zinc-300'}`}>{aInfo?.name}</div>
-                                <div className="ml-4 text-xs font-medium text-zinc-500 flex-1 truncate">
+                              <div key={idx} className={`flex text-[11px] font-bold bg-zinc-950 rounded border ${isMyMatch ? 'border-amber-500 bg-amber-500/10 ring-1 ring-amber-500' : 'border-zinc-800'}`}>
+                                <div style={{ backgroundColor: hInfo?.color_primary, color: hInfo?.color_secondary }} className="w-24 uppercase truncate font-black text-right px-2 py-1 rounded-l">{hInfo?.name}</div>
+                                <div className="px-2 py-1 bg-zinc-900 text-white text-center font-black min-w-[36px]">{currentHome.length} - {currentAway.length}</div>
+                                <div style={{ backgroundColor: aInfo?.color_primary, color: aInfo?.color_secondary }} className="w-24 uppercase truncate font-black text-left px-2 py-1 rounded-r">{aInfo?.name}</div>
+                                <div className="ml-2 flex-1 px-1 py-1 text-zinc-400 truncate opacity-80">
                                   {scorersList && `⚽ ${scorersList}`}
                                 </div>
                               </div>
@@ -527,38 +548,38 @@ function App() {
             )}
 
             {activeTab === 'standings' && (
-              <div className="bg-zinc-900 min-h-[600px] text-zinc-100 font-sans p-8 rounded-3xl border border-zinc-800 shadow-sm relative overflow-hidden">
-                 <h2 className="text-2xl font-black text-amber-500 mb-8 pb-4 border-b border-zinc-800">Classificação Geral (Jornada {matchweekCount})</h2>
+              <div className="bg-zinc-900 text-zinc-100 font-sans p-4 rounded-xl border border-zinc-800 shadow-sm relative overflow-hidden">
+                 <h2 className="text-xl font-black text-amber-500 mb-4 pb-2 border-b border-zinc-800">Classificação Geral (Jornada {matchweekCount})</h2>
                  
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-8">
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
                    {[1,2,3,4].map(div => (
                      <div key={div}>
                        <h3 className="text-zinc-500 font-black uppercase text-sm mb-4">{div}ª Divisão</h3>
-                       <div className="bg-zinc-950 border border-zinc-800 p-2 rounded-xl">
-                         <table className="w-full text-xs font-bold text-right border-collapse">
-                           <thead className="text-zinc-500 border-b border-zinc-800">
+                       <div className="bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
+                         <table className="w-full text-[11px] font-bold text-right border-collapse">
+                           <thead className="bg-zinc-900 text-zinc-400 border-b border-zinc-800">
                              <tr>
-                               <th className="text-left p-2">Equipa</th>
-                               <th className="p-2 w-8 text-center">J</th>
-                               <th className="p-2 w-8 text-center">V</th>
-                               <th className="p-2 w-8 text-center text-zinc-600">E</th>
-                               <th className="p-2 w-8 text-center text-red-500/50">D</th>
-                               <th className="p-2 w-16 text-center">G</th>
-                               <th className="p-2 w-10 text-center text-amber-500">Pts</th>
+                               <th className="text-left py-1 px-2">Equipa</th>
+                               <th className="py-1 px-1 w-6 text-center">J</th>
+                               <th className="py-1 px-1 w-6 text-center">V</th>
+                               <th className="py-1 px-1 w-6 text-center">E</th>
+                               <th className="py-1 px-1 w-6 text-center">D</th>
+                               <th className="py-1 px-2 w-12 text-center">G</th>
+                               <th className="py-1 px-2 w-8 text-center text-amber-500">Pts</th>
                              </tr>
                            </thead>
-                           <tbody className="divide-y divide-zinc-800/50">
+                           <tbody className="divide-y divide-black/20">
                              {teams.filter(t => t.division === div).sort((a,b) => (b.points||0) - (a.points||0) || ((b.goals_for||0) - (b.goals_against||0)) - ((a.goals_for||0) - (a.goals_against||0))).map((t, idx) => {
                                const isMe = t.id == me.teamId;
                                return (
-                                 <tr key={t.id} className={`hover:bg-zinc-900 transition-colors ${isMe ? 'bg-amber-500/10' : ''}`}>
-                                   <td className={`text-left uppercase p-2 w-[40%] truncate font-black ${isMe ? 'text-amber-500' : 'text-white'}`}>{idx+1}. {t.name}</td>
-                                   <td className="w-8 text-center p-2 text-zinc-400">{(t.wins||0) + (t.draws||0) + (t.losses||0)}</td>
-                                   <td className="w-8 text-center p-2 text-zinc-300">{t.wins||0}</td>
-                                   <td className="w-8 text-center p-2 text-zinc-500">{t.draws||0}</td>
-                                   <td className="w-8 text-center p-2 text-red-400/70">{t.losses||0}</td>
-                                   <td className="w-16 text-center p-2 tracking-widest text-zinc-300">{t.goals_for||0}:{t.goals_against||0}</td>
-                                   <td className="w-10 text-center p-2 text-white bg-zinc-900 rounded font-black">{t.points||0}</td>
+                                 <tr key={t.id} style={{ backgroundColor: t.color_primary || '#18181b', color: t.color_secondary || '#ffffff' }} className={`transition-colors ${isMe ? 'ring-2 ring-inset ring-amber-500' : ''}`}>
+                                   <td className="text-left uppercase py-[3px] px-2 truncate font-black w-[45%]">{idx+1}. {t.name}</td>
+                                   <td className="w-6 text-center py-[3px] px-1 opacity-80">{(t.wins||0) + (t.draws||0) + (t.losses||0)}</td>
+                                   <td className="w-6 text-center py-[3px] px-1 opacity-80">{t.wins||0}</td>
+                                   <td className="w-6 text-center py-[3px] px-1 opacity-80">{t.draws||0}</td>
+                                   <td className="w-6 text-center py-[3px] px-1 opacity-80">{t.losses||0}</td>
+                                   <td className="w-12 text-center py-[3px] px-2 tracking-widest opacity-80">{t.goals_for||0}:{t.goals_against||0}</td>
+                                   <td className="w-8 text-center py-[3px] px-2 font-black">{t.points||0}</td>
                                  </tr>
                                );
                              })}

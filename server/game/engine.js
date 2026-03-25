@@ -127,12 +127,12 @@ async function simulateMatchSegment(db, fixture, homeTactic, awayTactic, startMi
         const scorers = home.squad.filter(p => p.position === 'ATK' || p.position === 'MID');
         const scorer = scorers.length > 0 ? scorers[Math.floor(Math.random() * scorers.length)] : home.squad[0];
         fixture.finalHomeGoals++;
-        fixture.events.push({ minute, type: 'goal', team: 'home', text: `[${minute}'] ⚽ GOLO! ${scorer ? scorer.name : 'Jogador'}` });
+        fixture.events.push({ minute, type: 'goal', team: 'home', text: `[${minute}'] ⚽ GOLO! ${scorer ? scorer.name : 'Jogador'}`, playerId: scorer ? scorer.id : null });
       } else {
         const scorers = away.squad.filter(p => p.position === 'ATK' || p.position === 'MID');
         const scorer = scorers.length > 0 ? scorers[Math.floor(Math.random() * scorers.length)] : away.squad[0];
         fixture.finalAwayGoals++;
-        fixture.events.push({ minute, type: 'goal', team: 'away', text: `[${minute}'] ⚽ GOLO! ${scorer ? scorer.name : 'Jogador'}` });
+        fixture.events.push({ minute, type: 'goal', team: 'away', text: `[${minute}'] ⚽ GOLO! ${scorer ? scorer.name : 'Jogador'}`, playerId: scorer ? scorer.id : null });
       }
     }
     

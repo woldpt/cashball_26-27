@@ -33,8 +33,8 @@ db.serialize(() => {
   console.log('Seeding 32 fictitious teams and 512 players across 4 divisions (Base DB)...');
   
   const insertManager = db.prepare('INSERT INTO managers (name, reputation) VALUES (?, ?)');
-  const insertTeam = db.prepare('INSERT INTO teams (name, manager_id, division, budget) VALUES (?, ?, ?, ?)');
-  const insertPlayer = db.prepare('INSERT INTO players (name, position, skill, age, form, aggressiveness, nationality, value, wage, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const insertTeam = db.prepare('INSERT INTO teams (name, manager_id, division, budget, color_primary, color_secondary) VALUES (?, ?, ?, ?, ?, ?)');
+  const insertPlayer = db.prepare('INSERT INTO players (name, position, skill, age, form, aggressiveness, nationality, value, wage, goals, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)');
 
   let teamId = 1;
   let managerId = 1;
@@ -44,7 +44,14 @@ db.serialize(() => {
     data.teams.forEach(teamName => {
       const managerName = 'Mr. ' + getRandomName() + ' (' + teamName.split(' ')[0] + ')';
       insertManager.run(managerName, 50);
-      insertTeam.run(teamName, managerId, div, data.budget);
+      
+      const colors = [
+        ['#dc2626', '#ffffff'], ['#2563eb', '#ffffff'], ['#16a34a', '#ffffff'], ['#000000', '#ffffff'],
+        ['#ca8a04', '#000000'], ['#7c3aed', '#ffffff'], ['#db2777', '#ffffff'], ['#ea580c', '#ffffff'],
+        ['#0891b2', '#ffffff'], ['#4f46e5', '#ffffff'], ['#059669', '#ffffff'], ['#ffffff', '#000000']
+      ];
+      const teamColors = colors[teamId % colors.length];
+      insertTeam.run(teamName, managerId, div, data.budget, teamColors[0], teamColors[1]);
       
       const teamPositions = ['GK', 'GK', 'DEF', 'DEF', 'DEF', 'DEF', 'DEF', 'MID', 'MID', 'MID', 'MID', 'MID', 'ATK', 'ATK', 'ATK', 'ATK'];
       teamPositions.forEach(pos => {

@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS teams (
   stadium_capacity INTEGER DEFAULT 10000,
   budget INTEGER DEFAULT 15000,
   loan_amount INTEGER DEFAULT 0,
+  color_primary TEXT,
+  color_secondary TEXT,
   FOREIGN KEY(manager_id) REFERENCES managers(id)
 );
 
@@ -32,6 +34,7 @@ CREATE TABLE IF NOT EXISTS players (
   nationality TEXT,
   value INTEGER,
   wage INTEGER,
+  goals INTEGER DEFAULT 0,
   team_id INTEGER,
   FOREIGN KEY(team_id) REFERENCES teams(id)
 );

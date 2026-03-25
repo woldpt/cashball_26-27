@@ -111,6 +111,11 @@ io.on('connection', (socket) => {
     socket.emit('marketUpdate', game.globalMarket);
     socket.emit('gameState', { matchweek: game.matchweek, matchState: game.matchState });
     io.to(roomCode).emit('playerListUpdate', getPlayerList(game));
+    
+    game.db.all('SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20', (err3, scorers) => {
+       socket.emit('topScorers', scorers || []);
+    });
+
     socket.emit('systemMessage', `Foste contratado pelo ${team.name} (Divisão 4)!`);
   }
 
@@ -290,38 +295,46 @@ async function processSegment(game, startMin, endMin, nextState) {
     saveGameState(game);
 
   } else {
-    // BUG-05 FIX: Run standings update as a single atomic BEGIN/COMMIT SQL string
-    // instead of using the broken db.serialize() + loop pattern which fires COMMIT
-    // before the loop's run() calls complete.
-    const updateStatements = game.fixtures.map(match => {
-      const hG = match.finalHomeGoals;
-      const aG = match.finalAwayGoals;
-      let hPts = 0, aPts = 0, hW = 0, hD = 0, hL = 0, aW = 0, aD = 0, aL = 0;
-      if (hG > aG) { hPts = 3; hW = 1; aL = 1; }
-      else if (hG < aG) { aPts = 3; aW = 1; hL = 1; }
-      else { hPts = 1; aPts = 1; hD = 1; aD = 1; }
+    game.db.serialize(() => {
+      game.db.run("BEGIN TRANSACTION");
+      
+      for (const match of game.fixtures) {
+        const hG = match.finalHomeGoals;
+        const aG = match.finalAwayGoals;
+        let hPts = 0, aPts = 0, hW = 0, hD = 0, hL = 0, aW = 0, aD = 0, aL = 0;
+        if (hG > aG) { hPts = 3; hW = 1; aL = 1; }
+        else if (hG < aG) { aPts = 3; aW = 1; hL = 1; }
+        else { hPts = 1; aPts = 1; hD = 1; aD = 1; }
 
-      return [
-        `UPDATE teams SET points=points+${hPts}, wins=wins+${hW}, draws=draws+${hD}, losses=losses+${hL}, goals_for=goals_for+${hG}, goals_against=goals_against+${aG} WHERE id=${match.homeTeamId}`,
-        `UPDATE teams SET points=points+${aPts}, wins=wins+${aW}, draws=draws+${aD}, losses=losses+${aL}, goals_for=goals_for+${aG}, goals_against=goals_against+${hG} WHERE id=${match.awayTeamId}`
-      ];
-    }).flat();
+        game.db.run(`UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?`, [hPts, hW, hD, hL, hG, aG, match.homeTeamId]);
+        game.db.run(`UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?`, [aPts, aW, aD, aL, aG, hG, match.awayTeamId]);
 
-    const transactionSql = `BEGIN TRANSACTION; ${updateStatements.join('; ')}; COMMIT;`;
-
-    game.db.exec(transactionSql, (err) => {
-      if (err) {
-        console.error('Standings update error:', err);
-        game.db.run('ROLLBACK');
+        for (const event of match.events) {
+          if (event.type === 'goal' && event.playerId) {
+            game.db.run(`UPDATE players SET goals=goals+1 WHERE id=?`, [event.playerId]);
+          }
+        }
       }
 
-      // BUG-10 FIX: Increment matchweek and broadcast full-time results
-      io.to(game.roomCode).emit('matchResults', { matchweek: game.matchweek, results: game.fixtures });
-      connectedPlayers.forEach(p => { p.ready = false; });
-      game.matchweek++;
-      saveGameState(game);
-      game.db.all('SELECT * FROM teams', (err2, teams) => io.to(game.roomCode).emit('teamsData', teams));
-      io.to(game.roomCode).emit('playerListUpdate', getPlayerList(game));
+      game.db.run("COMMIT", (err) => {
+        if (err) {
+          console.error('Standings update error:', err);
+          game.db.run('ROLLBACK');
+          return;
+        }
+
+        io.to(game.roomCode).emit('matchResults', { matchweek: game.matchweek, results: game.fixtures });
+        connectedPlayers.forEach(p => { p.ready = false; });
+        game.matchweek++;
+        saveGameState(game);
+
+        game.db.all('SELECT * FROM teams', (err2, teams) => io.to(game.roomCode).emit('teamsData', teams));
+        
+        game.db.all('SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20', (err3, scorers) => {
+           io.to(game.roomCode).emit('topScorers', scorers || []);
+           io.to(game.roomCode).emit('playerListUpdate', getPlayerList(game));
+        });
+      });
     });
   }
 }
