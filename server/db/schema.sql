@@ -68,3 +68,29 @@ CREATE TABLE IF NOT EXISTS game_state (
   key TEXT PRIMARY KEY,
   value TEXT
 );
+
+CREATE TABLE IF NOT EXISTS cup_matches (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  season INTEGER NOT NULL,
+  round INTEGER NOT NULL,
+  home_team_id INTEGER,
+  away_team_id INTEGER,
+  home_score INTEGER DEFAULT 0,
+  away_score INTEGER DEFAULT 0,
+  home_et_score INTEGER DEFAULT 0,
+  away_et_score INTEGER DEFAULT 0,
+  home_penalties INTEGER DEFAULT 0,
+  away_penalties INTEGER DEFAULT 0,
+  winner_team_id INTEGER,
+  played BOOLEAN DEFAULT 0,
+  FOREIGN KEY(home_team_id) REFERENCES teams(id),
+  FOREIGN KEY(away_team_id) REFERENCES teams(id)
+);
+
+CREATE TABLE IF NOT EXISTS palmares (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  team_id INTEGER NOT NULL,
+  season INTEGER NOT NULL,
+  achievement TEXT NOT NULL,
+  FOREIGN KEY(team_id) REFERENCES teams(id)
+);

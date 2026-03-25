@@ -53,6 +53,19 @@ const divisionsData = {
     ],
     budget: 1500000,
   },
+  5: {
+    teams: [
+      "Amadores de Viseu",
+      "Rio Maior FC",
+      "Desportivo da Aldeia",
+      "Recreativo Serrano",
+      "União de Bairro",
+      "Sporting da Aldeia",
+      "Coruchense FC",
+      "Lousã Desportiva",
+    ],
+    budget: 500000,
+  },
 };
 
 const firstA = [
@@ -103,6 +116,7 @@ const skillRanges = {
   2: [30, 40],
   3: [20, 30],
   4: [5, 20],
+  5: [1, 10],
 };
 
 function randomSkill(min, max) {
@@ -137,7 +151,7 @@ db.serialize(() => {
   db.run("DELETE FROM game_state");
 
   console.log(
-    "Seeding 32 fictitious teams and 512 players across 4 divisions (Base DB)...",
+    "Seeding 40 fictitious teams and 640 players across 5 divisions (inc. Distritais) (Base DB)...",
   );
 
   const insertManager = db.prepare(
@@ -153,7 +167,7 @@ db.serialize(() => {
   let teamId = 1;
   let managerId = 1;
 
-  for (let div = 1; div <= 4; div++) {
+  for (let div = 1; div <= 5; div++) {
     const data = divisionsData[div];
     data.teams.forEach((teamName) => {
       const managerName =
@@ -258,6 +272,9 @@ db.serialize(() => {
   // Initialize game state defaults
   db.run("INSERT INTO game_state (key, value) VALUES ('matchweek', '1')");
   db.run("INSERT INTO game_state (key, value) VALUES ('matchState', 'idle')");
+  db.run("INSERT INTO game_state (key, value) VALUES ('season', '1')");
+  db.run("INSERT INTO game_state (key, value) VALUES ('cupRound', '0')");
+  db.run("INSERT INTO game_state (key, value) VALUES ('cupState', 'idle')");
 
   insertManager.finalize();
   insertTeam.finalize();

@@ -18,6 +18,8 @@ const {
   generateFixturesForDivision,
   simulateMatchSegment,
   applyPostMatchQualityEvolution,
+  simulateExtraTime,
+  simulatePenaltyShootout,
 } = require("./game/engine");
 const {
   verifyOrCreateManager,
@@ -291,6 +293,385 @@ function persistMatchResults(game, fixtures, matchweek, onDone) {
         },
       );
     });
+  });
+}
+
+              remaining -= 1;
+              if (remaining === 0 && onDone) onDone();
+            },
+          );
+        },
+      );
+    });
+  });
+}
+
+// ─── DIVISION NAMES ────────────────────────────────────────────────────────────
+const DIVISION_NAMES = {
+  1: "I Liga",
+  2: "II Liga",
+  3: "Liga 3",
+  4: "Campeonato de Portugal",
+  5: "Distritais",
+};
+
+// ─── CUP ROUND SCHEDULE ─────────────────────────────────────────────────────
+// matchweek → cup round (1-indexed)
+const CUP_ROUND_AFTER_MATCHWEEK = { 3: 1, 6: 2, 9: 3, 12: 4, 14: 5 };
+const CUP_ROUND_NAMES = [
+  "",
+  "16 avos de final",
+  "Oitavos de final",
+  "Quartos de final",
+  "Meias-finais",
+  "Final",
+];
+
+// ─── SEASON END ───────────────────────────────────────────────────────────────
+// Called after matchweek 14 completes. Awards palmares, applies promo/relegation.
+async function applySeasonEnd(game) {
+  const season = game.season;
+  const allTeams = await runAll(game.db, "SELECT * FROM teams ORDER BY division, id");
+
+  // Group by division
+  const byDiv = {};
+  for (const t of allTeams) {
+    if (!byDiv[t.division]) byDiv[t.division] = [];
+    byDiv[t.division].push(t);
+  }
+
+  // Sort each division by standings
+  for (const div in byDiv) {
+    byDiv[div] = getStandingsRows(byDiv[div]);
+  }
+
+  // Award I Liga champion palmares
+  const iLigaWinner = byDiv[1] && byDiv[1][0];
+  if (iLigaWinner) {
+    await new Promise((resolve) => {
+      game.db.run(
+        "INSERT INTO palmares (team_id, season, achievement) VALUES (?, ?, ?)",
+        [iLigaWinner.id, season, "Campeão Nacional"],
+        resolve,
+      );
+    });
+    io.to(game.roomCode).emit("systemMessage",
+      `🏆 ${iLigaWinner.name} é o Campeão Nacional da temporada ${season}!`);
+  }
+
+  // Award division champions (II Liga, Liga 3, Campeonato de Portugal)
+  for (const div of [2, 3, 4]) {
+    const winner = byDiv[div] && byDiv[div][0];
+    if (winner) {
+      await new Promise((resolve) => {
+        game.db.run(
+          "INSERT INTO palmares (team_id, season, achievement) VALUES (?, ?, ?)",
+          [winner.id, season, `Campeão ${DIVISION_NAMES[div]}`],
+          resolve,
+        );
+      });
+    }
+  }
+
+  // Promotion / relegation between divs 1-4, with Distritais (div 5) as reserve pool
+  // Each boundary: bottom 2 of higher div drop, top 2 of lower div rise
+  const promotions = []; // { teamId, fromDiv, toDiv }
+
+  for (const [upperDiv, lowerDiv] of [[1, 2], [2, 3], [3, 4], [4, 5]]) {
+    const upper = byDiv[upperDiv] || [];
+    const lower = byDiv[lowerDiv] || [];
+    if (!upper.length || !lower.length) continue;
+
+    const relegated = upper.slice(-2).map((t) => t.id);
+    // For Distritais: pick the 2 with highest average squad skill rather than just standings
+    let promoted;
+    if (lowerDiv === 5) {
+      const teamsWithSkill = await Promise.all(
+        lower.map(async (t) => {
+          const players = await runAll(game.db, "SELECT skill FROM players WHERE team_id = ?", [t.id]);
+          const avgSkill = players.length
+            ? players.reduce((s, p) => s + p.skill, 0) / players.length
+            : 0;
+          return { id: t.id, avgSkill };
+        }),
+      );
+      teamsWithSkill.sort((a, b) => b.avgSkill - a.avgSkill);
+      promoted = teamsWithSkill.slice(0, 2).map((t) => t.id);
+    } else {
+      promoted = lower.slice(0, 2).map((t) => t.id);
+    }
+
+    relegated.forEach((id) => promotions.push({ teamId: id, toDiv: lowerDiv }));
+    promoted.forEach((id) => promotions.push({ teamId: id, toDiv: upperDiv }));
+  }
+
+  // Apply division changes
+  for (const p of promotions) {
+    await new Promise((resolve) => {
+      game.db.run("UPDATE teams SET division = ? WHERE id = ?", [p.toDiv, p.teamId], resolve);
+    });
+  }
+
+  // Reset standings for all divisions 1-4 (Distritais don't have tracked standings)
+  await new Promise((resolve) => {
+    game.db.run(
+      "UPDATE teams SET points=0, wins=0, draws=0, losses=0, goals_for=0, goals_against=0 WHERE division <= 4",
+      resolve,
+    );
+  });
+
+  // Advance season
+  game.season += 1;
+  game.cupRound = 0;
+  game.cupState = "idle";
+  game.cupTeamIds = [];
+  saveGameState(game);
+
+  // Broadcast fresh teams data
+  const updatedTeams = await runAll(game.db, "SELECT * FROM teams");
+  io.to(game.roomCode).emit("teamsData", updatedTeams);
+  io.to(game.roomCode).emit("seasonEnd", {
+    season,
+    champion: iLigaWinner ? { id: iLigaWinner.id, name: iLigaWinner.name } : null,
+    promotions,
+  });
+}
+
+// ─── CUP: GENERATE DRAW ──────────────────────────────────────────────────────
+// Returns the draw fixtures (inserted into cup_matches) for the given round.
+async function generateCupDraw(game, round) {
+  const season = game.season;
+  let teamIds;
+
+  if (round === 1) {
+    // All teams from divisions 1-4
+    const teams = await runAll(game.db, "SELECT id FROM teams WHERE division BETWEEN 1 AND 4 ORDER BY id");
+    teamIds = teams.map((t) => t.id);
+  } else {
+    // Winners of previous round
+    const prevRound = await runAll(
+      game.db,
+      "SELECT winner_team_id FROM cup_matches WHERE season = ? AND round = ? AND played = 1",
+      [season, round - 1],
+    );
+    teamIds = prevRound.map((r) => r.winner_team_id).filter(Boolean);
+  }
+
+  // Fisher-Yates shuffle
+  for (let i = teamIds.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [teamIds[i], teamIds[j]] = [teamIds[j], teamIds[i]];
+  }
+
+  // Create pairs
+  const fixtures = [];
+  for (let i = 0; i < teamIds.length; i += 2) {
+    const homeId = teamIds[i];
+    const awayId = teamIds[i + 1];
+    if (!homeId || !awayId) continue;
+    await new Promise((resolve) => {
+      game.db.run(
+        "INSERT INTO cup_matches (season, round, home_team_id, away_team_id) VALUES (?, ?, ?, ?)",
+        [season, round, homeId, awayId],
+        resolve,
+      );
+    });
+    fixtures.push({ homeTeamId: homeId, awayTeamId: awayId });
+  }
+
+  game.cupTeamIds = teamIds;
+  game.cupRound = round;
+  game.cupState = "draw";
+  saveGameState(game);
+
+  return fixtures;
+}
+
+// ─── CUP: START ROUND ─────────────────────────────────────────────────────────
+// Called after the league matchweek that triggers a cup round.
+// If any human is still in the cup, emits the draw popup; otherwise auto-sims.
+async function startCupRound(game, round) {
+  const drawFixtures = await generateCupDraw(game, round);
+
+  // Enrich with team names for the UI
+  const enriched = await Promise.all(
+    drawFixtures.map(async (f) => {
+      const home = await runGet(game.db, "SELECT id, name, color_primary, color_secondary FROM teams WHERE id = ?", [f.homeTeamId]);
+      const away = await runGet(game.db, "SELECT id, name, color_primary, color_secondary FROM teams WHERE id = ?", [f.awayTeamId]);
+      return { homeTeam: home, awayTeam: away };
+    }),
+  );
+
+  const connectedPlayers = getPlayerList(game);
+  const humanTeamIds = new Set(connectedPlayers.map((p) => p.teamId));
+  const humanInCup = game.cupTeamIds.some((id) => humanTeamIds.has(id));
+
+  game.cupDrawAcks = new Set();
+
+  io.to(game.roomCode).emit("cupDrawStart", {
+    round,
+    roundName: CUP_ROUND_NAMES[round] || `Ronda ${round}`,
+    fixtures: enriched,
+    humanInCup,
+    season: game.season,
+  });
+
+  if (!humanInCup) {
+    // No human in cup: auto-simulate immediately after a brief delay
+    setTimeout(() => simulateCupRound(game, round), 800);
+  } else {
+    game.cupState = "draw";
+    // Simulation starts after all humans ack (see "cupDrawAcknowledged" handler)
+  }
+}
+
+// ─── CUP: SIMULATE ROUND ─────────────────────────────────────────────────────
+async function simulateCupRound(game, round) {
+  game.cupState = "playing";
+  saveGameState(game);
+
+  const season = game.season;
+  const matchRows = await runAll(
+    game.db,
+    "SELECT * FROM cup_matches WHERE season = ? AND round = ? AND played = 0",
+    [season, round],
+  );
+
+  const results = [];
+
+  for (const row of matchRows) {
+    const fixture = {
+      homeTeamId: row.home_team_id,
+      awayTeamId: row.away_team_id,
+      finalHomeGoals: 0,
+      finalAwayGoals: 0,
+      events: [],
+    };
+
+    const p1 = Object.values(game.playersByName).find((p) => p.teamId === row.home_team_id);
+    const p2 = Object.values(game.playersByName).find((p) => p.teamId === row.away_team_id);
+    const t1 = p1 ? p1.tactic : { formation: "4-4-2", style: "Balanced" };
+    const t2 = p2 ? p2.tactic : { formation: "4-4-2", style: "Balanced" };
+
+    const ctx = { game, io, matchweek: game.matchweek };
+
+    await simulateMatchSegment(game.db, fixture, t1, t2, 1, 45, ctx);
+
+    io.to(game.roomCode).emit("cupHalfTime", {
+      round,
+      fixture: {
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        homeGoals: fixture.finalHomeGoals,
+        awayGoals: fixture.finalAwayGoals,
+      },
+    });
+
+    await simulateMatchSegment(game.db, fixture, t1, t2, 46, 90, ctx);
+
+    // Cup: no draws allowed — extra time if level
+    let winnerId;
+    if (fixture.finalHomeGoals !== fixture.finalAwayGoals) {
+      winnerId = fixture.finalHomeGoals > fixture.finalAwayGoals
+        ? fixture.homeTeamId : fixture.awayTeamId;
+    } else {
+      // Extra time
+      await simulateExtraTime(game.db, fixture, t1, t2, ctx);
+
+      if (fixture.finalHomeGoals !== fixture.finalAwayGoals) {
+        winnerId = fixture.finalHomeGoals > fixture.finalAwayGoals
+          ? fixture.homeTeamId : fixture.awayTeamId;
+      } else {
+        // Penalty shootout
+        const { getTeamSquad } = require("./game/engine");
+        const homeSquad = await getTeamSquad(game.db, fixture.homeTeamId, t1, game.matchweek);
+        const awaySquad = await getTeamSquad(game.db, fixture.awayTeamId, t2, game.matchweek);
+        const shootout = simulatePenaltyShootout(homeSquad, awaySquad);
+
+        io.to(game.roomCode).emit("cupPenaltyShootout", {
+          round,
+          homeTeamId: fixture.homeTeamId,
+          awayTeamId: fixture.awayTeamId,
+          ...shootout,
+        });
+
+        // Small delay for UI to show shootout
+        await new Promise((r) => setTimeout(r, 500));
+
+        winnerId = shootout.homeGoals > shootout.awayGoals
+          ? fixture.homeTeamId : fixture.awayTeamId;
+
+        // Update DB with penalty scores
+        await new Promise((resolve) => {
+          game.db.run(
+            "UPDATE cup_matches SET home_penalties = ?, away_penalties = ?, played = 1, winner_team_id = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
+            [shootout.homeGoals, shootout.awayGoals, winnerId, season, round, fixture.homeTeamId, fixture.awayTeamId],
+            resolve,
+          );
+        });
+      }
+
+      // Update ET scores
+      const etHome = fixture.finalHomeGoals;
+      const etAway = fixture.finalAwayGoals;
+      await new Promise((resolve) => {
+        game.db.run(
+          "UPDATE cup_matches SET home_et_score = ?, away_et_score = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
+          [etHome, etAway, season, round, fixture.homeTeamId, fixture.awayTeamId],
+          resolve,
+        );
+      });
+    }
+
+    if (!winnerId) {
+      // Shouldn't happen, but fallback
+      winnerId = fixture.homeTeamId;
+    }
+
+    // Persist result
+    await new Promise((resolve) => {
+      game.db.run(
+        "UPDATE cup_matches SET home_score = ?, away_score = ?, played = 1, winner_team_id = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
+        [fixture.finalHomeGoals, fixture.finalAwayGoals, winnerId, season, round, fixture.homeTeamId, fixture.awayTeamId],
+        resolve,
+      );
+    });
+
+    results.push({
+      homeTeamId: fixture.homeTeamId,
+      awayTeamId: fixture.awayTeamId,
+      homeGoals: fixture.finalHomeGoals,
+      awayGoals: fixture.finalAwayGoals,
+      winnerId,
+      events: fixture.events,
+    });
+
+    // If this is the Final (round 5), award palmares
+    if (round === 5) {
+      const winnerTeam = await runGet(game.db, "SELECT name FROM teams WHERE id = ?", [winnerId]);
+      await new Promise((resolve) => {
+        game.db.run(
+          "INSERT INTO palmares (team_id, season, achievement) VALUES (?, ?, ?)",
+          [winnerId, season, "Vencedor da Taça de Portugal"],
+          resolve,
+        );
+      });
+      if (winnerTeam) {
+        io.to(game.roomCode).emit("systemMessage",
+          `🏆 ${winnerTeam.name} venceu a Taça de Portugal da temporada ${season}!`);
+      }
+    }
+  }
+
+  game.cupState = round === 5 ? "done_cup" : "done_round";
+  saveGameState(game);
+
+  io.to(game.roomCode).emit("cupRoundResults", {
+    round,
+    roundName: CUP_ROUND_NAMES[round] || `Ronda ${round}`,
+    results,
+    season,
+    isFinal: round === 5,
   });
 }
 
@@ -751,6 +1132,49 @@ io.on("connection", (socket) => {
     } catch (error) {
       console.error(`[${game.roomCode}] nextMatchSummary error:`, error);
       socket.emit("nextMatchSummary", null);
+    }
+  });
+
+  // ── CUP DRAW ACKNOWLEDGED ─────────────────────────────────────────────────
+  socket.on("cupDrawAcknowledged", () => {
+    const game = getGameBySocket(socket.id);
+    if (!game || game.cupState !== "draw") return;
+
+    game.cupDrawAcks.add(socket.id);
+
+    // Check if all connected humans have acknowledged
+    const connectedPlayers = getPlayerList(game);
+    const allAcked = connectedPlayers.every((p) => !p.socketId || game.cupDrawAcks.has(p.socketId));
+    if (allAcked) {
+      simulateCupRound(game, game.cupRound);
+    }
+  });
+
+  // ── REQUEST PALMARES ──────────────────────────────────────────────────────
+  socket.on("requestPalmares", async ({ teamId } = {}) => {
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    try {
+      const rows = await runAll(
+        game.db,
+        `SELECT pa.season, pa.achievement, t.name as team_name
+         FROM palmares pa
+         JOIN teams t ON t.id = pa.team_id
+         WHERE pa.team_id = ?
+         ORDER BY pa.season DESC, pa.id DESC`,
+        [teamId],
+      );
+      const allChampions = await runAll(
+        game.db,
+        `SELECT pa.season, pa.achievement, t.id as team_id, t.name as team_name, t.color_primary, t.color_secondary
+         FROM palmares pa
+         JOIN teams t ON t.id = pa.team_id
+         ORDER BY pa.season DESC, pa.id DESC`,
+      );
+      socket.emit("palmaresData", { teamId, trophies: rows, allChampions });
+    } catch (err) {
+      console.error(`[${game.roomCode}] requestPalmares error:`, err);
+      socket.emit("palmaresData", { teamId, trophies: [], allChampions: [] });
     }
   });
 
@@ -1346,7 +1770,28 @@ async function processSegment(game, startMin, endMin, nextState) {
 
         persistMatchResults(game, game.fixtures, completedMatchweek, () => {
           applyPostMatchQualityEvolution(game.db, game.fixtures, game.matchweek)
-            .then(() => {
+            .then(async () => {
+              // ── CUP ROUND TRIGGER ───────────────────────────────────────
+              // Normalise matchweek within the current season (1-14)
+              const normMw = ((completedMatchweek - 1) % 14) + 1;
+              const cupRound = CUP_ROUND_AFTER_MATCHWEEK[normMw];
+              if (cupRound) {
+                try {
+                  await startCupRound(game, cupRound);
+                } catch (cupErr) {
+                  console.error(`[${game.roomCode}] Cup round error:`, cupErr);
+                }
+              }
+
+              // ── SEASON END ──────────────────────────────────────────────
+              if (normMw === 14) {
+                try {
+                  await applySeasonEnd(game);
+                } catch (seErr) {
+                  console.error(`[${game.roomCode}] Season end error:`, seErr);
+                }
+              }
+
               game.db.all("SELECT * FROM teams", (err2, teams) => {
                 if (!err2) io.to(game.roomCode).emit("teamsData", teams);
 

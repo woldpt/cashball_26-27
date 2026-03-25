@@ -84,6 +84,11 @@ function getGame(roomCode, onReady) {
     socketToName: {}, // socketId -> name
     matchweek: 1,
     matchState: "idle",
+    season: 1,
+    cupRound: 0, // 0 = no cup in progress; 1-5 = current round
+    cupState: "idle", // idle | draw | playing | done_round | done_cup
+    cupTeamIds: [], // team IDs still alive in the cup this season
+    cupDrawAcks: new Set(), // socket IDs that acknowledged the current draw
     globalMarket: [],
     fixtures: [],
     auctions: {},
@@ -97,6 +102,28 @@ function getGame(roomCode, onReady) {
     "CREATE TABLE IF NOT EXISTS game_state (key TEXT PRIMARY KEY, value TEXT)",
     () => {
       ensurePlayerSchema(db, () => {
+        // Ensure cup/palmares tables added after initial schema
+        db.run(`CREATE TABLE IF NOT EXISTS cup_matches (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          season INTEGER NOT NULL,
+          round INTEGER NOT NULL,
+          home_team_id INTEGER,
+          away_team_id INTEGER,
+          home_score INTEGER DEFAULT 0,
+          away_score INTEGER DEFAULT 0,
+          home_et_score INTEGER DEFAULT 0,
+          away_et_score INTEGER DEFAULT 0,
+          home_penalties INTEGER DEFAULT 0,
+          away_penalties INTEGER DEFAULT 0,
+          winner_team_id INTEGER,
+          played BOOLEAN DEFAULT 0
+        )`);
+        db.run(`CREATE TABLE IF NOT EXISTS palmares (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          team_id INTEGER NOT NULL,
+          season INTEGER NOT NULL,
+          achievement TEXT NOT NULL
+        )`);
         db.get(
           "SELECT value FROM game_state WHERE key = 'matchweek'",
           (err, row) => {
@@ -107,13 +134,34 @@ function getGame(roomCode, onReady) {
               (err2, row2) => {
                 if (row2) game.matchState = row2.value || "idle";
 
-                // Load free agents and transfer-listed players for market
-                db.all(
-                  "SELECT * FROM players WHERE team_id IS NULL OR transfer_status != 'none' ORDER BY RANDOM() LIMIT 40",
-                  (err3, rows) => {
-                    if (!err3 && rows) game.globalMarket = rows;
-                    game.initialized = true;
-                    if (onReady) onReady(game);
+                db.get(
+                  "SELECT value FROM game_state WHERE key = 'season'",
+                  (err3, row3) => {
+                    if (row3) game.season = parseInt(row3.value) || 1;
+
+                    db.get(
+                      "SELECT value FROM game_state WHERE key = 'cupRound'",
+                      (err4, row4) => {
+                        if (row4) game.cupRound = parseInt(row4.value) || 0;
+
+                        db.get(
+                          "SELECT value FROM game_state WHERE key = 'cupState'",
+                          (err5, row5) => {
+                            if (row5) game.cupState = row5.value || "idle";
+
+                            // Load free agents and transfer-listed players for market
+                            db.all(
+                              "SELECT * FROM players WHERE team_id IS NULL OR transfer_status != 'none' ORDER BY RANDOM() LIMIT 40",
+                              (err6, rows) => {
+                                if (!err6 && rows) game.globalMarket = rows;
+                                game.initialized = true;
+                                if (onReady) onReady(game);
+                              },
+                            );
+                          },
+                        );
+                      },
+                    );
                   },
                 );
               },
@@ -141,6 +189,18 @@ function saveGameState(game) {
     (err) => {
       if (err) console.error("Error saving matchState:", err);
     },
+  );
+  game.db.run(
+    "INSERT OR REPLACE INTO game_state (key, value) VALUES ('season', ?)",
+    [String(game.season || 1)],
+  );
+  game.db.run(
+    "INSERT OR REPLACE INTO game_state (key, value) VALUES ('cupRound', ?)",
+    [String(game.cupRound || 0)],
+  );
+  game.db.run(
+    "INSERT OR REPLACE INTO game_state (key, value) VALUES ('cupState', ?)",
+    [game.cupState || "idle"],
   );
 }
 

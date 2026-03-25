@@ -709,4 +709,149 @@ module.exports = {
   generateFixturesForDivision,
   isPlayerAvailable,
   applyPostMatchQualityEvolution,
+  simulateExtraTime,
+  simulatePenaltyShootout,
 };
+
+// ─── EXTRA TIME ──────────────────────────────────────────────────────────────
+// Simulates two 15-minute extra-time periods (91-105 and 106-120).
+// Returns { firstHalfEvents, secondHalfEvents } after updating fixture goals.
+async function simulateExtraTime(db, fixture, homeTactic, awayTactic, context) {
+  await simulateMatchSegment(
+    db,
+    fixture,
+    homeTactic,
+    awayTactic,
+    91,
+    105,
+    context,
+  );
+  const et1Events = fixture.events.filter(
+    (e) => e.minute >= 91 && e.minute <= 105,
+  );
+
+  if (context.io && context.game) {
+    context.io.to(context.game.roomCode).emit("extraTimeHalfTime", {
+      fixture: {
+        homeTeamId: fixture.homeTeamId,
+        awayTeamId: fixture.awayTeamId,
+        homeGoals: fixture.finalHomeGoals,
+        awayGoals: fixture.finalAwayGoals,
+      },
+      events: et1Events,
+    });
+  }
+
+  await simulateMatchSegment(
+    db,
+    fixture,
+    homeTactic,
+    awayTactic,
+    106,
+    120,
+    context,
+  );
+  const et2Events = fixture.events.filter((e) => e.minute >= 106);
+
+  return { et1Events, et2Events };
+}
+
+// ─── PENALTY SHOOTOUT ─────────────────────────────────────────────────────────
+// Simulates a penalty shootout between two squads.
+// Returns { homeGoals, awayGoals, kicks: [{team, playerName, scored}] }
+function simulatePenaltyShootout(homeSquad, awaySquad) {
+  const kicks = [];
+  let homeGoals = 0;
+  let awayGoals = 0;
+
+  const pickShooter = (squad, usedIds) => {
+    const available = squad.filter((p) => !usedIds.has(p.id));
+    if (available.length === 0) {
+      // Cycle through again if all have taken a penalty
+      usedIds.clear();
+      return squad[0] || null;
+    }
+    // Pick by skill, mixed with some randomness
+    available.sort(
+      (a, b) => b.skill * (b.form / 100) - a.skill * (a.form / 100),
+    );
+    return available[0];
+  };
+
+  const homeUsed = new Set();
+  const awayUsed = new Set();
+  const homeGK = homeSquad.find((p) => p.position === "GK") || homeSquad[0];
+  const awayGK = awaySquad.find((p) => p.position === "GK") || awaySquad[0];
+
+  const calcScoredChance = (taker, gk) => {
+    const takerSkill = taker ? taker.skill || 10 : 10;
+    const gkSkill = gk ? gk.skill || 10 : 10;
+    return Math.max(0.3, Math.min(0.85, 0.6 + (takerSkill - gkSkill) / 120));
+  };
+
+  // 5 regulation rounds
+  for (let round = 0; round < 5; round++) {
+    const homeTaker = pickShooter(homeSquad, homeUsed);
+    const awayTaker = pickShooter(awaySquad, awayUsed);
+    if (homeTaker) homeUsed.add(homeTaker.id);
+    if (awayTaker) awayUsed.add(awayTaker.id);
+
+    const homeScored = Math.random() < calcScoredChance(homeTaker, awayGK);
+    const awayScored = Math.random() < calcScoredChance(awayTaker, homeGK);
+
+    if (homeScored) homeGoals++;
+    if (awayScored) awayGoals++;
+
+    kicks.push({
+      team: "home",
+      playerName: homeTaker ? homeTaker.name : "?",
+      scored: homeScored,
+    });
+    kicks.push({
+      team: "away",
+      playerName: awayTaker ? awayTaker.name : "?",
+      scored: awayScored,
+    });
+
+    // Early finish: if one side can't catch up after n rounds
+    const remaining = 4 - round;
+    if (homeGoals > awayGoals + remaining || awayGoals > homeGoals + remaining)
+      break;
+  }
+
+  // Sudden death if still tied
+  let sdRound = 0;
+  while (homeGoals === awayGoals && sdRound < 20) {
+    sdRound++;
+    const homeTaker = pickShooter(homeSquad, homeUsed);
+    const awayTaker = pickShooter(awaySquad, awayUsed);
+    if (homeTaker) homeUsed.add(homeTaker.id);
+    if (awayTaker) awayUsed.add(awayTaker.id);
+
+    const homeScored = Math.random() < calcScoredChance(homeTaker, awayGK);
+    const awayScored = Math.random() < calcScoredChance(awayTaker, homeGK);
+
+    if (homeScored) homeGoals++;
+    if (awayScored) awayGoals++;
+
+    kicks.push({
+      team: "home",
+      playerName: homeTaker ? homeTaker.name : "?",
+      scored: homeScored,
+      suddenDeath: true,
+    });
+    kicks.push({
+      team: "away",
+      playerName: awayTaker ? awayTaker.name : "?",
+      scored: awayScored,
+      suddenDeath: true,
+    });
+
+    if (homeScored !== awayScored) break; // One scored, other didn't → winner decided
+  }
+
+  // Tiebreak failsafe
+  if (homeGoals === awayGoals) homeGoals++;
+
+  return { homeGoals, awayGoals, kicks };
+}
