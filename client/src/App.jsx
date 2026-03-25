@@ -156,15 +156,14 @@ function App() {
 
   useEffect(() => {
     if (isPlayingMatch) {
-      const matchEvents = matchResults?.results?.[0]?.events || [];
-      const hasSecondHalf = matchEvents.some(e => e.minute > 45);
+      const isSecondHalfReplay = !showHalftimePanel;
 
-      if (liveMinute < 45 || (liveMinute >= 45 && liveMinute < 90 && hasSecondHalf)) {
+      if (liveMinute < 45 || (liveMinute >= 45 && liveMinute < 90 && isSecondHalfReplay)) {
         const timer = setTimeout(() => {
           setLiveMinute(m => m + 1);
         }, 1000);
         return () => clearTimeout(timer);
-      } else if (liveMinute === 45 && !hasSecondHalf) {
+      } else if (liveMinute === 45 && !isSecondHalfReplay) {
         setIsPlayingMatch(false);
       } else if (liveMinute >= 90) {
         const timer = setTimeout(() => {
