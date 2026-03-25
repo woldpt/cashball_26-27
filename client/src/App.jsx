@@ -712,13 +712,21 @@ function App() {
   const handleSetPlayerStatus = useCallback(
     (playerId, status) => {
       setTactic((prev) => {
-        // If setting this player as Titular, check if they are a GK and another GK
-        // is already Titular — if so, demote the existing GK Titular to Suplente first.
         const newPositions = { ...prev.positions };
+
+        // Block: no more than 5 suplentes
+        if (status === "Suplente") {
+          const currentSubs = Object.entries(newPositions).filter(
+            ([id, s]) => s === "Suplente" && Number(id) !== playerId,
+          ).length;
+          if (currentSubs >= 5) return prev; // silently ignore
+        }
+
+        // If setting this player as Titular and they are a GK, demote any other
+        // GK who is already Titular to Suplente (only 1 GK Titular allowed).
         if (status === "Titular") {
           const player = mySquad.find((p) => p.id === playerId);
           if (player?.position === "GK") {
-            // Find any other GK currently set as Titular and demote them
             mySquad.forEach((p) => {
               if (
                 p.id !== playerId &&
@@ -730,6 +738,7 @@ function App() {
             });
           }
         }
+
         newPositions[playerId] = status;
         const next = { ...prev, positions: newPositions };
         socket.emit("setTactic", next);
@@ -1686,7 +1695,7 @@ function App() {
 
             {activeTab === "squad" && (
               <div className="space-y-6">
-                <div className="bg-zinc-900 rounded-3xl border border-zinc-800 shadow-sm overflow-hidden">
+                <div className="bg-zinc-900 rounded-3xl border border-zinc-800 shadow-sm overflow-visible">
                   <table className="w-full text-left text-sm font-normal">
                     <thead>
                       <tr className="bg-zinc-950/50 text-zinc-400 uppercase text-[11px] tracking-widest border-b border-zinc-800 font-normal">
@@ -1747,32 +1756,60 @@ function App() {
                                   ? "🟡"
                                   : "❌"}
                             </span>
-                            {openStatusPickerId === player.id && (
-                              <div
-                                className="absolute left-0 top-full z-30 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl p-1 flex flex-col gap-0.5 min-w-32"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {[
-                                  ["Titular", "✅"],
-                                  ["Suplente", "🟡"],
-                                  ["Exclu\u00eddo", "❌"],
-                                ].map(([status, emoji]) => (
-                                  <button
-                                    key={status}
-                                    onClick={() =>
-                                      handleSetPlayerStatus(player.id, status)
-                                    }
-                                    className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 text-left ${
-                                      player.status === status
-                                        ? "bg-zinc-700 text-white"
-                                        : "hover:bg-zinc-700 text-zinc-300"
-                                    }`}
+                            {openStatusPickerId === player.id &&
+                              (() => {
+                                const subCount = Object.entries(
+                                  tactic.positions,
+                                ).filter(
+                                  ([id, s]) =>
+                                    s === "Suplente" &&
+                                    Number(id) !== player.id,
+                                ).length;
+                                const subsFull = subCount >= 5;
+                                return (
+                                  <div
+                                    className="absolute left-0 top-full z-30 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl p-1 flex flex-col gap-0.5 min-w-32"
+                                    onClick={(e) => e.stopPropagation()}
                                   >
-                                    {emoji} {status}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
+                                    {[
+                                      ["Titular", "✅"],
+                                      ["Suplente", "🟡"],
+                                      ["Excluído", "❌"],
+                                    ].map(([status, emoji]) => {
+                                      const disabled =
+                                        status === "Suplente" &&
+                                        subsFull &&
+                                        player.status !== "Suplente";
+                                      return (
+                                        <button
+                                          key={status}
+                                          onClick={() =>
+                                            !disabled &&
+                                            handleSetPlayerStatus(
+                                              player.id,
+                                              status,
+                                            )
+                                          }
+                                          title={
+                                            disabled
+                                              ? "Máximo de 5 suplentes atingido"
+                                              : undefined
+                                          }
+                                          className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 text-left ${
+                                            disabled
+                                              ? "opacity-40 cursor-not-allowed text-zinc-500"
+                                              : player.status === status
+                                                ? "bg-zinc-700 text-white"
+                                                : "hover:bg-zinc-700 text-zinc-300"
+                                          }`}
+                                        >
+                                          {emoji} {status}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })()}
                           </td>
                           <td
                             className={`px-3 py-2.5 text-center text-sm tracking-wider ${player.position === "GK" ? "text-yellow-500" : player.position === "DEF" ? "text-blue-500" : "text-green-500"}`}

@@ -125,7 +125,7 @@ function waitForMatchAction({
 }) {
   const humanCoach = getCurrentPlayerState(game, teamId);
   if (!humanCoach) {
-    return Promise.resolve(fallback());
+    return Promise.resolve({ choice: fallback(), source: "auto" });
   }
 
   return new Promise((resolve) => {
