@@ -296,16 +296,6 @@ function persistMatchResults(game, fixtures, matchweek, onDone) {
   });
 }
 
-              remaining -= 1;
-              if (remaining === 0 && onDone) onDone();
-            },
-          );
-        },
-      );
-    });
-  });
-}
-
 // ─── DIVISION NAMES ────────────────────────────────────────────────────────────
 const DIVISION_NAMES = {
   1: "I Liga",
@@ -331,7 +321,10 @@ const CUP_ROUND_NAMES = [
 // Called after matchweek 14 completes. Awards palmares, applies promo/relegation.
 async function applySeasonEnd(game) {
   const season = game.season;
-  const allTeams = await runAll(game.db, "SELECT * FROM teams ORDER BY division, id");
+  const allTeams = await runAll(
+    game.db,
+    "SELECT * FROM teams ORDER BY division, id",
+  );
 
   // Group by division
   const byDiv = {};
@@ -355,8 +348,10 @@ async function applySeasonEnd(game) {
         resolve,
       );
     });
-    io.to(game.roomCode).emit("systemMessage",
-      `🏆 ${iLigaWinner.name} é o Campeão Nacional da temporada ${season}!`);
+    io.to(game.roomCode).emit(
+      "systemMessage",
+      `🏆 ${iLigaWinner.name} é o Campeão Nacional da temporada ${season}!`,
+    );
   }
 
   // Award division champions (II Liga, Liga 3, Campeonato de Portugal)
@@ -377,7 +372,12 @@ async function applySeasonEnd(game) {
   // Each boundary: bottom 2 of higher div drop, top 2 of lower div rise
   const promotions = []; // { teamId, fromDiv, toDiv }
 
-  for (const [upperDiv, lowerDiv] of [[1, 2], [2, 3], [3, 4], [4, 5]]) {
+  for (const [upperDiv, lowerDiv] of [
+    [1, 2],
+    [2, 3],
+    [3, 4],
+    [4, 5],
+  ]) {
     const upper = byDiv[upperDiv] || [];
     const lower = byDiv[lowerDiv] || [];
     if (!upper.length || !lower.length) continue;
@@ -388,7 +388,11 @@ async function applySeasonEnd(game) {
     if (lowerDiv === 5) {
       const teamsWithSkill = await Promise.all(
         lower.map(async (t) => {
-          const players = await runAll(game.db, "SELECT skill FROM players WHERE team_id = ?", [t.id]);
+          const players = await runAll(
+            game.db,
+            "SELECT skill FROM players WHERE team_id = ?",
+            [t.id],
+          );
           const avgSkill = players.length
             ? players.reduce((s, p) => s + p.skill, 0) / players.length
             : 0;
@@ -408,7 +412,11 @@ async function applySeasonEnd(game) {
   // Apply division changes
   for (const p of promotions) {
     await new Promise((resolve) => {
-      game.db.run("UPDATE teams SET division = ? WHERE id = ?", [p.toDiv, p.teamId], resolve);
+      game.db.run(
+        "UPDATE teams SET division = ? WHERE id = ?",
+        [p.toDiv, p.teamId],
+        resolve,
+      );
     });
   }
 
@@ -432,7 +440,9 @@ async function applySeasonEnd(game) {
   io.to(game.roomCode).emit("teamsData", updatedTeams);
   io.to(game.roomCode).emit("seasonEnd", {
     season,
-    champion: iLigaWinner ? { id: iLigaWinner.id, name: iLigaWinner.name } : null,
+    champion: iLigaWinner
+      ? { id: iLigaWinner.id, name: iLigaWinner.name }
+      : null,
     promotions,
   });
 }
@@ -445,7 +455,10 @@ async function generateCupDraw(game, round) {
 
   if (round === 1) {
     // All teams from divisions 1-4
-    const teams = await runAll(game.db, "SELECT id FROM teams WHERE division BETWEEN 1 AND 4 ORDER BY id");
+    const teams = await runAll(
+      game.db,
+      "SELECT id FROM teams WHERE division BETWEEN 1 AND 4 ORDER BY id",
+    );
     teamIds = teams.map((t) => t.id);
   } else {
     // Winners of previous round
@@ -496,8 +509,16 @@ async function startCupRound(game, round) {
   // Enrich with team names for the UI
   const enriched = await Promise.all(
     drawFixtures.map(async (f) => {
-      const home = await runGet(game.db, "SELECT id, name, color_primary, color_secondary FROM teams WHERE id = ?", [f.homeTeamId]);
-      const away = await runGet(game.db, "SELECT id, name, color_primary, color_secondary FROM teams WHERE id = ?", [f.awayTeamId]);
+      const home = await runGet(
+        game.db,
+        "SELECT id, name, color_primary, color_secondary FROM teams WHERE id = ?",
+        [f.homeTeamId],
+      );
+      const away = await runGet(
+        game.db,
+        "SELECT id, name, color_primary, color_secondary FROM teams WHERE id = ?",
+        [f.awayTeamId],
+      );
       return { homeTeam: home, awayTeam: away };
     }),
   );
@@ -548,8 +569,12 @@ async function simulateCupRound(game, round) {
       events: [],
     };
 
-    const p1 = Object.values(game.playersByName).find((p) => p.teamId === row.home_team_id);
-    const p2 = Object.values(game.playersByName).find((p) => p.teamId === row.away_team_id);
+    const p1 = Object.values(game.playersByName).find(
+      (p) => p.teamId === row.home_team_id,
+    );
+    const p2 = Object.values(game.playersByName).find(
+      (p) => p.teamId === row.away_team_id,
+    );
     const t1 = p1 ? p1.tactic : { formation: "4-4-2", style: "Balanced" };
     const t2 = p2 ? p2.tactic : { formation: "4-4-2", style: "Balanced" };
 
@@ -572,20 +597,34 @@ async function simulateCupRound(game, round) {
     // Cup: no draws allowed — extra time if level
     let winnerId;
     if (fixture.finalHomeGoals !== fixture.finalAwayGoals) {
-      winnerId = fixture.finalHomeGoals > fixture.finalAwayGoals
-        ? fixture.homeTeamId : fixture.awayTeamId;
+      winnerId =
+        fixture.finalHomeGoals > fixture.finalAwayGoals
+          ? fixture.homeTeamId
+          : fixture.awayTeamId;
     } else {
       // Extra time
       await simulateExtraTime(game.db, fixture, t1, t2, ctx);
 
       if (fixture.finalHomeGoals !== fixture.finalAwayGoals) {
-        winnerId = fixture.finalHomeGoals > fixture.finalAwayGoals
-          ? fixture.homeTeamId : fixture.awayTeamId;
+        winnerId =
+          fixture.finalHomeGoals > fixture.finalAwayGoals
+            ? fixture.homeTeamId
+            : fixture.awayTeamId;
       } else {
         // Penalty shootout
         const { getTeamSquad } = require("./game/engine");
-        const homeSquad = await getTeamSquad(game.db, fixture.homeTeamId, t1, game.matchweek);
-        const awaySquad = await getTeamSquad(game.db, fixture.awayTeamId, t2, game.matchweek);
+        const homeSquad = await getTeamSquad(
+          game.db,
+          fixture.homeTeamId,
+          t1,
+          game.matchweek,
+        );
+        const awaySquad = await getTeamSquad(
+          game.db,
+          fixture.awayTeamId,
+          t2,
+          game.matchweek,
+        );
         const shootout = simulatePenaltyShootout(homeSquad, awaySquad);
 
         io.to(game.roomCode).emit("cupPenaltyShootout", {
@@ -598,14 +637,24 @@ async function simulateCupRound(game, round) {
         // Small delay for UI to show shootout
         await new Promise((r) => setTimeout(r, 500));
 
-        winnerId = shootout.homeGoals > shootout.awayGoals
-          ? fixture.homeTeamId : fixture.awayTeamId;
+        winnerId =
+          shootout.homeGoals > shootout.awayGoals
+            ? fixture.homeTeamId
+            : fixture.awayTeamId;
 
         // Update DB with penalty scores
         await new Promise((resolve) => {
           game.db.run(
             "UPDATE cup_matches SET home_penalties = ?, away_penalties = ?, played = 1, winner_team_id = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
-            [shootout.homeGoals, shootout.awayGoals, winnerId, season, round, fixture.homeTeamId, fixture.awayTeamId],
+            [
+              shootout.homeGoals,
+              shootout.awayGoals,
+              winnerId,
+              season,
+              round,
+              fixture.homeTeamId,
+              fixture.awayTeamId,
+            ],
             resolve,
           );
         });
@@ -617,7 +666,14 @@ async function simulateCupRound(game, round) {
       await new Promise((resolve) => {
         game.db.run(
           "UPDATE cup_matches SET home_et_score = ?, away_et_score = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
-          [etHome, etAway, season, round, fixture.homeTeamId, fixture.awayTeamId],
+          [
+            etHome,
+            etAway,
+            season,
+            round,
+            fixture.homeTeamId,
+            fixture.awayTeamId,
+          ],
           resolve,
         );
       });
@@ -632,7 +688,15 @@ async function simulateCupRound(game, round) {
     await new Promise((resolve) => {
       game.db.run(
         "UPDATE cup_matches SET home_score = ?, away_score = ?, played = 1, winner_team_id = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
-        [fixture.finalHomeGoals, fixture.finalAwayGoals, winnerId, season, round, fixture.homeTeamId, fixture.awayTeamId],
+        [
+          fixture.finalHomeGoals,
+          fixture.finalAwayGoals,
+          winnerId,
+          season,
+          round,
+          fixture.homeTeamId,
+          fixture.awayTeamId,
+        ],
         resolve,
       );
     });
@@ -648,7 +712,11 @@ async function simulateCupRound(game, round) {
 
     // If this is the Final (round 5), award palmares
     if (round === 5) {
-      const winnerTeam = await runGet(game.db, "SELECT name FROM teams WHERE id = ?", [winnerId]);
+      const winnerTeam = await runGet(
+        game.db,
+        "SELECT name FROM teams WHERE id = ?",
+        [winnerId],
+      );
       await new Promise((resolve) => {
         game.db.run(
           "INSERT INTO palmares (team_id, season, achievement) VALUES (?, ?, ?)",
@@ -657,8 +725,10 @@ async function simulateCupRound(game, round) {
         );
       });
       if (winnerTeam) {
-        io.to(game.roomCode).emit("systemMessage",
-          `🏆 ${winnerTeam.name} venceu a Taça de Portugal da temporada ${season}!`);
+        io.to(game.roomCode).emit(
+          "systemMessage",
+          `🏆 ${winnerTeam.name} venceu a Taça de Portugal da temporada ${season}!`,
+        );
       }
     }
   }
@@ -1144,7 +1214,9 @@ io.on("connection", (socket) => {
 
     // Check if all connected humans have acknowledged
     const connectedPlayers = getPlayerList(game);
-    const allAcked = connectedPlayers.every((p) => !p.socketId || game.cupDrawAcks.has(p.socketId));
+    const allAcked = connectedPlayers.every(
+      (p) => !p.socketId || game.cupDrawAcks.has(p.socketId),
+    );
     if (allAcked) {
       simulateCupRound(game, game.cupRound);
     }
