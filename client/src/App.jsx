@@ -709,16 +709,36 @@ function App() {
   );
 
   // ── SQUAD STATUS PICKER ───────────────────────────────────────────────────
-  const handleSetPlayerStatus = useCallback((playerId, status) => {
-    setTactic((prev) => {
-      const newPositions = { ...prev.positions };
-      newPositions[playerId] = status;
-      const next = { ...prev, positions: newPositions };
-      socket.emit("setTactic", next);
-      return next;
-    });
-    setOpenStatusPickerId(null);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleSetPlayerStatus = useCallback(
+    (playerId, status) => {
+      setTactic((prev) => {
+        // If setting this player as Titular, check if they are a GK and another GK
+        // is already Titular — if so, demote the existing GK Titular to Suplente first.
+        const newPositions = { ...prev.positions };
+        if (status === "Titular") {
+          const player = mySquad.find((p) => p.id === playerId);
+          if (player?.position === "GK") {
+            // Find any other GK currently set as Titular and demote them
+            mySquad.forEach((p) => {
+              if (
+                p.id !== playerId &&
+                p.position === "GK" &&
+                newPositions[p.id] === "Titular"
+              ) {
+                newPositions[p.id] = "Suplente";
+              }
+            });
+          }
+        }
+        newPositions[playerId] = status;
+        const next = { ...prev, positions: newPositions };
+        socket.emit("setTactic", next);
+        return next;
+      });
+      setOpenStatusPickerId(null);
+    },
+    [mySquad],
+  ); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── MARKET ACTIONS ────────────────────────────────────────────────────────
   const buyPlayer = useCallback((playerId) => {
