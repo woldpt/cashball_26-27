@@ -46,8 +46,17 @@ function App() {
   const [roomCode, setRoomCode] = useState('');
   const [isNewRoom, setIsNewRoom] = useState(true);
   const [availableSaves, setAvailableSaves] = useState([]);
-  const [joining, setJoining] = useState(false);       // BUG-15: prevent double join
-  const [disconnected, setDisconnected] = useState(false); // BUG-15: connection error
+  const [joining, setJoining] = useState(false);
+  const [disconnected, setDisconnected] = useState(false);
+  const [joinError, setJoinError] = useState('');
+  const [toasts, setToasts] = useState([]);
+  const joinTimerRef = React.useRef(null);
+
+  const addToast = (msg) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, msg }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  };
   
   const [matchResults, setMatchResults] = useState(null);
   const [matchweekCount, setMatchweekCount] = useState(0);
@@ -56,8 +65,6 @@ function App() {
   const [tactic, setTactic] = useState({ formation: '4-4-2', style: 'Balanced' });
   const [liveMinute, setLiveMinute] = useState(90);
   const [isPlayingMatch, setIsPlayingMatch] = useState(false);
-  // BUG-11 FIX: Halftime overlay is driven by this flag, not liveMinute===45.
-  // Set only when halfTimeResults arrives; cleared when matchResults arrives.
   const [showHalftimePanel, setShowHalftimePanel] = useState(false);
   const [subsMade, setSubsMade] = useState(0);
   const [swapSource, setSwapSource] = useState(null);
@@ -86,7 +93,7 @@ function App() {
     });
     socket.on('mySquad', (data) => setMySquad(data));
     socket.on('marketUpdate', (data) => setMarketPairs(data));
-    socket.on('systemMessage', (msg) => alert(msg));
+    socket.on('systemMessage', (msg) => addToast(msg));
     
     socket.on('gameState', (data) => {
       if (data.matchweek) setMatchweekCount(data.matchweek - 1);
@@ -148,8 +155,11 @@ function App() {
     if (me && !me.teamId && players.length > 0) {
       const p = players.find(x => x.name === me.name);
       if (p && p.teamId) {
+        // Clear timeout — join succeeded
+        if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
         setMe(prev => ({ ...prev, teamId: p.teamId }));
         setJoining(false);
+        setJoinError('');
       }
     }
   }, [players, me]);
@@ -177,9 +187,16 @@ function App() {
 
   const handleJoin = () => {
     if (name && roomCode && !joining) {
-      setJoining(true); // BUG-15: prevent double-emit
+      setJoinError('');
+      setJoining(true);
       socket.emit('joinGame', { name, roomCode: roomCode.toUpperCase() });
       setMe({ name, roomCode: roomCode.toUpperCase() });
+      // Timeout: if no teamId received in 6s, reset and show error
+      joinTimerRef.current = setTimeout(() => {
+        setMe(prev => (prev && !prev.teamId ? null : prev));
+        setJoining(false);
+        setJoinError('Sem resposta do servidor. Certifica-te que o servidor está ligado.');
+      }, 6000);
     }
   };
 
@@ -325,7 +342,8 @@ function App() {
           <button onClick={handleJoin} disabled={!name || !roomCode || joining} className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 py-5 rounded-xl font-black text-xl transition-all active:scale-95 border-b-4 border-emerald-700 active:border-b-0">
             {joining ? 'A GERAR CONTRATO...' : 'ASSINAR CONTRATO'}
           </button>
-          {disconnected && <p className="text-red-400 text-sm text-center mt-3 font-bold">⚠️ Sem ligação ao servidor. Tenta novamente.</p>}
+          {joinError && <p className="text-red-400 text-sm text-center mt-3 font-bold">⚠️ {joinError}</p>}
+          {!joinError && disconnected && <p className="text-red-400 text-sm text-center mt-3 font-bold">⚠️ Sem ligação ao servidor. Tenta novamente.</p>}
         </div>
       </div>
     );
@@ -336,6 +354,14 @@ function App() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans pb-12 tracking-tight">
+      {/* Toast notifications */}
+      <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+        {toasts.map(t => (
+          <div key={t.id} className="bg-zinc-800 border border-zinc-700 text-white text-sm font-bold px-5 py-3 rounded-xl shadow-2xl animate-pulse">
+            {t.msg}
+          </div>
+        ))}
+      </div>
       <header className="bg-zinc-900 border-b border-zinc-800 p-4 md:px-8 flex items-center justify-between sticky top-0 shadow-sm z-20">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl md:text-4xl font-black text-amber-500 tracking-tighter">CashBall <span className="text-zinc-100">26/27</span></h1>
