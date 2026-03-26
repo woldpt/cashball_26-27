@@ -1488,13 +1488,7 @@ function App() {
 
       <div className="max-w-350 mx-auto p-4 md:p-8">
         <div className="flex gap-3 mb-5 border-b border-zinc-800 pb-px overflow-x-auto">
-          {[
-            "club",
-            "standings",
-            "market",
-            "live",
-            "squad",
-          ].map((tab) => (
+          {["club", "standings", "market", "live", "squad"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -1517,8 +1511,6 @@ function App() {
           className={`grid grid-cols-1 gap-6 ${activeTab === "squad" ? "xl:grid-cols-[minmax(0,3fr)_260px]" : ""}`}
         >
           <div>
-
-
             {activeTab === "live" && (matchResults || matchAction) && (
               <div className="bg-zinc-900 min-h-150 text-zinc-100 font-sans p-6 rounded-3xl border border-zinc-800 shadow-sm relative overflow-hidden">
                 {matchAction && (
@@ -1787,11 +1779,9 @@ function App() {
                                   </div>
                                 </div>
                                 {/* Line 2: last event */}
-                                {lastEventText ? (
-                                  <div className="px-2 py-0.5 text-zinc-400 truncate text-center border-t border-zinc-800/60">
-                                    {lastEventText}
-                                  </div>
-                                ) : null}
+                                <div className="px-2 py-0.5 text-zinc-400 truncate text-center border-t border-zinc-800/60 min-h-5">
+                                  {lastEventText}
+                                </div>
                               </div>
                             );
                           })}
@@ -2514,8 +2504,6 @@ function App() {
                 </table>
               </div>
             )}
-
-
           </div>
 
           {activeTab === "squad" && (
