@@ -1406,7 +1406,7 @@ function App() {
   const headerStyle =
     teamInfo?.color_primary || teamInfo?.color_secondary
       ? {
-          background: `linear-gradient(90deg, ${teamInfo?.color_primary || "#18181b"} 0%, ${teamInfo?.color_secondary || "#27272a"} 100%)`,
+          background: teamInfo?.color_primary || "#18181b",
         }
       : undefined;
 
@@ -1457,20 +1457,32 @@ function App() {
         <div className="relative overflow-hidden py-2 px-4 md:px-6 flex items-center justify-between">
           <div className="absolute inset-0 bg-zinc-950/28"></div>
           <div className="relative z-10 flex items-center gap-4">
-            <h1 className="text-xl md:text-3xl font-black text-white tracking-tighter">
-              CashBall <span className="text-zinc-100/90">26/27</span>
+            <h1
+              className="text-xl md:text-3xl font-black tracking-tighter"
+              style={{ color: teamInfo?.color_secondary || "#ffffff" }}
+            >
+              CashBall <span className="opacity-80">26/27</span>
             </h1>
-            <p className="text-sm md:text-base font-bold text-zinc-100/90 uppercase">
+            <p
+              className="text-sm md:text-base font-bold uppercase"
+              style={{ color: teamInfo?.color_secondary || "#ffffff" }}
+            >
               | SALA: {me.roomCode} | Jornada {matchweekCount + 1}
             </p>
           </div>
           <div className="relative z-10 flex items-center gap-4">
             {isDesktopLayout && (
               <div className="text-right">
-                <p className="font-bold text-sm md:text-base text-white">
+                <p
+                  className="font-bold text-sm md:text-base"
+                  style={{ color: teamInfo?.color_secondary || "#ffffff" }}
+                >
                   {me.name}
                 </p>
-                <p className="text-sm md:text-base text-zinc-100 font-black tracking-widest">
+                <p
+                  className="text-sm md:text-base font-black tracking-widest"
+                  style={{ color: teamInfo?.color_secondary || "#ffffff" }}
+                >
                   {teamInfo?.name}
                 </p>
               </div>
@@ -2707,24 +2719,37 @@ function App() {
             <div
               className="px-5 py-4 border-b border-zinc-800 flex items-start justify-between gap-4"
               style={{
-                background: `linear-gradient(90deg, ${selectedTeam.color_primary || "#18181b"} 0%, ${selectedTeam.color_secondary || "#27272a"} 100%)`,
+                background: selectedTeam.color_primary || "#18181b",
               }}
             >
               <div>
-                <p className="text-xs uppercase tracking-widest font-black text-white/80">
+                <p
+                  className="text-xs uppercase tracking-widest font-black"
+                  style={{ color: selectedTeam.color_secondary || "#ffffff" }}
+                >
                   Plantel
                 </p>
-                <h3 className="text-2xl md:text-3xl font-black text-white">
+                <h3
+                  className="text-2xl md:text-3xl font-black"
+                  style={{ color: selectedTeam.color_secondary || "#ffffff" }}
+                >
                   {selectedTeam.name}
                 </h3>
-                <p className="text-sm font-bold text-white/80">
+                <p
+                  className="text-sm font-bold"
+                  style={{ color: selectedTeam.color_secondary || "#ffffff" }}
+                >
                   {DIVISION_NAMES[selectedTeam.division] ||
                     `Divisão ${selectedTeam.division}`}
                 </p>
               </div>
               <button
                 onClick={handleCloseTeamSquad}
-                className="shrink-0 px-4 py-2 rounded-xl bg-zinc-950/40 text-white font-black uppercase text-sm border border-white/10 hover:bg-zinc-950/60"
+                className="shrink-0 px-4 py-2 rounded-xl bg-zinc-950/40 font-black uppercase text-sm border hover:bg-zinc-950/60"
+                style={{
+                  color: selectedTeam.color_secondary || "#ffffff",
+                  borderColor: selectedTeam.color_secondary || "#ffffff",
+                }}
               >
                 Fechar
               </button>
