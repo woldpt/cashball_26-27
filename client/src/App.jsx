@@ -209,7 +209,9 @@ function App() {
   const [name, setName] = useState(savedSession?.name || "");
   const [password, setPassword] = useState(savedSession?.password || "");
   const [roomCode, setRoomCode] = useState(savedSession?.roomCode || "");
-  const [isNewRoom, setIsNewRoom] = useState(savedSession?.isNewRoom ?? true);
+  const [authPhase, setAuthPhase] = useState("access");
+  const [joinMode, setJoinMode] = useState(null);
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [availableSaves, setAvailableSaves] = useState([]);
   const [joining, setJoining] = useState(Boolean(savedSession));
   const [disconnected, setDisconnected] = useState(false);
@@ -273,9 +275,9 @@ function App() {
     (typeof import.meta !== "undefined" && import.meta.env?.VITE_BACKEND_URL) ||
     "";
 
-  // Re-fetch this coach's saved rooms whenever the name changes while in "Carregar" mode.
+  // Re-fetch this coach's saved rooms whenever the name changes while in "saved-game" mode.
   useEffect(() => {
-    if (!isNewRoom && name) {
+    if (joinMode === "saved-game" && name) {
       const timeout = setTimeout(() => {
         fetch(`${backendUrl}/saves?name=${encodeURIComponent(name)}`)
           .then((r) => r.json())
@@ -286,7 +288,7 @@ function App() {
           .catch(() => {});
       }, 400);
       return () => clearTimeout(timeout);
-    } else if (!isNewRoom && !name) {
+    } else if (joinMode === "saved-game" && !name) {
       // No name entered yet — show all saves so the dropdown is populated
       fetch(`${backendUrl}/saves`)
         .then((r) => r.json())
@@ -296,7 +298,7 @@ function App() {
         })
         .catch(() => {});
     }
-  }, [name, isNewRoom]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [name, joinMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // BUG-07 FIX: All socket listeners in a single effect with [] dep so they're
   // registered exactly once and cleaned up correctly on unmount.
@@ -477,13 +479,12 @@ function App() {
           name: me.name,
           password: me.password,
           roomCode: me.roomCode,
-          isNewRoom,
         }),
       );
     } catch {
       // Ignore storage failures.
     }
-  }, [me, isNewRoom]);
+  }, [me]);
 
   useEffect(() => {
     if (!savedSession || me?.teamId) return;
@@ -593,6 +594,12 @@ function App() {
       return next;
     });
   }, [mySquad, tactic.formation, tactic.positions, matchweekCount]);
+
+  const selectJoinMode = (mode) => {
+    setJoinMode(mode);
+    setRoomCode("");
+    setAuthPhase(mode === "new-game" ? "register" : "login");
+  };
 
   const handleJoin = () => {
     if (name && password && roomCode && !joining) {
@@ -915,11 +922,11 @@ function App() {
   if (!me || !me.teamId) {
     if (joining && me) {
       return (
-        <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 flex flex-col items-center justify-center font-sans">
-          <h1 className="text-6xl font-black text-amber-500 mb-8 drop-shadow-xl tracking-tighter">
+        <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center p-6 font-sans">
+          <h1 className="text-5xl font-black text-amber-500 mb-6 drop-shadow-xl tracking-tighter">
             CashBall <span className="text-zinc-100">26/27</span>
           </h1>
-          <div className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md border border-zinc-800 relative overflow-hidden shadow-2xl text-center">
+          <div className="bg-zinc-900/95 p-8 rounded-4xl w-full max-w-md border border-zinc-800 relative overflow-hidden shadow-2xl text-center">
             <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600"></div>
             <p className="text-xs text-zinc-500 uppercase font-black tracking-widest mb-2">
               Sessão guardada
@@ -935,124 +942,298 @@ function App() {
       );
     }
 
+    const registerPasswordMismatch =
+      confirmPassword !== "" && password !== confirmPassword;
+
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 flex flex-col items-center justify-center font-sans">
-        <h1 className="text-6xl font-black text-amber-500 mb-8 drop-shadow-xl tracking-tighter">
-          CashBall <span className="text-zinc-100">26/27</span>
-        </h1>
-        <div className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md border border-zinc-800 relative overflow-hidden shadow-2xl">
-          <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600"></div>
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-6 font-sans relative overflow-hidden">
+        {/* Decorative background blobs */}
+        <div className="pointer-events-none fixed inset-0 z-0">
+          <div className="absolute top-[-10%] left-[-5%] w-[40vw] h-[40vw] rounded-full bg-amber-600/8 blur-[80px]"></div>
+          <div className="absolute bottom-[-10%] right-[-5%] w-[35vw] h-[35vw] rounded-full bg-zinc-700/20 blur-[80px]"></div>
+        </div>
 
-          <div className="flex gap-2 mb-6">
-            <button
-              onClick={() => setIsNewRoom(true)}
-              className={`flex-1 py-3 text-sm font-black uppercase rounded-xl transition-all ${isNewRoom ? "bg-amber-500 text-zinc-950" : "bg-zinc-800 text-zinc-400"}`}
-            >
-              Nova Sala
-            </button>
-            <button
-              onClick={() => setIsNewRoom(false)}
-              className={`flex-1 py-3 text-sm font-black uppercase rounded-xl transition-all ${!isNewRoom ? "bg-amber-500 text-zinc-950" : "bg-zinc-800 text-zinc-400"}`}
-            >
-              Carregar
-            </button>
-          </div>
+        <div className="relative z-10 w-full max-w-2xl">
+          <h1 className="text-5xl font-black text-amber-500 mb-6 drop-shadow-xl tracking-tighter text-center">
+            CashBall <span className="text-zinc-100">26/27</span>
+          </h1>
 
-          <div className="mb-5">
-            <label className="block text-[10px] text-base uppercase text-zinc-500 mb-2 font-bold">
-              O teu nome de Treinador
-            </label>
-            <input
-              type="text"
-              className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-zinc-700 focus:ring-2 focus:ring-amber-500"
-              value={name}
-              placeholder="Ex: Amorim"
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
+          <div className="bg-zinc-900/95 rounded-4xl border border-zinc-800 relative overflow-hidden shadow-2xl backdrop-blur-xl">
+            <div className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-amber-600 via-amber-400 to-amber-600"></div>
 
-          <div className="mb-5">
-            <label className="block text-[10px] text-base uppercase text-zinc-500 mb-2 font-bold">
-              Palavra-passe
-            </label>
-            <input
-              type="password"
-              className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-zinc-700 focus:ring-2 focus:ring-amber-500"
-              value={password}
-              placeholder="••••••••"
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleJoin();
-              }}
-            />
-            <p className="text-xs text-zinc-600 mt-1 font-bold">
-              Na primeira vez cria a tua conta. Depois usa sempre a mesma
-              palavra-passe.
-            </p>
-          </div>
-
-          {isNewRoom ? (
-            <div className="mb-8">
-              <label className="block text-[10px] text-base uppercase text-zinc-500 mb-2 font-bold">
-                Nome do Novo Jogo (SALA)
-              </label>
-              <input
-                type="text"
-                className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-zinc-700 focus:ring-2 focus:ring-amber-500 uppercase"
-                value={roomCode}
-                placeholder="INVERNO"
-                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-              />
-              <p className="text-sm font-bold text-amber-500 mt-3 text-center bg-amber-500/10 p-2 rounded-lg">
-                Ficarás com um clube mágico da 4ª Divisão!
-              </p>
-            </div>
-          ) : (
-            <div className="mb-8">
-              <label className="block text-[10px] text-base uppercase text-zinc-500 mb-2 font-bold">
-                As tuas Salas Gravadas
-              </label>
-              <select
-                className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none focus:ring-2 focus:ring-amber-500 uppercase"
-                value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value)}
-              >
-                <option value="" disabled>
-                  -- Seleciona um Save --
-                </option>
-                {availableSaves.map((save) => (
-                  <option key={save} value={save}>
-                    {save}
-                  </option>
-                ))}
-              </select>
-              {availableSaves.length === 0 && (
-                <p className="text-zinc-500 text-sm mt-2">
-                  {name
-                    ? "Nenhum save encontrado para este treinador."
-                    : "Insere o teu nome para ver os teus saves."}
+            {/* PHASE: access — choose join mode */}
+            {authPhase === "access" && (
+              <div className="p-8">
+                <p className="text-zinc-500 text-sm font-bold mb-6 text-center uppercase tracking-widest">
+                  Escolhe o teu destino
                 </p>
-              )}
-            </div>
-          )}
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <button
+                    onClick={() => selectJoinMode("new-game")}
+                    className={`rounded-3xl border p-5 text-left transition-all ${joinMode === "new-game" ? "border-amber-400 bg-amber-500/10 shadow-[0_0_0_1px_rgba(245,158,11,0.12)]" : "border-zinc-800 bg-zinc-950 hover:border-zinc-700"}`}
+                  >
+                    <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-300 text-xl">
+                      ✦
+                    </div>
+                    <p className="text-[10px] uppercase tracking-[0.35em] text-amber-300 font-black mb-1">
+                      Novo jogo
+                    </p>
+                    <p className="text-base font-black text-white">
+                      Criar Novo Jogo
+                    </p>
+                    <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
+                      Começa do zero e recebe uma nova sala.
+                    </p>
+                  </button>
 
-          <button
-            onClick={handleJoin}
-            disabled={!name || !password || !roomCode || joining}
-            className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 py-5 rounded-xl font-black text-xl transition-all active:scale-95 border-b-4 border-emerald-700 active:border-b-0"
-          >
-            {joining ? "A GERAR CONTRATO..." : "ASSINAR CONTRATO"}
-          </button>
-          {joinError && (
-            <p className="text-red-400 text-sm text-center mt-3 font-bold">
-              ⚠️ {joinError}
-            </p>
-          )}
-          {!joinError && disconnected && (
-            <p className="text-red-400 text-sm text-center mt-3 font-bold">
-              ⚠️ Sem ligação ao servidor. Tenta novamente.
-            </p>
-          )}
+                  <button
+                    onClick={() => selectJoinMode("saved-game")}
+                    className={`rounded-3xl border p-5 text-left transition-all ${joinMode === "saved-game" ? "border-cyan-400 bg-cyan-500/10 shadow-[0_0_0_1px_rgba(34,211,238,0.12)]" : "border-zinc-800 bg-zinc-950 hover:border-zinc-700"}`}
+                  >
+                    <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/15 text-cyan-300 text-xl">
+                      ⟲
+                    </div>
+                    <p className="text-[10px] uppercase tracking-[0.35em] text-cyan-300 font-black mb-1">
+                      Save
+                    </p>
+                    <p className="text-base font-black text-white">
+                      Continuar jogo gravado
+                    </p>
+                    <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
+                      Reabre uma época guardada.
+                    </p>
+                  </button>
+
+                  <button
+                    onClick={() => selectJoinMode("friend-room")}
+                    className={`rounded-3xl border p-5 text-left transition-all ${joinMode === "friend-room" ? "border-emerald-400 bg-emerald-500/10 shadow-[0_0_0_1px_rgba(16,185,129,0.12)]" : "border-zinc-800 bg-zinc-950 hover:border-zinc-700"}`}
+                  >
+                    <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300 text-xl">
+                      ↗
+                    </div>
+                    <p className="text-[10px] uppercase tracking-[0.35em] text-emerald-300 font-black mb-1">
+                      Amigo
+                    </p>
+                    <p className="text-base font-black text-white">
+                      Entrar em sala de um amigo
+                    </p>
+                    <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
+                      Junta-te a outra equipa com um código.
+                    </p>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* PHASE: register — new game */}
+            {authPhase === "register" && (
+              <div className="p-8 space-y-5">
+                <button
+                  onClick={() => {
+                    setAuthPhase("access");
+                    setRoomCode("");
+                  }}
+                  className="text-xs text-zinc-500 hover:text-zinc-300 font-black uppercase tracking-widest flex items-center gap-1"
+                >
+                  ← Voltar
+                </button>
+                <div>
+                  <label className="block text-[10px] uppercase text-zinc-500 mb-2 font-bold">
+                    O teu nome de Treinador
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-zinc-700 focus:ring-2 focus:ring-amber-500"
+                    value={name}
+                    placeholder="Ex: Amorim"
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase text-zinc-500 mb-2 font-bold">
+                    Palavra-passe
+                  </label>
+                  <input
+                    type="password"
+                    className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-zinc-700 focus:ring-2 focus:ring-amber-500"
+                    value={password}
+                    placeholder="••••••••"
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase text-zinc-500 mb-2 font-bold">
+                    Confirmar Palavra-passe
+                  </label>
+                  <input
+                    type="password"
+                    className={`w-full bg-zinc-950 border p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-zinc-700 focus:ring-2 ${registerPasswordMismatch ? "border-red-500 focus:ring-red-500" : "border-zinc-800 focus:ring-amber-500"}`}
+                    value={confirmPassword}
+                    placeholder="••••••••"
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                  {registerPasswordMismatch && (
+                    <p className="text-red-400 text-xs mt-1 font-bold">
+                      As palavras-passe não coincidem.
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase text-zinc-500 mb-2 font-bold">
+                    Nome do Novo Jogo (SALA)
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-zinc-700 focus:ring-2 focus:ring-amber-500 uppercase"
+                    value={roomCode}
+                    placeholder="INVERNO"
+                    onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleJoin();
+                    }}
+                  />
+                  <p className="text-sm font-bold text-amber-500 mt-3 text-center bg-amber-500/10 p-2 rounded-lg">
+                    Ficarás com um clube mágico da 4ª Divisão!
+                  </p>
+                </div>
+                <button
+                  onClick={handleJoin}
+                  disabled={
+                    !name ||
+                    !password ||
+                    !roomCode ||
+                    joining ||
+                    registerPasswordMismatch
+                  }
+                  className="w-full bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 py-5 rounded-xl font-black text-xl transition-all active:scale-95 border-b-4 border-amber-700 active:border-b-0"
+                >
+                  {joining ? "A GERAR CONTRATO..." : "CRIAR JOGO"}
+                </button>
+                {joinError && (
+                  <p className="text-red-400 text-sm text-center font-bold">
+                    ⚠️ {joinError}
+                  </p>
+                )}
+                {!joinError && disconnected && (
+                  <p className="text-red-400 text-sm text-center font-bold">
+                    ⚠️ Sem ligação ao servidor. Tenta novamente.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* PHASE: login — load save or join friend */}
+            {authPhase === "login" && (
+              <div className="p-8 space-y-5">
+                <button
+                  onClick={() => {
+                    setAuthPhase("access");
+                    setRoomCode("");
+                  }}
+                  className="text-xs text-zinc-500 hover:text-zinc-300 font-black uppercase tracking-widest flex items-center gap-1"
+                >
+                  ← Voltar
+                </button>
+                <div>
+                  <label className="block text-[10px] uppercase text-zinc-500 mb-2 font-bold">
+                    O teu nome de Treinador
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-zinc-700 focus:ring-2 focus:ring-amber-500"
+                    value={name}
+                    placeholder="Ex: Amorim"
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase text-zinc-500 mb-2 font-bold">
+                    Palavra-passe
+                  </label>
+                  <input
+                    type="password"
+                    className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-zinc-700 focus:ring-2 focus:ring-amber-500"
+                    value={password}
+                    placeholder="••••••••"
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleJoin();
+                    }}
+                  />
+                  <p className="text-xs text-zinc-600 mt-1 font-bold">
+                    Usa sempre a mesma palavra-passe da tua conta.
+                  </p>
+                </div>
+
+                {joinMode === "saved-game" && (
+                  <div>
+                    <label className="block text-[10px] uppercase text-zinc-500 mb-2 font-bold">
+                      As tuas Salas Gravadas
+                    </label>
+                    <select
+                      className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none focus:ring-2 focus:ring-cyan-500 uppercase"
+                      value={roomCode}
+                      onChange={(e) => setRoomCode(e.target.value)}
+                    >
+                      <option value="" disabled>
+                        -- Seleciona um Save --
+                      </option>
+                      {availableSaves.map((save) => (
+                        <option key={save} value={save}>
+                          {save}
+                        </option>
+                      ))}
+                    </select>
+                    {availableSaves.length === 0 && (
+                      <p className="text-zinc-500 text-sm mt-2">
+                        {name
+                          ? "Nenhum save encontrado para este treinador."
+                          : "Insere o teu nome para ver os teus saves."}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {joinMode === "friend-room" && (
+                  <div>
+                    <label className="block text-[10px] uppercase text-zinc-500 mb-2 font-bold">
+                      Código da Sala do Amigo
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-zinc-700 focus:ring-2 focus:ring-emerald-500 uppercase"
+                      value={roomCode}
+                      placeholder="INVERNO"
+                      onChange={(e) =>
+                        setRoomCode(e.target.value.toUpperCase())
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleJoin();
+                      }}
+                    />
+                  </div>
+                )}
+
+                <button
+                  onClick={handleJoin}
+                  disabled={!name || !password || !roomCode || joining}
+                  className={`w-full disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 py-5 rounded-xl font-black text-xl transition-all active:scale-95 border-b-4 active:border-b-0 ${joinMode === "saved-game" ? "bg-cyan-500 hover:bg-cyan-400 border-cyan-700" : "bg-emerald-500 hover:bg-emerald-400 border-emerald-700"}`}
+                >
+                  {joining ? "A GERAR CONTRATO..." : "ASSINAR CONTRATO"}
+                </button>
+                {joinError && (
+                  <p className="text-red-400 text-sm text-center font-bold">
+                    ⚠️ {joinError}
+                  </p>
+                )}
+                {!joinError && disconnected && (
+                  <p className="text-red-400 text-sm text-center font-bold">
+                    ⚠️ Sem ligação ao servidor. Tenta novamente.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );

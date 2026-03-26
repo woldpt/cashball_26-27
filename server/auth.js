@@ -12,12 +12,12 @@
  *                   the /saves endpoint only shows their own rooms
  */
 
-const sqlite3 = require('sqlite3').verbose();
-const bcrypt  = require('bcryptjs');
-const path    = require('path');
-const fs      = require('fs');
+const sqlite3 = require("sqlite3").verbose();
+const bcrypt = require("bcryptjs");
+const path = require("path");
+const fs = require("fs");
 
-const DB_PATH = path.join(__dirname, 'db', 'accounts.db');
+const DB_PATH = path.join(__dirname, "db", "accounts.db");
 
 // Ensure the db directory exists (it always will in production but guards
 // against a fresh checkout where only base.db is present).
@@ -26,9 +26,9 @@ if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
 const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
-    console.error('[auth] Failed to open accounts.db:', err.message);
+    console.error("[auth] Failed to open accounts.db:", err.message);
   } else {
-    console.log('[auth] accounts.db ready.');
+    console.log("[auth] accounts.db ready.");
   }
 });
 
@@ -59,32 +59,116 @@ db.serialize(() => {
  */
 function verifyOrCreateManager(name, password) {
   return new Promise((resolve) => {
-    db.get('SELECT id, password_hash FROM managers WHERE name = ? COLLATE NOCASE', [name], async (err, row) => {
-      if (err) {
-        console.error('[auth] DB error:', err.message);
-        return resolve({ ok: false, error: 'Erro interno de autenticação.' });
-      }
+    db.get(
+      "SELECT id, password_hash FROM managers WHERE name = ? COLLATE NOCASE",
+      [name],
+      async (err, row) => {
+        if (err) {
+          console.error("[auth] DB error:", err.message);
+          return resolve({ ok: false, error: "Erro interno de autenticação." });
+        }
 
-      if (row) {
-        // Existing account — verify password
+        if (row) {
+          // Existing account — verify password
+          const match = await bcrypt.compare(password, row.password_hash);
+          if (!match) {
+            return resolve({ ok: false, error: "Palavra-passe incorrecta." });
+          }
+          return resolve({ ok: true });
+        } else {
+          // New account — create with hashed password
+          const hash = await bcrypt.hash(password, 10);
+          db.run(
+            "INSERT INTO managers (name, password_hash) VALUES (?, ?)",
+            [name, hash],
+            (err2) => {
+              if (err2) {
+                console.error("[auth] Insert error:", err2.message);
+                return resolve({ ok: false, error: "Erro ao criar conta." });
+              }
+              console.log(`[auth] New coach account created: "${name}"`);
+              resolve({ ok: true });
+            },
+          );
+        }
+      },
+    );
+  });
+}
+
+/**
+ * Verify an existing manager account without creating a new one.
+ *
+ * @param {string} name
+ * @param {string} password
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+function verifyManager(name, password) {
+  return new Promise((resolve) => {
+    db.get(
+      "SELECT id, password_hash FROM managers WHERE name = ? COLLATE NOCASE",
+      [name],
+      async (err, row) => {
+        if (err) {
+          console.error("[auth] DB error:", err.message);
+          return resolve({ ok: false, error: "Erro interno de autenticação." });
+        }
+
+        if (!row) {
+          return resolve({ ok: false, error: "Conta não encontrada." });
+        }
+
         const match = await bcrypt.compare(password, row.password_hash);
         if (!match) {
-          return resolve({ ok: false, error: 'Palavra-passe incorrecta.' });
+          return resolve({ ok: false, error: "Palavra-passe incorrecta." });
         }
+
         return resolve({ ok: true });
-      } else {
-        // New account — create with hashed password
+      },
+    );
+  });
+}
+
+/**
+ * Create a new manager account.
+ *
+ * @param {string} name
+ * @param {string} password
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+function createManager(name, password) {
+  return new Promise((resolve) => {
+    db.get(
+      "SELECT id FROM managers WHERE name = ? COLLATE NOCASE",
+      [name],
+      async (err, row) => {
+        if (err) {
+          console.error("[auth] DB error:", err.message);
+          return resolve({ ok: false, error: "Erro interno de autenticação." });
+        }
+
+        if (row) {
+          return resolve({
+            ok: false,
+            error: "Já existe uma conta com esse nome.",
+          });
+        }
+
         const hash = await bcrypt.hash(password, 10);
-        db.run('INSERT INTO managers (name, password_hash) VALUES (?, ?)', [name, hash], (err2) => {
-          if (err2) {
-            console.error('[auth] Insert error:', err2.message);
-            return resolve({ ok: false, error: 'Erro ao criar conta.' });
-          }
-          console.log(`[auth] New coach account created: "${name}"`);
-          resolve({ ok: true });
-        });
-      }
-    });
+        db.run(
+          "INSERT INTO managers (name, password_hash) VALUES (?, ?)",
+          [name, hash],
+          (err2) => {
+            if (err2) {
+              console.error("[auth] Insert error:", err2.message);
+              return resolve({ ok: false, error: "Erro ao criar conta." });
+            }
+            console.log(`[auth] New coach account created: "${name}"`);
+            resolve({ ok: true });
+          },
+        );
+      },
+    );
   });
 }
 
@@ -97,8 +181,8 @@ function verifyOrCreateManager(name, password) {
  */
 function recordRoomAccess(managerName, roomCode) {
   db.run(
-    'INSERT OR IGNORE INTO room_managers (room_code, manager_name) VALUES (?, ?)',
-    [roomCode.toUpperCase(), managerName]
+    "INSERT OR IGNORE INTO room_managers (room_code, manager_name) VALUES (?, ?)",
+    [roomCode.toUpperCase(), managerName],
   );
 }
 
@@ -111,14 +195,20 @@ function recordRoomAccess(managerName, roomCode) {
 function getManagerRooms(managerName) {
   return new Promise((resolve) => {
     db.all(
-      'SELECT room_code FROM room_managers WHERE manager_name = ? COLLATE NOCASE ORDER BY room_code',
+      "SELECT room_code FROM room_managers WHERE manager_name = ? COLLATE NOCASE ORDER BY room_code",
       [managerName],
       (err, rows) => {
         if (err) return resolve([]);
-        resolve(rows.map(r => r.room_code));
-      }
+        resolve(rows.map((r) => r.room_code));
+      },
     );
   });
 }
 
-module.exports = { verifyOrCreateManager, recordRoomAccess, getManagerRooms };
+module.exports = {
+  verifyOrCreateManager,
+  verifyManager,
+  createManager,
+  recordRoomAccess,
+  getManagerRooms,
+};

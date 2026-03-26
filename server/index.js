@@ -23,6 +23,8 @@ const {
 } = require("./game/engine");
 const {
   verifyOrCreateManager,
+  verifyManager,
+  createManager,
   recordRoomAccess,
   getManagerRooms,
 } = require("./auth");
@@ -71,6 +73,56 @@ app.get("/saves", apiLimiter, async (req, res) => {
   } catch (e) {
     console.error("[/saves] Error:", e.message);
     res.json([]);
+  }
+});
+
+app.post("/auth/login", apiLimiter, async (req, res) => {
+  try {
+    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    const password =
+      typeof req.body?.password === "string" ? req.body.password : "";
+
+    if (!name) {
+      return res.status(400).json({ error: "Nome de treinador inválido." });
+    }
+    if (!password) {
+      return res.status(400).json({ error: "A palavra-passe é obrigatória." });
+    }
+
+    const authResult = await verifyManager(name, password);
+    if (!authResult.ok) {
+      return res.status(401).json({ error: authResult.error });
+    }
+
+    return res.json({ ok: true, name });
+  } catch (error) {
+    console.error("[/auth/login] Error:", error.message);
+    return res.status(500).json({ error: "Erro interno de autenticação." });
+  }
+});
+
+app.post("/auth/register", apiLimiter, async (req, res) => {
+  try {
+    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    const password =
+      typeof req.body?.password === "string" ? req.body.password : "";
+
+    if (!name) {
+      return res.status(400).json({ error: "Nome de treinador inválido." });
+    }
+    if (!password) {
+      return res.status(400).json({ error: "A palavra-passe é obrigatória." });
+    }
+
+    const authResult = await createManager(name, password);
+    if (!authResult.ok) {
+      return res.status(409).json({ error: authResult.error });
+    }
+
+    return res.json({ ok: true, name });
+  } catch (error) {
+    console.error("[/auth/register] Error:", error.message);
+    return res.status(500).json({ error: "Erro interno de autenticação." });
   }
 });
 
