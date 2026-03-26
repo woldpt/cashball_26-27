@@ -173,8 +173,6 @@ function getGame(roomCode, onReady) {
                               },
                             );
                           });
-                          },
-                        );
                       },
                     );
                   },
