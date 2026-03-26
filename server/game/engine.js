@@ -422,6 +422,18 @@ async function simulateMatchSegment(
       if (p.position === "ATK") attack += effSkill;
     });
 
+    // Ego / chemistry penalty: too many star players in the same team
+    // causes dressing-room friction — offensive power degrades beyond 2 stars.
+    const starCount = squad.filter(
+      (p) => p.is_star && (p.position === "MID" || p.position === "ATK"),
+    ).length;
+    if (starCount >= 3) {
+      const excessStars = starCount - 2; // every star beyond 2 adds friction
+      const egoPenalty = Math.min(0.30, excessStars * 0.08); // up to -30%
+      attack *= 1 - egoPenalty;
+      midfield *= 1 - egoPenalty * 0.6; // midfield hit is softer
+    }
+
     if (style === "Offensive") {
       attack *= 1.15;
       defense *= 0.85;

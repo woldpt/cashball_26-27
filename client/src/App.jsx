@@ -2353,17 +2353,14 @@ function App() {
                               player.position}
                           </td>
                           <td className="px-3 py-2.5 text-white text-sm md:text-base whitespace-nowrap">
-                            {player.name}
-                            {player.is_star &&
-                              (player.position === "MID" ||
-                                player.position === "ATK") && (
-                                <span
-                                  className="ml-1 text-amber-400 font-black text-xs"
-                                  title="Craque"
-                                >
-                                  ★
-                                </span>
-                              )}
+                            {player.name}{!!player.is_star && (player.position === "MID" || player.position === "ATK") && (
+                              <span
+                                className="ml-1 text-amber-400 font-black"
+                                title="Craque"
+                              >
+                                *
+                              </span>
+                            )}
                           </td>
                           <td className="px-3 py-2.5 text-center text-zinc-100 font-normal">
                             <span className="inline-flex items-center justify-center bg-zinc-950 text-white px-2 py-1 rounded text-sm border border-zinc-800 font-normal">
@@ -2551,7 +2548,9 @@ function App() {
                           <td className="px-4 py-2">
                             <div className="flex items-center gap-2">
                               <p className="font-bold text-white text-sm leading-tight">
-                                {player.name}
+                                {player.name}{!!player.is_star && (player.position === "MID" || player.position === "ATK") && (
+                                  <span className="ml-1 text-amber-400 font-black" title="Craque">*</span>
+                                )}
                               </p>
                               {isListed && (
                                 <span
@@ -2926,17 +2925,14 @@ function App() {
                             {player.position}
                           </td>
                           <td className="px-4 py-2.5 font-bold text-white">
-                            {player.name}
-                            {player.is_star &&
-                              (player.position === "MID" ||
-                                player.position === "ATK") && (
-                                <span
-                                  className="ml-1 text-amber-400 font-black text-xs"
-                                  title="Craque"
-                                >
-                                  ★
-                                </span>
-                              )}
+                            {player.name}{!!player.is_star && (player.position === "MID" || player.position === "ATK") && (
+                              <span
+                                className="ml-1 text-amber-400 font-black"
+                                title="Craque"
+                              >
+                                *
+                              </span>
+                            )}
                           </td>
                           <td className="px-4 py-2.5 text-center">
                             <span className="bg-zinc-950 text-white font-black px-2 py-1.5 rounded text-sm border border-zinc-800">
