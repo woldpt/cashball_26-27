@@ -317,6 +317,8 @@ function App() {
   const [isPlayingMatch, setIsPlayingMatch] = useState(false);
   const [showHalftimePanel, setShowHalftimePanel] = useState(false);
   const [matchAction, setMatchAction] = useState(null);
+  const [injuryCountdown, setInjuryCountdown] = useState(null);
+  const injuryCountdownRef = React.useRef(null);
   const [subsMade, setSubsMade] = useState(0);
   const [swapSource, setSwapSource] = useState(null);
   const [swapTarget, setSwapTarget] = useState(null); // player coming IN (Suplente)
@@ -452,10 +454,27 @@ function App() {
       if (!meRef.current || data.teamId === meRef.current.teamId) {
         setMatchAction(data);
         setActiveTab("live");
+        if (data.type === "injury") {
+          clearInterval(injuryCountdownRef.current);
+          setInjuryCountdown(60);
+          injuryCountdownRef.current = setInterval(() => {
+            setInjuryCountdown((prev) => {
+              if (prev <= 1) {
+                clearInterval(injuryCountdownRef.current);
+                injuryCountdownRef.current = null;
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+        }
       }
     });
 
     socket.on("matchActionResolved", () => {
+      clearInterval(injuryCountdownRef.current);
+      injuryCountdownRef.current = null;
+      setInjuryCountdown(null);
       setMatchAction(null);
     });
 
@@ -950,6 +969,13 @@ function App() {
       setTactic((prev) => {
         const newPositions = { ...prev.positions };
 
+        // Block: injured or suspended players cannot be convoked
+        if (status === "Titular" || status === "Suplente") {
+          const player = mySquad.find((p) => p.id === playerId);
+          if (player && !isPlayerAvailable(player, matchweekCount + 1))
+            return prev;
+        }
+
         // Block: no more than 5 suplentes
         if (status === "Suplente") {
           const currentSubs = Object.entries(newPositions).filter(
@@ -982,7 +1008,7 @@ function App() {
       });
       setOpenStatusPickerId(null);
     },
-    [mySquad],
+    [mySquad, matchweekCount],
   ); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── MARKET ACTIONS ────────────────────────────────────────────────────────
@@ -1529,6 +1555,7 @@ function App() {
         ...p,
         status: isOut ? "Out" : tactic.positions[p.id] || "Excluído",
         isSubbedOut: isOut,
+        isUnavailable: !isPlayerAvailable(p, matchweekCount + 1),
       };
     })
     .sort((a, b) => {
@@ -1677,11 +1704,16 @@ function App() {
                         ? `| ${matchAction.currentScore.home} - ${matchAction.currentScore.away}`
                         : ""}
                     </p>
-                    <p className="text-center text-zinc-300 font-black mb-5 text-sm uppercase tracking-widest">
+                    <p className="text-center text-zinc-300 font-black mb-2 text-sm uppercase tracking-widest">
                       {matchAction.type === "injury"
                         ? `Jogador lesionado: ${matchAction.injuredPlayer?.name || "?"}`
                         : "Escolhe o jogador para marcar o penalty"}
                     </p>
+                    {matchAction.type === "injury" && injuryCountdown !== null && (
+                      <p className="text-center text-amber-400 font-black text-sm mb-4 tracking-wide">
+                        Auto-substituição em {injuryCountdown}s
+                      </p>
+                    )}
 
                     <div className="flex-1 overflow-y-auto bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 mb-5">
                       <div className="space-y-2">
@@ -2429,7 +2461,7 @@ function App() {
                       {annotatedSquad.map((player) => (
                         <tr
                           key={player.id}
-                          className={`transition-colors group select-none ${ENABLE_ROW_BG ? POSITION_BG_CLASS[player.position] : ""} hover:bg-zinc-800/50`}
+                          className={`transition-colors group select-none ${ENABLE_ROW_BG ? POSITION_BG_CLASS[player.position] : ""} hover:bg-zinc-800/50 ${player.isUnavailable ? "opacity-50" : ""}`}
                         >
                           <td
                             className="px-3 py-2.5 text-center text-lg leading-none relative"
@@ -2469,10 +2501,15 @@ function App() {
                                       ["Suplente", "🟡"],
                                       ["Excluído", "❌"],
                                     ].map(([status, emoji]) => {
+                                      const unavailable =
+                                        player.isUnavailable &&
+                                        (status === "Titular" ||
+                                          status === "Suplente");
                                       const disabled =
-                                        status === "Suplente" &&
-                                        subsFull &&
-                                        player.status !== "Suplente";
+                                        unavailable ||
+                                        (status === "Suplente" &&
+                                          subsFull &&
+                                          player.status !== "Suplente");
                                       return (
                                         <button
                                           key={status}
@@ -2484,9 +2521,11 @@ function App() {
                                             )
                                           }
                                           title={
-                                            disabled
-                                              ? "Máximo de 5 suplentes atingido"
-                                              : undefined
+                                            unavailable
+                                              ? "Jogador indisponível (lesão/suspensão)"
+                                              : disabled
+                                                ? "Máximo de 5 suplentes atingido"
+                                                : undefined
                                           }
                                           className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 text-left ${
                                             disabled
@@ -2522,6 +2561,14 @@ function App() {
                                   *
                                 </span>
                               )}
+                            {player.isUnavailable && (
+                              <span
+                                className="ml-2 text-xs font-bold text-red-400"
+                                title={`Indisponível até jornada ${player.injury_until_matchweek || player.suspension_until_matchweek}`}
+                              >
+                                🩹
+                              </span>
+                            )}
                           </td>
                           <td className="px-3 py-2.5 text-center text-zinc-100 font-normal">
                             <span className="inline-flex items-center justify-center bg-zinc-950 text-white px-2 py-1 rounded text-sm border border-zinc-800 font-normal">

@@ -211,28 +211,28 @@ async function applyInjuryEvent({
 
   const injuredPlayer = squad[Math.floor(Math.random() * squad.length)];
   const severityRoll = Math.random();
-  let injuryWeeks = 1;
-  let injuryLabel = "ligeira";
-  if (severityRoll < 0.12) {
-    injuryWeeks = 10;
+  let injuryWeeks;
+  let injuryLabel;
+  if (severityRoll < 0.1) {
+    // Grave: 3–8 semanas, incomum
+    injuryWeeks = 3 + Math.floor(Math.random() * 6);
     injuryLabel = "grave";
-  } else if (severityRoll < 0.32) {
-    injuryWeeks = 3;
-    injuryLabel = "moderada";
+  } else {
+    // Leve: 1 semana (afasta da próxima convocatória), comum
+    injuryWeeks = 1;
+    injuryLabel = "leve";
   }
 
   const injuryUntil = currentMatchweek + injuryWeeks;
   const qualityLoss =
-    injuryWeeks >= 10
-      ? 4 + Math.floor(Math.random() * 3)
-      : injuryWeeks >= 3
-        ? 1 + Math.floor(Math.random() * 2)
-        : Math.random() < 0.5
-          ? 1
-          : 0;
+    injuryLabel === "grave" ? 2 + Math.floor(Math.random() * 4) : 0;
+  const formLoss =
+    injuryLabel === "grave"
+      ? 15 + Math.floor(Math.random() * 11)
+      : 5 + Math.floor(Math.random() * 6);
   db.run(
-    "UPDATE players SET injuries = injuries + 1, skill = MAX(0, skill - ?), injury_until_matchweek = CASE WHEN injury_until_matchweek > ? THEN injury_until_matchweek ELSE ? END WHERE id = ?",
-    [qualityLoss, injuryUntil, injuryUntil, injuredPlayer.id],
+    "UPDATE players SET injuries = injuries + 1, skill = MAX(0, skill - ?), form = MAX(40, form - ?), injury_until_matchweek = CASE WHEN injury_until_matchweek > ? THEN injury_until_matchweek ELSE ? END WHERE id = ?",
+    [qualityLoss, formLoss, injuryUntil, injuryUntil, injuredPlayer.id],
   );
 
   fixture.events.push({
@@ -274,7 +274,7 @@ async function applyInjuryEvent({
         away: fixture.finalAwayGoals,
       },
     },
-    timeoutMs: 12000,
+    timeoutMs: 60000,
     fallback,
   });
 
@@ -611,7 +611,7 @@ async function simulateMatchSegment(
     }
 
     const injuryChance = Math.random();
-    if (injuryChance < 0.01) {
+    if (injuryChance < 0.003) {
       const isHomeInjury = Math.random() > 0.5;
       const squad = isHomeInjury ? home.squad : away.squad;
       const side = isHomeInjury ? "home" : "away";
