@@ -601,6 +601,23 @@ function App() {
     setAuthPhase(mode === "new-game" ? "register" : "login");
   };
 
+  const handleLogout = () => {
+    try {
+      window.localStorage.removeItem("cashballSession");
+    } catch {
+      // ignore
+    }
+    setMe(null);
+    setName("");
+    setPassword("");
+    setConfirmPassword("");
+    setRoomCode("");
+    setJoining(false);
+    setJoinError("");
+    setAuthPhase("access");
+    setJoinMode(null);
+  };
+
   const handleJoin = () => {
     if (name && password && roomCode && !joining) {
       setJoinError("");
@@ -1306,8 +1323,8 @@ function App() {
               | SALA: {me.roomCode} | Jornada {matchweekCount + 1}
             </p>
           </div>
-          {isDesktopLayout && (
-            <div className="relative z-10 flex items-center gap-4">
+          <div className="relative z-10 flex items-center gap-4">
+            {isDesktopLayout && (
               <div className="text-right">
                 <p className="font-bold text-sm md:text-base text-white">
                   {me.name}
@@ -1316,8 +1333,15 @@ function App() {
                   {teamInfo?.name}
                 </p>
               </div>
-            </div>
-          )}
+            )}
+            <button
+              onClick={handleLogout}
+              title="Terminar sessão"
+              className="text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors rounded-lg px-3 py-2 text-xs font-black uppercase tracking-widest border border-zinc-700 hover:border-zinc-500"
+            >
+              Sair
+            </button>
+          </div>
         </div>
       </header>
 
