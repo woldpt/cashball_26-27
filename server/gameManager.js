@@ -124,8 +124,8 @@ function getGame(roomCode, onReady) {
     () => {
       ensurePlayerSchema(db, () => {
         // Ensure attendance column exists in matches (migration for existing DBs).
-        // ALTER TABLE silently fails if the column already exists — no callback needed.
-        db.run("ALTER TABLE matches ADD COLUMN attendance INTEGER DEFAULT 0");
+        // Callback suppresses the "duplicate column" error on existing DBs.
+        db.run("ALTER TABLE matches ADD COLUMN attendance INTEGER DEFAULT 0", () => {});
         // Ensure cup/palmares tables added after initial schema
         db.run(`CREATE TABLE IF NOT EXISTS cup_matches (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
