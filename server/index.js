@@ -1189,7 +1189,10 @@ io.on("connection", (socket) => {
 
     // BUG-04 FIX: Use the callback-based getGame so we only proceed once DB state
     // has been fully loaded (matchweek, matchState, globalMarket).
-    getGame(roomCode, (game) => {
+    getGame(roomCode, (game, gameErr) => {
+      if (!game || gameErr) {
+        return socket.emit("joinError", gameErr ? gameErr.message : "Erro ao carregar o jogo. Contacta o administrador.");
+      }
       socket.join(roomCode);
 
       const connectedCount = Object.values(game.playersByName).filter(

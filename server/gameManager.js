@@ -71,7 +71,16 @@ function getGame(roomCode, onReady) {
 
   if (!fs.existsSync(dbPath)) {
     if (!fs.existsSync(basePath)) {
-      throw new Error("Base DB not found!");
+      console.error("[gameManager] base.db not found — run: npm run seed:real");
+      if (onReady) onReady(null, new Error("Base DB not found. Server needs to be seeded first."));
+      return null;
+    }
+    // Validate base.db is not empty before copying
+    const stat = fs.statSync(basePath);
+    if (stat.size < 1024) {
+      console.error("[gameManager] base.db is empty or corrupt — run: npm run seed:real");
+      if (onReady) onReady(null, new Error("Base DB is empty. Server needs to be seeded first."));
+      return null;
     }
     fs.copyFileSync(basePath, dbPath);
   }
