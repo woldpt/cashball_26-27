@@ -1509,24 +1509,30 @@ function App() {
       </header>
 
       <div className="max-w-350 mx-auto p-4 md:p-8">
-        <div className="flex gap-3 mb-5 border-b border-zinc-800 pb-px overflow-x-auto">
-          {["club", "standings", "market", "live", "squad"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2.5 font-bold text-sm md:text-base uppercase transition-colors border-b-4 ${activeTab === tab ? "border-amber-500 text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"}`}
-            >
-              {tab === "club"
-                ? "Clube"
-                : tab === "standings"
-                  ? "Classificações"
-                  : tab === "market"
-                    ? "Mercado"
-                    : tab === "live"
-                      ? "Jornada"
+        <div className="flex gap-3 mb-5 border-b border-zinc-800 pb-px overflow-x-auto justify-between">
+          <div className="flex gap-3 overflow-x-auto">
+            {["club", "standings", "market", "squad"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2.5 font-bold text-sm md:text-base uppercase transition-colors border-b-4 whitespace-nowrap ${activeTab === tab ? "border-amber-500 text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"}`}
+              >
+                {tab === "club"
+                  ? "Clube"
+                  : tab === "standings"
+                    ? "Classificações"
+                    : tab === "market"
+                      ? "Mercado"
                       : "Plantel"}
-            </button>
-          ))}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setActiveTab("live")}
+            className={`px-4 py-2.5 font-bold text-sm md:text-base uppercase transition-colors border-b-4 whitespace-nowrap ml-auto ${activeTab === "live" ? "border-amber-500 text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"}`}
+          >
+            Jornada
+          </button>
         </div>
 
         <div
@@ -1678,9 +1684,6 @@ function App() {
                   {isPlayingMatch && (
                     <div className="w-4 h-4 rounded-full bg-red-600 animate-pulse"></div>
                   )}
-                  <span className="text-3xl font-mono font-black">
-                    {Math.min(liveMinute, 90)}'
-                  </span>
                 </div>
                 <h2 className="text-2xl font-black text-amber-500 mb-8 pb-4 border-b border-zinc-800">
                   Jornada em Direto{" "}
@@ -1885,7 +1888,7 @@ function App() {
                         {DIVISION_NAMES[div] || `Div ${div}`}
                       </h3>
                       <div className="bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
-                        <table className="w-full text-[11px] font-bold text-right border-collapse">
+                        <table className="w-full text-[12px] font-bold text-right border-collapse">
                           <thead className="bg-zinc-900 text-zinc-400 border-b border-zinc-800">
                             <tr>
                               <th className="text-left py-1 px-2">Equipa</th>
