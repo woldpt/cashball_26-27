@@ -1,7 +1,7 @@
 function pickBestPlayer(players = []) {
   if (!players.length) return null;
   return [...players].sort(
-    (a, b) => b.skill * (b.form / 100) - a.skill * (a.form / 100),
+    (a, b) => b.skill - a.skill,
   )[0];
 }
 
@@ -46,7 +46,7 @@ async function getTeamSquad(db, teamId, tactic, currentMatchweek = 1) {
 
       // Auto-pick best 11 based on formation
       const sorted = [...availableRows].sort(
-        (a, b) => b.skill * b.form - a.skill * a.form,
+        (a, b) => b.skill - a.skill,
       );
       const lineup = [];
       const formationStr =
@@ -226,13 +226,9 @@ async function applyInjuryEvent({
   const injuryUntil = currentMatchweek + injuryWeeks;
   const qualityLoss =
     injuryLabel === "grave" ? 2 + Math.floor(Math.random() * 4) : 0;
-  const formLoss =
-    injuryLabel === "grave"
-      ? 15 + Math.floor(Math.random() * 11)
-      : 5 + Math.floor(Math.random() * 6);
   db.run(
-    "UPDATE players SET injuries = injuries + 1, skill = MAX(0, skill - ?), form = MAX(40, form - ?), injury_until_matchweek = CASE WHEN injury_until_matchweek > ? THEN injury_until_matchweek ELSE ? END WHERE id = ?",
-    [qualityLoss, formLoss, injuryUntil, injuryUntil, injuredPlayer.id],
+    "UPDATE players SET injuries = injuries + 1, skill = MAX(0, skill - ?), injury_until_matchweek = CASE WHEN injury_until_matchweek > ? THEN injury_until_matchweek ELSE ? END WHERE id = ?",
+    [qualityLoss, injuryUntil, injuryUntil, injuredPlayer.id],
   );
 
   fixture.events.push({
@@ -267,7 +263,6 @@ async function applyInjuryEvent({
         name: p.name,
         position: p.position,
         skill: p.skill,
-        form: p.form,
       })),
       currentScore: {
         home: fixture.finalHomeGoals,
@@ -330,7 +325,6 @@ async function applyPenaltyEvent({
         name: p.name,
         position: p.position,
         skill: p.skill,
-        form: p.form,
       })),
       currentScore: {
         home: fixture.finalHomeGoals,
@@ -347,7 +341,7 @@ async function applyPenaltyEvent({
       : fallback();
   if (!taker) return;
 
-  const penaltySkill = (taker.skill || 0) * 0.8 + (taker.form || 0) * 0.2;
+  const penaltySkill = taker.skill || 0;
   const goalChance = Math.max(
     0.35,
     Math.min(0.9, 0.55 + (penaltySkill - 50) / 120),
@@ -406,6 +400,20 @@ async function simulateMatchSegment(
     currentMatchweek,
   );
 
+  // Load team morale values
+  const [homeMorale, awayMorale] = await Promise.all([
+    new Promise((res) =>
+      db.get("SELECT morale FROM teams WHERE id = ?", [fixture.homeTeamId], (err, row) =>
+        res(row && row.morale != null ? row.morale : 75),
+      ),
+    ),
+    new Promise((res) =>
+      db.get("SELECT morale FROM teams WHERE id = ?", [fixture.awayTeamId], (err, row) =>
+        res(row && row.morale != null ? row.morale : 75),
+      ),
+    ),
+  ]);
+
   // Load full rosters for bench availability during injuries
   const homeFullRoster = await new Promise((resolve, reject) => {
     db.all(
@@ -436,7 +444,7 @@ async function simulateMatchSegment(
   const homeLineupIds = new Set(homeSquad.map((p) => p.id));
   const awayLineupIds = new Set(awaySquad.map((p) => p.id));
 
-  const getPower = (squad, style) => {
+  const getPower = (squad, style, morale = 75) => {
     let attack = 0,
       defense = 0,
       midfield = 0,
@@ -446,7 +454,7 @@ async function simulateMatchSegment(
         p.is_star && (p.position === "MID" || p.position === "ATK")
           ? 1.35
           : 1.0;
-      const effSkill = p.skill * (p.form / 100) * starMult;
+      const effSkill = p.skill * (morale / 100) * starMult;
       if (p.position === "GK") gk += effSkill;
       if (p.position === "DEF") defense += effSkill;
       if (p.position === "MID") midfield += effSkill;
@@ -477,8 +485,8 @@ async function simulateMatchSegment(
     return { attack, defense, midfield, gk, squad };
   };
 
-  const home = getPower(homeSquad, homeTactic ? homeTactic.style : "Balanced");
-  const away = getPower(awaySquad, awayTactic ? awayTactic.style : "Balanced");
+  const home = getPower(homeSquad, homeTactic ? homeTactic.style : "Balanced", homeMorale);
+  const away = getPower(awaySquad, awayTactic ? awayTactic.style : "Balanced", awayMorale);
 
   const yellowCounts = { home: {}, away: {} };
 
@@ -488,10 +496,12 @@ async function simulateMatchSegment(
     const currentHome = getPower(
       home.squad,
       homeTactic ? homeTactic.style : "Balanced",
+      homeMorale,
     );
     const currentAway = getPower(
       away.squad,
       awayTactic ? awayTactic.style : "Balanced",
+      awayMorale,
     );
     const currentHStrength =
       ((currentHome.attack || 10) * 1.5 +
@@ -658,8 +668,34 @@ async function applyPostMatchQualityEvolution(db, fixtures, currentMatchweek) {
       teamResults.set(match.awayTeamId, awayResult);
     }
 
+    // ── Morale update per team ─────────────────────────────────────────────
+    const moraleUpdates = [];
+    for (const [teamId, result] of teamResults.entries()) {
+      let delta;
+      if (result === "W") delta = 8 + Math.floor(Math.random() * 5);   // +8..+12
+      else if (result === "L") delta = -(8 + Math.floor(Math.random() * 5)); // -8..-12
+      else delta = Math.floor(Math.random() * 5) - 2;                   // -2..+2
+      moraleUpdates.push({ teamId, delta });
+    }
+
+    if (moraleUpdates.length > 0) {
+      db.all("SELECT id, morale FROM teams WHERE id IN (" + moraleUpdates.map(() => "?").join(",") + ")",
+        moraleUpdates.map((u) => u.teamId),
+        (err, rows) => {
+          if (err || !rows) return;
+          rows.forEach((row) => {
+            const upd = moraleUpdates.find((u) => u.teamId === row.id);
+            if (!upd) return;
+            const newMorale = Math.max(20, Math.min(100, (row.morale ?? 75) + upd.delta));
+            db.run("UPDATE teams SET morale = ? WHERE id = ?", [newMorale, row.id]);
+          });
+        },
+      );
+    }
+
+    // ── Player skill evolution ─────────────────────────────────────────────
     db.all(
-      "SELECT id, team_id, skill, form, injury_until_matchweek, suspension_until_matchweek FROM players WHERE team_id IS NOT NULL ORDER BY team_id, id",
+      "SELECT id, team_id, skill, injury_until_matchweek, suspension_until_matchweek FROM players WHERE team_id IS NOT NULL ORDER BY team_id, id",
       (err, players) => {
         if (err || !players || players.length === 0) {
           resolve();
@@ -713,24 +749,10 @@ async function applyPostMatchQualityEvolution(db, fixtures, currentMatchweek) {
             delta += 1;
           }
 
-          // Form update based on match result
-          let formDelta = 0;
-          if (teamResult === "W")
-            formDelta = 2 + Math.floor(Math.random() * 4); // +2 to +5
-          else if (teamResult === "L")
-            formDelta = -(2 + Math.floor(Math.random() * 4)); // -2 to -5
-          else formDelta = Math.floor(Math.random() * 5) - 2; // -2 to +2
-
-          const newForm = Math.max(
-            40,
-            Math.min(100, (player.form || 75) + formDelta),
-          );
-
-          if (delta !== 0 || formDelta !== 0) {
+          if (delta !== 0) {
             updates.push({
               id: player.id,
               skill: clampSkill((player.skill || 0) + delta),
-              form: newForm,
             });
           }
         }
@@ -744,8 +766,8 @@ async function applyPostMatchQualityEvolution(db, fixtures, currentMatchweek) {
         db.serialize(() => {
           updates.forEach((update) => {
             db.run(
-              "UPDATE players SET skill = ?, form = ? WHERE id = ?",
-              [update.skill, update.form, update.id],
+              "UPDATE players SET skill = ? WHERE id = ?",
+              [update.skill, update.id],
               () => {
                 remaining -= 1;
                 if (remaining === 0) resolve();
@@ -826,10 +848,8 @@ function simulatePenaltyShootout(homeSquad, awaySquad) {
       usedIds.clear();
       return squad[0] || null;
     }
-    // Pick by skill, mixed with some randomness
-    available.sort(
-      (a, b) => b.skill * (b.form / 100) - a.skill * (a.form / 100),
-    );
+    // Pick by skill
+    available.sort((a, b) => b.skill - a.skill);
     return available[0];
   };
 

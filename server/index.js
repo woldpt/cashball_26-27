@@ -1251,7 +1251,6 @@ function maybeTriggerContractRequest(game, io, player) {
           name: player.name,
           position: player.position,
           skill: player.skill,
-          form: player.form,
           wage,
           requestedWage,
         },

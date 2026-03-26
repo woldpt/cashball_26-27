@@ -2434,9 +2434,6 @@ function App() {
                         <th className="px-3 py-3 text-center w-14 font-normal">
                           QUAL
                         </th>
-                        <th className="px-3 py-3 text-center w-14 font-normal">
-                          FORMA
-                        </th>
                         <th className="px-3 py-3 text-center w-12 font-normal">
                           ⚽
                         </th>
@@ -2574,19 +2571,6 @@ function App() {
                             <span className="inline-flex items-center justify-center bg-zinc-950 text-white px-2 py-1 rounded text-sm border border-zinc-800 font-normal">
                               {player.skill}
                             </span>
-                          </td>
-                          <td className="px-3 py-2.5 text-center">
-                            <div className="flex items-center gap-3">
-                              <div className="flex-1 bg-zinc-950 rounded-full h-2.5 overflow-hidden">
-                                <div
-                                  className={`h-2.5 rounded-full ${player.form > 90 ? "bg-emerald-500" : player.form > 70 ? "bg-amber-500" : "bg-red-500"}`}
-                                  style={{ width: `${player.form}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-xs font-normal tracking-wider text-zinc-400 w-8">
-                                {player.form}
-                              </span>
-                            </div>
                           </td>
                           <td className="px-3 py-2.5 text-center text-emerald-400 font-normal">
                             {getPlayerStat(player, ["goals"])}
@@ -2951,6 +2935,41 @@ function App() {
                             Defensivo (+20% Def)
                           </option>
                         </select>
+                        {(() => {
+                          const morale = teamInfo?.morale ?? 75;
+                          const moraleColor =
+                            morale > 75
+                              ? "bg-emerald-500"
+                              : morale >= 50
+                                ? "bg-amber-500"
+                                : "bg-red-500";
+                          const moraleLabel =
+                            morale > 75
+                              ? "Boa"
+                              : morale >= 50
+                                ? "Média"
+                                : "Baixa";
+                          return (
+                            <div>
+                              <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-1.5">
+                                Moral da Equipa
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                                  <div
+                                    className={`h-2.5 rounded-full transition-all duration-500 ${moraleColor}`}
+                                    style={{ width: `${morale}%` }}
+                                  />
+                                </div>
+                                <span className={`text-xs font-black tracking-wider w-10 text-right ${
+                                  morale > 75 ? "text-emerald-400" : morale >= 50 ? "text-amber-400" : "text-red-400"
+                                }`}>
+                                  {moraleLabel}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -3114,16 +3133,13 @@ function App() {
                       <th className="px-4 py-3 font-black text-center">
                         Susp.
                       </th>
-                      <th className="px-4 py-3 font-black text-center">
-                        Forma
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800/60">
                     {selectedTeamSquad.length === 0 ? (
                       <tr>
                         <td
-                          colSpan="8"
+                          colSpan="7"
                           className="px-4 py-8 text-center text-zinc-500 font-bold"
                         >
                           Sem jogadores encontrados.
@@ -3169,19 +3185,6 @@ function App() {
                           </td>
                           <td className="px-4 py-2.5 text-center font-black text-amber-400">
                             {getPlayerStat(player, ["suspension_games"])}
-                          </td>
-                          <td className="px-4 py-2.5 text-center">
-                            <div className="flex items-center gap-3">
-                              <div className="flex-1 bg-zinc-950 rounded-full h-2.5 overflow-hidden">
-                                <div
-                                  className={`h-2.5 rounded-full ${player.form > 90 ? "bg-emerald-500" : player.form > 70 ? "bg-amber-500" : "bg-red-500"}`}
-                                  style={{ width: `${player.form}%` }}
-                                />
-                              </div>
-                              <span className="text-xs font-bold tracking-wider text-zinc-400 w-8">
-                                {player.form}
-                              </span>
-                            </div>
                           </td>
                         </tr>
                       ))

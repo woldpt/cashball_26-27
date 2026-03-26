@@ -123,6 +123,8 @@ function getGame(roomCode, onReady) {
     "CREATE TABLE IF NOT EXISTS game_state (key TEXT PRIMARY KEY, value TEXT)",
     () => {
       ensurePlayerSchema(db, () => {
+        // Ensure morale column exists in teams (migration for existing DBs).
+        db.run("ALTER TABLE teams ADD COLUMN morale INTEGER DEFAULT 75", () => {});
         // Ensure attendance column exists in matches (migration for existing DBs).
         // Callback suppresses the "duplicate column" error on existing DBs.
         db.run("ALTER TABLE matches ADD COLUMN attendance INTEGER DEFAULT 0", () => {});
