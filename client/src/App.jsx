@@ -2045,9 +2045,11 @@ function App() {
                                     {aInfo?.name}
                                   </div>
                                 </div>
-                                {/* Line 2: last event */}
-                                <div className="px-2 py-0.5 text-zinc-400 truncate text-center border-t border-zinc-800/60 min-h-5">
-                                  {lastEventText}
+                                {/* Line 2: attendance + last event */}
+                                <div className="px-2 py-0.5 text-zinc-400 truncate text-center border-t border-zinc-800/60 min-h-5 text-xs">
+                                  {match.attendance
+                                    ? `Lotação: ${match.attendance.toLocaleString("pt-PT")}${lastEventText ? "  |  " + lastEventText : ""}`
+                                    : lastEventText}
                                 </div>
                               </div>
                             );
@@ -2315,13 +2317,14 @@ function App() {
                     </div>
                     <div className="flex justify-between border-b border-zinc-800 pb-4">
                       <span className="text-zinc-400 font-bold">
-                        Bilheteiras (10€ \ lugar):
+                        Bilheteiras (10€/lugar — variável):
                       </span>
                       <span className="font-mono text-emerald-400 font-bold">
                         +{" "}
                         {formatCurrency(
                           (teamInfo?.stadium_capacity || 5000) * 10,
-                        )}
+                        )}{" "}
+                        <span className="text-zinc-500 text-sm font-normal">(máx.)</span>
                       </span>
                     </div>
 

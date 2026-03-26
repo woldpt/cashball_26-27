@@ -192,6 +192,43 @@ function runAll(db, sql, params = []) {
   });
 }
 
+// ── ATTENDANCE CALCULATION ────────────────────────────────────────────────────
+// Calculates realistic attendance for a home match based on recent form.
+// baseOccupancy: 0.35 (dire streak) → 0.85 (perfect run), ± 8% noise.
+async function calculateMatchAttendance(db, homeTeamId) {
+  const team = await runGet(
+    db,
+    "SELECT stadium_capacity FROM teams WHERE id = ?",
+    [homeTeamId],
+  );
+  const capacity = team ? team.stadium_capacity || 5000 : 5000;
+
+  const recentMatches = await runAll(
+    db,
+    `SELECT home_team_id, away_team_id, home_score, away_score
+     FROM matches
+     WHERE played = 1 AND (home_team_id = ? OR away_team_id = ?)
+     ORDER BY matchweek DESC, id DESC
+     LIMIT 5`,
+    [homeTeamId, homeTeamId],
+  );
+
+  let formScore = recentMatches.length === 0 ? 5 : 0; // neutral start if no history
+  for (const m of recentMatches) {
+    const isHome = m.home_team_id === homeTeamId;
+    const gf = isHome ? m.home_score : m.away_score;
+    const ga = isHome ? m.away_score : m.home_score;
+    if (gf > ga) formScore += 3;
+    else if (gf === ga) formScore += 1;
+  }
+
+  const maxFormScore = Math.max(recentMatches.length, 1) * 3;
+  const baseOccupancy = 0.35 + (formScore / Math.max(maxFormScore, 15)) * 0.50;
+  const noise = (Math.random() - 0.5) * 0.16;
+  const occupancy = Math.max(0.15, Math.min(1.0, baseOccupancy + noise));
+  return Math.floor(capacity * occupancy);
+}
+
 function runGet(db, sql, params = []) {
   return new Promise((resolve, reject) => {
     db.get(sql, params, (err, row) => {
@@ -332,8 +369,8 @@ function persistMatchResults(game, fixtures, matchweek, onDone) {
         () => {
           game.db.run(
             `INSERT INTO matches (
-              matchweek, home_team_id, away_team_id, home_score, away_score, played, narrative, competition
-            ) VALUES (?, ?, ?, ?, ?, 1, ?, 'League')`,
+              matchweek, home_team_id, away_team_id, home_score, away_score, played, narrative, competition, attendance
+            ) VALUES (?, ?, ?, ?, ?, 1, ?, 'League', ?)`,
             [
               game.matchweek,
               match.homeTeamId,
@@ -341,6 +378,7 @@ function persistMatchResults(game, fixtures, matchweek, onDone) {
               match.finalHomeGoals,
               match.finalAwayGoals,
               JSON.stringify(match.events || []),
+              match.attendance || 0,
             ],
             () => {
               remaining -= 1;
@@ -2027,7 +2065,6 @@ async function checkAllReady(game) {
       UPDATE teams 
       SET budget = budget 
         - CAST((loan_amount * 0.01) AS INTEGER) 
-        + (stadium_capacity * 10)
         - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
     `,
       async (err) => {
@@ -2060,6 +2097,13 @@ async function checkAllReady(game) {
 }
 
 async function processSegment(game, startMin, endMin, nextState) {
+  // Calculate attendance once per match at kick-off (first half only)
+  if (startMin === 1) {
+    for (const fx of game.fixtures) {
+      fx.attendance = await calculateMatchAttendance(game.db, fx.homeTeamId);
+    }
+  }
+
   for (const fx of game.fixtures) {
     const p1 = Object.values(game.playersByName).find(
       (p) => p.teamId === fx.homeTeamId,
@@ -2142,6 +2186,17 @@ async function processSegment(game, startMin, endMin, nextState) {
           // Release state so the room is not permanently stuck
           game.matchState = "idle";
           return;
+        }
+
+        // Apply ticket revenue based on actual attendance per home match
+        for (const match of game.fixtures) {
+          const revenue = (match.attendance || 0) * 10;
+          if (revenue > 0) {
+            game.db.run(
+              "UPDATE teams SET budget = budget + ? WHERE id = ?",
+              [revenue, match.homeTeamId],
+            );
+          }
         }
 
         // Only advance state after a successful commit so that clients always

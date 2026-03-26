@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS matches (
   played BOOLEAN DEFAULT 0,
   narrative TEXT,
   competition TEXT DEFAULT 'League',
+  attendance INTEGER DEFAULT 0,
   FOREIGN KEY(home_team_id) REFERENCES teams(id),
   FOREIGN KEY(away_team_id) REFERENCES teams(id)
 );
