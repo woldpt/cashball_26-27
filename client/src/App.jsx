@@ -198,6 +198,22 @@ function loadSavedSession() {
   }
 }
 
+function hasSeenWelcome(coachName, roomCode) {
+  try {
+    return window.localStorage.getItem(`cashball_welcome:${coachName}:${roomCode}`) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markWelcomeSeen(coachName, roomCode) {
+  try {
+    window.localStorage.setItem(`cashball_welcome:${coachName}:${roomCode}`, "1");
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
 const playWhistle = () => {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -306,6 +322,7 @@ function App() {
   const [showCupResults, setShowCupResults] = useState(false);
   const [cupPenaltyPopup, setCupPenaltyPopup] = useState(null); // shootout data
   const [cupPenaltyKickIdx, setCupPenaltyKickIdx] = useState(0); // how many kicks revealed
+  const [welcomeModal, setWelcomeModal] = useState(null); // { teamName }
   // Cup match live state
   const [isCupMatch, setIsCupMatch] = useState(false);
   const [cupMatchRoundName, setCupMatchRoundName] = useState("");
@@ -531,6 +548,12 @@ function App() {
       setPalmaresTeamId(data.teamId);
     });
     socket.on("systemMessage", (msg) => addToast(msg));
+    socket.on("teamAssigned", (data) => {
+      const currentMe = meRef.current;
+      if (currentMe?.name && currentMe?.roomCode && !hasSeenWelcome(currentMe.name, currentMe.roomCode)) {
+        setWelcomeModal({ teamName: data.teamName });
+      }
+    });
     socket.on("joinError", (msg) => {
       setJoinError(msg);
       setJoining(false);
@@ -650,6 +673,7 @@ function App() {
       socket.off("auctionUpdate");
       socket.off("auctionClosed");
       socket.off("systemMessage");
+      socket.off("teamAssigned");
       socket.off("joinError");
       socket.off("teamSquadData");
       socket.off("nextMatchSummary");
@@ -3911,6 +3935,36 @@ function App() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── WELCOME / HIRED MODAL ─────────────────────────────────────────────── */}
+      {welcomeModal && me?.teamId && (
+        <div className="fixed inset-0 z-200 bg-zinc-950/90 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-zinc-900 border border-amber-500/40 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-linear-to-r from-amber-900/40 to-zinc-900 px-6 py-5 border-b border-amber-700/30 text-center">
+              <p className="text-xs text-amber-400 uppercase font-black tracking-widest mb-2">Bem-vindo ao CashBall!</p>
+              <h2 className="text-3xl font-black text-white">Parabéns! 🎉</h2>
+            </div>
+            <div className="p-6 text-center space-y-4">
+              <p className="text-zinc-300 font-bold text-lg leading-relaxed">
+                Foste contratado pelo{" "}
+                <span className="text-amber-400 font-black">{welcomeModal.teamName}</span>!
+              </p>
+              <p className="text-zinc-500 text-sm">
+                Começa a gerir o teu clube e leva-o até ao topo da tabela.
+              </p>
+              <button
+                onClick={() => {
+                  markWelcomeSeen(me.name, me.roomCode);
+                  setWelcomeModal(null);
+                }}
+                className="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black py-4 rounded-2xl text-lg uppercase tracking-widest transition-all active:scale-95 border-b-4 border-amber-700 active:border-b-0"
+              >
+                Vamos lá!
+              </button>
+            </div>
           </div>
         </div>
       )}

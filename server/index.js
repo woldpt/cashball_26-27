@@ -2170,10 +2170,7 @@ io.on("connection", (socket) => {
       },
     );
 
-    socket.emit(
-      "systemMessage",
-      `Foste contratado pelo ${team.name} (Divisão 4)!`,
-    );
+    socket.emit("teamAssigned", { teamName: team.name, teamId: team.id });
   }
 
   // ── BUY PLAYER ────────────────────────────────────────────────────────────
