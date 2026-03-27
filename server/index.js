@@ -1569,10 +1569,48 @@ async function processNpcTransferActivity(game) {
       break; // one purchase per matchweek per NPC
     }
   }
+
+  // ── NPC PLAYER LISTING ──────────────────────────────────────────────────
+  // NPC teams with large squads put surplus or weakest players on the market.
+  const allNpcTeams = (
+    await runAll(game.db, "SELECT * FROM teams")
+  ).filter((t) => !humanTeamIds.has(t.id));
+
+  for (const npcTeam of allNpcTeams) {
+    const squad = await runAll(
+      game.db,
+      "SELECT * FROM players WHERE team_id = ? AND transfer_status = 'none' AND contract_request_pending = 0 ORDER BY skill ASC",
+      [npcTeam.id],
+    );
+
+    const listChance = squad.length > 16 ? 0.4 : squad.length > 12 ? 0.15 : 0;
+    if (listChance === 0 || Math.random() > listChance) continue;
+
+    const candidate = squad[0]; // weakest eligible player
+    if (!candidate) continue;
+
+    const useAuction = Math.random() < 0.4;
+    const price = Math.round(
+      (candidate.value || 0) * (useAuction ? 0.75 : 1.0),
+    );
+    if (price <= 0) continue;
+
+    await new Promise((resolve) => {
+      listPlayerOnMarket(
+        game,
+        candidate.id,
+        useAuction ? "auction" : "fixed",
+        price,
+        resolve,
+      );
+    });
+  }
 }
 
 // ─── NPC AUCTION BIDDING ───────────────────────────────────────────────────
 // Called when an auction starts. NPC teams may place bids after a delay.
+// Round 1 (3-15s): 50% participation, staggered first bids.
+// Round 2 (20-35s): 35% chance each NPC counter-bids if outbid.
 function scheduleNpcAuctionBids(game, playerId) {
   const auction = game.auctions?.[playerId];
   if (!auction) return;
@@ -1592,9 +1630,10 @@ function scheduleNpcAuctionBids(game, playerId) {
         (t) => !humanTeamIds.has(t.id) && t.id !== auction.sellerTeamId,
       );
 
+      // Round 1: staggered first bids between 3-15s
       let bidDelay = 3000 + Math.floor(Math.random() * 5000);
       for (const npcTeam of npcTeams) {
-        if (Math.random() > 0.2) continue; // 20% chance each NPC bids
+        if (Math.random() > 0.5) continue; // 50% chance each NPC bids in round 1
 
         setTimeout(() => {
           const currentAuction = game.auctions?.[playerId];
@@ -1606,7 +1645,24 @@ function scheduleNpcAuctionBids(game, playerId) {
           placeAuctionBid(game, npcTeam.id, playerId, bidAmount, io);
         }, bidDelay);
 
-        bidDelay += 3000 + Math.floor(Math.random() * 8000);
+        bidDelay += 2000 + Math.floor(Math.random() * 5000);
+      }
+
+      // Round 2: counter-bids between 20-35s for NPCs that were outbid
+      for (const npcTeam of npcTeams) {
+        if (Math.random() > 0.35) continue; // 35% chance each NPC counter-bids
+
+        const counterDelay = 20000 + Math.floor(Math.random() * 15000);
+        setTimeout(() => {
+          const currentAuction = game.auctions?.[playerId];
+          if (!currentAuction || currentAuction.status !== "open") return;
+          if (currentAuction.highestBidderTeamId === npcTeam.id) return; // already winning
+          const bidAmount =
+            currentAuction.highestBid + currentAuction.minIncrement;
+          if (bidAmount > npcTeam.budget * 0.45) return;
+
+          placeAuctionBid(game, npcTeam.id, playerId, bidAmount, io);
+        }, counterDelay);
       }
     },
   );
