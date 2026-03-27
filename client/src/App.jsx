@@ -303,6 +303,11 @@ function App() {
   const [cupRoundResults, setCupRoundResults] = useState(null); // last cup round results
   const [showCupResults, setShowCupResults] = useState(false);
   const [cupPenaltyPopup, setCupPenaltyPopup] = useState(null); // shootout data
+  const [cupPenaltyKickIdx, setCupPenaltyKickIdx] = useState(0); // how many kicks revealed
+  // Cup match live state
+  const [isCupMatch, setIsCupMatch] = useState(false);
+  const [cupMatchRoundName, setCupMatchRoundName] = useState("");
+  const [cupExtraTimeBadge, setCupExtraTimeBadge] = useState(false);
   const [palmares, setPalmares] = useState({ trophies: [], allChampions: [] });
   const [palmaresTeamId, setPalmaresTeamId] = useState(null); // last requested team
   const [selectedTeam, setSelectedTeam] = useState(null);
@@ -402,12 +407,66 @@ function App() {
       setCupDrawRevealIdx(0);
       setShowCupDrawPopup(true);
     });
+    socket.on("cupHalfTimeResults", (data) => {
+      // Treat the cup halftime exactly like a league halftime:
+      // reuse matchResults state so the live tab renders events and score.
+      setMatchResults({ matchweek: data.season, results: data.fixtures.map((fx) => ({
+        homeTeamId: fx.homeTeam?.id,
+        awayTeamId: fx.awayTeam?.id,
+        finalHomeGoals: fx.homeGoals,
+        finalAwayGoals: fx.awayGoals,
+        events: fx.events || [],
+        attendance: null,
+      })) });
+      setLiveMinute(0);
+      setSubsMade(0);
+      setSubbedOut([]);
+      setConfirmedSubs([]);
+      setSwapSource(null);
+      setSwapTarget(null);
+      setShowHalftimePanel(true);
+      setIsPlayingMatch(true);
+      setIsCupMatch(true);
+      setCupMatchRoundName(data.roundName);
+      setCupExtraTimeBadge(false);
+      setActiveTab("live");
+    });
+    socket.on("extraTimeHalfTime", (data) => {
+      // Indicate extra time half-time in the live tab — no ready gate needed
+      setCupExtraTimeBadge(true);
+      // Update the score for the displayed fixture if we have it
+      if (data && data.fixture) {
+        setMatchResults((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            results: (prev.results || []).map((r) => {
+              if (
+                r.homeTeamId === data.fixture.homeTeamId &&
+                r.awayTeamId === data.fixture.awayTeamId
+              ) {
+                return {
+                  ...r,
+                  finalHomeGoals: data.fixture.homeGoals,
+                  finalAwayGoals: data.fixture.awayGoals,
+                  events: [...(r.events || []), ...(data.events || [])],
+                };
+              }
+              return r;
+            }),
+          };
+        });
+      }
+    });
     socket.on("cupRoundResults", (data) => {
       setCupRoundResults(data);
       setShowCupResults(true);
+      setIsCupMatch(false);
+      setCupExtraTimeBadge(false);
     });
     socket.on("cupPenaltyShootout", (data) => {
       setCupPenaltyPopup(data);
+      setCupPenaltyKickIdx(0);
     });
     socket.on("palmaresData", (data) => {
       setPalmares(data);
@@ -485,6 +544,8 @@ function App() {
       setShowHalftimePanel(false);
       setLiveMinute(45);
       setIsPlayingMatch(true);
+      setIsCupMatch(false);
+      setCupExtraTimeBadge(false);
       setActiveTab("live");
     });
 
@@ -524,6 +585,8 @@ function App() {
       socket.off("teamSquadData");
       socket.off("nextMatchSummary");
       socket.off("cupDrawStart");
+      socket.off("cupHalfTimeResults");
+      socket.off("extraTimeHalfTime");
       socket.off("cupRoundResults");
       socket.off("cupPenaltyShootout");
       socket.off("palmaresData");
@@ -833,7 +896,11 @@ function App() {
   // Sending !isReady (a toggle) was broken because the server resets ready=false
   // after halftime, causing the toggle to send false instead of true.
   const handleHalftimeReady = () => {
-    socket.emit("setReady", true);
+    if (isCupMatch) {
+      socket.emit("cupHalfTimeReady");
+    } else {
+      socket.emit("setReady", true);
+    }
   };
 
   const handleOpenTeamSquad = (team) => {
@@ -875,6 +942,18 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, [showCupDrawPopup, cupDraw, cupDrawRevealIdx]);
+
+  // Penalty shootout progressive reveal: one kick every 2 s
+  useEffect(() => {
+    if (!cupPenaltyPopup) return;
+    const total = (cupPenaltyPopup.kicks || []).length;
+    if (cupPenaltyKickIdx >= total) return;
+    const timer = setTimeout(
+      () => setCupPenaltyKickIdx((i) => i + 1),
+      2000,
+    );
+    return () => clearTimeout(timer);
+  }, [cupPenaltyPopup, cupPenaltyKickIdx]);
 
   // Load own palmares when Clube tab is opened
   useEffect(() => {
@@ -1942,12 +2021,16 @@ function App() {
                       className={`mt-auto w-full py-3 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${
                         players.find((p) => p.name === me.name)?.ready
                           ? "bg-zinc-800 text-zinc-500"
-                          : "bg-amber-600 hover:bg-amber-500 text-zinc-950"
+                          : isCupMatch
+                            ? "bg-amber-500 hover:bg-amber-400 text-zinc-950"
+                            : "bg-amber-600 hover:bg-amber-500 text-zinc-950"
                       }`}
                     >
                       {players.find((p) => p.name === me.name)?.ready
                         ? "A AGUARDAR..."
-                        : "▶ INICIAR 2ª PARTE"}
+                        : isCupMatch
+                          ? "▶ 2ª PARTE — TAÇA"
+                          : "▶ INICIAR 2ª PARTE"}
                     </button>
                   </div>
                 )}
@@ -1958,8 +2041,11 @@ function App() {
                   )}
                 </div>
                 <h2 className="text-2xl font-black text-amber-500 mb-8 pb-4 border-b border-zinc-800">
-                  Jornada em Direto{" "}
-                  {liveMinute === 45 && !isPlayingMatch ? "(INTERVALO)" : ""}
+                  {isCupMatch ? (
+                    <>🏆 Taça · {cupMatchRoundName}{cupExtraTimeBadge ? " — Prolongamento" : ""}</>
+                  ) : (
+                    <>Jornada em Direto{" "}{liveMinute === 45 && !isPlayingMatch ? "(INTERVALO)" : ""}</>
+                  )}
                 </h2>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -2034,7 +2120,7 @@ function App() {
                                   >
                                     {hInfo?.name}
                                   </div>
-                                  <div className="px-3 py-1 bg-zinc-900 text-white text-center font-normal min-w-16 flex gap-0.5 items-center justify-center text-2xl">
+                                  <div className="px-3 py-1 bg-zinc-900 text-white text-center font-normal min-w-16 flex gap-0.5 items-center justify-center text-xl">
                                     <span
                                       style={{
                                         color: homeFlashing
@@ -2990,9 +3076,11 @@ function App() {
                       >
                         {isReady
                           ? "A AGUARDAR OUTROS"
-                          : isHalftime
-                            ? "2ª PARTE"
-                            : "JOGAR JORNADA"}
+                          : isHalftime && isCupMatch
+                            ? "2ª PARTE — TAÇA"
+                            : isHalftime
+                              ? "2ª PARTE"
+                              : "JOGAR JORNADA"}
                       </button>
                       {isDisabled && (
                         <p className="text-xs font-bold text-red-400 mt-2 text-center">
@@ -3359,15 +3447,12 @@ function App() {
                 const awayIdx = pairIdx * 2 + 1;
                 const homeRevealed = cupDrawRevealIdx > homeIdx;
                 const awayRevealed = cupDrawRevealIdx > awayIdx;
+                // Only highlight after both teams are revealed, so the drawn slot isn't
+                // visible before the name appears.
                 const isMyPair =
-                  fixture.homeTeam?.id ===
-                    parseInt(
-                      teams.find(
-                        (t) => t.id === parseInt(window._myTeamId || 0),
-                      )?.id || 0,
-                    ) ||
-                  fixture.homeTeam?.id === me?.teamId ||
-                  fixture.awayTeam?.id === me?.teamId;
+                  awayRevealed &&
+                  (fixture.homeTeam?.id === me?.teamId ||
+                    fixture.awayTeam?.id === me?.teamId);
 
                 return (
                   <div
@@ -3509,11 +3594,9 @@ function App() {
       {cupPenaltyPopup && (
         <div
           className="fixed inset-0 z-150 bg-zinc-950/92 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setCupPenaltyPopup(null)}
         >
           <div
             className="w-full max-w-sm rounded-3xl border border-zinc-800 bg-zinc-900 shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
           >
             <div className="bg-zinc-800/60 px-6 py-4 border-b border-zinc-800 text-center">
               <p className="text-xs text-zinc-400 uppercase font-black tracking-widest">
@@ -3533,9 +3616,15 @@ function App() {
                 >
                   {teams.find((t) => t.id === cupPenaltyPopup.homeTeamId)?.name}
                 </span>
-                <span className="text-2xl font-black text-white px-3 py-1 bg-zinc-950 border border-zinc-800 rounded-xl">
-                  {cupPenaltyPopup.homeGoals} – {cupPenaltyPopup.awayGoals}
-                </span>
+                {cupPenaltyKickIdx >= (cupPenaltyPopup.kicks || []).length ? (
+                  <span className="text-2xl font-black text-white px-3 py-1 bg-zinc-950 border border-zinc-800 rounded-xl">
+                    {cupPenaltyPopup.homeGoals} – {cupPenaltyPopup.awayGoals}
+                  </span>
+                ) : (
+                  <span className="text-2xl font-black text-zinc-500 px-3 py-1 bg-zinc-950 border border-zinc-800 rounded-xl animate-pulse">
+                    ? – ?
+                  </span>
+                )}
                 <span
                   className="font-black text-sm"
                   style={{
@@ -3549,10 +3638,10 @@ function App() {
               </div>
             </div>
             <div className="p-4 max-h-72 overflow-y-auto space-y-1">
-              {(cupPenaltyPopup.kicks || []).map((kick, idx) => (
+              {(cupPenaltyPopup.kicks || []).slice(0, cupPenaltyKickIdx).map((kick, idx) => (
                 <div
                   key={idx}
-                  className={`flex items-center gap-3 text-xs font-bold rounded-lg px-3 py-1.5 ${kick.team === "home" ? "bg-zinc-800/60" : "bg-zinc-950/60"}`}
+                  className={`flex items-center gap-3 text-xs font-bold rounded-lg px-3 py-1.5 transition-all ${kick.team === "home" ? "bg-zinc-800/60" : "bg-zinc-950/60"}`}
                 >
                   <span className="text-base">{kick.scored ? "⚽" : "❌"}</span>
                   <span
@@ -3567,15 +3656,24 @@ function App() {
                   )}
                 </div>
               ))}
+              {cupPenaltyKickIdx < (cupPenaltyPopup.kicks || []).length && (
+                <div className="text-center py-2">
+                  <span className="animate-pulse text-amber-400 text-xs font-black uppercase tracking-widest">
+                    A rematar…
+                  </span>
+                </div>
+              )}
             </div>
-            <div className="px-6 pb-6 pt-2">
-              <button
-                onClick={() => setCupPenaltyPopup(null)}
-                className="w-full rounded-2xl bg-amber-500 px-4 py-3 font-black uppercase tracking-widest text-zinc-950 hover:bg-amber-400"
-              >
-                Fechar
-              </button>
-            </div>
+            {cupPenaltyKickIdx >= (cupPenaltyPopup.kicks || []).length && (
+              <div className="px-6 pb-6 pt-2">
+                <button
+                  onClick={() => { setCupPenaltyPopup(null); setCupPenaltyKickIdx(0); }}
+                  className="w-full rounded-2xl bg-amber-500 px-4 py-3 font-black uppercase tracking-widest text-zinc-950 hover:bg-amber-400"
+                >
+                  Fechar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

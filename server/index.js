@@ -562,6 +562,8 @@ async function applySeasonEnd(game) {
   game.cupRound = 0;
   game.cupState = "idle";
   game.cupTeamIds = [];
+  game.cupFixtures = [];
+  game.cupHumanInCup = false;
   saveGameState(game);
 
   // Broadcast fresh teams data
@@ -658,6 +660,7 @@ async function startCupRound(game, round) {
   const humanInCup = game.cupTeamIds.some((id) => humanTeamIds.has(id));
 
   game.cupDrawAcks = new Set();
+  game.cupHumanInCup = humanInCup;
 
   io.to(game.roomCode).emit("cupDrawStart", {
     round,
@@ -668,8 +671,8 @@ async function startCupRound(game, round) {
   });
 
   if (!humanInCup) {
-    // No human in cup: auto-simulate and await completion
-    await simulateCupRound(game, round);
+    // No human in cup: auto-simulate without pausing
+    await simulateCupFirstHalf(game, round);
   } else {
     game.cupState = "draw";
     // Simulation starts after all humans ack (see "cupDrawAcknowledged" handler)
@@ -680,15 +683,15 @@ async function startCupRound(game, round) {
         console.log(
           `[${game.roomCode}] Cup draw timeout — auto-proceeding round ${round}`,
         );
-        simulateCupRound(game, round);
+        simulateCupFirstHalf(game, round);
       }
     }, 30000);
   }
 }
 
-// ─── CUP: SIMULATE ROUND ─────────────────────────────────────────────────────
-async function simulateCupRound(game, round) {
-  game.cupState = "playing";
+// ─── CUP: SIMULATE FIRST HALF ─────────────────────────────────────────────────
+async function simulateCupFirstHalf(game, round) {
+  game.cupState = "playing_first_half";
   saveGameState(game);
 
   const season = game.season;
@@ -698,10 +701,12 @@ async function simulateCupRound(game, round) {
     [season, round],
   );
 
-  const results = [];
+  const fixtures = [];
+  const roundName = CUP_ROUND_NAMES[round] || `Ronda ${round}`;
 
   for (const row of matchRows) {
     const fixture = {
+      _dbRow: row,
       homeTeamId: row.home_team_id,
       awayTeamId: row.away_team_id,
       finalHomeGoals: 0,
@@ -715,26 +720,87 @@ async function simulateCupRound(game, round) {
     const p2 = Object.values(game.playersByName).find(
       (p) => p.teamId === row.away_team_id,
     );
-    const t1 = p1 ? p1.tactic : { formation: "4-4-2", style: "Balanced" };
-    const t2 = p2 ? p2.tactic : { formation: "4-4-2", style: "Balanced" };
+    fixture._t1 = p1 ? p1.tactic : { formation: "4-4-2", style: "Balanced" };
+    fixture._t2 = p2 ? p2.tactic : { formation: "4-4-2", style: "Balanced" };
 
     const ctx = { game, io, matchweek: game.matchweek };
+    await simulateMatchSegment(game.db, fixture, fixture._t1, fixture._t2, 1, 45, ctx);
 
-    await simulateMatchSegment(game.db, fixture, t1, t2, 1, 45, ctx);
+    fixtures.push(fixture);
+  }
 
-    io.to(game.roomCode).emit("cupHalfTime", {
-      round,
-      fixture: {
-        homeTeamId: fixture.homeTeamId,
-        awayTeamId: fixture.awayTeamId,
-        homeGoals: fixture.finalHomeGoals,
-        awayGoals: fixture.finalAwayGoals,
-      },
-    });
+  // Enrich with team info for the UI
+  const enrichedHalftime = await Promise.all(
+    fixtures.map(async (fx) => {
+      const home = await runGet(
+        game.db,
+        "SELECT id, name, color_primary, color_secondary FROM teams WHERE id = ?",
+        [fx.homeTeamId],
+      );
+      const away = await runGet(
+        game.db,
+        "SELECT id, name, color_primary, color_secondary FROM teams WHERE id = ?",
+        [fx.awayTeamId],
+      );
+      return {
+        homeTeam: home,
+        awayTeam: away,
+        homeGoals: fx.finalHomeGoals,
+        awayGoals: fx.finalAwayGoals,
+        events: fx.events.slice(),
+      };
+    }),
+  );
+
+  // Persist cup fixtures so the second-half function can resume them
+  game.cupFixtures = fixtures;
+  game.cupState = "halftime";
+  game.cupHalfTimeAcks = new Set();
+  saveGameState(game);
+
+  io.to(game.roomCode).emit("cupHalfTimeResults", {
+    round,
+    roundName,
+    season,
+    fixtures: enrichedHalftime,
+  });
+
+  // Also update player list so the client knows to show "ready" state
+  io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
+
+  if (!game.cupHumanInCup) {
+    await simulateCupSecondHalf(game, round);
+  } else {
+    // Safety timeout: 30 s then auto-continue
+    if (game._cupHalftimeTimeout) clearTimeout(game._cupHalftimeTimeout);
+    game._cupHalftimeTimeout = setTimeout(() => {
+      if (game.cupState === "halftime") {
+        console.log(
+          `[${game.roomCode}] Cup halftime timeout — auto-proceeding round ${round}`,
+        );
+        simulateCupSecondHalf(game, round);
+      }
+    }, 30000);
+  }
+}
+
+// ─── CUP: SIMULATE SECOND HALF ────────────────────────────────────────────────
+async function simulateCupSecondHalf(game, round) {
+  game.cupState = "playing_second_half";
+  saveGameState(game);
+
+  const season = game.season;
+  const fixtures = game.cupFixtures || [];
+  const results = [];
+
+  for (const fixture of fixtures) {
+    const t1 = fixture._t1 || { formation: "4-4-2", style: "Balanced" };
+    const t2 = fixture._t2 || { formation: "4-4-2", style: "Balanced" };
+    const ctx = { game, io, matchweek: game.matchweek };
 
     await simulateMatchSegment(game.db, fixture, t1, t2, 46, 90, ctx);
 
-    // Cup: no draws allowed — extra time if level
+    // Cup: no draws allowed — extra time if level after 90 min
     let winnerId;
     if (fixture.finalHomeGoals !== fixture.finalAwayGoals) {
       winnerId =
@@ -742,7 +808,7 @@ async function simulateCupRound(game, round) {
           ? fixture.homeTeamId
           : fixture.awayTeamId;
     } else {
-      // Extra time
+      // Extra time (30 min, already handles ET half-time internally)
       await simulateExtraTime(game.db, fixture, t1, t2, ctx);
 
       if (fixture.finalHomeGoals !== fixture.finalAwayGoals) {
@@ -774,9 +840,6 @@ async function simulateCupRound(game, round) {
           ...shootout,
         });
 
-        // Small delay for UI to show shootout
-        await new Promise((r) => setTimeout(r, 500));
-
         winnerId =
           shootout.homeGoals > shootout.awayGoals
             ? fixture.homeTeamId
@@ -801,14 +864,12 @@ async function simulateCupRound(game, round) {
       }
 
       // Update ET scores
-      const etHome = fixture.finalHomeGoals;
-      const etAway = fixture.finalAwayGoals;
       await new Promise((resolve) => {
         game.db.run(
           "UPDATE cup_matches SET home_et_score = ?, away_et_score = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
           [
-            etHome,
-            etAway,
+            fixture.finalHomeGoals,
+            fixture.finalAwayGoals,
             season,
             round,
             fixture.homeTeamId,
@@ -820,11 +881,11 @@ async function simulateCupRound(game, round) {
     }
 
     if (!winnerId) {
-      // Shouldn't happen, but fallback
+      // Fallback — shouldn't happen
       winnerId = fixture.homeTeamId;
     }
 
-    // Persist result
+    // Persist full-time result
     await new Promise((resolve) => {
       game.db.run(
         "UPDATE cup_matches SET home_score = ?, away_score = ?, played = 1, winner_team_id = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
@@ -873,6 +934,7 @@ async function simulateCupRound(game, round) {
     }
   }
 
+  game.cupFixtures = [];
   game.cupState = round === 5 ? "done_cup" : "done_round";
   saveGameState(game);
 
@@ -1554,7 +1616,30 @@ io.on("connection", (socket) => {
     );
     if (allAcked) {
       if (game._cupDrawTimeout) clearTimeout(game._cupDrawTimeout);
-      simulateCupRound(game, game.cupRound);
+      simulateCupFirstHalf(game, game.cupRound);
+    }
+  });
+
+  // ── CUP HALF TIME READY ───────────────────────────────────────────────────
+  socket.on("cupHalfTimeReady", () => {
+    const game = getGameBySocket(socket.id);
+    if (!game || game.cupState !== "halftime") return;
+
+    const player = getPlayerBySocket(game, socket.id);
+    if (!player || !game.cupTeamIds.includes(player.teamId)) return;
+
+    game.cupHalfTimeAcks.add(socket.id);
+
+    const connectedPlayers = getPlayerList(game);
+    const cupHumans = connectedPlayers.filter(
+      (p) => p.socketId && game.cupTeamIds.includes(p.teamId),
+    );
+    const allReady = cupHumans.every((p) =>
+      game.cupHalfTimeAcks.has(p.socketId),
+    );
+    if (allReady) {
+      if (game._cupHalftimeTimeout) clearTimeout(game._cupHalftimeTimeout);
+      simulateCupSecondHalf(game, game.cupRound);
     }
   });
 
@@ -1666,9 +1751,42 @@ io.on("connection", (socket) => {
     socket.emit("gameState", {
       matchweek: game.matchweek,
       matchState: game.matchState,
+      cupState: game.cupState,
       year: game.year,
       tactic: game.playersByName[name]?.tactic || null,
     });
+
+    // If a cup halftime is in progress, re-send the halftime data to the rejoining player
+    if (game.cupState === "halftime" && Array.isArray(game.cupFixtures) && game.cupFixtures.length) {
+      Promise.all(
+        game.cupFixtures.map(async (fx) => {
+          const home = await runGet(
+            game.db,
+            "SELECT id, name, color_primary, color_secondary FROM teams WHERE id = ?",
+            [fx.homeTeamId],
+          );
+          const away = await runGet(
+            game.db,
+            "SELECT id, name, color_primary, color_secondary FROM teams WHERE id = ?",
+            [fx.awayTeamId],
+          );
+          return {
+            homeTeam: home,
+            awayTeam: away,
+            homeGoals: fx.finalHomeGoals,
+            awayGoals: fx.finalAwayGoals,
+            events: fx.events.filter((e) => e.minute <= 45),
+          };
+        }),
+      ).then((enrichedHalftime) => {
+        socket.emit("cupHalfTimeResults", {
+          round: game.cupRound,
+          roundName: CUP_ROUND_NAMES[game.cupRound] || `Ronda ${game.cupRound}`,
+          season: game.season,
+          fixtures: enrichedHalftime,
+        });
+      });
+    }
     io.to(roomCode).emit("playerListUpdate", getPlayerList(game));
 
     game.db.all(
@@ -2222,6 +2340,8 @@ async function processSegment(game, startMin, endMin, nextState) {
               const normMw = ((completedMatchweek - 1) % 14) + 1;
               const cupRound = CUP_ROUND_AFTER_MATCHWEEK[normMw];
               if (cupRound) {
+                // Give the client 2 s to render matchResults before the draw popup
+                await new Promise((r) => setTimeout(r, 2000));
                 try {
                   await startCupRound(game, cupRound);
                 } catch (cupErr) {
