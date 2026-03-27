@@ -1767,7 +1767,7 @@ function App() {
         </div>
 
         <div
-          className={`grid grid-cols-1 gap-6 ${activeTab === "squad" ? "xl:grid-cols-[minmax(0,3fr)_260px]" : ""}`}
+          className={`grid grid-cols-1 gap-6 ${activeTab === "squad" ? "xl:grid-cols-[minmax(0,3fr)_320px]" : ""}`}
         >
           <div>
             {activeTab === "live" && (matchResults || matchAction) && (
