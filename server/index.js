@@ -260,7 +260,7 @@ function pickRefereeSummary(roomCode, teamId, opponentId, matchweek) {
   );
   const balance = 20 + (biasSeed % 61);
   return {
-    refereeName,
+    name: refereeName,
     balance,
     favorsTeamA: balance >= 50,
   };
