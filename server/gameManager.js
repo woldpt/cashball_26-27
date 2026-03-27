@@ -25,6 +25,7 @@ function ensurePlayerSchema(db, onDone) {
       ["transfer_status", "TEXT DEFAULT 'none'"],
       ["transfer_price", "INTEGER DEFAULT 0"],
       ["is_star", "INTEGER DEFAULT 0"],
+      ["signed_season", "INTEGER DEFAULT 0"],
     ];
 
     const missing = required.filter(([name]) => !existing.has(name));

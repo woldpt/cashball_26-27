@@ -1333,11 +1333,12 @@ function finalizeAuction(game, playerId) {
               [finalBid, buyerTeamId],
               () => {
                 game.db.run(
-                  "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+                  "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, signed_season = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
                   [
                     buyerTeamId,
                     Math.max(player.wage || 0, Math.round(finalBid * 0.06)),
                     getSeasonEndMatchweek(game.matchweek),
+                    Math.ceil(Math.max(1, game.matchweek) / 14),
                     playerId,
                   ],
                   () => {
@@ -2211,10 +2212,11 @@ io.on("connection", (socket) => {
                     );
                   }
                   game.db.run(
-                    "UPDATE players SET team_id = ?, contract_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+                    "UPDATE players SET team_id = ?, contract_until_matchweek = ?, signed_season = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
                     [
                       playerState.teamId,
                       getSeasonEndMatchweek(game.matchweek),
+                      Math.ceil(Math.max(1, game.matchweek) / 14),
                       playerId,
                     ],
                     () => {

@@ -657,6 +657,7 @@ function App() {
       setIsCupMatch(false);
       setCupExtraTimeBadge(false);
       setActiveTab("live");
+      setTactic((prev) => ({ ...prev, positions: {} }));
     });
 
     // BUG-15 FIX: Track socket connection state
@@ -3052,7 +3053,7 @@ function App() {
                                 ? "✅"
                                 : player.status === "Suplente"
                                   ? "🟡"
-                                  : "❌"}
+                                  : "□"}
                             </span>
                             {openStatusPickerId === player.id &&
                               (() => {
@@ -3072,7 +3073,7 @@ function App() {
                                     {[
                                       ["Titular", "✅"],
                                       ["Suplente", "🟡"],
-                                      ["Excluído", "❌"],
+                                      ["Excluído", "□"],
                                     ].map(([status, emoji]) => {
                                       const unavailable =
                                         player.isUnavailable &&
@@ -3174,8 +3175,7 @@ function App() {
                             {formatCurrency(player.wage || 0)}
                           </td>
                           <td className="px-3 py-2 text-center">
-                            {player.status === "Titular" ||
-                            player.status === "Suplente" ? (
+                            {player.signed_season !== Math.ceil((matchweekCount + 1) / 14) ? (
                               <div className="flex flex-nowrap justify-center gap-1">
                                 <button
                                   onClick={(e) => {
