@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import { socket } from "./socket";
 import AdminPanel from "./AdminPanel.jsx";
 
@@ -351,6 +357,7 @@ function App() {
   const [injuryCountdown, setInjuryCountdown] = useState(null);
   const injuryCountdownRef = React.useRef(null);
   const [subsMade, setSubsMade] = useState(0);
+  const [, forceGoalFlashRender] = useState(0);
   const [swapSource, setSwapSource] = useState(null);
   const [swapTarget, setSwapTarget] = useState(null); // player coming IN (Suplente)
   const [subbedOut, setSubbedOut] = useState([]); // Track players who left the pitch
@@ -809,8 +816,9 @@ function App() {
   }, [isPlayingMatch, liveMinute, matchResults, showHalftimePanel, isCupMatch]);
 
   // Detect per-minute events: flash goal score & play notification for human matches
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isPlayingMatch || !matchResults?.results || liveMinute < 1) return;
+    let didFlashGoal = false;
     matchResults.results.forEach((match) => {
       const events = (match.events || []).filter(
         (e) => e.minute === liveMinute,
@@ -821,6 +829,7 @@ function App() {
         if (e.type === "goal") {
           const key = `${match.homeTeamId}_${match.awayTeamId}_${e.team}`;
           goalFlashRef.current[key] = Date.now();
+          didFlashGoal = true;
         }
       });
       // Sound only for matches involving a human coach
@@ -834,6 +843,9 @@ function App() {
         if (notifiable) playNotification();
       }
     });
+    if (didFlashGoal) {
+      forceGoalFlashRender((value) => value + 1);
+    }
   }, [liveMinute]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -2252,9 +2264,9 @@ function App() {
                               ];
                             const now = Date.now();
                             const homeFlashing =
-                              flashHome && now - flashHome < 3500;
+                              flashHome && now - flashHome < 1500;
                             const awayFlashing =
-                              flashAway && now - flashAway < 3500;
+                              flashAway && now - flashAway < 1500;
 
                             return (
                               <div
@@ -2272,7 +2284,7 @@ function App() {
                                   >
                                     {hInfo?.name}
                                   </div>
-                                  <div className="px-3 py-1 bg-zinc-900 text-white text-center font-normal min-w-16 flex gap-0.5 items-center justify-center text-xl">
+                                  <div className="px-2.5 py-0.5 bg-zinc-900 text-white text-center font-normal min-w-16 flex gap-0.5 items-center justify-center text-lg leading-none">
                                     <span
                                       style={{
                                         color: homeFlashing
@@ -2283,7 +2295,7 @@ function App() {
                                           : "normal",
                                         transition: homeFlashing
                                           ? "none"
-                                          : "color 2.5s ease, font-weight 2.5s ease",
+                                          : "color 1.25s ease, font-weight 1.25s ease",
                                       }}
                                     >
                                       {currentHome.length}
@@ -2299,7 +2311,7 @@ function App() {
                                           : "normal",
                                         transition: awayFlashing
                                           ? "none"
-                                          : "color 2.5s ease, font-weight 2.5s ease",
+                                          : "color 1.25s ease, font-weight 1.25s ease",
                                       }}
                                     >
                                       {currentAway.length}
