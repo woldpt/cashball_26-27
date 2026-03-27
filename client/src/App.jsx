@@ -85,6 +85,21 @@ function formatCurrency(value) {
   }).format(value);
 }
 
+function normalizeTeamId(teamId) {
+  if (teamId === null || teamId === undefined) return null;
+  const raw = String(teamId).trim();
+  if (!raw) return null;
+  const numeric = Number(raw);
+  return Number.isNaN(numeric) ? raw : numeric;
+}
+
+function isSameTeamId(left, right) {
+  const normalizedLeft = normalizeTeamId(left);
+  const normalizedRight = normalizeTeamId(right);
+  if (normalizedLeft === null || normalizedRight === null) return false;
+  return normalizedLeft === normalizedRight;
+}
+
 function getPlayerStat(player, keys, fallback = 0) {
   for (const key of keys) {
     const value = player?.[key];
@@ -354,6 +369,7 @@ function App() {
   const [isPlayingMatch, setIsPlayingMatch] = useState(false);
   const [showHalftimePanel, setShowHalftimePanel] = useState(false);
   const [matchAction, setMatchAction] = useState(null);
+  const [isMatchActionPending, setIsMatchActionPending] = useState(false);
   const [injuryCountdown, setInjuryCountdown] = useState(null);
   const injuryCountdownRef = React.useRef(null);
   const [subsMade, setSubsMade] = useState(0);
@@ -367,6 +383,8 @@ function App() {
   const isPlayingMatchRef = React.useRef(false);
   const selectedTeamRef = React.useRef(null);
   const marketPairsRef = React.useRef([]);
+  const mySquadRef = React.useRef([]);
+  const tacticRef = React.useRef({ positions: {} });
   // goalFlashRef: { [key]: timestamp } – key = `${homeId}_${awayId}_home|away`
   const goalFlashRef = React.useRef({});
 
@@ -473,6 +491,7 @@ function App() {
       setShowCupDrawPopup(true);
     });
     socket.on("cupHalfTimeResults", (data) => {
+      setIsMatchActionPending(false);
       // Treat the cup halftime exactly like a league halftime:
       // reuse matchResults state so the live tab renders events and score.
       setMatchResults({
@@ -533,6 +552,7 @@ function App() {
       setCupExtraTimeBadge(false);
     });
     socket.on("cupSecondHalfStart", (data) => {
+      setIsMatchActionPending(false);
       // Identical to matchResults but marks this as a cup second half animation.
       setMatchResults({
         matchweek: data.season,
@@ -606,6 +626,7 @@ function App() {
     });
 
     socket.on("halfTimeResults", (data) => {
+      setIsMatchActionPending(false);
       setMatchResults(data);
       setLiveMinute(0);
       setSubsMade(0);
@@ -619,27 +640,74 @@ function App() {
     });
 
     socket.on("matchActionRequired", (data) => {
-      if (!meRef.current || data.teamId === meRef.current.teamId) {
-        setMatchAction(data);
-        setActiveTab("live");
-        if (data.type === "injury") {
-          clearInterval(injuryCountdownRef.current);
-          setInjuryCountdown(60);
-          injuryCountdownRef.current = setInterval(() => {
-            setInjuryCountdown((prev) => {
-              if (prev <= 1) {
-                clearInterval(injuryCountdownRef.current);
-                injuryCountdownRef.current = null;
-                return 0;
-              }
-              return prev - 1;
-            });
-          }, 1000);
-        }
+      setIsMatchActionPending(true);
+
+      const isTargetCoach = isSameTeamId(data?.teamId, meRef.current?.teamId);
+      if (!isTargetCoach) {
+        return;
+      }
+
+      const normalizedAction = { ...(data || {}) };
+
+      if (normalizedAction.type === "penalty") {
+        const toCandidate = (player) => {
+          if (!player || player.id === undefined || player.id === null) {
+            return null;
+          }
+          return {
+            id: player.id,
+            name: player.name || "Jogador",
+            position: player.position || "MID",
+            skill: Number(player.skill || 0),
+          };
+        };
+
+        const incomingCandidates = (normalizedAction.takerCandidates || [])
+          .map(toCandidate)
+          .filter(Boolean);
+
+        const currentSquad = Array.isArray(mySquadRef.current)
+          ? mySquadRef.current
+          : [];
+        const currentPositions = tacticRef.current?.positions || {};
+        const titulares = currentSquad.filter(
+          (player) => currentPositions[player.id] === "Titular",
+        );
+        const fallbackBase = titulares.length > 0 ? titulares : currentSquad;
+        const fallbackCandidates = fallbackBase
+          .map(toCandidate)
+          .filter(Boolean);
+
+        normalizedAction.takerCandidates =
+          incomingCandidates.length > 0
+            ? incomingCandidates
+            : fallbackCandidates;
+      }
+
+      setMatchAction(normalizedAction);
+      setActiveTab("live");
+
+      clearInterval(injuryCountdownRef.current);
+      injuryCountdownRef.current = null;
+      setInjuryCountdown(null);
+
+      if (normalizedAction.type === "injury") {
+        setInjuryCountdown(60);
+        injuryCountdownRef.current = setInterval(() => {
+          setInjuryCountdown((prev) => {
+            if (prev <= 1) {
+              clearInterval(injuryCountdownRef.current);
+              injuryCountdownRef.current = null;
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
       }
     });
 
     socket.on("matchActionResolved", () => {
+      setIsMatchActionPending(false);
       clearInterval(injuryCountdownRef.current);
       injuryCountdownRef.current = null;
       setInjuryCountdown(null);
@@ -648,6 +716,7 @@ function App() {
 
     // BUG-11 FIX: matchResults clears showHalftimePanel (2nd half replay)
     socket.on("matchResults", (data) => {
+      setIsMatchActionPending(false);
       setMatchResults(data);
       setMatchweekCount(data.matchweek);
       setShowHalftimePanel(false);
@@ -718,6 +787,14 @@ function App() {
   }, [me]);
 
   useEffect(() => {
+    mySquadRef.current = mySquad;
+  }, [mySquad]);
+
+  useEffect(() => {
+    tacticRef.current = tactic;
+  }, [tactic]);
+
+  useEffect(() => {
     selectedTeamRef.current = selectedTeam;
   }, [selectedTeam]);
 
@@ -782,6 +859,7 @@ function App() {
 
   useEffect(() => {
     if (isPlayingMatch) {
+      if (isMatchActionPending) return;
       const isSecondHalfReplay = !showHalftimePanel;
 
       if (
@@ -813,7 +891,14 @@ function App() {
         return () => clearTimeout(timer);
       }
     }
-  }, [isPlayingMatch, liveMinute, matchResults, showHalftimePanel, isCupMatch]);
+  }, [
+    isPlayingMatch,
+    liveMinute,
+    matchResults,
+    showHalftimePanel,
+    isCupMatch,
+    isMatchActionPending,
+  ]);
 
   // Detect per-minute events: flash goal score & play notification for human matches
   useLayoutEffect(() => {
