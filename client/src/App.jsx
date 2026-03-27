@@ -1778,6 +1778,28 @@ function App() {
   const completedJornada =
     matchweekCount > 0 ? ((matchweekCount - 1) % 14) + 1 : 0;
 
+  // ── FINANCIAL PROJECTIONS ─────────────────────────────────────────────────
+  // All values are estimates based on current season data (no historical log).
+  const totalWeeklyWage = mySquad.reduce((acc, p) => acc + (p.wage || 0), 0);
+  // Home games: 7 per season (half of 14 matchweeks, balanced schedule)
+  const HOME_GAMES_PER_SEASON = 7;
+  // Rough estimate of home games played so far (completedJornada / 2)
+  const homeGamesPlayed = Math.round(completedJornada / 2);
+  const homeGamesRemaining = Math.max(0, HOME_GAMES_PER_SEASON - homeGamesPlayed);
+  const matchweeksRemaining = Math.max(0, 14 - completedJornada);
+  const capacityRevPerGame = (teamInfo?.stadium_capacity || 5000) * 10;
+  const projectedSeasonTickets = capacityRevPerGame * HOME_GAMES_PER_SEASON;
+  const projectedSeasonWages = totalWeeklyWage * 14;
+  const loanAmount = teamInfo?.loan_amount || 0;
+  const loanInterestPerWeek = Math.round(loanAmount * 0.01);
+  const projectedSeasonInterest = loanInterestPerWeek * 14;
+  const currentBudget = teamInfo?.budget || 0;
+  const projectedFinalBudget =
+    currentBudget +
+    capacityRevPerGame * homeGamesRemaining -
+    totalWeeklyWage * matchweeksRemaining -
+    loanInterestPerWeek * matchweeksRemaining;
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans pb-12 tracking-tight">
       {/* Toast notifications */}
@@ -1852,7 +1874,7 @@ function App() {
       <div className="max-w-350 mx-auto p-4 md:p-8">
         <div className="flex gap-3 mb-5 border-b border-zinc-800 pb-px overflow-x-auto justify-between">
           <div className="flex gap-3 overflow-x-auto">
-            {["club", "standings", "market", "squad"].map((tab) => (
+            {["club", "finances", "standings", "market", "squad"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -1860,11 +1882,13 @@ function App() {
               >
                 {tab === "club"
                   ? "Clube"
-                  : tab === "standings"
-                    ? "Classificações"
-                    : tab === "market"
-                      ? "Mercado"
-                      : "Plantel"}
+                  : tab === "finances"
+                    ? "Finanças"
+                    : tab === "standings"
+                      ? "Classificações"
+                      : tab === "market"
+                        ? "Mercado"
+                        : "Plantel"}
               </button>
             ))}
           </div>
@@ -2451,6 +2475,47 @@ function App() {
 
             {activeTab === "club" && (
               <div className="space-y-6">
+                {/* Club identity card */}
+                <div
+                  className="rounded-3xl border border-zinc-800 shadow-sm p-6 relative overflow-hidden"
+                  style={{ background: teamInfo?.color_primary ? `${teamInfo.color_primary}22` : undefined, borderColor: teamInfo?.color_primary || undefined }}
+                >
+                  <div className="flex flex-col md:flex-row md:items-center gap-4">
+                    <div
+                      className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black shrink-0"
+                      style={{ background: teamInfo?.color_primary || "#18181b", color: teamInfo?.color_secondary || "#fff" }}
+                    >
+                      {teamInfo?.name?.[0] || "?"}
+                    </div>
+                    <div className="flex-1">
+                      <h1
+                        className="text-2xl font-black tracking-tight"
+                        style={{ color: teamInfo?.color_primary || "#fff" }}
+                      >
+                        {teamInfo?.name || "—"}
+                      </h1>
+                      <p className="text-zinc-400 text-sm font-bold mt-0.5">
+                        {DIVISION_NAMES[teamInfo?.division] || `Divisão ${teamInfo?.division}`} · Época {seasonYear}/{seasonYear + 1}
+                      </p>
+                      <p className="text-zinc-500 text-xs mt-1">Manager: <strong className="text-zinc-300">{me?.name}</strong></p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Moral</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-28 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${(teamInfo?.morale || 75) >= 70 ? "bg-emerald-500" : (teamInfo?.morale || 75) >= 40 ? "bg-amber-500" : "bg-red-500"}`}
+                            style={{ width: `${teamInfo?.morale || 75}%` }}
+                          />
+                        </div>
+                        <span className={`font-black text-sm ${(teamInfo?.morale || 75) >= 70 ? "text-emerald-400" : (teamInfo?.morale || 75) >= 40 ? "text-amber-400" : "text-red-400"}`}>
+                          {teamInfo?.morale || 75}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Own team trophies */}
                 <div className="bg-zinc-900 rounded-3xl border border-zinc-800 shadow-sm p-6">
                   <h2 className="text-xs text-amber-400 font-black uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -2537,98 +2602,291 @@ function App() {
                 )}
 
                 {/* Finances section */}
-                <div className="bg-zinc-900 p-8 rounded-3xl border border-zinc-800 shadow-sm">
-                  <h2 className="text-2xl font-black mb-8 text-emerald-400">
-                    Resumo Financeiro
+                <div className="bg-zinc-900 p-6 rounded-3xl border border-zinc-800 shadow-sm">
+                  <h2 className="text-xs text-zinc-400 font-black uppercase tracking-widest mb-4">
+                    Estádio
                   </h2>
-                  <div className="space-y-6 text-lg">
-                    <div className="flex justify-between border-b border-zinc-800 pb-4">
-                      <span className="text-zinc-400 font-bold">
-                        Orçamento Atual:
-                      </span>
-                      <span className="font-mono text-white text-2xl font-black">
-                        {formatCurrency(teamInfo?.budget || 0)}
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-400 font-bold text-sm">Capacidade</span>
+                      <span className="font-mono text-white font-black text-lg">
+                        🏟️ {(teamInfo?.stadium_capacity || 5000).toLocaleString("pt-PT")} lugares
                       </span>
                     </div>
-                    <div className="flex justify-between border-b border-zinc-800 pb-4">
-                      <span className="text-zinc-400 font-bold">
-                        Salários Activos (Semanais):
-                      </span>
-                      <span className="font-mono text-red-400 font-bold">
-                        -{" "}
-                        {formatCurrency(
-                          mySquad.reduce((acc, p) => acc + p.wage, 0),
-                        )}
+                    <div className="flex items-center justify-between border-t border-zinc-800 pt-3">
+                      <span className="text-zinc-400 font-bold text-sm">Receita Máx./Jogo em Casa</span>
+                      <span className="font-mono text-emerald-400 font-bold text-sm">
+                        {formatCurrency(capacityRevPerGame)}
                       </span>
                     </div>
-                    <div className="flex justify-between border-b border-zinc-800 pb-4">
-                      <span className="text-zinc-400 font-bold">
-                        Bilheteiras (10€/lugar — variável):
-                      </span>
-                      <span className="font-mono text-emerald-400 font-bold">
-                        +{" "}
-                        {formatCurrency(
-                          (teamInfo?.stadium_capacity || 5000) * 10,
-                        )}{" "}
-                        <span className="text-zinc-500 text-sm font-normal">
-                          (máx.)
-                        </span>
-                      </span>
-                    </div>
+                    <p className="text-zinc-500 text-xs mt-1">
+                      Para expandir estádio ou gerir empréstimos, vê o separador <strong className="text-amber-400">Finanças</strong>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
-                    <div className="flex justify-between border-b border-zinc-800 pb-4">
-                      <span className="text-zinc-400 font-bold">
-                        Lotação do Estádio:
-                      </span>
-                      <span className="font-mono text-white text-xl font-bold">
-                        {teamInfo?.stadium_capacity?.toLocaleString() || 5000}{" "}
-                        Lugares
-                      </span>
+            {activeTab === "finances" && (
+              <div className="space-y-6">
+                {/* ── KPI CARDS ─────────────────────────────────────────────────── */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Saldo Actual */}
+                  <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 flex flex-col gap-1">
+                    <span className="text-zinc-500 font-black uppercase text-[10px] tracking-widest">Saldo Actual</span>
+                    <span className={`font-mono text-xl font-black ${currentBudget >= 0 ? "text-white" : "text-red-400"}`}>
+                      {formatCurrency(currentBudget)}
+                    </span>
+                    <span className="text-zinc-600 text-[10px]">época {seasonYear}/{seasonYear + 1}</span>
+                  </div>
+                  {/* Progresso do Ano Fiscal */}
+                  <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 flex flex-col gap-2">
+                    <span className="text-zinc-500 font-black uppercase text-[10px] tracking-widest">Ano Fiscal</span>
+                    <span className="text-white font-black text-xl">{completedJornada} <span className="text-zinc-500 font-normal text-sm">/ 14 jornadas</span></span>
+                    <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-amber-500 rounded-full transition-all"
+                        style={{ width: `${(completedJornada / 14) * 100}%` }}
+                      />
                     </div>
+                  </div>
+                  {/* Receita Projetada */}
+                  <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 flex flex-col gap-1">
+                    <span className="text-zinc-500 font-black uppercase text-[10px] tracking-widest">Bilheteiras (Época)</span>
+                    <span className="font-mono text-emerald-400 text-xl font-black">+{formatCurrency(projectedSeasonTickets)}</span>
+                    <span className="text-zinc-600 text-[10px]">{HOME_GAMES_PER_SEASON} jogos em casa × {formatCurrency(capacityRevPerGame)}</span>
+                  </div>
+                  {/* Balanço Final Projetado */}
+                  <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 flex flex-col gap-1">
+                    <span className="text-zinc-500 font-black uppercase text-[10px] tracking-widest">Balanço Proj. Final</span>
+                    <span className={`font-mono text-xl font-black ${projectedFinalBudget >= currentBudget ? "text-emerald-400" : "text-red-400"}`}>
+                      {formatCurrency(projectedFinalBudget)}
+                    </span>
+                    <span className="text-zinc-600 text-[10px]">{matchweeksRemaining} jornadas restantes</span>
+                  </div>
+                </div>
 
-                    <div className="flex justify-between pb-4">
-                      <span className="text-zinc-400 font-bold">
-                        Dívida ao Banco:
-                      </span>
-                      <span className="font-mono text-red-500 text-xl font-bold">
-                        {formatCurrency(teamInfo?.loan_amount || 0)}{" "}
-                        <span className="text-sm">(5% juros/sem)</span>
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8 pt-4 border-t border-zinc-800">
-                      <div className="bg-zinc-950 p-4 rounded-xl border border-emerald-900 border-opacity-30">
-                        <p className="text-sm font-bold text-amber-500 mb-3 uppercase tracking-widest">
-                          +5.000 Lugares Estádio
-                        </p>
-                        <button
-                          onClick={() => socket.emit("buildStadium")}
-                          className="w-full bg-amber-600 hover:bg-amber-500 text-zinc-950 font-black py-3 rounded-lg text-sm transition-all uppercase"
-                        >
-                          Expandir (150.000€)
-                        </button>
-                      </div>
-
-                      <div className="bg-zinc-950 p-4 rounded-xl border border-red-900 border-opacity-30">
-                        <p className="text-sm font-bold text-red-500 mb-3 uppercase tracking-widest">
-                          Apoio Bancário
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => socket.emit("takeLoan")}
-                            className="flex-1 bg-red-900 hover:bg-red-800 text-white font-black py-3 rounded-lg text-xs transition-all uppercase"
-                          >
-                            Pedir +500K
-                          </button>
-                          <button
-                            onClick={() => socket.emit("payLoan")}
-                            className="flex-1 bg-emerald-900 hover:bg-emerald-800 text-white font-black py-3 rounded-lg text-xs transition-all uppercase"
-                          >
-                            Pagar -500K
-                          </button>
+                {/* ── RECEITAS ──────────────────────────────────────────────────── */}
+                <div className="bg-zinc-900 rounded-3xl border border-zinc-800 shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-zinc-800 flex items-center gap-3">
+                    <span className="text-lg">💰</span>
+                    <h2 className="text-xs font-black uppercase tracking-widest text-emerald-400">Receitas</h2>
+                  </div>
+                  <div className="p-6 space-y-5">
+                    {/* Bilheteiras */}
+                    <div>
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="text-white font-bold text-sm">Bilheteiras</p>
+                          <p className="text-zinc-500 text-xs">
+                            10€/lugar × lotação — jornadas em casa
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-emerald-400 font-mono font-black text-base">{formatCurrency(capacityRevPerGame)}<span className="text-zinc-500 text-xs font-normal"> /jogo</span></p>
+                          <p className="text-zinc-400 font-mono text-xs">{formatCurrency(projectedSeasonTickets)} proj. época</p>
                         </div>
                       </div>
+                      {/* Home-games progress bar */}
+                      <div className="flex items-center gap-2 mt-3">
+                        <span className="text-zinc-600 text-[10px] w-20 shrink-0">Em casa</span>
+                        <div className="flex-1 flex gap-0.5">
+                          {Array.from({ length: HOME_GAMES_PER_SEASON }).map((_, i) => (
+                            <div
+                              key={i}
+                              className={`flex-1 h-2 rounded-sm ${i < homeGamesPlayed ? "bg-emerald-500" : i === homeGamesPlayed ? "bg-emerald-800 animate-pulse" : "bg-zinc-800"}`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-zinc-500 text-[10px] w-10 text-right">{homeGamesPlayed}/{HOME_GAMES_PER_SEASON}</span>
+                      </div>
                     </div>
+
+                    {/* Prémios */}
+                    <div className="border-t border-zinc-800 pt-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-white font-bold text-sm">Prémios</p>
+                          <p className="text-zinc-500 text-xs">Taça de Portugal — vencedor</p>
+                        </div>
+                        <span className="px-3 py-1 rounded-full bg-amber-900/30 border border-amber-700/30 text-amber-400 font-black text-xs">
+                          +500.000€
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── DESPESAS ──────────────────────────────────────────────────── */}
+                <div className="bg-zinc-900 rounded-3xl border border-zinc-800 shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-zinc-800 flex items-center gap-3">
+                    <span className="text-lg">📤</span>
+                    <h2 className="text-xs font-black uppercase tracking-widest text-red-400">Despesas</h2>
+                  </div>
+                  <div className="p-6 space-y-5">
+                    {/* Folha Salarial */}
+                    <div>
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <p className="text-white font-bold text-sm">Folha Salarial</p>
+                          <p className="text-zinc-500 text-xs">Pago por jornada</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-red-400 font-mono font-black text-base">-{formatCurrency(totalWeeklyWage)}<span className="text-zinc-500 text-xs font-normal"> /jornada</span></p>
+                          <p className="text-zinc-400 font-mono text-xs">-{formatCurrency(projectedSeasonWages)} proj. época</p>
+                        </div>
+                      </div>
+                      {/* Salary breakdown by player */}
+                      <div className="bg-zinc-950 rounded-xl border border-zinc-800 overflow-hidden">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="border-b border-zinc-800 text-zinc-500 uppercase text-[10px] tracking-wider">
+                              <th className="px-3 py-2 text-left font-black">Pos</th>
+                              <th className="px-3 py-2 text-left font-normal">Jogador</th>
+                              <th className="px-3 py-2 text-right font-normal">Ordenado/Jornada</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-zinc-900">
+                            {[...mySquad]
+                              .sort((a, b) => (b.wage || 0) - (a.wage || 0))
+                              .map((p) => (
+                                <tr key={p.id} className="hover:bg-zinc-900/50 transition-colors">
+                                  <td className={`px-3 py-1.5 font-black text-center ${POSITION_TEXT_CLASS[p.position] || "text-zinc-300"}`}>
+                                    {POSITION_SHORT_LABELS[p.position] || p.position}
+                                  </td>
+                                  <td className="px-3 py-1.5 text-zinc-300">{p.name}</td>
+                                  <td className="px-3 py-1.5 text-right font-mono text-red-400">{formatCurrency(p.wage || 0)}</td>
+                                </tr>
+                              ))}
+                          </tbody>
+                          <tfoot>
+                            <tr className="border-t border-zinc-700 bg-zinc-900">
+                              <td colSpan={2} className="px-3 py-2 font-black text-zinc-400 uppercase text-[10px] tracking-wider">Total</td>
+                              <td className="px-3 py-2 text-right font-mono font-black text-red-400">{formatCurrency(totalWeeklyWage)}</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Juros Bancários — só mostra se houver dívida */}
+                    {loanAmount > 0 && (
+                      <div className="border-t border-zinc-800 pt-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="text-white font-bold text-sm">Juros Bancários</p>
+                            <p className="text-zinc-500 text-xs">1% da dívida por jornada</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-red-400 font-mono font-black text-base">-{formatCurrency(loanInterestPerWeek)}<span className="text-zinc-500 text-xs font-normal"> /jornada</span></p>
+                            <p className="text-zinc-400 font-mono text-xs">-{formatCurrency(projectedSeasonInterest)} proj. época</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* ── DÍVIDA BANCÁRIA ───────────────────────────────────────────── */}
+                <div className="bg-zinc-900 rounded-3xl border border-zinc-800 shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-zinc-800 flex items-center gap-3">
+                    <span className="text-lg">🏦</span>
+                    <h2 className="text-xs font-black uppercase tracking-widest text-orange-400">Empréstimos</h2>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-white font-bold">Dívida Actual</p>
+                        <p className="text-zinc-500 text-xs">Taxa de juro: 1% / jornada</p>
+                      </div>
+                      <p className={`font-mono text-xl font-black ${loanAmount > 0 ? "text-red-400" : "text-emerald-400"}`}>
+                        {formatCurrency(loanAmount)}
+                      </p>
+                    </div>
+                    {/* Debt gauge */}
+                    <div>
+                      <div className="flex justify-between text-[10px] text-zinc-600 mb-1 font-bold">
+                        <span>0€</span>
+                        <span>Máximo: 2.000.000€</span>
+                      </div>
+                      <div className="w-full h-3 bg-zinc-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${loanAmount / 2000000 > 0.75 ? "bg-red-500" : loanAmount / 2000000 > 0.4 ? "bg-orange-500" : "bg-amber-400"}`}
+                          style={{ width: `${Math.min(100, (loanAmount / 2000000) * 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-zinc-600 text-[10px] text-right mt-1">{((loanAmount / 2000000) * 100).toFixed(0)}% do limite</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <div className="bg-zinc-950 p-4 rounded-xl border border-red-900/30 flex flex-col gap-2">
+                        <p className="text-xs font-black text-red-400 uppercase tracking-widest">Pedir Empréstimo</p>
+                        <p className="text-zinc-500 text-[10px]">+500.000€ → {formatCurrency(loanAmount + 500000)} dívida</p>
+                        <button
+                          onClick={() => socket.emit("takeLoan")}
+                          disabled={loanAmount >= 2000000}
+                          className="w-full bg-red-900 hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black py-2.5 rounded-lg text-xs transition-all uppercase"
+                        >
+                          Pedir +500K
+                        </button>
+                      </div>
+                      <div className="bg-zinc-950 p-4 rounded-xl border border-emerald-900/30 flex flex-col gap-2">
+                        <p className="text-xs font-black text-emerald-400 uppercase tracking-widest">Pagar Dívida</p>
+                        <p className="text-zinc-500 text-[10px]">-500.000€ → {formatCurrency(Math.max(0, loanAmount - 500000))} dívida</p>
+                        <button
+                          onClick={() => socket.emit("payLoan")}
+                          disabled={loanAmount < 500000 || currentBudget < 500000}
+                          className="w-full bg-emerald-900 hover:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black py-2.5 rounded-lg text-xs transition-all uppercase"
+                        >
+                          Pagar -500K
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── ESTÁDIO ───────────────────────────────────────────────────── */}
+                <div className="bg-zinc-900 rounded-3xl border border-zinc-800 shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-zinc-800 flex items-center gap-3">
+                    <span className="text-lg">🏟️</span>
+                    <h2 className="text-xs font-black uppercase tracking-widest text-amber-400">Estádio</h2>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-zinc-950 rounded-xl border border-zinc-800 p-4 flex flex-col gap-1">
+                        <span className="text-zinc-500 text-[10px] font-black uppercase tracking-wider">Capacidade Actual</span>
+                        <span className="text-white font-black text-2xl">{(teamInfo?.stadium_capacity || 5000).toLocaleString("pt-PT")}</span>
+                        <span className="text-zinc-600 text-[10px]">lugares</span>
+                      </div>
+                      <div className="bg-zinc-950 rounded-xl border border-zinc-800 p-4 flex flex-col gap-1">
+                        <span className="text-zinc-500 text-[10px] font-black uppercase tracking-wider">Receita/Jogo em Casa</span>
+                        <span className="text-emerald-400 font-mono font-black text-xl">{formatCurrency(capacityRevPerGame)}</span>
+                        <span className="text-zinc-600 text-[10px]">10€ × lotação (máx.)</span>
+                      </div>
+                    </div>
+
+                    {/* ROI pill */}
+                    <div className="bg-amber-950/20 border border-amber-800/20 rounded-xl p-4">
+                      <p className="text-amber-400 font-black text-xs uppercase tracking-widest mb-2">ROI — Expansão +5.000 Lugares</p>
+                      <ul className="text-zinc-400 text-xs space-y-1">
+                        <li>Custo: <strong className="text-white">150.000€</strong></li>
+                        <li>Ganho extra por jogo: <strong className="text-emerald-400">+{formatCurrency(5000 * 10)}</strong></li>
+                        <li>Recuperado em: <strong className="text-amber-400">3 jogos em casa</strong></li>
+                      </ul>
+                    </div>
+
+                    <button
+                      onClick={() => socket.emit("buildStadium")}
+                      disabled={currentBudget < 150000}
+                      className="w-full bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-950 font-black py-3 rounded-xl text-sm transition-all uppercase tracking-wide"
+                    >
+                      Expandir Estádio — 150.000€
+                    </button>
+                    {currentBudget < 150000 && (
+                      <p className="text-zinc-600 text-xs text-center">
+                        Saldo insuficiente. Precisa de mais {formatCurrency(150000 - currentBudget)}.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
