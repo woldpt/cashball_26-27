@@ -149,6 +149,8 @@ function buildAutoPositions(
   if (lineup.length < 11) {
     for (const player of sortedPlayers) {
       if (lineup.includes(player)) continue;
+      // Never add a 2nd GK to fill spots — that causes the 2-GK bug
+      if (player.position === "GK") continue;
       lineup.push(player);
       if (lineup.length === 11) break;
     }
@@ -158,8 +160,11 @@ function buildAutoPositions(
     lineup.slice(0, 11).map((player) => [player.id, "Titular"]),
   );
 
-  // Pick 5 suplentes from the best remaining available players
-  const subs = sortedPlayers.filter((p) => !lineup.includes(p)).slice(0, 5);
+  // Pick suplentes: always include 1 GK (if available), then fill remaining slots
+  const remaining = sortedPlayers.filter((p) => !lineup.includes(p));
+  const gkSub = remaining.find((p) => p.position === "GK");
+  const nonGkSubs = remaining.filter((p) => p.position !== "GK");
+  const subs = (gkSub ? [gkSub, ...nonGkSubs] : nonGkSubs).slice(0, 5);
   subs.forEach((p) => {
     positions[p.id] = "Suplente";
   });
@@ -3335,10 +3340,10 @@ function App() {
                               className={`cursor-pointer inline-flex items-center justify-center rounded-full ${player.status === "Titular" ? "bg-emerald-500/15" : player.status === "Suplente" ? "bg-amber-500/15" : "bg-zinc-900/80"}`}
                             >
                               {player.status === "Titular"
-                                ? "✅"
+                                ? "🟢"
                                 : player.status === "Suplente"
                                   ? "🟡"
-                                  : "□"}
+                                  : "⚫️"}
                             </span>
                             {openStatusPickerId === player.id &&
                               (() => {
@@ -3356,10 +3361,10 @@ function App() {
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     {[
-                                      ["Titular", "✅"],
-                                      ["Suplente", "🟡"],
-                                      ["Excluído", "□"],
-                                    ].map(([status, emoji]) => {
+                                      ["Titular", "🟢", "Convocado"],
+                                      ["Suplente", "🟡", "Suplente"],
+                                      ["Excluído", "⚫️", "Não convocado"],
+                                    ].map(([status, emoji, label]) => {
                                       const unavailable =
                                         player.isUnavailable &&
                                         (status === "Titular" ||
@@ -3394,7 +3399,7 @@ function App() {
                                                 : "hover:bg-zinc-700 text-zinc-300"
                                           }`}
                                         >
-                                          {emoji} {status}
+                                          {emoji} {label}
                                         </button>
                                       );
                                     })}
@@ -3794,6 +3799,18 @@ function App() {
                             Defensivo (+20% Def)
                           </option>
                         </select>
+                        <button
+                          className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg px-3 py-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors"
+                          onClick={() => {
+                            setTactic((prev) => {
+                              const next = { ...prev, positions: {} };
+                              socket.emit("setTactic", next);
+                              return next;
+                            });
+                          }}
+                        >
+                          Limpar Tática
+                        </button>
                         {(() => {
                           const morale = teamInfo?.morale ?? 75;
                           const moraleColor =

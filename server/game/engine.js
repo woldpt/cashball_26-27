@@ -65,7 +65,10 @@ async function getTeamSquad(db, teamId, tactic, currentMatchweek = 1) {
 
       if (lineup.length < 11) {
         const missing = 11 - lineup.length;
-        const remaining = sorted.filter((p) => !lineup.includes(p));
+        // Never fill with a 2nd GK — that causes the 2-GK bug
+        const remaining = sorted.filter(
+          (p) => !lineup.includes(p) && p.position !== "GK",
+        );
         lineup.push(...remaining.slice(0, missing));
       }
 
