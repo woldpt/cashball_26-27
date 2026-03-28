@@ -642,6 +642,7 @@ async function applySeasonEnd(game) {
   game.cupRuntime = {
     phaseToken: "",
     drawPayload: null,
+    preMatchPayload: null,
     halftimePayload: null,
     secondHalfPayload: null,
     fixtures: [],
@@ -652,6 +653,10 @@ async function applySeasonEnd(game) {
   if (game._leagueAnimTimeout) {
     clearTimeout(game._leagueAnimTimeout);
     game._leagueAnimTimeout = null;
+  }
+  if (game._cupPreMatchTimeout) {
+    clearTimeout(game._cupPreMatchTimeout);
+    game._cupPreMatchTimeout = null;
   }
   if (game._cupDrawTimeout) {
     clearTimeout(game._cupDrawTimeout);
@@ -1035,10 +1040,15 @@ async function startCupRound(game, round) {
 
 // ─── CUP: SIMULATE FIRST HALF ─────────────────────────────────────────────────
 async function simulateCupFirstHalf(game, round, expectedToken) {
-  if (game.cupState !== "draw" || game.cupRound !== round) return;
+  if (
+    (game.cupState !== "draw" && game.cupState !== "pre_match") ||
+    game.cupRound !== round
+  )
+    return;
   if ((game.cupRuntime?.phaseToken || "") !== expectedToken) return;
 
   clearCupTimeout(game, "_cupDrawTimeout");
+  clearCupTimeout(game, "_cupPreMatchTimeout");
   setCupPhase(game, "playing_first_half", round);
 
   const season = game.season;
@@ -1254,6 +1264,10 @@ function emitCurrentCupPhaseToSocket(game, socket) {
     socket.emit("cupDrawStart", runtime.drawPayload);
     return;
   }
+  if (game.cupState === "pre_match" && runtime.preMatchPayload) {
+    socket.emit("cupPreMatch", runtime.preMatchPayload);
+    return;
+  }
   if (game.cupState === "halftime" && runtime.halftimePayload) {
     socket.emit("cupHalfTimeResults", runtime.halftimePayload);
     return;
@@ -1267,6 +1281,23 @@ function ensureCupPhaseTimeout(game) {
   const token = game.cupRuntime?.phaseToken;
   const round = game.cupRound;
   if (!token || !round) return;
+
+  if (game.cupState === "pre_match" && !game._cupPreMatchTimeout) {
+    armCupTimeout({
+      game,
+      key: "_cupPreMatchTimeout",
+      ms: 60000,
+      phase: "pre_match",
+      round,
+      token,
+      onElapsed: () => {
+        console.log(
+          `[${game.roomCode}] Cup pre-match timeout — auto-starting round ${round}`,
+        );
+        simulateCupFirstHalf(game, round, token);
+      },
+    });
+  }
 
   if (game.cupState === "draw" && !game._cupDrawTimeout) {
     armCupTimeout({
@@ -2144,6 +2175,54 @@ io.on("connection", (socket) => {
     const allAcked = allConnectedCoachesAcked(game, game.cupDrawAcks);
     if (allAcked) {
       clearCupTimeout(game, "_cupDrawTimeout");
+      const preMatchToken = setCupPhase(game, "pre_match", game.cupRound);
+      game.cupPreMatchAcks = new Set();
+      const preMatchRoundName =
+        CUP_ROUND_NAMES[game.cupRound] || `Ronda ${game.cupRound}`;
+      const preMatchPayload = {
+        round: game.cupRound,
+        roundName: preMatchRoundName,
+        season: game.season,
+      };
+      game.cupRuntime.preMatchPayload = preMatchPayload;
+      io.to(game.roomCode).emit("cupPreMatch", preMatchPayload);
+      Object.values(game.playersByName).forEach((p) => {
+        p.ready = false;
+      });
+      io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
+      armCupTimeout({
+        game,
+        key: "_cupPreMatchTimeout",
+        ms: 60000,
+        phase: "pre_match",
+        round: game.cupRound,
+        token: preMatchToken,
+        onElapsed: () => {
+          console.log(
+            `[${game.roomCode}] Cup pre-match timeout — auto-starting round ${game.cupRound}`,
+          );
+          simulateCupFirstHalf(game, game.cupRound, game.cupRuntime?.phaseToken);
+        },
+      });
+    }
+  });
+
+  // ── CUP KICK OFF ──────────────────────────────────────────────────────────
+  socket.on("cupKickOff", () => {
+    const game = getGameBySocket(socket.id);
+    if (!game || game.cupState !== "pre_match") return;
+    const player = getPlayerBySocket(game, socket.id);
+    if (!player || !game.cupTeamIds.includes(player.teamId)) return;
+    player.ready = true;
+    game.cupPreMatchAcks = game.cupPreMatchAcks || new Set();
+    game.cupPreMatchAcks.add(socket.id);
+    io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
+    const allReady = allConnectedCoachesAcked(game, game.cupPreMatchAcks);
+    if (allReady) {
+      clearCupTimeout(game, "_cupPreMatchTimeout");
+      Object.values(game.playersByName).forEach((p) => {
+        p.ready = false;
+      });
       simulateCupFirstHalf(game, game.cupRound, game.cupRuntime?.phaseToken);
     }
   });

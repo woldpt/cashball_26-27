@@ -423,6 +423,7 @@ function App() {
   const [welcomeModal, setWelcomeModal] = useState(null); // { teamName }
   // Cup match live state
   const [isCupMatch, setIsCupMatch] = useState(false);
+  const [cupPreMatch, setCupPreMatch] = useState(false);
   const [cupMatchRoundName, setCupMatchRoundName] = useState("");
   const [cupExtraTimeBadge, setCupExtraTimeBadge] = useState(false);
   const [isCupExtraTime, setIsCupExtraTime] = useState(false);
@@ -564,6 +565,22 @@ function App() {
       setCupDrawRevealIdx(0);
       setShowCupDrawPopup(true);
     });
+    socket.on("cupPreMatch", (data) => {
+      setMatchResults({ matchweek: data.season, results: [] });
+      setShowHalftimePanel(true);
+      setIsPlayingMatch(false);
+      setLiveMinute(0);
+      setSubsMade(0);
+      setSubbedOut([]);
+      setConfirmedSubs([]);
+      setSwapSource(null);
+      setSwapTarget(null);
+      setIsCupMatch(true);
+      setCupPreMatch(true);
+      setCupMatchRoundName(data.roundName);
+      setCupExtraTimeBadge(false);
+      setActiveTab("live");
+    });
     socket.on("cupHalfTimeResults", (data) => {
       setIsMatchActionPending(false);
       // Treat the cup halftime exactly like a league halftime:
@@ -588,6 +605,7 @@ function App() {
       setShowHalftimePanel(true);
       setIsPlayingMatch(true);
       setIsCupMatch(true);
+      setCupPreMatch(false);
       setCupMatchRoundName(data.roundName);
       setCupExtraTimeBadge(false);
       setActiveTab("live");
@@ -670,6 +688,7 @@ function App() {
       setCupRoundResults(data);
       setShowCupResults(true);
       setIsCupMatch(false);
+      setCupPreMatch(false);
       setIsCupExtraTime(false);
       setCupExtraTimeBadge(false);
       setIsPlayingMatch(false);
@@ -909,6 +928,7 @@ function App() {
       socket.off("teamSquadData");
       socket.off("nextMatchSummary");
       socket.off("cupDrawStart");
+      socket.off("cupPreMatch");
       socket.off("cupHalfTimeResults");
       socket.off("cupExtraTimeStart");
       socket.off("extraTimeSecondHalfStart");
@@ -1265,7 +1285,9 @@ function App() {
   // Sending !isReady (a toggle) was broken because the server resets ready=false
   // after halftime, causing the toggle to send false instead of true.
   const handleHalftimeReady = () => {
-    if (isCupMatch) {
+    if (cupPreMatch) {
+      socket.emit("cupKickOff");
+    } else if (isCupMatch) {
       socket.emit("cupHalfTimeReady");
     } else {
       socket.emit("setReady", true);
@@ -2434,16 +2456,20 @@ function App() {
                       className={`w-full py-2.5 text-sm font-black uppercase tracking-widest transition-all shrink-0 ${
                         players.find((p) => p.name === me.name)?.ready
                           ? "bg-zinc-800 text-zinc-500"
-                          : isCupMatch
-                            ? "bg-amber-500 hover:bg-amber-400 text-zinc-950"
-                            : "bg-amber-600 hover:bg-amber-500 text-zinc-950"
+                          : cupPreMatch
+                            ? "bg-green-600 hover:bg-green-500 text-zinc-950"
+                            : isCupMatch
+                              ? "bg-amber-500 hover:bg-amber-400 text-zinc-950"
+                              : "bg-amber-600 hover:bg-amber-500 text-zinc-950"
                       }`}
                     >
                       {players.find((p) => p.name === me.name)?.ready
                         ? "A AGUARDAR..."
-                        : isCupMatch
-                          ? "▶ 2ª PARTE — TAÇA"
-                          : "▶ INICIAR 2ª PARTE"}
+                        : cupPreMatch
+                          ? "▶ INICIAR JOGO — TAÇA"
+                          : isCupMatch
+                            ? "▶ 2ª PARTE — TAÇA"
+                            : "▶ INICIAR 2ª PARTE"}
                     </button>
                   </div>
                 )}
@@ -2457,7 +2483,11 @@ function App() {
                   {isCupMatch ? (
                     <>
                       🏆 Taça · {cupMatchRoundName}
-                      {cupExtraTimeBadge ? " — Prolongamento" : ""}
+                      {cupPreMatch
+                        ? " — Pré-Jogo"
+                        : cupExtraTimeBadge
+                          ? " — Prolongamento"
+                          : ""}
                     </>
                   ) : (
                     <>
