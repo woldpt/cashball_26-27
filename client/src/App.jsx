@@ -772,27 +772,28 @@ function App() {
 
       const normalizedAction = { ...(data || {}) };
 
-      if (normalizedAction.type === "penalty") {
-        const toCandidate = (player) => {
-          if (!player || player.id === undefined || player.id === null) {
-            return null;
-          }
-          return {
-            id: player.id,
-            name: player.name || "Jogador",
-            position: player.position || "MID",
-            skill: Number(player.skill || 0),
-          };
+      const toCandidate = (player) => {
+        if (!player || player.id === undefined || player.id === null) {
+          return null;
+        }
+        return {
+          id: player.id,
+          name: player.name || "Jogador",
+          position: player.position || "MID",
+          skill: Number(player.skill || 0),
         };
+      };
 
+      const currentSquad = Array.isArray(mySquadRef.current)
+        ? mySquadRef.current
+        : [];
+      const currentPositions = tacticRef.current?.positions || {};
+
+      if (normalizedAction.type === "penalty") {
         const incomingCandidates = (normalizedAction.takerCandidates || [])
           .map(toCandidate)
           .filter(Boolean);
 
-        const currentSquad = Array.isArray(mySquadRef.current)
-          ? mySquadRef.current
-          : [];
-        const currentPositions = tacticRef.current?.positions || {};
         const titulares = currentSquad.filter(
           (player) => currentPositions[player.id] === "Titular",
         );
@@ -805,6 +806,26 @@ function App() {
           incomingCandidates.length > 0
             ? incomingCandidates
             : fallbackCandidates;
+      }
+
+      if (normalizedAction.type === "injury") {
+        const incomingBench = (normalizedAction.benchPlayers || [])
+          .map(toCandidate)
+          .filter(Boolean);
+
+        if (incomingBench.length > 0) {
+          normalizedAction.benchPlayers = incomingBench;
+        } else {
+          // Fallback: use players on the bench in the current tactic
+          const suplentes = currentSquad
+            .filter((player) => currentPositions[player.id] === "Suplente")
+            .map(toCandidate)
+            .filter(Boolean);
+          normalizedAction.benchPlayers =
+            suplentes.length > 0
+              ? suplentes
+              : currentSquad.map(toCandidate).filter(Boolean);
+        }
       }
 
       setMatchAction(normalizedAction);
@@ -2234,109 +2255,117 @@ function App() {
 
                 {/* BUG-11 FIX: showHalftimePanel (not liveMinute===45) controls this overlay */}
                 {showHalftimePanel && !isPlayingMatch && (
-                  <div className="absolute inset-0 bg-zinc-950 z-50 flex flex-col overflow-y-auto">
+                  <div className="absolute inset-0 bg-zinc-950 z-50 flex flex-col overflow-hidden">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800">
-                      <span className="text-amber-500 font-black uppercase tracking-widest text-sm">
+                    <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800 shrink-0">
+                      <span className="text-amber-500 font-black uppercase tracking-widest text-xs">
                         INTERVALO
                       </span>
-                      <span className="text-zinc-500 text-xs font-bold">
+                      <span className="text-zinc-500 text-[10px] font-bold">
                         Subs: {MAX_MATCH_SUBS - subsMade}/{MAX_MATCH_SUBS}
                       </span>
                     </div>
 
                     {/* Two-column player list */}
-                    <div className="flex flex-1 divide-x divide-zinc-800 min-h-0">
+                    <div className="flex flex-1 divide-x divide-zinc-800 overflow-hidden min-h-0">
                       {/* Em Campo */}
-                      <div className="flex-1 flex flex-col min-w-0">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 px-3 py-1.5 border-b border-zinc-800">
+                      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 px-2 py-1 border-b border-zinc-800 shrink-0">
                           Em Campo
                         </p>
-                        {annotatedSquad
-                          .filter(
-                            (p) =>
-                              tactic.positions[p.id] === "Titular" &&
-                              !subbedOut.includes(p.id),
-                          )
-                          .map((p) => (
-                            <div
-                              key={p.id}
-                              onClick={() =>
-                                subsMade < MAX_MATCH_SUBS &&
-                                handleSelectOut(p.id)
-                              }
-                              className={`flex items-center gap-2 px-3 py-1.5 border-b border-zinc-800/50 text-xs font-bold select-none transition-colors ${
-                                swapSource === p.id
-                                  ? "bg-red-500/15 text-red-200"
-                                  : subsMade < MAX_MATCH_SUBS
-                                    ? "cursor-pointer hover:bg-zinc-800/60"
-                                    : "opacity-40 cursor-not-allowed"
-                              }`}
-                            >
-                              <span
-                                className={`w-4 shrink-0 font-black ${POSITION_TEXT_CLASS[p.position]}`}
-                              >
-                                {POSITION_SHORT_LABELS[p.position]}
-                              </span>
-                              <span className="flex-1 truncate">{p.name}</span>
-                              <span className="text-zinc-500 shrink-0">
-                                {p.skill}
-                              </span>
-                            </div>
-                          ))}
-                      </div>
-
-                      {/* Banco */}
-                      <div className="flex-1 flex flex-col min-w-0">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-3 py-1.5 border-b border-zinc-800">
-                          Banco
-                        </p>
-                        {annotatedSquad
-                          .filter((p) => tactic.positions[p.id] === "Suplente")
-                          .map((p) => {
-                            const alreadyUsed = subbedOut.includes(p.id);
-                            const disabled =
-                              alreadyUsed ||
-                              !swapSource ||
-                              subsMade >= MAX_MATCH_SUBS;
-                            return (
+                        <div className="flex-1 overflow-y-auto">
+                          {annotatedSquad
+                            .filter(
+                              (p) =>
+                                tactic.positions[p.id] === "Titular" &&
+                                !subbedOut.includes(p.id),
+                            )
+                            .map((p) => (
                               <div
                                 key={p.id}
                                 onClick={() =>
-                                  !disabled && handleSelectIn(p.id)
+                                  subsMade < MAX_MATCH_SUBS &&
+                                  handleSelectOut(p.id)
                                 }
-                                className={`flex items-center gap-2 px-3 py-1.5 border-b border-zinc-800/50 text-xs font-bold select-none transition-colors ${
-                                  alreadyUsed
-                                    ? "opacity-25 cursor-not-allowed"
-                                    : swapTarget === p.id
-                                      ? "bg-emerald-500/15 text-emerald-200 cursor-pointer"
-                                      : disabled
-                                        ? "opacity-40 cursor-not-allowed"
-                                        : "cursor-pointer hover:bg-zinc-800/60"
+                                className={`flex items-center gap-1.5 px-2 py-1 border-b border-zinc-800/50 text-xs font-bold select-none transition-colors ${
+                                  swapSource === p.id
+                                    ? "bg-red-500/15 text-red-200"
+                                    : subsMade < MAX_MATCH_SUBS
+                                      ? "cursor-pointer hover:bg-zinc-800/60"
+                                      : "opacity-40 cursor-not-allowed"
                                 }`}
                               >
                                 <span
-                                  className={`w-4 shrink-0 font-black ${alreadyUsed ? "text-zinc-600" : POSITION_TEXT_CLASS[p.position]}`}
+                                  className={`w-3.5 shrink-0 font-black text-[10px] ${POSITION_TEXT_CLASS[p.position]}`}
                                 >
                                   {POSITION_SHORT_LABELS[p.position]}
                                 </span>
-                                <span className="flex-1 truncate">
+                                <span className="flex-1 truncate text-[11px]">
                                   {p.name}
                                 </span>
-                                <span
-                                  className={`shrink-0 ${alreadyUsed ? "text-zinc-700" : "text-zinc-500"}`}
-                                >
-                                  {alreadyUsed ? "SAIU" : p.skill}
+                                <span className="text-zinc-500 shrink-0 text-[10px]">
+                                  {p.skill}
                                 </span>
                               </div>
-                            );
-                          })}
+                            ))}
+                        </div>
+                      </div>
+
+                      {/* Banco */}
+                      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 px-2 py-1 border-b border-zinc-800 shrink-0">
+                          Banco
+                        </p>
+                        <div className="flex-1 overflow-y-auto">
+                          {annotatedSquad
+                            .filter(
+                              (p) => tactic.positions[p.id] === "Suplente",
+                            )
+                            .map((p) => {
+                              const alreadyUsed = subbedOut.includes(p.id);
+                              const disabled =
+                                alreadyUsed ||
+                                !swapSource ||
+                                subsMade >= MAX_MATCH_SUBS;
+                              return (
+                                <div
+                                  key={p.id}
+                                  onClick={() =>
+                                    !disabled && handleSelectIn(p.id)
+                                  }
+                                  className={`flex items-center gap-1.5 px-2 py-1 border-b border-zinc-800/50 text-xs font-bold select-none transition-colors ${
+                                    alreadyUsed
+                                      ? "opacity-25 cursor-not-allowed"
+                                      : swapTarget === p.id
+                                        ? "bg-emerald-500/15 text-emerald-200 cursor-pointer"
+                                        : disabled
+                                          ? "opacity-40 cursor-not-allowed"
+                                          : "cursor-pointer hover:bg-zinc-800/60"
+                                  }`}
+                                >
+                                  <span
+                                    className={`w-3.5 shrink-0 font-black text-[10px] ${alreadyUsed ? "text-zinc-600" : POSITION_TEXT_CLASS[p.position]}`}
+                                  >
+                                    {POSITION_SHORT_LABELS[p.position]}
+                                  </span>
+                                  <span className="flex-1 truncate text-[11px]">
+                                    {p.name}
+                                  </span>
+                                  <span
+                                    className={`shrink-0 text-[10px] ${alreadyUsed ? "text-zinc-700" : "text-zinc-500"}`}
+                                  >
+                                    {alreadyUsed ? "SAIU" : p.skill}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                        </div>
                       </div>
                     </div>
 
                     {/* Inline action bar */}
                     {swapSource && (
-                      <div className="flex items-center gap-2 px-3 py-2 border-t border-zinc-800 bg-zinc-900">
+                      <div className="flex items-center gap-2 px-3 py-2 border-t border-zinc-800 bg-zinc-900 shrink-0">
                         <span className="flex-1 text-xs font-bold truncate">
                           <span className="text-red-400">
                             {annotatedSquad.find((p) => p.id === swapSource)
@@ -2376,7 +2405,7 @@ function App() {
 
                     {/* Confirmed subs */}
                     {confirmedSubs.length > 0 && (
-                      <div className="px-3 py-1.5 border-t border-zinc-800 flex flex-col gap-0.5">
+                      <div className="px-3 py-1.5 border-t border-zinc-800 flex flex-col gap-0.5 shrink-0">
                         {confirmedSubs.map((sub, i) => {
                           const outP = mySquad.find((p) => p.id === sub.out);
                           const inP = mySquad.find((p) => p.id === sub.in);
@@ -2402,7 +2431,7 @@ function App() {
                     {/* BUG-06 FIX: Use handleHalftimeReady which always sends true */}
                     <button
                       onClick={handleHalftimeReady}
-                      className={`w-full py-3 text-sm font-black uppercase tracking-widest transition-all ${
+                      className={`w-full py-2.5 text-sm font-black uppercase tracking-widest transition-all shrink-0 ${
                         players.find((p) => p.name === me.name)?.ready
                           ? "bg-zinc-800 text-zinc-500"
                           : isCupMatch
