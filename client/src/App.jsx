@@ -17,10 +17,10 @@ const DIVISION_NAMES = {
 };
 
 const POSITION_SHORT_LABELS = {
-  GK: "G",
+  GR: "G",
   DEF: "D",
-  MID: "M",
-  ATK: "A",
+  MED: "M",
+  ATA: "A",
 };
 
 // Enable row background color per position
@@ -28,18 +28,18 @@ const ENABLE_ROW_BG = true;
 
 // Text color classes for each position (soft palette)
 const POSITION_TEXT_CLASS = {
-  GK: "text-yellow-500",
+  GR: "text-yellow-500",
   DEF: "text-blue-500",
-  MID: "text-emerald-500",
-  ATK: "text-rose-500",
+  MED: "text-emerald-500",
+  ATA: "text-rose-500",
 };
 
 // Background color classes for each position (soft, subtle)
 const POSITION_BG_CLASS = {
-  GK: "bg-yellow-500/8",
+  GR: "bg-yellow-500/8",
   DEF: "bg-blue-500/8",
-  MID: "bg-emerald-500/8",
-  ATK: "bg-rose-500/8",
+  MED: "bg-emerald-500/8",
+  ATA: "bg-rose-500/8",
 };
 
 const MAX_MATCH_SUBS = 5;
@@ -130,12 +130,12 @@ function buildAutoPositions(
 
   const formationParts = String(formation || "4-4-2").split("-");
   const requiredByPosition = {
-    GK: 1,
+    GR: 1,
     DEF: parseInt(formationParts[0], 10) || 0,
-    MID: parseInt(formationParts[1], 10) || 0,
-    ATK: parseInt(formationParts[2], 10) || 0,
+    MED: parseInt(formationParts[1], 10) || 0,
+    ATA: parseInt(formationParts[2], 10) || 0,
   };
-  const usedByPosition = { GK: 0, DEF: 0, MID: 0, ATK: 0 };
+  const usedByPosition = { GR: 0, DEF: 0, MED: 0, ATA: 0 };
   const lineup = [];
 
   for (const player of sortedPlayers) {
@@ -149,8 +149,8 @@ function buildAutoPositions(
   if (lineup.length < 11) {
     for (const player of sortedPlayers) {
       if (lineup.includes(player)) continue;
-      // Never add a 2nd GK to fill spots — that causes the 2-GK bug
-      if (player.position === "GK") continue;
+      // Never add a 2nd GR to fill spots — that causes the 2-GR bug
+      if (player.position === "GR") continue;
       lineup.push(player);
       if (lineup.length === 11) break;
     }
@@ -160,10 +160,10 @@ function buildAutoPositions(
     lineup.slice(0, 11).map((player) => [player.id, "Titular"]),
   );
 
-  // Pick suplentes: always include 1 GK (if available), then fill remaining slots
+  // Pick suplentes: always include 1 GR (if available), then fill remaining slots
   const remaining = sortedPlayers.filter((p) => !lineup.includes(p));
-  const gkSub = remaining.find((p) => p.position === "GK");
-  const nonGkSubs = remaining.filter((p) => p.position !== "GK");
+  const gkSub = remaining.find((p) => p.position === "GR");
+  const nonGkSubs = remaining.filter((p) => p.position !== "GR");
   const subs = (gkSub ? [gkSub, ...nonGkSubs] : nonGkSubs).slice(0, 5);
   subs.forEach((p) => {
     positions[p.id] = "Suplente";
@@ -804,7 +804,7 @@ function App() {
         return {
           id: player.id,
           name: player.name || "Jogador",
-          position: player.position || "MID",
+          position: player.position || "MED",
           skill: Number(player.skill || 0),
         };
       };
@@ -1457,15 +1457,15 @@ function App() {
           if (currentSubs >= 5) return prev; // silently ignore
         }
 
-        // If setting this player as Titular and they are a GK, demote any other
-        // GK who is already Titular to Suplente (only 1 GK Titular allowed).
+        // If setting this player as Titular and they are a GR, demote any other
+        // GR who is already Titular to Suplente (only 1 GR Titular allowed).
         if (status === "Titular") {
           const player = mySquad.find((p) => p.id === playerId);
-          if (player?.position === "GK") {
+          if (player?.position === "GR") {
             mySquad.forEach((p) => {
               if (
                 p.id !== playerId &&
-                p.position === "GK" &&
+                p.position === "GR" &&
                 newPositions[p.id] === "Titular"
               ) {
                 newPositions[p.id] = "Suplente";
@@ -2041,8 +2041,8 @@ function App() {
 
   const titulares = mySquad.filter((p) => tactic.positions[p.id] === "Titular");
   const isLineupComplete =
-    titulares.filter((p) => p.position === "GK").length === 1 &&
-    titulares.filter((p) => p.position !== "GK").length === 10;
+    titulares.filter((p) => p.position === "GR").length === 1 &&
+    titulares.filter((p) => p.position !== "GR").length === 10;
 
   const nextMatchOpponent = nextMatchSummary?.opponent || null;
   const nextMatchReferee = nextMatchSummary?.referee || null;
@@ -3454,8 +3454,8 @@ function App() {
                           <td className="px-3 py-2 text-white text-sm md:text-base whitespace-nowrap">
                             {player.name}
                             {!!player.is_star &&
-                              (player.position === "MID" ||
-                                player.position === "ATK") && (
+                              (player.position === "MED" ||
+                                player.position === "ATA") && (
                                 <span
                                   className="ml-1 text-amber-400 font-black"
                                   title="Craque"
@@ -3575,10 +3575,10 @@ function App() {
                         }
                       >
                         <option value="all">Todas</option>
-                        <option value="GK">Guarda-Redes</option>
+                        <option value="GR">Guarda-Redes</option>
                         <option value="DEF">Defesa</option>
-                        <option value="MID">Médio</option>
-                        <option value="ATK">Avançado</option>
+                        <option value="MED">Médio</option>
+                        <option value="ATA">Avançado</option>
                       </select>
                     </div>
                     <div>
@@ -3652,8 +3652,8 @@ function App() {
                               <p className="font-bold text-white text-sm leading-tight">
                                 {player.name}
                                 {!!player.is_star &&
-                                  (player.position === "MID" ||
-                                    player.position === "ATK") && (
+                                  (player.position === "MED" ||
+                                    player.position === "ATA") && (
                                     <span
                                       className="ml-1 text-amber-400 font-black"
                                       title="Craque"
@@ -4052,8 +4052,8 @@ function App() {
                           <td className="px-4 py-2.5 font-bold text-white">
                             {player.name}
                             {!!player.is_star &&
-                              (player.position === "MID" ||
-                                player.position === "ATK") && (
+                              (player.position === "MED" ||
+                                player.position === "ATA") && (
                                 <span
                                   className="ml-1 text-amber-400 font-black"
                                   title="Craque"
@@ -4146,10 +4146,10 @@ function App() {
                 </div>
                 <div className="flex gap-2">
                   <span className="font-normal text-zinc-700">
-                    Comportamento
+                    Agressividade
                   </span>
                   <span className="font-bold">
-                    {selectedAuctionPlayer.aggressiveness || "Normal"}
+                    {selectedAuctionPlayer.aggressiveness ?? 25}
                   </span>
                 </div>
                 <div className="flex gap-2">

@@ -5,8 +5,8 @@ const API_HEADERS = (token) => ({
   "Content-Type": "application/json",
 });
 
-const POSITION_OPTIONS = ["GK", "DEF", "MID", "ATK"];
-const DEFAULT_PLAYER = { name: "", position: "MID", country: "POR" };
+const POSITION_OPTIONS = ["GR", "DEF", "MED", "ATA"];
+const DEFAULT_PLAYER = { name: "", position: "MED", country: "POR" };
 
 function createEmptyTeam() {
   return {
@@ -16,18 +16,18 @@ function createEmptyTeam() {
     stadium: { name: "Novo Estádio", capacity: 2500 },
     manager: { name: "Novo Treinador" },
     players: [
-      { name: "Guarda-Redes", position: "GK", country: "POR" },
+      { name: "Guarda-Redes", position: "GR", country: "POR" },
       { name: "Defesa 1", position: "DEF", country: "POR" },
       { name: "Defesa 2", position: "DEF", country: "POR" },
       { name: "Defesa 3", position: "DEF", country: "POR" },
       { name: "Defesa 4", position: "DEF", country: "POR" },
-      { name: "Médio 1", position: "MID", country: "POR" },
-      { name: "Médio 2", position: "MID", country: "POR" },
-      { name: "Médio 3", position: "MID", country: "POR" },
-      { name: "Médio 4", position: "MID", country: "POR" },
-      { name: "Médio 5", position: "MID", country: "POR" },
-      { name: "Avançado 1", position: "ATK", country: "POR" },
-      { name: "Avançado 2", position: "ATK", country: "POR" },
+      { name: "Médio 1", position: "MED", country: "POR" },
+      { name: "Médio 2", position: "MED", country: "POR" },
+      { name: "Médio 3", position: "MED", country: "POR" },
+      { name: "Médio 4", position: "MED", country: "POR" },
+      { name: "Médio 5", position: "MED", country: "POR" },
+      { name: "Avançado 1", position: "ATA", country: "POR" },
+      { name: "Avançado 2", position: "ATA", country: "POR" },
     ],
   };
 }
@@ -68,7 +68,7 @@ function normalizeTeamDraft(team) {
     players: Array.isArray(team?.players)
       ? team.players.map((player) => ({
           name: player?.name || "",
-          position: player?.position || "MID",
+          position: player?.position || "MED",
           country: player?.country || player?.nationality || "",
         }))
       : [],

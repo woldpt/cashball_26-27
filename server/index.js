@@ -599,30 +599,6 @@ async function applySeasonEnd(game) {
     );
   });
 
-  // ── AGING + RETIREMENT ──────────────────────────────────────────────────
-  // All players age +1 per season
-  await new Promise((resolve) => {
-    game.db.run("UPDATE players SET age = age + 1", resolve);
-  });
-  // Players 36+ may retire (probability increases with age)
-  const retirementCandidates = await runAll(
-    game.db,
-    "SELECT id, age FROM players WHERE age >= 36 AND team_id IS NOT NULL",
-  );
-  for (const p of retirementCandidates) {
-    const retireChance =
-      p.age >= 39 ? 0.95 : p.age >= 38 ? 0.8 : p.age >= 37 ? 0.6 : 0.35;
-    if (Math.random() < retireChance) {
-      await new Promise((resolve) => {
-        game.db.run(
-          "UPDATE players SET team_id = NULL, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
-          [p.id],
-          resolve,
-        );
-      });
-    }
-  }
-
   // ── RESET GOAL STATS FOR NEW SEASON ─────────────────────────────────────
   await new Promise((resolve) => {
     game.db.run(
@@ -1528,7 +1504,7 @@ function startAuction(game, player, startingPrice, callback) {
         red_cards: player.red_cards || 0,
         injuries: player.injuries || 0,
         games_played: player.games_played || 0,
-        aggressiveness: player.aggressiveness || "Normal",
+        aggressiveness: player.aggressiveness ?? 25,
         is_star: player.is_star || 0,
         startingPrice,
         endsAt: now + durationMs,

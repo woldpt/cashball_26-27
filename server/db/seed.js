@@ -65,7 +65,10 @@ const lastB = [
   "Eterno",
 ];
 const nationalities = ["ZTR", "VNT", "BRR", "PNN", "MTR", "LST", "GNR", "FRR"];
-const aggressivenessLevels = ["Low", "Medium", "Medium", "Medium", "High"];
+// Aggressiveness is a numeric value 1-50 (spec)
+function randomAggressiveness() {
+  return Math.floor(Math.random() * 50) + 1;
+}
 const skillRanges = {
   1: [40, 50],
   2: [30, 40],
@@ -269,27 +272,30 @@ db.serialize(() => {
       const desiredPlayers = 20;
       const providedPlayers = teamData.players || [];
       const positionsDefault = [
-        "GK",
-        "GK",
+        "GR",
+        "GR",
         "DEF",
         "DEF",
         "DEF",
         "DEF",
         "DEF",
         "DEF",
-        "MID",
-        "MID",
-        "MID",
-        "MID",
-        "MID",
-        "MID",
-        "ATK",
-        "ATK",
-        "ATK",
-        "ATK",
-        "MID",
+        "MED",
+        "MED",
+        "MED",
+        "MED",
+        "MED",
+        "MED",
+        "ATA",
+        "ATA",
+        "ATA",
+        "ATA",
+        "MED",
         "DEF",
       ];
+
+      // Map fixture positions to spec positions (GK→GR, MID→MED, ATK→ATA)
+      const POSITION_MAP = { GK: "GR", MID: "MED", ATK: "ATA", DEF: "DEF", GR: "GR", MED: "MED", ATA: "ATA" };
 
       for (let i = 0; i < desiredPlayers; i++) {
         let p = providedPlayers[i];
@@ -302,27 +308,28 @@ db.serialize(() => {
         );
         let age = Math.floor(Math.random() * 16) + 18;
         let form = Math.floor(Math.random() * 20) + 80;
-        let agg =
-          aggressivenessLevels[
-            Math.floor(Math.random() * aggressivenessLevels.length)
-          ];
+        let agg = randomAggressiveness();
         let nat =
           nationalities[Math.floor(Math.random() * nationalities.length)];
 
         if (p) {
           if (p.name) name = p.name;
-          if (p.position) pos = p.position;
+          if (p.position) pos = POSITION_MAP[p.position] || p.position;
           if (p.skill) skill = p.skill;
           if (p.age) age = p.age;
           if (p.form) form = p.form;
-          if (p.aggressiveness) agg = p.aggressiveness;
+          if (p.aggressiveness) {
+            // Support legacy string values from fixtures
+            const aggMap = { Low: 10, Medium: 25, High: 40 };
+            agg = typeof p.aggressiveness === "number" ? p.aggressiveness : (aggMap[p.aggressiveness] || 25);
+          }
           if (p.nationality) nat = p.nationality;
         }
 
         const value = skill * 5000;
         const wage = skill * 50;
         const isStar =
-          (pos === "MID" || pos === "ATK") && Math.random() < 0.07 ? 1 : 0;
+          (pos === "MED" || pos === "ATA") && Math.random() < 0.07 ? 1 : 0;
         insertPlayer.run(
           name,
           pos,
@@ -392,25 +399,25 @@ db.serialize(() => {
         // insert 20 players per team
         const desiredPlayers = 20;
         const positionsDefault = [
-          "GK",
-          "GK",
+          "GR",
+          "GR",
           "DEF",
           "DEF",
           "DEF",
           "DEF",
           "DEF",
           "DEF",
-          "MID",
-          "MID",
-          "MID",
-          "MID",
-          "MID",
-          "MID",
-          "ATK",
-          "ATK",
-          "ATK",
-          "ATK",
-          "MID",
+          "MED",
+          "MED",
+          "MED",
+          "MED",
+          "MED",
+          "MED",
+          "ATA",
+          "ATA",
+          "ATA",
+          "ATA",
+          "MED",
           "DEF",
         ];
 
@@ -423,16 +430,13 @@ db.serialize(() => {
           );
           let age = Math.floor(Math.random() * 16) + 18;
           let form = Math.floor(Math.random() * 20) + 80;
-          let agg =
-            aggressivenessLevels[
-              Math.floor(Math.random() * aggressivenessLevels.length)
-            ];
+          let agg = randomAggressiveness();
           let nat =
             nationalities[Math.floor(Math.random() * nationalities.length)];
           const value = skill * 5000;
           const wage = skill * 50;
           const isStar =
-            (pos === "MID" || pos === "ATK") && Math.random() < 0.07 ? 1 : 0;
+            (pos === "MED" || pos === "ATA") && Math.random() < 0.07 ? 1 : 0;
           insertPlayer.run(
             name,
             pos,
@@ -455,22 +459,19 @@ db.serialize(() => {
   }
 
   // Generate 30 free agents for the transfer market
-  const freePositions = ["GK", "DEF", "DEF", "MID", "MID", "MID", "ATK", "ATK"];
+  const freePositions = ["GR", "DEF", "DEF", "MED", "MED", "MED", "ATA", "ATA"];
   for (let i = 0; i < 30; i++) {
     const name = getRandomName();
     const pos = freePositions[Math.floor(Math.random() * freePositions.length)];
     let skill = randomSkill(0, 15); // Distrital-level free agents
     const age = Math.floor(Math.random() * 16) + 18;
     const form = Math.floor(Math.random() * 20) + 80;
-    const agg =
-      aggressivenessLevels[
-        Math.floor(Math.random() * aggressivenessLevels.length)
-      ];
+    const agg = randomAggressiveness();
     const nat = nationalities[Math.floor(Math.random() * nationalities.length)];
     const value = skill * 5000;
     const wage = skill * 50;
     const isStar =
-      (pos === "MID" || pos === "ATK") && Math.random() < 0.07 ? 1 : 0;
+      (pos === "MED" || pos === "ATA") && Math.random() < 0.07 ? 1 : 0;
     insertPlayer.run(
       name,
       pos,

@@ -5,7 +5,7 @@ function pickBestPlayer(players = []) {
 
 /**
  * Weighted random pick for goal scorer.
- * Stars (MID/ATK with is_star=1) get a 3× weight so they score more often.
+ * Stars (MED/ATA with is_star=1) get a 3× weight so they score more often.
  */
 function weightedPickScorer(players = []) {
   if (!players.length) return null;
@@ -49,12 +49,12 @@ async function getTeamSquad(db, teamId, tactic, currentMatchweek = 1) {
         tactic && tactic.formation ? tactic.formation : "4-4-2";
       const parts = formationStr.split("-");
       const positions = {
-        GK: 1,
+        GR: 1,
         DEF: parseInt(parts[0], 10),
-        MID: parseInt(parts[1], 10),
-        ATK: parseInt(parts[2], 10),
+        MED: parseInt(parts[1], 10),
+        ATA: parseInt(parts[2], 10),
       };
-      const currentPos = { GK: 0, DEF: 0, MID: 0, ATK: 0 };
+      const currentPos = { GR: 0, DEF: 0, MED: 0, ATA: 0 };
 
       sorted.forEach((p) => {
         if (currentPos[p.position] < positions[p.position]) {
@@ -67,7 +67,7 @@ async function getTeamSquad(db, teamId, tactic, currentMatchweek = 1) {
         const missing = 11 - lineup.length;
         // Never fill with a 2nd GK — that causes the 2-GK bug
         const remaining = sorted.filter(
-          (p) => !lineup.includes(p) && p.position !== "GK",
+          (p) => !lineup.includes(p) && p.position !== "GR",
         );
         lineup.push(...remaining.slice(0, missing));
       }
@@ -466,20 +466,20 @@ async function simulateMatchSegment(
       gk = 0;
     squad.forEach((p) => {
       const starMult =
-        p.is_star && (p.position === "MID" || p.position === "ATK")
+        p.is_star && (p.position === "MED" || p.position === "ATA")
           ? 1.35
           : 1.0;
       const effSkill = p.skill * (morale / 100) * starMult;
-      if (p.position === "GK") gk += effSkill;
+      if (p.position === "GR") gk += effSkill;
       if (p.position === "DEF") defense += effSkill;
-      if (p.position === "MID") midfield += effSkill;
-      if (p.position === "ATK") attack += effSkill;
+      if (p.position === "MED") midfield += effSkill;
+      if (p.position === "ATA") attack += effSkill;
     });
 
     // Ego / chemistry penalty: too many star players in the same team
     // causes dressing-room friction — offensive power degrades beyond 2 stars.
     const starCount = squad.filter(
-      (p) => p.is_star && (p.position === "MID" || p.position === "ATK"),
+      (p) => p.is_star && (p.position === "MED" || p.position === "ATA"),
     ).length;
     if (starCount >= 3) {
       const excessStars = starCount - 2; // every star beyond 2 adds friction
@@ -558,7 +558,7 @@ async function simulateMatchSegment(
         const scoringSquad = attackingSide === "home" ? home.squad : away.squad;
         const scoringTeam = attackingSide;
         const scorers = scoringSquad.filter(
-          (p) => p.position === "ATK" || p.position === "MID",
+          (p) => p.position === "ATA" || p.position === "MED",
         );
         const scorer =
           scorers.length > 0 ? weightedPickScorer(scorers) : scoringSquad[0];
@@ -587,9 +587,8 @@ async function simulateMatchSegment(
       const side = isHomeCard ? "home" : "away";
       if (squad.length > 0) {
         const offender = squad[Math.floor(Math.random() * squad.length)];
-        let seriousProb = 0.15;
-        if (offender.aggressiveness === "High") seriousProb = 0.4;
-        if (offender.aggressiveness === "Low") seriousProb = 0.05;
+        const aggValue = typeof offender.aggressiveness === "number" ? offender.aggressiveness : 25;
+        let seriousProb = 0.05 + (aggValue / 50) * 0.35; // 0.05 (agg=0) to 0.40 (agg=50)
 
         if (Math.random() < seriousProb) {
           // Expulsão grave — 3 jogos de suspensão
@@ -747,10 +746,14 @@ async function applyPostMatchQualityEvolution(db, fixtures, currentMatchweek) {
 
           let delta = 0;
 
-          if (diff >= 5 && Math.random() < Math.min(0.18, 0.03 + diff / 120)) {
+          // Convivência: jogadores abaixo da média do plantel evoluem ao
+          // conviver com colegas mais talentosos (spec: "evoluem se
+          // conviverem com jogadores mais talentosos")
+          if (diff >= 3 && Math.random() < Math.min(0.22, 0.05 + diff / 80)) {
             delta += 1;
           }
 
+          // Vitória reforça evolução para jogadores abaixo da média
           if (
             teamResult === "W" &&
             diff >= 0 &&
@@ -759,15 +762,19 @@ async function applyPostMatchQualityEvolution(db, fixtures, currentMatchweek) {
             delta += 1;
           }
 
+          // Maus resultados: jogadores perdem qualidade se houver derrotas
+          // (spec: "perdem qualidade se houver muitos maus resultados seguidos")
+          // Jogadores acima da média do plantel são mais afectados
           if (teamResult === "L") {
             const lossPressure = Math.min(
-              0.18,
-              0.03 + Math.max(0, -diff) / 220,
+              0.12,
+              0.02 + Math.max(0, -diff) / 250,
             );
             if (Math.random() < lossPressure) delta -= 1;
           }
 
-          if (teamResult === "D" && diff >= 10 && Math.random() < 0.04) {
+          // Empate contra equipa mais forte — pequena hipótese de evolução
+          if (teamResult === "D" && diff >= 8 && Math.random() < 0.04) {
             delta += 1;
           }
 
@@ -887,8 +894,8 @@ function simulatePenaltyShootout(homeSquad, awaySquad) {
 
   const homeUsed = new Set();
   const awayUsed = new Set();
-  const homeGK = homeSquad.find((p) => p.position === "GK") || homeSquad[0];
-  const awayGK = awaySquad.find((p) => p.position === "GK") || awaySquad[0];
+  const homeGK = homeSquad.find((p) => p.position === "GR") || homeSquad[0];
+  const awayGK = awaySquad.find((p) => p.position === "GR") || awaySquad[0];
 
   const calcScoredChance = (taker, gk) => {
     const takerSkill = taker ? taker.skill || 10 : 10;
