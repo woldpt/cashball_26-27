@@ -535,7 +535,7 @@ async function simulateMatchSegment(
       (currentAway.defense || 10) * 0.5;
 
     const chance = Math.random();
-    if (chance < 0.03) {
+    if (chance < 0.025) {
       const penaltyChance = 0.008;
       const isPenalty = Math.random() < penaltyChance;
       const attackingSide =
@@ -591,18 +591,19 @@ async function simulateMatchSegment(
           typeof offender.aggressiveness === "number"
             ? offender.aggressiveness
             : 25;
-        let seriousProb = 0.05 + (aggValue / 50) * 0.35; // 0.05 (agg=0) to 0.40 (agg=50)
+        // redProb: probabilidade de cartão vermelho directo (expulsão + suspensão)
+        // Resto é cartão amarelo (sem expulsão)
+        const redProb = 0.04 + (aggValue / 50) * 0.18; // 0.04 (agg=0) a 0.22 (agg=50)
 
-        if (Math.random() < seriousProb) {
-          // Expulsão grave — 3 jogos de suspensão
+        if (Math.random() < redProb) {
+          // Cartão vermelho — 2 jogos de suspensão
           db.run(
-            "UPDATE players SET red_cards = red_cards + 1, suspension_games = suspension_games + 3, suspension_until_matchweek = CASE WHEN suspension_until_matchweek > ? THEN suspension_until_matchweek ELSE ? END WHERE id = ?",
-            [currentMatchweek + 3, currentMatchweek + 3, offender.id],
+            "UPDATE players SET red_cards = red_cards + 1, suspension_games = suspension_games + 2, suspension_until_matchweek = CASE WHEN suspension_until_matchweek > ? THEN suspension_until_matchweek ELSE ? END WHERE id = ?",
+            [currentMatchweek + 2, currentMatchweek + 2, offender.id],
           );
           fixture.events.push({
             minute,
             type: "red",
-            subType: "serious",
             team: side,
             emoji: "🟥",
             playerId: offender.id,
@@ -612,23 +613,16 @@ async function simulateMatchSegment(
           const idx = squad.findIndex((p) => p.id === offender.id);
           if (idx > -1) squad.splice(idx, 1);
         } else {
-          // Expulsão simples — 1 jogo de suspensão
-          db.run(
-            "UPDATE players SET red_cards = red_cards + 1, suspension_games = suspension_games + 1, suspension_until_matchweek = CASE WHEN suspension_until_matchweek > ? THEN suspension_until_matchweek ELSE ? END WHERE id = ?",
-            [currentMatchweek + 1, currentMatchweek + 1, offender.id],
-          );
+          // Cartão amarelo — sem expulsão
           fixture.events.push({
             minute,
-            type: "red",
-            subType: "simple",
+            type: "yellow",
             team: side,
-            emoji: "🟥",
+            emoji: "🟨",
             playerId: offender.id,
             playerName: offender.name,
-            text: `[${minute}'] 🟥 Vermelho! ${offender.name}`,
+            text: `[${minute}'] 🟨 Amarelo! ${offender.name}`,
           });
-          const idx = squad.findIndex((p) => p.id === offender.id);
-          if (idx > -1) squad.splice(idx, 1);
         }
       }
     }

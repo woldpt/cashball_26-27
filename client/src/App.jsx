@@ -433,6 +433,7 @@ function App() {
   const [cupMatchRoundName, setCupMatchRoundName] = useState("");
   const [cupExtraTimeBadge, setCupExtraTimeBadge] = useState(false);
   const [isCupExtraTime, setIsCupExtraTime] = useState(false);
+  const [cupActiveTeamIds, setCupActiveTeamIds] = useState([]); // equipas na ronda actual
   const [palmares, setPalmares] = useState({ trophies: [], allChampions: [] });
   const [palmaresTeamId, setPalmaresTeamId] = useState(null); // last requested team
   const [selectedTeam, setSelectedTeam] = useState(null);
@@ -585,6 +586,7 @@ function App() {
       setCupPreMatch(true);
       setCupMatchRoundName(data.roundName);
       setCupExtraTimeBadge(false);
+      setCupActiveTeamIds(data.cupTeamIds || []);
       setActiveTab("live");
     });
     socket.on("cupHalfTimeResults", (data) => {
@@ -894,7 +896,15 @@ function App() {
       setIsCupMatch(false);
       setCupExtraTimeBadge(false);
       setActiveTab("live");
-      setTactic((prev) => ({ ...prev, positions: {} }));
+      // Após jogo: todos os jogadores vão a "Não convocado"
+      setTactic((prev) => {
+        const allExcluded = Object.fromEntries(
+          (mySquadRef.current || []).map((p) => [p.id, "Excluído"]),
+        );
+        const next = { ...prev, positions: allExcluded };
+        socket.emit("setTactic", next);
+        return next;
+      });
     });
 
     // BUG-15 FIX: Track socket connection state
@@ -2012,6 +2022,20 @@ function App() {
   const myMatch = matchResults?.results.find(
     (r) => r.homeTeamId === me.teamId || r.awayTeamId === me.teamId,
   );
+  // Jogadores expulsos no meu jogo (para filtrar do painel de intervalo)
+  const mySideInHalftime = myMatch?.homeTeamId === me.teamId ? "home" : "away";
+  const redCardedHalftimeIds = new Set(
+    (myMatch?.events || [])
+      .filter((e) => e.type === "red" && e.team === mySideInHalftime)
+      .map((e) => e.playerId)
+      .filter(Boolean),
+  );
+  // Indica se o coach está na ronda actual da Taça
+  const myTeamInCup =
+    cupActiveTeamIds.length === 0 ||
+    cupActiveTeamIds.includes(me.teamId) ||
+    cupActiveTeamIds.includes(Number(me.teamId)) ||
+    cupActiveTeamIds.includes(String(me.teamId));
   const isDesktopLayout =
     typeof window !== "undefined" ? window.innerWidth >= 768 : false;
   const headerStyle =
@@ -2108,7 +2132,7 @@ function App() {
               CashBall 26/27
             </h1>
             <p
-              className="text-sm md:text-base font-bold uppercase"
+              className={`text-sm md:text-base font-bold uppercase ${isPlayingMatch ? "hidden sm:block" : ""}`}
               style={{ color: teamInfo?.color_secondary || "#ffffff" }}
             >
               | SALA: {me.roomCode} | {seasonYear} · Jornada {currentJornada}
@@ -2358,7 +2382,8 @@ function App() {
                               .filter(
                                 (p) =>
                                   tactic.positions[p.id] === "Titular" &&
-                                  !subbedOut.includes(p.id),
+                                  !subbedOut.includes(p.id) &&
+                                  !redCardedHalftimeIds.has(p.id),
                               )
                               .map((p) => (
                                 <div
@@ -2524,24 +2549,29 @@ function App() {
 
                       {/* BUG-06 FIX: Use handleHalftimeReady which always sends true */}
                       <button
-                        onClick={handleHalftimeReady}
+                        onClick={myTeamInCup ? handleHalftimeReady : undefined}
+                        disabled={!myTeamInCup}
                         className={`shrink-0 w-full py-3.5 text-sm font-black uppercase tracking-widest transition-all ${
-                          players.find((p) => p.name === me.name)?.ready
-                            ? "bg-zinc-800 text-zinc-500"
-                            : cupPreMatch
-                              ? "bg-green-600 hover:bg-green-500 text-zinc-950"
-                              : isCupMatch
-                                ? "bg-amber-500 hover:bg-amber-400 text-zinc-950"
-                                : "bg-amber-600 hover:bg-amber-500 text-zinc-950"
+                          !myTeamInCup
+                            ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                            : players.find((p) => p.name === me.name)?.ready
+                              ? "bg-zinc-800 text-zinc-500"
+                              : cupPreMatch
+                                ? "bg-green-600 hover:bg-green-500 text-zinc-950"
+                                : isCupMatch
+                                  ? "bg-amber-500 hover:bg-amber-400 text-zinc-950"
+                                  : "bg-amber-600 hover:bg-amber-500 text-zinc-950"
                         }`}
                       >
-                        {players.find((p) => p.name === me.name)?.ready
-                          ? "⏳ A AGUARDAR..."
-                          : cupPreMatch
-                            ? "▶ INICIAR JOGO — TAÇA"
-                            : isCupMatch
-                              ? "▶ 2ª PARTE — TAÇA"
-                              : "▶ INICIAR 2ª PARTE"}
+                        {!myTeamInCup
+                          ? "⏳ A AGUARDAR JOGO DA TAÇA..."
+                          : players.find((p) => p.name === me.name)?.ready
+                            ? "⏳ A AGUARDAR..."
+                            : cupPreMatch
+                              ? "▶ INICIAR JOGO — TAÇA"
+                              : isCupMatch
+                                ? "▶ 2ª PARTE — TAÇA"
+                                : "▶ INICIAR 2ª PARTE"}
                       </button>
                     </div>
                   </div>
@@ -2765,6 +2795,17 @@ function App() {
                             </span>
                             <span className="px-2 py-0.5 bg-zinc-900 border border-zinc-800 rounded font-black text-white min-w-12 text-center">
                               {r.homeGoals} - {r.awayGoals}
+                              {r.decidedByPenalties && (
+                                <span className="ml-1 text-[9px] text-amber-400">
+                                  ({r.penaltyHomeGoals}-{r.penaltyAwayGoals}
+                                  g.p.)
+                                </span>
+                              )}
+                              {r.wentToET && !r.decidedByPenalties && (
+                                <span className="ml-1 text-[9px] text-zinc-500">
+                                  p.e.
+                                </span>
+                              )}
                             </span>
                             <span
                               className="w-28 md:w-36 truncate text-left font-black"
@@ -3509,7 +3550,10 @@ function App() {
                                 className="ml-2 text-xs font-bold text-red-400"
                                 title={`Indisponível até jornada ${player.injury_until_matchweek || player.suspension_until_matchweek}`}
                               >
-                                🩹
+                                {(player.suspension_until_matchweek || 0) >
+                                matchweekCount
+                                  ? "🟥"
+                                  : "🩹"}
                               </span>
                             )}
                           </td>
@@ -3882,7 +3926,10 @@ function App() {
                           className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg px-3 py-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors"
                           onClick={() => {
                             setTactic((prev) => {
-                              const next = { ...prev, positions: {} };
+                              const allExcluded = Object.fromEntries(
+                                mySquad.map((p) => [p.id, "Excluído"]),
+                              );
+                              const next = { ...prev, positions: allExcluded };
                               socket.emit("setTactic", next);
                               return next;
                             });
@@ -4529,6 +4576,16 @@ function App() {
                       </span>
                       <span className="px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-lg font-black text-white text-sm">
                         {r.homeGoals} – {r.awayGoals}
+                        {r.wentToET && !r.decidedByPenalties && (
+                          <span className="ml-1 text-[10px] text-zinc-500 font-semibold">
+                            (p.e.)
+                          </span>
+                        )}
+                        {r.decidedByPenalties && (
+                          <span className="ml-1 text-[10px] text-amber-400 font-semibold">
+                            ({r.penaltyHomeGoals}–{r.penaltyAwayGoals} g.p.)
+                          </span>
+                        )}
                       </span>
                       <span
                         className="flex-1 text-left font-black text-sm truncate"

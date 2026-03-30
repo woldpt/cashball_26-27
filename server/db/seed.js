@@ -340,7 +340,7 @@ db.serialize(() => {
         const value = skill * 5000;
         const wage = skill * 50;
         const isStar =
-          (pos === "MED" || pos === "ATA") && Math.random() < 0.07 ? 1 : 0;
+          (pos === "MED" || pos === "ATA") && Math.random() < 0.15 ? 1 : 0;
         insertPlayer.run(
           name,
           pos,
@@ -447,7 +447,7 @@ db.serialize(() => {
           const value = skill * 5000;
           const wage = skill * 50;
           const isStar =
-            (pos === "MED" || pos === "ATA") && Math.random() < 0.07 ? 1 : 0;
+            (pos === "MED" || pos === "ATA") && Math.random() < 0.15 ? 1 : 0;
           insertPlayer.run(
             name,
             pos,

@@ -462,6 +462,16 @@ function allConnectedCoachesAcked(game, ackSet) {
   return socketIds.every((socketId) => ackSet.has(socketId));
 }
 
+// Versão filtrada para fases da Taça: só conta treinadores cujas equipas
+// participam na ronda actual (game.cupTeamIds).
+function allCupCoachesAcked(game, ackSet) {
+  const cupSocketIds = Object.values(game.playersByName)
+    .filter((p) => p.socketId && (game.cupTeamIds || []).includes(p.teamId))
+    .map((p) => p.socketId);
+  if (cupSocketIds.length === 0) return true;
+  return cupSocketIds.every((s) => ackSet.has(s));
+}
+
 // ─── SEASON CALENDAR ─────────────────────────────────────────────────────────
 // Ordered sequence of events in a season. Type 'league' = regular matchweek;
 // type 'cup' = draw + elimination round immediately after that matchweek.
@@ -816,6 +826,11 @@ async function finalizeCupRound(game, round, expectedToken) {
           ...shootout,
         });
 
+        // Guardar info de pénaltis no fixture para incluir nos resultados finais
+        fixture._penaltyHomeGoals = shootout.homeGoals;
+        fixture._penaltyAwayGoals = shootout.awayGoals;
+        fixture._decidedByPenalties = true;
+
         winnerId =
           shootout.homeGoals > shootout.awayGoals
             ? fixture.homeTeamId
@@ -880,6 +895,13 @@ async function finalizeCupRound(game, round, expectedToken) {
       homeGoals: fixture.finalHomeGoals,
       awayGoals: fixture.finalAwayGoals,
       winnerId,
+      wentToET:
+        !!fixture._decidedByPenalties ||
+        (fixture.finalHomeGoals === fixture.finalAwayGoals &&
+          fixture.events.some((e) => e.minute > 90)),
+      decidedByPenalties: !!fixture._decidedByPenalties,
+      penaltyHomeGoals: fixture._penaltyHomeGoals ?? null,
+      penaltyAwayGoals: fixture._penaltyAwayGoals ?? null,
       events: fixture.events,
     });
 
@@ -2159,6 +2181,7 @@ io.on("connection", (socket) => {
         round: game.cupRound,
         roundName: preMatchRoundName,
         season: game.season,
+        cupTeamIds: game.cupTeamIds || [],
       };
       game.cupRuntime.preMatchPayload = preMatchPayload;
       io.to(game.roomCode).emit("cupPreMatch", preMatchPayload);
@@ -2197,7 +2220,7 @@ io.on("connection", (socket) => {
     game.cupPreMatchAcks = game.cupPreMatchAcks || new Set();
     game.cupPreMatchAcks.add(socket.id);
     io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
-    const allReady = allConnectedCoachesAcked(game, game.cupPreMatchAcks);
+    const allReady = allCupCoachesAcked(game, game.cupPreMatchAcks);
     if (allReady) {
       clearCupTimeout(game, "_cupPreMatchTimeout");
       Object.values(game.playersByName).forEach((p) => {
@@ -2214,7 +2237,7 @@ io.on("connection", (socket) => {
 
     game.cupHalfTimeAcks.add(socket.id);
 
-    const allReady = allConnectedCoachesAcked(game, game.cupHalfTimeAcks);
+    const allReady = allCupCoachesAcked(game, game.cupHalfTimeAcks);
     if (allReady) {
       clearCupTimeout(game, "_cupHalftimeTimeout");
       simulateCupSecondHalf(game, game.cupRound, game.cupRuntime?.phaseToken);
@@ -2741,7 +2764,7 @@ io.on("connection", (socket) => {
     if (!game) return;
 
     game.db.all(
-      "SELECT * FROM players WHERE team_id = ? ORDER BY position, skill DESC, name",
+      "SELECT * FROM players WHERE team_id = ? ORDER BY CASE position WHEN 'GR' THEN 1 WHEN 'DEF' THEN 2 WHEN 'MED' THEN 3 WHEN 'ATA' THEN 4 ELSE 5 END, skill DESC, name",
       [teamId],
       (err, squad) => {
         socket.emit("teamSquadData", {
