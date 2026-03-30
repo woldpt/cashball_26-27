@@ -3896,11 +3896,13 @@ function App() {
                               <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black">
                                 Campo
                               </p>
-                              <p className={`font-black text-base ${
-                                nextMatchSummary?.venue === "Casa"
-                                  ? "text-emerald-400"
-                                  : "text-sky-400"
-                              }`}>
+                              <p
+                                className={`font-black text-base ${
+                                  nextMatchSummary?.venue === "Casa"
+                                    ? "text-emerald-400"
+                                    : "text-sky-400"
+                                }`}
+                              >
                                 {nextMatchSummary?.venue ?? "-"}
                               </p>
                             </div>
