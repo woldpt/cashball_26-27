@@ -370,8 +370,8 @@ async function buildNextMatchSummary(game, teamId) {
   );
   if (!fixture) return null;
 
-  const opponentId =
-    fixture.homeTeamId === team.id ? fixture.awayTeamId : fixture.homeTeamId;
+  const isHome = fixture.homeTeamId === team.id;
+  const opponentId = isHome ? fixture.awayTeamId : fixture.homeTeamId;
   const opponent = await runGet(game.db, "SELECT * FROM teams WHERE id = ?", [
     opponentId,
   ]);
@@ -386,6 +386,7 @@ async function buildNextMatchSummary(game, teamId) {
 
   return {
     matchweek: game.matchweek,
+    venue: isHome ? "Casa" : "Fora",
     team: {
       id: team.id,
       name: team.name,
