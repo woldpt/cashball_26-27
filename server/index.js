@@ -81,6 +81,57 @@ app.get("/saves", apiLimiter, async (req, res) => {
   }
 });
 
+// ── DELETE SAVE ───────────────────────────────────────────────────────────────
+// Deletes a room's .db file. Only allowed if the requesting coach has access to
+// that room and no players are currently connected to it.
+app.delete("/saves/:roomCode", apiLimiter, async (req, res) => {
+  try {
+    const roomCode =
+      typeof req.params.roomCode === "string"
+        ? req.params.roomCode.trim().toUpperCase()
+        : "";
+    const managerName =
+      typeof req.body?.name === "string" ? req.body.name.trim() : "";
+
+    if (!roomCode || !managerName) {
+      return res
+        .status(400)
+        .json({ error: "roomCode e name são obrigatórios." });
+    }
+
+    // Verify the coach has access to this room
+    const myRooms = await getManagerRooms(managerName);
+    if (!myRooms.includes(roomCode)) {
+      return res.status(403).json({ error: "Não tens acesso a esta sala." });
+    }
+
+    const dbPath = path.join(__dirname, "db", `game_${roomCode}.db`);
+    if (!fs.existsSync(dbPath)) {
+      return res.status(404).json({ error: "Sala não encontrada." });
+    }
+
+    // Refuse if the room is currently loaded with active connections
+    const activeGame = getGame(roomCode);
+    if (activeGame) {
+      const connected = Object.values(activeGame.socketToName || {}).filter(
+        Boolean,
+      ).length;
+      if (connected > 0) {
+        return res
+          .status(409)
+          .json({ error: "A sala está activa. Aguarda que todos saiam." });
+      }
+    }
+
+    fs.unlinkSync(dbPath);
+    console.log(`[DELETE /saves] Deleted room ${roomCode} by ${managerName}`);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("[DELETE /saves] Error:", e.message);
+    res.status(500).json({ error: "Erro ao apagar a sala." });
+  }
+});
+
 app.post("/auth/login", apiLimiter, async (req, res) => {
   try {
     const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";

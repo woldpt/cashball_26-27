@@ -1943,24 +1943,69 @@ function App() {
                     <label className="block text-[10px] uppercase text-cyan-300 mb-2 font-bold tracking-[0.3em]">
                       As tuas Salas Gravadas
                     </label>
-                    <select
-                      className="w-full bg-zinc-950 border border-zinc-800 p-4 rounded-xl text-white text-lg font-black outline-none focus:ring-2 focus:ring-cyan-500 uppercase"
-                      value={roomCode}
-                      onChange={(e) => setRoomCode(e.target.value)}
-                    >
-                      <option value="" disabled>
-                        -- Seleciona um Save --
-                      </option>
-                      {availableSaves.map((save) => (
-                        <option key={save} value={save}>
-                          {save}
-                        </option>
-                      ))}
-                    </select>
-                    {availableSaves.length === 0 && (
+                    {availableSaves.length === 0 ? (
                       <p className="text-zinc-500 text-sm mt-2">
                         Nenhum save encontrado para este treinador.
                       </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {availableSaves.map((save) => (
+                          <div
+                            key={save}
+                            onClick={() => setRoomCode(save)}
+                            className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all ${
+                              roomCode === save
+                                ? "border-cyan-500 bg-cyan-500/15 text-white"
+                                : "border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-600 hover:text-white"
+                            }`}
+                          >
+                            <span className="font-black text-sm uppercase tracking-widest">
+                              {save}
+                            </span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (
+                                  !window.confirm(
+                                    `Apagar a sala "${save}" permanentemente?`,
+                                  )
+                                )
+                                  return;
+                                fetch(
+                                  `${backendUrl}/saves/${encodeURIComponent(save)}`,
+                                  {
+                                    method: "DELETE",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({ name }),
+                                  },
+                                )
+                                  .then((r) => r.json())
+                                  .then((data) => {
+                                    if (data.ok) {
+                                      setAvailableSaves((prev) =>
+                                        prev.filter((s) => s !== save),
+                                      );
+                                      if (roomCode === save) setRoomCode("");
+                                    } else {
+                                      alert(
+                                        data.error || "Erro ao apagar sala.",
+                                      );
+                                    }
+                                  })
+                                  .catch(() =>
+                                    alert("Erro de ligação ao servidor."),
+                                  );
+                              }}
+                              className="shrink-0 text-zinc-600 hover:text-red-400 transition-colors p-1"
+                              title="Apagar sala"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                 )}
