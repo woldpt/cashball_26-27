@@ -3548,7 +3548,7 @@ function App() {
                             {player.isUnavailable && (
                               <span
                                 className="ml-2 text-xs font-bold text-red-400"
-                                title={`Indisponível até jornada ${player.injury_until_matchweek || player.suspension_until_matchweek}`}
+                                title={`Indisponível até jornada ${Math.max(player.injury_until_matchweek || 0, player.suspension_until_matchweek || 0) + 1}`}
                               >
                                 {(player.suspension_until_matchweek || 0) >
                                 matchweekCount
@@ -3900,6 +3900,9 @@ function App() {
                           value={tactic.formation}
                           onChange={(e) => handleAutoPick(e.target.value)}
                         >
+                          <option value="" disabled>
+                            Escolher formação...
+                          </option>
                           <option value="4-4-2">4-4-2 Clássico</option>
                           <option value="4-3-3">4-3-3 Ofensivo</option>
                           <option value="3-5-2">3-5-2 Controlo da Bola</option>
@@ -3929,7 +3932,11 @@ function App() {
                               const allExcluded = Object.fromEntries(
                                 mySquad.map((p) => [p.id, "Excluído"]),
                               );
-                              const next = { ...prev, positions: allExcluded };
+                              const next = {
+                                ...prev,
+                                formation: "",
+                                positions: allExcluded,
+                              };
                               socket.emit("setTactic", next);
                               return next;
                             });
