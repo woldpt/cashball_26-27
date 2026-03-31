@@ -509,6 +509,7 @@ function App() {
   const tacticRef = React.useRef({ positions: {} });
   // goalFlashRef: { [key]: timestamp } – key = `${homeId}_${awayId}_home|away`
   const goalFlashRef = React.useRef({});
+  const formationSelectRef = React.useRef(null);
 
   const backendUrl =
     (typeof import.meta !== "undefined" && import.meta.env?.VITE_BACKEND_URL) ||
@@ -4248,8 +4249,15 @@ function App() {
                       </p>
                       <div className="space-y-3">
                         <select
+                          ref={formationSelectRef}
                           className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-3 text-sm font-bold text-white focus:ring-2 focus:ring-amber-500"
                           value={tactic.formation}
+                          onMouseDown={() => {
+                            // Reset native value to "" so picking the same formation still fires onChange
+                            if (formationSelectRef.current) {
+                              formationSelectRef.current.value = "";
+                            }
+                          }}
                           onChange={(e) => handleAutoPick(e.target.value)}
                         >
                           <option value="" disabled>
@@ -4294,7 +4302,7 @@ function App() {
                             });
                           }}
                         >
-                          Limpar Tática
+                          🧹 Limpar Tática
                         </button>
                         {(() => {
                           const morale = teamInfo?.morale ?? 75;
