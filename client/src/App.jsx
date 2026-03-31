@@ -2214,7 +2214,7 @@ function App() {
         className={`sticky top-0 border-b border-zinc-800 shadow-sm z-20${isMatchInProgress ? " hidden" : ""}`}
         style={headerStyle}
       >
-        <div className="relative overflow-hidden py-2 px-4 md:px-6 flex items-center justify-between">
+        <div className="relative py-2 px-4 md:px-6 flex items-center justify-between">
           <div className="absolute inset-0 bg-zinc-950/28"></div>
           <div className="relative z-10 flex items-center gap-4">
             <h1
