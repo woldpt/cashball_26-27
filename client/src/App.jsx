@@ -2177,6 +2177,10 @@ function App() {
     totalWeeklyWage * matchweeksRemaining -
     loanInterestPerWeek * matchweeksRemaining;
 
+  // Oculta o menu e expande a janela de jogo durante a simulação
+  const isMatchInProgress =
+    isPlayingMatch || showHalftimePanel || !!matchAction;
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans pb-12 tracking-tight">
       {/* Toast notifications */}
@@ -2191,7 +2195,7 @@ function App() {
         ))}
       </div>
       <header
-        className="sticky top-0 border-b border-zinc-800 shadow-sm z-20"
+        className={`sticky top-0 border-b border-zinc-800 shadow-sm z-20${isMatchInProgress ? " hidden" : ""}`}
         style={headerStyle}
       >
         <div className="relative overflow-hidden py-2 px-4 md:px-6 flex items-center justify-between">
@@ -2278,7 +2282,9 @@ function App() {
       </header>
 
       <div className="max-w-350 mx-auto p-4 md:p-8">
-        <div className="flex gap-3 mb-5 border-b border-zinc-800 pb-px overflow-x-auto justify-between">
+        <div
+          className={`flex gap-3 mb-5 border-b border-zinc-800 pb-px overflow-x-auto justify-between${isMatchInProgress ? " hidden" : ""}`}
+        >
           <div className="flex gap-3 overflow-x-auto">
             {["club", "finances", "standings", "market", "squad"].map((tab) => (
               <button
@@ -2311,7 +2317,9 @@ function App() {
         >
           <div>
             {activeTab === "live" && (matchResults || matchAction) && (
-              <div className="bg-zinc-900 min-h-150 text-zinc-100 font-sans p-6 rounded-3xl border border-zinc-800 shadow-sm relative overflow-hidden">
+              <div
+                className={`bg-zinc-900 text-zinc-100 font-sans p-6 border border-zinc-800 shadow-sm relative overflow-hidden${isMatchInProgress ? " fixed inset-0 z-30 overflow-y-auto rounded-none" : " min-h-150 rounded-3xl"}`}
+              >
                 {matchAction && (
                   <div className="absolute inset-0 z-50 bg-zinc-950/95 backdrop-blur-sm p-6 flex flex-col">
                     <h2 className="text-3xl font-black text-amber-500 mb-2 tracking-widest text-center uppercase">
@@ -3877,12 +3885,21 @@ function App() {
                           </td>
                           <td className="px-4 py-2 text-right">
                             {player.transfer_status === "auction" ? (
-                              <button
-                                onClick={() => openAuctionBid(player)}
-                                className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black uppercase text-[10px] px-3 py-1.5 rounded"
-                              >
-                                Licitar
-                              </button>
+                              isSameTeamId(
+                                player.auction_seller_team_id,
+                                me?.teamId,
+                              ) ? (
+                                <span className="text-zinc-600 text-[10px] font-bold uppercase">
+                                  Meu leilão
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => openAuctionBid(player)}
+                                  className="bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black uppercase text-[10px] px-3 py-1.5 rounded"
+                                >
+                                  Licitar
+                                </button>
+                              )
                             ) : (
                               <button
                                 onClick={() => buyPlayer(player.id)}
