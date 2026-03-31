@@ -171,11 +171,29 @@ function buildAutoPositions(
     lineup.slice(0, 11).map((player) => [player.id, "Titular"]),
   );
 
-  // Pick suplentes: always include 1 GR (if available), then fill remaining slots
+  // Pick suplentes: garantir 1 suplente por posição (GR, DEF, MED, ATA) se disponível,
+  // depois preencher os restantes slots (máx 5) com os melhores restantes.
   const remaining = sortedPlayers.filter((p) => !lineup.includes(p));
-  const gkSub = remaining.find((p) => p.position === "GR");
-  const nonGkSubs = remaining.filter((p) => p.position !== "GR");
-  const subs = (gkSub ? [gkSub, ...nonGkSubs] : nonGkSubs).slice(0, 5);
+  const subs = [];
+  const usedInSubs = new Set();
+  for (const pos of ["GR", "DEF", "MED", "ATA"]) {
+    if (subs.length >= 5) break;
+    const candidate = remaining.find(
+      (p) => p.position === pos && !usedInSubs.has(p.id),
+    );
+    if (candidate) {
+      subs.push(candidate);
+      usedInSubs.add(candidate.id);
+    }
+  }
+  // preencher slots restantes com os melhores ainda não escolhidos
+  for (const p of remaining) {
+    if (subs.length >= 5) break;
+    if (!usedInSubs.has(p.id)) {
+      subs.push(p);
+      usedInSubs.add(p.id);
+    }
+  }
   subs.forEach((p) => {
     positions[p.id] = "Suplente";
   });
@@ -431,6 +449,8 @@ function App() {
   const [toasts, setToasts] = useState([]);
   const [lockedCoaches, setLockedCoaches] = useState([]);
   const [awaitingCoaches, setAwaitingCoaches] = useState([]);
+  const [showCoachPanel, setShowCoachPanel] = useState(false);
+  const coachPanelRef = React.useRef(null);
   const joinTimerRef = React.useRef(null);
 
   const addToast = (msg) => {
@@ -507,6 +527,7 @@ function App() {
   const tacticRef = React.useRef({ positions: {} });
   // goalFlashRef: { [key]: timestamp } – key = `${homeId}_${awayId}_home|away`
   const goalFlashRef = React.useRef({});
+  const formationSelectRef = React.useRef(null);
 
   const backendUrl =
     (typeof import.meta !== "undefined" && import.meta.env?.VITE_BACKEND_URL) ||
@@ -730,12 +751,14 @@ function App() {
     });
     socket.on("cupRoundResults", (data) => {
       setCupRoundResults(data);
-      setShowCupResults(true);
+      setShowCupResults(false);
+      setActiveTab("cup");
       setIsCupMatch(false);
       setCupPreMatch(false);
       setIsCupExtraTime(false);
       setCupExtraTimeBadge(false);
       setIsPlayingMatch(false);
+      setMatchResults(null);
     });
     socket.on("cupSecondHalfStart", (data) => {
       setIsMatchActionPending(false);
@@ -821,6 +844,7 @@ function App() {
       setSwapTarget(null);
       setShowHalftimePanel(true);
       setIsPlayingMatch(true);
+      setActiveTab("live");
     });
 
     socket.on("matchActionRequired", (data) => {
@@ -929,6 +953,7 @@ function App() {
       setIsPlayingMatch(true);
       setIsCupMatch(false);
       setCupExtraTimeBadge(false);
+      setActiveTab("live");
       // Após jogo: todos os jogadores vão a "Não convocado"
       setTactic((prev) => {
         const allExcluded = Object.fromEntries(
@@ -2209,7 +2234,7 @@ function App() {
         className={`sticky top-0 border-b border-zinc-800 shadow-sm z-20${isMatchInProgress ? " hidden" : ""}`}
         style={headerStyle}
       >
-        <div className="relative overflow-hidden py-2 px-4 md:px-6 flex items-center justify-between">
+        <div className="relative py-2 px-4 md:px-6 flex items-center justify-between">
           <div className="absolute inset-0 bg-zinc-950/28"></div>
           <div className="relative z-10 flex items-center gap-4">
             <h1
@@ -2253,31 +2278,132 @@ function App() {
               </div>
             )}
             {players.length > 0 && (
-              <div className="hidden sm:flex flex-col items-end gap-0.5">
-                <div className="flex items-center gap-1">
-                  {players.map((p, i) => (
-                    <div
-                      key={i}
-                      title={`${p.name} · ${teams.find((t) => t.id == p.teamId)?.name || "?"} · ${p.ready ? "Pronto" : "A aguardar"}`}
-                      className={`w-2 h-2 rounded-full ${p.ready ? "bg-emerald-400" : "bg-zinc-600"}`}
-                    />
-                  ))}
-                  <span
-                    className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-70"
-                    style={{ color: teamInfo?.color_secondary || "#ffffff" }}
-                  >
-                    {players.filter((p) => p.ready).length}/{players.length}
-                  </span>
-                </div>
-                {disconnected && (
-                  <span className="text-red-400 text-[10px] font-black uppercase tracking-widest">
-                    ⚠ Desligado
-                  </span>
-                )}
-                {!disconnected && awaitingCoaches.length > 0 && (
-                  <span className="text-amber-400 text-[10px] font-black uppercase tracking-widest">
-                    ⏸ {awaitingCoaches.join(", ")}
-                  </span>
+              <div className="relative hidden sm:block" ref={coachPanelRef}>
+                <button
+                  onClick={() => setShowCoachPanel((v) => !v)}
+                  className="flex flex-col items-end gap-0.5 focus:outline-none"
+                  title="Ver estado dos treinadores"
+                >
+                  <div className="flex items-center gap-1">
+                    {players.map((p, i) => (
+                      <div
+                        key={i}
+                        className={`w-2 h-2 rounded-full ${
+                          lockedCoaches.includes(p.name) || p.ready
+                            ? "bg-emerald-400"
+                            : "bg-zinc-500"
+                        }`}
+                      />
+                    ))}
+                    {awaitingCoaches
+                      .filter((n) => !players.some((p) => p.name === n))
+                      .map((_, i) => (
+                        <div
+                          key={`off-${i}`}
+                          className="w-2 h-2 rounded-full bg-zinc-700"
+                        />
+                      ))}
+                    <span
+                      className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-70"
+                      style={{ color: teamInfo?.color_secondary || "#ffffff" }}
+                    >
+                      {
+                        players.filter(
+                          (p) => lockedCoaches.includes(p.name) || p.ready,
+                        ).length
+                      }
+                      /
+                      {players.length +
+                        awaitingCoaches.filter(
+                          (n) => !players.some((p) => p.name === n),
+                        ).length}
+                    </span>
+                  </div>
+                  {disconnected && (
+                    <span className="text-red-400 text-[10px] font-black uppercase tracking-widest">
+                      ⚠ Desligado
+                    </span>
+                  )}
+                </button>
+
+                {showCoachPanel && (
+                  <div className="absolute right-0 top-full mt-2 z-50 w-72 bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden">
+                    <div className="px-4 py-2.5 border-b border-zinc-800 flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                        Sala {me.roomCode}
+                      </span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                        {players.length} online
+                      </span>
+                    </div>
+                    <div className="divide-y divide-zinc-800/60">
+                      {[
+                        ...players.map((p) => ({
+                          name: p.name,
+                          teamId: p.teamId,
+                          online: true,
+                          submitted: lockedCoaches.includes(p.name) || p.ready,
+                        })),
+                        ...awaitingCoaches
+                          .filter((n) => !players.some((p) => p.name === n))
+                          .map((n) => ({
+                            name: n,
+                            teamId: null,
+                            online: false,
+                            submitted: true,
+                          })),
+                      ].map((coach, i) => {
+                        const coachTeam = coach.teamId
+                          ? teams.find((t) => t.id == coach.teamId)
+                          : null;
+                        return (
+                          <div
+                            key={i}
+                            className="flex items-center gap-3 px-4 py-2.5"
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full shrink-0 ${
+                                coach.online ? "bg-emerald-400" : "bg-zinc-600"
+                              }`}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p
+                                className={`text-xs font-black truncate ${
+                                  coach.online ? "text-white" : "text-zinc-500"
+                                }`}
+                              >
+                                {coach.name}
+                                {coach.name === me.name && (
+                                  <span className="ml-1.5 text-[9px] font-bold uppercase text-zinc-600">
+                                    (tu)
+                                  </span>
+                                )}
+                              </p>
+                              {coachTeam && (
+                                <p
+                                  className="text-[10px] truncate"
+                                  style={{
+                                    color: coachTeam.color_primary || "#71717a",
+                                  }}
+                                >
+                                  {coachTeam.name}
+                                </p>
+                              )}
+                            </div>
+                            {coach.submitted ? (
+                              <span className="shrink-0 text-[10px] font-black text-emerald-400 uppercase tracking-wide">
+                                ✓ Ordens
+                              </span>
+                            ) : (
+                              <span className="shrink-0 text-[10px] font-black text-amber-500 uppercase tracking-wide">
+                                ⏳ Pendente
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </div>
             )}
@@ -2297,23 +2423,27 @@ function App() {
           className={`flex gap-3 mb-5 border-b border-zinc-800 pb-px overflow-x-auto justify-between${isMatchInProgress ? " hidden" : ""}`}
         >
           <div className="flex gap-3 overflow-x-auto">
-            {["club", "finances", "standings", "market", "squad"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2.5 font-bold text-sm md:text-base uppercase transition-colors border-b-4 whitespace-nowrap ${activeTab === tab ? "border-amber-500 text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"}`}
-              >
-                {tab === "club"
-                  ? "Clube"
-                  : tab === "finances"
-                    ? "Finanças"
-                    : tab === "standings"
-                      ? "Classificações"
-                      : tab === "market"
-                        ? "Mercado"
-                        : "Plantel"}
-              </button>
-            ))}
+            {["club", "finances", "standings", "cup", "market", "squad"].map(
+              (tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2.5 font-bold text-sm md:text-base uppercase transition-colors border-b-4 whitespace-nowrap ${activeTab === tab ? "border-amber-500 text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"}`}
+                >
+                  {tab === "club"
+                    ? "Clube"
+                    : tab === "finances"
+                      ? "Finanças"
+                      : tab === "standings"
+                        ? "Classificações"
+                        : tab === "cup"
+                          ? "Taça"
+                          : tab === "market"
+                            ? "Mercado"
+                            : "Plantel"}
+                </button>
+              ),
+            )}
           </div>
           <button
             onClick={() => setActiveTab("live")}
@@ -2670,7 +2800,12 @@ function App() {
 
                 <div className="absolute top-6 right-6 flex items-center gap-3">
                   {isPlayingMatch && (
-                    <div className="w-4 h-4 rounded-full bg-red-600 animate-pulse"></div>
+                    <>
+                      <span className="text-sm font-black text-white tabular-nums">
+                        {liveMinute}'
+                      </span>
+                      <div className="w-4 h-4 rounded-full bg-red-600 animate-pulse"></div>
+                    </>
                   )}
                 </div>
                 <h2 className="text-2xl font-black text-amber-500 mb-8 pb-4 border-b border-zinc-800">
@@ -2848,73 +2983,6 @@ function App() {
                     </div>
                   ))}
                 </div>
-
-                {/* Taça de Portugal last results */}
-                {cupRoundResults && (
-                  <div className="mt-6 bg-zinc-900/60 border border-amber-800/30 rounded-2xl overflow-hidden">
-                    <div className="bg-amber-900/20 px-4 py-2 border-b border-amber-800/30 flex items-center justify-between">
-                      <h3 className="font-black text-amber-400 uppercase text-xs tracking-widest">
-                        🏆 Taça de Portugal — {cupRoundResults.roundName}
-                      </h3>
-                      <button
-                        onClick={() => setShowCupResults(true)}
-                        className="text-xs text-amber-400 font-bold hover:text-amber-300 underline"
-                      >
-                        Ver detalhes
-                      </button>
-                    </div>
-                    <div className="p-3 space-y-1">
-                      {(cupRoundResults.results || []).map((r, idx) => {
-                        const hInfo = teams.find((t) => t.id === r.homeTeamId);
-                        const aInfo = teams.find((t) => t.id === r.awayTeamId);
-                        const isMyMatch =
-                          r.homeTeamId === me.teamId ||
-                          r.awayTeamId === me.teamId;
-                        const winnerInfo = teams.find(
-                          (t) => t.id === r.winnerId,
-                        );
-                        return (
-                          <div
-                            key={idx}
-                            className={`flex items-center gap-2 text-[11px] font-bold rounded border px-2 py-1 ${isMyMatch ? "border-amber-500 bg-amber-500/10" : "border-zinc-800 bg-zinc-950"}`}
-                          >
-                            <span
-                              className="w-28 md:w-36 truncate text-right font-black"
-                              style={{ color: hInfo?.color_primary || "#fff" }}
-                            >
-                              {hInfo?.name || r.homeTeamId}
-                            </span>
-                            <span className="px-2 py-0.5 bg-zinc-900 border border-zinc-800 rounded font-black text-white min-w-12 text-center">
-                              {r.homeGoals} - {r.awayGoals}
-                              {r.decidedByPenalties && (
-                                <span className="ml-1 text-[9px] text-amber-400">
-                                  ({r.penaltyHomeGoals}-{r.penaltyAwayGoals}
-                                  g.p.)
-                                </span>
-                              )}
-                              {r.wentToET && !r.decidedByPenalties && (
-                                <span className="ml-1 text-[9px] text-zinc-500">
-                                  p.e.
-                                </span>
-                              )}
-                            </span>
-                            <span
-                              className="w-28 md:w-36 truncate text-left font-black"
-                              style={{ color: aInfo?.color_primary || "#fff" }}
-                            >
-                              {aInfo?.name || r.awayTeamId}
-                            </span>
-                            {winnerInfo && (
-                              <span className="ml-auto text-amber-400 text-[10px] font-black shrink-0">
-                                ✓ {winnerInfo.name}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
@@ -3001,6 +3069,145 @@ function App() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {activeTab === "cup" && (
+              <div className="space-y-6">
+                {/* ── TAÇA DE PORTUGAL PAGE ─────────────────────────────── */}
+                {!cupRoundResults && !cupDraw && (
+                  <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-10 text-center">
+                    <p className="text-4xl mb-3">🏆</p>
+                    <p className="text-zinc-500 font-bold">
+                      Sem dados de Taça disponíveis neste momento.
+                    </p>
+                  </div>
+                )}
+
+                {cupRoundResults && (
+                  <div className="bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                    <div className="bg-amber-900/20 px-6 py-4 border-b border-amber-800/30">
+                      <p className="text-xs text-amber-400 uppercase font-black tracking-widest">
+                        Taça de Portugal · Temporada {cupRoundResults.season}
+                      </p>
+                      <h2 className="text-xl font-black text-white mt-0.5">
+                        {cupRoundResults.roundName}
+                      </h2>
+                    </div>
+                    <div className="p-4 space-y-2">
+                      {(cupRoundResults.results || []).map((r, idx) => {
+                        const hInfo = teams.find((t) => t.id === r.homeTeamId);
+                        const aInfo = teams.find((t) => t.id === r.awayTeamId);
+                        const winnerInfo = teams.find(
+                          (t) => t.id === r.winnerId,
+                        );
+                        const isMyMatch =
+                          r.homeTeamId === me.teamId ||
+                          r.awayTeamId === me.teamId;
+                        return (
+                          <div
+                            key={idx}
+                            className={`rounded-xl border px-4 py-3 ${isMyMatch ? "border-amber-500 bg-amber-500/10" : "border-zinc-800 bg-zinc-950"}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span
+                                className="flex-1 text-right font-black text-sm truncate"
+                                style={{
+                                  color: hInfo?.color_primary || "#fff",
+                                }}
+                              >
+                                {hInfo?.name || r.homeTeamId}
+                              </span>
+                              <span className="px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-lg font-black text-white text-sm">
+                                {r.homeGoals} – {r.awayGoals}
+                                {r.wentToET && !r.decidedByPenalties && (
+                                  <span className="ml-1 text-[10px] text-zinc-500 font-semibold">
+                                    (p.e.)
+                                  </span>
+                                )}
+                                {r.decidedByPenalties && (
+                                  <span className="ml-1 text-[10px] text-amber-400 font-semibold">
+                                    ({r.penaltyHomeGoals}–{r.penaltyAwayGoals}{" "}
+                                    g.p.)
+                                  </span>
+                                )}
+                              </span>
+                              <span
+                                className="flex-1 text-left font-black text-sm truncate"
+                                style={{
+                                  color: aInfo?.color_primary || "#fff",
+                                }}
+                              >
+                                {aInfo?.name || r.awayTeamId}
+                              </span>
+                            </div>
+                            {winnerInfo && (
+                              <p className="text-center text-amber-400 text-xs font-black mt-1">
+                                ✓ Apura-se {winnerInfo.name}
+                                {cupRoundResults.isFinal
+                                  ? " 🏆 Vencedor da Taça!"
+                                  : ""}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {cupDraw && (
+                  <div className="bg-zinc-900 rounded-3xl border border-zinc-800 overflow-hidden">
+                    <div className="bg-zinc-800/40 px-6 py-4 border-b border-zinc-800">
+                      <p className="text-xs text-zinc-400 uppercase font-black tracking-widest">
+                        Taça de Portugal · Temporada {cupDraw.season}
+                      </p>
+                      <h2 className="text-xl font-black text-white mt-0.5">
+                        Sorteio — {cupDraw.roundName}
+                      </h2>
+                    </div>
+                    <div className="p-4 space-y-2">
+                      {(cupDraw.fixtures || []).map((fixture, idx) => {
+                        const hInfo = teams.find(
+                          (t) =>
+                            t.id === fixture.homeTeamId || t.id === fixture[0],
+                        );
+                        const aInfo = teams.find(
+                          (t) =>
+                            t.id === fixture.awayTeamId || t.id === fixture[1],
+                        );
+                        const homeId = fixture.homeTeamId ?? fixture[0];
+                        const awayId = fixture.awayTeamId ?? fixture[1];
+                        const hName = hInfo?.name || homeId;
+                        const aName = aInfo?.name || awayId;
+                        const isMine =
+                          homeId === me.teamId || awayId === me.teamId;
+                        return (
+                          <div
+                            key={idx}
+                            className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${isMine ? "border-amber-500 bg-amber-500/10" : "border-zinc-800 bg-zinc-950"}`}
+                          >
+                            <span
+                              className="flex-1 text-right font-black text-sm truncate"
+                              style={{ color: hInfo?.color_primary || "#fff" }}
+                            >
+                              {hName}
+                            </span>
+                            <span className="px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-lg font-black text-zinc-400 text-sm">
+                              vs
+                            </span>
+                            <span
+                              className="flex-1 text-left font-black text-sm truncate"
+                              style={{ color: aInfo?.color_primary || "#fff" }}
+                            >
+                              {aName}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -4060,8 +4267,15 @@ function App() {
                       </p>
                       <div className="space-y-3">
                         <select
+                          ref={formationSelectRef}
                           className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-3 text-sm font-bold text-white focus:ring-2 focus:ring-amber-500"
                           value={tactic.formation}
+                          onMouseDown={() => {
+                            // Reset native value to "" so picking the same formation still fires onChange
+                            if (formationSelectRef.current) {
+                              formationSelectRef.current.value = "";
+                            }
+                          }}
                           onChange={(e) => handleAutoPick(e.target.value)}
                         >
                           <option value="" disabled>
@@ -4106,7 +4320,7 @@ function App() {
                             });
                           }}
                         >
-                          Limpar Tática
+                          🧹 Limpar Tática
                         </button>
                         {(() => {
                           const morale = teamInfo?.morale ?? 75;
@@ -4726,93 +4940,6 @@ function App() {
                   </button>
                 </div>
               )}
-          </div>
-        </div>
-      )}
-
-      {/* ── CUP ROUND RESULTS DETAIL POPUP ─────────────────────────────────── */}
-      {showCupResults && cupRoundResults && (
-        <div
-          className="fixed inset-0 z-140 bg-zinc-950/85 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setShowCupResults(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900 shadow-2xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="bg-zinc-800/50 px-6 py-4 border-b border-zinc-800 flex justify-between items-center">
-              <div>
-                <p className="text-xs text-amber-400 uppercase font-black tracking-widest">
-                  Taça de Portugal · Temporada {cupRoundResults.season}
-                </p>
-                <h2 className="text-xl font-black text-white">
-                  {cupRoundResults.roundName}
-                </h2>
-              </div>
-              <button
-                onClick={() => setShowCupResults(false)}
-                className="text-zinc-500 hover:text-white font-black text-lg"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-4 space-y-2 max-h-[60vh] overflow-y-auto">
-              {(cupRoundResults.results || []).map((r, idx) => {
-                const hInfo = teams.find((t) => t.id === r.homeTeamId);
-                const aInfo = teams.find((t) => t.id === r.awayTeamId);
-                const winnerInfo = teams.find((t) => t.id === r.winnerId);
-                const isMyMatch =
-                  r.homeTeamId === me.teamId || r.awayTeamId === me.teamId;
-                return (
-                  <div
-                    key={idx}
-                    className={`rounded-xl border px-4 py-3 ${isMyMatch ? "border-amber-500 bg-amber-500/10" : "border-zinc-800 bg-zinc-950"}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="flex-1 text-right font-black text-sm truncate"
-                        style={{ color: hInfo?.color_primary || "#fff" }}
-                      >
-                        {hInfo?.name}
-                      </span>
-                      <span className="px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-lg font-black text-white text-sm">
-                        {r.homeGoals} – {r.awayGoals}
-                        {r.wentToET && !r.decidedByPenalties && (
-                          <span className="ml-1 text-[10px] text-zinc-500 font-semibold">
-                            (p.e.)
-                          </span>
-                        )}
-                        {r.decidedByPenalties && (
-                          <span className="ml-1 text-[10px] text-amber-400 font-semibold">
-                            ({r.penaltyHomeGoals}–{r.penaltyAwayGoals} g.p.)
-                          </span>
-                        )}
-                      </span>
-                      <span
-                        className="flex-1 text-left font-black text-sm truncate"
-                        style={{ color: aInfo?.color_primary || "#fff" }}
-                      >
-                        {aInfo?.name}
-                      </span>
-                    </div>
-                    {winnerInfo && (
-                      <p className="text-center text-amber-400 text-xs font-black mt-1">
-                        ✓ Apura-se {winnerInfo.name}
-                        {cupRoundResults.isFinal ? " 🏆 Vencedor da Taça!" : ""}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="px-6 pb-6 pt-2">
-              <button
-                onClick={() => setShowCupResults(false)}
-                className="w-full rounded-2xl bg-zinc-800 px-4 py-2.5 font-black uppercase tracking-widest text-white hover:bg-zinc-700 text-sm"
-              >
-                Fechar
-              </button>
-            </div>
           </div>
         </div>
       )}
