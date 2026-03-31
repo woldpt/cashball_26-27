@@ -2776,7 +2776,12 @@ function App() {
 
                 <div className="absolute top-6 right-6 flex items-center gap-3">
                   {isPlayingMatch && (
-                    <div className="w-4 h-4 rounded-full bg-red-600 animate-pulse"></div>
+                    <>
+                      <span className="text-sm font-black text-white tabular-nums">
+                        {liveMinute}'
+                      </span>
+                      <div className="w-4 h-4 rounded-full bg-red-600 animate-pulse"></div>
+                    </>
                   )}
                 </div>
                 <h2 className="text-2xl font-black text-amber-500 mb-8 pb-4 border-b border-zinc-800">
