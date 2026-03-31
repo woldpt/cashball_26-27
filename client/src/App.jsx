@@ -171,11 +171,29 @@ function buildAutoPositions(
     lineup.slice(0, 11).map((player) => [player.id, "Titular"]),
   );
 
-  // Pick suplentes: always include 1 GR (if available), then fill remaining slots
+  // Pick suplentes: garantir 1 suplente por posição (GR, DEF, MED, ATA) se disponível,
+  // depois preencher os restantes slots (máx 5) com os melhores restantes.
   const remaining = sortedPlayers.filter((p) => !lineup.includes(p));
-  const gkSub = remaining.find((p) => p.position === "GR");
-  const nonGkSubs = remaining.filter((p) => p.position !== "GR");
-  const subs = (gkSub ? [gkSub, ...nonGkSubs] : nonGkSubs).slice(0, 5);
+  const subs = [];
+  const usedInSubs = new Set();
+  for (const pos of ["GR", "DEF", "MED", "ATA"]) {
+    if (subs.length >= 5) break;
+    const candidate = remaining.find(
+      (p) => p.position === pos && !usedInSubs.has(p.id),
+    );
+    if (candidate) {
+      subs.push(candidate);
+      usedInSubs.add(candidate.id);
+    }
+  }
+  // preencher slots restantes com os melhores ainda não escolhidos
+  for (const p of remaining) {
+    if (subs.length >= 5) break;
+    if (!usedInSubs.has(p.id)) {
+      subs.push(p);
+      usedInSubs.add(p.id);
+    }
+  }
   subs.forEach((p) => {
     positions[p.id] = "Suplente";
   });
