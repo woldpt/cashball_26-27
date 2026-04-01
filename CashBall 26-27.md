@@ -364,7 +364,7 @@ Há duas formas de vender jogadores:
 | Salários            | Soma dos salários semanais do plantel     |
 | Compra de jogadores | Custo de transferências                   |
 | Estádio             | Custo de aumento da capacidade do estádio |
-| Juros de empréstimo | 5% do valor em dívida por semana          |
+| Juros de empréstimo | 2,5% do valor em dívida por semana        |
 
 ### Estádio
 
@@ -599,7 +599,7 @@ ENCERRADA — Época terminada (arquivo)
 9. A **Taça de Portugal tem 32 participantes** (apenas clubes das 4 divisões principais).
 10. **Craques existem apenas nas posições Médios e Avançados** — nunca atribuir flag `craque` a GR ou Defesas. Craques têm +20% chance de marcar um golo decisivo.
 11. **Árbitros não têm perfil fixo** — a inclinação é gerada aleatoriamente por jogo, afecta apenas a probabilidade de cartões e penaltis (±15%), não o resultado geral.
-12. **Empréstimos bancários têm 5% de juros por semana** — taxa intencional para penalizar má gestão financeira.
+12. **Empréstimos bancários têm 2,5% de juros por semana** — taxa intencional para penalizar má gestão financeira.
 13. **Plantel mínimo 11, máximo 24** — nunca permitir venda/leilão que faça descer abaixo de 11.
 14. **Leilões incluem todos os 32 clubes das divisões principais** como potenciais licitadores (humanos e IA). Pop-up de leilão aparece para todos; cada clube dá uma única licitação em 15 segundos de tempo real.
 15. **O elenco de jogadores é fixo** — nunca sugerir criação de novos jogadores, reformas, ou envelhecimento. Os jogadores do seed são permanentes. A `qualidade` flutua entre 1 e 50; a flag `craque` nunca muda.
