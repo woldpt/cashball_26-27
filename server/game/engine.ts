@@ -1,5 +1,10 @@
-// @ts-nocheck
-function pickBestPlayer(players = []) {
+import type { ActiveGame, Tactic } from "../types";
+
+type Db = any;
+type PlayerRow = any;
+type MatchFixture = any;
+
+function pickBestPlayer(players: PlayerRow[] = []) {
   if (!players.length) return null;
   return [...players].sort((a, b) => b.skill - a.skill)[0];
 }
@@ -8,7 +13,7 @@ function pickBestPlayer(players = []) {
  * Weighted random pick for goal scorer.
  * Stars (MED/ATA with is_star=1) get a 3× weight so they score more often.
  */
-function weightedPickScorer(players = []) {
+function weightedPickScorer(players: PlayerRow[] = []) {
   if (!players.length) return null;
   const weights = players.map((p) => (p.is_star ? 3 : 1));
   const total = weights.reduce((s, w) => s + w, 0);
@@ -20,14 +25,19 @@ function weightedPickScorer(players = []) {
   return players[players.length - 1];
 }
 
-function isPlayerAvailable(player, currentMatchweek = 1) {
+function isPlayerAvailable(player: PlayerRow, currentMatchweek = 1) {
   const suspensionUntil = player.suspension_until_matchweek || 0;
   const injuryUntil = player.injury_until_matchweek || 0;
   return currentMatchweek > suspensionUntil && currentMatchweek > injuryUntil;
 }
 
-async function getTeamSquad(db, teamId, tactic, currentMatchweek = 1) {
-  return new Promise((resolve, reject) => {
+async function getTeamSquad(
+  db: Db,
+  teamId: number,
+  tactic: Tactic | null,
+  currentMatchweek = 1,
+): Promise<PlayerRow[]> {
+  return new Promise<PlayerRow[]>((resolve, reject) => {
     db.all("SELECT * FROM players WHERE team_id = ?", [teamId], (err, rows) => {
       if (err) return reject(err);
 
@@ -78,8 +88,12 @@ async function getTeamSquad(db, teamId, tactic, currentMatchweek = 1) {
   });
 }
 
-async function generateFixturesForDivision(db, division, matchweek) {
-  return new Promise((resolve) => {
+async function generateFixturesForDivision(
+  db: Db,
+  division: number,
+  matchweek: number,
+): Promise<MatchFixture[]> {
+  return new Promise<MatchFixture[]>((resolve) => {
     db.all(
       "SELECT id FROM teams WHERE division = ? ORDER BY id",
       [division],
@@ -124,7 +138,7 @@ async function generateFixturesForDivision(db, division, matchweek) {
   });
 }
 
-function getCurrentPlayerState(game, teamId) {
+function getCurrentPlayerState(game: ActiveGame, teamId: number) {
   return Object.values(game.playersByName).find(
     (p) => p.teamId === teamId && p.socketId,
   );
@@ -138,20 +152,26 @@ function waitForMatchAction({
   payload,
   timeoutMs,
   fallback,
-}) {
+}: {
+  game: ActiveGame;
+  io: any;
+  type: string;
+  teamId: number;
+  payload: Record<string, unknown>;
+  timeoutMs: number;
+  fallback: () => any;
+}): Promise<{ choice: any; source: string }> {
   const humanCoach = getCurrentPlayerState(game, teamId);
   if (!humanCoach) {
     return Promise.resolve({ choice: fallback(), source: "auto" });
   }
 
-  return new Promise((resolve) => {
+  return new Promise<{ choice: any; source: string }>((resolve) => {
     const actionId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const finalize = (choice, source = "auto") => {
-      if (
-        game.pendingMatchAction &&
-        game.pendingMatchAction.actionId === actionId
-      ) {
-        clearTimeout(game.pendingMatchAction.timer);
+      const pendingAction: any = game.pendingMatchAction;
+      if (pendingAction && pendingAction.actionId === actionId) {
+        clearTimeout(pendingAction.timer);
         game.pendingMatchAction = null;
       }
       io.to(game.roomCode).emit("matchActionResolved", {
@@ -184,19 +204,19 @@ function waitForMatchAction({
   });
 }
 
-function getAvailableBench(teamSquad, lineupIds) {
+function getAvailableBench(teamSquad: PlayerRow[], lineupIds: Set<number>) {
   return teamSquad.filter((p) => !lineupIds.has(p.id));
 }
 
-function selectPenaltyTaker(squad = []) {
+function selectPenaltyTaker(squad: PlayerRow[] = []) {
   return pickBestPlayer(squad) || null;
 }
 
-function clampSkill(value) {
+function clampSkill(value: number) {
   return Math.max(0, Math.min(50, Math.round(value)));
 }
 
-function normaliseStyle(style) {
+function normaliseStyle(style: unknown) {
   const raw = String(style || "Balanced")
     .trim()
     .toUpperCase();
@@ -205,7 +225,7 @@ function normaliseStyle(style) {
   return "EQUILIBRADO";
 }
 
-function getAggressivenessValue(player) {
+function getAggressivenessValue(player: PlayerRow) {
   if (typeof player?.aggressiveness === "number") {
     return Math.max(1, Math.min(5, Math.round(player.aggressiveness)));
   }
@@ -221,7 +241,7 @@ function getAggressivenessValue(player) {
   return AGG_TIER_VALUES[player?.aggressiveness] ?? 3;
 }
 
-function average(values = []) {
+function average(values: number[] = []) {
   if (!values.length) return 0;
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
@@ -236,6 +256,16 @@ async function applyInjuryEvent({
   currentMatchweek,
   io,
   game,
+}: {
+  db: Db;
+  fixture: MatchFixture;
+  teamSide: "home" | "away";
+  squad: PlayerRow[];
+  fullRoster: PlayerRow[];
+  lineupIds: Set<number>;
+  currentMatchweek: number;
+  io: any;
+  game: ActiveGame;
 }) {
   if (!squad.length) return { replaced: false, injuredPlayer: null };
 
@@ -336,6 +366,14 @@ async function applyPenaltyEvent({
   currentMatchweek,
   io,
   game,
+}: {
+  db: Db;
+  fixture: MatchFixture;
+  teamSide: "home" | "away";
+  squad: PlayerRow[];
+  currentMatchweek: number;
+  io: any;
+  game: ActiveGame;
 }) {
   const teamId = teamSide === "home" ? fixture.homeTeamId : fixture.awayTeamId;
   const takerCandidates = squad.filter((p) =>
@@ -408,13 +446,13 @@ async function applyPenaltyEvent({
 }
 
 async function simulateMatchSegment(
-  db,
-  fixture,
-  homeTactic,
-  awayTactic,
-  startMin,
-  endMin,
-  context = {},
+  db: Db,
+  fixture: MatchFixture,
+  homeTactic: Tactic | null,
+  awayTactic: Tactic | null,
+  startMin: number,
+  endMin: number,
+  context: any = {},
 ) {
   const currentMatchweek = context.matchweek || 1;
   const io = context.io;
@@ -435,14 +473,14 @@ async function simulateMatchSegment(
 
   // Load team morale values
   const [homeMorale, awayMorale] = await Promise.all([
-    new Promise((res) =>
+    new Promise<number>((res) =>
       db.get(
         "SELECT morale FROM teams WHERE id = ?",
         [fixture.homeTeamId],
         (err, row) => res(row && row.morale != null ? row.morale : 50),
       ),
     ),
-    new Promise((res) =>
+    new Promise<number>((res) =>
       db.get(
         "SELECT morale FROM teams WHERE id = ?",
         [fixture.awayTeamId],
@@ -452,7 +490,7 @@ async function simulateMatchSegment(
   ]);
 
   // Load full rosters for bench availability during injuries
-  const homeFullRoster = await new Promise((resolve, reject) => {
+  const homeFullRoster = await new Promise<PlayerRow[]>((resolve, reject) => {
     db.all(
       "SELECT * FROM players WHERE team_id = ?",
       [fixture.homeTeamId],
@@ -464,7 +502,7 @@ async function simulateMatchSegment(
       },
     );
   });
-  const awayFullRoster = await new Promise((resolve, reject) => {
+  const awayFullRoster = await new Promise<PlayerRow[]>((resolve, reject) => {
     db.all(
       "SELECT * FROM players WHERE team_id = ?",
       [fixture.awayTeamId],
@@ -716,8 +754,12 @@ async function simulateMatchSegment(
   delete fixture._minute;
 }
 
-async function applyPostMatchQualityEvolution(db, fixtures, currentMatchweek) {
-  return new Promise((resolve) => {
+async function applyPostMatchQualityEvolution(
+  db: Db,
+  fixtures: MatchFixture[],
+  currentMatchweek: number,
+) {
+  return new Promise<void>((resolve) => {
     const teamResults = new Map();
     for (const match of fixtures || []) {
       const homeResult =
@@ -878,7 +920,13 @@ module.exports = {
 // ─── EXTRA TIME ──────────────────────────────────────────────────────────────
 // Simulates two 15-minute extra-time periods (91-105 and 106-120).
 // Returns { firstHalfEvents, secondHalfEvents } after updating fixture goals.
-async function simulateExtraTime(db, fixture, homeTactic, awayTactic, context) {
+async function simulateExtraTime(
+  db: Db,
+  fixture: MatchFixture,
+  homeTactic: Tactic | null,
+  awayTactic: Tactic | null,
+  context: any,
+) {
   await simulateMatchSegment(
     db,
     fixture,
@@ -931,7 +979,10 @@ async function simulateExtraTime(db, fixture, homeTactic, awayTactic, context) {
 // ─── PENALTY SHOOTOUT ─────────────────────────────────────────────────────────
 // Simulates a penalty shootout between two squads.
 // Returns { homeGoals, awayGoals, kicks: [{team, playerName, scored}] }
-function simulatePenaltyShootout(homeSquad, awaySquad) {
+function simulatePenaltyShootout(
+  homeSquad: PlayerRow[],
+  awaySquad: PlayerRow[],
+) {
   const kicks = [];
   let homeGoals = 0;
   let awayGoals = 0;

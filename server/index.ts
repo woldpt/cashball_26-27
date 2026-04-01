@@ -1,6 +1,11 @@
 // @ts-nocheck
 require("dotenv").config();
 
+import type { ActiveGame, PlayerSession } from "./types";
+
+type Db = any;
+type AnyRow = Record<string, any>;
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -16,7 +21,21 @@ const {
   bindSocket,
   unbindSocket,
   getPlayerList,
-} = require("./gameManager");
+} = require("./gameManager") as {
+  getGame: (
+    roomCode: string,
+    onReady?: (game: ActiveGame | null, error?: Error) => void,
+  ) => ActiveGame | null;
+  getGameBySocket: (socketId: string) => ActiveGame | null;
+  saveGameState: (game: ActiveGame) => void;
+  getPlayerBySocket: (
+    game: ActiveGame,
+    socketId: string,
+  ) => PlayerSession | null;
+  bindSocket: (game: ActiveGame, name: string, socketId: string) => void;
+  unbindSocket: (game: ActiveGame, socketId: string) => void;
+  getPlayerList: (game: ActiveGame) => PlayerSession[];
+};
 const {
   generateFixturesForDivision,
   simulateMatchSegment,
@@ -24,7 +43,27 @@ const {
   simulateExtraTime,
   simulatePenaltyShootout,
   getTeamSquad,
-} = require("./game/engine");
+} = require("./game/engine") as {
+  generateFixturesForDivision: (
+    db: Db,
+    division: number,
+    matchweek: number,
+  ) => Promise<any[]>;
+  simulateMatchSegment: (...args: any[]) => Promise<void>;
+  applyPostMatchQualityEvolution: (
+    db: Db,
+    fixtures: any[],
+    currentMatchweek: number,
+  ) => Promise<void>;
+  simulateExtraTime: (...args: any[]) => Promise<any>;
+  simulatePenaltyShootout: (...args: any[]) => any;
+  getTeamSquad: (
+    db: Db,
+    teamId: number,
+    tactic: any,
+    currentMatchweek?: number,
+  ) => Promise<any[]>;
+};
 const {
   verifyOrCreateManager,
   verifyManager,
@@ -189,7 +228,7 @@ const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] },
 });
 
-function getSeasonEndMatchweek(matchweek) {
+function getSeasonEndMatchweek(matchweek: number) {
   return Math.ceil(Math.max(1, matchweek) / 14) * 14;
 }
 
@@ -236,8 +275,12 @@ function hashString(input = "") {
   return hash;
 }
 
-function runAll(db, sql, params = []) {
-  return new Promise((resolve, reject) => {
+function runAll<T extends AnyRow = AnyRow>(
+  db: Db,
+  sql: string,
+  params: any[] = [],
+): Promise<T[]> {
+  return new Promise<T[]>((resolve, reject) => {
     db.all(sql, params, (err, rows) => {
       if (err) return reject(err);
       resolve(rows || []);
@@ -248,7 +291,7 @@ function runAll(db, sql, params = []) {
 // ── ATTENDANCE CALCULATION ────────────────────────────────────────────────────
 // Calculates realistic attendance for a home match based on recent form.
 // baseOccupancy: 0.35 (dire streak) → 0.85 (perfect run), ± 8% noise.
-async function calculateMatchAttendance(db, homeTeamId) {
+async function calculateMatchAttendance(db: Db, homeTeamId: number) {
   const team = await runGet(
     db,
     "SELECT stadium_capacity FROM teams WHERE id = ?",
@@ -282,8 +325,12 @@ async function calculateMatchAttendance(db, homeTeamId) {
   return Math.floor(capacity * occupancy);
 }
 
-function runGet(db, sql, params = []) {
-  return new Promise((resolve, reject) => {
+function runGet<T extends AnyRow = AnyRow>(
+  db: Db,
+  sql: string,
+  params: any[] = [],
+): Promise<T | null> {
+  return new Promise<T | null>((resolve, reject) => {
     db.get(sql, params, (err, row) => {
       if (err) return reject(err);
       resolve(row || null);
@@ -291,7 +338,7 @@ function runGet(db, sql, params = []) {
   });
 }
 
-function getStandingsRows(teams = []) {
+function getStandingsRows(teams: AnyRow[] = []) {
   return [...teams].sort((a, b) => {
     const aGoalDifference = (a.goals_for || 0) - (a.goals_against || 0);
     const bGoalDifference = (b.goals_for || 0) - (b.goals_against || 0);
@@ -304,7 +351,12 @@ function getStandingsRows(teams = []) {
   });
 }
 
-function pickRefereeSummary(roomCode, teamId, opponentId, matchweek) {
+function pickRefereeSummary(
+  roomCode: string,
+  teamId: number,
+  opponentId: number,
+  matchweek: number,
+) {
   const seed = hashString(`${roomCode}:${matchweek}:${teamId}:${opponentId}`);
   const refereeName = refereeNames[seed % refereeNames.length];
   const biasSeed = hashString(
@@ -318,7 +370,11 @@ function pickRefereeSummary(roomCode, teamId, opponentId, matchweek) {
   };
 }
 
-async function getTeamRecentResults(game, teamId, limit = 5) {
+async function getTeamRecentResults(
+  game: ActiveGame,
+  teamId: number,
+  limit = 5,
+) {
   const rows = await runAll(
     game.db,
     `SELECT m.matchweek, m.home_team_id, m.away_team_id, m.home_score, m.away_score,
@@ -344,7 +400,7 @@ async function getTeamRecentResults(game, teamId, limit = 5) {
   return recent.join("");
 }
 
-async function buildNextMatchSummary(game, teamId) {
+async function buildNextMatchSummary(game: ActiveGame, teamId: number) {
   const team = await runGet(game.db, "SELECT * FROM teams WHERE id = ?", [
     teamId,
   ]);
@@ -408,7 +464,12 @@ async function buildNextMatchSummary(game, teamId) {
   };
 }
 
-function persistMatchResults(game, fixtures, matchweek, onDone) {
+function persistMatchResults(
+  game: ActiveGame,
+  fixtures: any[],
+  matchweek: number,
+  onDone?: () => void,
+) {
   let remaining = fixtures.length;
   if (remaining === 0) {
     if (onDone) onDone();
@@ -469,11 +530,11 @@ const CUP_ROUND_NAMES = [
 ];
 const CUP_TEAMS_BY_ROUND = { 1: 32, 2: 16, 3: 8, 4: 4, 5: 2 };
 
-function createCupPhaseToken(game, round, phase) {
+function createCupPhaseToken(game: ActiveGame, round: number, phase: string) {
   return `${game.season}:${round}:${phase}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function setCupPhase(game, phase, round = game.cupRound) {
+function setCupPhase(game: ActiveGame, phase: string, round = game.cupRound) {
   game.cupRound = round;
   game.cupState = phase;
   game.cupRuntime = game.cupRuntime || {};
@@ -482,14 +543,30 @@ function setCupPhase(game, phase, round = game.cupRound) {
   return game.cupRuntime.phaseToken;
 }
 
-function clearCupTimeout(game, key) {
+function clearCupTimeout(game: ActiveGame, key: string) {
   if (game[key]) {
     clearTimeout(game[key]);
     game[key] = null;
   }
 }
 
-function armCupTimeout({ game, key, ms, phase, round, token, onElapsed }) {
+function armCupTimeout({
+  game,
+  key,
+  ms,
+  phase,
+  round,
+  token,
+  onElapsed,
+}: {
+  game: ActiveGame;
+  key: string;
+  ms: number;
+  phase: string;
+  round: number;
+  token: string;
+  onElapsed: () => void;
+}) {
   clearCupTimeout(game, key);
   game[key] = setTimeout(() => {
     const currentToken = game.cupRuntime?.phaseToken;
@@ -504,21 +581,21 @@ function armCupTimeout({ game, key, ms, phase, round, token, onElapsed }) {
   }, ms);
 }
 
-function getConnectedCoachSocketIds(game) {
+function getConnectedCoachSocketIds(game: ActiveGame): string[] {
   return getPlayerList(game)
     .filter((player) => player.socketId)
     .map((player) => player.socketId);
 }
 
-function allConnectedCoachesAcked(game, ackSet) {
+function allConnectedCoachesAcked(game: ActiveGame, ackSet: Set<string>) {
   const socketIds = getConnectedCoachSocketIds(game);
   return socketIds.every((socketId) => ackSet.has(socketId));
 }
 
 // Versão filtrada para fases da Taça: só conta treinadores cujas equipas
 // participam na ronda actual (game.cupTeamIds).
-function allCupCoachesAcked(game, ackSet) {
-  const cupSocketIds = Object.values(game.playersByName)
+function allCupCoachesAcked(game: ActiveGame, ackSet: Set<string>) {
+  const cupSocketIds = (Object.values(game.playersByName) as PlayerSession[])
     .filter((p) => p.socketId && (game.cupTeamIds || []).includes(p.teamId))
     .map((p) => p.socketId);
   if (cupSocketIds.length === 0) return true;
@@ -552,7 +629,7 @@ const SEASON_CALENDAR = [
 
 // ─── SEASON END ───────────────────────────────────────────────────────────────
 // Called after matchweek 14 completes. Awards palmares, applies promo/relegation.
-async function applySeasonEnd(game) {
+async function applySeasonEnd(game: ActiveGame) {
   const season = game.season;
   const year = game.year; // real-world year of the season just ended
   const allTeams = await runAll(
@@ -713,7 +790,7 @@ async function applySeasonEnd(game) {
 
 // ─── CUP: GENERATE DRAW ──────────────────────────────────────────────────────
 // Returns the draw fixtures (inserted into cup_matches) for the given round.
-async function generateCupDraw(game, round) {
+async function generateCupDraw(game: ActiveGame, round: number) {
   const season = game.season;
   let teamIds;
 
@@ -778,8 +855,8 @@ async function generateCupDraw(game, round) {
 // ─── CUP EXTRA-TIME ANIMATION GATE ──────────────────────────────────────────
 // Returns a promise that resolves once every connected coach has emitted
 // "cupExtraTimeDone", or after `timeoutMs` milliseconds (whichever comes first).
-function cupETAnimGate(game, timeoutMs = 45000) {
-  return new Promise((resolve) => {
+function cupETAnimGate(game: ActiveGame, timeoutMs = 45000): Promise<void> {
+  return new Promise<void>((resolve) => {
     const acks = new Set();
     const timeout = setTimeout(() => {
       delete game._cupETAnimHandler;
@@ -788,9 +865,9 @@ function cupETAnimGate(game, timeoutMs = 45000) {
 
     game._cupETAnimHandler = (socketId) => {
       acks.add(socketId);
-      const connected = Object.values(game.playersByName).filter(
-        (p) => p.socketId,
-      );
+      const connected = (
+        Object.values(game.playersByName) as PlayerSession[]
+      ).filter((p) => p.socketId);
       if (
         connected.length > 0 &&
         connected.every((p) => acks.has(p.socketId))
@@ -803,7 +880,11 @@ function cupETAnimGate(game, timeoutMs = 45000) {
   });
 }
 
-async function finalizeCupRound(game, round, expectedToken) {
+async function finalizeCupRound(
+  game: ActiveGame,
+  round: number,
+  expectedToken: string,
+) {
   if (game.cupState !== "second_half_waiting" || game.cupRound !== round)
     return;
   if ((game.cupRuntime?.phaseToken || "") !== expectedToken) return;
@@ -1012,7 +1093,7 @@ async function finalizeCupRound(game, round, expectedToken) {
 // ─── CUP: START ROUND ─────────────────────────────────────────────────────────
 // Called after the league matchweek that triggers a cup round.
 // If any human is still in the cup, emits the draw popup; otherwise auto-sims.
-async function startCupRound(game, round) {
+async function startCupRound(game: ActiveGame, round: number) {
   const drawFixtures = await generateCupDraw(game, round);
 
   // Enrich with team names for the UI
@@ -1077,7 +1158,11 @@ async function startCupRound(game, round) {
 }
 
 // ─── CUP: SIMULATE FIRST HALF ─────────────────────────────────────────────────
-async function simulateCupFirstHalf(game, round, expectedToken) {
+async function simulateCupFirstHalf(
+  game: ActiveGame,
+  round: number,
+  expectedToken: string,
+) {
   if (
     (game.cupState !== "draw" && game.cupState !== "pre_match") ||
     game.cupRound !== round
@@ -1100,7 +1185,7 @@ async function simulateCupFirstHalf(game, round, expectedToken) {
   const roundName = CUP_ROUND_NAMES[round] || `Ronda ${round}`;
 
   for (const row of matchRows) {
-    const fixture = {
+    const fixture: any = {
       _dbRow: row,
       homeTeamId: row.home_team_id,
       awayTeamId: row.away_team_id,
@@ -1109,10 +1194,10 @@ async function simulateCupFirstHalf(game, round, expectedToken) {
       events: [],
     };
 
-    const p1 = Object.values(game.playersByName).find(
+    const p1 = (Object.values(game.playersByName) as PlayerSession[]).find(
       (p) => p.teamId === row.home_team_id,
     );
-    const p2 = Object.values(game.playersByName).find(
+    const p2 = (Object.values(game.playersByName) as PlayerSession[]).find(
       (p) => p.teamId === row.away_team_id,
     );
     fixture._t1 = p1 ? p1.tactic : { formation: "4-4-2", style: "Balanced" };
@@ -1207,7 +1292,11 @@ async function simulateCupFirstHalf(game, round, expectedToken) {
 }
 
 // ─── CUP: SIMULATE SECOND HALF ────────────────────────────────────────────────
-async function simulateCupSecondHalf(game, round, expectedToken) {
+async function simulateCupSecondHalf(
+  game: ActiveGame,
+  round: number,
+  expectedToken: string,
+) {
   if (game.cupState !== "halftime" || game.cupRound !== round) return;
   if ((game.cupRuntime?.phaseToken || "") !== expectedToken) return;
 
@@ -1296,7 +1385,7 @@ async function simulateCupSecondHalf(game, round, expectedToken) {
   await finalizeCupRound(game, round, secondHalfToken);
 }
 
-function emitCurrentCupPhaseToSocket(game, socket) {
+function emitCurrentCupPhaseToSocket(game: ActiveGame, socket: any) {
   const runtime = game.cupRuntime || {};
   if (game.cupState === "draw" && runtime.drawPayload) {
     socket.emit("cupDrawStart", runtime.drawPayload);
@@ -1315,7 +1404,7 @@ function emitCurrentCupPhaseToSocket(game, socket) {
   }
 }
 
-function ensureCupPhaseTimeout(game) {
+function ensureCupPhaseTimeout(game: ActiveGame) {
   const token = game.cupRuntime?.phaseToken;
   const round = game.cupRound;
   if (!token || !round) return;
@@ -1389,7 +1478,7 @@ function ensureCupPhaseTimeout(game) {
   }
 }
 
-function refreshMarket(game, emitToRoom = true) {
+function refreshMarket(game: ActiveGame, emitToRoom = true) {
   game.db.all(
     `SELECT p.*, t.name as team_name, t.color_primary, t.color_secondary
      FROM players p
@@ -1417,8 +1506,8 @@ function refreshMarket(game, emitToRoom = true) {
   );
 }
 
-function emitSquadForPlayer(game, teamId) {
-  const player = Object.values(game.playersByName).find(
+function emitSquadForPlayer(game: ActiveGame, teamId: number) {
+  const player = (Object.values(game.playersByName) as PlayerSession[]).find(
     (p) => p.teamId === teamId && p.socketId,
   );
   if (!player) return;
@@ -1431,7 +1520,7 @@ function emitSquadForPlayer(game, teamId) {
   );
 }
 
-function isMatchInProgress(game) {
+function isMatchInProgress(game: ActiveGame) {
   return (
     game.matchState === "running_first_half" ||
     game.matchState === "halftime" ||
@@ -1444,7 +1533,7 @@ function isMatchInProgress(game) {
  * Kills every active timer so no auction socket event can fire during
  * first-half or second-half simulation. Called at both kick-offs.
  */
-function finalizeAllRunningAuctions(game) {
+function finalizeAllRunningAuctions(game: ActiveGame) {
   if (!game.auctions) return;
   const playerIds = Object.keys(game.auctions);
   if (playerIds.length === 0) return;
@@ -1465,7 +1554,7 @@ function finalizeAllRunningAuctions(game) {
  * triggered after full-time instead of being lost.
  * Called at both kick-offs.
  */
-function cancelPendingCupDraw(game) {
+function cancelPendingCupDraw(game: ActiveGame) {
   if (game._leagueAnimTimeout) {
     clearTimeout(game._leagueAnimTimeout);
     game._leagueAnimTimeout = null;
@@ -1483,7 +1572,13 @@ function cancelPendingCupDraw(game) {
   game.cupDrawAcks = new Set();
 }
 
-function listPlayerOnMarket(game, playerId, mode, price, callback) {
+function listPlayerOnMarket(
+  game: ActiveGame,
+  playerId: number,
+  mode: string,
+  price: number,
+  callback?: (...args: any[]) => void,
+) {
   // Block auctions during matches — queue them for after full-time
   if (mode === "auction" && isMatchInProgress(game)) {
     if (!game.pendingAuctionQueue) game.pendingAuctionQueue = [];
@@ -1525,7 +1620,12 @@ function listPlayerOnMarket(game, playerId, mode, price, callback) {
   );
 }
 
-function startAuction(game, player, startingPrice, callback) {
+function startAuction(
+  game: ActiveGame,
+  player: any,
+  startingPrice: number,
+  callback?: (...args: any[]) => void,
+) {
   const durationMs = 15000;
   const now = Date.now();
   const existingTimer = game.auctionTimers?.[player.id];
@@ -1578,7 +1678,7 @@ function startAuction(game, player, startingPrice, callback) {
   );
 }
 
-function finalizeAuction(game, playerId) {
+function finalizeAuction(game: ActiveGame, playerId: number) {
   if (!game.auctions || !game.auctions[playerId]) return;
   const auction = game.auctions[playerId];
   const timer = game.auctionTimers?.[playerId];
@@ -1611,9 +1711,9 @@ function finalizeAuction(game, playerId) {
           "UPDATE players SET transfer_status = 'none', transfer_price = 0 WHERE id = ?",
           [playerId],
           () => {
-            const seller = Object.values(game.playersByName).find(
-              (p) => p.teamId === auction.sellerTeamId && p.socketId,
-            );
+            const seller = (
+              Object.values(game.playersByName) as PlayerSession[]
+            ).find((p) => p.teamId === auction.sellerTeamId && p.socketId);
             if (seller) {
               io.to(seller.socketId).emit(
                 "systemMessage",
@@ -1660,11 +1760,11 @@ function finalizeAuction(game, playerId) {
                       playerId,
                     ],
                     () => {
-                      const buyerCoach = Object.values(game.playersByName).find(
-                        (p) => p.teamId === buyerTeamId && p.socketId,
-                      );
-                      const sellerCoach = Object.values(
-                        game.playersByName,
+                      const buyerCoach = (
+                        Object.values(game.playersByName) as PlayerSession[]
+                      ).find((p) => p.teamId === buyerTeamId && p.socketId);
+                      const sellerCoach = (
+                        Object.values(game.playersByName) as PlayerSession[]
                       ).find(
                         (p) => p.teamId === auction.sellerTeamId && p.socketId,
                       );
@@ -1711,7 +1811,13 @@ function finalizeAuction(game, playerId) {
   );
 }
 
-function placeAuctionBid(game, teamId, playerId, bidAmount, io) {
+function placeAuctionBid(
+  game: ActiveGame,
+  teamId: number,
+  playerId: number,
+  bidAmount: number,
+  io: any,
+): Promise<any> {
   if (!game.auctions || !game.auctions[playerId]) {
     return Promise.resolve({ ok: false, error: "Leilão indisponível." });
   }
@@ -2332,7 +2438,7 @@ io.on("connection", (socket) => {
   });
 
   // ── REQUEST PALMARES ──────────────────────────────────────────────────────
-  socket.on("requestPalmares", async ({ teamId } = {}) => {
+  socket.on("requestPalmares", async ({ teamId }: { teamId?: number } = {}) => {
     const game = getGameBySocket(socket.id);
     if (!game) return;
     try {
@@ -2700,13 +2806,14 @@ io.on("connection", (socket) => {
 
     placeAuctionBid(game, playerState.teamId, playerId, bidAmount, io).then(
       (result) => {
-        if (!result.ok) {
-          socket.emit("systemMessage", result.error);
+        const bidResult: any = result;
+        if (!bidResult.ok) {
+          socket.emit("systemMessage", bidResult.error);
         } else {
           // Sealed-bid: confirm only to this coach, no broadcast
           socket.emit("auctionBidConfirmed", {
             playerId,
-            bidAmount: result.bidAmount,
+            bidAmount: bidResult.bidAmount,
           });
         }
       },
@@ -2841,10 +2948,11 @@ io.on("connection", (socket) => {
   socket.on("resolveMatchAction", ({ actionId, teamId, playerId }) => {
     const game = getGameBySocket(socket.id);
     if (!game || !game.pendingMatchAction) return;
-    if (game.pendingMatchAction.actionId !== actionId) return;
-    if (game.pendingMatchAction.teamId !== teamId) return;
+    const pendingAction: any = game.pendingMatchAction;
+    if (pendingAction.actionId !== actionId) return;
+    if (pendingAction.teamId !== teamId) return;
 
-    const pending = game.pendingMatchAction;
+    const pending: any = pendingAction;
     clearTimeout(pending.timer);
     game.pendingMatchAction = null;
     if (playerId === null || playerId === undefined) {
