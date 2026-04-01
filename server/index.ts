@@ -71,6 +71,60 @@ const {
   recordRoomAccess,
   getManagerRooms,
 } = require("./auth");
+const {
+  getSeasonEndMatchweek,
+  runAll,
+  runGet,
+  getStandingsRows,
+  pickRefereeSummary,
+  calculateMatchAttendance,
+} = require("./coreHelpers") as {
+  getSeasonEndMatchweek: (matchweek: number) => number;
+  runAll: <T extends AnyRow = AnyRow>(
+    db: Db,
+    sql: string,
+    params?: any[],
+  ) => Promise<T[]>;
+  runGet: <T extends AnyRow = AnyRow>(
+    db: Db,
+    sql: string,
+    params?: any[],
+  ) => Promise<T | null>;
+  getStandingsRows: (teams?: AnyRow[]) => AnyRow[];
+  pickRefereeSummary: (
+    roomCode: string,
+    teamId: number,
+    opponentId: number,
+    matchweek: number,
+  ) => { name: string; balance: number; favorsTeamA: boolean };
+  calculateMatchAttendance: (db: Db, homeTeamId: number) => Promise<number>;
+};
+const {
+  setCupPhase,
+  clearCupTimeout,
+  armCupTimeout,
+  allConnectedCoachesAcked,
+  allCupCoachesAcked,
+} = require("./cupHelpers") as {
+  setCupPhase: (
+    game: ActiveGame,
+    phase: string,
+    saveGameState: (game: ActiveGame) => void,
+    round?: number,
+  ) => string;
+  clearCupTimeout: (game: ActiveGame, key: string) => void;
+  armCupTimeout: (args: {
+    game: ActiveGame;
+    key: string;
+    ms: number;
+    phase: string;
+    round: number;
+    token: string;
+    onElapsed: () => void;
+  }) => void;
+  allConnectedCoachesAcked: (game: ActiveGame, ackSet: Set<string>) => boolean;
+  allCupCoachesAcked: (game: ActiveGame, ackSet: Set<string>) => boolean;
+};
 const adminRoutes = require("./adminRoutes");
 
 const app = express();
@@ -227,148 +281,6 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: "*", methods: ["GET", "POST"] },
 });
-
-function getSeasonEndMatchweek(matchweek: number) {
-  return Math.ceil(Math.max(1, matchweek) / 14) * 14;
-}
-
-const refereeNames = [
-  "Afonso Pereira",
-  "Bruno Almeida",
-  "Carlos Nogueira",
-  "Diogo Valente",
-  "Eduardo Matos",
-  "Filipe Santos",
-  "Gonçalo Ribeiro",
-  "Hugo Carvalho",
-  "Inácio Moreira",
-  "João Varela",
-  "Leandro Costa",
-  "Miguel Teixeira",
-  "Nuno Figueiredo",
-  "Óscar Pires",
-  "Pedro Cunha",
-  "Rafael Martins",
-  "Sérgio Lima",
-  "Tiago Fernandes",
-  "Ulisses Rocha",
-  "Vasco Mendes",
-  "Xavier Correia",
-  "Yuri Lopes",
-  "Zé Monteiro",
-  "André Simões",
-  "Bernardo Fonseca",
-  "César Tavares",
-  "Daniel Ribeiro",
-  "Elias Pinto",
-  "Francisco Lobo",
-  "Guilherme Serra",
-  "Henrique Antunes",
-  "Isaac Barros",
-];
-
-function hashString(input = "") {
-  let hash = 0;
-  for (let index = 0; index < input.length; index += 1) {
-    hash = (hash * 31 + input.charCodeAt(index)) >>> 0;
-  }
-  return hash;
-}
-
-function runAll<T extends AnyRow = AnyRow>(
-  db: Db,
-  sql: string,
-  params: any[] = [],
-): Promise<T[]> {
-  return new Promise<T[]>((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) return reject(err);
-      resolve(rows || []);
-    });
-  });
-}
-
-// ── ATTENDANCE CALCULATION ────────────────────────────────────────────────────
-// Calculates realistic attendance for a home match based on recent form.
-// baseOccupancy: 0.35 (dire streak) → 0.85 (perfect run), ± 8% noise.
-async function calculateMatchAttendance(db: Db, homeTeamId: number) {
-  const team = await runGet(
-    db,
-    "SELECT stadium_capacity FROM teams WHERE id = ?",
-    [homeTeamId],
-  );
-  const capacity = team ? team.stadium_capacity || 5000 : 5000;
-
-  const recentMatches = await runAll(
-    db,
-    `SELECT home_team_id, away_team_id, home_score, away_score
-     FROM matches
-     WHERE played = 1 AND (home_team_id = ? OR away_team_id = ?)
-     ORDER BY matchweek DESC, id DESC
-     LIMIT 5`,
-    [homeTeamId, homeTeamId],
-  );
-
-  let formScore = recentMatches.length === 0 ? 5 : 0; // neutral start if no history
-  for (const m of recentMatches) {
-    const isHome = m.home_team_id === homeTeamId;
-    const gf = isHome ? m.home_score : m.away_score;
-    const ga = isHome ? m.away_score : m.home_score;
-    if (gf > ga) formScore += 3;
-    else if (gf === ga) formScore += 1;
-  }
-
-  const maxFormScore = Math.max(recentMatches.length, 1) * 3;
-  const baseOccupancy = 0.35 + (formScore / Math.max(maxFormScore, 15)) * 0.5;
-  const noise = (Math.random() - 0.5) * 0.16;
-  const occupancy = Math.max(0.15, Math.min(1.0, baseOccupancy + noise));
-  return Math.floor(capacity * occupancy);
-}
-
-function runGet<T extends AnyRow = AnyRow>(
-  db: Db,
-  sql: string,
-  params: any[] = [],
-): Promise<T | null> {
-  return new Promise<T | null>((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) return reject(err);
-      resolve(row || null);
-    });
-  });
-}
-
-function getStandingsRows(teams: AnyRow[] = []) {
-  return [...teams].sort((a, b) => {
-    const aGoalDifference = (a.goals_for || 0) - (a.goals_against || 0);
-    const bGoalDifference = (b.goals_for || 0) - (b.goals_against || 0);
-    return (
-      (b.points || 0) - (a.points || 0) ||
-      bGoalDifference - aGoalDifference ||
-      (b.goals_for || 0) - (a.goals_for || 0) ||
-      String(a.name || "").localeCompare(String(b.name || ""))
-    );
-  });
-}
-
-function pickRefereeSummary(
-  roomCode: string,
-  teamId: number,
-  opponentId: number,
-  matchweek: number,
-) {
-  const seed = hashString(`${roomCode}:${matchweek}:${teamId}:${opponentId}`);
-  const refereeName = refereeNames[seed % refereeNames.length];
-  const biasSeed = hashString(
-    `${refereeName}:${teamId}:${opponentId}:${roomCode}`,
-  );
-  const balance = 20 + (biasSeed % 61);
-  return {
-    name: refereeName,
-    balance,
-    favorsTeamA: balance >= 50,
-  };
-}
 
 async function getTeamRecentResults(
   game: ActiveGame,
@@ -529,78 +441,6 @@ const CUP_ROUND_NAMES = [
   "Final",
 ];
 const CUP_TEAMS_BY_ROUND = { 1: 32, 2: 16, 3: 8, 4: 4, 5: 2 };
-
-function createCupPhaseToken(game: ActiveGame, round: number, phase: string) {
-  return `${game.season}:${round}:${phase}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function setCupPhase(game: ActiveGame, phase: string, round = game.cupRound) {
-  game.cupRound = round;
-  game.cupState = phase;
-  game.cupRuntime = game.cupRuntime || {};
-  game.cupRuntime.phaseToken = createCupPhaseToken(game, round, phase);
-  saveGameState(game);
-  return game.cupRuntime.phaseToken;
-}
-
-function clearCupTimeout(game: ActiveGame, key: string) {
-  if (game[key]) {
-    clearTimeout(game[key]);
-    game[key] = null;
-  }
-}
-
-function armCupTimeout({
-  game,
-  key,
-  ms,
-  phase,
-  round,
-  token,
-  onElapsed,
-}: {
-  game: ActiveGame;
-  key: string;
-  ms: number;
-  phase: string;
-  round: number;
-  token: string;
-  onElapsed: () => void;
-}) {
-  clearCupTimeout(game, key);
-  game[key] = setTimeout(() => {
-    const currentToken = game.cupRuntime?.phaseToken;
-    if (
-      game.cupState !== phase ||
-      game.cupRound !== round ||
-      currentToken !== token
-    ) {
-      return;
-    }
-    onElapsed();
-  }, ms);
-}
-
-function getConnectedCoachSocketIds(game: ActiveGame): string[] {
-  return getPlayerList(game)
-    .filter((player) => player.socketId)
-    .map((player) => player.socketId);
-}
-
-function allConnectedCoachesAcked(game: ActiveGame, ackSet: Set<string>) {
-  const socketIds = getConnectedCoachSocketIds(game);
-  return socketIds.every((socketId) => ackSet.has(socketId));
-}
-
-// Versão filtrada para fases da Taça: só conta treinadores cujas equipas
-// participam na ronda actual (game.cupTeamIds).
-function allCupCoachesAcked(game: ActiveGame, ackSet: Set<string>) {
-  const cupSocketIds = (Object.values(game.playersByName) as PlayerSession[])
-    .filter((p) => p.socketId && (game.cupTeamIds || []).includes(p.teamId))
-    .map((p) => p.socketId);
-  if (cupSocketIds.length === 0) return true;
-  return cupSocketIds.every((s) => ackSet.has(s));
-}
 
 // ─── SEASON CALENDAR ─────────────────────────────────────────────────────────
 // Ordered sequence of events in a season. Type 'league' = regular matchweek;
@@ -889,7 +729,7 @@ async function finalizeCupRound(
     return;
   if ((game.cupRuntime?.phaseToken || "") !== expectedToken) return;
 
-  setCupPhase(game, "finalizing_cup_round", round);
+  setCupPhase(game, "finalizing_cup_round", saveGameState, round);
   clearCupTimeout(game, "_cupSecondHalfTimeout");
 
   const season = game.season;
@@ -1068,7 +908,12 @@ async function finalizeCupRound(
   game.cupRuntime.halftimePayload = null;
   game.cupRuntime.secondHalfPayload = null;
   game.cupRuntime.fixtures = [];
-  setCupPhase(game, round === 5 ? "done_cup" : "done_round", round);
+  setCupPhase(
+    game,
+    round === 5 ? "done_cup" : "done_round",
+    saveGameState,
+    round,
+  );
 
   io.to(game.roomCode).emit("cupRoundResults", {
     round,
@@ -1128,7 +973,7 @@ async function startCupRound(game: ActiveGame, round: number) {
     season: game.season,
   };
 
-  const drawToken = setCupPhase(game, "draw", round);
+  const drawToken = setCupPhase(game, "draw", saveGameState, round);
   game.cupRuntime.drawPayload = drawPayload;
   game.cupRuntime.halftimePayload = null;
   game.cupRuntime.secondHalfPayload = null;
@@ -1172,7 +1017,7 @@ async function simulateCupFirstHalf(
 
   clearCupTimeout(game, "_cupDrawTimeout");
   clearCupTimeout(game, "_cupPreMatchTimeout");
-  setCupPhase(game, "playing_first_half", round);
+  setCupPhase(game, "playing_first_half", saveGameState, round);
 
   const season = game.season;
   const matchRows = await runAll(
@@ -1252,7 +1097,7 @@ async function simulateCupFirstHalf(
   // Persist cup fixtures so the second-half function can resume them
   game.cupFixtures = fixtures;
   game.cupRuntime.fixtures = fixtures;
-  const halftimeToken = setCupPhase(game, "halftime", round);
+  const halftimeToken = setCupPhase(game, "halftime", saveGameState, round);
   game.cupHalfTimeAcks = new Set();
   game.cupRuntime.halftimePayload = {
     round,
@@ -1301,7 +1146,7 @@ async function simulateCupSecondHalf(
   if ((game.cupRuntime?.phaseToken || "") !== expectedToken) return;
 
   clearCupTimeout(game, "_cupHalftimeTimeout");
-  setCupPhase(game, "playing_second_half", round);
+  setCupPhase(game, "playing_second_half", saveGameState, round);
 
   const season = game.season;
   const fixtures = game.cupFixtures || [];
@@ -1356,7 +1201,12 @@ async function simulateCupSecondHalf(
     results: enrichedSecondHalf,
   };
 
-  const secondHalfToken = setCupPhase(game, "second_half_waiting", round);
+  const secondHalfToken = setCupPhase(
+    game,
+    "second_half_waiting",
+    saveGameState,
+    round,
+  );
   game.cupSecondHalfAcks = new Set();
   game.cupRuntime.secondHalfPayload = secondHalfPayload;
   game.cupRuntime.fixtures = fixtures;
@@ -2319,7 +2169,12 @@ io.on("connection", (socket) => {
     const allAcked = allConnectedCoachesAcked(game, game.cupDrawAcks);
     if (allAcked) {
       clearCupTimeout(game, "_cupDrawTimeout");
-      const preMatchToken = setCupPhase(game, "pre_match", game.cupRound);
+      const preMatchToken = setCupPhase(
+        game,
+        "pre_match",
+        saveGameState,
+        game.cupRound,
+      );
       game.cupPreMatchAcks = new Set();
       const preMatchRoundName =
         CUP_ROUND_NAMES[game.cupRound] || `Ronda ${game.cupRound}`;
