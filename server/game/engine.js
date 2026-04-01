@@ -196,7 +196,9 @@ function clampSkill(value) {
 }
 
 function normaliseStyle(style) {
-  const raw = String(style || "Balanced").trim().toUpperCase();
+  const raw = String(style || "Balanced")
+    .trim()
+    .toUpperCase();
   if (raw === "DEFENSIVO" || raw === "DEFENSIVE") return "DEFENSIVO";
   if (raw === "OFENSIVO" || raw === "OFFENSIVE") return "OFENSIVO";
   return "EQUILIBRADO";
@@ -573,7 +575,8 @@ async function simulateMatchSegment(
       const isHome = attackingSide === "home";
 
       const ratio =
-        (attacking.attack || 1) / ((attacking.attack || 1) + (defending.defense || 1) * 2);
+        (attacking.attack || 1) /
+        ((attacking.attack || 1) + (defending.defense || 1) * 2);
       let probGoal = ratio * 0.01;
       probGoal *= isHome ? 1.05 : 0.95;
 
@@ -586,7 +589,8 @@ async function simulateMatchSegment(
       const scorers = scoringSquad.filter(
         (p) => p.position === "ATA" || p.position === "MED",
       );
-      const scorer = scorers.length > 0 ? weightedPickScorer(scorers) : scoringSquad[0];
+      const scorer =
+        scorers.length > 0 ? weightedPickScorer(scorers) : scoringSquad[0];
 
       if (isHome) fixture.finalHomeGoals++;
       else fixture.finalAwayGoals++;
@@ -634,8 +638,12 @@ async function simulateMatchSegment(
     maybeOpenPlayGoal("home");
     maybeOpenPlayGoal("away");
 
-    const homeAggAvg = average(home.squad.map((p) => getAggressivenessValue(p)));
-    const awayAggAvg = average(away.squad.map((p) => getAggressivenessValue(p)));
+    const homeAggAvg = average(
+      home.squad.map((p) => getAggressivenessValue(p)),
+    );
+    const awayAggAvg = average(
+      away.squad.map((p) => getAggressivenessValue(p)),
+    );
 
     const emitCard = (isHomeCard) => {
       const squad = isHomeCard ? home.squad : away.squad;

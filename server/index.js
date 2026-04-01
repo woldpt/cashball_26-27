@@ -2767,7 +2767,7 @@ io.on("connection", (socket) => {
             );
             socket.emit(
               "systemMessage",
-                "Empréstimo de 500.000€ aprovado (Juro 5%/Semana).",
+              "Empréstimo de 500.000€ aprovado (Juro 5%/Semana).",
             );
           },
         );
