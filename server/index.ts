@@ -125,6 +125,28 @@ const {
   allConnectedCoachesAcked: (game: ActiveGame, ackSet: Set<string>) => boolean;
   allCupCoachesAcked: (game: ActiveGame, ackSet: Set<string>) => boolean;
 };
+const {
+  DIVISION_NAMES,
+  CUP_ROUND_AFTER_MATCHWEEK,
+  CUP_ROUND_NAMES,
+  CUP_TEAMS_BY_ROUND,
+  SEASON_CALENDAR,
+} = require("./gameConstants") as {
+  DIVISION_NAMES: Record<number, string>;
+  CUP_ROUND_AFTER_MATCHWEEK: Record<number, number>;
+  CUP_ROUND_NAMES: string[];
+  CUP_TEAMS_BY_ROUND: Record<number, number>;
+  SEASON_CALENDAR: Array<Record<string, any>>;
+};
+const { isMatchInProgress, finalizeAllRunningAuctions, cancelPendingCupDraw } =
+  require("./matchFlowHelpers") as {
+    isMatchInProgress: (game: ActiveGame) => boolean;
+    finalizeAllRunningAuctions: (
+      game: ActiveGame,
+      finalizeAuction: (game: ActiveGame, playerId: number) => void,
+    ) => void;
+    cancelPendingCupDraw: (game: ActiveGame) => void;
+  };
 const adminRoutes = require("./adminRoutes");
 
 const app = express();
@@ -179,54 +201,6 @@ app.get("/saves", apiLimiter, async (req, res) => {
 // Deletes a room's .db file. Only allowed if the requesting coach has access to
 // that room and no players are currently connected to it.
 app.delete("/saves/:roomCode", apiLimiter, async (req, res) => {
-  try {
-    const roomCode =
-      typeof req.params.roomCode === "string"
-        ? req.params.roomCode.trim().toUpperCase()
-        : "";
-    const managerName =
-      typeof req.body?.name === "string" ? req.body.name.trim() : "";
-
-    if (!roomCode || !managerName) {
-      return res
-        .status(400)
-        .json({ error: "roomCode e name são obrigatórios." });
-    }
-
-    // Verify the coach has access to this room
-    const myRooms = await getManagerRooms(managerName);
-    if (!myRooms.includes(roomCode)) {
-      return res.status(403).json({ error: "Não tens acesso a esta sala." });
-    }
-
-    const dbPath = path.join(__dirname, "db", `game_${roomCode}.db`);
-    if (!fs.existsSync(dbPath)) {
-      return res.status(404).json({ error: "Sala não encontrada." });
-    }
-
-    // Refuse if the room is currently loaded with active connections
-    const activeGame = getGame(roomCode);
-    if (activeGame) {
-      const connected = Object.values(activeGame.socketToName || {}).filter(
-        Boolean,
-      ).length;
-      if (connected > 0) {
-        return res
-          .status(409)
-          .json({ error: "A sala está activa. Aguarda que todos saiam." });
-      }
-    }
-
-    fs.unlinkSync(dbPath);
-    console.log(`[DELETE /saves] Deleted room ${roomCode} by ${managerName}`);
-    res.json({ ok: true });
-  } catch (e) {
-    console.error("[DELETE /saves] Error:", e.message);
-    res.status(500).json({ error: "Erro ao apagar a sala." });
-  }
-});
-
-app.post("/auth/login", apiLimiter, async (req, res) => {
   try {
     const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
     const password =
@@ -1368,58 +1342,6 @@ function emitSquadForPlayer(game: ActiveGame, teamId: number) {
       if (!err) io.to(player.socketId).emit("mySquad", squad || []);
     },
   );
-}
-
-function isMatchInProgress(game: ActiveGame) {
-  return (
-    game.matchState === "running_first_half" ||
-    game.matchState === "halftime" ||
-    game.matchState === "playing_second_half"
-  );
-}
-
-/**
- * Immediately resolve all running auctions before a match half starts.
- * Kills every active timer so no auction socket event can fire during
- * first-half or second-half simulation. Called at both kick-offs.
- */
-function finalizeAllRunningAuctions(game: ActiveGame) {
-  if (!game.auctions) return;
-  const playerIds = Object.keys(game.auctions);
-  if (playerIds.length === 0) return;
-  for (const playerId of playerIds) {
-    if (game.auctionTimers?.[playerId]) {
-      clearTimeout(game.auctionTimers[playerId]);
-      delete game.auctionTimers[playerId];
-    }
-    finalizeAuction(game, Number(playerId));
-  }
-}
-
-/**
- * Cancel any pending cup draw that hasn't fired yet.
- * Prevents the cup-draw popup from appearing mid-match when the safety
- * timeout (_leagueAnimTimeout or _cupDrawTimeout) fires during simulation.
- * The pending round is saved to game.deferredCupRound so it can be
- * triggered after full-time instead of being lost.
- * Called at both kick-offs.
- */
-function cancelPendingCupDraw(game: ActiveGame) {
-  if (game._leagueAnimTimeout) {
-    clearTimeout(game._leagueAnimTimeout);
-    game._leagueAnimTimeout = null;
-  }
-  if (game._cupDrawTimeout) {
-    clearTimeout(game._cupDrawTimeout);
-    game._cupDrawTimeout = null;
-  }
-  // Defer rather than discard — trigger after full-time
-  if (game.pendingCupRound != null) {
-    game.deferredCupRound = game.pendingCupRound;
-  }
-  game.pendingCupRound = null;
-  game.leagueAnimAcks = new Set();
-  game.cupDrawAcks = new Set();
 }
 
 function listPlayerOnMarket(
@@ -2870,7 +2792,7 @@ async function checkAllReady(game) {
     weeklyLoopRunning[game.roomCode] = true;
 
     // Resolve all open auctions now — their timers must not fire mid-match.
-    finalizeAllRunningAuctions(game);
+    finalizeAllRunningAuctions(game, finalizeAuction);
     // Cancel any pending cup draw — its safety timeout must not fire mid-match.
     cancelPendingCupDraw(game);
 
@@ -2911,7 +2833,7 @@ async function checkAllReady(game) {
     //
     // Resolve any auctions that started during half-time so their timers
     // cannot interrupt second-half simulation.
-    finalizeAllRunningAuctions(game);
+    finalizeAllRunningAuctions(game, finalizeAuction);
     // Also cancel any pending cup draw.
     cancelPendingCupDraw(game);
     game.matchState = "playing_second_half";
