@@ -608,1142 +608,724 @@ ENCERRADA — Época terminada (arquivo)
 21. **Descida aos Distritais deixa o treinador como observador** — fica sem clube até receber um convite de um clube sem humano. Não há limite de descidas.
 22. Em caso de dúvida sobre uma mecânica não descrita, **perguntar antes de inventar**.
 
-# CashBall 26/27 — Detalhamento Técnico
+# CashBall 26/27 — Clarificações Críticas
 
-Este documento complementa a especificação principal e clarifica sistemas críticos para evitar ambiguidades durante a implementação.
-
----
-
-## 1. MORAL DA EQUIPA
-
-### Range e Escala
-
-- **Range**: 0 a 100 (inteiro)
-- **Inicial**: 50 (neutro) para todas as equipas no início da época
-
-### Cálculo de Mudança
-
-Após cada jogo (campeonato ou Taça):
-
-```
-if (resultado == VITÓRIA):
-  moral += 10
-elif (resultado == EMPATE):
-  moral += 0
-elif (resultado == DERROTA):
-  moral -= 15
-
-// Caps
-moral = max(0, min(100, moral))
-```
-
-**Nota especial:** A moral é **compartilhada entre Campeonato e Taça** — uma derrota em qualquer competição afecta a mesma moral.
-
-### Impacto no Resultado do Jogo
-
-A moral afecta a **probabilidade de golos marcados** (ataque):
-
-```
-bónus_moral = (moral - 50) * 0.005
-// Se moral = 50: bónus = 0
-// Se moral = 100: bónus = +0.5 (50% de aumento na probabilidade de golo)
-// Se moral = 0: bónus = -0.5 (-50% na probabilidade de golo)
-```
-
-A moral **não afecta defesa** — golos sofridos dependem apenas dos atributos defensivos da equipa adversária e da sua moral.
+Este documento resolve ambiguidades que causariam bugs na implementação.
 
 ---
 
-## 2. CÁLCULO DO RESULTADO DO JOGO
+## 1. CALENDÁRIO EXATO DA ÉPOCA
 
-### Modelo Base: Força Ofensiva vs. Força Defensiva
-
-A simulação de um jogo calcula:
-
-1. **Força Ofensiva da Equipa A** (ataque)
-2. **Força Defensiva da Equipa B** (defesa)
-3. Probabilidade de golo da Equipa A
-4. Repetir para Equipa B
-5. Determinar resultado final
-
-### Cálculo de Força Ofensiva
+### Estrutura Semanal
 
 ```
-força_ofensiva = (
-  qualidade_média_médios * 0.4 +
-  qualidade_média_avançados * 0.6
-)
+Época = 19 Jornadas Total
+├── 14 Jornadas de Campeonato (obrigatórias)
+└── 5 Rondas de Taça (até eliminação ou vitória final)
 
-// Aplicar factor formação (mais ofensiva = mais golos)
-formação_ofensiva_factor = {
-  "4-2-4": 1.15,    // Muito ofensiva
-  "3-4-3": 1.12,    // Ofensiva
-  "4-3-3": 1.08,    // Ligeiramente ofensiva
-  "4-4-2": 1.00,    // Neutra
-  "4-5-1": 0.90,    // Defensiva
-  "5-3-2": 0.85,    // Muito defensiva
-  "5-4-1": 0.80     // Defensiva máxima
-}
-
-força_ofensiva *= formação_ofensiva_factor
-
-// Aplicar bónus de moral
-bónus_moral = (moral_equipa_a - 50) * 0.005
-força_ofensiva *= (1 + bónus_moral)
-
-// Aplicar estilo de jogo
-estilo_factor = {
-  "DEFENSIVO": 0.85,
-  "EQUILIBRADO": 1.00,
-  "OFENSIVO": 1.15
-}
-força_ofensiva *= estilo_factor["sua_instrução"]
-força_ofensiva *= (1 / estilo_factor[adversário_instrução])  // Penalizar se adversário é defensivo
+Distribuição ao longo da época:
+Semana 1:  Jornada 1 Campeonato (submissão 1)
+Semana 2:  Jornada 2 Campeonato (submissão 2)
+Semana 3:  Jornada 3 Campeonato (submissão 3) + Ronda 1 Taça (submissão 4)
+Semana 4:  Jornada 4 Campeonato (submissão 5)
+Semana 5:  Jornada 5 Campeonato (submissão 6)
+Semana 6:  Jornada 6 Campeonato (submissão 7) + Ronda 2 Taça (submissão 8)
+Semana 7:  Jornada 7 Campeonato (submissão 9)
+Semana 8:  Jornada 8 Campeonato (submissão 10)
+Semana 9:  Jornada 9 Campeonato (submissão 11) + Quartos-de-Final Taça (submissão 12)
+Semana 10: Jornada 10 Campeonato (submissão 13)
+Semana 11: Jornada 11 Campeonato (submissão 14)
+Semana 12: Jornada 12 Campeonato (submissão 15) + Meias-Finais Taça (submissão 16)
+Semana 13: Jornada 13 Campeonato (submissão 17)
+Semana 14: Jornada 14 Campeonato (submissão 18) + Final Taça (submissão 19)
 ```
 
-### Cálculo de Força Defensiva
+### Semanas com Duplo Jogo
+
+**Exatamente 5 semanas com 2 submissões**: Semanas 3, 6, 9, 12, 14
+
+### Fluxo Temporal Preciso de uma Semana com Duplo Jogo
 
 ```
-força_defensiva = (
-  qualidade_média_defesas * 0.6 +
-  qualidade_média_guarda_redes * 0.4
-)
-
-// Aplicar factor formação (mais defesas = menos golos sofridos)
-formação_defensiva_factor = {
-  "5-4-1": 1.25,    // Máxima defesa (menos golos sofridos)
-  "5-3-2": 1.20,
-  "4-5-1": 1.10,
-  "4-4-2": 1.00,    // Neutra
-  "3-5-2": 0.95,
-  "4-3-3": 0.90,
-  "3-4-3": 0.85,
-  "4-2-4": 0.75     // Mínima defesa (mais golos sofridos)
-}
-
-força_defensiva *= formação_defensiva_factor
-
-// Nota: Força defensiva não sofre impacto directo de moral
-// (a moral só afecta ataque, não defesa)
+SEMANA 3 (Exemplo)
+├─ Estado: JORNADA_ABERTA (Campeonato, Jornada 3)
+├─ Treinadores submetem tácticas para Campeonato
+├─ QUANDO TODOS SUBMETEM:
+│  └─ Estado: JORNADA_SIMULANDO
+│  └─ Simulação decorre (45s + intervalo + 45s)
+│  └─ Eventos transmitidos em directo
+│  └─ Ao intervalo: pop-up substituições
+│  └─ Jogo termina
+├─ Após simulação do Campeonato:
+│  └─ Estado: RONDA_TACA_ABERTA (Ronda 1 Taça)
+│  └─ Sorteio da Ronda 1 Taça publicado
+│  └─ Treinadores ainda na Taça (32 inicialmente) vêem seu adversário
+│  └─ Treinadores submetem tácticas para Taça
+├─ QUANDO TODOS SUBMETEM TAÇA:
+│  └─ Estado: RONDA_TACA_SIMULANDO
+│  └─ Jogo da Taça simulado (mesmo processo)
+├─ Após jogo da Taça:
+│  └─ Estado: POS_JORNADA
+│  └─ Próxima semana: JORNADA_ABERTA (Semana 4, Campeonato Jornada 4)
 ```
 
-### Cálculo de Probabilidade de Golo
+### Número Total de Fases de Submissão
 
-Para cada minuto de simulação (45 + 45 + potencial 30 extra):
-
-```
-// Função base: quanto maior o ataque, mais alta a probabilidade
-// quanto maior a defesa, mais baixa
-
-prob_golo_base = força_ofensiva / (força_ofensiva + força_defensiva_adversária * 2)
-
-// Normalizar para intervalo 0-10% por minuto
-prob_golo_por_minuto = prob_golo_base * 0.02  // ~2% de chance base por minuto se forças iguais
-
-// Factor casa/fora
-if (is_home_team):
-  prob_golo_por_minuto *= 1.05  // +5% para equipa de casa
-else:
-  prob_golo_por_minuto *= 0.95  // -5% para equipa fora
-
-// Factor inclinação árbitro (afecta apenas cartões/penaltis, não golos directos)
-// não afecta esta probabilidade
-
-### Cálculo de Probabilidade de Cartão
-
-```
-
-// Probability de cartão amarelo por minuto
-prob_cartao_amarelo_base = 0.02 // 2% por minuto com agressividade neutra
-
-// Modificar com base na agressividade média da equipa
-agressividade_média_equipa = média(agressividade dos 11 em campo)
-
-prob_cartao_amarelo = prob_cartao_amarelo_base _ (1 + (agressividade_média_equipa - 3) _ 0.1)
-
-// Exemplos:
-// - Agressividade média = 1 (Cordeirinho): 1 - 0.2 = 0.8 (20% menos cartões)
-// - Agressividade média = 3 (Fair-Play): 1 + 0 = 1.0 (probabilidade base)
-// - Agressividade média = 5 (Caceteiro): 1 + 0.2 = 1.2 (20% mais cartões)
-
-// Cartão vermelho é mais raro e geralmente apenas por acumulação ou transgressão grave
-prob_cartao_vermelho = prob_cartao_amarelo \* 0.15 // 15% de cartão amarelo vira vermelho
-
-// Determinar se há golo neste minuto
-if (random(0, 1) < prob_golo_por_minuto):
-golo_marcado = true
-
-// Verificar se é um "golo decisivo" (craque pode influenciar)
-if (número*craques_em_campo > 0):
-prob_golo_decisivo = 0.2 \* número_craques_em_campo
-if (random(0, 1) < prob_golo_decisivo):
-golo*é_decisivo = true
-// (nota: isto apenas afecta narrativa ou atributo do relatório, não o cálculo)
-
-```
-
-### Resumo de Pesos
-
-| Factor | Descrição | Peso |
-|--------|-----------|------|
-| Qualidade Médios (Ataque) | Contribuem para golos | 0.4 |
-| Qualidade Avançados (Ataque) | Contribuem para golos | 0.6 |
-| Qualidade Defesas (Defesa) | Reduzem golos sofridos | 0.6 |
-| Qualidade GR (Defesa) | Reduz golos sofridos | 0.4 |
-| Formação | Modifica ofensa/defesa | ±15% |
-| Estilo | Modifica ofensa/defesa | ±15% |
-| Moral (Ataque) | Aumenta probabilidade golo | ±50% max |
-| Casa/Fora | Casa +5%, Fora -5% | ±5% |
-| Craques | +20% prob golo decisivo | +20% |
-
-**Importante**: Guarda-redes **não contribui** ao ataque — apenas à defesa.
+- **Sem eliminar ninguém da Taça**: 14 (campeonato) + 5 (taça) = **19 fases de submissão**
+- **Se um treinador é eliminado na Ronda 1**: fica com 14 (campeonato) + 0 (taça) = **14 fases de submissão**
+- **Máximo diferença entre treinadores**: 5 fases (quem vai à final vs quem sai na ronda 1)
 
 ---
 
-## 3. SISTEMA DE CONVITES
+## 2. SUBMISSÃO EM SEMANAS DE DUPLO JOGO
 
-### Avaliação
-
-Os convites são avaliados **no final de cada jornada** (após simulação e atualização de tabelas).
-
-### Critérios para Receber Convite
-
-**Convites de Clubes Mais Fortes** (promoção):
-- Treinador no topo da sua divisão (dentro dos top 3)
-- Sequência de 3+ vitórias consecutivas (em qualquer competição)
-- Mora de equipa > 70
-
-**Convites de Clubes em Crise** (fundo/ascensão):
-- Treinador em modo observador (sem clube)
-- Clube em risco de descida (nos últimos 2 da sua divisão)
-- **OU** clube sem treinador (despedido ou promovido)
-
-### Frequência
-
-- Máximo **um convite por treinador por jornada**
-- Nem todas as jornadas têm convites — apenas quando critérios são encontrados
-- A probabilidade é **rara** — aproximadamente 20-30% de chance numa jornada típica para um treinador elegível
-
-### Múltiplos Convites Simultâneos
-
-Um treinador **nunca recebe mais de um convite numa mesma jornada**. Se vários clubes o querem, apenas o primeiro a cumprir os critérios envia convite.
-
-### IA também Recebe Convites
-
-Sim. Clubes geridos por IA também podem receber convites para trocar de treinador. Quando isto acontece, o servidor aloca um novo "treinador IA" com personalidade e comportamento diferentes (mais conservador, mais ofensivo, etc.). Isto afecta:
-- Seleção de tácticas
-- Estilo de jogo preferido
-- Estratégia de transferências
-- Gestão financeira
-
----
-
-## 4. MERCADO DE TRANSFERÊNCIAS
-
-### Leilão Imediato — Desempate em Caso de Bids Simultâneos
-
-Se dois ou mais clubes licitem com o mesmo valor:
-
-```
-
-vencedor = clube_com_menor_timestamp_de_bid
-
-```
-
-**O desempate é feito pelo timestamp do servidor** (timestamp do momento exacto em que o servidor recebe o bid), não pela ordem de clique no cliente. Isto garante:
-- Imparcialidade (clock única de verdade no servidor)
-- Impossibilidade de "lag gaming"
-- Reprodutibilidade para auditorias
-
-### Lista de Transferências — Venda Simultânea
-
-Se múltiplos clubes tentarem comprar o mesmo jogador à venda por preço fixo no mesmo segundo:
-
-```
-
-comprador = clube_com_menor_timestamp_de_compra
-
-````
-
-Mesma regra: **timestamp do servidor**.
-
-### Limite de Budget para IA em Leilões
-
-Quando um clube de IA participa num leilão:
+### Fluxo Exato
 
 ```typescript
-function calculateMaxBidForAiTeam(aiTeam: Team, player: Player): number {
-  // Budget disponível = saldo actual
-  const budgetAvailable = aiTeam.balance;
+// FASE 1: CAMPEONATO
+async function weekDoubleGameFlow(seasonId: string, week: number) {
+  // Estado: JORNADA_ABERTA (Campeonato)
+  season.status = "JORNADA_ABERTA";
+  season.currentCompetition = "CHAMPIONSHIP";
+  season.currentRound = championshipRound;
 
-  // Threshold: IA não gasta mais de 40% do saldo em um jogador
-  const maxSpendThreshold = 0.40;
+  // Todos os treinadores submetem TÁTICA DE CAMPEONATO
+  await waitForAllSubmissions(seasonId, "CHAMPIONSHIP");
 
-  // Preço máximo que IA vai oferecer
-  const playerMarketValue = player.quality * 50000; // Estimativa: 50k por qualidade
+  // Simular campeonato
+  season.status = "JORNADA_SIMULANDO";
+  await simulateAndBroadcastMatches(seasonId, "CHAMPIONSHIP");
 
-  // IA nunca licita acima do saldo - margem de segurança (5 semanas de salários)
-  const safetyMargin = aiTeam.squad
-    .reduce((acc, p) => acc + p.salary * 5, 0); // 5 semanas de salários
+  // Atualizar tabelas de campeonato
+  season.status = "POS_JORNADA";
+  await updateStandings(seasonId, "CHAMPIONSHIP");
 
-  const maxBid = Math.min(
-    playerMarketValue,
-    (budgetAvailable - safetyMargin) * maxSpendThreshold
-  );
-
-  // IA só licita se consegue pagar
-  if (maxBid < player.salary * 4) {
-    return 0; // Não licita
+  // ===== INTERVALO ENTRE COMPETIÇÕES =====
+  // Sorteio da Taça (se aplicável)
+  if (isFirstRoundOfCup(cupRound)) {
+    await performCupDrawForRound(seasonId, cupRound);
   }
 
-  // Licitação aleatória até ao máximo
-  return Math.floor(maxBid * (0.7 + Math.random() * 0.3));
+  // FASE 2: TAÇA
+  // Estado: RONDA_TACA_ABERTA
+  season.status = "RONDA_TACA_ABERTA";
+  season.currentCompetition = "CUP";
+  season.currentCupRound = cupRound;
+
+  // Notificar treinadores dos seus adversários (via Socket.io)
+  io.to(`season_${seasonId}`).emit('cup:round_draw_complete', {
+    round: cupRound,
+    matches: [...] // adversários, horários, etc.
+  });
+
+  // Todos os treinadores (que ainda estão na Taça) submetem TÁTICA DE TAÇA
+  // Treinadores eliminados NÃO submetem, apenas observam
+  const activeTeamsInCup = await db.getTeamsStillInCup(seasonId);
+  await waitForSubmissions(seasonId, "CUP", activeTeamsInCup.length);
+
+  // Simular taça
+  season.status = "RONDA_TACA_SIMULANDO";
+  await simulateAndBroadcastMatches(seasonId, "CUP");
+
+  // Atualizar tabelas de taça (quadro de eliminatórias)
+  season.status = "POS_JORNADA";
+  await updateStandings(seasonId, "CUP");
+
+  // Próxima semana volta a JORNADA_ABERTA (campeonato)
 }
-````
+```
 
-**Regras:**
+### Chave: Duas Submissões Independentes
 
-- IA respeita **40% do saldo** como limite de gasto por jogador
-- IA mantém **5 semanas de salários** como margem de segurança
-- IA **não licita** se não conseguir pagar 4 semanas de salário do jogador
-- Licitação varia entre 70-100% do máximo calculado (variabilidade)
+1. **Submissão de Campeonato**: Todos os 32 treinadores (ou quantos estão ativos)
+2. **Submissão de Taça**: Apenas treinadores cujas equipas ainda estão em prova
 
 ---
 
-## 5. REGRA DE CRAQUES NA SIMULAÇÃO
+## 3. HUMANOS vs IA: CLARIFICAÇÃO
 
-### Definição Precisa
-
-Para cada **evento de golo decisivo** durante a simulação:
+### Estrutura Correcta
 
 ```
-probabilidade_golo_decisivo = 0.2 * número_craques_em_campo_na_equipa
+32 Equipas Totais (sempre)
+├─ Máximo 8 Humanos por Sala
+└─ 24-32 Controladas por IA (conforme quantos humanos entram)
 
-// Exemplo:
-// - 0 craques: 0% chance de golo decisivo
-// - 1 craque: 20% chance
-// - 2 craques: 40% chance
-// - 3+ craques: 60% cap máximo (evitar OP)
+Exemplo 1: 3 Humanos numa Sala
+├─ Humano 1: Campeão de Portugal
+├─ Humano 2: Segunda Liga
+├─ Humano 3: Liga 3
+└─ 29 Equipas: Controladas por IA (Primeira Liga, Segunda Liga x2, Liga 3 x2, Campeonato x4, etc.)
 
-// Implementação:
-probabilidade_golo_decisivo = min(0.6, 0.2 * número_craques)
+Exemplo 2: 8 Humanos numa Sala
+├─ 8 Humanos: Distribuídos pelas 4 divisões
+└─ 24 Equipas: Controladas por IA
 ```
 
-**Efeito do Golo Decisivo:**
+### Eventos Socket.io e o Público
 
-- Aumenta dramaticamente a visualização no relatório (descrição épica)
-- Afecta narrativa do jogo, não o cálculo de resultado
-- Um golo marcado é um golo — seja decisivo ou não, vale 1 ponto
-- Serve principalmente para criar tensão e conversa entre treinadores
+Quando emitimos eventos como:
+
+- **Leilão**: "Pop-up aparece para todos os 32 treinadores"
+- **Standings**: "Classificação de todos os 32 clubes"
+- **Convites**: "Todos os treinadores podem receber convites"
+
+Significa:
+
+- **Humanos**: Recebem eventos via Socket.io (UI actualiza)
+- **IA**: Recebe informação internamente (BD), mas não "UI"
+
+O sistema é **único** — a competição é entre 32 equipas, mas apenas até 8 são humanas.
 
 ---
 
-## 6. LOOP PRINCIPAL DO JOGO
+## 4. SIMULAÇÃO EM TEMPO REAL (45 + 45 + 30 segundos)
+
+### Gap na Implementação Anterior
+
+O `seasonLoop` não tinha:
+
+- Atraso de 45 segundos para 1ª Parte
+- Pop-up de intervalo com timeout
+- Atraso de 45 segundos para 2ª Parte
+- Potencial tempo extra (30s) + pop-up + grandes penalidades
+
+### Implementação Correcta
 
 ```typescript
-async function seasonLoop(seasonId: string) {
-  let season = await db.getSeason(seasonId);
+async function replayMatchViaSockets(
+  io: Server,
+  seasonId: string,
+  match: Match,
+  result: MatchResult, // Resultado já simulado
+): Promise<void> {
+  const roomId = `season_${seasonId}`;
+  const matchRoom = `match_${match.id}`;
 
-  while (season.status !== "ENCERRADA") {
-    // FASE 1: Abrir submissão
-    await openSubmissionPhase(season);
-    console.log(
-      `[${new Date().toISOString()}] Jornada ${season.currentRound} aberta`,
-    );
+  // ===== EMITIR INÍCIO DO JOGO =====
+  io.to(roomId).emit("match:start", {
+    matchId: match.id,
+    homeTeam: { id: match.homeTeamId, name: match.homeTeamName },
+    awayTeam: { id: match.awayTeamId, name: match.awayTeamName },
+    homeFormation: match.homeSubmission.formation,
+    awayFormation: match.awaySubmission.formation,
+    homeStyle: match.homeSubmission.style,
+    awayStyle: match.awaySubmission.style,
+    referee: result.referee,
+    timestamp: new Date(),
+  });
 
-    // FASE 2: Esperar por submissões
-    let allSubmitted = false;
-    while (!allSubmitted) {
-      await sleep(5000); // Verificar a cada 5 segundos
+  // ===== 1ª PARTE: 45 SEGUNDOS =====
+  console.log(`[Match ${match.id}] 1ª Parte iniciada`);
 
-      const submissions = await db.getSubmissions(
-        season.id,
-        season.currentRound,
-      );
-      const activeTrainers = await db.getActiveTrainers(season.id);
+  const firstHalfStart = Date.now();
+  const firstHalfEvents = result.events.filter((e) => e.minute <= 45);
 
-      allSubmitted = submissions.length === activeTrainers.length;
+  // Distribuir eventos ao longo de 45 segundos
+  for (const event of firstHalfEvents) {
+    // Tempo esperado do evento: (minuto / 45) * 45000ms
+    const eventTime = (event.minute / 45) * 45000;
+    const now = Date.now() - firstHalfStart;
+
+    if (eventTime > now) {
+      await sleep(eventTime - now);
     }
 
-    console.log(
-      `[${new Date().toISOString()}] Todas as submissões recebidas. Iniciando simulação...`,
+    // Emitir evento
+    io.to(roomId).emit("match:event", {
+      matchId: match.id,
+      minute: event.minute,
+      part: "1ST_HALF",
+      type: event.type,
+      team: event.team,
+      player: event.player,
+      isDecisive: event.isDecisive,
+      timestamp: new Date(),
+    });
+  }
+
+  // Aguardar que a 1ª Parte complete 45 segundos
+  const elapsed = Date.now() - firstHalfStart;
+  if (elapsed < 45000) {
+    await sleep(45000 - elapsed);
+  }
+
+  console.log(`[Match ${match.id}] Intervalo`);
+
+  // ===== INTERVALO: POP-UP SUBSTITUIÇÕES =====
+  // Apenas treinadores humanos veem e podem agir
+
+  const homeTeamTrainerId = await db.getTrainerIdForTeam(match.homeTeamId);
+  const awayTeamTrainerId = await db.getTrainerIdForTeam(match.awayTeamId);
+
+  // Pop-up para HOME
+  if (homeTeamTrainerId && isHumanTrainer(homeTeamTrainerId)) {
+    io.to(`trainer_${homeTeamTrainerId}`).emit(
+      "match:interval_substitutions_available",
+      {
+        matchId: match.id,
+        team: "HOME",
+        currentScore: {
+          home: result.events.filter(
+            (e) => e.minute <= 45 && e.team === "HOME" && e.type === "GOAL",
+          ).length,
+          away: result.events.filter(
+            (e) => e.minute <= 45 && e.team === "AWAY" && e.type === "GOAL",
+          ).length,
+        },
+        remainingSubstitutions: 3,
+        minute: 45,
+        part: "1ST_HALF",
+        timeout: 60000, // 60 segundos
+        timestamp: new Date(),
+      },
+    );
+  }
+
+  // Pop-up para AWAY
+  if (awayTeamTrainerId && isHumanTrainer(awayTeamTrainerId)) {
+    io.to(`trainer_${awayTeamTrainerId}`).emit(
+      "match:interval_substitutions_available",
+      {
+        matchId: match.id,
+        team: "AWAY",
+        currentScore: {
+          /* ... */
+        },
+        remainingSubstitutions: 3,
+        minute: 45,
+        part: "1ST_HALF",
+        timeout: 60000,
+        timestamp: new Date(),
+      },
+    );
+  }
+
+  // Aguardar 60 segundos para substituições (timeout)
+  await sleep(60000);
+
+  // Aplicar substituições (se humanos submeteram)
+  // Ou usar defaults da IA
+  const homeSubstitutions = await db.getSubstitutionsSubmitted(
+    match.id,
+    "HOME",
+  );
+  const awaySubstitutions = await db.getSubstitutionsSubmitted(
+    match.id,
+    "AWAY",
+  );
+
+  // Actualizar events com substituições realizadas
+  result.events = applySubstitutions(
+    result.events,
+    homeSubstitutions,
+    awaySubstitutions,
+  );
+
+  // ===== 2ª PARTE: 45 SEGUNDOS =====
+  console.log(`[Match ${match.id}] 2ª Parte iniciada`);
+
+  const secondHalfStart = Date.now();
+  const secondHalfEvents = result.events.filter(
+    (e) => e.minute > 45 && e.minute <= 90,
+  );
+
+  for (const event of secondHalfEvents) {
+    const eventTime = ((event.minute - 45) / 45) * 45000;
+    const now = Date.now() - secondHalfStart;
+
+    if (eventTime > now) {
+      await sleep(eventTime - now);
+    }
+
+    io.to(roomId).emit("match:event", {
+      matchId: match.id,
+      minute: event.minute,
+      part: "2ND_HALF",
+      type: event.type,
+      team: event.team,
+      player: event.player,
+      isDecisive: event.isDecisive,
+      timestamp: new Date(),
+    });
+  }
+
+  const elapsedSecondHalf = Date.now() - secondHalfStart;
+  if (elapsedSecondHalf < 45000) {
+    await sleep(45000 - elapsedSecondHalf);
+  }
+
+  // ===== DETERMINAR SE HÁ TEMPO EXTRA (TAÇA) =====
+  const isTaça = match.type === "CUP";
+  const isEmpatado = result.homeGoals === result.awayGoals;
+
+  if (isTaça && isEmpatado) {
+    console.log(`[Match ${match.id}] Tempo Extra (30 segundos)`);
+
+    // Pop-up de intervalo antes do extra
+    // ... (similar ao anterior)
+
+    // ===== TEMPO EXTRA: 30 SEGUNDOS =====
+    const extraTimeStart = Date.now();
+    const extraTimeEvents = result.events.filter(
+      (e) => e.minute > 90 && e.minute <= 120,
     );
 
-    // FASE 3: Simular matches
-    season.status = "JORNADA_SIMULANDO";
-    await db.updateSeason(season);
+    for (const event of extraTimeEvents) {
+      const eventTime = ((event.minute - 90) / 30) * 30000;
+      const now = Date.now() - extraTimeStart;
 
-    const matches = await db.getMatches(season.id, season.currentRound);
-    for (const match of matches) {
-      const result = simulateMatch(match, season.seed);
-      await db.updateMatchResult(match.id, result);
+      if (eventTime > now) {
+        await sleep(eventTime - now);
+      }
 
-      // Broadcast evento via Socket.io
-      io.to(`season_${season.id}`).emit("match:simulated", {
+      io.to(roomId).emit("match:event", {
         matchId: match.id,
-        result: result,
+        minute: event.minute,
+        part: "EXTRA_TIME",
+        type: event.type,
+        team: event.team,
+        player: event.player,
         timestamp: new Date(),
       });
     }
 
-    // FASE 4: Atualizar estado
-    season.status = "POS_JORNADA";
-    season.currentRound += 1;
-
-    // Avaliar convites
-    await evaluateInvites(season);
-
-    // Atualizar tabelas
-    await updateStandings(season);
-
-    // Verificar se epoch terminou
-    if (season.currentRound > season.totalRounds) {
-      season.status = "FIM_EPOCA";
-      await finalizeEpoch(season);
-      season.status = "ENCERRADA";
+    const elapsedExtra = Date.now() - extraTimeStart;
+    if (elapsedExtra < 30000) {
+      await sleep(30000 - elapsedExtra);
     }
 
-    await db.updateSeason(season);
-    console.log(
-      `[${new Date().toISOString()}] Jornada completada. Próxima: ${season.currentRound}`,
-    );
+    // Se ainda empatado, grandes penalidades
+    if (result.homeGoals === result.awayGoals) {
+      console.log(`[Match ${match.id}] Grandes Penalidades`);
+
+      // ===== GRANDES PENALIDADES (uma a uma) =====
+      const penalties = result.penalties;
+
+      for (const penalty of penalties.homeShots.concat(penalties.awayShots)) {
+        await sleep(3000); // 3 segundos entre penaltis
+
+        io.to(roomId).emit("match:event", {
+          matchId: match.id,
+          minute: 120 + penalty.order,
+          part: "PENALTIES",
+          type: penalty.scored ? "GOAL" : "MISS",
+          team: penalty.team,
+          player: penalty.player,
+          timestamp: new Date(),
+        });
+      }
+    }
   }
+
+  // ===== FIM DO JOGO =====
+  console.log(`[Match ${match.id}] Fim do jogo`);
+
+  io.to(roomId).emit("match:end", {
+    matchId: match.id,
+    seasonId: seasonId,
+    round: match.round,
+    homeTeam: { id: match.homeTeamId, name: match.homeTeamName },
+    awayTeam: { id: match.awayTeamId, name: match.awayTeamName },
+    finalScore: { home: result.homeGoals, away: result.awayGoals },
+    result: result.resultType,
+    penalties: result.penalties,
+    homeTeamMoralChange: result.homeTeamMoralChange,
+    awayTeamMoralChange: result.awayTeamMoralChange,
+    timestamp: new Date(),
+  });
 }
 ```
 
 ---
 
-## 7. SEED E CONSISTÊNCIA
+## 5. CÁLCULOS CORRECTOS (Sem Erros de Sintaxe)
 
-### Onde é Guardado
-
-```typescript
-interface Season {
-  id: string;
-  year: number;
-  seed: string; // Seed global da época
-  currentRound: number;
-  roundSeeds: Map<number, string>; // Seed específica de cada jornada
-}
-
-interface Match {
-  id: string;
-  seasonId: string;
-  round: number;
-  roundSeed: string; // Referência à seed da jornada
-  homeTeamId: string;
-  awayTeamId: string;
-  result: {
-    homeGoals: number;
-    awayGoals: number;
-  };
-  simulatedAt: Date;
-}
-```
-
-### Reprodutibilidade
-
-Para recriar exactamente o mesmo jogo:
+### Probabilidade de Golo (CORRIGIDO)
 
 ```typescript
-function simulateMatch(match: Match, roundSeed: string): MatchResult {
-  // Criar RNG determinístico a partir da seed
-  const rng = seededRandom(roundSeed);
+function calculateGoalProbabilityPerMinute(
+  attackingTeamQuality: number,
+  defendingTeamQuality: number,
+  isHome: boolean,
+): number {
+  // Força ofensiva vs força defensiva
+  // Quando forças iguais, probabilidade base é ~0.5%
 
-  // Usar rng() para todas as decisões
-  const homeGoals = calculateGoals(match.homeTeam, match.awayTeam, true, rng);
+  const baseRatio =
+    attackingTeamQuality / (attackingTeamQuality + defendingTeamQuality * 2);
 
-  const awayGoals = calculateGoals(match.awayTeam, match.homeTeam, false, rng);
+  // Normalizar para ~0.5% por minuto com forças iguais
+  const probGoalPerMinute = baseRatio * 0.01; // 1% de chance base
 
-  return { homeGoals, awayGoals };
+  // Factor casa/fora
+  const homeAwayFactor = isHome ? 1.05 : 0.95;
+
+  return probGoalPerMinute * homeAwayFactor;
 }
 
-// Exemplo: Mesma seed = mesmos resultados
-const seed1 = generateSeed(); // "a7f3b2e1c9d0..."
-const result1 = simulateMatch(match, seed1);
-const result2 = simulateMatch(match, seed1);
-// result1 === result2 (idêntico)
+// Exemplo real:
+// Ataque qualidade 30, Defesa qualidade 25
+// ratio = 30 / (30 + 25*2) = 30 / 80 = 0.375
+// prob = 0.375 * 0.01 = 0.00375 = 0.375% por minuto
+// Em 45 minutos: ~16% chance de marcar pelo menos 1 golo
 ```
 
-### Dependência de Ordem de Execução
-
-**Não depende.** A seed é **global por jornada** — não importa a ordem em que os jogos são processados dentro dessa jornada. Cada jogo tem:
+### Probabilidade de Cartão (CORRIGIDO)
 
 ```typescript
-const match_seed = roundSeed + "_" + match.id;
+function calculateYellowCardProbabilityPerMinute(
+  averageAggressivenessInField: number, // 1-5
+): number {
+  // Probabilidade base: 2% por minuto com agressividade = 3
+  const probCartaoBase = 0.02;
+
+  // Modificar com agressividade
+  // Se agressividade = 1: factor = 1 + (1-3)*0.1 = 1 - 0.2 = 0.8
+  // Se agressividade = 3: factor = 1 + (3-3)*0.1 = 1.0
+  // Se agressividade = 5: factor = 1 + (5-3)*0.1 = 1.2
+
+  const aggressionFactor = 1 + (averageAggressivenessInField - 3) * 0.1;
+
+  return probCartaoBase * aggressionFactor;
+}
+
+function calculateRedCardProbability(yellowCardProbability: number): number {
+  // 15% de chance de cartão amarelo vira vermelho
+  return yellowCardProbability * 0.15;
+}
 ```
 
-Isto garante que cada jogo é independente e reprodutível.
-
----
-
-## 8. MÁQUINA DE ESTADOS FORMAL
-
-### Estados e Transições Válidas
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                      PRE_EPOCA                           │
-│  (Mercado aberto, preparação inicial)                    │
-│  Treinadores: podem editar formação, mercado activo      │
-└─────────────────────┬──────────────────────────────────┘
-                      │
-                      v
-┌─────────────────────────────────────────────────────────┐
-│                  JORNADA_ABERTA                          │
-│  (Aguardando submissões de tácticas)                     │
-│  Treinadores: podem submeter/alterar táctica             │
-│  IA: submete automaticamente                             │
-└─────────────────────┬──────────────────────────────────┘
-                      │
-              (todos submeteram)
-                      v
-┌─────────────────────────────────────────────────────────┐
-│                JORNADA_SIMULANDO                         │
-│  (Simulação a correr, transmissão em directo)            │
-│  Treinadores: apenas observam, podem fazer subs          │
-│  ao intervalo (pop-up obrigatório)                       │
-└─────────────────────┬──────────────────────────────────┘
-                      │
-          (45s + intervalo + 45s)
-                      v
-┌─────────────────────────────────────────────────────────┐
-│                  POS_JORNADA                             │
-│  (Resultados finais, relatórios disponíveis)             │
-│  Treinadores: podem ver resultados, mercado activo       │
-└─────────────┬──────────────────┬────────────────────────┘
-              │                  │
-    (próxima jornada)    (se há jogo de Taça)
-              │                  │
-              v                  v
-     JORNADA_ABERTA   RONDA_TACA_ABERTA
-       (campeonato)         (Taça)
-```
-
-### Transições Explícitas
+### Cálculo de Força Ofensiva (CORRIGIDO)
 
 ```typescript
-enum SeasonState {
-  PRE_EPOCA = "PRE_EPOCA",
-  JORNADA_ABERTA = "JORNADA_ABERTA",
-  JORNADA_SIMULANDO = "JORNADA_SIMULANDO",
-  POS_JORNADA = "POS_JORNADA",
-  RONDA_TACA_ABERTA = "RONDA_TACA_ABERTA",
-  RONDA_TACA_SIMULANDO = "RONDA_TACA_SIMULANDO",
-  FIM_EPOCA = "FIM_EPOCA",
-  ENCERRADA = "ENCERRADA",
-}
-
-interface StateTransition {
-  from: SeasonState;
-  to: SeasonState;
-  trigger: string;
-  condition?: () => boolean;
-}
-
-const validTransitions: StateTransition[] = [
-  { from: "PRE_EPOCA", to: "JORNADA_ABERTA", trigger: "epoch_start" },
-  { from: "JORNADA_ABERTA", to: "JORNADA_SIMULANDO", trigger: "all_submitted" },
-  {
-    from: "JORNADA_SIMULANDO",
-    to: "POS_JORNADA",
-    trigger: "simulation_complete",
-  },
-  {
-    from: "POS_JORNADA",
-    to: "JORNADA_ABERTA",
-    trigger: "next_round",
-    condition: () => hasMoreRounds(),
-  },
-  {
-    from: "POS_JORNADA",
-    to: "RONDA_TACA_ABERTA",
-    trigger: "cup_round_available",
-    condition: () => isCupRound(),
-  },
-  {
-    from: "RONDA_TACA_ABERTA",
-    to: "RONDA_TACA_SIMULANDO",
-    trigger: "all_submitted_cup",
-  },
-  {
-    from: "RONDA_TACA_SIMULANDO",
-    to: "POS_JORNADA",
-    trigger: "cup_simulation_complete",
-  },
-  {
-    from: "POS_JORNADA",
-    to: "FIM_EPOCA",
-    trigger: "epoch_end",
-    condition: () => isLastRound(),
-  },
-  { from: "FIM_EPOCA", to: "ENCERRADA", trigger: "finalize_epoch" },
-];
-
-// Validação
-function canTransition(from: SeasonState, to: SeasonState): boolean {
-  const transition = validTransitions.find(
-    (t) => t.from === from && t.to === to,
+function calculateOffensiveForce(
+  team: Team,
+  submission: Submission,
+  moral: number,
+): number {
+  // 1. Qualidade base (por posição)
+  const midfieldersInField = team.players.filter(
+    (p) => p.position === "M" && submission.startingXI.includes(p.id),
   );
-  return transition && (!transition.condition || transition.condition());
-}
-```
+  const forwardsInField = team.players.filter(
+    (p) => p.position === "A" && submission.startingXI.includes(p.id),
+  );
 
----
+  const avgMidfielderQuality = average(
+    midfieldersInField.map((p) => p.quality),
+  );
+  const avgForwardQuality = average(forwardsInField.map((p) => p.quality));
 
-## 9. EVENTOS SOCKET.IO — CONTRATO
+  const baseOffensiveForce =
+    avgMidfielderQuality * 0.4 + avgForwardQuality * 0.6;
 
-### Namespaces
-
-```
-/seasons/:seasonId
-  └── Todos os eventos relacionados com a época
-
-/matches/:matchId
-  └── Eventos relacionados com o jogo específico
-
-/auction/:auctionId
-  └── Eventos de leilões
-```
-
-### Eventos de Jornada
-
-#### `round:opened`
-
-```typescript
-{
-  seasonId: string;
-  round: number;
-  type: "CHAMPIONSHIP" | "CUP";
-  deadline?: null; // sem deadline
-  timestamp: Date;
-}
-```
-
-#### `round:all_submitted`
-
-```typescript
-{
-  seasonId: string;
-  round: number;
-  type: "CHAMPIONSHIP" | "CUP";
-  submissionCount: number;
-  timestamp: Date;
-}
-```
-
-#### `round:simulation_start`
-
-```typescript
-{
-  seasonId: string;
-  round: number;
-  type: "CHAMPIONSHIP" | "CUP";
-  matchCount: number;
-  timestamp: Date;
-}
-```
-
-#### `round:simulation_complete`
-
-```typescript
-{
-  seasonId: string;
-  round: number;
-  type: "CHAMPIONSHIP" | "CUP";
-  timestamp: Date;
-}
-```
-
-### Eventos de Match
-
-#### `match:start`
-
-```typescript
-{
-  matchId: string;
-  seasonId: string;
-  round: number;
-  homeTeam: {
-    id: string;
-    name: string;
-  }
-  awayTeam: {
-    id: string;
-    name: string;
-  }
-  homeFormation: string;
-  awayFormation: string;
-  homeStyle: "DEFENSIVO" | "EQUILIBRADO" | "OFENSIVO";
-  awayStyle: "DEFENSIVO" | "EQUILIBRADO" | "OFENSIVO";
-  referee: {
-    name: string;
-    bias: "HOME" | "NEUTRAL" | "AWAY";
-  }
-  timestamp: Date;
-}
-```
-
-#### `match:event`
-
-```typescript
-{
-  matchId: string;
-  minute: number;
-  part: "1ST_HALF" | "INTERVAL" | "2ND_HALF" | "EXTRA_TIME" | "PENALTIES";
-  type: "GOAL" | "YELLOW_CARD" | "RED_CARD" | "SUBSTITUTION";
-
-  // Para GOAL:
-  // {
-  //   team: "HOME" | "AWAY";
-  //   player: { id: string; name: string };
-  //   isDecisive: boolean;
-  // }
-
-  // Para YELLOW_CARD / RED_CARD:
-  // {
-  //   team: "HOME" | "AWAY";
-  //   player: { id: string; name: string };
-  // }
-
-  // Para SUBSTITUTION:
-  // {
-  //   team: "HOME" | "AWAY";
-  //   playerOut: { id: string; name: string };
-  //   playerIn: { id: string; name: string };
-  // }
-
-  timestamp: Date;
-}
-```
-
-#### `match:interval_substitutions_available`
-
-```typescript
-{
-  matchId: string;
-  team: "HOME" | "AWAY";
-  currentScore: {
-    home: number;
-    away: number;
-  }
-  remainingSubstitutions: number;
-  minute: number;
-  part: "1ST_HALF" | "2ND_HALF" | "EXTRA_TIME";
-  timeout: 60000; // 60 segundos em ms para escolher
-  timestamp: Date;
-}
-```
-
-#### `match:end`
-
-```typescript
-{
-  matchId: string;
-  seasonId: string;
-  round: number;
-  homeTeam: { id: string; name: string };
-  awayTeam: { id: string; name: string };
-  finalScore: { home: number; away: number };
-  result: "HOME_WIN" | "AWAY_WIN" | "DRAW";
-  penalties?: {
-    homeShots: number;
-    awayShots: number;
-    homeConverted: number;
-    awayConverted: number;
-    winner: "HOME" | "AWAY";
+  // 2. Factor formação
+  const formationOffensiveFactors = {
+    "4-2-4": 1.15,
+    "3-4-3": 1.12,
+    "4-3-3": 1.08,
+    "4-4-2": 1.0,
+    "4-5-1": 0.9,
+    "5-3-2": 0.85,
+    "5-4-1": 0.8,
   };
-  homeTeamMoralChange: number;
-  awayTeamMoralChange: number;
-  timestamp: Date;
-}
-```
+  const formationFactor = formationOffensiveFactors[submission.formation];
 
-### Eventos de Leilão
+  // 3. Factor moral
+  const moralFactor = 1 + (moral - 50) * 0.01; // -50% a +50%
 
-#### `auction:start`
-
-```typescript
-{
-  auctionId: string;
-  seasonId: string;
-  player: {
-    id: string;
-    name: string;
-    position: string;
-    quality: number;
-  }
-  sellingTeam: {
-    id: string;
-    name: string;
-  }
-  minimumBid: number;
-  timeout: 15000; // 15 segundos
-  timestamp: Date;
-}
-```
-
-#### `auction:bid_received`
-
-```typescript
-{
-  auctionId: string;
-  biddingTeam: {
-    id: string;
-    name: string;
-  }
-  bidAmount: number;
-  timestamp: Date;
-  // Nota: Apenas enviado para a equipa que licita, não broadcast
-}
-```
-
-#### `auction:end`
-
-```typescript
-{
-  auctionId: string;
-  player: {
-    id: string;
-    name: string;
-  }
-  sellingTeam: {
-    id: string;
-    name: string;
-  }
-  winningTeam: {
-    id: string;
-    name: string;
-  }
-  finalPrice: number;
-  allBids: {
-    team: {
-      id: string;
-      name: string;
-    }
-    amount: number;
-  }
-  [];
-  timestamp: Date;
-}
-```
-
-### Eventos de Sistema
-
-#### `season:invite_received`
-
-```typescript
-{
-  seasonId: string;
-  trainerId: string;
-  offeringTeam: { id: string; name: string; division: number };
-  currentTeam?: { id: string; name: string }; // se trocando de clube
-  reason: "PROMOTION" | "CRISIS" | "FIRED";
-  timestamp: Date;
-  expiresAt: Date; // 24 horas para responder
-}
-```
-
-#### `season:standings_updated`
-
-```typescript
-{
-  seasonId: string;
-  round: number;
-  type: "CHAMPIONSHIP" | "CUP";
-  standings: {
-    division: number;
-    teams: {
-      id: string;
-      name: string;
-      position: number;
-      points: number;
-      played: number;
-      won: number;
-      drawn: number;
-      lost: number;
-      goalsFor: number;
-      goalsAgainst: number;
-      goalDifference: number;
-    }
-    [];
-  }
-  [];
-  timestamp: Date;
-}
-```
-
----
-
-## 10. MODELO DE DADOS EXPLÍCITO
-
-### Entidades Principais
-
-```typescript
-interface Season {
-  id: string;
-  year: number;
-  status: SeasonState;
-  seed: string;
-  startedAt: Date;
-  currentRound: number;
-  totalRounds: number; // 14 para campeonato + 5 para taça = 19 total
-  endedAt?: Date;
-}
-
-interface Team {
-  id: string;
-  name: string;
-  division: number; // 1-4
-  seasonId: string;
-  balance: number; // em euros
-  stadium: {
-    capacity: number;
-    expansionCost: number; // 300.000 por 5.000 lugares
+  // 4. Factor estilo
+  const styleFactors = {
+    DEFENSIVO: 0.85,
+    EQUILIBRADO: 1.0,
+    OFENSIVO: 1.15,
   };
-  currentTrainerId?: string; // null se gerido por IA
-  aiPersonality?: AiPersonality;
-  morale: number; // 0-100
-  createdAt: Date;
-}
+  const styleFactor = styleFactors[submission.style];
 
-interface Player {
-  id: string;
-  name: string;
-  position: "G" | "D" | "M" | "A";
-  quality: number; // 1-50
-  salary: number; // euros por semana
-  aggressiveness: 1 | 2 | 3 | 4 | 5; // 1=calm, 5=aggressive
-  isCraque: boolean;
-  teamId: string;
-  acquiredAt: Date;
-  lastQualityChangeRound?: number;
-  qualityChangeStreak?: number; // para rastrear 5+ jornadas
-}
+  // 5. Factor estilo adversário (penalização)
+  // Se adversário é muito defensivo, menos probabilidade de golo
+  // Isto é aplicado no cálculo de probabilidade, não aqui
 
-interface Submission {
-  id: string;
-  seasonId: string;
-  round: number;
-  type: "CHAMPIONSHIP" | "CUP";
-  trainerId: string;
-  teamId: string;
-  formation: string; // "4-3-3", etc.
-  style: "DEFENSIVO" | "EQUILIBRADO" | "OFENSIVO";
-  startingXI: string[]; // array de player IDs
-  substitutes: string[]; // array de player IDs (até 5)
-  submittedAt: Date;
+  return baseOffensiveForce * formationFactor * moralFactor * styleFactor;
 }
+```
 
-interface Match {
-  id: string;
-  seasonId: string;
-  round: number;
-  type: "CHAMPIONSHIP" | "CUP";
-  homeTeamId: string;
-  awayTeamId: string;
-  status: "SCHEDULED" | "SIMULATING" | "COMPLETED";
-  roundSeed: string;
-  result?: {
-    homeGoals: number;
-    awayGoals: number;
-    resultType: "HOME_WIN" | "AWAY_WIN" | "DRAW";
-    events: MatchEvent[];
-    penalties?: PenaltyShootout;
-    referee: {
-      name: string;
-      bias: "HOME" | "NEUTRAL" | "AWAY";
+### Cálculo de Força Defensiva (CORRIGIDO)
+
+```typescript
+function calculateDefensiveForce(team: Team, submission: Submission): number {
+  // 1. Qualidade base (por posição)
+  const defendersInField = team.players.filter(
+    (p) => p.position === "D" && submission.startingXI.includes(p.id),
+  );
+  const keepersInField = team.players.filter(
+    (p) => p.position === "G" && submission.startingXI.includes(p.id),
+  );
+
+  const avgDefenderQuality = average(defendersInField.map((p) => p.quality));
+  const avgKeeperQuality = average(keepersInField.map((p) => p.quality));
+
+  const baseDefensiveForce = avgDefenderQuality * 0.6 + avgKeeperQuality * 0.4;
+
+  // 2. Factor formação
+  const formationDefensiveFactors = {
+    "5-4-1": 1.25,
+    "5-3-2": 1.2,
+    "4-5-1": 1.1,
+    "4-4-2": 1.0,
+    "3-5-2": 0.95,
+    "4-3-3": 0.9,
+    "3-4-3": 0.85,
+    "4-2-4": 0.75,
+  };
+  const formationFactor = formationDefensiveFactors[submission.formation];
+
+  // 3. Nota: Moral NÃO afecta defesa, apenas ataque
+
+  // 4. Factor estilo (defesa torna-se mais resistente)
+  const styleFactors = {
+    DEFENSIVO: 1.15, // +15% defesa
+    EQUILIBRADO: 1.0,
+    OFENSIVO: 0.85, // -15% defesa
+  };
+  const styleFactor = styleFactors[submission.style];
+
+  return baseDefensiveForce * formationFactor * styleFactor;
+}
+```
+
+### Fórmula Final de Probabilidade (CORRIGIDO)
+
+```typescript
+function simulateGoalAttempt(
+  attackingTeam: Team,
+  defendingTeam: Team,
+  attackingTeamSubmission: Submission,
+  defendingTeamSubmission: Submission,
+  attackingTeamMoral: number,
+  isHome: boolean,
+  rng: SeededRandom,
+): MatchEvent | null {
+  const offensiveForce = calculateOffensiveForce(
+    attackingTeam,
+    attackingTeamSubmission,
+    attackingTeamMoral,
+  );
+
+  const defensiveForce = calculateDefensiveForce(
+    defendingTeam,
+    defendingTeamSubmission,
+  );
+
+  // Probabilidade base
+  const ratio = offensiveForce / (offensiveForce + defensiveForce * 2);
+  let probGoal = ratio * 0.01; // 1% de chance base
+
+  // Factor casa/fora
+  probGoal *= isHome ? 1.05 : 0.95;
+
+  // Factor estilo adversário (penalização extra se é muito defensivo)
+  if (defendingTeamSubmission.style === "DEFENSIVO") {
+    probGoal *= 0.85; // -15% extra
+  } else if (defendingTeamSubmission.style === "OFENSIVO") {
+    probGoal *= 1.1; // +10% extra
+  }
+
+  // Determinar se há golo
+  if (rng.next() < probGoal) {
+    // Seleccionar jogador que marca
+    const scorer = selectScorerFromTeam(
+      attackingTeam,
+      attackingTeamSubmission,
+      rng,
+    );
+
+    // Determinar se é decisivo (craque)
+    const craqueCount = countCraquesInField(
+      attackingTeam,
+      attackingTeamSubmission,
+    );
+    const craqueFactor = Math.min(0.6, 0.2 * craqueCount); // Cap em 60%
+    const isDecisive = rng.next() < craqueFactor;
+
+    return {
+      minute: calculateCurrentMinute(), // contexto
+      part: calculateCurrentPart(),
+      type: "GOAL",
+      team: isHome ? "HOME" : "AWAY",
+      player: scorer,
+      isDecisive: isDecisive,
     };
-  };
-  homeSubmission: Submission;
-  awaySubmission: Submission;
-  simulatedAt?: Date;
+  }
+
+  return null;
 }
-
-interface MatchEvent {
-  minute: number;
-  part: "1ST_HALF" | "INTERVAL" | "2ND_HALF" | "EXTRA_TIME" | "PENALTIES";
-  type: "GOAL" | "YELLOW_CARD" | "RED_CARD" | "SUBSTITUTION";
-  team: "HOME" | "AWAY";
-  player: { id: string; name: string };
-
-  // Se GOAL
-  isDecisive?: boolean;
-
-  // Se SUBSTITUTION
-  playerOut?: { id: string; name: string };
-}
-
-interface PenaltyShootout {
-  homeShots: {
-    order: number;
-    player: { id: string; name: string };
-    scored: boolean;
-  }[];
-  awayShots: {
-    order: number;
-    player: { id: string; name: string };
-    scored: boolean;
-  }[];
-  winner: "HOME" | "AWAY";
-}
-
-interface Auction {
-  id: string;
-  seasonId: string;
-  playerId: string;
-  sellingTeamId: string;
-  minimumBid: number;
-  status: "OPEN" | "CLOSED";
-  openedAt: Date;
-  closesAt: Date;
-  bids: {
-    teamId: string;
-    amount: number;
-    bidAt: Date;
-  }[];
-  winner?: {
-    teamId: string;
-    amount: number;
-  };
-  closedAt?: Date;
-}
-
-interface TransferOffer {
-  id: string;
-  seasonId: string;
-  playerId: string;
-  sellingTeamId: string;
-  requestedPrice: number;
-  status: "ACTIVE" | "SOLD" | "WITHDRAWN";
-  createdAt: Date;
-  soldAt?: Date;
-  soldToTeamId?: string;
-}
-
-interface Invite {
-  id: string;
-  seasonId: string;
-  fromTeamId: string;
-  toTrainerId: string;
-  reason: "PROMOTION" | "CRISIS" | "FIRED";
-  status: "PENDING" | "ACCEPTED" | "REJECTED";
-  sentAt: Date;
-  expiresAt: Date;
-  respondedAt?: Date;
-}
-
-interface AiPersonality {
-  name: string;
-  tacticalStyle: "DEFENSIVE" | "BALANCED" | "OFFENSIVE";
-  riskTolerance: number; // 0-100
-  marketAggression: number; // 0-100 (como de agressivo no mercado)
-  formationPreference: string[]; // ordenado por preferência
-}
-```
-
-### Índices Recomendados (Base de Dados)
-
-```sql
--- Performance crítica
-CREATE INDEX idx_season_status ON seasons(status);
-CREATE INDEX idx_match_season_round ON matches(seasonId, round);
-CREATE INDEX idx_submission_season_round_team ON submissions(seasonId, round, teamId);
-CREATE INDEX idx_team_season_division ON teams(seasonId, division);
-CREATE INDEX idx_player_team ON players(teamId);
-CREATE INDEX idx_auction_season_status ON auctions(seasonId, status);
-CREATE INDEX idx_invite_trainer_status ON invites(toTrainerId, status);
-
--- Para queries comuns
-CREATE INDEX idx_match_status ON matches(status);
-CREATE INDEX idx_submission_team ON submissions(teamId);
 ```
 
 ---
 
-## 11. FLUXO DE SIMULAÇÃO VISUAL
+## 6. PROMOÇÃO APÓS DESCIDA (RANDOM PURO)
 
-```
-┌─────────────────────────────────────────────┐
-│    Todas as submissões recebidas             │
-│    Estado: JORNADA_SIMULANDO                │
-│    Evento: round:simulation_start            │
-└────────────────────┬────────────────────────┘
-                     │
-                     v
-     ┌─────────────────────────────────┐
-     │   Para cada Match:              │
-     │   1. Calcular forças            │
-     │   2. Gerar RNG com seed         │
-     │   3. Simular 45s (1ª Parte)     │
-     └────────────┬────────────────────┘
-                  │
-        Evento: match:start
-        Broadcast: match:event (cada minuto)
-                  │
-                  v
-     ┌─────────────────────────────────┐
-     │    Intervalo                    │
-     │    Popup: substitutions_available
-     │    Treinos: ~60s para escolher  │
-     │    Evento: match:interval_..    │
-     └────────────┬────────────────────┘
-                  │
-                  v
-     ┌─────────────────────────────────┐
-     │   Simular 45s (2ª Parte)        │
-     │   Broadcast: match:event        │
-     └────────────┬────────────────────┘
-                  │
-         ┌────────┴────────┐
-         │                 │
-   (resultado             (Taça +
-    definitivo)           Empate)
-         │                 │
-         v                 v
-    match:end      ┌──────────────────┐
-                   │ Tempo Extra 30s   │
-                   │ Intervalo + Subs  │
-                   │ match:event       │
-                   └────────┬──────────┘
-                            │
-              ┌─────────────┴─────────────┐
-              │                           │
-        (Resultado                   (Ainda
-         definitivo)                  empate)
-              │                           │
-              v                           v
-         match:end            ┌──────────────────┐
-                              │ Grandes Penaltis │
-                              │ (uma a uma)      │
-                              │ match:event      │
-                              └────────┬─────────┘
-                                       │
-                                       v
-                                  match:end
+### Mecanismo
 
-│ Após todos os matches completados:
-│ Evento: round:simulation_complete
-│ Estado: POS_JORNADA
-│ Atualizar tabelas
-│ Avaliar convites
-│ Evento: season:standings_updated
-│ Evento: season:invite_received (se houver)
+```typescript
+async function finalizeSeasonPromotions(seasonId: string) {
+  const season = await db.getSeason(seasonId);
+  const standings = await db.getStandings(seasonId, "CHAMPIONSHIP");
+
+  // 1. Identificar equipas despromovidas
+  const relegated = getLastTwoTeams(standings.division4); // 2 equipas
+
+  // 2. No final da época, sortear 2 de entre TODOS os 32 clubes
+  const allTeams = await db.getAllTeamsInSeason(seasonId);
+  const randomSelectedTeams = random.shuffle(allTeams).slice(0, 2);
+
+  // 3. Essas 2 são promovidas para divisão 4 (substituindo os 2 que desceram)
+  for (const promotedTeam of randomSelectedTeams) {
+    await db.setTeamDivision(promotedTeam.id, 4);
+  }
+
+  // 4. Os 2 despromovidos perdem seus postos (treinador fica observador)
+  for (const relegatedTeam of relegated) {
+    await db.setTeamDivision(relegatedTeam.id, null); // "fora de competição"
+    const trainer = await db.getTrainerForTeam(relegatedTeam.id);
+    if (trainer && isHumanTrainer(trainer.id)) {
+      await db.setTrainerStatus(trainer.id, "OBSERVING");
+    }
+  }
+
+  console.log(
+    `Promoção random: ${randomSelectedTeams.map((t) => t.name).join(", ")} => Divisão 4`,
+  );
+  console.log(
+    `Descida: ${relegated.map((t) => t.name).join(", ")} => Observadores`,
+  );
+}
 ```
+
+### Clarificação
+
+- **Puro random**: Qualquer uma das 32 equipas tem igual probabilidade
+- **Sem critérios**: Não favorece equipas que desceram, equipas em forma, nada
+- **Justo**: Cria incerteza e drama na competição
 
 ---
 
-## CHECKSUM DE IMPLEMENTAÇÃO
+## CHECKLIST DE CLARIFICAÇÕES IMPLEMENTADAS
 
-Antes de começar o desenvolvimento, valida:
-
-- [ ] Moral usa range 0-100, sobe/desce com resultados, afecta só ataque
-- [ ] Cálculo de força inclui pesos por posição, formação, estilo, moral, casa/fora
-- [ ] Craques têm +20% prob golo decisivo (não aditivo, capped em 60%)
-- [ ] Convites avaliados fim da jornada, máximo 1 por treinador, raros
-- [ ] Mercado: timestamp do servidor desempata bids simultâneos
-- [ ] Seed é reprodutível e única por jornada + matchId
-- [ ] Estados forma máquina formal com transições explícitas
-- [ ] Socket.io eventos têm contrato definido
-- [ ] Modelo de dados tem todas as entidades e índices
-- [ ] Loop semanal: abrir → esperar → simular → atualizar
+- [ ] Calendário fixo: Semanas 3, 6, 9, 12, 14 com duplo jogo
+- [ ] 19 fases de submissão máximo (14 campeonato + 5 taça)
+- [ ] Submissões independentes: Campeonato depois Taça na mesma semana
+- [ ] 32 equipas totais, max 8 humanas, resto IA
+- [ ] Simulação cronometrada: 45s + intervalo (60s) + 45s + potencial 30s + penaltis
+- [ ] Pop-up de substituições ao intervalo (timeout 60s)
+- [ ] Cálculos sem erros de sintaxe, valores realistas
+- [ ] Força ofensiva inclui: qualidade, formação, moral, estilo
+- [ ] Força defensiva inclui: qualidade, formação, estilo (não moral)
+- [ ] Probabilidade golo ~0.5-1% por minuto (realista)
+- [ ] Cartão amarelo: 2% base \* factor agressividade
+- [ ] Cartão vermelho: 15% de amarelo vira vermelho
+- [ ] Craques: +20% prob golo decisivo, capped em 60%
+- [ ] Promoção: random puro de 32 clubes (sem critérios)
+- [ ] Árbitro inclinação: gerado random por jogo (±15% em cartões/penaltis)
