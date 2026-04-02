@@ -464,7 +464,7 @@ function App() {
 
   const [matchResults, setMatchResults] = useState(null);
   const [matchweekCount, setMatchweekCount] = useState(0);
-  const [activeTab, setActiveTab] = useState("squad");
+  const [activeTab, setActiveTab] = useState("players");
   const [topScorers, setTopScorers] = useState([]);
   const [marketPairs, setMarketPairs] = useState([]);
   const [marketPositionFilter, setMarketPositionFilter] = useState("all");
@@ -1079,7 +1079,7 @@ function App() {
   }, [savedSession, me?.teamId, adminSession]);
 
   useEffect(() => {
-    if (activeTab !== "squad" || !me?.teamId) return;
+    if (activeTab !== "tactic" || !me?.teamId) return;
     setNextMatchSummaryLoading(true);
     socket.emit("requestNextMatchSummary", { teamId: me.teamId });
   }, [activeTab, me?.teamId, matchweekCount]);
@@ -2434,7 +2434,8 @@ function App() {
               },
               { key: "cup", label: "Taça", icon: "emoji_events" },
               { key: "market", label: "Mercado", icon: "swap_horiz" },
-              { key: "squad", label: "Plantel", icon: "group" },
+              { key: "players", label: "Jogadores", icon: "group" },
+              { key: "tactic", label: "Táctica", icon: "strategy" },
             ].map(({ key, label, icon }) => (
               <button
                 key={key}
@@ -2474,9 +2475,9 @@ function App() {
       {!isMatchInProgress && (
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-low border-t border-outline-variant z-10 flex">
           {[
-            { key: "club", label: "Clube", icon: "groups_3" },
             { key: "standings", label: "Classif.", icon: "leaderboard" },
-            { key: "squad", label: "Plantel", icon: "group" },
+            { key: "players", label: "Jogadores", icon: "group" },
+            { key: "tactic", label: "Táctica", icon: "strategy" },
             { key: "market", label: "Mercado", icon: "swap_horiz" },
             { key: "live", label: "Live", icon: "sports_soccer" },
           ].map(({ key, label, icon }) => (
@@ -2501,7 +2502,7 @@ function App() {
       >
         <div className="p-4 lg:p-6">
           <div
-            className={`grid grid-cols-1 gap-6 ${activeTab === "squad" ? "xl:grid-cols-[minmax(0,3fr)_320px]" : ""}`}
+            className={`grid grid-cols-1 gap-6 ${activeTab === "tactic" ? "xl:grid-cols-[minmax(0,3fr)_320px]" : ""}`}
           >
             <div>
               {activeTab === "live" && (matchResults || matchAction) && (
@@ -3816,15 +3817,12 @@ function App() {
                 </div>
               )}
 
-              {activeTab === "squad" && (
+              {activeTab === "players" && (
                 <div className="space-y-6">
                   <div className="bg-surface-container rounded-lg shadow-sm overflow-visible">
                     <table className="w-full text-left text-sm font-normal">
                       <thead>
                         <tr className="bg-surface/50 text-on-surface-variant uppercase text-[11px] tracking-widest border-b border-outline-variant/20 font-normal">
-                          <th className="px-3 py-3 text-center w-10 font-normal">
-                            ☑️
-                          </th>
                           <th className="px-3 py-3 text-center w-12 font-normal">
                             POS
                           </th>
@@ -3861,86 +3859,6 @@ function App() {
                             key={player.id}
                             className={`transition-colors group select-none ${ENABLE_ROW_BG ? POSITION_BG_CLASS[player.position] : ""} hover:bg-zinc-800/50 ${player.isUnavailable ? "opacity-50" : ""}`}
                           >
-                            <td
-                              className="px-3 py-2 text-center text-lg leading-none relative"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenStatusPickerId((prev) =>
-                                  prev === player.id ? null : player.id,
-                                );
-                              }}
-                            >
-                              <span
-                                className={`cursor-pointer inline-flex items-center justify-center rounded-full ${player.status === "Titular" ? "bg-emerald-500/15" : player.status === "Suplente" ? "bg-amber-500/15" : "bg-zinc-900/80"}`}
-                              >
-                                {player.status === "Titular"
-                                  ? "🟢"
-                                  : player.status === "Suplente"
-                                    ? "🟡"
-                                    : "⚫️"}
-                              </span>
-                              {openStatusPickerId === player.id &&
-                                (() => {
-                                  const subCount = Object.entries(
-                                    tactic.positions,
-                                  ).filter(
-                                    ([id, s]) =>
-                                      s === "Suplente" &&
-                                      Number(id) !== player.id,
-                                  ).length;
-                                  const subsFull = subCount >= 5;
-                                  return (
-                                    <div
-                                      className="absolute left-0 top-full z-30 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl p-1 flex flex-col gap-0.5 min-w-32"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      {[
-                                        ["Titular", "🟢", "Convocado"],
-                                        ["Suplente", "🟡", "Suplente"],
-                                        ["Excluído", "⚫️", "Não convocado"],
-                                      ].map(([status, emoji, label]) => {
-                                        const unavailable =
-                                          player.isUnavailable &&
-                                          (status === "Titular" ||
-                                            status === "Suplente");
-                                        const disabled =
-                                          unavailable ||
-                                          (status === "Suplente" &&
-                                            subsFull &&
-                                            player.status !== "Suplente");
-                                        return (
-                                          <button
-                                            key={status}
-                                            onClick={() =>
-                                              !disabled &&
-                                              handleSetPlayerStatus(
-                                                player.id,
-                                                status,
-                                              )
-                                            }
-                                            title={
-                                              unavailable
-                                                ? "Jogador indisponível (lesão/suspensão)"
-                                                : disabled
-                                                  ? "Máximo de 5 suplentes atingido"
-                                                  : undefined
-                                            }
-                                            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 text-left ${
-                                              disabled
-                                                ? "opacity-40 cursor-not-allowed text-zinc-500"
-                                                : player.status === status
-                                                  ? "bg-zinc-700 text-white"
-                                                  : "hover:bg-zinc-700 text-zinc-300"
-                                            }`}
-                                          >
-                                            {emoji} {label}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  );
-                                })()}
-                            </td>
                             <td
                               className={`px-3 py-2 text-center text-sm tracking-wider ${POSITION_TEXT_CLASS[player.position] || "text-zinc-300"}`}
                             >
@@ -4088,6 +4006,336 @@ function App() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "tactic" && (
+                <div className="space-y-4">
+                  {/* ── 2D PITCH ─────────────────────────────────────── */}
+                  {(() => {
+                    const titulares = annotatedSquad.filter(
+                      (p) => p.status === "Titular",
+                    );
+                    const grPlayers = titulares.filter(
+                      (p) => p.position === "GR",
+                    );
+                    const defPlayers = titulares.filter(
+                      (p) => p.position === "DEF",
+                    );
+                    const medPlayers = titulares.filter(
+                      (p) => p.position === "MED",
+                    );
+                    const ataPlayers = titulares.filter(
+                      (p) => p.position === "ATA",
+                    );
+                    const rows = [
+                      ataPlayers,
+                      medPlayers,
+                      defPlayers,
+                      grPlayers,
+                    ];
+                    const rowYs = ["10%", "33%", "59%", "82%"];
+                    const posColors = {
+                      GR: "bg-amber-500 text-zinc-900",
+                      DEF: "bg-sky-500 text-zinc-900",
+                      MED: "bg-primary text-on-primary",
+                      ATA: "bg-red-500 text-white",
+                    };
+                    return (
+                      <div
+                        className="relative w-full rounded-xl overflow-hidden border border-zinc-800/60"
+                        style={{
+                          aspectRatio: "3/4",
+                          background:
+                            "linear-gradient(180deg, #05430e 0%, #0b5e1a 50%, #05430e 100%)",
+                        }}
+                      >
+                        <svg
+                          className="absolute inset-0 w-full h-full"
+                          viewBox="0 0 300 400"
+                          preserveAspectRatio="none"
+                          aria-hidden="true"
+                        >
+                          <rect
+                            x="12"
+                            y="12"
+                            width="276"
+                            height="376"
+                            fill="none"
+                            stroke="rgba(255,255,255,0.18)"
+                            strokeWidth="1.5"
+                            rx="2"
+                          />
+                          <line
+                            x1="12"
+                            y1="200"
+                            x2="288"
+                            y2="200"
+                            stroke="rgba(255,255,255,0.15)"
+                            strokeWidth="1"
+                          />
+                          <circle
+                            cx="150"
+                            cy="200"
+                            r="44"
+                            fill="none"
+                            stroke="rgba(255,255,255,0.12)"
+                            strokeWidth="1"
+                          />
+                          <circle
+                            cx="150"
+                            cy="200"
+                            r="3"
+                            fill="rgba(255,255,255,0.18)"
+                          />
+                          <rect
+                            x="90"
+                            y="12"
+                            width="120"
+                            height="56"
+                            fill="none"
+                            stroke="rgba(255,255,255,0.12)"
+                            strokeWidth="1"
+                          />
+                          <rect
+                            x="120"
+                            y="12"
+                            width="60"
+                            height="22"
+                            fill="none"
+                            stroke="rgba(255,255,255,0.1)"
+                            strokeWidth="1"
+                          />
+                          <rect
+                            x="90"
+                            y="332"
+                            width="120"
+                            height="56"
+                            fill="none"
+                            stroke="rgba(255,255,255,0.12)"
+                            strokeWidth="1"
+                          />
+                          <rect
+                            x="120"
+                            y="366"
+                            width="60"
+                            height="22"
+                            fill="none"
+                            stroke="rgba(255,255,255,0.1)"
+                            strokeWidth="1"
+                          />
+                        </svg>
+                        {rows.map((rowPlayers, ri) =>
+                          rowPlayers.length > 0 ? (
+                            <div
+                              key={ri}
+                              className="absolute w-full flex justify-evenly items-start px-2"
+                              style={{ top: rowYs[ri] }}
+                            >
+                              {rowPlayers.map((player) => (
+                                <div
+                                  key={player.id}
+                                  className="flex flex-col items-center gap-0.5"
+                                  style={{ maxWidth: "64px" }}
+                                >
+                                  <div
+                                    className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-xs border-2 border-white/20 shrink-0 relative ${posColors[player.position] || "bg-zinc-500 text-white"} ${player.isUnavailable ? "opacity-50 ring-2 ring-red-500" : ""}`}
+                                  >
+                                    {POSITION_SHORT_LABELS[player.position] ||
+                                      "?"}
+                                    {player.isUnavailable && (
+                                      <span className="absolute -top-1 -right-1 text-[9px] leading-none">
+                                        {(player.suspension_until_matchweek ||
+                                          0) > matchweekCount
+                                          ? "🟥"
+                                          : "🩹"}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span
+                                    className="text-white text-[9px] font-bold text-center leading-tight"
+                                    style={{
+                                      textShadow:
+                                        "0 1px 4px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.8)",
+                                      maxWidth: "56px",
+                                      display: "block",
+                                      whiteSpace: "nowrap",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                    }}
+                                  >
+                                    {player.name.split(" ").pop()}
+                                  </span>
+                                  <span
+                                    className="text-[9px] font-black leading-none"
+                                    style={{
+                                      color: "var(--color-primary)",
+                                      textShadow: "0 1px 4px rgba(0,0,0,0.95)",
+                                    }}
+                                  >
+                                    {player.skill}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : null,
+                        )}
+                        {!tactic.formation && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <p
+                              className="text-zinc-400 text-sm font-bold text-center px-8 leading-relaxed"
+                              style={{
+                                textShadow: "0 1px 4px rgba(0,0,0,0.9)",
+                              }}
+                            >
+                              Escolhe uma formação no painel lateral para ver os
+                              jogadores em campo
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* ── COMPACT PLAYER LIST ──────────────────────────── */}
+                  <div className="bg-surface-container rounded-lg overflow-hidden">
+                    <div className="px-4 py-3 border-b border-outline-variant/20 bg-surface/40 flex items-center justify-between">
+                      <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black">
+                        Plantel
+                      </p>
+                      <p className="text-[10px] font-black text-zinc-500">
+                        <span className="text-emerald-400">
+                          {
+                            annotatedSquad.filter((p) => p.status === "Titular")
+                              .length
+                          }
+                        </span>
+                        /11 titulares ·{" "}
+                        <span className="text-amber-400">
+                          {
+                            annotatedSquad.filter(
+                              (p) => p.status === "Suplente",
+                            ).length
+                          }
+                        </span>
+                        /5 suplentes
+                      </p>
+                    </div>
+                    <div className="divide-y divide-zinc-800/40">
+                      {annotatedSquad.map((player) => (
+                        <div
+                          key={player.id}
+                          className={`flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-zinc-800/30 select-none relative ${player.isUnavailable ? "opacity-60" : ""}`}
+                        >
+                          <span
+                            className={`cursor-pointer text-base leading-none shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full ${player.status === "Titular" ? "bg-emerald-500/15" : player.status === "Suplente" ? "bg-amber-500/15" : "bg-zinc-900/80"}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenStatusPickerId((prev) =>
+                                prev === player.id ? null : player.id,
+                              );
+                            }}
+                          >
+                            {player.status === "Titular"
+                              ? "🟢"
+                              : player.status === "Suplente"
+                                ? "🟡"
+                                : "⚫️"}
+                          </span>
+                          <span
+                            className={`text-xs font-black w-5 text-center shrink-0 ${POSITION_TEXT_CLASS[player.position] || "text-zinc-400"}`}
+                          >
+                            {POSITION_SHORT_LABELS[player.position] ||
+                              player.position}
+                          </span>
+                          <span className="flex-1 text-white text-sm font-bold truncate">
+                            {player.name}
+                            {!!player.is_star &&
+                              (player.position === "MED" ||
+                                player.position === "ATA") && (
+                                <span
+                                  className="ml-1 text-amber-400 font-black"
+                                  title="Craque"
+                                >
+                                  *
+                                </span>
+                              )}
+                            {player.isUnavailable && (
+                              <span className="ml-1.5 text-xs font-bold text-red-400">
+                                {(player.suspension_until_matchweek || 0) >
+                                matchweekCount
+                                  ? "🟥"
+                                  : "🩹"}
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-primary font-black text-sm shrink-0">
+                            {player.skill}
+                          </span>
+                          {openStatusPickerId === player.id &&
+                            (() => {
+                              const subCount = Object.entries(
+                                tactic.positions,
+                              ).filter(
+                                ([id, s]) =>
+                                  s === "Suplente" && Number(id) !== player.id,
+                              ).length;
+                              const subsFull = subCount >= 5;
+                              return (
+                                <div
+                                  className="absolute left-10 top-full z-30 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl p-1 flex flex-col gap-0.5 min-w-36"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {[
+                                    ["Titular", "🟢", "Convocado"],
+                                    ["Suplente", "🟡", "Suplente"],
+                                    ["Excluído", "⚫️", "Não convocado"],
+                                  ].map(([status, emoji, label]) => {
+                                    const unavailable =
+                                      player.isUnavailable &&
+                                      (status === "Titular" ||
+                                        status === "Suplente");
+                                    const disabled =
+                                      unavailable ||
+                                      (status === "Suplente" &&
+                                        subsFull &&
+                                        player.status !== "Suplente");
+                                    return (
+                                      <button
+                                        key={status}
+                                        onClick={() =>
+                                          !disabled &&
+                                          handleSetPlayerStatus(
+                                            player.id,
+                                            status,
+                                          )
+                                        }
+                                        title={
+                                          unavailable
+                                            ? "Jogador indisponível (lesão/suspensão)"
+                                            : disabled
+                                              ? "Máximo de 5 suplentes atingido"
+                                              : undefined
+                                        }
+                                        className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 text-left ${
+                                          disabled
+                                            ? "opacity-40 cursor-not-allowed text-zinc-500"
+                                            : player.status === status
+                                              ? "bg-zinc-700 text-white"
+                                              : "hover:bg-zinc-700 text-zinc-300"
+                                        }`}
+                                      >
+                                        {emoji} {label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })()}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -4284,7 +4532,7 @@ function App() {
               )}
             </div>
 
-            {activeTab === "squad" && (
+            {activeTab === "tactic" && (
               <div className="space-y-6">
                 <div className="bg-surface-container p-5 rounded-lg flex flex-col items-center sticky top-23">
                   {disconnected && (
@@ -4292,202 +4540,194 @@ function App() {
                       ⚠️ Desligado — a reconectar...
                     </p>
                   )}
-                  {activeTab === "squad" && (
-                    <div className="w-full mb-4 space-y-4">
-                      <div className="p-4 rounded-2xl border border-zinc-800 bg-zinc-950/80">
-                        <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-3">
-                          Próximo Jogo
-                        </p>
-                        {nextMatchSummaryLoading && !nextMatchSummary ? (
-                          <div className="text-sm font-bold text-zinc-500 py-2">
-                            A carregar resumo...
+                  <div className="w-full mb-4 space-y-4">
+                    <div className="p-4 rounded-2xl border border-zinc-800 bg-zinc-950/80">
+                      <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-3">
+                        Próximo Jogo
+                      </p>
+                      {nextMatchSummaryLoading && !nextMatchSummary ? (
+                        <div className="text-sm font-bold text-zinc-500 py-2">
+                          A carregar resumo...
+                        </div>
+                      ) : nextMatchOpponent ? (
+                        <div className="space-y-3 text-sm">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black">
+                                Adversário
+                              </p>
+                              <p className="text-white font-black text-base leading-tight">
+                                {nextMatchOpponent.name}
+                              </p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black">
+                                Campo
+                              </p>
+                              <p
+                                className={`font-black text-base ${
+                                  nextMatchSummary?.venue === "Casa"
+                                    ? "text-emerald-400"
+                                    : "text-sky-400"
+                                }`}
+                              >
+                                {nextMatchSummary?.venue ?? "-"}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black">
+                                Classificação
+                              </p>
+                              <p className="text-amber-400 font-black text-base">
+                                {nextMatchOpponent.position
+                                  ? `${nextMatchOpponent.position}º`
+                                  : "-"}
+                              </p>
+                            </div>
                           </div>
-                        ) : nextMatchOpponent ? (
-                          <div className="space-y-3 text-sm">
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black">
-                                  Adversário
-                                </p>
-                                <p className="text-white font-black text-base leading-tight">
-                                  {nextMatchOpponent.name}
-                                </p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black">
-                                  Campo
-                                </p>
-                                <p
-                                  className={`font-black text-base ${
-                                    nextMatchSummary?.venue === "Casa"
+                          <div className="flex items-center justify-center gap-1.5 font-black tracking-[0.35em] text-xs">
+                            {(nextMatchOpponent.last5 || "-----")
+                              .split("")
+                              .slice(0, 5)
+                              .map((result, index) => (
+                                <span
+                                  key={`${result}-${index}`}
+                                  className={`w-7 h-7 rounded-full flex items-center justify-center border ${result === "V" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : result === "E" ? "bg-amber-500/15 text-amber-400 border-amber-500/30" : result === "D" ? "bg-red-500/15 text-red-400 border-red-500/30" : "bg-surface text-on-surface-variant border-outline-variant/20"}`}
+                                >
+                                  {result}
+                                </span>
+                              ))}
+                          </div>
+                          <div className="pt-2 border-t border-zinc-800/80">
+                            <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black mb-2">
+                              Árbitro
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => setRefereePopup(nextMatchReferee)}
+                              className="flex w-full items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-left hover:border-amber-500/40 transition-colors"
+                            >
+                              <span className="font-black text-white text-sm">
+                                {nextMatchReferee?.name || "A definir"}
+                              </span>
+                              <span className="text-[10px] uppercase tracking-widest font-black text-amber-400">
+                                Ver balança
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-sm font-bold text-zinc-500 py-2">
+                          Sem resumo disponível.
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="p-4 rounded-2xl border border-zinc-800 bg-zinc-950/80">
+                      <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-3">
+                        Tática
+                      </p>
+                      <div className="space-y-3">
+                        <select
+                          ref={formationSelectRef}
+                          className="w-full bg-surface border border-outline-variant rounded-sm px-3 py-3 text-sm font-bold text-on-surface focus:ring-2 focus:ring-primary"
+                          value={tactic.formation}
+                          onMouseDown={() => {
+                            // Reset native value to "" so picking the same formation still fires onChange
+                            if (formationSelectRef.current) {
+                              formationSelectRef.current.value = "";
+                            }
+                          }}
+                          onChange={(e) => handleAutoPick(e.target.value)}
+                        >
+                          <option value="" disabled>
+                            Escolher formação...
+                          </option>
+                          <option value="4-4-2">4-4-2 Clássico</option>
+                          <option value="4-3-3">4-3-3 Ofensivo</option>
+                          <option value="3-5-2">3-5-2 Controlo da Bola</option>
+                          <option value="5-3-2">5-3-2 Autocarro</option>
+                          <option value="4-5-1">4-5-1 Catenaccio</option>
+                          <option value="3-4-3">3-4-3 Ataque Total</option>
+                          <option value="4-2-4">4-2-4 Avassalador</option>
+                          <option value="5-4-1">5-4-1 Ferrolho</option>
+                        </select>
+                        <select
+                          className="w-full bg-surface border border-outline-variant rounded-sm px-3 py-3 text-sm font-bold text-primary focus:ring-2 focus:ring-primary"
+                          value={tactic.style}
+                          onChange={(e) =>
+                            updateTactic({ style: e.target.value })
+                          }
+                        >
+                          <option value="Balanced">Equilibrado</option>
+                          <option value="Offensive">Ofensivo (+15% Atk)</option>
+                          <option value="Defensive">
+                            Defensivo (+20% Def)
+                          </option>
+                        </select>
+                        <button
+                          className="w-full bg-surface-container hover:bg-surface-bright border border-outline-variant/30 rounded px-3 py-2 text-xs font-bold text-on-surface-variant hover:text-on-surface transition-colors"
+                          onClick={() => {
+                            setTactic((prev) => {
+                              const allExcluded = Object.fromEntries(
+                                mySquad.map((p) => [p.id, "Excluído"]),
+                              );
+                              const next = {
+                                ...prev,
+                                formation: "",
+                                positions: allExcluded,
+                              };
+                              socket.emit("setTactic", next);
+                              return next;
+                            });
+                          }}
+                        >
+                          🧹 Limpar Tática
+                        </button>
+                        {(() => {
+                          const morale = teamInfo?.morale ?? 75;
+                          const moraleColor =
+                            morale > 75
+                              ? "bg-emerald-500"
+                              : morale >= 50
+                                ? "bg-amber-500"
+                                : "bg-red-500";
+                          const moraleLabel =
+                            morale > 75
+                              ? "Boa"
+                              : morale >= 50
+                                ? "Média"
+                                : "Baixa";
+                          return (
+                            <div>
+                              <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-1.5">
+                                Moral da Equipa
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                                  <div
+                                    className={`h-2.5 rounded-full transition-all duration-500 ${moraleColor}`}
+                                    style={{ width: `${morale}%` }}
+                                  />
+                                </div>
+                                <span
+                                  className={`text-xs font-black tracking-wider w-10 text-right ${
+                                    morale > 75
                                       ? "text-emerald-400"
-                                      : "text-sky-400"
+                                      : morale >= 50
+                                        ? "text-amber-400"
+                                        : "text-red-400"
                                   }`}
                                 >
-                                  {nextMatchSummary?.venue ?? "-"}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black">
-                                  Classificação
-                                </p>
-                                <p className="text-amber-400 font-black text-base">
-                                  {nextMatchOpponent.position
-                                    ? `${nextMatchOpponent.position}º`
-                                    : "-"}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-center gap-1.5 font-black tracking-[0.35em] text-xs">
-                              {(nextMatchOpponent.last5 || "-----")
-                                .split("")
-                                .slice(0, 5)
-                                .map((result, index) => (
-                                  <span
-                                    key={`${result}-${index}`}
-                                    className={`w-7 h-7 rounded-full flex items-center justify-center border ${result === "V" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : result === "E" ? "bg-amber-500/15 text-amber-400 border-amber-500/30" : result === "D" ? "bg-red-500/15 text-red-400 border-red-500/30" : "bg-surface text-on-surface-variant border-outline-variant/20"}`}
-                                  >
-                                    {result}
-                                  </span>
-                                ))}
-                            </div>
-                            <div className="pt-2 border-t border-zinc-800/80">
-                              <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black mb-2">
-                                Árbitro
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setRefereePopup(nextMatchReferee)
-                                }
-                                className="flex w-full items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-left hover:border-amber-500/40 transition-colors"
-                              >
-                                <span className="font-black text-white text-sm">
-                                  {nextMatchReferee?.name || "A definir"}
+                                  {moraleLabel}
                                 </span>
-                                <span className="text-[10px] uppercase tracking-widest font-black text-amber-400">
-                                  Ver balança
-                                </span>
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-sm font-bold text-zinc-500 py-2">
-                            Sem resumo disponível.
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="p-4 rounded-2xl border border-zinc-800 bg-zinc-950/80">
-                        <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-3">
-                          Tática
-                        </p>
-                        <div className="space-y-3">
-                          <select
-                            ref={formationSelectRef}
-                            className="w-full bg-surface border border-outline-variant rounded-sm px-3 py-3 text-sm font-bold text-on-surface focus:ring-2 focus:ring-primary"
-                            value={tactic.formation}
-                            onMouseDown={() => {
-                              // Reset native value to "" so picking the same formation still fires onChange
-                              if (formationSelectRef.current) {
-                                formationSelectRef.current.value = "";
-                              }
-                            }}
-                            onChange={(e) => handleAutoPick(e.target.value)}
-                          >
-                            <option value="" disabled>
-                              Escolher formação...
-                            </option>
-                            <option value="4-4-2">4-4-2 Clássico</option>
-                            <option value="4-3-3">4-3-3 Ofensivo</option>
-                            <option value="3-5-2">
-                              3-5-2 Controlo da Bola
-                            </option>
-                            <option value="5-3-2">5-3-2 Autocarro</option>
-                            <option value="4-5-1">4-5-1 Catenaccio</option>
-                            <option value="3-4-3">3-4-3 Ataque Total</option>
-                            <option value="4-2-4">4-2-4 Avassalador</option>
-                            <option value="5-4-1">5-4-1 Ferrolho</option>
-                          </select>
-                          <select
-                            className="w-full bg-surface border border-outline-variant rounded-sm px-3 py-3 text-sm font-bold text-primary focus:ring-2 focus:ring-primary"
-                            value={tactic.style}
-                            onChange={(e) =>
-                              updateTactic({ style: e.target.value })
-                            }
-                          >
-                            <option value="Balanced">Equilibrado</option>
-                            <option value="Offensive">
-                              Ofensivo (+15% Atk)
-                            </option>
-                            <option value="Defensive">
-                              Defensivo (+20% Def)
-                            </option>
-                          </select>
-                          <button
-                            className="w-full bg-surface-container hover:bg-surface-bright border border-outline-variant/30 rounded px-3 py-2 text-xs font-bold text-on-surface-variant hover:text-on-surface transition-colors"
-                            onClick={() => {
-                              setTactic((prev) => {
-                                const allExcluded = Object.fromEntries(
-                                  mySquad.map((p) => [p.id, "Excluído"]),
-                                );
-                                const next = {
-                                  ...prev,
-                                  formation: "",
-                                  positions: allExcluded,
-                                };
-                                socket.emit("setTactic", next);
-                                return next;
-                              });
-                            }}
-                          >
-                            🧹 Limpar Tática
-                          </button>
-                          {(() => {
-                            const morale = teamInfo?.morale ?? 75;
-                            const moraleColor =
-                              morale > 75
-                                ? "bg-emerald-500"
-                                : morale >= 50
-                                  ? "bg-amber-500"
-                                  : "bg-red-500";
-                            const moraleLabel =
-                              morale > 75
-                                ? "Boa"
-                                : morale >= 50
-                                  ? "Média"
-                                  : "Baixa";
-                            return (
-                              <div>
-                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-1.5">
-                                  Moral da Equipa
-                                </p>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex-1 bg-zinc-800 rounded-full h-2.5 overflow-hidden">
-                                    <div
-                                      className={`h-2.5 rounded-full transition-all duration-500 ${moraleColor}`}
-                                      style={{ width: `${morale}%` }}
-                                    />
-                                  </div>
-                                  <span
-                                    className={`text-xs font-black tracking-wider w-10 text-right ${
-                                      morale > 75
-                                        ? "text-emerald-400"
-                                        : morale >= 50
-                                          ? "text-amber-400"
-                                          : "text-red-400"
-                                    }`}
-                                  >
-                                    {moraleLabel}
-                                  </span>
-                                </div>
                               </div>
-                            );
-                          })()}
-                        </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
-                  )}
+                  </div>
                   {(() => {
                     const isReady = players.find(
                       (p) => p.name === me.name,
