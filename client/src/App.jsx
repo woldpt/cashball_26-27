@@ -3043,90 +3043,123 @@ function App() {
               )}
 
               {activeTab === "standings" && (
-                <div className="bg-surface-container text-on-surface p-4 rounded-lg relative overflow-hidden">
-                  <h2 className="text-xl font-headline font-black text-tertiary mb-4 pb-2 border-b border-outline-variant/30">
-                    Classificação Geral (Jornada {completedJornada})
-                  </h2>
+                <div className="space-y-4">
+                  {/* Page header */}
+                  <div className="flex items-baseline justify-between">
+                    <h2 className="text-lg font-headline font-black text-on-surface">
+                      Classificação
+                    </h2>
+                    <span className="text-xs text-on-surface-variant font-bold">
+                      Jornada {completedJornada}
+                    </span>
+                  </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
-                    {[1, 2, 3, 4].map((div) => (
-                      <div key={div}>
-                        <h3 className="text-zinc-500 font-black uppercase text-sm mb-4">
-                          {DIVISION_NAMES[div] || `Div ${div}`}
-                        </h3>
-                        <div className="bg-surface border border-outline-variant/20 rounded overflow-hidden">
-                          <table className="w-full text-[12px] font-bold text-right border-collapse">
-                            <thead className="bg-surface-container text-on-surface-variant border-b border-outline-variant/20">
-                              <tr>
-                                <th className="text-left py-1 px-2">Equipa</th>
-                                <th className="py-1 px-1 w-6 text-center">J</th>
-                                <th className="py-1 px-1 w-6 text-center">V</th>
-                                <th className="py-1 px-1 w-6 text-center">E</th>
-                                <th className="py-1 px-1 w-6 text-center">D</th>
-                                <th className="py-1 px-2 w-12 text-center">
-                                  G
-                                </th>
-                                <th className="py-1 px-2 w-8 text-center text-tertiary">
-                                  Pts
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-black/20">
-                              {teams
-                                .filter((t) => t.division === div)
-                                .sort(
-                                  (a, b) =>
-                                    (b.points || 0) - (a.points || 0) ||
-                                    (b.goals_for || 0) -
-                                      (b.goals_against || 0) -
-                                      ((a.goals_for || 0) -
-                                        (a.goals_against || 0)),
-                                )
-                                .map((t, idx) => {
-                                  const isMe = t.id == me.teamId;
-                                  return (
-                                    <tr
-                                      key={t.id}
-                                      onClick={() => handleOpenTeamSquad(t)}
-                                      style={{
-                                        backgroundColor:
-                                          t.color_primary || "#18181b",
-                                        color: t.color_secondary || "#ffffff",
-                                      }}
-                                      className={`transition-colors cursor-pointer hover:brightness-110 ${isMe ? "ring-2 ring-inset ring-amber-500" : ""}`}
-                                    >
-                                      <td className="text-left uppercase py-0.75 px-2 truncate font-black w-[45%]">
-                                        {idx + 1}. {t.name}
-                                      </td>
-                                      <td className="w-6 text-center py-0.75 px-1 opacity-80">
-                                        {(t.wins || 0) +
-                                          (t.draws || 0) +
-                                          (t.losses || 0)}
-                                      </td>
-                                      <td className="w-6 text-center py-0.75 px-1 opacity-80">
-                                        {t.wins || 0}
-                                      </td>
-                                      <td className="w-6 text-center py-0.75 px-1 opacity-80">
-                                        {t.draws || 0}
-                                      </td>
-                                      <td className="w-6 text-center py-0.75 px-1 opacity-80">
-                                        {t.losses || 0}
-                                      </td>
-                                      <td className="w-12 text-center py-0.75 px-2 tracking-widest opacity-80">
-                                        {t.goals_for || 0}:
-                                        {t.goals_against || 0}
-                                      </td>
-                                      <td className="w-8 text-center py-0.75 px-2 font-black">
-                                        {t.points || 0}
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                            </tbody>
-                          </table>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {[1, 2, 3, 4].map((div) => {
+                      const divTeams = teams
+                        .filter((t) => t.division === div)
+                        .sort(
+                          (a, b) =>
+                            (b.points || 0) - (a.points || 0) ||
+                            (b.goals_for || 0) -
+                              (b.goals_against || 0) -
+                              ((a.goals_for || 0) - (a.goals_against || 0)),
+                        );
+                      return (
+                        <div
+                          key={div}
+                          className="bg-surface-container rounded-lg overflow-hidden"
+                        >
+                          {/* Division header row */}
+                          <div className="flex items-center px-3 py-2 border-b border-outline-variant/20">
+                            <span className="flex-1 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                              {DIVISION_NAMES[div] || `Div ${div}`}
+                            </span>
+                            <div className="flex text-[9px] font-bold uppercase tracking-wider text-on-surface-variant/50">
+                              <span className="w-6 text-center">J</span>
+                              <span className="w-6 text-center">V</span>
+                              <span className="w-6 text-center">E</span>
+                              <span className="w-6 text-center">D</span>
+                              <span className="w-8 text-center">DG</span>
+                              <span className="w-7 text-center text-tertiary/70">
+                                Pts
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Team rows */}
+                          {divTeams.map((t, idx) => {
+                            const isMe = t.id == me.teamId;
+                            const gd =
+                              (t.goals_for || 0) - (t.goals_against || 0);
+                            const played =
+                              (t.wins || 0) + (t.draws || 0) + (t.losses || 0);
+                            const isPromo = idx < 2;
+                            const isRelegate =
+                              idx >= divTeams.length - 2 && div < 4;
+                            return (
+                              <div
+                                key={t.id}
+                                onClick={() => handleOpenTeamSquad(t)}
+                                className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-all border-b border-black/10 last:border-0 hover:brightness-110${isMe ? " outline outline-2 outline-inset outline-primary" : ""}`}
+                                style={{
+                                  backgroundColor: t.color_primary || "#1c1b1b",
+                                  color: t.color_secondary || "#fff",
+                                }}
+                              >
+                                {/* Zone indicator */}
+                                <span
+                                  className={`shrink-0 w-1.5 h-5 rounded-full ${isPromo ? "bg-primary/80" : isRelegate ? "bg-red-500/70" : "bg-white/10"}`}
+                                />
+                                {/* Position */}
+                                <span className="shrink-0 w-4 text-[11px] font-black opacity-60 text-right">
+                                  {idx + 1}
+                                </span>
+                                {/* Team name */}
+                                <span className="flex-1 text-[11px] font-black uppercase truncate">
+                                  {t.name}
+                                </span>
+                                {/* Stats */}
+                                <div className="flex text-[11px] font-bold shrink-0">
+                                  <span className="w-6 text-center opacity-60">
+                                    {played}
+                                  </span>
+                                  <span className="w-6 text-center opacity-60">
+                                    {t.wins || 0}
+                                  </span>
+                                  <span className="w-6 text-center opacity-60">
+                                    {t.draws || 0}
+                                  </span>
+                                  <span className="w-6 text-center opacity-60">
+                                    {t.losses || 0}
+                                  </span>
+                                  <span className="w-8 text-center opacity-60">
+                                    {gd > 0 ? `+${gd}` : gd}
+                                  </span>
+                                  <span className="w-7 text-center font-black">
+                                    {t.points || 0}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          {/* Legend */}
+                          <div className="flex gap-3 px-3 py-1.5 border-t border-outline-variant/10">
+                            <span className="flex items-center gap-1 text-[9px] text-on-surface-variant/40 font-bold uppercase tracking-wide">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary/70 inline-block" />
+                              Subida
+                            </span>
+                            {div < 4 && (
+                              <span className="flex items-center gap-1 text-[9px] text-on-surface-variant/40 font-bold uppercase tracking-wide">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500/60 inline-block" />
+                                Descida
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
