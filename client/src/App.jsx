@@ -2821,33 +2821,41 @@ function App() {
                         ) : null}
 
                         {/* BUG-06 FIX: Use handleHalftimeReady which always sends true */}
-                        <button
-                          onClick={
-                            myTeamInCup ? handleHalftimeReady : undefined
-                          }
-                          disabled={!myTeamInCup}
-                          className={`shrink-0 w-full py-3.5 text-sm font-black uppercase tracking-widest transition-all ${
-                            !myTeamInCup
-                              ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                              : players.find((p) => p.name === me.name)?.ready
-                                ? "bg-zinc-800 text-zinc-500"
-                                : cupPreMatch
-                                  ? "bg-green-600 hover:bg-green-500 text-zinc-950"
-                                  : isCupMatch
-                                    ? "bg-primary hover:brightness-110 text-on-primary"
-                                    : "bg-primary hover:brightness-110 text-on-primary"
-                          }`}
-                        >
-                          {!myTeamInCup
-                            ? "⏳ A AGUARDAR JOGO DA TAÇA..."
-                            : players.find((p) => p.name === me.name)?.ready
-                              ? "⏳ A AGUARDAR..."
-                              : cupPreMatch
-                                ? "▶ INICIAR JOGO — TAÇA"
-                                : isCupMatch
-                                  ? "▶ 2ª PARTE — TAÇA"
-                                  : "▶ INICIAR 2ª PARTE"}
-                        </button>
+                        {/* BUG: only gate on myTeamInCup when it's actually a cup match */}
+                        {(() => {
+                          const isCupContext = isCupMatch || cupPreMatch;
+                          const canContinue = !isCupContext || myTeamInCup;
+                          const isReady = !!players.find(
+                            (p) => p.name === me.name,
+                          )?.ready;
+                          return (
+                            <button
+                              onClick={
+                                canContinue ? handleHalftimeReady : undefined
+                              }
+                              disabled={!canContinue || isReady}
+                              className={`shrink-0 w-full py-3.5 text-sm font-black uppercase tracking-widest transition-all ${
+                                !canContinue
+                                  ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                                  : isReady
+                                    ? "bg-zinc-800 text-zinc-500"
+                                    : cupPreMatch
+                                      ? "bg-green-600 hover:bg-green-500 text-zinc-950"
+                                      : "bg-primary hover:brightness-110 text-on-primary"
+                              }`}
+                            >
+                              {!canContinue
+                                ? "⏳ A AGUARDAR JOGO DA TAÇA..."
+                                : isReady
+                                  ? "⏳ A AGUARDAR..."
+                                  : cupPreMatch
+                                    ? "▶ INICIAR JOGO — TAÇA"
+                                    : isCupMatch
+                                      ? "▶ 2ª PARTE — TAÇA"
+                                      : "▶ INICIAR 2ª PARTE"}
+                            </button>
+                          );
+                        })()}
                       </div>
                     </div>
                   )}
@@ -3094,9 +3102,10 @@ function App() {
                               (t.goals_for || 0) - (t.goals_against || 0);
                             const played =
                               (t.wins || 0) + (t.draws || 0) + (t.losses || 0);
-                            const isPromo = idx < 2;
-                            const isRelegate =
-                              idx >= divTeams.length - 2 && div < 4;
+                            // Div 1 (I Liga) has no promotion spots
+                            const isPromo = div > 1 && idx < 2;
+                            // All divisions (incl. Div 4 Campeonato de Portugal) have relegation
+                            const isRelegate = idx >= divTeams.length - 2;
                             return (
                               <div
                                 key={t.id}
@@ -3146,16 +3155,16 @@ function App() {
 
                           {/* Legend */}
                           <div className="flex gap-3 px-3 py-1.5 border-t border-outline-variant/10">
-                            <span className="flex items-center gap-1 text-[9px] text-on-surface-variant/40 font-bold uppercase tracking-wide">
-                              <span className="w-1.5 h-1.5 rounded-full bg-primary/70 inline-block" />
-                              Subida
-                            </span>
-                            {div < 4 && (
+                            {div > 1 && (
                               <span className="flex items-center gap-1 text-[9px] text-on-surface-variant/40 font-bold uppercase tracking-wide">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500/60 inline-block" />
-                                Descida
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary/70 inline-block" />
+                                Subida
                               </span>
                             )}
+                            <span className="flex items-center gap-1 text-[9px] text-on-surface-variant/40 font-bold uppercase tracking-wide">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500/60 inline-block" />
+                              Descida
+                            </span>
                           </div>
                         </div>
                       );
