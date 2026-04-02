@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PITCH MASTER 98 - Live Multiview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "error-container": "#93000a",
+              "on-error": "#690005",
+              "tertiary-fixed": "#ffe088",
+              "surface-container-low": "#1c1b1b",
+              "surface-container-high": "#2a2a2a",
+              "inverse-surface": "#e5e2e1",
+              "primary-fixed-dim": "#95d4b3",
+              "surface-container-highest": "#353534",
+              "on-primary-fixed": "#002114",
+              "on-secondary-fixed": "#1b1c1c",
+              "on-tertiary-container": "#4e3d00",
+              "tertiary-fixed-dim": "#e9c349",
+              "on-primary": "#003824",
+              "outline": "#8b938b",
+              "surface": "#131313",
+              "tertiary-container": "#cca72f",
+              "on-tertiary-fixed-variant": "#574500",
+              "on-secondary-container": "#b9b8b8",
+              "surface-container": "#201f1f",
+              "tertiary": "#e9c349",
+              "surface-tint": "#95d4b3",
+              "on-secondary-fixed-variant": "#474747",
+              "background": "#131313",
+              "primary-fixed": "#b1f0ce",
+              "inverse-primary": "#2c694e",
+              "error": "#ffb4ab",
+              "primary": "#95d4b3",
+              "surface-variant": "#353534",
+              "surface-bright": "#393939",
+              "on-surface-variant": "#c1c8c0",
+              "on-tertiary": "#3c2f00",
+              "on-primary-fixed-variant": "#0e5138",
+              "secondary-container": "#494949",
+              "on-surface": "#e5e2e1",
+              "surface-container-lowest": "#0e0e0e",
+              "secondary-fixed": "#e4e2e2",
+              "on-error-container": "#ffdad6",
+              "secondary-fixed-dim": "#c8c6c6",
+              "outline-variant": "#424843",
+              "secondary": "#c8c6c6",
+              "on-secondary": "#303030",
+              "on-background": "#e5e2e1",
+              "inverse-on-surface": "#313030",
+              "primary-container": "#00412b",
+              "on-primary-container": "#71ae8f",
+              "surface-dim": "#131313",
+              "on-tertiary-fixed": "#241a00"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body { background-color: #131313; color: #E5E2E1; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      .pitch-gradient {
+        background: radial-gradient(circle at 50% 50%, rgba(0, 65, 43, 0.15) 0%, rgba(19, 19, 19, 0) 70%);
+      }
+    </style>
+</head>
+<body class="dark selection:bg-primary selection:text-on-primary">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#131313] dark:bg-[#131313] bg-gradient-to-b from-[#131313] to-transparent pb-4">
+<div class="flex justify-between items-center w-full px-6 py-4">
+<div class="text-2xl font-bold text-[#E9C349] tracking-tighter font-['Space_Grotesk'] uppercase">
+                PITCH MASTER 98
+            </div>
+<div class="hidden md:flex gap-8 font-['Space_Grotesk'] tracking-tighter uppercase">
+<a class="text-[#E5E2E1]/60 hover:text-[#E5E2E1] transition-colors cursor-pointer active:scale-95 duration-150" href="#">SQUAD</a>
+<a class="text-[#E5E2E1]/60 hover:text-[#E5E2E1] transition-colors cursor-pointer active:scale-95 duration-150" href="#">TACTICS</a>
+<a class="text-[#E5E2E1]/60 hover:text-[#E5E2E1] transition-colors cursor-pointer active:scale-95 duration-150" href="#">SCOUTING</a>
+<a class="text-[#E5E2E1]/60 hover:text-[#E5E2E1] transition-colors cursor-pointer active:scale-95 duration-150" href="#">TRANSFERS</a>
+</div>
+<div class="flex items-center gap-4 text-[#95D4B3]">
+<span class="material-symbols-outlined cursor-pointer hover:bg-[#393939]/40 p-2 transition-colors duration-150" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:bg-[#393939]/40 p-2 transition-colors duration-150" data-icon="settings">settings</span>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/30">
+<img alt="Manager Profile" data-alt="close-up portrait of a professional football manager in a black suit looking intensely towards the pitch" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJi8Pyxp0__SUncsUPIEiiem_kSQ95gszMkm-iWAQaUvZN9wN2eNnBGM_OblQN7QdEdMuZXsm0wNFVYlJ9dnwEnxpvS8VyctSAh6K9kTvUkVZB_fAgCVcoc3mCEU4XR86tfrkNPyw2wqwwi9zsYq4_KfWZ-Z7WKuGj5levTH96np4pQkSLGShnmyypPp4kuoxlZJg1xaBvCy04wnk_EKnsoLVrfMnSTnet5cSuz_dAhpaw0iMKnByVgKCNRjavPbuEmPcMWBRgXQ_U"/>
+</div>
+</div>
+</div>
+</nav>
+<!-- SideNavBar (Hidden on small screens) -->
+<aside class="hidden lg:flex h-screen w-64 fixed left-0 top-0 bg-[#1C1B1B] border-r border-[#424843]/15 flex-col py-8 pt-24 z-40">
+<div class="px-6 mb-10">
+<div class="flex items-center gap-3">
+<img alt="Club Crest" class="w-10 h-10 rounded-sm" data-alt="abstract minimalist football club crest with golden eagle wings and deep green background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3fu_5ymzuhZvkKVXMDT_5tvugthuxuSCQS4vRUZYi7ZVK_yQ4R4sgSHc5Y4P8EhR2hltnAHobQDCIqxfCN0P9xJUSFgpupueL1tmgSMror6hjSgad_LQqGPXcOeD0eLo4iBVtEuk0zuw426Ar-c6PjHbWAO3KEeDM0a2yh1XhSyZlIFJD6hKZi59lnCL858qGO6eM1HviFexbMIGbl5vZew16fqd_T4lW1x1tSSQuEDDsQlIKbvlL-tx4PgWwLQ3XnUlTeoCKoXaF"/>
+<div>
+<div class="text-[#E9C349] font-black font-['Inter'] text-sm tracking-tight">PITCH MASTER 98</div>
+<div class="text-[#E5E2E1]/50 text-xs font-medium uppercase tracking-widest">Elite Division</div>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 px-6 py-3 text-[#E5E2E1]/50 hover:bg-[#201F1F] hover:text-[#E5E2E1] transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-['Inter'] font-medium text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-3 text-[#E5E2E1]/50 hover:bg-[#201F1F] hover:text-[#E5E2E1] transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+<span class="font-['Inter'] font-medium text-sm">League Table</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-3 bg-[#00412B]/20 text-[#95D4B3] border-l-4 border-[#95D4B3] transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="event_note">event_note</span>
+<span class="font-['Inter'] font-medium text-sm">Fixtures</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-3 text-[#E5E2E1]/50 hover:bg-[#201F1F] hover:text-[#E5E2E1] transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-['Inter'] font-medium text-sm">Staff</span>
+</a>
+<a class="flex items-center gap-4 px-6 py-3 text-[#E5E2E1]/50 hover:bg-[#201F1F] hover:text-[#E5E2E1] transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-['Inter'] font-medium text-sm">History</span>
+</a>
+</nav>
+<div class="px-6 mt-auto">
+<button class="w-full py-3 bg-primary text-on-primary font-bold text-xs rounded-md tracking-widest active:scale-95 transition-transform">
+                MATCHDAY LIVE
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pt-24 pb-24 lg:pl-64 min-h-screen pitch-gradient px-4 lg:px-6">
+<div class="max-w-[1600px] mx-auto">
+<!-- Dashboard Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+<div>
+<h1 class="font-headline text-4xl font-bold tracking-tighter uppercase text-on-background">Live Multiview</h1>
+<p class="font-body text-primary text-sm tracking-wide opacity-80 uppercase">Matchday 24 • Final Round Simulations</p>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex items-center gap-2 px-3 py-1 bg-surface-container-high rounded-full border border-outline-variant/20">
+<span class="w-2 h-2 bg-error rounded-full animate-pulse"></span>
+<span class="text-[10px] font-bold text-on-surface tracking-widest uppercase">Live Broadcast</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col xl:flex-row gap-6">
+<!-- Match Grid -->
+<div class="flex-1">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3">
+<!-- Match Cards (16 Items) -->
+<!-- Card 1: GOAL State -->
+<div class="bg-surface-container p-4 rounded-md relative overflow-hidden group cursor-pointer hover:bg-surface-bright transition-colors duration-200">
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex justify-between items-start mb-4">
+<span class="text-[10px] font-bold text-tertiary font-headline uppercase tracking-tighter bg-tertiary-container/20 px-2 py-0.5 rounded-sm">74'</span>
+<div class="bg-error px-2 py-0.5 rounded-sm animate-pulse">
+<span class="text-[10px] font-black text-on-error uppercase tracking-tighter">GOAL!</span>
+</div>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-primary">
+<span class="text-[10px] font-bold">LON</span>
+</div>
+<span class="font-headline font-bold text-sm tracking-tight">LONDON FC</span>
+</div>
+<span class="font-headline font-bold text-lg text-primary">3</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-error">
+<span class="text-[10px] font-bold">MUN</span>
+</div>
+<span class="font-headline font-bold text-sm tracking-tight opacity-60">MUNICH CITY</span>
+</div>
+<span class="font-headline font-bold text-lg opacity-60">1</span>
+</div>
+</div>
+</div>
+<!-- Card 2 to 16 (Repeated logic for density) -->
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4">
+<span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">41'</span>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-tertiary">
+<span class="text-[10px] font-bold">MAD</span>
+</div>
+<span class="font-headline font-bold text-sm tracking-tight">MADRID BLANCO</span>
+</div>
+<span class="font-headline font-bold text-lg text-primary">0</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-primary-container">
+<span class="text-[10px] font-bold">PAR</span>
+</div>
+<span class="font-headline font-bold text-sm tracking-tight">PARIS ELITE</span>
+</div>
+<span class="font-headline font-bold text-lg text-primary">0</span>
+</div>
+</div>
+</div>
+<!-- Dynamic Placeholder Cards -->
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4"><span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">88'</span></div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-primary"><span class="text-[10px] font-bold">BAR</span></div><span class="font-headline font-bold text-sm tracking-tight">BARCELONA FC</span></div><span class="font-headline font-bold text-lg text-primary">2</span></div>
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-outline"><span class="text-[10px] font-bold">ROM</span></div><span class="font-headline font-bold text-sm tracking-tight opacity-60">ROME UNITED</span></div><span class="font-headline font-bold text-lg opacity-60">2</span></div>
+</div>
+</div>
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4"><span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">12'</span></div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-secondary"><span class="text-[10px] font-bold">MIL</span></div><span class="font-headline font-bold text-sm tracking-tight">MILAN STRIKE</span></div><span class="font-headline font-bold text-lg text-primary">1</span></div>
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-tertiary-container"><span class="text-[10px] font-bold">AMS</span></div><span class="font-headline font-bold text-sm tracking-tight">AMSTEL STARS</span></div><span class="font-headline font-bold text-lg text-primary">1</span></div>
+</div>
+</div>
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors border-l-4 border-error/50">
+<div class="flex justify-between items-start mb-4">
+<span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">62'</span>
+<span class="text-[10px] font-bold text-error uppercase">Red Card</span>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-primary"><span class="text-[10px] font-bold">LIS</span></div><span class="font-headline font-bold text-sm tracking-tight">LISBON EAGLES</span></div><span class="font-headline font-bold text-lg text-primary">0</span></div>
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-error"><span class="text-[10px] font-bold">BER</span></div><span class="font-headline font-bold text-sm tracking-tight">BERLIN WALL</span></div><span class="font-headline font-bold text-lg text-primary">1</span></div>
+</div>
+</div>
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4"><span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">HT</span></div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-primary-fixed-dim"><span class="text-[10px] font-bold">TOK</span></div><span class="font-headline font-bold text-sm tracking-tight">TOKYO RISING</span></div><span class="font-headline font-bold text-lg text-primary">0</span></div>
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-on-surface-variant"><span class="text-[10px] font-bold">NYC</span></div><span class="font-headline font-bold text-sm tracking-tight">NYC GIANTS</span></div><span class="font-headline font-bold text-lg text-primary">0</span></div>
+</div>
+</div>
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4"><span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">29'</span></div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-tertiary-fixed"><span class="text-[10px] font-bold">RIO</span></div><span class="font-headline font-bold text-sm tracking-tight">RIO SAMBA</span></div><span class="font-headline font-bold text-lg text-primary">1</span></div>
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-outline-variant"><span class="text-[10px] font-bold">SAO</span></div><span class="font-headline font-bold text-sm tracking-tight opacity-60">SAO PAULO FC</span></div><span class="font-headline font-bold text-lg opacity-60">0</span></div>
+</div>
+</div>
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4"><span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">55'</span></div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-primary"><span class="text-[10px] font-bold">MAN</span></div><span class="font-headline font-bold text-sm tracking-tight">MAN CITY BLUE</span></div><span class="font-headline font-bold text-lg text-primary">2</span></div>
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-on-secondary-fixed"><span class="text-[10px] font-bold">LIV</span></div><span class="font-headline font-bold text-sm tracking-tight">LIVERPOOL RED</span></div><span class="font-headline font-bold text-lg text-primary">2</span></div>
+</div>
+</div>
+<!-- Row 3 & 4 (Continuing for 16 total) -->
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4"><span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">05'</span></div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-primary-container"><span class="text-[10px] font-bold">DOR</span></div><span class="font-headline font-bold text-sm tracking-tight">DORTMUND YEL</span></div><span class="font-headline font-bold text-lg text-primary">0</span></div>
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-on-tertiary-fixed-variant"><span class="text-[10px] font-bold">MUA</span></div><span class="font-headline font-bold text-sm tracking-tight">MUNICH ARENA</span></div><span class="font-headline font-bold text-lg text-primary">0</span></div>
+</div>
+</div>
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4"><span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">FT</span></div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-primary"><span class="text-[10px] font-bold">NAP</span></div><span class="font-headline font-bold text-sm tracking-tight opacity-60">NAPLES AZURE</span></div><span class="font-headline font-bold text-lg opacity-60">1</span></div>
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-tertiary"><span class="text-[10px] font-bold">JUV</span></div><span class="font-headline font-bold text-sm tracking-tight">TURIN BLACK</span></div><span class="font-headline font-bold text-lg text-primary">2</span></div>
+</div>
+</div>
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4"><span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">33'</span></div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-primary"><span class="text-[10px] font-bold">POR</span></div><span class="font-headline font-bold text-sm tracking-tight">PORTO BLUE</span></div><span class="font-headline font-bold text-lg text-primary">0</span></div>
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-error"><span class="text-[10px] font-bold">BEN</span></div><span class="font-headline font-bold text-sm tracking-tight">BENFICA RED</span></div><span class="font-headline font-bold text-lg text-primary">0</span></div>
+</div>
+</div>
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4"><span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">79'</span></div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-outline"><span class="text-[10px] font-bold">MAR</span></div><span class="font-headline font-bold text-sm tracking-tight opacity-60">MARSEILLE</span></div><span class="font-headline font-bold text-lg opacity-60">0</span></div>
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-primary-container"><span class="text-[10px] font-bold">LYO</span></div><span class="font-headline font-bold text-sm tracking-tight">LYON OL</span></div><span class="font-headline font-bold text-lg text-primary">1</span></div>
+</div>
+</div>
+<!-- 4 more to reach 16 -->
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4"><span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">18'</span></div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-tertiary-fixed"><span class="text-[10px] font-bold">ZEN</span></div><span class="font-headline font-bold text-sm tracking-tight">ZENIT GOLD</span></div><span class="font-headline font-bold text-lg text-primary">1</span></div>
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-surface-bright"><span class="text-[10px] font-bold">CSK</span></div><span class="font-headline font-bold text-sm tracking-tight opacity-60">CSKA ARMY</span></div><span class="font-headline font-bold text-lg opacity-60">0</span></div>
+</div>
+</div>
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4"><span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">45+2'</span></div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-primary-container"><span class="text-[10px] font-bold">GAL</span></div><span class="font-headline font-bold text-sm tracking-tight">GALATASARAY</span></div><span class="font-headline font-bold text-lg text-primary">2</span></div>
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-error-container"><span class="text-[10px] font-bold">FEN</span></div><span class="font-headline font-bold text-sm tracking-tight opacity-60">FENERBAHCE</span></div><span class="font-headline font-bold text-lg opacity-60">1</span></div>
+</div>
+</div>
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4"><span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">82'</span></div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-primary"><span class="text-[10px] font-bold">CEL</span></div><span class="font-headline font-bold text-sm tracking-tight">CELTIC GREEN</span></div><span class="font-headline font-bold text-lg text-primary">0</span></div>
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-outline-variant"><span class="text-[10px] font-bold">RAN</span></div><span class="font-headline font-bold text-sm tracking-tight opacity-60">RANGERS BLUE</span></div><span class="font-headline font-bold text-lg opacity-60">0</span></div>
+</div>
+</div>
+<div class="bg-surface-container p-4 rounded-md cursor-pointer hover:bg-surface-bright transition-colors">
+<div class="flex justify-between items-start mb-4"><span class="text-[10px] font-bold text-on-surface-variant font-headline uppercase tracking-tighter bg-surface-container-high px-2 py-0.5 rounded-sm">15'</span></div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-secondary-fixed"><span class="text-[10px] font-bold">AJA</span></div><span class="font-headline font-bold text-sm tracking-tight">AJAX RED</span></div><span class="font-headline font-bold text-lg text-primary">1</span></div>
+<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-6 h-6 bg-surface-container-highest rounded-sm flex items-center justify-center border-l-2 border-primary-container"><span class="text-[10px] font-bold">PSV</span></div><span class="font-headline font-bold text-sm tracking-tight">PSV LIGHTS</span></div><span class="font-headline font-bold text-lg text-primary">1</span></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Sidebar: Live League Table -->
+<aside class="w-full xl:w-80 flex flex-col gap-6">
+<div class="bg-surface-container rounded-md overflow-hidden border border-outline-variant/10">
+<div class="bg-surface-container-high px-4 py-3 flex justify-between items-center">
+<h2 class="text-tertiary font-headline font-bold text-xs uppercase tracking-widest">Live League Table</h2>
+<span class="text-[10px] text-on-surface-variant font-bold tracking-widest">WEEK 24</span>
+</div>
+<div class="p-0 overflow-x-auto">
+<table class="w-full text-left border-separate border-spacing-y-1 px-2">
+<thead>
+<tr class="text-[9px] text-on-surface-variant font-bold uppercase tracking-widest">
+<th class="py-2 pl-2">#</th>
+<th class="py-2">TEAM</th>
+<th class="py-2 text-center">PTS</th>
+<th class="py-2 text-center">GD</th>
+</tr>
+</thead>
+<tbody class="text-xs">
+<tr class="bg-primary-container/20 text-on-primary-container">
+<td class="py-2 pl-2 font-bold">1</td>
+<td class="py-2 font-headline font-bold">LONDON FC</td>
+<td class="py-2 text-center font-bold">58</td>
+<td class="py-2 text-center text-[10px]">+22</td>
+</tr>
+<tr class="hover:bg-surface-container-highest transition-colors">
+<td class="py-2 pl-2 font-bold opacity-50">2</td>
+<td class="py-2 font-headline font-bold">BARCELONA FC</td>
+<td class="py-2 text-center font-bold">56</td>
+<td class="py-2 text-center text-[10px] font-medium">+18</td>
+</tr>
+<tr class="hover:bg-surface-container-highest transition-colors">
+<td class="py-2 pl-2 font-bold opacity-50">3</td>
+<td class="py-2 font-headline font-bold">MADRID BLANCO</td>
+<td class="py-2 text-center font-bold">54</td>
+<td class="py-2 text-center text-[10px] font-medium">+14</td>
+</tr>
+<tr class="hover:bg-surface-container-highest transition-colors border-b border-outline-variant/5">
+<td class="py-2 pl-2 font-bold opacity-50">4</td>
+<td class="py-2 font-headline font-bold">MAN CITY BLUE</td>
+<td class="py-2 text-center font-bold">51</td>
+<td class="py-2 text-center text-[10px] font-medium">+10</td>
+</tr>
+<!-- Divider logic via margin/spacing in design system -->
+<tr class="hover:bg-surface-container-highest transition-colors">
+<td class="py-2 pl-2 font-bold opacity-50">5</td>
+<td class="py-2 font-headline font-bold">TURIN BLACK</td>
+<td class="py-2 text-center font-bold">48</td>
+<td class="py-2 text-center text-[10px] font-medium">+6</td>
+</tr>
+<tr class="hover:bg-surface-container-highest transition-colors">
+<td class="py-2 pl-2 font-bold opacity-50">6</td>
+<td class="py-2 font-headline font-bold">PARIS ELITE</td>
+<td class="py-2 text-center font-bold">47</td>
+<td class="py-2 text-center text-[10px] font-medium">+9</td>
+</tr>
+<tr class="hover:bg-surface-container-highest transition-colors">
+<td class="py-2 pl-2 font-bold opacity-50 text-error">15</td>
+<td class="py-2 font-headline font-bold">ROME UNITED</td>
+<td class="py-2 text-center font-bold">22</td>
+<td class="py-2 text-center text-[10px] font-medium">-12</td>
+</tr>
+<tr class="hover:bg-surface-container-highest transition-colors">
+<td class="py-2 pl-2 font-bold opacity-50 text-error">16</td>
+<td class="py-2 font-headline font-bold">MUNICH CITY</td>
+<td class="py-2 text-center font-bold">18</td>
+<td class="py-2 text-center text-[10px] font-medium">-19</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-3 bg-surface-container-lowest text-center">
+<button class="text-primary text-[10px] font-bold uppercase tracking-[0.2em] hover:text-primary-fixed-dim transition-colors">View Full Standings</button>
+</div>
+</div>
+<!-- Tactical Insights Card -->
+<div class="bg-primary-container p-4 rounded-md border border-primary/20">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-primary scale-75" data-icon="lightbulb">lightbulb</span>
+<h3 class="text-primary font-headline font-bold text-xs uppercase">Tactical Alert</h3>
+</div>
+<p class="text-[11px] text-on-primary-container leading-relaxed">
+<strong class="text-primary">London FC</strong> virtual championship win probability has increased to <span class="font-bold">88.4%</span> following their 3rd goal against Munich.
+                        </p>
+</div>
+</aside>
+</div>
+</div>
+</main>
+<!-- Bottom Ticker -->
+<footer class="fixed bottom-0 left-0 w-full z-50 bg-[#131313]/90 backdrop-blur-xl border-t border-[#424843]/15 flex h-10 items-center overflow-hidden">
+<div class="bg-tertiary px-4 h-full flex items-center z-10 shrink-0">
+<span class="text-on-tertiary font-headline font-black text-[10px] uppercase tracking-tighter">LATEST EVENTS</span>
+</div>
+<div class="flex-1 whitespace-nowrap flex items-center gap-8 px-6 overflow-hidden">
+<div class="flex items-center gap-2 animate-[marquee_20s_linear_infinite]">
+<span class="text-xs font-bold text-on-surface uppercase">Goal for London FC!</span>
+<span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+<span class="text-xs text-on-surface-variant font-medium">Yellow Card: Munich City #5 (J. Doe)</span>
+<span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+<span class="text-xs font-bold text-primary uppercase">Substitution: Barcelona FC (In: Messi Jr / Out: Suarez III)</span>
+<span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+<span class="text-xs text-on-surface-variant font-medium">Penalty Missed! Rome United remains 0-0</span>
+<span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+<span class="text-xs font-bold text-on-surface uppercase">Full Time: Turin Black wins 2-1 against Naples</span>
+</div>
+</div>
+<div class="bg-surface-container-high px-4 h-full hidden lg:flex items-center gap-3 shrink-0">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="timer">timer</span>
+<span class="text-[10px] font-bold font-headline text-on-surface">19:42:05</span>
+</div>
+</footer>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 lg:hidden bg-[#131313]/80 backdrop-blur-xl border-t border-[#424843]/15">
+<a class="flex flex-col items-center justify-center text-[#E5E2E1]/40 p-2 hover:text-[#95D4B3]" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#E5E2E1]/40 p-2 hover:text-[#95D4B3]" href="#">
+<span class="material-symbols-outlined" data-icon="strategy">strategy</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase mt-1">Tactics</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#00412B] text-[#95D4B3] rounded-md p-2" href="#">
+<span class="material-symbols-outlined" data-icon="sports_soccer">sports_soccer</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase mt-1">Matches</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#E5E2E1]/40 p-2 hover:text-[#95D4B3]" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase mt-1">Scout</span>
+</a>
+</nav>
+<style>
+        @keyframes marquee {
+            0% { transform: translateX(10%); }
+            100% { transform: translateX(-100%); }
+        }
+    </style>
+</body></html>

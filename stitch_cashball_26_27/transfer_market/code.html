@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary": "#003824",
+                        "tertiary-fixed": "#ffe088",
+                        "surface-variant": "#353534",
+                        "tertiary-container": "#cca72f",
+                        "on-tertiary-fixed": "#241a00",
+                        "surface": "#131313",
+                        "surface-container-highest": "#353534",
+                        "error": "#ffb4ab",
+                        "surface-container-lowest": "#0e0e0e",
+                        "inverse-surface": "#e5e2e1",
+                        "primary": "#95d4b3",
+                        "outline-variant": "#424843",
+                        "on-secondary-fixed-variant": "#474747",
+                        "on-error-container": "#ffdad6",
+                        "on-error": "#690005",
+                        "on-surface-variant": "#c1c8c0",
+                        "on-primary-container": "#71ae8f",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-dim": "#131313",
+                        "surface-bright": "#393939",
+                        "secondary-fixed": "#e4e2e2",
+                        "secondary-container": "#494949",
+                        "on-primary-fixed": "#002114",
+                        "on-secondary-container": "#b9b8b8",
+                        "secondary": "#c8c6c6",
+                        "inverse-on-surface": "#313030",
+                        "primary-container": "#00412b",
+                        "on-primary-fixed-variant": "#0e5138",
+                        "error-container": "#93000a",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "on-tertiary-container": "#4e3d00",
+                        "tertiary": "#e9c349",
+                        "outline": "#8b938b",
+                        "on-secondary": "#303030",
+                        "primary-fixed": "#b1f0ce",
+                        "inverse-primary": "#2c694e",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "background": "#131313",
+                        "surface-container-low": "#1c1b1b",
+                        "on-surface": "#e5e2e1",
+                        "surface-container": "#201f1f",
+                        "on-tertiary": "#3c2f00",
+                        "surface-tint": "#95d4b3",
+                        "on-background": "#e5e2e1",
+                        "primary-fixed-dim": "#95d4b3",
+                        "tertiary-fixed-dim": "#e9c349",
+                        "secondary-fixed-dim": "#c8c6c6"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #131313; }
+        ::-webkit-scrollbar-thumb { background: #353534; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body overflow-hidden">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-[#131313] border-b-[2.5px] border-[#1C1B1B] flex justify-between items-center px-6 h-16 w-full">
+<div class="flex items-center gap-8">
+<span class="text-xl font-black text-[#E9C349] tracking-tighter font-headline">Transfer Market</span>
+<nav class="hidden md:flex gap-6 items-center h-full">
+<a class="font-headline tracking-tighter uppercase font-bold text-[#95D4B3] border-b-2 border-[#95D4B3] pb-1 transition-all" href="#">Players</a>
+<a class="font-headline tracking-tighter uppercase font-bold text-[#E5E2E1] opacity-70 hover:bg-[#393939] transition-colors" href="#">Scouts</a>
+<a class="font-headline tracking-tighter uppercase font-bold text-[#E5E2E1] opacity-70 hover:bg-[#393939] transition-colors" href="#">Shortlist</a>
+<a class="font-headline tracking-tighter uppercase font-bold text-[#E5E2E1] opacity-70 hover:bg-[#393939] transition-colors" href="#">History</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="px-4 py-1.5 bg-primary-container text-primary font-headline font-bold rounded-sm tracking-tight">
+                $84.5M BUDGET
+            </div>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-[#393939] p-2 rounded-full transition-all active:scale-95">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-[#393939] p-2 rounded-full transition-all active:scale-95">settings</button>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-64 z-40 bg-[#1C1B1B] flex flex-col pt-20 gap-y-1">
+<div class="px-6 mb-6">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-sm overflow-hidden bg-surface-bright">
+<img class="w-full h-full object-cover" data-alt="professional portrait of an elite football manager with silver hair in a sharp suit with stadium lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBssoaf3OOpmP-M6ArsYq3ySo48DFWfGAYW8wBYyQNaTKc2O-RHpJ2-xv7tGUTjeSXvKqb8PHRFmDW54Vpf258LQczmTNi8CSGZRmlOGxb17Y4KW5QKy56_b58hqrANJh5C3YajjCfXtWITTlTqLtVglmLGqIOqdVqDhLQjPmE-drOCM9bOcCSYoXbCEecbXXHKuKQN1kgWvidQ5mVCJ62cWFIUjSYlPWkOs7Z1PJN-PKaVAw6BXMdW0UlWj_kB9ziIXowSevjI1klr"/>
+</div>
+<div>
+<p class="font-headline text-[#E9C349] font-bold text-sm leading-none">A. Wenger</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">Elite Level</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-[#E5E2E1] opacity-60 hover:opacity-100 hover:bg-[#393939] transition-all active:translate-x-1" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-['Inter'] font-medium text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#E5E2E1] opacity-60 hover:opacity-100 hover:bg-[#393939] transition-all active:translate-x-1" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-['Inter'] font-medium text-sm">Squad</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#E5E2E1] opacity-60 hover:opacity-100 hover:bg-[#393939] transition-all active:translate-x-1" href="#">
+<span class="material-symbols-outlined">strategy</span>
+<span class="font-['Inter'] font-medium text-sm">Tactics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#E5E2E1] opacity-60 hover:opacity-100 hover:bg-[#393939] transition-all active:translate-x-1" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-['Inter'] font-medium text-sm">Schedule</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#E5E2E1] opacity-60 hover:opacity-100 hover:bg-[#393939] transition-all active:translate-x-1" href="#">
+<span class="material-symbols-outlined">fitness_center</span>
+<span class="font-['Inter'] font-medium text-sm">Training</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#E5E2E1] opacity-60 hover:opacity-100 hover:bg-[#393939] transition-all active:translate-x-1" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-['Inter'] font-medium text-sm">Finance</span>
+</a>
+</nav>
+<div class="p-4 border-t border-outline-variant/10">
+<button class="w-full bg-primary text-on-primary font-headline font-bold py-3 rounded-sm active:scale-95 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">forward_10</span>
+                Advance Day
+            </button>
+</div>
+<div class="pb-6">
+<a class="flex items-center gap-3 px-4 py-2 text-[#E5E2E1] opacity-60 hover:opacity-100 text-xs" href="#">
+<span class="material-symbols-outlined text-sm">help</span>
+<span>Help</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-error/70 hover:text-error text-xs" href="#">
+<span class="material-symbols-outlined text-sm">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pl-64 pt-16 h-screen flex">
+<div class="flex-1 p-6 overflow-y-auto flex flex-col gap-6">
+<!-- Header Section -->
+<section class="flex flex-col gap-6">
+<div class="flex justify-between items-end">
+<div>
+<h1 class="font-headline text-5xl font-black tracking-tighter leading-none text-on-surface">TRANSFER MARKET</h1>
+<p class="text-on-surface-variant font-medium mt-2">Active Transfer Window: Summer 2024</p>
+</div>
+<div class="relative w-96 group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full bg-surface-container-low border-none focus:ring-1 focus:ring-primary text-sm py-3 pl-10 rounded-sm" placeholder="Global Search for Players..." type="text"/>
+</div>
+</div>
+<!-- Filters -->
+<div class="grid grid-cols-4 gap-4 bg-surface-container p-4 rounded-md">
+<div class="space-y-2">
+<label class="block text-[10px] uppercase font-bold text-on-surface-variant tracking-widest">Position</label>
+<div class="flex gap-1">
+<button class="flex-1 bg-primary text-on-primary text-[10px] font-bold py-2 rounded-sm">GK</button>
+<button class="flex-1 bg-surface-bright text-on-surface text-[10px] font-bold py-2 rounded-sm hover:bg-primary-container/40 transition-colors">DEF</button>
+<button class="flex-1 bg-surface-bright text-on-surface text-[10px] font-bold py-2 rounded-sm hover:bg-primary-container/40 transition-colors">MID</button>
+<button class="flex-1 bg-surface-bright text-on-surface text-[10px] font-bold py-2 rounded-sm hover:bg-primary-container/40 transition-colors">STR</button>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block text-[10px] uppercase font-bold text-on-surface-variant tracking-widest">Age Range</label>
+<select class="w-full bg-surface-container-low border-none text-sm py-2 rounded-sm text-on-surface">
+<option>16 - 24 (Prospects)</option>
+<option>25 - 29 (Prime)</option>
+<option>30+ (Veterans)</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="block text-[10px] uppercase font-bold text-on-surface-variant tracking-widest">Skill Level (Min 0-100)</label>
+<input class="w-full accent-primary bg-surface-container-high h-1 appearance-none rounded-lg" max="100" min="0" type="range" value="75"/>
+</div>
+<div class="space-y-2">
+<label class="block text-[10px] uppercase font-bold text-on-surface-variant tracking-widest">Max Market Value</label>
+<input class="w-full bg-surface-container-low border-none text-sm py-2 rounded-sm text-on-surface text-right pr-4 font-headline font-bold" type="text" value="$50,000,000"/>
+</div>
+</div>
+</section>
+<!-- Player List -->
+<section class="bg-surface-container-low rounded-md overflow-hidden flex-1 flex flex-col">
+<div class="grid grid-cols-12 gap-1 p-3 bg-surface-container-high border-b border-outline-variant/10">
+<div class="col-span-5 text-[10px] uppercase font-bold text-tertiary tracking-widest">Player Name</div>
+<div class="col-span-1 text-[10px] uppercase font-bold text-tertiary tracking-widest text-center">Age</div>
+<div class="col-span-2 text-[10px] uppercase font-bold text-tertiary tracking-widest text-center">Skill</div>
+<div class="col-span-2 text-[10px] uppercase font-bold text-tertiary tracking-widest">Status</div>
+<div class="col-span-2 text-[10px] uppercase font-bold text-tertiary tracking-widest text-right">Value</div>
+</div>
+<div class="overflow-y-auto space-y-[2.5px] p-1 bg-surface-dim flex-1">
+<!-- Row 1 -->
+<div class="grid grid-cols-12 gap-1 items-center p-3 bg-surface-container hover:bg-primary-container/20 transition-all cursor-pointer group">
+<div class="col-span-5 flex items-center gap-3">
+<div class="w-8 h-8 bg-surface-bright rounded-sm overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="profile of a young professional soccer player with sharp facial features and athletic build" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCeSTJsk3rT8WjL3TqL8xxlu75HhednFZAZ_Gm_UUDAAwuqL178t-G49yE-mFcCMffg7MoRZUl-2ePPU3DCj-PB6tQmJh2P20GJjGgUCWpy8V32jSaSKn5dvOf9pZwqjUOi4CN7UNK8e6AgoPXCibFehwvasaBhQvmkbwv5k5eNadDF3DbERWCgor7bx3NsjcPwYgr5qsQ--vSiaegV-xs3gCSskTinB7iH8fbfvQl4eKfyIQgmnwZOXB78zE79Gbzrl2_Wh29y4_cM"/>
+</div>
+<div>
+<h4 class="text-sm font-bold font-headline group-hover:text-primary transition-colors">Luca Van Basten</h4>
+<p class="text-[10px] text-on-surface-variant flex items-center gap-1"><span class="w-1.5 h-1.5 bg-primary rounded-full"></span> MID (Central)</p>
+</div>
+</div>
+<div class="col-span-1 text-center font-headline font-medium">21</div>
+<div class="col-span-2 px-4">
+<div class="w-full h-1 bg-surface-bright rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 88%"></div>
+</div>
+</div>
+<div class="col-span-2">
+<span class="text-[10px] font-bold px-2 py-0.5 bg-surface-bright text-on-surface border-l-2 border-primary rounded-sm">Transfer Listed</span>
+</div>
+<div class="col-span-2 text-right font-headline font-bold text-primary">$42.5M</div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-12 gap-1 items-center p-3 bg-surface-container hover:bg-primary-container/20 transition-all cursor-pointer group">
+<div class="col-span-5 flex items-center gap-3">
+<div class="w-8 h-8 bg-surface-bright rounded-sm overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="focused portrait of a veteran defensive player with short dark hair in a professional sport setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9PB31istDZT3StFwa5T3DbswVHCSC3TXs7Q2gZVEc4l8hRRwXMBBbRIFkzzmgEWkgeBnv9I6vZVGA75dpHUuwQMC0zIF61soU4zL2qOsfwjy1j36syl-jmSXYUfSVr2NyizMROZq4gD8dapzjKOHlL14AVgixlXPU36i_wUuWszHySrYRVk25wLOuJIUCrZgQQ8kjJdwZtPBMZfc9bw3zRYS_o3xTn7oZAvotxS57fLw7dQygLiGIvjzr0YTXqGspo-MpCbAKBJtJ"/>
+</div>
+<div>
+<h4 class="text-sm font-bold font-headline group-hover:text-primary transition-colors">Mateo Kovačić</h4>
+<p class="text-[10px] text-on-surface-variant flex items-center gap-1"><span class="w-1.5 h-1.5 bg-primary rounded-full"></span> MID (Defensive)</p>
+</div>
+</div>
+<div class="col-span-1 text-center font-headline font-medium">29</div>
+<div class="col-span-2 px-4">
+<div class="w-full h-1 bg-surface-bright rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 82%"></div>
+</div>
+</div>
+<div class="col-span-2">
+<span class="text-[10px] font-bold px-2 py-0.5 bg-surface-container-highest text-on-surface-variant rounded-sm">Unavailable</span>
+</div>
+<div class="col-span-2 text-right font-headline font-bold text-primary">$28.0M</div>
+</div>
+<!-- Row 3 -->
+<div class="grid grid-cols-12 gap-1 items-center p-3 bg-surface-container-high border-l-2 border-primary group">
+<div class="col-span-5 flex items-center gap-3">
+<div class="w-8 h-8 bg-surface-bright rounded-sm overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="professional photo of a striker with a focused gaze and short buzzed hair against a dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzdcfS_VjVVRwK9eF_F9mkLqpIu5nvSe3HY8kb919tL0PWuAgHpFOkSyIfW3ydlYEs3lUkGyl77OD4zqbU8y9RZ3diOh7jpDlEuq2UDlM1PXvbuNxLMtN91crC3mJctBELDyvHS8vkf3__CixqIZQXph2TVuKETH9qEOWxeSeM3ex-jsfzfGk_SHDcyOCqzJkVEvCldW5CDbJbbE-8i7TObNMrjowyPxcYbMDPlDF63NgRQdc-esNow1fUX8690U1qkoGh67_8IXnd"/>
+</div>
+<div>
+<h4 class="text-sm font-bold font-headline text-primary">Jules Koundé</h4>
+<p class="text-[10px] text-on-surface-variant flex items-center gap-1"><span class="w-1.5 h-1.5 bg-primary rounded-full"></span> DEF (Right Back)</p>
+</div>
+</div>
+<div class="col-span-1 text-center font-headline font-medium">25</div>
+<div class="col-span-2 px-4">
+<div class="w-full h-1 bg-surface-bright rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 91%"></div>
+</div>
+</div>
+<div class="col-span-2">
+<span class="text-[10px] font-bold px-2 py-0.5 bg-surface-bright text-on-surface border-l-2 border-primary rounded-sm">Active Interest</span>
+</div>
+<div class="col-span-2 text-right font-headline font-bold text-primary">$55.2M</div>
+</div>
+<!-- Row 4 -->
+<div class="grid grid-cols-12 gap-1 items-center p-3 bg-surface-container hover:bg-primary-container/20 transition-all cursor-pointer group">
+<div class="col-span-5 flex items-center gap-3">
+<div class="w-8 h-8 bg-surface-bright rounded-sm overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="intense athletic portrait of a nordic professional player with blonde hair tied back" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdaQRqMETOP9SYODRU5Qj7GSCjfEjUHjcEWbFFuDsALQuZij2PJOSDhq9oT2kiMSau-wf3QoH9klYBPq9uxmX5plZKxYn948YEnpi2W8Mm39qO-6k4FAPEVc1XJauWuuZOjNwOryNukFXcQNE3VHDV9pS5PoDA9e3fm93csvkoYLUMGy47xZAXMA33J4PQvc7CQZ27tgQswDCQE3jrcTOzNMwbcd53yjW6-ckzMOIUEqeBy1nyGVhaskiCZvt6BEgWXtt_j_okt5Uh"/>
+</div>
+<div>
+<h4 class="text-sm font-bold font-headline group-hover:text-primary transition-colors">E. Haaland Jr.</h4>
+<p class="text-[10px] text-on-surface-variant flex items-center gap-1"><span class="w-1.5 h-1.5 bg-error rounded-full"></span> STR (Center)</p>
+</div>
+</div>
+<div class="col-span-1 text-center font-headline font-medium">19</div>
+<div class="col-span-2 px-4">
+<div class="w-full h-1 bg-surface-bright rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 79%"></div>
+</div>
+</div>
+<div class="col-span-2">
+<span class="text-[10px] font-bold px-2 py-0.5 bg-surface-bright text-on-surface border-l-2 border-primary rounded-sm">Transfer Listed</span>
+</div>
+<div class="col-span-2 text-right font-headline font-bold text-primary">$12.5M</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Bidding Panel -->
+<aside class="w-[400px] bg-surface-container border-l border-outline-variant/10 p-6 flex flex-col gap-6 overflow-y-auto">
+<div class="flex items-center justify-between">
+<h3 class="font-headline font-bold text-lg uppercase tracking-tight">Player Detail</h3>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-on-surface transition-colors">close</span>
+</div>
+<!-- Profile Overview -->
+<div class="relative bg-surface rounded-md p-4 overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 opacity-10">
+<span class="material-symbols-outlined text-[120px]" style="font-variation-settings: 'FILL' 1;">shield</span>
+</div>
+<div class="flex items-center gap-4 relative z-10">
+<div class="w-20 h-20 bg-surface-container-high rounded-md overflow-hidden ring-2 ring-primary">
+<img class="w-full h-full object-cover" data-alt="high contrast studio portrait of a soccer player with short hair and modern beard style wearing a dark jersey" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCp4SkzN5rtt5k79CENeU_c5Jnt91tcSWjhJzd82FaFX3p66kMavhXLae33OsKP1Z0yOelIqK7PxNLgv9NmYFvIny02PH4ifv1cx5mt4oFczjQws_vgIY9SbfViO8W3YfYMZUikT9sVMzUQw9iV5c0EhmtKHNFth1Eq5sVgn8Tqa6RPA9Ll2VZjrYT_rBzIGuBdrAA_WBo-5WtCcsIJGhmhWEFBcbSPWQe-GxcTndyevHcOurFl9GCe6eKAM9fAydSqHkmpqW2ejBSN"/>
+</div>
+<div>
+<h2 class="font-headline text-2xl font-black text-on-surface leading-none">JULES KOUNDÉ</h2>
+<div class="flex items-center gap-2 mt-2">
+<img alt="France Flag" class="w-4 h-3 rounded-xs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD54tCwBHvDCMRst0K5QIap_M7n3sjGhCvchRE2aVeQlMaaKDQ1W0HncAb3lC4woonmytH3NMRMKzZy6m6c2I3draHFmNV6KvqN-ic21d_u38mzhAlFJF35ESupHO14NhjWwCuQWc3Eza4L9w9fHFV06toZHyaedAHFPdBOZE748Brto3gxdlaP25UnTGW7L7aM9AmTMU7NHnjHO3_sJnDzwKzhp2q_01Uaw_ZznXV-FssrhzSbP1DzAHmyy1N7J8LJ80Kn-WWhdGae"/>
+<span class="text-[10px] uppercase font-bold tracking-widest text-primary">France</span>
+</div>
+<p class="text-on-surface-variant text-xs mt-1">FC Barcelona (Spain)</p>
+</div>
+</div>
+</div>
+<!-- Detailed Stats -->
+<div class="space-y-4">
+<h4 class="text-[10px] uppercase font-black text-on-surface-variant tracking-widest">Tactical Profile</h4>
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-surface-container-low p-3 rounded-sm border-l-2 border-primary">
+<p class="text-[10px] text-on-surface-variant font-medium">Defensive Awareness</p>
+<p class="font-headline text-xl font-bold">92</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-sm border-l-2 border-primary">
+<p class="text-[10px] text-on-surface-variant font-medium">Interceptions</p>
+<p class="font-headline text-xl font-bold">88</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-sm border-l-2 border-tertiary">
+<p class="text-[10px] text-on-surface-variant font-medium">Aerial Reach</p>
+<p class="font-headline text-xl font-bold">75</p>
+</div>
+<div class="bg-surface-container-low p-3 rounded-sm border-l-2 border-primary">
+<p class="text-[10px] text-on-surface-variant font-medium">Ball Progression</p>
+<p class="font-headline text-xl font-bold">81</p>
+</div>
+</div>
+</div>
+<!-- Career History -->
+<div class="space-y-3">
+<h4 class="text-[10px] uppercase font-black text-on-surface-variant tracking-widest">Career History</h4>
+<div class="space-y-2">
+<div class="flex justify-between items-center text-xs px-2 py-1 bg-surface-container-lowest/50">
+<span class="text-on-surface-variant">2022 - 2024</span>
+<span class="font-medium text-on-surface">FC Barcelona</span>
+<span class="font-headline font-bold">64 Apps</span>
+</div>
+<div class="flex justify-between items-center text-xs px-2 py-1">
+<span class="text-on-surface-variant">2019 - 2022</span>
+<span class="font-medium text-on-surface">Sevilla FC</span>
+<span class="font-headline font-bold">95 Apps</span>
+</div>
+</div>
+</div>
+<!-- Bidding Section -->
+<div class="mt-auto pt-6 border-t border-outline-variant/10 space-y-4">
+<div class="flex items-center justify-between">
+<h4 class="font-headline font-bold text-sm tracking-tight text-tertiary uppercase">Make an Offer</h4>
+<span class="text-[10px] text-on-surface-variant uppercase font-bold">Agent Status: Open</span>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-md space-y-4">
+<div class="flex justify-between items-end">
+<p class="text-[10px] text-on-surface-variant uppercase font-bold">Offer Amount</p>
+<p class="font-headline text-2xl font-black text-primary tracking-tighter">$58,500,000</p>
+</div>
+<input class="w-full accent-primary bg-surface-bright h-1.5 appearance-none rounded-lg" max="80000000" min="40000000" type="range" value="58500000"/>
+<div class="flex justify-between text-[10px] text-on-surface-variant font-medium">
+<span>Min: $42M</span>
+<span>Max: $80M</span>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<button class="w-full bg-primary text-on-primary font-headline font-black py-4 rounded-sm hover:brightness-110 active:scale-[0.98] transition-all tracking-widest uppercase text-sm">
+                        SUBMIT BID
+                    </button>
+<button class="w-full bg-secondary-container text-on-secondary-container font-headline font-bold py-3 rounded-sm hover:bg-surface-bright active:scale-[0.98] transition-all tracking-tight uppercase text-xs flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">star</span>
+                        ADD TO SHORTLIST
+                    </button>
+</div>
+</div>
+</aside>
+</main>
+</body></html>

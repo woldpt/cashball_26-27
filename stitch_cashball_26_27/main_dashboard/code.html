@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TACTICAL EDITORIAL - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary-container": "#00412b",
+              "error": "#ffb4ab",
+              "on-primary-fixed": "#002114",
+              "on-tertiary-fixed": "#241a00",
+              "on-error-container": "#ffdad6",
+              "on-secondary": "#303030",
+              "surface-container-low": "#1c1b1b",
+              "inverse-primary": "#2c694e",
+              "secondary": "#c8c6c6",
+              "on-primary": "#003824",
+              "inverse-on-surface": "#313030",
+              "secondary-fixed": "#e4e2e2",
+              "surface-bright": "#393939",
+              "on-primary-fixed-variant": "#0e5138",
+              "secondary-fixed-dim": "#c8c6c6",
+              "primary": "#95d4b3",
+              "surface-dim": "#131313",
+              "on-secondary-container": "#b9b8b8",
+              "on-secondary-fixed-variant": "#474747",
+              "surface-container-lowest": "#0e0e0e",
+              "error-container": "#93000a",
+              "surface-container": "#201f1f",
+              "on-secondary-fixed": "#1b1c1c",
+              "on-primary-container": "#71ae8f",
+              "outline": "#8b938b",
+              "inverse-surface": "#e5e2e1",
+              "on-tertiary": "#3c2f00",
+              "surface-variant": "#353534",
+              "surface": "#131313",
+              "on-error": "#690005",
+              "on-surface": "#e5e2e1",
+              "surface-tint": "#95d4b3",
+              "surface-container-high": "#2a2a2a",
+              "on-surface-variant": "#c1c8c0",
+              "outline-variant": "#424843",
+              "tertiary-fixed": "#ffe088",
+              "on-background": "#e5e2e1",
+              "surface-container-highest": "#353534",
+              "on-tertiary-container": "#4e3d00",
+              "background": "#131313",
+              "tertiary-fixed-dim": "#e9c349",
+              "secondary-container": "#494949",
+              "primary-fixed-dim": "#95d4b3",
+              "on-tertiary-fixed-variant": "#574500",
+              "tertiary-container": "#cca72f",
+              "tertiary": "#e9c349",
+              "primary-fixed": "#b1f0ce"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .pitch-glow {
+            background: radial-gradient(circle at 50% 50%, rgba(0, 65, 43, 0.15) 0%, rgba(19, 19, 19, 0) 70%);
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #131313; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #393939; border-radius: 2px; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<div class="flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-full w-64 bg-[#1C1B1B] mr-[0.5rem] py-6 gap-2">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3 mb-6">
+<img alt="Manager Portrait" class="w-10 h-10 rounded-md object-cover bg-surface-container-highest" data-alt="close-up portrait of a serious middle-aged football manager in a sharp charcoal suit with a stadium background in soft focus" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZfbD3TYrjaTnZ5c2KllSdIdK0mje5aEHkpGI5nYQzSXtY7GxULBV1-6S9I7omKq1no6Ta54fYjx8FX-ByYpBw3q8LNO1wVPHd7SyO-jO8dMlypgMhgivKD8eBdO1V8ZZLgjpGuVNYBAodCc6b63pSVRm2hZAL4U9hv-0aCMFkRzpRWjz2AiAD-6ugF6jdkZdY-ME5pRpFomibJtLsaQPIWqPcDFvSpzIR7Htfeto0TixFCbkoPhv6b6_kbNrMe8KkGyoUIb916xNQ"/>
+<div class="flex flex-col">
+<span class="font-headline text-lg font-bold text-[#95D4B3]">A. Wenger</span>
+<span class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">Elite Manager</span>
+</div>
+</div>
+</div>
+<nav class="flex flex-col gap-1 px-2">
+<!-- Dashboard Active -->
+<a class="bg-[#201F1F] text-[#E9C349] rounded-md border-l-4 border-[#95D4B3] px-4 py-3 flex items-center gap-3 transition-transform active:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-medium">Dashboard</span>
+</a>
+<a class="text-[#E5E2E1]/70 px-4 py-3 flex items-center gap-3 hover:bg-[#201F1F] hover:text-[#95D4B3] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-medium">Squad</span>
+</a>
+<a class="text-[#E5E2E1]/70 px-4 py-3 flex items-center gap-3 hover:bg-[#201F1F] hover:text-[#95D4B3] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="strategy">strategy</span>
+<span class="font-medium">Tactics</span>
+</a>
+<a class="text-[#E5E2E1]/70 px-4 py-3 flex items-center gap-3 hover:bg-[#201F1F] hover:text-[#95D4B3] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-medium">Scouting</span>
+</a>
+<a class="text-[#E5E2E1]/70 px-4 py-3 flex items-center gap-3 hover:bg-[#201F1F] hover:text-[#95D4B3] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+<span class="font-medium">League</span>
+</a>
+<a class="text-[#E5E2E1]/70 px-4 py-3 flex items-center gap-3 hover:bg-[#201F1F] hover:text-[#95D4B3] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-medium">Finances</span>
+</a>
+</nav>
+<div class="mt-auto px-6">
+<div class="bg-surface-container rounded-md p-4 mb-4">
+<div class="flex justify-between items-center mb-1">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Season Progress</span>
+<span class="text-[10px] font-headline text-tertiary">72%</span>
+</div>
+<div class="w-full bg-surface-bright h-1 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[72%]"></div>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar relative">
+<div class="absolute inset-0 pitch-glow pointer-events-none"></div>
+<!-- TopAppBar -->
+<header class="sticky top-0 z-50 bg-[#131313] bg-[#1C1B1B] mb-[0.5rem] flex justify-between items-center w-full px-6 h-16 shrink-0">
+<div class="flex items-center gap-8">
+<span class="text-xl font-black text-[#E9C349] tracking-tighter font-headline uppercase">TACTICAL EDITORIAL</span>
+<nav class="hidden lg:flex items-center gap-6">
+<a class="font-headline tracking-tighter uppercase font-bold text-[#E9C349] border-b-2 border-[#E9C349] pb-1" href="#">Premier League</a>
+<a class="font-headline tracking-tighter uppercase font-bold text-[#E5E2E1]/60 hover:text-[#95D4B3] transition-colors" href="#">Matchday 12</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="bg-surface-container px-4 py-1.5 rounded-md flex items-center gap-2">
+<span class="material-symbols-outlined text-[#E9C349] text-sm" style="font-variation-settings: 'FILL' 1;">payments</span>
+<span class="font-headline font-bold text-sm tracking-tight text-[#95D4B3]">£42.5M</span>
+</div>
+<button class="bg-primary text-on-primary font-headline font-bold uppercase tracking-tighter px-6 py-2 rounded-md hover:bg-opacity-90 active:scale-95 transition-all text-sm">
+                        Next Match
+                    </button>
+</div>
+</header>
+<!-- Dashboard Grid -->
+<div class="p-6 grid grid-cols-1 md:grid-cols-12 gap-4 auto-rows-min">
+<!-- Hero Next Match Card (Bento Style) -->
+<section class="md:col-span-8 h-80 relative overflow-hidden rounded-md bg-surface-container-low group">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="wide cinematic shot of a modern football stadium at night under bright floodlights with a faint mist rising from the grass" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCS_17wN1Fgc-NAduje8KrzQqh9EQWw4o_MC3k4VY9izAmubTCMyuu4eNwW1JcCVk9laV9wxSy3jzE6Yf71M7_uxyhfloaG8ALrCkYVbNxwl5ydB7DshjpGfKeAJpN_gmUGBpqHQY5VY6SJuOrsk1wNiNaEL2MHE_jglDYWi2QoIxwZ_mIjLZdCQFdU1qzsAtjBZYzwzU029BrelqdR6OubOAaWP3TQ6ODmd6woTUgjveaCp1SOfRfS-a9nXSXcOK-b28-hcmKFYxAC')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8 w-full flex justify-between items-end">
+<div class="flex flex-col">
+<span class="bg-tertiary text-on-tertiary-fixed text-[10px] font-black uppercase tracking-widest px-2 py-0.5 w-fit mb-4">Upcoming Fixture</span>
+<h2 class="font-headline text-4xl font-black uppercase tracking-tighter mb-2">London Eagles <span class="text-primary">vs</span> North City</h2>
+<div class="flex items-center gap-4 text-on-surface-variant font-medium">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">calendar_today</span> Oct 28, 20:00</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">location_on</span> Olympic Stadium</span>
+</div>
+</div>
+<div class="hidden lg:flex items-center gap-6">
+<div class="text-center">
+<p class="text-[10px] uppercase font-bold text-on-surface-variant mb-1">Our Form</p>
+<div class="flex gap-1">
+<span class="w-6 h-6 rounded-sm bg-primary text-on-primary flex items-center justify-center text-[10px] font-bold">W</span>
+<span class="w-6 h-6 rounded-sm bg-primary text-on-primary flex items-center justify-center text-[10px] font-bold">W</span>
+<span class="w-6 h-6 rounded-sm bg-surface-bright flex items-center justify-center text-[10px] font-bold text-on-surface">D</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Status Summary Cards (Vertical Stack) -->
+<div class="md:col-span-4 grid grid-cols-1 gap-4">
+<!-- Morale Card -->
+<div class="bg-surface-container rounded-md p-6 flex flex-col justify-between border-l-4 border-primary">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-xs uppercase font-bold text-on-surface-variant tracking-widest mb-1">Team Morale</h3>
+<p class="font-headline text-2xl font-bold tracking-tighter text-on-surface">Excellent</p>
+</div>
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">sentiment_very_satisfied</span>
+</div>
+<div class="space-y-3">
+<div class="flex items-center justify-between text-xs">
+<span>Recent Win Bonus</span>
+<span class="text-primary font-bold">+12%</span>
+</div>
+<div class="w-full bg-surface-bright h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[88%]"></div>
+</div>
+</div>
+</div>
+<!-- Financial Quick Look -->
+<div class="bg-surface-container rounded-md p-6 flex flex-col justify-between border-l-4 border-tertiary">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="text-xs uppercase font-bold text-on-surface-variant tracking-widest mb-1">Financial State</h3>
+<p class="font-headline text-2xl font-bold tracking-tighter text-on-surface">Stable</p>
+</div>
+<span class="material-symbols-outlined text-tertiary text-3xl" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-lowest p-3 rounded-md">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant">Weekly Wage Bill</span>
+<span class="ml-auto font-headline font-bold text-sm">£1.2M</span>
+</div>
+</div>
+</div>
+<!-- League Table (Asymmetric Column) -->
+<section class="md:col-span-5 bg-surface-container rounded-md overflow-hidden flex flex-col h-fit">
+<div class="bg-surface-container-high px-6 py-4 flex items-center justify-between">
+<h3 class="font-headline text-sm font-bold uppercase tracking-tight text-tertiary">Premier League - Top 5</h3>
+<span class="material-symbols-outlined text-on-surface-variant text-sm">more_horiz</span>
+</div>
+<div class="flex flex-col p-2">
+<!-- Table Headers -->
+<div class="grid grid-cols-12 px-4 py-2 text-[10px] uppercase font-bold text-on-surface-variant border-b border-outline-variant/10">
+<div class="col-span-1">#</div>
+<div class="col-span-7">Club</div>
+<div class="col-span-2 text-center">P</div>
+<div class="col-span-2 text-right">Pts</div>
+</div>
+<!-- Row 1 (Active/Highlighted) -->
+<div class="grid grid-cols-12 px-4 py-3 items-center bg-primary-container/20 rounded-md my-0.5">
+<div class="col-span-1 font-headline font-bold text-primary">1</div>
+<div class="col-span-7 font-bold flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                                London Eagles
+                            </div>
+<div class="col-span-2 text-center font-medium">11</div>
+<div class="col-span-2 text-right font-headline font-bold text-primary">28</div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-12 px-4 py-3 items-center hover:bg-surface-bright/40 transition-colors rounded-md my-0.5">
+<div class="col-span-1 font-headline font-bold text-on-surface-variant">2</div>
+<div class="col-span-7 font-medium">Manchester Blues</div>
+<div class="col-span-2 text-center font-medium">11</div>
+<div class="col-span-2 text-right font-headline font-bold">25</div>
+</div>
+<!-- Row 3 -->
+<div class="grid grid-cols-12 px-4 py-3 items-center hover:bg-surface-bright/40 transition-colors rounded-md my-0.5">
+<div class="col-span-1 font-headline font-bold text-on-surface-variant">3</div>
+<div class="col-span-7 font-medium">Mersey Red</div>
+<div class="col-span-2 text-center font-medium">11</div>
+<div class="col-span-2 text-right font-headline font-bold">24</div>
+</div>
+<!-- Row 4 -->
+<div class="grid grid-cols-12 px-4 py-3 items-center hover:bg-surface-bright/40 transition-colors rounded-md my-0.5">
+<div class="col-span-1 font-headline font-bold text-on-surface-variant">4</div>
+<div class="col-span-7 font-medium">North City</div>
+<div class="col-span-2 text-center font-medium">11</div>
+<div class="col-span-2 text-right font-headline font-bold">22</div>
+</div>
+<!-- Row 5 -->
+<div class="grid grid-cols-12 px-4 py-3 items-center hover:bg-surface-bright/40 transition-colors rounded-md my-0.5">
+<div class="col-span-1 font-headline font-bold text-on-surface-variant">5</div>
+<div class="col-span-7 font-medium">Villa Park</div>
+<div class="col-span-2 text-center font-medium">11</div>
+<div class="col-span-2 text-right font-headline font-bold">20</div>
+</div>
+</div>
+</section>
+<!-- Key Players / Squad Health (2/3 width equivalent) -->
+<section class="md:col-span-7 flex flex-col gap-4">
+<div class="bg-surface-container rounded-md p-6 h-full flex flex-col">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline text-sm font-bold uppercase tracking-tight text-on-surface">Key Tactical Units</h3>
+<button class="text-[10px] uppercase font-bold text-primary hover:underline">Full Squad</button>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+<!-- Player Miniature -->
+<div class="bg-surface-container-lowest p-3 rounded-md flex items-center gap-3 border-l-2 border-primary">
+<div class="w-10 h-10 bg-surface-bright rounded-md flex items-center justify-center font-headline font-bold text-tertiary">9</div>
+<div class="flex flex-col min-w-0">
+<span class="text-xs font-bold truncate">E. Haaland Jr.</span>
+<div class="flex items-center gap-2">
+<span class="bg-surface-bright text-[8px] font-black px-1.5 py-0.5 rounded-sm">ST</span>
+<span class="text-[10px] text-primary">Match Ready</span>
+</div>
+</div>
+<div class="ml-auto flex flex-col items-end">
+<span class="text-[10px] font-bold">Fit: 98%</span>
+<div class="w-12 h-1 bg-surface-container-high rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[98%]"></div>
+</div>
+</div>
+</div>
+<!-- Player Miniature -->
+<div class="bg-surface-container-lowest p-3 rounded-md flex items-center gap-3 border-l-2 border-[#E9C349]">
+<div class="w-10 h-10 bg-surface-bright rounded-md flex items-center justify-center font-headline font-bold text-tertiary">10</div>
+<div class="flex flex-col min-w-0">
+<span class="text-xs font-bold truncate">M. Ødegaard</span>
+<div class="flex items-center gap-2">
+<span class="bg-surface-bright text-[8px] font-black px-1.5 py-0.5 rounded-sm">CM</span>
+<span class="text-[10px] text-tertiary-fixed-dim">Inspired</span>
+</div>
+</div>
+<div class="ml-auto flex flex-col items-end">
+<span class="text-[10px] font-bold">Fit: 94%</span>
+<div class="w-12 h-1 bg-surface-container-high rounded-full overflow-hidden">
+<div class="bg-tertiary h-full w-[94%]"></div>
+</div>
+</div>
+</div>
+<!-- Player Miniature -->
+<div class="bg-surface-container-lowest p-3 rounded-md flex items-center gap-3 border-l-2 border-primary">
+<div class="w-10 h-10 bg-surface-bright rounded-md flex items-center justify-center font-headline font-bold text-tertiary">4</div>
+<div class="flex flex-col min-w-0">
+<span class="text-xs font-bold truncate">W. Saliba</span>
+<div class="flex items-center gap-2">
+<span class="bg-surface-bright text-[8px] font-black px-1.5 py-0.5 rounded-sm">DC</span>
+<span class="text-[10px] text-primary">Solid</span>
+</div>
+</div>
+<div class="ml-auto flex flex-col items-end">
+<span class="text-[10px] font-bold">Fit: 100%</span>
+<div class="w-12 h-1 bg-surface-container-high rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[100%]"></div>
+</div>
+</div>
+</div>
+<!-- Player Miniature -->
+<div class="bg-surface-container-lowest p-3 rounded-md flex items-center gap-3 border-l-2 border-error">
+<div class="w-10 h-10 bg-surface-bright rounded-md flex items-center justify-center font-headline font-bold text-tertiary">7</div>
+<div class="flex flex-col min-w-0">
+<span class="text-xs font-bold truncate">B. Saka</span>
+<div class="flex items-center gap-2">
+<span class="bg-surface-bright text-[8px] font-black px-1.5 py-0.5 rounded-sm">RW</span>
+<span class="text-[10px] text-error">Minor Knock</span>
+</div>
+</div>
+<div class="ml-auto flex flex-col items-end">
+<span class="text-[10px] font-bold text-error">Fit: 68%</span>
+<div class="w-12 h-1 bg-surface-container-high rounded-full overflow-hidden">
+<div class="bg-error h-full w-[68%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Financial Breakdown (Detailed) -->
+<section class="md:col-span-12 lg:col-span-12 grid grid-cols-1 sm:grid-cols-3 gap-4">
+<div class="bg-surface-container-low p-6 rounded-md flex flex-col gap-1">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Transfer Budget</span>
+<span class="font-headline text-3xl font-black text-primary">£24.8M</span>
+<span class="text-[10px] text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[12px] text-primary">arrow_upward</span> +5% from sales</span>
+</div>
+<div class="bg-surface-container-low p-6 rounded-md flex flex-col gap-1">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Stadium Revenue</span>
+<span class="font-headline text-3xl font-black text-on-surface">£8.2M</span>
+<span class="text-[10px] text-on-surface-variant">Last Match: Sell-out</span>
+</div>
+<div class="bg-surface-container-low p-6 rounded-md flex flex-col gap-1">
+<span class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Commercial Deals</span>
+<span class="font-headline text-3xl font-black text-tertiary">£12.5M</span>
+<span class="text-[10px] text-on-surface-variant">3 Active Sponsors</span>
+</div>
+</section>
+</div>
+<!-- Bottom Navigation (Mobile Only) -->
+<nav class="md:hidden sticky bottom-0 w-full bg-surface/80 backdrop-blur-xl flex justify-around py-3 px-6 z-50 border-t border-outline-variant/10">
+<a class="flex flex-col items-center gap-1 text-[#E9C349]" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface/60" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter">Squad</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface/60" href="#">
+<span class="material-symbols-outlined">strategy</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter">Tactics</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface/60" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter">League</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface/60" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="text-[10px] font-bold uppercase tracking-tighter">Finance</span>
+</a>
+</nav>
+</main>
+</div>
+</body></html>
