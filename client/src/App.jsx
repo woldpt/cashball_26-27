@@ -399,6 +399,7 @@ const AGG_TIERS = {
 };
 function aggLabel(value) {
   if (typeof value === "number") {
+    // DB stores aggressiveness as an integer 1-5: map directly to tier names.
     const tiers = [
       "Cordeirinho",
       "Cavalheiro",
@@ -406,7 +407,8 @@ function aggLabel(value) {
       "Caneleiro",
       "Caceteiro",
     ];
-    return tiers[Math.min(4, Math.floor(((value - 1) / 50) * 5))];
+    const idx = Math.max(0, Math.min(4, Math.round(value) - 1));
+    return tiers[idx];
   }
   return AGG_TIERS[value] ? value : "Fair Play";
 }

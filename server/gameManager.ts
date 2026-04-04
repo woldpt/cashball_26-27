@@ -71,6 +71,7 @@ function ensurePlayerSchema(
       ["career_goals", "INTEGER DEFAULT 0"],
       ["career_reds", "INTEGER DEFAULT 0"],
       ["career_injuries", "INTEGER DEFAULT 0"],
+      ["aggressiveness", "INTEGER DEFAULT 3"],
     ];
 
     const missing = required.filter(([name]) => !existing.has(name));
@@ -112,6 +113,19 @@ function ensurePlayerSchema(
                     if (backfillErr)
                       console.warn(
                         "[gameManager] is_star backfill failed:",
+                        backfillErr.message,
+                      );
+                    if (onDone) onDone(null);
+                  },
+                );
+              } else if (missing.some(([n]: [string, string]) => n === "aggressiveness")) {
+                // Backfill aggressiveness with random 1-5 values
+                db.run(
+                  `UPDATE players SET aggressiveness = 1 + (ABS(RANDOM()) % 5)`,
+                  (backfillErr) => {
+                    if (backfillErr)
+                      console.warn(
+                        "[gameManager] aggressiveness backfill failed:",
                         backfillErr.message,
                       );
                     if (onDone) onDone(null);
@@ -204,6 +218,16 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     "CREATE TABLE IF NOT EXISTS game_state (key TEXT PRIMARY KEY, value TEXT)",
     () => {
       ensurePlayerSchema(db, () => {
+        // One-time migration: randomize aggressiveness if all players still have the default (3).
+        // This fixes room DBs copied from an old base.db before the seed was updated.
+        db.get(
+          "SELECT COUNT(*) AS total, SUM(CASE WHEN aggressiveness = 3 THEN 1 ELSE 0 END) AS allThree FROM players",
+          (aggCheckErr: Error | null, aggRow: { total: number; allThree: number } | null) => {
+            if (!aggCheckErr && aggRow && aggRow.total > 0 && aggRow.total === aggRow.allThree) {
+              console.log(`[gameManager] Backfilling aggressiveness for room ${roomCode} (all players had default 3)`);
+              db.run(`UPDATE players SET aggressiveness = 1 + (ABS(RANDOM()) % 5)`);
+            }
+        });
         // Ensure morale column exists in teams (migration for existing DBs).
         db.run(
           "ALTER TABLE teams ADD COLUMN morale INTEGER DEFAULT 50",
