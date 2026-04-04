@@ -36,6 +36,7 @@ const {
   createManager,
   recordRoomAccess,
   getManagerRooms,
+  deleteRoomAccess,
 } = require("./auth");
 const {
   getSeasonEndMatchweek,
@@ -152,13 +153,14 @@ app.get("/saves", apiLimiter, async (req, res) => {
 });
 
 // ── DELETE SAVE ───────────────────────────────────────────────────────────────
-// Deletes a room's .db file. Only allowed if the requesting coach has access to
-// that room and no players are currently connected to it.
+// Deletes a room's .db file. Only allowed if the requesting coach has access
+// to that room, no players are currently connected, and credentials are valid.
 app.delete("/saves/:roomCode", apiLimiter, async (req, res) => {
   try {
     const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
     const password =
       typeof req.body?.password === "string" ? req.body.password : "";
+    const roomCode = (req.params.roomCode || "").toUpperCase();
 
     if (!name) {
       return res.status(400).json({ error: "Nome de treinador inválido." });
@@ -166,16 +168,49 @@ app.delete("/saves/:roomCode", apiLimiter, async (req, res) => {
     if (!password) {
       return res.status(400).json({ error: "A palavra-passe é obrigatória." });
     }
+    if (!roomCode) {
+      return res.status(400).json({ error: "Código de sala inválido." });
+    }
 
     const authResult = await verifyManager(name, password);
     if (!authResult.ok) {
       return res.status(401).json({ error: authResult.error });
     }
 
-    return res.json({ ok: true, name });
+    // Verify this coach has access to the room
+    const myRooms = await getManagerRooms(name);
+    if (!myRooms.includes(roomCode)) {
+      return res.status(403).json({ error: "Não tens acesso a esta sala." });
+    }
+
+    // Refuse if any player is actively connected to this room
+    const activeGame = getGame(roomCode);
+    if (activeGame) {
+      const connected = Object.values(activeGame.playersByName).filter(
+        (p: any) => p.socketId,
+      ).length;
+      if (connected > 0) {
+        return res
+          .status(409)
+          .json({ error: "Sala tem jogadores ligados. Tenta mais tarde." });
+      }
+    }
+
+    // Delete the .db file
+    const dbDir = resolveDbDir();
+    const dbFile = path.join(dbDir, `game_${roomCode}.db`);
+    if (fs.existsSync(dbFile)) {
+      fs.unlinkSync(dbFile);
+    }
+
+    // Remove room_managers entries so it disappears from saves lists
+    await deleteRoomAccess(roomCode);
+
+    console.log(`[/saves] Room "${roomCode}" deleted by coach "${name}"`);
+    return res.json({ ok: true });
   } catch (error) {
-    console.error("[/auth/login] Error:", error.message);
-    return res.status(500).json({ error: "Erro interno de autenticação." });
+    console.error("[/saves DELETE] Error:", error.message);
+    return res.status(500).json({ error: "Erro ao apagar sala." });
   }
 });
 

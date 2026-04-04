@@ -263,10 +263,27 @@ function getManagerRooms(managerName) {
   });
 }
 
+/**
+ * Remove all room_managers entries for a given room (called when a room is deleted).
+ *
+ * @param {string} roomCode
+ * @returns {Promise<void>}
+ */
+function deleteRoomAccess(roomCode) {
+  return new Promise((resolve) => {
+    db.run(
+      "DELETE FROM room_managers WHERE room_code = ? COLLATE NOCASE",
+      [roomCode.toUpperCase()],
+      () => resolve(),
+    );
+  });
+}
+
 module.exports = {
   verifyOrCreateManager,
   verifyManager,
   createManager,
   recordRoomAccess,
+  deleteRoomAccess,
   getManagerRooms,
 };

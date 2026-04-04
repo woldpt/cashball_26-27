@@ -2049,7 +2049,7 @@ function App() {
                                     headers: {
                                       "Content-Type": "application/json",
                                     },
-                                    body: JSON.stringify({ name }),
+                                    body: JSON.stringify({ name, password }),
                                   },
                                 )
                                   .then((r) => r.json())
@@ -2509,6 +2509,117 @@ function App() {
         className={`pt-14 pb-20 lg:pb-12${!isMatchInProgress ? " lg:ml-64" : ""}`}
       >
         <div className="p-4 lg:p-6">
+          {/* ─── TACTIC: HORIZONTAL ADVERSARY BANNER ──────────────────── */}
+          {activeTab === "tactic" && (
+            <div className="mb-4 rounded-xl border border-zinc-800 bg-zinc-950/80">
+              {nextMatchOpponent ? (
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4">
+                  {/* Jornada + VS */}
+                  <div className="shrink-0">
+                    <p className="text-[10px] uppercase tracking-[0.35em] text-zinc-500 font-black mb-0.5">
+                      Jornada {nextMatchSummary?.matchweek ?? "—"}
+                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${nextMatchSummary?.venue === "Casa" ? "bg-emerald-500/20 text-emerald-400" : "bg-sky-500/20 text-sky-400"}`}
+                      >
+                        {nextMatchSummary?.venue ?? "-"}
+                      </span>
+                      <p className="text-white font-black text-lg leading-tight">
+                        vs {nextMatchOpponent.name}
+                      </p>
+                    </div>
+                  </div>
+                  {/* Standings */}
+                  <div className="shrink-0 text-center">
+                    <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-0.5">
+                      Posição
+                    </p>
+                    <p className="text-base font-black">
+                      <span className="text-primary">
+                        {nextMatchSummary?.team?.position
+                          ? `${nextMatchSummary.team.position}º`
+                          : "—"}
+                      </span>
+                      <span className="text-zinc-600 mx-1.5">vs</span>
+                      <span className="text-amber-400">
+                        {nextMatchOpponent.position
+                          ? `${nextMatchOpponent.position}º`
+                          : "—"}
+                      </span>
+                    </p>
+                  </div>
+                  {/* Opponent pts */}
+                  <div className="shrink-0 text-center">
+                    <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-0.5">
+                      Pts Adv.
+                    </p>
+                    <p className="text-white font-black text-base">
+                      {nextMatchOpponent.points ?? "—"}
+                    </p>
+                  </div>
+                  {/* GM / GS */}
+                  <div className="shrink-0 text-center">
+                    <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-0.5">
+                      GM / GS Adv.
+                    </p>
+                    <p className="text-sm font-black">
+                      <span className="text-emerald-400">
+                        {nextMatchOpponent.goalsFor ?? "—"}
+                      </span>
+                      <span className="text-zinc-600 mx-1">/</span>
+                      <span className="text-red-400">
+                        {nextMatchOpponent.goalsAgainst ?? "—"}
+                      </span>
+                    </p>
+                  </div>
+                  {/* Opponent form */}
+                  <div className="shrink-0">
+                    <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-1">
+                      Forma Adv.
+                    </p>
+                    <div className="flex items-center gap-1">
+                      {(nextMatchOpponent.last5 || "-----")
+                        .split("")
+                        .slice(0, 5)
+                        .map((r, i) => (
+                          <span
+                            key={`adv-${r}-${i}`}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border ${r === "V" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : r === "E" ? "bg-amber-500/15 text-amber-400 border-amber-500/30" : r === "D" ? "bg-red-500/15 text-red-400 border-red-500/30" : "bg-surface text-on-surface-variant border-outline-variant/20"}`}
+                          >
+                            {r}
+                          </span>
+                        ))}
+                    </div>
+                  </div>
+                  {/* Referee */}
+                  <div className="ml-auto shrink-0">
+                    <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-1">
+                      Árbitro
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setRefereePopup(nextMatchReferee)}
+                      className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 hover:border-amber-500/40 transition-colors"
+                    >
+                      <span className="font-black text-white text-sm">
+                        {nextMatchReferee?.name || "A definir"}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-widest font-black text-amber-400">
+                        Ver balança
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="px-5 py-4 text-sm font-bold text-zinc-500">
+                  {nextMatchSummaryLoading
+                    ? "A carregar próximo jogo…"
+                    : "Sem jogo disponível."}
+                </div>
+              )}
+            </div>
+          )}
           <div
             className={`grid grid-cols-1 gap-6 ${activeTab === "tactic" ? "xl:grid-cols-[minmax(0,3fr)_320px]" : ""}`}
           >
@@ -4019,9 +4130,8 @@ function App() {
               )}
 
               {activeTab === "tactic" && (
-                <div className="flex flex-col lg:flex-row lg:items-start gap-4">
-                  {/* ── 2D PITCH ─────────────────────────────────────── */}
-                  <div className="w-full lg:w-52 lg:shrink-0">
+                <div>
+                  {false && <div>
                     {(() => {
                       const titulares = annotatedSquad.filter(
                         (p) => p.status === "Titular",
@@ -4207,10 +4317,9 @@ function App() {
                         </div>
                       );
                     })()}
-                  </div>
-
+                  </div>}
                   {/* ── COMPACT PLAYER LIST ──────────────────────────── */}
-                  <div className="flex-1 bg-surface-container rounded-lg overflow-hidden">
+                  <div className="bg-surface-container rounded-lg overflow-hidden">
                     <div className="px-4 py-3 border-b border-outline-variant/20 bg-surface/40 flex items-center justify-between">
                       <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black">
                         Plantel
@@ -4552,87 +4661,123 @@ function App() {
                     </p>
                   )}
                   <div className="w-full mb-4 space-y-4">
-                    <div className="p-4 rounded-2xl border border-zinc-800 bg-zinc-950/80">
-                      <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-3">
-                        Próximo Jogo
-                      </p>
-                      {nextMatchSummaryLoading && !nextMatchSummary ? (
-                        <div className="text-sm font-bold text-zinc-500 py-2">
-                          A carregar resumo...
-                        </div>
-                      ) : nextMatchOpponent ? (
-                        <div className="space-y-3 text-sm">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black">
-                                Adversário
-                              </p>
-                              <p className="text-white font-black text-base leading-tight">
-                                {nextMatchOpponent.name}
-                              </p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black">
-                                Campo
-                              </p>
-                              <p
-                                className={`font-black text-base ${
-                                  nextMatchSummary?.venue === "Casa"
-                                    ? "text-emerald-400"
-                                    : "text-sky-400"
-                                }`}
+                    {/* ── 2D PITCH ─────────────────────────────────────── */}
+                    {(() => {
+                      const titulares = annotatedSquad.filter(
+                        (p) => p.status === "Titular",
+                      );
+                      const grPlayers = titulares.filter(
+                        (p) => p.position === "GR",
+                      );
+                      const defPlayers = titulares.filter(
+                        (p) => p.position === "DEF",
+                      );
+                      const medPlayers = titulares.filter(
+                        (p) => p.position === "MED",
+                      );
+                      const ataPlayers = titulares.filter(
+                        (p) => p.position === "ATA",
+                      );
+                      const rows = [
+                        ataPlayers,
+                        medPlayers,
+                        defPlayers,
+                        grPlayers,
+                      ];
+                      const rowYs = ["10%", "33%", "59%", "82%"];
+                      const posColors = {
+                        GR: "bg-amber-500 text-zinc-900",
+                        DEF: "bg-sky-500 text-zinc-900",
+                        MED: "bg-primary text-on-primary",
+                        ATA: "bg-red-500 text-white",
+                      };
+                      return (
+                        <div
+                          className="relative w-full rounded-xl overflow-hidden border border-zinc-800/60"
+                          style={{
+                            aspectRatio: "3/4",
+                            background:
+                              "linear-gradient(180deg, #05430e 0%, #0b5e1a 50%, #05430e 100%)",
+                          }}
+                        >
+                          <svg
+                            className="absolute inset-0 w-full h-full"
+                            viewBox="0 0 300 400"
+                            preserveAspectRatio="none"
+                            aria-hidden="true"
+                          >
+                            <rect x="12" y="12" width="276" height="376" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" rx="2" />
+                            <line x1="12" y1="200" x2="288" y2="200" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                            <circle cx="150" cy="200" r="44" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+                            <circle cx="150" cy="200" r="3" fill="rgba(255,255,255,0.18)" />
+                            <rect x="90" y="12" width="120" height="56" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+                            <rect x="120" y="12" width="60" height="22" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                            <rect x="90" y="332" width="120" height="56" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+                            <rect x="120" y="366" width="60" height="22" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                          </svg>
+                          {rows.map((rowPlayers, ri) =>
+                            rowPlayers.length > 0 ? (
+                              <div
+                                key={ri}
+                                className="absolute w-full flex justify-evenly items-start px-2"
+                                style={{ top: rowYs[ri] }}
                               >
-                                {nextMatchSummary?.venue ?? "-"}
+                                {rowPlayers.map((player) => (
+                                  <div
+                                    key={player.id}
+                                    className="flex flex-col items-center gap-0.5"
+                                    style={{ maxWidth: "64px" }}
+                                  >
+                                    <div
+                                      className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-xs border-2 border-white/20 shrink-0 relative ${posColors[player.position] || "bg-zinc-500 text-white"} ${player.isUnavailable ? "opacity-50 ring-2 ring-red-500" : ""}`}
+                                    >
+                                      {POSITION_SHORT_LABELS[player.position] || "?"}
+                                      {player.isUnavailable && (
+                                        <span className="absolute -top-1 -right-1 text-[9px] leading-none">
+                                          {(player.suspension_until_matchweek || 0) > matchweekCount ? "🟥" : "🩹"}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span
+                                      className="text-white text-[9px] font-bold text-center leading-tight"
+                                      style={{
+                                        textShadow: "0 1px 4px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.8)",
+                                        maxWidth: "56px",
+                                        display: "block",
+                                        whiteSpace: "nowrap",
+                                        overflow: "hidden",
+                                        textOverflow: "ellipsis",
+                                      }}
+                                    >
+                                      {player.name.split(" ").pop()}
+                                    </span>
+                                    <span
+                                      className="text-[9px] font-black leading-none"
+                                      style={{
+                                        color: "var(--color-primary)",
+                                        textShadow: "0 1px 4px rgba(0,0,0,0.95)",
+                                      }}
+                                    >
+                                      {player.skill}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : null,
+                          )}
+                          {!tactic.formation && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <p
+                                className="text-zinc-400 text-sm font-bold text-center px-8 leading-relaxed"
+                                style={{ textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}
+                              >
+                                Escolhe uma formação para ver os jogadores em campo
                               </p>
                             </div>
-                            <div className="text-right">
-                              <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black">
-                                Classificação
-                              </p>
-                              <p className="text-amber-400 font-black text-base">
-                                {nextMatchOpponent.position
-                                  ? `${nextMatchOpponent.position}º`
-                                  : "-"}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-center gap-1.5 font-black tracking-[0.35em] text-xs">
-                            {(nextMatchOpponent.last5 || "-----")
-                              .split("")
-                              .slice(0, 5)
-                              .map((result, index) => (
-                                <span
-                                  key={`${result}-${index}`}
-                                  className={`w-7 h-7 rounded-full flex items-center justify-center border ${result === "V" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : result === "E" ? "bg-amber-500/15 text-amber-400 border-amber-500/30" : result === "D" ? "bg-red-500/15 text-red-400 border-red-500/30" : "bg-surface text-on-surface-variant border-outline-variant/20"}`}
-                                >
-                                  {result}
-                                </span>
-                              ))}
-                          </div>
-                          <div className="pt-2 border-t border-zinc-800/80">
-                            <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black mb-2">
-                              Árbitro
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => setRefereePopup(nextMatchReferee)}
-                              className="flex w-full items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-left hover:border-amber-500/40 transition-colors"
-                            >
-                              <span className="font-black text-white text-sm">
-                                {nextMatchReferee?.name || "A definir"}
-                              </span>
-                              <span className="text-[10px] uppercase tracking-widest font-black text-amber-400">
-                                Ver balança
-                              </span>
-                            </button>
-                          </div>
+                          )}
                         </div>
-                      ) : (
-                        <div className="text-sm font-bold text-zinc-500 py-2">
-                          Sem resumo disponível.
-                        </div>
-                      )}
-                    </div>
+                      );
+                    })()}
 
                     <div className="p-4 rounded-2xl border border-zinc-800 bg-zinc-950/80">
                       <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-3">
