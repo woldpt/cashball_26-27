@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tactical Editorial - Matchday Multiview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-surface": "#e5e2e1",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-surface": "#e5e2e1",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-background": "#e5e2e1",
+                        "primary": "#95d4b3",
+                        "on-secondary": "#303030",
+                        "tertiary-fixed-dim": "#e9c349",
+                        "on-primary-fixed": "#002114",
+                        "on-error-container": "#ffdad6",
+                        "error-container": "#93000a",
+                        "primary-container": "#00412b",
+                        "error": "#ffb4ab",
+                        "on-error": "#690005",
+                        "surface-bright": "#393939",
+                        "on-primary-fixed-variant": "#0e5138",
+                        "surface-tint": "#95d4b3",
+                        "secondary-fixed": "#e4e2e2",
+                        "on-tertiary-container": "#4e3d00",
+                        "on-primary": "#003824",
+                        "on-tertiary-fixed-variant": "#574500",
+                        "secondary-container": "#494949",
+                        "inverse-primary": "#2c694e",
+                        "on-surface-variant": "#c1c8c0",
+                        "on-secondary-container": "#b9b8b8",
+                        "surface-container-low": "#1c1b1b",
+                        "primary-fixed": "#b1f0ce",
+                        "surface": "#131313",
+                        "outline-variant": "#424843",
+                        "on-tertiary": "#3c2f00",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-container": "#201f1f",
+                        "tertiary-container": "#cca72f",
+                        "background": "#131313",
+                        "outline": "#8b938b",
+                        "secondary": "#c8c6c6",
+                        "on-tertiary-fixed": "#241a00",
+                        "tertiary-fixed": "#ffe088",
+                        "surface-variant": "#353534",
+                        "surface-container-highest": "#353534",
+                        "secondary-fixed-dim": "#c8c6c6",
+                        "surface-dim": "#131313",
+                        "tertiary": "#e9c349",
+                        "on-primary-container": "#71ae8f",
+                        "inverse-on-surface": "#313030",
+                        "primary-fixed-dim": "#95d4b3",
+                        "on-secondary-fixed-variant": "#474747"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 h-16 bg-[#131313] pb-1 flex justify-between items-center px-6 w-full max-w-full">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-bold tracking-tighter text-[#E9C349] font-['Space_Grotesk']">Tactical Editorial</span>
+<div class="hidden md:flex gap-6 items-center">
+<a class="font-['Space_Grotesk'] tracking-tighter uppercase text-sm text-[#E9C349] border-b-2 border-[#E9C349] pb-1" href="#">Matchday</a>
+<a class="font-['Space_Grotesk'] tracking-tighter uppercase text-sm text-[#E5E2E1] opacity-70 hover:opacity-100 hover:text-[#95D4B3] transition-colors duration-200" href="#">Leagues</a>
+<a class="font-['Space_Grotesk'] tracking-tighter uppercase text-sm text-[#E5E2E1] opacity-70 hover:opacity-100 hover:text-[#95D4B3] transition-colors duration-200" href="#">Tactics</a>
+<a class="font-['Space_Grotesk'] tracking-tighter uppercase text-sm text-[#E5E2E1] opacity-70 hover:opacity-100 hover:text-[#95D4B3] transition-colors duration-200" href="#">Scouting</a>
+<a class="font-['Space_Grotesk'] tracking-tighter uppercase text-sm text-[#E5E2E1] opacity-70 hover:opacity-100 hover:text-[#95D4B3] transition-colors duration-200" href="#">Club</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-[#95D4B3] text-[#003824] px-4 py-1.5 font-bold text-xs uppercase tracking-wider rounded-md scale-95 active:scale-90 transition-transform">Go Live</button>
+<span class="material-symbols-outlined text-[#E5E2E1] opacity-70 cursor-pointer hover:opacity-100">settings</span>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-[#95D4B3]/30">
+<img alt="Manager Profile" class="w-full h-full object-cover" data-alt="close-up portrait of a determined football manager in a sharp suit with stadium lights blurred in the background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCp9-Dlq0AVaWpPyOYPxatZ5pfVzCF--LHW89OVd0cT_amp0dNQlEbaS7EkuFpu0vNJt2iX2bd-o5VZofsfFSGeVoBzIcZfpXuVv-cLhQXtm9v65_c4ceN4SSDmXwFV0KYPBMF39cDLDY0Ytns88n8pyuRVoCrBPUW9LvSSerz3aks46gyUxWJ7HdBJVTHPGH1xybs9FcOl020jiHPYIqQw7rVgSmTd57pXp67vfbW0ZJJqSvf1akoPVMCf9rgShgyC0-c-04yMXvCf"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-[#1C1B1B] mr-2.5 bg-[#131313] flex flex-col py-4 h-full hidden lg:flex">
+<div class="px-6 mb-8">
+<p class="font-['Inter'] text-[10px] font-bold text-[#95D4B3] tracking-[0.2em] uppercase mb-1">LEAGUE COMMAND</p>
+<p class="text-[#E5E2E1] opacity-40 text-[10px] uppercase tracking-widest">4 Leagues | 32 Teams</p>
+</div>
+<div class="flex-1 flex flex-col gap-1">
+<div class="px-3">
+<a class="flex items-center gap-4 px-3 py-3 bg-[#201F1F] text-[#95D4B3] border-l-4 border-[#95D4B3] transition-all duration-150 ease-in-out group" href="#">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">trophy</span>
+<span class="font-['Inter'] text-xs font-medium uppercase tracking-wider">Premier League</span>
+</a>
+</div>
+<div class="px-3">
+<a class="flex items-center gap-4 px-3 py-3 text-[#E5E2E1] opacity-60 hover:bg-[#201F1F] hover:text-white transition-all duration-150 ease-in-out group" href="#">
+<span class="material-symbols-outlined text-sm">leaderboard</span>
+<span class="font-['Inter'] text-xs font-medium uppercase tracking-wider">Championship</span>
+</a>
+</div>
+<div class="px-3">
+<a class="flex items-center gap-4 px-3 py-3 text-[#E5E2E1] opacity-60 hover:bg-[#201F1F] hover:text-white transition-all duration-150 ease-in-out group" href="#">
+<span class="material-symbols-outlined text-sm">military_tech</span>
+<span class="font-['Inter'] text-xs font-medium uppercase tracking-wider">League One</span>
+</a>
+</div>
+<div class="px-3">
+<a class="flex items-center gap-4 px-3 py-3 text-[#E5E2E1] opacity-60 hover:bg-[#201F1F] hover:text-white transition-all duration-150 ease-in-out group" href="#">
+<span class="material-symbols-outlined text-sm">sports_soccer</span>
+<span class="font-['Inter'] text-xs font-medium uppercase tracking-wider">League Two</span>
+</a>
+</div>
+<div class="px-3">
+<a class="flex items-center gap-4 px-3 py-3 text-[#E5E2E1] opacity-60 hover:bg-[#201F1F] hover:text-white transition-all duration-150 ease-in-out group" href="#">
+<span class="material-symbols-outlined text-sm">workspace_premium</span>
+<span class="font-['Inter'] text-xs font-medium uppercase tracking-wider">Cup Matches</span>
+</a>
+</div>
+</div>
+<div class="mt-auto px-6 pt-4 border-t border-white/5">
+<button class="w-full py-2 bg-[#201F1F] text-[#95D4B3] text-[10px] font-bold uppercase tracking-widest rounded transition-all hover:bg-[#393939]">Refresh Scores</button>
+<div class="flex justify-between mt-4 pb-2">
+<span class="material-symbols-outlined text-[#E5E2E1]/40 hover:text-[#E5E2E1] cursor-pointer text-lg">help</span>
+<span class="material-symbols-outlined text-[#E5E2E1]/40 hover:text-[#E5E2E1] cursor-pointer text-lg">history</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pt-20 lg:ml-64 px-6 pb-12 min-h-screen">
+<div class="grid grid-cols-12 gap-5">
+<!-- HIGHLIGHT MATCH (TOP CENTER) -->
+<section class="col-span-12 lg:col-span-9 space-y-5">
+<div class="relative overflow-hidden bg-surface-container rounded-md">
+<!-- Stadium Ambiance -->
+<div class="absolute inset-0 bg-gradient-to-br from-primary-container/20 to-transparent pointer-events-none"></div>
+<div class="relative p-8 flex flex-col items-center">
+<div class="flex items-center justify-between w-full mb-10">
+<div class="text-center w-1/3">
+<div class="w-20 h-20 mx-auto mb-4 bg-surface-bright rounded-full flex items-center justify-center border-b-4 border-primary">
+<span class="text-3xl font-bold text-on-surface">LFC</span>
+</div>
+<h2 class="font-headline text-xl tracking-tighter uppercase font-bold text-primary">London FC</h2>
+<p class="font-label text-[10px] text-primary/60 tracking-widest uppercase">Human Manager</p>
+</div>
+<div class="text-center">
+<div class="font-headline text-7xl font-extrabold tracking-tighter text-on-surface flex gap-4 items-center">
+<span>2</span>
+<span class="text-2xl opacity-20">:</span>
+<span>1</span>
+</div>
+<div class="mt-2 bg-primary/10 px-3 py-1 rounded-sm">
+<span class="text-primary text-[10px] font-bold uppercase tracking-[0.2em]">Live 74'</span>
+</div>
+</div>
+<div class="text-center w-1/3">
+<div class="w-20 h-20 mx-auto mb-4 bg-surface-bright rounded-full flex items-center justify-center border-b-4 border-tertiary">
+<span class="text-3xl font-bold text-on-surface">MNC</span>
+</div>
+<h2 class="font-headline text-xl tracking-tighter uppercase font-bold">Munich City</h2>
+<p class="font-label text-[10px] text-on-surface/40 tracking-widest uppercase">AI Strategic</p>
+</div>
+</div>
+<!-- Stats Row -->
+<div class="w-full grid grid-cols-3 gap-8 pt-8 border-t border-white/5">
+<div class="text-center">
+<p class="text-[10px] uppercase tracking-widest text-on-surface/40 mb-2">Possession</p>
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold text-primary">54%</span>
+<div class="flex-1 h-1 bg-surface-bright rounded-full overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 54%"></div>
+<div class="bg-tertiary h-full" style="width: 46%"></div>
+</div>
+<span class="text-xs font-bold text-tertiary">46%</span>
+</div>
+</div>
+<div class="text-center">
+<p class="text-[10px] uppercase tracking-widest text-on-surface/40 mb-1">Expected Goals (xG)</p>
+<p class="font-headline text-lg font-bold tracking-tighter"><span class="text-primary">1.84</span> <span class="text-on-surface/20 mx-1">/</span> <span class="text-on-surface/60">0.92</span></p>
+</div>
+<div class="text-center">
+<p class="text-[10px] uppercase tracking-widest text-on-surface/40 mb-2">Condition</p>
+<div class="flex justify-center gap-4">
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-[10px] font-bold">92%</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="text-[10px] font-bold">84%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ALL MATCHES GRID (BOTTOM SECTION) -->
+<div class="space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="font-headline text-lg font-bold tracking-tighter uppercase text-on-surface/80">Continental Multiview</h3>
+<span class="text-[10px] font-bold text-tertiary uppercase tracking-widest">Simulating Matchday 12</span>
+</div>
+<!-- League Row: League B -->
+<div class="space-y-3">
+<div class="flex items-center gap-3">
+<span class="h-[1px] flex-1 bg-white/5"></span>
+<span class="text-[10px] font-bold text-primary uppercase tracking-[0.2em]">Championship (League B)</span>
+<span class="h-[1px] flex-1 bg-white/5"></span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+<!-- Match Card -->
+<div class="bg-surface-container-low p-3 rounded hover:bg-surface-bright transition-colors cursor-pointer group border-l-2 border-primary">
+<div class="flex justify-between items-center mb-1">
+<span class="text-[9px] font-bold text-primary uppercase">HUMAN</span>
+<span class="text-[9px] text-on-surface/30">78'</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs font-bold truncate pr-2">Madrid Rovers</span>
+<span class="text-xs font-bold text-primary">3</span>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="text-xs font-medium text-on-surface/60 truncate pr-2">Paris SG</span>
+<span class="text-xs font-bold text-on-surface/40">1</span>
+</div>
+</div>
+<!-- Repeat Match Cards -->
+<div class="bg-surface-container-low p-3 rounded hover:bg-surface-bright transition-colors cursor-pointer group">
+<div class="flex justify-end items-center mb-1">
+<span class="text-[9px] text-on-surface/30">78'</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs font-medium text-on-surface/60 truncate pr-2">Berlin Utd</span>
+<span class="text-xs font-bold">0</span>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="text-xs font-medium text-on-surface/60 truncate pr-2">Rome Wolves</span>
+<span class="text-xs font-bold">0</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-3 rounded hover:bg-surface-bright transition-colors cursor-pointer group">
+<div class="flex justify-end items-center mb-1">
+<span class="text-[9px] text-on-surface/30">78'</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs font-medium text-on-surface/60 truncate pr-2">Ajax Lions</span>
+<span class="text-xs font-bold">2</span>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="text-xs font-medium text-on-surface/60 truncate pr-2">Porto Drags</span>
+<span class="text-xs font-bold">2</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-3 rounded hover:bg-surface-bright transition-colors cursor-pointer group">
+<div class="flex justify-end items-center mb-1">
+<span class="text-[9px] text-on-surface/30">78'</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs font-medium text-on-surface/60 truncate pr-2">Lisbon SC</span>
+<span class="text-xs font-bold">1</span>
+</div>
+<div class="flex justify-between items-center mt-1">
+<span class="text-xs font-medium text-on-surface/60 truncate pr-2">Istanbul FC</span>
+<span class="text-xs font-bold">4</span>
+</div>
+</div>
+</div>
+</div>
+<!-- League Row: League C -->
+<div class="space-y-3">
+<div class="flex items-center gap-3">
+<span class="h-[1px] flex-1 bg-white/5"></span>
+<span class="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em]">League One (League C)</span>
+<span class="h-[1px] flex-1 bg-white/5"></span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+<div class="bg-surface-container-low p-3 rounded hover:bg-surface-bright transition-colors cursor-pointer group">
+<div class="flex justify-end items-center mb-1"><span class="text-[9px] text-on-surface/30">78'</span></div>
+<div class="flex justify-between items-center"><span class="text-xs font-medium text-on-surface/60">Brugge V</span><span class="text-xs font-bold">0</span></div>
+<div class="flex justify-between items-center mt-1"><span class="text-xs font-medium text-on-surface/60">Athens AC</span><span class="text-xs font-bold">1</span></div>
+</div>
+<div class="bg-surface-container-low p-3 rounded hover:bg-surface-bright transition-colors cursor-pointer group border-l-2 border-primary">
+<div class="flex justify-between items-center mb-1">
+<span class="text-[9px] font-bold text-primary uppercase">HUMAN</span>
+<span class="text-[9px] text-on-surface/30">78'</span>
+</div>
+<div class="flex justify-between items-center"><span class="text-xs font-bold">Prague City</span><span class="text-xs font-bold text-primary">2</span></div>
+<div class="flex justify-between items-center mt-1"><span class="text-xs font-medium text-on-surface/60">Vienna Red</span><span class="text-xs font-bold">0</span></div>
+</div>
+<div class="bg-surface-container-low p-3 rounded hover:bg-surface-bright transition-colors cursor-pointer group">
+<div class="flex justify-end items-center mb-1"><span class="text-[9px] text-on-surface/30">78'</span></div>
+<div class="flex justify-between items-center"><span class="text-xs font-medium text-on-surface/60">Kyiv Dynamo</span><span class="text-xs font-bold">1</span></div>
+<div class="flex justify-between items-center mt-1"><span class="text-xs font-medium text-on-surface/60">Warsaw Utd</span><span class="text-xs font-bold">1</span></div>
+</div>
+<div class="bg-surface-container-low p-3 rounded hover:bg-surface-bright transition-colors cursor-pointer group">
+<div class="flex justify-end items-center mb-1"><span class="text-[9px] text-on-surface/30">78'</span></div>
+<div class="flex justify-between items-center"><span class="text-xs font-medium text-on-surface/60">Zagreb FC</span><span class="text-xs font-bold">3</span></div>
+<div class="flex justify-between items-center mt-1"><span class="text-xs font-medium text-on-surface/60">Sofia Sport</span><span class="text-xs font-bold">2</span></div>
+</div>
+</div>
+</div>
+<!-- League Row: League D -->
+<div class="space-y-3">
+<div class="flex items-center gap-3">
+<span class="h-[1px] flex-1 bg-white/5"></span>
+<span class="text-[10px] font-bold text-on-surface/30 uppercase tracking-[0.2em]">League Two (League D)</span>
+<span class="h-[1px] flex-1 bg-white/5"></span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+<div class="bg-surface-container-low p-3 rounded hover:bg-surface-bright transition-colors cursor-pointer group">
+<div class="flex justify-end items-center mb-1"><span class="text-[9px] text-on-surface/30">78'</span></div>
+<div class="flex justify-between items-center"><span class="text-xs font-medium text-on-surface/60">Oslo Titans</span><span class="text-xs font-bold">0</span></div>
+<div class="flex justify-between items-center mt-1"><span class="text-xs font-medium text-on-surface/60">Helsinki B</span><span class="text-xs font-bold">0</span></div>
+</div>
+<div class="bg-surface-container-low p-3 rounded hover:bg-surface-bright transition-colors cursor-pointer group">
+<div class="flex justify-end items-center mb-1"><span class="text-[9px] text-on-surface/30">78'</span></div>
+<div class="flex justify-between items-center"><span class="text-xs font-medium text-on-surface/60">Copenhagen</span><span class="text-xs font-bold">1</span></div>
+<div class="flex justify-between items-center mt-1"><span class="text-xs font-medium text-on-surface/60">Stockholm</span><span class="text-xs font-bold">1</span></div>
+</div>
+<div class="bg-surface-container-low p-3 rounded hover:bg-surface-bright transition-colors cursor-pointer group">
+<div class="flex justify-end items-center mb-1"><span class="text-[9px] text-on-surface/30">78'</span></div>
+<div class="flex justify-between items-center"><span class="text-xs font-medium text-on-surface/60">Reykjavik</span><span class="text-xs font-bold">2</span></div>
+<div class="flex justify-between items-center mt-1"><span class="text-xs font-medium text-on-surface/60">Torshavn</span><span class="text-xs font-bold">0</span></div>
+</div>
+<div class="bg-surface-container-low p-3 rounded hover:bg-surface-bright transition-colors cursor-pointer group border-l-2 border-primary">
+<div class="flex justify-between items-center mb-1">
+<span class="text-[9px] font-bold text-primary uppercase">HUMAN</span>
+<span class="text-[9px] text-on-surface/30">78'</span>
+</div>
+<div class="flex justify-between items-center"><span class="text-xs font-bold">Luxembourg</span><span class="text-xs font-bold text-primary">0</span></div>
+<div class="flex justify-between items-center mt-1"><span class="text-xs font-medium text-on-surface/60">Monaco AS</span><span class="text-xs font-bold">2</span></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- LIVE LEAGUE TABLE (RIGHT SIDEBAR) -->
+<aside class="col-span-12 lg:col-span-3">
+<div class="bg-surface-container p-5 rounded-md sticky top-24">
+<div class="flex items-center justify-between mb-6">
+<h4 class="font-headline text-sm font-bold tracking-tighter uppercase text-tertiary">Live Table: PREMIER</h4>
+<span class="text-[10px] opacity-40 uppercase tracking-widest">Matchday 12/14</span>
+</div>
+<div class="space-y-1">
+<!-- Table Header -->
+<div class="grid grid-cols-12 px-2 py-2 text-[10px] font-bold text-on-surface/40 uppercase tracking-wider bg-surface-container-high rounded-t-sm">
+<span class="col-span-1">#</span>
+<span class="col-span-6">Team</span>
+<span class="col-span-2 text-center">PTS</span>
+<span class="col-span-3 text-right">LIVE</span>
+</div>
+<!-- Table Rows -->
+<div class="grid grid-cols-12 px-2 py-3 text-xs bg-primary/10 border-l-4 border-primary items-center">
+<span class="col-span-1 font-headline font-bold">1</span>
+<span class="col-span-6 font-bold truncate">London FC</span>
+<span class="col-span-2 text-center font-bold text-primary">28</span>
+<span class="col-span-3 text-right flex items-center justify-end gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span class="text-[9px] font-bold text-primary">WIN</span>
+</span>
+</div>
+<div class="grid grid-cols-12 px-2 py-3 text-xs bg-surface-container-low hover:bg-surface-bright transition-colors items-center">
+<span class="col-span-1 font-headline">2</span>
+<span class="col-span-6 truncate text-on-surface/70">Munich City</span>
+<span class="col-span-2 text-center font-medium">24</span>
+<span class="col-span-3 text-right">
+<span class="text-[9px] font-bold text-error">LOSS</span>
+</span>
+</div>
+<div class="grid grid-cols-12 px-2 py-3 text-xs bg-surface-container-low hover:bg-surface-bright transition-colors items-center">
+<span class="col-span-1 font-headline">3</span>
+<span class="col-span-6 truncate text-on-surface/70">Milan Stars</span>
+<span class="col-span-2 text-center font-medium">21</span>
+<span class="col-span-3 text-right">
+<span class="text-[9px] font-bold text-on-surface/40">DRAW</span>
+</span>
+</div>
+<div class="grid grid-cols-12 px-2 py-3 text-xs bg-surface-container-low hover:bg-surface-bright transition-colors items-center">
+<span class="col-span-1 font-headline">4</span>
+<span class="col-span-6 truncate text-on-surface/70">Manchester R</span>
+<span class="col-span-2 text-center font-medium">19</span>
+<span class="col-span-3 text-right">
+<span class="text-[9px] font-bold text-primary">WIN</span>
+</span>
+</div>
+<div class="grid grid-cols-12 px-2 py-3 text-xs bg-surface-container-low hover:bg-surface-bright transition-colors items-center">
+<span class="col-span-1 font-headline">5</span>
+<span class="col-span-6 truncate text-on-surface/70">Dortmund BV</span>
+<span class="col-span-2 text-center font-medium">18</span>
+<span class="col-span-3 text-right">
+<span class="text-[9px] font-bold text-on-surface/40">DRAW</span>
+</span>
+</div>
+<div class="grid grid-cols-12 px-2 py-3 text-xs bg-surface-container-low hover:bg-surface-bright transition-colors items-center border-t border-white/5">
+<span class="col-span-1 font-headline text-error/60">6</span>
+<span class="col-span-6 truncate text-on-surface/70">Liverpool FC</span>
+<span class="col-span-2 text-center font-medium">14</span>
+<span class="col-span-3 text-right">
+<span class="text-[9px] font-bold text-on-surface/40">DRAW</span>
+</span>
+</div>
+<div class="grid grid-cols-12 px-2 py-3 text-xs bg-surface-container-low hover:bg-surface-bright transition-colors items-center">
+<span class="col-span-1 font-headline text-error/60">7</span>
+<span class="col-span-6 truncate text-on-surface/70">Barcelona AC</span>
+<span class="col-span-2 text-center font-medium">12</span>
+<span class="col-span-3 text-right">
+<span class="text-[9px] font-bold text-error">LOSS</span>
+</span>
+</div>
+<div class="grid grid-cols-12 px-2 py-3 text-xs bg-surface-container-low hover:bg-surface-bright transition-colors items-center rounded-b-sm">
+<span class="col-span-1 font-headline text-error">8</span>
+<span class="col-span-6 truncate text-on-surface/70">Turin Bulls</span>
+<span class="col-span-2 text-center font-medium">7</span>
+<span class="col-span-3 text-right">
+<span class="text-[9px] font-bold text-error">LOSS</span>
+</span>
+</div>
+</div>
+<div class="mt-6 flex flex-col gap-2">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="text-[9px] uppercase tracking-widest text-on-surface/50">Promotion Zone</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="text-[9px] uppercase tracking-widest text-on-surface/50">Relegation Hazard</span>
+</div>
+</div>
+</div>
+<div class="mt-5 bg-[#E9C349]/10 p-4 rounded-md border border-[#E9C349]/20">
+<p class="text-[10px] font-bold text-[#E9C349] uppercase tracking-[0.2em] mb-1">Scouting Alert</p>
+<p class="text-xs text-on-surface/80 leading-relaxed">Agent report: <span class="font-bold">Mbappé Jr</span> has scored a brace in League B. Scout recommended for next window.</p>
+</div>
+</aside>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 w-full bg-surface/80 backdrop-blur-xl h-16 flex justify-around items-center px-4 border-t border-white/5">
+<div class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">trophy</span>
+<span class="text-[9px] font-bold uppercase tracking-widest">Live</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface/40">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="text-[9px] font-bold uppercase tracking-widest">Table</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface/40">
+<span class="material-symbols-outlined">settings_input_component</span>
+<span class="text-[9px] font-bold uppercase tracking-widest">Tactics</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-on-surface/40">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-[9px] font-bold uppercase tracking-widest">Club</span>
+</div>
+</nav>
+</body></html>
