@@ -352,6 +352,29 @@ function markWelcomeSeen(coachName, roomCode) {
   }
 }
 
+function hasSeenWelcomeThisSession(coachName, roomCode) {
+  try {
+    return (
+      window.sessionStorage.getItem(
+        `cashball_welcome_session:${coachName}:${roomCode}`,
+      ) === "1"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function markWelcomeSeenThisSession(coachName, roomCode) {
+  try {
+    window.sessionStorage.setItem(
+      `cashball_welcome_session:${coachName}:${roomCode}`,
+      "1",
+    );
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
 const playWhistle = () => {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -800,12 +823,15 @@ function App() {
     socket.on("systemMessage", (msg) => addToast(msg));
     socket.on("teamAssigned", (data) => {
       const currentMe = meRef.current;
-      if (
-        currentMe?.name &&
-        currentMe?.roomCode &&
-        !hasSeenWelcome(currentMe.name, currentMe.roomCode)
-      ) {
-        setWelcomeModal({ teamName: data.teamName });
+      if (!currentMe?.name || !currentMe?.roomCode) return;
+      if (data.isNew) {
+        if (!hasSeenWelcome(currentMe.name, currentMe.roomCode)) {
+          setWelcomeModal(data);
+        }
+      } else {
+        if (!hasSeenWelcomeThisSession(currentMe.name, currentMe.roomCode)) {
+          setWelcomeModal(data);
+        }
       }
     });
     socket.on("joinError", (msg) => {
@@ -5998,31 +6024,130 @@ function App() {
       {welcomeModal && me?.teamId && (
         <div className="fixed inset-0 z-200 bg-zinc-950/90 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-sm bg-surface-container border border-primary/40 rounded-lg shadow-2xl overflow-hidden">
-            <div className="bg-linear-to-r from-amber-900/40 to-zinc-900 px-6 py-5 border-b border-amber-700/30 text-center">
-              <p className="text-xs text-amber-400 uppercase font-black tracking-widest mb-2">
-                Bem-vindo ao CashBall!
+            {/* Header */}
+            <div
+              className={`px-6 py-5 border-b text-center ${
+                welcomeModal.isNew
+                  ? "bg-linear-to-r from-amber-900/40 to-zinc-900 border-amber-700/30"
+                  : "bg-linear-to-r from-zinc-800 to-zinc-900 border-zinc-700/40"
+              }`}
+            >
+              <p
+                className={`text-xs uppercase font-black tracking-widest mb-2 ${
+                  welcomeModal.isNew ? "text-amber-400" : "text-zinc-400"
+                }`}
+              >
+                {welcomeModal.isNew ? "🎲 Sorteio" : "👋 Bem de volta"}
               </p>
-              <h2 className="text-3xl font-black text-white">Parabéns! 🎉</h2>
+              <h2 className="text-2xl font-black text-white">
+                {welcomeModal.isNew ? "Foste sorteado!" : "Continua a missão!"}
+              </h2>
             </div>
-            <div className="p-6 text-center space-y-4">
-              <p className="text-zinc-300 font-bold text-lg leading-relaxed">
-                Foste contratado pelo{" "}
-                <span className="text-amber-400 font-black">
-                  {welcomeModal.teamName}
-                </span>
-                !
+
+            {/* Team identity */}
+            <div className="px-6 pt-5 pb-2 flex items-center justify-center gap-3">
+              {welcomeModal.colorPrimary && (
+                <div
+                  className="w-7 h-7 rounded-sm border border-white/20 shrink-0"
+                  style={{ backgroundColor: welcomeModal.colorPrimary }}
+                />
+              )}
+              <span className="text-white font-black text-xl leading-tight text-center">
+                {welcomeModal.teamName}
+              </span>
+            </div>
+            {welcomeModal.division != null && (
+              <p className="text-center text-xs text-zinc-400 uppercase font-bold tracking-wide pb-4">
+                {DIVISION_NAMES[welcomeModal.division] ||
+                  `Divisão ${welcomeModal.division}`}
               </p>
-              <p className="text-zinc-500 text-sm">
-                Começa a gerir o teu clube e leva-o até ao topo da tabela.
+            )}
+
+            {/* Stats grid */}
+            <div className="px-6 pb-4 space-y-2">
+              {welcomeModal.isNew ? (
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="bg-zinc-800/50 rounded px-3 py-2 text-center col-span-2">
+                    <p className="text-zinc-400 text-xs uppercase tracking-wide font-bold">
+                      Orçamento inicial
+                    </p>
+                    <p className="text-white font-black text-lg">
+                      {formatCurrency(welcomeModal.budget ?? 0)}
+                    </p>
+                  </div>
+                  {welcomeModal.stadiumCapacity > 0 && (
+                    <div className="bg-zinc-800/50 rounded px-3 py-2 text-center col-span-2">
+                      <p className="text-zinc-400 text-xs uppercase tracking-wide font-bold">
+                        🏟️ Capacidade do estádio
+                      </p>
+                      <p className="text-white font-black text-lg">
+                        {(welcomeModal.stadiumCapacity ?? 0).toLocaleString(
+                          "pt-PT",
+                        )}{" "}
+                        lugares
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="bg-zinc-800/50 rounded px-3 py-2 text-center">
+                    <p className="text-zinc-400 text-xs uppercase tracking-wide font-bold">
+                      Pontos
+                    </p>
+                    <p className="text-white font-black text-lg">
+                      {welcomeModal.points ?? 0}
+                    </p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded px-3 py-2 text-center">
+                    <p className="text-zinc-400 text-xs uppercase tracking-wide font-bold">
+                      V / E / D
+                    </p>
+                    <p className="text-white font-black text-lg">
+                      {welcomeModal.wins ?? 0} / {welcomeModal.draws ?? 0} /{" "}
+                      {welcomeModal.losses ?? 0}
+                    </p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded px-3 py-2 text-center">
+                    <p className="text-zinc-400 text-xs uppercase tracking-wide font-bold">
+                      ⚽ Golos
+                    </p>
+                    <p className="text-white font-black text-lg">
+                      {welcomeModal.goalsFor ?? 0} –{" "}
+                      {welcomeModal.goalsAgainst ?? 0}
+                    </p>
+                  </div>
+                  <div className="bg-zinc-800/50 rounded px-3 py-2 text-center">
+                    <p className="text-zinc-400 text-xs uppercase tracking-wide font-bold">
+                      Orçamento
+                    </p>
+                    <p className="text-white font-black text-lg">
+                      {formatCurrency(welcomeModal.budget ?? 0)}
+                    </p>
+                  </div>
+                </div>
+              )}
+              <p className="text-zinc-500 text-sm text-center pt-1">
+                {welcomeModal.isNew
+                  ? "Começa a gerir o teu clube e leva-o ao topo da tabela."
+                  : "Retoma a gestão do teu clube."}
               </p>
+            </div>
+
+            {/* Action button */}
+            <div className="px-6 pb-6">
               <button
                 onClick={() => {
-                  markWelcomeSeen(me.name, me.roomCode);
+                  if (welcomeModal.isNew) {
+                    markWelcomeSeen(me.name, me.roomCode);
+                  } else {
+                    markWelcomeSeenThisSession(me.name, me.roomCode);
+                  }
                   setWelcomeModal(null);
                 }}
                 className="w-full bg-primary hover:brightness-110 text-on-primary font-black py-4 rounded-sm text-lg uppercase tracking-widest transition-all active:scale-95"
               >
-                Vamos lá!
+                {welcomeModal.isNew ? "Vamos lá! 🚀" : "Continuar 🎯"}
               </button>
             </div>
           </div>
