@@ -49,6 +49,7 @@ const POSITION_BG_CLASS = {
 
 const MAX_MATCH_SUBS = 3;
 const ADMIN_SESSION_KEY = "cashballAdminSession";
+const DEFAULT_TACTIC = { formation: "4-4-2", style: "Balanced", positions: {} };
 
 function loadAdminSession() {
   try {
@@ -528,11 +529,7 @@ function App() {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [selectedTeamSquad, setSelectedTeamSquad] = useState([]);
   const [selectedTeamLoading, setSelectedTeamLoading] = useState(false);
-  const [tactic, setTactic] = useState({
-    formation: "4-4-2",
-    style: "Balanced",
-    positions: {},
-  });
+  const [tactic, setTactic] = useState(DEFAULT_TACTIC);
   const [liveMinute, setLiveMinute] = useState(90);
   const [isPlayingMatch, setIsPlayingMatch] = useState(false);
   const [showHalftimePanel, setShowHalftimePanel] = useState(false);
@@ -1277,6 +1274,55 @@ function App() {
     setAuthSubmitting(false);
   };
 
+  const resetGameState = () => {
+    setTeams([]);
+    setTeamForms({});
+    setPlayers([]);
+    setMySquad([]);
+    setMarketPairs([]);
+    setTopScorers([]);
+    setMatchResults(null);
+    setMatchweekCount(0);
+    setActiveTab("players");
+    setTactic(DEFAULT_TACTIC);
+    setLockedCoaches([]);
+    setAwaitingCoaches([]);
+    setNextMatchSummary(null);
+    setNextMatchSummaryLoading(false);
+    setIsPlayingMatch(false);
+    setShowHalftimePanel(false);
+    setMatchAction(null);
+    setIsMatchActionPending(false);
+    setLiveMinute(90);
+    setSubsMade(0);
+    setSwapSource(null);
+    setSwapTarget(null);
+    setSubbedOut([]);
+    setConfirmedSubs([]);
+    setRefereePopup(null);
+    setCupDraw(null);
+    setShowCupDrawPopup(false);
+    setCupRoundResults(null);
+    setShowCupResults(false);
+    setCupPenaltyPopup(null);
+    setWelcomeModal(null);
+    setIsCupMatch(false);
+    setCupPreMatch(false);
+    setCupMatchRoundName("");
+    setCupExtraTimeBadge(false);
+    setIsCupExtraTime(false);
+    setCupActiveTeamIds([]);
+    setPalmares({ trophies: [], allChampions: [] });
+    setPalmaresTeamId(null);
+    setSelectedTeam(null);
+    setSelectedTeamSquad([]);
+    setSelectedTeamLoading(false);
+    setSelectedAuctionPlayer(null);
+    setAuctionBid("");
+    setMyAuctionBid(null);
+    setAuctionResult(null);
+  };
+
   const handleAuthenticate = async (mode) => {
     if (!name || !password || authSubmitting) return;
 
@@ -1364,6 +1410,7 @@ function App() {
     } catch {
       // ignore
     }
+    resetGameState();
     setMe(null);
     setName("");
     setPassword("");
@@ -1390,6 +1437,7 @@ function App() {
 
   const handleJoin = () => {
     if (name && password && roomCode && !joining) {
+      resetGameState();
       setJoinError("");
       setJoining(true);
       socket.emit("joinGame", {
@@ -4447,6 +4495,11 @@ function App() {
                               <span className="inline-flex items-center justify-center bg-zinc-950 text-white px-2 py-1 rounded text-sm border border-zinc-800 font-normal">
                                 {player.skill}
                               </span>
+                              {player.prev_skill !== null && player.prev_skill !== undefined && player.prev_skill !== player.skill && (
+                                <span className={`ml-1 text-xs font-black ${player.skill > player.prev_skill ? "text-emerald-400" : "text-red-400"}`}>
+                                  {player.skill > player.prev_skill ? "▲" : "▼"}
+                                </span>
+                              )}
                             </td>
                             <td className="px-3 py-2 text-center font-normal">
                               <AggBadge value={player.aggressiveness} />
@@ -4831,6 +4884,11 @@ function App() {
                           </span>
                           <span className="text-primary font-black text-sm shrink-0">
                             {player.skill}
+                            {player.prev_skill !== null && player.prev_skill !== undefined && player.prev_skill !== player.skill && (
+                              <span className={`ml-0.5 text-[10px] ${player.skill > player.prev_skill ? "text-emerald-400" : "text-red-400"}`}>
+                                {player.skill > player.prev_skill ? "▲" : "▼"}
+                              </span>
+                            )}
                           </span>
                           {openStatusPickerId === player.id &&
                             (() => {
@@ -5568,6 +5626,11 @@ function App() {
                             <span className="bg-zinc-950 text-white font-black px-2 py-1.5 rounded text-sm border border-zinc-800">
                               {player.skill}
                             </span>
+                            {player.prev_skill !== null && player.prev_skill !== undefined && player.prev_skill !== player.skill && (
+                              <span className={`ml-1 text-xs font-black ${player.skill > player.prev_skill ? "text-emerald-400" : "text-red-400"}`}>
+                                {player.skill > player.prev_skill ? "▲" : "▼"}
+                              </span>
+                            )}
                           </td>
                           <td className="px-4 py-2.5 text-center">
                             <AggBadge value={player.aggressiveness} />
