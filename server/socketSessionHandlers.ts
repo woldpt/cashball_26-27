@@ -61,6 +61,7 @@ export function registerSessionSocketHandlers(
     name: string,
     team: any,
     roomCode: string,
+    isNew: boolean = true,
   ) {
     if (!game.playersByName[name]) {
       game.playersByName[name] = {
@@ -114,9 +115,34 @@ export function registerSessionSocketHandlers(
       },
     );
 
-    socket.emit(
-      "systemMessage",
-      `Foste contratado pelo ${team.name} (Divisão 4)!`,
+    game.db.get(
+      "SELECT id, name, division, budget, points, wins, draws, losses, goals_for, goals_against, color_primary, color_secondary, stadium_capacity FROM teams WHERE id = ?",
+      [team.id],
+      (err: any, details: any) => {
+        if (err) {
+          console.error(
+            `[${roomCode}] assignPlayer: failed to fetch team details for id=${team.id}:`,
+            err,
+          );
+        }
+        const d = details || team;
+        socket.emit("teamAssigned", {
+          teamName: d.name,
+          teamId: d.id,
+          division: d.division ?? 4,
+          budget: d.budget ?? 0,
+          points: d.points ?? 0,
+          wins: d.wins ?? 0,
+          draws: d.draws ?? 0,
+          losses: d.losses ?? 0,
+          goalsFor: d.goals_for ?? 0,
+          goalsAgainst: d.goals_against ?? 0,
+          colorPrimary: d.color_primary ?? "#888888",
+          colorSecondary: d.color_secondary ?? "#ffffff",
+          stadiumCapacity: d.stadium_capacity ?? 0,
+          isNew,
+        });
+      },
     );
   }
 
@@ -228,7 +254,7 @@ export function registerSessionSocketHandlers(
               "SELECT id, name FROM teams WHERE manager_id = ?",
               [row.id],
               (err2: any, team: any) => {
-                if (team) assignPlayer(game, trimmedName, team, roomCode);
+                if (team) assignPlayer(game, trimmedName, team, roomCode, false);
                 else generateRandomTeam(game, trimmedName, roomCode, row.id);
               },
             );
