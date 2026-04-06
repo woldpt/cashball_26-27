@@ -49,6 +49,7 @@ Jogo de gestão de futebol baseado em texto/dados, fiel ao espírito minimalista
 - **As partidas decorrem e são visíveis em tempo real para todos os humanos** assim que a jornada é simulada — não é necessário estar online em simultâneo para submeter a táctica, mas os jogos são transmitidos em directo (via Socket.io) para quem está online
 - **JavaScript + JSDoc no Frontend** — sem compilação adicional, intellisense no VS Code, simples e rápido
 - **Stack recomendado**: React 19 + Vite no frontend (JavaScript + JSDoc), Node.js + Express 5 no backend (TypeScript), SQLite como base de dados. Dependências principais: `socket.io-client` (frontend), `socket.io`, `bcryptjs`, `dotenv`, `express-rate-limit` (backend)
+- **Divisão 5 (Distritais)** — existe internamente no backend como base da pirâmide de clubes (`gameConstants.ts`), mas é invisível e não jogável por humanos; serve apenas para abastecer o pool de equipas IA que sobem/descem entre divisões
 
 ---
 
