@@ -2,7 +2,7 @@
 
 ## Conceito Central
 
-Jogo de gestão de futebol baseado em texto/dados, fiel ao espírito minimalista e estatístico do **Elifoot 98**, mas correndo num browser moderno com suporte a **multiplayer assíncrono orientado à disponibilidade dos treinadores**. O jogo não tem horários fixos: a jornada avança assim que **todos os treinadores activos submetem a sua táctica**. Num mesmo dia podem realizar-se zero jogos ou várias jornadas completas — depende inteiramente da rapidez com que os participantes respondem. **As partidas decorrem e são visíveis em tempo real para todos os humanos assim que a jornada é simulada.**
+Jogo de gestão de futebol baseado em texto/dados, fiel ao espírito minimalista e estatístico do **Elifoot 98**, mas correndo num browser moderno com suporte a **multiplayer orientado à disponibilidade dos treinadores**. O jogo não tem horários fixos: a jornada avança assim que **todos os treinadores activos submetem a sua táctica**. Num mesmo dia podem realizar-se zero jogos ou várias jornadas completas — depende inteiramente da rapidez com que os participantes respondem. **A submissão de tácticas é assíncrona, mas a simulação da partida é síncrona** — todos os treinadores humanos devem estar presentes e confirmar "Pronto" no início do jogo, ao intervalo e antes do tempo extra. Os treinadores acompanham o desenrolar dos eventos em simultâneo, à semelhança do Football Manager ou Hattrick.
 
 ---
 
@@ -14,7 +14,8 @@ Jogo de gestão de futebol baseado em texto/dados, fiel ao espírito minimalista
 
 - **Referências principais**:
   - Elifoot 98 (mecânicas base, filosofia de jogo)
-  - Football Manager (profundidade de elenco)
+  - Football Manager (profundidade de elenco, simulação síncrona de partidas)
+  - Hattrick (modelo de acompanhamento de partida em simultâneo entre treinadores)
   - Lichess (UX limpo)
 
 ---
@@ -46,7 +47,7 @@ Jogo de gestão de futebol baseado em texto/dados, fiel ao espírito minimalista
 
 - **TypeScript no Backend** — Express em TypeScript para lógica crítica (cálculos de jornadas, transferências, finanças); Frontend em JavaScript puro com JSDoc para type hints
 - A base de dados é **SQLite** (ficheiro local), não PostgreSQL — adequado para desenvolvimento e para a escala actual do jogo (32 treinadores)
-- **As partidas decorrem e são visíveis em tempo real para todos os humanos** assim que a jornada é simulada — não é necessário estar online em simultâneo para submeter a táctica, mas os jogos são transmitidos em directo (via Socket.io) para quem está online
+- **Submissão assíncrona, simulação síncrona** — não é necessário estar online em simultâneo para submeter a táctica, mas a simulação da partida requer a presença de todos os treinadores humanos. A partida só arranca quando todos confirmam "Pronto"; ao intervalo e antes do tempo extra a simulação pausa e aguarda nova confirmação. Eventos transmitidos via Socket.io
 - **JavaScript + JSDoc no Frontend** — sem compilação adicional, intellisense no VS Code, simples e rápido
 - **Stack recomendado**: React 19 + Vite no frontend (JavaScript + JSDoc), Node.js + Express 5 no backend (TypeScript), SQLite como base de dados. Dependências principais: `socket.io-client` (frontend), `socket.io`, `bcryptjs`, `dotenv`, `express-rate-limit` (backend)
 - **Divisão 5 (Distritais)** — existe internamente no backend como base da pirâmide de clubes (`gameConstants.ts`), mas é invisível e não jogável por humanos; serve apenas para abastecer o pool de equipas IA que sobem/descem entre divisões
@@ -67,7 +68,8 @@ Pré-época
 └── 14 jornadas de campeonato por divisão
 └── 5 rondas de Taça intercaladas (incluindo final no Jamor)
 └── Cada semana avança quando todos os treinadores activos submetem a táctica
-└── As partidas decorrem e são transmitidas em directo (via Socket.io) para todos os humanos online
+└── A simulação é síncrona: só arranca quando todos os humanos confirmam "Pronto" (início, intervalo, tempo extra)
+└── Todos os treinadores acompanham os eventos da partida em simultâneo (via Socket.io)
 └── Rondas da Taça: treinador ainda em competição submete a táctica. Treinadores já eliminados ficam só a observar as partidas.
 
 Pós-época
@@ -129,8 +131,8 @@ Aproximadamente **10% dos jogadores das posições Médios e Avançados** são c
 
 ### Simulação de Jogos
 
-- Simulação **estatística/probabilística**, calculada **in loco** durante a transmissão;
-- O resultado **não é pré-calculado** — é simulado em tempo real: 45 segundos de 1.ª Parte, intervalo com mudança de táctica/substituições, depois mais 45 segundos de 2.ª Parte com dados actualizados;
+- Simulação **estatística/probabilística**, calculada **in loco** durante a partida;
+- O resultado **não é pré-calculado** — é simulado em directo: 45 segundos de 1.ª Parte, intervalo com mudança de táctica/substituições, depois mais 45 segundos de 2.ª Parte com dados actualizados. Cada bloco (1.ª Parte, 2.ª Parte, tempo extra) só arranca após todos os treinadores humanos confirmarem "Pronto";
 - Resultado calculado com base em:
   - Atributos médios ponderados por posição;
   - Presença de craques em campo (+20% chance de golo decisivo por craque em campo);
@@ -226,17 +228,26 @@ Um treinador que esteja a fazer um trabalho excelente — posição acima do esp
 
 ## Multiplayer e Filosofia de Jogo
 
-### Princípio Central: Avanço por Submissão + Transmissão em Directo
+### Princípio Central: Submissão Assíncrona + Simulação Síncrona
 
-O CashBall 26/27 **não tem hora marcada para os jogos**. Não há calendário real, não há notificações de "o teu jogo começa às 20h". O jogo avança quando os treinadores estão disponíveis;
+O CashBall 26/27 **não tem hora marcada para os jogos**. Não há calendário real, não há notificações de "o teu jogo começa às 20h". O ritmo do jogo é ditado colectivamente pelos participantes.
 
-O mecanismo é simples: uma jornada está **pendente** até que todos os treinadores activos submetam a sua táctica para o próximo jogo. Assim que o último treinador submete, **todos os jogos dessa jornada são simulados de imediato** e são **transmitidos em directo via Socket.io** para todos os humanos online. As partidas decorrem e são visíveis em tempo real (evento por evento) para quem esteja a observar.
+**Fase 1 — Submissão (assíncrona):** Uma jornada está **pendente** até que todos os treinadores activos submetam a sua táctica para o próximo jogo. Cada treinador submete quando pode — não é necessário estar online em simultâneo.
+
+**Fase 2 — Simulação (síncrona):** Assim que o último treinador submete, a jornada fica pronta para simular, mas os jogos **só arrancam quando todos os treinadores humanos confirmam "Pronto"**. A simulação da partida requer a presença de todos — os treinadores acompanham o desenrolar dos eventos em simultâneo (evento por evento, via Socket.io), à semelhança do Football Manager ou Hattrick.
+
+**Checkpoints de confirmação ("Pronto"):**
+
+1. **Início da partida** — a simulação da 1.ª Parte só começa quando todos os humanos confirmam
+2. **Intervalo** — a simulação pausa; cada treinador pode fazer substituições/ajustes e confirma "Pronto" para a 2.ª Parte
+3. **Antes do tempo extra** (apenas Taça, se empate) — nova pausa e confirmação antes dos 30 segundos extra
 
 Isto significa que:
 
 - Num dia em que todos os treinadores estejam online ao mesmo tempo, podem realizar-se **várias jornadas consecutivas** no espaço de horas;
 - Num dia em que ninguém aceda ao jogo, **nenhum jogo acontece**;
-- Quem está online vê os jogos a decorrer em tempo real; quem não está pode ver os resultados e relatórios quando voltar;
+- Se um treinador não confirmar "Pronto", a simulação fica em espera — quem não está presente bloqueia o avanço;
+- Quem não assistiu pode consultar os resultados e relatórios de jogo quando voltar;
 - Não existe penalização automática por demora — o ritmo é ditado colectivamente pelos participantes.
 
 ### O que é uma "Submissão de Táctica"
@@ -278,12 +289,13 @@ ABERTA
 └── Treinadores de IA submetem automaticamente no momento em que a jornada abre
 
 COMPLETA (todos submeteram)
-└── Simulação decorre — transmissão em directo (evento por evento) via Socket.io
-└── 1ª Parte: simulação estatística com descrição de eventos (golos, cartões, etc.)
-└── Intervalo: (máximo de 3 substituições por jogo podem ser decididas pelos treinadores humanos e IA)
-└── 2ª Parte: continuação da simulação
+└── Todos os treinadores humanos devem confirmar "Pronto" — simulação só arranca com OK de todos
+└── 1ª Parte: simulação estatística com descrição de eventos (golos, cartões, etc.) — 45 segundos
+└── Intervalo: simulação pausa; treinadores fazem substituições e confirmam "Pronto" para a 2ª Parte
+└── 2ª Parte: continuação da simulação — 45 segundos
 └── Se for uma partida da Taça e estiver empatada ao fim do tempo regulamentar:
-    └── Tempo extra: 30 minutos adicionais de simulação
+    └── Pausa: treinadores confirmam "Pronto" para o tempo extra
+    └── Tempo extra: 30 segundos adicionais de simulação
     └── Se continuar empatado, avança-se para simulação de grandes penalidades (uma a uma)
 └── Próxima jornada transita para ABERTA automaticamente após simulação
 ```
@@ -740,7 +752,7 @@ ENCERRADA — Época terminada (arquivo)
 
 1. **Manter coerência com as mecânicas acima** — não introduzir sistemas não descritos sem aviso explícito.
 2. **Fidelidade ao espírito do Elifoot 98** — simplicidade e dados em primeiro lugar; evitar complexidade desnecessária tipo FIFA Ultimate Team.
-3. **O multiplayer avança por submissão e as partidas são transmitidas em directo** — a jornada simula quando todos os treinadores activos submetem a táctica; as partidas decorrem e são visíveis em tempo real (via Socket.io) para todos os humanos online. Nunca sugerir timers de jogo fixos, horas marcadas, ou modelos à Hattrick.
+3. **Submissão assíncrona, simulação síncrona** — a submissão de tácticas é assíncrona (cada treinador submete quando pode); a simulação da partida é síncrona e requer a presença de todos os treinadores humanos, que confirmam "Pronto" em cada checkpoint (início, intervalo, tempo extra). Modelo inspirado em Football Manager / Hattrick. Nunca sugerir timers de jogo fixos ou horas marcadas.
 4. **Stack: React 19 + Vite no frontend (JavaScript + JSDoc), Node.js + Express 5 no backend (TypeScript), SQLite como base de dados** — sugerir sempre código nesse contexto. Dependências recomendadas: `socket.io-client` (frontend), `socket.io`, `bcryptjs`, `dotenv`, `express-rate-limit` (backend).
 5. **Português de Portugal** em todos os textos de UI, mensagens de sistema e comentários de código.
 6. **Sem microtransacções ou mecânicas de monetização** — este é um projecto independente/hobby.
@@ -755,11 +767,11 @@ ENCERRADA — Época terminada (arquivo)
 15. **O elenco de jogadores é fixo** — nunca sugerir criação de novos jogadores, reformas, ou envelhecimento. Os jogadores do seed são permanentes. A `qualidade` flutua entre 1 e 50; a flag `craque` nunca muda.
 16. **Máximo 8 jogadores humanos por sala** — o acesso é feito exclusivamente por senha única gerada no momento da criação da sala.
 17. **Sem Distritais com simulação** — usar sorteio simples de promoção no final da época para economizar CPU.
-18. **Substituições são escolhidas ao intervalo** — durante a transmissão em directo do jogo, ao intervalo aparece um pop-up permitindo até 3 substituições no total. O treinador decide em tempo real durante os intervalos da partida (intervalo principal e potencial intervalo antes do tempo extra). **A IA também faz substituições ao intervalo** se tiver jogadores de maior qualidade no banco.
+18. **Substituições são escolhidas ao intervalo** — ao intervalo a simulação pausa e aguarda que todos os treinadores humanos façam (ou não) substituições e confirmem "Pronto" para o bloco seguinte. Pop-up permite até 3 substituições no total, distribuídas entre o intervalo principal e o potencial intervalo antes do tempo extra. **A IA também faz substituições ao intervalo** se tiver jogadores de maior qualidade no banco.
 19. **Semanas com duplo jogo (Campeonato + Taça) têm ciclos de submissão independentes** — o treinador submete para o campeonato, após simulação submete para a Taça. Podem ocorrer em dias diferentes.
 20. **Convites de clubes mais fortes são avaliados no final de cada jornada** — aparece na interface do treinador imediatamente. **Convites expiram em 10 minutos.**
 21. **Descida aos Distritais deixa o treinador como observador** — fica sem clube até receber um convite de um clube sem humano. Não há limite de descidas. **Clubes de IA que descem reaparecem no sorteio de promoção após 1 época de interregno.**
-22. **O resultado do jogo é calculado in loco** — a simulação decorre em tempo real (45s + intervalo + 45s), com recálculo de forças após substituições e expulsões. O resultado nunca é pré-calculado.
+22. **O resultado do jogo é calculado in loco** — a simulação decorre em directo (45s + intervalo + 45s), com cada bloco a arrancar apenas após todos os humanos confirmarem "Pronto". Recálculo de forças após substituições e expulsões. O resultado nunca é pré-calculado.
 23. **Jogos da mesma jornada são simulados em paralelo** — todos visíveis em simultâneo.
 24. **Auto-golos de defesas são possíveis** — probabilidade baixa, depende da pressão ofensiva adversária.
 25. **Cartão vermelho directo recalcula forças** — equipa fica com menos jogadores e sofre penalização de -10% por jogador a menos.
