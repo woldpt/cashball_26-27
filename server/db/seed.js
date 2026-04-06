@@ -2,6 +2,10 @@ const fs = require("fs");
 const path = require("path");
 const db = require("./database");
 
+// Ensure schema exists before seeding
+const schemaPath = path.join(__dirname, "schema.sql");
+const schema = fs.readFileSync(schemaPath, "utf8");
+
 // Always load team fixtures from server/db/fixtures/all_teams.json
 const fixturesDir = path.join(__dirname, "fixtures");
 
@@ -43,6 +47,14 @@ function randomSkill(min, max) {
 db.configure("busyTimeout", 10000);
 
 db.serialize(() => {
+  // Create tables if they don't exist yet
+  db.exec(schema, (schemaErr) => {
+    if (schemaErr) {
+      console.error("[seed] Schema init failed:", schemaErr.message);
+      process.exit(1);
+    }
+  });
+
   db.run("BEGIN EXCLUSIVE", (err) => {
     if (err) {
       console.error("[seed] Failed to start transaction:", err.message);
