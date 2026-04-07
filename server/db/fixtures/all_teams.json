@@ -799,7 +799,7 @@
     {
       "name": "GD Bragança",
       "division": 4,
-      "colors": { "primary": "#0000ff", "secondary": "#ffffff" },
+      "colors": { "primary": "#FFD700", "secondary": "#0047AB" },
       "stadium": { "name": "Estádio Municipal de Bragança", "capacity": 10000 },
       "manager": { "name": "André Irulegui" },
       "players": [
@@ -834,7 +834,7 @@
     {
       "name": "Sport Clube Vianense",
       "division": 4,
-      "colors": { "primary": "#0000ff", "secondary": "#ffffff" },
+      "colors": { "primary": "#003087", "secondary": "#ffffff" },
       "stadium": { "name": "Estádio Dr. José de Matos", "capacity": 5000 },
       "manager": { "name": "Filipe Mesquita" },
       "players": [
@@ -867,7 +867,7 @@
     {
       "name": "Rebordosa AC",
       "division": 4,
-      "colors": { "primary": "#0000ff", "secondary": "#ffffff" },
+      "colors": { "primary": "#1565C0", "secondary": "#ffffff" },
       "stadium": {
         "name": "Complexo Desportivo de Azevedo",
         "capacity": 10000
@@ -903,7 +903,7 @@
     {
       "name": "Leça FC",
       "division": 4,
-      "colors": { "primary": "#0000ff", "secondary": "#ffffff" },
+      "colors": { "primary": "#228B22", "secondary": "#ffffff" },
       "stadium": { "name": "Estádio do Leça Futebol Clube", "capacity": 5000 },
       "manager": { "name": "Mika" },
       "players": [
@@ -937,7 +937,7 @@
     {
       "name": "GD Vitória de Sernache",
       "division": 4,
-      "colors": { "primary": "#0000ff", "secondary": "#ffffff" },
+      "colors": { "primary": "#006400", "secondary": "#ffffff" },
       "stadium": {
         "name": "Estádio Municipal Nuno Álvares Pereira",
         "capacity": 5000
@@ -974,7 +974,7 @@
     {
       "name": "Associação Naval 1893",
       "division": 4,
-      "colors": { "primary": "#000080", "secondary": "#ffffff" },
+      "colors": { "primary": "#009900", "secondary": "#ffffff" },
       "stadium": {
         "name": "Estádio Municipal José Bento Pessoa",
         "capacity": 10000
@@ -1012,7 +1012,7 @@
     {
       "name": "Louletano DC",
       "division": 4,
-      "colors": { "primary": "#ff0000", "secondary": "#ffffff" },
+      "colors": { "primary": "#CC0000", "secondary": "#ffffff" },
       "stadium": { "name": "Estádio Municipal de Loulé", "capacity": 10000 },
       "manager": { "name": "Nuno Vaz" },
       "players": [
@@ -1044,7 +1044,7 @@
     {
       "name": "Juventude Sport Clube",
       "division": 4,
-      "colors": { "primary": "#0000ff", "secondary": "#ffffff" },
+      "colors": { "primary": "#1E4DB7", "secondary": "#ffffff" },
       "stadium": { "name": "Estádio Juventude Sport Clube", "capacity": 5000 },
       "manager": { "name": "João Mateus" },
       "players": [
@@ -1078,7 +1078,7 @@
     {
       "name": "GD Portel",
       "division": 5,
-      "colors": { "primary": "#000080", "secondary": "#ffffff" },
+      "colors": { "primary": "#006400", "secondary": "#FFD700" },
       "stadium": {
         "name": "Estádio Municipal D. Nuno Álvares Pereira",
         "capacity": 5000
@@ -1116,7 +1116,7 @@
     {
       "name": "União de Montemor",
       "division": 5,
-      "colors": { "primary": "#0000ff", "secondary": "#ffffff" },
+      "colors": { "primary": "#1A1A1A", "secondary": "#ffffff" },
       "stadium": { "name": "Estádio 1º de Maio", "capacity": 5000 },
       "manager": { "name": "Gonçalo Carapinha" },
       "players": [
@@ -1150,7 +1150,7 @@
     {
       "name": "GD Monte do Trigo",
       "division": 5,
-      "colors": { "primary": "#000000", "secondary": "#ffffff" },
+      "colors": { "primary": "#CC0000", "secondary": "#FFFFFF" },
       "stadium": { "name": "Campo D. Manuel II", "capacity": 5000 },
       "manager": { "name": "Rui Varela" },
       "players": [
@@ -1184,7 +1184,7 @@
     {
       "name": "Estrela Vendas Novas",
       "division": 5,
-      "colors": { "primary": "#0000ff", "secondary": "#ffffff" },
+      "colors": { "primary": "#228B22", "secondary": "#ffffff" },
       "stadium": {
         "name": "Estádio Municipal de Vendas Novas",
         "capacity": 5000
@@ -1221,7 +1221,7 @@
     {
       "name": "Atlético de Reguengos",
       "division": 5,
-      "colors": { "primary": "#0000ff", "secondary": "#ffffff" },
+      "colors": { "primary": "#CC0000", "secondary": "#000033" },
       "stadium": { "name": "Campo Virgílio Durão", "capacity": 5000 },
       "manager": { "name": "Vasco Barros" },
       "players": [
@@ -1254,7 +1254,7 @@
     {
       "name": "Sp. Viana",
       "division": 5,
-      "colors": { "primary": "#0000ff", "secondary": "#ffffff" },
+      "colors": { "primary": "#006400", "secondary": "#ffffff" },
       "stadium": { "name": "Campo João Sousa Faria e Melo", "capacity": 5000 },
       "manager": { "name": "Luís Coxola" },
       "players": [
@@ -1288,7 +1288,7 @@
     {
       "name": "Arcoense",
       "division": 5,
-      "colors": { "primary": "#0000ff", "secondary": "#ffffff" },
+      "colors": { "primary": "#006400", "secondary": "#ffffff" },
       "stadium": { "name": "Campo Artur Gomes Jorge", "capacity": 5000 },
       "manager": { "name": "Hugo Painho" },
       "players": [
@@ -1321,7 +1321,7 @@
     {
       "name": "Redondense FC",
       "division": 5,
-      "colors": { "primary": "#0000ff", "secondary": "#ffffff" },
+      "colors": { "primary": "#CC0000", "secondary": "#ffffff" },
       "stadium": { "name": "Parque de Jogos do Calvário", "capacity": 5000 },
       "manager": { "name": "Luis Saramago" },
       "players": [
