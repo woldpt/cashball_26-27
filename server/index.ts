@@ -260,13 +260,9 @@ function scheduleNpcAuctionBids(game, playerId) {
 }
 
 // ── CUP FLOW ──────────────────────────────────────────────────────────────────
-// Cup flow is created first because weeklyFlowHelpers depends on startCupRound
-// and finalizeCupRound. checkAllReady is injected into cupFlowHelpers after
-// weeklyFlowHelpers is created (see below).
-
-// We use a late-binding wrapper to avoid circular dependency:
-// cupFlowHelpers needs checkAllReady, weeklyFlowHelpers needs startCupRound + finalizeCupRound.
-const checkAllReadyRef: { fn: ((game: ActiveGame) => Promise<void>) | null } = { fn: null };
+// No circular dependency: cupFlowHelpers no longer needs checkAllReady.
+// weeklyFlowHelpers calls startCupRound (from cupFlowHelpers) when preparing
+// the lobby for an upcoming cup week.
 
 const cupFlowHelpers = createCupFlowHelpers({
   io,
@@ -282,16 +278,11 @@ const cupFlowHelpers = createCupFlowHelpers({
   simulatePenaltyShootout,
   pickRefereeSummary,
   getPlayerList,
-  checkAllReady: (game) => {
-    if (!checkAllReadyRef.fn) return Promise.resolve();
-    return checkAllReadyRef.fn(game);
-  },
 });
 
 const applySeasonEnd = cupFlowHelpers.applySeasonEnd;
 const startCupRound = cupFlowHelpers.startCupRound;
 const finalizeCupRound = cupFlowHelpers.finalizeCupRound;
-const transitionToKickoff = cupFlowHelpers.transitionToKickoff;
 const emitCurrentPhaseToSocket = cupFlowHelpers.emitCurrentPhaseToSocket;
 const ensurePhaseTimeout = cupFlowHelpers.ensurePhaseTimeout;
 
@@ -319,9 +310,6 @@ const weeklyFlowHelpers = createWeeklyFlowHelpers({
 
 const checkAllReady = weeklyFlowHelpers.checkAllReady;
 
-// Resolve the late-binding reference so cupFlowHelpers can call checkAllReady
-checkAllReadyRef.fn = checkAllReady;
-
 // ── SOCKET HANDLERS ───────────────────────────────────────────────────────────
 
 io.on("connection", (socket) => {
@@ -348,7 +336,6 @@ io.on("connection", (socket) => {
     getPlayerBySocket,
     getPlayerList,
     saveGameState,
-    transitionToKickoff,
     checkAllReady,
   });
 

@@ -275,6 +275,17 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 try { await processNpcTransferActivity(game); } catch (_) {}
                 refreshMarket(game);
 
+                // If the next calendar event is a cup round, prepare the draw NOW
+                // so coaches see their opponent and can set tactics in the lobby.
+                if (game.currentEvent?.type === "cup") {
+                  try {
+                    await startCupRound(game, (game.currentEvent as any).round);
+                    saveGameState(game);
+                  } catch (cupErr) {
+                    console.error(`[${game.roomCode}] Cup draw preparation error:`, cupErr);
+                  }
+                }
+
                 // Broadcast updated standings and squad info
                 game.db.all("SELECT * FROM teams", (err2: any, teams: any[]) => {
                   if (!err2) io.to(game.roomCode).emit("teamsData", teams);
@@ -316,35 +327,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
   }
 
   // ─── MAIN DISPATCH: checkAllReady ────────────────────────────────────────────
-  // Called every time a player's ready status changes.
-  // Dispatches based on gamePhase — the single source of truth.
+  // Cup and league use the IDENTICAL flow: lobby → match_first_half → halftime
+  // → match_second_half → finalize → lobby. No special cup phases.
 
   async function checkAllReady(game: ActiveGame) {
-    // ── Cup awaiting kickoff: only cup coaches need to be ready ──────────────
-    if (game.gamePhase === "cup_awaiting_kickoff") {
-      const cupCoaches = Object.values(game.playersByName).filter(
-        (p) => p.socketId && game.cupTeamIds.includes(p.teamId),
-      );
-      // If human coaches are in the cup, all must be ready
-      if (cupCoaches.length > 0 && !cupCoaches.every((p) => p.ready)) return;
-
-      if (segmentRunning[game.roomCode]) return;
-      segmentRunning[game.roomCode] = true;
-      clearPhaseTimer(game);
-
-      game.gamePhase = "match_first_half";
-      game.phaseToken = makePhaseToken(game);
-      saveGameState(game);
-
-      try {
-        await runMatchSegment(game, 1, 45);
-      } finally {
-        segmentRunning[game.roomCode] = false;
-      }
-      return;
-    }
-
-    // ── All other phases: standard readiness check ───────────────────────────
+    // ── Standard readiness check (same for cup and league) ──────────────────
     if (game.lockedCoaches.size >= 2) {
       const allReady = [...game.lockedCoaches].every(
         (name) => game.playersByName[name]?.socketId && game.playersByName[name]?.ready,
@@ -360,32 +347,24 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       `[${game.roomCode}] All ready — calendarIndex=${game.calendarIndex} gamePhase=${game.gamePhase}`,
     );
 
+    // ── Lobby → start match (league OR cup, identical) ──────────────────────
     if (game.gamePhase === "lobby") {
       if (segmentRunning[game.roomCode]) return;
 
       const entry = SEASON_CALENDAR[game.calendarIndex];
       if (!entry) {
-        // Past end of calendar — season end should have fired already
         console.warn(`[${game.roomCode}] checkAllReady: calendarIndex ${game.calendarIndex} out of range`);
         return;
       }
 
       finalizeAllRunningAuctions(game, finalizeAuction);
 
-      if (entry.type === "cup") {
-        // Cup events: start the draw phase (not a direct match)
-        // startCupRound sets gamePhase = "cup_draw" internally
-        await startCupRound(game, (entry as any).round);
-        return;
-      }
-
-      // League event
       segmentRunning[game.roomCode] = true;
       game.gamePhase = "match_first_half";
       game.currentEvent = entry;
       game.phaseToken = makePhaseToken(game);
 
-      // Deduct weekly wages + loan interest
+      // Deduct weekly wages + loan interest (same for cup and league weeks)
       game.db.run(
         `UPDATE teams SET budget = budget
           - CAST((loan_amount * 0.025) AS INTEGER)
@@ -399,14 +378,31 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             return;
           }
 
-          const mw = (entry as any).matchweek;
-          const [f1, f2, f3, f4] = await Promise.all([
-            generateFixturesForDivision(game.db, 1, mw),
-            generateFixturesForDivision(game.db, 2, mw),
-            generateFixturesForDivision(game.db, 3, mw),
-            generateFixturesForDivision(game.db, 4, mw),
-          ]);
-          game.currentFixtures = [...f1, ...f2, ...f3, ...f4];
+          if (entry.type === "cup") {
+            // Cup fixtures were prepared when we entered the lobby (see finalizeLeagueEvent).
+            // Fallback: prepare now if missing (e.g. crash recovery).
+            if (!game.currentFixtures || game.currentFixtures.length === 0) {
+              try {
+                await startCupRound(game, (entry as any).round);
+              } catch (cupErr) {
+                console.error(`[${game.roomCode}] Cup draw fallback error:`, cupErr);
+                game.gamePhase = "lobby";
+                segmentRunning[game.roomCode] = false;
+                return;
+              }
+            }
+          } else {
+            // League: generate fixtures now
+            const mw = (entry as any).matchweek;
+            const [f1, f2, f3, f4] = await Promise.all([
+              generateFixturesForDivision(game.db, 1, mw),
+              generateFixturesForDivision(game.db, 2, mw),
+              generateFixturesForDivision(game.db, 3, mw),
+              generateFixturesForDivision(game.db, 4, mw),
+            ]);
+            game.currentFixtures = [...f1, ...f2, ...f3, ...f4];
+          }
+
           saveGameState(game);
 
           try {
@@ -419,6 +415,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       return;
     }
 
+    // ── Halftime → second half (league AND cup, identical) ──────────────────
     if (game.gamePhase === "match_halftime") {
       if (segmentRunning[game.roomCode]) return;
       segmentRunning[game.roomCode] = true;

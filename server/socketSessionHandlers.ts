@@ -48,12 +48,10 @@ function legacyMatchState(gamePhase: GamePhase): string {
 function legacyCupState(game: ActiveGame): string {
   if (!game.currentEvent || game.currentEvent.type !== "cup") return "idle";
   switch (game.gamePhase) {
-    case "cup_draw":             return "draw";
-    case "cup_awaiting_kickoff": return "pre_match";
-    case "match_first_half":     return "playing_first_half";
-    case "match_halftime":       return "halftime";
+    case "match_first_half":  return "playing_first_half";
+    case "match_halftime":    return "halftime";
     case "match_second_half":
-    case "match_extra_time":     return "playing_second_half";
+    case "match_extra_time":  return "playing_second_half";
     default: return "idle";
   }
 }

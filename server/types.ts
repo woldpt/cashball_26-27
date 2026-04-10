@@ -33,8 +33,6 @@ export type GamePhase =
   | "match_second_half"      // Engine running 46-90
   | "match_extra_time"       // Cup only: ET simulation
   | "match_finalizing"       // Post-match processing (brief, blocking)
-  | "cup_draw"               // Cup only: show draw, wait for acks
-  | "cup_awaiting_kickoff"   // Cup only: all cup managers confirm Ready
   | "season_end";            // Season wrap-up: promotions, relegations
 
 export interface ActiveGame {
@@ -61,11 +59,9 @@ export interface ActiveGame {
   phaseTimer: ReturnType<typeof setTimeout> | null;
   phaseAcks: Set<string>;
 
-  // ── Cup runtime payloads (flat fields replacing CupRuntime object) ──
+  // ── Cup runtime payloads ──
   cupTeamIds: number[];
-  cupDrawPayload: unknown | null;
   cupHalftimePayload: unknown | null;
-  cupSecondHalfPayload: unknown | null;
 
   // ── Retained fields ──
   lockedCoaches: Set<string>;

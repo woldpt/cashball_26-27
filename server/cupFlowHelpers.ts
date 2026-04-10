@@ -36,7 +36,6 @@ interface CupFlowDeps {
     matchweek: number,
   ) => { name: string; balance: number; favorsTeamA: boolean };
   getPlayerList: (game: ActiveGame) => PlayerSession[];
-  checkAllReady: (game: ActiveGame) => Promise<void>;
 }
 
 export function createCupFlowHelpers(deps: CupFlowDeps) {
@@ -54,7 +53,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     simulatePenaltyShootout,
     pickRefereeSummary,
     getPlayerList,
-    checkAllReady,
   } = deps;
 
   // ─── SEASON END ────────────────────────────────────────────────────────────
@@ -153,9 +151,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     game.currentEvent = SEASON_CALENDAR[0];
     game.currentFixtures = [];
     game.cupTeamIds = [];
-    game.cupDrawPayload = null;
     game.cupHalftimePayload = null;
-    game.cupSecondHalfPayload = null;
     game.lastHalftimePayload = null;
     clearPhaseTimer(game);
     game.phaseAcks = new Set();
@@ -229,13 +225,16 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     return fixtures;
   }
 
-  // ─── START CUP ROUND ────────────────────────────────────────────────────────
-  // Sets gamePhase = "cup_draw", populates currentFixtures, arms draw timer.
+  // ─── PREPARE CUP ROUND ──────────────────────────────────────────────────────
+  // Generates the draw, populates game.currentFixtures, emits cupDrawStart.
+  // Does NOT change gamePhase — that is the caller's responsibility.
+  // Called when transitioning TO the lobby for a cup week, so coaches can
+  // see their opponent and set tactics before clicking Ready.
 
   async function startCupRound(game: ActiveGame, round: number) {
     const drawFixtures = await generateCupDraw(game, round);
 
-    // Enrich fixtures with team info and pre-assign tactics
+    // Enrich fixtures with team info
     const enrichedFixtures: any[] = [];
     for (const fixture of drawFixtures) {
       const home = await runGet(
@@ -248,12 +247,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
         "SELECT id, name, color_primary, color_secondary FROM teams WHERE id = ?",
         [fixture.awayTeamId],
       );
-      const p1 = (Object.values(game.playersByName) as PlayerSession[]).find(
-        (p) => p.teamId === fixture.homeTeamId,
-      );
-      const p2 = (Object.values(game.playersByName) as PlayerSession[]).find(
-        (p) => p.teamId === fixture.awayTeamId,
-      );
       enrichedFixtures.push({
         homeTeamId: fixture.homeTeamId,
         awayTeamId: fixture.awayTeamId,
@@ -264,15 +257,16 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
         events: [],
         homeLineup: [],
         awayLineup: [],
-        _t1: p1 ? p1.tactic : { formation: "4-4-2", style: "Balanced" },
-        _t2: p2 ? p2.tactic : { formation: "4-4-2", style: "Balanced" },
+        // Tactics are NOT pre-assigned here — they are read live from
+        // game.playersByName[p].tactic at match start, same as league.
       });
     }
 
     game.currentFixtures = enrichedFixtures;
     game.currentEvent = SEASON_CALENDAR[game.calendarIndex];
+    game.cupHalftimePayload = null;
 
-    // Build draw payload (pairs of teams for the draw animation)
+    // Compute humanInCup for the client's draw payload
     const connectedPlayers = getPlayerList(game);
     const humanTeamIds = new Set(connectedPlayers.map((p) => p.teamId));
     const humanInCup = game.cupTeamIds.some((id) => humanTeamIds.has(id));
@@ -285,77 +279,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
       season: game.season,
     };
 
-    game.cupDrawPayload = drawPayload;
-    game.cupHalftimePayload = null;
-    game.cupSecondHalfPayload = null;
-    game.gamePhase = "cup_draw";
-    game.phaseToken = makePhaseToken(game);
-    game.phaseAcks = new Set();
-    saveGameState(game);
-
+    // Emit draw so clients can show the animation in the lobby
     io.to(game.roomCode).emit("cupDrawStart", drawPayload);
-
-    if (!humanInCup) {
-      // No human in cup — transition straight to kickoff and auto-start
-      transitionToKickoff(game);
-    } else {
-      // Wait 30s for all coaches to acknowledge the draw, then auto-proceed
-      armPhaseTimer(game, 30000, () => {
-        if (game.gamePhase === "cup_draw") {
-          console.log(`[${game.roomCode}] Cup draw ack timeout — auto-proceeding`);
-          transitionToKickoff(game);
-        }
-      });
-    }
-  }
-
-  // ─── DRAW → KICKOFF TRANSITION ───────────────────────────────────────────────
-
-  function transitionToKickoff(game: ActiveGame) {
-    clearPhaseTimer(game);
-    game.gamePhase = "cup_awaiting_kickoff";
-    game.phaseToken = makePhaseToken(game);
-    game.phaseAcks = new Set();
-
-    // Reset ready flags
-    Object.values(game.playersByName).forEach((p) => { p.ready = false; });
-
-    const entry = game.currentEvent as any;
-    const cupPreMatchPayload = {
-      round: entry?.round,
-      roundName: entry?.roundName,
-      season: game.season,
-      cupTeamIds: game.cupTeamIds,
-    };
-
-    io.to(game.roomCode).emit("cupPreMatch", cupPreMatchPayload);
-    io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
-    saveGameState(game);
-
-    // Check if humans are in the cup; if not, start immediately
-    const humanInCup = (Object.values(game.playersByName) as PlayerSession[])
-      .some((p) => p.socketId && game.cupTeamIds.includes(p.teamId));
-
-    if (!humanInCup) {
-      // Auto-start: all NPC cup → immediately trigger match
-      checkAllReady(game).catch((err) =>
-        console.error(`[${game.roomCode}] Cup auto-kickoff error:`, err),
-      );
-    } else {
-      // Wait 60s for cup coaches to click Ready, then auto-start
-      armPhaseTimer(game, 60000, () => {
-        if (game.gamePhase === "cup_awaiting_kickoff") {
-          console.log(`[${game.roomCode}] Cup kickoff timeout — auto-starting`);
-          // Mark all disconnected cup coaches as ready so the game can proceed
-          Object.values(game.playersByName).forEach((p) => {
-            if (game.cupTeamIds.includes(p.teamId)) p.ready = true;
-          });
-          checkAllReady(game).catch((err) =>
-            console.error(`[${game.roomCode}] Cup auto-kickoff (timeout) error:`, err),
-          );
-        }
-      });
-    }
   }
 
   // ─── CUP ROUND FINALIZATION (ET + PENALTIES) ────────────────────────────────
@@ -503,9 +428,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     game.calendarIndex += 1;
     game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
     game.currentFixtures = [];
-    game.cupDrawPayload = null;
     game.cupHalftimePayload = null;
-    game.cupSecondHalfPayload = null;
     game.lastHalftimePayload = null;
     game.gamePhase = "lobby";
     Object.values(game.playersByName).forEach((p) => { p.ready = false; });
@@ -566,81 +489,47 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
   /**
    * Emit the current phase state to a reconnecting socket.
-   * Replaces the old emitCurrentCupPhaseToSocket.
+   * Cup lobby: re-emit the draw so the client can show the matchup.
    */
   function emitCurrentPhaseToSocket(game: ActiveGame, socket: any) {
-    switch (game.gamePhase) {
-      case "cup_draw":
-        if (game.cupDrawPayload) socket.emit("cupDrawStart", game.cupDrawPayload);
-        break;
+    // Lobby during a cup week: re-emit draw so reconnecting coach sees matchup
+    if (game.gamePhase === "lobby" && game.currentEvent?.type === "cup" && game.currentFixtures.length > 0) {
+      const entry = game.currentEvent as any;
+      const connectedPlayers = getPlayerList(game);
+      const humanTeamIds = new Set(connectedPlayers.map((p) => p.teamId));
+      const humanInCup = game.cupTeamIds.some((id) => humanTeamIds.has(id));
+      socket.emit("cupDrawStart", {
+        round: entry.round,
+        roundName: entry.roundName,
+        fixtures: game.currentFixtures.map((f: any) => ({ homeTeam: f.homeTeam, awayTeam: f.awayTeam })),
+        humanInCup,
+        season: game.season,
+      });
+      return;
+    }
 
-      case "cup_awaiting_kickoff": {
-        const entry = game.currentEvent as any;
-        socket.emit("cupPreMatch", {
-          round: entry?.round,
-          roundName: entry?.roundName,
-          season: game.season,
-          cupTeamIds: game.cupTeamIds,
-        });
-        break;
+    if (game.gamePhase === "match_halftime") {
+      if (game.currentEvent?.type === "cup" && game.cupHalftimePayload) {
+        socket.emit("cupHalfTimeResults", game.cupHalftimePayload);
+      } else if (game.lastHalftimePayload) {
+        socket.emit("halfTimeResults", game.lastHalftimePayload);
       }
-
-      case "match_halftime":
-        if (game.currentEvent?.type === "cup" && game.cupHalftimePayload) {
-          socket.emit("cupHalfTimeResults", game.cupHalftimePayload);
-        } else if (game.lastHalftimePayload) {
-          socket.emit("halfTimeResults", game.lastHalftimePayload);
-        }
-        break;
-
-      case "match_second_half":
-      case "match_extra_time":
-        if (game.currentEvent?.type === "cup" && game.cupSecondHalfPayload) {
-          socket.emit("cupSecondHalfStart", game.cupSecondHalfPayload);
-        }
-        break;
     }
   }
 
   /**
-   * Re-arm phase timers for a reconnecting player.
-   * Replaces the old ensureCupPhaseTimeout.
+   * No phase timers needed for cup lobby — coaches ready up same as league.
+   * Kept for API compatibility; no-op unless there's a timer already set.
    */
-  function ensurePhaseTimeout(game: ActiveGame) {
-    if (game.phaseTimer) return; // Already running
-
-    const token = game.phaseToken;
-    if (!token) return;
-
-    if (game.gamePhase === "cup_draw") {
-      armPhaseTimer(game, 30000, () => {
-        if (game.gamePhase === "cup_draw" && game.phaseToken === token) {
-          console.log(`[${game.roomCode}] Cup draw ack timeout (reconnect re-arm)`);
-          transitionToKickoff(game);
-        }
-      });
-    }
-
-    if (game.gamePhase === "cup_awaiting_kickoff") {
-      armPhaseTimer(game, 60000, () => {
-        if (game.gamePhase === "cup_awaiting_kickoff" && game.phaseToken === token) {
-          console.log(`[${game.roomCode}] Cup kickoff timeout (reconnect re-arm)`);
-          Object.values(game.playersByName).forEach((p) => {
-            if (game.cupTeamIds.includes(p.teamId)) p.ready = true;
-          });
-          checkAllReady(game).catch(() => {});
-        }
-      });
-    }
+  function ensurePhaseTimeout(_game: ActiveGame) {
+    // Cup now uses the same lobby Ready flow as league — no separate timers.
   }
 
   return {
     applySeasonEnd,
     startCupRound,
     finalizeCupRound,
-    transitionToKickoff,
     emitCurrentPhaseToSocket,
     ensurePhaseTimeout,
-    armPhaseTimer,
   };
 }
