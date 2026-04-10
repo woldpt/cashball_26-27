@@ -1839,19 +1839,19 @@ function App() {
             {authPhase === "login" && (
               <div className="p-8 space-y-5">
                 <div className="space-y-2 text-center">
-                  <p className="text-xs text-zinc-500 uppercase font-black tracking-[0.35em]">
+                  <p className="text-[10px] text-on-surface-variant uppercase font-black tracking-[0.35em]">
                     Login
                   </p>
-                  <h2 className="text-3xl font-black text-white tracking-tight">
+                  <h2 className="text-3xl font-headline font-black text-on-surface tracking-tight">
                     Entra primeiro na tua conta
                   </h2>
-                  <p className="text-sm text-zinc-400 font-medium">
+                  <p className="text-sm text-on-surface-variant font-medium">
                     Depois escolhes se queres novo jogo, continuar uma época ou
                     juntar-te a amigos.
                   </p>
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase text-zinc-500 mb-2 font-bold">
+                  <label className="block text-[10px] uppercase text-on-surface-variant mb-2 font-bold tracking-wider">
                     O teu nome de Treinador
                   </label>
                   <input
@@ -1866,7 +1866,7 @@ function App() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase text-zinc-500 mb-2 font-bold">
+                  <label className="block text-[10px] uppercase text-on-surface-variant mb-2 font-bold tracking-wider">
                     Palavra-passe
                   </label>
                   <input
@@ -1930,15 +1930,15 @@ function App() {
                   ← Voltar
                 </button>
                 <div className="space-y-2 text-center">
-                  <p className="text-xs text-zinc-500 uppercase font-black tracking-[0.35em]">
+                  <p className="text-[10px] text-on-surface-variant uppercase font-black tracking-[0.35em]">
                     Nova conta
                   </p>
-                  <h2 className="text-3xl font-black text-white tracking-tight">
+                  <h2 className="text-3xl font-headline font-black text-on-surface tracking-tight">
                     Cria a tua conta de treinador
                   </h2>
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase text-zinc-500 mb-2 font-bold">
+                  <label className="block text-[10px] uppercase text-on-surface-variant mb-2 font-bold tracking-wider">
                     O teu nome de Treinador
                   </label>
                   <input
@@ -1953,7 +1953,7 @@ function App() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase text-zinc-500 mb-2 font-bold">
+                  <label className="block text-[10px] uppercase text-on-surface-variant mb-2 font-bold tracking-wider">
                     Palavra-passe
                   </label>
                   <input
@@ -1968,7 +1968,7 @@ function App() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] uppercase text-zinc-500 mb-2 font-bold">
+                  <label className="block text-[10px] uppercase text-on-surface-variant mb-2 font-bold tracking-wider">
                     Confirmar Palavra-passe
                   </label>
                   <input
@@ -2021,10 +2021,10 @@ function App() {
               <div className="p-8 space-y-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs text-zinc-500 uppercase font-black tracking-[0.35em] mb-2">
+                    <p className="text-[10px] text-on-surface-variant uppercase font-black tracking-[0.35em] mb-2">
                       Sessão autenticada
                     </p>
-                    <h2 className="text-3xl font-black text-white tracking-tight">
+                    <h2 className="text-3xl font-headline font-black text-on-surface tracking-tight">
                       Escolhe como queres jogar
                     </h2>
                     <p className="text-sm text-zinc-400 font-medium mt-2">
@@ -2033,7 +2033,7 @@ function App() {
                   </div>
                   <button
                     onClick={resetAuthFlow}
-                    className="shrink-0 text-xs text-zinc-500 hover:text-zinc-300 font-black uppercase tracking-widest"
+                    className="shrink-0 text-xs text-on-surface-variant hover:text-on-surface font-black uppercase tracking-widest"
                   >
                     Trocar conta
                   </button>
@@ -2051,7 +2051,7 @@ function App() {
                       Novo jogo
                     </p>
                     <p className="text-base font-black text-white">Novo jogo</p>
-                    <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
+                    <p className="mt-2 text-xs text-on-surface-variant leading-relaxed">
                       Começa do zero e recebe uma nova sala.
                     </p>
                   </button>
@@ -2069,7 +2069,7 @@ function App() {
                     <p className="text-base font-black text-white">
                       Continuar jogo
                     </p>
-                    <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
+                    <p className="mt-2 text-xs text-on-surface-variant leading-relaxed">
                       Reabre uma época guardada.
                     </p>
                   </button>
@@ -2087,7 +2087,7 @@ function App() {
                     <p className="text-base font-black text-white">
                       Juntar a amigos
                     </p>
-                    <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
+                    <p className="mt-2 text-xs text-on-surface-variant leading-relaxed">
                       Junta-te a outra equipa com um código.
                     </p>
                   </button>
@@ -2122,7 +2122,7 @@ function App() {
                       As tuas Salas Gravadas
                     </label>
                     {availableSaves.length === 0 ? (
-                      <p className="text-zinc-500 text-sm mt-2">
+                      <p className="text-on-surface-variant text-sm mt-2">
                         Nenhum save encontrado para este treinador.
                       </p>
                     ) : (
@@ -2134,7 +2134,7 @@ function App() {
                             className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all ${
                               roomCode === save
                                 ? "border-cyan-500 bg-cyan-500/15 text-white"
-                                : "border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-600 hover:text-white"
+                                : "border-outline-variant/20 bg-surface text-on-surface-variant hover:border-outline-variant hover:text-on-surface"
                             }`}
                           >
                             <span className="font-black text-sm uppercase tracking-widest">
@@ -2176,7 +2176,7 @@ function App() {
                                     alert("Erro de ligação ao servidor."),
                                   );
                               }}
-                              className="shrink-0 text-zinc-600 hover:text-red-400 transition-colors p-1"
+                              className="shrink-0 text-on-surface-variant/50 hover:text-error transition-colors p-1"
                               title="Apagar sala"
                             >
                               🗑️
@@ -2648,12 +2648,12 @@ function App() {
         <div className="p-4 lg:p-6">
           {/* ─── TACTIC: HORIZONTAL ADVERSARY BANNER ──────────────────── */}
           {activeTab === "tactic" && (
-            <div className="mb-4 rounded-xl border border-zinc-800 bg-zinc-950/80">
+            <div className="mb-4 rounded-md border border-outline-variant/20 bg-surface-container-low">
               {nextMatchOpponent ? (
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4">
                   {/* Jornada + VS */}
                   <div className="shrink-0">
-                    <p className="text-[10px] uppercase tracking-[0.35em] text-zinc-500 font-black mb-0.5">
+                    <p className="text-[10px] uppercase tracking-[0.35em] text-on-surface-variant font-black mb-0.5">
                       Jornada {nextMatchSummary?.matchweek ?? "—"}
                     </p>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -2669,7 +2669,7 @@ function App() {
                   </div>
                   {/* Standings */}
                   <div className="shrink-0 text-center">
-                    <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-0.5">
+                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-black mb-0.5">
                       Posição
                     </p>
                     <p className="text-base font-black">
@@ -2688,31 +2688,31 @@ function App() {
                   </div>
                   {/* Opponent pts */}
                   <div className="shrink-0 text-center">
-                    <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-0.5">
+                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-black mb-0.5">
                       Pts Adv.
                     </p>
-                    <p className="text-white font-black text-base">
+                    <p className="text-on-surface font-headline font-black text-base">
                       {nextMatchOpponent.points ?? "—"}
                     </p>
                   </div>
                   {/* GM / GS */}
                   <div className="shrink-0 text-center">
-                    <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-0.5">
+                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-black mb-0.5">
                       GM / GS Adv.
                     </p>
                     <p className="text-sm font-black">
-                      <span className="text-emerald-400">
+                      <span className="text-primary">
                         {nextMatchOpponent.goalsFor ?? "—"}
                       </span>
-                      <span className="text-zinc-600 mx-1">/</span>
-                      <span className="text-red-400">
+                      <span className="text-on-surface-variant/40 mx-1">/</span>
+                      <span className="text-error">
                         {nextMatchOpponent.goalsAgainst ?? "—"}
                       </span>
                     </p>
                   </div>
                   {/* Opponent form */}
                   <div className="shrink-0">
-                    <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-1">
+                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-black mb-1">
                       Forma Adv.
                     </p>
                     <div className="flex items-center gap-1">
@@ -2731,25 +2731,25 @@ function App() {
                   </div>
                   {/* Referee */}
                   <div className="ml-auto shrink-0">
-                    <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-1">
+                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-black mb-1">
                       Árbitro
                     </p>
                     <button
                       type="button"
                       onClick={() => setRefereePopup(nextMatchReferee)}
-                      className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 hover:border-amber-500/40 transition-colors"
+                      className="flex items-center gap-2 rounded-md border border-outline-variant/30 bg-surface px-3 py-2 hover:border-tertiary/40 transition-colors"
                     >
                       <span className="font-black text-white text-sm">
                         {nextMatchReferee?.name || "A definir"}
                       </span>
-                      <span className="text-[10px] uppercase tracking-widest font-black text-amber-400">
+                      <span className="text-[10px] uppercase tracking-widest font-black text-tertiary">
                         Ver balança
                       </span>
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="px-5 py-4 text-sm font-bold text-zinc-500">
+                <div className="px-5 py-4 text-sm font-bold text-on-surface-variant">
                   {nextMatchSummaryLoading
                     ? "A carregar próximo jogo…"
                     : "Sem jogo disponível."}
@@ -3846,7 +3846,7 @@ function App() {
                           return (
                             <div
                               key={idx}
-                              className={`rounded-xl border px-4 py-3 ${isMyMatch ? "border-primary bg-primary/10" : "border-outline-variant/20 bg-surface"}`}
+                              className={`rounded-md border px-4 py-3 ${isMyMatch ? "border-primary bg-primary/10" : "border-outline-variant/20 bg-surface"}`}
                             >
                               <div className="flex items-center gap-3">
                                 <span
@@ -3926,7 +3926,7 @@ function App() {
                           return (
                             <div
                               key={idx}
-                              className={`rounded-xl border px-4 py-3 flex items-center gap-3 ${isMine ? "border-primary bg-primary/10" : "border-outline-variant/20 bg-surface"}`}
+                              className={`rounded-md border px-4 py-3 flex items-center gap-3 ${isMine ? "border-primary bg-primary/10" : "border-outline-variant/20 bg-surface"}`}
                             >
                               <span
                                 className="flex-1 text-right font-black text-sm truncate"
@@ -3970,7 +3970,7 @@ function App() {
                   >
                     <div className="flex flex-col md:flex-row md:items-center gap-4">
                       <div
-                        className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black shrink-0"
+                        className="w-16 h-16 rounded-md flex items-center justify-center text-3xl font-black shrink-0"
                         style={{
                           background: teamInfo?.color_primary || "#18181b",
                           color: teamInfo?.color_secondary || "#fff",
@@ -3985,29 +3985,29 @@ function App() {
                         >
                           {teamInfo?.name || "—"}
                         </h1>
-                        <p className="text-zinc-400 text-sm font-bold mt-0.5">
+                        <p className="text-on-surface-variant text-sm font-bold mt-0.5">
                           {DIVISION_NAMES[teamInfo?.division] ||
                             `Divisão ${teamInfo?.division}`}{" "}
                           · Época {seasonYear}/{seasonYear + 1}
                         </p>
-                        <p className="text-zinc-500 text-xs mt-1">
+                        <p className="text-on-surface-variant text-xs mt-1">
                           Manager:{" "}
-                          <strong className="text-zinc-300">{me?.name}</strong>
+                          <strong className="text-on-surface">{me?.name}</strong>
                         </p>
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">
+                        <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-widest">
                           Moral
                         </span>
                         <div className="flex items-center gap-2">
-                          <div className="w-28 h-2 bg-zinc-800 rounded-full overflow-hidden">
+                          <div className="w-28 h-2 bg-surface-bright rounded-full overflow-hidden">
                             <div
-                              className={`h-full rounded-full ${(teamInfo?.morale || 75) >= 70 ? "bg-emerald-500" : (teamInfo?.morale || 75) >= 40 ? "bg-amber-500" : "bg-red-500"}`}
+                              className={`h-full rounded-full ${(teamInfo?.morale || 75) >= 70 ? "bg-primary" : (teamInfo?.morale || 75) >= 40 ? "bg-tertiary" : "bg-error"}`}
                               style={{ width: `${teamInfo?.morale || 75}%` }}
                             />
                           </div>
                           <span
-                            className={`font-black text-sm ${(teamInfo?.morale || 75) >= 70 ? "text-emerald-400" : (teamInfo?.morale || 75) >= 40 ? "text-amber-400" : "text-red-400"}`}
+                            className={`font-headline font-black text-sm ${(teamInfo?.morale || 75) >= 70 ? "text-primary" : (teamInfo?.morale || 75) >= 40 ? "text-tertiary" : "text-error"}`}
                           >
                             {teamInfo?.morale || 75}
                           </span>
@@ -4018,8 +4018,9 @@ function App() {
 
                   {/* Own team trophies */}
                   <div className="bg-surface-container rounded-lg shadow-sm p-6">
-                    <h2 className="text-xs text-amber-400 font-black uppercase tracking-widest mb-4 flex items-center gap-2">
-                      🏆 Palmarés de {teamInfo?.name}
+                    <h2 className="text-xs text-tertiary font-black uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>emoji_events</span>
+                      Palmarés de {teamInfo?.name}
                     </h2>
                     {palmaresTeamId === me?.teamId &&
                     palmares.trophies?.length > 0 ? (
@@ -4027,14 +4028,14 @@ function App() {
                         {palmares.trophies.map((trophy, idx) => (
                           <div
                             key={idx}
-                            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-900/20 border border-amber-700/40"
+                            className="flex items-center gap-3 px-4 py-3 rounded-md bg-tertiary/8 border border-tertiary/25"
                           >
-                            <span className="text-2xl">🏆</span>
+                            <span className="material-symbols-outlined text-tertiary text-2xl" style={{fontVariationSettings: "'FILL' 1"}}>emoji_events</span>
                             <div>
-                              <p className="text-amber-300 font-black text-sm">
+                              <p className="text-tertiary font-black text-sm">
                                 {trophy.achievement}
                               </p>
-                              <p className="text-zinc-500 text-xs font-bold">
+                              <p className="text-on-surface-variant text-xs font-bold">
                                 {trophy.season}
                               </p>
                             </div>
@@ -4042,7 +4043,7 @@ function App() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-zinc-500 font-bold text-sm">
+                      <p className="text-on-surface-variant font-bold text-sm">
                         Ainda sem títulos conquistados.
                       </p>
                     )}
@@ -4051,7 +4052,7 @@ function App() {
                   {/* All-time champions by season */}
                   {palmares.allChampions?.length > 0 && (
                     <div className="bg-surface-container rounded-lg shadow-sm p-6">
-                      <h2 className="text-xs text-zinc-400 font-black uppercase tracking-widest mb-4">
+                      <h2 className="text-xs text-on-surface-variant font-black uppercase tracking-widest mb-4">
                         Palco de Honra — Todos os Campeões
                       </h2>
                       <div className="space-y-3">
@@ -4066,16 +4067,16 @@ function App() {
                             .map((season) => (
                               <div
                                 key={season}
-                                className="bg-surface border border-outline-variant/20 rounded px-5 py-3"
+                                className="bg-surface border border-outline-variant/15 rounded-md px-5 py-3"
                               >
-                                <p className="text-xs text-zinc-500 font-black uppercase tracking-widest mb-2">
+                                <p className="text-xs text-on-surface-variant font-black uppercase tracking-widest mb-2">
                                   {season}
                                 </p>
                                 <div className="flex flex-wrap gap-2">
                                   {bySeasons[season].map((c, i) => (
                                     <span
                                       key={i}
-                                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-zinc-800 border border-zinc-700"
+                                      className="inline-flex items-center gap-1 px-3 py-1 rounded-sm text-xs font-black bg-surface-bright border border-outline-variant/30"
                                     >
                                       <span
                                         className={
@@ -4083,13 +4084,13 @@ function App() {
                                             "Campeão Nacional" ||
                                           c.achievement ===
                                             "Vencedor da Taça de Portugal"
-                                            ? "text-amber-400"
-                                            : "text-white"
+                                            ? "text-tertiary"
+                                            : "text-on-surface"
                                         }
                                       >
                                         {c.team_name}
                                       </span>
-                                      <span className="text-zinc-400">
+                                      <span className="text-on-surface-variant">
                                         — {c.achievement}
                                       </span>
                                     </span>
@@ -4104,12 +4105,12 @@ function App() {
 
                   {/* Finances section */}
                   <div className="bg-surface-container p-6 rounded-lg shadow-sm">
-                    <h2 className="text-xs text-zinc-400 font-black uppercase tracking-widest mb-4">
+                    <h2 className="text-xs text-on-surface-variant font-black uppercase tracking-widest mb-4">
                       Estádio
                     </h2>
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-zinc-400 font-bold text-sm">
+                        <span className="text-on-surface-variant font-bold text-sm">
                           Capacidade
                         </span>
                         <span className="font-mono text-white font-black text-lg">
@@ -4120,18 +4121,18 @@ function App() {
                           lugares
                         </span>
                       </div>
-                      <div className="flex items-center justify-between border-t border-zinc-800 pt-3">
-                        <span className="text-zinc-400 font-bold text-sm">
+                      <div className="flex items-center justify-between border-t border-outline-variant/15 pt-3">
+                        <span className="text-on-surface-variant font-bold text-sm">
                           Receita Máx./Jogo em Casa
                         </span>
                         <span className="font-mono text-emerald-400 font-bold text-sm">
                           {formatCurrency(capacityRevPerGame)}
                         </span>
                       </div>
-                      <p className="text-zinc-500 text-xs mt-1">
+                      <p className="text-on-surface-variant text-xs mt-1">
                         Para expandir estádio ou gerir empréstimos, vê o
                         separador{" "}
-                        <strong className="text-amber-400">Finanças</strong>.
+                        <strong className="text-tertiary">Finanças</strong>.
                       </p>
                     </div>
                   </div>
@@ -4167,7 +4168,7 @@ function App() {
                           / 14 jornadas
                         </span>
                       </span>
-                      <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 bg-surface-bright rounded-full overflow-hidden">
                         <div
                           className="h-full bg-primary rounded-full transition-all"
                           style={{ width: `${(completedJornada / 14) * 100}%` }}
@@ -4245,7 +4246,7 @@ function App() {
                               (_, i) => (
                                 <div
                                   key={i}
-                                  className={`flex-1 h-2 rounded-sm ${i < homeGamesPlayed ? "bg-emerald-500" : i === homeGamesPlayed ? "bg-emerald-800 animate-pulse" : "bg-zinc-800"}`}
+                                  className={`flex-1 h-2 rounded-sm ${i < homeGamesPlayed ? "bg-primary" : i === homeGamesPlayed ? "bg-primary/40 animate-pulse" : "bg-surface-bright"}`}
                                 />
                               ),
                             )}
@@ -4343,7 +4344,7 @@ function App() {
                           <span>0€</span>
                           <span>Máximo: 2.500.000€</span>
                         </div>
-                        <div className="w-full h-3 bg-zinc-800 rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-surface-bright rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all ${loanAmount / 2500000 > 0.75 ? "bg-red-500" : loanAmount / 2500000 > 0.4 ? "bg-orange-500" : "bg-amber-400"}`}
                             style={{
@@ -4357,27 +4358,27 @@ function App() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-3 pt-2">
-                        <div className="bg-zinc-950 p-4 rounded-xl border border-red-900/30 flex flex-col gap-2">
-                          <p className="text-xs font-black text-red-400 uppercase tracking-widest">
+                        <div className="bg-surface p-4 rounded-md border border-error/20 flex flex-col gap-2">
+                          <p className="text-xs font-black text-error uppercase tracking-widest">
                             Pedir Empréstimo
                           </p>
-                          <p className="text-zinc-500 text-[10px]">
+                          <p className="text-on-surface-variant text-[10px]">
                             +500.000€ → {formatCurrency(loanAmount + 500000)}{" "}
                             dívida
                           </p>
                           <button
                             onClick={() => socket.emit("takeLoan")}
                             disabled={loanAmount >= 2500000}
-                            className="w-full bg-red-900 hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black py-2.5 rounded-lg text-xs transition-all uppercase"
+                            className="w-full bg-error-container hover:bg-red-900 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black py-2.5 rounded-md text-xs transition-all uppercase tracking-wider"
                           >
                             Pedir +500K
                           </button>
                         </div>
-                        <div className="bg-zinc-950 p-4 rounded-xl border border-emerald-900/30 flex flex-col gap-2">
-                          <p className="text-xs font-black text-emerald-400 uppercase tracking-widest">
+                        <div className="bg-surface p-4 rounded-md border border-primary/20 flex flex-col gap-2">
+                          <p className="text-xs font-black text-primary uppercase tracking-widest">
                             Pagar Dívida
                           </p>
-                          <p className="text-zinc-500 text-[10px]">
+                          <p className="text-on-surface-variant text-[10px]">
                             -500.000€ →{" "}
                             {formatCurrency(Math.max(0, loanAmount - 500000))}{" "}
                             dívida
@@ -4387,7 +4388,7 @@ function App() {
                             disabled={
                               loanAmount < 500000 || currentBudget < 500000
                             }
-                            className="w-full bg-emerald-900 hover:bg-emerald-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black py-2.5 rounded-lg text-xs transition-all uppercase"
+                            className="w-full bg-primary-container hover:bg-primary/20 disabled:opacity-40 disabled:cursor-not-allowed text-primary font-black py-2.5 rounded-md text-xs transition-all uppercase tracking-wider"
                           >
                             Pagar -500K
                           </button>
@@ -4406,27 +4407,27 @@ function App() {
                     </div>
                     <div className="p-6 space-y-4">
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-surface rounded border border-zinc-800 p-4 flex flex-col gap-1">
-                          <span className="text-zinc-500 text-[10px] font-black uppercase tracking-wider">
+                        <div className="bg-surface rounded-md border border-outline-variant/15 p-4 flex flex-col gap-1">
+                          <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
                             Capacidade Actual
                           </span>
-                          <span className="text-white font-black text-2xl">
+                          <span className="text-on-surface font-headline font-black text-2xl">
                             {(
                               teamInfo?.stadium_capacity || 10000
                             ).toLocaleString("pt-PT")}
                           </span>
-                          <span className="text-zinc-600 text-[10px]">
+                          <span className="text-on-surface-variant text-[10px]">
                             lugares
                           </span>
                         </div>
-                        <div className="bg-surface rounded border border-zinc-800 p-4 flex flex-col gap-1">
-                          <span className="text-zinc-500 text-[10px] font-black uppercase tracking-wider">
+                        <div className="bg-surface rounded-md border border-outline-variant/15 p-4 flex flex-col gap-1">
+                          <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
                             Receita/Jogo em Casa
                           </span>
-                          <span className="text-emerald-400 font-mono font-black text-xl">
+                          <span className="text-primary font-mono font-black text-xl">
                             {formatCurrency(capacityRevPerGame)}
                           </span>
-                          <span className="text-zinc-600 text-[10px]">
+                          <span className="text-on-surface-variant text-[10px]">
                             15€ × lotação (máx.)
                           </span>
                         </div>
@@ -4486,7 +4487,7 @@ function App() {
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-zinc-800/50 font-normal">
+                      <tbody className="divide-y divide-outline-variant/10 font-normal">
                         {annotatedSquad.map((player) => (
                           <tr
                             key={player.id}
@@ -4529,7 +4530,7 @@ function App() {
                                 )}
                             </td>
                             <td className="px-3 py-2 text-center text-zinc-100 font-normal">
-                              <span className="inline-flex items-center justify-center bg-zinc-950 text-white px-2 py-1 rounded text-sm border border-zinc-800 font-normal">
+                              <span className="inline-flex items-center justify-center bg-surface text-on-surface px-2 py-1 rounded-sm text-sm border border-outline-variant/30 font-headline font-black tabular-nums">
                                 {player.skill}
                               </span>
                               {player.prev_skill !== null &&
@@ -4599,7 +4600,7 @@ function App() {
                                     }}
                                     title="Renovar"
                                     aria-label="Renovar"
-                                    className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-normal uppercase leading-none"
+                                    className="px-2 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase leading-none tracking-wide"
                                   >
                                     R
                                   </button>
@@ -4617,7 +4618,7 @@ function App() {
                                         : "Vender em Leilão"
                                     }
                                     aria-label="Vender em Leilão"
-                                    className="px-2 py-1 rounded-lg bg-primary hover:brightness-110 disabled:opacity-30 disabled:hover:bg-primary text-on-primary text-[10px] font-normal uppercase leading-none"
+                                    className="px-2 py-1 rounded-md bg-primary hover:brightness-110 disabled:opacity-30 disabled:hover:bg-primary text-on-primary text-[10px] font-black uppercase leading-none tracking-wide"
                                   >
                                     V
                                   </button>
@@ -4629,7 +4630,7 @@ function App() {
                                       }}
                                       title="Retirar da lista de transferências"
                                       aria-label="Retirar da lista"
-                                      className="px-2 py-1 rounded-lg bg-red-700 hover:bg-red-600 text-white text-[10px] font-normal uppercase leading-none"
+                                      className="px-2 py-1 rounded-md bg-red-700 hover:bg-red-600 text-white text-[10px] font-black uppercase leading-none tracking-wide"
                                     >
                                       ✕
                                     </button>
@@ -4641,7 +4642,7 @@ function App() {
                                       }}
                                       title="Listar no Mercado"
                                       aria-label="Listar no Mercado"
-                                      className="px-2 py-1 rounded-lg bg-zinc-700 hover:bg-zinc-600 text-white text-[10px] font-normal uppercase leading-none"
+                                      className="px-2 py-1 rounded-md bg-secondary-container hover:bg-surface-bright text-on-surface text-[10px] font-black uppercase leading-none tracking-wide"
                                     >
                                       L
                                     </button>
@@ -4696,7 +4697,7 @@ function App() {
                         };
                         return (
                           <div
-                            className="relative w-full rounded-xl overflow-hidden border border-zinc-800/60"
+                            className="relative w-full rounded-md overflow-hidden border border-outline-variant/20"
                             style={{
                               aspectRatio: "3/4",
                               background:
@@ -4877,11 +4878,11 @@ function App() {
                         /5 suplentes
                       </p>
                     </div>
-                    <div className="divide-y divide-zinc-800/40">
+                    <div className="divide-y divide-outline-variant/10">
                       {annotatedSquad.map((player) => (
                         <div
                           key={player.id}
-                          className={`flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-zinc-800/30 select-none relative ${player.isUnavailable ? "opacity-60" : ""}`}
+                          className={`flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-surface-bright/20 select-none relative ${player.isUnavailable ? "opacity-60" : ""}`}
                         >
                           <span
                             className={`cursor-pointer text-base leading-none shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full ${player.status === "Titular" ? "bg-emerald-500/15" : player.status === "Suplente" ? "bg-amber-500/15" : "bg-zinc-900/80"}`}
@@ -4948,7 +4949,7 @@ function App() {
                               const subsFull = subCount >= 5;
                               return (
                                 <div
-                                  className="absolute left-10 top-full z-30 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl p-1 flex flex-col gap-0.5 min-w-36"
+                                  className="absolute left-10 top-full z-30 bg-surface-container-high border border-outline-variant/40 rounded-md shadow-xl p-1 flex flex-col gap-0.5 min-w-36"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {[
@@ -4982,12 +4983,12 @@ function App() {
                                               ? "Máximo de 5 suplentes atingido"
                                               : undefined
                                         }
-                                        className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-2 text-left ${
+                                        className={`px-3 py-2 rounded-md text-xs font-bold flex items-center gap-2 text-left ${
                                           disabled
-                                            ? "opacity-40 cursor-not-allowed text-zinc-500"
+                                            ? "opacity-40 cursor-not-allowed text-on-surface-variant"
                                             : player.status === status
-                                              ? "bg-zinc-700 text-white"
-                                              : "hover:bg-zinc-700 text-zinc-300"
+                                              ? "bg-surface-bright text-on-surface"
+                                              : "hover:bg-surface-bright/60 text-on-surface-variant"
                                         }`}
                                       >
                                         {emoji} {label}
@@ -5080,7 +5081,7 @@ function App() {
                         <th className="px-4 py-2.5"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-800/50 font-medium">
+                    <tbody className="divide-y divide-outline-variant/10 font-medium">
                       {filteredMarketPlayers.map((player) => {
                         const isListed =
                           player.transfer_status &&
@@ -5090,7 +5091,7 @@ function App() {
                         return (
                           <tr
                             key={player.id}
-                            className="hover:bg-zinc-800/50 transition-colors"
+                            className="hover:bg-surface-bright/20 transition-colors"
                           >
                             <td className="px-4 py-2 font-black text-[11px] md:text-xs">
                               {player.position}
@@ -5125,7 +5126,7 @@ function App() {
                               {player.team_name || "Sem clube"}
                             </td>
                             <td className="px-4 py-2 text-center">
-                              <span className="bg-emerald-950 text-emerald-400 font-black px-2 py-1 rounded text-sm">
+                              <span className="bg-surface text-on-surface font-headline font-black px-2 py-1 rounded-sm text-sm border border-outline-variant/30 tabular-nums">
                                 {player.skill}
                               </span>
                             </td>
@@ -5172,7 +5173,7 @@ function App() {
                                 ) : (
                                   <button
                                     onClick={() => openAuctionBid(player)}
-                                    className="bg-primary hover:brightness-110 text-on-primary font-black uppercase text-[10px] px-3 py-1.5 rounded"
+                                    className="bg-primary hover:brightness-110 text-on-primary font-black uppercase text-[10px] px-3 py-1.5 rounded-md tracking-wide"
                                   >
                                     Licitar
                                   </button>
@@ -5181,7 +5182,7 @@ function App() {
                                 <button
                                   onClick={() => buyPlayer(player.id)}
                                   disabled={!canAfford}
-                                  className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 disabled:hover:bg-emerald-600 text-white font-black uppercase text-[10px] px-3 py-1.5 rounded"
+                                  className="bg-primary hover:brightness-110 disabled:opacity-30 disabled:hover:bg-primary text-on-primary font-black uppercase text-[10px] px-3 py-1.5 rounded-md tracking-wide"
                                 >
                                   {canAfford ? "Comprar" : "Sem dinheiro"}
                                 </button>
@@ -5237,7 +5238,7 @@ function App() {
                       };
                       return (
                         <div
-                          className="relative w-full rounded-xl overflow-hidden border border-zinc-800/60"
+                          className="relative w-full rounded-md overflow-hidden border border-outline-variant/20"
                           style={{
                             aspectRatio: "3/4",
                             background:
@@ -5392,7 +5393,7 @@ function App() {
                       );
                     })()}
 
-                    <div className="p-4 rounded-2xl border border-zinc-800 bg-zinc-950/80">
+                    <div className="p-4 rounded-md border border-outline-variant/20 bg-surface/60">
                       <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-3">
                         Tática
                       </p>
@@ -5457,10 +5458,10 @@ function App() {
                           const morale = teamInfo?.morale ?? 75;
                           const moraleColor =
                             morale > 75
-                              ? "bg-emerald-500"
+                              ? "bg-primary"
                               : morale >= 50
-                                ? "bg-amber-500"
-                                : "bg-red-500";
+                                ? "bg-tertiary"
+                                : "bg-error";
                           const moraleLabel =
                             morale > 75
                               ? "Boa"
@@ -5469,23 +5470,23 @@ function App() {
                                 : "Baixa";
                           return (
                             <div>
-                              <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-1.5">
+                              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-black mb-1.5">
                                 Moral da Equipa
                               </p>
                               <div className="flex items-center gap-2">
-                                <div className="flex-1 bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+                                <div className="flex-1 bg-surface-bright rounded-full h-2 overflow-hidden">
                                   <div
-                                    className={`h-2.5 rounded-full transition-all duration-500 ${moraleColor}`}
+                                    className={`h-2 rounded-full transition-all duration-500 ${moraleColor}`}
                                     style={{ width: `${morale}%` }}
                                   />
                                 </div>
                                 <span
-                                  className={`text-xs font-black tracking-wider w-10 text-right ${
+                                  className={`text-xs font-headline font-black tracking-wider w-10 text-right ${
                                     morale > 75
-                                      ? "text-emerald-400"
+                                      ? "text-primary"
                                       : morale >= 50
-                                        ? "text-amber-400"
-                                        : "text-red-400"
+                                        ? "text-tertiary"
+                                        : "text-error"
                                   }`}
                                 >
                                   {moraleLabel}
