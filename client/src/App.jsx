@@ -3109,21 +3109,7 @@ function App() {
                   )}
 
                   {/* ── V2 TOP BAR ─────────────────────── */}
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-headline font-black text-on-surface tracking-tight">
-                      {isCupMatch ? (
-                        <>
-                          🏆 Taça · {cupMatchRoundName}
-                          {cupPreMatch
-                            ? " — Pré-Jogo"
-                            : cupExtraTimeBadge
-                              ? " — Prolongamento"
-                              : ""}
-                        </>
-                      ) : (
-                        <>Multiview Jornada {matchResults?.matchweek || ""}</>
-                      )}
-                    </h2>
+                  <div className="flex items-center justify-center mb-4">
                     {/* ── CENTERED CLOCK ── */}
                     <div className="flex flex-col items-center">
                       {isPlayingMatch ? (
@@ -3139,9 +3125,12 @@ function App() {
                         <span className="text-sm font-black text-tertiary uppercase tracking-wide">
                           Intervalo
                         </span>
+                      ) : isCupMatch ? (
+                        <span className="text-sm font-black text-on-surface-variant/60 uppercase tracking-wide">
+                          🏆 {cupMatchRoundName}{cupPreMatch ? " — Pré-Jogo" : cupExtraTimeBadge ? " — Prolongamento" : ""}
+                        </span>
                       ) : null}
                     </div>
-                    <div className="w-32" />{/* spacer for centering */}
                   </div>
 
                   {/* ── HERO: MY MATCH ─────────────────────── */}
@@ -3212,17 +3201,6 @@ function App() {
                               <span className="text-xs font-bold text-on-surface truncate max-w-[120px]">
                                 {hInfo?.name}
                               </span>
-                              <div className="mt-1 space-y-0.5">
-                                {matchEvents.filter(e => e.minute <= liveMinute && e.team === "home" && ["goal","penalty_goal","own_goal","yellow_card","red_card","injury","substitution"].includes(e.type)).map((e, i) => {
-                                  const icon = e.type === "goal" || e.type === "penalty_goal" ? "⚽" : e.type === "own_goal" ? "⚽🔙" : e.type === "yellow_card" ? "🟨" : e.type === "red_card" ? "🟥" : e.type === "injury" ? "🤕" : e.type === "substitution" ? "🔄" : "";
-                                  const name = e.playerName || e.player_name || e.player;
-                                  return (
-                                    <span key={i} className="block text-[10px] text-primary/70 font-bold">
-                                      {icon} {name || "?"} {e.minute}'
-                                    </span>
-                                  );
-                                })}
-                              </div>
                             </div>
 
                             {/* Score center */}
@@ -3271,7 +3249,7 @@ function App() {
                                         style={{ width: `${progress}%` }}
                                       />
                                       {/* Event markers on progress bar */}
-                                      {matchEvents.filter(e => e.minute <= liveMinute && ["goal","penalty_goal","own_goal","yellow_card","red_card","injury"].includes(e.type)).map((e, i) => (
+                                      {matchEvents.filter(e => e.minute <= liveMinute && ["goal","penalty_goal","own_goal","yellow","red","injury"].includes(e.type)).map((e, i) => (
                                         <span
                                           key={i}
                                           className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
@@ -3281,8 +3259,8 @@ function App() {
                                           <span className={`block w-1.5 h-1.5 rounded-full ${
                                             e.type === "goal" || e.type === "penalty_goal" ? "bg-primary" :
                                             e.type === "own_goal" ? "bg-orange-400" :
-                                            e.type === "yellow_card" ? "bg-yellow-400" :
-                                            e.type === "red_card" ? "bg-red-500" :
+                                            e.type === "yellow" ? "bg-yellow-400" :
+                                            e.type === "red" ? "bg-red-500" :
                                             "bg-blue-400"
                                           }`} />
                                         </span>
@@ -3321,35 +3299,24 @@ function App() {
                               <span className="text-xs font-bold text-on-surface truncate max-w-[120px]">
                                 {aInfo?.name}
                               </span>
-                              <div className="mt-1 space-y-0.5">
-                                {matchEvents.filter(e => e.minute <= liveMinute && e.team === "away" && ["goal","penalty_goal","own_goal","yellow_card","red_card","injury","substitution"].includes(e.type)).map((e, i) => {
-                                  const icon = e.type === "goal" || e.type === "penalty_goal" ? "⚽" : e.type === "own_goal" ? "⚽🔙" : e.type === "yellow_card" ? "🟨" : e.type === "red_card" ? "🟥" : e.type === "injury" ? "🤕" : e.type === "substitution" ? "🔄" : "";
-                                  const name = e.playerName || e.player_name || e.player;
-                                  return (
-                                    <span key={i} className="block text-[10px] text-primary/70 font-bold">
-                                      {icon} {name || "?"} {e.minute}'
-                                    </span>
-                                  );
-                                })}
-                              </div>
                             </div>
                           </div>
 
                           {/* Events log list (all types) - replaces stats bar and old timeline */}
-                          {matchEvents.filter(e => e.minute <= liveMinute && ["goal","penalty_goal","own_goal","yellow_card","red_card","injury","substitution"].includes(e.type)).length > 0 && (
+                          {matchEvents.filter(e => e.minute <= liveMinute && ["goal","penalty_goal","own_goal","yellow","red","injury","substitution"].includes(e.type)).length > 0 && (
                             <div className="relative px-4 pb-3 space-y-0.5">
                               {matchEvents
-                                .filter(e => e.minute <= liveMinute && ["goal","penalty_goal","own_goal","yellow_card","red_card","injury","substitution"].includes(e.type))
+                                .filter(e => e.minute <= liveMinute && ["goal","penalty_goal","own_goal","yellow","red","injury","substitution"].includes(e.type))
                                 .sort((a, b) => a.minute - b.minute)
                                 .map((e, i) => {
                                   const isHome = e.team === "home";
-                                  const icon = e.type === "goal" || e.type === "penalty_goal" ? "⚽" : e.type === "own_goal" ? "⚽🔙" : e.type === "yellow_card" ? "🟨" : e.type === "red_card" ? "🟥" : e.type === "injury" ? "🤕" : e.type === "substitution" ? "🔄" : "";
+                                  const icon = e.type === "goal" || e.type === "penalty_goal" ? "⚽" : e.type === "own_goal" ? "⚽🔙" : e.type === "yellow" ? "🟨" : e.type === "red" ? "🟥" : e.type === "injury" ? "🤕" : e.type === "substitution" ? "🔄" : "";
                                   const name = e.playerName || e.player_name || e.player || "?";
                                   return (
                                     <div key={i} className={`flex items-center gap-1 text-[10px] ${isHome ? "" : "flex-row-reverse"}`}>
                                       <span className="text-on-surface-variant/40 tabular-nums shrink-0">{e.minute}'</span>
                                       <span>{icon}</span>
-                                      <span className={`font-bold truncate ${e.type === "goal" || e.type === "penalty_goal" ? "text-primary" : e.type === "own_goal" ? "text-orange-400" : e.type === "red_card" ? "text-red-400" : "text-on-surface-variant/70"}`}>{name}</span>
+                                      <span className={`font-bold truncate ${e.type === "goal" || e.type === "penalty_goal" ? "text-primary" : e.type === "own_goal" ? "text-orange-400" : e.type === "red" ? "text-red-400" : "text-on-surface-variant/70"}`}>{name}</span>
                                     </div>
                                   );
                                 })
