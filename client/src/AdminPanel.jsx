@@ -404,7 +404,7 @@ function AdminPanel({ token, username, onLogout }) {
     const divisions = ["all", "1", "2", "3", "4", "5"];
 
     return (
-      <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
+      <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
         <section className="rounded-[28px] border border-white/8 bg-white/5 p-4 backdrop-blur-xl shadow-2xl shadow-black/20">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div>
@@ -955,7 +955,7 @@ function AdminPanel({ token, username, onLogout }) {
           </div>
         </header>
 
-        <div className="grid flex-1 gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="grid flex-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className="rounded-[28px] border border-white/8 bg-white/5 p-4 backdrop-blur-xl shadow-2xl shadow-black/20">
             <div className="mb-4 rounded-3xl border border-white/8 bg-slate-950/60 p-4">
               <p className="text-xs uppercase tracking-[0.3em] text-slate-400 font-semibold">

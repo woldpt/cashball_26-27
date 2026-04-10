@@ -4153,7 +4153,7 @@ function App() {
               {activeTab === "finances" && (
                 <div className="space-y-6">
                   {/* ── KPI CARDS ─────────────────────────────────────────────────── */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {/* Saldo Actual */}
                     <div className="bg-surface-container rounded-lg p-5 flex flex-col gap-1">
                       <span className="text-zinc-500 font-black uppercase text-[10px] tracking-widest">
@@ -4322,7 +4322,7 @@ function App() {
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3 pt-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                         <div className="bg-surface p-4 rounded-md border border-error/20 flex flex-col gap-2">
                           <p className="text-xs font-black text-error uppercase tracking-widest">
                             Pedir Empréstimo
@@ -4371,7 +4371,7 @@ function App() {
                       </h2>
                     </div>
                     <div className="p-6 space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="bg-surface rounded-md border border-outline-variant/15 p-4 flex flex-col gap-1">
                           <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
                             Capacidade Actual
@@ -4418,8 +4418,8 @@ function App() {
 
               {activeTab === "players" && (
                 <div className="space-y-6">
-                  <div className="bg-surface-container rounded-lg shadow-sm overflow-visible">
-                    <table className="w-full text-left text-sm font-normal">
+                  <div className="bg-surface-container rounded-lg shadow-sm overflow-x-auto">
+                    <table className="w-full min-w-[720px] text-left text-sm font-normal">
                       <thead>
                         <tr className="bg-surface/50 text-on-surface-variant uppercase text-[11px] tracking-widest border-b border-outline-variant/20 font-normal">
                           <th className="px-3 py-3 text-center w-12 font-normal">
@@ -4826,7 +4826,8 @@ function App() {
                       </div>
                     </div>
                   </div>
-                  <table className="w-full text-left text-xs md:text-sm">
+                  <div className="overflow-x-auto">
+                  <table className="w-full min-w-[760px] text-left text-xs md:text-sm">
                     <thead>
                       <tr className="bg-surface/50 text-on-surface-variant uppercase text-[10px] md:text-[11px] border-b border-outline-variant/20">
                         <th className="px-4 py-2.5 font-black">Pos</th>
@@ -4968,6 +4969,7 @@ function App() {
                       })}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               )}
             </div>
@@ -5390,7 +5392,7 @@ function App() {
                   A carregar plantel...
                 </div>
               ) : (
-                <table className="w-full text-left text-sm border-collapse">
+                <table className="w-full min-w-[620px] text-left text-sm border-collapse">
                   <thead className="sticky top-0 bg-surface text-on-surface-variant uppercase text-[11px] tracking-widest border-b border-outline-variant/20">
                     <tr>
                       <th className="px-4 py-3 font-black">Pos</th>
@@ -5500,7 +5502,7 @@ function App() {
           onClick={auctionResult ? undefined : closeAuctionBid}
         >
           <div
-            className="w-full max-w-lg bg-amber-400 border-2 border-amber-600 rounded-2xl shadow-2xl overflow-hidden"
+            className="w-full max-w-lg bg-amber-400 border-2 border-amber-600 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Title bar */}
@@ -5520,7 +5522,7 @@ function App() {
 
             {/* Player card — yellow background inspired by PC Futebol */}
             <div className="p-5 space-y-3 text-zinc-950">
-              <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
                 <div className="flex gap-2">
                   <span className="font-normal text-zinc-700">Equipa</span>
                   <span className="font-black bg-blue-800 text-white px-2 py-0.5 rounded text-xs leading-tight uppercase">
@@ -5608,7 +5610,7 @@ function App() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-x-6 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 text-sm">
                 <div className="flex gap-2">
                   <span className="font-normal text-zinc-700">
                     Salário pretendido
