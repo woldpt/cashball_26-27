@@ -1448,17 +1448,8 @@ function App() {
     socket.emit("setReady", !isReady);
   };
 
-  // BUG-06 FIX: Halftime confirm always sends true.
-  // Sending !isReady (a toggle) was broken because the server resets ready=false
-  // after halftime, causing the toggle to send false instead of true.
   const handleHalftimeReady = () => {
-    if (cupPreMatch) {
-      socket.emit("cupKickOff");
-    } else if (isCupMatch) {
-      socket.emit("cupHalfTimeReady");
-    } else {
-      socket.emit("setReady", true);
-    }
+    socket.emit("setReady", true);
   };
 
   const handleOpenTeamSquad = (team) => {

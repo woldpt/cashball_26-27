@@ -295,6 +295,26 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     const results: any[] = [];
     let hasAnyET = false;
 
+    // Start 45-90 min animation on client
+    io.to(game.roomCode).emit("cupSecondHalfStart", {
+      round,
+      roundName,
+      season,
+      results: fixtures.map((f: any) => ({
+        homeTeamId: f.homeTeamId,
+        awayTeamId: f.awayTeamId,
+        finalHomeGoals: f.finalHomeGoals,
+        finalAwayGoals: f.finalAwayGoals,
+        events: f.events
+      }))
+    });
+
+    const humanInCup = (Object.values(game.playersByName) as PlayerSession[])
+      .some((p) => p.socketId && game.cupTeamIds.includes(p.teamId));
+    if (humanInCup) {
+      await cupSecondHalfAnimGate(game, 47000); // Wait for 45-90 animation
+    }
+
     for (const fixture of fixtures) {
       const t1 = fixture._t1 || { formation: "4-4-2", style: "Balanced" };
       const t2 = fixture._t2 || { formation: "4-4-2", style: "Balanced" };
@@ -467,6 +487,31 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
         ) {
           clearTimeout(timeout);
           delete game._cupETAnimHandler;
+          resolve();
+        }
+      };
+    });
+  }
+
+  function cupSecondHalfAnimGate(game: ActiveGame, timeoutMs = 47000): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const acks = new Set<string>();
+      const timeout = setTimeout(() => {
+        delete game._cupSecondHalfAnimHandler;
+        resolve();
+      }, timeoutMs);
+
+      game._cupSecondHalfAnimHandler = (socketId: string) => {
+        acks.add(socketId);
+        const connected = (Object.values(game.playersByName) as PlayerSession[]).filter(
+          (p) => p.socketId,
+        );
+        if (
+          connected.length > 0 &&
+          connected.every((p) => acks.has(p.socketId as string))
+        ) {
+          clearTimeout(timeout);
+          delete game._cupSecondHalfAnimHandler;
           resolve();
         }
       };
