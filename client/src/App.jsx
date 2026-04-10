@@ -3281,11 +3281,11 @@ function App() {
                           </div>
 
                           {/* Teams + Score */}
-                          <div className="relative flex items-stretch justify-between px-6 py-5">
+                          <div className="relative flex items-stretch justify-between px-2 sm:px-6 py-4 sm:py-5">
                             {/* Home */}
-                            <div className="flex-1 flex flex-col items-center gap-1">
+                            <div className="flex-1 min-w-0 flex flex-col items-center gap-1">
                               <span
-                                className="w-10 h-10 rounded-md flex items-center justify-center text-sm font-black"
+                                className="w-10 h-10 rounded-md flex items-center justify-center text-sm font-black shrink-0"
                                 style={{
                                   backgroundColor:
                                     hInfo?.color_primary || "#333",
@@ -3296,10 +3296,10 @@ function App() {
                                   .substring(0, 3)
                                   .toUpperCase()}
                               </span>
-                              <span className="text-xs font-bold text-on-surface truncate max-w-[120px]">
+                              <span className="text-xs font-bold text-on-surface truncate w-full text-center px-1">
                                 {hInfo?.name}
                               </span>
-                              <div className="flex flex-col items-center mt-1">
+                              <div className="flex flex-col items-center mt-1 w-full">
                                 {matchEvents
                                   .filter(e => e.minute <= liveMinute && e.team === "home" && ["goal","penalty_goal","own_goal","yellow","red","injury","substitution"].includes(e.type))
                                   .sort((a, b) => a.minute - b.minute)
@@ -3307,10 +3307,10 @@ function App() {
                                     const icon = e.type === "goal" || e.type === "penalty_goal" ? "⚽" : e.type === "own_goal" ? "⚽🔙" : e.type === "yellow" ? "🟨" : e.type === "red" ? "🟥" : e.type === "injury" ? "🤕" : e.type === "substitution" ? "🔄" : "";
                                     const name = e.playerName || e.player_name || e.player || "?";
                                     return (
-                                      <div key={i} className="flex items-center justify-center gap-1.5 text-[10px] leading-tight">
+                                      <div key={i} className="flex items-center justify-center gap-1 text-[10px] leading-tight w-full">
                                         <span className="text-on-surface-variant/40 tabular-nums shrink-0">{e.minute}'</span>
-                                        <span>{icon}</span>
-                                        <span className={`font-bold truncate max-w-[100px] ${e.type === "goal" || e.type === "penalty_goal" ? "text-primary" : e.type === "own_goal" ? "text-orange-400" : e.type === "red" ? "text-red-400" : "text-on-surface-variant/70"}`}>{name}</span>
+                                        <span className="shrink-0">{icon}</span>
+                                        <span className={`font-bold truncate min-w-0 ${e.type === "goal" || e.type === "penalty_goal" ? "text-primary" : e.type === "own_goal" ? "text-orange-400" : e.type === "red" ? "text-red-400" : "text-on-surface-variant/70"}`}>{name}</span>
                                       </div>
                                     );
                                   })
@@ -3326,16 +3326,16 @@ function App() {
                               const myHomeFlashing = myFlashHome && nowTs - myFlashHome < 1500;
                               const myAwayFlashing = myFlashAway && nowTs - myFlashAway < 1500;
                               return (
-                                <div className="flex flex-col items-center justify-center gap-1 min-w-[100px]">
+                                <div className="flex flex-col items-center justify-center gap-1 shrink-0 w-[90px] sm:w-[120px]">
                                   <button
                                     onClick={() => {
                                       setMatchDetailFixture(myMatch);
                                       setShowMatchDetail(true);
                                     }}
-                                    className="flex items-baseline gap-2 cursor-pointer group"
+                                    className="flex items-baseline gap-1.5 cursor-pointer group"
                                   >
                                     <span
-                                      className="text-5xl font-headline font-black tracking-tighter"
+                                      className="text-4xl sm:text-5xl font-headline font-black tracking-tighter"
                                       style={{
                                         color: myHomeFlashing ? "#ff4444" : undefined,
                                         transition: myHomeFlashing ? "none" : "color 1.25s ease",
@@ -3343,11 +3343,11 @@ function App() {
                                     >
                                       {homeGoals.length}
                                     </span>
-                                    <span className="text-2xl text-on-surface-variant/30 font-headline">
+                                    <span className="text-xl sm:text-2xl text-on-surface-variant/30 font-headline">
                                       -
                                     </span>
                                     <span
-                                      className="text-5xl font-headline font-black tracking-tighter"
+                                      className="text-4xl sm:text-5xl font-headline font-black tracking-tighter"
                                       style={{
                                         color: myAwayFlashing ? "#ff4444" : undefined,
                                         transition: myAwayFlashing ? "none" : "color 1.25s ease",
@@ -3357,7 +3357,7 @@ function App() {
                                     </span>
                                   </button>
                                   {/* Enriched progress bar */}
-                                  <div className="relative w-40 mt-2">
+                                  <div className="relative w-full mt-2">
                                     <div className="relative h-1.5 bg-outline-variant/20 rounded-full overflow-hidden">
                                       <div
                                         className="h-full bg-primary transition-all duration-1000"
@@ -3398,9 +3398,9 @@ function App() {
                             })()}
 
                             {/* Away */}
-                            <div className="flex-1 flex flex-col items-center gap-1">
+                            <div className="flex-1 min-w-0 flex flex-col items-center gap-1">
                               <span
-                                className="w-10 h-10 rounded-md flex items-center justify-center text-sm font-black"
+                                className="w-10 h-10 rounded-md flex items-center justify-center text-sm font-black shrink-0"
                                 style={{
                                   backgroundColor:
                                     aInfo?.color_primary || "#333",
@@ -3411,10 +3411,10 @@ function App() {
                                   .substring(0, 3)
                                   .toUpperCase()}
                               </span>
-                              <span className="text-xs font-bold text-on-surface truncate max-w-[120px]">
+                              <span className="text-xs font-bold text-on-surface truncate w-full text-center px-1">
                                 {aInfo?.name}
                               </span>
-                              <div className="flex flex-col items-center mt-1">
+                              <div className="flex flex-col items-center mt-1 w-full">
                                 {matchEvents
                                   .filter(e => e.minute <= liveMinute && e.team === "away" && ["goal","penalty_goal","own_goal","yellow","red","injury","substitution"].includes(e.type))
                                   .sort((a, b) => a.minute - b.minute)
@@ -3422,9 +3422,9 @@ function App() {
                                     const icon = e.type === "goal" || e.type === "penalty_goal" ? "⚽" : e.type === "own_goal" ? "⚽🔙" : e.type === "yellow" ? "🟨" : e.type === "red" ? "🟥" : e.type === "injury" ? "🤕" : e.type === "substitution" ? "🔄" : "";
                                     const name = e.playerName || e.player_name || e.player || "?";
                                     return (
-                                      <div key={i} className="flex items-center justify-center gap-1.5 text-[10px] leading-tight">
-                                        <span className={`font-bold truncate max-w-[100px] ${e.type === "goal" || e.type === "penalty_goal" ? "text-primary" : e.type === "own_goal" ? "text-orange-400" : e.type === "red" ? "text-red-400" : "text-on-surface-variant/70"}`}>{name}</span>
-                                        <span>{icon}</span>
+                                      <div key={i} className="flex items-center justify-center gap-1 text-[10px] leading-tight w-full">
+                                        <span className={`font-bold truncate min-w-0 ${e.type === "goal" || e.type === "penalty_goal" ? "text-primary" : e.type === "own_goal" ? "text-orange-400" : e.type === "red" ? "text-red-400" : "text-on-surface-variant/70"}`}>{name}</span>
+                                        <span className="shrink-0">{icon}</span>
                                         <span className="text-on-surface-variant/40 tabular-nums shrink-0">{e.minute}'</span>
                                       </div>
                                     );
