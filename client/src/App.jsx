@@ -3603,25 +3603,16 @@ function App() {
                     })()}
 
                   {/* ── MULTIVIEW GRID ─────────────────────── */}
-                  <div
-                    className={
-                      isCupMatch
-                        ? "flex flex-col gap-2"
-                        : "grid grid-cols-1 lg:grid-cols-2 gap-4"
-                    }
-                  >
-                    {(isCupMatch ? [null] : [1, 2, 3, 4]).map((div) => (
-                      <div key={div ?? "cup"}>
-                        {!isCupMatch && (
-                          <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mb-1.5 mt-2 first:mt-0">
-                            {DIVISION_NAMES[div] || `Div ${div}`}
-                          </h3>
-                        )}
+                  {!isCupMatch && <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {[1, 2, 3, 4].map((div) => (
+                      <div key={div}>
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/40 mb-1.5 mt-2 first:mt-0">
+                          {DIVISION_NAMES[div] || `Div ${div}`}
+                        </h3>
                         <div className="space-y-1">
                           {matchResults.results
                             .filter(
                               (m) =>
-                                isCupMatch ||
                                 teams.find((t) => t.id === m.homeTeamId)
                                   ?.division === div,
                             )
@@ -3768,7 +3759,7 @@ function App() {
                         </div>
                       </div>
                     ))}
-                  </div>
+                  </div>}
                 </div>
               )}
 
