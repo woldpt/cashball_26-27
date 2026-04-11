@@ -2870,7 +2870,7 @@ function App() {
                       </p>
                       <p className="text-center text-zinc-300 font-black mb-2 text-sm uppercase tracking-widest">
                         {matchAction.type === "injury"
-                          ? `Jogador lesionado: ${matchAction.injuredPlayer?.name || "?"}`
+                          ? `Jogador lesionado: ${matchAction.injuredPlayer?.name || "?"}${matchAction.injuredPlayer?.position ? ` · ${matchAction.injuredPlayer.position}` : ""}`
                           : "Escolhe o jogador para marcar o penalty"}
                       </p>
                       {matchAction.type === "injury" &&
