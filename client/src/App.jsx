@@ -2724,16 +2724,15 @@ function App() {
             {[
               { key: "club", label: "Clube", icon: "groups_3" },
               { key: "finances", label: "Finanças", icon: "payments" },
+              { key: "players", label: "Plantel", icon: "group" },
+              { key: "calendario", label: "Calendário", icon: "calendar_month" },
               {
                 key: "standings",
                 label: "Classificações",
                 icon: "leaderboard",
               },
-              { key: "cup", label: "Taça", icon: "emoji_events" },
-              { key: "calendario", label: "Calendário", icon: "calendar_month" },
               { key: "market", label: "Mercado", icon: "swap_horiz" },
-              { key: "players", label: "Jogadores", icon: "group" },
-              { key: "tactic", label: "Táctica", icon: "strategy" },
+              { key: "tactic", label: "JOGAR", icon: "strategy" },
             ].map(({ key, label, icon }) => (
               <button
                 key={key}
@@ -2770,29 +2769,6 @@ function App() {
                 </div>
               </div>
             )}
-            <button
-              onClick={() => setActiveTab("live")}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold transition-all ${
-                activeTab === "live"
-                  ? "bg-primary text-on-primary"
-                  : "bg-surface-container text-primary border border-primary/30 hover:bg-primary-container/20"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[20px] shrink-0 leading-none">
-                sports_soccer
-              </span>
-              <span className="font-black uppercase tracking-widest flex-1">
-                LIVE
-              </span>
-              <span className="relative flex h-2 w-2 shrink-0">
-                <span
-                  className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${activeTab === "live" ? "bg-[#003824]" : "bg-primary"}`}
-                />
-                <span
-                  className={`relative inline-flex rounded-full h-2 w-2 ${activeTab === "live" ? "bg-[#003824]" : "bg-primary"}`}
-                />
-              </span>
-            </button>
           </div>
         </nav>
       )}
@@ -2803,13 +2779,11 @@ function App() {
           {[
             { key: "club", label: "Clube", icon: "groups_3" },
             { key: "finances", label: "Finanças", icon: "payments" },
-            { key: "standings", label: "Classif.", icon: "leaderboard" },
-            { key: "cup", label: "Taça", icon: "emoji_events" },
+            { key: "players", label: "Plantel", icon: "group" },
             { key: "calendario", label: "Calendário", icon: "calendar_month" },
-            { key: "players", label: "Jogadores", icon: "group" },
-            { key: "tactic", label: "Táctica", icon: "strategy" },
+            { key: "standings", label: "Classif.", icon: "leaderboard" },
             { key: "market", label: "Mercado", icon: "swap_horiz" },
-            { key: "live", label: "Live", icon: "sports_soccer" },
+            { key: "tactic", label: "JOGAR", icon: "strategy" },
           ].map(({ key, label, icon }) => (
             <button
               key={key}
