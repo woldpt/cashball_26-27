@@ -147,14 +147,14 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       fixtures.forEach((match) => {
         game.db.run(
           "DELETE FROM matches WHERE matchweek = ? AND home_team_id = ? AND away_team_id = ? AND competition = 'League'",
-          [game.matchweek, match.homeTeamId, match.awayTeamId],
+          [matchweek, match.homeTeamId, match.awayTeamId],
           () => {
             game.db.run(
               `INSERT INTO matches (
                 matchweek, home_team_id, away_team_id, home_score, away_score, played, narrative, competition, attendance
               ) VALUES (?, ?, ?, ?, ?, 1, ?, 'League', ?)`,
               [
-                game.matchweek,
+                matchweek,
                 match.homeTeamId,
                 match.awayTeamId,
                 match.finalHomeGoals,
