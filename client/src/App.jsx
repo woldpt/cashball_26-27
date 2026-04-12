@@ -590,6 +590,8 @@ function App() {
   const [cupActiveTeamIds, setCupActiveTeamIds] = useState([]); // equipas na ronda actual
   const [palmares, setPalmares] = useState({ trophies: [], allChampions: [] });
   const [palmaresTeamId, setPalmaresTeamId] = useState(null); // last requested team
+  const [clubNews, setClubNews] = useState([]);
+  const [clubNewsTeamId, setClubNewsTeamId] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [selectedTeamSquad, setSelectedTeamSquad] = useState([]);
   const [selectedTeamLoading, setSelectedTeamLoading] = useState(false);
@@ -890,6 +892,10 @@ function App() {
     socket.on("palmaresData", (data) => {
       setPalmares(data);
       setPalmaresTeamId(data.teamId);
+    });
+    socket.on("clubNewsData", (data) => {
+      setClubNews(data.news || []);
+      setClubNewsTeamId(data.teamId);
     });
     socket.on("systemMessage", (msg) => addToast(msg));
     socket.on("transferProposalResult", ({ ok, message }) => {
@@ -1710,6 +1716,7 @@ function App() {
   useEffect(() => {
     if (activeTab !== "club" || !me?.teamId) return;
     socket.emit("requestPalmares", { teamId: me.teamId });
+    socket.emit("requestClubNews", { teamId: me.teamId });
   }, [activeTab, me?.teamId]);
 
   // Refresh calendar whenever the tab is opened or a matchweek advances
@@ -4720,6 +4727,92 @@ function App() {
                       </div>
                     </div>
                   )}
+
+                  {/* Club Newspaper */}
+                  <div className="bg-surface-container rounded-lg shadow-sm p-6">
+                    <h2 className="text-xs text-on-surface-variant font-black uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <span
+                        className="material-symbols-outlined text-sm"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        newspaper
+                      </span>
+                      Jornal do Clube
+                    </h2>
+                    {clubNews && clubNews.length > 0 ? (
+                      <div className="space-y-3">
+                        {clubNews.map((news, idx) => (
+                          <div
+                            key={news.id || idx}
+                            className="bg-surface border border-outline-variant/15 rounded-md px-4 py-3"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1">
+                                <p className="text-sm font-black text-on-surface">
+                                  {news.title}
+                                </p>
+                                {news.description && (
+                                  <p className="text-xs text-on-surface-variant font-bold mt-1">
+                                    {news.description}
+                                  </p>
+                                )}
+                                {news.type === "transfer_in" && (
+                                  <div className="flex items-center gap-2 mt-2 text-xs">
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-sm bg-primary/15 text-primary font-black">
+                                      <span
+                                        className="material-symbols-outlined text-xs"
+                                        style={{ fontVariationSettings: "'FILL' 1" }}
+                                      >
+                                        login
+                                      </span>
+                                      Entrada
+                                    </span>
+                                    {news.amount && (
+                                      <span className="text-on-surface-variant font-bold">
+                                        €{news.amount.toLocaleString("pt-PT")}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                {news.type === "transfer_out" && (
+                                  <div className="flex items-center gap-2 mt-2 text-xs">
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-sm bg-error/15 text-error font-black">
+                                      <span
+                                        className="material-symbols-outlined text-xs"
+                                        style={{ fontVariationSettings: "'FILL' 1" }}
+                                      >
+                                        logout
+                                      </span>
+                                      Saída
+                                    </span>
+                                    {news.related_team_name && (
+                                      <span className="text-on-surface-variant font-bold">
+                                        {news.related_team_name}
+                                      </span>
+                                    )}
+                                    {news.amount && (
+                                      <span className="text-on-surface-variant font-bold">
+                                        €{news.amount.toLocaleString("pt-PT")}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              {news.matchweek && (
+                                <span className="text-xs text-on-surface-variant font-bold shrink-0">
+                                  Jornada {news.matchweek}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-on-surface-variant font-bold text-sm">
+                        Nenhuma notícia ainda.
+                      </p>
+                    )}
+                  </div>
 
                   {/* Finances section */}
                   <div className="bg-surface-container p-6 rounded-lg shadow-sm">

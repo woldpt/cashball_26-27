@@ -101,3 +101,21 @@ CREATE TABLE IF NOT EXISTS palmares (
   achievement TEXT NOT NULL,
   FOREIGN KEY(team_id) REFERENCES teams(id)
 );
+
+CREATE TABLE IF NOT EXISTS club_news (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  team_id INTEGER NOT NULL,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  player_id INTEGER,
+  player_name TEXT,
+  related_team_id INTEGER,
+  related_team_name TEXT,
+  amount INTEGER,
+  matchweek INTEGER,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(team_id) REFERENCES teams(id),
+  FOREIGN KEY(player_id) REFERENCES players(id),
+  FOREIGN KEY(related_team_id) REFERENCES teams(id)
+);

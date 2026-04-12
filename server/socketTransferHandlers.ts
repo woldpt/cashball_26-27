@@ -32,6 +32,39 @@ interface TransferHandlerDeps {
   ) => Promise<any>;
 }
 
+function logClubNews(
+  game: ActiveGame,
+  type: string,
+  title: string,
+  teamId: number,
+  data: {
+    player_name?: string;
+    player_id?: number;
+    related_team_name?: string;
+    related_team_id?: number;
+    amount?: number;
+    description?: string;
+  },
+) {
+  const description = data.description || null;
+  game.db.run(
+    `INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      teamId,
+      type,
+      title,
+      description,
+      data.player_id || null,
+      data.player_name || null,
+      data.related_team_id || null,
+      data.related_team_name || null,
+      data.amount || null,
+      game.matchweek,
+    ],
+  );
+}
+
 export function registerTransferSocketHandlers(
   socket: any,
   deps: TransferHandlerDeps,
@@ -91,6 +124,43 @@ export function registerTransferSocketHandlers(
                       playerId,
                     ],
                     () => {
+                      // Log transfer news
+                      game.db.get(
+                        "SELECT name FROM teams WHERE id = ?",
+                        [playerState.teamId],
+                        (errTeam, buyingTeam) => {
+                          logClubNews(
+                            game,
+                            "transfer_in",
+                            `${player.name} contratado`,
+                            playerState.teamId,
+                            {
+                              player_name: player.name,
+                              player_id: playerId,
+                              related_team_id: player.team_id,
+                              related_team_name: player.team_name,
+                              amount: price,
+                              description: `${player.name} foi contratado por €${price}.`,
+                            },
+                          );
+                          if (player.team_id) {
+                            logClubNews(
+                              game,
+                              "transfer_out",
+                              `${player.name} transferido`,
+                              player.team_id,
+                              {
+                                player_name: player.name,
+                                player_id: playerId,
+                                related_team_id: playerState.teamId,
+                                related_team_name: buyingTeam?.name,
+                                amount: price,
+                                description: `${player.name} foi transferido por €${price}.`,
+                              },
+                            );
+                          }
+                        },
+                      );
                       refreshMarket(game);
                       game.db.all("SELECT * FROM teams", (err3, teams) =>
                         io.to(game.roomCode).emit("teamsData", teams),
@@ -364,6 +434,49 @@ export function registerTransferSocketHandlers(
                       });
                       return;
                     }
+                    // Log transfer news
+                    game.db.get(
+                      "SELECT name FROM teams WHERE id = ?",
+                      [playerState.teamId],
+                      (errTeam, buyingTeam) => {
+                        game.db.get(
+                          "SELECT name FROM teams WHERE id = ?",
+                          [player.team_id],
+                          (errOldTeam, oldTeam) => {
+                            logClubNews(
+                              game,
+                              "transfer_in",
+                              `${player.name} contratado`,
+                              playerState.teamId,
+                              {
+                                player_name: player.name,
+                                player_id: playerId,
+                                related_team_id: player.team_id,
+                                related_team_name: oldTeam?.name,
+                                amount: proposalPrice,
+                                description: `${player.name} foi contratado por €${proposalPrice}.`,
+                              },
+                            );
+                            if (player.team_id) {
+                              logClubNews(
+                                game,
+                                "transfer_out",
+                                `${player.name} transferido`,
+                                player.team_id,
+                                {
+                                  player_name: player.name,
+                                  player_id: playerId,
+                                  related_team_id: playerState.teamId,
+                                  related_team_name: buyingTeam?.name,
+                                  amount: proposalPrice,
+                                  description: `${player.name} foi transferido por €${proposalPrice}.`,
+                                },
+                              );
+                            }
+                          },
+                        );
+                      },
+                    );
                     refreshMarket(game);
                     game.db.all("SELECT * FROM teams", (_e1, teams) =>
                       io.to(game.roomCode).emit("teamsData", teams),

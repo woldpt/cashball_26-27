@@ -390,4 +390,24 @@ export function registerSessionSocketHandlers(
       socket.emit("palmaresData", { teamId, trophies: [], allChampions: [] });
     }
   });
+
+  socket.on("requestClubNews", async ({ teamId }: { teamId?: number } = {}) => {
+    const game = getGameBySocket(socket.id);
+    if (!game || !teamId) return;
+    try {
+      const news = await runAll(
+        game.db,
+        `SELECT id, team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek, created_at
+         FROM club_news
+         WHERE team_id = ?
+         ORDER BY created_at DESC, id DESC
+         LIMIT 20`,
+        [teamId],
+      );
+      socket.emit("clubNewsData", { teamId, news: news || [] });
+    } catch (err) {
+      console.error(`[${game.roomCode}] requestClubNews error:`, err);
+      socket.emit("clubNewsData", { teamId, news: [] });
+    }
+  });
 }
