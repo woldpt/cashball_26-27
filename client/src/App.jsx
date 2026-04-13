@@ -5519,6 +5519,7 @@ function App() {
                     <thead>
                       <tr className="bg-surface/50 text-on-surface-variant uppercase text-[10px] md:text-[11px] border-b border-outline-variant/20">
                         <th className="px-4 py-2.5 font-black">Pos</th>
+                        <th className="px-4 py-2.5 font-black"></th>
                         <th className="px-4 py-2.5 font-black">Nome</th>
                         <th className="px-4 py-2.5 font-black">Clube</th>
                         <th className="px-4 py-2.5 font-black text-center">
@@ -5559,6 +5560,9 @@ function App() {
                           >
                             <td className="px-4 py-2 font-black text-[11px] md:text-xs">
                               {player.position}
+                            </td>
+                            <td className="px-4 py-2 text-center text-lg" title={FLAG_TO_COUNTRY[player.nationality] || player.nationality || "—"}>
+                              {player.nationality || "—"}
                             </td>
                             <td className="px-4 py-2">
                               <div className="flex items-center gap-2">
