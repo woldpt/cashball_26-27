@@ -7,6 +7,46 @@ interface AuctionDeps {
   scheduleNpcAuctionBids: (game: ActiveGame, playerId: number) => void;
 }
 
+function logClubNews(
+  game: ActiveGame,
+  type: string,
+  title: string,
+  teamId: number,
+  data: {
+    player_name?: string;
+    player_id?: number;
+    related_team_name?: string;
+    related_team_id?: number;
+    amount?: number;
+    description?: string;
+  },
+  io?: any,
+) {
+  const description = data.description || null;
+  game.db.run(
+    `INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      teamId,
+      type,
+      title,
+      description,
+      data.player_id || null,
+      data.player_name || null,
+      data.related_team_id || null,
+      data.related_team_name || null,
+      data.amount || null,
+      game.matchweek,
+    ],
+    () => {
+      // Notify team coaches that news was updated
+      if (io) {
+        io.to(game.roomCode).emit("clubNewsUpdated", { teamId });
+      }
+    },
+  );
+}
+
 export function createAuctionHelpers(deps: AuctionDeps) {
   const {
     io,
@@ -99,6 +139,21 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                   `${player.name} não recebeu lances e saiu do leilão.`,
                 );
               }
+
+              // Log club news for failed auction
+              logClubNews(
+                game,
+                "auction_failed",
+                `${player.name} não vendido em leilão`,
+                auction.sellerTeamId,
+                {
+                  player_name: player.name,
+                  player_id: playerId,
+                  description: "Nenhum lance recebido",
+                },
+                io,
+              );
+
               delete game.auctions![playerId];
               delete game.auctionTimers?.[playerId];
               refreshMarket(game);
@@ -160,6 +215,39 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                             `${player.name} foi vendido em leilão por €${finalBid}.`,
                           );
                         }
+
+                        // Log club news for buyer (transfer_in)
+                        logClubNews(
+                          game,
+                          "transfer_in",
+                          `${player.name} contratado em leilão`,
+                          buyerTeamId,
+                          {
+                            player_name: player.name,
+                            player_id: playerId,
+                            related_team_name: player.team_name,
+                            related_team_id: auction.sellerTeamId,
+                            amount: finalBid,
+                          },
+                          io,
+                        );
+
+                        // Log club news for seller (transfer_out)
+                        logClubNews(
+                          game,
+                          "transfer_out",
+                          `${player.name} vendido em leilão`,
+                          auction.sellerTeamId,
+                          {
+                            player_name: player.name,
+                            player_id: playerId,
+                            related_team_name: buyerTeamName,
+                            related_team_id: buyerTeamId,
+                            amount: finalBid,
+                          },
+                          io,
+                        );
+
                         delete game.auctions?.[playerId];
                         delete game.auctionTimers?.[playerId];
                         refreshMarket(game);
