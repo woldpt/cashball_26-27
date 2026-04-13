@@ -4289,6 +4289,27 @@ function App() {
                                   )
                                 : null;
 
+                              // check if user was already eliminated from the cup
+                              const isEliminated = (() => {
+                                const myPlayedCupMatches = cal.cupMatches.filter(
+                                  (m) =>
+                                    m.played &&
+                                    (m.home_team_id === myTeamId || m.away_team_id === myTeamId),
+                                );
+                                return myPlayedCupMatches.some((m) => {
+                                  const hasPen = m.home_penalties > 0 || m.away_penalties > 0;
+                                  if (m.home_team_id === myTeamId) {
+                                    const myScore = hasPen ? m.home_penalties : m.home_score;
+                                    const opScore = hasPen ? m.away_penalties : m.away_score;
+                                    return myScore < opScore;
+                                  } else {
+                                    const myScore = hasPen ? m.away_penalties : m.away_score;
+                                    const opScore = hasPen ? m.home_penalties : m.home_score;
+                                    return myScore < opScore;
+                                  }
+                                });
+                              })();
+
                               // status badge
                               const cupBadge = isDone ? (
                                 <span className="text-[9px] font-black uppercase tracking-widest bg-surface-bright text-on-surface-variant/60 px-2 py-0.5 rounded">
@@ -4299,9 +4320,15 @@ function App() {
                                   Próximo
                                 </span>
                               ) : !cupDrawn ? (
-                                <span className="text-[9px] font-black uppercase tracking-widest bg-amber-500/15 text-amber-400 px-2 py-0.5 rounded">
-                                  Aguarda sorteio
-                                </span>
+                                isEliminated ? (
+                                  <span className="text-[9px] font-black uppercase tracking-widest bg-red-500/15 text-red-400 px-2 py-0.5 rounded">
+                                    Eliminado
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] font-black uppercase tracking-widest bg-amber-500/15 text-amber-400 px-2 py-0.5 rounded">
+                                    Aguarda sorteio
+                                  </span>
+                                )
                               ) : (
                                 <span className="text-[9px] font-black uppercase tracking-widest bg-surface-bright text-on-surface-variant/40 px-2 py-0.5 rounded">
                                   Por jogar
