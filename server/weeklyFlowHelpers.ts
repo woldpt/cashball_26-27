@@ -107,85 +107,91 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     // At the start of the second half, apply halftime tactic changes (substitutions/style)
     // to the cached squads. fixture._homeSquad/_awaySquad were set during the first half and
     // won't reflect tactic position changes made during the interval otherwise.
+    // Helper to create lineup snapshot
+    const lineupSnapshot = (squad: any[]) =>
+      squad.map((p) => ({
+        id: p.id,
+        name: p.name,
+        position: p.position,
+        is_star: p.is_star || 0,
+        skill: p.skill,
+      }));
+
+    // At the start of the second half, apply halftime tactic changes (substitutions/style)
     if (startMin === 46) {
-      for (let fi = 0; fi < game.currentFixtures.length; fi++) {
-        const fixture = game.currentFixtures[fi];
-        const { t1, t2 } = fixtureTactics[fi];
+      try {
+        for (let fi = 0; fi < game.currentFixtures.length; fi++) {
+          const fixture = game.currentFixtures[fi];
+          const { t1, t2 } = fixtureTactics[fi];
 
-        const lineupSnapshot = (squad: any[]) =>
-          squad.map((p) => ({
-            id: p.id,
-            name: p.name,
-            position: p.position,
-            is_star: p.is_star || 0,
-            skill: p.skill,
-          }));
+          const applyHalftimeSubs = (
+            squad: any[] | undefined,
+            tactic: any,
+            fullRoster: any[] | undefined,
+            teamSide: "home" | "away",
+          ) => {
+            if (!squad || !tactic?.positions || !fullRoster) return;
+            const positions: Record<number, string> = tactic.positions;
+            const currentIds = new Set(squad.map((p: any) => p.id));
 
-        const applyHalftimeSubs = (
-          squad: any[] | undefined,
-          tactic: any,
-          fullRoster: any[] | undefined,
-          teamSide: "home" | "away",
-        ) => {
-          if (!squad || !tactic?.positions || !fullRoster) return;
-          const positions: Record<number, string> = tactic.positions;
-          const currentIds = new Set(squad.map((p: any) => p.id));
+            // Players in the current squad who are now marked as Suplente (subbed out at halftime)
+            const toRemoveIds = squad
+              .filter((p: any) => positions[p.id] === "Suplente")
+              .map((p: any) => p.id);
 
-          // Players in the current squad who are now marked as Suplente (subbed out at halftime)
-          const toRemoveIds = squad
-            .filter((p: any) => positions[p.id] === "Suplente")
-            .map((p: any) => p.id);
+            // Players not in squad who are now marked as Titular (subbed in at halftime)
+            const toAddIds = Object.entries(positions)
+              .filter(([id, status]) => status === "Titular" && !currentIds.has(Number(id)))
+              .map(([id]) => Number(id));
 
-          // Players not in squad who are now marked as Titular (subbed in at halftime)
-          const toAddIds = Object.entries(positions)
-            .filter(([id, status]) => status === "Titular" && !currentIds.has(Number(id)))
-            .map(([id]) => Number(id));
+            if (toRemoveIds.length === 0 && toAddIds.length === 0) return;
 
-          if (toRemoveIds.length === 0 && toAddIds.length === 0) return;
+            // Snapshot outgoing/incoming players BEFORE modifying the squad
+            const outPlayers = toRemoveIds.map((id: number) => squad.find((p: any) => p.id === id)).filter(Boolean);
+            const inPlayers = toAddIds.map((id: number) => fullRoster.find((p: any) => p.id === id)).filter(Boolean);
 
-          // Snapshot outgoing/incoming players BEFORE modifying the squad
-          const outPlayers = toRemoveIds.map((id: number) => squad.find((p: any) => p.id === id)).filter(Boolean);
-          const inPlayers = toAddIds.map((id: number) => fullRoster.find((p: any) => p.id === id)).filter(Boolean);
+            // Remove subbed-out players
+            for (const id of toRemoveIds) {
+              const idx = squad.findIndex((p: any) => p.id === id);
+              if (idx > -1) squad.splice(idx, 1);
+            }
 
-          // Remove subbed-out players
-          for (const id of toRemoveIds) {
-            const idx = squad.findIndex((p: any) => p.id === id);
-            if (idx > -1) squad.splice(idx, 1);
-          }
+            // Add subbed-in players from the full roster
+            for (const player of inPlayers) {
+              squad.push(player);
+            }
 
-          // Add subbed-in players from the full roster
-          for (const player of inPlayers) {
-            squad.push(player);
-          }
+            // Update the lineup snapshot to reflect the new squad composition
+            if (teamSide === "home") {
+              fixture.homeLineup = lineupSnapshot(squad);
+            } else {
+              fixture.awayLineup = lineupSnapshot(squad);
+            }
 
-          // Update the lineup snapshot to reflect the new squad composition
-          if (teamSide === "home") {
-            fixture.homeLineup = lineupSnapshot(squad);
-          } else {
-            fixture.awayLineup = lineupSnapshot(squad);
-          }
+            // Emit halftime_sub events so the client lineup display reflects the changes
+            const pairs = Math.min(outPlayers.length, inPlayers.length);
+            for (let i = 0; i < pairs; i++) {
+              fixture.events = fixture.events || [];
+              fixture.events.push({
+                minute: 45,
+                type: "halftime_sub",
+                team: teamSide,
+                emoji: "🔁",
+                outPlayerId: outPlayers[i].id,
+                outPlayerName: outPlayers[i].name,
+                playerId: inPlayers[i].id,
+                playerName: inPlayers[i].name,
+                position: inPlayers[i].position,
+                text: `[HT] 🔁 ${outPlayers[i].name} → ${inPlayers[i].name}`,
+              });
+            }
+          };
 
-          // Emit halftime_sub events so the client lineup display reflects the changes
-          const pairs = Math.min(outPlayers.length, inPlayers.length);
-          for (let i = 0; i < pairs; i++) {
-            fixture.events = fixture.events || [];
-            fixture.events.push({
-              minute: 45,
-              type: "halftime_sub",
-              team: teamSide,
-              emoji: "🔁",
-              outPlayerId: outPlayers[i].id,
-              outPlayerName: outPlayers[i].name,
-              playerId: inPlayers[i].id,
-              playerName: inPlayers[i].name,
-              position: inPlayers[i].position,
-              text: `[HT] 🔁 ${outPlayers[i].name} → ${inPlayers[i].name}`,
-            });
-          }
-        };
-
-        applyHalftimeSubs(fixture._homeSquad, t1, fixture._homeFullRoster, "home");
-        applyHalftimeSubs(fixture._awaySquad, t2, fixture._awayFullRoster, "away");
+          applyHalftimeSubs(fixture._homeSquad, t1, fixture._homeFullRoster, "home");
+          applyHalftimeSubs(fixture._awaySquad, t2, fixture._awayFullRoster, "away");
+        }
+      } catch (err) {
+        console.error(`[${game.roomCode}] Error applying halftime substitutions:`, err);
       }
     }
 
@@ -245,6 +251,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
     if (endMin === 45) {
       // ── Halftime ─────────────────────────────────────────────────────────
+      console.log(`[${game.roomCode}] Halftime reached. entry=${entry ? `type:${entry.type}` : "null"}, gamePhase=${game.gamePhase}`);
       game.gamePhase = "match_halftime";
 
       if (entry?.type === "cup") {
@@ -271,6 +278,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         };
         game.cupHalftimePayload = halftimePayload;
         game.lastHalftimePayload = halftimePayload;
+        console.log(`[${game.roomCode}] Emitting cupHalfTimeResults with ${game.currentFixtures.length} fixtures`);
         io.to(game.roomCode).emit("cupHalfTimeResults", halftimePayload);
       } else {
         const halfTimeFixtures = game.currentFixtures.map((fixture) => ({
