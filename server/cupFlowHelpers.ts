@@ -295,9 +295,62 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     const results: any[] = [];
     let hasAnyET = false;
 
+    // ─── ET halftime gate: pause before ET so coaches can make substitutions ───
+    const drawFixtures = fixtures.filter(
+      (f) => f.finalHomeGoals === f.finalAwayGoals,
+    );
+
+    if (drawFixtures.length > 0) {
+      const humanInAnyDraw = drawFixtures.some((f) =>
+        (Object.values(game.playersByName) as PlayerSession[]).some(
+          (p) => p.socketId && (p.teamId === f.homeTeamId || p.teamId === f.awayTeamId),
+        ),
+      );
+
+      if (humanInAnyDraw) {
+        game.gamePhase = "match_et_halftime";
+        io.to(game.roomCode).emit("cupETHalfTime", {
+          round,
+          roundName,
+          season: game.season,
+          fixtures: drawFixtures.map((f) => ({
+            homeTeam: f.homeTeam || null,
+            awayTeam: f.awayTeam || null,
+            homeGoals: f.finalHomeGoals,
+            awayGoals: f.finalAwayGoals,
+            events: (f.events || []).slice(),
+            homeLineup: f.homeLineup || [],
+            awayLineup: f.awayLineup || [],
+          })),
+        });
+        Object.values(game.playersByName).forEach((p) => { p.ready = false; });
+        io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
+        saveGameState(game);
+
+        // Wait for all connected coaches to click "Pronto" (5-min fallback timeout)
+        await new Promise<void>((resolve) => {
+          const timeout = setTimeout(() => {
+            delete (game as any)._cupETReadyResolve;
+            resolve();
+          }, 300_000);
+          (game as any)._cupETReadyResolve = () => {
+            clearTimeout(timeout);
+            delete (game as any)._cupETReadyResolve;
+            resolve();
+          };
+        });
+      }
+    }
+
     for (const fixture of fixtures) {
-      const t1 = fixture._t1 || { formation: "4-4-2", style: "Balanced" };
-      const t2 = fixture._t2 || { formation: "4-4-2", style: "Balanced" };
+      // Re-read tactics from live player state so ET uses any changes made
+      // during the ET halftime interval (tactic changes, style adjustments).
+      const p1 = Object.values(game.playersByName).find((p: any) => p.teamId === fixture.homeTeamId);
+      const p2 = Object.values(game.playersByName).find((p: any) => p.teamId === fixture.awayTeamId);
+      const t1 = (p1 as any)?.tactic || fixture._t1 || { formation: "4-4-2", style: "Balanced" };
+      const t2 = (p2 as any)?.tactic || fixture._t2 || { formation: "4-4-2", style: "Balanced" };
+      if (p1) fixture._t1 = t1;
+      if (p2) fixture._t2 = t2;
       const ctx = { game, io, matchweek: game.matchweek };
 
       let winnerId;
@@ -493,31 +546,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     });
   }
 
-  function cupSecondHalfAnimGate(game: ActiveGame, timeoutMs = 47000): Promise<void> {
-    return new Promise<void>((resolve) => {
-      const acks = new Set<string>();
-      const timeout = setTimeout(() => {
-        delete game._cupSecondHalfAnimHandler;
-        resolve();
-      }, timeoutMs);
-
-      game._cupSecondHalfAnimHandler = (socketId: string) => {
-        acks.add(socketId);
-        const connected = (Object.values(game.playersByName) as PlayerSession[]).filter(
-          (p) => p.socketId,
-        );
-        if (
-          connected.length > 0 &&
-          connected.every((p) => acks.has(p.socketId as string))
-        ) {
-          clearTimeout(timeout);
-          delete game._cupSecondHalfAnimHandler;
-          resolve();
-        }
-      };
-    });
-  }
-
   // ─── PHASE TIMER HELPERS ─────────────────────────────────────────────────────
 
   function armPhaseTimer(game: ActiveGame, ms: number, onElapsed: () => void) {
@@ -559,6 +587,29 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
       } else if (game.lastHalftimePayload) {
         socket.emit("halfTimeResults", game.lastHalftimePayload);
       }
+      return;
+    }
+
+    // ET halftime: reconnecting coach sees the draw scoreline and can set tactics
+    if (game.gamePhase === "match_et_halftime") {
+      const etEntry = game.currentEvent as any;
+      const drawFixtures = game.currentFixtures.filter(
+        (f: any) => f.finalHomeGoals === f.finalAwayGoals,
+      );
+      socket.emit("cupETHalfTime", {
+        round: etEntry?.round,
+        roundName: CUP_ROUND_NAMES[etEntry?.round] || `Ronda ${etEntry?.round}`,
+        season: game.season,
+        fixtures: drawFixtures.map((f: any) => ({
+          homeTeam: f.homeTeam || null,
+          awayTeam: f.awayTeam || null,
+          homeGoals: f.finalHomeGoals,
+          awayGoals: f.finalAwayGoals,
+          events: (f.events || []).slice(),
+          homeLineup: f.homeLineup || [],
+          awayLineup: f.awayLineup || [],
+        })),
+      });
     }
   }
 

@@ -563,6 +563,17 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       return;
     }
 
+    // ── ET halftime → Extra Time (cup only) ─────────────────────────────────
+    // finalizeCupRound is suspended awaiting _cupETReadyResolve. Resolve it.
+    if (game.gamePhase === "match_et_halftime") {
+      if ((game as any)._cupETReadyResolve) {
+        const resolve = (game as any)._cupETReadyResolve;
+        delete (game as any)._cupETReadyResolve;
+        resolve();
+      }
+      return;
+    }
+
     // ── Halftime → second half (league AND cup, identical) ──────────────────
     if (game.gamePhase === "match_halftime") {
       if (segmentRunning[game.roomCode]) return;

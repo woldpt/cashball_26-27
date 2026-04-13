@@ -26,12 +26,5 @@ export function registerCupSocketHandlers(socket: any, deps: CupHandlerDeps) {
   socket.on("cupKickOff", () => {});
   socket.on("cupHalfTimeReady", () => {});
   
-  // ── 90-min animation done ─────────────────────────────────────────────────────
-  socket.on("cupSecondHalfDone", () => {
-    const game = getGameBySocket(socket.id);
-    if (!game || !game._cupSecondHalfAnimHandler) return;
-    game._cupSecondHalfAnimHandler(socket.id);
-  });
-  
   socket.on("leagueAnimDone", () => {});
 }
