@@ -112,6 +112,15 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         const fixture = game.currentFixtures[fi];
         const { t1, t2 } = fixtureTactics[fi];
 
+        const lineupSnapshot = (squad: any[]) =>
+          squad.map((p) => ({
+            id: p.id,
+            name: p.name,
+            position: p.position,
+            is_star: p.is_star || 0,
+            skill: p.skill,
+          }));
+
         const applyHalftimeSubs = (
           squad: any[] | undefined,
           tactic: any,
@@ -147,6 +156,13 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           // Add subbed-in players from the full roster
           for (const player of inPlayers) {
             squad.push(player);
+          }
+
+          // Update the lineup snapshot to reflect the new squad composition
+          if (teamSide === "home") {
+            fixture.homeLineup = lineupSnapshot(squad);
+          } else {
+            fixture.awayLineup = lineupSnapshot(squad);
           }
 
           // Emit halftime_sub events so the client lineup display reflects the changes
