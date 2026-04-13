@@ -1002,6 +1002,13 @@ function App() {
       setLiveMinute(data.startMin);
       setIsPlayingMatch(true);
       setActiveTab("live");
+      // Always sync cup state from the server payload (handles reconnect mid-match)
+      if (data.isCup) {
+        setIsCupMatch(true);
+        if (data.cupRoundName) setCupMatchRoundName(data.cupRoundName);
+      } else {
+        setIsCupMatch(false);
+      }
       if (data.startMin === 1) {
         // First half — set up match UI from scratch
         setShowHalftimePanel(false);
@@ -3736,6 +3743,69 @@ function App() {
                       </div>
                     ))}
                   </div>}
+
+                  {/* ── CUP MULTIVIEW (single list, no division groups) ── */}
+                  {isCupMatch && matchResults?.results && (
+                    <div className="space-y-1">
+                      {matchResults.results
+                        .filter(
+                          (m) =>
+                            m.homeTeamId !== me.teamId &&
+                            m.awayTeamId !== me.teamId,
+                        )
+                        .map((match, idx) => {
+                          const hInfo = teams.find((t) => t.id === match.homeTeamId);
+                          const aInfo = teams.find((t) => t.id === match.awayTeamId);
+                          const matchEvents = match.events || [];
+                          const currentHome = matchEvents.filter(
+                            (e) => e.minute <= liveMinute && e.type === "goal" && e.team === "home",
+                          );
+                          const currentAway = matchEvents.filter(
+                            (e) => e.minute <= liveMinute && e.type === "goal" && e.team === "away",
+                          );
+                          const isHumanMatch = players.some(
+                            (p) => p.teamId === match.homeTeamId || p.teamId === match.awayTeamId,
+                          );
+                          const flashHome = goalFlashRef.current[`${match.homeTeamId}_${match.awayTeamId}_home`];
+                          const flashAway = goalFlashRef.current[`${match.homeTeamId}_${match.awayTeamId}_away`];
+                          const now = Date.now();
+                          const homeFlashing = flashHome && now - flashHome < 1500;
+                          const awayFlashing = flashAway && now - flashAway < 1500;
+
+                          return (
+                            <div
+                              key={idx}
+                              className={`bg-surface-container-low rounded-md overflow-hidden ${isHumanMatch ? "border-l-2 border-l-primary/50" : ""}`}
+                            >
+                              <div className="flex items-center">
+                                <div className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 min-w-0">
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: hInfo?.color_primary || "#666" }} />
+                                  <span className="text-[11px] font-bold text-on-surface truncate">{hInfo?.name}</span>
+                                </div>
+                                <button
+                                  onClick={() => { setMatchDetailFixture(match); setShowMatchDetail(true); }}
+                                  title="Ver detalhes da partida"
+                                  className="px-3 py-1.5 bg-surface-container hover:bg-surface-bright text-on-surface text-center font-headline min-w-[52px] flex gap-1 items-center justify-center text-sm leading-none transition-colors cursor-pointer"
+                                >
+                                  <span className="font-black" style={{ color: homeFlashing ? "#ff4444" : undefined, transition: homeFlashing ? "none" : "color 1.25s ease" }}>{currentHome.length}</span>
+                                  <span className="text-on-surface-variant/30 text-xs">-</span>
+                                  <span className="font-black" style={{ color: awayFlashing ? "#ff4444" : undefined, transition: awayFlashing ? "none" : "color 1.25s ease" }}>{currentAway.length}</span>
+                                </button>
+                                <div className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 min-w-0 justify-end">
+                                  <span className="text-[11px] font-bold text-on-surface truncate">{aInfo?.name}</span>
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: aInfo?.color_primary || "#666" }} />
+                                </div>
+                              </div>
+                              <div className="flex text-[9px] text-on-surface-variant/40 px-2.5 pb-1">
+                                <span className="flex-1 truncate">{getMatchLastEventText(matchEvents, liveMinute, "home")}</span>
+                                {isHumanMatch && <span className="text-primary/40 font-bold text-[8px] uppercase">Humano</span>}
+                                <span className="flex-1 truncate text-right">{getMatchLastEventText(matchEvents, liveMinute, "away")}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
                 </div>
               )}
 
