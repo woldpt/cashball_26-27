@@ -46,33 +46,42 @@ function randomSkill(min, max) {
 
 db.configure("busyTimeout", 10000);
 
-db.serialize(() => {
-  // Create tables if they don't exist yet
-  db.exec(schema, (schemaErr) => {
-    if (schemaErr) {
-      console.error("[seed] Schema init failed:", schemaErr.message);
-      process.exit(1);
-    }
-  });
+// Drop tables in dependency order so that the schema is always recreated fresh.
+// This ensures new columns (e.g. stadium_name) are present even when reseeding
+// an existing database that was created with an older schema.
+const dropSchema = `
+DROP TABLE IF EXISTS club_news;
+DROP TABLE IF EXISTS matches;
+DROP TABLE IF EXISTS cup_matches;
+DROP TABLE IF EXISTS palmares;
+DROP TABLE IF EXISTS players;
+DROP TABLE IF EXISTS teams;
+DROP TABLE IF EXISTS managers;
+DROP TABLE IF EXISTS game_state;
+`;
 
+db.serialize(() => {
   db.run("BEGIN EXCLUSIVE", (err) => {
     if (err) {
       console.error("[seed] Failed to start transaction:", err.message);
       process.exit(1);
     }
   });
-  db.run("DELETE FROM players");
-  db.run("DELETE FROM teams");
-  db.run("DELETE FROM managers");
-  db.run("DELETE FROM game_state");
-  db.run("DELETE FROM cup_matches", () => {});
-  db.run("DELETE FROM palmares", () => {});
-  // reset sqlite autoincrement sequences so inserted IDs start predictable at 1
-  db.run("DELETE FROM sqlite_sequence WHERE name='players'");
-  db.run("DELETE FROM sqlite_sequence WHERE name='teams'");
-  db.run("DELETE FROM sqlite_sequence WHERE name='managers'");
-  db.run("DELETE FROM sqlite_sequence WHERE name='cup_matches'", () => {});
-  db.run("DELETE FROM sqlite_sequence WHERE name='palmares'", () => {});
+
+  // Drop all tables then recreate with the current schema so that any schema
+  // changes (e.g. added columns) are always applied when reseeding.
+  db.exec(dropSchema, (dropErr) => {
+    if (dropErr) {
+      console.error("[seed] Drop tables failed:", dropErr.message);
+      process.exit(1);
+    }
+  });
+  db.exec(schema, (schemaErr) => {
+    if (schemaErr) {
+      console.error("[seed] Schema init failed:", schemaErr.message);
+      process.exit(1);
+    }
+  });
 
   console.log(`Seeding ${allTeamsData.length} teams from all_teams.json...`);
 
