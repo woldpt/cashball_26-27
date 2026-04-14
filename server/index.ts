@@ -362,6 +362,7 @@ io.on("connection", (socket) => {
     ensurePhaseTimeout,
     emitAwaitingCoaches,
     runAll,
+    runGet,
     buildNextMatchSummary,
     doesGameExist,
     generateUniqueRoomCode,

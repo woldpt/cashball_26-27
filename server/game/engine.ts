@@ -470,9 +470,13 @@ async function applyPenaltyEvent({
       emoji: "⚽",
       playerId: taker.id,
       playerName: taker.name,
-      text: `[${fixture._minute}'] ⚽ PENÁLTI! ${taker.name}`,
+      text: `[${fixture._minute}'] ⚽ PENÁLTI — GOLO!!! ${taker.name}`,
+      penaltySuspense: true,
+      penaltyResult: "GOLO!!!",
     });
   } else {
+    const missTypes = ["DEFENDEU!", "AO POSTE!", "AO LADO!", "PANENKA!"];
+    const missType = missTypes[Math.floor(Math.random() * missTypes.length)];
     fixture.events.push({
       minute: fixture._minute,
       type: "penalty_miss",
@@ -480,7 +484,9 @@ async function applyPenaltyEvent({
       emoji: "❌",
       playerId: taker.id,
       playerName: taker.name,
-      text: `[${fixture._minute}'] ❌ PENÁLTI falhado! ${taker.name}`,
+      text: `[${fixture._minute}'] ❌ PENÁLTI — ${missType} ${taker.name}`,
+      penaltySuspense: true,
+      penaltyResult: missType,
     });
   }
 }

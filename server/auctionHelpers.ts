@@ -24,8 +24,8 @@ function logClubNews(
 ) {
   const description = data.description || null;
   game.db.run(
-    `INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek, year)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       teamId,
       type,
@@ -37,6 +37,7 @@ function logClubNews(
       data.related_team_name || null,
       data.amount || null,
       game.matchweek,
+      game.year || 0,
     ],
     () => {
       // Notify team coaches that news was updated
@@ -288,7 +289,10 @@ export function createAuctionHelpers(deps: AuctionDeps) {
     startingPrice: number,
     callback?: (...args: any[]) => void,
   ) => {
-    const durationMs = 15000;
+    const otherHumans = Object.values(game.playersByName).filter(
+      (p: any) => p.socketId && p.teamId !== player.team_id
+    );
+    const durationMs = otherHumans.length > 0 ? 15000 : 3000;
     const now = Date.now();
     const actualDurationMs = durationMs;
 

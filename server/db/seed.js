@@ -80,7 +80,7 @@ db.serialize(() => {
     "INSERT INTO managers (name, reputation) VALUES (?, ?)",
   );
   const insertTeam = db.prepare(
-    "INSERT INTO teams (name, manager_id, division, stadium_capacity, budget, color_primary, color_secondary) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO teams (name, manager_id, division, stadium_capacity, stadium_name, budget, color_primary, color_secondary) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
   );
   const insertPlayer = db.prepare(
     "INSERT INTO players (name, position, skill, age, form, aggressiveness, nationality, value, wage, goals, is_star, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)",
@@ -123,11 +123,14 @@ db.serialize(() => {
     const stadiumCapacity = stadium.capacity || 10000;
     const budget = 1500000; // default budget for all
 
+    const stadiumName = stadium.name || "";
+
     insertTeam.run(
       teamData.name,
       managerId,
       teamData.division || 4,
       stadiumCapacity,
+      stadiumName,
       budget,
       primaryColor,
       secondaryColor,

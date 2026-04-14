@@ -9,6 +9,12 @@ type RunAll = <T extends AnyRow = AnyRow>(
   params?: any[],
 ) => Promise<T[]>;
 
+type RunGet = <T extends AnyRow = AnyRow>(
+  db: any,
+  sql: string,
+  params?: any[],
+) => Promise<T | null>;
+
 interface SessionHandlerDeps {
   io: any;
   verifyOrCreateManager: (
@@ -29,6 +35,7 @@ interface SessionHandlerDeps {
   ensurePhaseTimeout: (game: ActiveGame) => void;
   emitAwaitingCoaches: (game: ActiveGame) => void;
   runAll: RunAll;
+  runGet: RunGet;
   buildNextMatchSummary: (game: ActiveGame, teamId: number) => Promise<any>;
   doesGameExist: (roomCode: string) => boolean;
   generateUniqueRoomCode: () => string;
@@ -76,6 +83,7 @@ export function registerSessionSocketHandlers(
     ensurePhaseTimeout,
     emitAwaitingCoaches,
     runAll,
+    runGet,
     buildNextMatchSummary,
     doesGameExist,
     generateUniqueRoomCode,
@@ -419,6 +427,55 @@ export function registerSessionSocketHandlers(
     } catch (err) {
       console.error(`[${game.roomCode}] requestClubNews error:`, err);
       socket.emit("clubNewsData", { teamId, news: [] });
+    }
+  });
+
+  socket.on("requestFinanceData", async ({ teamId }: { teamId?: number } = {}) => {
+    const game = getGameBySocket(socket.id);
+    if (!game || !teamId) return;
+    try {
+      const homeMatches = await runAll(
+        game.db,
+        "SELECT attendance FROM matches WHERE home_team_id = ? AND played = 1",
+        [teamId],
+      );
+      const totalTicketRevenue = homeMatches.reduce((sum, m) => sum + (m.attendance || 0) * 15, 0);
+
+      const transferIn = await runAll(
+        game.db,
+        "SELECT amount FROM club_news WHERE team_id = ? AND type = 'transfer_in' AND amount > 0",
+        [teamId],
+      );
+      const transferOut = await runAll(
+        game.db,
+        "SELECT amount FROM club_news WHERE team_id = ? AND type = 'transfer_out' AND amount > 0",
+        [teamId],
+      );
+      const totalTransferIncome = transferOut.reduce((sum, n) => sum + (n.amount || 0), 0);
+      const totalTransferExpenses = transferIn.reduce((sum, n) => sum + (n.amount || 0), 0);
+
+      const team = await runGet(game.db, "SELECT division FROM teams WHERE id = ?", [teamId]);
+      const sponsorMap: Record<number, number> = { 1: 2000000, 2: 1500000, 3: 1000000, 4: 500000, 5: 0 };
+      const sponsorRevenue = sponsorMap[team?.division || 4] || 0;
+
+      socket.emit("financeData", {
+        teamId,
+        totalTicketRevenue,
+        totalTransferIncome,
+        totalTransferExpenses,
+        sponsorRevenue,
+        homeMatchesPlayed: homeMatches.length,
+      });
+    } catch (err) {
+      console.error(`[${game.roomCode}] requestFinanceData error:`, err);
+      socket.emit("financeData", {
+        teamId,
+        totalTicketRevenue: 0,
+        totalTransferIncome: 0,
+        totalTransferExpenses: 0,
+        sponsorRevenue: 0,
+        homeMatchesPlayed: 0,
+      });
     }
   });
 }

@@ -49,8 +49,8 @@ function logClubNews(
 ) {
   const description = data.description || null;
   game.db.run(
-    `INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek, year)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       teamId,
       type,
@@ -62,6 +62,7 @@ function logClubNews(
       data.related_team_name || null,
       data.amount || null,
       game.matchweek,
+      game.year || 0,
     ],
     () => {
       // Notify team coaches that news was updated
