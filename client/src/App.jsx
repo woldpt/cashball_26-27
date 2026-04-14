@@ -2981,6 +2981,7 @@ function App() {
                       {(nextMatchOpponent.last5 || "-----")
                         .split("")
                         .slice(0, 5)
+                        .reverse()
                         .map((r, i) => (
                           <span
                             key={`adv-${r}-${i}`}
@@ -4068,7 +4069,10 @@ function App() {
                                   </span>
                                   {/* Form badges */}
                                   <div className="flex w-[68px] items-center justify-center gap-0.5">
-                                    {form.split("").map((r, ri) => (
+                                    {form
+                                      .split("")
+                                      .reverse()
+                                      .map((r, ri) => (
                                       <span
                                         key={ri}
                                         className={`w-3 h-3 rounded-sm flex items-center justify-center text-[8px] font-black leading-none ${
@@ -4081,7 +4085,7 @@ function App() {
                                       >
                                         {r}
                                       </span>
-                                    ))}
+                                      ))}
                                   </div>
                                 </div>
                               </div>
