@@ -445,6 +445,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
           fixture._penaltyHomeGoals = shootout.homeGoals;
           fixture._penaltyAwayGoals = shootout.awayGoals;
           fixture._decidedByPenalties = true;
+          // Update final goals to reflect penalty shootout result
+          fixture.finalHomeGoals = shootout.homeGoals;
+          fixture.finalAwayGoals = shootout.awayGoals;
 
           winnerId = shootout.homeGoals > shootout.awayGoals
             ? fixture.homeTeamId
