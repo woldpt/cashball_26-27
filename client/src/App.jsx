@@ -774,6 +774,7 @@ function App() {
     socket.on("cupHalfTimeResults", (data) => {
       try {
         setIsMatchActionPending(false);
+        setIsLiveSimulation(false);
         // Treat the cup halftime exactly like a league halftime:
         // reuse matchResults state so the live tab renders events and score.
         const fixtures = data.fixtures || [];
