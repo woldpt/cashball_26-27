@@ -11,10 +11,50 @@ type RunAll = <T extends AnyRow = AnyRow>(
 interface NpcTransferDeps {
   runAll: RunAll;
   getSeasonEndMatchweek: (matchweek: number) => number;
+  io: any;
+}
+
+function logClubNews(
+  game: ActiveGame,
+  type: string,
+  title: string,
+  teamId: number,
+  data: {
+    player_name?: string;
+    player_id?: number;
+    related_team_name?: string;
+    related_team_id?: number;
+    amount?: number;
+    description?: string;
+  },
+  io?: any,
+) {
+  game.db.run(
+    `INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek, year)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      teamId,
+      type,
+      title,
+      data.description || null,
+      data.player_id || null,
+      data.player_name || null,
+      data.related_team_id || null,
+      data.related_team_name || null,
+      data.amount || null,
+      game.matchweek,
+      game.year || 0,
+    ],
+    () => {
+      if (io) {
+        io.to(game.roomCode).emit("clubNewsUpdated", { teamId });
+      }
+    },
+  );
 }
 
 export function createNpcTransferHelpers(deps: NpcTransferDeps) {
-  const { runAll, getSeasonEndMatchweek } = deps;
+  const { runAll, getSeasonEndMatchweek, io } = deps;
 
   const processNpcTransferActivity = async (
     game: ActiveGame,
@@ -89,6 +129,29 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
             resolve,
           );
         });
+
+        // Log club news for seller (human team) when NPC buys from transfer list
+        if (player.team_id && humanTeamIds.has(player.team_id)) {
+          logClubNews(
+            game,
+            "transfer_out",
+            `${player.name} vendido (Lista de Transferências)`,
+            player.team_id,
+            {
+              player_name: player.name,
+              player_id: player.id,
+              related_team_id: npcTeam.id,
+              related_team_name: npcTeam.name,
+              amount: price,
+              description: `${player.name} foi vendido por €${price}.`,
+            },
+            io,
+          );
+          // Broadcast updated team budgets
+          game.db.all("SELECT * FROM teams", (_err: any, teams: any[]) => {
+            if (teams) io.to(game.roomCode).emit("teamsData", teams);
+          });
+        }
 
         npcTeam.budget -= price;
         break;

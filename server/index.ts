@@ -266,6 +266,7 @@ const contractHelpers = createContractHelpers({
 const npcTransferHelpers = createNpcTransferHelpers({
   runAll,
   getSeasonEndMatchweek,
+  io,
 });
 
 const matchSummaryHelpers = createMatchSummaryHelpers({

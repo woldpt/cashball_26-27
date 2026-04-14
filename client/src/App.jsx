@@ -788,7 +788,7 @@ function App() {
             attendance: null,
           })),
         });
-        setLiveMinute(0);
+        setLiveMinute(45);
         setSubsMade(0);
         setSubbedOut([]);
         setConfirmedSubs([]);
@@ -814,8 +814,52 @@ function App() {
         console.error("Error handling cupHalfTimeResults:", err, "data:", data);
       }
     });
+    socket.on("cupETHalfTime", (data) => {
+      // Gate before extra time — server waits for all coaches to set ready
+      try {
+        setIsMatchActionPending(false);
+        setIsLiveSimulation(false);
+        setIsPlayingMatch(false);
+        const fixtures = data.fixtures || [];
+        setMatchResults({
+          matchweek: data.season,
+          results: fixtures.map((fx) => ({
+            homeTeamId: fx.homeTeam?.id,
+            awayTeamId: fx.awayTeam?.id,
+            finalHomeGoals: fx.homeGoals,
+            finalAwayGoals: fx.awayGoals,
+            events: fx.events || [],
+            homeLineup: fx.homeLineup || [],
+            awayLineup: fx.awayLineup || [],
+            attendance: null,
+          })),
+        });
+        setLiveMinute(90);
+        setSubsMade(0);
+        setSubbedOut([]);
+        setConfirmedSubs([]);
+        setSwapSource(null);
+        setSwapTarget(null);
+        setShowHalftimePanel(true);
+        setIsCupMatch(true);
+        setCupPreMatch(false);
+        setCupMatchRoundName(data.roundName);
+        setCupExtraTimeBadge(false);
+
+        const myId = meRef.current?.teamId;
+        const userInMatch = myId != null && fixtures.some(
+          (fx) => fx.homeTeam?.id == myId || fx.awayTeam?.id == myId,
+        );
+        if (!userInMatch) {
+          socket.emit("setReady", true);
+        }
+      } catch (err) {
+        console.error("Error handling cupETHalfTime:", err, "data:", data);
+      }
+    });
     socket.on("cupExtraTimeStart", (data) => {
       // Cup match went to extra time — restart the live clock from 90
+      setShowHalftimePanel(false);
       setIsCupExtraTime(true);
       setCupExtraTimeBadge(true);
       setLiveMinute(90);
@@ -1086,8 +1130,12 @@ function App() {
 
     socket.on("matchMinuteUpdate", (data) => {
       setLiveMinute(data.minute);
-      // Check for penalty suspense events
+      // Check for penalty suspense events — only show for the player's own match
+      const myTeamId = meRef.current?.teamId;
       for (const f of (data.fixtures || [])) {
+        const isMyFixture = myTeamId != null &&
+          (f.homeTeamId === myTeamId || f.awayTeamId === myTeamId);
+        if (!isMyFixture) continue;
         for (const e of (f.minuteEvents || [])) {
           if (e.penaltySuspense) {
             setPenaltySuspense({ playerName: e.playerName, result: e.penaltyResult, team: e.team });
@@ -1304,6 +1352,7 @@ function App() {
       socket.off("cupDrawStart");
       socket.off("cupPreMatch");
       socket.off("cupHalfTimeResults");
+      socket.off("cupETHalfTime");
       socket.off("cupExtraTimeStart");
       socket.off("extraTimeSecondHalfStart");
       socket.off("extraTimeHalfTime");
@@ -2050,8 +2099,18 @@ function App() {
       return (b.skill || 0) - (a.skill || 0);
     };
 
+    const myBudget = teams.find((t) => t.id == me?.teamId)?.budget ?? Infinity;
+
     return marketPairs
       .filter((player) => player.team_id !== marketTeamId)
+      .filter((player) => {
+        // Hide auctions whose starting bid exceeds our cash balance
+        if (player.transfer_status === "auction") {
+          const startingPrice = player.auction_starting_price || player.transfer_price || 0;
+          if (startingPrice > myBudget) return false;
+        }
+        return true;
+      })
       .filter((player) =>
         normalizedPosition === "all"
           ? true
@@ -2062,7 +2121,7 @@ function App() {
         marketPrice: getPlayerPrice(player),
       }))
       .sort(comparePlayers);
-  }, [marketPairs, marketPositionFilter, marketSort, me?.teamId]);
+  }, [marketPairs, marketPositionFilter, marketSort, me?.teamId, teams]);
 
   if (adminSession) {
     return (
@@ -2690,7 +2749,7 @@ function App() {
             ].map(({ key, label, icon }) => (
               <button
                 key={key}
-                onClick={() => setActiveTab(key)}
+                onClick={() => { setActiveTab(key); window.scrollTo(0, 0); }}
                 className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold transition-all text-left ${
                   activeTab === key
                     ? "bg-primary-container/20 text-primary border-l-4 border-primary"
@@ -2705,7 +2764,7 @@ function App() {
             ))}
             <div className="pt-2">
               <button
-                onClick={() => setActiveTab("tactic")}
+                onClick={() => { setActiveTab("tactic"); window.scrollTo(0, 0); }}
                 className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-black uppercase tracking-widest transition-all rounded-sm ${
                   activeTab === "tactic"
                     ? "bg-primary text-on-primary shadow-lg"
@@ -2820,7 +2879,7 @@ function App() {
           ].map(({ key, label, icon }) => (
             <button
               key={key}
-              onClick={() => setActiveTab(key)}
+              onClick={() => { setActiveTab(key); window.scrollTo(0, 0); }}
               className={`flex-1 shrink-0 min-w-[72px] flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors relative ${
                 activeTab === key ? "text-primary" : "text-on-surface-variant"
               }`}
@@ -3058,14 +3117,16 @@ function App() {
                         <div className="shrink-0 flex items-center justify-between px-3 py-2 bg-surface-container-high border-b border-outline-variant/20">
                           <div className="flex items-center gap-2.5">
                             <span className="text-amber-500 font-black text-lg tabular-nums leading-none">
-                              45'
+                              {liveMinute}'
                             </span>
                             <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full">
                               {cupPreMatch
                                 ? "Pré-Jogo"
-                                : isCupMatch
-                                  ? "Intervalo · Taça"
-                                  : "Intervalo"}
+                                : liveMinute >= 90
+                                  ? "Antes do Tempo Extra · Taça"
+                                  : isCupMatch
+                                    ? "Intervalo · Taça"
+                                    : "Intervalo"}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5">
@@ -5297,17 +5358,21 @@ function App() {
                                     *
                                   </span>
                                 )}
-                              {player.isUnavailable && (
-                                <span
-                                  className="ml-2 text-xs font-bold text-red-400"
-                                  title={`Indisponível até jornada ${Math.max(player.injury_until_matchweek || 0, player.suspension_until_matchweek || 0) + 1}`}
-                                >
-                                  {(player.suspension_until_matchweek || 0) >
-                                  matchweekCount
-                                    ? "🟥"
-                                    : "🩹"}
-                                </span>
-                              )}
+                              {player.isUnavailable && (() => {
+                                const susp = player.suspension_until_matchweek || 0;
+                                const inj = player.injury_until_matchweek || 0;
+                                const isSuspended = susp > matchweekCount;
+                                const gamesLeft = isSuspended ? susp - matchweekCount : inj - matchweekCount;
+                                return (
+                                  <span
+                                    className="ml-2 text-xs font-bold text-red-400 inline-flex items-center gap-0.5"
+                                    title={`Indisponível até jornada ${Math.max(inj, susp) + 1}`}
+                                  >
+                                    {isSuspended ? "🟥" : "🩹"}
+                                    <span className="tabular-nums">{gamesLeft}</span>
+                                  </span>
+                                );
+                              })()}
                               {player.transfer_status &&
                                 player.transfer_status !== "none" && (
                                   <span className="ml-2 text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
@@ -5451,8 +5516,8 @@ function App() {
               {activeTab === "tactic" && (
                 <div>
                   {/* ── COMPACT PLAYER LIST ──────────────────────────── */}
-                  <div className="bg-surface-container rounded-lg overflow-hidden">
-                    <div className="px-4 py-3 border-b border-outline-variant/20 bg-surface/40 flex items-center justify-between">
+                  <div className="bg-surface-container rounded-lg">
+                    <div className="px-4 py-3 border-b border-outline-variant/20 bg-surface/40 rounded-t-lg flex items-center justify-between">
                       <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black">
                         Plantel
                       </p>
@@ -5545,7 +5610,7 @@ function App() {
                               const subsFull = subCount >= 5;
                               return (
                                 <div
-                                  className="absolute left-10 top-full z-30 bg-surface-container-high border border-outline-variant/40 rounded-md shadow-xl p-1 flex flex-col gap-0.5 min-w-36"
+                                  className="absolute left-10 top-full z-50 bg-surface-container-high border border-outline-variant/40 rounded-md shadow-xl p-1 flex flex-col gap-0.5 min-w-36"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   {[
@@ -5642,8 +5707,16 @@ function App() {
                           <option value="price-desc">Preço (mais caro)</option>
                         </select>
                       </div>
-                      <div className="flex items-end text-sm font-bold text-zinc-500">
-                        {filteredMarketPlayers.length} jogadores
+                      <div className="flex flex-col justify-end gap-1">
+                        <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-black">
+                          Caixa disponível
+                        </div>
+                        <div className="text-sm font-black text-emerald-400">
+                          €{(teamInfo?.budget ?? 0).toLocaleString("pt-PT")}
+                        </div>
+                        <div className="text-xs text-zinc-500">
+                          {filteredMarketPlayers.length} jogadores
+                        </div>
                       </div>
                     </div>
                   </div>
