@@ -753,7 +753,7 @@ async function simulateMatchSegment(
 
       const ratio =
         adjustedAttack / (adjustedAttack + (defending.defense || 1) * 2);
-      let probGoal = ratio * 0.025;
+        let probGoal = ratio * 0.03; // Base chance of a goal in any given minute, scaled by power ratio
       probGoal *= isHome ? 1.05 : 0.95;
 
       // Ego conflict penalty: 3+ craques no onze titular reduzem probabilidade
