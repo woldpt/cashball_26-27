@@ -140,15 +140,24 @@ async function generateFixturesForDivision(
           const swapMap: Record<number, boolean> = {};
           let prevCorrectedHome: boolean | null = null;
           for (let r = 0; r < totalRounds; r++) {
-            const rot = rotating.map((_, i) => rotating[(i + r) % rotating.length]);
+            const rot = rotating.map(
+              (_, i) => rotating[(i + r) % rotating.length],
+            );
             const all = [teams[0], ...rot];
             let rawIsHome: boolean | null = null;
             for (let i = 0; i < Math.floor(n / 2); i++) {
-              if (all[i].id === userTeamId) { rawIsHome = true; break; }
-              if (all[n - 1 - i].id === userTeamId) { rawIsHome = false; break; }
+              if (all[i].id === userTeamId) {
+                rawIsHome = true;
+                break;
+              }
+              if (all[n - 1 - i].id === userTeamId) {
+                rawIsHome = false;
+                break;
+              }
             }
             if (rawIsHome === null) continue;
-            const needsSwap = prevCorrectedHome !== null && rawIsHome === prevCorrectedHome;
+            const needsSwap =
+              prevCorrectedHome !== null && rawIsHome === prevCorrectedHome;
             swapMap[r] = needsSwap;
             prevCorrectedHome = needsSwap ? !rawIsHome : rawIsHome;
           }
@@ -475,7 +484,12 @@ async function applyPenaltyEvent({
       penaltyResult: "GOLO!!!",
     });
   } else {
-    const missTypes = ["DEFENDEU!", "AO POSTE!", "AO LADO!", "PANENKA!"];
+    const missTypes = [
+      "DEFENDEU!",
+      "AO POSTE!",
+      "AO LADO!",
+      "PANENKA FALHADO!",
+    ];
     const missType = missTypes[Math.floor(Math.random() * missTypes.length)];
     fixture.events.push({
       minute: fixture._minute,
@@ -509,18 +523,27 @@ async function simulateMatchSegment(
     homeSquad = fixture._homeSquad;
   } else if (fixture.homeLineup && fixture.homeLineup.length > 0) {
     const homeIds = new Set(fixture.homeLineup.map((p: any) => p.id));
-    for (const e of (fixture.events || [])) {
+    for (const e of fixture.events || []) {
       if (e.team === "home") {
-        if ((e.type === "red" || e.type === "injury") && e.playerId) homeIds.delete(e.playerId);
+        if ((e.type === "red" || e.type === "injury") && e.playerId)
+          homeIds.delete(e.playerId);
         if (e.type === "substitution" && e.playerId) homeIds.add(e.playerId);
       }
     }
     homeSquad = await new Promise<any[]>((resolve) => {
-      db.all(`SELECT * FROM players WHERE id IN (${Array.from(homeIds).join(",") || "0"})`, (_, r) => resolve(r || []));
+      db.all(
+        `SELECT * FROM players WHERE id IN (${Array.from(homeIds).join(",") || "0"})`,
+        (_, r) => resolve(r || []),
+      );
     });
     fixture._homeSquad = homeSquad;
   } else {
-    homeSquad = await getTeamSquad(db, fixture.homeTeamId, homeTactic, currentMatchweek);
+    homeSquad = await getTeamSquad(
+      db,
+      fixture.homeTeamId,
+      homeTactic,
+      currentMatchweek,
+    );
     fixture._homeSquad = homeSquad;
   }
 
@@ -529,18 +552,27 @@ async function simulateMatchSegment(
     awaySquad = fixture._awaySquad;
   } else if (fixture.awayLineup && fixture.awayLineup.length > 0) {
     const awayIds = new Set(fixture.awayLineup.map((p: any) => p.id));
-    for (const e of (fixture.events || [])) {
+    for (const e of fixture.events || []) {
       if (e.team === "away") {
-        if ((e.type === "red" || e.type === "injury") && e.playerId) awayIds.delete(e.playerId);
+        if ((e.type === "red" || e.type === "injury") && e.playerId)
+          awayIds.delete(e.playerId);
         if (e.type === "substitution" && e.playerId) awayIds.add(e.playerId);
       }
     }
     awaySquad = await new Promise<any[]>((resolve) => {
-      db.all(`SELECT * FROM players WHERE id IN (${Array.from(awayIds).join(",") || "0"})`, (_, r) => resolve(r || []));
+      db.all(
+        `SELECT * FROM players WHERE id IN (${Array.from(awayIds).join(",") || "0"})`,
+        (_, r) => resolve(r || []),
+      );
     });
     fixture._awaySquad = awaySquad;
   } else {
-    awaySquad = await getTeamSquad(db, fixture.awayTeamId, awayTactic, currentMatchweek);
+    awaySquad = await getTeamSquad(
+      db,
+      fixture.awayTeamId,
+      awayTactic,
+      currentMatchweek,
+    );
     fixture._awaySquad = awaySquad;
   }
 
@@ -710,13 +742,17 @@ async function simulateMatchSegment(
 
       // Apply opponent style factor to attack per README spec:
       // força_ofensiva *= (1 / estilo_factor[adversário_instrução])
-      const STYLE_FACTORS = { DEFENSIVO: 0.85, EQUILIBRADO: 1.0, OFENSIVO: 1.15 };
+      const STYLE_FACTORS = {
+        DEFENSIVO: 0.85,
+        EQUILIBRADO: 1.0,
+        OFENSIVO: 1.15,
+      };
       const opponentStyleFactor = STYLE_FACTORS[defending.style] || 1.0;
-      const adjustedAttack = (attacking.attack || 1) * (1.0 / opponentStyleFactor);
+      const adjustedAttack =
+        (attacking.attack || 1) * (1.0 / opponentStyleFactor);
 
       const ratio =
-        adjustedAttack /
-        (adjustedAttack + (defending.defense || 1) * 2);
+        adjustedAttack / (adjustedAttack + (defending.defense || 1) * 2);
       let probGoal = ratio * 0.02;
       probGoal *= isHome ? 1.05 : 0.95;
 
@@ -825,7 +861,8 @@ async function simulateMatchSegment(
           executeRedCard();
         } else {
           // Cartão amarelo — sem expulsão
-          fixture._yellowCards[offenderId] = (fixture._yellowCards[offenderId] || 0) + 1;
+          fixture._yellowCards[offenderId] =
+            (fixture._yellowCards[offenderId] || 0) + 1;
           fixture.events.push({
             minute,
             type: "yellow",
