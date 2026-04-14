@@ -23,6 +23,14 @@ export const CUP_TEAMS_BY_ROUND: Record<number, number> = {
   5: 2,
 };
 
+export const SPONSOR_REVENUE_BY_DIVISION: Record<number, number> = {
+  1: 2000000,
+  2: 1500000,
+  3: 1000000,
+  4: 500000,
+  5: 0,
+};
+
 /**
  * Typed calendar entry — either a league matchweek or a cup round.
  * calendarIndex is the position in SEASON_CALENDAR (0-based, 0..18).

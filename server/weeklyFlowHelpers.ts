@@ -84,6 +84,13 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     startMin: number,
     endMin: number,
   ): Promise<void> {
+    // Prevent re-running the same segment
+    const segmentKey = `${startMin}-${endMin}`;
+    if (game._lastCompletedSegment === segmentKey) {
+      console.warn(`[${game.roomCode}] Skipping already-completed segment ${segmentKey}`);
+      return;
+    }
+
     const entry = game.currentEvent as CalendarEntry | null;
 
     // Calculate attendance only for league first halves
@@ -103,6 +110,14 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       if (p2) fixture._t2 = t2;
       return { t1, t2 };
     });
+
+    // Detect if any connected human has a team in the current fixtures
+    const humanInFixtures = game.currentFixtures.some((f) =>
+      Object.values(game.playersByName).some(
+        (p: any) => p.socketId && (p.teamId === f.homeTeamId || p.teamId === f.awayTeamId)
+      )
+    );
+    const effectiveMsPerMinute = humanInFixtures ? MS_PER_GAME_MINUTE : 100;
 
     // At the start of the second half, apply halftime tactic changes (substitutions/style)
     // to the cached squads. fixture._homeSquad/_awaySquad were set during the first half and
@@ -245,9 +260,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
       // Wait before next minute to sync with client clock
       if (minute < endMin) {
-        await new Promise((r) => setTimeout(r, MS_PER_GAME_MINUTE));
+        await new Promise((r) => setTimeout(r, effectiveMsPerMinute));
       }
     }
+
+    game._lastCompletedSegment = segmentKey;
 
     if (endMin === 45) {
       // ── Halftime ─────────────────────────────────────────────────────────
@@ -507,6 +524,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       game.gamePhase = "match_first_half";
       game.currentEvent = entry;
       game.phaseToken = makePhaseToken(game);
+      game._lastCompletedSegment = null;
 
       // Deduct weekly wages + loan interest (same for cup and league weeks)
       game.db.run(

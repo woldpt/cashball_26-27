@@ -1,7 +1,7 @@
 // @ts-nocheck
 import type { ActiveGame, PlayerSession } from "./types";
 import type { CalendarEntry } from "./gameConstants";
-import { SEASON_CALENDAR } from "./gameConstants";
+import { SEASON_CALENDAR, SPONSOR_REVENUE_BY_DIVISION } from "./gameConstants";
 import { clearPhaseTimer, makePhaseToken } from "./matchFlowHelpers";
 
 interface CupFlowDeps {
@@ -106,8 +106,39 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
       }
     }
 
+    // Sponsor revenue by division
+    for (const team of allTeams) {
+      const sponsorAmount = SPONSOR_REVENUE_BY_DIVISION[team.division] || 0;
+      if (sponsorAmount > 0) {
+        await new Promise((resolve) => {
+          game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [sponsorAmount, team.id], resolve);
+        });
+      }
+    }
+    io.to(game.roomCode).emit("systemMessage", "📺 Receitas de patrocinadores distribuídas.");
+
+    // Best scorer prize
+    const topScorer = await runGet(
+      game.db,
+      `SELECT p.id, p.name, p.team_id, p.goals, t.name as team_name
+       FROM players p
+       LEFT JOIN teams t ON p.team_id = t.id
+       WHERE p.goals > 0
+       ORDER BY p.goals DESC, p.skill DESC
+       LIMIT 1`,
+    );
+    if (topScorer && topScorer.team_id) {
+      await new Promise((resolve) => {
+        game.db.run("UPDATE teams SET budget = budget + 500000 WHERE id = ?", [topScorer.team_id], resolve);
+      });
+      io.to(game.roomCode).emit(
+        "systemMessage",
+        `⚽ ${topScorer.name} (${topScorer.team_name}) é o Melhor Marcador com ${topScorer.goals} golos! (+500.000€ para ${topScorer.team_name})`,
+      );
+    }
+
     const promotions: Array<{ teamId: number; toDiv: number }> = [];
-    for (const [upperDiv, lowerDiv] of [[1, 2], [2, 3], [3, 4]]) {
+    for (const [upperDiv, lowerDiv] of [[1, 2], [2, 3], [3, 4], [4, 5]]) {
       const upper = byDiv[upperDiv] || [];
       const lower = byDiv[lowerDiv] || [];
       if (!upper.length || !lower.length) continue;
@@ -160,6 +191,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
     const updatedTeams = await runAll(game.db, "SELECT * FROM teams");
     io.to(game.roomCode).emit("teamsData", updatedTeams);
+    io.to(game.roomCode).emit("topScorers", []); // Reset top scorers for new season
     io.to(game.roomCode).emit("seasonEnd", {
       season,
       year,
@@ -200,10 +232,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
       }
     }
 
-    // Fisher-Yates shuffle
-    for (let i = teamIds.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [teamIds[i], teamIds[j]] = [teamIds[j], teamIds[i]];
+    // Fisher-Yates shuffle (skip for finals — neutral ground)
+    if (round !== 5) {
+      for (let i = teamIds.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [teamIds[i], teamIds[j]] = [teamIds[j], teamIds[i]];
+      }
     }
 
     const fixtures: Array<{ homeTeamId: number; awayTeamId: number }> = [];
@@ -265,6 +299,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     game.currentFixtures = enrichedFixtures;
     game.currentEvent = SEASON_CALENDAR[game.calendarIndex];
     game.cupHalftimePayload = null;
+
+    // Skip draw animation for the final (round 5) — fixtures are set silently
+    if (round === 5) return;
 
     // Compute humanInCup for the client's draw payload
     const connectedPlayers = getPlayerList(game);
@@ -440,6 +477,22 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
           resolve,
         );
       });
+
+      // Cup upset morale boost: winner beat a team from a higher division
+      const [homeDiv, awayDiv] = await Promise.all([
+        runGet(game.db, "SELECT division FROM teams WHERE id = ?", [fixture.homeTeamId]),
+        runGet(game.db, "SELECT division FROM teams WHERE id = ?", [fixture.awayTeamId]),
+      ]);
+      const winnerIsHome = winnerId === fixture.homeTeamId;
+      const winnerDiv = winnerIsHome ? (homeDiv?.division ?? 5) : (awayDiv?.division ?? 5);
+      const loserDiv = winnerIsHome ? (awayDiv?.division ?? 5) : (homeDiv?.division ?? 5);
+      if (loserDiv < winnerDiv) {
+        const divDiff = winnerDiv - loserDiv;
+        const extraMorale = Math.min(25, divDiff * 10);
+        await new Promise((resolve) => {
+          game.db.run("UPDATE teams SET morale = MIN(100, morale + ?) WHERE id = ?", [extraMorale, winnerId], resolve);
+        });
+      }
 
       results.push({
         homeTeamId: fixture.homeTeamId,

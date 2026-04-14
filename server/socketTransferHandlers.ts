@@ -49,8 +49,8 @@ function logClubNews(
 ) {
   const description = data.description || null;
   game.db.run(
-    `INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek, year)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       teamId,
       type,
@@ -62,6 +62,7 @@ function logClubNews(
       data.related_team_name || null,
       data.amount || null,
       game.matchweek,
+      game.year || 0,
     ],
     () => {
       // Notify team coaches that news was updated
@@ -199,7 +200,7 @@ export function registerTransferSocketHandlers(
     );
   });
 
-  socket.on("listPlayerForTransfer", ({ playerId, mode, price }) => {
+  socket.on("listPlayerForTransfer", ({ playerId, mode, price, startingPrice }) => {
     const game = getGameBySocket(socket.id);
     if (!game) return;
     const playerState = getPlayerBySocket(game, socket.id);
@@ -222,7 +223,7 @@ export function registerTransferSocketHandlers(
         const finalPrice = Math.max(
           0,
           Math.round(
-            price || player.value * (finalMode === "auction" ? 0.75 : 1.0),
+            startingPrice || price || player.value * (finalMode === "auction" ? 0.75 : 1.0),
           ),
         );
 
