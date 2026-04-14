@@ -953,7 +953,7 @@ function App() {
       setClubNews(data.news || []);
     });
     socket.on("clubNewsUpdated", ({ teamId }) => {
-      // Always refresh club news for the user's own team when updated
+      // Use meRef (not me) to avoid stale closure — this listener is registered once with [] deps
       const currentMe = meRef.current;
       if (currentMe?.teamId === teamId) {
         socket.emit("requestClubNews", { teamId });

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import type { ActiveGame, PlayerSession } from "./types";
 import type { CalendarEntry } from "./gameConstants";
-import { SEASON_CALENDAR } from "./gameConstants";
+import { SEASON_CALENDAR, SPONSOR_REVENUE_BY_DIVISION } from "./gameConstants";
 import { clearPhaseTimer, makePhaseToken } from "./matchFlowHelpers";
 
 interface CupFlowDeps {
@@ -107,9 +107,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     }
 
     // Sponsor revenue by division
-    const sponsorByDiv: Record<number, number> = { 1: 2000000, 2: 1500000, 3: 1000000, 4: 500000, 5: 0 };
     for (const team of allTeams) {
-      const sponsorAmount = sponsorByDiv[team.division] || 0;
+      const sponsorAmount = SPONSOR_REVENUE_BY_DIVISION[team.division] || 0;
       if (sponsorAmount > 0) {
         await new Promise((resolve) => {
           game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [sponsorAmount, team.id], resolve);

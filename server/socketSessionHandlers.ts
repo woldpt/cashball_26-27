@@ -1,5 +1,6 @@
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { getAllTeamForms } from "./coreHelpers";
+import { SPONSOR_REVENUE_BY_DIVISION } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
 
@@ -456,8 +457,7 @@ export function registerSessionSocketHandlers(
       const totalTransferExpenses = transferIn.reduce((sum, n) => sum + (n.amount || 0), 0);
 
       const team = await runGet(game.db, "SELECT division FROM teams WHERE id = ?", [teamId]);
-      const sponsorMap: Record<number, number> = { 1: 2000000, 2: 1500000, 3: 1000000, 4: 500000, 5: 0 };
-      const sponsorRevenue = sponsorMap[team?.division || 4] || 0;
+      const sponsorRevenue = SPONSOR_REVENUE_BY_DIVISION[team?.division || 4] || 0;
 
       socket.emit("financeData", {
         teamId,
