@@ -56,7 +56,7 @@ function logClubNews(
     ],
     () => {
       if (io) {
-        io.to(game.roomCode).emit("clubNewsUpdated", { teamId, type, title });
+        io.to(game.roomCode).emit("clubNewsUpdated", { teamId, type, title, playerId: data.player_id || null, playerName: data.player_name || null });
       }
     },
   );

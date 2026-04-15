@@ -432,6 +432,38 @@ export function registerSessionSocketHandlers(
     }
   });
 
+  socket.on("requestPlayerHistory", async ({ playerId }: { playerId?: number } = {}) => {
+    const game = getGameBySocket(socket.id);
+    if (!game || !playerId) return;
+    try {
+      const player = await runGet(
+        game.db,
+        `SELECT p.*, t.name as team_name
+         FROM players p
+         LEFT JOIN teams t ON t.id = p.team_id
+         WHERE p.id = ?`,
+        [playerId],
+      );
+      if (!player) { socket.emit("playerHistoryData", null); return; }
+      const transfers = await runAll(
+        game.db,
+        `SELECT cn.year, cn.matchweek, cn.title, cn.amount,
+                cn.team_id, t.name as team_name,
+                cn.related_team_id, cn.related_team_name, cn.type
+         FROM club_news cn
+         LEFT JOIN teams t ON t.id = cn.team_id
+         WHERE cn.player_id = ?
+           AND cn.type IN ('transfer_in', 'auction_won')
+         ORDER BY cn.year ASC, cn.matchweek ASC`,
+        [playerId],
+      );
+      socket.emit("playerHistoryData", { player, transfers: transfers || [] });
+    } catch (err) {
+      console.error(`[${game.roomCode}] requestPlayerHistory error:`, err);
+      socket.emit("playerHistoryData", null);
+    }
+  });
+
   socket.on("requestFinanceData", async ({ teamId }: { teamId?: number } = {}) => {
     const game = getGameBySocket(socket.id);
     if (!game || !teamId) return;
