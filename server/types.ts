@@ -31,7 +31,6 @@ export type GamePhase =
   | "match_first_half"       // Engine running 1-45 (league OR cup)
   | "match_halftime"         // Waiting: all humans confirm Ready
   | "match_second_half"      // Engine running 46-90
-  | "match_et_halftime"      // Cup only: waiting for Ready before ET (substitutions)
   | "match_extra_time"       // Cup only: ET simulation running (91-120)
   | "match_finalizing"       // Post-match processing (brief, blocking)
   | "season_end";            // Season wrap-up: promotions, relegations

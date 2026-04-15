@@ -344,7 +344,20 @@ async function applyInjuryEvent({
   });
 
   const teamId = teamSide === "home" ? fixture.homeTeamId : fixture.awayTeamId;
-  const availableBench = getAvailableBench(fullRoster || squad, lineupIds);
+
+  // Only show players who were explicitly chosen as "Suplente" in the pre-match tactic.
+  // This prevents listing the full squad and showing players that weren't on the bench.
+  const tactic = teamSide === "home" ? fixture._t1 : fixture._t2;
+  const tacticPositions: Record<number, string> = tactic?.positions || {};
+  const benchIds = new Set(
+    Object.entries(tacticPositions)
+      .filter(([, status]) => status === "Suplente")
+      .map(([id]) => Number(id)),
+  );
+  const roster = fullRoster || squad;
+  const availableBench = roster.filter(
+    (p) => !lineupIds.has(p.id) && (benchIds.size === 0 || benchIds.has(p.id)),
+  );
 
   // If the injured player is a goalkeeper, prefer substituting with another goalkeeper
   let substituteCandidates = availableBench;
@@ -937,9 +950,9 @@ async function applyPostMatchQualityEvolution(
     const moraleUpdates = [];
     for (const [teamId, result] of teamResults.entries()) {
       let delta;
-      if (result === "W") delta = 10;
+      if (result === "W") delta = 20;
       else if (result === "L") delta = -15;
-      else delta = 0;
+      else delta = 5;
       moraleUpdates.push({ teamId, delta });
     }
 

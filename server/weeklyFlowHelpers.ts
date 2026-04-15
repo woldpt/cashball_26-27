@@ -420,8 +420,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                   return;
                 }
 
-                // Drain pending auction queue
-                if (game.pendingAuctionQueue && game.pendingAuctionQueue.length > 0) {
+                // Drain pending auction queue — skip if next event is a cup round to avoid
+                // the auction modal overlapping the cup draw animation.
+                if (game.pendingAuctionQueue && game.pendingAuctionQueue.length > 0 && game.currentEvent?.type !== "cup") {
                   const queue = game.pendingAuctionQueue.splice(0) as any[];
                   let qDelay = 500;
                   for (const qEntry of queue) {
@@ -576,19 +577,43 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           } finally {
             segmentRunning[game.roomCode] = false;
           }
+
+          // Auto-advance cup halftime when no human coach is in any fixture.
+          // (All eliminated — no substitutions screen needed, continue immediately.)
+          if (game.gamePhase === "match_halftime" && entry?.type === "cup") {
+            const humanInAnyFixture = game.currentFixtures.some((f) =>
+              (Object.values(game.playersByName) as PlayerSession[]).some(
+                (p) => p.socketId && (p.teamId === f.homeTeamId || p.teamId === f.awayTeamId),
+              ),
+            );
+            if (!humanInAnyFixture) {
+              finalizeAllRunningAuctions(game, finalizeAuction);
+              game.gamePhase = "match_second_half";
+              game.phaseToken = makePhaseToken(game);
+              saveGameState(game);
+              const cupEntry = entry as any;
+              io.to(game.roomCode).emit("cupSecondHalfStart", {
+                round: cupEntry.round,
+                roundName: cupEntry.roundName,
+                season: game.season,
+                results: game.currentFixtures.map((f) => ({
+                  homeTeamId: f.homeTeamId,
+                  awayTeamId: f.awayTeamId,
+                  finalHomeGoals: f.finalHomeGoals,
+                  finalAwayGoals: f.finalAwayGoals,
+                  events: f.events,
+                })),
+              });
+              segmentRunning[game.roomCode] = true;
+              try {
+                await runMatchSegment(game, 46, 90);
+              } finally {
+                segmentRunning[game.roomCode] = false;
+              }
+            }
+          }
         },
       );
-      return;
-    }
-
-    // ── ET halftime → Extra Time (cup only) ─────────────────────────────────
-    // finalizeCupRound is suspended awaiting _cupETReadyResolve. Resolve it.
-    if (game.gamePhase === "match_et_halftime") {
-      if ((game as any)._cupETReadyResolve) {
-        const resolve = (game as any)._cupETReadyResolve;
-        delete (game as any)._cupETReadyResolve;
-        resolve();
-      }
       return;
     }
 

@@ -750,6 +750,11 @@ function App() {
     socket.on("cupDrawStart", (data) => {
       // Never open the cup draw popup during an active match
       if (isPlayingMatchRef.current) return;
+      // Close any open auction modal to avoid overlap with the draw animation
+      setSelectedAuctionPlayer(null);
+      setAuctionBid("");
+      setMyAuctionBid(null);
+      setAuctionResult(null);
       setCupDraw(data);
       setCupDrawRevealIdx(0);
       setShowCupDrawPopup(true);
@@ -1834,12 +1839,12 @@ function App() {
     }
   }, [showCupDrawPopup, cupDraw, cupDrawRevealIdx]);
 
-  // Penalty shootout progressive reveal: one kick every 2 s
+  // Penalty shootout progressive reveal: one kick every 3.5 s (for suspense)
   useEffect(() => {
     if (!cupPenaltyPopup) return;
     const total = (cupPenaltyPopup.kicks || []).length;
     if (cupPenaltyKickIdx >= total) return;
-    const timer = setTimeout(() => setCupPenaltyKickIdx((i) => i + 1), 2000);
+    const timer = setTimeout(() => setCupPenaltyKickIdx((i) => i + 1), 3500);
     return () => clearTimeout(timer);
   }, [cupPenaltyPopup, cupPenaltyKickIdx]);
 
@@ -3880,6 +3885,17 @@ function App() {
                             m.homeTeamId !== me.teamId &&
                             m.awayTeamId !== me.teamId,
                         )
+                        .filter((m) => {
+                          // After 90', only show games still in extra time (score tied at 90)
+                          if (liveMinute <= 90) return true;
+                          const goals90Home = (m.events || []).filter(
+                            (e) => e.minute <= 90 && e.type === "goal" && e.team === "home",
+                          ).length;
+                          const goals90Away = (m.events || []).filter(
+                            (e) => e.minute <= 90 && e.type === "goal" && e.team === "away",
+                          ).length;
+                          return goals90Home === goals90Away;
+                        })
                         .map((match, idx) => {
                           const hInfo = teams.find((t) => t.id === match.homeTeamId);
                           const aInfo = teams.find((t) => t.id === match.awayTeamId);
@@ -4290,7 +4306,7 @@ function App() {
                     </div>
                   )}
 
-                  {cupDraw && (
+                  {cupDraw && !cupRoundResults && (
                     <div className="bg-surface-container rounded-lg overflow-hidden">
                       <div className="bg-surface-container-high/40 px-6 py-4 border-b border-outline-variant/20">
                         <p className="text-xs text-zinc-400 uppercase font-black tracking-widest">
@@ -5885,6 +5901,15 @@ function App() {
                       ⚠️ Desligado — a reconectar...
                     </p>
                   )}
+                  {(nextMatchSummary?.isCup && !nextMatchOpponent) ? (
+                    <div className="w-full flex flex-col items-center gap-6 py-6 text-center">
+                      <p className="text-5xl">🏆</p>
+                      <p className="text-on-surface-variant font-bold text-sm leading-relaxed">
+                        Já foste eliminado desta ronda da Taça.<br />
+                        Aguarda os resultados dos outros jogos na aba LIVE.
+                      </p>
+                    </div>
+                  ) : (
                   <div className="w-full mb-4 space-y-4">
                     {/* ── 2D PITCH ─────────────────────────────────────── */}
                     {(() => {
@@ -6178,6 +6203,7 @@ function App() {
                       </div>
                     </div>
                   </div>
+                  )}
                   {(() => {
                     const isReady = players.find(
                       (p) => p.name === me.name,
@@ -6201,7 +6227,7 @@ function App() {
                           {isReady
                             ? "A AGUARDAR OUTROS"
                             : isEliminatedCupSpectator
-                              ? "VER RONDA DA TAÇA"
+                              ? "AVANÇAR PARA JOGOS DA TAÇA"
                               : isHalftime && isCupMatch
                                 ? "2ª PARTE — TAÇA"
                                 : isHalftime
