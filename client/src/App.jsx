@@ -7197,7 +7197,7 @@ function App() {
 
       {/* ── Auction notification (persiana) ───────────────────────────────── */}
       <div
-        className={`fixed top-0 left-0 right-0 z-130 transition-transform duration-300 ${
+        className={`fixed top-14 left-0 right-0 z-130 transition-transform duration-300 ${
           selectedAuctionPlayer ? "translate-y-0" : "-translate-y-full"
         }`}
       >
@@ -7206,17 +7206,18 @@ function App() {
           const startingPrice = selectedAuctionPlayer.startingPrice || selectedAuctionPlayer.transfer_price || 0;
           const isSeller = selectedAuctionPlayer.sellerTeamId === me?.teamId;
           return (
-            <div className="w-full bg-amber-400 border-b-2 border-amber-600 shadow-2xl">
+            <div className="w-full border-b-2 border-amber-600 shadow-2xl overflow-hidden relative" style={{background: "linear-gradient(90deg, #fbbf24 0%, #fde68a 40%, #fbbf24 60%, #f59e0b 100%)", backgroundSize: "200% 100%", animation: "shimmer 2s linear infinite"}}>
+              <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
               {/* ── Collapsed strip — always visible ── */}
               <button
                 type="button"
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-left"
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-left relative z-10"
                 onClick={() => setIsAuctionExpanded((v) => !v)}
               >
-                <span className="text-xs font-black uppercase tracking-widest bg-blue-700 text-white px-2 py-0.5 rounded shrink-0">
+                <span className="text-xs font-black uppercase tracking-widest bg-blue-700 text-white px-2 py-0.5 rounded shrink-0 shadow-md animate-pulse">
                   Leilão
                 </span>
-                <span className="font-black text-zinc-950 truncate">
+                <span className="font-black text-zinc-950 truncate drop-shadow-sm">
                   {selectedAuctionPlayer.name}
                 </span>
                 <span className="text-xs text-zinc-700 shrink-0">
