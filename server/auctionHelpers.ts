@@ -42,7 +42,7 @@ function logClubNews(
     () => {
       // Notify team coaches that news was updated
       if (io) {
-        io.to(game.roomCode).emit("clubNewsUpdated", { teamId });
+        io.to(game.roomCode).emit("clubNewsUpdated", { teamId, type, title });
       }
     },
   );

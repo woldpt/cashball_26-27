@@ -584,6 +584,13 @@ function App() {
     );
   };
 
+  const pushTickerItem = (text) => {
+    setNewsTickerItems((prev) => [
+      ...prev.slice(-49),
+      { id: Date.now() + Math.random(), text },
+    ]);
+  };
+
   const [matchResults, setMatchResults] = useState(null);
   const [matchweekCount, setMatchweekCount] = useState(0);
   const [activeTab, setActiveTab] = useState("players");
@@ -619,6 +626,7 @@ function App() {
   const [palmares, setPalmares] = useState({ trophies: [], allChampions: [] });
   const [palmaresTeamId, setPalmaresTeamId] = useState(null); // last requested team
   const [clubNews, setClubNews] = useState([]);
+  const [newsTickerItems, setNewsTickerItems] = useState([]);
   const [financeData, setFinanceData] = useState(null); // { totalTicketRevenue, totalTransferIncome, totalTransferExpenses, sponsorRevenue, homeMatchesPlayed }
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [selectedTeamSquad, setSelectedTeamSquad] = useState([]);
@@ -742,6 +750,13 @@ function App() {
       });
     });
     socket.on("auctionClosed", (result) => {
+      if (result.sold) {
+        pushTickerItem(
+          `${result.playerName} transferido para ${result.buyerTeamName} por ${formatCurrency(result.finalBid)}`
+        );
+      } else {
+        pushTickerItem(`Leilão de ${result.playerName} encerrado sem licitações`);
+      }
       setSelectedAuctionPlayer((prev) => {
         if (prev && prev.playerId === result.playerId) {
           setAuctionResult(result);
@@ -761,6 +776,15 @@ function App() {
       });
     });
     socket.on("topScorers", (data) => setTopScorers(data));
+    socket.on("seasonEnd", (data) => {
+      if (data.champion) {
+        pushTickerItem(`Campeão: ${data.champion.name}`);
+      }
+      for (const p of data.promotions || []) {
+        const teamName = teamsRef.current.find((t) => t.id === p.teamId)?.name || `Equipa ${p.teamId}`;
+        pushTickerItem(`${teamName} promovida/descida para divisão ${p.toDiv}`);
+      }
+    });
     socket.on("teamSquadData", ({ teamId, squad }) => {
       if (selectedTeamRef.current && selectedTeamRef.current.id === teamId) {
         setSelectedTeamSquad(squad || []);
@@ -991,6 +1015,11 @@ function App() {
     });
     socket.on("cupRoundResults", (data) => {
       isCupDrawRef.current = false;
+      for (const r of data.results || []) {
+        const homeName = r.homeTeam?.name || teamsRef.current.find((t) => t.id === r.homeTeamId)?.name || "?";
+        const awayName = r.awayTeam?.name || teamsRef.current.find((t) => t.id === r.awayTeamId)?.name || "?";
+        pushTickerItem(`Taça: ${homeName} ${r.homeGoals}-${r.awayGoals} ${awayName}`);
+      }
       setCupRoundResults(data);
       setCupPenaltyPopup(null);
       setShowCupResults(false);
@@ -1033,11 +1062,14 @@ function App() {
     socket.on("clubNewsData", (data) => {
       setClubNews(data.news || []);
     });
-    socket.on("clubNewsUpdated", ({ teamId }) => {
+    socket.on("clubNewsUpdated", ({ teamId, title }) => {
       // Use meRef (not me) to avoid stale closure — this listener is registered once with [] deps
       const currentMe = meRef.current;
       if (currentMe?.teamId === teamId) {
         socket.emit("requestClubNews", { teamId });
+      }
+      if (title) {
+        pushTickerItem(title);
       }
     });
     socket.on("financeData", (data) => setFinanceData(data));
@@ -1333,6 +1365,11 @@ function App() {
     // BUG-11 FIX: matchResults clears showHalftimePanel (2nd half replay)
     socket.on("matchResults", (data) => {
       setIsMatchActionPending(false);
+      for (const r of data.results || []) {
+        const home = teamsRef.current.find((t) => t.id === r.homeTeamId)?.name || "?";
+        const away = teamsRef.current.find((t) => t.id === r.awayTeamId)?.name || "?";
+        pushTickerItem(`${home} ${r.homeGoals}-${r.awayGoals} ${away}`);
+      }
       setMatchResults(data);
       setMatchweekCount(data.matchweek);
       setShowHalftimePanel(false);
@@ -8192,6 +8229,30 @@ function App() {
               >
                 Recusar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── News ticker ───────────────────────────────────────────────────────── */}
+      {newsTickerItems.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 h-8 flex items-stretch bg-zinc-950 border-t border-zinc-700 overflow-hidden">
+          <div className="shrink-0 bg-red-600 text-white text-xs font-black px-3 flex items-center uppercase tracking-widest select-none">
+            Notícias
+          </div>
+          <div className="overflow-hidden flex-1 relative">
+            <style>{`@keyframes tickerScroll { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }`}</style>
+            <div
+              key={newsTickerItems.length}
+              className="absolute whitespace-nowrap flex items-center h-full gap-8 text-xs text-zinc-200"
+              style={{ animation: `tickerScroll ${Math.max(15, newsTickerItems.length * 8)}s linear` }}
+            >
+              {newsTickerItems.map((item) => (
+                <span key={item.id}>
+                  <span className="text-red-500 mr-2">◆</span>
+                  {item.text}
+                </span>
+              ))}
             </div>
           </div>
         </div>
