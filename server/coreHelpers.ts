@@ -87,13 +87,18 @@ export function getStandingsRows(teams: AnyRow[] = []) {
   });
 }
 
-export async function getAllTeamForms(db: Db): Promise<Record<number, string>> {
+export async function getAllTeamForms(db: Db, season?: number): Promise<Record<number, string>> {
   const rows = await runAll(
     db,
-    `SELECT m.home_team_id, m.away_team_id, m.home_score, m.away_score
-     FROM matches m
-     WHERE m.played = 1
-     ORDER BY m.matchweek DESC, m.id DESC`,
+    season != null
+      ? `SELECT m.home_team_id, m.away_team_id, m.home_score, m.away_score
+         FROM matches m
+         WHERE m.played = 1 AND m.season = ${season}
+         ORDER BY m.id DESC`
+      : `SELECT m.home_team_id, m.away_team_id, m.home_score, m.away_score
+         FROM matches m
+         WHERE m.played = 1
+         ORDER BY m.id DESC`,
   );
   const formMap: Record<number, string[]> = {};
   for (const row of rows) {
@@ -114,7 +119,7 @@ export async function getAllTeamForms(db: Db): Promise<Record<number, string>> {
   }
   const result: Record<number, string> = {};
   for (const [id, arr] of Object.entries(formMap)) {
-    result[Number(id)] = arr.join("");
+    result[Number(id)] = arr.reverse().join("");
   }
   return result;
 }

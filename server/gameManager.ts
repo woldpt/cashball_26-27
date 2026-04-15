@@ -314,6 +314,7 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
           );
           db.run("ALTER TABLE matches ADD COLUMN home_lineup TEXT", () => {});
           db.run("ALTER TABLE matches ADD COLUMN away_lineup TEXT", () => {});
+          db.run("ALTER TABLE matches ADD COLUMN season INTEGER DEFAULT 1", () => {});
           db.run(`CREATE TABLE IF NOT EXISTS cup_matches (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             season INTEGER NOT NULL,

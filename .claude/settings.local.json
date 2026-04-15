@@ -25,7 +25,9 @@
       "Bash(/usr/local/bin/node_modules/.bin/tsc --noEmit)",
       "Bash(/home/woldpt/git/wsball_26-27/server/node_modules/.bin/tsc -p /home/woldpt/git/wsball_26-27/server/tsconfig.json --noEmit)",
       "Read(//usr/local/lib/node_modules/typescript/bin/**)",
-      "Read(//home/woldpt/.local/lib/node_modules/typescript/bin/**)"
+      "Read(//home/woldpt/.local/lib/node_modules/typescript/bin/**)",
+      "Bash(grep -n \"INSERT INTO matches\\\\|SELECT.*FROM matches\" /home/woldpt/git/wsball_26-27/server/*.ts)",
+      "Bash(grep -n \"getAllTeamForms\" /home/woldpt/git/wsball_26-27/server/*.ts)"
     ]
   }
 }

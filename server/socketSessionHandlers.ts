@@ -117,7 +117,7 @@ export function registerSessionSocketHandlers(
 
     game.db.all("SELECT * FROM teams", (err: any, teams: any[]) => {
       socket.emit("teamsData", teams);
-      getAllTeamForms(game.db).then((forms) => {
+      getAllTeamForms(game.db, game.season).then((forms) => {
         socket.emit("teamForms", forms);
       }).catch(() => {});
     });

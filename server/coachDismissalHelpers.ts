@@ -298,7 +298,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       game.db,
       "SELECT id, name, division, manager_id, budget FROM teams",
     );
-    const forms: Record<number, string> = await getAllTeamForms(game.db);
+    const forms: Record<number, string> = await getAllTeamForms(game.db, game.season);
 
     // 3. Equipas humanas activas
     const humanTeamIds = new Set<number>(

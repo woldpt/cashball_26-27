@@ -552,7 +552,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                   "SELECT * FROM teams",
                   (err2: any, teams: any[]) => {
                     if (!err2) io.to(game.roomCode).emit("teamsData", teams);
-                    getAllTeamForms(game.db)
+                    getAllTeamForms(game.db, game.season)
                       .then((forms) => {
                         io.to(game.roomCode).emit("teamForms", forms);
                       })

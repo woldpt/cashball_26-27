@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS players (
 
 CREATE TABLE IF NOT EXISTS matches (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  season INTEGER DEFAULT 1,
   matchweek INTEGER,
   home_team_id INTEGER,
   away_team_id INTEGER,
