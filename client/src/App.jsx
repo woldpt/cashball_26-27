@@ -6515,10 +6515,6 @@ function App() {
 
                   {activeTab === "players" &&
                     (() => {
-                      const expiringCount = mySquad.filter((p) => {
-                        const cu = p.contract_until_matchweek || 0;
-                        return cu > 0 && cu <= matchweekCount + 4;
-                      }).length;
                       const wageByPos = { GR: 0, DEF: 0, MED: 0, ATA: 0 };
                       mySquad.forEach((p) => {
                         if (wageByPos[p.position] !== undefined)
@@ -6547,22 +6543,6 @@ function App() {
                         ATA: "border-rose-500",
                       };
 
-                      const getContractStatus = (player) => {
-                        if ((player.contract_request_pending || 0) > 0)
-                          return "wants_raise";
-                        const cu = player.contract_until_matchweek || 0;
-                        if (cu > 0 && cu <= matchweekCount + 4)
-                          return "expiring";
-                        return "stable";
-                      };
-
-                      const formatExpiry = (mw) => {
-                        if (!mw) return "—";
-                        const idx = Math.floor(mw / 14);
-                        const y1 = 2026 + idx;
-                        return `${y1}/${String(y1 + 1).slice(2)}`;
-                      };
-
                       return (
                         <div className="space-y-4">
                           {/* ── Summary widgets ── */}
@@ -6587,21 +6567,46 @@ function App() {
                                 {formatCurrency(currentBudget)}
                               </span>
                             </div>
-                            <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-error">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                                Contratos a Expirar
-                              </span>
-                              <div className="flex items-baseline gap-2">
-                                <span className="text-3xl font-black font-headline tracking-tighter text-on-surface">
-                                  {String(expiringCount).padStart(2, "0")}
-                                </span>
-                                {expiringCount > 0 && (
-                                  <span className="text-[10px] font-black text-error uppercase tracking-widest">
-                                    Acção Necessária
+                            {(() => {
+                              const morale = teamInfo?.morale ?? 75;
+                              const moraleColor =
+                                morale >= 70
+                                  ? "text-emerald-400"
+                                  : morale >= 40
+                                    ? "text-tertiary"
+                                    : "text-error";
+                              const moraleBorder =
+                                morale >= 70
+                                  ? "border-emerald-500"
+                                  : morale >= 40
+                                    ? "border-tertiary"
+                                    : "border-error";
+                              const moraleLabel =
+                                morale >= 70
+                                  ? "Boa"
+                                  : morale >= 40
+                                    ? "Razoável"
+                                    : "Má";
+                              return (
+                                <div
+                                  className={`bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 ${moraleBorder}`}
+                                >
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                                    Moral da Equipa
                                   </span>
-                                )}
-                              </div>
-                            </div>
+                                  <div className="flex items-baseline gap-2">
+                                    <span
+                                      className={`text-3xl font-black font-headline tracking-tighter ${moraleColor}`}
+                                    >
+                                      {morale}%
+                                    </span>
+                                    <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">
+                                      {moraleLabel}
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
 
                           {/* ── Contract table ── */}
@@ -6618,24 +6623,18 @@ function App() {
                               <table className="w-full min-w-[700px] text-left border-separate border-spacing-y-0.5 px-2 pb-2">
                                 <thead>
                                   <tr className="text-[10px] uppercase tracking-widest text-on-surface-variant font-black">
-                                    <th className="py-3 px-3">Jogador</th>
                                     <th className="py-3 px-3 text-center w-14">
                                       Pos
+                                    </th>
+                                    <th className="py-3 px-3">Jogador</th>
+                                    <th className="py-3 px-3 text-center w-12">
+                                      País
                                     </th>
                                     <th className="py-3 px-3 text-center w-16">
                                       Qual
                                     </th>
-                                    <th className="py-3 px-3 text-center w-14">
-                                      Idade
-                                    </th>
                                     <th className="py-3 px-3 text-center">
                                       Ordenado/sem
-                                    </th>
-                                    <th className="py-3 px-3 text-center">
-                                      Expira
-                                    </th>
-                                    <th className="py-3 px-3 text-center">
-                                      Estado
                                     </th>
                                     <th className="py-3 px-3 text-right">
                                       Ações
@@ -6644,8 +6643,6 @@ function App() {
                                 </thead>
                                 <tbody className="text-sm font-medium">
                                   {annotatedSquad.map((player) => {
-                                    const contractStatus =
-                                      getContractStatus(player);
                                     const canAct =
                                       player.signed_season !==
                                       Math.ceil((matchweekCount + 1) / 14);
@@ -6654,75 +6651,6 @@ function App() {
                                         key={player.id}
                                         className={`bg-surface-container-low hover:bg-primary-container/15 transition-all ${player.isUnavailable ? "opacity-60" : ""}`}
                                       >
-                                        {/* Jogador */}
-                                        <td className="py-2.5 px-3">
-                                          <div className="flex flex-col">
-                                            <div className="flex items-center gap-1.5">
-                                              <span className="font-black font-headline text-sm tracking-tight uppercase text-on-surface">
-                                                <PlayerLink
-                                                  playerId={player.id}
-                                                >
-                                                  {player.name}
-                                                </PlayerLink>
-                                              </span>
-                                              {!!player.is_star &&
-                                                (player.position === "MED" ||
-                                                  player.position ===
-                                                    "ATA") && (
-                                                  <span
-                                                    className="text-amber-400 font-black text-xs"
-                                                    title="Craque"
-                                                  >
-                                                    ★
-                                                  </span>
-                                                )}
-                                              {player.transfer_status &&
-                                                player.transfer_status !==
-                                                  "none" && (
-                                                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                                                    À venda
-                                                  </span>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center gap-1.5 text-[10px] text-on-surface-variant uppercase font-bold">
-                                              <span
-                                                title={
-                                                  FLAG_TO_COUNTRY[
-                                                    player.nationality
-                                                  ] || player.nationality
-                                                }
-                                              >
-                                                {player.nationality}
-                                              </span>
-                                              {player.isUnavailable &&
-                                                (() => {
-                                                  const susp =
-                                                    player.suspension_until_matchweek ||
-                                                    0;
-                                                  const inj =
-                                                    player.injury_until_matchweek ||
-                                                    0;
-                                                  const isSuspended =
-                                                    susp > matchweekCount;
-                                                  const gamesLeft = isSuspended
-                                                    ? susp - matchweekCount
-                                                    : inj - matchweekCount;
-                                                  return (
-                                                    <span
-                                                      className="text-red-400"
-                                                      title={`Indisponível até jornada ${Math.max(inj, susp) + 1}`}
-                                                    >
-                                                      ·{" "}
-                                                      {isSuspended
-                                                        ? "🟥"
-                                                        : "🩹"}{" "}
-                                                      {gamesLeft}j
-                                                    </span>
-                                                  );
-                                                })()}
-                                            </div>
-                                          </div>
-                                        </td>
                                         {/* Pos */}
                                         <td className="py-2.5 px-3 text-center">
                                           <span
@@ -6731,6 +6659,67 @@ function App() {
                                             {posLabelMap[player.position] ||
                                               player.position}
                                           </span>
+                                        </td>
+                                        {/* Jogador */}
+                                        <td className="py-2.5 px-3">
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="font-black font-headline text-sm tracking-tight uppercase text-on-surface">
+                                              <PlayerLink playerId={player.id}>
+                                                {player.name}
+                                              </PlayerLink>
+                                            </span>
+                                            {!!player.is_star &&
+                                              (player.position === "MED" ||
+                                                player.position === "ATA") && (
+                                                <span
+                                                  className="text-amber-400 font-black text-xs"
+                                                  title="Craque"
+                                                >
+                                                  ★
+                                                </span>
+                                              )}
+                                            {player.transfer_status &&
+                                              player.transfer_status !==
+                                                "none" && (
+                                                <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                                  À venda
+                                                </span>
+                                              )}
+                                            {player.isUnavailable &&
+                                              (() => {
+                                                const susp =
+                                                  player.suspension_until_matchweek ||
+                                                  0;
+                                                const inj =
+                                                  player.injury_until_matchweek ||
+                                                  0;
+                                                const isSuspended =
+                                                  susp > matchweekCount;
+                                                const gamesLeft = isSuspended
+                                                  ? susp - matchweekCount
+                                                  : inj - matchweekCount;
+                                                return (
+                                                  <span
+                                                    className="text-red-400 text-xs font-bold"
+                                                    title={`Indisponível até jornada ${Math.max(inj, susp) + 1}`}
+                                                  >
+                                                    {isSuspended ? "🟥" : "🩹"}
+                                                    {gamesLeft}j
+                                                  </span>
+                                                );
+                                              })()}
+                                          </div>
+                                        </td>
+                                        {/* País */}
+                                        <td
+                                          className="py-2.5 px-3 text-center text-on-surface-variant text-sm"
+                                          title={
+                                            FLAG_TO_COUNTRY[
+                                              player.nationality
+                                            ] || player.nationality
+                                          }
+                                        >
+                                          {player.nationality}
                                         </td>
                                         {/* Qual */}
                                         <td className="py-2.5 px-3 text-center">
@@ -6750,63 +6739,12 @@ function App() {
                                               </span>
                                             )}
                                         </td>
-                                        {/* Idade */}
-                                        <td className="py-2.5 px-3 text-center text-on-surface-variant font-normal tabular-nums">
-                                          {player.age || "—"}
-                                        </td>
                                         {/* Ordenado */}
                                         <td className="py-2.5 px-3 text-center font-mono text-on-surface-variant text-xs">
                                           {formatCurrency(player.wage || 0)}
                                           <span className="text-[10px] opacity-40 ml-0.5">
                                             /sem
                                           </span>
-                                        </td>
-                                        {/* Expira */}
-                                        <td className="py-2.5 px-3 text-center text-xs font-bold">
-                                          {player.contract_until_matchweek ? (
-                                            <span
-                                              className={
-                                                contractStatus === "expiring"
-                                                  ? "text-error italic"
-                                                  : "text-on-surface"
-                                              }
-                                            >
-                                              {formatExpiry(
-                                                player.contract_until_matchweek,
-                                              )}
-                                            </span>
-                                          ) : (
-                                            <span className="text-zinc-600">
-                                              —
-                                            </span>
-                                          )}
-                                        </td>
-                                        {/* Estado */}
-                                        <td className="py-2.5 px-3">
-                                          {contractStatus === "wants_raise" && (
-                                            <div className="flex items-center justify-center gap-1.5 text-tertiary">
-                                              <span className="w-1.5 h-1.5 rounded-full bg-tertiary shrink-0" />
-                                              <span className="text-[10px] uppercase font-black">
-                                                Pediu Aumento
-                                              </span>
-                                            </div>
-                                          )}
-                                          {contractStatus === "expiring" && (
-                                            <div className="flex items-center justify-center gap-1.5 text-error">
-                                              <span className="w-1.5 h-1.5 rounded-full bg-error animate-pulse shrink-0" />
-                                              <span className="text-[10px] uppercase font-black">
-                                                A Expirar
-                                              </span>
-                                            </div>
-                                          )}
-                                          {contractStatus === "stable" && (
-                                            <div className="flex items-center justify-center gap-1.5 text-on-surface-variant">
-                                              <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant shrink-0" />
-                                              <span className="text-[10px] uppercase font-black">
-                                                Estável
-                                              </span>
-                                            </div>
-                                          )}
                                         </td>
                                         {/* Ações */}
                                         <td className="py-2.5 px-3 text-right">
