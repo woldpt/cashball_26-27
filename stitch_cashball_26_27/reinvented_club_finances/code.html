@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Finance Management | Tactical Editorial</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {darkMode: "class", theme: {extend: {colors: {"primary-container": "#2d6a4f", "on-primary-fixed-variant": "#0e5138", "inverse-surface": "#e5e2e1", "error-container": "#93000a", "surface-container-highest": "#353534", "on-error": "#690005", "on-background": "#e5e2e1", "primary-fixed": "#b1f0ce", "on-secondary": "#303030", "outline-variant": "#404943", "surface-container-lowest": "#0e0e0e", "on-surface-variant": "#bfc9c1", "on-primary-container": "#a8e7c5", "on-primary": "#003824", "surface-bright": "#393939", "primary-fixed-dim": "#95d4b3", "on-error-container": "#ffdad6", outline: "#8a938c", "on-tertiary-fixed-variant": "#574500", "secondary-container": "#494949", "surface-container-high": "#2a2a2a", "tertiary-fixed-dim": "#e9c349", "surface-container": "#201f1f", "on-secondary-fixed": "#1b1c1c", "inverse-primary": "#2c694e", background: "#131313", tertiary: "#e9c349", "surface-tint": "#95d4b3", "on-secondary-fixed-variant": "#474747", "inverse-on-surface": "#313030", "on-tertiary-container": "#4e3d00", error: "#ffb4ab", "on-tertiary-fixed": "#241a00", "surface-container-low": "#1c1b1b", "on-primary-fixed": "#002114", "secondary-fixed": "#e4e2e2", "tertiary-container": "#cca72f", "secondary-fixed-dim": "#c8c6c6", "tertiary-fixed": "#ffe088", "on-tertiary": "#3c2f00", "surface-dim": "#131313", surface: "#131313", "on-surface": "#e5e2e1", "on-secondary-container": "#b9b8b8", "surface-variant": "#353534", primary: "#95d4b3", secondary: "#c8c6c6"}, borderRadius: {DEFAULT: "0.125rem", lg: "0.25rem", xl: "0.5rem", full: "0.75rem"}, fontFamily: {headline: ["Space Grotesk"], body: ["Inter"], label: ["Inter"], display: "Space Grotesk"}}}};</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-headline { font-family: 'Space Grotesk', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col md:flex-row overflow-hidden">
+<!-- Sidebar Navigation (Mandatory Shared Component) -->
+<aside class="hidden md:flex flex-col h-screen w-64 left-0 border-r-0 bg-[#1C1B1B] py-6 px-4 shrink-0">
+<div class="mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-container rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="stadium">stadium</span>
+</div>
+<div>
+<h2 class="font-headline text-lg text-[#E9C349] leading-none">London FC</h2>
+<p class="font-body text-[10px] opacity-60 uppercase tracking-widest mt-1">Premier Division</p>
+</div>
+</div>
+</div>
+<nav class="flex flex-col gap-2 flex-grow">
+<a class="flex items-center gap-3 px-3 py-3 text-[#E5E2E1] opacity-60 hover:opacity-100 hover:bg-[#393939] transition-all cursor-pointer duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-body text-sm">Overview</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 text-[#E5E2E1] opacity-60 hover:opacity-100 hover:bg-[#393939] transition-all cursor-pointer duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-body text-sm">Balance Sheet</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 text-[#E5E2E1] opacity-60 hover:opacity-100 hover:bg-[#393939] transition-all cursor-pointer duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="handshake">handshake</span>
+<span class="font-body text-sm">Sponsorships</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 text-[#E5E2E1] opacity-60 hover:opacity-100 hover:bg-[#393939] transition-all cursor-pointer duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="stadium">stadium</span>
+<span class="font-body text-sm">Ticket Sales</span>
+</a>
+<a class="bg-[#201F1F] text-[#95D4B3] font-bold border-l-4 border-[#95D4B3] flex items-center gap-3 px-3 py-3 transition-all cursor-pointer duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-body text-sm">Wage Bill</span>
+</a>
+</nav>
+<div class="mt-auto">
+<button class="w-full py-3 bg-primary text-on-primary font-headline font-bold uppercase tracking-wider rounded-md text-sm hover:brightness-110 active:opacity-80 transition-all">
+                Request Budget
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-grow overflow-y-auto relative pb-24 md:pb-8">
+<!-- TopAppBar (Mandatory Shared Component) -->
+<header class="flex justify-between items-center px-6 py-4 w-full max-w-full bg-[#131313] sticky top-0 z-40">
+<div class="flex items-center gap-8">
+<span class="text-2xl font-bold tracking-tighter text-[#E9C349] font-headline uppercase">TACTICAL EDITORIAL</span>
+<nav class="hidden lg:flex items-center gap-6">
+<a class="font-body text-sm text-[#E5E2E1] opacity-70 hover:bg-[#393939] hover:text-[#95D4B3] transition-colors px-2 py-1" href="#">Dashboard</a>
+<a class="font-body text-sm text-[#E5E2E1] opacity-70 hover:bg-[#393939] hover:text-[#95D4B3] transition-colors px-2 py-1" href="#">Transfers</a>
+<a class="font-body text-sm text-[#E5E2E1] opacity-70 hover:bg-[#393939] hover:text-[#95D4B3] transition-colors px-2 py-1" href="#">Scouting</a>
+<a class="font-body text-sm text-[#95D4B3] border-b-2 border-[#95D4B3] pb-1 font-medium" href="#">Finance</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden sm:flex items-center bg-surface-container rounded px-3 py-1.5 border border-outline-variant/15">
+<span class="material-symbols-outlined text-sm text-tertiary mr-2" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-headline text-sm font-bold text-on-surface">£142.8M</span>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-on-surface transition-colors" data-icon="settings">settings</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/30">
+<img alt="Manager Profile" data-alt="professional portrait of a middle-aged football manager in a dark suit with a focused and strategic expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXvlKro7ixbJRAc7_Lj2cKdApR2iBDTivaRhStb6oCiSE6hql2lFNSgIIOoukNvWH-uydDAh-ZOOLONp_A8IjcQkSEvQXREpTEnK8tFoNOctH6dw0pPm02LKtKdhKojOaCTT2omUizoQJ6024ye-W7Pnu6lDES_-ovVAhDIjmSbHEGcvkHTGldOQ86ht26d1g-2ArsYhiwj1tHDh8mUx8pG2iD68ltsLuGMqlgcIJUlc_Tx7YKigUC_jSsgqUioNjASL_1RenY0sPt"/>
+</div>
+</div>
+</header>
+<div class="p-6 space-y-6 max-w-7xl mx-auto">
+<!-- Financial Hero Section -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-0.5 bg-outline-variant/10 overflow-hidden rounded-xl">
+<div class="bg-surface-container p-6 flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-5">
+<span class="material-symbols-outlined text-8xl" data-icon="payments">payments</span>
+</div>
+<div>
+<p class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-1">Total Balance</p>
+<h2 class="font-headline text-4xl font-bold text-primary tracking-tighter">£142,850,000</h2>
+</div>
+<div class="mt-6 flex items-end gap-2">
+<div class="flex gap-1 h-8 items-end">
+<div class="w-1 bg-primary/20 h-2 rounded-t-sm"></div>
+<div class="w-1 bg-primary/40 h-4 rounded-t-sm"></div>
+<div class="w-1 bg-primary/60 h-3 rounded-t-sm"></div>
+<div class="w-1 bg-primary/80 h-6 rounded-t-sm"></div>
+<div class="w-1 bg-primary h-8 rounded-t-sm"></div>
+</div>
+<span class="font-label text-[10px] text-primary font-bold">+12.4% YOY</span>
+</div>
+</div>
+<div class="bg-surface-container p-6 flex flex-col justify-between">
+<div>
+<p class="font-label text-xs uppercase tracking-widest text-on-surface-variant mb-1">Projected EoS Profit</p>
+<h2 class="font-headline text-4xl font-bold text-tertiary tracking-tighter">£28,420,000</h2>
+</div>
+<div class="mt-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-sm" data-icon="trending_up">trending_up</span>
+<span class="font-label text-[10px] text-on-surface-variant font-medium">ON TARGET FOR BOARD OBJECTIVES</span>
+</div>
+</div>
+<div class="bg-surface-container p-0 overflow-hidden">
+<div class="relative h-full w-full">
+<img alt="Financial background" class="w-full h-full object-cover opacity-40 mix-blend-luminosity" data-alt="close-up of digital financial stock market data on a screen with abstract bokeh light reflections and dark green overlay" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDejr80dc6luT43DFW1lQxtvQBT8mLn4NefB9SnMDuNPm9fWqZvwqcaJ8dsFuF9lvrcO0r8XtJOpvO1VoZZRDPXL19qUvUrDW-z-4VEeWSLFB-gLokT6YiWR_QduCFh42JeEpZv-PNXbADSeD3V7mgxg6a4FxVmxOxummvl7wC5EmwXpQ8obvtNUVWRdS3eXkmsXe_eYKCReWKk0u5fCZGJ1qv--5PDDcgHMDo4pQyaYw_DiMPEQMw8ccLCWLSA--hiITV7lVAORyLf"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container via-transparent to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-6">
+<p class="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface mb-1">Market Valuation</p>
+<p class="font-headline text-xl font-bold text-on-surface">£1.24 BILLION</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Income vs Expenses & Wage Bill -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Income Column -->
+<div class="bg-surface-container-low rounded-lg p-6 flex flex-col space-y-4">
+<div class="flex justify-between items-center pb-2 border-b border-outline-variant/10">
+<h3 class="font-headline text-lg uppercase tracking-tight flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="arrow_downward">arrow_downward</span>
+                            Income
+                        </h3>
+<span class="font-headline text-primary font-bold">£312.5M</span>
+</div>
+<ul class="space-y-4">
+<li class="flex justify-between items-center group">
+<div class="flex flex-col">
+<span class="font-body text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Ticket Sales</span>
+<span class="text-[10px] opacity-40 uppercase">Season &amp; Matchday</span>
+</div>
+<span class="font-headline text-sm font-bold">£84.2M</span>
+</li>
+<li class="flex justify-between items-center group">
+<div class="flex flex-col">
+<span class="font-body text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Merchandising</span>
+<span class="text-[10px] opacity-40 uppercase">Retail &amp; Global Licensing</span>
+</div>
+<span class="font-headline text-sm font-bold">£42.8M</span>
+</li>
+<li class="flex justify-between items-center group">
+<div class="flex flex-col">
+<span class="font-body text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">TV Rights</span>
+<span class="text-[10px] opacity-40 uppercase">League &amp; Continental</span>
+</div>
+<span class="font-headline text-sm font-bold">£115.0M</span>
+</li>
+<li class="flex justify-between items-center group">
+<div class="flex flex-col">
+<span class="font-body text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Sponsorship</span>
+<span class="text-[10px] opacity-40 uppercase">Shirt, Training &amp; Stadium</span>
+</div>
+<span class="font-headline text-sm font-bold">£55.5M</span>
+</li>
+<li class="flex justify-between items-center group">
+<div class="flex flex-col">
+<span class="font-body text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Transfer Revenue</span>
+<span class="text-[10px] opacity-40 uppercase">Player Outgoings</span>
+</div>
+<span class="font-headline text-sm font-bold">£15.0M</span>
+</li>
+</ul>
+</div>
+<!-- Expenses Column -->
+<div class="bg-surface-container-low rounded-lg p-6 flex flex-col space-y-4">
+<div class="flex justify-between items-center pb-2 border-b border-outline-variant/10">
+<h3 class="font-headline text-lg uppercase tracking-tight flex items-center gap-2">
+<span class="material-symbols-outlined text-error" data-icon="arrow_upward">arrow_upward</span>
+                            Expenses
+                        </h3>
+<span class="font-headline text-error font-bold">£284.1M</span>
+</div>
+<ul class="space-y-4">
+<li class="flex justify-between items-center group">
+<div class="flex flex-col">
+<span class="font-body text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Player Wages</span>
+<span class="text-[10px] opacity-40 uppercase">Weekly Base Salaries</span>
+</div>
+<span class="font-headline text-sm font-bold">£162.4M</span>
+</li>
+<li class="flex justify-between items-center group">
+<div class="flex flex-col">
+<span class="font-body text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Staff Salaries</span>
+<span class="text-[10px] opacity-40 uppercase">Coaches &amp; Operations</span>
+</div>
+<span class="font-headline text-sm font-bold">£18.2M</span>
+</li>
+<li class="flex justify-between items-center group">
+<div class="flex flex-col">
+<span class="font-body text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Stadium Maintenance</span>
+<span class="text-[10px] opacity-40 uppercase">Utilities &amp; Groundwork</span>
+</div>
+<span class="font-headline text-sm font-bold">£12.5M</span>
+</li>
+<li class="flex justify-between items-center group">
+<div class="flex flex-col">
+<span class="font-body text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Scout Fees</span>
+<span class="text-[10px] opacity-40 uppercase">Travel &amp; Reports</span>
+</div>
+<span class="font-headline text-sm font-bold">£4.2M</span>
+</li>
+<li class="flex justify-between items-center group">
+<div class="flex flex-col">
+<span class="font-body text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">Transfer Spending</span>
+<span class="text-[10px] opacity-40 uppercase">Installments Due</span>
+</div>
+<span class="font-headline text-sm font-bold">£86.8M</span>
+</li>
+</ul>
+</div>
+<!-- Control Center: Wage & Debt -->
+<div class="space-y-6">
+<!-- Wage Bill Card -->
+<div class="bg-surface-container rounded-lg p-6 border-l-4 border-error overflow-hidden relative">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline text-sm uppercase tracking-widest text-on-surface-variant">Wage Bill Control</h3>
+<p class="font-headline text-2xl font-bold mt-1">£3.1M <span class="text-xs font-normal opacity-50">/ WEEK</span></p>
+</div>
+<span class="material-symbols-outlined text-error" data-icon="warning" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+<span>Utilization</span>
+<span class="text-error">94.8%</span>
+</div>
+<div class="h-2 w-full bg-surface-bright rounded-full overflow-hidden">
+<div class="h-full bg-error rounded-full" style="width: 94.8%"></div>
+</div>
+<div class="flex justify-between text-[10px] opacity-60 uppercase">
+<span>Current: £3,123,000</span>
+<span>Cap: £3,290,000</span>
+</div>
+</div>
+</div>
+<!-- Debt Card -->
+<div class="bg-surface-container rounded-lg p-6 border-t border-outline-variant/10">
+<h3 class="font-headline text-sm uppercase tracking-widest text-on-surface-variant mb-4">Debt &amp; Loan Management</h3>
+<div class="mb-6">
+<p class="text-[10px] opacity-50 uppercase mb-1">Outstanding Bank Loans</p>
+<p class="font-headline text-2xl font-bold text-on-surface tracking-tight">£45,000,000</p>
+<p class="text-[10px] text-error font-medium mt-1">INTEREST RATE: 4.2% APR</p>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<button class="bg-secondary-container py-2 text-xs font-headline font-bold uppercase tracking-wider rounded hover:bg-surface-bright transition-all">Pay Back</button>
+<button class="bg-surface-bright py-2 text-xs font-headline font-bold uppercase tracking-wider rounded hover:brightness-110 transition-all border border-outline-variant/30">Request Loan</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Ledger/Transactions List -->
+<section class="bg-surface-container-low rounded-lg overflow-hidden">
+<div class="px-6 py-4 border-b border-outline-variant/10 flex justify-between items-center">
+<h3 class="font-headline text-sm uppercase tracking-widest">Recent Financial Ledger</h3>
+<button class="text-[10px] font-bold uppercase tracking-tighter text-primary flex items-center gap-1">
+                        View All Records <span class="material-symbols-outlined text-xs" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-separate border-spacing-y-0.5">
+<thead class="bg-surface-container-high">
+<tr>
+<th class="px-6 py-3 font-label text-[10px] uppercase text-tertiary tracking-widest">Date</th>
+<th class="px-6 py-3 font-label text-[10px] uppercase text-tertiary tracking-widest">Description</th>
+<th class="px-6 py-3 font-label text-[10px] uppercase text-tertiary tracking-widest">Category</th>
+<th class="px-6 py-3 font-label text-[10px] uppercase text-tertiary tracking-widest text-right">Amount</th>
+</tr>
+</thead>
+<tbody>
+<tr class="hover:bg-primary-container/20 transition-all cursor-default">
+<td class="px-6 py-4 font-body text-xs text-on-surface-variant">14 OCT 98</td>
+<td class="px-6 py-4 font-body text-sm font-medium">Champions League TV Payout</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 rounded-sm bg-surface-bright text-[10px] font-bold uppercase border-l-2 border-primary">Revenue</span>
+</td>
+<td class="px-6 py-4 font-headline text-sm font-bold text-primary text-right">+ £4,200,000</td>
+</tr>
+<tr class="hover:bg-primary-container/20 transition-all cursor-default">
+<td class="px-6 py-4 font-body text-xs text-on-surface-variant">12 OCT 98</td>
+<td class="px-6 py-4 font-body text-sm font-medium">Stamford Bridge Utility Bill</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 rounded-sm bg-surface-bright text-[10px] font-bold uppercase border-l-2 border-error">Maintenance</span>
+</td>
+<td class="px-6 py-4 font-headline text-sm font-bold text-error text-right">- £142,500</td>
+</tr>
+<tr class="hover:bg-primary-container/20 transition-all cursor-default">
+<td class="px-6 py-4 font-body text-xs text-on-surface-variant">10 OCT 98</td>
+<td class="px-6 py-4 font-body text-sm font-medium">Merchandise Sales (Week 41)</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 rounded-sm bg-surface-bright text-[10px] font-bold uppercase border-l-2 border-primary">Retail</span>
+</td>
+<td class="px-6 py-4 font-headline text-sm font-bold text-primary text-right">+ £845,900</td>
+</tr>
+<tr class="hover:bg-primary-container/20 transition-all cursor-default">
+<td class="px-6 py-4 font-body text-xs text-on-surface-variant">08 OCT 98</td>
+<td class="px-6 py-4 font-body text-sm font-medium">Installment: A. Cole Transfer</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 rounded-sm bg-surface-bright text-[10px] font-bold uppercase border-l-2 border-error">Transfers</span>
+</td>
+<td class="px-6 py-4 font-headline text-sm font-bold text-error text-right">- £1,200,000</td>
+</tr>
+<tr class="hover:bg-primary-container/20 transition-all cursor-default">
+<td class="px-6 py-4 font-body text-xs text-on-surface-variant">05 OCT 98</td>
+<td class="px-6 py-4 font-body text-sm font-medium">Sponsorship Bonus: Clean Sheet Streak</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 rounded-sm bg-surface-bright text-[10px] font-bold uppercase border-l-2 border-primary">Sponsorship</span>
+</td>
+<td class="px-6 py-4 font-headline text-sm font-bold text-primary text-right">+ £50,000</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Mandatory Shared Component for Mobile) -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 bg-[#131313]/80 dark:bg-[#131313]/80 backdrop-blur-xl z-50 rounded-t-lg border-t border-[#424843]/15 md:hidden">
+<a class="flex flex-col items-center justify-center text-[#E5E2E1]/60 hover:bg-[#201F1F] transition-transform duration-150 scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-body text-[10px] font-medium uppercase tracking-wider mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#E5E2E1]/60 hover:bg-[#201F1F] transition-transform duration-150 scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="strategy">strategy</span>
+<span class="font-body text-[10px] font-medium uppercase tracking-wider mt-1">Tactics</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#E5E2E1]/60 hover:bg-[#201F1F] transition-transform duration-150 scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-body text-[10px] font-medium uppercase tracking-wider mt-1">Squad</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#00412B]/30 text-[#95D4B3] rounded-md py-1 px-3 scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="monetization_on">monetization_on</span>
+<span class="font-body text-[10px] font-medium uppercase tracking-wider mt-1">Finance</span>
+</a>
+</nav>
+</body></html>
