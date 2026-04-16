@@ -614,6 +614,7 @@ function App() {
   const [marketPairs, setMarketPairs] = useState([]);
   const [marketPositionFilter, setMarketPositionFilter] = useState("all");
   const [marketSort, setMarketSort] = useState("quality-desc");
+  const [playersPositionFilter, setPlayersPositionFilter] = useState("all");
   const [selectedAuctionPlayer, setSelectedAuctionPlayer] = useState(null);
   const [isAuctionExpanded, setIsAuctionExpanded] = useState(false);
   const [auctionBid, setAuctionBid] = useState("");
@@ -6276,229 +6277,318 @@ function App() {
                   );
                 })()}
 
-              {activeTab === "players" && (
-                <div className="space-y-6">
-                  <div className="bg-surface-container rounded-lg shadow-sm overflow-x-auto">
-                    <table className="w-full min-w-[720px] text-left text-sm font-normal">
-                      <thead>
-                        <tr className="bg-surface/50 text-on-surface-variant uppercase text-[11px] tracking-widest border-b border-outline-variant/20 font-normal">
-                          <th className="px-3 py-3 text-center w-12 font-normal">
-                            POS
-                          </th>
-                          <th className="px-3 py-3 font-normal">NOME</th>
-                          <th className="px-3 py-3 text-center w-12 font-normal">
-                            NAC
-                          </th>
-                          <th className="px-3 py-3 text-center w-14 font-normal">
-                            QUAL
-                          </th>
-                          <th className="px-3 py-3 text-center font-normal">
-                            AGR
-                          </th>
-                          <th className="px-3 py-3 text-center w-12 font-normal">
-                            ⚽
-                          </th>
-                          <th className="px-3 py-3 text-center w-12 font-normal">
-                            🟥
-                          </th>
-                          <th className="px-3 py-3 text-center w-12 font-normal">
-                            🩹
-                          </th>
-                          <th className="px-3 py-3 text-center w-24 font-normal">
-                            ORDENADO
-                          </th>
-                          <th className="px-3 py-3 text-center w-24 font-normal">
-                            AÇÕES
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-outline-variant/10 font-normal">
-                        {annotatedSquad.map((player) => (
-                          <tr
-                            key={player.id}
-                            className={`transition-colors group select-none ${ENABLE_ROW_BG ? POSITION_BG_CLASS[player.position] : ""} hover:bg-zinc-800/50 ${player.isUnavailable ? "opacity-50" : ""}`}
+              {activeTab === "players" && (() => {
+                const currentSeason = Math.ceil((matchweekCount + 1) / 14);
+                const expiringPlayers = mySquad.filter(
+                  (p) => p.contract_until_matchweek > 0 && p.contract_until_matchweek <= matchweekCount + 3
+                );
+                const POSITION_BORDER = {
+                  GR: "border-yellow-500",
+                  DEF: "border-blue-500",
+                  MED: "border-emerald-500",
+                  ATA: "border-rose-500",
+                };
+                const POSITION_BAR_COLOR = {
+                  GR: "bg-yellow-500",
+                  DEF: "bg-blue-500",
+                  MED: "bg-emerald-500",
+                  ATA: "bg-rose-500",
+                };
+                const filteredSquad = annotatedSquad.filter(
+                  (p) => playersPositionFilter === "all" || p.position === playersPositionFilter
+                );
+                const wageByPos = ["GR", "DEF", "MED", "ATA"].map((pos) => ({
+                  pos,
+                  total: mySquad.filter((p) => p.position === pos).reduce((s, p) => s + (p.wage || 0), 0),
+                  count: mySquad.filter((p) => p.position === pos).length,
+                }));
+                const maxPosWage = Math.max(...wageByPos.map((w) => w.total), 1);
+                return (
+                  <div className="space-y-5">
+                    {/* ── SUMMARY WIDGETS ──────────────────────────────── */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Massa Salarial */}
+                      <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-primary">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                          Massa Salarial / Semana
+                        </span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-3xl font-headline font-black tracking-tighter text-on-surface">
+                            {formatCurrency(totalWeeklyWage)}
+                          </span>
+                          <span className="text-[10px] text-on-surface-variant">
+                            {mySquad.length} jogadores
+                          </span>
+                        </div>
+                      </div>
+                      {/* Saldo Disponível */}
+                      <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-tertiary">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                          Saldo Disponível
+                        </span>
+                        <div className="flex items-baseline gap-2">
+                          <span className={`text-3xl font-headline font-black tracking-tighter ${currentBudget >= 0 ? "text-tertiary" : "text-error"}`}>
+                            {formatCurrency(currentBudget)}
+                          </span>
+                          {loanAmount > 0 && (
+                            <span className="text-[10px] text-error font-black">
+                              Dívida: {formatCurrency(loanAmount)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {/* Contratos a Expirar */}
+                      <div className={`bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 ${expiringPlayers.length > 0 ? "border-error" : "border-outline-variant"}`}>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                          Contratos a Expirar
+                        </span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-3xl font-headline font-black tracking-tighter text-on-surface">
+                            {String(expiringPlayers.length).padStart(2, "0")}
+                          </span>
+                          {expiringPlayers.length > 0 ? (
+                            <span className="text-xs text-error font-black">Ação necessária</span>
+                          ) : (
+                            <span className="text-xs text-primary font-black">Tudo OK</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ── SQUAD CONTRACT TABLE ──────────────────────────── */}
+                    <div className="bg-surface-container rounded-md overflow-hidden">
+                      {/* Table header */}
+                      <div className="px-5 py-4 flex flex-wrap gap-3 justify-between items-center bg-surface-container-high/50">
+                        <h2 className="text-base font-headline font-black tracking-tight text-tertiary uppercase">
+                          Plantel — Gestão Contratual
+                        </h2>
+                        <div className="flex gap-2 items-center flex-wrap">
+                          <select
+                            className="bg-surface-container-lowest border border-outline-variant/20 px-3 py-1.5 rounded-sm text-[10px] font-black uppercase text-on-surface focus:outline-none"
+                            value={playersPositionFilter}
+                            onChange={(e) => setPlayersPositionFilter(e.target.value)}
                           >
-                            <td
-                              className={`px-3 py-2 text-center text-sm tracking-wider ${POSITION_TEXT_CLASS[player.position] || "text-zinc-300"}`}
+                            <option value="all">Todas as posições</option>
+                            <option value="GR">Guarda-Redes</option>
+                            <option value="DEF">Defesa</option>
+                            <option value="MED">Médio</option>
+                            <option value="ATA">Avançado</option>
+                          </select>
+                          {expiringPlayers.length > 0 && (
+                            <button
+                              onClick={() => expiringPlayers.forEach((p) => renewPlayerContract(p))}
+                              className="px-3 py-1.5 bg-tertiary text-on-tertiary-container text-[10px] font-black uppercase tracking-widest rounded-sm hover:brightness-110 transition-all"
                             >
-                              {POSITION_SHORT_LABELS[player.position] ||
-                                player.position}
-                            </td>
-                            <td className="px-3 py-2 text-white text-sm md:text-base whitespace-nowrap">
-                              <PlayerLink playerId={player.id}>
-                                {player.name}
-                              </PlayerLink>
-                              {!!player.is_star &&
-                                (player.position === "MED" ||
-                                  player.position === "ATA") && (
-                                  <span
-                                    className="ml-1 text-amber-400 font-black"
-                                    title="Craque"
-                                  >
-                                    *
-                                  </span>
-                                )}
-                              {player.isUnavailable &&
-                                (() => {
-                                  const susp =
-                                    player.suspension_until_matchweek || 0;
-                                  const inj =
-                                    player.injury_until_matchweek || 0;
-                                  const isSuspended = susp > matchweekCount;
-                                  const gamesLeft = isSuspended
-                                    ? susp - matchweekCount
-                                    : inj - matchweekCount;
-                                  return (
-                                    <span
-                                      className="ml-2 text-xs font-bold text-red-400 inline-flex items-center gap-0.5"
-                                      title={`Indisponível até jornada ${Math.max(inj, susp) + 1}`}
-                                    >
-                                      {isSuspended ? "🟥" : "🩹"}
-                                      <span className="tabular-nums">
-                                        {gamesLeft}
+                              Renovar todos a expirar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {/* Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-separate border-spacing-y-0.75 px-3 pb-3">
+                          <thead>
+                            <tr className="text-[10px] uppercase tracking-widest text-on-surface-variant font-black">
+                              <th className="py-3 px-3">Jogador</th>
+                              <th className="py-3 px-3">Pos</th>
+                              <th className="py-3 px-3 text-center">Qual</th>
+                              <th className="py-3 px-3">Ordenado/sem</th>
+                              <th className="py-3 px-3">Contrato até</th>
+                              <th className="py-3 px-3">Estado</th>
+                              <th className="py-3 px-3 text-right">Ações</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredSquad.map((player) => {
+                              const isExpiringSoon =
+                                player.contract_until_matchweek > 0 &&
+                                player.contract_until_matchweek <= matchweekCount + 3;
+                              const wantsRaise = !!player.contract_request_pending;
+                              const canManage = player.signed_season !== currentSeason;
+                              const isStar = !!player.is_star && (player.position === "MED" || player.position === "ATA");
+
+                              let statusColor = "text-primary";
+                              let dotClass = "bg-primary";
+                              let statusLabel = "Estável";
+                              if (isExpiringSoon) {
+                                statusColor = "text-error";
+                                dotClass = "bg-error animate-pulse";
+                                statusLabel = "A Expirar";
+                              } else if (wantsRaise) {
+                                statusColor = "text-tertiary";
+                                dotClass = "bg-tertiary";
+                                statusLabel = "Quer Aumento";
+                              }
+
+                              let playerLabel = "Jogador do plantel";
+                              if (isStar) playerLabel = "Craque";
+                              else if (player.skill >= 80) playerLabel = "Titular indiscutível";
+                              else if (player.skill >= 65) playerLabel = "Rotação";
+
+                              const positionBorderClass = POSITION_BORDER[player.position] || "border-primary";
+                              const contractMw = player.contract_until_matchweek;
+                              let contractLabel = "—";
+                              if (contractMw > 0) {
+                                const cSeason = 2026 + Math.floor((contractMw - 1) / 14);
+                                const cJornada = ((contractMw - 1) % 14) + 1;
+                                contractLabel = `J${cJornada} — ${cSeason}/${cSeason + 1}`;
+                              }
+
+                              return (
+                                <tr
+                                  key={player.id}
+                                  className={`bg-surface-container-low hover:bg-primary-container/20 transition-all ${player.isUnavailable ? "opacity-60" : ""}`}
+                                >
+                                  {/* Jogador */}
+                                  <td className="py-2.5 px-3">
+                                    <div className={`font-headline font-bold text-sm tracking-tight uppercase ${isExpiringSoon ? "text-error" : isStar ? "text-tertiary" : "text-on-surface"}`}>
+                                      <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
+                                      {player.isUnavailable && (() => {
+                                        const isSusp = (player.suspension_until_matchweek || 0) > matchweekCount;
+                                        const gamesLeft = isSusp
+                                          ? (player.suspension_until_matchweek || 0) - matchweekCount
+                                          : (player.injury_until_matchweek || 0) - matchweekCount;
+                                        return (
+                                          <span className="ml-2 text-[10px] font-black text-red-400 inline-flex items-center gap-0.5">
+                                            {isSusp ? "🟥" : "🩹"}
+                                            <span className="tabular-nums">{gamesLeft}</span>
+                                          </span>
+                                        );
+                                      })()}
+                                      {player.transfer_status && player.transfer_status !== "none" && (
+                                        <span className="ml-2 text-[10px] font-black px-1.5 py-0.5 rounded-sm bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 normal-case tracking-normal">
+                                          À venda
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[10px] text-on-surface-variant uppercase tracking-wide mt-0.5">
+                                      <span title={FLAG_TO_COUNTRY[player.nationality] || player.nationality}>
+                                        {player.nationality}
                                       </span>
+                                      {" · "}
+                                      {playerLabel}
+                                    </div>
+                                  </td>
+                                  {/* Posição */}
+                                  <td className="py-2.5 px-3">
+                                    <span className={`px-2 py-0.5 bg-surface-bright rounded-sm text-[10px] font-black border-l-2 ${positionBorderClass} ${POSITION_TEXT_CLASS[player.position] || ""}`}>
+                                      {POSITION_SHORT_LABELS[player.position] || player.position}
                                     </span>
-                                  );
-                                })()}
-                              {player.transfer_status &&
-                                player.transfer_status !== "none" && (
-                                  <span className="ml-2 text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                                    À venda
-                                  </span>
-                                )}
-                            </td>
-                            <td className="px-3 py-2 text-center text-zinc-400 text-sm">
-                              <span
-                                title={
-                                  FLAG_TO_COUNTRY[player.nationality] ||
-                                  player.nationality
-                                }
-                              >
-                                {player.nationality}
+                                  </td>
+                                  {/* Qualidade */}
+                                  <td className="py-2.5 px-3 text-center">
+                                    <span className="inline-flex items-center justify-center bg-surface text-on-surface px-2 py-0.5 rounded-sm text-sm border border-outline-variant/30 font-headline font-black tabular-nums">
+                                      {player.skill}
+                                    </span>
+                                    {player.prev_skill != null && player.prev_skill !== player.skill && (
+                                      <span className={`ml-1 text-[10px] font-black ${player.skill > player.prev_skill ? "text-emerald-400" : "text-red-400"}`}>
+                                        {player.skill > player.prev_skill ? "▲" : "▼"}
+                                      </span>
+                                    )}
+                                  </td>
+                                  {/* Ordenado */}
+                                  <td className="py-2.5 px-3 font-mono text-sm text-on-surface">
+                                    {formatCurrency(player.wage || 0)}
+                                    <span className="text-[10px] text-on-surface-variant/40 ml-1">/sem</span>
+                                    {wantsRaise && player.contract_requested_wage > 0 && (
+                                      <div className="text-[10px] text-tertiary font-black mt-0.5">
+                                        Pede {formatCurrency(player.contract_requested_wage)}
+                                      </div>
+                                    )}
+                                  </td>
+                                  {/* Contrato até */}
+                                  <td className={`py-2.5 px-3 text-sm font-bold ${isExpiringSoon ? "text-error italic" : "text-on-surface"}`}>
+                                    {contractLabel}
+                                  </td>
+                                  {/* Estado */}
+                                  <td className="py-2.5 px-3">
+                                    <div className={`flex items-center gap-1.5 ${statusColor}`}>
+                                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass}`} />
+                                      <span className="text-[10px] uppercase font-black">{statusLabel}</span>
+                                    </div>
+                                  </td>
+                                  {/* Ações */}
+                                  <td className="py-2.5 px-3 text-right">
+                                    {canManage ? (
+                                      <div className="flex justify-end gap-1.5 flex-wrap">
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); renewPlayerContract(player); }}
+                                          className="px-3 py-1.5 bg-primary text-on-primary hover:brightness-110 text-[10px] uppercase font-black rounded-sm transition-all"
+                                        >
+                                          Renovar
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); listPlayerAuction(player); }}
+                                          disabled={isPlayingMatch || showHalftimePanel}
+                                          title={isPlayingMatch || showHalftimePanel ? "Disponível após as partidas" : "Vender em Leilão"}
+                                          className="px-3 py-1.5 bg-secondary-container hover:bg-surface-bright disabled:opacity-30 text-on-surface text-[10px] uppercase font-black rounded-sm transition-all"
+                                        >
+                                          Leilão
+                                        </button>
+                                        {player.transfer_status === "fixed" ? (
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); removeFromTransferList(player); }}
+                                            className="px-3 py-1.5 bg-error-container text-on-error-container hover:brightness-110 text-[10px] uppercase font-black rounded-sm transition-all"
+                                          >
+                                            Retirar
+                                          </button>
+                                        ) : (
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); listPlayerFixed(player); }}
+                                            className="px-3 py-1.5 bg-surface-bright hover:brightness-110 text-on-surface text-[10px] uppercase font-black rounded-sm transition-all border border-outline-variant/30"
+                                          >
+                                            Listar
+                                          </button>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="text-[10px] text-on-surface-variant/40 uppercase font-bold">Recente</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* ── WAGE STRUCTURE BAR CHART ──────────────────────── */}
+                    <div className="bg-surface-container-low p-5 rounded-md">
+                      <h3 className="text-[10px] font-black uppercase tracking-widest text-primary mb-5">
+                        Distribuição Salarial por Posição
+                      </h3>
+                      <div className="flex items-end gap-3 h-20 mb-3">
+                        {wageByPos.map(({ pos, total }) => {
+                          const pct = Math.round((total / maxPosWage) * 100);
+                          const barColor = POSITION_BAR_COLOR[pos] || "bg-primary";
+                          return (
+                            <div key={pos} className="flex-1 flex flex-col items-center gap-1">
+                              <span className="text-[9px] font-black text-on-surface-variant text-center leading-tight">
+                                {total > 0 ? formatCurrency(total) : "—"}
                               </span>
-                            </td>
-                            <td className="px-3 py-2 text-center text-zinc-100 font-normal">
-                              <span className="inline-flex items-center justify-center bg-surface text-on-surface px-2 py-1 rounded-sm text-sm border border-outline-variant/30 font-headline font-black tabular-nums">
-                                {player.skill}
-                              </span>
-                              {player.prev_skill !== null &&
-                                player.prev_skill !== undefined &&
-                                player.prev_skill !== player.skill && (
-                                  <span
-                                    className={`ml-1 text-xs font-black ${player.skill > player.prev_skill ? "text-emerald-400" : "text-red-400"}`}
-                                  >
-                                    {player.skill > player.prev_skill
-                                      ? "▲"
-                                      : "▼"}
-                                  </span>
-                                )}
-                            </td>
-                            <td className="px-3 py-2 text-center font-normal">
-                              <AggBadge value={player.aggressiveness} />
-                            </td>
-                            <td className="px-3 py-2 text-center text-emerald-400 font-normal">
-                              {getPlayerStat(player, ["goals"])}{" "}
-                              <span className="text-zinc-500 text-xs">
-                                ({getPlayerStat(player, ["career_goals"])})
-                              </span>
-                            </td>
-                            <td className="px-3 py-2 text-center text-red-400 font-normal">
-                              {getPlayerStat(player, [
-                                "reds",
-                                "red_cards",
-                                "reds_count",
-                                "expulsions",
-                              ])}{" "}
-                              <span className="text-zinc-500 text-xs">
-                                ({getPlayerStat(player, ["career_reds"])})
-                              </span>
-                            </td>
-                            <td className="px-3 py-2 text-center text-orange-400 font-normal">
-                              {getPlayerStat(player, [
-                                "injuries",
-                                "injury_count",
-                                "lesoes",
-                                "lesions",
-                              ])}{" "}
-                              <span className="text-zinc-500 text-xs">
-                                ({getPlayerStat(player, ["career_injuries"])})
-                              </span>
-                            </td>
-                            <td className="px-3 py-2 text-center font-mono text-zinc-300 text-xs md:text-sm">
-                              {formatCurrency(player.wage || 0)}
-                            </td>
-                            <td className="px-3 py-2 text-center">
-                              {player.signed_season !==
-                              Math.ceil((matchweekCount + 1) / 14) ? (
-                                <div className="flex flex-nowrap justify-center gap-1">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      renewPlayerContract(player);
-                                    }}
-                                    title="Renovar"
-                                    aria-label="Renovar"
-                                    className="px-2 py-1 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase leading-none tracking-wide"
-                                  >
-                                    R
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      listPlayerAuction(player);
-                                    }}
-                                    disabled={
-                                      isPlayingMatch || showHalftimePanel
-                                    }
-                                    title={
-                                      isPlayingMatch || showHalftimePanel
-                                        ? "Disponível após as partidas"
-                                        : "Vender em Leilão"
-                                    }
-                                    aria-label="Vender em Leilão"
-                                    className="px-2 py-1 rounded-md bg-primary hover:brightness-110 disabled:opacity-30 disabled:hover:bg-primary text-on-primary text-[10px] font-black uppercase leading-none tracking-wide"
-                                  >
-                                    V
-                                  </button>
-                                  {player.transfer_status === "fixed" ? (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        removeFromTransferList(player);
-                                      }}
-                                      title="Retirar da lista de transferências"
-                                      aria-label="Retirar da lista"
-                                      className="px-2 py-1 rounded-md bg-red-700 hover:bg-red-600 text-white text-[10px] font-black uppercase leading-none tracking-wide"
-                                    >
-                                      ✕
-                                    </button>
-                                  ) : (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        listPlayerFixed(player);
-                                      }}
-                                      title="Listar no Mercado"
-                                      aria-label="Listar no Mercado"
-                                      className="px-2 py-1 rounded-md bg-secondary-container hover:bg-surface-bright text-on-surface text-[10px] font-black uppercase leading-none tracking-wide"
-                                    >
-                                      L
-                                    </button>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-xs text-zinc-600 font-normal uppercase">
-                                  —
-                                </span>
-                              )}
-                            </td>
-                          </tr>
+                              <div className="w-full bg-surface-container-high/60 rounded-t-sm relative h-12">
+                                <div
+                                  className={`absolute bottom-0 inset-x-0 rounded-t-sm ${barColor} opacity-75 transition-all`}
+                                  style={{ height: `${Math.max(pct, 4)}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex gap-3">
+                        {wageByPos.map(({ pos, count }) => (
+                          <div key={pos} className="flex-1 text-center">
+                            <div className={`text-[10px] font-black uppercase ${POSITION_TEXT_CLASS[pos] || "text-on-surface-variant"}`}>{pos}</div>
+                            <div className="text-[9px] text-on-surface-variant/50">{count} jog.</div>
+                          </div>
                         ))}
-                      </tbody>
-                    </table>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {activeTab === "tactic" && (
                 <div>
