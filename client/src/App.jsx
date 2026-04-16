@@ -3125,7 +3125,10 @@ function App() {
             {/* Online players button */}
             <div className="relative">
               <button
-                onClick={() => setShowOnlineDropdown((v) => !v)}
+                onClick={() => {
+                  setChatOpen(false);
+                  setShowOnlineDropdown((v) => !v);
+                }}
                 title="Jogadores online"
                 className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-white/10 transition-colors"
               >
@@ -3236,7 +3239,10 @@ function App() {
 
             {/* Chat button */}
             <button
-              onClick={() => setChatOpen((v) => !v)}
+              onClick={() => {
+                setShowOnlineDropdown(false);
+                setChatOpen((v) => !v);
+              }}
               title="Chat"
               className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-white/10 transition-colors"
             >
