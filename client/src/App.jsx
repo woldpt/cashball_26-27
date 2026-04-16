@@ -2410,23 +2410,26 @@ function App() {
   if (!me || !me.teamId) {
     if (joining && me) {
       return (
-        <div className="min-h-screen bg-surface text-on-surface flex flex-col items-center justify-center p-6">
-          <h1 className="text-5xl font-headline font-black text-primary mb-6 tracking-tight">
-            CashBall <span className="text-on-surface">26/27</span>
-          </h1>
-          <div className="bg-surface-container p-8 rounded-md w-full max-w-md relative overflow-hidden shadow-2xl text-center">
-            <div className="absolute top-0 inset-x-0 h-0.5 bg-linear-to-r from-primary via-primary to-transparent"></div>
-            <p className="text-[10px] uppercase tracking-[0.35em] text-on-surface-variant font-bold mb-3">
-              Sessão guardada
-            </p>
-            <p className="text-2xl font-headline font-black text-on-surface mb-1">
-              A reconectar...
-            </p>
-            <p className="text-xs text-on-surface-variant font-medium tracking-wide">
-              {me.name} · {me.roomCode?.toUpperCase()}
-            </p>
+        <>
+          <div className="min-h-screen bg-surface text-on-surface flex flex-col items-center justify-center p-6 pb-24">
+            <h1 className="text-5xl font-headline font-black text-primary mb-6 tracking-tight">
+              CashBall <span className="text-on-surface">26/27</span>
+            </h1>
+            <div className="bg-surface-container p-8 rounded-md w-full max-w-md relative overflow-hidden shadow-2xl text-center">
+              <div className="absolute top-0 inset-x-0 h-0.5 bg-linear-to-r from-primary via-primary to-transparent"></div>
+              <p className="text-[10px] uppercase tracking-[0.35em] text-on-surface-variant font-bold mb-3">
+                Sessão guardada
+              </p>
+              <p className="text-2xl font-headline font-black text-on-surface mb-1">
+                A reconectar...
+              </p>
+              <p className="text-xs text-on-surface-variant font-medium tracking-wide">
+                {me.name} · {me.roomCode?.toUpperCase()}
+              </p>
+            </div>
           </div>
-        </div>
+          <NewsTicker newsTickerItems={[]} />
+        </>
       );
     }
 
@@ -2434,7 +2437,8 @@ function App() {
       confirmPassword !== "" && password !== confirmPassword;
 
     return (
-      <div className="min-h-screen bg-surface text-on-surface flex flex-col relative overflow-hidden">
+      <>
+      <div className="min-h-screen bg-surface text-on-surface flex flex-col relative overflow-hidden pb-16">
         {/* Background layer */}
         <div className="pointer-events-none fixed inset-0 z-0">
           <div className="absolute inset-0 grid-lines"></div>
@@ -3076,7 +3080,7 @@ function App() {
         ))}
       </div>
       <header
-        className={`fixed top-0 left-0 right-0 h-14 z-20 flex items-center${isMatchInProgress ? " hidden" : ""}`}
+        className="fixed top-0 left-0 right-0 h-14 z-20 flex items-center"
         style={{
           background: teamInfo?.color_primary || "#131313",
           borderBottom: "1px solid #201f1f",
@@ -3281,131 +3285,149 @@ function App() {
       </header>
 
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
-      {!isMatchInProgress && (
-        <nav className="hidden lg:flex fixed left-0 top-14 bottom-0 w-64 bg-surface-container-low flex-col z-10">
-          <div className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: {},
-                visible: { transition: { staggerChildren: 0.055 } },
-              }}
-            >
-              {[
-                { key: "club", label: "Clube", icon: "groups_3" },
-                { key: "finances", label: "Finanças", icon: "payments" },
-                { key: "players", label: "Plantel", icon: "group" },
-                {
-                  key: "calendario",
-                  label: "Calendário",
-                  icon: "calendar_month",
-                },
-                {
-                  key: "standings",
-                  label: "Classificações",
-                  icon: "leaderboard",
-                },
-                { key: "market", label: "Mercado", icon: "swap_horiz" },
-              ].map(({ key, label, icon }) => (
-                <motion.button
-                  key={key}
-                  variants={{
-                    hidden: { opacity: 0, x: -12 },
-                    visible: {
-                      opacity: 1,
-                      x: 0,
-                      transition: { duration: 0.2 },
-                    },
-                  }}
-                  onClick={() => {
-                    setActiveTab(key);
-                    window.scrollTo(0, 0);
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold transition-all text-left ${
-                    activeTab === key
-                      ? "bg-primary-container/20 text-primary border-l-4 border-primary"
-                      : "text-on-surface-variant hover:bg-surface-bright hover:text-on-surface"
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[20px] shrink-0 leading-none">
-                    {icon}
-                  </span>
-                  <span>{label}</span>
-                </motion.button>
-              ))}
-            </motion.div>
-            <div className="pt-2">
-              <button
+      <nav className="hidden lg:flex fixed left-0 top-14 bottom-0 w-64 bg-surface-container-low flex-col z-10">
+        <div className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: { transition: { staggerChildren: 0.055 } },
+            }}
+          >
+            {[
+              { key: "club", label: "Clube", icon: "groups_3" },
+              { key: "finances", label: "Finanças", icon: "payments" },
+              { key: "players", label: "Plantel", icon: "group" },
+              {
+                key: "calendario",
+                label: "Calendário",
+                icon: "calendar_month",
+              },
+              {
+                key: "standings",
+                label: "Classificações",
+                icon: "leaderboard",
+              },
+              { key: "market", label: "Mercado", icon: "swap_horiz" },
+            ].map(({ key, label, icon }) => (
+              <motion.button
+                key={key}
+                variants={{
+                  hidden: { opacity: 0, x: -12 },
+                  visible: {
+                    opacity: 1,
+                    x: 0,
+                    transition: { duration: 0.2 },
+                  },
+                }}
                 onClick={() => {
-                  setActiveTab("tactic");
+                  if (isMatchInProgress) return;
+                  setActiveTab(key);
                   window.scrollTo(0, 0);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-black uppercase tracking-widest transition-all rounded-sm ${
-                  activeTab === "tactic"
-                    ? "bg-primary text-on-primary shadow-lg"
-                    : "bg-primary/10 text-primary border border-primary/40 hover:bg-primary/20"
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold transition-all text-left ${
+                  isMatchInProgress
+                    ? "text-on-surface-variant/25 cursor-not-allowed"
+                    : activeTab === key
+                      ? "bg-primary-container/20 text-primary border-l-4 border-primary"
+                      : "text-on-surface-variant hover:bg-surface-bright hover:text-on-surface"
                 }`}
               >
                 <span className="material-symbols-outlined text-[20px] shrink-0 leading-none">
-                  strategy
+                  {icon}
                 </span>
-                <span className="flex-1 text-left">JOGAR</span>
-                <span className="relative flex h-2 w-2 shrink-0">
-                  <span
-                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${activeTab === "tactic" ? "bg-on-primary/40" : "bg-primary"}`}
-                  />
-                  <span
-                    className={`relative inline-flex rounded-full h-2 w-2 ${activeTab === "tactic" ? "bg-on-primary/60" : "bg-primary"}`}
-                  />
-                </span>
-              </button>
-            </div>
-          </div>
-        </nav>
-      )}
-
-      {/* ── MOBILE BOTTOM NAV ────────────────────────────────────────────── */}
-      {!isMatchInProgress && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-10 flex overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {[
-            { key: "club", label: "Clube", icon: "groups_3" },
-            { key: "finances", label: "Finanças", icon: "payments" },
-            { key: "players", label: "Plantel", icon: "group" },
-            { key: "calendario", label: "Calendário", icon: "calendar_month" },
-            { key: "standings", label: "Classif.", icon: "leaderboard" },
-            { key: "market", label: "Mercado", icon: "swap_horiz" },
-            { key: "tactic", label: "Jogar", icon: "strategy" },
-          ].map(({ key, label, icon }) => (
-            <motion.button
-              key={key}
-              whileTap={{ scale: 0.88 }}
+                <span>{label}</span>
+              </motion.button>
+            ))}
+          </motion.div>
+          <div className="pt-2">
+            <button
               onClick={() => {
-                setActiveTab(key);
+                if (isMatchInProgress) return;
+                setActiveTab("tactic");
                 window.scrollTo(0, 0);
               }}
-              className={`flex-1 shrink-0 min-w-[72px] flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors relative ${
-                activeTab === key ? "text-primary" : "text-on-surface-variant"
+              className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-black uppercase tracking-widest transition-all rounded-sm ${
+                isMatchInProgress
+                  ? "bg-red-500/15 text-red-400 border border-red-500/30 cursor-not-allowed"
+                  : activeTab === "tactic"
+                    ? "bg-primary text-on-primary shadow-lg"
+                    : "bg-primary/10 text-primary border border-primary/40 hover:bg-primary/20"
               }`}
             >
-              {activeTab === key && (
-                <motion.span
-                  layoutId="mobileTabIndicator"
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-b-full"
-                  transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                />
-              )}
-              <span className="material-symbols-outlined text-[22px] leading-none">
-                {icon}
+              <span className="material-symbols-outlined text-[20px] shrink-0 leading-none">
+                {isMatchInProgress ? "sensors" : "strategy"}
               </span>
-              <span>{label}</span>
-            </motion.button>
-          ))}
-        </nav>
-      )}
+              <span className="flex-1 text-left">
+                {isMatchInProgress ? "AO VIVO" : "JOGAR"}
+              </span>
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span
+                  className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isMatchInProgress ? "bg-red-500" : activeTab === "tactic" ? "bg-on-primary/40" : "bg-primary"}`}
+                />
+                <span
+                  className={`relative inline-flex rounded-full h-2 w-2 ${isMatchInProgress ? "bg-red-500" : activeTab === "tactic" ? "bg-on-primary/60" : "bg-primary"}`}
+                />
+              </span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* ── MOBILE BOTTOM NAV ────────────────────────────────────────────── */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-10 flex overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        {[
+          { key: "club", label: "Clube", icon: "groups_3" },
+          { key: "finances", label: "Finanças", icon: "payments" },
+          { key: "players", label: "Plantel", icon: "group" },
+          { key: "calendario", label: "Calendário", icon: "calendar_month" },
+          { key: "standings", label: "Classif.", icon: "leaderboard" },
+          { key: "market", label: "Mercado", icon: "swap_horiz" },
+          { key: "tactic", label: "Jogar", icon: "strategy" },
+        ].map(({ key, label, icon }) => (
+          <motion.button
+            key={key}
+            whileTap={{ scale: isMatchInProgress ? 1 : 0.88 }}
+            onClick={() => {
+              if (isMatchInProgress) return;
+              setActiveTab(key);
+              window.scrollTo(0, 0);
+            }}
+            className={`flex-1 shrink-0 min-w-[72px] flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors relative ${
+              isMatchInProgress
+                ? key === "tactic"
+                  ? "text-red-400 cursor-not-allowed"
+                  : "text-on-surface-variant/25 cursor-not-allowed"
+                : activeTab === key
+                  ? "text-primary"
+                  : "text-on-surface-variant"
+            }`}
+          >
+            {!isMatchInProgress && activeTab === key && (
+              <motion.span
+                layoutId="mobileTabIndicator"
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-b-full"
+                transition={{ type: "spring", stiffness: 500, damping: 35 }}
+              />
+            )}
+            {isMatchInProgress && key === "tactic" && (
+              <motion.span
+                layoutId="mobileTabIndicator"
+                className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-red-500 rounded-b-full"
+                transition={{ type: "spring", stiffness: 500, damping: 35 }}
+              />
+            )}
+            <span className="material-symbols-outlined text-[22px] leading-none">
+              {isMatchInProgress && key === "tactic" ? "sensors" : icon}
+            </span>
+            <span>{isMatchInProgress && key === "tactic" ? "LIVE" : label}</span>
+          </motion.button>
+        ))}
+      </nav>
 
       <main
-        className={`pt-14 lg:pb-12${newsTickerItems.length > 0 ? " pb-28" : " pb-20"}${!isMatchInProgress ? " lg:ml-64" : ""}`}
+        className="pt-14 pb-28 lg:pb-12 lg:ml-64"
       >
         <div className="p-4 lg:p-6">
           {/* ─── TACTIC: HORIZONTAL ADVERSARY BANNER ──────────────────── */}
@@ -3544,10 +3566,10 @@ function App() {
                 >
                   {activeTab === "live" && (matchResults || matchAction) && (
                     <div
-                      className={`bg-surface-container text-on-surface font-body p-6 border border-outline-variant/20 shadow-sm relative overflow-hidden${isMatchInProgress ? " fixed inset-0 z-30 overflow-y-auto rounded-none" : " min-h-150 rounded-lg"}`}
+                      className={`bg-surface-container text-on-surface font-body p-6 border border-outline-variant/20 shadow-sm relative overflow-hidden${isMatchInProgress ? " rounded-lg" : " min-h-150 rounded-lg"}`}
                     >
                       {matchAction && (
-                        <div className="fixed inset-0 z-[150] bg-surface/95 backdrop-blur-sm p-6 flex flex-col justify-center">
+                        <div className="fixed inset-0 top-14 z-[150] bg-surface/95 backdrop-blur-sm p-6 flex flex-col justify-center">
                           <h2 className="text-3xl font-black text-amber-500 mb-2 tracking-widest text-center uppercase">
                             {matchAction.type === "injury"
                               ? "LESÃO"
@@ -3646,7 +3668,7 @@ function App() {
                           );
 
                           return (
-                            <div className="absolute inset-0 bg-zinc-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-2">
+                            <div className="fixed inset-0 top-14 bg-zinc-950/90 backdrop-blur-sm z-[25] flex items-center justify-center p-2">
                               <div className="w-full max-w-sm max-h-[85vh] flex flex-col overflow-hidden bg-surface-container rounded-lg border border-outline-variant/40 shadow-2xl">
                                 {/* ── Header ── */}
                                 <div className="shrink-0 flex items-center justify-between px-3 py-2 bg-surface-container-high border-b border-outline-variant/20">
