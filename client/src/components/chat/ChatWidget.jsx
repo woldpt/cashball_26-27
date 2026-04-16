@@ -56,7 +56,7 @@ export function ChatWidget({
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
+    <div className="fixed top-14 right-4 z-50 flex flex-col items-end gap-2">
       {/* Expanded panel */}
       {chatOpen && (
         <div
@@ -180,23 +180,6 @@ export function ChatWidget({
           </div>
         </div>
       )}
-
-      {/* Toggle button */}
-      <button
-        onClick={() => setChatOpen((o) => !o)}
-        className="relative flex items-center justify-center w-12 h-12 rounded-full shadow-xl transition-all hover:scale-105 active:scale-95"
-        style={{ background: chatOpen ? "#3b3b3b" : "#2563eb" }}
-        title="Chat"
-      >
-        <span className="material-symbols-outlined text-white text-[22px] leading-none">
-          {chatOpen ? "close" : "chat"}
-        </span>
-        {!chatOpen && totalUnread > 0 && (
-          <span className="absolute -top-1 -right-1 flex items-center justify-center rounded-full bg-rose-500 text-white text-[9px] font-black leading-none min-w-4.5 h-4.5 px-1">
-            {totalUnread > 9 ? "9+" : totalUnread}
-          </span>
-        )}
-      </button>
     </div>
   );
 }
