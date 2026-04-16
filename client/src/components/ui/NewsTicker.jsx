@@ -54,7 +54,7 @@ export function NewsTicker({ newsTickerItems }) {
 
   if (!allItems.length) return null;
 
-  const duration = Math.max(15, allItems.length * 8);
+  const duration = Math.max(25, allItems.length * 14);
 
   return (
     <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 z-50 h-8 flex items-stretch bg-zinc-950 border-t border-zinc-700 overflow-hidden">
