@@ -539,6 +539,19 @@ function AggBadge({ value }) {
   return <span className={`text-[10px] font-bold ${cfg.color}`}>{key}</span>;
 }
 
+function PlayerLink({ playerId, children }) {
+  if (!playerId) return <>{children}</>;
+  return (
+    <button
+      type="button"
+      className="hover:underline underline-offset-2 cursor-pointer"
+      onClick={() => socket.emit("requestPlayerHistory", { playerId })}
+    >
+      {children}
+    </button>
+  );
+}
+
 function App() {
   const savedSessionRef = React.useRef(loadSavedSession());
   const savedSession = savedSessionRef.current;
@@ -3382,7 +3395,7 @@ function App() {
                                           <span
                                             className={`truncate max-w-[120px] ${e.type === "goal" || e.type === "penalty_goal" ? "text-primary font-bold" : e.type === "red" ? "text-red-400 font-bold" : "text-on-surface-variant"}`}
                                           >
-                                            {name}
+                                            <PlayerLink playerId={e.playerId}>{name}</PlayerLink>
                                           </span>
                                           {!isHome && (
                                             <span className="shrink-0">
@@ -3858,7 +3871,7 @@ function App() {
                                         <span
                                           className={`font-bold truncate min-w-0 ${e.type === "goal" || e.type === "penalty_goal" ? "text-primary" : e.type === "own_goal" ? "text-orange-400" : e.type === "red" ? "text-red-400" : "text-on-surface-variant/70"}`}
                                         >
-                                          {name}
+                                          <PlayerLink playerId={e.playerId}>{name}</PlayerLink>
                                         </span>
                                       </div>
                                     );
@@ -4053,7 +4066,7 @@ function App() {
                                         <span
                                           className={`font-bold truncate min-w-0 ${e.type === "goal" || e.type === "penalty_goal" ? "text-primary" : e.type === "own_goal" ? "text-orange-400" : e.type === "red" ? "text-red-400" : "text-on-surface-variant/70"}`}
                                         >
-                                          {name}
+                                          <PlayerLink playerId={e.playerId}>{name}</PlayerLink>
                                         </span>
                                         <span className="shrink-0">{icon}</span>
                                         <span className="text-on-surface-variant/40 tabular-nums shrink-0">
@@ -4603,7 +4616,7 @@ function App() {
                               }}
                             />
                             <span className="flex-1 text-[11px] font-bold text-on-surface truncate">
-                              {s.name}
+                              <PlayerLink playerId={s.id}>{s.name}</PlayerLink>
                             </span>
                             <span className="text-[10px] text-on-surface-variant/50 truncate max-w-[80px]">
                               {s.team_name}
@@ -6030,7 +6043,7 @@ function App() {
                                 player.position}
                             </td>
                             <td className="px-3 py-2 text-white text-sm md:text-base whitespace-nowrap">
-                              {player.name}
+                              <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
                               {!!player.is_star &&
                                 (player.position === "MED" ||
                                   player.position === "ATA") && (
@@ -6257,7 +6270,7 @@ function App() {
                               player.position}
                           </span>
                           <span className="flex-1 text-white text-sm font-bold truncate">
-                            {player.name}
+                            <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
                             {!!player.is_star &&
                               (player.position === "MED" ||
                                 player.position === "ATA") && (
@@ -6470,7 +6483,7 @@ function App() {
                               <td className="px-4 py-2">
                                 <div className="flex items-center gap-2">
                                   <p className="font-bold text-white text-sm leading-tight">
-                                    {player.name}
+                                    <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
                                     {!!player.is_star &&
                                       (player.position === "MED" ||
                                         player.position === "ATA") && (
@@ -6731,7 +6744,7 @@ function App() {
                                         )}
                                       </div>
                                       <span
-                                        className="text-white text-[9px] font-bold text-center leading-tight"
+                                        className="text-white text-[9px] font-bold text-center leading-tight hover:underline underline-offset-2 cursor-pointer"
                                         style={{
                                           textShadow:
                                             "0 1px 4px rgba(0,0,0,0.95), 0 0 8px rgba(0,0,0,0.8)",
@@ -6741,6 +6754,7 @@ function App() {
                                           overflow: "hidden",
                                           textOverflow: "ellipsis",
                                         }}
+                                        onClick={() => socket.emit("requestPlayerHistory", { playerId: player.id })}
                                       >
                                         {player.name.split(" ").pop()}
                                       </span>
@@ -7074,7 +7088,7 @@ function App() {
                                 {player.position}
                               </td>
                               <td className="px-4 py-2.5 font-bold text-white">
-                                {player.name}
+                                <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
                                 {!!player.is_star &&
                                   (player.position === "MED" ||
                                     player.position === "ATA") && (
@@ -7855,7 +7869,7 @@ function App() {
                 <span
                   className={`flex-1 truncate text-xs font-bold ${isOff ? "text-zinc-600 line-through" : "text-zinc-200"}`}
                 >
-                  {p.name}
+                  <PlayerLink playerId={p.id}>{p.name}</PlayerLink>
                   {!!p.is_star &&
                     (p.position === "MED" || p.position === "ATA") && (
                       <span className="ml-0.5 text-amber-400 font-black">
@@ -7991,7 +8005,7 @@ function App() {
                                   ↑
                                 </span>
                                 <span className="flex-1 truncate text-xs font-bold text-zinc-300">
-                                  {p.name}
+                                  <PlayerLink playerId={p.id}>{p.name}</PlayerLink>
                                 </span>
                                 {p.goals > 0 && (
                                   <span className="text-[10px]">
@@ -8047,7 +8061,7 @@ function App() {
                                   color: teamInfo?.color_primary || "#d4d4d8",
                                 }}
                               >
-                                {e.playerName || e.player_name || ""}
+                                <PlayerLink playerId={e.playerId}>{e.playerName || e.player_name || ""}</PlayerLink>
                               </span>
                               <span
                                 className="text-[9px] font-black uppercase tracking-widest shrink-0"
