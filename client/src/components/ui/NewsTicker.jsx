@@ -18,7 +18,7 @@ const REDCARPET_LINES = parseLines(rawRedcarpet);
 const pickFillerItem = () => {
   const sources = [
     { lines: LOL_LINES, prefix: "" },
-    { lines: CMTV_LINES, prefix: "ALERTA CM: " },
+    { lines: CMTV_LINES, prefix: "ÚLTIMA HORA: " },
     { lines: REDCARPET_LINES, prefix: "" },
   ];
   const src = sources[Math.floor(Math.random() * sources.length)];
@@ -59,7 +59,7 @@ export function NewsTicker({ newsTickerItems }) {
   return (
     <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 z-50 h-8 flex items-stretch bg-zinc-950 border-t border-zinc-700 overflow-hidden">
       <div className="shrink-0 bg-red-600 text-white text-xs font-black px-3 flex items-center uppercase tracking-widest select-none">
-        Notícias
+        Alerta CM
       </div>
       <div className="overflow-hidden flex-1 relative">
         <style>{`@keyframes tickerScroll { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }`}</style>
