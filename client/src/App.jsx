@@ -770,8 +770,6 @@ function App() {
       setSelectedAuctionPlayer((prev) => {
         if (prev && prev.playerId === result.playerId) {
           setAuctionResult(result);
-          // Auto-expand to show result, then auto-dismiss after 5 seconds
-          setIsAuctionExpanded(true);
           setTimeout(() => {
             setSelectedAuctionPlayer(null);
             setIsAuctionExpanded(false);
@@ -7278,8 +7276,11 @@ function App() {
                   {formatCurrency(startingPrice)}
                 </span>
                 {auctionResult ? (
-                  <span className="text-xs font-black uppercase px-2 py-0.5 rounded bg-amber-600 text-white shrink-0">
-                    Resultado
+                  <span className="text-xs font-black px-2 py-0.5 rounded shrink-0 ml-auto"
+                    style={{ background: auctionResult.sold ? "#16a34a" : "#7f1d1d", color: "#fff" }}>
+                    {auctionResult.sold
+                      ? `Vendido · ${auctionResult.buyerTeamName} · ${formatCurrency(auctionResult.finalBid)}`
+                      : "Sem licitações"}
                   </span>
                 ) : myAuctionBid != null ? (
                   <span className="text-xs font-black uppercase px-2 py-0.5 rounded bg-emerald-600 text-white shrink-0">
