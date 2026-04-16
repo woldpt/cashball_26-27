@@ -1120,6 +1120,7 @@ function App() {
     });
 
     socket.on("gameState", (data) => {
+      setNewsTickerItems([]);
       if (data.matchweek) setMatchweekCount(data.matchweek - 1);
       if (data.tactic) {
         setTactic((prev) => ({
@@ -1376,11 +1377,14 @@ function App() {
     socket.on("matchResults", (data) => {
       setIsMatchActionPending(false);
       const myTeamId = meRef.current?.teamId;
+      const myDivision = teamsRef.current.find((t) => t.id === myTeamId)?.division;
       for (const r of data.results || []) {
-        if (r.homeTeamId !== myTeamId && r.awayTeamId !== myTeamId) continue;
+        const homeDiv = teamsRef.current.find((t) => t.id === r.homeTeamId)?.division;
+        if (myDivision && homeDiv !== myDivision) continue;
         const home = r.homeTeam?.name || teamsRef.current.find((t) => t.id === r.homeTeamId)?.name || "?";
         const away = r.awayTeam?.name || teamsRef.current.find((t) => t.id === r.awayTeamId)?.name || "?";
-        pushTickerItem(`${home} ${r.finalHomeGoals ?? r.homeGoals ?? "?"}-${r.finalAwayGoals ?? r.awayGoals ?? "?"} ${away}`, null, null, myTeamId);
+        const teamId = r.homeTeamId === myTeamId || r.awayTeamId === myTeamId ? myTeamId : r.homeTeamId;
+        pushTickerItem(`${home} ${r.finalHomeGoals ?? r.homeGoals ?? "?"}-${r.finalAwayGoals ?? r.awayGoals ?? "?"} ${away}`, null, null, teamId);
       }
       setMatchResults(data);
       setMatchweekCount(data.matchweek);
