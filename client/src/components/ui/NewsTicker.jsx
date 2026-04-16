@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useReducer, useEffect, useCallback } from "react";
 import { socket } from "../../socket.js";
 import { getTeamColor } from "../../utils/teamHelpers.js";
 import rawLol from "./LOL.md?raw";
@@ -32,22 +32,32 @@ const pickFillerItem = () => {
   };
 };
 
+function tickerReducer(state, action) {
+  switch (action.type) {
+    case "newNews":
+      return { loopKey: state.loopKey + 1, extraItems: [] };
+    case "loopEnd":
+      return { loopKey: state.loopKey + 1, extraItems: [action.item] };
+    default:
+      return state;
+  }
+}
+
 /**
  * @param {{ newsTickerItems: Array }} props
  */
 export function NewsTicker({ newsTickerItems }) {
-  const [loopKey, setLoopKey] = useState(0);
-  const [extraItems, setExtraItems] = useState([]);
+  const [{ loopKey, extraItems }, dispatch] = useReducer(tickerReducer, {
+    loopKey: 0,
+    extraItems: [],
+  });
 
-  // When real news changes, restart from scratch (no filler yet)
   useEffect(() => {
-    setExtraItems([]);
-    setLoopKey((k) => k + 1);
+    dispatch({ type: "newNews" });
   }, [newsTickerItems]);
 
   const handleAnimationEnd = useCallback(() => {
-    setExtraItems([pickFillerItem()]);
-    setLoopKey((k) => k + 1);
+    dispatch({ type: "loopEnd", item: pickFillerItem() });
   }, []);
 
   const allItems = [...newsTickerItems, ...extraItems];
