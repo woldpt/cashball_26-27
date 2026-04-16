@@ -3039,7 +3039,7 @@ function App() {
       )}
 
       <main
-        className={`pt-14 pb-20 lg:pb-12${!isMatchInProgress ? " lg:ml-64" : ""}`}
+        className={`pt-14 lg:pb-12${newsTickerItems.length > 0 ? " pb-28" : " pb-20"}${!isMatchInProgress ? " lg:ml-64" : ""}`}
       >
         <div className="p-4 lg:p-6">
           {/* ─── TACTIC: HORIZONTAL ADVERSARY BANNER ──────────────────── */}
@@ -8251,7 +8251,7 @@ function App() {
 
       {/* ── News ticker ───────────────────────────────────────────────────────── */}
       {newsTickerItems.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 h-8 flex items-stretch bg-zinc-950 border-t border-zinc-700 overflow-hidden">
+        <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 z-50 h-8 flex items-stretch bg-zinc-950 border-t border-zinc-700 overflow-hidden">
           <div className="shrink-0 bg-red-600 text-white text-xs font-black px-3 flex items-center uppercase tracking-widest select-none">
             Notícias
           </div>
