@@ -593,6 +593,19 @@ async function simulateMatchSegment(
     fixture._yellowCards = {};
   }
 
+  // Track games played — increment once per match (startMin === 0 only)
+  if (startMin === 0) {
+    const participantIds = [
+      ...Array.from(new Set((homeSquad || []).map((p: any) => p.id))),
+      ...Array.from(new Set((awaySquad || []).map((p: any) => p.id))),
+    ].filter(Boolean);
+    if (participantIds.length > 0) {
+      db.run(
+        `UPDATE players SET games_played = games_played + 1 WHERE id IN (${participantIds.join(",")})`,
+      );
+    }
+  }
+
   // Load team morale values (cached on fixture for minute-by-minute mode)
   let homeMorale: number, awayMorale: number;
   if (fixture._homeMorale !== undefined) {

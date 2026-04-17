@@ -1,4 +1,6 @@
 import { formatCurrency } from "../../utils/formatters.js";
+import { AggBadge } from "../shared/AggBadge.jsx";
+import { aggLabel } from "../../utils/playerHelpers.js";
 
 // Position config
 const POS_LABEL = { GR: "GR", DEF: "DEF", MED: "MED", ATA: "ATA" };
@@ -49,38 +51,86 @@ function SkillBar({ label, value, maxValue = 20, color }) {
   );
 }
 
+function StatCard({ label, value, color = "text-on-surface" }) {
+  return (
+    <div className="bg-surface-container rounded-lg p-3 flex flex-col items-center gap-1">
+      <span className={`font-black font-headline text-xl ${color}`}>{value}</span>
+      <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant text-center leading-tight">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 /**
- * @param {{ playerHistoryModal: object|null, setPlayerHistoryModal: function }} props
+ * @param {{
+ *   playerHistoryModal: object|null,
+ *   setPlayerHistoryModal: function,
+ *   myTeamId?: number|string,
+ *   matchweekCount?: number,
+ *   isPlayingMatch?: boolean,
+ *   showHalftimePanel?: boolean,
+ *   renewPlayerContract?: function,
+ *   listPlayerAuction?: function,
+ *   listPlayerFixed?: function,
+ *   removeFromTransferList?: function,
+ * }} props
  */
 export function PlayerHistoryModal({
   playerHistoryModal,
   setPlayerHistoryModal,
+  myTeamId,
+  matchweekCount = 0,
+  isPlayingMatch = false,
+  showHalftimePanel = false,
+  renewPlayerContract,
+  listPlayerAuction,
+  listPlayerFixed,
+  removeFromTransferList,
 }) {
   if (!playerHistoryModal) return null;
 
   const { player, transfers } = playerHistoryModal;
   if (!player) return null;
 
-  const pos = player.position; // GR | DEF | MED | ATA
+  const pos = player.position;
   const barColor = POS_BAR[pos] || "#95d4b3";
-  const goals = player.career_goals ?? player.goals ?? 0;
-  const reds = player.career_reds ?? player.red_cards ?? 0;
-  const injuries = player.career_injuries ?? player.injuries ?? 0;
-  const form = player.form ?? 10;
-  const formPct = Math.min(100, Math.round((form / 20) * 100));
-  const skill = player.skill ?? 0;
-  const skillPct = Math.min(100, Math.round((skill / 20) * 100));
   const isStar = player.is_star === 1;
+  const skill = player.skill ?? 0;
+
+  // Aggressiveness
+  const aggKey = aggLabel(player.aggressiveness);
+
+  // Season stats
+  const sGames = player.games_played ?? 0;
+  const sGoals = player.goals ?? 0;
+  const sReds = player.red_cards ?? 0;
+  const sInjuries = player.injuries ?? 0;
+
+  // Career totals (prior seasons + current)
+  const cGames = (player.career_games ?? 0) + sGames;
+  const cGoals = (player.career_goals ?? 0) + sGoals;
+  const cReds = (player.career_reds ?? 0) + sReds;
+  const cInjuries = (player.career_injuries ?? 0) + sInjuries;
+
+  // Contract management — only shown for own team
+  const isMyPlayer =
+    myTeamId != null &&
+    player.team_id != null &&
+    Number(myTeamId) === Number(player.team_id);
+  const currentSeason = Math.ceil((matchweekCount + 1) / 14);
+  const canAct = isMyPlayer && player.signed_season !== currentSeason;
+  const matchInProgress = isPlayingMatch || showHalftimePanel;
 
   // Availability badge
   let availBadge = null;
-  if (player.suspension_until_matchweek > 0) {
+  if ((player.suspension_until_matchweek ?? 0) > matchweekCount) {
     availBadge = (
       <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-sm bg-error-container/50 text-error border border-error/20 tracking-widest">
         🟥 Suspenso
       </span>
     );
-  } else if (player.injury_until_matchweek > 0) {
+  } else if ((player.injury_until_matchweek ?? 0) > matchweekCount) {
     availBadge = (
       <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-sm bg-error-container/30 text-error border border-error/20 tracking-widest">
         🩹 Lesionado
@@ -100,7 +150,6 @@ export function PlayerHistoryModal({
       >
         {/* ── IDENTITY HEADER ── */}
         <div className="relative bg-surface-container overflow-hidden">
-          {/* subtle position glow */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -108,8 +157,7 @@ export function PlayerHistoryModal({
             }}
           />
           <div className="relative flex items-start gap-4 px-6 pt-6 pb-5">
-            {/* Position orb */}
-            <div className="shrink-0 flex flex-col items-center gap-2 mt-1">
+            <div className="shrink-0 mt-1">
               <div
                 className={`px-2.5 py-1 rounded-sm bg-surface-bright border-l-2 ${POS_BORDER[pos] || "border-zinc-500"} ${POS_TEXT[pos] || "text-zinc-300"} text-xs font-black uppercase tracking-wider`}
               >
@@ -117,33 +165,34 @@ export function PlayerHistoryModal({
               </div>
             </div>
 
-            {/* Name + meta */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="font-black font-headline text-2xl tracking-tight text-on-surface uppercase leading-none">
                   {player.name}
                 </h2>
                 {isStar && (
-                  <span className="text-amber-400 text-sm" title="Craque">
-                    ★
-                  </span>
+                  <span className="text-amber-400 text-sm" title="Craque">★</span>
                 )}
                 {availBadge}
               </div>
               <p className="text-on-surface-variant text-xs font-medium mt-1 tracking-wide">
                 {POS_FULL[pos] || pos}
-                {player.age ? ` · ${player.age} anos` : ""}
                 {player.nationality ? ` · ${player.nationality}` : ""}
               </p>
-              <p className="text-xs mt-0.5">
-                <span className="text-on-surface-variant">Clube: </span>
-                <span className="font-bold text-tertiary">
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-on-surface-variant text-xs">Clube:</span>
+                <span className="font-bold text-tertiary text-xs">
                   {player.team_name || "Sem clube"}
                 </span>
-              </p>
+                {aggKey && (
+                  <>
+                    <span className="text-outline-variant/40 text-xs">·</span>
+                    <AggBadge value={player.aggressiveness} />
+                  </>
+                )}
+              </div>
             </div>
 
-            {/* Close */}
             <button
               type="button"
               className="shrink-0 text-on-surface-variant hover:text-on-surface text-lg leading-none transition-colors"
@@ -176,55 +225,59 @@ export function PlayerHistoryModal({
 
         {/* ── SCROLLABLE BODY ── */}
         <div className="overflow-y-auto flex-1">
-          {/* ── SKILL + FORM BARS ── */}
+
+          {/* ── SKILL BAR ── */}
           <div className="px-6 py-5 border-b border-outline-variant/10">
             <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
-              Atributos
+              Qualidade
             </p>
-            <div className="space-y-4">
-              <SkillBar label="Qualidade" value={skill} color={barColor} />
-              <SkillBar label="Forma" value={form} color="#95d4b3" />
+            <SkillBar label="Skill" value={skill} color={barColor} />
+          </div>
+
+          {/* ── SEASON STATS ── */}
+          <div className="px-6 py-5 border-b border-outline-variant/10">
+            <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
+              Época Actual
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              <StatCard label="Jogos" value={sGames} />
+              <StatCard label="Golos" value={sGoals} color="text-tertiary" />
+              <StatCard
+                label="Vermelhos"
+                value={sReds}
+                color={sReds > 0 ? "text-error" : "text-on-surface"}
+              />
+              <StatCard
+                label="Lesões"
+                value={sInjuries}
+                color={sInjuries > 0 ? "text-amber-400" : "text-on-surface"}
+              />
             </div>
           </div>
 
-          {/* ── CAREER STATS GRID ── */}
+          {/* ── CAREER STATS ── */}
           <div className="px-6 py-5 border-b border-outline-variant/10">
             <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
-              Estatísticas de Carreira
+              Carreira Total
             </p>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: "Golos", value: goals, color: "text-tertiary" },
-                {
-                  label: "Cartões Vermelhos",
-                  value: reds,
-                  color: reds > 0 ? "text-error" : "text-on-surface",
-                },
-                {
-                  label: "Lesões",
-                  value: injuries,
-                  color: injuries > 0 ? "text-amber-400" : "text-on-surface",
-                },
-              ].map(({ label, value, color }) => (
-                <div
-                  key={label}
-                  className="bg-surface-container rounded-lg p-4 flex flex-col items-center gap-1"
-                >
-                  <span
-                    className={`font-black font-headline text-2xl ${color}`}
-                  >
-                    {value}
-                  </span>
-                  <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant text-center leading-tight">
-                    {label}
-                  </span>
-                </div>
-              ))}
+            <div className="grid grid-cols-4 gap-2">
+              <StatCard label="Jogos" value={cGames} />
+              <StatCard label="Golos" value={cGoals} color="text-tertiary" />
+              <StatCard
+                label="Vermelhos"
+                value={cReds}
+                color={cReds > 0 ? "text-error" : "text-on-surface"}
+              />
+              <StatCard
+                label="Lesões"
+                value={cInjuries}
+                color={cInjuries > 0 ? "text-amber-400" : "text-on-surface"}
+              />
             </div>
           </div>
 
           {/* ── TRANSFER HISTORY ── */}
-          <div className="px-6 py-5">
+          <div className="px-6 py-5 border-b border-outline-variant/10">
             <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
               Historial de Transferências
             </p>
@@ -250,7 +303,7 @@ export function PlayerHistoryModal({
                         className="border-t border-outline-variant/10 hover:bg-primary-container/10 transition-colors text-sm"
                       >
                         <td className="px-3 py-2.5 text-on-surface-variant text-xs tabular-nums">
-                          {t.year ? `${t.year}` : "—"}
+                          {t.year ?? "—"}
                           {t.matchweek ? (
                             <span className="opacity-50"> J{t.matchweek}</span>
                           ) : null}
@@ -271,6 +324,64 @@ export function PlayerHistoryModal({
               </div>
             )}
           </div>
+
+          {/* ── CONTRACT MANAGEMENT ── */}
+          {isMyPlayer && (
+            <div className="px-6 py-5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-3">
+                Gestão Contratual
+              </p>
+              {canAct ? (
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => {
+                      renewPlayerContract?.(player);
+                      setPlayerHistoryModal(null);
+                    }}
+                    className="flex-1 min-w-[100px] px-4 py-2.5 bg-primary text-on-primary hover:brightness-110 text-[10px] uppercase font-black rounded-sm transition-all"
+                  >
+                    Renovar Contrato
+                  </button>
+                  <button
+                    onClick={() => {
+                      listPlayerAuction?.(player);
+                      setPlayerHistoryModal(null);
+                    }}
+                    disabled={matchInProgress}
+                    title={matchInProgress ? "Disponível após as partidas" : "Vender em Leilão"}
+                    className="flex-1 min-w-[100px] px-4 py-2.5 bg-secondary-container hover:bg-surface-bright disabled:opacity-30 text-on-surface text-[10px] uppercase font-black rounded-sm transition-all"
+                  >
+                    Vender em Leilão
+                  </button>
+                  {player.transfer_status === "fixed" ? (
+                    <button
+                      onClick={() => {
+                        removeFromTransferList?.(player);
+                        setPlayerHistoryModal(null);
+                      }}
+                      className="flex-1 min-w-[100px] px-4 py-2.5 bg-error-container text-on-error-container hover:brightness-110 text-[10px] uppercase font-black rounded-sm transition-all"
+                    >
+                      ✕ Retirar da Lista
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        listPlayerFixed?.(player);
+                        setPlayerHistoryModal(null);
+                      }}
+                      className="flex-1 min-w-[100px] px-4 py-2.5 bg-secondary-container hover:bg-surface-bright text-on-surface text-[10px] uppercase font-black rounded-sm transition-all"
+                    >
+                      Listar para Transferência
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-on-surface-variant italic">
+                  Gestão contratual indisponível — jogador contratado nesta época.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -7766,6 +7766,14 @@ function App() {
       <PlayerHistoryModal
         playerHistoryModal={playerHistoryModal}
         setPlayerHistoryModal={setPlayerHistoryModal}
+        myTeamId={me?.teamId}
+        matchweekCount={matchweekCount}
+        isPlayingMatch={isPlayingMatch}
+        showHalftimePanel={showHalftimePanel}
+        renewPlayerContract={renewPlayerContract}
+        listPlayerAuction={listPlayerAuction}
+        listPlayerFixed={listPlayerFixed}
+        removeFromTransferList={removeFromTransferList}
       />
 
       <ChatWidget

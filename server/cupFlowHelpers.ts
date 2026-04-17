@@ -162,13 +162,13 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     });
     await new Promise((resolve) => {
       game.db.run(
-        "UPDATE players SET career_goals = career_goals + goals, career_reds = career_reds + red_cards, career_injuries = career_injuries + injuries",
+        "UPDATE players SET career_goals = career_goals + goals, career_reds = career_reds + red_cards, career_injuries = career_injuries + injuries, career_games = career_games + games_played",
         resolve,
       );
     });
     await new Promise((resolve) => {
       game.db.run(
-        "UPDATE players SET goals = 0, red_cards = 0, injuries = 0, suspension_games = 0, suspension_until_matchweek = 0, injury_until_matchweek = 0",
+        "UPDATE players SET goals = 0, red_cards = 0, injuries = 0, games_played = 0, suspension_games = 0, suspension_until_matchweek = 0, injury_until_matchweek = 0",
         resolve,
       );
     });

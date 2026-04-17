@@ -89,6 +89,8 @@ function ensurePlayerSchema(
       ["career_goals", "INTEGER DEFAULT 0"],
       ["career_reds", "INTEGER DEFAULT 0"],
       ["career_injuries", "INTEGER DEFAULT 0"],
+      ["career_games", "INTEGER DEFAULT 0"],
+      ["games_played", "INTEGER DEFAULT 0"],
       ["aggressiveness", "INTEGER DEFAULT 3"],
       ["prev_skill", "INTEGER DEFAULT NULL"],
     ];
