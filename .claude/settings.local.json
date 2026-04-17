@@ -36,7 +36,8 @@
       "Bash(command -v docker)",
       "Bash(docker --version)",
       "Bash(systemctl is-active *)",
-      "Bash(sudo -n systemctl start docker)"
+      "Bash(sudo -n systemctl start docker)",
+      "Bash(npx eslint *)"
     ]
   }
 }

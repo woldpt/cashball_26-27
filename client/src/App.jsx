@@ -4,6 +4,7 @@ import React, {
   useState,
   useMemo,
   useCallback,
+  useRef,
 } from "react";
 import { socket } from "./socket";
 import AdminPanel from "./AdminPanel.jsx";
@@ -57,6 +58,20 @@ const POSITION_TEXT_CLASS = {
   DEF: "text-blue-500",
   MED: "text-emerald-500",
   ATA: "text-rose-500",
+};
+
+const POSITION_BORDER_CLASS = {
+  GR: "border-yellow-500",
+  DEF: "border-blue-500",
+  MED: "border-emerald-500",
+  ATA: "border-rose-500",
+};
+
+const POSITION_LABEL_MAP = {
+  GR: "GR",
+  DEF: "DEF",
+  MED: "MED",
+  ATA: "ATA",
 };
 
 // Background color classes for each position (soft, subtle)
@@ -612,7 +627,7 @@ function App() {
 
   const [matchResults, setMatchResults] = useState(null);
   const [matchweekCount, setMatchweekCount] = useState(0);
-  const [activeTab, setActiveTab] = useState("players");
+  const [activeTab, setActiveTab] = useState("club");
   const [topScorers, setTopScorers] = useState([]);
   const [marketPairs, setMarketPairs] = useState([]);
   const [marketPositionFilter, setMarketPositionFilter] = useState("all");
@@ -672,6 +687,9 @@ function App() {
   const [subbedOut, setSubbedOut] = useState([]); // Track players who left the pitch
   const [confirmedSubs, setConfirmedSubs] = useState([]); // [{out: id, in: id}]
   const [openStatusPickerId, setOpenStatusPickerId] = useState(null);
+  const [dragOverPlayerId, setDragOverPlayerId] = useState(null);
+  const dragPlayerIdRef = useRef(null);
+  const dragPlayerStatusRef = useRef(null);
   const [penaltySuspense, setPenaltySuspense] = useState(null); // { playerName, result, team }
   // Match detail modal (non-blocking overlay during live match)
   const [showMatchDetail, setShowMatchDetail] = useState(false);
@@ -1169,6 +1187,17 @@ function App() {
       }
     });
     socket.on("systemMessage", (msg) => addToast(msg));
+    socket.on("renewContractCounterOffer", ({ playerId, playerName, demandedWage }) => {
+      setGameDialog({
+        mode: "confirm",
+        title: `Contra-proposta — ${playerName}`,
+        description: `${playerName} recusou a tua oferta e exige €${demandedWage.toLocaleString("pt-PT")}/sem. Aceitas ou deixas ir a leilão?`,
+        confirmLabel: "Aceitar",
+        cancelLabel: "Leilão",
+        onConfirm: () => socket.emit("acceptCounterOffer", { playerId, accepted: true }),
+        onCancel: () => socket.emit("acceptCounterOffer", { playerId, accepted: false }),
+      });
+    });
     socket.on("transferProposalResult", ({ ok, message }) => {
       addToast(message);
       if (ok) setTransferProposalModal(null);
@@ -1249,6 +1278,38 @@ function App() {
 
     socket.on("awaitingCoaches", (offline) => {
       setAwaitingCoaches(offline || []);
+    });
+
+    socket.on("matchReplay", (data) => {
+      // Reconnected mid-match: fast-forward to current minute without animation
+      setLiveMinute(data.minute);
+      setIsPlayingMatch(true);
+      setIsLiveSimulation(false);
+      setShowHalftimePanel(false);
+      setMatchAction(null);
+      setIsMatchActionPending(false);
+      setActiveTab("live");
+      if (data.isCup) {
+        setIsCupMatch(true);
+        if (data.cupRoundName) setCupMatchRoundName(data.cupRoundName);
+      } else {
+        setIsCupMatch(false);
+      }
+      setMatchResults({
+        matchweek: data.matchweek,
+        results: (data.fixtures || []).map((f) => ({
+          homeTeamId: f.homeTeamId,
+          awayTeamId: f.awayTeamId,
+          homeTeam: f.homeTeam,
+          awayTeam: f.awayTeam,
+          finalHomeGoals: f.finalHomeGoals || 0,
+          finalAwayGoals: f.finalAwayGoals || 0,
+          events: f.events || [],
+          attendance: f.attendance || null,
+          homeLineup: f.homeLineup || [],
+          awayLineup: f.awayLineup || [],
+        })),
+      });
     });
 
     socket.on("matchSegmentStart", (data) => {
@@ -1863,7 +1924,7 @@ function App() {
     setTopScorers([]);
     setMatchResults(null);
     setMatchweekCount(0);
-    setActiveTab("players");
+    setActiveTab("club");
     setTactic(DEFAULT_TACTIC);
     setLockedCoaches([]);
     setAwaitingCoaches([]);
@@ -2215,6 +2276,26 @@ function App() {
     setSwapTarget(null);
   }, []);
 
+  // Reset ALL halftime substitutions (undo confirmed swaps + clear selection)
+  const handleResetAllSubs = useCallback(() => {
+    setTactic((prevTactic) => {
+      const newPositions = { ...prevTactic.positions };
+      // Revert each confirmed sub: out-player goes back to Titular, in-player to Suplente
+      confirmedSubs.forEach(({ out: outId, in: inId }) => {
+        newPositions[outId] = "Titular";
+        newPositions[inId] = "Suplente";
+      });
+      const next = { ...prevTactic, positions: newPositions };
+      socket.emit("setTactic", next);
+      return next;
+    });
+    setSubbedOut([]);
+    setConfirmedSubs([]);
+    setSubsMade(0);
+    setSwapSource(null);
+    setSwapTarget(null);
+  }, [confirmedSubs]);
+
   // ── SQUAD STATUS PICKER ───────────────────────────────────────────────────
   const handleSetPlayerStatus = useCallback(
     (playerId, status) => {
@@ -2267,6 +2348,39 @@ function App() {
         return next;
       });
       setOpenStatusPickerId(null);
+    },
+    [mySquad, matchweekCount],
+  );
+
+  const handleSwapPlayerStatuses = useCallback(
+    (draggedId, targetId) => {
+      setTactic((prev) => {
+        const newPositions = { ...prev.positions };
+        const draggedStatus = newPositions[draggedId] ?? "Excluído";
+        const targetStatus = newPositions[targetId] ?? "Excluído";
+        // Titular swaps only allowed between same-position players
+        if (draggedStatus === "Titular" || targetStatus === "Titular") {
+          const draggedPlayer = mySquad.find((p) => p.id === draggedId);
+          const targetPlayer = mySquad.find((p) => p.id === targetId);
+          if (!draggedPlayer || !targetPlayer) return prev;
+          if (draggedPlayer.position !== targetPlayer.position) return prev;
+        }
+        // Block injured/suspended from becoming Titular or Suplente
+        if (targetStatus === "Titular" || targetStatus === "Suplente") {
+          const draggedPlayer = mySquad.find((p) => p.id === draggedId);
+          if (draggedPlayer && !isPlayerAvailable(draggedPlayer, matchweekCount + 1)) return prev;
+        }
+        if (draggedStatus === "Titular" || draggedStatus === "Suplente") {
+          const targetPlayer = mySquad.find((p) => p.id === targetId);
+          if (targetPlayer && !isPlayerAvailable(targetPlayer, matchweekCount + 1)) return prev;
+        }
+        newPositions[draggedId] = targetStatus;
+        newPositions[targetId] = draggedStatus;
+        return { ...prev, positions: newPositions };
+      });
+      setDragOverPlayerId(null);
+      dragPlayerIdRef.current = null;
+      dragPlayerStatusRef.current = null;
     },
     [mySquad, matchweekCount],
   );
@@ -2579,7 +2693,7 @@ function App() {
                         type="text"
                         className="w-full bg-surface border border-outline-variant p-4 rounded-sm text-on-surface text-lg font-black outline-none transition-all placeholder:text-on-surface-variant/40 focus:ring-2 focus:ring-primary"
                         value={name}
-                        placeholder="Ex: Amorim"
+                        placeholder="Ex: Cobra"
                         onChange={(e) => {
                           setName(e.target.value);
                           setAuthError("");
@@ -3138,15 +3252,7 @@ function App() {
               {seasonYear} · J{currentJornada} · {me.roomName || me.roomCode}
             </span>
           </div>
-          {/* Center: live match timer */}
-          {activeTab === "live" && isPlayingMatch && (
-            <p
-              className="absolute left-1/2 -translate-x-1/2 text-2xl md:text-4xl font-headline font-black tracking-widest"
-              style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
-            >
-              {Math.min(liveMinute, 120)}'
-            </p>
-          )}
+          {/* Center: spacer (clock shown in match body) */}
           {/* Right: unified widget — sala + chat + sair */}
           <div className="flex items-center gap-1" ref={onlineDropdownRef}>
             {/* Manager identity (lg only) */}
@@ -3706,7 +3812,7 @@ function App() {
 
                           return (
                             <div className="fixed inset-0 top-14 bg-zinc-950/90 backdrop-blur-sm z-[25] flex items-center justify-center p-2">
-                              <div className="w-full max-w-sm max-h-[85vh] flex flex-col overflow-hidden bg-surface-container rounded-lg border border-outline-variant/40 shadow-2xl">
+                              <div className="w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden bg-surface-container rounded-lg border border-outline-variant/40 shadow-2xl">
                                 {/* ── Header ── */}
                                 <div className="shrink-0 flex items-center justify-between px-3 py-2 bg-surface-container-high border-b border-outline-variant/20">
                                   <div className="flex items-center gap-2.5">
@@ -4121,6 +4227,17 @@ function App() {
                                     </span>
                                   </div>
                                 ) : null}
+
+                                {confirmedSubs.length > 0 && (
+                                  <div className="shrink-0 border-t border-zinc-800/30 px-4 py-1.5 flex justify-center">
+                                    <button
+                                      onClick={handleResetAllSubs}
+                                      className="text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-red-400 transition-colors"
+                                    >
+                                      ↺ Anular todas as substituições
+                                    </button>
+                                  </div>
+                                )}
 
                                 {/* BUG-06 FIX: Use handleHalftimeReady which always sends true */}
                                 {/* BUG: only gate on myTeamInCup when it's actually a cup match */}
@@ -4891,93 +5008,239 @@ function App() {
                         </div>
                       )}
 
-                      {cupRoundResults && (() => {
-                        const allResults = cupRoundResults.results || [];
-                        const myResults = allResults.filter(
-                          (r) => r.homeTeamId === me.teamId || r.awayTeamId === me.teamId,
-                        );
-                        const shown =
-                          cupResultsFilter === "mine" ? myResults : allResults;
-                        return (
-                          <div>
-                            {/* Header */}
-                            <div className="flex items-start justify-between mb-5">
-                              <div>
+                      {cupRoundResults &&
+                        (() => {
+                          const allResults = cupRoundResults.results || [];
+                          const myResults = allResults.filter(
+                            (r) =>
+                              r.homeTeamId === me.teamId ||
+                              r.awayTeamId === me.teamId,
+                          );
+                          const shown =
+                            cupResultsFilter === "mine"
+                              ? myResults
+                              : allResults;
+                          return (
+                            <div>
+                              {/* Header */}
+                              <div className="flex items-start justify-between mb-5">
+                                <div>
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <span className="px-2 py-0.5 bg-primary/20 border border-primary/30 rounded text-primary text-[10px] font-black uppercase tracking-widest">
+                                      Taça de Portugal
+                                    </span>
+                                    <span className="text-zinc-500 text-xs font-semibold">
+                                      {cupRoundResults.roundName}
+                                    </span>
+                                  </div>
+                                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                                    Resultados
+                                  </h2>
+                                </div>
+                                {myResults.length > 0 && (
+                                  <div className="flex rounded-lg border border-outline-variant/20 overflow-hidden text-xs font-black shrink-0">
+                                    <button
+                                      onClick={() => setCupResultsFilter("all")}
+                                      className={`px-3 py-1.5 transition-colors ${cupResultsFilter === "all" ? "bg-primary text-on-primary" : "bg-surface text-zinc-400 hover:bg-surface-container"}`}
+                                    >
+                                      Todos
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        setCupResultsFilter("mine")
+                                      }
+                                      className={`px-3 py-1.5 transition-colors ${cupResultsFilter === "mine" ? "bg-primary text-on-primary" : "bg-surface text-zinc-400 hover:bg-surface-container"}`}
+                                    >
+                                      O meu jogo
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Results cards */}
+                              <div className="space-y-3">
+                                {shown.map((r, idx) => {
+                                  const hInfo =
+                                    r.homeTeam ||
+                                    teams.find((t) => t.id === r.homeTeamId);
+                                  const aInfo =
+                                    r.awayTeam ||
+                                    teams.find((t) => t.id === r.awayTeamId);
+                                  const isWinnerHome =
+                                    r.winnerId === r.homeTeamId;
+                                  const isMyMatch =
+                                    r.homeTeamId === me.teamId ||
+                                    r.awayTeamId === me.teamId;
+                                  const finalLabel = r.decidedByPenalties
+                                    ? "Final (Grandes Pénaltis)"
+                                    : r.wentToET
+                                      ? "Final (Prolongamento)"
+                                      : "Final";
+                                  return (
+                                    <div
+                                      key={idx}
+                                      className={`rounded-xl border overflow-hidden ${isMyMatch ? "border-primary/40" : "border-white/8"}`}
+                                    >
+                                      {/* Card header */}
+                                      <div
+                                        className={`flex items-center justify-between px-4 py-2 ${isMyMatch ? "bg-primary/10" : "bg-white/3"}`}
+                                      >
+                                        <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">
+                                          {cupRoundResults.roundName}
+                                        </span>
+                                        <span
+                                          className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${cupRoundResults.isFinal ? "bg-amber-500/20 text-amber-400" : "bg-white/8 text-zinc-300"}`}
+                                        >
+                                          {finalLabel}
+                                        </span>
+                                      </div>
+
+                                      {/* Match body */}
+                                      <div className="px-4 py-5">
+                                        <div className="flex items-center gap-3">
+                                          {/* Home */}
+                                          <div className="flex-1 flex flex-col items-end gap-1.5">
+                                            <div
+                                              className="w-12 h-12 rounded-full flex items-center justify-center font-black text-lg border border-white/10"
+                                              style={{
+                                                background:
+                                                  hInfo?.color_primary ||
+                                                  "#333",
+                                                color:
+                                                  hInfo?.color_secondary ||
+                                                  "#fff",
+                                              }}
+                                            >
+                                              {hInfo?.name?.[0] ?? "?"}
+                                            </div>
+                                            <span
+                                              className="font-black text-sm text-right truncate max-w-[100px]"
+                                              style={{
+                                                color:
+                                                  hInfo?.color_primary ||
+                                                  "#fff",
+                                              }}
+                                            >
+                                              {hInfo?.name || r.homeTeamId}
+                                            </span>
+                                            {isWinnerHome && (
+                                              <span className="text-[9px] font-black uppercase tracking-widest text-primary bg-primary/15 px-2 py-0.5 rounded">
+                                                {cupRoundResults.isFinal
+                                                  ? "🏆 Campeão"
+                                                  : "Apurado"}
+                                              </span>
+                                            )}
+                                          </div>
+
+                                          {/* Score */}
+                                          <div className="flex flex-col items-center shrink-0 gap-1">
+                                            <span className="text-3xl font-black text-white tabular-nums tracking-tight">
+                                              {r.homeGoals}{" "}
+                                              <span className="text-zinc-600">
+                                                –
+                                              </span>{" "}
+                                              {r.awayGoals}
+                                            </span>
+                                            {r.decidedByPenalties && (
+                                              <span className="text-[10px] text-amber-400 font-bold">
+                                                ({r.penaltyHomeGoals}–
+                                                {r.penaltyAwayGoals} g.p.)
+                                              </span>
+                                            )}
+                                          </div>
+
+                                          {/* Away */}
+                                          <div className="flex-1 flex flex-col items-start gap-1.5">
+                                            <div
+                                              className="w-12 h-12 rounded-full flex items-center justify-center font-black text-lg border border-white/10"
+                                              style={{
+                                                background:
+                                                  aInfo?.color_primary ||
+                                                  "#333",
+                                                color:
+                                                  aInfo?.color_secondary ||
+                                                  "#fff",
+                                              }}
+                                            >
+                                              {aInfo?.name?.[0] ?? "?"}
+                                            </div>
+                                            <span
+                                              className="font-black text-sm text-left truncate max-w-[100px]"
+                                              style={{
+                                                color:
+                                                  aInfo?.color_primary ||
+                                                  "#fff",
+                                              }}
+                                            >
+                                              {aInfo?.name || r.awayTeamId}
+                                            </span>
+                                            {!isWinnerHome && r.winnerId && (
+                                              <span className="text-[9px] font-black uppercase tracking-widest text-primary bg-primary/15 px-2 py-0.5 rounded">
+                                                {cupRoundResults.isFinal
+                                                  ? "🏆 Campeão"
+                                                  : "Apurado"}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                      {cupDraw &&
+                        !cupRoundResults &&
+                        (() => {
+                          return (
+                            <div>
+                              {/* Header */}
+                              <div className="mb-5">
                                 <div className="flex items-center gap-2 mb-1.5">
                                   <span className="px-2 py-0.5 bg-primary/20 border border-primary/30 rounded text-primary text-[10px] font-black uppercase tracking-widest">
-                                    Taça de Portugal
-                                  </span>
-                                  <span className="text-zinc-500 text-xs font-semibold">
-                                    {cupRoundResults.roundName}
+                                    Taça de Portugal · {cupDraw.season}
                                   </span>
                                 </div>
                                 <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                                  Resultados
+                                  Sorteio — {cupDraw.roundName}
                                 </h2>
                               </div>
-                              {myResults.length > 0 && (
-                                <div className="flex rounded-lg border border-outline-variant/20 overflow-hidden text-xs font-black shrink-0">
-                                  <button
-                                    onClick={() => setCupResultsFilter("all")}
-                                    className={`px-3 py-1.5 transition-colors ${cupResultsFilter === "all" ? "bg-primary text-on-primary" : "bg-surface text-zinc-400 hover:bg-surface-container"}`}
-                                  >
-                                    Todos
-                                  </button>
-                                  <button
-                                    onClick={() => setCupResultsFilter("mine")}
-                                    className={`px-3 py-1.5 transition-colors ${cupResultsFilter === "mine" ? "bg-primary text-on-primary" : "bg-surface text-zinc-400 hover:bg-surface-container"}`}
-                                  >
-                                    O meu jogo
-                                  </button>
-                                </div>
-                              )}
-                            </div>
 
-                            {/* Results cards */}
-                            <div className="space-y-3">
-                              {shown.map((r, idx) => {
-                                const hInfo =
-                                  r.homeTeam ||
-                                  teams.find((t) => t.id === r.homeTeamId);
-                                const aInfo =
-                                  r.awayTeam ||
-                                  teams.find((t) => t.id === r.awayTeamId);
-                                const isWinnerHome =
-                                  r.winnerId === r.homeTeamId;
-                                const isMyMatch =
-                                  r.homeTeamId === me.teamId ||
-                                  r.awayTeamId === me.teamId;
-                                const finalLabel = r.decidedByPenalties
-                                  ? "Final (Grandes Pénaltis)"
-                                  : r.wentToET
-                                    ? "Final (Prolongamento)"
-                                    : "Final";
-                                return (
-                                  <div
-                                    key={idx}
-                                    className={`rounded-xl border overflow-hidden ${isMyMatch ? "border-primary/40" : "border-white/8"}`}
-                                  >
-                                    {/* Card header */}
-                                    <div
-                                      className={`flex items-center justify-between px-4 py-2 ${isMyMatch ? "bg-primary/10" : "bg-white/3"}`}
-                                    >
-                                      <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">
-                                        {cupRoundResults.roundName}
-                                      </span>
-                                      <span
-                                        className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${cupRoundResults.isFinal ? "bg-amber-500/20 text-amber-400" : "bg-white/8 text-zinc-300"}`}
+                              {/* Draw fixtures */}
+                              <div className="space-y-3">
+                                {(cupDraw.fixtures || []).map(
+                                  (fixture, idx) => {
+                                    const hInfo = fixture.homeTeam;
+                                    const aInfo = fixture.awayTeam;
+                                    const isMine =
+                                      hInfo?.id === me.teamId ||
+                                      aInfo?.id === me.teamId;
+                                    return (
+                                      <div
+                                        key={idx}
+                                        className={`relative flex items-center gap-4 rounded-xl border px-5 py-3.5 ${isMine ? "border-amber-500/50 bg-amber-950/20" : "border-white/8 bg-white/3"}`}
                                       >
-                                        {finalLabel}
-                                      </span>
-                                    </div>
-
-                                    {/* Match body */}
-                                    <div className="px-4 py-5">
-                                      <div className="flex items-center gap-3">
+                                        {isMine && (
+                                          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-amber-500 rounded-full text-[10px] font-black text-black uppercase tracking-widest whitespace-nowrap">
+                                            O seu jogo
+                                          </span>
+                                        )}
                                         {/* Home */}
-                                        <div className="flex-1 flex flex-col items-end gap-1.5">
+                                        <div className="flex-1 flex items-center justify-end gap-3">
+                                          <span
+                                            className="font-black text-sm text-right truncate"
+                                            style={{
+                                              color:
+                                                hInfo?.color_primary || "#fff",
+                                            }}
+                                          >
+                                            {hInfo?.name || "?"}
+                                          </span>
                                           <div
-                                            className="w-12 h-12 rounded-full flex items-center justify-center font-black text-lg border border-white/10"
+                                            className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm shrink-0 border border-white/10"
                                             style={{
                                               background:
                                                 hInfo?.color_primary || "#333",
@@ -4986,47 +5249,19 @@ function App() {
                                                 "#fff",
                                             }}
                                           >
-                                            {hInfo?.name?.[0] ?? "?"}
+                                            {hInfo?.name?.[0] || "?"}
                                           </div>
-                                          <span
-                                            className="font-black text-sm text-right truncate max-w-[100px]"
-                                            style={{
-                                              color:
-                                                hInfo?.color_primary || "#fff",
-                                            }}
-                                          >
-                                            {hInfo?.name || r.homeTeamId}
-                                          </span>
-                                          {isWinnerHome && (
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-primary bg-primary/15 px-2 py-0.5 rounded">
-                                              {cupRoundResults.isFinal
-                                                ? "🏆 Campeão"
-                                                : "Apurado"}
-                                            </span>
-                                          )}
                                         </div>
-
-                                        {/* Score */}
-                                        <div className="flex flex-col items-center shrink-0 gap-1">
-                                          <span className="text-3xl font-black text-white tabular-nums tracking-tight">
-                                            {r.homeGoals}{" "}
-                                            <span className="text-zinc-600">
-                                              –
-                                            </span>{" "}
-                                            {r.awayGoals}
+                                        {/* VS */}
+                                        <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center">
+                                          <span className="text-zinc-500 text-[10px] font-black uppercase">
+                                            vs
                                           </span>
-                                          {r.decidedByPenalties && (
-                                            <span className="text-[10px] text-amber-400 font-bold">
-                                              ({r.penaltyHomeGoals}–
-                                              {r.penaltyAwayGoals} g.p.)
-                                            </span>
-                                          )}
                                         </div>
-
                                         {/* Away */}
-                                        <div className="flex-1 flex flex-col items-start gap-1.5">
+                                        <div className="flex-1 flex items-center gap-3">
                                           <div
-                                            className="w-12 h-12 rounded-full flex items-center justify-center font-black text-lg border border-white/10"
+                                            className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm shrink-0 border border-white/10"
                                             style={{
                                               background:
                                                 aInfo?.color_primary || "#333",
@@ -5035,127 +5270,26 @@ function App() {
                                                 "#fff",
                                             }}
                                           >
-                                            {aInfo?.name?.[0] ?? "?"}
+                                            {aInfo?.name?.[0] || "?"}
                                           </div>
                                           <span
-                                            className="font-black text-sm text-left truncate max-w-[100px]"
+                                            className="font-black text-sm text-left truncate"
                                             style={{
                                               color:
                                                 aInfo?.color_primary || "#fff",
                                             }}
                                           >
-                                            {aInfo?.name || r.awayTeamId}
+                                            {aInfo?.name || "?"}
                                           </span>
-                                          {!isWinnerHome && r.winnerId && (
-                                            <span className="text-[9px] font-black uppercase tracking-widest text-primary bg-primary/15 px-2 py-0.5 rounded">
-                                              {cupRoundResults.isFinal
-                                                ? "🏆 Campeão"
-                                                : "Apurado"}
-                                            </span>
-                                          )}
                                         </div>
                                       </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      {cupDraw && !cupRoundResults && (() => {
-                        return (
-                          <div>
-                            {/* Header */}
-                            <div className="mb-5">
-                              <div className="flex items-center gap-2 mb-1.5">
-                                <span className="px-2 py-0.5 bg-primary/20 border border-primary/30 rounded text-primary text-[10px] font-black uppercase tracking-widest">
-                                  Taça de Portugal · {cupDraw.season}
-                                </span>
+                                    );
+                                  },
+                                )}
                               </div>
-                              <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                                Sorteio — {cupDraw.roundName}
-                              </h2>
                             </div>
-
-                            {/* Draw fixtures */}
-                            <div className="space-y-3">
-                              {(cupDraw.fixtures || []).map((fixture, idx) => {
-                                const hInfo = fixture.homeTeam;
-                                const aInfo = fixture.awayTeam;
-                                const isMine =
-                                  hInfo?.id === me.teamId ||
-                                  aInfo?.id === me.teamId;
-                                return (
-                                  <div
-                                    key={idx}
-                                    className={`relative flex items-center gap-4 rounded-xl border px-5 py-3.5 ${isMine ? "border-amber-500/50 bg-amber-950/20" : "border-white/8 bg-white/3"}`}
-                                  >
-                                    {isMine && (
-                                      <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-amber-500 rounded-full text-[10px] font-black text-black uppercase tracking-widest whitespace-nowrap">
-                                        O seu jogo
-                                      </span>
-                                    )}
-                                    {/* Home */}
-                                    <div className="flex-1 flex items-center justify-end gap-3">
-                                      <span
-                                        className="font-black text-sm text-right truncate"
-                                        style={{
-                                          color:
-                                            hInfo?.color_primary || "#fff",
-                                        }}
-                                      >
-                                        {hInfo?.name || "?"}
-                                      </span>
-                                      <div
-                                        className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm shrink-0 border border-white/10"
-                                        style={{
-                                          background:
-                                            hInfo?.color_primary || "#333",
-                                          color:
-                                            hInfo?.color_secondary || "#fff",
-                                        }}
-                                      >
-                                        {hInfo?.name?.[0] || "?"}
-                                      </div>
-                                    </div>
-                                    {/* VS */}
-                                    <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center">
-                                      <span className="text-zinc-500 text-[10px] font-black uppercase">
-                                        vs
-                                      </span>
-                                    </div>
-                                    {/* Away */}
-                                    <div className="flex-1 flex items-center gap-3">
-                                      <div
-                                        className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm shrink-0 border border-white/10"
-                                        style={{
-                                          background:
-                                            aInfo?.color_primary || "#333",
-                                          color:
-                                            aInfo?.color_secondary || "#fff",
-                                        }}
-                                      >
-                                        {aInfo?.name?.[0] || "?"}
-                                      </div>
-                                      <span
-                                        className="font-black text-sm text-left truncate"
-                                        style={{
-                                          color:
-                                            aInfo?.color_primary || "#fff",
-                                        }}
-                                      >
-                                        {aInfo?.name || "?"}
-                                      </span>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })()}
+                          );
+                        })()}
                     </div>
                   )}
 
@@ -5613,7 +5747,7 @@ function App() {
                                               : "border-primary/30 text-primary bg-primary/10"
                                           }`}
                                         >
-                                          {type === "cup" ? "🏆" : "LJ"}
+                                          {type === "cup" ? "🏆" : "⚽"}
                                         </div>
                                         {/* Opponent logo */}
                                         <TeamCircle team={opponent} />
@@ -6539,19 +6673,6 @@ function App() {
                         MED: "#10b981",
                         ATA: "#f43f5e",
                       };
-                      const posLabelMap = {
-                        GR: "GR",
-                        DEF: "DEF",
-                        MED: "MED",
-                        ATA: "ATA",
-                      };
-                      const posBorderClass = {
-                        GR: "border-yellow-500",
-                        DEF: "border-blue-500",
-                        MED: "border-emerald-500",
-                        ATA: "border-rose-500",
-                      };
-
                       return (
                         <div className="space-y-4">
                           {/* ── Summary widgets ── */}
@@ -6645,6 +6766,9 @@ function App() {
                                     <th className="py-3 px-3 text-center">
                                       Ordenado/sem
                                     </th>
+                                    <th className="py-3 px-3 text-center hidden sm:table-cell">
+                                      Valor
+                                    </th>
                                     <th className="py-3 px-3 text-right">
                                       Ações
                                     </th>
@@ -6663,9 +6787,9 @@ function App() {
                                         {/* Pos */}
                                         <td className="py-2.5 px-3 text-center">
                                           <span
-                                            className={`px-2 py-0.5 bg-surface-bright rounded-sm text-[10px] font-black border-l-2 ${posBorderClass[player.position] || "border-zinc-500"} ${POSITION_TEXT_CLASS[player.position] || "text-zinc-300"}`}
+                                            className={`px-2 py-0.5 bg-surface-bright rounded-sm text-[10px] font-black border-l-2 ${POSITION_BORDER_CLASS[player.position] || "border-zinc-500"} ${POSITION_TEXT_CLASS[player.position] || "text-zinc-300"}`}
                                           >
-                                            {posLabelMap[player.position] ||
+                                            {POSITION_LABEL_MAP[player.position] ||
                                               player.position}
                                           </span>
                                         </td>
@@ -6754,6 +6878,10 @@ function App() {
                                           <span className="text-[10px] opacity-40 ml-0.5">
                                             /sem
                                           </span>
+                                        </td>
+                                        {/* Valor de Mercado */}
+                                        <td className="py-2.5 px-3 text-center font-mono text-emerald-400 text-xs hidden sm:table-cell">
+                                          {formatCurrency(player.value || 0)}
                                         </td>
                                         {/* Ações */}
                                         <td className="py-2.5 px-3 text-right">
@@ -6991,27 +7119,28 @@ function App() {
                               ))}
                             </div>
 
-                            {/* Estilo strip */}
-                            <div className="px-4 py-2.5 border-b border-outline-variant/15 bg-surface-container-high/20 flex items-center gap-2">
-                              <span className="text-[9px] uppercase tracking-[0.2em] font-black text-on-surface-variant shrink-0">
-                                Estilo
+                            {/* Mentalidade strip */}
+                            <div className="px-4 py-3 border-b border-outline-variant/15 bg-surface-container-high/20">
+                              <span className="block text-[9px] uppercase tracking-[0.2em] font-black text-on-surface-variant mb-2">
+                                Mentalidade
                               </span>
-                              <div className="flex gap-1 flex-1">
+                              <div className="flex gap-1.5">
                                 {[
-                                  ["Defensive", "Def."],
-                                  ["Balanced", "Equil."],
-                                  ["Offensive", "Ofens."],
-                                ].map(([val, lbl]) => (
+                                  ["Defensive", "🛡️", "Defensivo"],
+                                  ["Balanced", "⚖️", "Equilibrado"],
+                                  ["Offensive", "⚔️", "Ofensivo"],
+                                ].map(([val, icon, lbl]) => (
                                   <button
                                     key={val}
                                     onClick={() => updateTactic({ style: val })}
-                                    className={`flex-1 py-1 text-[9px] font-black uppercase tracking-wide rounded-sm transition-all ${
+                                    className={`flex-1 flex flex-col items-center gap-0.5 py-2 rounded transition-all ${
                                       tactic.style === val
-                                        ? "bg-primary text-on-primary shadow-sm"
+                                        ? "bg-primary text-on-primary shadow-md"
                                         : "bg-surface-container-high hover:bg-surface-bright text-on-surface-variant border border-outline-variant/20"
                                     }`}
                                   >
-                                    {lbl}
+                                    <span className="text-base leading-none">{icon}</span>
+                                    <span className="text-[9px] font-black uppercase tracking-wide leading-none">{lbl}</span>
                                   </button>
                                 ))}
                               </div>
@@ -7050,7 +7179,16 @@ function App() {
                                 .map((player) => (
                                   <div
                                     key={player.id}
-                                    className={`relative flex items-center gap-3 px-4 py-2.5 hover:bg-primary/5 transition-colors select-none ${player.isUnavailable ? "opacity-50" : ""}`}
+                                    draggable
+                                    onDragStart={() => {
+                                      dragPlayerIdRef.current = player.id;
+                                      dragPlayerStatusRef.current = "Titular";
+                                    }}
+                                    onDragOver={(e) => { e.preventDefault(); setDragOverPlayerId(player.id); }}
+                                    onDragLeave={() => setDragOverPlayerId(null)}
+                                    onDrop={(e) => { e.preventDefault(); if (dragPlayerIdRef.current && dragPlayerIdRef.current !== player.id) handleSwapPlayerStatuses(dragPlayerIdRef.current, player.id); else { setDragOverPlayerId(null); dragPlayerIdRef.current = null; } }}
+                                    onDragEnd={() => { setDragOverPlayerId(null); dragPlayerIdRef.current = null; }}
+                                    className={`relative flex items-center gap-3 px-4 py-2.5 hover:bg-primary/5 transition-colors select-none cursor-grab active:cursor-grabbing ${player.isUnavailable ? "opacity-50" : ""} ${dragOverPlayerId === player.id && dragPlayerIdRef.current !== player.id ? "bg-primary/10 ring-1 ring-primary/40" : ""}`}
                                   >
                                     <span
                                       className={`shrink-0 w-[22px] text-center text-[10px] font-black ${
@@ -7210,7 +7348,16 @@ function App() {
                                 .map((player) => (
                                   <div
                                     key={player.id}
-                                    className={`relative flex items-center gap-3 px-4 py-2.5 hover:bg-primary/5 transition-colors select-none ${player.isUnavailable ? "opacity-35" : ""}`}
+                                    draggable
+                                    onDragStart={() => {
+                                      dragPlayerIdRef.current = player.id;
+                                      dragPlayerStatusRef.current = "Suplente";
+                                    }}
+                                    onDragOver={(e) => { e.preventDefault(); setDragOverPlayerId(player.id); }}
+                                    onDragLeave={() => setDragOverPlayerId(null)}
+                                    onDrop={(e) => { e.preventDefault(); if (dragPlayerIdRef.current && dragPlayerIdRef.current !== player.id) handleSwapPlayerStatuses(dragPlayerIdRef.current, player.id); else { setDragOverPlayerId(null); dragPlayerIdRef.current = null; } }}
+                                    onDragEnd={() => { setDragOverPlayerId(null); dragPlayerIdRef.current = null; }}
+                                    className={`relative flex items-center gap-3 px-4 py-2.5 hover:bg-primary/5 transition-colors select-none cursor-grab active:cursor-grabbing ${player.isUnavailable ? "opacity-35" : ""} ${dragOverPlayerId === player.id && dragPlayerIdRef.current !== player.id ? "bg-amber-500/10 ring-1 ring-amber-500/40" : ""}`}
                                   >
                                     <span
                                       className={`shrink-0 w-[22px] text-center text-[10px] font-black ${
@@ -7339,7 +7486,16 @@ function App() {
                                   .map((player) => (
                                     <div
                                       key={player.id}
-                                      className="relative flex items-center gap-3 px-4 py-2 select-none opacity-40 hover:opacity-70 transition-opacity cursor-pointer"
+                                      draggable
+                                      onDragStart={() => {
+                                        dragPlayerIdRef.current = player.id;
+                                        dragPlayerStatusRef.current = "Excluído";
+                                      }}
+                                      onDragOver={(e) => { e.preventDefault(); setDragOverPlayerId(player.id); }}
+                                      onDragLeave={() => setDragOverPlayerId(null)}
+                                      onDrop={(e) => { e.preventDefault(); if (dragPlayerIdRef.current && dragPlayerIdRef.current !== player.id) handleSwapPlayerStatuses(dragPlayerIdRef.current, player.id); else { setDragOverPlayerId(null); dragPlayerIdRef.current = null; } }}
+                                      onDragEnd={() => { setDragOverPlayerId(null); dragPlayerIdRef.current = null; }}
+                                      className={`relative flex items-center gap-3 px-4 py-2 select-none transition-all cursor-grab active:cursor-grabbing ${dragOverPlayerId === player.id && dragPlayerIdRef.current !== player.id ? "opacity-100 bg-zinc-700/40 ring-1 ring-zinc-500/40" : "opacity-40 hover:opacity-70"}`}
                                     >
                                       <span
                                         className={`shrink-0 w-[22px] text-center text-[10px] font-black ${
@@ -7807,8 +7963,10 @@ function App() {
                                   key={player.id}
                                   className="hover:bg-surface-bright/20 transition-colors"
                                 >
-                                  <td className="px-4 py-2 font-black text-[11px] md:text-xs">
-                                    {player.position}
+                                  <td className="px-4 py-2 text-center">
+                                    <span className={`px-2 py-0.5 bg-surface-bright rounded-sm text-[10px] font-black border-l-2 ${POSITION_BORDER_CLASS[player.position] || "border-zinc-500"} ${POSITION_TEXT_CLASS[player.position] || "text-zinc-300"}`}>
+                                      {POSITION_LABEL_MAP[player.position] || player.position}
+                                    </span>
                                   </td>
                                   <td
                                     className="px-4 py-2 text-center text-lg"

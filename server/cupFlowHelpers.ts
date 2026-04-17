@@ -360,6 +360,41 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
         if (humanInFixture) {
           hasAnyET = true;
           etHumanTeamIds.push(fixture.homeTeamId, fixture.awayTeamId);
+
+          // Gate: show substitution screen before extra time starts
+          game.gamePhase = "match_et_gate";
+          const etGatePayload = {
+            round,
+            roundName,
+            season,
+            fixtures: fixtures.map((fx: any) => ({
+              homeTeam: fx.homeTeam || null,
+              awayTeam: fx.awayTeam || null,
+              homeGoals: fx.finalHomeGoals,
+              awayGoals: fx.finalAwayGoals,
+              events: (fx.events || []).slice(),
+              homeLineup: fx.homeLineup || [],
+              awayLineup: fx.awayLineup || [],
+              attendance: fx.attendance || null,
+            })),
+          };
+          game.lastHalftimePayload = etGatePayload;
+          Object.values(game.playersByName).forEach((p: any) => { p.ready = false; });
+          io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
+          io.to(game.roomCode).emit("cupETHalfTime", etGatePayload);
+
+          // Wait for all coaches to mark ready (90s fallback timeout)
+          await new Promise<void>((resolve) => {
+            game._etGateResolve = resolve;
+            game._etGateTimer = setTimeout(() => {
+              game._etGateResolve = null;
+              game._etGateTimer = null;
+              resolve();
+            }, 90_000);
+          });
+          if (game._etGateTimer) { clearTimeout(game._etGateTimer); game._etGateTimer = null; }
+          game._etGateResolve = null;
+
           io.to(game.roomCode).emit("cupExtraTimeStart", {
             homeTeamId: fixture.homeTeamId,
             awayTeamId: fixture.awayTeamId,

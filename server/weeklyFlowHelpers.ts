@@ -288,6 +288,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         });
       }
 
+      // Track current live minute for reconnection recovery
+      game.liveMinute = minute;
+
       // Emit per-minute update so the client clock stays in sync
       io.to(game.roomCode).emit("matchMinuteUpdate", {
         minute,
@@ -756,6 +759,15 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           }
         },
       );
+      return;
+    }
+
+    // ── ET gate → start extra time (cup only) ────────────────────────────────
+    if (game.gamePhase === "match_et_gate") {
+      if (game._etGateResolve) {
+        game._etGateResolve();
+        game._etGateResolve = null;
+      }
       return;
     }
 
