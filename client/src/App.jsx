@@ -6739,16 +6739,9 @@ function App() {
                           <div className="bg-surface-container rounded-lg overflow-hidden">
                             {/* Header */}
                             <div className="px-5 py-3 border-b border-outline-variant/20 flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <span className="font-headline text-xs font-black tracking-[0.2em] uppercase text-on-surface-variant">
-                                  Formação
-                                </span>
-                                {tactic.formation && (
-                                  <span className="px-2 py-0.5 bg-primary/15 text-primary text-[10px] font-black tracking-widest rounded-sm uppercase">
-                                    {tactic.formation}
-                                  </span>
-                                )}
-                              </div>
+                              <span className="font-headline text-xs font-black tracking-[0.2em] uppercase text-on-surface-variant">
+                                Formação
+                              </span>
                               <button
                                 className="text-[9px] uppercase tracking-widest font-black text-on-surface-variant/50 hover:text-error transition-colors"
                                 onClick={() => {
@@ -6770,7 +6763,24 @@ function App() {
                               </button>
                             </div>
 
-                            {/* Formation pill buttons */}
+                            {/* Moral bar */}
+                            {(() => {
+                              const morale = teamInfo?.morale ?? 75;
+                              const mc = morale > 75 ? "bg-primary" : morale >= 50 ? "bg-tertiary" : "bg-error";
+                              const ml = morale > 75 ? "Boa" : morale >= 50 ? "Média" : "Baixa";
+                              const tc = morale > 75 ? "text-primary" : morale >= 50 ? "text-tertiary" : "text-error";
+                              return (
+                                <div className="px-4 py-2 border-b border-outline-variant/15 flex items-center gap-2">
+                                  <span className="text-[9px] uppercase tracking-[0.2em] font-black text-on-surface-variant shrink-0">Moral</span>
+                                  <div className="flex-1 bg-surface-bright rounded-full h-1.5 overflow-hidden">
+                                    <div className={`h-full rounded-full transition-all duration-500 ${mc}`} style={{ width: `${morale}%` }} />
+                                  </div>
+                                  <span className={`text-[10px] font-black shrink-0 ${tc}`}>{ml}</span>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Formation pill buttons */}}
                             <div className="px-5 py-3 border-b border-outline-variant/15 flex flex-wrap gap-2">
                               {[
                                 { value: "4-4-2", label: "4-4-2 Clássico" },
@@ -6796,73 +6806,28 @@ function App() {
                               ))}
                             </div>
 
-                            {/* Estilo + Moral strip */}
-                            <div className="px-4 py-2.5 border-b border-outline-variant/15 bg-surface-container-high/20 flex flex-col gap-2">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[9px] uppercase tracking-[0.2em] font-black text-on-surface-variant shrink-0 w-10">
-                                  Estilo
-                                </span>
-                                <div className="flex gap-1 flex-1">
-                                  {[
-                                    ["Defensive", "Def."],
-                                    ["Balanced", "Equil."],
-                                    ["Offensive", "Ofens."],
-                                  ].map(([val, lbl]) => (
-                                    <button
-                                      key={val}
-                                      onClick={() =>
-                                        updateTactic({ style: val })
-                                      }
-                                      className={`flex-1 py-1 text-[9px] font-black uppercase tracking-wide rounded-sm transition-all ${
-                                        tactic.style === val
-                                          ? "bg-primary text-on-primary shadow-sm"
-                                          : "bg-surface-container-high hover:bg-surface-bright text-on-surface-variant border border-outline-variant/20"
-                                      }`}
-                                    >
-                                      {lbl}
-                                    </button>
-                                  ))}
-                                </div>
+                            {/* Estilo strip */}
+                            <div className="px-4 py-2.5 border-b border-outline-variant/15 bg-surface-container-high/20 flex items-center gap-2">
+                              <span className="text-[9px] uppercase tracking-[0.2em] font-black text-on-surface-variant shrink-0">Estilo</span>
+                              <div className="flex gap-1 flex-1">
+                                {[
+                                  ["Defensive", "Def."],
+                                  ["Balanced", "Equil."],
+                                  ["Offensive", "Ofens."],
+                                ].map(([val, lbl]) => (
+                                  <button
+                                    key={val}
+                                    onClick={() => updateTactic({ style: val })}
+                                    className={`flex-1 py-1 text-[9px] font-black uppercase tracking-wide rounded-sm transition-all ${
+                                      tactic.style === val
+                                        ? "bg-primary text-on-primary shadow-sm"
+                                        : "bg-surface-container-high hover:bg-surface-bright text-on-surface-variant border border-outline-variant/20"
+                                    }`}
+                                  >
+                                    {lbl}
+                                  </button>
+                                ))}
                               </div>
-                              {(() => {
-                                const morale = teamInfo?.morale ?? 75;
-                                const mc =
-                                  morale > 75
-                                    ? "bg-primary"
-                                    : morale >= 50
-                                      ? "bg-tertiary"
-                                      : "bg-error";
-                                const ml =
-                                  morale > 75
-                                    ? "Boa"
-                                    : morale >= 50
-                                      ? "Média"
-                                      : "Baixa";
-                                const tc =
-                                  morale > 75
-                                    ? "text-primary"
-                                    : morale >= 50
-                                      ? "text-tertiary"
-                                      : "text-error";
-                                return (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[9px] uppercase tracking-[0.2em] font-black text-on-surface-variant shrink-0 w-10">
-                                      Moral
-                                    </span>
-                                    <div className="flex-1 bg-surface-bright rounded-full h-1.5 overflow-hidden">
-                                      <div
-                                        className={`h-full rounded-full transition-all duration-500 ${mc}`}
-                                        style={{ width: `${morale}%` }}
-                                      />
-                                    </div>
-                                    <span
-                                      className={`text-[10px] font-black shrink-0 ml-1 ${tc}`}
-                                    >
-                                      {ml}
-                                    </span>
-                                  </div>
-                                );
-                              })()}
                             </div>
                           </div>
                           {/* ── COL 2: TITULARES ── */}
