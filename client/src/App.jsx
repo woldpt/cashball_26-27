@@ -7604,7 +7604,7 @@ function App() {
                                       const subsFull = subCount >= 5;
                                       return (
                                         <div
-                                          className="absolute right-4 top-full z-50 bg-surface-container-high border border-outline-variant/40 rounded-md shadow-xl p-1 flex flex-col gap-0.5 min-w-[140px]"
+                                          className="absolute right-4 bottom-full mb-1 z-50 bg-surface-container-high border border-outline-variant/40 rounded-md shadow-xl p-1 flex flex-col gap-0.5 min-w-[140px]"
                                           onClick={(e) => e.stopPropagation()}
                                         >
                                           {[
