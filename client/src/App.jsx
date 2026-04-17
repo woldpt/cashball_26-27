@@ -6719,8 +6719,8 @@ function App() {
                     })()}
 
                   {activeTab === "tactic" && (
-                    <div>
-                      {/* ── FORMATION EDITOR ── */}
+                    <div className="grid grid-cols-1 xl:grid-cols-[260px_minmax(0,1fr)] gap-4 items-start">
+                      {/* ── COL 1: CONTROLO ── */}
                       <div className="bg-surface-container rounded-lg overflow-hidden">
                         {/* Header */}
                         <div className="px-5 py-3 border-b border-outline-variant/20 flex items-center justify-between">
@@ -6846,7 +6846,10 @@ function App() {
                             );
                           })()}
                         </div>
+                      </div>
 
+                      {/* ── COL 2: CAMPO ── */}
+                      <div className="bg-surface-container rounded-lg overflow-hidden">
                         {/* 2D Pitch */}
                         {(() => {
                           const titulares = annotatedSquad.filter(
