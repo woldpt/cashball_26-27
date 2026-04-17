@@ -2225,6 +2225,14 @@ function App() {
             return prev;
         }
 
+        // Block: no more than 11 titulares
+        if (status === "Titular") {
+          const currentTitulares = Object.entries(newPositions).filter(
+            ([id, s]) => s === "Titular" && Number(id) !== playerId,
+          ).length;
+          if (currentTitulares >= 11) return prev; // silently ignore
+        }
+
         // Block: no more than 5 suplentes
         if (status === "Suplente") {
           const currentSubs = Object.entries(newPositions).filter(
@@ -7436,7 +7444,15 @@ function App() {
                                       s === "Suplente" &&
                                       Number(id) !== player.id,
                                   ).length;
+                                  const titCount = Object.entries(
+                                    tactic.positions,
+                                  ).filter(
+                                    ([id, s]) =>
+                                      s === "Titular" &&
+                                      Number(id) !== player.id,
+                                  ).length;
                                   const subsFull = subCount >= 5;
+                                  const titularesFull = titCount >= 11;
                                   return (
                                     <div
                                       className="absolute right-4 top-full z-50 bg-surface-container-high border border-outline-variant/40 rounded-md shadow-xl p-1 flex flex-col gap-0.5 min-w-[140px]"
@@ -7453,6 +7469,9 @@ function App() {
                                             status === "Suplente");
                                         const disabled =
                                           unavail ||
+                                          (status === "Titular" &&
+                                            titularesFull &&
+                                            player.status !== "Titular") ||
                                           (status === "Suplente" &&
                                             subsFull &&
                                             player.status !== "Suplente");
@@ -7522,31 +7541,66 @@ function App() {
                                   >
                                     🟡
                                   </span>
-                                  {openStatusPickerId === player.id && (
-                                    <div
-                                      className="absolute right-4 top-full z-50 bg-surface-container-high border border-outline-variant/40 rounded-md shadow-xl p-1 flex flex-col gap-0.5 min-w-[140px]"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      {[
-                                        ["Titular", "🟢", "Titular"],
-                                        ["Suplente", "🟡", "Suplente"],
-                                        ["Excluído", "⚫️", "Não convocado"],
-                                      ].map(([status, emoji, label]) => (
-                                        <button
-                                          key={status}
-                                          onClick={() =>
-                                            handleSetPlayerStatus(
-                                              player.id,
-                                              status,
-                                            )
-                                          }
-                                          className={`px-3 py-2 rounded text-xs font-bold flex items-center gap-2 ${player.status === status ? "bg-surface-bright text-on-surface" : "hover:bg-surface-bright/60 text-on-surface-variant"}`}
+                                  {openStatusPickerId === player.id &&
+                                    (() => {
+                                      const titCount = Object.entries(
+                                        tactic.positions,
+                                      ).filter(
+                                        ([id, s]) =>
+                                          s === "Titular" &&
+                                          Number(id) !== player.id,
+                                      ).length;
+                                      const subCount = Object.entries(
+                                        tactic.positions,
+                                      ).filter(
+                                        ([id, s]) =>
+                                          s === "Suplente" &&
+                                          Number(id) !== player.id,
+                                      ).length;
+                                      const titularesFull = titCount >= 11;
+                                      const subsFull = subCount >= 5;
+                                      return (
+                                        <div
+                                          className="absolute right-4 top-full z-50 bg-surface-container-high border border-outline-variant/40 rounded-md shadow-xl p-1 flex flex-col gap-0.5 min-w-[140px]"
+                                          onClick={(e) => e.stopPropagation()}
                                         >
-                                          {emoji} {label}
-                                        </button>
-                                      ))}
-                                    </div>
-                                  )}
+                                          {[
+                                            ["Titular", "🟢", "Titular"],
+                                            ["Suplente", "🟡", "Suplente"],
+                                            ["Excluído", "⚫️", "Não convocado"],
+                                          ].map(([status, emoji, label]) => {
+                                            const disabled =
+                                              (status === "Titular" &&
+                                                titularesFull &&
+                                                player.status !== "Titular") ||
+                                              (status === "Suplente" &&
+                                                subsFull &&
+                                                player.status !== "Suplente");
+                                            return (
+                                              <button
+                                                key={status}
+                                                onClick={() =>
+                                                  !disabled &&
+                                                  handleSetPlayerStatus(
+                                                    player.id,
+                                                    status,
+                                                  )
+                                                }
+                                                className={`px-3 py-2 rounded text-xs font-bold flex items-center gap-2 ${
+                                                  disabled
+                                                    ? "opacity-40 cursor-not-allowed"
+                                                    : player.status === status
+                                                      ? "bg-surface-bright text-on-surface"
+                                                      : "hover:bg-surface-bright/60 text-on-surface-variant"
+                                                }`}
+                                              >
+                                                {emoji} {label}
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      );
+                                    })()}
                                 </div>
                               ))}
                           </>
@@ -7601,7 +7655,15 @@ function App() {
                                           s === "Suplente" &&
                                           Number(id) !== player.id,
                                       ).length;
+                                      const titCount = Object.entries(
+                                        tactic.positions,
+                                      ).filter(
+                                        ([id, s]) =>
+                                          s === "Titular" &&
+                                          Number(id) !== player.id,
+                                      ).length;
                                       const subsFull = subCount >= 5;
+                                      const titularesFull = titCount >= 11;
                                       return (
                                         <div
                                           className="absolute right-4 bottom-full mb-1 z-50 bg-surface-container-high border border-outline-variant/40 rounded-md shadow-xl p-1 flex flex-col gap-0.5 min-w-[140px]"
@@ -7618,6 +7680,8 @@ function App() {
                                                 status === "Suplente");
                                             const disabled =
                                               unavail ||
+                                              (status === "Titular" &&
+                                                titularesFull) ||
                                               (status === "Suplente" &&
                                                 subsFull);
                                             return (
