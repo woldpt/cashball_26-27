@@ -120,7 +120,17 @@ function DivisionTable({ div, teams, teamForms, myTeamId, onTeamClick }) {
                 >
                   {/* Position */}
                   <td
-                    className={`pl-4 pr-2 py-2 font-black text-[11px] ${isMe ? "text-primary" : "text-on-surface-variant/50"}`}
+                    className={`pl-4 pr-2 py-2 font-black text-[11px] ${
+                      isMe
+                        ? "text-primary"
+                        : div === 1 && idx === 0
+                          ? "text-tertiary"
+                          : isPromo
+                            ? "text-emerald-400"
+                            : isRelegate
+                              ? "text-red-400"
+                              : "text-on-surface-variant/50"
+                    }`}
                   >
                     {padPos(idx + 1)}
                   </td>
