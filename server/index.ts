@@ -23,6 +23,7 @@ const {
   getPlayerList,
   doesGameExist,
   generateUniqueRoomCode,
+  closeAllDatabases,
 } = require("./gameManager") as typeof import("./gameManager");
 const {
   generateFixturesForDivision,
@@ -119,10 +120,26 @@ function getRoomName(roomCode: string): Promise<string> {
   });
 }
 
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || "http://localhost:5173")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 const app = express();
 app.set("trust proxy", 1);
-app.use(cors());
-app.use(express.json());
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("X-XSS-Protection", "0");
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'none'; frame-ancestors 'none'",
+  );
+  next();
+});
+app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
+app.use(express.json({ limit: "1mb" }));
 app.use("/admin", adminRoutes);
 
 const apiLimiter = rateLimit({
@@ -178,7 +195,7 @@ app.delete("/saves/:roomCode", apiLimiter, async (req, res) => {
       return res.status(400).json({ error: "Nome de treinador inválido." });
     if (!password)
       return res.status(400).json({ error: "A palavra-passe é obrigatória." });
-    if (!roomCode)
+    if (!/^[A-Z0-9]{4,8}$/.test(roomCode))
       return res.status(400).json({ error: "Código de sala inválido." });
 
     const authResult = await verifyManager(name, password);
@@ -256,7 +273,7 @@ app.post("/auth/register", apiLimiter, async (req, res) => {
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: "*", methods: ["GET", "POST"] },
+  cors: { origin: ALLOWED_ORIGINS, methods: ["GET", "POST"], credentials: true },
 });
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -448,6 +465,25 @@ io.on("connection", (socket) => {
   });
 });
 
+function validateEnvVars() {
+  const warnings: string[] = [];
+  if (!process.env.ADMIN_USERNAME) warnings.push("ADMIN_USERNAME");
+  if (!process.env.ADMIN_PASSWORD_HASH && !process.env.ADMIN_PASSWORD) {
+    warnings.push("ADMIN_PASSWORD_HASH or ADMIN_PASSWORD");
+  }
+  if (!process.env.CORS_ORIGINS) {
+    console.warn(
+      "[server] CORS_ORIGINS not set — defaulting to http://localhost:5173",
+    );
+  }
+  if (warnings.length > 0) {
+    console.warn(
+      `[server] WARNING: missing env vars (${warnings.join(", ")}). Admin endpoints will reject all requests.`,
+    );
+  }
+}
+validateEnvVars();
+
 const PORT = 3000;
 server.listen(PORT, () => {
   const portMsg = `Listening on port ${PORT}`;
@@ -475,3 +511,25 @@ process.on("uncaughtException", (err) => {
 process.on("unhandledRejection", (reason) => {
   console.error("[server] Unhandled promise rejection:", reason);
 });
+
+let shuttingDown = false;
+function gracefulShutdown(signal: string) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`[server] ${signal} received, shutting down...`);
+  try {
+    io.emit("serverShutdown");
+  } catch (err) {
+    console.error("[server] Error emitting shutdown:", err);
+  }
+  io.close();
+  server.close(() => {
+    closeAllDatabases().finally(() => process.exit(0));
+  });
+  setTimeout(() => {
+    console.error("[server] Forced shutdown after timeout");
+    process.exit(1);
+  }, 10000).unref();
+}
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));

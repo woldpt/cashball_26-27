@@ -1,5 +1,5 @@
 import type { ActiveGame, PlayerSession } from "./types";
-import { logClubNews, runExec, runGet, runAll } from "./coreHelpers";
+import { logClubNews, runExec, runGet, runAll, validatePositiveInt } from "./coreHelpers";
 
 interface TransferHandlerDeps {
   io: any;
@@ -56,11 +56,14 @@ export function registerTransferSocketHandlers(
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
 
+    const validPlayerId = validatePositiveInt(playerId);
+    if (!validPlayerId) return;
+
     try {
       const player = await runGet<any>(
         game.db,
         "SELECT * FROM players WHERE id = ?",
-        [playerId],
+        [validPlayerId],
       );
       if (!player) return;
 
@@ -104,7 +107,7 @@ export function registerTransferSocketHandlers(
             getSeasonEndMatchweek(game.matchweek),
             Math.ceil(Math.max(1, game.matchweek) / 14),
             game.matchweek,
-            playerId,
+            validPlayerId,
           ],
         );
         await runExec(game.db, "COMMIT");
@@ -126,7 +129,7 @@ export function registerTransferSocketHandlers(
         playerState.teamId,
         {
           player_name: player.name,
-          player_id: playerId,
+          player_id: validPlayerId,
           related_team_id: player.team_id,
           related_team_name: player.team_name,
           amount: price,
@@ -142,7 +145,7 @@ export function registerTransferSocketHandlers(
           player.team_id,
           {
             player_name: player.name,
-            player_id: playerId,
+            player_id: validPlayerId,
             related_team_id: playerState.teamId,
             related_team_name: buyingTeam?.name,
             amount: price,
@@ -175,6 +178,9 @@ export function registerTransferSocketHandlers(
       if (!game) return;
       const playerState = getPlayerBySocket(game, socket.id);
       if (!playerState) return;
+
+      const validPlayerId = validatePositiveInt(playerId);
+      if (!validPlayerId) return;
 
       const finalMode = mode === "auction" ? "auction" : "fixed";
       if (finalMode === "auction" && isMatchInProgress(game)) {
@@ -211,7 +217,12 @@ export function registerTransferSocketHandlers(
             game.db.run(
               "UPDATE players SET transfer_status = ?, transfer_price = ? WHERE id = ?",
               [finalMode, finalPrice, playerId],
-              () => {
+              (runErr: Error | null) => {
+                if (runErr) {
+                  console.error("[listPlayerForTransfer] Error:", runErr);
+                  socket.emit("systemMessage", "Erro ao listar jogador.");
+                  return;
+                }
                 refreshMarket(game);
                 emitSquadForPlayer(game, playerState.teamId);
                 socket.emit(
@@ -235,7 +246,12 @@ export function registerTransferSocketHandlers(
     game.db.run(
       "UPDATE players SET transfer_status = 'none', transfer_price = 0 WHERE id = ? AND team_id = ? AND transfer_status = 'fixed'",
       [playerId, playerState.teamId],
-      function () {
+      function (this: any, runErr: Error | null) {
+        if (runErr) {
+          console.error("[removeFromTransferList] Error:", runErr);
+          socket.emit("systemMessage", "Erro ao retirar jogador da lista.");
+          return;
+        }
         if (this.changes > 0) {
           refreshMarket(game);
           emitSquadForPlayer(game, playerState.teamId);
@@ -271,7 +287,12 @@ export function registerTransferSocketHandlers(
           game.db.run(
             "UPDATE players SET wage = ?, contract_until_matchweek = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
             [acceptedWage, seasonEnd, game.matchweek, playerId],
-            () => {
+            (runErr: Error | null) => {
+              if (runErr) {
+                console.error("[renewContract] Error:", runErr);
+                socket.emit("systemMessage", "Erro ao renovar contrato.");
+                return;
+              }
               refreshMarket(game);
               emitSquadForPlayer(game, playerState.teamId);
               socket.emit(
@@ -289,7 +310,11 @@ export function registerTransferSocketHandlers(
             game.db.run(
               "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
               [playerId],
-              () => {
+              (runErr: Error | null) => {
+                if (runErr) {
+                  console.error("[renewContract:reject] Error:", runErr);
+                  return;
+                }
                 emitSquadForPlayer(game, playerState.teamId);
               },
             );
@@ -302,6 +327,9 @@ export function registerTransferSocketHandlers(
             game.db.run(
               "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
               [playerId],
+              (runErr: Error | null) => {
+                if (runErr) console.error("[renewContract:match] Error:", runErr);
+              },
             );
             socket.emit(
               "systemMessage",
@@ -319,14 +347,21 @@ export function registerTransferSocketHandlers(
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
 
-    placeAuctionBid(game, playerState.teamId, playerId, bidAmount)
+    const validPlayerId = validatePositiveInt(playerId);
+    const validBidAmount = validatePositiveInt(bidAmount);
+    if (!validPlayerId || !validBidAmount) {
+      socket.emit("systemMessage", "Lance inválido.");
+      return;
+    }
+
+    placeAuctionBid(game, playerState.teamId, validPlayerId, validBidAmount)
       .then((result) => {
         const bidResult: any = result;
         if (!bidResult.ok) {
           socket.emit("systemMessage", bidResult.error);
         } else {
           socket.emit("auctionBidConfirmed", {
-            playerId,
+            playerId: validPlayerId,
             bidAmount: bidResult.bidAmount,
           });
         }
@@ -408,6 +443,9 @@ export function registerTransferSocketHandlers(
                   game.db.run(
                     "UPDATE teams SET budget = budget + ? WHERE id = ?",
                     [proposalPrice, player.team_id],
+                    (errRefund: Error | null) => {
+                      if (errRefund) console.error("[makeTransferProposal:refund] Error:", errRefund);
+                    },
                   );
                 }
                 game.db.run(

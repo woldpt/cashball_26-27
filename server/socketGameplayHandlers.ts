@@ -84,11 +84,25 @@ export function registerGameplaySocketHandlers(
 
   socket.on("disconnect", () => {
     const game = getGameBySocket(socket.id);
-    if (game) {
-      unbindSocket(game, socket.id);
-      io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
-      emitAwaitingCoaches(game);
+    if (!game) return;
+
+    // If the disconnected socket owned the pending match action, auto-resolve it
+    const playerState = getPlayerBySocket(game, socket.id);
+    const pendingAction: any = game.pendingMatchAction;
+    if (playerState && pendingAction && pendingAction.teamId === playerState.teamId) {
+      clearTimeout(pendingAction.timer);
+      game.pendingMatchAction = null;
+      const fallbackValue = pendingAction.fallback ? pendingAction.fallback() : null;
+      try {
+        pendingAction.finalize(fallbackValue, "auto");
+      } catch (err) {
+        console.error("[disconnect] Error finalizing pending match action:", err);
+      }
     }
+
+    unbindSocket(game, socket.id);
+    io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
+    emitAwaitingCoaches(game);
   });
 
   socket.on("acceptJobOffer", async () => {

@@ -3,6 +3,8 @@ const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
 const express = require("express");
+const bcrypt = require("bcryptjs");
+const rateLimit = require("express-rate-limit");
 
 const router = express.Router();
 
@@ -194,21 +196,54 @@ function normalizeFixturePayload(fileKey, payload) {
   return null;
 }
 
-function validateAdminCredentials(username, password) {
+function timingSafeStringEqual(a, b) {
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+async function validateAdminCredentials(username, password) {
   const configuredUsername = String(process.env.ADMIN_USERNAME || "").trim();
+  const configuredHash = String(process.env.ADMIN_PASSWORD_HASH || "");
   const configuredPassword = String(process.env.ADMIN_PASSWORD || "");
-  if (!configuredUsername || !configuredPassword) {
+
+  if (!configuredUsername || (!configuredHash && !configuredPassword)) {
     return { ok: false, error: "Admin credentials are not configured." };
   }
 
-  if (username !== configuredUsername || password !== configuredPassword) {
+  if (!timingSafeStringEqual(username, configuredUsername)) {
+    return { ok: false, error: "Credenciais de admin inválidas." };
+  }
+
+  let passwordOk = false;
+  if (configuredHash) {
+    try {
+      passwordOk = await bcrypt.compare(password, configuredHash);
+    } catch (err) {
+      console.error("[admin] bcrypt compare failed:", err);
+      return { ok: false, error: "Credenciais de admin inválidas." };
+    }
+  } else {
+    passwordOk = timingSafeStringEqual(password, configuredPassword);
+  }
+
+  if (!passwordOk) {
     return { ok: false, error: "Credenciais de admin inválidas." };
   }
 
   return { ok: true };
 }
 
-router.post("/login", (req, res) => {
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Demasiadas tentativas de login. Tenta novamente em 15 minutos." },
+});
+
+router.post("/login", adminLoginLimiter, async (req, res) => {
   const username = String(req.body?.username || "").trim();
   const password = String(req.body?.password || "");
 
@@ -218,7 +253,7 @@ router.post("/login", (req, res) => {
       .json({ error: "Username e password são obrigatórios." });
   }
 
-  const result = validateAdminCredentials(username, password);
+  const result = await validateAdminCredentials(username, password);
   if (!result.ok) {
     return res.status(401).json({ error: result.error });
   }
