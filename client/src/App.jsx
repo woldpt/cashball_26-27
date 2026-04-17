@@ -652,7 +652,7 @@ function App() {
   const [selectedTeamLoading, setSelectedTeamLoading] = useState(false);
   const [transferProposalModal, setTransferProposalModal] = useState(null); // { player, suggestedPrice }
   const [calendarData, setCalendarData] = useState(null);
-  const [expandedCalEntries, setExpandedCalEntries] = useState({});
+  const [calFilter, setCalFilter] = useState("all"); // "all" | "league" | "cup"
   const [tactic, setTactic] = useState(DEFAULT_TACTIC);
   const [liveMinute, setLiveMinute] = useState(90);
   const [isPlayingMatch, setIsPlayingMatch] = useState(false);
@@ -4997,10 +4997,6 @@ function App() {
                       const cal = calendarData;
                       const curIdx = cal?.calendarIndex ?? 0;
                       const calYear = cal?.year ?? seasonYear;
-                      const done = Math.min(curIdx, SEASON_CALENDAR.length);
-                      const pct = Math.round(
-                        (done / SEASON_CALENDAR.length) * 100,
-                      );
                       const myTeamId = me?.teamId;
                       const myTeam = teams.find((t) => t.id === myTeamId);
                       const myDivision = myTeam?.division;
@@ -5014,35 +5010,238 @@ function App() {
                         return "future";
                       };
 
-                      const toggleEntry = (idx) =>
-                        setExpandedCalEntries((prev) => ({
-                          ...prev,
-                          [idx]: !prev[idx],
-                        }));
+                      // Build flat list of MY matches across season
+                      const calEntries = SEASON_CALENDAR.filter((entry) => {
+                        if (calFilter === "league")
+                          return entry.type === "league";
+                        if (calFilter === "cup") return entry.type === "cup";
+                        return true;
+                      })
+                        .map((entry) => {
+                          const status = getStatus(entry);
+                          if (entry.type === "cup") {
+                            const cupFixtures =
+                              cal?.cupMatches?.filter(
+                                (m) => m.round === entry.round,
+                              ) ?? [];
+                            const myMatch = cupFixtures.find(
+                              (f) =>
+                                f.home_team_id === myTeamId ||
+                                f.away_team_id === myTeamId,
+                            );
+                            if (!myMatch && cupFixtures.length > 0) return null; // in cup but not my match drawn yet (show placeholder)
+                            const opponent = myMatch
+                              ? teams.find(
+                                  (t) =>
+                                    t.id ===
+                                    (myMatch.home_team_id === myTeamId
+                                      ? myMatch.away_team_id
+                                      : myMatch.home_team_id),
+                                )
+                              : null;
+                            const imHome = myMatch?.home_team_id === myTeamId;
+                            const stadiumTeam = imHome ? myTeam : opponent;
+                            const hasPen =
+                              myMatch &&
+                              (myMatch.home_penalties > 0 ||
+                                myMatch.away_penalties > 0);
+                            const myScore = myMatch?.played
+                              ? imHome
+                                ? myMatch.home_score
+                                : myMatch.away_score
+                              : null;
+                            const opScore = myMatch?.played
+                              ? imHome
+                                ? myMatch.away_score
+                                : myMatch.home_score
+                              : null;
+                            const myPen = hasPen
+                              ? imHome
+                                ? myMatch.home_penalties
+                                : myMatch.away_penalties
+                              : null;
+                            const opPen = hasPen
+                              ? imHome
+                                ? myMatch.away_penalties
+                                : myMatch.home_penalties
+                              : null;
+                            const won = myMatch?.played
+                              ? myMatch.winner_team_id === myTeamId
+                              : null;
+                            return {
+                              entry,
+                              status,
+                              type: "cup",
+                              myMatch,
+                              opponent,
+                              imHome,
+                              stadiumTeam,
+                              hasPen,
+                              myScore,
+                              opScore,
+                              myPen,
+                              opPen,
+                              won,
+                            };
+                          } else {
+                            const divFixtures =
+                              status === "done"
+                                ? (cal?.leagueMatches
+                                    ?.filter(
+                                      (m) =>
+                                        m.matchweek === entry.matchweek &&
+                                        myDivTeams.some(
+                                          (t) => t.id === m.home_team_id,
+                                        ) &&
+                                        myDivTeams.some(
+                                          (t) => t.id === m.away_team_id,
+                                        ),
+                                    )
+                                    .map((m) => ({
+                                      homeTeamId: m.home_team_id,
+                                      awayTeamId: m.away_team_id,
+                                      result: m,
+                                    })) ?? [])
+                                : generateLeagueFixtures(
+                                    myDivTeams,
+                                    entry.matchweek,
+                                    myTeamId,
+                                  ).map((f) => ({ ...f, result: null }));
+                            const myFixture = divFixtures.find(
+                              (f) =>
+                                f.homeTeamId === myTeamId ||
+                                f.awayTeamId === myTeamId,
+                            );
+                            if (!myFixture) return null;
+                            const imHome = myFixture.homeTeamId === myTeamId;
+                            const opponent = teams.find(
+                              (t) =>
+                                t.id ===
+                                (imHome
+                                  ? myFixture.awayTeamId
+                                  : myFixture.homeTeamId),
+                            );
+                            const stadiumTeam = imHome ? myTeam : opponent;
+                            const myScore = myFixture.result
+                              ? imHome
+                                ? myFixture.result.home_score
+                                : myFixture.result.away_score
+                              : null;
+                            const opScore = myFixture.result
+                              ? imHome
+                                ? myFixture.result.away_score
+                                : myFixture.result.home_score
+                              : null;
+                            const won = myFixture.result
+                              ? imHome
+                                ? myFixture.result.home_score >
+                                  myFixture.result.away_score
+                                : myFixture.result.away_score >
+                                  myFixture.result.home_score
+                              : null;
+                            const drew = myFixture.result
+                              ? myFixture.result.home_score ===
+                                myFixture.result.away_score
+                              : null;
+                            return {
+                              entry,
+                              status,
+                              type: "league",
+                              myFixture,
+                              opponent,
+                              imHome,
+                              stadiumTeam,
+                              myScore,
+                              opScore,
+                              won,
+                              drew,
+                            };
+                          }
+                        })
+                        .filter(Boolean);
+
+                      // ── STATS ─────────────────────────────────────────────
+                      const playedLeague = calEntries.filter(
+                        (e) =>
+                          e.type === "league" &&
+                          e.status === "done" &&
+                          e.myScore !== null,
+                      );
+                      const goalDiff = playedLeague.reduce(
+                        (acc, e) => acc + (e.myScore - e.opScore),
+                        0,
+                      );
+                      // Unbeaten run: count from end of list until first loss
+                      const playedAll = calEntries.filter(
+                        (e) => e.status === "done" && e.myScore !== null,
+                      );
+                      let unbeatenRun = 0;
+                      for (let i = playedAll.length - 1; i >= 0; i--) {
+                        const e = playedAll[i];
+                        if (e.won === false && e.drew !== true) break;
+                        unbeatenRun++;
+                      }
+                      // Next away game
+                      const nextAway = calEntries.find(
+                        (e) => e.status !== "done" && !e.imHome,
+                      );
+                      const nextAwayOpponent = nextAway?.stadiumTeam;
+
+                      // Team logo circle helper
+                      const TeamCircle = ({ team, size = "lg" }) => {
+                        const sz =
+                          size === "lg"
+                            ? "w-10 h-10 text-base"
+                            : "w-7 h-7 text-xs";
+                        return (
+                          <div
+                            className={`${sz} rounded-full flex items-center justify-center font-black shrink-0 border border-white/10`}
+                            style={{
+                              background: team?.color_primary || "#333",
+                              color: team?.color_secondary || "#fff",
+                            }}
+                          >
+                            {team?.name?.[0] ?? "?"}
+                          </div>
+                        );
+                      };
 
                       return (
-                        <div className="space-y-4">
+                        <div className="space-y-5">
                           {/* ── PAGE HEADER ──────────────────────────────────── */}
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                              <h2 className="text-lg font-headline font-black text-on-surface">
-                                Calendário
-                              </h2>
-                              <p className="text-xs text-on-surface-variant mt-0.5">
-                                Época {calYear}/{calYear + 1}
-                                {cal ? ` · Temporada ${cal.season}` : ""}
-                              </p>
-                            </div>
-                            {/* Progress pill */}
-                            <div className="flex flex-col items-end gap-1 shrink-0">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                                {done} / {SEASON_CALENDAR.length} semanas
-                              </span>
-                              <div className="w-36 h-1.5 bg-outline-variant/30 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-primary rounded-full transition-all duration-500"
-                                  style={{ width: `${pct}%` }}
-                                />
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 mb-1">
+                              Timeline do Treinador
+                            </p>
+                            <div className="flex flex-wrap items-end justify-between gap-3">
+                              <div>
+                                <h2 className="text-2xl font-headline font-black text-on-surface leading-tight">
+                                  Calendário de Competições
+                                </h2>
+                                <p className="text-sm text-on-surface-variant mt-0.5">
+                                  Temporada {calYear}/{calYear + 1}
+                                  {myTeam ? ` · ${myTeam.name}` : ""}
+                                </p>
+                              </div>
+                              {/* Filter tabs */}
+                              <div className="flex items-center gap-1 bg-surface-container-high rounded-lg p-1">
+                                {[
+                                  ["all", "Todos"],
+                                  ["league", "Liga"],
+                                  ["cup", "Taça"],
+                                ].map(([val, label]) => (
+                                  <button
+                                    key={val}
+                                    onClick={() => setCalFilter(val)}
+                                    className={`px-3 py-1 rounded text-xs font-black uppercase tracking-wide transition-all ${
+                                      calFilter === val
+                                        ? "bg-primary text-white shadow"
+                                        : "text-on-surface-variant hover:text-on-surface"
+                                    }`}
+                                  >
+                                    {label}
+                                  </button>
+                                ))}
                               </div>
                             </div>
                           </div>
@@ -5059,589 +5258,273 @@ function App() {
                             </div>
                           )}
 
-                          {/* ── CALENDAR ENTRIES ──────────────────────────────── */}
+                          {/* ── MATCH TIMELINE ────────────────────────────────── */}
                           {cal && (
                             <div className="space-y-2">
-                              {SEASON_CALENDAR.map((entry) => {
-                                const status = getStatus(entry);
-                                const isCurrent = status === "current";
-                                const isDone = status === "done";
-                                const isCupEntry = entry.type === "cup";
-                                const isExpanded =
-                                  !!expandedCalEntries[entry.calendarIndex];
+                              {calEntries.length === 0 && (
+                                <div className="bg-surface-container rounded-lg p-8 text-center">
+                                  <p className="text-on-surface-variant text-sm">
+                                    Sem jogos para mostrar.
+                                  </p>
+                                </div>
+                              )}
+                              {calEntries.map(
+                                ({
+                                  entry,
+                                  status,
+                                  type,
+                                  opponent,
+                                  imHome,
+                                  stadiumTeam,
+                                  myScore,
+                                  opScore,
+                                  won,
+                                  drew,
+                                  hasPen,
+                                  myPen,
+                                  opPen,
+                                }) => {
+                                  const isCurrent = status === "current";
+                                  const isDone = status === "done";
 
-                                // ── card style per status ───────────────────
-                                const cardClass = isCurrent
-                                  ? "bg-primary/8 border border-primary/50 rounded-lg overflow-hidden"
-                                  : isDone
-                                    ? "bg-surface-container rounded-lg overflow-hidden opacity-80"
-                                    : "bg-surface-container rounded-lg overflow-hidden opacity-60";
+                                  // result outcome class
+                                  const outcomeClass =
+                                    !isDone || myScore === null
+                                      ? ""
+                                      : won
+                                        ? "border-l-2 border-l-emerald-500"
+                                        : drew
+                                          ? "border-l-2 border-l-amber-500"
+                                          : "border-l-2 border-l-red-500";
 
-                                // ── CUP ENTRY ────────────────────────────────
-                                if (isCupEntry) {
-                                  const cupFixtures = cal.cupMatches.filter(
-                                    (m) => m.round === entry.round,
-                                  );
-                                  const cupDrawn = cupFixtures.length > 0;
-                                  const myMatch = cupDrawn
-                                    ? cupFixtures.find(
-                                        (f) =>
-                                          f.home_team_id === myTeamId ||
-                                          f.away_team_id === myTeamId,
-                                      )
-                                    : null;
+                                  const cardBase = `flex items-stretch gap-0 rounded-lg overflow-hidden transition-opacity ${
+                                    isDone
+                                      ? "bg-surface-container"
+                                      : isCurrent
+                                        ? "bg-surface-container border border-primary/40"
+                                        : "bg-surface-container opacity-60"
+                                  } ${outcomeClass}`;
 
-                                  // check if user was already eliminated from the cup
-                                  const isEliminated = (() => {
-                                    const myPlayedCupMatches =
-                                      cal.cupMatches.filter(
-                                        (m) =>
-                                          m.played &&
-                                          (m.home_team_id === myTeamId ||
-                                            m.away_team_id === myTeamId),
-                                      );
-                                    return myPlayedCupMatches.some((m) => {
-                                      const hasPen =
-                                        m.home_penalties > 0 ||
-                                        m.away_penalties > 0;
-                                      if (m.home_team_id === myTeamId) {
-                                        const myScore = hasPen
-                                          ? m.home_penalties
-                                          : m.home_score;
-                                        const opScore = hasPen
-                                          ? m.away_penalties
-                                          : m.away_score;
-                                        return myScore < opScore;
-                                      } else {
-                                        const myScore = hasPen
-                                          ? m.away_penalties
-                                          : m.away_score;
-                                        const opScore = hasPen
-                                          ? m.home_penalties
-                                          : m.home_score;
-                                        return myScore < opScore;
-                                      }
-                                    });
-                                  })();
+                                  // Left date column content
+                                  const weekLabel =
+                                    type === "cup"
+                                      ? entry.roundName
+                                          .split(" ")
+                                          .slice(-2)
+                                          .join(" ")
+                                      : `Jornada ${entry.matchweek}`;
 
-                                  // status badge
-                                  const cupBadge = isDone ? (
-                                    <span className="text-[9px] font-black uppercase tracking-widest bg-surface-bright text-on-surface-variant/60 px-2 py-0.5 rounded">
-                                      Concluído
-                                    </span>
-                                  ) : isCurrent ? (
-                                    <span className="text-[9px] font-black uppercase tracking-widest bg-primary/20 text-primary px-2 py-0.5 rounded animate-pulse">
-                                      Próximo
-                                    </span>
-                                  ) : !cupDrawn ? (
-                                    isEliminated ? (
-                                      <span className="text-[9px] font-black uppercase tracking-widest bg-red-500/15 text-red-400 px-2 py-0.5 rounded">
-                                        Eliminado
-                                      </span>
+                                  // Score/status right column
+                                  const scoreBlock =
+                                    isDone && myScore !== null ? (
+                                      <div className="flex flex-col items-end gap-1">
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">
+                                          Resultado
+                                        </span>
+                                        <span
+                                          className={`text-xl font-headline font-black leading-none ${
+                                            won
+                                              ? "text-emerald-400"
+                                              : drew
+                                                ? "text-amber-400"
+                                                : "text-red-400"
+                                          }`}
+                                        >
+                                          {myScore} – {opScore}
+                                        </span>
+                                        {hasPen && (
+                                          <span className="text-[9px] text-amber-400 font-bold">
+                                            {myPen}–{opPen} gp
+                                          </span>
+                                        )}
+                                        <span
+                                          className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                                            won
+                                              ? "bg-emerald-500/20 text-emerald-400"
+                                              : drew
+                                                ? "bg-amber-500/20 text-amber-400"
+                                                : "bg-red-500/20 text-red-400"
+                                          }`}
+                                        >
+                                          {won
+                                            ? "Vitória"
+                                            : drew
+                                              ? "Empate"
+                                              : "Derrota"}
+                                          {type === "cup" && !won && !drew
+                                            ? " · Eliminado"
+                                            : ""}
+                                        </span>
+                                      </div>
+                                    ) : isCurrent ? (
+                                      <div className="flex flex-col items-end gap-1">
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">
+                                          Próximo Jogo
+                                        </span>
+                                        <span className="text-xl font-headline font-black text-on-surface-variant/60">
+                                          VS
+                                        </span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-primary/20 text-primary animate-pulse">
+                                          Ativo
+                                        </span>
+                                      </div>
                                     ) : (
-                                      <span className="text-[9px] font-black uppercase tracking-widest bg-amber-500/15 text-amber-400 px-2 py-0.5 rounded">
-                                        Aguarda sorteio
-                                      </span>
-                                    )
-                                  ) : (
-                                    <span className="text-[9px] font-black uppercase tracking-widest bg-surface-bright text-on-surface-variant/40 px-2 py-0.5 rounded">
-                                      Por jogar
-                                    </span>
-                                  );
+                                      <div className="flex flex-col items-end gap-1">
+                                        <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-surface-bright text-on-surface-variant/40">
+                                          Agendado
+                                        </span>
+                                      </div>
+                                    );
 
                                   return (
                                     <div
                                       key={entry.calendarIndex}
-                                      className={cardClass}
+                                      className={cardBase}
                                     >
-                                      {/* Header – clickable to expand all cup matches */}
-                                      <div
-                                        className={`flex items-center gap-3 px-4 py-2.5 border-b border-amber-800/30 bg-amber-900/15 ${cupDrawn ? "cursor-pointer select-none" : ""}`}
-                                        onClick={
-                                          cupDrawn
-                                            ? () =>
-                                                toggleEntry(entry.calendarIndex)
-                                            : undefined
-                                        }
-                                      >
-                                        <span className="shrink-0 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-amber-500/25 text-amber-400">
-                                          Taça
+                                      {/* Left: matchweek + competition type */}
+                                      <div className="w-28 shrink-0 flex flex-col justify-center gap-1 px-3 py-3 border-r border-outline-variant/10">
+                                        <span
+                                          className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded self-start ${
+                                            type === "cup"
+                                              ? "bg-amber-500/20 text-amber-400"
+                                              : "bg-primary/20 text-primary"
+                                          }`}
+                                        >
+                                          {type === "cup" ? "Taça" : "Liga"}
                                         </span>
-                                        <span className="font-black text-sm text-on-surface flex-1 truncate">
-                                          {entry.roundName}
+                                        <span className="text-[10px] font-black text-on-surface leading-tight">
+                                          {weekLabel}
                                         </span>
                                         {isCurrent && (
-                                          <span className="shrink-0 relative flex h-2 w-2">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+                                          <span className="text-[9px] text-primary font-bold">
+                                            Hoje
                                           </span>
                                         )}
-                                        {/* Our cup match preview */}
-                                        {myMatch &&
-                                          (() => {
-                                            const hInfo = teams.find(
-                                              (t) =>
-                                                t.id === myMatch.home_team_id,
-                                            );
-                                            const aInfo = teams.find(
-                                              (t) =>
-                                                t.id === myMatch.away_team_id,
-                                            );
-                                            const hasPen =
-                                              myMatch.home_penalties > 0 ||
-                                              myMatch.away_penalties > 0;
-                                            return (
-                                              <div className="flex items-center gap-1.5 text-[11px] font-bold shrink-0">
-                                                <span
-                                                  className={
-                                                    myMatch.home_team_id ===
-                                                    myTeamId
-                                                      ? "text-primary"
-                                                      : "text-on-surface-variant"
-                                                  }
-                                                >
-                                                  {hInfo?.name ??
-                                                    myMatch.home_team_id}
-                                                </span>
-                                                <span className="text-on-surface-variant/50 text-[10px] font-black">
-                                                  {myMatch.played
-                                                    ? `${myMatch.home_score}–${myMatch.away_score}${hasPen ? ` (${myMatch.home_penalties}–${myMatch.away_penalties}gp)` : ""}`
-                                                    : "vs"}
-                                                </span>
-                                                <span
-                                                  className={
-                                                    myMatch.away_team_id ===
-                                                    myTeamId
-                                                      ? "text-primary"
-                                                      : "text-on-surface-variant"
-                                                  }
-                                                >
-                                                  {aInfo?.name ??
-                                                    myMatch.away_team_id}
-                                                </span>
-                                              </div>
-                                            );
-                                          })()}
-                                        {!myMatch && !cupDrawn && (
-                                          <span className="text-[10px] text-on-surface-variant/40 italic">
-                                            Sorteio por realizar
+                                      </div>
+
+                                      {/* Center: teams + stadium */}
+                                      <div className="flex-1 flex items-center gap-3 px-4 py-3 min-w-0">
+                                        {/* Type icon */}
+                                        <div
+                                          className={`shrink-0 w-8 h-8 rounded flex items-center justify-center text-xs font-black border ${
+                                            type === "cup"
+                                              ? "border-amber-500/30 text-amber-400 bg-amber-500/10"
+                                              : "border-primary/30 text-primary bg-primary/10"
+                                          }`}
+                                        >
+                                          {type === "cup" ? "🏆" : "LJ"}
+                                        </div>
+                                        {/* Opponent logo */}
+                                        <TeamCircle team={opponent} />
+                                        {/* Opponent info */}
+                                        <div className="flex flex-col min-w-0">
+                                          <button
+                                            className="text-sm font-black text-on-surface text-left truncate hover:text-primary transition-colors"
+                                            onClick={() =>
+                                              opponent &&
+                                              handleOpenTeamSquad(opponent)
+                                            }
+                                          >
+                                            {opponent?.name ?? "TBD"}
+                                          </button>
+                                          <span className="text-[10px] text-on-surface-variant/60 truncate">
+                                            {stadiumTeam?.stadium_name
+                                              ? `${stadiumTeam.stadium_name.toUpperCase()} (${imHome ? "H" : "A"})`
+                                              : imHome
+                                                ? "Casa"
+                                                : "Fora"}
                                           </span>
-                                        )}
-                                        <div className="flex items-center gap-2 shrink-0">
-                                          {cupBadge}
-                                          {cupDrawn && (
-                                            <span className="material-symbols-outlined text-base text-on-surface-variant/40">
-                                              {isExpanded
-                                                ? "expand_less"
-                                                : "expand_more"}
-                                            </span>
-                                          )}
                                         </div>
                                       </div>
 
-                                      {/* Expanded: all cup fixtures */}
-                                      {isExpanded && cupDrawn && (
-                                        <div>
-                                          {cupFixtures.map((f, fi) => {
-                                            const homeInfo = teams.find(
-                                              (t) => t.id === f.home_team_id,
-                                            );
-                                            const awayInfo = teams.find(
-                                              (t) => t.id === f.away_team_id,
-                                            );
-                                            const isMyMatch =
-                                              f.home_team_id === myTeamId ||
-                                              f.away_team_id === myTeamId;
-                                            const hasPenalties =
-                                              f.home_penalties > 0 ||
-                                              f.away_penalties > 0;
-                                            const hasET =
-                                              (f.home_et_score > 0 ||
-                                                f.away_et_score > 0) &&
-                                              !hasPenalties;
-                                            return (
-                                              <div
-                                                key={fi}
-                                                className={`flex items-center gap-2 px-4 py-2 border-b border-outline-variant/5 last:border-0 ${
-                                                  isMyMatch
-                                                    ? "bg-primary/8"
-                                                    : ""
-                                                }`}
-                                              >
-                                                <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                                                  <button
-                                                    className={`text-[11px] font-bold truncate text-right ${isMyMatch && f.home_team_id === myTeamId ? "text-primary" : f.played && f.winner_team_id !== f.home_team_id ? "text-on-surface-variant/50" : "text-on-surface hover:underline"}`}
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      if (
-                                                        f.home_team_id !==
-                                                          myTeamId &&
-                                                        homeInfo
-                                                      )
-                                                        handleOpenTeamSquad(
-                                                          homeInfo,
-                                                        );
-                                                    }}
-                                                  >
-                                                    {homeInfo?.name ??
-                                                      f.home_team_id}
-                                                  </button>
-                                                  <span
-                                                    className="shrink-0 w-2 h-2 rounded-full"
-                                                    style={{
-                                                      backgroundColor:
-                                                        homeInfo?.color_primary ||
-                                                        "#666",
-                                                    }}
-                                                  />
-                                                </div>
-                                                <div className="shrink-0 w-20 text-center">
-                                                  {f.played ? (
-                                                    <span className="text-xs font-black font-headline text-on-surface bg-surface border border-outline-variant/20 rounded px-2 py-0.5 whitespace-nowrap">
-                                                      {f.home_score}–
-                                                      {f.away_score}
-                                                      {hasPenalties && (
-                                                        <span className="ml-1 text-[9px] text-amber-400">
-                                                          ({f.home_penalties}–
-                                                          {f.away_penalties}gp)
-                                                        </span>
-                                                      )}
-                                                      {hasET && (
-                                                        <span className="ml-1 text-[9px] text-zinc-500">
-                                                          (p.e.)
-                                                        </span>
-                                                      )}
-                                                    </span>
-                                                  ) : (
-                                                    <span className="text-[10px] font-black text-on-surface-variant/40">
-                                                      vs
-                                                    </span>
-                                                  )}
-                                                </div>
-                                                <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                                  <span
-                                                    className="shrink-0 w-2 h-2 rounded-full"
-                                                    style={{
-                                                      backgroundColor:
-                                                        awayInfo?.color_primary ||
-                                                        "#666",
-                                                    }}
-                                                  />
-                                                  <button
-                                                    className={`text-[11px] font-bold truncate text-left ${isMyMatch && f.away_team_id === myTeamId ? "text-primary" : f.played && f.winner_team_id !== f.away_team_id ? "text-on-surface-variant/50" : "text-on-surface hover:underline"}`}
-                                                    onClick={(e) => {
-                                                      e.stopPropagation();
-                                                      if (
-                                                        f.away_team_id !==
-                                                          myTeamId &&
-                                                        awayInfo
-                                                      )
-                                                        handleOpenTeamSquad(
-                                                          awayInfo,
-                                                        );
-                                                    }}
-                                                  >
-                                                    {awayInfo?.name ??
-                                                      f.away_team_id}
-                                                  </button>
-                                                </div>
-                                              </div>
-                                            );
-                                          })}
-                                          {/* Cup final winner */}
-                                          {entry.round === 5 &&
-                                            cupFixtures.some((m) => m.played) &&
-                                            (() => {
-                                              const finalMatch =
-                                                cupFixtures.find(
-                                                  (m) => m.played,
-                                                );
-                                              const champ = finalMatch
-                                                ? teams.find(
-                                                    (t) =>
-                                                      t.id ===
-                                                      finalMatch.winner_team_id,
-                                                  )
-                                                : null;
-                                              return champ ? (
-                                                <div className="px-4 py-2 border-t border-amber-800/30 bg-amber-900/10 flex items-center gap-2">
-                                                  <span className="text-amber-400 text-sm">
-                                                    🏆
-                                                  </span>
-                                                  <span className="text-xs font-black text-amber-400 uppercase tracking-widest">
-                                                    Vencedor: {champ.name}
-                                                  </span>
-                                                </div>
-                                              ) : null;
-                                            })()}
-                                        </div>
-                                      )}
+                                      {/* Right: score/status */}
+                                      <div className="shrink-0 flex items-center justify-end px-4 py-3">
+                                        {scoreBlock}
+                                      </div>
                                     </div>
                                   );
-                                }
-
-                                // ── LEAGUE ENTRY ─────────────────────────────
-                                // For done matchweeks: use actual DB records as the source
-                                // of truth (home/away and scores).  For future/current:
-                                // use the fixture generator (with swap correction).
-                                const divFixtures = isDone
-                                  ? cal.leagueMatches
-                                      .filter(
-                                        (m) =>
-                                          m.matchweek === entry.matchweek &&
-                                          myDivTeams.some(
-                                            (t) => t.id === m.home_team_id,
-                                          ) &&
-                                          myDivTeams.some(
-                                            (t) => t.id === m.away_team_id,
-                                          ),
-                                      )
-                                      .map((m) => ({
-                                        homeTeamId: m.home_team_id,
-                                        awayTeamId: m.away_team_id,
-                                        result: m,
-                                      }))
-                                  : generateLeagueFixtures(
-                                      myDivTeams,
-                                      entry.matchweek,
-                                      myTeamId,
-                                    ).map((f) => ({ ...f, result: null }));
-
-                                const myFixture = divFixtures.find(
-                                  (f) =>
-                                    f.homeTeamId === myTeamId ||
-                                    f.awayTeamId === myTeamId,
-                                );
-                                const myImHome =
-                                  myFixture?.homeTeamId === myTeamId;
-                                const myHomeInfo = myFixture
-                                  ? teams.find(
-                                      (t) => t.id === myFixture.homeTeamId,
-                                    )
-                                  : null;
-                                const myAwayInfo = myFixture
-                                  ? teams.find(
-                                      (t) => t.id === myFixture.awayTeamId,
-                                    )
-                                  : null;
-
-                                // status badge
-                                const leagueBadge = isDone ? (
-                                  <span className="text-[9px] font-black uppercase tracking-widest bg-surface-bright text-on-surface-variant/60 px-2 py-0.5 rounded shrink-0">
-                                    Concluído
-                                  </span>
-                                ) : isCurrent ? (
-                                  <span className="text-[9px] font-black uppercase tracking-widest bg-primary/20 text-primary px-2 py-0.5 rounded animate-pulse shrink-0">
-                                    Próximo
-                                  </span>
-                                ) : (
-                                  <span className="text-[9px] font-black uppercase tracking-widest bg-surface-bright text-on-surface-variant/40 px-2 py-0.5 rounded shrink-0">
-                                    Por jogar
-                                  </span>
-                                );
-
-                                return (
-                                  <div
-                                    key={entry.calendarIndex}
-                                    className={cardClass}
-                                  >
-                                    {/* ── CLICKABLE HEADER: week + our match ── */}
-                                    <div
-                                      className={`flex items-center gap-2 px-4 py-2.5 cursor-pointer select-none border-b ${
-                                        isCurrent
-                                          ? "border-primary/20 bg-primary/5"
-                                          : "border-outline-variant/20"
-                                      }`}
-                                      onClick={() =>
-                                        toggleEntry(entry.calendarIndex)
-                                      }
-                                    >
-                                      {/* Liga badge + week */}
-                                      <span className="shrink-0 text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-primary/20 text-primary">
-                                        Liga
-                                      </span>
-                                      <span className="font-black text-sm text-on-surface shrink-0">
-                                        J{entry.matchweek}
-                                      </span>
-                                      {isCurrent && (
-                                        <span className="shrink-0 relative flex h-2 w-2">
-                                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                                          <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-                                        </span>
-                                      )}
-
-                                      {/* Our team's match – centered, grows to fill */}
-                                      {myFixture ? (
-                                        <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-center">
-                                          <span
-                                            className={`shrink-0 text-[8px] font-black uppercase tracking-wider ${myImHome ? "text-emerald-400" : "text-on-surface-variant/50"}`}
-                                          >
-                                            {myImHome ? "casa" : "fora"}
-                                          </span>
-                                          <span
-                                            className="shrink-0 w-2 h-2 rounded-full"
-                                            style={{
-                                              backgroundColor:
-                                                myHomeInfo?.color_primary ||
-                                                "#666",
-                                            }}
-                                          />
-                                          <span
-                                            className={`text-[11px] font-bold truncate ${myFixture.homeTeamId === myTeamId ? "text-primary" : "text-on-surface"}`}
-                                          >
-                                            {myHomeInfo?.name ??
-                                              myFixture.homeTeamId}
-                                          </span>
-                                          <span className="shrink-0 text-xs font-black font-headline text-on-surface-variant/70 mx-0.5">
-                                            {myFixture.result
-                                              ? `${myFixture.result.home_score}–${myFixture.result.away_score}`
-                                              : "vs"}
-                                          </span>
-                                          <span
-                                            className={`text-[11px] font-bold truncate ${myFixture.awayTeamId === myTeamId ? "text-primary" : "text-on-surface"}`}
-                                          >
-                                            {myAwayInfo?.name ??
-                                              myFixture.awayTeamId}
-                                          </span>
-                                          <span
-                                            className="shrink-0 w-2 h-2 rounded-full"
-                                            style={{
-                                              backgroundColor:
-                                                myAwayInfo?.color_primary ||
-                                                "#666",
-                                            }}
-                                          />
-                                        </div>
-                                      ) : (
-                                        <div className="flex-1" />
-                                      )}
-
-                                      {/* right side: badge + chevron */}
-                                      <div className="flex items-center gap-1.5 shrink-0">
-                                        {leagueBadge}
-                                        <span className="material-symbols-outlined text-base text-on-surface-variant/40">
-                                          {isExpanded
-                                            ? "expand_less"
-                                            : "expand_more"}
-                                        </span>
-                                      </div>
-                                    </div>
-
-                                    {/* ── EXPANDED: all division fixtures ──── */}
-                                    {isExpanded && (
-                                      <div className="divide-y divide-outline-variant/10">
-                                        {divFixtures.map((f, fi) => {
-                                          const homeInfo = teams.find(
-                                            (t) => t.id === f.homeTeamId,
-                                          );
-                                          const awayInfo = teams.find(
-                                            (t) => t.id === f.awayTeamId,
-                                          );
-                                          const isMyMatch =
-                                            f.homeTeamId === myTeamId ||
-                                            f.awayTeamId === myTeamId;
-                                          return (
-                                            <div
-                                              key={fi}
-                                              className={`flex items-center px-4 py-1.5 gap-2 ${
-                                                isMyMatch ? "bg-primary/8" : ""
-                                              }`}
-                                            >
-                                              {/* Home team */}
-                                              <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                                                {isMyMatch &&
-                                                  f.homeTeamId === myTeamId && (
-                                                    <span className="shrink-0 text-[8px] font-black text-emerald-400 uppercase tracking-wider">
-                                                      casa
-                                                    </span>
-                                                  )}
-                                                <button
-                                                  className={`text-[11px] font-bold truncate text-left ${isMyMatch && f.homeTeamId === myTeamId ? "text-primary" : "text-on-surface hover:underline"}`}
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if (
-                                                      f.homeTeamId !==
-                                                        myTeamId &&
-                                                      homeInfo
-                                                    )
-                                                      handleOpenTeamSquad(
-                                                        homeInfo,
-                                                      );
-                                                  }}
-                                                >
-                                                  {homeInfo?.name ??
-                                                    f.homeTeamId}
-                                                </button>
-                                                <span
-                                                  className="shrink-0 w-2 h-2 rounded-full"
-                                                  style={{
-                                                    backgroundColor:
-                                                      homeInfo?.color_primary ||
-                                                      "#666",
-                                                  }}
-                                                />
-                                              </div>
-                                              {/* Score or VS */}
-                                              <div className="shrink-0 w-14 text-center">
-                                                {f.result ? (
-                                                  <span className="text-xs font-black font-headline text-on-surface bg-surface border border-outline-variant/20 rounded px-2 py-0.5">
-                                                    {f.result.home_score}–
-                                                    {f.result.away_score}
-                                                  </span>
-                                                ) : (
-                                                  <span className="text-[10px] font-black text-on-surface-variant/40">
-                                                    vs
-                                                  </span>
-                                                )}
-                                              </div>
-                                              {/* Away team */}
-                                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                                <span
-                                                  className="shrink-0 w-2 h-2 rounded-full"
-                                                  style={{
-                                                    backgroundColor:
-                                                      awayInfo?.color_primary ||
-                                                      "#666",
-                                                  }}
-                                                />
-                                                <button
-                                                  className={`text-[11px] font-bold truncate text-left ${isMyMatch && f.awayTeamId === myTeamId ? "text-primary" : "text-on-surface hover:underline"}`}
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if (
-                                                      f.awayTeamId !==
-                                                        myTeamId &&
-                                                      awayInfo
-                                                    )
-                                                      handleOpenTeamSquad(
-                                                        awayInfo,
-                                                      );
-                                                  }}
-                                                >
-                                                  {awayInfo?.name ??
-                                                    f.awayTeamId}
-                                                </button>
-                                                {isMyMatch &&
-                                                  f.awayTeamId === myTeamId && (
-                                                    <span className="shrink-0 text-[8px] font-black text-on-surface-variant/50 uppercase tracking-wider">
-                                                      fora
-                                                    </span>
-                                                  )}
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
+                                },
+                              )}
                             </div>
                           )}
+
+                          {/* ── SEASON STATS ──────────────────────────────────── */}
+                          {cal && (
+                            <div className="grid grid-cols-3 gap-3">
+                              {/* Goal diff */}
+                              <div className="bg-surface-container rounded-lg p-4">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">
+                                    Saldo de Gols
+                                  </span>
+                                  <span className="material-symbols-outlined text-base text-emerald-400">
+                                    trending_up
+                                  </span>
+                                </div>
+                                <p
+                                  className={`text-3xl font-headline font-black leading-none mb-1 ${
+                                    goalDiff > 0
+                                      ? "text-emerald-400"
+                                      : goalDiff < 0
+                                        ? "text-red-400"
+                                        : "text-on-surface-variant"
+                                  }`}
+                                >
+                                  {goalDiff > 0 ? "+" : ""}
+                                  {goalDiff}
+                                </p>
+                                <p className="text-[9px] text-on-surface-variant/60 uppercase tracking-wide font-bold">
+                                  {goalDiff > 0
+                                    ? "Saldo positivo"
+                                    : goalDiff < 0
+                                      ? "Saldo negativo"
+                                      : "Saldo neutro"}
+                                </p>
+                              </div>
+                              {/* Unbeaten run */}
+                              <div className="bg-surface-container rounded-lg p-4">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">
+                                    Invencibilidade
+                                  </span>
+                                  <span className="material-symbols-outlined text-base text-amber-400">
+                                    emoji_events
+                                  </span>
+                                </div>
+                                <p className="text-3xl font-headline font-black leading-none mb-1 text-on-surface">
+                                  {String(unbeatenRun).padStart(2, "0")}
+                                </p>
+                                <p className="text-[9px] text-on-surface-variant/60 uppercase tracking-wide font-bold">
+                                  {unbeatenRun === 1
+                                    ? "1 jogo"
+                                    : `${unbeatenRun} jogos`}{" "}
+                                  sem derrota
+                                </p>
+                              </div>
+                              {/* Next away */}
+                              <div className="bg-surface-container rounded-lg p-4">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">
+                                    Próxima Viagem
+                                  </span>
+                                  <span className="material-symbols-outlined text-base text-on-surface-variant/60">
+                                    flight_takeoff
+                                  </span>
+                                </div>
+                                <p className="text-base font-headline font-black leading-tight mb-1 text-on-surface truncate">
+                                  {nextAwayOpponent?.name ?? "—"}
+                                </p>
+                                <p className="text-[9px] text-on-surface-variant/60 uppercase tracking-wide font-bold">
+                                  {nextAwayOpponent?.stadium_name ??
+                                    "Deslocação"}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                          {/* ── END OF CALENDAR ────────── */}
                         </div>
                       );
                     })()}
-
                   {activeTab === "club" && (
                     <div className="space-y-5 relative">
                       {/* Ambient glow blobs */}
