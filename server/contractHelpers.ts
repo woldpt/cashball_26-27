@@ -69,6 +69,65 @@ export function createContractHelpers(deps: ContractDeps) {
     );
   };
 
+  const processAgentRenegotiations = async (game: ActiveGame) => {
+    const currentMw = game.matchweek;
+    // Jogadores com 2+ temporadas (>= 28 matchweeks) no mesmo clube e sem processo pendente
+    const veterans = await runAll(
+      game.db,
+      `SELECT * FROM players
+       WHERE team_id IS NOT NULL
+         AND transfer_status = 'none'
+         AND contract_request_pending = 0
+         AND joined_matchweek > 0
+         AND (? - joined_matchweek) >= 28`,
+      [currentMw],
+    );
+
+    for (const player of veterans) {
+      // 30% chance per matchweek to avoid avalanche of simultaneous requests
+      if (Math.random() > 0.3) continue;
+
+      const coach = (Object.values(game.playersByName) as PlayerSession[]).find(
+        (p) => p.teamId === player.team_id && p.socketId,
+      );
+      if (!coach) continue;
+
+      const wage = player.wage || 0;
+      // Agente exige mais do que na renovação por expiração: jogador valorizado
+      const demandBase = Math.max(
+        Math.round((player.skill || 0) * 85),
+        Math.round(wage * 1.3),
+      );
+      // Apenas aciona se diferença significativa (>20% acima do salário actual)
+      if (wage >= demandBase * 0.85) continue;
+
+      const requestedWage = Math.round(
+        demandBase * (1.0 + Math.random() * 0.15),
+      );
+
+      game.db.run(
+        "UPDATE players SET contract_request_pending = 1, contract_requested_wage = ? WHERE id = ?",
+        [requestedWage, player.id],
+        () => {
+          io.to(coach.socketId as string).emit("matchActionRequired", {
+            actionId: `contract-renegotiate-${player.id}-${Date.now()}`,
+            type: "contract",
+            teamId: player.team_id,
+            isRenegotiation: true,
+            player: {
+              id: player.id,
+              name: player.name,
+              position: player.position,
+              skill: player.skill,
+              wage,
+              requestedWage,
+            },
+          });
+        },
+      );
+    }
+  };
+
   const processContractExpiries = async (game: ActiveGame) => {
     const currentMw = game.matchweek;
 
@@ -125,6 +184,7 @@ export function createContractHelpers(deps: ContractDeps) {
 
   return {
     maybeTriggerContractRequest,
+    processAgentRenegotiations,
     processContractExpiries,
   };
 }

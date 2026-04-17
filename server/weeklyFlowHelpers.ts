@@ -49,6 +49,7 @@ interface WeeklyFlowDeps {
     callback?: (...args: any[]) => void,
   ) => void;
   processContractExpiries: (game: ActiveGame) => Promise<void>;
+  processAgentRenegotiations: (game: ActiveGame) => Promise<void>;
   processNpcTransferActivity: (game: ActiveGame) => Promise<void>;
   refreshMarket: (game: ActiveGame, emitToRoom?: boolean) => void;
   processCoachEvents: (game: ActiveGame) => Promise<void>;
@@ -71,6 +72,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     applySeasonEnd,
     listPlayerOnMarket,
     processContractExpiries,
+    processAgentRenegotiations,
     processNpcTransferActivity,
     refreshMarket,
     processCoachEvents,
@@ -521,6 +523,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                   await processContractExpiries(game);
                 } catch (_) {}
                 try {
+                  await processAgentRenegotiations(game);
+                } catch (_) {}
+                try {
                   await processNpcTransferActivity(game);
                 } catch (_) {}
                 refreshMarket(game);
@@ -645,9 +650,18 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       game._lastCompletedSegment = null;
 
       // Weekly base income by division (keeps lower-division teams viable)
-      const WEEKLY_BASE_INCOME: Record<number, number> = { 1: 80000, 2: 50000, 3: 30000, 4: 15000, 5: 5000 };
+      const WEEKLY_BASE_INCOME: Record<number, number> = {
+        1: 80000,
+        2: 50000,
+        3: 30000,
+        4: 15000,
+        5: 5000,
+      };
       for (const [div, income] of Object.entries(WEEKLY_BASE_INCOME)) {
-        game.db.run("UPDATE teams SET budget = budget + ? WHERE division = ?", [income, Number(div)]);
+        game.db.run("UPDATE teams SET budget = budget + ? WHERE division = ?", [
+          income,
+          Number(div),
+        ]);
       }
 
       // Deduct weekly wages + loan interest (same for cup and league weeks)

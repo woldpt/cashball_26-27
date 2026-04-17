@@ -147,12 +147,16 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                   [finalBid, buyerTeamId],
                   () => {
                     game.db.run(
-                      "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, signed_season = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+                      "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, signed_season = ?, joined_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
                       [
                         buyerTeamId,
-                        Math.max(player.wage || 0, Math.round((player.skill || 0) * 300)),
+                        Math.max(
+                          player.wage || 0,
+                          Math.round((player.skill || 0) * 300),
+                        ),
                         getSeasonEndMatchweek(game.matchweek),
                         Math.ceil(Math.max(1, game.matchweek) / 14),
+                        game.matchweek,
                         playerId,
                       ],
                       () => {
@@ -253,7 +257,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
     callback?: (...args: any[]) => void,
   ) => {
     const otherHumans = Object.values(game.playersByName).filter(
-      (p: any) => p.socketId && p.teamId !== player.team_id
+      (p: any) => p.socketId && p.teamId !== player.team_id,
     );
     const durationMs = otherHumans.length > 0 ? 15000 : 3000;
     const now = Date.now();

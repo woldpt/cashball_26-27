@@ -303,6 +303,7 @@ const finalizeAuction = auctionHelpers.finalizeAuction;
 const placeAuctionBid = auctionHelpers.placeAuctionBid;
 
 const processContractExpiries = contractHelpers.processContractExpiries;
+const processAgentRenegotiations = contractHelpers.processAgentRenegotiations;
 const processNpcTransferActivity = (game) =>
   npcTransferHelpers.processNpcTransferActivity(game, listPlayerOnMarket);
 
@@ -369,6 +370,7 @@ const weeklyFlowHelpers = createWeeklyFlowHelpers({
   applySeasonEnd,
   listPlayerOnMarket,
   processContractExpiries,
+  processAgentRenegotiations,
   processNpcTransferActivity,
   refreshMarket,
   processCoachEvents,

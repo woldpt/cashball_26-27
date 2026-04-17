@@ -88,9 +88,16 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
         // This prevents a double-sale when two NPC teams share the same marketPlayers snapshot.
         const changes = await new Promise<number>((resolve) => {
           game.db.run(
-            "UPDATE players SET team_id = ?, transfer_status = 'none', transfer_price = 0, contract_until_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ? AND (transfer_status = 'fixed' OR team_id IS NULL)",
-            [npcTeam.id, getSeasonEndMatchweek(game.matchweek), player.id],
-            function (this: any) { resolve(this.changes ?? 0); },
+            "UPDATE players SET team_id = ?, transfer_status = 'none', transfer_price = 0, contract_until_matchweek = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ? AND (transfer_status = 'fixed' OR team_id IS NULL)",
+            [
+              npcTeam.id,
+              getSeasonEndMatchweek(game.matchweek),
+              game.matchweek,
+              player.id,
+            ],
+            function (this: any) {
+              resolve(this.changes ?? 0);
+            },
           );
         });
 

@@ -130,7 +130,13 @@ db.serialize(() => {
       capacity: 10000,
     };
     const stadiumCapacity = stadium.capacity || 10000;
-    const BUDGET_BY_DIVISION = { 1: 2500000, 2: 2000000, 3: 1500000, 4: 1000000, 5: 500000 };
+    const BUDGET_BY_DIVISION = {
+      1: 2500000,
+      2: 2000000,
+      3: 1500000,
+      4: 1000000,
+      5: 500000,
+    };
     const budget = BUDGET_BY_DIVISION[teamData.division || 4] ?? 1000000;
 
     const stadiumName = stadium.name || "";
@@ -215,13 +221,25 @@ db.serialize(() => {
       db.run("ROLLBACK", () => process.exit(1));
       return;
     }
-    db.run("COMMIT", (commitErr) => {
-      if (commitErr) {
-        console.error("[seed] COMMIT failed:", commitErr.message);
-        process.exit(1);
-      }
-      console.log("Base Seed complete.");
-      db.close(() => process.exit(0));
-    });
+    // All seeded players start as "joined at matchweek 1" so agent renegotiations
+    // become eligible after 2 seasons (28 matchweeks) of gameplay.
+    db.run(
+      "UPDATE players SET joined_matchweek = 1 WHERE team_id IS NOT NULL",
+      (updateErr) => {
+        if (updateErr)
+          console.warn(
+            "[seed] joined_matchweek backfill failed:",
+            updateErr.message,
+          );
+        db.run("COMMIT", (commitErr) => {
+          if (commitErr) {
+            console.error("[seed] COMMIT failed:", commitErr.message);
+            process.exit(1);
+          }
+          console.log("Base Seed complete.");
+          db.close(() => process.exit(0));
+        });
+      },
+    );
   });
 });

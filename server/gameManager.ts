@@ -86,6 +86,7 @@ function ensurePlayerSchema(
       ["transfer_price", "INTEGER DEFAULT 0"],
       ["is_star", "INTEGER DEFAULT 0"],
       ["signed_season", "INTEGER DEFAULT 0"],
+      ["joined_matchweek", "INTEGER DEFAULT 0"],
       ["career_goals", "INTEGER DEFAULT 0"],
       ["career_reds", "INTEGER DEFAULT 0"],
       ["career_injuries", "INTEGER DEFAULT 0"],
@@ -154,6 +155,28 @@ function ensurePlayerSchema(
                       if (backfillErr)
                         console.warn(
                           "[gameManager] aggressiveness backfill failed:",
+                          backfillErr.message,
+                        );
+                      next();
+                    },
+                  );
+                });
+              }
+
+              if (
+                missing.some(
+                  ([n]: [string, string]) => n === "joined_matchweek",
+                )
+              ) {
+                backfillSteps.push((next) => {
+                  // Backfill all players with a team as "joined at matchweek 1"
+                  // so they become eligible for renegotiations after 28 matchweeks.
+                  db.run(
+                    `UPDATE players SET joined_matchweek = 1 WHERE team_id IS NOT NULL AND joined_matchweek = 0`,
+                    (backfillErr) => {
+                      if (backfillErr)
+                        console.warn(
+                          "[gameManager] joined_matchweek backfill failed:",
                           backfillErr.message,
                         );
                       next();
@@ -316,7 +339,10 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
           );
           db.run("ALTER TABLE matches ADD COLUMN home_lineup TEXT", () => {});
           db.run("ALTER TABLE matches ADD COLUMN away_lineup TEXT", () => {});
-          db.run("ALTER TABLE matches ADD COLUMN season INTEGER DEFAULT 1", () => {});
+          db.run(
+            "ALTER TABLE matches ADD COLUMN season INTEGER DEFAULT 1",
+            () => {},
+          );
           db.run(`CREATE TABLE IF NOT EXISTS cup_matches (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             season INTEGER NOT NULL,
