@@ -7051,7 +7051,17 @@ function App() {
                                     key={player.id}
                                     className={`relative flex items-center gap-3 px-4 py-2.5 hover:bg-primary/5 transition-colors select-none ${player.isUnavailable ? "opacity-35" : ""}`}
                                   >
-                                    <span className="shrink-0 w-[22px] text-center text-[10px] font-black text-on-surface-variant">
+                                    <span
+                                      className={`shrink-0 w-[22px] text-center text-[10px] font-black ${
+                                        player.position === "GR"
+                                          ? "text-amber-400"
+                                          : player.position === "DEF"
+                                            ? "text-sky-400"
+                                            : player.position === "MED"
+                                              ? "text-primary"
+                                              : "text-red-400"
+                                      }`}
+                                    >
                                       {POSITION_SHORT_LABELS[player.position]}
                                     </span>
                                     <span className="flex-1 text-sm font-medium text-on-surface truncate">
@@ -7170,7 +7180,17 @@ function App() {
                                       key={player.id}
                                       className="relative flex items-center gap-3 px-4 py-2 select-none opacity-40 hover:opacity-70 transition-opacity cursor-pointer"
                                     >
-                                      <span className="shrink-0 w-[22px] text-center text-[10px] font-black text-on-surface-variant">
+                                      <span
+                                        className={`shrink-0 w-[22px] text-center text-[10px] font-black ${
+                                          player.position === "GR"
+                                            ? "text-amber-400"
+                                            : player.position === "DEF"
+                                              ? "text-sky-400"
+                                              : player.position === "MED"
+                                                ? "text-primary"
+                                                : "text-red-400"
+                                        }`}
+                                      >
                                         {POSITION_SHORT_LABELS[player.position]}
                                       </span>
                                       <span className="flex-1 text-sm font-medium text-on-surface-variant truncate">
