@@ -697,6 +697,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     if (game.gamePhase === "match_extra_time" && game.currentFixtures?.length > 0) {
       const entry = game.currentEvent as any;
       socket.emit("matchReplay", {
+        // Default to 91 because extra time starts at minute 91
         minute: game.liveMinute ?? 91,
         matchweek: game.matchweek,
         isCup: true,

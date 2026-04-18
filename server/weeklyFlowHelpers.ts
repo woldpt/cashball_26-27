@@ -401,7 +401,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           `[${game.roomCode}] ⏱ Halftime safety timeout: no connected coaches after ${HALFTIME_SAFETY_TIMEOUT_MS / 1000}s — auto-advancing to second half`,
         );
         // Mark all as ready and trigger advance
-        Object.values(game.playersByName).forEach((p) => { p.ready = true; });
+        Object.values(game.playersByName).forEach((p) => {
+          p.ready = true;
+        });
         checkAllReady(game);
       }, HALFTIME_SAFETY_TIMEOUT_MS);
 
