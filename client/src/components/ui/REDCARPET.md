@@ -1,189 +1,199 @@
-Cristiano Ronaldo foi visto a comprar flores para a Georgina numa florista de Cascais e pediu para embrulhar com um laço vermelho.
+Mbappé exige que Torre Eiffel seja pintada com as cores do Real Madrid!
 
-A ex-mulher do Manuel Luís Goucha confessou que ainda guarda todas as cartas de amor que ele lhe escreveu nos anos 90.
+Gyökeres visto a comer um defesa central ao pequeno-almoço com molho barbecue.
 
-A filha da Cláudia Vieira apareceu com um namorado novo e as amigas dizem que ele é mais bonito que o pai.
+Haaland confessa: "Sou um protótipo da Tesla enviado para destruir defesas".
 
-O Fernando Mendes foi apanhado a dançar sozinho no supermercado ao som de uma música do Tony Carreira.
+Di María anuncia que só marca golos de canto direto para poupar o físico.
 
-A SIC anunciou que vai lançar um novo programa de namoros e o Goucha já pediu para ser o padrinho.
+Messi visto a passear o cão em Miami: "O cão é o novo 10 da seleção argentina".
 
-A mulher do José Castelo Branco disse que o marido agora dorme com o casaco de pele por cima do pijama.
+Cristiano Ronaldo compra ilha privada para treinar livres sem que a física o impeça.
 
-A Bárbara Norton de Matos confessou que tem medo de aranhas mas não tem medo de dizer a verdade na televisão.
+Pinto da Costa escreve livro: "Como sobreviver a 40 anos de capas de jornal".
 
-O Manuel Luís Goucha foi visto a provar vestidos de noiva numa loja em Lisboa “só para experimentar o tecido”.
+Neymar pede licença de 6 meses para recuperar de "fadiga de festas de aniversário".
 
-A Cristina Ferreira comprou um novo carro todo cor-de-rosa e disse que combina com o seu sorriso.
+Rúben Amorim treina cão para ladrar em 3-4-3.
 
-O João Paulo Rodrigues apareceu com um corte de cabelo novo e a mulher disse que parece 10 anos mais novo.
+Bellingham eleito Rei de Inglaterra por aclamação popular após um golo de cabeça.
 
-A filha do Tony Carreira revelou que o pai ainda canta “Para os meus filhos” quando está a tomar banho.
+Benfica contrata novo lateral: "É bom, é barato e ninguém sabe quem é".
 
-A Ana Marques foi apanhada a comer gelado de chocolate às 11 da manhã e disse que era para dar energia.
+Guardiola proíbe jogadores do City de respirar sem autorização tática.
 
-O Pedro Teixeira confessou que chora sempre que vê filmes da Disney com a filha.
+FC Porto treina "olhar de raiva" em frente ao espelho durante 4 horas por dia.
 
-A Cláudia Vieira disse que o segredo do casamento é fingir que não ouve quando o marido ronca.
+Vinícius Jr. processa a própria sombra por "tentativa de marcação cerrada".
 
-O Fernando Mendes comprou um cão pequenino e já lhe arranjou um guarda-roupa completo.
+Sporting instala detetores de fumo no balneário para evitar festejos antecipados.
 
-A SIC vai fazer um especial sobre casais famosos e o Goucha quer ser o apresentador principal.
+Harry Kane entra em pânico: "Ganhei um troféu de 'Participação' e não sei onde o meter".
 
-A ex-namorada do Rúben Semedo disse que ele é muito romântico mas esquece sempre os aniversários.
+Árbitro da Primeira Liga confessa: "Uso o VAR para ver o preço do bacalhau no Continente".
 
-A Maria Cerqueira Gomes apareceu com um vestido tão justo que o Goucha comentou “hoje estás a matar”.
+Lamine Yamal apanhado a fazer os trabalhos de casa de Matemática no balneário.
 
-O José Castelo Branco revelou que tem uma coleção de 47 pares de sapatos de verniz.
+Pepe planeia jogar até aos 50 para poder marcar o próprio neto.
 
-A filha da Joana Teles confessou que quer ser influencer de unhas quando crescer.
+Lewandowski abre fábrica de salsichas que prometem abdominais de aço.
 
-O Manuel Luís Goucha disse que o seu prato favorito continua a ser o bacalhau com natas da mãe.
+Otávio envia WhatsApp ao Porto: "Saudades de discutir com o árbitro aos domingos".
 
-A Cristina Ferreira foi vista a experimentar óculos de sol gigantes numa loja e disse que a fazem parecer misteriosa.
+Zlatan Ibrahimović afirma que o Tempo só passa porque ele permite.
 
-O Tony Carreira cantou uma música nova ao vivo no programa e dedicou-a à mulher “mesmo quando ela está zangada”.
+Villas-Boas instala câmaras térmicas para detetar "inimigos do reino".
 
-A Bárbara Norton de Matos confessou que já teve um crush no Goucha quando era mais nova.
+Modrić renova pelo Real até 2050: "Aos 65 anos estarei no meu pico".
 
-O João Paulo Rodrigues disse que a mulher o obriga a ver novelas mexicanas todos os fins de semana.
+Rui Costa visto a fumar 3 maços de uma vez após ver a tabela classificativa.
 
-A Ana Marques revelou que tem uma gaveta secreta cheia de chocolates que ninguém pode tocar.
+Griezmann muda de cor de cabelo para condizer com o relvado: "Invisibilidade tática".
 
-A Cláudia Vieira disse que o marido faz melhor arroz de tomate do que ela.
+Estádio do Jamor classificado como "Monumento Arqueológico Vivo" pela UNESCO.
 
-O Fernando Mendes apareceu com uma camisola cor-de-rosa e disse que é a cor da felicidade.
+Kevin De Bruyne sorri por 0.5 segundos e assusta a família.
 
-A filha do Pedro Teixeira quer ser apresentadora de televisão como a mãe quando for grande.
+Equipa do Braga perde-se na Pedreira e é resgatada por espeleólogos.
 
-O José Castelo Branco confessou que dorme com meias de seda para os pés ficarem macios.
+Presidente do Portimonense vende o próprio estádio a um consórcio de Marte.
 
-A Maria Cerqueira Gomes disse que o segredo da boa forma é rir muito e comer pouco pão.
+VAR revela imagens inéditas: "O fora de jogo foi de 1 milímetro de unha encravada".
 
-O Goucha revelou que tem uma playlist secreta só com músicas românticas dos anos 80.
+Treinador da distrital demitido por não usar fato de treino com 2 números acima.
 
-A Cristina Ferreira foi apanhada a tirar selfies com fãs no parque e parou para conversar com todas.
+Apanha-bolas do Bessa convocado para a seleção por "perda de tempo estratégica".
 
-O Manuel Luís Goucha disse que o seu maior medo é ficar sem gel para o cabelo.
+Chuteiras de ouro de Messi encontradas num contentor de "objetos mágicos".
 
-A Joana Teles confessou que chora quando vê anúncios de comida para animais.
+Relvado do Maracanã pede reforma antecipada por excesso de pisadelas.
 
-O Tony Carreira revelou que ainda guarda o primeiro microfone que usou em concertos.
+Xabi Alonso ganha a Bundesliga a jogar FM na vida real.
 
-A Bárbara Norton de Matos disse que o seu perfume favorito cheira a baunilha e a fofoca.
+Ancelotti levanta a sobrancelha e provoca terramoto de magnitude 4.5 em Madrid.
 
-O Pedro Teixeira apareceu com um chapéu novo e a mulher disse que parece um galã de novela.
+Luis Enrique proíbe jogadores de comer açúcar: "Só podem lamber limões".
 
-A Ana Marques confessou que tem pavor de elevadores mas adora andar de avião.
+Darwin Núñez acerta no poste da baliza e derruba satélite da NASA.
 
-A Cláudia Vieira revelou que faz bolos caseiros todos os domingos para a família.
+Casillas e Buffon abrem lar de idosos para guarda-redes que se recusam a sair.
 
-O Fernando Mendes disse que o seu cão tem mais roupa do que ele.
+Al-Hilal oferece contrato de 1 bilião a um adepto que gritou "Siiiiu".
 
-A filha da Cristina Ferreira quer estudar moda e já desenhou uma coleção inspirada na mãe.
+Chelsea contrata 45 jogadores numa tarde: "Um para cada minuto da primeira parte".
 
-O João Paulo Rodrigues confessou que canta no duche quando pensa que ninguém ouve.
+PSG compra a cidade de Paris para garantir que Mbappé tem estacionamento.
 
-A Maria Cerqueira Gomes foi vista a comprar flores para si própria e disse que merece.
+Barcelona hipoteca a Sagrada Família para inscrever um suplente.
 
-O José Castelo Branco revelou que tem uma coleção de relógios maior do que a do Cristiano Ronaldo.
+Newcastle oferece poço de petróleo a jogador que fizer um hat-trick.
 
-A SIC vai fazer um programa sobre amizades de longa data e o Goucha já escolheu os convidados.
+Transferência recorde: Cão de Cristiano Ronaldo assina pelo Sporting por 5 milhões.
 
-O Manuel Luís Goucha disse que o seu dia perfeito começa com um café e um sorriso da equipa.
+Agente de jogadores Jorge Mendes visto a vender a alma ao diabo em troca de uma comissão.
 
-A Cristina Ferreira confessou que ainda guarda todos os vestidos que usou em galas.
+Manchester United gasta 100 milhões num jogador que só sabe correr para a esquerda.
 
-O Tony Carreira cantou uma serenata improvisada à mulher durante as gravações.
+Atlético de Madrid paga 80 milhões por defesa que nunca sorriu na vida.
 
-A Bárbara Norton de Matos disse que o segredo da juventude é dormir cedo e fofocar tarde.
+Bayern Munique multa jogador por usar meias de marca concorrente no duche.
 
-O Pedro Teixeira revelou que faz massagens nos pés da mulher quando ela chega cansada.
+"O futebol é 11 contra 11 e no fim o árbitro estraga tudo", diz adepto anónimo.
 
-A Ana Marques confessou que tem uma fraqueza por bolos de arroz.
+Mourinho: "Eu não sou especial, sou a edição limitada e esgotada".
 
-A Cláudia Vieira disse que o marido é o melhor pai do mundo mas péssimo a escolher roupa.
+Jorge Jesus afirma ter inventado o conceito de "bola redonda".
 
-O Fernando Mendes apareceu com um cachecol gigante e disse que é para abraçar o mundo.
+Sérgio Conceição: "O meu olhar queima relva, não preciso de cortador".
 
-A Joana Teles revelou que o seu filho já sabe imitar o Goucha na perfeição.
+Pochettino confessa: "Às vezes nem eu percebo o que o Chelsea está a fazer".
 
-O João Paulo Rodrigues confessou que tem medo de aranhas mas não tem medo de dançar.
+Klopp revela: "Deixei o Liverpool porque as minhas facetas estavam a ficar gastas de tanto sorrir".
 
-A Maria Cerqueira Gomes disse que o seu maior vício é comprar sapatos.
+Cantona diz que "as gaivotas seguem o arrastão porque o peixe está em promoção".
 
-O José Castelo Branco revelou que usa perfume francês até para ir ao ginásio.
+Balotelli: "Lancei foguetes na casa de banho para testar a acústica".
 
-A Cristina Ferreira foi vista a rir tanto num almoço que quase entornou o vinho.
+Cassano: "Comi 3000 croissants e ainda sou melhor que o vosso 10".
 
-O Manuel Luís Goucha disse que o segredo de um bom programa é ouvir mais do que falar.
+Gattuso: "Às vezes sinto saudades de dar uma canelada no meu próprio sombra".
 
-O Tony Carreira confessou que ainda fica nervoso antes de cada concerto.
+Adepto do Vitória de Guimarães batiza filho de "D. Afonso Henriques do Golo".
 
-A Bárbara Norton de Matos revelou que tem uma caixa cheia de cartas de fãs dos anos 90.
+Luz e Alvalade ligadas por túnel secreto para troca de insultos civilizada.
 
-O Pedro Teixeira disse que o seu hobby secreto é cozinhar pratos vegetarianos.
+Bancada do Dragão instala sistema de som que imita o rugido de um dragão com azia.
 
-A Ana Marques confessou que adora ver séries românticas à noite com chocolate.
+San Siro recusa ser demolido: "Sou velho mas as minhas escadas são um ginásio".
 
-A Cláudia Vieira revelou que faz ioga todas as manhãs para manter a paz interior.
+Estádio do Qatar desmontado e transformado em 50 mil conjuntos de Tupperware.
 
-O Fernando Mendes apareceu com uma camisola de lã e disse que é para aquecer o coração.
+Adepto do Everton pede para ser enterrado em Anfield para "finalmente ver bom futebol".
 
-A filha da Joana Teles quer ter o próprio programa de televisão quando crescer.
+Bancada do Boavista exige que o clube jogue sempre de xadrez para confundir oponentes.
 
-O João Paulo Rodrigues confessou que chora em filmes de animais.
+Invasão de campo: Gato preto finta 5 polícias e assina pelo Vizela.
 
-A Maria Cerqueira Gomes disse que o seu dia perfeito inclui sol, mar e um bom fofoca.
+Estádio das Antas aparece em sonhos a adeptos saudosos do antigamente.
 
-O José Castelo Branco revelou que tem uma coleção de gravatas de todas as cores do arco-íris.
+Bifanas do estádio do Bonfim declaradas Património Mundial da Humanidade.
 
-A Cristina Ferreira confessou que ainda dança sozinha em casa quando ouve música antiga.
+Possessão de bola do City chega aos 110%: "Têm a bola deles e a do adversário".
 
-O Manuel Luís Goucha disse que o sorriso é a melhor maquilhagem que uma pessoa pode usar.
+Nuno Santos tem 99% de probabilidade de marcar um golo de letra e 1% de usar o pé direito.
 
-O Tony Carreira cantou uma música dedicada a todos os pais presentes no estúdio.
+Bernardo Silva correu tanto que foi parar a outra fronteira sem passaporte.
 
-A Bárbara Norton de Matos revelou que o seu animal favorito é o gato porque é independente como ela.
+Taxa de acerto de passes de Kroos é maior que a precisão de um relógio atómico.
 
-O Pedro Teixeira disse que o segredo do casamento é nunca ir dormir zangado.
+Probabilidade de o Arsenal ganhar a liga sobe 0.001% após vitória contra o último.
 
-A Ana Marques confessou que tem uma coleção de canecas com frases motivacionais.
+Estudo revela: 90% dos adeptos de futebol percebem mais de tática que o Guardiola.
 
-A Cláudia Vieira revelou que faz bolos decorados para os aniversários dos filhos.
+Tempo útil de jogo na Liga Portuguesa desce para 12 minutos devido a "quedas misteriosas".
 
-O Fernando Mendes apareceu com um anel novo e disse que é para brilhar mais.
+João Félix bate recorde de "olhares melancólicos para o banco de suplentes".
 
-A Joana Teles confessou que adora fazer piqueniques em família aos fins de semana.
+Casemiro leva cartão amarelo antes de sair do autocarro.
 
-O João Paulo Rodrigues disse que o seu maior orgulho é ver os filhos felizes.
+Maguire faz autogolo de cabeça e é nomeado para o Puskas pela complexidade.
 
-A Maria Cerqueira Gomes revelou que tem uma gaveta secreta de chocolates caros.
+FIFA anuncia Mundial de 2040 em Marte para "expandir fronteiras comerciais".
 
-O José Castelo Branco confessou que usa máscara facial todas as noites.
+Robôs substituem árbitros: "Agora os insultos serão via Wi-Fi".
 
-A Cristina Ferreira disse que o segredo da felicidade é rodear-se de gente boa.
+Futebol jogado com duas bolas para "aumentar o entretenimento e o caos".
 
-O Manuel Luís Goucha revelou que o seu momento favorito do dia é o “bom dia” da equipa.
+Superliga Europeia anunciada novamente por um senhor escondido num arbusto.
 
-O Tony Carreira disse que ainda escreve cartas à mulher quando viaja.
+Cartões azuis introduzidos para jogadores que digam "olha lá, ó colega".
 
-A Bárbara Norton de Matos confessou que tem um fraquinho por homens com voz grossa.
+Holograma de Eusébio convocado para o próximo dérbi de Lisboa.
 
-O Pedro Teixeira revelou que faz surpresas românticas à mulher todos os meses.
+Jogadores obrigados a usar câmaras na cabeça para live no TikTok durante o jogo.
 
-A Ana Marques disse que o seu perfume favorito cheira a baunilha e a felicidade.
+Substituições ilimitadas: "Entra o massagista para marcar o livre direto".
 
-A Cláudia Vieira confessou que ainda guarda o primeiro desenho que os filhos lhe fizeram.
+Intervalo passa a ter 45 minutos para dar tempo de comer uma refeição completa.
 
-O Fernando Mendes apareceu com um sorriso gigante e disse que a vida é para ser vivida a rir.
+Bola de Ouro entregue a um influencer que fez 3 fintas num jardim.
 
-A Joana Teles revelou que o seu hobby é colecionar fotografias antigas da família.
+Campeonato de San Marino: Jogadores festejam empate como se tivessem descoberto a cura para a calvície.
 
-O João Paulo Rodrigues disse que o segredo de um bom dia é começar com um abraço.
+Equipa da 3ª divisão inglesa viaja para o jogo num trator para poupar custos.
 
-A Maria Cerqueira Gomes confessou que adora receber flores sem ser aniversário.
+Guarda-redes da Escócia confessa que usa o kilt por baixo dos calções para dar sorte.
 
-O José Castelo Branco revelou que tem uma playlist só com músicas românticas.
+Treinador italiano demitido por não gesticular o suficiente com as mãos.
 
-A Cristina Ferreira disse que o melhor remédio para um dia mau é um bom abraço.
+Estádio na Bolívia a 4000 metros: "Jogadores usam máscaras de oxigénio e botijas de mergulho".
+
+Liga da Arábia Saudita compra o direito de decidir o tempo que faz na Europa.
+
+Jogador brasileiro muda de nome para "Golzinho" para facilitar o marketing.
+
+Seleção da Alemanha treina com manual de instruções de 500 páginas por passe.
+
+Adepto japonês limpa o estádio inteiro, o parque de estacionamento e a cidade vizinha.
+
+O futebol acaba amanhã: "Afinal era tudo um sonho do Figo", revela fonte.
