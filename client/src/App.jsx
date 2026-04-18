@@ -3252,7 +3252,7 @@ function App() {
           borderBottom: "1px solid #201f1f",
         }}
       >
-        <div className="flex items-center justify-between w-full px-4 lg:px-6">
+        <div className="relative flex items-center justify-between w-full px-4 lg:px-6">
           {/* Left: brand + session info */}
           <div className="flex items-center gap-3">
             <h1
@@ -3265,7 +3265,57 @@ function App() {
               {seasonYear} · J{currentJornada} · {me.roomName || me.roomCode}
             </span>
           </div>
-          {/* Center: spacer (clock shown in match body) */}
+
+          {/* Center: live clock (absolute so it's always centered) */}
+          {isMatchInProgress && (
+            <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none">
+              {isPlayingMatch ? (
+                <>
+                  <span
+                    className="text-xl font-headline font-black tabular-nums leading-none"
+                    style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+                  >
+                    {liveMinute}'
+                  </span>
+                  <span
+                    className="text-[8px] font-bold uppercase tracking-widest"
+                    style={{
+                      color: teamInfo?.color_secondary || "#e5e2e1",
+                      opacity: 0.55,
+                    }}
+                  >
+                    {liveMinute > 45 ? "2ª Parte" : "1ª Parte"}
+                  </span>
+                </>
+              ) : liveMinute === 45 && !isCupMatch ? (
+                <span
+                  className="text-xs font-black uppercase tracking-widest"
+                  style={{
+                    color: teamInfo?.color_secondary || "#e5e2e1",
+                    opacity: 0.7,
+                  }}
+                >
+                  Intervalo
+                </span>
+              ) : isCupMatch ? (
+                <span
+                  className="text-[10px] font-black uppercase tracking-widest"
+                  style={{
+                    color: teamInfo?.color_secondary || "#e5e2e1",
+                    opacity: 0.7,
+                  }}
+                >
+                  🏆 {cupMatchRoundName}
+                  {cupPreMatch
+                    ? " · Pré-Jogo"
+                    : cupExtraTimeBadge
+                      ? " · Prol."
+                      : ""}
+                </span>
+              ) : null}
+            </div>
+          )}
+
           {/* Right: unified widget — sala + chat + sair */}
           <div className="flex items-center gap-1" ref={onlineDropdownRef}>
             {/* Manager identity (lg only) */}
@@ -4316,36 +4366,6 @@ function App() {
                           );
                         })()}
 
-                      {/* ── V2 TOP BAR ─────────────────────── */}
-                      <div className="flex items-center justify-center mb-4">
-                        {/* ── CENTERED CLOCK ── */}
-                        <div className="flex flex-col items-center">
-                          {isPlayingMatch ? (
-                            <>
-                              <span className="text-3xl font-headline font-black text-primary tabular-nums leading-none">
-                                {liveMinute}'
-                              </span>
-                              <span className="text-[9px] font-bold text-primary/60 uppercase tracking-widest mt-0.5">
-                                {liveMinute > 45 ? "2ª Parte" : "1ª Parte"}
-                              </span>
-                            </>
-                          ) : liveMinute === 45 && !isCupMatch ? (
-                            <span className="text-sm font-black text-tertiary uppercase tracking-wide">
-                              Intervalo
-                            </span>
-                          ) : isCupMatch ? (
-                            <span className="text-sm font-black text-on-surface-variant/60 uppercase tracking-wide">
-                              🏆 {cupMatchRoundName}
-                              {cupPreMatch
-                                ? " — Pré-Jogo"
-                                : cupExtraTimeBadge
-                                  ? " — Prolongamento"
-                                  : ""}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-
                       {/* ── HERO: MY MATCH ─────────────────────── */}
                       {matchResults &&
                         (() => {
@@ -4792,10 +4812,20 @@ function App() {
                                         className={`w-full text-left rounded-md overflow-hidden transition-colors ${isHumanMatch ? "bg-primary-container/10 border-l-2 border-primary/60" : "bg-surface-container hover:bg-surface-bright"}`}
                                       >
                                         <div className="flex justify-between items-center px-3 py-2">
-                                          <span
-                                            className={`text-[11px] font-bold truncate flex-1 min-w-0 pr-1 ${isHumanMatch && players.some((p) => p.teamId === match.homeTeamId) ? "text-primary" : "text-on-surface/80"}`}
-                                          >
-                                            {hInfo?.name}
+                                          <span className="flex items-center gap-1.5 flex-1 min-w-0 pr-1">
+                                            <span
+                                              className="w-2 h-2 rounded-sm shrink-0"
+                                              style={{
+                                                background:
+                                                  hInfo?.color_primary ||
+                                                  "#555",
+                                              }}
+                                            />
+                                            <span
+                                              className={`text-[11px] font-bold truncate ${isHumanMatch && players.some((p) => p.teamId === match.homeTeamId) ? "text-primary" : "text-on-surface/80"}`}
+                                            >
+                                              {hInfo?.name}
+                                            </span>
                                           </span>
                                           <span className="font-headline font-black text-sm shrink-0 flex items-center gap-1 px-1">
                                             <span
@@ -4826,10 +4856,20 @@ function App() {
                                               {currentAway.length}
                                             </span>
                                           </span>
-                                          <span
-                                            className={`text-[11px] font-bold truncate flex-1 min-w-0 pl-1 text-right ${isHumanMatch && players.some((p) => p.teamId === match.awayTeamId) ? "text-primary" : "text-on-surface/80"}`}
-                                          >
-                                            {aInfo?.name}
+                                          <span className="flex items-center gap-1.5 flex-1 min-w-0 pl-1 justify-end">
+                                            <span
+                                              className={`text-[11px] font-bold truncate ${isHumanMatch && players.some((p) => p.teamId === match.awayTeamId) ? "text-primary" : "text-on-surface/80"}`}
+                                            >
+                                              {aInfo?.name}
+                                            </span>
+                                            <span
+                                              className="w-2 h-2 rounded-sm shrink-0"
+                                              style={{
+                                                background:
+                                                  aInfo?.color_primary ||
+                                                  "#555",
+                                              }}
+                                            />
                                           </span>
                                         </div>
                                         {(lastHomeEvent || lastAwayEvent) && (
