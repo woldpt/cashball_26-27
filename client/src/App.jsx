@@ -3612,7 +3612,9 @@ function App() {
       </nav>
 
       {/* ── MOBILE BOTTOM NAV ────────────────────────────────────────────── */}
-      <nav className={`${isMatchInProgress ? "hidden" : ""} lg:hidden fixed bottom-8 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden`}>
+      <nav
+        className={`${isMatchInProgress ? "hidden" : ""} lg:hidden fixed bottom-8 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden`}
+      >
         {[
           { key: "club", label: "Clube", icon: "groups_3" },
           { key: "finances", label: "Finanças", icon: "payments" },
@@ -3664,7 +3666,9 @@ function App() {
         ))}
       </nav>
 
-      <main className={`pt-14 lg:pb-12 lg:ml-64 ${isMatchInProgress ? "pb-8" : "pb-24"}`}>
+      <main
+        className={`pt-14 lg:pb-12 lg:ml-64 ${isMatchInProgress ? "pb-8" : "pb-24"}`}
+      >
         <div className="p-4 lg:p-6">
           {/* ─── TACTIC: HORIZONTAL ADVERSARY BANNER ──────────────────── */}
           {activeTab === "tactic" && (
@@ -6715,7 +6719,8 @@ function App() {
                                         description: `Juros semanais: ${formatCurrency(Math.round((loanAmount + 500000) * 0.025))}. Dívida total após: ${formatCurrency(loanAmount + 500000)}.`,
                                         confirmLabel: "Confirmar Empréstimo",
                                         danger: true,
-                                        onConfirm: () => socket.emit("takeLoan"),
+                                        onConfirm: () =>
+                                          socket.emit("takeLoan"),
                                         onCancel: () => {},
                                       });
                                     }}
@@ -6784,7 +6789,8 @@ function App() {
                                     title: "Expandir Estádio — 300.000€",
                                     description: `Aumenta a capacidade em 5.000 lugares. Receita máxima por jogo sobe ${formatCurrency(5000 * 15)}.`,
                                     confirmLabel: "Confirmar Expansão",
-                                    onConfirm: () => socket.emit("buildStadium"),
+                                    onConfirm: () =>
+                                      socket.emit("buildStadium"),
                                     onCancel: () => {},
                                   });
                                 }}
@@ -7901,7 +7907,7 @@ function App() {
                                   <div
                                     className="relative w-full"
                                     style={{
-                                      aspectRatio: "9/14",
+                                      aspectRatio: "9/12",
                                       background:
                                         "linear-gradient(180deg, #05430e 0%, #0b5e1a 50%, #05430e 100%)",
                                     }}
@@ -8284,7 +8290,8 @@ function App() {
                                             title: `Comprar ${player.name}`,
                                             description: `${player.position} · Qualidade ${player.skill} · Preço: ${formatCurrency(price)}`,
                                             confirmLabel: "Confirmar Compra",
-                                            onConfirm: () => buyPlayer(player.id),
+                                            onConfirm: () =>
+                                              buyPlayer(player.id),
                                             onCancel: () => {},
                                           });
                                         }}
@@ -8399,7 +8406,10 @@ function App() {
         setJobOfferModal={setJobOfferModal}
       />
 
-      <NewsTicker newsTickerItems={newsTickerItems} hideOnMobile={isMatchInProgress} />
+      <NewsTicker
+        newsTickerItems={newsTickerItems}
+        hideOnMobile={isMatchInProgress}
+      />
 
       <PlayerHistoryModal
         playerHistoryModal={playerHistoryModal}
