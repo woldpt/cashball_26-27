@@ -101,6 +101,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       return;
     }
 
+    console.log(
+      `[${game.roomCode}] ▶ runMatchSegment ${startMin}-${endMin} | phase=${game.gamePhase} | fixtures=${game.currentFixtures.length}`,
+    );
+
     const entry = game.currentEvent as CalendarEntry | null;
 
     // Calculate attendance only for league first halves
@@ -312,11 +316,14 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     }
 
     game._lastCompletedSegment = segmentKey;
+    console.log(
+      `[${game.roomCode}] ✓ Segment ${startMin}-${endMin} completed | phase=${game.gamePhase}`,
+    );
 
     if (endMin === 45) {
       // ── Halftime ─────────────────────────────────────────────────────────
       console.log(
-        `[${game.roomCode}] Halftime reached. entry=${entry ? `type:${entry.type}` : "null"}, gamePhase=${game.gamePhase}`,
+        `[${game.roomCode}] ⏸ HALFTIME reached | entry=${entry ? `type:${entry.type}` : "null"} | gamePhase=${game.gamePhase}`,
       );
       game.gamePhase = "match_halftime";
 
@@ -371,10 +378,40 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       });
       io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
       saveGameState(game);
+
+      // Safety timeout: auto-advance halftime if coaches don't respond within 120s.
+      // This prevents permanently stuck matches when all coaches disconnect.
+      const HALFTIME_SAFETY_TIMEOUT_MS = 120_000;
+      const halftimeToken = game.phaseToken;
+      game.phaseTimer = setTimeout(() => {
+        // Only fire if we are still in halftime with the same token
+        if (game.gamePhase !== "match_halftime" || game.phaseToken !== halftimeToken) return;
+
+        // Check if any connected coach exists
+        const anyConnected = Object.values(game.playersByName).some((p) => !!p.socketId);
+        if (anyConnected) {
+          // Coaches are connected but not ready — don't force; they may be adjusting tactics
+          console.log(
+            `[${game.roomCode}] ⏱ Halftime safety: coaches connected but not ready, extending timeout`,
+          );
+          return;
+        }
+
+        console.warn(
+          `[${game.roomCode}] ⏱ Halftime safety timeout: no connected coaches after ${HALFTIME_SAFETY_TIMEOUT_MS / 1000}s — auto-advancing to second half`,
+        );
+        // Mark all as ready and trigger advance
+        Object.values(game.playersByName).forEach((p) => { p.ready = true; });
+        checkAllReady(game);
+      }, HALFTIME_SAFETY_TIMEOUT_MS);
+
       return;
     }
 
     // ── Full time ────────────────────────────────────────────────────────────
+    console.log(
+      `[${game.roomCode}] 🏁 FULL TIME reached | entry=${entry ? `type:${entry.type}` : "null"} | phase=${game.gamePhase}`,
+    );
     game.gamePhase = "match_finalizing";
     saveGameState(game);
 
@@ -391,6 +428,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     const fixtures = game.currentFixtures;
     const entry = game.currentEvent as CalendarEntry | null;
     const completedMatchweek = game.matchweek;
+
+    console.log(
+      `[${game.roomCode}] 📊 finalizeLeagueEvent | mw=${completedMatchweek} | fixtures=${fixtures.length}`,
+    );
 
     return new Promise<void>((resolveOuter) => {
       game.db.serialize(() => {
@@ -478,6 +519,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           game.currentFixtures = [];
           game.gamePhase = "lobby";
           game.lastHalftimePayload = null;
+          console.log(
+            `[${game.roomCode}] ↩ League match finalized → lobby | calendarIndex=${game.calendarIndex} | mw=${game.matchweek} | nextEvent=${game.currentEvent?.type ?? "none"}`,
+          );
           saveGameState(game);
 
           // Check season end: calendarIndex past end of calendar
@@ -617,29 +661,42 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
   async function checkAllReady(game: ActiveGame) {
     // ── Standard readiness check (same for cup and league) ──────────────────
     if (game.lockedCoaches.size >= 2) {
-      const allReady = [...game.lockedCoaches].every(
-        (name) =>
-          game.playersByName[name]?.socketId && game.playersByName[name]?.ready,
-      );
+      const readyStatus = [...game.lockedCoaches].map((name) => ({
+        name,
+        connected: !!game.playersByName[name]?.socketId,
+        ready: !!game.playersByName[name]?.ready,
+      }));
+      const allReady = readyStatus.every((s) => s.connected && s.ready);
       if (!allReady) return;
+      console.log(
+        `[${game.roomCode}] ✅ All locked coaches ready: ${readyStatus.map((s) => `${s.name}(${s.ready ? "R" : "-"})`).join(", ")}`,
+      );
     } else {
       const connectedPlayers = getPlayerList(game);
       if (connectedPlayers.length === 0) return;
       if (!connectedPlayers.every((player) => player.ready)) return;
+      console.log(
+        `[${game.roomCode}] ✅ All ${connectedPlayers.length} connected players ready`,
+      );
     }
 
     console.log(
-      `[${game.roomCode}] All ready — calendarIndex=${game.calendarIndex} gamePhase=${game.gamePhase}`,
+      `[${game.roomCode}] 🔄 checkAllReady dispatching | calendarIndex=${game.calendarIndex} | gamePhase=${game.gamePhase} | segmentRunning=${!!segmentRunning[game.roomCode]}`,
     );
 
     // ── Lobby → start match (league OR cup, identical) ──────────────────────
     if (game.gamePhase === "lobby") {
-      if (segmentRunning[game.roomCode]) return;
+      if (segmentRunning[game.roomCode]) {
+        console.warn(
+          `[${game.roomCode}] ⚠ Lobby→match blocked: segmentRunning is true (match already in progress)`,
+        );
+        return;
+      }
 
       const entry = SEASON_CALENDAR[game.calendarIndex];
       if (!entry) {
         console.warn(
-          `[${game.roomCode}] checkAllReady: calendarIndex ${game.calendarIndex} out of range`,
+          `[${game.roomCode}] ⚠ checkAllReady: calendarIndex ${game.calendarIndex} out of range (calendar length: ${SEASON_CALENDAR.length})`,
         );
         return;
       }
@@ -651,6 +708,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       game.currentEvent = entry;
       game.phaseToken = makePhaseToken(game);
       game._lastCompletedSegment = null;
+
+      console.log(
+        `[${game.roomCode}] 🏟 Starting match | type=${entry.type} | calendarIndex=${game.calendarIndex} | ${entry.type === "cup" ? `round=${(entry as any).round}` : `mw=${(entry as any).matchweek}`}`,
+      );
 
       // Weekly base income by division (keeps lower-division teams viable)
       const WEEKLY_BASE_INCOME: Record<number, number> = {
@@ -674,49 +735,79 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)`,
         async (err: any) => {
           if (err) {
-            console.error(`[${game.roomCode}] Weekly expense error:`, err);
+            console.error(`[${game.roomCode}] ❌ Weekly expense DB error:`, err);
             game.gamePhase = "lobby";
             game.currentEvent = entry;
             segmentRunning[game.roomCode] = false;
             return;
           }
 
-          if (entry.type === "cup") {
-            // Cup fixtures were prepared when we entered the lobby (see finalizeLeagueEvent).
-            // Fallback: prepare now if missing (e.g. crash recovery).
-            if (!game.currentFixtures || game.currentFixtures.length === 0) {
-              try {
-                await startCupRound(game, (entry as any).round);
-              } catch (cupErr) {
-                console.error(
-                  `[${game.roomCode}] Cup draw fallback error:`,
-                  cupErr,
+          try {
+            if (entry.type === "cup") {
+              // Cup fixtures were prepared when we entered the lobby (see finalizeLeagueEvent).
+              // Fallback: prepare now if missing (e.g. crash recovery).
+              if (!game.currentFixtures || game.currentFixtures.length === 0) {
+                console.log(
+                  `[${game.roomCode}] 🏆 Cup fixtures missing, generating draw for round ${(entry as any).round}`,
                 );
-                game.gamePhase = "lobby";
-                segmentRunning[game.roomCode] = false;
-                return;
+                await startCupRound(game, (entry as any).round);
+              } else {
+                console.log(
+                  `[${game.roomCode}] 🏆 Cup fixtures already prepared: ${game.currentFixtures.length} matches`,
+                );
               }
+            } else {
+              // League: generate fixtures now.
+              // Pass the human player's teamId so the alternation fix applies.
+              const mw = (entry as any).matchweek;
+              const userTeamId = Object.values(game.playersByName)
+                .map((p) => p.teamId)
+                .find(Boolean);
+              console.log(
+                `[${game.roomCode}] ⚽ Generating league fixtures for mw=${mw}`,
+              );
+              const [f1, f2, f3, f4] = await Promise.all([
+                generateFixturesForDivision(game.db, 1, mw, userTeamId),
+                generateFixturesForDivision(game.db, 2, mw, userTeamId),
+                generateFixturesForDivision(game.db, 3, mw, userTeamId),
+                generateFixturesForDivision(game.db, 4, mw, userTeamId),
+              ]);
+              game.currentFixtures = [...f1, ...f2, ...f3, ...f4];
+              console.log(
+                `[${game.roomCode}] ⚽ Generated ${game.currentFixtures.length} league fixtures`,
+              );
             }
-          } else {
-            // League: generate fixtures now.
-            // Pass the human player's teamId so the alternation fix applies.
-            const mw = (entry as any).matchweek;
-            const userTeamId = Object.values(game.playersByName)
-              .map((p) => p.teamId)
-              .find(Boolean);
-            const [f1, f2, f3, f4] = await Promise.all([
-              generateFixturesForDivision(game.db, 1, mw, userTeamId),
-              generateFixturesForDivision(game.db, 2, mw, userTeamId),
-              generateFixturesForDivision(game.db, 3, mw, userTeamId),
-              generateFixturesForDivision(game.db, 4, mw, userTeamId),
-            ]);
-            game.currentFixtures = [...f1, ...f2, ...f3, ...f4];
+          } catch (fixtureErr) {
+            console.error(
+              `[${game.roomCode}] ❌ Fixture generation failed — reverting to lobby:`,
+              fixtureErr,
+            );
+            game.gamePhase = "lobby";
+            game.currentEvent = entry;
+            game.currentFixtures = [];
+            segmentRunning[game.roomCode] = false;
+            saveGameState(game);
+            // Reset ready states so coaches can retry
+            Object.values(game.playersByName).forEach((p) => {
+              p.ready = false;
+            });
+            io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
+            io.to(game.roomCode).emit(
+              "systemMessage",
+              "⚠ Erro ao gerar jogos. Tenta novamente.",
+            );
+            return;
           }
 
           saveGameState(game);
 
           try {
             await runMatchSegment(game, 1, 45);
+          } catch (segmentErr) {
+            console.error(
+              `[${game.roomCode}] ❌ First half segment failed:`,
+              segmentErr,
+            );
           } finally {
             segmentRunning[game.roomCode] = false;
           }
@@ -732,6 +823,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               ),
             );
             if (!humanInAnyFixture) {
+              console.log(
+                `[${game.roomCode}] 🏆 No human in cup fixtures — auto-advancing to second half`,
+              );
+              // Cancel halftime safety timeout
+              clearPhaseTimer(game);
               finalizeAllRunningAuctions(game, finalizeAuction);
               game.gamePhase = "match_second_half";
               game.phaseToken = makePhaseToken(game);
@@ -752,6 +848,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               segmentRunning[game.roomCode] = true;
               try {
                 await runMatchSegment(game, 46, 90);
+              } catch (segmentErr) {
+                console.error(
+                  `[${game.roomCode}] ❌ Cup auto-advance second half failed:`,
+                  segmentErr,
+                );
               } finally {
                 segmentRunning[game.roomCode] = false;
               }
@@ -764,6 +865,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
     // ── ET gate → start extra time (cup only) ────────────────────────────────
     if (game.gamePhase === "match_et_gate") {
+      console.log(
+        `[${game.roomCode}] ⏩ ET gate acknowledged — resolving to start extra time`,
+      );
       if (game._etGateResolve) {
         game._etGateResolve();
         game._etGateResolve = null;
@@ -773,8 +877,21 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
     // ── Halftime → second half (league AND cup, identical) ──────────────────
     if (game.gamePhase === "match_halftime") {
-      if (segmentRunning[game.roomCode]) return;
+      if (segmentRunning[game.roomCode]) {
+        console.warn(
+          `[${game.roomCode}] ⚠ Halftime→second half blocked: segmentRunning is true`,
+        );
+        return;
+      }
       segmentRunning[game.roomCode] = true;
+
+      // Cancel halftime safety timeout
+      clearPhaseTimer(game);
+
+      const entry = game.currentEvent as any;
+      console.log(
+        `[${game.roomCode}] ▶ Halftime → second half | type=${entry?.type ?? "unknown"}`,
+      );
 
       finalizeAllRunningAuctions(game, finalizeAuction);
       game.gamePhase = "match_second_half";
@@ -782,7 +899,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       saveGameState(game);
 
       // For cup matches, emit animation before second half starts
-      const entry = game.currentEvent as any;
       if (entry?.type === "cup") {
         io.to(game.roomCode).emit("cupSecondHalfStart", {
           round: entry.round,
@@ -800,6 +916,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
       try {
         await runMatchSegment(game, 46, 90);
+      } catch (segmentErr) {
+        console.error(
+          `[${game.roomCode}] ❌ Second half segment failed:`,
+          segmentErr,
+        );
       } finally {
         segmentRunning[game.roomCode] = false;
       }

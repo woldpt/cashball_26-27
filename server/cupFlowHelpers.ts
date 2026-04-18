@@ -334,6 +334,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     let hasAnyET = false;
     const etHumanTeamIds: number[] = [];
 
+    console.log(
+      `[${game.roomCode}] 🏆 finalizeCupRound | round=${round} (${roundName}) | fixtures=${fixtures.length}`,
+    );
+
     for (const fixture of fixtures) {
       // Re-read tactics from live player state so ET uses any changes made
       // during the ET halftime interval (tactic changes, style adjustments).
@@ -348,11 +352,22 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
       const goals90Home = fixture.finalHomeGoals;
       const goals90Away = fixture.finalAwayGoals;
       let winnerId;
+
+      console.log(
+        `[${game.roomCode}] 🏆 Cup fixture result: ${fixture.homeTeam?.name ?? fixture.homeTeamId} ${goals90Home}-${goals90Away} ${fixture.awayTeam?.name ?? fixture.awayTeamId}`,
+      );
+
       if (fixture.finalHomeGoals !== fixture.finalAwayGoals) {
         winnerId = fixture.finalHomeGoals > fixture.finalAwayGoals
           ? fixture.homeTeamId
           : fixture.awayTeamId;
+        console.log(
+          `[${game.roomCode}] 🏆 Winner decided in 90 min: teamId=${winnerId}`,
+        );
       } else {
+        console.log(
+          `[${game.roomCode}] 🏆 Draw at 90 min — checking for ET/penalties`,
+        );
         // Only process ET for fixtures involving human players
         const humanInFixture = (Object.values(game.playersByName) as PlayerSession[])
           .some((p) => p.socketId && (p.teamId === fixture.homeTeamId || p.teamId === fixture.awayTeamId));
@@ -360,6 +375,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
         if (humanInFixture) {
           hasAnyET = true;
           etHumanTeamIds.push(fixture.homeTeamId, fixture.awayTeamId);
+          console.log(
+            `[${game.roomCode}] ⏸ ET gate: waiting for coaches to ready up (human in fixture)`,
+          );
 
           // Gate: show substitution screen before extra time starts
           game.gamePhase = "match_et_gate";
@@ -394,6 +412,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
           });
           if (game._etGateTimer) { clearTimeout(game._etGateTimer); game._etGateTimer = null; }
           game._etGateResolve = null;
+          console.log(
+            `[${game.roomCode}] ⏩ ET gate resolved — starting extra time`,
+          );
 
           io.to(game.roomCode).emit("cupExtraTimeStart", {
             homeTeamId: fixture.homeTeamId,
@@ -404,10 +425,16 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
         }
 
         game.gamePhase = "match_extra_time";
+        console.log(
+          `[${game.roomCode}] 🏆 Simulating extra time...`,
+        );
         await simulateExtraTime(game.db, fixture, t1, t2, ctx);
 
         const etGoalsHome = fixture.finalHomeGoals;
         const etGoalsAway = fixture.finalAwayGoals;
+        console.log(
+          `[${game.roomCode}] 🏆 ET result: ${etGoalsHome}-${etGoalsAway}`,
+        );
 
         // Notify that ET is over and show final score
         io.to(game.roomCode).emit("extraTimeEnded", {
@@ -421,7 +448,13 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
           winnerId = fixture.finalHomeGoals > fixture.finalAwayGoals
             ? fixture.homeTeamId
             : fixture.awayTeamId;
+          console.log(
+            `[${game.roomCode}] 🏆 Winner decided in ET: teamId=${winnerId}`,
+          );
         } else {
+          console.log(
+            `[${game.roomCode}] 🏆 Still draw after ET — going to penalties`,
+          );
           const homeSquad = await getTeamSquad(game.db, fixture.homeTeamId, t1, game.matchweek);
           const awaySquad = await getTeamSquad(game.db, fixture.awayTeamId, t2, game.matchweek);
           const shootout = simulatePenaltyShootout(homeSquad, awaySquad);
@@ -448,6 +481,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
           winnerId = shootout.homeGoals > shootout.awayGoals
             ? fixture.homeTeamId
             : fixture.awayTeamId;
+          console.log(
+            `[${game.roomCode}] 🏆 Penalties: ${shootout.homeGoals}-${shootout.awayGoals} → winner teamId=${winnerId}`,
+          );
 
           await new Promise((resolve) => {
             game.db.run(
@@ -557,6 +593,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     game.lastHalftimePayload = null;
     game.gamePhase = "lobby";
     Object.values(game.playersByName).forEach((p) => { p.ready = false; });
+    console.log(
+      `[${game.roomCode}] ↩ Cup round ${round} finalized → lobby | calendarIndex=${game.calendarIndex} | nextEvent=${game.currentEvent?.type ?? "none"}`,
+    );
     saveGameState(game);
 
     // Season end if past calendar
@@ -618,6 +657,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
    * Cup lobby: re-emit the draw so the client can show the matchup.
    */
   function emitCurrentPhaseToSocket(game: ActiveGame, socket: any) {
+    console.log(
+      `[${game.roomCode}] 🔌 emitCurrentPhaseToSocket | phase=${game.gamePhase} | eventType=${game.currentEvent?.type ?? "none"}`,
+    );
+
     // Lobby during a cup week: re-emit draw so reconnecting coach sees matchup
     if (game.gamePhase === "lobby" && game.currentEvent?.type === "cup" && game.currentFixtures.length > 0) {
       const entry = game.currentEvent as any;
@@ -650,6 +693,41 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
       return;
     }
 
+    // Recovery for match_extra_time: tell the reconnecting client that ET is running
+    if (game.gamePhase === "match_extra_time" && game.currentFixtures?.length > 0) {
+      const entry = game.currentEvent as any;
+      socket.emit("matchReplay", {
+        minute: game.liveMinute ?? 91,
+        matchweek: game.matchweek,
+        isCup: true,
+        cupRoundName: entry?.roundName || null,
+        fixtures: game.currentFixtures.map((f: any) => ({
+          homeTeamId: f.homeTeamId,
+          awayTeamId: f.awayTeamId,
+          homeTeam: f.homeTeam || null,
+          awayTeam: f.awayTeam || null,
+          finalHomeGoals: f.finalHomeGoals || 0,
+          finalAwayGoals: f.finalAwayGoals || 0,
+          events: (f.events || []).slice(),
+          homeLineup: f.homeLineup || [],
+          awayLineup: f.awayLineup || [],
+          attendance: f.attendance || null,
+        })),
+      });
+      return;
+    }
+
+    // Recovery for match_finalizing: tell the client we are wrapping up
+    if (game.gamePhase === "match_finalizing") {
+      socket.emit("gameState", {
+        gamePhase: game.gamePhase,
+        calendarIndex: game.calendarIndex,
+        currentEvent: game.currentEvent,
+        matchweek: game.matchweek,
+        year: game.year,
+      });
+      return;
+    }
   }
 
   /**
