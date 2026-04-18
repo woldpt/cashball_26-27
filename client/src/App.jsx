@@ -4426,13 +4426,15 @@ function App() {
                           const homeGoals = matchEvents.filter(
                             (e) =>
                               e.minute <= liveMinute &&
-                              e.type === "goal" &&
+                              (e.type === "goal" ||
+                                e.type === "penalty_goal") &&
                               e.team === "home",
                           );
                           const awayGoals = matchEvents.filter(
                             (e) =>
                               e.minute <= liveMinute &&
-                              e.type === "goal" &&
+                              (e.type === "goal" ||
+                                e.type === "penalty_goal") &&
                               e.team === "away",
                           );
                           const progress = Math.min(
@@ -4503,6 +4505,7 @@ function App() {
                                               "own_goal",
                                               "yellow",
                                               "red",
+                                              "injury",
                                             ].includes(e.type),
                                         )
                                         .sort((a, b) => a.minute - b.minute)
@@ -4517,7 +4520,9 @@ function App() {
                                                   ? "🟨"
                                                   : e.type === "red"
                                                     ? "🟥"
-                                                    : "";
+                                                    : e.type === "injury"
+                                                      ? "🚑"
+                                                      : "";
                                           const name =
                                             e.playerName ||
                                             e.player_name ||
@@ -4643,6 +4648,7 @@ function App() {
                                               "own_goal",
                                               "yellow",
                                               "red",
+                                              "injury",
                                             ].includes(e.type),
                                         )
                                         .sort((a, b) => a.minute - b.minute)
@@ -4657,7 +4663,9 @@ function App() {
                                                   ? "🟨"
                                                   : e.type === "red"
                                                     ? "🟥"
-                                                    : "";
+                                                    : e.type === "injury"
+                                                      ? "🚑"
+                                                      : "";
                                           const name =
                                             e.playerName ||
                                             e.player_name ||
