@@ -3612,7 +3612,7 @@ function App() {
       </nav>
 
       {/* ── MOBILE BOTTOM NAV ────────────────────────────────────────────── */}
-      <nav className="lg:hidden fixed bottom-8 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <nav className={`${isMatchInProgress ? "hidden" : ""} lg:hidden fixed bottom-8 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden`}>
         {[
           { key: "club", label: "Clube", icon: "groups_3" },
           { key: "finances", label: "Finanças", icon: "payments" },
@@ -3664,7 +3664,7 @@ function App() {
         ))}
       </nav>
 
-      <main className="pt-14 pb-24 lg:pb-12 lg:ml-64">
+      <main className={`pt-14 lg:pb-12 lg:ml-64 ${isMatchInProgress ? "pb-8" : "pb-24"}`}>
         <div className="p-4 lg:p-6">
           {/* ─── TACTIC: HORIZONTAL ADVERSARY BANNER ──────────────────── */}
           {activeTab === "tactic" && (
@@ -5851,6 +5851,15 @@ function App() {
                                         <span className="text-[10px] font-black text-on-surface leading-tight">
                                           {weekLabel}
                                         </span>
+                                        <span
+                                          className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded self-start ${
+                                            imHome
+                                              ? "bg-emerald-500/20 text-emerald-400"
+                                              : "bg-sky-500/20 text-sky-400"
+                                          }`}
+                                        >
+                                          {imHome ? "Casa" : "Fora"}
+                                        </span>
                                         {isCurrent && (
                                           <span className="text-[9px] text-primary font-bold">
                                             Hoje
@@ -6888,7 +6897,7 @@ function App() {
                                       Ordenado/sem
                                     </th>
                                     <th className="py-3 px-3 text-center hidden sm:table-cell">
-                                      Valor
+                                      Valor Estimado
                                     </th>
                                     <th className="py-3 px-3 text-right">
                                       Ações
@@ -8360,7 +8369,7 @@ function App() {
         setJobOfferModal={setJobOfferModal}
       />
 
-      <NewsTicker newsTickerItems={newsTickerItems} />
+      <NewsTicker newsTickerItems={newsTickerItems} hideOnMobile={isMatchInProgress} />
 
       <PlayerHistoryModal
         playerHistoryModal={playerHistoryModal}
