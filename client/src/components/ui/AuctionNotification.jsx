@@ -108,8 +108,8 @@ export function AuctionNotification({
       className="w-full overflow-hidden"
       style={{
         background: "#0d0d14",
-        borderTop: `2px solid ${accent.border}`,
-        boxShadow: `0 4px 32px 0 ${accent.border}55, 0 2px 8px 0 #000a`,
+        borderTop: `2px solid #d4af37`,
+        boxShadow: `0 4px 32px 0 #d4af3755, 0 2px 8px 0 #000a`,
       }}
     >
       {/* ── Collapsed strip — always visible ──────────────────────────── */}
@@ -117,7 +117,7 @@ export function AuctionNotification({
         type="button"
         className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all hover:brightness-125"
         style={{
-          background: `linear-gradient(90deg, ${accent.border}18 0%, #13131f 40%, #0d0d14 100%)`,
+          background: `linear-gradient(90deg, #d4af3718 0%, #13131f 40%, #0d0d14 100%)`,
         }}
         onClick={() => setIsAuctionExpanded((v) => !v)}
       >
@@ -132,7 +132,7 @@ export function AuctionNotification({
         ) : (
           <span
             className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm shrink-0 animate-pulse"
-            style={{ background: accent.border, color: "#0d0d14" }}
+            style={{ background: "#d4af37", color: "#0d0d14" }}
           >
             Leilão
           </span>

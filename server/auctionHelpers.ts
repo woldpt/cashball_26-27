@@ -88,9 +88,10 @@ export function createAuctionHelpers(deps: AuctionDeps) {
         }
 
         if (!winnerTeamId) {
+          const currentMw = game.matchweek || 0;
           game.db.run(
-            "UPDATE players SET transfer_status = 'none', transfer_price = 0 WHERE id = ?",
-            [playerId],
+            "UPDATE players SET transfer_status = 'none', transfer_price = 0, last_auctioned_matchweek = ? WHERE id = ?",
+            [currentMw, playerId],
             () => {
               const seller = (
                 Object.values(game.playersByName) as PlayerSession[]
@@ -337,6 +338,13 @@ export function createAuctionHelpers(deps: AuctionDeps) {
         if (!player.team_id) {
           if (callback) callback(false, "Jogador já está sem contrato.");
           return;
+        }
+        if (mode === "auction") {
+          const currentMw = game.matchweek || 0;
+          if ((player.last_auctioned_matchweek || 0) >= currentMw && currentMw > 0) {
+            if (callback) callback(false, "Este jogador já foi a leilão nesta jornada. Aguarda a próxima jornada.");
+            return;
+          }
         }
         const finalPrice = Math.max(
           0,

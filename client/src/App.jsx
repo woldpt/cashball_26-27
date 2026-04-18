@@ -2988,6 +2988,13 @@ function App() {
                       >
                         Trocar conta
                       </button>
+                      <button
+                        onClick={handleLogout}
+                        className="shrink-0 text-xs text-error/60 hover:text-error font-black uppercase tracking-widest"
+                        title="Terminar sessão completamente"
+                      >
+                        Terminar Sessão
+                      </button>
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-3">
@@ -3502,12 +3509,22 @@ function App() {
                           name: n,
                           teamId: null,
                           online: false,
-                          submitted: true,
+                          submitted: false,
                         })),
                     ].map((coach, i) => {
                       const coachTeam = coach.teamId
                         ? teams.find((t) => t.id == coach.teamId)
                         : null;
+                      const statusLabel = !coach.online
+                        ? "Offline"
+                        : coach.submitted
+                          ? "Vamos! ⚡"
+                          : "Queimando neurónios 🧠";
+                      const statusColor = !coach.online
+                        ? "text-on-surface-variant/40"
+                        : coach.submitted
+                          ? "text-emerald-400"
+                          : "text-amber-400";
                       return (
                         <div
                           key={coach.name || i}
@@ -3516,7 +3533,9 @@ function App() {
                           <span
                             className={`w-2 h-2 rounded-full shrink-0 ${
                               coach.online
-                                ? "bg-emerald-400"
+                                ? coach.submitted
+                                  ? "bg-emerald-400"
+                                  : "bg-amber-400"
                                 : "bg-surface-bright"
                             }`}
                           />
@@ -3546,15 +3565,9 @@ function App() {
                               </p>
                             )}
                           </div>
-                          {coach.submitted ? (
-                            <span className="shrink-0 text-[10px] font-black text-primary uppercase tracking-wide">
-                              ✓
-                            </span>
-                          ) : (
-                            <span className="shrink-0 text-[10px] font-black text-tertiary uppercase tracking-wide">
-                              ⏳
-                            </span>
-                          )}
+                          <span className={`shrink-0 text-[10px] font-black ${statusColor}`}>
+                            {statusLabel}
+                          </span>
                         </div>
                       );
                     })}
@@ -3592,8 +3605,12 @@ function App() {
 
             {/* SAIR */}
             <button
-              onClick={handleLogout}
-              title="Terminar sessão"
+              onClick={() => {
+                resetGameState();
+                setMe(null);
+                setAuthPhase("mode");
+              }}
+              title="Voltar à escolha de sala"
               className="flex items-center gap-1.5 hover:bg-white/10 transition-colors rounded-lg px-2 py-2 text-xs font-black uppercase tracking-widest"
               style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
             >
@@ -3607,8 +3624,23 @@ function App() {
       </header>
 
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
-      <nav className="hidden lg:flex fixed left-0 top-14 bottom-0 w-64 bg-surface-container-low flex-col z-10">
-        <div className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <nav className={`hidden lg:flex fixed left-0 top-14 bottom-0 bg-surface-container-low flex-col z-10 transition-all duration-200 ${sidebarCollapsed ? "w-14" : "w-64"}`}>
+        {/* Toggle button */}
+        <button
+          onClick={() => {
+            const next = !sidebarCollapsed;
+            setSidebarCollapsed(next);
+            sidebarUserPrefRef.current = next;
+            try { localStorage.setItem("sidebarCollapsed", String(next)); } catch {}
+          }}
+          title={sidebarCollapsed ? "Expandir sidebar" : "Recolher sidebar"}
+          className="shrink-0 flex items-center justify-center h-10 border-b border-outline-variant/20 text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-colors"
+        >
+          <span className="material-symbols-outlined text-[18px] leading-none">
+            {sidebarCollapsed ? "chevron_right" : "chevron_left"}
+          </span>
+        </button>
+        <div className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
           <motion.div
             initial="hidden"
             animate="visible"
@@ -3648,7 +3680,8 @@ function App() {
                   setActiveTab(key);
                   window.scrollTo(0, 0);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold transition-all text-left ${
+                title={sidebarCollapsed ? label : undefined}
+                className={`w-full flex items-center gap-3 px-2 py-3 text-sm font-bold transition-all text-left ${sidebarCollapsed ? "justify-center" : ""} ${
                   isMatchInProgress
                     ? "text-on-surface-variant/25 cursor-not-allowed"
                     : activeTab === key
@@ -3659,7 +3692,7 @@ function App() {
                 <span className="material-symbols-outlined text-[20px] shrink-0 leading-none">
                   {icon}
                 </span>
-                <span>{label}</span>
+                {!sidebarCollapsed && <span>{label}</span>}
               </motion.button>
             ))}
           </motion.div>
@@ -3670,7 +3703,8 @@ function App() {
                 setActiveTab("tactic");
                 window.scrollTo(0, 0);
               }}
-              className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-black uppercase tracking-widest transition-all rounded-sm ${
+              title={sidebarCollapsed ? (isMatchInProgress ? "AO VIVO" : "JOGAR") : undefined}
+              className={`w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest transition-all rounded-sm ${sidebarCollapsed ? "justify-center" : ""} ${
                 isMatchInProgress
                   ? "bg-red-500/15 text-red-400 border border-red-500/30 cursor-not-allowed"
                   : activeTab === "tactic"
@@ -3681,17 +3715,21 @@ function App() {
               <span className="material-symbols-outlined text-[20px] shrink-0 leading-none">
                 {isMatchInProgress ? "sensors" : "strategy"}
               </span>
-              <span className="flex-1 text-left">
-                {isMatchInProgress ? "AO VIVO" : "JOGAR"}
-              </span>
-              <span className="relative flex h-2 w-2 shrink-0">
-                <span
-                  className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isMatchInProgress ? "bg-red-500" : activeTab === "tactic" ? "bg-on-primary/40" : "bg-primary"}`}
-                />
-                <span
-                  className={`relative inline-flex rounded-full h-2 w-2 ${isMatchInProgress ? "bg-red-500" : activeTab === "tactic" ? "bg-on-primary/60" : "bg-primary"}`}
-                />
-              </span>
+              {!sidebarCollapsed && (
+                <>
+                  <span className="flex-1 text-left">
+                    {isMatchInProgress ? "AO VIVO" : "JOGAR"}
+                  </span>
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span
+                      className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isMatchInProgress ? "bg-red-500" : activeTab === "tactic" ? "bg-on-primary/40" : "bg-primary"}`}
+                    />
+                    <span
+                      className={`relative inline-flex rounded-full h-2 w-2 ${isMatchInProgress ? "bg-red-500" : activeTab === "tactic" ? "bg-on-primary/60" : "bg-primary"}`}
+                    />
+                  </span>
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -3753,7 +3791,7 @@ function App() {
       </nav>
 
       <main
-        className={`pt-14 lg:pb-12 lg:ml-64 ${isMatchInProgress ? "pb-8" : "pb-24"}`}
+        className={`pt-14 lg:pb-12 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-14" : "lg:ml-64"} ${isMatchInProgress ? "pb-8" : "pb-24"}`}
       >
         <div className="p-4 lg:p-6">
           {/* ─── TACTIC: HORIZONTAL ADVERSARY BANNER ──────────────────── */}
@@ -5046,7 +5084,7 @@ function App() {
 
                       {/* ── CUP MULTIVIEW (single list, no division groups) ── */}
                       {isCupMatch && matchResults?.results && (
-                        <div className="space-y-1">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
                           {matchResults.results
                             .filter(
                               (m) =>
@@ -5123,7 +5161,7 @@ function App() {
                                             hInfo?.color_primary || "#666",
                                         }}
                                       />
-                                      <span className="text-[11px] font-bold text-on-surface truncate">
+                                      <span className="text-sm font-bold text-on-surface truncate">
                                         {hInfo?.name}
                                       </span>
                                     </div>
@@ -5166,7 +5204,7 @@ function App() {
                                       </span>
                                     </button>
                                     <div className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 min-w-0 justify-end">
-                                      <span className="text-[11px] font-bold text-on-surface truncate">
+                                      <span className="text-sm font-bold text-on-surface truncate">
                                         {aInfo?.name}
                                       </span>
                                       <span
@@ -5730,7 +5768,7 @@ function App() {
                                   Calendário de Competições
                                 </h2>
                                 <p className="text-sm text-on-surface-variant mt-0.5">
-                                  Temporada {calYear}/{calYear + 1}
+                                  Temporada {calYear}
                                   {myTeam ? ` · ${myTeam.name}` : ""}
                                 </p>
                               </div>
@@ -7030,6 +7068,9 @@ function App() {
                                       !player.isJunior &&
                                       player.signed_season !==
                                         Math.ceil((matchweekCount + 1) / 14);
+                                    const alreadyAuctionedThisWeek =
+                                      matchweekCount > 0 &&
+                                      (player.last_auctioned_matchweek || 0) >= matchweekCount;
                                     return (
                                       <tr
                                         key={player.id}
@@ -7159,13 +7200,16 @@ function App() {
                                                 }}
                                                 disabled={
                                                   isPlayingMatch ||
-                                                  showHalftimePanel
+                                                  showHalftimePanel ||
+                                                  alreadyAuctionedThisWeek
                                                 }
                                                 title={
                                                   isPlayingMatch ||
                                                   showHalftimePanel
                                                     ? "Disponível após as partidas"
-                                                    : "Vender em Leilão"
+                                                    : alreadyAuctionedThisWeek
+                                                      ? "Já foi a leilão nesta jornada"
+                                                      : "Vender em Leilão"
                                                 }
                                                 className="px-3 py-1.5 bg-secondary-container hover:bg-surface-bright disabled:opacity-30 text-on-surface text-[10px] uppercase font-black rounded-sm transition-all"
                                               >
@@ -7489,14 +7533,17 @@ function App() {
                                             ★
                                           </span>
                                         )}
-                                      {player.isUnavailable && (
-                                        <span className="ml-1 text-xs">
-                                          {(player.suspension_until_matchweek ||
-                                            0) > matchweekCount
-                                            ? "🟥"
-                                            : "🩹"}
-                                        </span>
-                                      )}
+                                      {player.isUnavailable && (() => {
+                                        const susp = player.suspension_until_matchweek || 0;
+                                        const inj = player.injury_until_matchweek || 0;
+                                        const isSusp = susp > matchweekCount;
+                                        const left = isSusp ? susp - matchweekCount : inj - matchweekCount;
+                                        return (
+                                          <span className="ml-1 text-xs">
+                                            {isSusp ? "🟥" : "🩹"} ({left})
+                                          </span>
+                                        );
+                                      })()}
                                     </span>
                                     <span className="text-sm font-black text-primary shrink-0">
                                       {player.skill}
@@ -7671,14 +7718,17 @@ function App() {
                                       <PlayerLink playerId={player.id}>
                                         {player.name}
                                       </PlayerLink>
-                                      {player.isUnavailable && (
-                                        <span className="ml-1 text-xs">
-                                          {(player.suspension_until_matchweek ||
-                                            0) > matchweekCount
-                                            ? "🟥"
-                                            : "🩹"}
-                                        </span>
-                                      )}
+                                      {player.isUnavailable && (() => {
+                                        const susp = player.suspension_until_matchweek || 0;
+                                        const inj = player.injury_until_matchweek || 0;
+                                        const isSusp = susp > matchweekCount;
+                                        const left = isSusp ? susp - matchweekCount : inj - matchweekCount;
+                                        return (
+                                          <span className="ml-1 text-xs">
+                                            {isSusp ? "🟥" : "🩹"} ({left})
+                                          </span>
+                                        );
+                                      })()}
                                     </span>
                                     <span className="text-sm font-bold text-on-surface-variant shrink-0">
                                       {player.skill}

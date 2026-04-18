@@ -76,6 +76,11 @@ export function registerChatHandlers(
               message: trimmed,
               timestamp,
             };
+            // Ensure socket is in the correct room before broadcasting
+            if (!socket.rooms.has(String(roomCode))) {
+              console.warn(`[chat] socket ${socket.id} (${coachName}) not in room ${roomCode} — re-joining`);
+              socket.join(roomCode);
+            }
             console.log(`[chat] Room msg from ${coachName} in ${roomCode} → broadcasting to room`);
             io.to(roomCode).emit("chatMessage", msgData);
           },
