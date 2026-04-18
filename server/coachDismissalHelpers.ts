@@ -1,5 +1,6 @@
 import type { ActiveGame } from "./types";
 import { getAllTeamForms, logClubNews } from "./coreHelpers";
+import { withJuniorGRs } from "./game/engine";
 
 type Db = any;
 type AnyRow = Record<string, any>;
@@ -224,7 +225,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
         [team.id],
         (err: any, squad: any[]) => {
           if (!err && player.socketId) {
-            io.to(player.socketId as string).emit("mySquad", squad || []);
+            io.to(player.socketId as string).emit("mySquad", withJuniorGRs(squad || [], team.id, game.matchweek || 1));
           }
         },
       );
@@ -446,7 +447,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
         [toTeamId],
         (err: any, squad: any[]) => {
           if (!err && player.socketId) {
-            io.to(player.socketId as string).emit("mySquad", squad || []);
+            io.to(player.socketId as string).emit("mySquad", withJuniorGRs(squad || [], toTeamId, game.matchweek || 1));
           }
         },
       );

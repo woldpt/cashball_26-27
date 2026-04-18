@@ -7,6 +7,7 @@ import {
   clearPhaseTimer,
   makePhaseToken,
 } from "./matchFlowHelpers";
+import { withJuniorGRs } from "./game/engine";
 
 interface WeeklyFlowDeps {
   io: any;
@@ -627,7 +628,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                               if (!err4)
                                 io.to(player.socketId as string).emit(
                                   "mySquad",
-                                  squad || [],
+                                  withJuniorGRs(squad || [], player.teamId as number, game.matchweek || 1),
                                 );
                             },
                           );

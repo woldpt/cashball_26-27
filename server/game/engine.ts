@@ -4,6 +4,74 @@ type Db = any;
 type PlayerRow = any;
 type MatchFixture = any;
 
+// ── Junior GR (Juniores) ─────────────────────────────────────────────────────
+const JUNIOR_FIRST_NAMES = [
+  "Carlos", "João", "Miguel", "André", "Rui",
+  "Diogo", "Pedro", "Tiago", "Nuno", "Luís",
+  "Filipe", "Gonçalo", "Rodrigo", "Rafael", "Marco",
+];
+const JUNIOR_LAST_NAMES = [
+  "Silva", "Santos", "Ferreira", "Pereira", "Oliveira",
+  "Costa", "Rodrigues", "Martins", "Jesus", "Sousa",
+  "Fernandes", "Gonçalves", "Gomes", "Lopes", "Marques",
+];
+
+/**
+ * Generates a deterministic ephemeral junior GR player for a team.
+ * Uses negative IDs so all DB write operations are harmless no-ops.
+ * The same (teamId, matchweek, slotIndex) always produces the same name and ID.
+ * ID scheme: -(teamId * 10 + slotIndex + 1)
+ */
+export function generateJuniorGR(teamId: number, matchweek: number, slotIndex: number): PlayerRow {
+  const firstIdx = Math.abs(teamId * 37 + matchweek * 13 + slotIndex * 7) % JUNIOR_FIRST_NAMES.length;
+  const lastIdx  = Math.abs(teamId * 53 + matchweek * 17 + slotIndex * 11) % JUNIOR_LAST_NAMES.length;
+  return {
+    id: -(teamId * 10 + slotIndex + 1),
+    name: `${JUNIOR_FIRST_NAMES[firstIdx]} ${JUNIOR_LAST_NAMES[lastIdx]} (Junior)`,
+    position: "GR",
+    skill: 1,
+    aggressiveness: 3,
+    isJunior: true,
+    team_id: teamId,
+    age: 17,
+    form: 50,
+    nationality: "🇵🇹",
+    value: 0,
+    wage: 0,
+    goals: 0,
+    is_star: 0,
+    suspension_until_matchweek: 0,
+    injury_until_matchweek: 0,
+    games_played: 0,
+    yellow_cards: 0,
+    red_cards: 0,
+    career_injuries: 0,
+    career_reds: 0,
+    transfer_status: "none",
+    prev_skill: null,
+    signed_season: null,
+  };
+}
+
+/**
+ * Injects junior GR players into a squad whenever there are fewer than 2 available GRs.
+ * Accepts the full squad (including unavailable players) or a pre-filtered available subset;
+ * in both cases it correctly counts only available GRs before deciding how many juniors to add.
+ * The original array is never mutated.
+ */
+export function withJuniorGRs(squad: PlayerRow[], teamId: number, matchweek: number): PlayerRow[] {
+  const availableGRCount = squad.filter(
+    (p) => p.position === "GR" && isPlayerAvailable(p, matchweek),
+  ).length;
+  if (availableGRCount >= 2) return squad;
+  const needed = 2 - availableGRCount;
+  const juniors: PlayerRow[] = [];
+  for (let i = 0; i < needed; i++) {
+    juniors.push(generateJuniorGR(teamId, matchweek, i));
+  }
+  return [...squad, ...juniors];
+}
+
 function pickBestPlayer(players: PlayerRow[] = []) {
   if (!players.length) return null;
   return [...players].sort((a, b) => b.skill - a.skill)[0];
@@ -41,9 +109,11 @@ async function getTeamSquad(
     db.all("SELECT * FROM players WHERE team_id = ?", [teamId], (err, rows) => {
       if (err) return reject(err);
 
-      const availableRows = (rows || []).filter((p) =>
+      // Build available roster and inject junior GRs if fewer than 2 are available
+      const availableReal = (rows || []).filter((p) =>
         isPlayerAvailable(p, currentMatchweek),
       );
+      const availableRows = withJuniorGRs(availableReal, teamId, currentMatchweek);
 
       // If tactic has explicit position assignments, use them
       if (tactic && tactic.positions) {
@@ -543,13 +613,23 @@ async function simulateMatchSegment(
         if (e.type === "substitution" && e.playerId) homeIds.add(e.playerId);
       }
     }
+    // Junior GRs have negative IDs — fetch real players from DB, then re-add any juniors.
     homeSquad = await new Promise<any[]>((resolve) => {
-      const ids = Array.from(homeIds);
-      const ph = ids.length > 0 ? ids.map(() => "?").join(",") : "0";
+      const allIds = Array.from(homeIds);
+      const realIds = allIds.filter((id: number) => id > 0);
+      const juniorIds = new Set(allIds.filter((id: number) => id < 0));
+      const ph = realIds.length > 0 ? realIds.map(() => "?").join(",") : "0";
       db.all(
         `SELECT * FROM players WHERE id IN (${ph})`,
-        ids.length > 0 ? ids : [],
-        (_, r) => resolve(r || []),
+        realIds.length > 0 ? realIds : [],
+        (_, r) => {
+          const dbPlayers = r || [];
+          // Re-add cached junior GRs whose IDs are still in the active lineup.
+          const cachedJuniors = (fixture._homeFullRoster || []).filter(
+            (p: any) => juniorIds.has(p.id),
+          );
+          resolve([...dbPlayers, ...cachedJuniors]);
+        },
       );
     });
     fixture._homeSquad = homeSquad;
@@ -575,13 +655,22 @@ async function simulateMatchSegment(
         if (e.type === "substitution" && e.playerId) awayIds.add(e.playerId);
       }
     }
+    // Junior GRs have negative IDs — fetch real players from DB, then re-add any juniors.
     awaySquad = await new Promise<any[]>((resolve) => {
-      const ids = Array.from(awayIds);
-      const ph = ids.length > 0 ? ids.map(() => "?").join(",") : "0";
+      const allIds = Array.from(awayIds);
+      const realIds = allIds.filter((id: number) => id > 0);
+      const juniorIds = new Set(allIds.filter((id: number) => id < 0));
+      const ph = realIds.length > 0 ? realIds.map(() => "?").join(",") : "0";
       db.all(
         `SELECT * FROM players WHERE id IN (${ph})`,
-        ids.length > 0 ? ids : [],
-        (_, r) => resolve(r || []),
+        realIds.length > 0 ? realIds : [],
+        (_, r) => {
+          const dbPlayers = r || [];
+          const cachedJuniors = (fixture._awayFullRoster || []).filter(
+            (p: any) => juniorIds.has(p.id),
+          );
+          resolve([...dbPlayers, ...cachedJuniors]);
+        },
       );
     });
     fixture._awaySquad = awaySquad;
@@ -600,11 +689,12 @@ async function simulateMatchSegment(
   }
 
   // Track games played — increment once per match (startMin === 0 only)
+  // Exclude junior GR negative IDs — they are ephemeral and have no DB row.
   if (startMin === 0) {
     const participantIds = [
       ...Array.from(new Set((homeSquad || []).map((p: any) => p.id))),
       ...Array.from(new Set((awaySquad || []).map((p: any) => p.id))),
-    ].filter(Boolean);
+    ].filter((id) => typeof id === "number" && id > 0);
     if (participantIds.length > 0) {
       const ph = participantIds.map(() => "?").join(",");
       db.run(
@@ -652,9 +742,10 @@ async function simulateMatchSegment(
         [fixture.homeTeamId],
         (err, rows) => {
           if (err) return reject(err);
-          resolve(
-            (rows || []).filter((p) => isPlayerAvailable(p, currentMatchweek)),
+          const available = (rows || []).filter((p) =>
+            isPlayerAvailable(p, currentMatchweek),
           );
+          resolve(withJuniorGRs(available, fixture.homeTeamId, currentMatchweek));
         },
       );
     });
@@ -664,9 +755,10 @@ async function simulateMatchSegment(
         [fixture.awayTeamId],
         (err, rows) => {
           if (err) return reject(err);
-          resolve(
-            (rows || []).filter((p) => isPlayerAvailable(p, currentMatchweek)),
+          const available = (rows || []).filter((p) =>
+            isPlayerAvailable(p, currentMatchweek),
           );
+          resolve(withJuniorGRs(available, fixture.awayTeamId, currentMatchweek));
         },
       );
     });

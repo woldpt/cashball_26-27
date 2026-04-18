@@ -2318,9 +2318,12 @@ function App() {
       setTactic((prev) => {
         const newPositions = { ...prev.positions };
 
+        // Block: junior GRs cannot have their status changed
+        const player = mySquad.find((p) => p.id === playerId);
+        if (player?.isJunior) return prev;
+
         // Block: injured or suspended players cannot be convoked
         if (status === "Titular" || status === "Suplente") {
-          const player = mySquad.find((p) => p.id === playerId);
           if (player && !isPlayerAvailable(player, matchweekCount + 1))
             return prev;
         }
@@ -2374,16 +2377,19 @@ function App() {
         const newPositions = { ...prev.positions };
         const draggedStatus = newPositions[draggedId] ?? "Excluído";
         const targetStatus = newPositions[targetId] ?? "Excluído";
+
+        // Block: junior GRs cannot be involved in swaps
+        const draggedPlayer = mySquad.find((p) => p.id === draggedId);
+        const targetPlayer = mySquad.find((p) => p.id === targetId);
+        if (draggedPlayer?.isJunior || targetPlayer?.isJunior) return prev;
+
         // Titular swaps only allowed between same-position players
         if (draggedStatus === "Titular" || targetStatus === "Titular") {
-          const draggedPlayer = mySquad.find((p) => p.id === draggedId);
-          const targetPlayer = mySquad.find((p) => p.id === targetId);
           if (!draggedPlayer || !targetPlayer) return prev;
           if (draggedPlayer.position !== targetPlayer.position) return prev;
         }
         // Block injured/suspended from becoming Titular or Suplente
         if (targetStatus === "Titular" || targetStatus === "Suplente") {
-          const draggedPlayer = mySquad.find((p) => p.id === draggedId);
           if (
             draggedPlayer &&
             !isPlayerAvailable(draggedPlayer, matchweekCount + 1)
@@ -2391,7 +2397,6 @@ function App() {
             return prev;
         }
         if (draggedStatus === "Titular" || draggedStatus === "Suplente") {
-          const targetPlayer = mySquad.find((p) => p.id === targetId);
           if (
             targetPlayer &&
             !isPlayerAvailable(targetPlayer, matchweekCount + 1)
@@ -6934,6 +6939,7 @@ function App() {
                                 <tbody className="text-sm font-medium">
                                   {annotatedSquad.map((player) => {
                                     const canAct =
+                                      !player.isJunior &&
                                       player.signed_season !==
                                       Math.ceil((matchweekCount + 1) / 14);
                                     return (
@@ -6959,6 +6965,11 @@ function App() {
                                                 {player.name}
                                               </PlayerLink>
                                             </span>
+                                            {player.isJunior && (
+                                              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                                                🎓 Juniores
+                                              </span>
+                                            )}
                                             {!!player.is_star &&
                                               (player.position === "MED" ||
                                                 player.position === "ATA") && (
@@ -7341,8 +7352,9 @@ function App() {
                                 .map((player) => (
                                   <div
                                     key={player.id}
-                                    draggable
+                                    draggable={!player.isJunior}
                                     onDragStart={() => {
+                                      if (player.isJunior) return;
                                       dragPlayerIdRef.current = player.id;
                                       dragPlayerStatusRef.current = "Titular";
                                     }}
@@ -7372,7 +7384,7 @@ function App() {
                                       setDragOverPlayerId(null);
                                       dragPlayerIdRef.current = null;
                                     }}
-                                    className={`relative flex items-center gap-3 px-4 py-2.5 hover:bg-primary/5 transition-colors select-none cursor-grab active:cursor-grabbing ${player.isUnavailable ? "opacity-50" : ""} ${dragOverPlayerId === player.id && dragPlayerIdRef.current !== player.id ? "bg-primary/10 ring-1 ring-primary/40" : ""}`}
+                                    className={`relative flex items-center gap-3 px-4 py-2.5 hover:bg-primary/5 transition-colors select-none ${player.isJunior ? "cursor-default" : "cursor-grab active:cursor-grabbing"} ${player.isUnavailable ? "opacity-50" : ""} ${dragOverPlayerId === player.id && dragPlayerIdRef.current !== player.id ? "bg-primary/10 ring-1 ring-primary/40" : ""}`}
                                   >
                                     <span
                                       className={`shrink-0 px-1.5 py-0.5 bg-surface-bright rounded-sm text-[9px] font-black border-l-2 ${POSITION_BORDER_CLASS[player.position] || "border-zinc-500"} ${POSITION_TEXT_CLASS[player.position] || "text-zinc-300"}`}
@@ -7412,18 +7424,20 @@ function App() {
                                           </span>
                                         )}
                                     </span>
-                                    <span
-                                      className="shrink-0 w-6 h-6 rounded-full bg-emerald-500/15 flex items-center justify-center text-sm cursor-pointer"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setOpenStatusPickerId((prev) =>
-                                          prev === player.id ? null : player.id,
-                                        );
-                                      }}
-                                    >
-                                      🟢
-                                    </span>
-                                    {openStatusPickerId === player.id &&
+                                    {!player.isJunior && (
+                                      <span
+                                        className="shrink-0 w-6 h-6 rounded-full bg-emerald-500/15 flex items-center justify-center text-sm cursor-pointer"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenStatusPickerId((prev) =>
+                                            prev === player.id ? null : player.id,
+                                          );
+                                        }}
+                                      >
+                                        🟢
+                                      </span>
+                                    )}
+                                    {!player.isJunior && openStatusPickerId === player.id &&
                                       (() => {
                                         const subCount = Object.entries(
                                           tactic.positions,
@@ -7524,8 +7538,9 @@ function App() {
                                 .map((player) => (
                                   <div
                                     key={player.id}
-                                    draggable
+                                    draggable={!player.isJunior}
                                     onDragStart={() => {
+                                      if (player.isJunior) return;
                                       dragPlayerIdRef.current = player.id;
                                       dragPlayerStatusRef.current = "Suplente";
                                     }}
@@ -7555,7 +7570,7 @@ function App() {
                                       setDragOverPlayerId(null);
                                       dragPlayerIdRef.current = null;
                                     }}
-                                    className={`relative flex items-center gap-3 px-4 py-2.5 hover:bg-primary/5 transition-colors select-none cursor-grab active:cursor-grabbing ${player.isUnavailable ? "opacity-35" : ""} ${dragOverPlayerId === player.id && dragPlayerIdRef.current !== player.id ? "bg-amber-500/10 ring-1 ring-amber-500/40" : ""}`}
+                                    className={`relative flex items-center gap-3 px-4 py-2.5 hover:bg-primary/5 transition-colors select-none ${player.isJunior ? "cursor-default" : "cursor-grab active:cursor-grabbing"} ${player.isUnavailable ? "opacity-35" : ""} ${dragOverPlayerId === player.id && dragPlayerIdRef.current !== player.id ? "bg-amber-500/10 ring-1 ring-amber-500/40" : ""}`}
                                   >
                                     <span
                                       className={`shrink-0 px-1.5 py-0.5 bg-surface-bright rounded-sm text-[9px] font-black border-l-2 ${POSITION_BORDER_CLASS[player.position] || "border-zinc-500"} ${POSITION_TEXT_CLASS[player.position] || "text-zinc-300"}`}
@@ -7578,18 +7593,20 @@ function App() {
                                     <span className="text-sm font-bold text-on-surface-variant shrink-0">
                                       {player.skill}
                                     </span>
-                                    <span
-                                      className="shrink-0 w-6 h-6 rounded-full bg-amber-500/15 flex items-center justify-center text-sm cursor-pointer"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setOpenStatusPickerId((prev) =>
-                                          prev === player.id ? null : player.id,
-                                        );
-                                      }}
-                                    >
-                                      🟡
-                                    </span>
-                                    {openStatusPickerId === player.id &&
+                                    {!player.isJunior && (
+                                      <span
+                                        className="shrink-0 w-6 h-6 rounded-full bg-amber-500/15 flex items-center justify-center text-sm cursor-pointer"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setOpenStatusPickerId((prev) =>
+                                            prev === player.id ? null : player.id,
+                                          );
+                                        }}
+                                      >
+                                        🟡
+                                      </span>
+                                    )}
+                                    {!player.isJunior && openStatusPickerId === player.id &&
                                       (() => {
                                         const titCount = Object.entries(
                                           tactic.positions,
@@ -7661,7 +7678,8 @@ function App() {
                             {annotatedSquad.filter(
                               (p) =>
                                 p.status !== "Titular" &&
-                                p.status !== "Suplente",
+                                p.status !== "Suplente" &&
+                                !p.isJunior,
                             ).length > 0 && (
                               <>
                                 <div className="px-4 py-1.5 bg-surface-container-lowest/80 text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 border-t border-outline-variant/10">
@@ -7671,7 +7689,8 @@ function App() {
                                   .filter(
                                     (p) =>
                                       p.status !== "Titular" &&
-                                      p.status !== "Suplente",
+                                      p.status !== "Suplente" &&
+                                      !p.isJunior,
                                   )
                                   .map((player) => (
                                     <div

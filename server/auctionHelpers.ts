@@ -1,5 +1,6 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import { logClubNews } from "./coreHelpers";
+import { withJuniorGRs } from "./game/engine";
 
 interface AuctionDeps {
   io: any;
@@ -53,7 +54,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
       "SELECT * FROM players WHERE team_id = ?",
       [teamId],
       (err: Error | null, squad: any[]) => {
-        if (!err) io.to(player.socketId as string).emit("mySquad", squad || []);
+        if (!err) io.to(player.socketId as string).emit("mySquad", withJuniorGRs(squad || [], teamId, game.matchweek || 1));
       },
     );
   };

@@ -1,5 +1,6 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import { logClubNews, runExec, runGet, runAll, validatePositiveInt } from "./coreHelpers";
+import { withJuniorGRs } from "./game/engine";
 
 interface TransferHandlerDeps {
   io: any;
@@ -163,7 +164,7 @@ export function registerTransferSocketHandlers(
         "SELECT * FROM players WHERE team_id = ?",
         [playerState.teamId],
       );
-      socket.emit("mySquad", squad);
+      socket.emit("mySquad", withJuniorGRs(squad, playerState.teamId as number, game.matchweek || 1));
       socket.emit("systemMessage", `Contrataste ${player.name} por €${price}!`);
     } catch (err) {
       console.error("[buyPlayer] Error:", err);
@@ -565,7 +566,7 @@ export function registerTransferSocketHandlers(
                     game.db.all(
                       "SELECT * FROM players WHERE team_id = ?",
                       [playerState.teamId],
-                      (_e2, squad) => socket.emit("mySquad", squad),
+                      (_e2, squad) => socket.emit("mySquad", withJuniorGRs(squad || [], playerState.teamId as number, game.matchweek || 1)),
                     );
                     socket.emit("transferProposalResult", {
                       ok: true,
