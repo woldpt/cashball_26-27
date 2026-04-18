@@ -146,12 +146,41 @@ export function registerSessionSocketHandlers(
     );
     socket.emit("marketUpdate", game.globalMarket);
 
+    // Smooth reconnect: send current match state to clients rejoining mid-match
+    if (
+      (game.gamePhase === "match_first_half" || game.gamePhase === "match_second_half") &&
+      game.currentFixtures?.length > 0
+    ) {
+      const entry = game.currentEvent as any;
+      // Reconnects must always receive replay payload; if minute is not persisted yet, use phase start.
+      const fallbackMinute = game.gamePhase === "match_first_half" ? 1 : 46;
+      socket.emit("matchReplay", {
+        minute: game.liveMinute ?? fallbackMinute,
+        matchweek: game.matchweek,
+        isCup: entry?.type === "cup",
+        cupRoundName: entry?.roundName || null,
+        fixtures: game.currentFixtures.map((f: any) => ({
+          homeTeamId: f.homeTeamId,
+          awayTeamId: f.awayTeamId,
+          homeTeam: f.homeTeam || null,
+          awayTeam: f.awayTeam || null,
+          finalHomeGoals: f.finalHomeGoals || 0,
+          finalAwayGoals: f.finalAwayGoals || 0,
+          events: (f.events || []).slice(),
+          homeLineup: f.homeLineup || [],
+          awayLineup: f.awayLineup || [],
+          attendance: f.attendance || null,
+        })),
+      });
+    }
+
     // Emit gameState with both new fields and legacy compat fields
     socket.emit("gameState", {
       // ── New fields ──────────────────────────────────────────────────────────
       gamePhase: game.gamePhase,
       calendarIndex: game.calendarIndex,
       currentEvent: game.currentEvent,
+      liveMinute: game.liveMinute ?? null,
       // ── Legacy compat fields (derived from new state machine) ────────────────
       matchweek: game.matchweek,
       matchState: legacyMatchState(game.gamePhase),
@@ -171,33 +200,6 @@ export function registerSessionSocketHandlers(
 
     emitCurrentPhaseToSocket(game, socket);
     ensurePhaseTimeout(game);
-
-    // Smooth reconnect: send current match state to clients rejoining mid-match
-    if (
-      (game.gamePhase === "match_first_half" || game.gamePhase === "match_second_half") &&
-      game.currentFixtures?.length > 0 &&
-      game.liveMinute != null
-    ) {
-      const entry = game.currentEvent as any;
-      socket.emit("matchReplay", {
-        minute: game.liveMinute,
-        matchweek: game.matchweek,
-        isCup: entry?.type === "cup",
-        cupRoundName: entry?.roundName || null,
-        fixtures: game.currentFixtures.map((f: any) => ({
-          homeTeamId: f.homeTeamId,
-          awayTeamId: f.awayTeamId,
-          homeTeam: f.homeTeam || null,
-          awayTeam: f.awayTeam || null,
-          finalHomeGoals: f.finalHomeGoals || 0,
-          finalAwayGoals: f.finalAwayGoals || 0,
-          events: (f.events || []).slice(),
-          homeLineup: f.homeLineup || [],
-          awayLineup: f.awayLineup || [],
-          attendance: f.attendance || null,
-        })),
-      });
-    }
 
     io.to(roomCode).emit("playerListUpdate", getPlayerList(game));
     emitAwaitingCoaches(game);

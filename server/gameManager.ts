@@ -318,6 +318,7 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     // Current event runtime
     currentEvent: null,
     currentFixtures: [],
+    liveMinute: null,
 
     // Single phase timer + ack set
     phaseToken: "",
@@ -502,6 +503,18 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                 } catch (_) {}
               }
 
+              // Current live minute for reconnects mid-match
+              if (Object.prototype.hasOwnProperty.call(st, "liveMinute")) {
+                if (st["liveMinute"] === "null") {
+                  game.liveMinute = null;
+                } else {
+                  const parsedMinute = parseInt(st["liveMinute"], 10);
+                  game.liveMinute = Number.isFinite(parsedMinute)
+                    ? parsedMinute
+                    : null;
+                }
+              }
+
               // Locked coaches
               if (st["lockedCoaches"]) {
                 try {
@@ -612,6 +625,10 @@ function saveGameState(game: ActiveGame): void {
   upsert("season", String(game.season || 1));
   upsert("year", String(game.year || 2026));
   upsert("matchweek", String(game.matchweek || 1));
+  upsert(
+    "liveMinute",
+    game.liveMinute != null ? String(game.liveMinute) : "null",
+  );
   upsert("cupTeamIds", JSON.stringify(game.cupTeamIds || []));
   upsert(
     "cupHalftimePayload",
