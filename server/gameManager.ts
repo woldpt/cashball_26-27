@@ -276,6 +276,31 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
   }
 
   const db = new sqlite.Database(dbPath);
+  db.run("PRAGMA foreign_keys = ON", (err: Error | null) => {
+    if (err) console.error(`[gameManager] Failed to enable foreign keys for ${roomCode}:`, err.message);
+  });
+
+  // Ensure performance indexes exist on FK columns (idempotent)
+  const indexStatements = [
+    "CREATE INDEX IF NOT EXISTS idx_teams_manager_id ON teams(manager_id)",
+    "CREATE INDEX IF NOT EXISTS idx_players_team_id ON players(team_id)",
+    "CREATE INDEX IF NOT EXISTS idx_matches_home_team_id ON matches(home_team_id)",
+    "CREATE INDEX IF NOT EXISTS idx_matches_away_team_id ON matches(away_team_id)",
+    "CREATE INDEX IF NOT EXISTS idx_matches_matchweek ON matches(matchweek)",
+    "CREATE INDEX IF NOT EXISTS idx_matches_played ON matches(played)",
+    "CREATE INDEX IF NOT EXISTS idx_cup_matches_season_round ON cup_matches(season, round)",
+    "CREATE INDEX IF NOT EXISTS idx_palmares_team_id ON palmares(team_id)",
+    "CREATE INDEX IF NOT EXISTS idx_club_news_team_id ON club_news(team_id)",
+    "CREATE INDEX IF NOT EXISTS idx_club_news_player_id ON club_news(player_id)",
+    "CREATE INDEX IF NOT EXISTS idx_club_news_created_at ON club_news(created_at)",
+  ];
+  db.serialize(() => {
+    for (const sql of indexStatements) {
+      db.run(sql, (idxErr: Error | null) => {
+        if (idxErr) console.error(`[gameManager] Index creation failed for ${roomCode}:`, idxErr.message);
+      });
+    }
+  });
 
   const game: ActiveGame = {
     roomCode,
@@ -695,6 +720,23 @@ function getPlayerList(game: ActiveGame): PlayerSession[] {
   return Object.values(game.playersByName).filter((p) => p.socketId !== null);
 }
 
+function closeAllDatabases(): Promise<void> {
+  const closes = Object.values(activeGames).map((game) =>
+    new Promise<void>((resolve) => {
+      try {
+        game.db.close((err: Error | null) => {
+          if (err) console.error("[gameManager] DB close error:", err.message);
+          resolve();
+        });
+      } catch (err) {
+        console.error("[gameManager] DB close threw:", err);
+        resolve();
+      }
+    }),
+  );
+  return Promise.all(closes).then(() => undefined);
+}
+
 module.exports = {
   getGame,
   getGameBySocket,
@@ -706,4 +748,5 @@ module.exports = {
   activeGames,
   doesGameExist,
   generateUniqueRoomCode,
+  closeAllDatabases,
 };

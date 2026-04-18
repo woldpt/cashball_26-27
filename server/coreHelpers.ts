@@ -76,6 +76,11 @@ export function runGet<T extends AnyRow = AnyRow>(
   });
 }
 
+export function validatePositiveInt(val: unknown): number | null {
+  const n = Number(val);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
 export function runExec(
   db: Db,
   sql: string,

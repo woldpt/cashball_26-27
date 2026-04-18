@@ -1,5 +1,5 @@
 import type { ActiveGame, PlayerSession } from "./types";
-import { logClubNews, runExec, runGet, runAll } from "./coreHelpers";
+import { logClubNews, runExec, runGet, runAll, validatePositiveInt } from "./coreHelpers";
 
 interface TransferHandlerDeps {
   io: any;
@@ -56,11 +56,14 @@ export function registerTransferSocketHandlers(
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
 
+    const validPlayerId = validatePositiveInt(playerId);
+    if (!validPlayerId) return;
+
     try {
       const player = await runGet<any>(
         game.db,
         "SELECT * FROM players WHERE id = ?",
-        [playerId],
+        [validPlayerId],
       );
       if (!player) return;
 
@@ -104,7 +107,7 @@ export function registerTransferSocketHandlers(
             getSeasonEndMatchweek(game.matchweek),
             Math.ceil(Math.max(1, game.matchweek) / 14),
             game.matchweek,
-            playerId,
+            validPlayerId,
           ],
         );
         await runExec(game.db, "COMMIT");
@@ -126,7 +129,7 @@ export function registerTransferSocketHandlers(
         playerState.teamId,
         {
           player_name: player.name,
-          player_id: playerId,
+          player_id: validPlayerId,
           related_team_id: player.team_id,
           related_team_name: player.team_name,
           amount: price,
@@ -142,7 +145,7 @@ export function registerTransferSocketHandlers(
           player.team_id,
           {
             player_name: player.name,
-            player_id: playerId,
+            player_id: validPlayerId,
             related_team_id: playerState.teamId,
             related_team_name: buyingTeam?.name,
             amount: price,
@@ -175,6 +178,9 @@ export function registerTransferSocketHandlers(
       if (!game) return;
       const playerState = getPlayerBySocket(game, socket.id);
       if (!playerState) return;
+
+      const validPlayerId = validatePositiveInt(playerId);
+      if (!validPlayerId) return;
 
       const finalMode = mode === "auction" ? "auction" : "fixed";
       if (finalMode === "auction" && isMatchInProgress(game)) {
@@ -211,7 +217,12 @@ export function registerTransferSocketHandlers(
             game.db.run(
               "UPDATE players SET transfer_status = ?, transfer_price = ? WHERE id = ?",
               [finalMode, finalPrice, playerId],
-              () => {
+              (runErr: Error | null) => {
+                if (runErr) {
+                  console.error("[listPlayerForTransfer] Error:", runErr);
+                  socket.emit("systemMessage", "Erro ao listar jogador.");
+                  return;
+                }
                 refreshMarket(game);
                 emitSquadForPlayer(game, playerState.teamId);
                 socket.emit(
@@ -235,7 +246,12 @@ export function registerTransferSocketHandlers(
     game.db.run(
       "UPDATE players SET transfer_status = 'none', transfer_price = 0 WHERE id = ? AND team_id = ? AND transfer_status = 'fixed'",
       [playerId, playerState.teamId],
-      function () {
+      function (this: any, runErr: Error | null) {
+        if (runErr) {
+          console.error("[removeFromTransferList] Error:", runErr);
+          socket.emit("systemMessage", "Erro ao retirar jogador da lista.");
+          return;
+        }
         if (this.changes > 0) {
           refreshMarket(game);
           emitSquadForPlayer(game, playerState.teamId);
@@ -260,8 +276,10 @@ export function registerTransferSocketHandlers(
       (err, player) => {
         if (err || !player) return;
 
+        const value = player.value || (player.skill || 0) * 20000;
+        const fairWage = Math.round(Math.pow(value, 0.62) / 2.5);
         const demandedWage = Math.max(
-          Math.round((player.skill || 0) * 70),
+          fairWage,
           Math.round((player.wage || 0) * 1.05),
         );
         const acceptedWage = Math.max(0, Math.round(offeredWage || 0));
@@ -271,7 +289,12 @@ export function registerTransferSocketHandlers(
           game.db.run(
             "UPDATE players SET wage = ?, contract_until_matchweek = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
             [acceptedWage, seasonEnd, game.matchweek, playerId],
-            () => {
+            (runErr: Error | null) => {
+              if (runErr) {
+                console.error("[renewContract] Error:", runErr);
+                socket.emit("systemMessage", "Erro ao renovar contrato.");
+                return;
+              }
               refreshMarket(game);
               emitSquadForPlayer(game, playerState.teamId);
               socket.emit(
@@ -281,36 +304,89 @@ export function registerTransferSocketHandlers(
             },
           );
         } else {
+          // Counter-offer: inform manager of demanded wage before going to auction
+          if (!game.pendingRenewalCounterOffers) game.pendingRenewalCounterOffers = {};
+          // Cancel any existing timeout for this player
+          const existing = game.pendingRenewalCounterOffers[playerId];
+          if (existing?.timer) clearTimeout(existing.timer);
+
           const auctionPrice = Math.max(
             Math.round(player.value * 0.65),
             demandedWage * 12,
           );
-          listPlayerOnMarket(game, playerId, "auction", auctionPrice, () => {
-            game.db.run(
-              "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
-              [playerId],
-              () => {
-                emitSquadForPlayer(game, playerState.teamId);
-              },
-            );
-            socket.emit(
-              "systemMessage",
-              `${player.name} recusou e foi para leilão.`,
-            );
+
+          const sendToAuction = () => {
+            delete game.pendingRenewalCounterOffers?.[playerId];
+            listPlayerOnMarket(game, playerId, "auction", auctionPrice, () => {
+              game.db.run(
+                "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+                [playerId],
+                (runErr: Error | null) => {
+                  if (runErr) console.error("[renewContract:reject] Error:", runErr);
+                  else emitSquadForPlayer(game, playerState.teamId);
+                },
+              );
+              socket.emit("systemMessage", `${player.name} recusou e foi para leilão.`);
+            });
+          };
+
+          // Store counter-offer state with 90s timeout (if coach doesn't respond, go to auction)
+          const timer = setTimeout(sendToAuction, 90_000);
+          game.pendingRenewalCounterOffers[playerId] = {
+            demandedWage,
+            teamId: playerState.teamId,
+            timer,
+            sendToAuction,
+          };
+
+          socket.emit("renewContractCounterOffer", {
+            playerId,
+            playerName: player.name,
+            demandedWage,
           });
-          if (isMatchInProgress(game)) {
-            game.db.run(
-              "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
-              [playerId],
-            );
-            socket.emit(
-              "systemMessage",
-              `${player.name} recusou. O leilão será lançado após o final das partidas.`,
-            );
-          }
         }
       },
     );
+  });
+
+  socket.on("acceptCounterOffer", ({ playerId, accepted }) => {
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    const playerState = getPlayerBySocket(game, socket.id);
+    if (!playerState) return;
+
+    const pending = game.pendingRenewalCounterOffers?.[playerId];
+    if (!pending || pending.teamId !== playerState.teamId) return;
+
+    clearTimeout(pending.timer);
+    delete game.pendingRenewalCounterOffers[playerId];
+
+    if (accepted) {
+      const seasonEnd = getSeasonEndMatchweek(game.matchweek);
+      game.db.get(
+        "SELECT * FROM players WHERE id = ? AND team_id = ?",
+        [playerId, playerState.teamId],
+        (err: Error | null, player: any) => {
+          if (err || !player) return;
+          game.db.run(
+            "UPDATE players SET wage = ?, contract_until_matchweek = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
+            [pending.demandedWage, seasonEnd, game.matchweek, playerId],
+            (runErr: Error | null) => {
+              if (runErr) {
+                console.error("[acceptCounterOffer] Error:", runErr);
+                socket.emit("systemMessage", "Erro ao renovar contrato.");
+                return;
+              }
+              refreshMarket(game);
+              emitSquadForPlayer(game, playerState.teamId);
+              socket.emit("systemMessage", `${player.name} renovou até ao fim da época por €${pending.demandedWage}/sem.`);
+            },
+          );
+        },
+      );
+    } else {
+      pending.sendToAuction();
+    }
   });
 
   socket.on("placeAuctionBid", ({ playerId, bidAmount }) => {
@@ -319,14 +395,21 @@ export function registerTransferSocketHandlers(
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
 
-    placeAuctionBid(game, playerState.teamId, playerId, bidAmount)
+    const validPlayerId = validatePositiveInt(playerId);
+    const validBidAmount = validatePositiveInt(bidAmount);
+    if (!validPlayerId || !validBidAmount) {
+      socket.emit("systemMessage", "Lance inválido.");
+      return;
+    }
+
+    placeAuctionBid(game, playerState.teamId, validPlayerId, validBidAmount)
       .then((result) => {
         const bidResult: any = result;
         if (!bidResult.ok) {
           socket.emit("systemMessage", bidResult.error);
         } else {
           socket.emit("auctionBidConfirmed", {
-            playerId,
+            playerId: validPlayerId,
             bidAmount: bidResult.bidAmount,
           });
         }
@@ -408,6 +491,9 @@ export function registerTransferSocketHandlers(
                   game.db.run(
                     "UPDATE teams SET budget = budget + ? WHERE id = ?",
                     [proposalPrice, player.team_id],
+                    (errRefund: Error | null) => {
+                      if (errRefund) console.error("[makeTransferProposal:refund] Error:", errRefund);
+                    },
                   );
                 }
                 game.db.run(

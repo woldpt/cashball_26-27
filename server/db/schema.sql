@@ -125,3 +125,15 @@ CREATE TABLE IF NOT EXISTS club_news (
   FOREIGN KEY(player_id) REFERENCES players(id),
   FOREIGN KEY(related_team_id) REFERENCES teams(id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_teams_manager_id ON teams(manager_id);
+CREATE INDEX IF NOT EXISTS idx_players_team_id ON players(team_id);
+CREATE INDEX IF NOT EXISTS idx_matches_home_team_id ON matches(home_team_id);
+CREATE INDEX IF NOT EXISTS idx_matches_away_team_id ON matches(away_team_id);
+CREATE INDEX IF NOT EXISTS idx_matches_matchweek ON matches(matchweek);
+CREATE INDEX IF NOT EXISTS idx_matches_played ON matches(played);
+CREATE INDEX IF NOT EXISTS idx_cup_matches_season_round ON cup_matches(season, round);
+CREATE INDEX IF NOT EXISTS idx_palmares_team_id ON palmares(team_id);
+CREATE INDEX IF NOT EXISTS idx_club_news_team_id ON club_news(team_id);
+CREATE INDEX IF NOT EXISTS idx_club_news_player_id ON club_news(player_id);
+CREATE INDEX IF NOT EXISTS idx_club_news_created_at ON club_news(created_at);
