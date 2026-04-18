@@ -7068,6 +7068,9 @@ function App() {
                                       !player.isJunior &&
                                       player.signed_season !==
                                         Math.ceil((matchweekCount + 1) / 14);
+                                    const alreadyAuctionedThisWeek =
+                                      matchweekCount > 0 &&
+                                      (player.last_auctioned_matchweek || 0) >= matchweekCount;
                                     return (
                                       <tr
                                         key={player.id}
@@ -7198,13 +7201,13 @@ function App() {
                                                 disabled={
                                                   isPlayingMatch ||
                                                   showHalftimePanel ||
-                                                  ((player.last_auctioned_matchweek || 0) >= matchweekCount && matchweekCount > 0)
+                                                  alreadyAuctionedThisWeek
                                                 }
                                                 title={
                                                   isPlayingMatch ||
                                                   showHalftimePanel
                                                     ? "Disponível após as partidas"
-                                                    : ((player.last_auctioned_matchweek || 0) >= matchweekCount && matchweekCount > 0)
+                                                    : alreadyAuctionedThisWeek
                                                       ? "Já foi a leilão nesta jornada"
                                                       : "Vender em Leilão"
                                                 }
