@@ -97,6 +97,7 @@ function DivisionTable({ div, teams, teamForms, myTeamId, onTeamClick }) {
           <tbody>
             {divTeams.map((t, idx) => {
               const isMe = String(t.id) === String(myTeamId);
+              const isHuman = t.manager_id != null;
               const gd = (t.goals_for || 0) - (t.goals_against || 0);
               const played = (t.wins || 0) + (t.draws || 0) + (t.losses || 0);
               const isPromo = div > 1 && idx < 2;
@@ -110,7 +111,9 @@ function DivisionTable({ div, teams, teamForms, myTeamId, onTeamClick }) {
 
               const rowBg = isMe
                 ? "bg-primary/10 hover:bg-primary/15"
-                : "bg-surface-container-lowest hover:bg-surface-container-high/60";
+                : isHuman
+                  ? "bg-amber-500/5 hover:bg-amber-500/10"
+                  : "bg-surface-container-lowest hover:bg-surface-container-high/60";
 
               return (
                 <tr
@@ -143,7 +146,7 @@ function DivisionTable({ div, teams, teamForms, myTeamId, onTeamClick }) {
                         style={{ backgroundColor: t.color_primary || "#666" }}
                       />
                       <span
-                        className={`font-bold truncate max-w-25 ${isRelegate && !isPromo ? "opacity-60" : ""} ${isMe ? "text-primary" : "text-on-surface"}`}
+                        className={`font-bold truncate max-w-25 ${isRelegate && !isPromo ? "opacity-60" : ""} ${isMe ? "text-primary" : isHuman ? "text-amber-300" : "text-on-surface"}`}
                       >
                         {t.name}
                       </span>
@@ -151,6 +154,9 @@ function DivisionTable({ div, teams, teamForms, myTeamId, onTeamClick }) {
                         <span className="shrink-0 px-1 py-px bg-tertiary text-on-tertiary text-[8px] font-black rounded-sm leading-tight">
                           TU
                         </span>
+                      )}
+                      {!isMe && isHuman && (
+                        <span className="shrink-0 text-amber-400 text-[8px]" title="Treinador humano">👤</span>
                       )}
                     </div>
                   </td>

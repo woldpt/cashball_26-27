@@ -207,6 +207,11 @@ export function registerTransferSocketHandlers(
           );
 
           if (finalMode === "auction") {
+            const currentMw = game.matchweek || 0;
+            if ((player.last_auctioned_matchweek || 0) >= currentMw && currentMw > 0) {
+              socket.emit("systemMessage", "Este jogador já foi a leilão nesta jornada. Aguarda a próxima jornada.");
+              return;
+            }
             startAuction(game, player, finalPrice, () => {
               emitSquadForPlayer(game, playerState.teamId);
               socket.emit(

@@ -94,6 +94,7 @@ function ensurePlayerSchema(
       ["games_played", "INTEGER DEFAULT 0"],
       ["aggressiveness", "INTEGER DEFAULT 3"],
       ["prev_skill", "INTEGER DEFAULT NULL"],
+      ["last_auctioned_matchweek", "INTEGER DEFAULT 0"],
     ];
 
     const missing = required.filter(([name]) => !existing.has(name));
