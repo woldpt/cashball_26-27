@@ -1,7 +1,8 @@
 import { socket } from "../../socket.js";
 
 export function PlayerLink({ playerId, children }) {
-  if (!playerId) return <>{children}</>;
+  // Negative IDs belong to ephemeral junior GRs — they have no history to display.
+  if (!playerId || playerId < 0) return <>{children}</>;
   return (
     <button
       type="button"

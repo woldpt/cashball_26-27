@@ -1,4 +1,5 @@
 import type { ActiveGame, PlayerSession } from "./types";
+import { withJuniorGRs } from "./game/engine";
 
 interface GameplayHandlerDeps {
   io: any;
@@ -60,9 +61,10 @@ export function registerGameplaySocketHandlers(
       "SELECT * FROM players WHERE team_id = ? ORDER BY CASE position WHEN 'GR' THEN 1 WHEN 'DEF' THEN 2 WHEN 'MED' THEN 3 WHEN 'ATA' THEN 4 ELSE 5 END, skill DESC, name",
       [teamId],
       (err, squad) => {
+        const base = err ? [] : squad || [];
         socket.emit("teamSquadData", {
           teamId,
-          squad: err ? [] : squad || [],
+          squad: withJuniorGRs(base, teamId, game.matchweek || 1),
         });
       },
     );

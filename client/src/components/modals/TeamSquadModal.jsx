@@ -185,6 +185,11 @@ export function TeamSquadModal({
                             <PlayerLink playerId={player.id}>
                               {player.name}
                             </PlayerLink>
+                            {player.isJunior && (
+                              <span className="ml-1 text-[9px] font-black uppercase px-1 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                                🎓
+                              </span>
+                            )}
                             {!!player.is_star &&
                               (player.position === "MED" ||
                                 player.position === "ATA") && (
@@ -246,7 +251,7 @@ export function TeamSquadModal({
                           </td>
                           {showProposalCol && (
                             <td className="px-4 py-2.5 text-center">
-                              {Math.round((player.value || 0) * 1.35) <= myBudget ? (
+                              {!player.isJunior && Math.round((player.value || 0) * 1.35) <= myBudget ? (
                                 <button
                                   onClick={() =>
                                     setTransferProposalModal({

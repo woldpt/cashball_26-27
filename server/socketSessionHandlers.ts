@@ -2,6 +2,7 @@ import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { getAllTeamForms } from "./coreHelpers";
 import { SPONSOR_REVENUE_BY_DIVISION } from "./gameConstants";
 import { getGlobalMessages } from "./db/globalDatabase";
+import { withJuniorGRs } from "./game/engine";
 
 type AnyRow = Record<string, any>;
 
@@ -142,7 +143,8 @@ export function registerSessionSocketHandlers(
     game.db.all(
       "SELECT * FROM players WHERE team_id = ?",
       [team.id],
-      (err: any, squad: any[]) => socket.emit("mySquad", squad),
+      (err: any, squad: any[]) =>
+        socket.emit("mySquad", withJuniorGRs(squad || [], team.id, game.matchweek || 1)),
     );
     socket.emit("marketUpdate", game.globalMarket);
 
@@ -528,7 +530,8 @@ export function registerSessionSocketHandlers(
     "requestPlayerHistory",
     async ({ playerId }: { playerId?: number } = {}) => {
       const game = getGameBySocket(socket.id);
-      if (!game || !playerId) return;
+      // Negative IDs belong to ephemeral junior GRs — no DB row exists for them.
+      if (!game || !playerId || playerId < 0) return;
       try {
         const player = await runGet(
           game.db,
