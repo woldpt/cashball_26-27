@@ -2642,6 +2642,20 @@ function App() {
       .sort(comparePlayers);
   }, [marketPairs, marketPositionFilter, marketSort, me?.teamId, teams]);
 
+  const isMatchInProgress =
+    isPlayingMatch || showHalftimePanel || !!matchAction;
+
+  // Auto-collapse sidebar during Live; restore user preference when Live ends
+  React.useEffect(() => {
+    if (isMatchInProgress) {
+      sidebarUserPrefRef.current = sidebarCollapsed;
+      setSidebarCollapsed(true);
+    } else {
+      setSidebarCollapsed(sidebarUserPrefRef.current);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMatchInProgress]);
+
   if (adminSession) {
     return (
       <AdminPanel
@@ -3312,21 +3326,6 @@ function App() {
   const loanAmount = teamInfo?.loan_amount || 0;
   const loanInterestPerWeek = Math.round(loanAmount * 0.025);
   const currentBudget = teamInfo?.budget || 0;
-
-  // Oculta o menu e expande a janela de jogo durante a simulação
-  const isMatchInProgress =
-    isPlayingMatch || showHalftimePanel || !!matchAction;
-
-  // Auto-collapse sidebar during Live; restore user preference when Live ends
-  React.useEffect(() => {
-    if (isMatchInProgress) {
-      sidebarUserPrefRef.current = sidebarCollapsed;
-      setSidebarCollapsed(true);
-    } else {
-      setSidebarCollapsed(sidebarUserPrefRef.current);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMatchInProgress]);
 
   return (
     <div className="min-h-screen bg-surface text-on-surface font-body tracking-tight">
