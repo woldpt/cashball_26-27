@@ -435,14 +435,18 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                   "match_second_half",
                   "match_extra_time",
                   "match_finalizing",
+                  "match_et_gate",
                 ];
                 if (transientStates.includes(savedPhase)) {
                   console.warn(
-                    `[gameManager] Recovering stuck gamePhase '${savedPhase}' -> 'lobby' for room ${roomCode}`,
+                    `[gameManager] 🔄 Recovering stuck gamePhase '${savedPhase}' → 'lobby' for room ${roomCode}`,
                   );
                   game.gamePhase = "lobby";
                 } else {
                   game.gamePhase = savedPhase;
+                  console.log(
+                    `[gameManager] Restored gamePhase='${savedPhase}' for room ${roomCode}`,
+                  );
                 }
               } else {
                 game.gamePhase = deriveGamePhase(
@@ -588,6 +592,9 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
 }
 
 function saveGameState(game: ActiveGame): void {
+  console.log(
+    `[${game.roomCode}] 💾 saveGameState | phase=${game.gamePhase} | calIdx=${game.calendarIndex} | mw=${game.matchweek} | season=${game.season}`,
+  );
   const upsert = (key: string, value: string) => {
     game.db.run(
       "INSERT OR REPLACE INTO game_state (key, value) VALUES (?, ?)",

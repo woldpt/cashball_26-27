@@ -45,6 +45,9 @@ export function registerGameplaySocketHandlers(
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
     playerState.ready = ready;
+    console.log(
+      `[${game.roomCode}] 👤 ${playerState.name} setReady=${ready} | phase=${game.gamePhase}`,
+    );
     io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
     checkAllReady(game);
   });
@@ -86,8 +89,12 @@ export function registerGameplaySocketHandlers(
     const game = getGameBySocket(socket.id);
     if (!game) return;
 
-    // If the disconnected socket owned the pending match action, auto-resolve it
     const playerState = getPlayerBySocket(game, socket.id);
+    console.log(
+      `[${game.roomCode}] 🔌 Disconnect: ${playerState?.name ?? "unknown"} (socket=${socket.id}) | phase=${game.gamePhase}`,
+    );
+
+    // If the disconnected socket owned the pending match action, auto-resolve it
     const pendingAction: any = game.pendingMatchAction;
     if (playerState && pendingAction && pendingAction.teamId === playerState.teamId) {
       clearTimeout(pendingAction.timer);

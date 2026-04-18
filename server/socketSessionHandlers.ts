@@ -110,6 +110,9 @@ export function registerSessionSocketHandlers(
     roomCode: string,
     isNew: boolean = true,
   ) {
+    console.log(
+      `[${roomCode}] 👤 assignPlayer: ${name} → team=${team.name ?? team.id} | isNew=${isNew} | phase=${game.gamePhase}`,
+    );
     if (!game.playersByName[name]) {
       game.playersByName[name] = {
         name,
