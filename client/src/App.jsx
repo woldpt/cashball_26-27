@@ -4783,7 +4783,9 @@ function App() {
                                           >
                                             <span
                                               className="block w-1.5 h-1.5 rounded-full"
-                                              style={{ backgroundColor: dotColor }}
+                                              style={{
+                                                backgroundColor: dotColor,
+                                              }}
                                             />
                                           </span>
                                         );
@@ -4794,11 +4796,18 @@ function App() {
                                     <span className="font-bold text-primary/60">
                                       {liveMinute}'
                                     </span>
-                                    <span>{isCupExtraTime ? "120'" : "90'"}</span>
+                                    <span>
+                                      {isCupExtraTime ? "120'" : "90'"}
+                                    </span>
                                   </div>
                                   {myMatch.attendance && (
                                     <div className="flex items-center justify-center gap-1 text-[10px] text-on-surface-variant/50 pt-0.5">
-                                      <span>🏟️</span>
+                                      <span className="text-zinc-400 text-[11px] font-bold">
+                                        {hInfo?.stadium_name
+                                          ? `${hInfo.stadium_name} `
+                                          : ""}
+                                        🏟{" "}
+                                      </span>
                                       <span className="font-bold">
                                         {myMatch.attendance.toLocaleString(
                                           "pt-PT",
@@ -6977,7 +6986,7 @@ function App() {
                                     const canAct =
                                       !player.isJunior &&
                                       player.signed_season !==
-                                      Math.ceil((matchweekCount + 1) / 14);
+                                        Math.ceil((matchweekCount + 1) / 14);
                                     return (
                                       <tr
                                         key={player.id}
@@ -7466,14 +7475,17 @@ function App() {
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           setOpenStatusPickerId((prev) =>
-                                            prev === player.id ? null : player.id,
+                                            prev === player.id
+                                              ? null
+                                              : player.id,
                                           );
                                         }}
                                       >
                                         🟢
                                       </span>
                                     )}
-                                    {!player.isJunior && openStatusPickerId === player.id &&
+                                    {!player.isJunior &&
+                                      openStatusPickerId === player.id &&
                                       (() => {
                                         const subCount = Object.entries(
                                           tactic.positions,
@@ -7635,14 +7647,17 @@ function App() {
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           setOpenStatusPickerId((prev) =>
-                                            prev === player.id ? null : player.id,
+                                            prev === player.id
+                                              ? null
+                                              : player.id,
                                           );
                                         }}
                                       >
                                         🟡
                                       </span>
                                     )}
-                                    {!player.isJunior && openStatusPickerId === player.id &&
+                                    {!player.isJunior &&
+                                      openStatusPickerId === player.id &&
                                       (() => {
                                         const titCount = Object.entries(
                                           tactic.positions,
