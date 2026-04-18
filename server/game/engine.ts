@@ -1189,6 +1189,7 @@ async function applyPostMatchQualityEvolution(
 }
 
 module.exports = {
+  withJuniorGRs,
   simulateMatchSegment,
   getTeamSquad,
   generateFixturesForDivision,
