@@ -226,7 +226,7 @@ function DivisionTable({
   );
 }
 
-function GoldenBootSidebar({ topScorers }) {
+function GoldenBootSidebar({ topScorers, myTeamId }) {
   if (!topScorers?.length) return null;
 
   return (
@@ -238,49 +238,60 @@ function GoldenBootSidebar({ topScorers }) {
         </h3>
       </div>
       <div className="divide-y divide-outline-variant/10">
-        {topScorers.slice(0, 10).map((s, i) => (
-          <div
-            key={s.id}
-            className="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-container-high/50 transition-colors"
-          >
-            {/* Rank badge */}
-            <span
-              className={`shrink-0 w-5 h-5 flex items-center justify-center text-[9px] font-black rounded-sm ${
-                i === 0
-                  ? "bg-tertiary text-on-tertiary"
-                  : "bg-surface-bright text-on-surface"
+        {topScorers.slice(0, 10).map((s, i) => {
+          const isMe = String(s.team_id) === String(myTeamId);
+          return (
+            <div
+              key={s.id}
+              className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
+                isMe
+                  ? "bg-primary-container/20 border-l-2 border-primary"
+                  : "hover:bg-surface-container-high/50"
               }`}
             >
-              {i + 1}
-            </span>
-
-            {/* Team colour dot */}
-            <span
-              className="shrink-0 w-2 h-2 rounded-full"
-              style={{ backgroundColor: s.color_primary || "#666" }}
-            />
-
-            {/* Name + team */}
-            <div className="flex-1 min-w-0">
-              <div className="text-[10px] text-on-surface-variant/50 font-bold uppercase truncate">
-                {s.team_name}
-              </div>
-              <div className="text-[11px] font-bold text-on-surface truncate">
-                <PlayerLink playerId={s.id}>{s.name}</PlayerLink>
-              </div>
-            </div>
-
-            {/* Goals */}
-            <div className="text-right shrink-0">
-              <div
-                className={`text-lg font-black font-headline leading-none ${i === 0 ? "text-tertiary" : "text-on-surface"}`}
+              {/* Rank badge */}
+              <span
+                className={`shrink-0 w-5 h-5 flex items-center justify-center text-[9px] font-black rounded-sm ${
+                  i === 0
+                    ? "bg-tertiary text-on-tertiary"
+                    : isMe
+                    ? "bg-primary text-on-primary"
+                    : "bg-surface-bright text-on-surface"
+                }`}
               >
-                {s.goals}
+                {i + 1}
+              </span>
+
+              {/* Team colour dot */}
+              <span
+                className="shrink-0 w-2 h-2 rounded-full"
+                style={{ backgroundColor: s.color_primary || "#666" }}
+              />
+
+              {/* Name + team */}
+              <div className="flex-1 min-w-0">
+                <div className={`text-[10px] font-bold uppercase truncate ${isMe ? "text-primary/70" : "text-on-surface-variant/50"}`}>
+                  {s.team_name}
+                </div>
+                <div className={`text-[11px] font-bold truncate ${isMe ? "text-primary" : "text-on-surface"}`}>
+                  <PlayerLink playerId={s.id}>{s.name}</PlayerLink>
+                </div>
               </div>
-              <div className="text-[8px] uppercase opacity-40">golos</div>
+
+              {/* Goals */}
+              <div className="text-right shrink-0">
+                <div
+                  className={`text-lg font-black font-headline leading-none ${
+                    i === 0 ? "text-tertiary" : isMe ? "text-primary" : "text-on-surface"
+                  }`}
+                >
+                  {s.goals}
+                </div>
+                <div className="text-[8px] uppercase opacity-40">golos</div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
@@ -412,7 +423,7 @@ export function LeagueStandings({
 
         {/* Sidebar */}
         <div className="xl:col-span-3 flex flex-col gap-4">
-          <GoldenBootSidebar topScorers={topScorers} />
+          <GoldenBootSidebar topScorers={topScorers} myTeamId={myTeamId} />
 
           {/* Form legend */}
           <div className="bg-surface-container rounded-md p-4 space-y-2">
