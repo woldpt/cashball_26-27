@@ -152,7 +152,7 @@ function DivisionTable({
                         style={{ backgroundColor: t.color_primary || "#666" }}
                       />
                       <span
-                        className={`font-bold truncate max-w-25 ${isRelegate && !isPromo ? "opacity-60" : ""} ${isMe ? "text-primary" : isHuman ? "text-amber-300" : "text-on-surface"}`}
+                        className={`font-bold truncate max-w-25 ${isRelegate && !isPromo ? "opacity-0" : ""} ${isMe ? "text-primary" : isHuman ? "text-amber-300" : "text-on-surface"}`}
                       >
                         {t.name}
                       </span>
