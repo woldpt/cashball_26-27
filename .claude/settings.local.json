@@ -38,7 +38,8 @@
       "Bash(systemctl is-active *)",
       "Bash(sudo -n systemctl start docker)",
       "Bash(npx eslint *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(python3 -c ' *)"
     ]
   },
   "outputStyle": "default"

@@ -541,11 +541,9 @@ async function applyPenaltyEvent({
       : fallback();
   if (!taker) return;
 
+  // Base 75% goal rate, skill (range 5–50) shifts it ±12.5 pp around the mean (30)
   const penaltySkill = taker.skill || 0;
-  const goalChance = Math.max(
-    0.35,
-    Math.min(0.9, 0.55 + (penaltySkill - 50) / 120),
-  );
+  const goalChance = Math.max(0.60, Math.min(0.88, 0.75 + (penaltySkill - 30) / 160));
   const scored = Math.random() < goalChance;
 
   if (scored) {
@@ -567,13 +565,18 @@ async function applyPenaltyEvent({
       penaltyResult: "GOLO!!!",
     });
   } else {
-    const missTypes = [
-      "DEFENDEU!",
-      "AO POSTE!",
-      "AO LADO!",
-      "PANENKA FALHADO!",
-    ];
-    const missType = missTypes[Math.floor(Math.random() * missTypes.length)];
+    // Miss type proportions: 60% save · 20% post/wide · 20% panenka
+    const missRoll = Math.random();
+    let missType: string;
+    if (missRoll < 0.60) {
+      missType = "DEFENDEU!";
+    } else if (missRoll < 0.70) {
+      missType = "AO POSTE!";
+    } else if (missRoll < 0.80) {
+      missType = "AO LADO!";
+    } else {
+      missType = "PANENKA FALHADO!";
+    }
     fixture.events.push({
       minute: fixture._minute,
       type: "penalty_miss",

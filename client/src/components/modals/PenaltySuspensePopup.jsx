@@ -1,7 +1,21 @@
+import { useState, useEffect } from "react";
+
 /**
  * @param {{ penaltySuspense: object|null }} props
  */
 export function PenaltySuspensePopup({ penaltySuspense }) {
+  const [showResult, setShowResult] = useState(false);
+
+  useEffect(() => {
+    if (!penaltySuspense) {
+      setShowResult(false);
+      return;
+    }
+    setShowResult(false);
+    const timer = setTimeout(() => setShowResult(true), 2000);
+    return () => clearTimeout(timer);
+  }, [penaltySuspense]);
+
   if (!penaltySuspense) return null;
 
   return (
@@ -13,15 +27,21 @@ export function PenaltySuspensePopup({ penaltySuspense }) {
         <p className="text-zinc-400 text-sm font-bold mb-1">
           {penaltySuspense.playerName}
         </p>
-        <p
-          className={`text-3xl font-black ${
-            penaltySuspense.result === "GOLO!!!"
-              ? "text-emerald-400"
-              : "text-red-400"
-          }`}
-        >
-          {penaltySuspense.result}
-        </p>
+        {showResult ? (
+          <p
+            className={`text-3xl font-black ${
+              penaltySuspense.result === "GOLO!!!"
+                ? "text-emerald-400"
+                : "text-red-400"
+            }`}
+          >
+            {penaltySuspense.result}
+          </p>
+        ) : (
+          <p className="text-3xl font-black text-amber-300 animate-pulse">
+            ...
+          </p>
+        )}
       </div>
     </div>
   );
