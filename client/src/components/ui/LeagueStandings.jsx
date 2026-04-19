@@ -130,14 +130,14 @@ function DivisionTable({
                   {/* Position */}
                   <td
                     className={`pl-4 pr-2 py-2 font-black text-[11px] ${
-                      isMe
-                        ? "text-primary"
-                        : div === 1 && idx === 0
-                          ? "text-tertiary"
-                          : isPromo
-                            ? "text-emerald-400"
-                            : isRelegate
-                              ? "text-red-400"
+                      isPromo
+                        ? "text-emerald-400"
+                        : isRelegate
+                          ? "text-red-400"
+                          : isMe
+                            ? "text-primary"
+                            : div === 1 && idx === 0
+                              ? "text-tertiary"
                               : "text-on-surface-variant/50"
                     }`}
                   >
@@ -152,7 +152,7 @@ function DivisionTable({
                         style={{ backgroundColor: t.color_primary || "#666" }}
                       />
                       <span
-                        className={`font-bold truncate max-w-25 ${isRelegate && !isPromo ? "opacity-0" : ""} ${isMe ? "text-primary" : isHuman ? "text-amber-300" : "text-on-surface"}`}
+                        className={`font-bold truncate max-w-25 ${isRelegate && !isPromo ? "opacity-60" : ""} ${isMe ? "text-primary" : isHuman ? "text-amber-300" : "text-on-surface"}`}
                       >
                         {t.name}
                       </span>
