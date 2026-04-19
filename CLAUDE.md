@@ -2,7 +2,7 @@
 
 ## Visão Geral do Projecto
 
-Jogo de gestão de futebol baseado em texto, inspirado no Elifoot 98, a correr no browser com suporte a multiplayer assíncrono. 32 treinadores humanos submetem tácticas de forma assíncrona; a simulação das partidas é síncrona (todos confirmam "Pronto" antes do início, intervalo e tempo extra). Eventos transmitidos via Socket.io em tempo real.
+Jogo de gestão de futebol baseado em texto, inspirado no Elifoot 98, a correr no browser com suporte a multiplayer assíncrono. 1 a 8 treinadores humanos submetem tácticas de forma assíncrona; a simulação das partidas é síncrona (todos confirmam "Pronto" antes do início, intervalo e tempo extra). Eventos transmitidos via Socket.io em tempo real.
 
 ## Stack Tecnológica
 
@@ -32,7 +32,6 @@ npm run build        # compila TypeScript → dist/
 npm run start        # corre dist/index.js
 npm run typecheck    # verifica tipos sem emitir ficheiros
 npm run seed         # seed da base de dados
-npm run seed:real    # seed com dados reais
 ```
 
 ### Frontend
