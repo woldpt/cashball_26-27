@@ -133,3 +133,9 @@ body {
 .toast-slide-in {
   animation: toast-in 0.2s ease-out forwards;
 }
+
+/* Auction persiana shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}

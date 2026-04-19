@@ -105,20 +105,33 @@ export function AuctionNotification({
 
   return (
     <div
-      className="w-full overflow-hidden"
+      className="w-full overflow-hidden relative"
       style={{
-        background: "#0d0d14",
-        borderTop: `2px solid #d4af37`,
-        boxShadow: `0 4px 32px 0 #d4af3755, 0 2px 8px 0 #000a`,
+        background: "linear-gradient(90deg, #92681a 0%, #c9950a 30%, #f0c330 50%, #c9950a 70%, #92681a 100%)",
+        borderTop: `2px solid #f5d76e`,
+        borderBottom: `1px solid #a8730a`,
+        boxShadow: `0 4px 32px 0 #d4af3788, 0 2px 12px 0 #f0c33044, 0 0 0 1px #d4af3722`,
       }}
     >
+      {/* ── Shimmer overlay ── */}
+      <div
+        className="absolute inset-0 pointer-events-none overflow-hidden"
+        style={{ zIndex: 0 }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(105deg, transparent 30%, #fff5 50%, transparent 70%)",
+            animation: "shimmer 3s infinite linear",
+            backgroundSize: "200% 100%",
+          }}
+        />
+      </div>
       {/* ── Collapsed strip — always visible ──────────────────────────── */}
       <button
         type="button"
-        className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all hover:brightness-125"
-        style={{
-          background: `linear-gradient(90deg, #d4af3718 0%, #13131f 40%, #0d0d14 100%)`,
-        }}
+        className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-all hover:brightness-110 relative"
+        style={{ zIndex: 1 }}
         onClick={() => setIsAuctionExpanded((v) => !v)}
       >
         {/* Live / finished pill */}
@@ -132,32 +145,32 @@ export function AuctionNotification({
         ) : (
           <span
             className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm shrink-0 animate-pulse"
-            style={{ background: "#d4af37", color: "#0d0d14" }}
+            style={{ background: "#3b1f00", color: "#f5d76e" }}
           >
             Leilão
           </span>
         )}
 
         {/* Name + pos + skill */}
-        <span className="font-headline font-black text-white truncate">
+        <span className="font-headline font-black truncate" style={{ color: "#3b1f00" }}>
           {selectedAuctionPlayer.name}
         </span>
         <span
           className="text-[10px] font-black shrink-0 px-1.5 py-0.5 rounded-sm"
           style={{
-            background: "#1e1e2e",
-            color: accent.text,
-            border: `1px solid ${accent.border}40`,
+            background: "#00000030",
+            color: "#3b1f00",
+            border: `1px solid #00000025`,
           }}
         >
           {pos}
         </span>
-        <span className="text-xs text-zinc-500 shrink-0 tabular-nums">
+        <span className="text-xs shrink-0 tabular-nums font-bold" style={{ color: "#5c3500" }}>
           {selectedAuctionPlayer.skill}
         </span>
 
         {/* Price / result pill */}
-        <span className="font-mono font-black text-amber-400 text-sm shrink-0 ml-auto tabular-nums">
+        <span className="font-mono font-black text-sm shrink-0 ml-auto tabular-nums" style={{ color: "#3b1f00" }}>
           {formatCurrency(startingPrice)}
         </span>
         {auctionResult ? (
@@ -185,7 +198,7 @@ export function AuctionNotification({
         <span
           className="material-symbols-outlined text-base shrink-0 transition-transform"
           style={{
-            color: "#52525b",
+            color: "#5c3500",
             transform: isAuctionExpanded ? "rotate(180deg)" : "rotate(0deg)",
           }}
         >
@@ -200,7 +213,8 @@ export function AuctionNotification({
               e.stopPropagation();
               closeAuctionBid();
             }}
-            className="text-zinc-600 hover:text-zinc-300 font-bold shrink-0 transition-colors leading-none"
+            className="font-bold shrink-0 transition-colors leading-none hover:opacity-60"
+            style={{ color: "#5c3500" }}
             aria-label="Fechar"
           >
             <span className="material-symbols-outlined text-base">close</span>
@@ -210,7 +224,7 @@ export function AuctionNotification({
 
       {/* ── Expanded panel ────────────────────────────────────────────────── */}
       {isAuctionExpanded && (
-        <div style={{ borderTop: "1px solid #1e1e2e" }}>
+        <div style={{ borderTop: "1px solid #a8730a", background: "#0d0d14", position: "relative", zIndex: 1 }}>
           {/* ── Hero header ── */}
           <div
             className="px-5 pt-6 pb-5 relative overflow-hidden"

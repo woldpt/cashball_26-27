@@ -8528,9 +8528,9 @@ function App() {
 
       {/* ── Auction notification (persiana) ───────────────────────────────── */}
       <div
-        className={`fixed top-14 left-0 lg:left-64 right-0 z-130 transition-transform duration-300 ${
+        className={`fixed top-14 left-0 right-0 z-130 transition-all duration-300 ${
           selectedAuctionPlayer ? "translate-y-0" : "-translate-y-full"
-        }`}
+        } ${sidebarCollapsed ? "lg:left-14" : "lg:left-64"}`}
       >
         <AuctionNotification
           selectedAuctionPlayer={selectedAuctionPlayer}
