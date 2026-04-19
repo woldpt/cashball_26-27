@@ -3347,7 +3347,7 @@ function App() {
         ))}
       </div>
       <header
-        className="fixed top-0 left-0 right-0 h-14 z-20 flex items-center"
+        className="fixed top-0 left-0 right-0 h-14 z-[160] flex items-center"
         style={{
           background: teamInfo?.color_primary || "#131313",
           borderBottom: "1px solid #201f1f",
