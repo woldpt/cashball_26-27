@@ -1,12 +1,13 @@
 import { socket } from "../../socket.js";
 
 /**
- * @param {{ cupDraw: object|null, cupDrawRevealIdx: number, me: object, showCupDrawPopup: boolean, setShowCupDrawPopup: function }} props
+ * @param {{ cupDraw: object|null, cupDrawRevealIdx: number, me: object, players: object[], showCupDrawPopup: boolean, setShowCupDrawPopup: function }} props
  */
 export function CupDrawPopup({
   cupDraw,
   cupDrawRevealIdx,
   me,
+  players = [],
   showCupDrawPopup,
   setShowCupDrawPopup,
 }) {
@@ -14,6 +15,9 @@ export function CupDrawPopup({
 
   const totalPairs = (cupDraw.fixtures || []).length;
   const fullyRevealed = cupDrawRevealIdx >= totalPairs * 2;
+
+  const coachOf = (teamId) =>
+    players.find((p) => p.teamId === teamId)?.name ?? null;
 
   return (
     <div className="fixed inset-0 z-140 bg-zinc-950/97 backdrop-blur-sm flex flex-col items-center p-4 overflow-y-auto">
@@ -39,6 +43,9 @@ export function CupDrawPopup({
             (fixture.homeTeam?.id === me?.teamId ||
               fixture.awayTeam?.id === me?.teamId);
 
+          const homeCoach = homeRevealed ? coachOf(fixture.homeTeam?.id) : null;
+          const awayCoach = awayRevealed ? coachOf(fixture.awayTeam?.id) : null;
+
           return (
             <div
               key={pairIdx}
@@ -60,16 +67,23 @@ export function CupDrawPopup({
                   homeRevealed ? "opacity-100" : "opacity-0"
                 }`}
               >
-                <span
-                  className="font-black text-xs text-right truncate"
-                  style={{
-                    color: homeRevealed
-                      ? fixture.homeTeam?.color_primary || "#fff"
-                      : "transparent",
-                  }}
-                >
-                  {homeRevealed ? fixture.homeTeam?.name || "?" : "·····"}
-                </span>
+                <div className="text-right min-w-0">
+                  <span
+                    className="block font-black text-xs truncate"
+                    style={{
+                      color: homeRevealed
+                        ? fixture.homeTeam?.color_primary || "#fff"
+                        : "transparent",
+                    }}
+                  >
+                    {homeRevealed ? fixture.homeTeam?.name || "?" : "·····"}
+                  </span>
+                  {homeCoach && (
+                    <span className="block text-[9px] text-amber-400 font-bold truncate">
+                      {homeCoach}
+                    </span>
+                  )}
+                </div>
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 border border-white/10"
                   style={{
@@ -107,16 +121,23 @@ export function CupDrawPopup({
                 >
                   {awayRevealed ? fixture.awayTeam?.name?.[0] || "?" : ""}
                 </div>
-                <span
-                  className="font-black text-xs text-left truncate"
-                  style={{
-                    color: awayRevealed
-                      ? fixture.awayTeam?.color_primary || "#fff"
-                      : "transparent",
-                  }}
-                >
-                  {awayRevealed ? fixture.awayTeam?.name || "?" : "·····"}
-                </span>
+                <div className="min-w-0">
+                  <span
+                    className="block font-black text-xs truncate"
+                    style={{
+                      color: awayRevealed
+                        ? fixture.awayTeam?.color_primary || "#fff"
+                        : "transparent",
+                    }}
+                  >
+                    {awayRevealed ? fixture.awayTeam?.name || "?" : "·····"}
+                  </span>
+                  {awayCoach && (
+                    <span className="block text-[9px] text-amber-400 font-bold truncate">
+                      {awayCoach}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           );

@@ -3836,9 +3836,21 @@ function App() {
                       >
                         {nextMatchSummary?.venue ?? "-"}
                       </span>
-                      <p className="text-white font-black text-lg leading-tight">
-                        vs {nextMatchOpponent.name}
-                      </p>
+                      <div>
+                        <p className="text-white font-black text-lg leading-tight">
+                          vs {nextMatchOpponent.name}
+                        </p>
+                        {(() => {
+                          const coach = players.find(
+                            (p) => p.teamId === nextMatchOpponent.id,
+                          );
+                          return coach ? (
+                            <p className="text-[10px] text-amber-400 font-bold">
+                              Treinador: {coach.name}
+                            </p>
+                          ) : null;
+                        })()}
+                      </div>
                     </div>
                   </div>
                   {/* Standings */}
@@ -5030,10 +5042,16 @@ function App() {
                                                   "#555",
                                               }}
                                             />
-                                            <span
-                                              className={`text-[11px] font-bold truncate ${isHumanMatch && players.some((p) => p.teamId === match.homeTeamId) ? "text-primary" : "text-on-surface/80"}`}
-                                            >
-                                              {hInfo?.name}
+                                            <span className="flex flex-col min-w-0">
+                                              <span
+                                                className={`text-[11px] font-bold truncate ${isHumanMatch && players.some((p) => p.teamId === match.homeTeamId) ? "text-primary" : "text-on-surface/80"}`}
+                                              >
+                                                {hInfo?.name}
+                                              </span>
+                                              {(() => {
+                                                const c = players.find((p) => p.teamId === match.homeTeamId);
+                                                return c ? <span className="text-[9px] text-amber-400 font-bold truncate leading-none">{c.name}</span> : null;
+                                              })()}
                                             </span>
                                           </span>
                                           <span className="font-headline font-black text-sm shrink-0 flex items-center gap-1 px-1">
@@ -5066,10 +5084,16 @@ function App() {
                                             </span>
                                           </span>
                                           <span className="flex items-center gap-1.5 flex-1 min-w-0 pl-1 justify-end">
-                                            <span
-                                              className={`text-[11px] font-bold truncate ${isHumanMatch && players.some((p) => p.teamId === match.awayTeamId) ? "text-primary" : "text-on-surface/80"}`}
-                                            >
-                                              {aInfo?.name}
+                                            <span className="flex flex-col min-w-0 items-end">
+                                              <span
+                                                className={`text-[11px] font-bold truncate ${isHumanMatch && players.some((p) => p.teamId === match.awayTeamId) ? "text-primary" : "text-on-surface/80"}`}
+                                              >
+                                                {aInfo?.name}
+                                              </span>
+                                              {(() => {
+                                                const c = players.find((p) => p.teamId === match.awayTeamId);
+                                                return c ? <span className="text-[9px] text-amber-400 font-bold truncate leading-none">{c.name}</span> : null;
+                                              })()}
                                             </span>
                                             <span
                                               className="w-2 h-2 rounded-sm shrink-0"
@@ -8630,6 +8654,7 @@ function App() {
         cupDraw={cupDraw}
         cupDrawRevealIdx={cupDrawRevealIdx}
         me={me}
+        players={players}
         setShowCupDrawPopup={setShowCupDrawPopup}
       />
 
