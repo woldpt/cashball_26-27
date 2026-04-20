@@ -1416,6 +1416,7 @@ function App() {
       }
       // Check for penalty suspense events — only show for the player's own match
       const myTeamId = meRef.current?.teamId;
+      let myFixtureWithSuspense = null;
       for (const f of data.fixtures || []) {
         const isMyFixture =
           myTeamId != null &&
@@ -1423,12 +1424,32 @@ function App() {
         if (!isMyFixture) continue;
         for (const e of f.minuteEvents || []) {
           if (e.penaltySuspense) {
+            myFixtureWithSuspense = f;
             setPenaltySuspense({
               playerName: e.playerName,
               result: e.penaltyResult,
               team: e.team,
             });
-            setTimeout(() => setPenaltySuspense(null), 3000);
+            // After suspense, update the score for my fixture
+            setTimeout(() => {
+              setPenaltySuspense(null);
+              setMatchResults((prev) => {
+                if (!prev) return prev;
+                const updatedResults = (prev.results || []).map((r) => {
+                  if (
+                    r.homeTeamId !== f.homeTeamId ||
+                    r.awayTeamId !== f.awayTeamId
+                  )
+                    return r;
+                  return {
+                    ...r,
+                    finalHomeGoals: f.homeGoals,
+                    finalAwayGoals: f.awayGoals,
+                  };
+                });
+                return { ...prev, results: updatedResults };
+              });
+            }, 3000);
           }
         }
       }
@@ -1450,10 +1471,15 @@ function App() {
                   ee.playerId === ne.playerId,
               ),
           );
+          // If my fixture has penalty suspense active, hold back the score update
+          const hasSuspense =
+            myFixtureWithSuspense != null &&
+            r.homeTeamId === myFixtureWithSuspense.homeTeamId &&
+            r.awayTeamId === myFixtureWithSuspense.awayTeamId;
           return {
             ...r,
-            finalHomeGoals: update.homeGoals,
-            finalAwayGoals: update.awayGoals,
+            finalHomeGoals: hasSuspense ? r.finalHomeGoals : update.homeGoals,
+            finalAwayGoals: hasSuspense ? r.finalAwayGoals : update.awayGoals,
             events: [...existingEvents, ...newEvents],
             homeLineup: update.homeLineup?.length
               ? update.homeLineup
