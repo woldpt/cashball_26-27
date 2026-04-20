@@ -606,6 +606,14 @@ async function applyPenaltyEvent({
   }
 }
 
+function applyFatigue(squad: PlayerRow[], lineupIds: Set<number>, amount: number) {
+  for (const p of squad) {
+    if (lineupIds.has(p.id)) {
+      p.skill = Math.max(1, p.skill - amount);
+    }
+  }
+}
+
 async function simulateMatchSegment(
   db: Db,
   fixture: MatchFixture,
@@ -875,6 +883,18 @@ async function simulateMatchSegment(
 
   for (let minute = startMin; minute <= endMin; minute++) {
     fixture._minute = minute;
+
+    // Cansaço: -1 a partir do minuto 46, -2 total a partir do minuto 70
+    if (minute === 46 && !fixture._fatigue1Applied) {
+      applyFatigue(homeSquad, homeLineupIds, 1);
+      applyFatigue(awaySquad, awayLineupIds, 1);
+      fixture._fatigue1Applied = true;
+    }
+    if (minute === 70 && !fixture._fatigue2Applied) {
+      applyFatigue(homeSquad, homeLineupIds, 1);
+      applyFatigue(awaySquad, awayLineupIds, 1);
+      fixture._fatigue2Applied = true;
+    }
 
     const currentHome = getPower(home.squad, homeTactic, homeMorale);
     const currentAway = getPower(away.squad, awayTactic, awayMorale);
