@@ -7540,8 +7540,8 @@ function App() {
                             })()}
 
                             {/* Formation pill buttons */}
-                            <div className="px-5 py-3 border-b border-outline-variant/15 flex flex-wrap gap-2">
-                              {[
+                            {(() => {
+                              const formations = [
                                 { value: "4-4-2", label: "4-4-2 Clássico" },
                                 { value: "4-3-3", label: "4-3-3 Ofensivo" },
                                 { value: "3-5-2", label: "3-5-2 Controlo" },
@@ -7550,20 +7550,34 @@ function App() {
                                 { value: "3-4-3", label: "3-4-3 Total" },
                                 { value: "4-2-4", label: "4-2-4 Avassalador" },
                                 { value: "5-4-1", label: "5-4-1 Ferrolho" },
-                              ].map(({ value, label }) => (
-                                <button
-                                  key={value}
-                                  onClick={() => handleAutoPick(value)}
-                                  className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-sm ${
-                                    tactic.formation === value
-                                      ? "bg-primary text-on-primary"
-                                      : "bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface border border-outline-variant/20"
-                                  }`}
-                                >
-                                  {label}
-                                </button>
-                              ))}
-                            </div>
+                              ];
+                              const hasLineup = titulares.length > 0;
+                              const lastLabel = formations.find((f) => f.value === tactic.formation)?.label;
+                              return (
+                                <div className="px-5 py-3 border-b border-outline-variant/15 flex flex-col gap-2">
+                                  <div className="flex flex-wrap gap-2">
+                                    {formations.map(({ value, label }) => (
+                                      <button
+                                        key={value}
+                                        onClick={() => handleAutoPick(value)}
+                                        className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-sm ${
+                                          hasLineup && tactic.formation === value
+                                            ? "bg-primary text-on-primary"
+                                            : "bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface border border-outline-variant/20"
+                                        }`}
+                                      >
+                                        {label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  {!hasLineup && lastLabel && (
+                                    <p className="text-[9px] text-on-surface-variant/40 font-bold uppercase tracking-widest">
+                                      Última: {lastLabel}
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })()}
 
                             {/* Mentalidade strip */}
                             <div className="px-4 py-3 border-b border-outline-variant/15 bg-surface-container-high/20">
