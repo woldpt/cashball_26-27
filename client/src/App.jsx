@@ -8741,7 +8741,7 @@ function App() {
 
       <NewsTicker
         newsTickerItems={newsTickerItems}
-        hideOnMobile={isMatchInProgress}
+        hidden={isMatchInProgress}
       />
 
       <PlayerHistoryModal

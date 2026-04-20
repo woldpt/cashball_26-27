@@ -45,9 +45,9 @@ function buildPlaylist(newsItems) {
 }
 
 /**
- * @param {{ newsTickerItems: Array, hideOnMobile?: boolean }} props
+ * @param {{ newsTickerItems: Array, hideOnMobile?: boolean, hidden?: boolean }} props
  */
-export function NewsTicker({ newsTickerItems, hideOnMobile = false }) {
+export function NewsTicker({ newsTickerItems, hideOnMobile = false, hidden = false }) {
   // Rebuild playlist whenever real news changes.
   // useMemo keeps the filler stable between unrelated re-renders.
   const playlist = useMemo(
@@ -55,7 +55,7 @@ export function NewsTicker({ newsTickerItems, hideOnMobile = false }) {
     [newsTickerItems],
   );
 
-  if (!playlist.length) return null;
+  if (!playlist.length || hidden) return null;
 
   // Technique: render content twice and animate translateX(0) → translateX(-50%).
   // Because -50% = exactly one copy's width, the CSS `infinite` loop is seamless.
