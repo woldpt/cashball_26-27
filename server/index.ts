@@ -125,6 +125,8 @@ const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || "http://localhost:5173")
   .map((s) => s.trim())
   .filter(Boolean);
 
+const SERVER_START_TIME = Date.now();
+
 const app = express();
 app.set("trust proxy", 1);
 app.use((req, res, next) => {
@@ -398,6 +400,8 @@ const checkAllReady = weeklyFlowHelpers.checkAllReady;
 // ── SOCKET HANDLERS ───────────────────────────────────────────────────────────
 
 io.on("connection", (socket) => {
+  socket.emit("serverStartTime", SERVER_START_TIME);
+
   registerSessionSocketHandlers(socket, {
     io,
     verifyOrCreateManager,

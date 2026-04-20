@@ -2118,15 +2118,7 @@ function App() {
     } catch {
       // ignore
     }
-    resetGameState();
-    setMe(null);
-    setName("");
-    setPassword("");
-    setConfirmPassword("");
-    setRoomCode("");
-    setJoining(false);
-    setJoinError("");
-    resetAuthFlow();
+    window.location.reload();
   };
 
   const handleAdminLogout = () => {

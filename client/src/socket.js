@@ -9,6 +9,16 @@ export const socket = io(import.meta.env.VITE_BACKEND_URL || undefined, {
   timeout: 20000,
 });
 
+// Detect server restarts: reload the page so the client picks up new assets.
+let _knownServerStartTime = null;
+socket.on('serverStartTime', (t) => {
+  if (_knownServerStartTime === null) {
+    _knownServerStartTime = t;
+  } else if (_knownServerStartTime !== t) {
+    window.location.reload();
+  }
+});
+
 socket.on('connect_error', (err) => {
   console.error('[socket] connect_error:', err.message);
 });
