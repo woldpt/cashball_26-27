@@ -830,7 +830,7 @@ function App() {
       // Skip if starting price exceeds our available budget
       const myTeamId = meRef.current?.teamId;
       const myTeamBudget =
-        teamsRef.current.find((t) => t.id == myTeamId)?.budget ?? Infinity;
+        teamsRef.current.find((t) => t.id == myTeamId)?.budget ?? 0;
       if (auctionData.startingPrice > myTeamBudget) return;
       // Auto-open auction notification for all eligible coaches
       setSelectedAuctionPlayer(auctionData);
@@ -2607,7 +2607,7 @@ function App() {
       return (b.skill || 0) - (a.skill || 0);
     };
 
-    const myBudget = teams.find((t) => t.id == me?.teamId)?.budget ?? Infinity;
+    const myBudget = teams.find((t) => t.id == me?.teamId)?.budget ?? 0;
 
     return marketPairs
       .filter((player) => player.team_id !== marketTeamId)
@@ -8716,10 +8716,11 @@ function App() {
                                         </span>
                                       ) : (
                                         <button
-                                          onClick={() => openAuctionBid(player)}
-                                          className="bg-primary hover:brightness-110 text-on-primary font-black uppercase text-[10px] px-3 py-1.5 rounded-md tracking-wide"
+                                          onClick={() => canAfford && openAuctionBid(player)}
+                                          disabled={!canAfford}
+                                          className="bg-primary hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed text-on-primary font-black uppercase text-[10px] px-3 py-1.5 rounded-md tracking-wide"
                                         >
-                                          Licitar
+                                          {canAfford ? "Licitar" : "Sem fundos"}
                                         </button>
                                       )
                                     ) : (
