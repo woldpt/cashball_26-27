@@ -1429,7 +1429,7 @@ function App() {
               result: e.penaltyResult,
               team: e.team,
             });
-            // After suspense, update the score for my fixture
+            // After suspense, update the score AND add the held-back event
             setTimeout(() => {
               setPenaltySuspense(null);
               setMatchResults((prev) => {
@@ -1440,10 +1440,25 @@ function App() {
                     r.awayTeamId !== f.awayTeamId
                   )
                     return r;
+                  // Add the held-back penalty event now
+                  const suspenseEvents = (f.minuteEvents || []).filter(
+                    (ne) => ne.penaltySuspense,
+                  );
+                  const existingEvents = r.events || [];
+                  const toAdd = suspenseEvents.filter(
+                    (ne) =>
+                      !existingEvents.some(
+                        (ee) =>
+                          ee.minute === ne.minute &&
+                          ee.type === ne.type &&
+                          ee.playerId === ne.playerId,
+                      ),
+                  );
                   return {
                     ...r,
                     finalHomeGoals: f.homeGoals,
                     finalAwayGoals: f.awayGoals,
+                    events: [...existingEvents, ...toAdd],
                   };
                 });
                 return { ...prev, results: updatedResults };
@@ -1461,6 +1476,13 @@ function App() {
           );
           if (!update) return r;
           const existingEvents = r.events || [];
+          // If my fixture has penalty suspense active, hold back the score AND
+          // the penalty_goal/penalty_miss events so the scoreboard only updates
+          // after the modal reveals the outcome.
+          const hasSuspense =
+            myFixtureWithSuspense != null &&
+            r.homeTeamId === myFixtureWithSuspense.homeTeamId &&
+            r.awayTeamId === myFixtureWithSuspense.awayTeamId;
           const newEvents = (update.minuteEvents || []).filter(
             (ne) =>
               !existingEvents.some(
@@ -1468,13 +1490,8 @@ function App() {
                   ee.minute === ne.minute &&
                   ee.type === ne.type &&
                   ee.playerId === ne.playerId,
-              ),
+              ) && !(hasSuspense && ne.penaltySuspense),
           );
-          // If my fixture has penalty suspense active, hold back the score update
-          const hasSuspense =
-            myFixtureWithSuspense != null &&
-            r.homeTeamId === myFixtureWithSuspense.homeTeamId &&
-            r.awayTeamId === myFixtureWithSuspense.awayTeamId;
           return {
             ...r,
             finalHomeGoals: hasSuspense ? r.finalHomeGoals : update.homeGoals,
