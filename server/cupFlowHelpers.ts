@@ -2,7 +2,7 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import type { CalendarEntry } from "./gameConstants";
 import { SEASON_CALENDAR, SPONSOR_REVENUE_BY_DIVISION } from "./gameConstants";
-import { clearPhaseTimer, makePhaseToken } from "./matchFlowHelpers";
+import { clearPhaseTimer } from "./matchFlowHelpers";
 
 interface CupFlowDeps {
   io: any;
@@ -60,7 +60,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
   async function applySeasonEnd(game: ActiveGame) {
     const season = game.season;
     const year = game.year;
-    const allTeams = await runAll(game.db, "SELECT * FROM teams ORDER BY division, id");
+    const allTeams = await runAll(
+      game.db,
+      "SELECT * FROM teams ORDER BY division, id",
+    );
 
     const byDiv: Record<number, any[]> = {};
     for (const team of allTeams) {
@@ -131,11 +134,18 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
       const sponsorAmount = SPONSOR_REVENUE_BY_DIVISION[team.division] || 0;
       if (sponsorAmount > 0) {
         await new Promise((resolve) => {
-          game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [sponsorAmount, team.id], resolve);
+          game.db.run(
+            "UPDATE teams SET budget = budget + ? WHERE id = ?",
+            [sponsorAmount, team.id],
+            resolve,
+          );
         });
       }
     }
-    io.to(game.roomCode).emit("systemMessage", "📺 Receitas de patrocinadores distribuídas.");
+    io.to(game.roomCode).emit(
+      "systemMessage",
+      "📺 Receitas de patrocinadores distribuídas.",
+    );
 
     // Best scorer prize
     const topScorer = await runGet(
@@ -149,7 +159,11 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     );
     if (topScorer && topScorer.team_id) {
       await new Promise((resolve) => {
-        game.db.run("UPDATE teams SET budget = budget + 500000 WHERE id = ?", [topScorer.team_id], resolve);
+        game.db.run(
+          "UPDATE teams SET budget = budget + 500000 WHERE id = ?",
+          [topScorer.team_id],
+          resolve,
+        );
       });
       io.to(game.roomCode).emit(
         "systemMessage",
@@ -158,19 +172,32 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     }
 
     const promotions: Array<{ teamId: number; toDiv: number }> = [];
-    for (const [upperDiv, lowerDiv] of [[1, 2], [2, 3], [3, 4], [4, 5]]) {
+    for (const [upperDiv, lowerDiv] of [
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 5],
+    ]) {
       const upper = byDiv[upperDiv] || [];
       const lower = byDiv[lowerDiv] || [];
       if (!upper.length || !lower.length) continue;
       const relegated = upper.slice(-2).map((team) => team.id);
       const promoted = lower.slice(0, 2).map((team) => team.id);
-      relegated.forEach((id) => promotions.push({ teamId: id, toDiv: lowerDiv }));
-      promoted.forEach((id) => promotions.push({ teamId: id, toDiv: upperDiv }));
+      relegated.forEach((id) =>
+        promotions.push({ teamId: id, toDiv: lowerDiv }),
+      );
+      promoted.forEach((id) =>
+        promotions.push({ teamId: id, toDiv: upperDiv }),
+      );
     }
 
     for (const promotion of promotions) {
       await new Promise((resolve) => {
-        game.db.run("UPDATE teams SET division = ? WHERE id = ?", [promotion.toDiv, promotion.teamId], resolve);
+        game.db.run(
+          "UPDATE teams SET division = ? WHERE id = ?",
+          [promotion.toDiv, promotion.teamId],
+          resolve,
+        );
       });
     }
 
@@ -216,7 +243,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     io.to(game.roomCode).emit("seasonEnd", {
       season,
       year,
-      champion: iLigaWinner ? { id: iLigaWinner.id, name: iLigaWinner.name } : null,
+      champion: iLigaWinner
+        ? { id: iLigaWinner.id, name: iLigaWinner.name }
+        : null,
       promotions,
     });
   }
@@ -332,7 +361,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     const drawPayload = {
       round,
       roundName: CUP_ROUND_NAMES[round] || `Ronda ${round}`,
-      fixtures: enrichedFixtures.map((f) => ({ homeTeam: f.homeTeam, awayTeam: f.awayTeam })),
+      fixtures: enrichedFixtures.map((f) => ({
+        homeTeam: f.homeTeam,
+        awayTeam: f.awayTeam,
+      })),
       humanInCup,
       season: game.season,
     };
@@ -352,7 +384,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     const roundName = CUP_ROUND_NAMES[round] || `Ronda ${round}`;
     const results: any[] = [];
     let hasAnyET = false;
-    const etHumanTeamIds: number[] = [];
 
     console.log(
       `[${game.roomCode}] 🏆 finalizeCupRound | round=${round} (${roundName}) | fixtures=${fixtures.length}`,
@@ -361,10 +392,16 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     for (const fixture of fixtures) {
       // Re-read tactics from live player state so ET uses any changes made
       // during the ET halftime interval (tactic changes, style adjustments).
-      const p1 = Object.values(game.playersByName).find((p: any) => p.teamId === fixture.homeTeamId);
-      const p2 = Object.values(game.playersByName).find((p: any) => p.teamId === fixture.awayTeamId);
-      const t1 = (p1 as any)?.tactic || fixture._t1 || { formation: "4-4-2", style: "Balanced" };
-      const t2 = (p2 as any)?.tactic || fixture._t2 || { formation: "4-4-2", style: "Balanced" };
+      const p1 = Object.values(game.playersByName).find(
+        (p: any) => p.teamId === fixture.homeTeamId,
+      );
+      const p2 = Object.values(game.playersByName).find(
+        (p: any) => p.teamId === fixture.awayTeamId,
+      );
+      const t1 = (p1 as any)?.tactic ||
+        fixture._t1 || { formation: "4-4-2", style: "Balanced" };
+      const t2 = (p2 as any)?.tactic ||
+        fixture._t2 || { formation: "4-4-2", style: "Balanced" };
       if (p1) fixture._t1 = t1;
       if (p2) fixture._t2 = t2;
       const ctx = { game, io, matchweek: game.matchweek };
@@ -378,9 +415,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
       );
 
       if (fixture.finalHomeGoals !== fixture.finalAwayGoals) {
-        winnerId = fixture.finalHomeGoals > fixture.finalAwayGoals
-          ? fixture.homeTeamId
-          : fixture.awayTeamId;
+        winnerId =
+          fixture.finalHomeGoals > fixture.finalAwayGoals
+            ? fixture.homeTeamId
+            : fixture.awayTeamId;
         console.log(
           `[${game.roomCode}] 🏆 Winner decided in 90 min: teamId=${winnerId}`,
         );
@@ -390,14 +428,25 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
         );
         hasAnyET = true;
 
-        const humanInFixture = (Object.values(game.playersByName) as PlayerSession[])
-          .some((p) => p.socketId && (p.teamId === fixture.homeTeamId || p.teamId === fixture.awayTeamId));
+        const humanInFixture = (
+          Object.values(game.playersByName) as PlayerSession[]
+        ).some(
+          (p) =>
+            p.socketId &&
+            (p.teamId === fixture.homeTeamId ||
+              p.teamId === fixture.awayTeamId),
+        );
 
         if (humanInFixture) {
-          etHumanTeamIds.push(fixture.homeTeamId, fixture.awayTeamId);
           console.log(
             `[${game.roomCode}] ⏸ ET gate: waiting for coaches to ready up (human in fixture)`,
           );
+
+          // Reset ready states BEFORE changing phase to prevent premature gate resolution
+          // (a coach whose ready=true from the previous phase must not skip the gate).
+          Object.values(game.playersByName).forEach((p: any) => {
+            p.ready = false;
+          });
 
           // Gate: show substitution screen before extra time starts
           game.gamePhase = "match_et_gate";
@@ -417,7 +466,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
             })),
           };
           game.lastHalftimePayload = etGatePayload;
-          Object.values(game.playersByName).forEach((p: any) => { p.ready = false; });
           io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
           io.to(game.roomCode).emit("cupETHalfTime", etGatePayload);
 
@@ -430,11 +478,16 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
               resolve();
             }, 90_000);
           });
-          if (game._etGateTimer) { clearTimeout(game._etGateTimer); game._etGateTimer = null; }
+          if (game._etGateTimer) {
+            clearTimeout(game._etGateTimer);
+            game._etGateTimer = null;
+          }
           game._etGateResolve = null;
           console.log(
             `[${game.roomCode}] ⏩ ET gate resolved — starting extra time`,
           );
+          // Sync ready state to all coaches before ET animation starts
+          io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
         }
 
         // Always emit cupExtraTimeStart so observers (eliminated coaches) also see the animation
@@ -446,9 +499,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
         });
 
         game.gamePhase = "match_extra_time";
-        console.log(
-          `[${game.roomCode}] 🏆 Simulating extra time...`,
-        );
+        console.log(`[${game.roomCode}] 🏆 Simulating extra time...`);
         await simulateExtraTime(game.db, fixture, t1, t2, ctx);
 
         const etGoalsHome = fixture.finalHomeGoals;
@@ -466,9 +517,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
         });
 
         if (fixture.finalHomeGoals !== fixture.finalAwayGoals) {
-          winnerId = fixture.finalHomeGoals > fixture.finalAwayGoals
-            ? fixture.homeTeamId
-            : fixture.awayTeamId;
+          winnerId =
+            fixture.finalHomeGoals > fixture.finalAwayGoals
+              ? fixture.homeTeamId
+              : fixture.awayTeamId;
           console.log(
             `[${game.roomCode}] 🏆 Winner decided in ET: teamId=${winnerId}`,
           );
@@ -476,13 +528,29 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
           console.log(
             `[${game.roomCode}] 🏆 Still draw after ET — going to penalties`,
           );
-          const homeSquad = await getTeamSquad(game.db, fixture.homeTeamId, t1, game.matchweek);
-          const awaySquad = await getTeamSquad(game.db, fixture.awayTeamId, t2, game.matchweek);
+          const homeSquad = await getTeamSquad(
+            game.db,
+            fixture.homeTeamId,
+            t1,
+            game.matchweek,
+          );
+          const awaySquad = await getTeamSquad(
+            game.db,
+            fixture.awayTeamId,
+            t2,
+            game.matchweek,
+          );
           const shootout = simulatePenaltyShootout(homeSquad, awaySquad);
 
           // Only emit penalty shootout for fixtures involving human players
-          const humanInFixture = (Object.values(game.playersByName) as PlayerSession[])
-            .some((p) => p.socketId && (p.teamId === fixture.homeTeamId || p.teamId === fixture.awayTeamId));
+          const humanInFixture = (
+            Object.values(game.playersByName) as PlayerSession[]
+          ).some(
+            (p) =>
+              p.socketId &&
+              (p.teamId === fixture.homeTeamId ||
+                p.teamId === fixture.awayTeamId),
+          );
           if (humanInFixture) {
             io.to(game.roomCode).emit("cupPenaltyShootout", {
               round,
@@ -495,13 +563,14 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
           fixture._penaltyHomeGoals = shootout.homeGoals;
           fixture._penaltyAwayGoals = shootout.awayGoals;
           fixture._decidedByPenalties = true;
-          // Update final goals to reflect penalty shootout result
-          fixture.finalHomeGoals = shootout.homeGoals;
-          fixture.finalAwayGoals = shootout.awayGoals;
+          // Do NOT overwrite finalHomeGoals/finalAwayGoals — they hold the real
+          // match score after regulation + ET (e.g. 1-1). The penalty result is
+          // reported separately via _penaltyHomeGoals/_penaltyAwayGoals.
 
-          winnerId = shootout.homeGoals > shootout.awayGoals
-            ? fixture.homeTeamId
-            : fixture.awayTeamId;
+          winnerId =
+            shootout.homeGoals > shootout.awayGoals
+              ? fixture.homeTeamId
+              : fixture.awayTeamId;
           console.log(
             `[${game.roomCode}] 🏆 Penalties: ${shootout.homeGoals}-${shootout.awayGoals} → winner teamId=${winnerId}`,
           );
@@ -509,7 +578,15 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
           await new Promise((resolve) => {
             game.db.run(
               "UPDATE cup_matches SET home_penalties = ?, away_penalties = ?, played = 1, winner_team_id = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
-              [shootout.homeGoals, shootout.awayGoals, winnerId, season, round, fixture.homeTeamId, fixture.awayTeamId],
+              [
+                shootout.homeGoals,
+                shootout.awayGoals,
+                winnerId,
+                season,
+                round,
+                fixture.homeTeamId,
+                fixture.awayTeamId,
+              ],
               resolve,
             );
           });
@@ -518,7 +595,14 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
         await new Promise((resolve) => {
           game.db.run(
             "UPDATE cup_matches SET home_et_score = ?, away_et_score = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
-            [etGoalsHome, etGoalsAway, season, round, fixture.homeTeamId, fixture.awayTeamId],
+            [
+              etGoalsHome,
+              etGoalsAway,
+              season,
+              round,
+              fixture.homeTeamId,
+              fixture.awayTeamId,
+            ],
             resolve,
           );
         });
@@ -529,24 +613,44 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
       await new Promise((resolve) => {
         game.db.run(
           "UPDATE cup_matches SET home_score = ?, away_score = ?, played = 1, winner_team_id = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
-          [goals90Home, goals90Away, winnerId, season, round, fixture.homeTeamId, fixture.awayTeamId],
+          [
+            goals90Home,
+            goals90Away,
+            winnerId,
+            season,
+            round,
+            fixture.homeTeamId,
+            fixture.awayTeamId,
+          ],
           resolve,
         );
       });
 
       // Cup upset morale boost: winner beat a team from a higher division
       const [homeDiv, awayDiv] = await Promise.all([
-        runGet(game.db, "SELECT division FROM teams WHERE id = ?", [fixture.homeTeamId]),
-        runGet(game.db, "SELECT division FROM teams WHERE id = ?", [fixture.awayTeamId]),
+        runGet(game.db, "SELECT division FROM teams WHERE id = ?", [
+          fixture.homeTeamId,
+        ]),
+        runGet(game.db, "SELECT division FROM teams WHERE id = ?", [
+          fixture.awayTeamId,
+        ]),
       ]);
       const winnerIsHome = winnerId === fixture.homeTeamId;
-      const winnerDiv = winnerIsHome ? (homeDiv?.division ?? 5) : (awayDiv?.division ?? 5);
-      const loserDiv = winnerIsHome ? (awayDiv?.division ?? 5) : (homeDiv?.division ?? 5);
+      const winnerDiv = winnerIsHome
+        ? (homeDiv?.division ?? 5)
+        : (awayDiv?.division ?? 5);
+      const loserDiv = winnerIsHome
+        ? (awayDiv?.division ?? 5)
+        : (homeDiv?.division ?? 5);
       if (loserDiv < winnerDiv) {
         const divDiff = winnerDiv - loserDiv;
         const extraMorale = Math.min(25, divDiff * 10);
         await new Promise((resolve) => {
-          game.db.run("UPDATE teams SET morale = MIN(100, morale + ?) WHERE id = ?", [extraMorale, winnerId], resolve);
+          game.db.run(
+            "UPDATE teams SET morale = MIN(100, morale + ?) WHERE id = ?",
+            [extraMorale, winnerId],
+            resolve,
+          );
         });
       }
 
@@ -558,7 +662,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
         homeGoals: fixture.finalHomeGoals,
         awayGoals: fixture.finalAwayGoals,
         winnerId,
-        wentToET: !!fixture._decidedByPenalties || fixture.events.some((e: any) => e.minute > 90),
+        wentToET:
+          !!fixture._decidedByPenalties ||
+          fixture.events.some((e: any) => e.minute > 90),
         decidedByPenalties: !!fixture._decidedByPenalties,
         penaltyHomeGoals: fixture._penaltyHomeGoals ?? null,
         penaltyAwayGoals: fixture._penaltyAwayGoals ?? null,
@@ -566,7 +672,11 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
       });
 
       if (round === 5) {
-        const winnerTeam = await runGet(game.db, "SELECT name FROM teams WHERE id = ?", [winnerId]);
+        const winnerTeam = await runGet(
+          game.db,
+          "SELECT name FROM teams WHERE id = ?",
+          [winnerId],
+        );
         await new Promise((resolve) => {
           game.db.run(
             "INSERT INTO palmares (team_id, season, achievement) VALUES (?, ?, ?)",
@@ -575,7 +685,11 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
           );
         });
         await new Promise((resolve) => {
-          game.db.run("UPDATE teams SET budget = budget + 500000 WHERE id = ?", [winnerId], resolve);
+          game.db.run(
+            "UPDATE teams SET budget = budget + 500000 WHERE id = ?",
+            [winnerId],
+            resolve,
+          );
         });
         const updatedTeams = await runAll(game.db, "SELECT * FROM teams");
         io.to(game.roomCode).emit("teamsData", updatedTeams);
@@ -590,8 +704,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
     // ET animation gate: wait for all connected coaches to ack before advancing
     if (hasAnyET) {
-      const anyHumanConnected = (Object.values(game.playersByName) as PlayerSession[])
-        .some((p) => !!p.socketId);
+      const anyHumanConnected = (
+        Object.values(game.playersByName) as PlayerSession[]
+      ).some((p) => !!p.socketId);
       if (anyHumanConnected) {
         await cupETAnimGate(game, 45000);
       }
@@ -613,7 +728,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     game.cupHalftimePayload = null;
     game.lastHalftimePayload = null;
     game.gamePhase = "lobby";
-    Object.values(game.playersByName).forEach((p) => { p.ready = false; });
+    Object.values(game.playersByName).forEach((p) => {
+      p.ready = false;
+    });
     console.log(
       `[${game.roomCode}] ↩ Cup round ${round} finalized → lobby | calendarIndex=${game.calendarIndex} | nextEvent=${game.currentEvent?.type ?? "none"}`,
     );
@@ -643,13 +760,28 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
       game._cupETAnimHandler = (socketId: string) => {
         acks.add(socketId);
-        // Wait for ALL connected coaches (including eliminated observers)
-        const connected = (Object.values(game.playersByName) as PlayerSession[]).filter(
-          (p) => !!p.socketId,
+        // Only require acks from coaches whose teams are still in a current fixture.
+        // Eliminated coaches are observers: their client may not send cupExtraTimeDone,
+        // which would otherwise block the gate for the full 45s timeout.
+        const inFixture = (
+          Object.values(game.playersByName) as PlayerSession[]
+        ).filter(
+          (p) =>
+            !!p.socketId &&
+            game.currentFixtures.some(
+              (f) => f.homeTeamId === p.teamId || f.awayTeamId === p.teamId,
+            ),
         );
+        // Fallback: if no human coach is in any fixture, use all connected coaches.
+        const relevant =
+          inFixture.length > 0
+            ? inFixture
+            : (Object.values(game.playersByName) as PlayerSession[]).filter(
+                (p) => !!p.socketId,
+              );
         if (
-          connected.length > 0 &&
-          connected.every((p) => acks.has(p.socketId as string))
+          relevant.length > 0 &&
+          relevant.every((p) => acks.has(p.socketId as string))
         ) {
           clearTimeout(timeout);
           delete game._cupETAnimHandler;
@@ -657,18 +789,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
         }
       };
     });
-  }
-
-  // ─── PHASE TIMER HELPERS ─────────────────────────────────────────────────────
-
-  function armPhaseTimer(game: ActiveGame, ms: number, onElapsed: () => void) {
-    clearPhaseTimer(game);
-    const token = game.phaseToken;
-    game.phaseTimer = setTimeout(() => {
-      // Stale check: only fire if token hasn't changed
-      if (game.phaseToken !== token) return;
-      onElapsed();
-    }, ms);
   }
 
   // ─── RECONNECT HELPERS ───────────────────────────────────────────────────────
@@ -683,7 +803,11 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     );
 
     // Lobby during a cup week: re-emit draw so reconnecting coach sees matchup
-    if (game.gamePhase === "lobby" && game.currentEvent?.type === "cup" && game.currentFixtures.length > 0) {
+    if (
+      game.gamePhase === "lobby" &&
+      game.currentEvent?.type === "cup" &&
+      game.currentFixtures.length > 0
+    ) {
       const entry = game.currentEvent as any;
       const connectedPlayers = getPlayerList(game);
       const humanTeamIds = new Set(connectedPlayers.map((p) => p.teamId));
@@ -691,7 +815,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
       socket.emit("cupDrawStart", {
         round: entry.round,
         roundName: entry.roundName,
-        fixtures: game.currentFixtures.map((f: any) => ({ homeTeam: f.homeTeam, awayTeam: f.awayTeam })),
+        fixtures: game.currentFixtures.map((f: any) => ({
+          homeTeam: f.homeTeam,
+          awayTeam: f.awayTeam,
+        })),
         humanInCup,
         season: game.season,
       });
@@ -715,7 +842,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     }
 
     // Recovery for match_extra_time: tell the reconnecting client that ET is running
-    if (game.gamePhase === "match_extra_time" && game.currentFixtures?.length > 0) {
+    if (
+      game.gamePhase === "match_extra_time" &&
+      game.currentFixtures?.length > 0
+    ) {
       const entry = game.currentEvent as any;
       socket.emit("matchReplay", {
         // Default to 91 because extra time starts at minute 91
