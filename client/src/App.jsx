@@ -4918,8 +4918,8 @@ function App() {
                                         🏟{" "}
                                         {myMatch.attendance.toLocaleString(
                                           "pt-PT",
-                                        )}
-                                        " adeptos"
+                                        )}{" "}
+                                        adeptos
                                       </span>
                                     </div>
                                   )}
