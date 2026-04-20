@@ -7,7 +7,6 @@ import React, {
   useRef,
 } from "react";
 import { socket } from "./socket";
-import AdminPanel from "./AdminPanel.jsx";
 import { COUNTRY_FLAGS } from "./countryFlags.js";
 // ── Extracted components ───────────────────────────────────────────────────
 import { AggBadge } from "./components/shared/AggBadge.jsx";
@@ -83,7 +82,6 @@ const POSITION_BG_CLASS = {
 };
 
 const MAX_MATCH_SUBS = 3;
-const ADMIN_SESSION_KEY = "cashballAdminSession";
 
 // ── SEASON CALENDAR ───────────────────────────────────────────────────────────
 const SEASON_CALENDAR = [
@@ -174,37 +172,6 @@ function generateLeagueFixtures(teamsInDivision, matchweek, myTeamId) {
 }
 const DEFAULT_TACTIC = { formation: "4-4-2", style: "Balanced", positions: {} };
 
-function loadAdminSession() {
-  try {
-    const raw = window.localStorage.getItem(ADMIN_SESSION_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed?.token || !parsed?.username) return null;
-    if (parsed.expiresAt && Number(parsed.expiresAt) <= Date.now()) {
-      window.localStorage.removeItem(ADMIN_SESSION_KEY);
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function saveAdminSession(session) {
-  try {
-    window.localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
-  } catch {
-    // Ignore storage failures.
-  }
-}
-
-function clearAdminSession() {
-  try {
-    window.localStorage.removeItem(ADMIN_SESSION_KEY);
-  } catch {
-    // Ignore storage failures.
-  }
-}
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("pt-PT", {
@@ -578,8 +545,6 @@ const playGoalSound = () => {
 function App() {
   const savedSessionRef = React.useRef(loadSavedSession());
   const savedSession = savedSessionRef.current;
-  const [adminSession, setAdminSession] = useState(() => loadAdminSession());
-
   const [teams, setTeams] = useState([]);
   const [teamForms, setTeamForms] = useState({});
   const [players, setPlayers] = useState([]);
@@ -770,7 +735,6 @@ function App() {
 
   // Re-fetch this coach's saved rooms whenever the name changes while in "saved-game" mode.
   useEffect(() => {
-    if (adminSession) return;
     if (joinMode === "saved-game" && name) {
       const timeout = setTimeout(() => {
         fetch(`${backendUrl}/saves?name=${encodeURIComponent(name)}`)
@@ -785,7 +749,7 @@ function App() {
     } else if (joinMode === "saved-game" && !name) {
       setAvailableSaves([]);
     }
-  }, [name, joinMode, adminSession]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [name, joinMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep isPlayingMatchRef in sync and force-close auction modal when a match starts.
   useEffect(() => {
@@ -1808,7 +1772,6 @@ function App() {
   }, [marketPairs]);
 
   useEffect(() => {
-    if (adminSession) return;
     if (!me?.name || !me?.password || !me?.roomCode) return;
     try {
       window.localStorage.setItem(
@@ -1822,10 +1785,10 @@ function App() {
     } catch {
       // Ignore storage failures.
     }
-  }, [me, adminSession]);
+  }, [me]);
 
   useEffect(() => {
-    if (adminSession || !savedSession || me?.teamId) return;
+    if (!savedSession || me?.teamId) return;
     socket.emit("joinGame", {
       name: savedSession.name,
       password: savedSession.password,
@@ -1841,7 +1804,7 @@ function App() {
     return () => {
       if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
     };
-  }, [savedSession, me?.teamId, adminSession]);
+  }, [savedSession, me?.teamId]);
 
   useEffect(() => {
     if (activeTab !== "tactic" || !me?.teamId) return;
@@ -2099,50 +2062,6 @@ function App() {
     }
   };
 
-  const handleAdminAuthenticate = async () => {
-    if (!name || !password || authSubmitting) return;
-
-    setAuthSubmitting(true);
-    setAuthError("");
-
-    try {
-      const response = await fetch(`${backendUrl}/admin/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: name.trim(),
-          password,
-        }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setAuthError(data.error || "Não foi possível autenticar o admin.");
-        return;
-      }
-
-      const session = {
-        token: data.token,
-        username: data.username,
-        expiresAt: Date.now() + Number(data.expiresIn || 0),
-      };
-      saveAdminSession(session);
-      setAdminSession(session);
-      setMe(null);
-      setJoining(false);
-      setJoinMode(null);
-      setRoomCode("");
-      setJoinError("");
-      setAuthPhase("login");
-    } catch {
-      setAuthError("Sem ligação ao servidor. Tenta novamente.");
-    } finally {
-      setAuthSubmitting(false);
-    }
-  };
-
   const handleLogout = () => {
     try {
       window.localStorage.removeItem("cashballSession");
@@ -2150,20 +2069,6 @@ function App() {
       // ignore
     }
     window.location.reload();
-  };
-
-  const handleAdminLogout = () => {
-    clearAdminSession();
-    setAdminSession(null);
-    setName("");
-    setPassword("");
-    setConfirmPassword("");
-    setRoomCode("");
-    setJoining(false);
-    setJoinError("");
-    setAuthError("");
-    setAuthPhase("login");
-    setJoinMode(null);
   };
 
   const handleJoin = () => {
@@ -2670,16 +2575,6 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMatchInProgress]);
 
-  if (adminSession) {
-    return (
-      <AdminPanel
-        token={adminSession.token}
-        username={adminSession.username}
-        onLogout={handleAdminLogout}
-      />
-    );
-  }
-
   if (!me || !me.teamId) {
     if (joining && me) {
       return (
@@ -2851,26 +2746,17 @@ function App() {
                     >
                       {authSubmitting ? "A VALIDAR..." : "ENTRAR"}
                     </button>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={handleAdminAuthenticate}
-                        disabled={!name.trim() || !password || authSubmitting}
-                        className="border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 disabled:bg-surface-container disabled:text-on-surface-variant text-cyan-100 py-3 rounded font-black text-xs uppercase tracking-[0.2em] transition-all"
-                      >
-                        Admin
-                      </button>
-                      <button
-                        onClick={() => {
-                          setConfirmPassword("");
-                          setAuthError("");
-                          setJoinError("");
-                          setAuthPhase("register");
-                        }}
-                        className="border border-outline-variant/60 bg-surface-container hover:border-primary/40 text-on-surface py-3 rounded font-black text-xs uppercase tracking-[0.2em] transition-all"
-                      >
-                        Criar conta
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => {
+                        setConfirmPassword("");
+                        setAuthError("");
+                        setJoinError("");
+                        setAuthPhase("register");
+                      }}
+                      className="w-full border border-outline-variant/60 bg-surface-container hover:border-primary/40 text-on-surface py-3 rounded font-black text-xs uppercase tracking-[0.2em] transition-all"
+                    >
+                      Criar conta
+                    </button>
                     {authError && (
                       <p className="text-red-400 text-sm text-center font-bold">
                         ⚠️ {authError}
