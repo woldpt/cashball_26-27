@@ -81,7 +81,16 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         "SELECT * FROM cup_matches WHERE season = ? AND round = ? AND (home_team_id = ? OR away_team_id = ?) AND played = 0",
         [game.season, currentEntry.round, teamId, teamId],
       );
-      if (!cupMatch) return null;
+      if (!cupMatch) {
+        // Team is eliminated from this round — return spectator summary (no opponent)
+        return {
+          matchweek: game.matchweek,
+          isCup: true,
+          cupRound: (currentEntry as any).round,
+          cupRoundName: (currentEntry as any).roundName,
+          opponent: null,
+        };
+      }
 
       const isHome = cupMatch.home_team_id === teamId;
       const opponentId = isHome ? cupMatch.away_team_id : cupMatch.home_team_id;
