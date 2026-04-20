@@ -3942,7 +3942,7 @@ function App() {
 
       {/* LIVE bar during match (mobile) */}
       {isMatchInProgress && (
-        <div className="lg:hidden fixed bottom-8 left-0 right-0 h-10 z-40 flex items-center justify-center bg-red-500/10 border-t border-red-500/30 backdrop-blur-sm">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 h-10 z-40 flex items-center justify-center bg-red-500/10 border-t border-red-500/30 backdrop-blur-sm">
           <span className="material-symbols-outlined text-red-400 text-[18px] leading-none mr-1.5 animate-pulse">
             sensors
           </span>
