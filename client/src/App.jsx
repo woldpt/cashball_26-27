@@ -546,6 +546,34 @@ const playGoalSound = () => {
   }
 };
 
+// Som descendente para golo anulado pelo VAR
+const playVarSound = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const sequence = [
+      { freq: 440, time: 0, dur: 0.16, vol: 0.11 },
+      { freq: 330, time: 0.15, dur: 0.32, vol: 0.09 },
+    ];
+    sequence.forEach(({ freq, time, dur, vol }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
+      gain.gain.setValueAtTime(vol, ctx.currentTime + time);
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        ctx.currentTime + time + dur,
+      );
+      osc.start(ctx.currentTime + time);
+      osc.stop(ctx.currentTime + time + dur);
+    });
+  } catch {
+    // ignore
+  }
+};
+
 function App() {
   const savedSessionRef = React.useRef(loadSavedSession());
   const savedSession = savedSessionRef.current;
@@ -1936,10 +1964,12 @@ function App() {
         const hasGoal = events.some((e) =>
           ["goal", "penalty_goal"].includes(e.type),
         );
+        const hasVar = events.some((e) => e.type === "var_disallowed");
         const hasOtherEvent = events.some((e) =>
           ["red", "injury"].includes(e.type),
         );
         if (hasGoal) playGoalSound();
+        else if (hasVar) playVarSound();
         else if (hasOtherEvent) playNotification();
       }
     });
@@ -4844,6 +4874,7 @@ function App() {
                                               "goal",
                                               "penalty_goal",
                                               "own_goal",
+                                              "var_disallowed",
                                               "yellow",
                                               "red",
                                               "injury",
@@ -4857,13 +4888,15 @@ function App() {
                                               ? "⚽"
                                               : e.type === "own_goal"
                                                 ? "⚽🔙"
-                                                : e.type === "yellow"
-                                                  ? "🟨"
-                                                  : e.type === "red"
-                                                    ? "🟥"
-                                                    : e.type === "injury"
-                                                      ? "🚑"
-                                                      : "";
+                                                : e.type === "var_disallowed"
+                                                  ? "📺"
+                                                  : e.type === "yellow"
+                                                    ? "🟨"
+                                                    : e.type === "red"
+                                                      ? "🟥"
+                                                      : e.type === "injury"
+                                                        ? "🚑"
+                                                        : "";
                                           const name =
                                             e.playerName ||
                                             e.player_name ||
@@ -4881,7 +4914,7 @@ function App() {
                                                 {icon}
                                               </span>
                                               <span
-                                                className={`font-bold truncate min-w-0 ${e.type === "goal" || e.type === "penalty_goal" ? "text-primary" : e.type === "own_goal" ? "text-orange-400" : e.type === "red" ? "text-red-400" : "text-on-surface-variant/70"}`}
+                                                className={`font-bold truncate min-w-0 ${e.type === "goal" || e.type === "penalty_goal" ? "text-primary" : e.type === "own_goal" ? "text-orange-400" : e.type === "var_disallowed" ? "text-amber-400/60 line-through" : e.type === "red" ? "text-red-400" : "text-on-surface-variant/70"}`}
                                               >
                                                 <PlayerLink
                                                   playerId={e.playerId}
@@ -4987,6 +5020,7 @@ function App() {
                                               "goal",
                                               "penalty_goal",
                                               "own_goal",
+                                              "var_disallowed",
                                               "yellow",
                                               "red",
                                               "injury",
@@ -5000,13 +5034,15 @@ function App() {
                                               ? "⚽"
                                               : e.type === "own_goal"
                                                 ? "⚽🔙"
-                                                : e.type === "yellow"
-                                                  ? "🟨"
-                                                  : e.type === "red"
-                                                    ? "🟥"
-                                                    : e.type === "injury"
-                                                      ? "🚑"
-                                                      : "";
+                                                : e.type === "var_disallowed"
+                                                  ? "📺"
+                                                  : e.type === "yellow"
+                                                    ? "🟨"
+                                                    : e.type === "red"
+                                                      ? "🟥"
+                                                      : e.type === "injury"
+                                                        ? "🚑"
+                                                        : "";
                                           const name =
                                             e.playerName ||
                                             e.player_name ||
@@ -5018,7 +5054,7 @@ function App() {
                                               className="flex items-center gap-1 text-[9px] leading-tight w-full justify-end"
                                             >
                                               <span
-                                                className={`font-bold truncate min-w-0 ${e.type === "goal" || e.type === "penalty_goal" ? "text-primary" : e.type === "own_goal" ? "text-orange-400" : e.type === "red" ? "text-red-400" : "text-on-surface-variant/70"}`}
+                                                className={`font-bold truncate min-w-0 ${e.type === "goal" || e.type === "penalty_goal" ? "text-primary" : e.type === "own_goal" ? "text-orange-400" : e.type === "var_disallowed" ? "text-amber-400/60 line-through" : e.type === "red" ? "text-red-400" : "text-on-surface-variant/70"}`}
                                               >
                                                 <PlayerLink
                                                   playerId={e.playerId}

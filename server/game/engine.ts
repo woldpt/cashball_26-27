@@ -918,6 +918,20 @@ async function simulateMatchSegment(
       const scorer =
         scorers.length > 0 ? weightedPickScorer(scorers) : scoringSquad[0];
 
+      // VAR: 5% de hipótese de golo ser anulado
+      if (Math.random() < 0.05) {
+        fixture.events.push({
+          minute,
+          type: "var_disallowed",
+          team: attackingSide,
+          emoji: "📺",
+          playerId: scorer ? scorer.id : null,
+          playerName: scorer ? scorer.name : "Jogador",
+          text: `[${minute}'] 📺 VAR — Golo anulado! ${scorer ? scorer.name : "Jogador"}`,
+        });
+        return;
+      }
+
       if (isHome) fixture.finalHomeGoals++;
       else fixture.finalAwayGoals++;
 
