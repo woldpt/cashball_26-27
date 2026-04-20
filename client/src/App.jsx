@@ -4916,11 +4916,10 @@ function App() {
                                           ? `${hInfo.stadium_name} `
                                           : ""}
                                         🏟{" "}
-                                      </span>
-                                      <span className="font-bold">
                                         {myMatch.attendance.toLocaleString(
                                           "pt-PT",
                                         )}
+                                        " adeptos"
                                       </span>
                                     </div>
                                   )}
@@ -5042,8 +5041,16 @@ function App() {
                                                 {hInfo?.name}
                                               </span>
                                               {(() => {
-                                                const c = players.find((p) => p.teamId === match.homeTeamId);
-                                                return c ? <span className="text-[9px] text-amber-400 font-bold truncate leading-none">{c.name}</span> : null;
+                                                const c = players.find(
+                                                  (p) =>
+                                                    p.teamId ===
+                                                    match.homeTeamId,
+                                                );
+                                                return c ? (
+                                                  <span className="text-[9px] text-amber-400 font-bold truncate leading-none">
+                                                    {c.name}
+                                                  </span>
+                                                ) : null;
                                               })()}
                                             </span>
                                           </span>
@@ -5084,8 +5091,16 @@ function App() {
                                                 {aInfo?.name}
                                               </span>
                                               {(() => {
-                                                const c = players.find((p) => p.teamId === match.awayTeamId);
-                                                return c ? <span className="text-[9px] text-amber-400 font-bold truncate leading-none">{c.name}</span> : null;
+                                                const c = players.find(
+                                                  (p) =>
+                                                    p.teamId ===
+                                                    match.awayTeamId,
+                                                );
+                                                return c ? (
+                                                  <span className="text-[9px] text-amber-400 font-bold truncate leading-none">
+                                                    {c.name}
+                                                  </span>
+                                                ) : null;
                                               })()}
                                             </span>
                                             <span
@@ -5608,13 +5623,23 @@ function App() {
 
                       // Find the cup round in which my team was eliminated
                       const eliminatedCupRound = (() => {
-                        const cupEntries = SEASON_CALENDAR.filter((e) => e.type === "cup");
+                        const cupEntries = SEASON_CALENDAR.filter(
+                          (e) => e.type === "cup",
+                        );
                         for (const e of cupEntries) {
-                          const fixtures = cal?.cupMatches?.filter((m) => m.round === e.round) ?? [];
+                          const fixtures =
+                            cal?.cupMatches?.filter(
+                              (m) => m.round === e.round,
+                            ) ?? [];
                           const myMatch = fixtures.find(
-                            (f) => f.home_team_id === myTeamId || f.away_team_id === myTeamId,
+                            (f) =>
+                              f.home_team_id === myTeamId ||
+                              f.away_team_id === myTeamId,
                           );
-                          if (myMatch?.played && myMatch.winner_team_id !== myTeamId) {
+                          if (
+                            myMatch?.played &&
+                            myMatch.winner_team_id !== myTeamId
+                          ) {
                             return e.round;
                           }
                         }
@@ -5632,8 +5657,16 @@ function App() {
                           const status = getStatus(entry);
                           if (entry.type === "cup") {
                             // Rounds after elimination → show eliminated placeholder
-                            if (eliminatedCupRound !== null && entry.round > eliminatedCupRound) {
-                              return { entry, status, type: "cup", eliminated: true };
+                            if (
+                              eliminatedCupRound !== null &&
+                              entry.round > eliminatedCupRound
+                            ) {
+                              return {
+                                entry,
+                                status,
+                                type: "cup",
+                                eliminated: true,
+                              };
                             }
                             const cupFixtures =
                               cal?.cupMatches?.filter(
@@ -5791,7 +5824,8 @@ function App() {
                         (e) => e.status !== "done" && !e.eliminated,
                       );
                       const nextGameOpponent = nextGame?.opponent;
-                      const nextGameVenue = nextGame?.stadiumTeam?.stadium_name ?? null;
+                      const nextGameVenue =
+                        nextGame?.stadiumTeam?.stadium_name ?? null;
                       const nextGameIsHome = nextGame?.imHome;
 
                       // Team logo circle helper
@@ -5895,14 +5929,21 @@ function App() {
                                     Próximo Jogo
                                   </span>
                                   <span className="material-symbols-outlined text-base text-on-surface-variant/60">
-                                    {nextGameIsHome === false ? "flight_takeoff" : "home"}
+                                    {nextGameIsHome === false
+                                      ? "flight_takeoff"
+                                      : "home"}
                                   </span>
                                 </div>
                                 <p className="text-base font-headline font-black leading-tight mb-1 text-on-surface truncate">
                                   {nextGameOpponent?.name ?? "—"}
                                 </p>
                                 <p className="text-[9px] text-on-surface-variant/60 uppercase tracking-wide font-bold truncate">
-                                  {nextGameVenue ?? (nextGameIsHome ? "Casa" : nextGameIsHome === false ? "Deslocação" : "—")}
+                                  {nextGameVenue ??
+                                    (nextGameIsHome
+                                      ? "Casa"
+                                      : nextGameIsHome === false
+                                        ? "Deslocação"
+                                        : "—")}
                                 </p>
                               </div>
                             </div>
@@ -6138,7 +6179,9 @@ function App() {
                                           {/* Mobile-only home/away indicator */}
                                           <span
                                             className={`sm:hidden text-[8px] font-black uppercase tracking-widest ${
-                                              imHome ? "text-emerald-400" : "text-sky-400"
+                                              imHome
+                                                ? "text-emerald-400"
+                                                : "text-sky-400"
                                             }`}
                                           >
                                             {imHome ? "Casa" : "Fora"}
@@ -7305,35 +7348,55 @@ function App() {
                                         </td>
                                         {/* Jogos */}
                                         <td className="py-2.5 px-3 text-center font-black text-zinc-300 text-xs">
-                                          {getPlayerStat(player, ["games_played"])}{" "}
+                                          {getPlayerStat(player, [
+                                            "games_played",
+                                          ])}{" "}
                                           <span className="text-zinc-600 font-normal">
-                                            ({getPlayerStat(player, ["career_games"])})
+                                            (
+                                            {getPlayerStat(player, [
+                                              "career_games",
+                                            ])}
+                                            )
                                           </span>
                                         </td>
                                         {/* Golos */}
                                         <td className="py-2.5 px-3 text-center font-black text-emerald-400 text-xs">
                                           {getPlayerStat(player, ["goals"])}{" "}
                                           <span className="text-zinc-600 font-normal">
-                                            ({getPlayerStat(player, ["career_goals"])})
+                                            (
+                                            {getPlayerStat(player, [
+                                              "career_goals",
+                                            ])}
+                                            )
                                           </span>
                                         </td>
                                         {/* Vermelhos */}
                                         <td className="py-2.5 px-3 text-center font-black text-red-400 text-xs">
                                           {getPlayerStat(player, ["red_cards"])}{" "}
                                           <span className="text-zinc-600 font-normal">
-                                            ({getPlayerStat(player, ["career_reds"])})
+                                            (
+                                            {getPlayerStat(player, [
+                                              "career_reds",
+                                            ])}
+                                            )
                                           </span>
                                         </td>
                                         {/* Lesões */}
                                         <td className="py-2.5 px-3 text-center font-black text-orange-400 text-xs">
                                           {getPlayerStat(player, ["injuries"])}{" "}
                                           <span className="text-zinc-600 font-normal">
-                                            ({getPlayerStat(player, ["career_injuries"])})
+                                            (
+                                            {getPlayerStat(player, [
+                                              "career_injuries",
+                                            ])}
+                                            )
                                           </span>
                                         </td>
                                         {/* Agressividade */}
                                         <td className="py-2.5 px-3 text-center">
-                                          <AggBadge value={player.aggressiveness} />
+                                          <AggBadge
+                                            value={player.aggressiveness}
+                                          />
                                         </td>
                                         {/* Ações */}
                                         <td className="py-2.5 px-3 text-right">
@@ -7561,7 +7624,9 @@ function App() {
                                 { value: "5-4-1", label: "5-4-1 Ferrolho" },
                               ];
                               const hasLineup = titulares.length > 0;
-                              const lastLabel = formations.find((f) => f.value === tactic.formation)?.label;
+                              const lastLabel = formations.find(
+                                (f) => f.value === tactic.formation,
+                              )?.label;
                               return (
                                 <div className="px-5 py-3 border-b border-outline-variant/15 flex flex-col gap-2">
                                   <div className="flex flex-wrap gap-2">
@@ -7570,7 +7635,8 @@ function App() {
                                         key={value}
                                         onClick={() => handleAutoPick(value)}
                                         className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-sm ${
-                                          hasLineup && tactic.formation === value
+                                          hasLineup &&
+                                          tactic.formation === value
                                             ? "bg-primary text-on-primary"
                                             : "bg-surface-container-high hover:bg-surface-bright text-on-surface-variant hover:text-on-surface border border-outline-variant/20"
                                         }`}
