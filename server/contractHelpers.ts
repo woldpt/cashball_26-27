@@ -162,10 +162,17 @@ export function createContractHelpers(deps: ContractDeps) {
             );
           });
         } else {
+          const div5Team = await runGet(
+            game.db,
+            "SELECT id FROM teams WHERE division = 5 ORDER BY RANDOM() LIMIT 1",
+            [],
+          );
+          const fallbackTeamId = div5Team?.id ?? player.team_id;
+          const newWageFallback = Math.max(Math.round((player.skill || 0) * 40), 500);
           await new Promise((resolve) => {
             game.db.run(
-              "UPDATE players SET team_id = NULL, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0 WHERE id = ?",
-              [player.id],
+              "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0 WHERE id = ?",
+              [fallbackTeamId, newWageFallback, getSeasonEndMatchweek(currentMw), player.id],
               resolve,
             );
           });

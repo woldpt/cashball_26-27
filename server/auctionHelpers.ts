@@ -22,7 +22,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
       `SELECT p.*, t.name as team_name, t.color_primary, t.color_secondary
      FROM players p
      LEFT JOIN teams t ON p.team_id = t.id
-     WHERE p.team_id IS NULL OR p.transfer_status != 'none'
+     WHERE p.team_id IS NOT NULL AND p.transfer_status != 'none'
      ORDER BY CASE WHEN p.transfer_status = 'auction' THEN 0 ELSE 1 END, p.transfer_price ASC, p.value ASC, p.skill DESC`,
       (err: Error | null, rows: any[]) => {
         if (!err && rows) {
