@@ -187,7 +187,18 @@ db.serialize(() => {
         const wage = skill * 200;
         const isStar =
           (pos === "MED" || pos === "ATA") && Math.random() < 0.1 ? 1 : 0;
-        return { name: p.name, pos, skill, age, form, agg, nat, value, wage, isStar };
+        return {
+          name: p.name,
+          pos,
+          skill,
+          age,
+          form,
+          agg,
+          nat,
+          value,
+          wage,
+          isStar,
+        };
       });
 
     // Garantir pelo menos um craque por equipa: se nenhum foi escolhido
@@ -203,9 +214,23 @@ db.serialize(() => {
       }
     }
 
-    playersToInsert.forEach(({ name, pos, skill, age, form, agg, nat, value, wage, isStar }) => {
-      insertPlayer.run(name, pos, skill, age, form, agg, nat, value, wage, isStar, teamId);
-    });
+    playersToInsert.forEach(
+      ({ name, pos, skill, age, form, agg, nat, value, wage, isStar }) => {
+        insertPlayer.run(
+          name,
+          pos,
+          skill,
+          age,
+          form,
+          agg,
+          nat,
+          value,
+          wage,
+          isStar,
+          teamId,
+        );
+      },
+    );
 
     teamId++;
     managerId++;
