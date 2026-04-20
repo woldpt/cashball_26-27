@@ -3294,7 +3294,9 @@ function App() {
   // ── SEASON / YEAR HELPERS ────────────────────────────────────────────────
   // matchweekCount is the global (cumulative) matchweek counter.
   // Each season has 14 matchweeks, starting from year 2026.
-  const seasonYear = 2026 + Math.floor(matchweekCount / 14);
+  // Use matchweekCount-1 so the year only advances when the *first* matchweek
+  // of the new season is played (not at matchweek 14, while the cup final is still pending).
+  const seasonYear = 2026 + Math.floor(Math.max(0, matchweekCount - 1) / 14);
   // Within-season jornada for the NEXT match to be played (1-14)
   const currentJornada = (matchweekCount % 14) + 1;
   // Within-season jornada for the LAST completed match (0 = none played yet)
