@@ -596,11 +596,11 @@ async function applyPenaltyEvent({
       : fallback();
   if (!taker) return;
 
-  // Base 75% goal rate, skill (range 5–50) shifts it ±12.5 pp around the mean (30)
+  // Base 82% goal rate, skill (range 5–50) shifts it ±6 pp around the mean (30)
   const penaltySkill = taker.skill || 0;
   const goalChance = Math.max(
-    0.6,
-    Math.min(0.88, 0.75 + (penaltySkill - 30) / 160),
+    0.74,
+    Math.min(0.92, 0.82 + (penaltySkill - 30) / 250),
   );
   const scored = Math.random() < goalChance;
 
@@ -1391,7 +1391,7 @@ function simulatePenaltyShootout(
   const calcScoredChance = (taker, gk) => {
     const takerSkill = taker ? taker.skill || 10 : 10;
     const gkSkill = gk ? gk.skill || 10 : 10;
-    return Math.max(0.3, Math.min(0.85, 0.6 + (takerSkill - gkSkill) / 120));
+    return Math.max(0.55, Math.min(0.88, 0.72 + (takerSkill - gkSkill) / 200));
   };
 
   // 5 regulation rounds
