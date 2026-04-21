@@ -171,6 +171,11 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
       );
     }
 
+    // Clear financial club news (revenues and expenses list)
+    await new Promise((resolve) => {
+      game.db.run("DELETE FROM club_news WHERE amount IS NOT NULL", resolve);
+    });
+
     const promotions: Array<{
       teamId: number;
       toDiv: number;
