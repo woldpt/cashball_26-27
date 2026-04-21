@@ -34,7 +34,11 @@ interface SessionHandlerDeps {
     game: ActiveGame,
     socketId: string,
   ) => PlayerSession | null;
-  bindSocket: (game: ActiveGame, name: string, socketId: string) => string | null;
+  bindSocket: (
+    game: ActiveGame,
+    name: string,
+    socketId: string,
+  ) => string | null;
   getPlayerList: (game: ActiveGame) => PlayerSession[];
   saveGameState: (game: ActiveGame) => void;
   emitCurrentPhaseToSocket: (game: ActiveGame, socket: any) => void;
@@ -151,13 +155,17 @@ export function registerSessionSocketHandlers(
       "SELECT * FROM players WHERE team_id = ?",
       [team.id],
       (err: any, squad: any[]) =>
-        socket.emit("mySquad", withJuniorGRs(squad || [], team.id, game.matchweek || 1)),
+        socket.emit(
+          "mySquad",
+          withJuniorGRs(squad || [], team.id, game.matchweek || 1),
+        ),
     );
     socket.emit("marketUpdate", game.globalMarket);
 
     // Smooth reconnect: send current match state to clients rejoining mid-match
     if (
-      (game.gamePhase === "match_first_half" || game.gamePhase === "match_second_half") &&
+      (game.gamePhase === "match_first_half" ||
+        game.gamePhase === "match_second_half") &&
       game.currentFixtures?.length > 0
     ) {
       const entry = game.currentEvent as any;
@@ -411,10 +419,98 @@ export function registerSessionSocketHandlers(
               "SELECT id, name FROM teams WHERE manager_id = ?",
               [row.id],
               (err2: any, team: any) => {
-                if (team)
+                if (team) {
                   assignPlayer(game, trimmedName, team, finalRoomCode, false);
-                else
+                } else if (game.dismissedCoachSince[trimmedName]) {
+                  // Coach is dismissed and waiting for a new job — rebind socket
+                  // without assigning a new team so their dismissed state is preserved.
+                  if (!game.playersByName[trimmedName]) {
+                    game.playersByName[trimmedName] = {
+                      name: trimmedName,
+                      teamId: null,
+                      roomCode: finalRoomCode,
+                      ready: false,
+                      tactic: { formation: "4-4-2", style: "Balanced" },
+                      socketId: socket.id,
+                    };
+                  }
+                  const displacedSocketId = bindSocket(
+                    game,
+                    trimmedName,
+                    socket.id,
+                  );
+                  if (displacedSocketId) {
+                    io.to(displacedSocketId).emit("sessionDisplaced", {
+                      reason: "another_device",
+                    });
+                  }
+
+                  const dismissalInfo = game.dismissedCoachSince[trimmedName];
+                  socket.emit("coachDismissed", {
+                    reason: dismissalInfo.reason || "results",
+                    teamName: dismissalInfo.teamName || "equipa anterior",
+                  });
+
+                  game.db.all(
+                    "SELECT * FROM teams",
+                    (errT: any, teams: any[]) => {
+                      if (!errT) socket.emit("teamsData", teams);
+                      getAllTeamForms(game.db, game.season)
+                        .then((forms) => socket.emit("teamForms", forms))
+                        .catch(() => {});
+                    },
+                  );
+
+                  socket.emit("gameState", {
+                    gamePhase: game.gamePhase,
+                    calendarIndex: game.calendarIndex,
+                    currentEvent: game.currentEvent,
+                    liveMinute: game.liveMinute ?? null,
+                    matchweek: game.matchweek,
+                    matchState: legacyMatchState(game.gamePhase),
+                    cupState: legacyCupState(game),
+                    cupRound:
+                      game.currentEvent?.type === "cup"
+                        ? (game.currentEvent as any).round
+                        : 0,
+                    year: game.year,
+                    tactic: null,
+                    lockedCoaches: [...game.lockedCoaches],
+                    lastHalfTimePayload: null,
+                  });
+
+                  io.to(finalRoomCode).emit(
+                    "playerListUpdate",
+                    getPlayerList(game),
+                  );
+
+                  game.db.all(
+                    "SELECT id, coach_name AS coachName, message, timestamp FROM chat_messages ORDER BY id DESC LIMIT 50",
+                    (errC: any, rows: any[]) => {
+                      const messages = errC ? [] : (rows || []).reverse();
+                      socket.emit("chatHistory", { channel: "room", messages });
+                    },
+                  );
+                  getGlobalMessages(50)
+                    .then((messages) =>
+                      socket.emit("chatHistory", {
+                        channel: "global",
+                        messages,
+                      }),
+                    )
+                    .catch(() =>
+                      socket.emit("chatHistory", {
+                        channel: "global",
+                        messages: [],
+                      }),
+                    );
+
+                  console.log(
+                    `[${finalRoomCode}] 🔄 Dismissed coach ${trimmedName} reconnected — preserved dismissed state`,
+                  );
+                } else {
                   generateRandomTeam(game, trimmedName, finalRoomCode, row.id);
+                }
               },
             );
           } else {

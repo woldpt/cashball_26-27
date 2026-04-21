@@ -64,6 +64,8 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     game.dismissedCoachSince[coachName] = {
       matchweek: game.matchweek,
       division,
+      reason,
+      teamName,
     };
     delete game.pendingJobOffers[coachName];
     game.lockedCoaches.delete(coachName);
@@ -225,7 +227,10 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
         [team.id],
         (err: any, squad: any[]) => {
           if (!err && player.socketId) {
-            io.to(player.socketId as string).emit("mySquad", withJuniorGRs(squad || [], team.id, game.matchweek || 1));
+            io.to(player.socketId as string).emit(
+              "mySquad",
+              withJuniorGRs(squad || [], team.id, game.matchweek || 1),
+            );
           }
         },
       );
@@ -259,7 +264,10 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       game.db,
       "SELECT id, name, division, manager_id, budget FROM teams",
     );
-    const forms: Record<number, string> = await getAllTeamForms(game.db, game.season);
+    const forms: Record<number, string> = await getAllTeamForms(
+      game.db,
+      game.season,
+    );
 
     // 3. Equipas humanas activas
     const humanTeamIds = new Set<number>(
@@ -447,7 +455,10 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
         [toTeamId],
         (err: any, squad: any[]) => {
           if (!err && player.socketId) {
-            io.to(player.socketId as string).emit("mySquad", withJuniorGRs(squad || [], toTeamId, game.matchweek || 1));
+            io.to(player.socketId as string).emit(
+              "mySquad",
+              withJuniorGRs(squad || [], toTeamId, game.matchweek || 1),
+            );
           }
         },
       );

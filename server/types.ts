@@ -83,7 +83,15 @@ export interface ActiveGame {
     }
   >;
   negativeBudgetStreak: Record<number, number>; // teamId → semanas consecutivas com budget < 0
-  dismissedCoachSince: Record<string, { matchweek: number; division: number }>; // coachName → info de despedimento
+  dismissedCoachSince: Record<
+    string,
+    {
+      matchweek: number;
+      division: number;
+      reason?: "results" | "budget";
+      teamName?: string;
+    }
+  >; // coachName → info de despedimento
 
   [key: string]: any;
 }

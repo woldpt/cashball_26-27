@@ -593,6 +593,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                     coachErr,
                   );
                 }
+                // Re-evaluate readiness after coach events: if a dismissal removed
+                // the only blocker, the game should advance for NPC matches.
+                checkAllReady(game);
 
                 // If the next calendar event is a cup round, prepare the draw NOW
                 // so coaches see their opponent and can set tactics in the lobby.
@@ -688,11 +691,20 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       const connectedPlayers = getPlayerList(game).filter(
         (p) => p.teamId !== null,
       );
-      if (connectedPlayers.length === 0) return;
-      if (!connectedPlayers.every((player) => player.ready)) return;
-      console.log(
-        `[${game.roomCode}] ✅ All ${connectedPlayers.length} connected players ready`,
-      );
+      if (connectedPlayers.length === 0) {
+        // All connected players are dismissed — only auto-advance from lobby so NPC matches can run.
+        if (game.gamePhase !== "lobby") return;
+        console.log(
+          `[${game.roomCode}] 🤖 No active coaches connected in lobby — auto-advancing NPC matches`,
+        );
+        // Fall through to advance the lobby
+      } else if (!connectedPlayers.every((player) => player.ready)) {
+        return;
+      } else {
+        console.log(
+          `[${game.roomCode}] ✅ All ${connectedPlayers.length} connected players ready`,
+        );
+      }
     }
 
     console.log(

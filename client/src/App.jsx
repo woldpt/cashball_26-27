@@ -755,6 +755,7 @@ function App() {
   const teamsRef = React.useRef([]);
   const isLiveSimulationRef = React.useRef(false);
   const isCupExtraTimeRef = React.useRef(false);
+  const dismissedInfoRef = React.useRef(null);
   // matchReplayActiveRef: true between receiving matchReplay and matchResults
   // Used to prevent gameState from resetting isPlayingMatch after a mid-match reconnect
   const matchReplayActiveRef = React.useRef(false);
@@ -1735,13 +1736,14 @@ function App() {
     const onConnect = () => {
       setDisconnected(false);
       setJoining(false);
-      // Re-join on reconnect using the meRef to avoid stale closure
+      // Re-join on reconnect using the meRef to avoid stale closure.
+      // Also reconnect when the coach is dismissed (no teamId but still in the room).
       const currentMe = meRef.current;
       if (
-        currentMe?.teamId &&
-        currentMe.roomCode &&
-        currentMe.name &&
-        currentMe.password
+        (currentMe?.teamId || dismissedInfoRef.current) &&
+        currentMe?.roomCode &&
+        currentMe?.name &&
+        currentMe?.password
       ) {
         socket.emit("joinGame", {
           name: currentMe.name,
@@ -1807,6 +1809,11 @@ function App() {
   useEffect(() => {
     meRef.current = me;
   }, [me]);
+
+  // Keep dismissedInfoRef in sync so the onConnect closure always has the latest dismissedInfo
+  useEffect(() => {
+    dismissedInfoRef.current = dismissedInfo;
+  }, [dismissedInfo]);
 
   // Auto-scroll chat messages panel
   useEffect(() => {
@@ -3366,7 +3373,7 @@ function App() {
       {dismissedInfo && !jobOfferModal && (
         <div
           style={{ position: "fixed", inset: 0, zIndex: 9998 }}
-          className="flex flex-col items-center justify-center bg-black/90 gap-6 p-8"
+          className="flex flex-col items-center justify-center bg-black/90 gap-6 p-8 overflow-y-auto"
         >
           <span
             className="material-symbols-outlined text-red-500"
