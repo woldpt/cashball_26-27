@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { AggBadge } from "../shared/AggBadge.jsx";
 import { formatCurrency } from "../../utils/formatters.js";
 import { FLAG_TO_COUNTRY } from "../../constants/index.js";
@@ -86,6 +87,22 @@ export function AuctionNotification({
   me,
   teamInfo,
 }) {
+  const [secondsLeft, setSecondsLeft] = useState(null);
+
+  useEffect(() => {
+    if (!selectedAuctionPlayer || auctionResult) {
+      setSecondsLeft(null);
+      return;
+    }
+    const endsAt = selectedAuctionPlayer.endsAt;
+    if (!endsAt) return;
+    const tick = () =>
+      setSecondsLeft(Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 500);
+    return () => clearInterval(id);
+  }, [selectedAuctionPlayer, auctionResult]);
+
   if (!selectedAuctionPlayer) return null;
 
   const startingPrice =
@@ -107,7 +124,8 @@ export function AuctionNotification({
     <div
       className="w-full overflow-hidden relative"
       style={{
-        background: "linear-gradient(90deg, #92681a 0%, #c9950a 30%, #f0c330 50%, #c9950a 70%, #92681a 100%)",
+        background:
+          "linear-gradient(90deg, #92681a 0%, #c9950a 30%, #f0c330 50%, #c9950a 70%, #92681a 100%)",
         borderTop: `2px solid #f5d76e`,
         borderBottom: `1px solid #a8730a`,
         boxShadow: `0 4px 32px 0 #d4af3788, 0 2px 12px 0 #f0c33044, 0 0 0 1px #d4af3722`,
@@ -121,7 +139,8 @@ export function AuctionNotification({
         <div
           className="absolute inset-0"
           style={{
-            background: "linear-gradient(105deg, transparent 30%, #fff5 50%, transparent 70%)",
+            background:
+              "linear-gradient(105deg, transparent 30%, #fff5 50%, transparent 70%)",
             animation: "shimmer 3s infinite linear",
             backgroundSize: "200% 100%",
           }}
@@ -143,16 +162,32 @@ export function AuctionNotification({
             Finalizado
           </span>
         ) : (
-          <span
-            className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm shrink-0 animate-pulse"
-            style={{ background: "#3b1f00", color: "#f5d76e" }}
-          >
-            Leilão
+          <span className="flex items-center gap-1.5 shrink-0">
+            <span
+              className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm animate-pulse"
+              style={{ background: "#3b1f00", color: "#f5d76e" }}
+            >
+              Leilão
+            </span>
+            {secondsLeft != null && (
+              <span
+                className="text-[10px] font-black tabular-nums px-1.5 py-0.5 rounded-sm"
+                style={{
+                  background: secondsLeft <= 10 ? "#7f1d1d" : "#00000030",
+                  color: secondsLeft <= 10 ? "#fca5a5" : "#5c3500",
+                }}
+              >
+                {secondsLeft}s
+              </span>
+            )}
           </span>
         )}
 
         {/* Name + pos + skill */}
-        <span className="font-headline font-black truncate" style={{ color: "#3b1f00" }}>
+        <span
+          className="font-headline font-black truncate"
+          style={{ color: "#3b1f00" }}
+        >
           {selectedAuctionPlayer.name}
         </span>
         <span
@@ -165,12 +200,18 @@ export function AuctionNotification({
         >
           {pos}
         </span>
-        <span className="text-xs shrink-0 tabular-nums font-bold" style={{ color: "#5c3500" }}>
+        <span
+          className="text-xs shrink-0 tabular-nums font-bold"
+          style={{ color: "#5c3500" }}
+        >
           {selectedAuctionPlayer.skill}
         </span>
 
         {/* Price / result pill */}
-        <span className="font-mono font-black text-sm shrink-0 ml-auto tabular-nums" style={{ color: "#3b1f00" }}>
+        <span
+          className="font-mono font-black text-sm shrink-0 ml-auto tabular-nums"
+          style={{ color: "#3b1f00" }}
+        >
           {formatCurrency(startingPrice)}
         </span>
         {auctionResult ? (
@@ -224,7 +265,14 @@ export function AuctionNotification({
 
       {/* ── Expanded panel ────────────────────────────────────────────────── */}
       {isAuctionExpanded && (
-        <div style={{ borderTop: "1px solid #a8730a", background: "#0d0d14", position: "relative", zIndex: 1 }}>
+        <div
+          style={{
+            borderTop: "1px solid #a8730a",
+            background: "#0d0d14",
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
           {/* ── Hero header ── */}
           <div
             className="px-5 pt-6 pb-5 relative overflow-hidden"
@@ -239,12 +287,22 @@ export function AuctionNotification({
                 background: `radial-gradient(circle, ${accent.border}30 0%, transparent 70%)`,
               }}
             />
-            <p
-              className="text-[10px] font-black uppercase tracking-[0.25em] mb-2"
-              style={{ color: accent.text }}
-            >
-              {statusLabel}
-            </p>
+            <div className="flex items-center gap-3 mb-2">
+              <p
+                className="text-[10px] font-black uppercase tracking-[0.25em]"
+                style={{ color: accent.text }}
+              >
+                {statusLabel}
+              </p>
+              {!isFinished && secondsLeft != null && (
+                <span
+                  className="font-mono font-black text-2xl tabular-nums leading-none"
+                  style={{ color: secondsLeft <= 10 ? "#f87171" : accent.text }}
+                >
+                  {secondsLeft}s
+                </span>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="font-headline font-black text-3xl leading-tight text-white tracking-tighter">
                 {selectedAuctionPlayer.name}
@@ -460,6 +518,7 @@ export function AuctionNotification({
                     min="0"
                     value={auctionBid}
                     onChange={(e) => setAuctionBid(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && submitAuctionBid()}
                     placeholder={String(startingPrice)}
                     className="flex-1 min-w-0 bg-transparent py-3 pr-3 text-white font-mono text-base outline-none placeholder:text-zinc-700"
                     autoFocus
