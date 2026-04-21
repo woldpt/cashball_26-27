@@ -756,6 +756,7 @@ function App() {
   const teamsRef = React.useRef([]);
   const isLiveSimulationRef = React.useRef(false);
   const isCupExtraTimeRef = React.useRef(false);
+  const pendingDismissalRef = React.useRef(null);
   // matchReplayActiveRef: true between receiving matchReplay and matchResults
   // Used to prevent gameState from resetting isPlayingMatch after a mid-match reconnect
   const matchReplayActiveRef = React.useRef(false);
@@ -1256,6 +1257,12 @@ function App() {
       const currentMe = meRef.current;
       if (!currentMe?.name || !currentMe?.roomCode) return;
       setMe((prev) => (prev ? { ...prev, teamId: data.teamId } : prev));
+      const pendingDismissal = pendingDismissalRef.current;
+      if (pendingDismissal) {
+        pendingDismissalRef.current = null;
+        setDismissalModal({ ...pendingDismissal, newTeam: data });
+        return;
+      }
       if (data.isNew) {
         if (!hasSeenWelcome(currentMe.name, currentMe.roomCode)) {
           setWelcomeModal(data);
@@ -1703,7 +1710,7 @@ function App() {
 
     socket.on("coachDismissed", ({ reason, teamName }) => {
       setJobOfferModal(null);
-      setDismissalModal({ reason, teamName });
+      pendingDismissalRef.current = { reason, teamName };
     });
 
     socket.on("jobOffer", (data) => setJobOfferModal(data));
