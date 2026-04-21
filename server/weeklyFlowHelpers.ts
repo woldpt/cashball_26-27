@@ -109,7 +109,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     const entry = game.currentEvent as CalendarEntry | null;
 
     // Calculate attendance only for league first halves
-    if (startMin === 1 && entry?.type === "league") {
+    if (startMin === 1 && (entry?.type === "league" || entry?.type === "cup")) {
       for (const fixture of game.currentFixtures) {
         fixture.attendance = await calculateMatchAttendance(
           game.db,
@@ -386,10 +386,16 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       const halftimeToken = game.phaseToken;
       game.phaseTimer = setTimeout(() => {
         // Only fire if we are still in halftime with the same token
-        if (game.gamePhase !== "match_halftime" || game.phaseToken !== halftimeToken) return;
+        if (
+          game.gamePhase !== "match_halftime" ||
+          game.phaseToken !== halftimeToken
+        )
+          return;
 
         // Check if any connected coach exists
-        const anyConnected = Object.values(game.playersByName).some((p) => !!p.socketId);
+        const anyConnected = Object.values(game.playersByName).some(
+          (p) => !!p.socketId,
+        );
         if (anyConnected) {
           // Coaches are connected but not ready — don't force; they may be adjusting tactics
           console.log(
@@ -628,7 +634,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                               if (!err4)
                                 io.to(player.socketId as string).emit(
                                   "mySquad",
-                                  withJuniorGRs(squad || [], player.teamId as number, game.matchweek || 1),
+                                  withJuniorGRs(
+                                    squad || [],
+                                    player.teamId as number,
+                                    game.matchweek || 1,
+                                  ),
                                 );
                             },
                           );
@@ -738,7 +748,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)`,
         async (err: any) => {
           if (err) {
-            console.error(`[${game.roomCode}] ❌ Weekly expense DB error:`, err);
+            console.error(
+              `[${game.roomCode}] ❌ Weekly expense DB error:`,
+              err,
+            );
             game.gamePhase = "lobby";
             game.currentEvent = entry;
             segmentRunning[game.roomCode] = false;
