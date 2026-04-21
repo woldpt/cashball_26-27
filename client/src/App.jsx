@@ -5246,7 +5246,7 @@ function App() {
                                         );
                                       })}
                                   </div>
-                                  <div className="flex justify-between text-[12px] text-on-surface-variant/30">
+                                  <div className="flex justify-between text-[14px] text-on-surface-variant/30">
                                     <span>0'</span>
                                     <span className="font-bold text-primary/60">
                                       {liveMinute}'
