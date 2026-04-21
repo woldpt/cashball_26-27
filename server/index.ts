@@ -1,4 +1,5 @@
 // @ts-nocheck
+require("./logBootstrap");
 require("dotenv").config();
 
 import type { ActiveGame } from "./types";
@@ -275,7 +276,11 @@ app.post("/auth/register", apiLimiter, async (req, res) => {
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: ALLOWED_ORIGINS, methods: ["GET", "POST"], credentials: true },
+  cors: {
+    origin: ALLOWED_ORIGINS,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
 });
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
