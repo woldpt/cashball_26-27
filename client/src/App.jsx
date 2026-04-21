@@ -7094,33 +7094,46 @@ function App() {
                                 </span>
                               </div>
                             </div>
-                            {/* Estádio */}
-                            <div className="bg-surface-container p-6 flex flex-col justify-between relative overflow-hidden">
-                              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none">
-                                <span className="material-symbols-outlined text-8xl">
-                                  stadium
-                                </span>
-                              </div>
-                              <div>
-                                <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1 font-label">
-                                  Estádio
-                                </p>
-                                <h2 className="font-headline text-3xl font-bold tracking-tighter text-on-surface">
-                                  {(
-                                    teamInfo?.stadium_capacity || 10000
-                                  ).toLocaleString("pt-PT")}{" "}
-                                  lug.
-                                </h2>
-                              </div>
-                              <div className="mt-6">
-                                <p className="text-[10px] text-on-surface-variant uppercase mb-1">
-                                  Receita máx./jogo em casa
-                                </p>
-                                <p className="font-headline text-lg font-bold text-primary">
-                                  {formatCurrency(capacityRevPerGame)}
-                                </p>
-                              </div>
-                            </div>
+                            {/* Saldo previsto */}
+                            {(() => {
+                              const remainingJornadas =
+                                14 - completedJornada;
+                              const projectedEndBudget =
+                                completedJornada > 0
+                                  ? Math.round(
+                                      currentBudget +
+                                        (seasonResult / completedJornada) *
+                                          remainingJornadas,
+                                    )
+                                  : currentBudget;
+                              return (
+                                <div className="bg-surface-container p-6 flex flex-col justify-between relative overflow-hidden">
+                                  <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none">
+                                    <span className="material-symbols-outlined text-8xl">
+                                      savings
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mb-1 font-label">
+                                      Saldo previsto fim de época
+                                    </p>
+                                    <h2
+                                      className={`font-headline text-3xl font-bold tracking-tighter ${projectedEndBudget >= 0 ? "text-tertiary" : "text-error"}`}
+                                    >
+                                      {projectedEndBudget >= 0 ? "+" : ""}
+                                      {formatCurrency(projectedEndBudget)}
+                                    </h2>
+                                  </div>
+                                  <div className="mt-6">
+                                    <p className="text-[10px] text-on-surface-variant uppercase mb-1">
+                                      Projeção linear ·{" "}
+                                      {remainingJornadas} jornadas
+                                      restantes
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
 
                           {/* ── RECEITAS / DESPESAS / CONTROLO ────────────────────────────── */}
