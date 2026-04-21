@@ -18,6 +18,7 @@ import { PlayerLink } from "./components/shared/PlayerLink.jsx";
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import { WelcomeModal } from "./components/modals/WelcomeModal.jsx";
+import { DismissalModal } from "./components/modals/DismissalModal.jsx";
 import { SeasonEndModal } from "./components/modals/SeasonEndModal.jsx";
 import { JobOfferModal } from "./components/modals/JobOfferModal.jsx";
 import { PlayerHistoryModal } from "./components/modals/PlayerHistoryModal.jsx";
@@ -683,6 +684,7 @@ function App() {
   const [pendingCupRoundResults, setPendingCupRoundResults] = useState(null); // held until penalty popup closes
   const [welcomeModal, setWelcomeModal] = useState(null); // { teamName }
   const [jobOfferModal, setJobOfferModal] = useState(null); // null | { fromTeam, toTeam, expiresAtMatchweek }
+  const [dismissalModal, setDismissalModal] = useState(null); // null | { reason, teamName }
   const [seasonEndModal, setSeasonEndModal] = useState(null); // seasonEnd payload
   // Cup match live state
   const [isCupMatch, setIsCupMatch] = useState(false);
@@ -1253,6 +1255,7 @@ function App() {
     socket.on("teamAssigned", (data) => {
       const currentMe = meRef.current;
       if (!currentMe?.name || !currentMe?.roomCode) return;
+      setMe((prev) => (prev ? { ...prev, teamId: data.teamId } : prev));
       if (data.isNew) {
         if (!hasSeenWelcome(currentMe.name, currentMe.roomCode)) {
           setWelcomeModal(data);
@@ -1699,12 +1702,8 @@ function App() {
     });
 
     socket.on("coachDismissed", ({ reason, teamName }) => {
-      const msg =
-        reason === "budget"
-          ? `Foste despedido de ${teamName} por insolvência financeira.`
-          : `Foste despedido de ${teamName} após má série de resultados.`;
-      addToast(msg);
       setJobOfferModal(null);
+      setDismissalModal({ reason, teamName });
     });
 
     socket.on("jobOffer", (data) => setJobOfferModal(data));
@@ -2074,6 +2073,7 @@ function App() {
     setShowCupResults(false);
     setCupPenaltyPopup(null);
     setWelcomeModal(null);
+    setDismissalModal(null);
     setIsCupMatch(false);
     setCupPreMatch(false);
     setCupMatchRoundName("");
@@ -9156,8 +9156,13 @@ function App() {
         setShowMatchDetail={setShowMatchDetail}
       />
 
+      <DismissalModal
+        dismissalModal={dismissalModal}
+        onContinue={() => setDismissalModal(null)}
+      />
+
       <WelcomeModal
-        welcomeModal={welcomeModal}
+        welcomeModal={dismissalModal ? null : welcomeModal}
         me={me}
         setWelcomeModal={setWelcomeModal}
       />

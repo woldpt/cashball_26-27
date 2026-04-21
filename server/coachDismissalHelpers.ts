@@ -242,6 +242,10 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       "systemMessage",
       `${coachName} foi atribuído a ${team.name}.`,
     );
+
+    game.db.all("SELECT * FROM teams", (err: any, allTeamsData: any[]) => {
+      if (!err) io.to(game.roomCode).emit("teamsData", allTeamsData);
+    });
   }
 
   // ── MAIN FUNCTION ─────────────────────────────────────────────────────────
