@@ -593,9 +593,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                     coachErr,
                   );
                 }
-                // Re-evaluate readiness after coach events: if a dismissal removed
-                // the only blocker, the game should advance for NPC matches.
-                checkAllReady(game);
 
                 // If the next calendar event is a cup round, prepare the draw NOW
                 // so coaches see their opponent and can set tactics in the lobby.
@@ -841,6 +838,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           } finally {
             segmentRunning[game.roomCode] = false;
           }
+          // segmentRunning is now false; safe to auto-advance if all coaches were dismissed.
+          if (game.gamePhase === "lobby") {
+            checkAllReady(game);
+            return;
+          }
 
           // Auto-advance cup halftime when no human coach is in any fixture.
           // (All eliminated — no substitutions screen needed, continue immediately.)
@@ -885,6 +887,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 );
               } finally {
                 segmentRunning[game.roomCode] = false;
+              }
+              // Re-check lobby after cup auto-advance in case all coaches were dismissed.
+              if ((game.gamePhase as string) === "lobby") {
+                checkAllReady(game);
               }
             }
           }
@@ -953,6 +959,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         );
       } finally {
         segmentRunning[game.roomCode] = false;
+      }
+      // segmentRunning is now false; safe to auto-advance if all coaches were dismissed.
+      if ((game.gamePhase as string) === "lobby") {
+        checkAllReady(game);
       }
     }
   }
