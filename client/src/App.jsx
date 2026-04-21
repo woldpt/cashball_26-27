@@ -4829,7 +4829,7 @@ function App() {
                                   <div className="shrink-0 border-t border-zinc-800/30 px-4 py-1.5 flex justify-center">
                                     <button
                                       onClick={handleResetAllSubs}
-                                      className="text-[9px] font-black uppercase tracking-widest text-zinc-600 hover:text-red-400 transition-colors"
+                                      className="text-[9px] font-black uppercase tracking-widest text-red-400 hover:text-red-600 transition-colors"
                                     >
                                       ↺ Anular todas as substituições
                                     </button>
