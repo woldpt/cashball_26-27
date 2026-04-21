@@ -551,6 +551,96 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
           `[${game.roomCode}] ⏩ ET gate resolved — starting extra time`,
         );
         io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
+
+        // Apply ET substitutions and re-read tactics changed during the pause screen
+        const lineupSnapshotET = (squad: any[]) =>
+          squad.map((p) => ({
+            id: p.id,
+            name: p.name,
+            position: p.position,
+            is_star: p.is_star || 0,
+            skill: p.skill,
+          }));
+
+        const applyETSubs = (
+          squad: any[] | undefined,
+          tactic: any,
+          fullRoster: any[] | undefined,
+          fx: any,
+          teamSide: "home" | "away",
+        ) => {
+          if (!squad || !tactic?.positions || !fullRoster) return;
+          const positions: Record<number, string> = tactic.positions;
+          const currentIds = new Set(squad.map((p: any) => p.id));
+          const toRemoveIds = squad
+            .filter((p: any) => positions[p.id] === "Suplente")
+            .map((p: any) => p.id);
+          const toAddIds = Object.entries(positions)
+            .filter(
+              ([id, status]) =>
+                status === "Titular" && !currentIds.has(Number(id)),
+            )
+            .map(([id]) => Number(id));
+          if (toRemoveIds.length === 0 && toAddIds.length === 0) return;
+
+          const outPlayers = toRemoveIds
+            .map((id: number) => squad.find((p: any) => p.id === id))
+            .filter(Boolean);
+          const inPlayers = toAddIds
+            .map((id: number) => fullRoster.find((p: any) => p.id === id))
+            .filter(Boolean);
+
+          for (const id of toRemoveIds) {
+            const idx = squad.findIndex((p: any) => p.id === id);
+            if (idx > -1) squad.splice(idx, 1);
+          }
+          for (const player of inPlayers) {
+            squad.push(player);
+          }
+
+          if (teamSide === "home") {
+            fx.homeLineup = lineupSnapshotET(squad);
+          } else {
+            fx.awayLineup = lineupSnapshotET(squad);
+          }
+
+          const pairs = Math.min(outPlayers.length, inPlayers.length);
+          for (let i = 0; i < pairs; i++) {
+            fx.events = fx.events || [];
+            fx.events.push({
+              minute: 90,
+              type: "et_sub",
+              team: teamSide,
+              emoji: "🔁",
+              outPlayerId: outPlayers[i].id,
+              outPlayerName: outPlayers[i].name,
+              playerId: inPlayers[i].id,
+              playerName: inPlayers[i].name,
+              position: inPlayers[i].position,
+              text: `[90+ET] 🔁 ${outPlayers[i].name} → ${inPlayers[i].name}`,
+            });
+          }
+        };
+
+        for (const setup of drawnSetups) {
+          const { fixture: fx } = setup;
+          const p1 = Object.values(game.playersByName).find(
+            (p: any) => p.teamId === fx.homeTeamId,
+          );
+          const p2 = Object.values(game.playersByName).find(
+            (p: any) => p.teamId === fx.awayTeamId,
+          );
+          if ((p1 as any)?.tactic) {
+            setup.t1 = (p1 as any).tactic;
+            fx._t1 = (p1 as any).tactic;
+          }
+          if ((p2 as any)?.tactic) {
+            setup.t2 = (p2 as any).tactic;
+            fx._t2 = (p2 as any).tactic;
+          }
+          applyETSubs(fx._homeSquad, setup.t1, fx._homeFullRoster, fx, "home");
+          applyETSubs(fx._awaySquad, setup.t2, fx._awayFullRoster, fx, "away");
+        }
       }
 
       // Emit cupExtraTimeStart ONCE — use the human's drawn fixture if available
