@@ -2302,6 +2302,8 @@ function App() {
       teamId: matchAction.teamId,
       playerId,
     });
+    setMatchAction(null);
+    setIsMatchActionPending(false);
   };
 
   // ── TACTIC ────────────────────────────────────────────────────────────────

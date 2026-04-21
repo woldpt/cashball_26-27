@@ -75,7 +75,14 @@ export function registerGameplaySocketHandlers(
 
   socket.on("resolveMatchAction", ({ actionId, teamId, playerId }) => {
     const game = getGameBySocket(socket.id);
-    if (!game || !game.pendingMatchAction) return;
+    if (!game) return;
+
+    if (!game.pendingMatchAction) {
+      // Já foi resolvido (timer ou desconexão auto-resolveu) — desbloquear cliente preso
+      socket.emit("matchActionResolved", { source: "auto" });
+      return;
+    }
+
     const pendingAction: any = game.pendingMatchAction;
     if (pendingAction.actionId !== actionId) return;
     if (pendingAction.teamId !== teamId) return;
