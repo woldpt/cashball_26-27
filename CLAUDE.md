@@ -7,24 +7,28 @@ Jogo de gestão de futebol baseado em texto, inspirado no Elifoot 98, a correr n
 ## Stack Tecnológica
 
 ### Frontend (`/client`)
+
 - React 19 + Vite 8 — SPA em **JavaScript puro** (sem TypeScript)
 - Tailwind CSS 4 via plugin Vite
 - Socket.io-client 4
 - JSDoc para type hints (sem compilação adicional)
 
 ### Backend (`/server`)
+
 - Node.js + Express 5 em **TypeScript**
 - Socket.io 4
 - SQLite 3 (ficheiro local em `server/db/base.db`)
 - bcryptjs, dotenv, express-rate-limit
 
 ### Infraestrutura
+
 - Docker Compose (`docker-compose.yml` na raiz)
 - Backend: porta 3000; Frontend: ip fixo `172.100.0.57` na rede `cftunnel` (externa)
 
 ## Comandos Úteis
 
 ### Backend
+
 ```bash
 cd server
 npm run dev          # dev com tsx (sem compilação)
@@ -35,6 +39,7 @@ npm run seed         # seed da base de dados
 ```
 
 ### Frontend
+
 ```bash
 cd client
 npm run dev          # servidor de desenvolvimento Vite
@@ -44,6 +49,7 @@ npm run preview      # preview do build
 ```
 
 ### Docker
+
 ```bash
 docker compose up --build   # build e arranque dos containers
 docker compose down         # parar containers
@@ -123,3 +129,32 @@ docker compose down         # parar containers
 - Branch de trabalho: `claude/fix-repo-connection-RSwIu`
 - Push: `git push -u origin <branch>`
 - Commits em português ou inglês, descritivos e concisos
+
+## Fluxo de decisão dos tipos de partidas
+
+```mermaid
+flowchart TB
+    Lobby["Lobby"] --> DarTatica["Dar tática e seguir para partida"]
+    DarTatica --> Decision1{"Tipo de Competição"}
+
+    Decision1 -- Campeonato --> Parte1Camp["1ª Parte - 1' a 45'"]
+    Parte1Camp --> IntervaloC["Intervalo (relógio pára)\nEscolher substituições e dar OK"]
+    IntervaloC --> Parte2Camp["2ª Parte - 46' à 90'"]
+    Parte2Camp --> ResultadosCamp["Janela de Resultados do Campeonato"]
+    ResultadosCamp --> Lobby
+
+    Decision1 -- Taça --> Parte1Taca["1ª Parte - 1' a 45'"]
+    Parte1Taca --> IntervaloT["Intervalo (relógio pára)\nEscolher substituições e dar OK"]
+    IntervaloT --> Parte2Taca["2ª Parte - 46' à 90'"]
+    Parte2Taca --> Decision2{"Partida ficou empatada?"}
+
+    Decision2 -- Não --> ResultadosTaca["Janela de Resultados da Taça"]
+    Decision2 -- Sim --> PausaExtra["Pausa para Extra-time (relógio pára)\nEscolher substituições e dar OK"]
+    PausaExtra --> ExtraTime["Extra Time - 91' a 120'"]
+    ExtraTime --> Decision3{"Empatada após Extra-time?"}
+
+    Decision3 -- Não --> ResultadosTaca
+    Decision3 -- Sim --> Penalties["Desempate por penalties"]
+    Penalties --> ResultadosTaca
+    ResultadosTaca --> Lobby
+```
