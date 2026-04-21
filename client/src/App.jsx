@@ -1441,6 +1441,13 @@ function App() {
             // After suspense, update the score AND add the held-back event
             setTimeout(() => {
               setPenaltySuspense(null);
+              // Play goal sound and flash for scored penalty
+              if (e.type === "penalty_goal") {
+                playGoalSound();
+                const flashKey = `${f.homeTeamId}_${f.awayTeamId}_${e.team}`;
+                goalFlashRef.current[flashKey] = Date.now();
+                forceGoalFlashRender((v) => v + 1);
+              }
               setMatchResults((prev) => {
                 if (!prev) return prev;
                 const updatedResults = (prev.results || []).map((r) => {
@@ -1978,7 +1985,7 @@ function App() {
       if (!events.length) return;
       // Track goal flashes (all matches)
       events.forEach((e) => {
-        if (e.type === "goal") {
+        if (e.type === "goal" || e.type === "penalty_goal") {
           const key = `${match.homeTeamId}_${match.awayTeamId}_${e.team}`;
           goalFlashRef.current[key] = Date.now();
           didFlashGoal = true;
