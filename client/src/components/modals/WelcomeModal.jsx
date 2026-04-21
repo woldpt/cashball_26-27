@@ -214,7 +214,7 @@ export function WelcomeModal({ welcomeModal, me, setWelcomeModal }) {
               {/* Footer microcopy */}
               <div className="mt-5 pt-4 border-t border-emerald-900/20 flex justify-between text-[9px] text-zinc-600 font-bold uppercase tracking-widest">
                 <span>{me.name}</span>
-                <span>Temporada 26/27</span>
+                <span>Temporada {calYear}</span>
                 <span>{me.roomCode}</span>
               </div>
             </div>
