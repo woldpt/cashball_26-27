@@ -1717,16 +1717,21 @@ function App() {
     socket.on("jobOffer", (data) => setJobOfferModal(data));
 
     socket.on("chatMessage", (msg) => {
+      const isOwn = msg.coachName === meRef.current?.name;
       if (msg.channel === "room") {
         setRoomMessages((prev) => [...prev.slice(-199), msg]);
-        setUnreadRoom((prev) =>
-          chatOpen && activeChatTab === "room" ? 0 : prev + 1,
-        );
+        if (!isOwn) {
+          setUnreadRoom((prev) =>
+            chatOpen && activeChatTab === "room" ? 0 : prev + 1,
+          );
+        }
       } else if (msg.channel === "global") {
         setGlobalMessages((prev) => [...prev.slice(-199), msg]);
-        setUnreadGlobal((prev) =>
-          chatOpen && activeChatTab === "global" ? 0 : prev + 1,
-        );
+        if (!isOwn) {
+          setUnreadGlobal((prev) =>
+            chatOpen && activeChatTab === "global" ? 0 : prev + 1,
+          );
+        }
       }
     });
 
