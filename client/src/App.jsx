@@ -2302,12 +2302,16 @@ function App() {
 
   // ── SUBSTITUTION SWAP ─────────────────────────────────────────────────────
   // Step 1: click a Titular to mark as OUT
-  const handleSelectOut = useCallback((playerId) => {
-    setSwapSource((prev) => (prev === playerId ? null : playerId));
-    setSwapTarget(null);
-  }, []);
+  const handleSelectOut = useCallback(
+    (playerId) => {
+      setSwapSource((prev) => (prev === playerId ? null : playerId));
+      // Only clear target if we're not in bench-first mode (swapTarget already set, swapSource not yet)
+      if (swapSource !== null) setSwapTarget(null);
+    },
+    [swapSource],
+  );
 
-  // Step 2: click a Suplente to mark as IN
+  // Step 2: click a Suplente to mark as IN (can also be Step 1 — bench-first selection)
   const handleSelectIn = useCallback((playerId) => {
     setSwapTarget((prev) => (prev === playerId ? null : playerId));
   }, []);
@@ -4636,7 +4640,6 @@ function App() {
                                               (p.position === "GR");
                                           const disabled =
                                             alreadyUsed ||
-                                            !swapSource ||
                                             subsMade >= MAX_MATCH_SUBS ||
                                             positionMismatch;
                                           return (
@@ -4709,14 +4712,20 @@ function App() {
                                 </div>
 
                                 {/* ── Swap action bar ── */}
-                                {swapSource ? (
+                                {swapSource || swapTarget ? (
                                   <div className="shrink-0 flex items-center gap-2 px-3 py-2.5 border-t border-outline-variant/30 bg-surface-container">
                                     <div className="flex-1 flex items-center gap-2 min-w-0">
-                                      <span className="bg-red-950 text-red-300 border border-red-800/60 text-[10px] font-black px-2 py-0.5 rounded truncate max-w-[40%]">
-                                        {annotatedSquad.find(
-                                          (p) => p.id === swapSource,
-                                        )?.name ?? "?"}
-                                      </span>
+                                      {swapSource ? (
+                                        <span className="bg-red-950 text-red-300 border border-red-800/60 text-[10px] font-black px-2 py-0.5 rounded truncate max-w-[40%]">
+                                          {annotatedSquad.find(
+                                            (p) => p.id === swapSource,
+                                          )?.name ?? "?"}
+                                        </span>
+                                      ) : (
+                                        <span className="text-zinc-600 text-[10px] italic">
+                                          escolhe em campo…
+                                        </span>
+                                      )}
                                       <span className="text-zinc-500 shrink-0 font-black text-sm">
                                         →
                                       </span>
@@ -4740,9 +4749,9 @@ function App() {
                                     </button>
                                     <button
                                       onClick={handleConfirmSub}
-                                      disabled={!swapTarget}
+                                      disabled={!swapSource || !swapTarget}
                                       className={`shrink-0 px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wide transition-colors ${
-                                        swapTarget
+                                        swapSource && swapTarget
                                           ? "bg-emerald-600 hover:bg-emerald-500 text-white"
                                           : "bg-zinc-800 text-zinc-600 cursor-not-allowed"
                                       }`}
@@ -4753,7 +4762,8 @@ function App() {
                                 ) : subsMade < MAX_MATCH_SUBS ? (
                                   <div className="shrink-0 border-t border-zinc-800/60 px-4 py-1.5 text-center">
                                     <span className="text-[9px] text-zinc-700 font-bold uppercase tracking-wide">
-                                      Toca num jogador em campo para substituir
+                                      Toca num jogador em campo ou no banco para
+                                      substituir
                                     </span>
                                   </div>
                                 ) : null}
