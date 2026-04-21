@@ -3429,7 +3429,11 @@ function App() {
                       opacity: 0.55,
                     }}
                   >
-                    {liveMinute > 45 ? "2ª Parte" : "1ª Parte"}
+                    {liveMinute > 90
+                      ? "Prolongamento"
+                      : liveMinute > 45
+                        ? "2ª Parte"
+                        : "1ª Parte"}
                   </span>
                 </>
               ) : liveMinute === 45 && !isCupMatch ? (
