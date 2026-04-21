@@ -681,6 +681,7 @@ function App() {
   const [cupResultsFilter, setCupResultsFilter] = useState("all"); // "all" | "mine"
   const [cupPenaltyPopup, setCupPenaltyPopup] = useState(null); // shootout data
   const [cupPenaltyKickIdx, setCupPenaltyKickIdx] = useState(0); // how many kicks revealed
+  const [pendingCupRoundResults, setPendingCupRoundResults] = useState(null); // held until penalty popup closes
   const [welcomeModal, setWelcomeModal] = useState(null); // { teamName }
   const [jobOfferModal, setJobOfferModal] = useState(null); // null | { fromTeam, toTeam, expiresAtMatchweek }
   const [seasonEndModal, setSeasonEndModal] = useState(null); // seasonEnd payload
@@ -1161,15 +1162,8 @@ function App() {
         );
       }
       setCupRoundResults(data);
-      setCupPenaltyPopup(null);
-      setShowCupResults(false);
-      setActiveTab("cup");
-      setIsCupMatch(false);
-      setCupPreMatch(false);
-      setIsCupExtraTime(false);
-      setCupExtraTimeBadge(false);
-      setIsPlayingMatch(false);
-      setMatchResults(null);
+      // Don't navigate away yet — if a penalty shootout popup is open, wait for it to close first.
+      setPendingCupRoundResults(data);
     });
     socket.on("cupSecondHalfStart", (data) => {
       setIsMatchActionPending(false);
@@ -2230,6 +2224,21 @@ function App() {
     const timer = setTimeout(() => setCupPenaltyKickIdx((i) => i + 1), 3500);
     return () => clearTimeout(timer);
   }, [cupPenaltyPopup, cupPenaltyKickIdx]);
+
+  // After the penalty popup closes, apply any cup round results that arrived while it was open.
+  useEffect(() => {
+    if (cupPenaltyPopup !== null) return;
+    if (!pendingCupRoundResults) return;
+    setPendingCupRoundResults(null);
+    setShowCupResults(false);
+    setActiveTab("cup");
+    setIsCupMatch(false);
+    setCupPreMatch(false);
+    setIsCupExtraTime(false);
+    setCupExtraTimeBadge(false);
+    setIsPlayingMatch(false);
+    setMatchResults(null);
+  }, [cupPenaltyPopup, pendingCupRoundResults]);
 
   // Load own palmares when Clube or Classificações tab is opened
   useEffect(() => {
