@@ -227,7 +227,7 @@ function buildAutoPositions(
   if (!availablePlayers.length) return {};
 
   const sortedPlayers = [...availablePlayers].sort(
-    (a, b) => b.skill * b.form - a.skill * a.form,
+    (a, b) => b.skill - a.skill,
   );
 
   const formationParts = String(formation || "4-4-2").split("-");
