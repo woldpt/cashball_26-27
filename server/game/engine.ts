@@ -1726,12 +1726,20 @@ async function applyPostMatchQualityEvolution(
         }
 
         if (updates.length === 0) {
-          resolve();
+          // Mesmo sem evoluções, limpar prev_skill de semanas anteriores
+          db.run(
+            "UPDATE players SET prev_skill = NULL WHERE team_id IS NOT NULL",
+            () => resolve(),
+          );
           return;
         }
 
         let remaining = updates.length;
         db.serialize(() => {
+          // Limpar prev_skill de semanas anteriores; só os que mudam esta semana ficam marcados
+          db.run(
+            "UPDATE players SET prev_skill = NULL WHERE team_id IS NOT NULL",
+          );
           updates.forEach((update) => {
             db.run(
               "UPDATE players SET prev_skill = skill, skill = ? WHERE id = ?",
