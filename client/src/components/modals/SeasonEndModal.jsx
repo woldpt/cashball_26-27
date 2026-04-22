@@ -6,6 +6,7 @@ const DIVISION_NAMES = {
   2: "Segunda Liga",
   3: "Liga 3",
   4: "Campeonato de Portugal",
+  5: "Distritais",
 };
 
 function fmt(value) {
@@ -55,9 +56,10 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
   const myPromotion = data?.promotions?.find((p) => isMyTeam(p.teamId));
   const isPromotion = myPromotion && myPromotion.toDiv < myPromotion.fromDiv;
 
-  // Only show Div 1-4 promotions/relegations in the modal (Div 5 is internal NPC pool)
+  // Mostrar subidas/descidas Div 1-4 e também subidas dos Distritais (Div 5 → 4).
+  // Descidas para a Div 5 continuam ocultas (pool interna de equipas NPC).
   const visiblePromotions = (data?.promotions || []).filter(
-    (p) => p.toDiv !== 5 && p.fromDiv !== 5,
+    (p) => p.toDiv !== 5,
   );
 
   return (
