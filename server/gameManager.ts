@@ -370,6 +370,10 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
             () => {},
           );
           db.run(
+            "ALTER TABLE teams ADD COLUMN avg_attendance INTEGER DEFAULT 0",
+            () => {},
+          );
+          db.run(
             "ALTER TABLE matches ADD COLUMN attendance INTEGER DEFAULT 0",
             () => {},
           );

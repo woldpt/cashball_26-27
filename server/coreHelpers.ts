@@ -108,7 +108,10 @@ export function getStandingsRows(teams: AnyRow[] = []) {
   });
 }
 
-export async function getAllTeamForms(db: Db, season?: number): Promise<Record<number, string>> {
+export async function getAllTeamForms(
+  db: Db,
+  season?: number,
+): Promise<Record<number, string>> {
   const rows = await runAll(
     db,
     season != null
@@ -129,12 +132,20 @@ export async function getAllTeamForms(db: Db, season?: number): Promise<Record<n
     if (!formMap[awayId]) formMap[awayId] = [];
     if (formMap[homeId].length < 5) {
       formMap[homeId].push(
-        row.home_score > row.away_score ? "V" : row.home_score < row.away_score ? "D" : "E"
+        row.home_score > row.away_score
+          ? "V"
+          : row.home_score < row.away_score
+            ? "D"
+            : "E",
       );
     }
     if (formMap[awayId].length < 5) {
       formMap[awayId].push(
-        row.away_score > row.home_score ? "V" : row.away_score < row.home_score ? "D" : "E"
+        row.away_score > row.home_score
+          ? "V"
+          : row.away_score < row.home_score
+            ? "D"
+            : "E",
       );
     }
   }
@@ -165,9 +176,13 @@ export function pickRefereeSummary(
 }
 
 export async function calculateMatchAttendance(db: Db, homeTeamId: number) {
-  const team = await runGet<{ stadium_capacity?: number; division?: number }>(
+  const team = await runGet<{
+    stadium_capacity?: number;
+    division?: number;
+    avg_attendance?: number;
+  }>(
     db,
-    "SELECT stadium_capacity, division FROM teams WHERE id = ?",
+    "SELECT stadium_capacity, division, avg_attendance FROM teams WHERE id = ?",
     [homeTeamId],
   );
   const rawCapacity = team ? team.stadium_capacity || 10000 : 10000;
@@ -204,8 +219,14 @@ export async function calculateMatchAttendance(db: Db, homeTeamId: number) {
   }
 
   // Ocupação do estádio: mínimo 30%, máximo 100%
-  const occupancyRate = 0.3 + formPoints * 0.7;
-  return Math.floor(capacity * occupancyRate);
+  const formAttendance = Math.floor(capacity * (0.3 + formPoints * 0.7));
+
+  // Se existe média histórica, blendá-la com a previsão baseada em forma
+  const prevAvg = team?.avg_attendance || 0;
+  if (prevAvg > 0) {
+    return Math.min(capacity, Math.round((prevAvg + formAttendance) / 2));
+  }
+  return formAttendance;
 }
 
 export function logClubNews(

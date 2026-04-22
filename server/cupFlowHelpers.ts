@@ -229,6 +229,31 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
         resolve,
       );
     });
+
+    // Persist avg_attendance per team (rolling average: blend previous + this season)
+    for (const team of allTeams) {
+      const homeMatches = await runAll<{ attendance: number }>(
+        game.db,
+        "SELECT attendance FROM matches WHERE home_team_id = ? AND played = 1 AND attendance > 0",
+        [team.id],
+      );
+      if (homeMatches.length > 0) {
+        const seasonAvg = Math.round(
+          homeMatches.reduce((s, m) => s + (m.attendance || 0), 0) /
+            homeMatches.length,
+        );
+        const prevAvg = team.avg_attendance || 0;
+        const newAvg =
+          prevAvg > 0 ? Math.round((prevAvg + seasonAvg) / 2) : seasonAvg;
+        await new Promise((resolve) => {
+          game.db.run(
+            "UPDATE teams SET avg_attendance = ? WHERE id = ?",
+            [newAvg, team.id],
+            resolve,
+          );
+        });
+      }
+    }
     await new Promise((resolve) => {
       game.db.run(
         "UPDATE players SET career_goals = career_goals + goals, career_reds = career_reds + red_cards, career_injuries = career_injuries + injuries, career_games = career_games + games_played",
