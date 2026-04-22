@@ -54,6 +54,15 @@ interface SessionHandlerDeps {
   emitGlobalPlayerUpdate?: () => void;
 }
 
+function safeParse<T>(json: string | null | undefined, fallback: T): T {
+  if (!json) return fallback;
+  try {
+    return JSON.parse(json);
+  } catch {
+    return fallback;
+  }
+}
+
 // ─── LEGACY COMPAT HELPERS ───────────────────────────────────────────────────
 // Derive old-style matchState/cupState from the new unified gamePhase.
 // Keeps the existing client working without changes.
@@ -578,9 +587,9 @@ export function registerSessionSocketHandlers(
         ...match,
         finalHomeGoals: match.home_score,
         finalAwayGoals: match.away_score,
-        events: match.narrative ? JSON.parse(match.narrative) : [],
-        homeLineup: match.home_lineup ? JSON.parse(match.home_lineup) : [],
-        awayLineup: match.away_lineup ? JSON.parse(match.away_lineup) : [],
+        events: safeParse(match.narrative, []),
+        homeLineup: safeParse(match.home_lineup, []),
+        awayLineup: safeParse(match.away_lineup, []),
       }));
 
       const cupMatches = await runAll(

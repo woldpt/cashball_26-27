@@ -1,4 +1,5 @@
 import type { ActiveGame, PlayerSession } from "./types";
+import { runExec } from "./coreHelpers";
 
 interface FinanceHandlerDeps {
   io: any;
@@ -15,61 +16,64 @@ export function registerFinanceSocketHandlers(
 ) {
   const { io, getGameBySocket, getPlayerBySocket } = deps;
 
-  socket.on("buildStadium", () => {
+  socket.on("buildStadium", async () => {
     const game = getGameBySocket(socket.id);
     if (!game) return;
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
 
-    game.db.get(
-      "SELECT budget, stadium_capacity FROM teams WHERE id = ?",
-      [playerState.teamId],
-      (err, team) => {
-        const cost = 300000;
-        const maxCapacity = 120000;
-        if (team && team.stadium_capacity >= maxCapacity) {
-          socket.emit(
-            "systemMessage",
-            "Capacidade máxima atingida (120.000 lugares)!",
-          );
-          return;
-        }
-        if (team && team.budget >= cost) {
-          game.db.run(
-            "UPDATE teams SET budget = budget - ?, stadium_capacity = MIN(stadium_capacity + 5000, ?) WHERE id = ?",
-            [cost, maxCapacity, playerState.teamId],
-            () => {
-              // Registar obra nas notícias do clube
-              const matchweek = game.matchweek || 1;
-              game.db.run(
-                "INSERT INTO club_news (team_id, type, title, description, amount, matchweek) VALUES (?, 'stadium_build', 'Expansão do Estádio', '+5000 lugares construídos', ?, ?)",
-                [playerState.teamId, cost, matchweek],
-              );
-              // Emitir teamsData para toda a sala (actualiza budget e capacity)
-              game.db.all("SELECT * FROM teams", (err2, teams) => {
-                io.to(game.roomCode).emit("teamsData", teams);
-              });
-              // Emitir evento dedicado para ticker e refresh de finanças
-              const updatedTeam = (data: any) => {
-                io.to(game.roomCode).emit("stadiumBuilt", {
-                  teamId: playerState.teamId,
-                  teamName: data?.name || "",
-                  newCapacity: (team.stadium_capacity || 10000) + 5000,
-                });
-              };
-              game.db.get(
-                "SELECT name FROM teams WHERE id = ?",
-                [playerState.teamId],
-                (_e: any, row: any) => updatedTeam(row),
-              );
-              socket.emit("systemMessage", "+5000 Lugares Construídos!");
-            },
-          );
-        } else {
-          socket.emit("systemMessage", "Sem dinheiro (Custo: 300.000€)!");
-        }
-      },
-    );
+    const team: any = await new Promise((resolve) => {
+      game.db.get(
+        "SELECT budget, stadium_capacity, name FROM teams WHERE id = ?",
+        [playerState.teamId],
+        (_err: any, row: any) => resolve(row ?? null),
+      );
+    });
+
+    const cost = 300000;
+    const maxCapacity = 120000;
+
+    if (!team) return;
+    if (team.stadium_capacity >= maxCapacity) {
+      socket.emit("systemMessage", "Capacidade máxima atingida (120.000 lugares)!");
+      return;
+    }
+    if (team.budget < cost) {
+      socket.emit("systemMessage", "Sem dinheiro (Custo: 300.000€)!");
+      return;
+    }
+
+    const matchweek = game.matchweek || 1;
+    try {
+      await runExec(game.db, "BEGIN");
+      await runExec(
+        game.db,
+        "UPDATE teams SET budget = budget - ?, stadium_capacity = MIN(stadium_capacity + 5000, ?) WHERE id = ?",
+        [cost, maxCapacity, playerState.teamId],
+      );
+      await runExec(
+        game.db,
+        "INSERT INTO club_news (team_id, type, title, description, amount, matchweek) VALUES (?, 'stadium_build', 'Expansão do Estádio', '+5000 lugares construídos', ?, ?)",
+        [playerState.teamId, cost, matchweek],
+      );
+      await runExec(game.db, "COMMIT");
+    } catch (err) {
+      await runExec(game.db, "ROLLBACK").catch(() => {});
+      console.error("[buildStadium] Transaction failed:", err);
+      socket.emit("systemMessage", "Erro ao construir estádio.");
+      return;
+    }
+
+    // Emitir teamsData para toda a sala (actualiza budget e capacity)
+    game.db.all("SELECT * FROM teams", (_err2: any, teams: any[]) => {
+      io.to(game.roomCode).emit("teamsData", teams);
+    });
+    io.to(game.roomCode).emit("stadiumBuilt", {
+      teamId: playerState.teamId,
+      teamName: team.name || "",
+      newCapacity: (team.stadium_capacity || 10000) + 5000,
+    });
+    socket.emit("systemMessage", "+5000 Lugares Construídos!");
   });
 
   socket.on("takeLoan", () => {

@@ -17,7 +17,7 @@ const supportedFixtures = new Map([
 ]);
 
 const tokenStore = new Map();
-const tokenTtlMs = 12 * 60 * 60 * 1000;
+const tokenTtlMs = 2 * 60 * 60 * 1000;
 
 function cleanupTokens() {
   const now = Date.now();
@@ -354,32 +354,52 @@ router.delete("/fixtures/all_teams/team/:index", (req, res) => {
 
 router.post("/reseed", (req, res) => {
   const seedScript = path.join(__dirname, "db", "seed.js");
+  if (!fs.existsSync(seedScript)) {
+    return res.status(500).json({ error: "Seed script not found." });
+  }
+
   const child = spawn(process.execPath, [seedScript, "--real"], {
     cwd: __dirname,
-    env: process.env,
+    env: {
+      NODE_ENV: process.env.NODE_ENV || "production",
+      DATABASE_URL: process.env.DATABASE_URL,
+      HOME: process.env.HOME,
+      PATH: process.env.PATH,
+    },
+    timeout: 30_000,
   });
 
   let stdout = "";
   let stderr = "";
+  const MAX_OUTPUT = 4096;
 
   child.stdout.on("data", (chunk) => {
-    stdout += chunk.toString();
+    if (stdout.length < MAX_OUTPUT) stdout += chunk.toString();
   });
   child.stderr.on("data", (chunk) => {
-    stderr += chunk.toString();
+    if (stderr.length < MAX_OUTPUT) stderr += chunk.toString();
   });
 
   child.on("close", (code) => {
     if (code !== 0) {
-      return res.status(500).json({
-        error: "Reseed failed.",
-        stdout,
-        stderr,
-      });
+      console.error("[admin] Reseed failed. stderr:", stderr.slice(0, 500));
+      return res.status(500).json({ error: "Reseed failed." });
     }
-
-    return res.json({ ok: true, stdout, stderr });
+    return res.json({ ok: true });
   });
+
+  child.on("error", (err) => {
+    console.error("[admin] Reseed spawn error:", err.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Reseed failed." });
+    }
+  });
+});
+
+router.post("/logout", (req, res) => {
+  const token = readToken(req);
+  if (token) tokenStore.delete(token);
+  return res.json({ ok: true });
 });
 
 module.exports = router;

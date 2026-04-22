@@ -35,6 +35,13 @@ export function registerGameplaySocketHandlers(
   } = deps;
 
   socket.on("setTactic", (tactic) => {
+    if (
+      !tactic ||
+      typeof tactic !== "object" ||
+      typeof tactic.formation !== "string" ||
+      typeof tactic.style !== "string"
+    )
+      return;
     const game = getGameBySocket(socket.id);
     const playerState = getPlayerBySocket(game, socket.id);
     if (game && playerState) {
@@ -124,25 +131,36 @@ export function registerGameplaySocketHandlers(
       `[${game.roomCode}] 🔌 Disconnect: ${playerState?.name ?? "unknown"} (socket=${socket.id}) | phase=${game.gamePhase}`,
     );
 
-    // If the disconnected socket owned the pending match action, auto-resolve it
-    const pendingAction: any = game.pendingMatchAction;
-    if (
-      playerState &&
-      pendingAction &&
-      pendingAction.teamId === playerState.teamId
-    ) {
-      clearTimeout(pendingAction.timer);
-      game.pendingMatchAction = null;
-      const fallbackValue = pendingAction.fallback
-        ? pendingAction.fallback()
-        : null;
-      try {
-        pendingAction.finalize(fallbackValue, "auto");
-      } catch (err) {
-        console.error(
-          "[disconnect] Error finalizing pending match action:",
-          err,
-        );
+    if (playerState) {
+      // Remove from lockedCoaches so checkAllReady doesn't block on offline coach
+      game.lockedCoaches.delete(playerState.name);
+
+      // Cancel any pending contract counter-offer timer for this coach's team
+      if (game.pendingRenewalCounterOffers) {
+        for (const [pid, offer] of Object.entries(game.pendingRenewalCounterOffers as Record<string, any>)) {
+          if (offer.teamId === playerState.teamId) {
+            clearTimeout(offer.timer);
+            delete (game.pendingRenewalCounterOffers as any)[pid];
+          }
+        }
+      }
+
+      // If the disconnected socket owned the pending match action, auto-resolve it
+      const pendingAction: any = game.pendingMatchAction;
+      if (pendingAction && pendingAction.teamId === playerState.teamId) {
+        clearTimeout(pendingAction.timer);
+        game.pendingMatchAction = null;
+        const fallbackValue = pendingAction.fallback
+          ? pendingAction.fallback()
+          : null;
+        try {
+          pendingAction.finalize(fallbackValue, "auto");
+        } catch (err) {
+          console.error(
+            "[disconnect] Error finalizing pending match action:",
+            err,
+          );
+        }
       }
     }
 
@@ -150,6 +168,8 @@ export function registerGameplaySocketHandlers(
     io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
     emitGlobalPlayerUpdate?.();
     emitAwaitingCoaches(game);
+    // Let remaining ready coaches proceed if all are now ready
+    checkAllReady(game);
   });
 
   socket.on("acceptJobOffer", async () => {

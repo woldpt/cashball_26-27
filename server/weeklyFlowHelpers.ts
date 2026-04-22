@@ -643,30 +643,46 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                         io.to(game.roomCode).emit("topScorers", scorers || []);
 
                         const connectedPlayers = getPlayerList(game);
-                        connectedPlayers.forEach((player) => {
-                          if (!player.socketId) return;
-                          game.db.all(
-                            "SELECT * FROM players WHERE team_id = ?",
-                            [player.teamId],
-                            (err4: any, squad: any[]) => {
-                              if (!err4)
-                                io.to(player.socketId as string).emit(
-                                  "mySquad",
-                                  withJuniorGRs(
-                                    squad || [],
-                                    player.teamId as number,
-                                    game.matchweek || 1,
-                                  ),
-                                );
-                            },
-                          );
-                        });
+                        const activeTeamIds = connectedPlayers
+                          .filter((p) => p.socketId && p.teamId != null)
+                          .map((p) => p.teamId as number);
 
-                        io.to(game.roomCode).emit(
-                          "playerListUpdate",
-                          getPlayerList(game),
+                        const emitSquadsAndFinish = (byTeam: Map<number, any[]>) => {
+                          connectedPlayers.forEach((player) => {
+                            if (!player.socketId || player.teamId == null) return;
+                            const squad = byTeam.get(player.teamId as number) || [];
+                            io.to(player.socketId as string).emit(
+                              "mySquad",
+                              withJuniorGRs(squad, player.teamId as number, game.matchweek || 1),
+                            );
+                          });
+                          io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
+                          resolveOuter();
+                        };
+
+                        if (activeTeamIds.length === 0) {
+                          io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
+                          resolveOuter();
+                          return;
+                        }
+
+                        const placeholders = activeTeamIds.map(() => "?").join(",");
+                        game.db.all(
+                          `SELECT * FROM players WHERE team_id IN (${placeholders})`,
+                          activeTeamIds,
+                          (err4: any, allPlayers: any[]) => {
+                            const byTeam = new Map<number, any[]>();
+                            if (!err4 && allPlayers) {
+                              for (const p of allPlayers) {
+                                const list = byTeam.get(p.team_id) || [];
+                                list.push(p);
+                                byTeam.set(p.team_id, list);
+                              }
+                            }
+                            emitSquadsAndFinish(byTeam);
+                          },
                         );
-                        resolveOuter();
+                        return;
                       },
                     );
                   },
