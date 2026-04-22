@@ -669,9 +669,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
       );
       // Simulate ALL drawn fixtures' ET simultaneously so the clock only runs once
       await Promise.all(
-        drawnSetups.map(({ fixture, t1, t2, ctx }) =>
-          simulateExtraTime(game.db, fixture, t1, t2, ctx),
-        ),
+        drawnSetups.map(({ fixture, t1, t2, ctx }) => {
+          (ctx as any).hasHumanInET = humanInAnyDraw;
+          return simulateExtraTime(game.db, fixture, t1, t2, ctx);
+        }),
       );
 
       // Post-ET: determine winner (or penalties) for each drawn fixture
