@@ -63,7 +63,10 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
   );
 
   const displayYear = data?.year ?? 0;
-  const handleContinue = onClose;
+  const handleContinue = () => {
+    onClose();
+    window.location.reload();
+  };
 
   return (
     <AnimatePresence>
