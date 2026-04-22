@@ -3365,7 +3365,7 @@ function App() {
                 ⚽ CashBall 26/27
               </span>
               <span className="text-xs text-on-surface-variant/40">
-                v1.0a © 2026 by Fábio Silva
+                v1.0a-TESTING © 2026 by Fábio Silva
               </span>
             </div>
           </footer>
