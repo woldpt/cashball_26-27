@@ -256,6 +256,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     game.cupTeamIds = [];
     game.cupHalftimePayload = null;
     game.lastHalftimePayload = null;
+    game.dismissalsThisSeason = new Set<string>();
     clearPhaseTimer(game);
     game.phaseAcks = new Set();
     game.phaseToken = "";

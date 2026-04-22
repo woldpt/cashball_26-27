@@ -45,6 +45,109 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
 
   // ── Internal helpers ───────────────────────────────────────────────────────
 
+  /**
+   * Desce o treinador para uma equipa NPC na divisão imediatamente inferior,
+   * sem o despedir formalmente. Usado quando o limite de 1 despedimento/época
+   * foi atingido e o treinador ainda está em div 1–3.
+   */
+  async function demoteCoach(
+    game: ActiveGame,
+    coachName: string,
+    currentDivision: number,
+  ): Promise<void> {
+    const player = game.playersByName[coachName];
+    if (!player) return;
+
+    const takenTeamIds = Object.values(game.playersByName)
+      .map((p) => p.teamId)
+      .filter((id): id is number => id !== null && id !== undefined);
+
+    const targetDiv = currentDivision + 1;
+    const placeholders =
+      takenTeamIds.length > 0 ? takenTeamIds.map(() => "?").join(",") : null;
+
+    let query =
+      "SELECT id, name, division, budget, color_primary, color_secondary, " +
+      "points, wins, draws, losses, goals_for, goals_against, " +
+      "stadium_capacity, stadium_name FROM teams WHERE division = ?";
+    const params: any[] = [targetDiv];
+    if (placeholders) {
+      query += ` AND id NOT IN (${placeholders})`;
+      params.push(...takenTeamIds);
+    }
+    query += " ORDER BY RANDOM() LIMIT 1";
+
+    const team = await runGet<AnyRow>(game.db, query, params);
+    if (!team) {
+      console.warn(
+        `[${game.roomCode}] demoteCoach: no NPC team found in div ${targetDiv} for ${coachName}`,
+      );
+      return;
+    }
+
+    const mgr = await runGet<{ id: number }>(
+      game.db,
+      "SELECT id FROM managers WHERE name = ?",
+      [coachName],
+    );
+    if (!mgr) return;
+
+    const oldTeamId = player.teamId;
+
+    // Actualizar DB
+    game.db.run("UPDATE teams SET manager_id = NULL WHERE id = ?", [oldTeamId]);
+    game.db.run("UPDATE teams SET manager_id = ? WHERE id = ?", [
+      mgr.id,
+      team.id,
+    ]);
+
+    // Actualizar estado em memória
+    player.teamId = team.id;
+
+    // Notificar coach
+    if (player.socketId) {
+      io.to(player.socketId).emit("teamAssigned", {
+        teamName: team.name,
+        teamId: team.id,
+        division: team.division,
+        budget: team.budget ?? 0,
+        points: team.points ?? 0,
+        wins: team.wins ?? 0,
+        draws: team.draws ?? 0,
+        losses: team.losses ?? 0,
+        goalsFor: team.goals_for ?? 0,
+        goalsAgainst: team.goals_against ?? 0,
+        colorPrimary: team.color_primary ?? "#888888",
+        colorSecondary: team.color_secondary ?? "#ffffff",
+        stadiumCapacity: team.stadium_capacity ?? 0,
+        stadiumName: team.stadium_name ?? "",
+        isNew: true,
+      });
+
+      game.db.all(
+        "SELECT * FROM players WHERE team_id = ?",
+        [team.id],
+        (err: any, squad: any[]) => {
+          if (!err && player.socketId) {
+            io.to(player.socketId as string).emit(
+              "mySquad",
+              withJuniorGRs(squad || [], team.id, game.matchweek || 1),
+            );
+          }
+        },
+      );
+    }
+
+    io.to(game.roomCode).emit(
+      "systemMessage",
+      `${coachName} desceu para a ${targetDiv}ª divisão e assumiu o comando de ${team.name}.`,
+    );
+
+    game.db.all("SELECT * FROM teams", (err: any, allTeamsData: any[]) => {
+      if (!err) io.to(game.roomCode).emit("teamsData", allTeamsData);
+    });
+  }
+
   async function dismissHumanCoach(
     game: ActiveGame,
     coachName: string,
@@ -56,9 +159,20 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     const player = game.playersByName[coachName];
     if (!player) return;
 
+    // Máximo 1 despedimento por época: se já foi despedido esta época e ainda
+    // está numa divisão jogável acima da 4ª, desce de divisão em vez de ser despedido.
+    if (game.dismissalsThisSeason.has(coachName)) {
+      if (division < 4) {
+        await demoteCoach(game, coachName, division);
+        return;
+      }
+      // div 4 → despedimento obrigatório (div 5 não é jogável)
+    }
+
     const socketId = player.socketId;
 
-    // Mark as dismissed: keep entry in playersByName but clear teamId
+    // Registar despedimento na época corrente
+    game.dismissalsThisSeason.add(coachName);
     player.teamId = null;
     player.ready = false;
     game.dismissedCoachSince[coachName] = {

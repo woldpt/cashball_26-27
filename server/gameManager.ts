@@ -278,7 +278,11 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
 
   const db = new sqlite.Database(dbPath);
   db.run("PRAGMA foreign_keys = ON", (err: Error | null) => {
-    if (err) console.error(`[gameManager] Failed to enable foreign keys for ${roomCode}:`, err.message);
+    if (err)
+      console.error(
+        `[gameManager] Failed to enable foreign keys for ${roomCode}:`,
+        err.message,
+      );
   });
 
   // Ensure performance indexes exist on FK columns (idempotent)
@@ -298,7 +302,11 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
   db.serialize(() => {
     for (const sql of indexStatements) {
       db.run(sql, (idxErr: Error | null) => {
-        if (idxErr) console.error(`[gameManager] Index creation failed for ${roomCode}:`, idxErr.message);
+        if (idxErr)
+          console.error(
+            `[gameManager] Index creation failed for ${roomCode}:`,
+            idxErr.message,
+          );
       });
     }
   });
@@ -343,6 +351,7 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     pendingJobOffers: {},
     negativeBudgetStreak: {},
     dismissedCoachSince: {},
+    dismissalsThisSeason: new Set<string>(),
   };
 
   activeGames[roomCode] = game;
@@ -550,6 +559,13 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                   );
                 } catch (_) {}
               }
+              if (st["dismissalsThisSeason"]) {
+                try {
+                  const names = JSON.parse(st["dismissalsThisSeason"]);
+                  if (Array.isArray(names))
+                    game.dismissalsThisSeason = new Set<string>(names);
+                } catch (_) {}
+              }
 
               // Set currentEvent from calendarIndex
               game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
@@ -648,6 +664,10 @@ function saveGameState(game: ActiveGame): void {
     JSON.stringify(game.negativeBudgetStreak || {}),
   );
   upsert("dismissedCoachSince", JSON.stringify(game.dismissedCoachSince || {}));
+  upsert(
+    "dismissalsThisSeason",
+    JSON.stringify([...(game.dismissalsThisSeason ?? [])]),
+  );
 
   // Persist current fixtures for crash recovery (only serialisable fields)
   if (game.currentFixtures && game.currentFixtures.length > 0) {
@@ -755,18 +775,20 @@ function getPlayerList(game: ActiveGame): PlayerSession[] {
 }
 
 function closeAllDatabases(): Promise<void> {
-  const closes = Object.values(activeGames).map((game) =>
-    new Promise<void>((resolve) => {
-      try {
-        game.db.close((err: Error | null) => {
-          if (err) console.error("[gameManager] DB close error:", err.message);
+  const closes = Object.values(activeGames).map(
+    (game) =>
+      new Promise<void>((resolve) => {
+        try {
+          game.db.close((err: Error | null) => {
+            if (err)
+              console.error("[gameManager] DB close error:", err.message);
+            resolve();
+          });
+        } catch (err) {
+          console.error("[gameManager] DB close threw:", err);
           resolve();
-        });
-      } catch (err) {
-        console.error("[gameManager] DB close threw:", err);
-        resolve();
-      }
-    }),
+        }
+      }),
   );
   return Promise.all(closes).then(() => undefined);
 }

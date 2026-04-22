@@ -94,6 +94,7 @@ export interface ActiveGame {
       teamName?: string;
     }
   >; // coachName → info de despedimento
+  dismissalsThisSeason: Set<string>; // coaches despedidos na época actual (máx 1 por época)
 
   [key: string]: any;
 }
