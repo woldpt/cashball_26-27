@@ -788,6 +788,23 @@ async function applyInjuryEvent({
     if (idx > -1) squad.splice(idx, 1, replacement);
     lineupIds.delete(injuredPlayer.id);
     lineupIds.add(replacement.id);
+
+    // Actualizar snapshot de lineup para que o ecrã de intervalo reflicta a substituição
+    const lineupRef =
+      teamSide === "home" ? fixture.homeLineup : fixture.awayLineup;
+    if (lineupRef) {
+      const li = lineupRef.findIndex((p: any) => p.id === injuredPlayer.id);
+      if (li > -1) {
+        lineupRef[li] = {
+          id: replacement.id,
+          name: replacement.name,
+          position: replacement.position,
+          is_star: replacement.is_star || 0,
+          skill: replacement.skill,
+        };
+      }
+    }
+
     fixture.events.push({
       minute: fixture._minute,
       type: "substitution",
@@ -803,6 +820,15 @@ async function applyInjuryEvent({
   const idx = squad.findIndex((p) => p.id === injuredPlayer.id);
   if (idx > -1) squad.splice(idx, 1);
   lineupIds.delete(injuredPlayer.id);
+
+  // Remover jogador do snapshot de lineup quando sai sem substituto
+  const lineupRefNoSub =
+    teamSide === "home" ? fixture.homeLineup : fixture.awayLineup;
+  if (lineupRefNoSub) {
+    const li = lineupRefNoSub.findIndex((p: any) => p.id === injuredPlayer.id);
+    if (li > -1) lineupRefNoSub.splice(li, 1);
+  }
+
   return { replaced: false, injuredPlayer, replacement: null };
 }
 
@@ -1562,6 +1588,23 @@ async function simulateMatchSegment(
               if (idx > -1) squad.splice(idx, 1, playerIn);
               lineupIds.delete(playerOutId);
               lineupIds.add(playerInId);
+
+              // Actualizar snapshot de lineup para que o ecrã de intervalo reflicta a substituição
+              const lineupRef = isHome ? fixture.homeLineup : fixture.awayLineup;
+              if (lineupRef) {
+                const li = lineupRef.findIndex(
+                  (p: any) => p.id === playerOutId,
+                );
+                if (li > -1) {
+                  lineupRef[li] = {
+                    id: playerIn.id,
+                    name: playerIn.name,
+                    position: playerIn.position,
+                    is_star: playerIn.is_star || 0,
+                    skill: playerIn.skill,
+                  };
+                }
+              }
 
               // Keep tactic positions in sync so applyHalftimeSubs/applyETSubs
               // don't undo this substitution when the next phase starts.
