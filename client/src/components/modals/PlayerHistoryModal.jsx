@@ -126,7 +126,7 @@ export function PlayerHistoryModal({
   const matchInProgress = isPlayingMatch || showHalftimePanel;
   const alreadyAuctionedThisWeek =
     matchweekCount > 0 &&
-    (player.last_auctioned_matchweek || 0) >= matchweekCount;
+    (player.last_auctioned_matchweek || 0) > matchweekCount;
 
   // Availability badge
   let availBadge = null;

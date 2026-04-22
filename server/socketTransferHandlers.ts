@@ -1,5 +1,11 @@
 import type { ActiveGame, PlayerSession } from "./types";
-import { logClubNews, runExec, runGet, runAll, validatePositiveInt } from "./coreHelpers";
+import {
+  logClubNews,
+  runExec,
+  runGet,
+  runAll,
+  validatePositiveInt,
+} from "./coreHelpers";
 import { withJuniorGRs } from "./game/engine";
 
 interface TransferHandlerDeps {
@@ -32,6 +38,7 @@ interface TransferHandlerDeps {
     playerId: number,
     bidAmount: number,
   ) => Promise<any>;
+  finalizeAuction: (game: ActiveGame, playerId: number) => void;
 }
 
 export function registerTransferSocketHandlers(
@@ -49,6 +56,7 @@ export function registerTransferSocketHandlers(
     listPlayerOnMarket,
     startAuction,
     placeAuctionBid,
+    finalizeAuction,
   } = deps;
 
   socket.on("buyPlayer", async (playerId) => {
@@ -164,7 +172,10 @@ export function registerTransferSocketHandlers(
         "SELECT * FROM players WHERE team_id = ?",
         [playerState.teamId],
       );
-      socket.emit("mySquad", withJuniorGRs(squad, playerState.teamId as number, game.matchweek || 1));
+      socket.emit(
+        "mySquad",
+        withJuniorGRs(squad, playerState.teamId as number, game.matchweek || 1),
+      );
       socket.emit("systemMessage", `Contrataste ${player.name} por €${price}!`);
     } catch (err) {
       console.error("[buyPlayer] Error:", err);
@@ -208,8 +219,14 @@ export function registerTransferSocketHandlers(
 
           if (finalMode === "auction") {
             const currentMw = game.matchweek || 0;
-            if ((player.last_auctioned_matchweek || 0) >= currentMw && currentMw > 0) {
-              socket.emit("systemMessage", "Este jogador já foi a leilão nesta jornada. Aguarda a próxima jornada.");
+            if (
+              (player.last_auctioned_matchweek || 0) >= currentMw &&
+              currentMw > 0
+            ) {
+              socket.emit(
+                "systemMessage",
+                "Este jogador já foi a leilão nesta jornada. Aguarda a próxima jornada.",
+              );
               return;
             }
             startAuction(game, player, finalPrice, () => {
@@ -311,7 +328,8 @@ export function registerTransferSocketHandlers(
           );
         } else {
           // Counter-offer: inform manager of demanded wage before going to auction
-          if (!game.pendingRenewalCounterOffers) game.pendingRenewalCounterOffers = {};
+          if (!game.pendingRenewalCounterOffers)
+            game.pendingRenewalCounterOffers = {};
           // Cancel any existing timeout for this player
           const existing = game.pendingRenewalCounterOffers[playerId];
           if (existing?.timer) clearTimeout(existing.timer);
@@ -328,11 +346,15 @@ export function registerTransferSocketHandlers(
                 "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
                 [playerId],
                 (runErr: Error | null) => {
-                  if (runErr) console.error("[renewContract:reject] Error:", runErr);
+                  if (runErr)
+                    console.error("[renewContract:reject] Error:", runErr);
                   else emitSquadForPlayer(game, playerState.teamId);
                 },
               );
-              socket.emit("systemMessage", `${player.name} recusou e foi para leilão.`);
+              socket.emit(
+                "systemMessage",
+                `${player.name} recusou e foi para leilão.`,
+              );
             });
           };
 
@@ -385,7 +407,10 @@ export function registerTransferSocketHandlers(
               }
               refreshMarket(game);
               emitSquadForPlayer(game, playerState.teamId);
-              socket.emit("systemMessage", `${player.name} renovou até ao fim da época por €${pending.demandedWage}/sem.`);
+              socket.emit(
+                "systemMessage",
+                `${player.name} renovou até ao fim da época por €${pending.demandedWage}/sem.`,
+              );
             },
           );
         },
@@ -418,6 +443,20 @@ export function registerTransferSocketHandlers(
             playerId: validPlayerId,
             bidAmount: bidResult.bidAmount,
           });
+
+          // In single-player (only 1 human), finalize the auction immediately
+          // after the human bids — no need to wait for the timeout.
+          const humanCount = Object.values(game.playersByName).filter(
+            (p: any) => p.socketId,
+          ).length;
+          if (humanCount <= 1) {
+            const timer = game.auctionTimers?.[validPlayerId];
+            if (timer) {
+              clearTimeout(timer as any);
+              delete game.auctionTimers![validPlayerId];
+            }
+            finalizeAuction(game, validPlayerId);
+          }
         }
       })
       .catch((err) => {
@@ -498,7 +537,11 @@ export function registerTransferSocketHandlers(
                     "UPDATE teams SET budget = budget + ? WHERE id = ?",
                     [proposalPrice, player.team_id],
                     (errRefund: Error | null) => {
-                      if (errRefund) console.error("[makeTransferProposal:refund] Error:", errRefund);
+                      if (errRefund)
+                        console.error(
+                          "[makeTransferProposal:refund] Error:",
+                          errRefund,
+                        );
                     },
                   );
                 }
@@ -571,7 +614,15 @@ export function registerTransferSocketHandlers(
                     game.db.all(
                       "SELECT * FROM players WHERE team_id = ?",
                       [playerState.teamId],
-                      (_e2, squad) => socket.emit("mySquad", withJuniorGRs(squad || [], playerState.teamId as number, game.matchweek || 1)),
+                      (_e2, squad) =>
+                        socket.emit(
+                          "mySquad",
+                          withJuniorGRs(
+                            squad || [],
+                            playerState.teamId as number,
+                            game.matchweek || 1,
+                          ),
+                        ),
                     );
                     socket.emit("transferProposalResult", {
                       ok: true,

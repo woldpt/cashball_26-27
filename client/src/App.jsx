@@ -7892,7 +7892,7 @@ function App() {
                                         Math.ceil((matchweekCount + 1) / 14);
                                     const alreadyAuctionedThisWeek =
                                       matchweekCount > 0 &&
-                                      (player.last_auctioned_matchweek || 0) >=
+                                      (player.last_auctioned_matchweek || 0) >
                                         matchweekCount;
                                     return (
                                       <tr

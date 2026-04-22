@@ -463,6 +463,7 @@ io.on("connection", (socket) => {
     listPlayerOnMarket,
     startAuction,
     placeAuctionBid,
+    finalizeAuction,
   });
 
   registerFinanceSocketHandlers(socket, {

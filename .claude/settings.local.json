@@ -41,7 +41,8 @@
       "Bash(node -e ' *)",
       "Bash(python3 -c ' *)",
       "Bash(grep -E \"\\\\.ts$\")",
-      "Bash(xargs ls *)"
+      "Bash(xargs ls *)",
+      "Bash(grep -v \"-- \")"
     ]
   },
   "outputStyle": "default"
