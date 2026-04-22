@@ -2377,7 +2377,7 @@ function App() {
       const { playerOut, playerIn } = playerIdOrChoice;
       setTactic((prev) => {
         const newPositions = { ...prev.positions };
-        newPositions[playerOut] = "Suplente";
+        delete newPositions[playerOut];
         newPositions[playerIn] = "Titular";
         const next = { ...prev, positions: newPositions };
         socket.emit("setTactic", next);

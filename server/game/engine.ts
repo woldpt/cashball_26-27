@@ -1219,7 +1219,7 @@ async function simulateMatchSegment(
                 (p: any) => (p as any).teamId === teamId,
               ) as any;
               if (coachState?.tactic?.positions) {
-                coachState.tactic.positions[playerOutId] = "Suplente";
+                delete coachState.tactic.positions[playerOutId];
                 coachState.tactic.positions[playerInId] = "Titular";
               }
 
