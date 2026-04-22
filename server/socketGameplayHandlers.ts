@@ -73,7 +73,22 @@ export function registerGameplaySocketHandlers(
     );
   });
 
-  socket.on("resolveMatchAction", ({ actionId, teamId, playerId }) => {
+  socket.on("request_substitution", () => {
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    const playerState = getPlayerBySocket(game, socket.id);
+    if (!playerState || !playerState.teamId) return;
+
+    if (!game.pendingSubstitutions) {
+      game.pendingSubstitutions = new Set();
+    }
+    game.pendingSubstitutions.add(playerState.teamId);
+    console.log(
+      `[${game.roomCode}] 🔁 ${playerState.name} requested substitution for team ${playerState.teamId}`,
+    );
+  });
+
+  socket.on("resolveMatchAction", ({ actionId, teamId, playerId, choice }) => {
     const game = getGameBySocket(socket.id);
     if (!game) return;
 
@@ -90,10 +105,13 @@ export function registerGameplaySocketHandlers(
     const pending: any = pendingAction;
     clearTimeout(pending.timer);
     game.pendingMatchAction = null;
-    if (playerId === null || playerId === undefined) {
+    
+    const finalChoice = choice !== undefined ? choice : playerId;
+    
+    if (finalChoice === null || finalChoice === undefined) {
       pending.finalize(pending.fallback ? pending.fallback() : null, "auto");
     } else {
-      pending.finalize(playerId, "human");
+      pending.finalize(finalChoice, "human");
     }
   });
 

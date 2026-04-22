@@ -72,6 +72,8 @@ export interface ActiveGame {
   pendingAuctionQueue: unknown[];
   initialized: boolean;
   lastHalftimePayload?: any;
+  pendingMatchAction?: any;
+  pendingSubstitutions?: Set<number>;
 
   // ── Coach dismissal & job offers ──
   pendingJobOffers: Record<

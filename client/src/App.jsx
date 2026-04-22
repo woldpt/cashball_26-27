@@ -1656,6 +1656,15 @@ function App() {
         }
       }
 
+      if (normalizedAction.type === "user_substitution") {
+        normalizedAction.benchPlayers = (normalizedAction.benchPlayers || [])
+          .map(toCandidate)
+          .filter(Boolean);
+        normalizedAction.onPitch = (normalizedAction.onPitch || [])
+          .map(toCandidate)
+          .filter(Boolean);
+      }
+
       setMatchAction(normalizedAction);
       setActiveTab("live");
 
@@ -1663,7 +1672,7 @@ function App() {
       injuryCountdownRef.current = null;
       setInjuryCountdown(null);
 
-      if (normalizedAction.type === "injury") {
+      if (normalizedAction.type === "injury" || normalizedAction.type === "user_substitution") {
         setInjuryCountdown(60);
         injuryCountdownRef.current = setInterval(() => {
           setInjuryCountdown((prev) => {
@@ -2345,13 +2354,18 @@ function App() {
     return () => document.removeEventListener("mousedown", close);
   }, [showOnlineDropdown]);
 
-  const handleResolveMatchAction = (playerId) => {
+  const handleResolveMatchAction = (playerIdOrChoice) => {
     if (!matchAction) return;
-    socket.emit("resolveMatchAction", {
+    const payload = {
       actionId: matchAction.actionId,
       teamId: matchAction.teamId,
-      playerId,
-    });
+    };
+    if (typeof playerIdOrChoice === 'object' && playerIdOrChoice !== null) {
+      payload.choice = playerIdOrChoice;
+    } else {
+      payload.playerId = playerIdOrChoice;
+    }
+    socket.emit("resolveMatchAction", payload);
     setMatchAction(null);
     setIsMatchActionPending(false);
   };
@@ -4295,68 +4309,135 @@ function App() {
                           <h2 className="text-3xl font-black text-amber-500 mb-2 tracking-widest text-center uppercase">
                             {matchAction.type === "injury"
                               ? "LESÃO"
-                              : "PENÁLTI"}
+                              : matchAction.type === "user_substitution"
+                                ? "SUBSTITUIÇÃO"
+                                : "PENÁLTI"}
                           </h2>
-                          <p className="text-center text-zinc-400 font-bold mb-2 text-sm">
-                            Minuto {matchAction.minute}'{" "}
-                            {matchAction.currentScore
-                              ? `| ${matchAction.currentScore.home} - ${matchAction.currentScore.away}`
-                              : ""}
-                          </p>
-                          <p className="text-center text-zinc-300 font-black mb-2 text-sm uppercase tracking-widest">
-                            {matchAction.type === "injury"
-                              ? `Jogador lesionado: ${matchAction.injuredPlayer?.name || "?"}${matchAction.injuredPlayer?.position ? ` · ${matchAction.injuredPlayer.position}` : ""}`
-                              : "Escolhe o jogador para marcar o penalty"}
-                          </p>
-                          {matchAction.type === "injury" &&
-                            injuryCountdown !== null && (
-                              <p className="text-center text-amber-400 font-black text-sm mb-4 tracking-wide">
-                                Auto-substituição em {injuryCountdown}s
+                          
+                          {matchAction.type === "user_substitution" ? (
+                            <>
+                              <p className="text-center text-zinc-400 font-bold mb-2 text-sm">
+                                Minuto {matchAction.minute}'
                               </p>
-                            )}
-
-                          <div className="flex-1 overflow-y-auto bg-surface-container/40 border border-outline-variant/20 rounded p-4 mb-5">
-                            <div className="space-y-2">
-                              {(matchAction.type === "injury"
-                                ? matchAction.benchPlayers || []
-                                : matchAction.takerCandidates || []
-                              ).map((player) => (
-                                <button
-                                  key={player.id}
-                                  onClick={() =>
-                                    handleResolveMatchAction(player.id)
-                                  }
-                                  className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded border border-outline-variant/20 bg-surface hover:bg-surface-bright transition-colors text-left"
-                                >
-                                  <span className="font-bold text-white truncate">
-                                    {player.name}
-                                  </span>
-                                  <span className="text-xs font-black uppercase tracking-widest text-zinc-400">
-                                    {player.position} · {player.skill}
-                                  </span>
-                                </button>
-                              ))}
-                              {((matchAction.type === "injury" &&
-                                (!matchAction.benchPlayers ||
-                                  matchAction.benchPlayers.length === 0)) ||
-                                (matchAction.type === "penalty" &&
-                                  (!matchAction.takerCandidates ||
-                                    matchAction.takerCandidates.length ===
-                                      0))) && (
-                                <p className="text-center text-zinc-500 font-bold text-sm py-8">
-                                  Sem opções disponíveis. O sistema escolherá
-                                  automaticamente.
+                              {injuryCountdown !== null && (
+                                <p className="text-center text-amber-400 font-black text-sm mb-4 tracking-wide">
+                                  Tempo restante: {injuryCountdown}s
                                 </p>
                               )}
-                            </div>
-                          </div>
+                              <div className="flex-1 overflow-hidden bg-surface-container/40 border border-outline-variant/20 rounded p-4 mb-5 flex gap-4">
+                                <div className="flex-1 flex flex-col gap-2 overflow-hidden">
+                                  <h3 className="text-zinc-300 font-bold text-center text-sm uppercase tracking-wider">Em campo (sai)</h3>
+                                  <div className="space-y-2 overflow-y-auto pr-2 pb-2">
+                                    {(matchAction.onPitch || []).map(player => (
+                                      <button
+                                        key={`out-${player.id}`}
+                                        onClick={() => setSwapSource(player)}
+                                        className={`w-full flex items-center justify-between gap-2 px-3 py-3 rounded border transition-colors text-left ${swapSource?.id === player.id ? 'border-primary bg-primary/20' : 'border-outline-variant/20 bg-surface hover:bg-surface-bright'}`}
+                                      >
+                                        <span className="font-bold text-white truncate text-sm">{player.name}</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{player.position}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="flex-1 flex flex-col gap-2 overflow-hidden">
+                                  <h3 className="text-zinc-300 font-bold text-center text-sm uppercase tracking-wider">No banco (entra)</h3>
+                                  <div className="space-y-2 overflow-y-auto pr-2 pb-2">
+                                    {(matchAction.benchPlayers || []).map(player => (
+                                      <button
+                                        key={`in-${player.id}`}
+                                        onClick={() => setSwapTarget(player)}
+                                        className={`w-full flex items-center justify-between gap-2 px-3 py-3 rounded border transition-colors text-left ${swapTarget?.id === player.id ? 'border-primary bg-primary/20' : 'border-outline-variant/20 bg-surface hover:bg-surface-bright'}`}
+                                      >
+                                        <span className="font-bold text-white truncate text-sm">{player.name}</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{player.position}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex gap-4">
+                                <button
+                                  onClick={() => handleResolveMatchAction(null)}
+                                  className="flex-1 py-4 rounded-sm text-lg font-black uppercase tracking-widest transition-all border border-outline-variant/40 hover:bg-surface-bright text-zinc-300"
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  disabled={!swapSource || !swapTarget}
+                                  onClick={() => {
+                                    handleResolveMatchAction({ playerOut: swapSource.id, playerIn: swapTarget.id });
+                                  }}
+                                  className="flex-1 py-4 rounded-sm text-lg font-black uppercase tracking-widest transition-all bg-primary hover:brightness-110 text-on-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Confirmar
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-center text-zinc-400 font-bold mb-2 text-sm">
+                                Minuto {matchAction.minute}'{" "}
+                                {matchAction.currentScore
+                                  ? `| ${matchAction.currentScore.home} - ${matchAction.currentScore.away}`
+                                  : ""}
+                              </p>
+                              <p className="text-center text-zinc-300 font-black mb-2 text-sm uppercase tracking-widest">
+                                {matchAction.type === "injury"
+                                  ? `Jogador lesionado: ${matchAction.injuredPlayer?.name || "?"}${matchAction.injuredPlayer?.position ? ` · ${matchAction.injuredPlayer.position}` : ""}`
+                                  : "Escolhe o jogador para marcar o penalty"}
+                              </p>
+                              {matchAction.type === "injury" &&
+                                injuryCountdown !== null && (
+                                  <p className="text-center text-amber-400 font-black text-sm mb-4 tracking-wide">
+                                    Auto-substituição em {injuryCountdown}s
+                                  </p>
+                                )}
 
-                          <button
-                            onClick={() => handleResolveMatchAction(null)}
-                            className="w-full py-4 rounded-sm text-lg font-black uppercase tracking-widest transition-all bg-primary hover:brightness-110 text-on-primary"
-                          >
-                            Escolha automática
-                          </button>
+                              <div className="flex-1 overflow-y-auto bg-surface-container/40 border border-outline-variant/20 rounded p-4 mb-5">
+                                <div className="space-y-2">
+                                  {(matchAction.type === "injury"
+                                    ? matchAction.benchPlayers || []
+                                    : matchAction.takerCandidates || []
+                                  ).map((player) => (
+                                    <button
+                                      key={player.id}
+                                      onClick={() =>
+                                        handleResolveMatchAction(player.id)
+                                      }
+                                      className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded border border-outline-variant/20 bg-surface hover:bg-surface-bright transition-colors text-left"
+                                    >
+                                      <span className="font-bold text-white truncate">
+                                        {player.name}
+                                      </span>
+                                      <span className="text-xs font-black uppercase tracking-widest text-zinc-400">
+                                        {player.position} · {player.skill}
+                                      </span>
+                                    </button>
+                                  ))}
+                                  {((matchAction.type === "injury" &&
+                                    (!matchAction.benchPlayers ||
+                                      matchAction.benchPlayers.length === 0)) ||
+                                    (matchAction.type === "penalty" &&
+                                      (!matchAction.takerCandidates ||
+                                        matchAction.takerCandidates.length ===
+                                          0))) && (
+                                    <p className="text-center text-zinc-500 font-bold text-sm py-8">
+                                      Sem opções disponíveis. O sistema escolherá
+                                      automaticamente.
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={() => handleResolveMatchAction(null)}
+                                className="w-full py-4 rounded-sm text-lg font-black uppercase tracking-widest transition-all bg-primary hover:brightness-110 text-on-primary"
+                              >
+                                Escolha automática
+                              </button>
+                            </>
+                          )}
                         </div>
                       )}
 
@@ -4975,15 +5056,26 @@ function App() {
 
                               <div className="relative z-10 flex flex-col items-center px-4 pt-5 pb-4">
                                 {/* Match label */}
-                                <div className="flex items-center gap-2 mb-5">
-                                  {isPlayingMatch && (
-                                    <span className="w-2 h-2 rounded-full bg-error animate-pulse shrink-0" />
+                                <div className="flex items-center justify-between w-full mb-5">
+                                  <div className="flex items-center gap-2">
+                                    {isPlayingMatch && (
+                                      <span className="w-2 h-2 rounded-full bg-error animate-pulse shrink-0" />
+                                    )}
+                                    <span className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/50 font-black">
+                                      {isCupMatch
+                                        ? `Taça · ${cupMatchRoundName}`
+                                        : `${DIVISION_NAMES[hInfo?.division] || ""} · Jornada ${matchResults.matchweek}`}
+                                    </span>
+                                  </div>
+                                  {isPlayingMatch && !isMatchActionPending && (
+                                    <button 
+                                      onClick={() => socket.emit("request_substitution")}
+                                      className="text-[10px] font-black uppercase tracking-widest bg-surface-container-high hover:bg-surface-bright text-zinc-300 px-3 py-1.5 rounded-sm border border-outline-variant/20 transition-colors flex items-center gap-1.5"
+                                    >
+                                      <span className="material-symbols-outlined text-[14px]">pause</span>
+                                      Pausa / Sub
+                                    </button>
                                   )}
-                                  <span className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/50 font-black">
-                                    {isCupMatch
-                                      ? `Taça · ${cupMatchRoundName}`
-                                      : `${DIVISION_NAMES[hInfo?.division] || ""} · Jornada ${matchResults.matchweek}`}
-                                  </span>
                                 </div>
 
                                 {/* Teams + Score row */}

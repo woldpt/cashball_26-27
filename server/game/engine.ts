@@ -1142,6 +1142,79 @@ async function simulateMatchSegment(
         if (injuryResult.replaced && side === "away") away.squad = squad;
       }
     }
+    }
+    
+    // User substitutions
+    if (game.pendingSubstitutions && game.pendingSubstitutions.size > 0) {
+      const teamsToSub = [fixture.homeTeamId, fixture.awayTeamId].filter(id => game.pendingSubstitutions.has(id));
+      for (const teamId of teamsToSub) {
+        game.pendingSubstitutions.delete(teamId);
+        
+        const isHome = teamId === fixture.homeTeamId;
+        const squad = isHome ? home.squad : away.squad;
+        const fullRoster = isHome ? homeFullRoster : awayFullRoster;
+        const tactic = isHome ? homeTactic : awayTactic;
+        const side = isHome ? "home" : "away";
+        const lineupIds = isHome ? homeLineupIds : awayLineupIds;
+        
+        const onPitch = squad.filter((p: any) => lineupIds.has(p.id));
+        
+        const tacticPositions: Record<number, string> = tactic?.positions || {};
+        const benchIds = new Set(
+          Object.entries(tacticPositions)
+            .filter(([, status]) => status === "Suplente")
+            .map(([id]) => Number(id)),
+        );
+        const availableBench = fullRoster.filter(
+          (p: any) => !lineupIds.has(p.id) && benchIds.has(p.id)
+        );
+        
+        if (onPitch.length > 0 && availableBench.length > 0) {
+          const result = await waitForMatchAction({
+            game,
+            io,
+            type: "user_substitution",
+            teamId,
+            payload: {
+              minute: fixture._minute,
+              teamId,
+              onPitch: onPitch.map((p: any) => ({ id: p.id, name: p.name, position: p.position, skill: p.skill })),
+              benchPlayers: availableBench.map((p: any) => ({ id: p.id, name: p.name, position: p.position, skill: p.skill })),
+            },
+            timeoutMs: 60000,
+            fallback: () => null,
+          });
+          
+          if (result.choice && result.choice.playerOut && result.choice.playerIn) {
+            const playerOutId = result.choice.playerOut;
+            const playerInId = result.choice.playerIn;
+            
+            const playerOut = squad.find((p: any) => p.id === playerOutId);
+            const playerIn = fullRoster.find((p: any) => p.id === playerInId);
+            
+            if (playerOut && playerIn) {
+              const idx = squad.findIndex((p: any) => p.id === playerOutId);
+              if (idx > -1) squad.splice(idx, 1, playerIn);
+              lineupIds.delete(playerOutId);
+              lineupIds.add(playerInId);
+              
+              fixture.events.push({
+                minute: fixture._minute,
+                type: "substitution",
+                team: side,
+                emoji: "🔁",
+                playerId: playerInId,
+                playerName: playerIn.name,
+                text: `[${fixture._minute}'] 🔁 Substituição: ${playerOut.name} -> ${playerIn.name}`,
+              });
+              
+              if (isHome) home.squad = squad;
+              if (!isHome) away.squad = squad;
+            }
+          }
+        }
+      }
+    }
   }
 
   delete fixture._minute;
