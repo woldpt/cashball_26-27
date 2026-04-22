@@ -8384,6 +8384,13 @@ function App() {
                                       <PlayerLink playerId={player.id}>
                                         {player.name}
                                       </PlayerLink>
+                                      {!!player.is_star &&
+                                        (player.position === "MED" ||
+                                          player.position === "ATA") && (
+                                          <span className="ml-1 text-amber-400 text-[10px]">
+                                            ★
+                                          </span>
+                                        )}
                                       {player.isUnavailable &&
                                         (() => {
                                           const susp =
@@ -8561,6 +8568,13 @@ function App() {
                                       </span>
                                       <span className="flex-1 text-sm font-medium text-on-surface-variant truncate">
                                         {player.name}
+                                        {!!player.is_star &&
+                                          (player.position === "MED" ||
+                                            player.position === "ATA") && (
+                                            <span className="ml-1 text-amber-400 text-[10px]">
+                                              ★
+                                            </span>
+                                          )}
                                       </span>
                                       <span className="text-xs font-bold text-on-surface-variant shrink-0">
                                         {player.skill}
