@@ -1,5 +1,21 @@
 import { AGG_TIERS } from "../constants/index.js";
 
+/**
+ * Returns all 6 player attributes with safe defaults.
+ * @param {object} player
+ * @returns {{ gk: number, defesa: number, passe: number, finalizacao: number, form: number, resistencia: number }}
+ */
+export function getPlayerAttrs(player) {
+  return {
+    gk: player?.gk ?? player?.skill ?? 1,
+    defesa: player?.defesa ?? player?.skill ?? 1,
+    passe: player?.passe ?? player?.skill ?? 1,
+    finalizacao: player?.finalizacao ?? player?.skill ?? 1,
+    form: player?.form ?? 50,
+    resistencia: player?.resistencia ?? 50,
+  };
+}
+
 export function getPlayerStat(player, keys, fallback = 0) {
   for (const key of keys) {
     const value = player?.[key];

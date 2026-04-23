@@ -343,7 +343,7 @@ export function AuctionNotification({
           </div>
 
           {/* ── Info cards ── */}
-          <div className="px-5 pb-4 grid grid-cols-3 gap-2">
+          <div className="px-5 pb-4 grid grid-cols-2 gap-2">
             <InfoCard icon="public" label="Nacionalidade">
               <span title={countryName}>
                 {selectedAuctionPlayer.nationality || "—"}
@@ -355,11 +355,38 @@ export function AuctionNotification({
             <InfoCard icon="shield_person" label="Equipa">
               {selectedAuctionPlayer.team_name || "Sem clube"}
             </InfoCard>
-            <InfoCard icon="bolt" label="Força">
-              <span style={{ color: accent.text }} className="text-2xl">
-                {getPrimaryAttr(selectedAuctionPlayer)}
-              </span>
-            </InfoCard>
+          </div>
+
+          {/* ── Attribute grid ── */}
+          <div className="px-5 pb-4">
+            <div
+              className="rounded-md p-3.5 grid grid-cols-3 gap-x-4 gap-y-2.5"
+              style={{ background: "#18181f", border: "1px solid #26263a" }}
+            >
+              {[
+                { label: "GR",  value: Number(selectedAuctionPlayer.gk ?? selectedAuctionPlayer.skill ?? 1),         color: "#eab308", hi: pos === "GR" },
+                { label: "DEF", value: Number(selectedAuctionPlayer.defesa ?? selectedAuctionPlayer.skill ?? 1),      color: "#3b82f6", hi: pos === "DEF" },
+                { label: "MED", value: Number(selectedAuctionPlayer.passe ?? selectedAuctionPlayer.skill ?? 1),       color: "#10b981", hi: pos === "MED" },
+                { label: "ATA", value: Number(selectedAuctionPlayer.finalizacao ?? selectedAuctionPlayer.skill ?? 1), color: "#f43f5e", hi: pos === "ATA" },
+                { label: "Forma",   value: Number(selectedAuctionPlayer.form ?? 50),         color: "#a1a1aa", hi: false },
+                { label: "Resist.", value: Number(selectedAuctionPlayer.resistencia ?? 50),  color: "#a1a1aa", hi: false },
+              ].map(({ label, value, color, hi }) => (
+                <div key={label} className="flex flex-col gap-0.5">
+                  <span
+                    className="text-[9px] font-black uppercase tracking-widest leading-none"
+                    style={{ color: hi ? color : "#52525b" }}
+                  >
+                    {label}
+                  </span>
+                  <span
+                    className="text-xl font-black tabular-nums leading-none"
+                    style={{ color: hi ? color : "#a1a1aa" }}
+                  >
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* ── Financial ── */}

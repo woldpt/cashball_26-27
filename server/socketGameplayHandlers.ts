@@ -99,6 +99,19 @@ export function registerGameplaySocketHandlers(
     );
   });
 
+  socket.on("requestTrainingHistory", () => {
+    const game = getGameBySocket(socket.id);
+    const playerState = getPlayerBySocket(game, socket.id);
+    if (!game || !playerState?.teamId) return;
+    game.db.all(
+      "SELECT season, matchweek, focus, intensity FROM team_training_plan WHERE team_id = ? ORDER BY season DESC, matchweek DESC LIMIT 10",
+      [playerState.teamId],
+      (_err: any, rows: any[]) => {
+        socket.emit("trainingHistoryData", rows || []);
+      },
+    );
+  });
+
   socket.on("setReady", (ready) => {
     const game = getGameBySocket(socket.id);
     if (!game) return;
