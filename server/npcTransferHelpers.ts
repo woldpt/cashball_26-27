@@ -17,6 +17,8 @@ interface NpcTransferDeps {
 
 export function createNpcTransferHelpers(deps: NpcTransferDeps) {
   const { runAll, getSeasonEndMatchweek, io } = deps;
+  const playerOverallSql =
+    "((COALESCE(gk, skill, 1) + COALESCE(defesa, skill, 1) + COALESCE(passe, skill, 1) + COALESCE(finalizacao, skill, 1)) / 4.0)";
 
   const processNpcTransferActivity = async (
     game: ActiveGame,
@@ -43,7 +45,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
 
     const marketPlayers = await runAll(
       game.db,
-      "SELECT * FROM players WHERE team_id IS NOT NULL AND transfer_status = 'fixed' ORDER BY skill DESC, value ASC",
+      `SELECT * FROM players WHERE team_id IS NOT NULL AND transfer_status = 'fixed' ORDER BY ${playerOverallSql} DESC, value ASC`,
     );
 
     for (const npcTeam of npcTeams) {
@@ -166,7 +168,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
     for (const npcTeam of allNpcTeams) {
       const squad = await runAll(
         game.db,
-        "SELECT * FROM players WHERE team_id = ? AND transfer_status = 'none' AND contract_request_pending = 0 ORDER BY skill ASC",
+        `SELECT * FROM players WHERE team_id = ? AND transfer_status = 'none' AND contract_request_pending = 0 ORDER BY ${playerOverallSql} ASC`,
         [npcTeam.id],
       );
 

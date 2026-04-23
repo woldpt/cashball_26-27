@@ -23,6 +23,15 @@ interface ContractDeps {
 
 export function createContractHelpers(deps: ContractDeps) {
   const { io, getSeasonEndMatchweek, runAll, runGet } = deps;
+  const playerOverall = (player: any) =>
+    Math.round(
+      ((Number(player?.gk ?? player?.skill ?? 1) +
+        Number(player?.defesa ?? player?.skill ?? 1) +
+        Number(player?.passe ?? player?.skill ?? 1) +
+        Number(player?.finalizacao ?? player?.skill ?? 1)) /
+        4) *
+        (0.8 + Number(player?.form ?? 50) / 500),
+    );
 
   const maybeTriggerContractRequest = (game: ActiveGame, player: any) => {
     if (!player || !player.team_id) return;
@@ -30,7 +39,7 @@ export function createContractHelpers(deps: ContractDeps) {
     if (player.contract_request_pending) return;
 
     const wage = player.wage || 0;
-    const value = player.value || (player.skill || 0) * 20000;
+    const value = player.value || playerOverall(player) * 20000;
     // Non-linear demand base: mirrors the seeding wage formula with a small premium
     const fairWage = Math.round(Math.pow(value, 0.62) / 2.5);
     const demandBase = Math.max(fairWage, Math.round(wage * 1.05), wage + 100);
@@ -60,7 +69,7 @@ export function createContractHelpers(deps: ContractDeps) {
             id: player.id,
             name: player.name,
             position: player.position,
-            skill: player.skill,
+            skill: playerOverall(player),
             wage,
             requestedWage,
           },
@@ -93,7 +102,7 @@ export function createContractHelpers(deps: ContractDeps) {
       if (!coach) continue;
 
       const wage = player.wage || 0;
-      const value = player.value || (player.skill || 0) * 20000;
+      const value = player.value || playerOverall(player) * 20000;
       // Agente exige mais do que na renovação por expiração: jogador valorizado
       const fairWage = Math.round(Math.pow(value, 0.62) / 2.5);
       const demandBase = Math.max(
@@ -120,7 +129,7 @@ export function createContractHelpers(deps: ContractDeps) {
               id: player.id,
               name: player.name,
               position: player.position,
-              skill: player.skill,
+              skill: playerOverall(player),
               wage,
               requestedWage,
             },
@@ -150,7 +159,7 @@ export function createContractHelpers(deps: ContractDeps) {
           [player.team_id],
         );
         const newWage = Math.max(
-          Math.round((player.skill || 0) * 55),
+          Math.round(playerOverall(player) * 55),
           player.wage || 0,
         );
         if (team && team.budget > newWage * 14) {
@@ -168,7 +177,7 @@ export function createContractHelpers(deps: ContractDeps) {
             [],
           );
           const fallbackTeamId = div5Team?.id ?? player.team_id;
-          const newWageFallback = Math.max(Math.round((player.skill || 0) * 40), 500);
+          const newWageFallback = Math.max(Math.round(playerOverall(player) * 40), 500);
           await new Promise((resolve) => {
             game.db.run(
               "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0 WHERE id = ?",

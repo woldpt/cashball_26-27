@@ -18,6 +18,14 @@ function getPlayerStat(player, keys, fallback = 0) {
   return fallback;
 }
 
+function getPrimaryAttr(player) {
+  if (!player) return 0;
+  if (player.position === "GR") return player.gk ?? player.skill ?? 0;
+  if (player.position === "DEF") return player.defesa ?? player.skill ?? 0;
+  if (player.position === "MED") return player.passe ?? player.skill ?? 0;
+  return player.finalizacao ?? player.skill ?? 0;
+}
+
 /** Position badge with left coloured border */
 function PosBadge({ pos }) {
   const colours = {
@@ -308,7 +316,7 @@ export function TransferHub({
                     {/* Quality */}
                     <td className="py-2.5 px-3 text-center">
                       <span className="font-headline font-black text-base text-primary tabular-nums">
-                        {player.skill}
+                        {getPrimaryAttr(player)}
                       </span>
                     </td>
 
@@ -455,7 +463,7 @@ function PlayerDetailPanel({
       <div className="p-5 space-y-5 flex-1">
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-2">
-          <StatCard label="Qualidade" value={player.skill} accent />
+          <StatCard label="Atributo" value={getPrimaryAttr(player)} accent />
           <div className="bg-surface-container p-3 rounded-md">
             <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest mb-1">
               Agressividade

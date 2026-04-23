@@ -14,6 +14,13 @@ export function TransferProposalModal({
   transferProposalModal,
   setTransferProposalModal,
 }) {
+  const getPrimaryAttr = (p) => {
+    if (!p) return 0;
+    if (p.position === "GR") return p.gk ?? p.skill ?? 0;
+    if (p.position === "DEF") return p.defesa ?? p.skill ?? 0;
+    if (p.position === "MED") return p.passe ?? p.skill ?? 0;
+    return p.finalizacao ?? p.skill ?? 0;
+  };
   const player = transferProposalModal?.player;
   const suggestedPrice = transferProposalModal?.suggestedPrice;
 
@@ -55,7 +62,7 @@ export function TransferProposalModal({
                 </span>
                 {" · "}
                 <span className="font-black text-white">
-                  Qualidade {player.skill}
+                  Atributo {getPrimaryAttr(player)}
                 </span>
                 {" · "}
                 <span className="text-zinc-400">

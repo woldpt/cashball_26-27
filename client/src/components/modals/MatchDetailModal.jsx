@@ -32,6 +32,13 @@ export function MatchDetailModal({
   currentJornada,
   setShowMatchDetail,
 }) {
+  const getPrimaryAttr = (p) => {
+    if (!p) return null;
+    if (p.position === "GR") return p.gk ?? p.skill ?? null;
+    if (p.position === "DEF") return p.defesa ?? p.skill ?? null;
+    if (p.position === "MED") return p.passe ?? p.skill ?? null;
+    return p.finalizacao ?? p.skill ?? null;
+  };
   const fx = matchDetailFixture;
   const hInfo = teams.find((t) => t.id === fx?.homeTeamId);
   const aInfo = teams.find((t) => t.id === fx?.awayTeamId);
@@ -97,9 +104,9 @@ export function MatchDetailModal({
             <span className="ml-0.5 text-amber-400 font-black">*</span>
           )}
         </span>
-        {!isOff && p.skill != null && (
+        {!isOff && getPrimaryAttr(p) != null && (
           <span className="text-[10px] font-black tabular-nums text-zinc-500 shrink-0">
-            {p.skill}
+            {getPrimaryAttr(p)}
           </span>
         )}
         {label ? <span className="text-[10px] shrink-0">{label}</span> : null}

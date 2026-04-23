@@ -10,6 +10,17 @@ interface AuctionDeps {
 }
 
 export function createAuctionHelpers(deps: AuctionDeps) {
+  const playerOverallSql =
+    "((COALESCE(p.gk, p.skill, 1) + COALESCE(p.defesa, p.skill, 1) + COALESCE(p.passe, p.skill, 1) + COALESCE(p.finalizacao, p.skill, 1)) / 4.0)";
+  const playerOverall = (player: any) =>
+    Math.round(
+      ((Number(player?.gk ?? player?.skill ?? 1) +
+        Number(player?.defesa ?? player?.skill ?? 1) +
+        Number(player?.passe ?? player?.skill ?? 1) +
+        Number(player?.finalizacao ?? player?.skill ?? 1)) /
+        4) *
+        (0.8 + Number(player?.form ?? 50) / 500),
+    );
   const {
     io,
     isMatchInProgress,
@@ -23,7 +34,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
      FROM players p
      LEFT JOIN teams t ON p.team_id = t.id
      WHERE p.team_id IS NOT NULL AND p.transfer_status != 'none'
-     ORDER BY CASE WHEN p.transfer_status = 'auction' THEN 0 ELSE 1 END, p.transfer_price ASC, p.value ASC, p.skill DESC`,
+     ORDER BY CASE WHEN p.transfer_status = 'auction' THEN 0 ELSE 1 END, p.transfer_price ASC, p.value ASC, ${playerOverallSql} DESC`,
       (err: Error | null, rows: any[]) => {
         if (!err && rows) {
           const decorated = rows.map((row) => {
@@ -158,7 +169,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                         buyerTeamId,
                         Math.max(
                           player.wage || 0,
-                          Math.round((player.skill || 0) * 300),
+                          Math.round(playerOverall(player) * 300),
                         ),
                         getSeasonEndMatchweek(game.matchweek),
                         Math.ceil(Math.max(1, game.matchweek) / 14),
@@ -299,7 +310,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           team_name: player.team_name || null,
           sellerTeamId: player.team_id,
           position: player.position,
-          skill: player.skill,
+          skill: playerOverall(player),
           value: player.value,
           wage: player.wage,
           nationality: player.nationality,

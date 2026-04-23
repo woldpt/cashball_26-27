@@ -45,6 +45,15 @@ export function registerTransferSocketHandlers(
   socket: any,
   deps: TransferHandlerDeps,
 ) {
+  const playerOverall = (player: any) =>
+    Math.round(
+      ((Number(player?.gk ?? player?.skill ?? 1) +
+        Number(player?.defesa ?? player?.skill ?? 1) +
+        Number(player?.passe ?? player?.skill ?? 1) +
+        Number(player?.finalizacao ?? player?.skill ?? 1)) /
+        4) *
+        (0.8 + Number(player?.form ?? 50) / 500),
+    );
   const {
     io,
     getGameBySocket,
@@ -299,7 +308,7 @@ export function registerTransferSocketHandlers(
       (err, player) => {
         if (err || !player) return;
 
-        const value = player.value || (player.skill || 0) * 20000;
+        const value = player.value || playerOverall(player) * 20000;
         const fairWage = Math.round(Math.pow(value, 0.62) / 2.5);
         const demandedWage = Math.max(
           fairWage,

@@ -210,6 +210,25 @@ function getPlayerStat(player, keys, fallback = 0) {
   return fallback;
 }
 
+function getPrimaryAttr(player) {
+  if (!player) return 0;
+  if (player.position === "GR") return Number(player.gk ?? player.skill ?? 0);
+  if (player.position === "DEF")
+    return Number(player.defesa ?? player.skill ?? 0);
+  if (player.position === "MED") return Number(player.passe ?? player.skill ?? 0);
+  return Number(player.finalizacao ?? player.skill ?? 0);
+}
+
+function getOverallAttr(player) {
+  if (!player) return 0;
+  const gk = Number(player.gk ?? player.skill ?? 1);
+  const defesa = Number(player.defesa ?? player.skill ?? 1);
+  const passe = Number(player.passe ?? player.skill ?? 1);
+  const finalizacao = Number(player.finalizacao ?? player.skill ?? 1);
+  const form = Number(player.form ?? 50);
+  return ((gk + defesa + passe + finalizacao) / 4) * (0.8 + form / 500);
+}
+
 function isPlayerAvailable(player, currentMatchweek = 1) {
   const suspensionUntil = player?.suspension_until_matchweek || 0;
   const injuryUntil = player?.injury_until_matchweek || 0;
@@ -226,7 +245,9 @@ function buildAutoPositions(
   );
   if (!availablePlayers.length) return {};
 
-  const sortedPlayers = [...availablePlayers].sort((a, b) => b.skill - a.skill);
+  const sortedPlayers = [...availablePlayers].sort(
+    (a, b) => getOverallAttr(b) - getOverallAttr(a),
+  );
 
   const formationParts = String(formation || "4-4-2").split("-");
   const requiredByPosition = {
@@ -1626,7 +1647,7 @@ function App() {
           id: player.id,
           name: player.name || "Jogador",
           position: player.position || "MED",
-          skill: Number(player.skill || 0),
+          skill: Math.round(getOverallAttr(player)),
         };
       };
 
@@ -2617,12 +2638,12 @@ function App() {
 
   const renewPlayerContract = useCallback((player) => {
     const defaultWage = Math.round(
-      Math.max(player.wage || 0, (player.skill || 0) * 70) * 1.15,
+      Math.max(player.wage || 0, getOverallAttr(player) * 70) * 1.15,
     );
     setGameDialog({
       mode: "prompt",
       title: `Renovar Contrato — ${player.name}`,
-      description: `Proposta de salário semanal (€/semana). Posição: ${player.position} · Skill: ${player.skill}`,
+      description: `Proposta de salário semanal (€/semana). Posição: ${player.position} · Atributo: ${getPrimaryAttr(player)}`,
       defaultValue: String(defaultWage),
       confirmLabel: "Renovar",
       onConfirm: (val) => {
@@ -2739,9 +2760,9 @@ function App() {
         return getPlayerPrice(b) - getPlayerPrice(a);
       }
       if (marketSort === "quality-asc") {
-        return (a.skill || 0) - (b.skill || 0);
+        return getOverallAttr(a) - getOverallAttr(b);
       }
-      return (b.skill || 0) - (a.skill || 0);
+      return getOverallAttr(b) - getOverallAttr(a);
     };
 
     const myBudget = teams.find((t) => t.id == me?.teamId)?.budget ?? 0;
@@ -4381,7 +4402,7 @@ function App() {
                                       (a, b) =>
                                         (posOrder[a.position] ?? 9) -
                                           (posOrder[b.position] ?? 9) ||
-                                        (b.skill ?? 0) - (a.skill ?? 0),
+                                        getOverallAttr(b) - getOverallAttr(a),
                                     );
                                   const onPitchSorted = sortPlayers(
                                     matchAction.onPitch || [],
@@ -4409,7 +4430,7 @@ function App() {
                                               </span>
                                               <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
                                                 {player.position} ·{" "}
-                                                {player.skill}
+                                                {getPrimaryAttr(player)}
                                               </span>
                                             </button>
                                           ))}
@@ -4433,7 +4454,7 @@ function App() {
                                               </span>
                                               <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
                                                 {player.position} ·{" "}
-                                                {player.skill}
+                                                {getPrimaryAttr(player)}
                                               </span>
                                             </button>
                                           ))}
@@ -4501,7 +4522,7 @@ function App() {
                                         {player.name}
                                       </span>
                                       <span className="text-xs font-black uppercase tracking-widest text-zinc-400">
-                                        {player.position} · {player.skill}
+                                        {player.position} · {getPrimaryAttr(player)}
                                       </span>
                                     </button>
                                   ))}
@@ -4858,7 +4879,7 @@ function App() {
                                               <span
                                                 className={`shrink-0 text-[10px] font-black tabular-nums ${swapSource === p.id ? "text-red-400" : "text-zinc-600"}`}
                                               >
-                                                {p.skill}
+                                                {getPrimaryAttr(p)}
                                               </span>
                                             </div>
                                           );
@@ -4958,7 +4979,9 @@ function App() {
                                                       : "text-zinc-600"
                                                 }`}
                                               >
-                                                {alreadyUsed ? "—" : p.skill}
+                                                {alreadyUsed
+                                                  ? "—"
+                                                  : getPrimaryAttr(p)}
                                               </span>
                                             </div>
                                           );
@@ -8023,15 +8046,15 @@ function App() {
                                         {/* Qual */}
                                         <td className="py-2.5 px-3 text-center">
                                           <span className="inline-flex items-center justify-center bg-surface text-on-surface px-2 py-0.5 rounded-sm text-sm border border-outline-variant/30 font-headline font-black tabular-nums">
-                                            {player.skill}
+                                            {getPrimaryAttr(player)}
                                           </span>
                                           {player.prev_skill != null &&
                                             player.prev_skill !==
-                                              player.skill && (
+                                              getPrimaryAttr(player) && (
                                               <span
-                                                className={`ml-1 text-[10px] font-black ${player.skill > player.prev_skill ? "text-emerald-400" : "text-red-400"}`}
+                                                className={`ml-1 text-[10px] font-black ${getPrimaryAttr(player) > player.prev_skill ? "text-emerald-400" : "text-red-400"}`}
                                               >
-                                                {player.skill >
+                                                {getPrimaryAttr(player) >
                                                 player.prev_skill
                                                   ? "▲"
                                                   : "▼"}
@@ -8561,13 +8584,15 @@ function App() {
                                         })()}
                                     </span>
                                     <span className="text-sm font-black text-primary shrink-0">
-                                      {player.skill}
+                                      {getPrimaryAttr(player)}
                                       {player.prev_skill != null &&
-                                        player.prev_skill !== player.skill && (
+                                        player.prev_skill !==
+                                          getPrimaryAttr(player) && (
                                           <span
-                                            className={`ml-0.5 text-[9px] ${player.skill > player.prev_skill ? "text-emerald-400" : "text-red-400"}`}
+                                            className={`ml-0.5 text-[9px] ${getPrimaryAttr(player) > player.prev_skill ? "text-emerald-400" : "text-red-400"}`}
                                           >
-                                            {player.skill > player.prev_skill
+                                            {getPrimaryAttr(player) >
+                                            player.prev_skill
                                               ? "▲"
                                               : "▼"}
                                           </span>
@@ -8764,7 +8789,7 @@ function App() {
                                         })()}
                                     </span>
                                     <span className="text-sm font-bold text-on-surface-variant shrink-0">
-                                      {player.skill}
+                                      {getPrimaryAttr(player)}
                                     </span>
                                     {!player.isJunior && (
                                       <span
@@ -8931,7 +8956,7 @@ function App() {
                                           )}
                                       </span>
                                       <span className="text-xs font-bold text-on-surface-variant shrink-0">
-                                        {player.skill}
+                                        {getPrimaryAttr(player)}
                                       </span>
                                       <span
                                         className="shrink-0 w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-sm cursor-pointer"
@@ -9246,7 +9271,7 @@ function App() {
                                                     "0 1px 4px rgba(0,0,0,0.95)",
                                                 }}
                                               >
-                                                {player.skill}
+                                                {getPrimaryAttr(player)}
                                               </span>
                                             </div>
                                           ))}
@@ -9434,7 +9459,7 @@ function App() {
                                   </td>
                                   <td className="px-4 py-2 text-center">
                                     <span className="bg-surface text-on-surface font-headline font-black px-2 py-1 rounded-sm text-sm border border-outline-variant/30 tabular-nums">
-                                      {player.skill}
+                                      {getPrimaryAttr(player)}
                                     </span>
                                   </td>
                                   <td className="px-4 py-2 text-center">
@@ -9507,7 +9532,7 @@ function App() {
                                           setGameDialog({
                                             mode: "confirm",
                                             title: `Comprar ${player.name}`,
-                                            description: `${player.position} · Qualidade ${player.skill} · Preço: ${formatCurrency(price)}`,
+                                            description: `${player.position} · Atributo ${getPrimaryAttr(player)} · Preço: ${formatCurrency(price)}`,
                                             confirmLabel: "Confirmar Compra",
                                             onConfirm: () =>
                                               buyPlayer(player.id),

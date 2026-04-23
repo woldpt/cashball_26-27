@@ -154,7 +154,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
        FROM players p
        LEFT JOIN teams t ON p.team_id = t.id
        WHERE p.goals > 0
-       ORDER BY p.goals DESC, p.skill DESC
+       ORDER BY p.goals DESC, ((COALESCE(p.gk, p.skill, 1) + COALESCE(p.defesa, p.skill, 1) + COALESCE(p.passe, p.skill, 1) + COALESCE(p.finalizacao, p.skill, 1)) / 4.0) DESC
        LIMIT 1`,
     );
     if (topScorer && topScorer.team_id) {
@@ -582,13 +582,22 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
         io.to(game.roomCode).emit("playerListUpdate", getPlayerList(game));
 
         // Apply ET substitutions and re-read tactics changed during the pause screen
+        const playerOverall = (p: any) =>
+          Math.round(
+            ((Number(p?.gk ?? p?.skill ?? 1) +
+              Number(p?.defesa ?? p?.skill ?? 1) +
+              Number(p?.passe ?? p?.skill ?? 1) +
+              Number(p?.finalizacao ?? p?.skill ?? 1)) /
+              4) *
+              (0.8 + Number(p?.form ?? 50) / 500),
+          );
         const lineupSnapshotET = (squad: any[]) =>
           squad.map((p) => ({
             id: p.id,
             name: p.name,
             position: p.position,
             is_star: p.is_star || 0,
-            skill: p.skill,
+            skill: playerOverall(p),
           }));
 
         const applyETSubs = (

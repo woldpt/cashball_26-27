@@ -153,13 +153,22 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     // to the cached squads. fixture._homeSquad/_awaySquad were set during the first half and
     // won't reflect tactic position changes made during the interval otherwise.
     // Helper to create lineup snapshot
+    const playerOverall = (p: any) =>
+      Math.round(
+        ((Number(p?.gk ?? p?.skill ?? 1) +
+          Number(p?.defesa ?? p?.skill ?? 1) +
+          Number(p?.passe ?? p?.skill ?? 1) +
+          Number(p?.finalizacao ?? p?.skill ?? 1)) /
+          4) *
+          (0.8 + Number(p?.form ?? 50) / 500),
+      );
     const lineupSnapshot = (squad: any[]) =>
       squad.map((p) => ({
         id: p.id,
         name: p.name,
         position: p.position,
         is_star: p.is_star || 0,
-        skill: p.skill,
+        skill: playerOverall(p),
       }));
 
     // At the start of the second half, apply halftime tactic changes (substitutions/style)

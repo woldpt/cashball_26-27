@@ -87,6 +87,13 @@ export function AuctionNotification({
   me,
   teamInfo,
 }) {
+  const getPrimaryAttr = (p) => {
+    if (!p) return 0;
+    if (p.position === "GR") return p.gk ?? p.skill ?? 0;
+    if (p.position === "DEF") return p.defesa ?? p.skill ?? 0;
+    if (p.position === "MED") return p.passe ?? p.skill ?? 0;
+    return p.finalizacao ?? p.skill ?? 0;
+  };
   const [secondsLeft, setSecondsLeft] = useState(null);
 
   useEffect(() => {
@@ -204,7 +211,7 @@ export function AuctionNotification({
           className="text-xs shrink-0 tabular-nums font-bold"
           style={{ color: "#5c3500" }}
         >
-          {selectedAuctionPlayer.skill}
+          {getPrimaryAttr(selectedAuctionPlayer)}
         </span>
 
         {/* Price / result pill */}
@@ -321,7 +328,7 @@ export function AuctionNotification({
                 className="text-sm font-black px-2 py-0.5 rounded-sm"
                 style={{ background: "#1e1e2e", color: "#e4e4e7" }}
               >
-                {selectedAuctionPlayer.skill}
+                {getPrimaryAttr(selectedAuctionPlayer)}
               </span>
               {!!selectedAuctionPlayer.is_star &&
                 (pos === "MED" || pos === "ATA") && (
@@ -350,7 +357,7 @@ export function AuctionNotification({
             </InfoCard>
             <InfoCard icon="bolt" label="Força">
               <span style={{ color: accent.text }} className="text-2xl">
-                {selectedAuctionPlayer.skill}
+                {getPrimaryAttr(selectedAuctionPlayer)}
               </span>
             </InfoCard>
           </div>
