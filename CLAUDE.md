@@ -57,7 +57,7 @@ docker compose down         # parar containers
 
 ## Estrutura de Ficheiros
 
-```
+```text
 /
 ├── client/
 │   ├── src/
@@ -104,6 +104,102 @@ docker compose down         # parar containers
     │   └── fixtures/            # fixtures para seed
     └── tsconfig.json
 ```
+
+## Atributos dos Jogadores
+
+Cada jogador tem **4 atributos de skill** (escala 1–50) mais **2 atributos de condição** (escala 0–100):
+
+| Atributo     | Coluna DB     | Posição principal | Papel no motor                           |
+| ------------ | ------------- | ----------------- | ---------------------------------------- |
+| Guarda-Redes | `gk`          | GR                | Contribui para `defense` da equipa       |
+| Defesa       | `defesa`      | DEF               | Contribui para `defense` da equipa       |
+| Passe        | `passe`       | MED               | Contribui para `midfield` (posse)        |
+| Finalização  | `finalizacao` | ATA               | Contribui para `attack` da equipa        |
+| Forma        | `form`        | Todos (0–100)     | Multiplicador transversal de eficácia    |
+| Resistência  | `resistencia` | Todos (0–100)     | Afecta fadiga acumulada ao longo do jogo |
+
+- O campo `skill` (legado) ainda existe na DB mas **não é usado no motor** — usar sempre os atributos individuais.
+- `getOverall(player)` = média dos 4 atributos × factor de forma (0.8–1.0).
+- **Craque** (`is_star = 1`) atribuído apenas a MED e ATA; triplica o peso na escolha do marcador.
+- **Agressividade** (`aggressiveness`) — inteiro 1–50 na DB; o motor converte para escala 1–5 interna.
+
+## Motor de Simulação (estilo Hattrick)
+
+O motor (`server/game/engine.ts`) segue a mecânica do Hattrick: **posse de bola determina quem ataca**.
+
+### `getPower(squad, tactic, morale)` — retorna `{ midfield, attack, defense, style, squad }`
+
+```text
+midfield = avgMidfielderPasse × 0.75 + avgMidfielderForm × 0.25
+attack   = avgForwardFin × 0.70 + avgForwardPasse × 0.15 + avgForwardForm × 0.15
+defense  = avgDefenderDef × 0.68 + avgKeeperGk × 0.32 + avgBacklineForm × 0.10
+```
+
+- Cada valor é multiplicado por factores de formação, estilo táctico e moral.
+- **Médios** só contribuem para `midfield`; **Avançados** só para `attack`; **Defesas + GR** para `defense`.
+
+### Loop minuto-a-minuto (1–90 / 91–120)
+
+```text
+homePossession = homeMidfield / (homeMidfield + awayMidfield)
+teamInControl  = random() < homePossession ? "home" : "away"
+
+if (random() < 0.14):          // 14% chance de jogada de perigo por minuto
+    processChance(teamInControl)
+```
+
+### `processChance(attackingSide)` — oportunidade de golo
+
+```text
+ratio    = attack / (attack + defesa_adversária)
+probGoal = ratio × 0.17 × getGoalTimeMultiplier(minute) × fator_casa (1.05/0.95)
+```
+
+- Penalidade de egos: >2 Craques no XI reduz `probGoal` em 10 pp por craque extra.
+- 5% de chance de golo válido ser anulado pelo VAR.
+- Falha → emite evento `near_miss` com frase do GR adversário (45% das falhas).
+
+### Outros eventos por minuto
+
+| Evento  | Prob.       | Notas                                                    |
+| ------- | ----------- | -------------------------------------------------------- |
+| Penálti | 0.2% / min  | Batedor escolhido pelo treinador (12 s timeout)          |
+| Lesão   | ~0.3% / min | Grave (10%) vs leve (90%); substituição com 60 s timeout |
+| Cartão  | ~0.4% / min | Amarelo → 2.º amarelo = vermelho                         |
+| Fadiga  | min 46 e 70 | −1 unidade de form + resistência por período             |
+
+### Distribuição temporal de golos (`getGoalTimeMultiplier`)
+
+Pesos normalizados (média = 1.0) que replicam a distribuição real de golos no futebol:
+`00-10': 0.66 · 11-20': 0.83 · 21-30': 0.94 · 31-40': 1.02 · 41-45': 1.11 · 46-55': 0.85 · 56-65': 0.94 · 66-75': 1.11 · 76-85': 1.28 · 86-FT: 1.62`
+
+## Sistema de Treino
+
+O treino semanal é configurado por cada treinador na sidebar do Lobby (tab "Escalação").
+
+### Frontend (`App.jsx`)
+
+- Estado: `trainingPlan = { focus, intensity }` (useState)
+- Eventos Socket.io: `requestTrainingPlan` → `trainingPlanData`; `setTrainingPlan` → `trainingPlanUpdated`
+- UI: select de foco + slider de intensidade (1–100); bloqueado quando o treinador já está "Pronto"
+
+### Focos de treino disponíveis
+
+| Foco          | Atributo(s) melhorados | Posições beneficiadas |
+| ------------- | ---------------------- | --------------------- |
+| `FORMA`       | `form`                 | Todos                 |
+| `RESISTENCIA` | `resistencia`          | Todos                 |
+| `GR`          | `gk`                   | Apenas GR             |
+| `DEFESA`      | `defesa`               | Apenas DEF            |
+| `PASSE`       | `passe`                | Apenas MED            |
+| `ATAQUE`      | `finalizacao`          | Apenas ATA            |
+
+### Backend (`server/trainingHelpers.ts` — `applyWeeklyTraining`)
+
+- Lido da tabela `team_training_plan` (colunas: `team_id`, `focus`, `intensity`, `season`, `matchweek`)
+- **Forma/Resistência**: incremento fixo proporcional à intensidade (`+intensity/20` e `+intensity/25`)
+- **Skills técnicas**: incremento probabilístico — `chance = 0.15 + intensity/200`; só sobe 1 ponto se o random passar; só afecta a posição correcta
+- Valores clamped: skills entre 1–50, form/resistência entre 0–100
 
 ## Convenções e Decisões Arquitecturais
 
