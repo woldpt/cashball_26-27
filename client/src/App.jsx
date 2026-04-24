@@ -8751,41 +8751,45 @@ function App() {
                                           );
                                         })()}
                                     </span>
-                                    <span className="text-sm font-black text-primary shrink-0">
-                                      {player.skill}
-                                      {player.prev_skill != null &&
-                                        player.prev_skill !== player.skill && (
+                                    <div className="shrink-0 grid grid-cols-3 items-center gap-x-2 text-right">
+                                      <span className="text-sm font-black text-primary tabular-nums">
+                                        {player.skill}
+                                        {player.prev_skill != null &&
+                                          player.prev_skill !==
+                                            player.skill && (
+                                            <span
+                                              className={`ml-0.5 text-[9px] ${player.skill > player.prev_skill ? "text-emerald-400" : "text-red-400"}`}
+                                            >
+                                              {player.skill > player.prev_skill
+                                                ? "▲"
+                                                : "▼"}
+                                            </span>
+                                          )}
+                                      </span>
+                                      <span className="text-[12px] text-cyan-400/70 font-black tabular-nums">
+                                        🛡️{player.resistance ?? "–"}
+                                      </span>
+                                      {(() => {
+                                        const f = player.form ?? 100;
+                                        return (
                                           <span
-                                            className={`ml-0.5 text-[9px] ${player.skill > player.prev_skill ? "text-emerald-400" : "text-red-400"}`}
+                                            className={`text-[9px] font-black ${
+                                              f >= 115
+                                                ? "text-emerald-400"
+                                                : f <= 85
+                                                  ? "text-rose-400"
+                                                  : "text-on-surface-variant/40"
+                                            }`}
                                           >
-                                            {player.skill > player.prev_skill
-                                              ? "▲"
-                                              : "▼"}
+                                            {f >= 115
+                                              ? "Alta"
+                                              : f <= 85
+                                                ? "Baixa"
+                                                : "Normal"}
                                           </span>
-                                        )}
-                                    </span>
-                                    {player.resistance != null && (
-                                      <span className="text-[12px] text-cyan-400/70 font-black shrink-0">
-                                        🛡️{player.resistance}
-                                      </span>
-                                    )}
-                                    {player.form != null && (
-                                      <span
-                                        className={`text-[9px] font-black shrink-0 ${
-                                          (player.form || 100) >= 115
-                                            ? "text-emerald-400"
-                                            : (player.form || 100) <= 85
-                                              ? "text-rose-400"
-                                              : "text-on-surface-variant/40"
-                                        }`}
-                                      >
-                                        {(player.form || 100) >= 115
-                                          ? "Alta"
-                                          : (player.form || 100) <= 85
-                                            ? "Baixa"
-                                            : "Normal"}
-                                      </span>
-                                    )}
+                                        );
+                                      })()}
+                                    </div>
                                     {!player.isJunior && (
                                       <span
                                         className="shrink-0 w-6 h-6 rounded-full bg-emerald-500/15 flex items-center justify-center text-sm cursor-pointer"
@@ -8976,31 +8980,34 @@ function App() {
                                           );
                                         })()}
                                     </span>
-                                    <span className="text-sm font-bold text-on-surface-variant shrink-0">
-                                      {player.skill}
-                                    </span>
-                                    {player.resistance != null && (
-                                      <span className="text-[12px] text-cyan-400/70 font-black shrink-0">
-                                        🛡️{player.resistance}
+                                    <div className="shrink-0 grid grid-cols-3 items-center gap-x-2 text-right">
+                                      <span className="text-sm font-bold text-on-surface-variant tabular-nums">
+                                        {player.skill}
                                       </span>
-                                    )}
-                                    {player.form != null && (
-                                      <span
-                                        className={`text-[9px] font-black shrink-0 ${
-                                          (player.form || 100) >= 115
-                                            ? "text-emerald-400"
-                                            : (player.form || 100) <= 85
-                                              ? "text-rose-400"
-                                              : "text-on-surface-variant/40"
-                                        }`}
-                                      >
-                                        {(player.form || 100) >= 115
-                                          ? "Alta"
-                                          : (player.form || 100) <= 85
-                                            ? "Baixa"
-                                            : "Normal"}
+                                      <span className="text-[12px] text-cyan-400/70 font-black tabular-nums">
+                                        🛡️{player.resistance ?? "–"}
                                       </span>
-                                    )}
+                                      {(() => {
+                                        const f = player.form ?? 100;
+                                        return (
+                                          <span
+                                            className={`text-[9px] font-black ${
+                                              f >= 115
+                                                ? "text-emerald-400"
+                                                : f <= 85
+                                                  ? "text-rose-400"
+                                                  : "text-on-surface-variant/40"
+                                            }`}
+                                          >
+                                            {f >= 115
+                                              ? "Alta"
+                                              : f <= 85
+                                                ? "Baixa"
+                                                : "Normal"}
+                                          </span>
+                                        );
+                                      })()}
+                                    </div>
                                     {!player.isJunior && (
                                       <span
                                         className="shrink-0 w-6 h-6 rounded-full bg-amber-500/15 flex items-center justify-center text-sm cursor-pointer"
@@ -9165,9 +9172,34 @@ function App() {
                                             </span>
                                           )}
                                       </span>
-                                      <span className="text-xs font-bold text-on-surface-variant shrink-0">
-                                        {player.skill}
-                                      </span>
+                                      <div className="shrink-0 grid grid-cols-3 items-center gap-x-2 text-right">
+                                        <span className="text-xs font-bold text-on-surface-variant tabular-nums">
+                                          {player.skill}
+                                        </span>
+                                        <span className="text-[12px] text-cyan-400/70 font-black tabular-nums">
+                                          🛡️{player.resistance ?? "–"}
+                                        </span>
+                                        {(() => {
+                                          const f = player.form ?? 100;
+                                          return (
+                                            <span
+                                              className={`text-[9px] font-black ${
+                                                f >= 115
+                                                  ? "text-emerald-400"
+                                                  : f <= 85
+                                                    ? "text-rose-400"
+                                                    : "text-on-surface-variant/40"
+                                              }`}
+                                            >
+                                              {f >= 115
+                                                ? "Alta"
+                                                : f <= 85
+                                                  ? "Baixa"
+                                                  : "Normal"}
+                                            </span>
+                                          );
+                                        })()}
+                                      </div>
                                       <span
                                         className="shrink-0 w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-sm cursor-pointer"
                                         onClick={(e) => {
