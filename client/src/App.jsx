@@ -4520,6 +4520,18 @@ function App() {
                             ? teams.find((t) => t.id === myMatch.awayTeamId)
                             : null;
                           const matchEvents = myMatch?.events || [];
+                          const weatherEvent = matchEvents.find(
+                            (e) => e.type === "weather",
+                          );
+                          const WEATHER_LABELS = {
+                            "☀️": "Sol",
+                            "🌧️": "Chuva",
+                            "⛈️": "Chuva forte",
+                            "💨": "Vento",
+                            "🥶": "Frio",
+                            "🌫️": "Nevoeiro",
+                            "❄️": "Neve",
+                          };
                           const homeGoals = matchEvents.filter(
                             (e) =>
                               (e.minute <= 45 || e.minute <= liveMinute) &&
@@ -4599,6 +4611,19 @@ function App() {
                                         {aInfo?.name}
                                       </span>
                                     </div>
+
+                                    {/* Weather badge */}
+                                    {weatherEvent && (
+                                      <div className="flex justify-center">
+                                        <span className="text-[10px] text-on-surface-variant/50 flex items-center gap-1">
+                                          <span>{weatherEvent.emoji}</span>
+                                          <span>
+                                            {WEATHER_LABELS[weatherEvent.emoji] ||
+                                              ""}
+                                          </span>
+                                        </span>
+                                      </div>
+                                    )}
 
                                     {/* Timeline */}
                                     <div className="flex flex-col gap-1 max-h-24 overflow-y-auto px-1 text-[10px]">
@@ -5069,6 +5094,18 @@ function App() {
                             (t) => t.id === myMatch.awayTeamId,
                           );
                           const matchEvents = myMatch.events || [];
+                          const weatherEvent = matchEvents.find(
+                            (e) => e.type === "weather",
+                          );
+                          const WEATHER_LABELS = {
+                            "☀️": "Sol",
+                            "🌧️": "Chuva",
+                            "⛈️": "Chuva forte",
+                            "💨": "Vento",
+                            "🥶": "Frio",
+                            "🌫️": "Nevoeiro",
+                            "❄️": "Neve",
+                          };
 
                           // If ET is running for other fixtures but my match was decided at 90', hide this block
                           if (isCupExtraTime) {
@@ -5157,6 +5194,16 @@ function App() {
                                         "pt-PT",
                                       )}{" "}
                                       adeptos
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Weather badge */}
+                                {weatherEvent && (
+                                  <div className="flex items-center justify-center gap-1 text-[10px] text-on-surface-variant/50 mb-3">
+                                    <span>{weatherEvent.emoji}</span>
+                                    <span>
+                                      {WEATHER_LABELS[weatherEvent.emoji] || ""}
                                     </span>
                                   </div>
                                 )}

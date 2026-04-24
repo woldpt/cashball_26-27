@@ -643,6 +643,19 @@ function getGoalTimeMultiplier(minute: number): number {
   return 1.62; // 86'–FT  ~18-20%
 }
 
+function getWeatherGoalMultiplier(condition: string | undefined): number {
+  switch (condition) {
+    case "neve":        return 0.80;
+    case "nevoeiro":    return 0.85;
+    case "frio":        return 0.90;
+    case "sol":         return 1.00;
+    case "vento":       return 1.05;
+    case "chuva":       return 1.08;
+    case "chuva_forte": return 1.15;
+    default:            return 1.00;
+  }
+}
+
 function normaliseStyle(style: unknown) {
   const raw = String(style || "Balanced")
     .trim()
@@ -1286,6 +1299,15 @@ async function simulateMatchSegment(
       applyFatigue(awaySquad, awayLineupIds, 1);
       fixture._fatigue2Applied = true;
     }
+    if (
+      minute === 60 &&
+      !fixture._fatigue3Applied &&
+      (fixture._weather === "neve" || fixture._weather === "frio")
+    ) {
+      applyFatigue(homeSquad, homeLineupIds, 1);
+      applyFatigue(awaySquad, awayLineupIds, 1);
+      fixture._fatigue3Applied = true;
+    }
 
     const currentHome = getPower(home.squad, homeTactic, homeMorale);
     const currentAway = getPower(away.squad, awayTactic, awayMorale);
@@ -1313,6 +1335,7 @@ async function simulateMatchSegment(
         adjustedAttack / (adjustedAttack + (defending.defense || 1) * 2);
       let probGoal = ratio * 0.03 * getGoalTimeMultiplier(fixture._minute);
       probGoal *= isHome ? 1.05 : 0.95;
+      probGoal *= getWeatherGoalMultiplier(fixture._weather);
 
       // Ego conflict penalty: 3+ craques no onze titular reduzem probabilidade
       const scoringSquad = isHome ? home.squad : away.squad;

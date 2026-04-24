@@ -42,7 +42,8 @@
       "Bash(python3 -c ' *)",
       "Bash(grep -E \"\\\\.ts$\")",
       "Bash(xargs ls *)",
-      "Bash(grep -v \"-- \")"
+      "Bash(grep -v \"-- \")",
+      "Bash(grep -n \"fixture\\\\|match\\\\|\\\\`match\\\\|status\\\\|state\" /home/woldpt/git/wsball_26-27/client/src/App.jsx)"
     ]
   },
   "outputStyle": "default"
