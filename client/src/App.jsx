@@ -4455,7 +4455,7 @@ function App() {
                                               <span className="font-bold text-white truncate text-sm">
                                                 {player.name}
                                               </span>
-                                              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1">
+                                              <span className="text-[12px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1">
                                                 {player.position} ·{" "}
                                                 {player.skill}
                                                 {player.resistance != null && (
@@ -4511,7 +4511,7 @@ function App() {
                                               <span className="font-bold text-white truncate text-sm">
                                                 {player.name}
                                               </span>
-                                              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1">
+                                              <span className="text-[12px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1">
                                                 {player.position} ·{" "}
                                                 {player.skill}
                                                 {player.resistance != null && (
@@ -4995,12 +4995,12 @@ function App() {
                                               </span>
                                               <div className="shrink-0 flex items-center gap-1">
                                                 <span
-                                                  className={`text-[10px] font-black tabular-nums ${swapSource === p.id ? "text-red-400" : "text-zinc-600"}`}
+                                                  className={`text-[12px] font-black tabular-nums ${swapSource === p.id ? "text-red-400" : "text-zinc-600"}`}
                                                 >
                                                   {p.skill}
                                                 </span>
                                                 {p.resistance != null && (
-                                                  <span className="text-[8px] text-cyan-400/70 tabular-nums">
+                                                  <span className="text-[10px] text-cyan-400/70 tabular-nums">
                                                     🛡️{p.resistance}
                                                   </span>
                                                 )}
@@ -5123,7 +5123,7 @@ function App() {
                                                 </span>
                                                 {!alreadyUsed &&
                                                   p.resistance != null && (
-                                                    <span className="text-[8px] text-cyan-400/70 tabular-nums">
+                                                    <span className="text-[12px] text-cyan-400/70 tabular-nums">
                                                       🛡️{p.resistance}
                                                     </span>
                                                   )}
@@ -8259,7 +8259,7 @@ function App() {
                                         {/* Resistência */}
                                         <td className="py-2.5 px-3 text-center">
                                           {player.resistance != null && (
-                                            <span className="text-[10px] text-cyan-400/70">
+                                            <span className="text-[12px] text-cyan-400/70">
                                               🛡️ {player.resistance}
                                             </span>
                                           )}
@@ -8768,7 +8768,7 @@ function App() {
                                         )}
                                     </span>
                                     {player.resistance != null && (
-                                      <span className="text-[9px] text-cyan-400/70 font-black shrink-0">
+                                      <span className="text-[12px] text-cyan-400/70 font-black shrink-0">
                                         🛡️{player.resistance}
                                       </span>
                                     )}
@@ -8983,7 +8983,7 @@ function App() {
                                       {player.skill}
                                     </span>
                                     {player.resistance != null && (
-                                      <span className="text-[9px] text-cyan-400/70 font-black shrink-0">
+                                      <span className="text-[12px] text-cyan-400/70 font-black shrink-0">
                                         🛡️{player.resistance}
                                       </span>
                                     )}
@@ -9686,7 +9686,7 @@ function App() {
                                   </td>
                                   <td className="px-4 py-2 text-center">
                                     {player.resistance != null && (
-                                      <span className="text-[10px] text-cyan-400/70">
+                                      <span className="text-[12px] text-cyan-400/70">
                                         🛡️ {player.resistance}
                                       </span>
                                     )}

@@ -201,7 +201,7 @@ export function PlayerHistoryModal({
                 {player.resistance != null && (
                   <>
                     <span className="text-outline-variant/40 text-xs">·</span>
-                    <span className="text-[9px] text-cyan-400/70 font-black">
+                    <span className="text-[12px] text-cyan-400/70 font-black">
                       🛡️ {player.resistance}
                     </span>
                   </>
