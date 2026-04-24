@@ -10,6 +10,7 @@ if (!global.__cashballConsolePatched) {
     minute: "2-digit",
     second: "2-digit",
     hour12: false,
+    timeZone: process.env.TZ || "Europe/Lisbon",
   });
 
   const timestamp = () => formatter.format(new Date()).replace(",", "");
