@@ -575,7 +575,7 @@ const playVarSound = () => {
 };
 
 if (window.location.search) {
-  window.history.replaceState({}, '', window.location.pathname);
+  window.history.replaceState({}, "", window.location.pathname);
 }
 
 function App() {
@@ -1287,18 +1287,27 @@ function App() {
         try {
           window.localStorage.setItem(
             "cashballSession",
-            JSON.stringify({ name: updated.name, password: updated.password, roomCode: updated.roomCode })
+            JSON.stringify({
+              name: updated.name,
+              password: updated.password,
+              roomCode: updated.roomCode,
+            }),
           );
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
         return updated;
       });
       if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
 
       const cacheKey = `cashball_cache_busted_${roomCode}`;
       if (!sessionStorage.getItem(cacheKey)) {
-        sessionStorage.setItem(cacheKey, '1');
+        sessionStorage.setItem(cacheKey, "1");
         window.location.href =
-          window.location.origin + window.location.pathname + '?t=' + Date.now();
+          window.location.origin +
+          window.location.pathname +
+          "?t=" +
+          Date.now();
       }
     });
     socket.on("joinError", (msg) => {
@@ -4317,13 +4326,27 @@ function App() {
                           {nextMatchSummary.weatherForecast.emoji}
                         </span>
                         <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                          {nextMatchSummary.weatherForecast.condition === "sol" ? "Sol" :
-                           nextMatchSummary.weatherForecast.condition === "chuva" ? "Chuva" :
-                           nextMatchSummary.weatherForecast.condition === "chuva_forte" ? "Chuva forte" :
-                           nextMatchSummary.weatherForecast.condition === "vento" ? "Vento" :
-                           nextMatchSummary.weatherForecast.condition === "frio" ? "Frio" :
-                           nextMatchSummary.weatherForecast.condition === "nevoeiro" ? "Nevoeiro" :
-                           nextMatchSummary.weatherForecast.condition === "neve" ? "Neve" : "—"}
+                          {nextMatchSummary.weatherForecast.condition === "sol"
+                            ? "Sol"
+                            : nextMatchSummary.weatherForecast.condition ===
+                                "chuva"
+                              ? "Chuva"
+                              : nextMatchSummary.weatherForecast.condition ===
+                                  "chuva_forte"
+                                ? "Chuva forte"
+                                : nextMatchSummary.weatherForecast.condition ===
+                                    "vento"
+                                  ? "Vento"
+                                  : nextMatchSummary.weatherForecast
+                                        .condition === "frio"
+                                    ? "Frio"
+                                    : nextMatchSummary.weatherForecast
+                                          .condition === "nevoeiro"
+                                      ? "Nevoeiro"
+                                      : nextMatchSummary.weatherForecast
+                                            .condition === "neve"
+                                        ? "Neve"
+                                        : "—"}
                         </span>
                       </div>
                     </div>
@@ -4970,11 +4993,33 @@ function App() {
                                                     </span>
                                                   )}
                                               </span>
-                                              <span
-                                                className={`shrink-0 text-[10px] font-black tabular-nums ${swapSource === p.id ? "text-red-400" : "text-zinc-600"}`}
-                                              >
-                                                {p.skill}
-                                              </span>
+                                              <div className="shrink-0 flex items-center gap-1">
+                                                <span
+                                                  className={`text-[10px] font-black tabular-nums ${swapSource === p.id ? "text-red-400" : "text-zinc-600"}`}
+                                                >
+                                                  {p.skill}
+                                                </span>
+                                                {p.resistance != null && (
+                                                  <span className="text-[8px] text-cyan-400/70 tabular-nums">
+                                                    🛡️{p.resistance}
+                                                  </span>
+                                                )}
+                                                {p.form != null &&
+                                                  (() => {
+                                                    const f = p.form || 100;
+                                                    return (
+                                                      <span
+                                                        className={`text-[9px] font-black ${f >= 115 ? "text-emerald-400" : f <= 85 ? "text-rose-400" : "text-zinc-600"}`}
+                                                      >
+                                                        {f >= 115
+                                                          ? "Alta"
+                                                          : f <= 85
+                                                            ? "Baixa"
+                                                            : "Normal"}
+                                                      </span>
+                                                    );
+                                                  })()}
+                                              </div>
                                             </div>
                                           );
                                         })}
@@ -5064,17 +5109,41 @@ function App() {
                                                     </span>
                                                   )}
                                               </span>
-                                              <span
-                                                className={`shrink-0 text-[10px] font-black tabular-nums ${
-                                                  alreadyUsed
-                                                    ? "text-zinc-700"
-                                                    : swapTarget === p.id
-                                                      ? "text-emerald-400"
-                                                      : "text-zinc-600"
-                                                }`}
-                                              >
-                                                {alreadyUsed ? "—" : p.skill}
-                                              </span>
+                                              <div className="shrink-0 flex items-center gap-1">
+                                                <span
+                                                  className={`text-[10px] font-black tabular-nums ${
+                                                    alreadyUsed
+                                                      ? "text-zinc-700"
+                                                      : swapTarget === p.id
+                                                        ? "text-emerald-400"
+                                                        : "text-zinc-600"
+                                                  }`}
+                                                >
+                                                  {alreadyUsed ? "—" : p.skill}
+                                                </span>
+                                                {!alreadyUsed &&
+                                                  p.resistance != null && (
+                                                    <span className="text-[8px] text-cyan-400/70 tabular-nums">
+                                                      🛡️{p.resistance}
+                                                    </span>
+                                                  )}
+                                                {!alreadyUsed &&
+                                                  p.form != null &&
+                                                  (() => {
+                                                    const f = p.form || 100;
+                                                    return (
+                                                      <span
+                                                        className={`text-[9px] font-black ${f >= 115 ? "text-emerald-400" : f <= 85 ? "text-rose-400" : "text-zinc-600"}`}
+                                                      >
+                                                        {f >= 115
+                                                          ? "Alta"
+                                                          : f <= 85
+                                                            ? "Baixa"
+                                                            : "Normal"}
+                                                      </span>
+                                                    );
+                                                  })()}
+                                              </div>
                                             </div>
                                           );
                                         })}
