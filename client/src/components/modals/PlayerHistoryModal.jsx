@@ -223,7 +223,6 @@ export function PlayerHistoryModal({
                         : (player.form || 100) <= 85
                           ? "Baixa"
                           : "Normal"}{" "}
-                      {player.form}
                     </span>
                   </>
                 )}
