@@ -47,6 +47,9 @@ export async function applyWeeklyTraining(
               const attrBoostChance = 0.15 + intensity / 200;
               const formBoost = Math.round(intensity / 20);
               const resBoost = Math.round(intensity / 25);
+              // Overtraining penalty: intensity above 60 causes fatigue (-form)
+              // 61–80 → -1 form; 81–100 → -2 form
+              const fatiguePenalty = Math.floor(Math.max(0, intensity - 60) / 20);
               const stm = db.prepare(
                 "UPDATE players SET gk = ?, defesa = ?, passe = ?, finalizacao = ?, form = ?, resistencia = ? WHERE id = ?",
               );
@@ -57,6 +60,9 @@ export async function applyWeeklyTraining(
                 let finalizacao = p.finalizacao || 1;
                 let form = p.form || 25;
                 let resistencia = p.resistencia || 25;
+
+                // Apply fatigue before skill gains
+                if (fatiguePenalty > 0) form = clampSkill(form - fatiguePenalty);
 
                 if (attrs.includes("form")) form = clampSkill(form + formBoost);
                 if (attrs.includes("resistencia"))
