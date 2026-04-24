@@ -4993,32 +4993,29 @@ function App() {
                                                     </span>
                                                   )}
                                               </span>
-                                              <div className="shrink-0 flex items-center gap-1">
+                                              <div className="shrink-0 grid grid-cols-3 items-center gap-x-2 text-right">
                                                 <span
-                                                  className={`text-[12px] font-black tabular-nums ${swapSource === p.id ? "text-red-400" : "text-zinc-600"}`}
+                                                  className={`text-[12px] font-black tabular-nums ${swapSource === p.id ? "text-red-400" : "text-zinc-400"}`}
                                                 >
                                                   {p.skill}
                                                 </span>
-                                                {p.resistance != null && (
-                                                  <span className="text-[10px] text-cyan-400/70 tabular-nums">
-                                                    🛡️{p.resistance}
-                                                  </span>
-                                                )}
-                                                {p.form != null &&
-                                                  (() => {
-                                                    const f = p.form || 100;
-                                                    return (
-                                                      <span
-                                                        className={`text-[9px] font-black ${f >= 115 ? "text-emerald-400" : f <= 85 ? "text-rose-400" : "text-zinc-600"}`}
-                                                      >
-                                                        {f >= 115
-                                                          ? "Alta"
-                                                          : f <= 85
-                                                            ? "Baixa"
-                                                            : "Normal"}
-                                                      </span>
-                                                    );
-                                                  })()}
+                                                <span className="text-[10px] text-cyan-400/70 tabular-nums">
+                                                  🛡️{p.resistance ?? "–"}
+                                                </span>
+                                                {(() => {
+                                                  const f = p.form ?? 100;
+                                                  return (
+                                                    <span
+                                                      className={`text-[9px] font-black ${f >= 115 ? "text-emerald-400" : f <= 85 ? "text-rose-400" : "text-zinc-500"}`}
+                                                    >
+                                                      {f >= 115
+                                                        ? "Alta"
+                                                        : f <= 85
+                                                          ? "Baixa"
+                                                          : "Normal"}
+                                                    </span>
+                                                  );
+                                                })()}
                                               </div>
                                             </div>
                                           );
