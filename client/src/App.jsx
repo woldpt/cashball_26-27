@@ -574,6 +574,10 @@ const playVarSound = () => {
   }
 };
 
+if (window.location.search) {
+  window.history.replaceState({}, '', window.location.pathname);
+}
+
 function App() {
   const savedSessionRef = React.useRef(loadSavedSession());
   const savedSession = savedSessionRef.current;
@@ -1277,8 +1281,25 @@ function App() {
     socket.on("joinGameSuccess", (data) => {
       const { roomCode, roomName } = data;
       setRoomCode(roomCode);
-      setMe((prev) => (prev ? { ...prev, roomCode, roomName } : null));
+      setMe((prev) => {
+        if (!prev) return null;
+        const updated = { ...prev, roomCode, roomName };
+        try {
+          window.localStorage.setItem(
+            "cashballSession",
+            JSON.stringify({ name: updated.name, password: updated.password, roomCode: updated.roomCode })
+          );
+        } catch { /* ignore */ }
+        return updated;
+      });
       if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
+
+      const cacheKey = `cashball_cache_busted_${roomCode}`;
+      if (!sessionStorage.getItem(cacheKey)) {
+        sessionStorage.setItem(cacheKey, '1');
+        window.location.href =
+          window.location.origin + window.location.pathname + '?t=' + Date.now();
+      }
     });
     socket.on("joinError", (msg) => {
       setJoinError(msg);
