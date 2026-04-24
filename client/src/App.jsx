@@ -4389,9 +4389,26 @@ function App() {
                                               <span className="font-bold text-white truncate text-sm">
                                                 {player.name}
                                               </span>
-                                              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                                              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1">
                                                 {player.position} ·{" "}
                                                 {player.skill}
+                                                {player.resistance != null && (
+                                                  <>
+                                                    · <span className="text-cyan-400/70">🛡️{player.resistance}</span>
+                                                  </>
+                                                )}
+                                                {player.form != null && (
+                                                  <>
+                                                    · <span className={`${
+                                                      (player.form || 100) >= 115 ? "text-emerald-400" :
+                                                      (player.form || 100) <= 85  ? "text-rose-400" :
+                                                      "text-zinc-400"
+                                                    }`}>
+                                                      {(player.form || 100) >= 115 ? "▲" :
+                                                       (player.form || 100) <= 85  ? "▼" : "—"}
+                                                    </span>
+                                                  </>
+                                                )}
                                               </span>
                                             </button>
                                           ))}
@@ -4413,9 +4430,26 @@ function App() {
                                               <span className="font-bold text-white truncate text-sm">
                                                 {player.name}
                                               </span>
-                                              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                                              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1">
                                                 {player.position} ·{" "}
                                                 {player.skill}
+                                                {player.resistance != null && (
+                                                  <>
+                                                    · <span className="text-cyan-400/70">🛡️{player.resistance}</span>
+                                                  </>
+                                                )}
+                                                {player.form != null && (
+                                                  <>
+                                                    · <span className={`${
+                                                      (player.form || 100) >= 115 ? "text-emerald-400" :
+                                                      (player.form || 100) <= 85  ? "text-rose-400" :
+                                                      "text-zinc-400"
+                                                    }`}>
+                                                      {(player.form || 100) >= 115 ? "▲" :
+                                                       (player.form || 100) <= 85  ? "▼" : "—"}
+                                                    </span>
+                                                  </>
+                                                )}
                                               </span>
                                             </button>
                                           ))}
@@ -8591,6 +8625,21 @@ function App() {
                                           </span>
                                         )}
                                     </span>
+                                    {player.resistance != null && (
+                                      <span className="text-[9px] text-cyan-400/70 font-black shrink-0">
+                                        🛡️{player.resistance}
+                                      </span>
+                                    )}
+                                    {player.form != null && (
+                                      <span className={`text-[9px] font-black shrink-0 ${
+                                        (player.form || 100) >= 115 ? "text-emerald-400" :
+                                        (player.form || 100) <= 85  ? "text-rose-400" :
+                                        "text-on-surface-variant/40"
+                                      }`}>
+                                        {(player.form || 100) >= 115 ? "▲" :
+                                         (player.form || 100) <= 85  ? "▼" : "—"}
+                                      </span>
+                                    )}
                                     {!player.isJunior && (
                                       <span
                                         className="shrink-0 w-6 h-6 rounded-full bg-emerald-500/15 flex items-center justify-center text-sm cursor-pointer"
@@ -8784,6 +8833,21 @@ function App() {
                                     <span className="text-sm font-bold text-on-surface-variant shrink-0">
                                       {player.skill}
                                     </span>
+                                    {player.resistance != null && (
+                                      <span className="text-[9px] text-cyan-400/70 font-black shrink-0">
+                                        🛡️{player.resistance}
+                                      </span>
+                                    )}
+                                    {player.form != null && (
+                                      <span className={`text-[9px] font-black shrink-0 ${
+                                        (player.form || 100) >= 115 ? "text-emerald-400" :
+                                        (player.form || 100) <= 85  ? "text-rose-400" :
+                                        "text-on-surface-variant/40"
+                                      }`}>
+                                        {(player.form || 100) >= 115 ? "▲" :
+                                         (player.form || 100) <= 85  ? "▼" : "—"}
+                                      </span>
+                                    )}
                                     {!player.isJunior && (
                                       <span
                                         className="shrink-0 w-6 h-6 rounded-full bg-amber-500/15 flex items-center justify-center text-sm cursor-pointer"
