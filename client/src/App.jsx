@@ -7938,6 +7938,12 @@ function App() {
                                     <th className="py-3 px-3 text-center">
                                       Agr
                                     </th>
+                                    <th className="py-3 px-3 text-center">
+                                      Res
+                                    </th>
+                                    <th className="py-3 px-3 text-center">
+                                      For
+                                    </th>
                                     <th className="py-3 px-3 text-right">
                                       Ações
                                     </th>
@@ -9361,6 +9367,12 @@ function App() {
                               </th>
                               <th className="px-4 py-2.5 font-black text-center">
                                 Agr.
+                              </th>
+                              <th className="px-4 py-2.5 font-black text-center">
+                                Res
+                              </th>
+                              <th className="px-4 py-2.5 font-black text-center">
+                                For
                               </th>
                               <th className="px-4 py-2.5 font-black text-center">
                                 Jogos

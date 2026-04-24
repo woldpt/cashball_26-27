@@ -198,6 +198,27 @@ export function PlayerHistoryModal({
                     <AggBadge value={player.aggressiveness} />
                   </>
                 )}
+                {player.resistance != null && (
+                  <>
+                    <span className="text-outline-variant/40 text-xs">·</span>
+                    <span className="text-[9px] text-cyan-400/70 font-black">
+                      🛡️ {player.resistance}
+                    </span>
+                  </>
+                )}
+                {player.form != null && (
+                  <>
+                    <span className="text-outline-variant/40 text-xs">·</span>
+                    <span className={`text-[9px] font-black ${
+                      (player.form || 100) >= 115 ? "text-emerald-400" :
+                      (player.form || 100) <= 85  ? "text-rose-400" :
+                      "text-on-surface-variant/30"
+                    }`}>
+                      {(player.form || 100) >= 115 ? "▲" :
+                       (player.form || 100) <= 85  ? "▼" : "—"} {player.form}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
