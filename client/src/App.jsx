@@ -2114,6 +2114,15 @@ function App() {
   };
 
   const resetGameState = () => {
+    // Limpar refs de jogo activo para evitar estado residual ao mudar de sala
+    matchReplayActiveRef.current = false;
+    isLiveSimulationRef.current = false;
+    isCupExtraTimeRef.current = false;
+    if (injuryCountdownRef.current) {
+      clearInterval(injuryCountdownRef.current);
+      injuryCountdownRef.current = null;
+    }
+    setInjuryCountdown(null);
     setTeams([]);
     setTeamForms({});
     setPlayers([]);
@@ -4618,8 +4627,9 @@ function App() {
                                         <span className="text-[10px] text-on-surface-variant/50 flex items-center gap-1">
                                           <span>{weatherEvent.emoji}</span>
                                           <span>
-                                            {WEATHER_LABELS[weatherEvent.emoji] ||
-                                              ""}
+                                            {WEATHER_LABELS[
+                                              weatherEvent.emoji
+                                            ] || ""}
                                           </span>
                                         </span>
                                       </div>
@@ -8134,14 +8144,21 @@ function App() {
                                           {(() => {
                                             const form = player.form || 100;
                                             const formColor =
-                                              form >= 115 ? "text-emerald-400" :
-                                              form <= 85  ? "text-rose-400" :
-                                              "text-on-surface-variant/30";
+                                              form >= 115
+                                                ? "text-emerald-400"
+                                                : form <= 85
+                                                  ? "text-rose-400"
+                                                  : "text-on-surface-variant/30";
                                             const formArrow =
-                                              form >= 115 ? "▲" :
-                                              form <= 85  ? "▼" : "—";
+                                              form >= 115
+                                                ? "▲"
+                                                : form <= 85
+                                                  ? "▼"
+                                                  : "—";
                                             return (
-                                              <span className={`text-[10px] font-bold ${formColor}`}>
+                                              <span
+                                                className={`text-[10px] font-bold ${formColor}`}
+                                              >
                                                 {formArrow}
                                               </span>
                                             );
@@ -9446,14 +9463,21 @@ function App() {
                                     {(() => {
                                       const form = player.form || 100;
                                       const formColor =
-                                        form >= 115 ? "text-emerald-400" :
-                                        form <= 85  ? "text-rose-400" :
-                                        "text-on-surface-variant/30";
+                                        form >= 115
+                                          ? "text-emerald-400"
+                                          : form <= 85
+                                            ? "text-rose-400"
+                                            : "text-on-surface-variant/30";
                                       const formArrow =
-                                        form >= 115 ? "▲" :
-                                        form <= 85  ? "▼" : "—";
+                                        form >= 115
+                                          ? "▲"
+                                          : form <= 85
+                                            ? "▼"
+                                            : "—";
                                       return (
-                                        <span className={`text-[10px] font-bold ${formColor}`}>
+                                        <span
+                                          className={`text-[10px] font-bold ${formColor}`}
+                                        >
                                           {formArrow}
                                         </span>
                                       );
