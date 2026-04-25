@@ -73,6 +73,10 @@ const { registerGameplaySocketHandlers } =
   require("./socketGameplayHandlers") as typeof import("./socketGameplayHandlers");
 const { registerChatHandlers } =
   require("./socketChatHandlers") as typeof import("./socketChatHandlers");
+const { createTrainingHandlers } =
+  require("./socketTrainingHandlers") as typeof import("./socketTrainingHandlers");
+const { createTrainingHelpers } =
+  require("./trainingHelpers") as typeof import("./trainingHelpers");
 const { emitAwaitingCoaches: emitAwaitingCoachesHelper } =
   require("./presenceHelpers") as typeof import("./presenceHelpers");
 const { createWeeklyFlowHelpers } =
@@ -379,6 +383,14 @@ const processCoachEvents = coachDismissalHelpers.processCoachEvents;
 const handleAcceptJobOffer = coachDismissalHelpers.handleAcceptJobOffer;
 const handleDeclineJobOffer = coachDismissalHelpers.handleDeclineJobOffer;
 
+const trainingHelpers = createTrainingHelpers({ io });
+const applyTrainingBonuses = trainingHelpers.applyTrainingBonuses;
+
+const trainingHandlers = createTrainingHandlers({ io });
+const setTrainingFocus = trainingHandlers.setTrainingFocus;
+const getTrainingFocus = trainingHandlers.getTrainingFocus;
+const getTrainingHistory = trainingHandlers.getTrainingHistory;
+
 const weeklyFlowHelpers = createWeeklyFlowHelpers({
   io,
   getPlayerList,
@@ -390,6 +402,7 @@ const weeklyFlowHelpers = createWeeklyFlowHelpers({
   saveGameState,
   persistMatchResults,
   applyPostMatchQualityEvolution,
+  applyTrainingBonuses,
   startCupRound,
   finalizeCupRound,
   applySeasonEnd,
@@ -489,6 +502,30 @@ io.on("connection", (socket) => {
     io,
     getGameBySocket,
     getPlayerBySocket,
+  });
+
+  // Training handlers
+  socket.on("setTrainingFocus", (trainingFocus: string) => {
+    const game = getGameBySocket(socket.id);
+    const player = getPlayerBySocket(socket.id);
+    if (!game || !player) return;
+    setTrainingFocus(game, player.name, trainingFocus);
+  });
+
+  socket.on("getTrainingFocus", async (callback: (focus: string | null) => void) => {
+    const game = getGameBySocket(socket.id);
+    const player = getPlayerBySocket(socket.id);
+    if (!game || !player) return;
+    const focus = await getTrainingFocus(game, player.teamId);
+    callback(focus);
+  });
+
+  socket.on("getTrainingHistory", async (matchweek: number, callback: (history: any[]) => void) => {
+    const game = getGameBySocket(socket.id);
+    const player = getPlayerBySocket(socket.id);
+    if (!game || !player) return;
+    const history = await getTrainingHistory(game, player.teamId, matchweek);
+    callback(history);
   });
 });
 

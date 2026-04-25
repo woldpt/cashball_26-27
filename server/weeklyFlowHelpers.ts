@@ -39,6 +39,11 @@ interface WeeklyFlowDeps {
     fixtures: any[],
     currentMatchweek: number,
   ) => Promise<void>;
+  applyTrainingBonuses: (
+    game: ActiveGame,
+    fixtures: any[],
+    matchweek: number,
+  ) => Promise<void>;
   startCupRound: (game: ActiveGame, round: number) => Promise<void>;
   finalizeCupRound: (game: ActiveGame) => Promise<void>;
   applySeasonEnd: (game: ActiveGame) => Promise<void>;
@@ -68,6 +73,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     saveGameState,
     persistMatchResults,
     applyPostMatchQualityEvolution,
+    applyTrainingBonuses,
     startCupRound,
     finalizeCupRound,
     applySeasonEnd,
@@ -556,6 +562,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
           persistMatchResults(game, fixtures, completedMatchweek, () => {
             applyPostMatchQualityEvolution(game.db, fixtures, game.matchweek)
+              .then(() => applyTrainingBonuses(game, fixtures, game.matchweek))
               .then(async () => {
                 if (seasonDone) {
                   try {

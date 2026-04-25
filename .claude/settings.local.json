@@ -45,7 +45,12 @@
       "Bash(grep -v \"-- \")",
       "Bash(grep -n \"fixture\\\\|match\\\\|\\\\`match\\\\|status\\\\|state\" /home/woldpt/git/wsball_26-27/client/src/App.jsx)",
       "Bash(git add *)",
-      "Bash(git commit -m 'feat: adicionar previsão meteorológica para o próximo jogo na página de Tática *)"
+      "Bash(git commit -m 'feat: adicionar previsão meteorológica para o próximo jogo na página de Tática *)",
+      "Bash(npx tsx *)",
+      "Bash(npm --version)",
+      "Bash(node scripts/socketioContractValidator.ts)",
+      "Bash(git commit -m ' *)",
+      "Bash(awk *)"
     ]
   },
   "outputStyle": "default"

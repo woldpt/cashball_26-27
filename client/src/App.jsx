@@ -34,6 +34,7 @@ import { AuctionNotification } from "./components/ui/AuctionNotification.jsx";
 import { NewsTicker } from "./components/ui/NewsTicker.jsx";
 import { LeagueStandings } from "./components/ui/LeagueStandings.jsx";
 import { CupBracketPage } from "./components/ui/CupBracketPage.jsx";
+import { TrainingPage } from "./components/ui/TrainingPage.jsx";
 import { ChatWidget } from "./components/chat/ChatWidget.jsx";
 
 const FLAG_TO_COUNTRY = {};
@@ -3830,6 +3831,7 @@ function App() {
               { key: "club", label: "Clube", icon: "groups_3" },
               { key: "finances", label: "Finanças", icon: "payments" },
               { key: "players", label: "Plantel", icon: "group" },
+              { key: "training", label: "Treino", icon: "fitness_center" },
               {
                 key: "calendario",
                 label: "Calendário",
@@ -3945,6 +3947,7 @@ function App() {
                     {[
                       { key: "finances", label: "Finanças", icon: "payments" },
                       { key: "players", label: "Plantel", icon: "group" },
+                      { key: "training", label: "Treino", icon: "fitness_center" },
                     ].map(({ key, label, icon }) => (
                       <button
                         key={key}
@@ -8467,6 +8470,14 @@ function App() {
                         </div>
                       );
                     })()}
+
+                  {activeTab === "training" && (
+                    <TrainingPage
+                      me={me}
+                      players={players}
+                      matchweek={matchweekCount}
+                    />
+                  )}
 
                   {activeTab === "tactic" && (
                     <div>
