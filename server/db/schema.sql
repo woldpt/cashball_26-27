@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS players (
   is_star INTEGER DEFAULT 0,
   prev_skill INTEGER DEFAULT NULL,
   last_auctioned_matchweek INTEGER DEFAULT 0,
+  transfer_cooldown_until_matchweek INTEGER DEFAULT 0,
   team_id INTEGER,
   FOREIGN KEY(team_id) REFERENCES teams(id)
 );

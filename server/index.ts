@@ -586,6 +586,7 @@ const trainingMigrations: Array<{ sql: string; label: string }> = [
   { sql: `ALTER TABLE team_training ADD COLUMN applied INTEGER DEFAULT 0`, label: "team_training.applied" },
   { sql: `ALTER TABLE training_player_history ADD COLUMN delta REAL NOT NULL DEFAULT 0`, label: "training_player_history.delta" },
   { sql: `ALTER TABLE training_player_history ADD COLUMN focus TEXT`, label: "training_player_history.focus" },
+  { sql: `ALTER TABLE players ADD COLUMN transfer_cooldown_until_matchweek INTEGER DEFAULT 0`, label: "players.transfer_cooldown_until_matchweek" },
 ];
 for (const m of trainingMigrations) {
   db.run(m.sql, (err: any) => {

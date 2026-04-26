@@ -153,7 +153,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                   [finalBid, buyerTeamId],
                   () => {
                     game.db.run(
-                      "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, signed_season = ?, joined_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+                      "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, signed_season = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
                       [
                         buyerTeamId,
                         (() => {
@@ -165,6 +165,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                         })(),
                         getSeasonEndMatchweek(game.matchweek),
                         Math.ceil(Math.max(1, game.matchweek) / 14),
+                        game.matchweek,
                         game.matchweek,
                         playerId,
                       ],
