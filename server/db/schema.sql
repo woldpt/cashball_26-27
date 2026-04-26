@@ -140,11 +140,14 @@ CREATE INDEX IF NOT EXISTS idx_club_news_team_id ON club_news(team_id);
 CREATE INDEX IF NOT EXISTS idx_club_news_player_id ON club_news(player_id);
 CREATE INDEX IF NOT EXISTS idx_club_news_created_at ON club_news(created_at);
 
+-- NOTE: column "matchweek" actually stores game.calendarIndex (not the league matchweek),
+-- so that training also covers cup events. Each calendar entry = one training "week".
 CREATE TABLE IF NOT EXISTS team_training (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   team_id INTEGER NOT NULL,
   matchweek INTEGER NOT NULL,
   training_focus TEXT NOT NULL,
+  applied INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(team_id) REFERENCES teams(id),
   UNIQUE(team_id, matchweek)
@@ -158,6 +161,8 @@ CREATE TABLE IF NOT EXISTS training_player_history (
   attribute TEXT NOT NULL,
   old_value REAL NOT NULL,
   new_value REAL NOT NULL,
+  delta REAL NOT NULL DEFAULT 0,
+  focus TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(player_id) REFERENCES players(id),
   FOREIGN KEY(team_id) REFERENCES teams(id)

@@ -27,6 +27,7 @@ const POSITION_TEXT_CLASS = {
 export function TrainingPage({ me, players, matchweek }) {
   const [selectedTraining, setSelectedTraining] = useState(null);
   const [trainingHistory, setTrainingHistory] = useState([]);
+  const [historyCalendarIndex, setHistoryCalendarIndex] = useState(null);
   const [savedTraining, setSavedTraining] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -35,15 +36,19 @@ export function TrainingPage({ me, players, matchweek }) {
   useEffect(() => {
     if (!me?.teamId) return;
 
-    // Get current training focus
     socket.emit("getTrainingFocus", (focus) => {
       setSavedTraining(focus);
       setSelectedTraining(focus);
     });
 
-    // Get last week's history
-    socket.emit("getTrainingHistory", matchweek - 1, (history) => {
-      setTrainingHistory(history);
+    // Pass null → backend returns history for the latest event with rows
+    socket.emit("getTrainingHistory", null, (history) => {
+      setTrainingHistory(history || []);
+      if (history && history.length > 0 && history[0].calendar_index != null) {
+        setHistoryCalendarIndex(history[0].calendar_index);
+      } else {
+        setHistoryCalendarIndex(null);
+      }
     });
   }, [me?.teamId, matchweek]);
 
@@ -65,10 +70,23 @@ export function TrainingPage({ me, players, matchweek }) {
     if (!me?.teamId) return;
     setLoading(true);
 
-    socket.emit("setTrainingFocus", trainingKey, () => {
-      setSelectedTraining(trainingKey);
-      setSavedTraining(trainingKey);
+    let cleared = false;
+    const clearLoading = () => {
+      if (cleared) return;
+      cleared = true;
       setLoading(false);
+    };
+
+    // Fallback in case the server never acks (avoid permanently disabled buttons)
+    const fallback = setTimeout(clearLoading, 4000);
+
+    socket.emit("setTrainingFocus", trainingKey, (ok) => {
+      clearTimeout(fallback);
+      if (ok) {
+        setSelectedTraining(trainingKey);
+        setSavedTraining(trainingKey);
+      }
+      clearLoading();
     });
   };
 
@@ -135,9 +153,11 @@ export function TrainingPage({ me, players, matchweek }) {
               <div>
                 <h3 className="font-bold text-white mb-2">Como funciona?</h3>
                 <ul className="text-xs text-zinc-300 space-y-1.5">
-                  <li className="flex items-start gap-2"><span className="text-blue-400">→</span> Escolha um foco de treino no início da jornada</li>
-                  <li className="flex items-start gap-2"><span className="text-blue-400">→</span> Apenas jogadores que jogam beneficiam</li>
-                  <li className="flex items-start gap-2"><span className="text-blue-400">→</span> <strong>Posições:</strong> +0.5 skill | <strong>Forma:</strong> +10 pts | <strong>Resistência:</strong> +0.2</li>
+                  <li className="flex items-start gap-2"><span className="text-blue-400">→</span> Escolha um foco no início da jornada (league ou taça)</li>
+                  <li className="flex items-start gap-2"><span className="text-blue-400">→</span> Apenas jogadores que jogaram beneficiam</li>
+                  <li className="flex items-start gap-2"><span className="text-blue-400">→</span> <strong>Posições:</strong> +0.5 progresso (2 semanas → +1 skill)</li>
+                  <li className="flex items-start gap-2"><span className="text-blue-400">→</span> <strong>Resistência:</strong> +0.2 progresso (5 semanas → +1 res)</li>
+                  <li className="flex items-start gap-2"><span className="text-blue-400">→</span> <strong>Forma:</strong> +10 directos (máx 100)</li>
                   <li className="flex items-start gap-2"><span className="text-blue-400">→</span> Aplicado automaticamente após a jornada</li>
                 </ul>
               </div>
@@ -148,21 +168,19 @@ export function TrainingPage({ me, players, matchweek }) {
         {/* ── TRAINING HISTORY ──────────────────────────────────────────── */}
         <div className="space-y-3">
           <h2 className="text-lg font-bold text-white mb-3">
-            Relatório - Jornada {Math.max(1, matchweek - 1)}
+            Relatório do último treino aplicado
+            {historyCalendarIndex != null && (
+              <span className="ml-2 text-xs font-semibold text-zinc-500">
+                (evento #{historyCalendarIndex + 1})
+              </span>
+            )}
           </h2>
 
-          {matchweek <= 1 ? (
-            <div className="bg-surface-container rounded-lg p-6 text-center">
-              <span className="material-symbols-outlined text-[40px] text-zinc-500 block mb-2">schedule</span>
-              <p className="text-zinc-400 text-sm">
-                Nenhuma jornada anterior para mostrar histórico.
-              </p>
-            </div>
-          ) : trainingHistory.length === 0 ? (
+          {trainingHistory.length === 0 ? (
             <div className="bg-surface-container rounded-lg p-6 text-center">
               <span className="material-symbols-outlined text-[40px] text-zinc-500 block mb-2">bar_chart</span>
               <p className="text-zinc-400 text-sm">
-                Nenhum treino foi aplicado na jornada {Math.max(1, matchweek - 1)}.
+                Ainda não há histórico de treino — escolha um foco e jogue uma jornada.
               </p>
             </div>
           ) : (
@@ -198,14 +216,15 @@ export function TrainingPage({ me, players, matchweek }) {
                         </div>
                         <div className="flex items-center gap-1 shrink-0 ml-2">
                           <span className="text-zinc-500 text-xs w-8 text-right">
-                            {Math.round(record.old_value * 10) / 10}
+                            {record.old_value}
                           </span>
                           <span className="text-zinc-600">→</span>
-                          <span className="text-green-400 font-semibold text-xs w-8 text-right">
-                            {Math.round(record.new_value * 10) / 10}
+                          <span className={`font-semibold text-xs w-8 text-right ${record.new_value > record.old_value ? "text-green-400" : "text-zinc-400"}`}>
+                            {record.new_value}
                           </span>
-                          <span className="text-green-500/70 text-xs ml-1 w-12 text-right">
-                            +{Math.round((record.new_value - record.old_value) * 10) / 10}
+                          <span className="text-green-500/70 text-xs ml-1 w-14 text-right">
+                            +{record.delta}
+                            {record.new_value === record.old_value ? " prog" : ""}
                           </span>
                         </div>
                       </div>
