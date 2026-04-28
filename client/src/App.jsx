@@ -8207,8 +8207,27 @@ function App() {
                                                 const inj =
                                                   player.injury_until_matchweek ||
                                                   0;
+                                                const cooldown =
+                                                  player.transfer_cooldown_until_matchweek ||
+                                                  0;
                                                 const isSuspended =
                                                   susp > matchweekCount;
+                                                const isInjured =
+                                                  inj > matchweekCount;
+                                                const isCooldown =
+                                                  !isSuspended &&
+                                                  !isInjured &&
+                                                  cooldown >= matchweekCount;
+                                                if (isCooldown) {
+                                                  return (
+                                                    <span
+                                                      className="text-red-400 text-xs font-bold"
+                                                      title="Em viagem — disponível na próxima jornada"
+                                                    >
+                                                      ✈️ (1)
+                                                    </span>
+                                                  );
+                                                }
                                                 const gamesLeft = isSuspended
                                                   ? susp - matchweekCount
                                                   : inj - matchweekCount;
@@ -8753,7 +8772,25 @@ function App() {
                                             0;
                                           const inj =
                                             player.injury_until_matchweek || 0;
+                                          const cooldown =
+                                            player.transfer_cooldown_until_matchweek ||
+                                            0;
                                           const isSusp = susp > matchweekCount;
+                                          const isInj = inj > matchweekCount;
+                                          const isCooldown =
+                                            !isSusp &&
+                                            !isInj &&
+                                            cooldown >= matchweekCount;
+                                          if (isCooldown) {
+                                            return (
+                                              <span
+                                                className="ml-1 text-xs"
+                                                title="Em viagem — disponível na próxima jornada"
+                                              >
+                                                ✈️ (1)
+                                              </span>
+                                            );
+                                          }
                                           const left = isSusp
                                             ? susp - matchweekCount
                                             : inj - matchweekCount;
@@ -8982,7 +9019,25 @@ function App() {
                                             0;
                                           const inj =
                                             player.injury_until_matchweek || 0;
+                                          const cooldown =
+                                            player.transfer_cooldown_until_matchweek ||
+                                            0;
                                           const isSusp = susp > matchweekCount;
+                                          const isInj = inj > matchweekCount;
+                                          const isCooldown =
+                                            !isSusp &&
+                                            !isInj &&
+                                            cooldown >= matchweekCount;
+                                          if (isCooldown) {
+                                            return (
+                                              <span
+                                                className="ml-1 text-xs"
+                                                title="Em viagem — disponível na próxima jornada"
+                                              >
+                                                ✈️ (1)
+                                              </span>
+                                            );
+                                          }
                                           const left = isSusp
                                             ? susp - matchweekCount
                                             : inj - matchweekCount;
@@ -9494,10 +9549,11 @@ function App() {
                                                 ] || "?"}
                                                 {player.isUnavailable && (
                                                   <span className="absolute -top-1 -right-1 text-[9px] leading-none">
-                                                    {(player.suspension_until_matchweek ||
-                                                      0) > matchweekCount
+                                                    {(player.suspension_until_matchweek || 0) > matchweekCount
                                                       ? "🟥"
-                                                      : "🩹"}
+                                                      : (player.injury_until_matchweek || 0) > matchweekCount
+                                                        ? "🩹"
+                                                        : "✈️"}
                                                   </span>
                                                 )}
                                               </div>

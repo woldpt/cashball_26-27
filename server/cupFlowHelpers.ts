@@ -281,7 +281,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
     });
     await new Promise((resolve) => {
       game.db.run(
-        "UPDATE players SET goals = 0, red_cards = 0, injuries = 0, games_played = 0, suspension_games = 0, suspension_until_matchweek = 0, injury_until_matchweek = 0",
+        "UPDATE players SET goals = 0, red_cards = 0, injuries = 0, games_played = 0, suspension_games = 0, suspension_until_matchweek = 0, injury_until_matchweek = 0, transfer_cooldown_until_matchweek = 0",
         resolve,
       );
     });
