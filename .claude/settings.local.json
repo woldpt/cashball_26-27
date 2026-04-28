@@ -59,7 +59,8 @@
       "Bash(/home/woldpt/.nvm/versions/node/v23.11.0/bin/npm run *)",
       "Read(//home/woldpt/.volta/**)",
       "Read(//home/woldpt/.local/share/**)",
-      "Read(//home/woldpt/**)"
+      "Read(//home/woldpt/**)",
+      "Bash(sqlite3 *)"
     ]
   },
   "outputStyle": "default"
