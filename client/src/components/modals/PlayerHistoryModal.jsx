@@ -310,7 +310,9 @@ export function PlayerHistoryModal({
                       disabled={!canAfford}
                       className="w-full px-4 py-2.5 bg-primary text-on-primary hover:brightness-110 disabled:opacity-30 text-[10px] uppercase font-black rounded-sm transition-all"
                     >
-                      {canAfford ? "🔨 Licitar no Leilão" : "Saldo Insuficiente"}
+                      {canAfford
+                        ? "🔨 Licitar no Leilão"
+                        : "Saldo Insuficiente"}
                     </button>
                   ) : (
                     <button
