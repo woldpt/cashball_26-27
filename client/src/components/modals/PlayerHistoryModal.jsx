@@ -310,7 +310,7 @@ export function PlayerHistoryModal({
                       disabled={!canAfford}
                       className="w-full px-4 py-2.5 bg-primary text-on-primary hover:brightness-110 disabled:opacity-30 text-[10px] uppercase font-black rounded-sm transition-all"
                     >
-                      {canAfford ? "Licitar no Leilão" : "Saldo Insuficiente"}
+                      {canAfford ? "🔨 Licitar no Leilão" : "Saldo Insuficiente"}
                     </button>
                   ) : (
                     <button
@@ -329,7 +329,7 @@ export function PlayerHistoryModal({
                       disabled={!canAfford}
                       className="w-full px-4 py-2.5 bg-primary text-on-primary hover:brightness-110 disabled:opacity-30 text-[10px] uppercase font-black rounded-sm transition-all"
                     >
-                      {canAfford ? "Comprar Jogador" : "Saldo Insuficiente"}
+                      {canAfford ? "💰 Comprar Jogador" : "Saldo Insuficiente"}
                     </button>
                   )}
                 </div>
@@ -350,7 +350,7 @@ export function PlayerHistoryModal({
                         }}
                         className="w-full px-4 py-2.5 bg-primary text-on-primary hover:brightness-110 text-[10px] uppercase font-black rounded-sm transition-all"
                       >
-                        Renovar Contrato
+                        📝 Renovar Contrato
                       </button>
                       <button
                         onClick={() => {
@@ -367,7 +367,7 @@ export function PlayerHistoryModal({
                         }
                         className="w-full px-4 py-2.5 bg-secondary-container hover:bg-surface-bright disabled:opacity-30 text-on-surface text-[10px] uppercase font-black rounded-sm transition-all"
                       >
-                        Vender em Leilão
+                        🔨 Vender em Leilão
                       </button>
                       {player.transfer_status === "fixed" ? (
                         <button
@@ -387,7 +387,7 @@ export function PlayerHistoryModal({
                           }}
                           className="w-full px-4 py-2.5 bg-secondary-container hover:bg-surface-bright text-on-surface text-[10px] uppercase font-black rounded-sm transition-all"
                         >
-                          Listar para Transferência
+                          🏷️ Listar para Transferência
                         </button>
                       )}
                     </div>
