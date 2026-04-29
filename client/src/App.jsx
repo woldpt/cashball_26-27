@@ -5151,7 +5151,7 @@ function App() {
                                                   const f = p.form ?? 100;
                                                   return (
                                                     <span
-                                                      className={`text-[9px] font-black ${f >= 115 ? "text-emerald-400" : f <= 85 ? "text-rose-400" : "text-zinc-500"}`}
+                                                      className={`text-[12px] font-black tabular-nums ${f >= 115 ? "text-emerald-400" : f <= 85 ? "text-rose-400" : "text-zinc-400"}`}
                                                     >
                                                       {f >= 115
                                                         ? "💪"
@@ -7856,13 +7856,11 @@ function App() {
                                               >
                                                 <div>
                                                   <p className="text-xs text-on-surface-variant/80">
-                                                    {t.player_name ||
-                                                      "Jogador"}
+                                                    {t.player_name || "Jogador"}
                                                     <span className="opacity-40 mx-1">
                                                       →
                                                     </span>
-                                                    {t.related_team_name ||
-                                                      "—"}
+                                                    {t.related_team_name || "—"}
                                                   </p>
                                                   {t.matchweek != null && (
                                                     <p className="text-[10px] opacity-30 uppercase">
@@ -7952,8 +7950,8 @@ function App() {
                                               ? "expand_less"
                                               : "expand_more"}
                                           </span>
-                                          {financeData.transferInList
-                                            ?.length || 0}{" "}
+                                          {financeData.transferInList?.length ||
+                                            0}{" "}
                                           transferência(s)
                                         </p>
                                       </div>
@@ -7975,13 +7973,11 @@ function App() {
                                               >
                                                 <div>
                                                   <p className="text-xs text-on-surface-variant/80">
-                                                    {t.player_name ||
-                                                      "Jogador"}
+                                                    {t.player_name || "Jogador"}
                                                     <span className="opacity-40 mx-1">
                                                       ←
                                                     </span>
-                                                    {t.related_team_name ||
-                                                      "—"}
+                                                    {t.related_team_name || "—"}
                                                   </p>
                                                   {t.matchweek != null && (
                                                     <p className="text-[10px] opacity-30 uppercase">
