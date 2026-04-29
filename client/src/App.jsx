@@ -215,7 +215,9 @@ function isPlayerAvailable(player, currentMatchweek = 1) {
   const suspensionUntil = player?.suspension_until_matchweek || 0;
   const injuryUntil = player?.injury_until_matchweek || 0;
   const cooldownUntil = player?.transfer_cooldown_until_matchweek || 0;
-  return currentMatchweek > Math.max(suspensionUntil, injuryUntil, cooldownUntil);
+  return (
+    currentMatchweek > Math.max(suspensionUntil, injuryUntil, cooldownUntil)
+  );
 }
 
 function buildAutoPositions(
@@ -3510,7 +3512,7 @@ function App() {
         ))}
       </div>
       <header
-        className="fixed top-0 left-0 right-0 h-14 z-[160] flex items-center"
+        className="fixed top-0 left-0 right-0 h-14 z-160 flex items-center"
         style={{
           background: teamInfo?.color_primary || "#131313",
           borderBottom: "1px solid #201f1f",
@@ -3949,7 +3951,11 @@ function App() {
                     {[
                       { key: "finances", label: "Finanças", icon: "payments" },
                       { key: "players", label: "Plantel", icon: "group" },
-                      { key: "training", label: "Treino", icon: "fitness_center" },
+                      {
+                        key: "training",
+                        label: "Treino",
+                        icon: "fitness_center",
+                      },
                     ].map(({ key, label, icon }) => (
                       <button
                         key={key}
@@ -9549,9 +9555,11 @@ function App() {
                                                 ] || "?"}
                                                 {player.isUnavailable && (
                                                   <span className="absolute -top-1 -right-1 text-[9px] leading-none">
-                                                    {(player.suspension_until_matchweek || 0) > matchweekCount
+                                                    {(player.suspension_until_matchweek ||
+                                                      0) > matchweekCount
                                                       ? "🟥"
-                                                      : (player.injury_until_matchweek || 0) > matchweekCount
+                                                      : (player.injury_until_matchweek ||
+                                                            0) > matchweekCount
                                                         ? "🩹"
                                                         : "✈️"}
                                                   </span>
