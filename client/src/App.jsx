@@ -8109,7 +8109,7 @@ function App() {
                                     <th className="py-3 px-3 text-center">
                                       Les
                                     </th>
-                                    <th className="py-3 px-3 text-right">
+                                    <th className="py-3 px-3 text-right hidden">
                                       Ações
                                     </th>
                                   </tr>
@@ -8355,7 +8355,7 @@ function App() {
                                           </span>
                                         </td>
                                         {/* Ações */}
-                                        <td className="py-2.5 px-3 text-right hidden md:table-cell">
+                                        <td className="py-2.5 px-3 text-right hidden">
                                           {canAct ? (
                                             <div className="flex justify-end gap-1.5 flex-wrap">
                                               <button
