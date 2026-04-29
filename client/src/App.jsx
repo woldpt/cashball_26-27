@@ -6852,10 +6852,7 @@ function App() {
                                 }) => {
                                   // ── Eliminated from cup ──────────────────
                                   if (eliminated) {
-                                    const weekLabel = entry.roundName
-                                      .split(" ")
-                                      .slice(-2)
-                                      .join(" ");
+                                    const weekLabel = entry.roundName;
                                     return (
                                       <div
                                         key={entry.calendarIndex}
@@ -6916,9 +6913,6 @@ function App() {
                                   const weekLabel =
                                     type === "cup"
                                       ? entry.roundName
-                                          .split(" ")
-                                          .slice(-2)
-                                          .join(" ")
                                       : `Jornada ${entry.matchweek}`;
 
                                   // Score/status right column
