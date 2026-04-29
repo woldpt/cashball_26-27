@@ -186,7 +186,8 @@ db.serialize(() => {
         const agg = randomAggressiveness();
         const nat = p.nationality || p.country || "🇵🇹";
         const value = skill * 20000;
-        const wage = skill * 200;
+        const wageFactor = 0.85 + Math.random() * 0.30; // ±15% de variação
+        const wage = Math.round(skill * 200 * wageFactor);
         const isStar =
           (pos === "MED" || pos === "ATA") && Math.random() < 0.1 ? 1 : 0;
         return {
