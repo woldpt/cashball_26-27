@@ -4625,11 +4625,11 @@ function App() {
                                                     >
                                                       {(player.form || 100) >=
                                                       115
-                                                        ? "Alta"
+                                                        ? "💪"
                                                         : (player.form ||
                                                               100) <= 85
-                                                          ? "Baixa"
-                                                          : "Normal"}
+                                                          ? "😩"
+                                                          : "👍"}
                                                     </span>
                                                   </>
                                                 )}
@@ -4681,11 +4681,11 @@ function App() {
                                                     >
                                                       {(player.form || 100) >=
                                                       115
-                                                        ? "Alta"
+                                                        ? "💪"
                                                         : (player.form ||
                                                               100) <= 85
-                                                          ? "Baixa"
-                                                          : "Normal"}
+                                                          ? "😩"
+                                                          : "👍"}
                                                     </span>
                                                   </>
                                                 )}
@@ -8973,10 +8973,10 @@ function App() {
                                             }`}
                                           >
                                             {f >= 115
-                                              ? "Alta"
+                                              ? "💪"
                                               : f <= 85
-                                                ? "Baixa"
-                                                : "Normal"}
+                                                ? "😩"
+                                                : "👍"}
                                           </span>
                                         );
                                       })()}
@@ -9412,10 +9412,10 @@ function App() {
                                               }`}
                                             >
                                               {f >= 115
-                                                ? "Alta"
+                                                ? "💪"
                                                 : f <= 85
-                                                  ? "Baixa"
-                                                  : "Normal"}
+                                                  ? "😩"
+                                                  : "👍"}
                                             </span>
                                           );
                                         })()}
