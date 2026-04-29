@@ -88,14 +88,23 @@ export function TrainingPage({ me, players, matchweek }) {
     }
   }, []);
 
-  // Fetch current training and history on component mount
+  // Fetch current training focus when team changes
   useEffect(() => {
     if (!me?.teamId) return;
 
     socket.emit("getTrainingFocus", (focus) => {
-      setSavedTraining(focus);
-      setSelectedTraining(focus);
+      // Keep current selection if backend returns null/undefined
+      // so the user's focus persists week after week.
+      if (focus != null) {
+        setSavedTraining(focus);
+        setSelectedTraining(focus);
+      }
     });
+  }, [me?.teamId]);
+
+  // Fetch history when matchweek changes
+  useEffect(() => {
+    if (!me?.teamId) return;
 
     // Pass null → backend returns history for the latest event with rows
     socket.emit("getTrainingHistory", null, (history) => {
