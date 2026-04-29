@@ -268,7 +268,7 @@ export function PlayerHistoryModal({
                     </p>
                   </div>
                 </div>
-                <SkillBar label="Skill" value={skill} color={barColor} />
+                <SkillBar label="Qualidade" value={skill} color={barColor} />
               </div>
 
               {/* Contract management */}
