@@ -2,442 +2,498 @@ import { useState, useEffect } from "react";
 import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
 
 export function UserSettingsPage({
-  me,
-  teamInfo,
-  palmares,
-  backendUrl,
-  avatarSeed,
-  onAvatarSeedChange,
-  onBack,
-  onLeaveRoom,
+	me,
+	teamInfo,
+	palmares,
+	backendUrl,
+	avatarSeed,
+	onAvatarSeedChange,
+	onBack,
+	onLeaveRoom,
 }) {
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [changingPassword, setChangingPassword] = useState(false);
-  const [passwordMsg, setPasswordMsg] = useState(null);
-  const [rooms, setRooms] = useState([]);
-  const [roomsLoading, setRoomsLoading] = useState(true);
-  const [deletingAccount, setDeletingAccount] = useState(false);
-  const [email, setEmail] = useState("");
-  const [birthYear, setBirthYear] = useState("");
-  const [profileSaving, setProfileSaving] = useState(false);
-  const [profileMsg, setProfileMsg] = useState(null);
+	const [currentPassword, setCurrentPassword] = useState("");
+	const [newPassword, setNewPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
+	const [changingPassword, setChangingPassword] = useState(false);
+	const [passwordMsg, setPasswordMsg] = useState(null);
+	const [rooms, setRooms] = useState([]);
+	const [roomsLoading, setRoomsLoading] = useState(true);
+	const [deletingAccount, setDeletingAccount] = useState(false);
+	const [email, setEmail] = useState("");
+	const [birthYear, setBirthYear] = useState("");
+	const [profileSaving, setProfileSaving] = useState(false);
+	const [profileMsg, setProfileMsg] = useState(null);
 
-  useEffect(() => {
-    if (!me?.name) return;
-    fetch(`${backendUrl}/auth/manager-info?name=${encodeURIComponent(me.name)}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data?.rooms)) setRooms(data.rooms);
-        if (data?.email !== undefined) setEmail(data.email);
-        if (data?.birthYear) setBirthYear(String(data.birthYear));
-      })
-      .catch(() => { /* ignorar */ })
-      .finally(() => setRoomsLoading(false));
-  }, [me?.name, backendUrl]);
+	useEffect(() => {
+		if (!me?.name) return;
+		fetch(`${backendUrl}/auth/manager-info?name=${encodeURIComponent(me.name)}`)
+			.then((r) => r.json())
+			.then((data) => {
+				if (Array.isArray(data?.rooms)) setRooms(data.rooms);
+				if (data?.email !== undefined) setEmail(data.email);
+				if (data?.birthYear) setBirthYear(String(data.birthYear));
+			})
+			.catch(() => {
+				/* ignorar */
+			})
+			.finally(() => setRoomsLoading(false));
+	}, [me?.name, backendUrl]);
 
-  const handleSaveProfile = async () => {
-    setProfileMsg(null);
-    setProfileSaving(true);
-    try {
-      const body = { name: me.name };
-      if (email?.trim()) body.email = email.trim();
-      if (birthYear) body.birthYear = parseInt(birthYear, 10);
-      const res = await fetch(`${backendUrl}/auth/update-profile`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setProfileMsg({ type: "success", text: "Perfil actualizado!" });
-      } else {
-        setProfileMsg({ type: "error", text: data.error || "Erro ao guardar." });
-      }
-    } catch {
-      setProfileMsg({ type: "error", text: "Erro de ligação." });
-    } finally {
-      setProfileSaving(false);
-    }
-  };
+	const handleSaveProfile = async () => {
+		setProfileMsg(null);
+		setProfileSaving(true);
+		try {
+			const body = { name: me.name };
+			if (email?.trim()) body.email = email.trim();
+			if (birthYear) body.birthYear = parseInt(birthYear, 10);
+			const res = await fetch(`${backendUrl}/auth/update-profile`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(body),
+			});
+			const data = await res.json();
+			if (data.ok) {
+				setProfileMsg({ type: "success", text: "Perfil actualizado!" });
+			} else {
+				setProfileMsg({
+					type: "error",
+					text: data.error || "Erro ao guardar.",
+				});
+			}
+		} catch {
+			setProfileMsg({ type: "error", text: "Erro de ligação." });
+		} finally {
+			setProfileSaving(false);
+		}
+	};
 
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    setPasswordMsg(null);
+	const handleChangePassword = async (e) => {
+		e.preventDefault();
+		setPasswordMsg(null);
 
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setPasswordMsg({ type: "error", text: "Preenche todos os campos." });
-      return;
-    }
-    if (newPassword.length < 3) {
-      setPasswordMsg({
-        type: "error",
-        text: "A nova palavra-passe deve ter pelo menos 3 caracteres.",
-      });
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordMsg({ type: "error", text: "As novas palavras-passe não coincidem." });
-      return;
-    }
+		if (!currentPassword || !newPassword || !confirmPassword) {
+			setPasswordMsg({ type: "error", text: "Preenche todos os campos." });
+			return;
+		}
+		if (newPassword.length < 3) {
+			setPasswordMsg({
+				type: "error",
+				text: "A nova palavra-passe deve ter pelo menos 3 caracteres.",
+			});
+			return;
+		}
+		if (newPassword !== confirmPassword) {
+			setPasswordMsg({
+				type: "error",
+				text: "As novas palavras-passe não coincidem.",
+			});
+			return;
+		}
 
-    setChangingPassword(true);
-    try {
-      const res = await fetch(`${backendUrl}/auth/change-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: me.name,
-          currentPassword,
-          newPassword,
-        }),
-      });
-      const data = await res.json();
-      if (!data.ok) {
-        setPasswordMsg({ type: "error", text: data.error || "Erro ao alterar palavra-passe." });
-      } else {
-        setPasswordMsg({ type: "success", text: "Palavra-passe alterada com sucesso!" });
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        try {
-          const s = JSON.parse(window.localStorage.getItem("cashballSession") || "{}");
-          s.password = newPassword;
-          window.localStorage.setItem("cashballSession", JSON.stringify(s));
-        } catch (_a) { _a && undefined; /* ignorar */ }
-      }
-    } catch (_b) { _b && undefined; /* ignorar */
-      setPasswordMsg({ type: "error", text: "Erro de ligação ao servidor." });
-    } finally {
-      setChangingPassword(false);
-    }
-  };
+		setChangingPassword(true);
+		try {
+			const res = await fetch(`${backendUrl}/auth/change-password`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					name: me.name,
+					currentPassword,
+					newPassword,
+				}),
+			});
+			const data = await res.json();
+			if (!data.ok) {
+				setPasswordMsg({
+					type: "error",
+					text: data.error || "Erro ao alterar palavra-passe.",
+				});
+			} else {
+				setPasswordMsg({
+					type: "success",
+					text: "Palavra-passe alterada com sucesso!",
+				});
+				setCurrentPassword("");
+				setNewPassword("");
+				setConfirmPassword("");
+				try {
+					const s = JSON.parse(
+						window.localStorage.getItem("cashballSession") || "{}",
+					);
+					s.password = newPassword;
+					window.localStorage.setItem("cashballSession", JSON.stringify(s));
+				} catch (_a) {
+					_a && undefined; /* ignorar */
+				}
+			}
+		} catch (_b) {
+			_b && undefined; /* ignorar */
+			setPasswordMsg({ type: "error", text: "Erro de ligação ao servidor." });
+		} finally {
+			setChangingPassword(false);
+		}
+	};
 
-  const handleSwitchRoom = (roomCode) => {
-    if (typeof window !== "undefined") {
-      if (me?.roomCode) {
-        try {
-          window.localStorage.setItem(
-            "cashballSession",
-            JSON.stringify({
-              name: me.name,
-              password: me.password,
-              roomCode,
-            }),
-          );
-        } catch (_e) { _e && undefined; /* ignorar */ }
-      }
-      window.location.reload();
-    }
-  };
+	const handleSwitchRoom = (roomCode) => {
+		if (typeof window !== "undefined") {
+			if (me?.roomCode) {
+				try {
+					window.localStorage.setItem(
+						"cashballSession",
+						JSON.stringify({
+							name: me.name,
+							password: me.password,
+							roomCode,
+						}),
+					);
+				} catch (_e) {
+					_e && undefined; /* ignorar */
+				}
+			}
+			window.location.reload();
+		}
+	};
 
-  const handleDeleteAccount = async () => {
-    setDeletingAccount("loading");
-    try {
-      const res = await fetch(`${backendUrl}/auth/delete-account`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: me.name }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        try { window.localStorage.removeItem("cashballSession"); } catch { /* ignorar */ }
-        window.location.reload();
-      } else {
-        setDeletingAccount(false);
-      }
-    } catch {
-      setDeletingAccount(false);
-    }
-  };
+	const handleDeleteAccount = async () => {
+		setDeletingAccount("loading");
+		try {
+			const res = await fetch(`${backendUrl}/auth/delete-account`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ name: me.name }),
+			});
+			const data = await res.json();
+			if (data.ok) {
+				try {
+					window.localStorage.removeItem("cashballSession");
+				} catch {
+					/* ignorar */
+				}
+				window.location.reload();
+			} else {
+				setDeletingAccount(false);
+			}
+		} catch {
+			setDeletingAccount(false);
+		}
+	};
 
-  const trophies = palmares?.trophies || [];
+	const trophies = palmares?.trophies || [];
 
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-      {/* Back */}
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 text-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors"
-      >
-        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-        Voltar
-      </button>
+	return (
+		<div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+			{/* Back */}
+			<button
+				onClick={onBack}
+				className="flex items-center gap-2 text-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors"
+			>
+				<span className="material-symbols-outlined text-[18px]">
+					arrow_back
+				</span>
+				Voltar
+			</button>
 
-      {/* Profile (full width) */}
-      <div className="bg-surface-container-low border border-outline-variant/20 rounded-xl p-6 flex flex-col sm:flex-row items-center gap-5">
-        <div className="relative group shrink-0">
-          <PlayerAvatar seed={`${me?.name || "?"}|${avatarSeed}`} size="xl" />
-          <button
-            onClick={() => {
-              const newSeed = Math.random().toString(36).slice(2, 10);
-              onAvatarSeedChange(newSeed);
-              fetch(`${backendUrl}/auth/avatar-seed`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: me.name, seed: newSeed }),
-              }).catch(() => { /* ignorar */ });
-            }}
-            title="Gerar novo avatar"
-            className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/40 text-on-surface flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-surface-bright"
-          >
-            <span className="material-symbols-outlined text-[16px] leading-none">refresh</span>
-          </button>
-        </div>
-        <div className="text-center sm:text-left flex-1">
-          <h2 className="text-xl font-headline font-black tracking-tight">{me?.name}</h2>
-          <p className="text-sm text-on-surface-variant font-bold mt-1">
-            {teamInfo?.name || "Sem equipa"}
-          </p>
-          <p className="text-xs text-on-surface-variant/60 font-medium mt-0.5">
-            Sala: {me?.roomName || me?.roomCode || "—"}
-          </p>
-          <div className="flex flex-wrap gap-3 mt-3">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email (opcional)"
-              className="flex-1 min-w-[200px] bg-surface border border-outline-variant/30 rounded-lg px-3 py-2 text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
-            />
-            <select
-              value={birthYear}
-              onChange={(e) => setBirthYear(e.target.value)}
-              className="w-28 bg-surface border border-outline-variant/30 rounded-lg px-3 py-2 text-sm font-medium text-on-surface focus:outline-none focus:border-primary/60 transition-colors"
-            >
-              <option value="">Ano</option>
-              {Array.from({ length: 71 }, (_, i) => 1940 + i).reverse().map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-2 mt-2">
-            <button
-              onClick={handleSaveProfile}
-              disabled={profileSaving}
-              className="text-xs font-black uppercase tracking-widest bg-primary/10 text-primary px-4 py-1.5 rounded-lg hover:bg-primary/20 transition-colors disabled:opacity-50"
-            >
-              {profileSaving ? "A guardar..." : "Guardar Perfil"}
-            </button>
-            {profileMsg && (
-              <span className={`text-[10px] font-bold ${profileMsg.type === "success" ? "text-emerald-400" : "text-red-400"}`}>
-                {profileMsg.text}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
+			{/* Profile (full width) */}
+			<div className="bg-surface-container-low border border-outline-variant/20 rounded-xl p-6 flex flex-col sm:flex-row items-center gap-5">
+				<div className="relative group shrink-0">
+					<PlayerAvatar seed={`${me?.name || "?"}|${avatarSeed}`} size="xl" />
+					<button
+						onClick={() => {
+							const newSeed = Math.random().toString(36).slice(2, 10);
+							onAvatarSeedChange(newSeed);
+							fetch(`${backendUrl}/auth/avatar-seed`, {
+								method: "POST",
+								headers: { "Content-Type": "application/json" },
+								body: JSON.stringify({ name: me.name, seed: newSeed }),
+							}).catch(() => {
+								/* ignorar */
+							});
+						}}
+						title="Gerar novo avatar"
+						className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/40 text-on-surface flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-surface-bright"
+					>
+						<span className="material-symbols-outlined text-[16px] leading-none">
+							refresh
+						</span>
+					</button>
+				</div>
+				<div className="text-center sm:text-left flex-1">
+					<h2 className="text-xl font-headline font-black tracking-tight">
+						{me?.name}
+					</h2>
+					<p className="text-sm text-on-surface-variant font-bold mt-1">
+						{teamInfo?.name || "Sem equipa"}
+					</p>
+					<p className="text-xs text-on-surface-variant/60 font-medium mt-0.5">
+						Sala: {me?.roomName || me?.roomCode || "—"}
+					</p>
+					<div className="flex flex-wrap gap-3 mt-3">
+						<input
+							type="email"
+							value={email}
+							onChange={(e) => setEmail(e.target.value)}
+							placeholder="Email (opcional)"
+							className="flex-1 min-w-[200px] bg-surface border border-outline-variant/30 rounded-lg px-3 py-2 text-sm font-medium text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
+						/>
+						<select
+							value={birthYear}
+							onChange={(e) => setBirthYear(e.target.value)}
+							className="w-28 bg-surface border border-outline-variant/30 rounded-lg px-3 py-2 text-sm font-medium text-on-surface focus:outline-none focus:border-primary/60 transition-colors"
+						>
+							<option value="">Ano</option>
+							{Array.from({ length: 71 }, (_, i) => 1940 + i)
+								.reverse()
+								.map((y) => (
+									<option key={y} value={y}>
+										{y}
+									</option>
+								))}
+						</select>
+					</div>
+					<div className="flex items-center gap-2 mt-2">
+						<button
+							onClick={handleSaveProfile}
+							disabled={profileSaving}
+							className="text-xs font-black uppercase tracking-widest bg-primary/10 text-primary px-4 py-1.5 rounded-lg hover:bg-primary/20 transition-colors disabled:opacity-50"
+						>
+							{profileSaving ? "A guardar..." : "Guardar Perfil"}
+						</button>
+						{profileMsg && (
+							<span
+								className={`text-[10px] font-bold ${profileMsg.type === "success" ? "text-emerald-400" : "text-red-400"}`}
+							>
+								{profileMsg.text}
+							</span>
+						)}
+					</div>
+				</div>
+			</div>
 
-      {/* 2-column grid on md+ */}
-      <div className="md:grid md:grid-cols-2 md:gap-6 space-y-8 md:space-y-0">
-        {/* Palmarés */}
-        <section>
-          <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px]">emoji_events</span>
-            Conquistas / Palmarés
-          </h3>
-          <div className="bg-surface-container-low border border-outline-variant/20 rounded-xl p-5">
-            {trophies.length === 0 ? (
-              <p className="text-sm text-on-surface-variant/60 font-medium text-center py-4">
-                Ainda sem conquistas nesta sala.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {trophies.map((t, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 py-2 px-3 rounded-lg bg-surface/40 border border-outline-variant/10"
-                  >
-                    <span className="text-xl">🏆</span>
-                    <div>
-                      <p className="text-sm font-bold">{t.achievement}</p>
-                      <p className="text-xs text-on-surface-variant/60 font-medium">
-                        Temporada {t.season} · {t.team_name}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
+			{/* 2-column grid on md+ */}
+			<div className="md:grid md:grid-cols-2 md:gap-6 space-y-8 md:space-y-0">
+				{/* Palmarés */}
+				<section>
+					<h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
+						<span className="material-symbols-outlined text-[18px]">
+							emoji_events
+						</span>
+						Conquistas / Palmarés
+					</h3>
+					<div className="bg-surface-container-low border border-outline-variant/20 rounded-xl p-5">
+						{trophies.length === 0 ? (
+							<p className="text-sm text-on-surface-variant/60 font-medium text-center py-4">
+								Ainda sem conquistas nesta sala.
+							</p>
+						) : (
+							<div className="space-y-3">
+								{trophies.map((t, i) => (
+									<div
+										key={i}
+										className="flex items-center gap-3 py-2 px-3 rounded-lg bg-surface/40 border border-outline-variant/10"
+									>
+										<span className="text-xl">🏆</span>
+										<div>
+											<p className="text-sm font-bold">{t.achievement}</p>
+											<p className="text-xs text-on-surface-variant/60 font-medium">
+												Temporada {t.season} · {t.team_name}
+											</p>
+										</div>
+									</div>
+								))}
+							</div>
+						)}
+					</div>
+				</section>
 
-        {/* My Rooms */}
-        <section>
-          <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px]">meeting_room</span>
-            As Minhas Salas
-          </h3>
-          <div className="bg-surface-container-low border border-outline-variant/20 rounded-xl p-5 space-y-2">
-            {roomsLoading ? (
-              <p className="text-sm text-on-surface-variant/60 font-medium">A carregar...</p>
-            ) : rooms.length === 0 ? (
-              <p className="text-sm text-on-surface-variant/60 font-medium">Nenhuma sala encontrada.</p>
-            ) : (
-              rooms.map((r) => {
-                const isActive = r.roomCode === me?.roomCode;
-                return (
-                  <div
-                    key={r.roomCode}
-                    className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-surface/50 border border-outline-variant/10"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="material-symbols-outlined text-[18px] text-on-surface-variant shrink-0">
-                        meeting_room
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold truncate">{r.roomName}</p>
-                        <p className="text-xs text-on-surface-variant/50 font-medium truncate">
-                          {r.roomCode}
-                        </p>
-                      </div>
+				{/* My Rooms */}
+				<section>
+					<h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
+						<span className="material-symbols-outlined text-[18px]">
+							meeting_room
+						</span>
+						As Minhas Salas
+					</h3>
+					<div className="bg-surface-container-low border border-outline-variant/20 rounded-xl p-5 space-y-2">
+						{roomsLoading ? (
+							<p className="text-sm text-on-surface-variant/60 font-medium">
+								A carregar...
+							</p>
+						) : rooms.length === 0 ? (
+							<p className="text-sm text-on-surface-variant/60 font-medium">
+								Nenhuma sala encontrada.
+							</p>
+						) : (
+							rooms.map((r) => {
+								const isActive = r.roomCode === me?.roomCode;
+								return (
+									<div
+										key={r.roomCode}
+										className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-surface/50 border border-outline-variant/10"
+									>
+										<div className="flex items-center gap-3 min-w-0">
+											<span className="material-symbols-outlined text-[18px] text-on-surface-variant shrink-0">
+												meeting_room
+											</span>
+											<div className="min-w-0">
+												<p className="text-sm font-bold truncate">
+													{r.roomName}
+												</p>
+												<p className="text-xs text-on-surface-variant/50 font-medium truncate">
+													{r.roomCode}
+												</p>
+											</div>
+										</div>
+										<div className="flex items-center gap-3 shrink-0">
+											{r.teamName && (
+												<span className="text-xs font-bold text-on-surface-variant/80 hidden sm:block">
+													{r.teamName}
+												</span>
+											)}
+											<button
+												onClick={() => handleSwitchRoom(r.roomCode)}
+												disabled={isActive}
+												className={`text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-colors ${
+													isActive
+														? "text-on-surface-variant/30 bg-surface-container cursor-not-allowed"
+														: "text-primary bg-primary/10 hover:bg-primary/20"
+												}`}
+											>
+												{isActive ? "Actual" : "Entrar"}
+											</button>
+										</div>
+									</div>
+								);
+							})
+						)}
+					</div>
+				</section>
 
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      {r.teamName && (
-                        <span className="text-xs font-bold text-on-surface-variant/80 hidden sm:block">
-                          {r.teamName}
-                        </span>
-                      )}
-                      <button
-                        onClick={() => handleSwitchRoom(r.roomCode)}
-                        disabled={isActive}
-                        className={`text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-colors ${
-                          isActive
-                            ? "text-on-surface-variant/30 bg-surface-container cursor-not-allowed"
-                            : "text-primary bg-primary/10 hover:bg-primary/20"
-                        }`}
-                      >
-                        {isActive ? "Actual" : "Entrar"}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </section>
+				{/* Change Password */}
+				<section>
+					<h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
+						<span className="material-symbols-outlined text-[18px]">lock</span>
+						Alterar Palavra-Passe
+					</h3>
+					<form
+						onSubmit={handleChangePassword}
+						className="bg-surface-container-low border border-outline-variant/20 rounded-xl p-5 space-y-4"
+					>
+						<div>
+							<label className="text-xs font-bold text-on-surface-variant block mb-1">
+								Palavra-passe actual
+							</label>
+							<input
+								type="password"
+								value={currentPassword}
+								onChange={(e) => setCurrentPassword(e.target.value)}
+								className="w-full bg-surface border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
+								placeholder="••••••••"
+							/>
+						</div>
+						<div>
+							<label className="text-xs font-bold text-on-surface-variant block mb-1">
+								Nova palavra-passe
+							</label>
+							<input
+								type="password"
+								value={newPassword}
+								onChange={(e) => setNewPassword(e.target.value)}
+								className="w-full bg-surface border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
+								placeholder="••••••••"
+							/>
+						</div>
+						<div>
+							<label className="text-xs font-bold text-on-surface-variant block mb-1">
+								Confirmar nova palavra-passe
+							</label>
+							<input
+								type="password"
+								value={confirmPassword}
+								onChange={(e) => setConfirmPassword(e.target.value)}
+								className="w-full bg-surface border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
+								placeholder="••••••••"
+							/>
+						</div>
 
-        {/* Change Password */}
-        <section>
-          <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px]">lock</span>
-            Alterar Palavra-Passe
-          </h3>
-          <form
-            onSubmit={handleChangePassword}
-            className="bg-surface-container-low border border-outline-variant/20 rounded-xl p-5 space-y-4"
-          >
-            <div>
-              <label className="text-xs font-bold text-on-surface-variant block mb-1">
-                Palavra-passe actual
-              </label>
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full bg-surface border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
-                placeholder="••••••••"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-on-surface-variant block mb-1">
-                Nova palavra-passe
-              </label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full bg-surface border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
-                placeholder="••••••••"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-on-surface-variant block mb-1">
-                Confirmar nova palavra-passe
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-surface border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
-                placeholder="••••••••"
-              />
-            </div>
+						{passwordMsg && (
+							<div
+								className={`text-xs font-bold px-4 py-2 rounded-lg ${
+									passwordMsg.type === "success"
+										? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+										: "bg-red-500/10 text-red-400 border border-red-500/20"
+								}`}
+							>
+								<span className="material-symbols-outlined text-[14px] align-text-bottom mr-1">
+									{passwordMsg.type === "success" ? "check_circle" : "error"}
+								</span>
+								{passwordMsg.text}
+							</div>
+						)}
 
-            {passwordMsg && (
-              <div
-                className={`text-xs font-bold px-4 py-2 rounded-lg ${
-                  passwordMsg.type === "success"
-                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                    : "bg-red-500/10 text-red-400 border border-red-500/20"
-                }`}
-              >
-                <span className="material-symbols-outlined text-[14px] align-text-bottom mr-1">
-                  {passwordMsg.type === "success" ? "check_circle" : "error"}
-                </span>
-                {passwordMsg.text}
-              </div>
-            )}
+						<button
+							type="submit"
+							disabled={changingPassword}
+							className="w-full bg-primary text-on-primary font-black text-sm uppercase tracking-widest rounded-lg px-5 py-3 hover:bg-primary/90 transition-colors disabled:opacity-50"
+						>
+							{changingPassword ? "A guardar..." : "Guardar"}
+						</button>
+					</form>
+				</section>
 
-            <button
-              type="submit"
-              disabled={changingPassword}
-              className="w-full bg-primary text-on-primary font-black text-sm uppercase tracking-widest rounded-lg px-5 py-3 hover:bg-primary/90 transition-colors disabled:opacity-50"
-            >
-              {changingPassword ? "A guardar..." : "Guardar"}
-            </button>
-          </form>
-        </section>
-
-        {/* Actions */}
-        <section>
-          <h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px]">settings</span>
-            Acções
-          </h3>
-          <div className="flex flex-col gap-3">
-            <button
-              onClick={onLeaveRoom}
-              className="w-full flex items-center justify-center gap-2 bg-surface-container-low border border-outline-variant/20 text-on-surface font-black text-xs uppercase tracking-widest rounded-xl px-5 py-3 hover:bg-surface-bright transition-colors"
-            >
-              <span className="material-symbols-outlined text-[18px]">logout</span>
-              Sair da Sala
-            </button>
-            {deletingAccount !== "confirm" ? (
-              <button
-                onClick={() => setDeletingAccount("confirm")}
-                className="w-full flex items-center justify-center gap-2 bg-transparent border border-red-500/15 text-red-400/60 font-black text-xs uppercase tracking-widest rounded-xl px-5 py-3 hover:bg-red-500/5 hover:text-red-400 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[18px]">delete_forever</span>
-                Apagar Conta
-              </button>
-            ) : (
-              <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 space-y-3">
-                <p className="text-xs font-bold text-red-400 text-center">
-                  Tens a certeza? Esta acção é irreversível.
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setDeletingAccount(false)}
-                    className="flex-1 bg-surface-container-low border border-outline-variant/20 text-on-surface font-black text-xs uppercase tracking-widest rounded-lg px-4 py-2.5 hover:bg-surface-bright transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleDeleteAccount}
-                    disabled={deletingAccount === "loading"}
-                    className="flex-1 bg-red-500/20 border border-red-500/30 text-red-400 font-black text-xs uppercase tracking-widest rounded-lg px-4 py-2.5 hover:bg-red-500/30 transition-colors disabled:opacity-50"
-                  >
-                    {deletingAccount === "loading" ? "A apagar..." : "Sim, Apagar"}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
-    </div>
-  );
+				{/* Actions */}
+				<section>
+					<h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
+						<span className="material-symbols-outlined text-[18px]">
+							settings
+						</span>
+						Acções
+					</h3>
+					<div className="flex flex-col gap-3">
+						<button
+							onClick={onLeaveRoom}
+							className="w-full flex items-center justify-center gap-2 bg-surface-container-low border border-outline-variant/20 text-on-surface font-black text-xs uppercase tracking-widest rounded-xl px-5 py-3 hover:bg-surface-bright transition-colors"
+						>
+							<span className="material-symbols-outlined text-[18px]">
+								logout
+							</span>
+							Sair da Sala
+						</button>
+						{deletingAccount !== "confirm" ? (
+							<button
+								onClick={() => setDeletingAccount("confirm")}
+								className="w-full flex items-center justify-center gap-2 bg-transparent border border-red-500/15 text-red-400/60 font-black text-xs uppercase tracking-widest rounded-xl px-5 py-3 hover:bg-red-500/5 hover:text-red-400 transition-colors"
+							>
+								<span className="material-symbols-outlined text-[18px]">
+									delete_forever
+								</span>
+								Apagar Conta
+							</button>
+						) : (
+							<div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 space-y-3">
+								<p className="text-xs font-bold text-red-400 text-center">
+									Tens a certeza? Esta acção é irreversível.
+								</p>
+								<div className="flex gap-2">
+									<button
+										onClick={() => setDeletingAccount(false)}
+										className="flex-1 bg-surface-container-low border border-outline-variant/20 text-on-surface font-black text-xs uppercase tracking-widest rounded-lg px-4 py-2.5 hover:bg-surface-bright transition-colors"
+									>
+										Cancelar
+									</button>
+									<button
+										onClick={handleDeleteAccount}
+										disabled={deletingAccount === "loading"}
+										className="flex-1 bg-red-500/20 border border-red-500/30 text-red-400 font-black text-xs uppercase tracking-widest rounded-lg px-4 py-2.5 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+									>
+										{deletingAccount === "loading"
+											? "A apagar..."
+											: "Sim, Apagar"}
+									</button>
+								</div>
+							</div>
+						)}
+					</div>
+				</section>
+			</div>
+		</div>
+	);
 }

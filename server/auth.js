@@ -25,52 +25,52 @@ const authCache = new Map(); // name_lower → { password, expiry }
 const AUTH_CACHE_TTL = 10 * 60 * 1000; // 10 minutos
 
 function authCacheGet(name, password) {
-  const key = name.toLowerCase();
-  const cached = authCache.get(key);
-  if (cached && cached.expiry > Date.now() && cached.password === password) {
-    // Renovar TTL a cada uso
-    cached.expiry = Date.now() + AUTH_CACHE_TTL;
-    return true;
-  }
-  return false;
+	const key = name.toLowerCase();
+	const cached = authCache.get(key);
+	if (cached && cached.expiry > Date.now() && cached.password === password) {
+		// Renovar TTL a cada uso
+		cached.expiry = Date.now() + AUTH_CACHE_TTL;
+		return true;
+	}
+	return false;
 }
 
 function authCacheSet(name, password) {
-  authCache.set(name.toLowerCase(), {
-    password,
-    expiry: Date.now() + AUTH_CACHE_TTL,
-  });
+	authCache.set(name.toLowerCase(), {
+		password,
+		expiry: Date.now() + AUTH_CACHE_TTL,
+	});
 }
 
 function authCacheInvalidate(name) {
-  authCache.delete(name.toLowerCase());
+	authCache.delete(name.toLowerCase());
 }
 
 function resolveAccountsDbPath() {
-  const candidates = [
-    path.join(__dirname, "db"),
-    path.join(__dirname, "..", "db"),
-    path.join(process.cwd(), "db"),
-  ];
+	const candidates = [
+		path.join(__dirname, "db"),
+		path.join(__dirname, "..", "db"),
+		path.join(process.cwd(), "db"),
+	];
 
-  const existingFile = candidates
-    .map((dir) => path.join(dir, "accounts.db"))
-    .find((candidatePath) => fs.existsSync(candidatePath));
+	const existingFile = candidates
+		.map((dir) => path.join(dir, "accounts.db"))
+		.find((candidatePath) => fs.existsSync(candidatePath));
 
-  if (existingFile) {
-    return existingFile;
-  }
+	if (existingFile) {
+		return existingFile;
+	}
 
-  // Prefer the directory that contains base.db so that accounts.db lands in
-  // the same volume-mounted folder as the game databases, not in dist/db/.
-  const targetDir =
-    candidates.find((dir) => fs.existsSync(path.join(dir, "base.db"))) ||
-    candidates.find((dir) => fs.existsSync(dir)) ||
-    candidates[0];
-  if (!fs.existsSync(targetDir)) {
-    fs.mkdirSync(targetDir, { recursive: true });
-  }
-  return path.join(targetDir, "accounts.db");
+	// Prefer the directory that contains base.db so that accounts.db lands in
+	// the same volume-mounted folder as the game databases, not in dist/db/.
+	const targetDir =
+		candidates.find((dir) => fs.existsSync(path.join(dir, "base.db"))) ||
+		candidates.find((dir) => fs.existsSync(dir)) ||
+		candidates[0];
+	if (!fs.existsSync(targetDir)) {
+		fs.mkdirSync(targetDir, { recursive: true });
+	}
+	return path.join(targetDir, "accounts.db");
 }
 
 const DB_PATH = resolveAccountsDbPath();
@@ -81,45 +81,51 @@ const dbDir = path.dirname(DB_PATH);
 if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
 const db = new sqlite3.Database(DB_PATH, (err) => {
-  if (err) {
-    console.error("[auth] Failed to open accounts.db:", err.message);
-  } else {
-    console.log("[auth] accounts.db ready.");
-  }
+	if (err) {
+		console.error("[auth] Failed to open accounts.db:", err.message);
+	} else {
+		console.log("[auth] accounts.db ready.");
+	}
 });
 
 // Create tables once on startup
 db.serialize(() => {
-  db.run(`
+	db.run(`
     CREATE TABLE IF NOT EXISTS managers (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
       name          TEXT    UNIQUE NOT NULL COLLATE NOCASE,
       password_hash TEXT    NOT NULL
     )
   `);
-  db.run(`
+	db.run(`
     CREATE TABLE IF NOT EXISTS room_managers (
       room_code    TEXT NOT NULL COLLATE NOCASE,
       manager_name TEXT NOT NULL COLLATE NOCASE,
       PRIMARY KEY (room_code, manager_name)
     )
   `);
-  // Migration: add avatar_seed column (safe to re-run)
-  db.run(`ALTER TABLE managers ADD COLUMN avatar_seed TEXT DEFAULT ''`, (err) => {
-    if (err) {
-      // Column already exists — ignore
-    }
-  });
-  db.run(`ALTER TABLE managers ADD COLUMN email TEXT DEFAULT ''`, (err) => {
-    if (err) {
-      // Column already exists — ignore
-    }
-  });
-  db.run(`ALTER TABLE managers ADD COLUMN birth_year INTEGER DEFAULT NULL`, (err) => {
-    if (err) {
-      // Column already exists — ignore
-    }
-  });
+	// Migration: add avatar_seed column (safe to re-run)
+	db.run(
+		`ALTER TABLE managers ADD COLUMN avatar_seed TEXT DEFAULT ''`,
+		(err) => {
+			if (err) {
+				// Column already exists — ignore
+			}
+		},
+	);
+	db.run(`ALTER TABLE managers ADD COLUMN email TEXT DEFAULT ''`, (err) => {
+		if (err) {
+			// Column already exists — ignore
+		}
+	});
+	db.run(
+		`ALTER TABLE managers ADD COLUMN birth_year INTEGER DEFAULT NULL`,
+		(err) => {
+			if (err) {
+				// Column already exists — ignore
+			}
+		},
+	);
 });
 
 /**
@@ -130,62 +136,62 @@ db.serialize(() => {
  * @returns {Promise<{ok: boolean, error?: string}>}
  */
 function verifyOrCreateManager(name, password) {
-  const normalizedName = typeof name === "string" ? name.trim() : "";
-  const normalizedPassword = typeof password === "string" ? password : "";
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	const normalizedPassword = typeof password === "string" ? password : "";
 
-  if (!normalizedName || !normalizedPassword) {
-    return Promise.resolve({ ok: false, error: "Credenciais inválidas." });
-  }
+	if (!normalizedName || !normalizedPassword) {
+		return Promise.resolve({ ok: false, error: "Credenciais inválidas." });
+	}
 
-  // Verificar cache antes de correr bcrypt (~72-141ms poupados em reconexões)
-  if (authCacheGet(normalizedName, normalizedPassword)) {
-    return Promise.resolve({ ok: true });
-  }
+	// Verificar cache antes de correr bcrypt (~72-141ms poupados em reconexões)
+	if (authCacheGet(normalizedName, normalizedPassword)) {
+		return Promise.resolve({ ok: true });
+	}
 
-  return new Promise((resolve) => {
-    db.get(
-      "SELECT id, password_hash FROM managers WHERE name = ? COLLATE NOCASE",
-      [normalizedName],
-      async (err, row) => {
-        if (err) {
-          console.error("[auth] DB error:", err.message);
-          return resolve({ ok: false, error: "Erro interno de autenticação." });
-        }
+	return new Promise((resolve) => {
+		db.get(
+			"SELECT id, password_hash FROM managers WHERE name = ? COLLATE NOCASE",
+			[normalizedName],
+			async (err, row) => {
+				if (err) {
+					console.error("[auth] DB error:", err.message);
+					return resolve({ ok: false, error: "Erro interno de autenticação." });
+				}
 
-        if (row) {
-          // Existing account — verify password
-          const match = await bcrypt.compare(
-            normalizedPassword,
-            row.password_hash,
-          );
-          if (!match) {
-            authCacheInvalidate(normalizedName);
-            return resolve({ ok: false, error: "Palavra-passe incorrecta." });
-          }
-          authCacheSet(normalizedName, normalizedPassword);
-          return resolve({ ok: true });
-        } else {
-          // New account — create with hashed password
-          const hash = await bcrypt.hash(normalizedPassword, 10);
-          db.run(
-            "INSERT INTO managers (name, password_hash) VALUES (?, ?)",
-            [normalizedName, hash],
-            (err2) => {
-              if (err2) {
-                console.error("[auth] Insert error:", err2.message);
-                return resolve({ ok: false, error: "Erro ao criar conta." });
-              }
-              console.log(
-                `[auth] New coach account created: "${normalizedName}"`,
-              );
-              authCacheSet(normalizedName, normalizedPassword);
-              resolve({ ok: true });
-            },
-          );
-        }
-      },
-    );
-  });
+				if (row) {
+					// Existing account — verify password
+					const match = await bcrypt.compare(
+						normalizedPassword,
+						row.password_hash,
+					);
+					if (!match) {
+						authCacheInvalidate(normalizedName);
+						return resolve({ ok: false, error: "Palavra-passe incorrecta." });
+					}
+					authCacheSet(normalizedName, normalizedPassword);
+					return resolve({ ok: true });
+				} else {
+					// New account — create with hashed password
+					const hash = await bcrypt.hash(normalizedPassword, 10);
+					db.run(
+						"INSERT INTO managers (name, password_hash) VALUES (?, ?)",
+						[normalizedName, hash],
+						(err2) => {
+							if (err2) {
+								console.error("[auth] Insert error:", err2.message);
+								return resolve({ ok: false, error: "Erro ao criar conta." });
+							}
+							console.log(
+								`[auth] New coach account created: "${normalizedName}"`,
+							);
+							authCacheSet(normalizedName, normalizedPassword);
+							resolve({ ok: true });
+						},
+					);
+				}
+			},
+		);
+	});
 }
 
 /**
@@ -196,46 +202,46 @@ function verifyOrCreateManager(name, password) {
  * @returns {Promise<{ok: boolean, error?: string}>}
  */
 function verifyManager(name, password) {
-  const normalizedName = typeof name === "string" ? name.trim() : "";
-  const normalizedPassword = typeof password === "string" ? password : "";
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	const normalizedPassword = typeof password === "string" ? password : "";
 
-  if (!normalizedName || !normalizedPassword) {
-    return Promise.resolve({ ok: false, error: "Credenciais inválidas." });
-  }
+	if (!normalizedName || !normalizedPassword) {
+		return Promise.resolve({ ok: false, error: "Credenciais inválidas." });
+	}
 
-  // Cache hit: evitar bcrypt em re-logins recentes
-  if (authCacheGet(normalizedName, normalizedPassword)) {
-    return Promise.resolve({ ok: true });
-  }
+	// Cache hit: evitar bcrypt em re-logins recentes
+	if (authCacheGet(normalizedName, normalizedPassword)) {
+		return Promise.resolve({ ok: true });
+	}
 
-  return new Promise((resolve) => {
-    db.get(
-      "SELECT id, password_hash FROM managers WHERE name = ? COLLATE NOCASE",
-      [normalizedName],
-      async (err, row) => {
-        if (err) {
-          console.error("[auth] DB error:", err.message);
-          return resolve({ ok: false, error: "Erro interno de autenticação." });
-        }
+	return new Promise((resolve) => {
+		db.get(
+			"SELECT id, password_hash FROM managers WHERE name = ? COLLATE NOCASE",
+			[normalizedName],
+			async (err, row) => {
+				if (err) {
+					console.error("[auth] DB error:", err.message);
+					return resolve({ ok: false, error: "Erro interno de autenticação." });
+				}
 
-        if (!row) {
-          return resolve({ ok: false, error: "Conta não encontrada." });
-        }
+				if (!row) {
+					return resolve({ ok: false, error: "Conta não encontrada." });
+				}
 
-        const match = await bcrypt.compare(
-          normalizedPassword,
-          row.password_hash,
-        );
-        if (!match) {
-          authCacheInvalidate(normalizedName);
-          return resolve({ ok: false, error: "Palavra-passe incorrecta." });
-        }
+				const match = await bcrypt.compare(
+					normalizedPassword,
+					row.password_hash,
+				);
+				if (!match) {
+					authCacheInvalidate(normalizedName);
+					return resolve({ ok: false, error: "Palavra-passe incorrecta." });
+				}
 
-        authCacheSet(normalizedName, normalizedPassword);
-        return resolve({ ok: true });
-      },
-    );
-  });
+				authCacheSet(normalizedName, normalizedPassword);
+				return resolve({ ok: true });
+			},
+		);
+	});
 }
 
 /**
@@ -246,48 +252,48 @@ function verifyManager(name, password) {
  * @returns {Promise<{ok: boolean, error?: string}>}
  */
 function createManager(name, password) {
-  const normalizedName = typeof name === "string" ? name.trim() : "";
-  const normalizedPassword = typeof password === "string" ? password : "";
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	const normalizedPassword = typeof password === "string" ? password : "";
 
-  if (!normalizedName || !normalizedPassword) {
-    return Promise.resolve({ ok: false, error: "Credenciais inválidas." });
-  }
+	if (!normalizedName || !normalizedPassword) {
+		return Promise.resolve({ ok: false, error: "Credenciais inválidas." });
+	}
 
-  return new Promise((resolve) => {
-    db.get(
-      "SELECT id FROM managers WHERE name = ? COLLATE NOCASE",
-      [normalizedName],
-      async (err, row) => {
-        if (err) {
-          console.error("[auth] DB error:", err.message);
-          return resolve({ ok: false, error: "Erro interno de autenticação." });
-        }
+	return new Promise((resolve) => {
+		db.get(
+			"SELECT id FROM managers WHERE name = ? COLLATE NOCASE",
+			[normalizedName],
+			async (err, row) => {
+				if (err) {
+					console.error("[auth] DB error:", err.message);
+					return resolve({ ok: false, error: "Erro interno de autenticação." });
+				}
 
-        if (row) {
-          return resolve({
-            ok: false,
-            error: "Já existe uma conta com esse nome.",
-          });
-        }
+				if (row) {
+					return resolve({
+						ok: false,
+						error: "Já existe uma conta com esse nome.",
+					});
+				}
 
-        const hash = await bcrypt.hash(normalizedPassword, 10);
-        db.run(
-          "INSERT INTO managers (name, password_hash) VALUES (?, ?)",
-          [normalizedName, hash],
-          (err2) => {
-            if (err2) {
-              console.error("[auth] Insert error:", err2.message);
-              return resolve({ ok: false, error: "Erro ao criar conta." });
-            }
-            console.log(
-              `[auth] New coach account created: "${normalizedName}"`,
-            );
-            resolve({ ok: true });
-          },
-        );
-      },
-    );
-  });
+				const hash = await bcrypt.hash(normalizedPassword, 10);
+				db.run(
+					"INSERT INTO managers (name, password_hash) VALUES (?, ?)",
+					[normalizedName, hash],
+					(err2) => {
+						if (err2) {
+							console.error("[auth] Insert error:", err2.message);
+							return resolve({ ok: false, error: "Erro ao criar conta." });
+						}
+						console.log(
+							`[auth] New coach account created: "${normalizedName}"`,
+						);
+						resolve({ ok: true });
+					},
+				);
+			},
+		);
+	});
 }
 
 /**
@@ -298,10 +304,10 @@ function createManager(name, password) {
  * @param {string} roomCode
  */
 function recordRoomAccess(managerName, roomCode) {
-  db.run(
-    "INSERT OR IGNORE INTO room_managers (room_code, manager_name) VALUES (?, ?)",
-    [roomCode.toUpperCase(), managerName],
-  );
+	db.run(
+		"INSERT OR IGNORE INTO room_managers (room_code, manager_name) VALUES (?, ?)",
+		[roomCode.toUpperCase(), managerName],
+	);
 }
 
 /**
@@ -311,16 +317,16 @@ function recordRoomAccess(managerName, roomCode) {
  * @returns {Promise<string[]>}
  */
 function getManagerRooms(managerName) {
-  return new Promise((resolve) => {
-    db.all(
-      "SELECT room_code FROM room_managers WHERE manager_name = ? COLLATE NOCASE ORDER BY room_code",
-      [managerName],
-      (err, rows) => {
-        if (err) return resolve([]);
-        resolve(rows.map((r) => r.room_code));
-      },
-    );
-  });
+	return new Promise((resolve) => {
+		db.all(
+			"SELECT room_code FROM room_managers WHERE manager_name = ? COLLATE NOCASE ORDER BY room_code",
+			[managerName],
+			(err, rows) => {
+				if (err) return resolve([]);
+				resolve(rows.map((r) => r.room_code));
+			},
+		);
+	});
 }
 
 /**
@@ -330,13 +336,13 @@ function getManagerRooms(managerName) {
  * @returns {Promise<void>}
  */
 function deleteRoomAccess(roomCode) {
-  return new Promise((resolve) => {
-    db.run(
-      "DELETE FROM room_managers WHERE room_code = ? COLLATE NOCASE",
-      [roomCode.toUpperCase()],
-      () => resolve(),
-    );
-  });
+	return new Promise((resolve) => {
+		db.run(
+			"DELETE FROM room_managers WHERE room_code = ? COLLATE NOCASE",
+			[roomCode.toUpperCase()],
+			() => resolve(),
+		);
+	});
 }
 
 /**
@@ -348,48 +354,61 @@ function deleteRoomAccess(roomCode) {
  * @returns {Promise<{ok: boolean, error?: string}>}
  */
 function changePassword(name, currentPassword, newPassword) {
-  const normalizedName = typeof name === "string" ? name.trim() : "";
-  const normalizedCurrent = typeof currentPassword === "string" ? currentPassword : "";
-  const normalizedNew = typeof newPassword === "string" ? newPassword : "";
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	const normalizedCurrent =
+		typeof currentPassword === "string" ? currentPassword : "";
+	const normalizedNew = typeof newPassword === "string" ? newPassword : "";
 
-  if (!normalizedName || !normalizedCurrent || !normalizedNew) {
-    return Promise.resolve({ ok: false, error: "Credenciais inválidas." });
-  }
-  if (normalizedNew.length < 3) {
-    return Promise.resolve({ ok: false, error: "A nova palavra-passe deve ter pelo menos 3 caracteres." });
-  }
+	if (!normalizedName || !normalizedCurrent || !normalizedNew) {
+		return Promise.resolve({ ok: false, error: "Credenciais inválidas." });
+	}
+	if (normalizedNew.length < 3) {
+		return Promise.resolve({
+			ok: false,
+			error: "A nova palavra-passe deve ter pelo menos 3 caracteres.",
+		});
+	}
 
-  return new Promise((resolve) => {
-    db.get(
-      "SELECT id, password_hash FROM managers WHERE name = ? COLLATE NOCASE",
-      [normalizedName],
-      async (err, row) => {
-        if (err) {
-          console.error("[auth] DB error:", err.message);
-          return resolve({ ok: false, error: "Erro interno." });
-        }
-        if (!row) {
-          return resolve({ ok: false, error: "Conta não encontrada." });
-        }
-        const match = await bcrypt.compare(normalizedCurrent, row.password_hash);
-        if (!match) {
-          return resolve({ ok: false, error: "Palavra-passe actual incorrecta." });
-        }
-        const hash = await bcrypt.hash(normalizedNew, 10);
-        db.run(
-          "UPDATE managers SET password_hash = ? WHERE id = ?",
-          [hash, row.id],
-          (err2) => {
-            if (err2) {
-              console.error("[auth] Update error:", err2.message);
-              return resolve({ ok: false, error: "Erro ao alterar palavra-passe." });
-            }
-            resolve({ ok: true });
-          },
-        );
-      },
-    );
-  });
+	return new Promise((resolve) => {
+		db.get(
+			"SELECT id, password_hash FROM managers WHERE name = ? COLLATE NOCASE",
+			[normalizedName],
+			async (err, row) => {
+				if (err) {
+					console.error("[auth] DB error:", err.message);
+					return resolve({ ok: false, error: "Erro interno." });
+				}
+				if (!row) {
+					return resolve({ ok: false, error: "Conta não encontrada." });
+				}
+				const match = await bcrypt.compare(
+					normalizedCurrent,
+					row.password_hash,
+				);
+				if (!match) {
+					return resolve({
+						ok: false,
+						error: "Palavra-passe actual incorrecta.",
+					});
+				}
+				const hash = await bcrypt.hash(normalizedNew, 10);
+				db.run(
+					"UPDATE managers SET password_hash = ? WHERE id = ?",
+					[hash, row.id],
+					(err2) => {
+						if (err2) {
+							console.error("[auth] Update error:", err2.message);
+							return resolve({
+								ok: false,
+								error: "Erro ao alterar palavra-passe.",
+							});
+						}
+						resolve({ ok: true });
+					},
+				);
+			},
+		);
+	});
 }
 
 /**
@@ -399,38 +418,38 @@ function changePassword(name, currentPassword, newPassword) {
  * @returns {Promise<{ok: boolean, error?: string, info?: {name: string, rooms: string[]}}>}
  */
 function getManagerInfo(name) {
-  const normalizedName = typeof name === "string" ? name.trim() : "";
-  if (!normalizedName) {
-    return Promise.resolve({ ok: false, error: "Nome inválido." });
-  }
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName) {
+		return Promise.resolve({ ok: false, error: "Nome inválido." });
+	}
 
-  return new Promise((resolve) => {
-    db.get(
-      "SELECT id, name, email, birth_year FROM managers WHERE name = ? COLLATE NOCASE",
-      [normalizedName],
-      async (err, row) => {
-        if (err) {
-          console.error("[auth] DB error:", err.message);
-          return resolve({ ok: false, error: "Erro interno." });
-        }
-        if (!row) {
-          return resolve({ ok: false, error: "Conta não encontrada." });
-        }
+	return new Promise((resolve) => {
+		db.get(
+			"SELECT id, name, email, birth_year FROM managers WHERE name = ? COLLATE NOCASE",
+			[normalizedName],
+			async (err, row) => {
+				if (err) {
+					console.error("[auth] DB error:", err.message);
+					return resolve({ ok: false, error: "Erro interno." });
+				}
+				if (!row) {
+					return resolve({ ok: false, error: "Conta não encontrada." });
+				}
 
-        const rooms = await getManagerRooms(normalizedName);
+				const rooms = await getManagerRooms(normalizedName);
 
-        resolve({
-          ok: true,
-          info: {
-            name: row.name,
-            email: row.email || "",
-            birthYear: row.birth_year || null,
-            rooms,
-          },
-        });
-      },
-    );
-  });
+				resolve({
+					ok: true,
+					info: {
+						name: row.name,
+						email: row.email || "",
+						birthYear: row.birth_year || null,
+						rooms,
+					},
+				});
+			},
+		);
+	});
 }
 
 /**
@@ -440,19 +459,19 @@ function getManagerInfo(name) {
  * @returns {Promise<string>}
  */
 function getAvatarSeed(name) {
-  const normalizedName = typeof name === "string" ? name.trim() : "";
-  if (!normalizedName) return Promise.resolve("");
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName) return Promise.resolve("");
 
-  return new Promise((resolve) => {
-    db.get(
-      "SELECT avatar_seed FROM managers WHERE name = ? COLLATE NOCASE",
-      [normalizedName],
-      (err, row) => {
-        if (err || !row) return resolve("");
-        resolve(row.avatar_seed || "");
-      },
-    );
-  });
+	return new Promise((resolve) => {
+		db.get(
+			"SELECT avatar_seed FROM managers WHERE name = ? COLLATE NOCASE",
+			[normalizedName],
+			(err, row) => {
+				if (err || !row) return resolve("");
+				resolve(row.avatar_seed || "");
+			},
+		);
+	});
 }
 
 /**
@@ -463,22 +482,22 @@ function getAvatarSeed(name) {
  * @returns {Promise<{ok: boolean}>}
  */
 function setAvatarSeed(name, seed) {
-  const normalizedName = typeof name === "string" ? name.trim() : "";
-  if (!normalizedName) return Promise.resolve({ ok: false });
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName) return Promise.resolve({ ok: false });
 
-  return new Promise((resolve) => {
-    db.run(
-      "UPDATE managers SET avatar_seed = ? WHERE name = ? COLLATE NOCASE",
-      [seed, normalizedName],
-      (err) => {
-        if (err) {
-          console.error("[auth] setAvatarSeed error:", err.message);
-          return resolve({ ok: false });
-        }
-        resolve({ ok: true });
-      },
-    );
-  });
+	return new Promise((resolve) => {
+		db.run(
+			"UPDATE managers SET avatar_seed = ? WHERE name = ? COLLATE NOCASE",
+			[seed, normalizedName],
+			(err) => {
+				if (err) {
+					console.error("[auth] setAvatarSeed error:", err.message);
+					return resolve({ ok: false });
+				}
+				resolve({ ok: true });
+			},
+		);
+	});
 }
 
 /**
@@ -491,46 +510,49 @@ function setAvatarSeed(name, seed) {
  * @returns {Promise<{ok: boolean, error?: string}>}
  */
 function updateManagerProfile(name, email, birthYear) {
-  const normalizedName = typeof name === "string" ? name.trim() : "";
-  if (!normalizedName) {
-    return Promise.resolve({ ok: false, error: "Nome inválido." });
-  }
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName) {
+		return Promise.resolve({ ok: false, error: "Nome inválido." });
+	}
 
-  const updates = [];
-  const params = [];
+	const updates = [];
+	const params = [];
 
-  if (email !== undefined) {
-    const safeEmail = (typeof email === "string" && email.trim() !== "") ? email.trim() : null;
-    updates.push("email = ?");
-    params.push(safeEmail);
-  }
-  if (birthYear !== undefined) {
-    const safeBirthYear =
-      birthYear != null && !Number.isNaN(birthYear) ? parseInt(birthYear, 10) : null;
-    updates.push("birth_year = ?");
-    params.push(safeBirthYear);
-  }
+	if (email !== undefined) {
+		const safeEmail =
+			typeof email === "string" && email.trim() !== "" ? email.trim() : null;
+		updates.push("email = ?");
+		params.push(safeEmail);
+	}
+	if (birthYear !== undefined) {
+		const safeBirthYear =
+			birthYear != null && !Number.isNaN(birthYear)
+				? parseInt(birthYear, 10)
+				: null;
+		updates.push("birth_year = ?");
+		params.push(safeBirthYear);
+	}
 
-  // Nothing to update
-  if (updates.length === 0) {
-    return Promise.resolve({ ok: true });
-  }
+	// Nothing to update
+	if (updates.length === 0) {
+		return Promise.resolve({ ok: true });
+	}
 
-  params.push(normalizedName);
+	params.push(normalizedName);
 
-  return new Promise((resolve) => {
-    db.run(
-      `UPDATE managers SET ${updates.join(", ")} WHERE name = ? COLLATE NOCASE`,
-      params,
-      (err) => {
-        if (err) {
-          console.error("[auth] updateManagerProfile error:", err.message);
-          return resolve({ ok: false, error: "Erro ao actualizar perfil." });
-        }
-        resolve({ ok: true });
-      },
-    );
-  });
+	return new Promise((resolve) => {
+		db.run(
+			`UPDATE managers SET ${updates.join(", ")} WHERE name = ? COLLATE NOCASE`,
+			params,
+			(err) => {
+				if (err) {
+					console.error("[auth] updateManagerProfile error:", err.message);
+					return resolve({ ok: false, error: "Erro ao actualizar perfil." });
+				}
+				resolve({ ok: true });
+			},
+		);
+	});
 }
 
 /**
@@ -540,43 +562,43 @@ function updateManagerProfile(name, email, birthYear) {
  * @returns {Promise<{ok: boolean, error?: string}>}
  */
 function deleteManager(name) {
-  const normalizedName = typeof name === "string" ? name.trim() : "";
-  if (!normalizedName) {
-    return Promise.resolve({ ok: false, error: "Nome inválido." });
-  }
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName) {
+		return Promise.resolve({ ok: false, error: "Nome inválido." });
+	}
 
-  return new Promise((resolve) => {
-    db.serialize(() => {
-      db.run(
-        "DELETE FROM room_managers WHERE manager_name = ? COLLATE NOCASE",
-        [normalizedName],
-      );
-      db.run(
-        "DELETE FROM managers WHERE name = ? COLLATE NOCASE",
-        [normalizedName],
-        (err) => {
-          if (err) {
-            console.error("[auth] deleteManager error:", err.message);
-            return resolve({ ok: false, error: "Erro ao apagar conta." });
-          }
-          resolve({ ok: true });
-        },
-      );
-    });
-  });
+	return new Promise((resolve) => {
+		db.serialize(() => {
+			db.run(
+				"DELETE FROM room_managers WHERE manager_name = ? COLLATE NOCASE",
+				[normalizedName],
+			);
+			db.run(
+				"DELETE FROM managers WHERE name = ? COLLATE NOCASE",
+				[normalizedName],
+				(err) => {
+					if (err) {
+						console.error("[auth] deleteManager error:", err.message);
+						return resolve({ ok: false, error: "Erro ao apagar conta." });
+					}
+					resolve({ ok: true });
+				},
+			);
+		});
+	});
 }
 
 module.exports = {
-  verifyOrCreateManager,
-  verifyManager,
-  createManager,
-  recordRoomAccess,
-  deleteRoomAccess,
-  getManagerRooms,
-  changePassword,
-  getManagerInfo,
-  getAvatarSeed,
-  setAvatarSeed,
-  updateManagerProfile,
-  deleteManager,
+	verifyOrCreateManager,
+	verifyManager,
+	createManager,
+	recordRoomAccess,
+	deleteRoomAccess,
+	getManagerRooms,
+	changePassword,
+	getManagerInfo,
+	getAvatarSeed,
+	setAvatarSeed,
+	updateManagerProfile,
+	deleteManager,
 };
