@@ -68,8 +68,12 @@ To maintain type safety without TypeScript, all components and non-trivial funct
 
 ### Frontend (`/client`)
 
-- `src/App.jsx`: Root state orchestration and socket initialization.
+- `src/App.jsx`: Root orchestrator (Auth state, session management, and top-level providers).
+- `src/contexts/`: Global state management.
+  - `GameContext.jsx`: Core game state (match status, players, finances, sockets).
+  - `TacticsContext.jsx`: UI state and logic for team tactics.
 - `src/hooks/useSocketListeners.js`: Centralized socket event handling.
+- `src/GameLayout.jsx`: Main UI container (consumes all contexts, holds the layout structure).
 - `src/views/`: Modularized tab components (Standings, Market, etc.).
 - `src/components/`: UI hierarchy (`modals/`, `ui/`, `shared/`).
 - `src/utils/`: Helpers (audio, formatters, cache management).

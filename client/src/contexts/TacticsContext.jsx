@@ -1,0 +1,456 @@
+import {
+	createContext,
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	startTransition,
+} from "react";
+import { socket } from "../socket";
+import { TACTIC_FORMATIONS } from "../constants/index.js";
+import {
+	buildAutoPositions,
+	getAvailablePositionCounts,
+	isFormationAvailable,
+	isPlayerAvailable,
+} from "../utils/playerHelpers.js";
+import { useGame } from "./GameContext.jsx";
+
+const TacticsContext = createContext(null);
+
+/**
+ * Provides tactic-specific state, computed values and handlers.
+ * Consumes useGame() for all game state — no props needed beyond children.
+ */
+export function TacticsProvider({ children }) {
+	const {
+		tactic,
+		setTactic,
+		tacticFamiliarity,
+		setTacticFamiliarity,
+		allTacticFamiliarity,
+		setAllTacticFamiliarity,
+		swapSource,
+		setSwapSource,
+		swapTarget,
+		setSwapTarget,
+		subbedOut,
+		setSubbedOut,
+		confirmedSubs,
+		setConfirmedSubs,
+		subsMade,
+		setSubsMade,
+		mySquad,
+		matchweekCount,
+		nextMatchSummary,
+		players,
+		me,
+		teamInfo,
+		disconnected,
+		isCupMatch,
+		showHalftimePanel,
+		isPlayingMatch,
+		annotatedSquad, // computed by GameContext
+	} = useGame();
+
+	// ── UI state owned exclusively by this context ──────────────────────────
+	const [openStatusPickerId, setOpenStatusPickerId] = useState(null);
+	const [dragOverPlayerId, setDragOverPlayerId] = useState(null);
+	const [dragPlayerId, setDragPlayerId] = useState(null);
+	const dragPlayerStatusRef = useRef(null);
+
+	// ── Computed values ──────────────────────────────────────────────────────
+	const availablePositionCounts = useMemo(
+		() => getAvailablePositionCounts(mySquad, matchweekCount + 1),
+		[mySquad, matchweekCount],
+	);
+
+	const formationAvailabilityByValue = useMemo(
+		() =>
+			Object.fromEntries(
+				TACTIC_FORMATIONS.map(({ value }) => [
+					value,
+					isFormationAvailable(value, availablePositionCounts),
+				]),
+			),
+		[availablePositionCounts],
+	);
+
+	const titulares = useMemo(
+		() => mySquad.filter((p) => tactic.positions[p.id] === "Titular"),
+		[mySquad, tactic.positions],
+	);
+
+	const isLineupComplete = useMemo(
+		() =>
+			titulares.filter((p) => p.position === "GR").length === 1 &&
+			titulares.filter((p) => p.position !== "GR").length === 10,
+		[titulares],
+	);
+
+	const nextMatchOpponent = nextMatchSummary?.opponent || null;
+	const nextMatchReferee = nextMatchSummary?.referee || null;
+
+	// ── Auto-tactic effect: auto-fill positions when squad first loads ───────
+	useEffect(() => {
+		if (!mySquad.length) return;
+		if (tactic.positions && Object.keys(tactic.positions).length > 0) return;
+
+		const availableCounts = getAvailablePositionCounts(
+			mySquad,
+			matchweekCount + 1,
+		);
+		const fallbackFormation = isFormationAvailable(
+			tactic.formation,
+			availableCounts,
+		)
+			? tactic.formation
+			: TACTIC_FORMATIONS.find((f) =>
+					isFormationAvailable(f.value, availableCounts),
+				)?.value;
+		if (!fallbackFormation) return;
+
+		const autoPositions = buildAutoPositions(
+			mySquad,
+			fallbackFormation,
+			matchweekCount + 1,
+		);
+		if (Object.keys(autoPositions).length === 0) return;
+
+		startTransition(() => {
+			setTactic((prev) => {
+				if (prev.positions && Object.keys(prev.positions).length > 0)
+					return prev;
+				const next = {
+					...prev,
+					formation: fallbackFormation,
+					positions: autoPositions,
+				};
+				socket.emit("setTactic", next);
+				return next;
+			});
+		});
+	}, [mySquad, tactic.formation, tactic.positions, matchweekCount, setTactic]);
+
+	// ── Close status picker on any outside click ─────────────────────────────
+	useEffect(() => {
+		if (!openStatusPickerId) return;
+		const close = () => setOpenStatusPickerId(null);
+		document.addEventListener("click", close);
+		return () => document.removeEventListener("click", close);
+	}, [openStatusPickerId]);
+
+	// ── Handlers ─────────────────────────────────────────────────────────────
+
+	const updateTactic = useCallback(
+		(patch) => {
+			setTactic((prev) => {
+				const next = { ...prev, ...patch };
+				socket.emit("setTactic", next);
+				return next;
+			});
+		},
+		[setTactic],
+	);
+
+	const handleClearTactic = useCallback(() => {
+		setTactic((prev) => {
+			const allExcluded = Object.fromEntries(
+				mySquad.map((p) => [p.id, "Excluído"]),
+			);
+			const next = { ...prev, formation: "", positions: allExcluded };
+			socket.emit("setTactic", next);
+			return next;
+		});
+	}, [mySquad, setTactic]);
+
+	const handleAutoPick = useCallback(
+		(formation) => {
+			const availableCounts = getAvailablePositionCounts(
+				mySquad,
+				matchweekCount + 1,
+			);
+			if (!isFormationAvailable(formation, availableCounts)) return;
+
+			const autoPositions = buildAutoPositions(
+				mySquad,
+				formation,
+				matchweekCount + 1,
+			);
+			setTactic((prev) => {
+				const next = { ...prev, formation, positions: autoPositions };
+				socket.emit("setTactic", next);
+				return next;
+			});
+		},
+		[matchweekCount, mySquad, setTactic],
+	);
+
+	const handleSelectOut = useCallback(
+		(playerId) => {
+			setSwapSource((prev) => (prev === playerId ? null : playerId));
+			if (swapSource !== null) setSwapTarget(null);
+		},
+		[swapSource, setSwapSource, setSwapTarget],
+	);
+
+	const handleSelectIn = useCallback(
+		(playerId) => {
+			setSwapTarget((prev) => (prev === playerId ? null : playerId));
+		},
+		[setSwapTarget],
+	);
+
+	const handleConfirmSub = useCallback(() => {
+		if (!swapSource || !swapTarget || subsMade >= 3) return;
+		const srcPlayer = mySquad.find((p) => p.id === swapSource);
+		const tgtPlayer = mySquad.find((p) => p.id === swapTarget);
+		if (
+			srcPlayer &&
+			tgtPlayer &&
+			(srcPlayer.position === "GR") !== (tgtPlayer.position === "GR")
+		)
+			return;
+		setTactic((prevTactic) => {
+			const newPositions = { ...prevTactic.positions };
+			newPositions[swapSource] = "Suplente";
+			newPositions[swapTarget] = "Titular";
+			const next = { ...prevTactic, positions: newPositions };
+			socket.emit("setTactic", next);
+			return next;
+		});
+		setSubbedOut((prev) => [...prev, swapSource]);
+		setConfirmedSubs((prev) => [...prev, { out: swapSource, in: swapTarget }]);
+		setSubsMade((n) => n + 1);
+		setSwapSource(null);
+		setSwapTarget(null);
+	}, [
+		swapSource,
+		swapTarget,
+		subsMade,
+		mySquad,
+		setTactic,
+		setSubbedOut,
+		setConfirmedSubs,
+		setSubsMade,
+		setSwapSource,
+		setSwapTarget,
+	]);
+
+	const handleResetSub = useCallback(() => {
+		setSwapSource(null);
+		setSwapTarget(null);
+	}, [setSwapSource, setSwapTarget]);
+
+	const handleResetAllSubs = useCallback(() => {
+		setTactic((prevTactic) => {
+			const newPositions = { ...prevTactic.positions };
+			confirmedSubs.forEach(({ out: outId, in: inId }) => {
+				newPositions[outId] = "Titular";
+				newPositions[inId] = "Suplente";
+			});
+			const next = { ...prevTactic, positions: newPositions };
+			socket.emit("setTactic", next);
+			return next;
+		});
+		setSubbedOut([]);
+		setConfirmedSubs([]);
+		setSubsMade(0);
+		setSwapSource(null);
+		setSwapTarget(null);
+	}, [
+		confirmedSubs,
+		setTactic,
+		setSubbedOut,
+		setConfirmedSubs,
+		setSubsMade,
+		setSwapSource,
+		setSwapTarget,
+	]);
+
+	const handleSetPlayerStatus = useCallback(
+		(playerId, status) => {
+			setTactic((prev) => {
+				const newPositions = { ...prev.positions };
+				const player = mySquad.find((p) => p.id === playerId);
+				if (player?.isJunior) return prev;
+
+				if (status === "Titular" || status === "Suplente") {
+					if (player && !isPlayerAvailable(player, matchweekCount + 1))
+						return prev;
+				}
+
+				if (status === "Titular") {
+					const currentTitulares = Object.entries(newPositions).filter(
+						([id, s]) => s === "Titular" && Number(id) !== playerId,
+					).length;
+					if (currentTitulares >= 11) return prev;
+				}
+
+				if (status === "Suplente") {
+					const currentSubs = Object.entries(newPositions).filter(
+						([id, s]) => s === "Suplente" && Number(id) !== playerId,
+					).length;
+					if (currentSubs >= 5) return prev;
+				}
+
+				if (status === "Titular") {
+					const pl = mySquad.find((p) => p.id === playerId);
+					if (pl?.position === "GR") {
+						mySquad.forEach((p) => {
+							if (
+								p.id !== playerId &&
+								p.position === "GR" &&
+								newPositions[p.id] === "Titular"
+							) {
+								newPositions[p.id] = "Suplente";
+							}
+						});
+					}
+				}
+
+				newPositions[playerId] = status;
+				const next = { ...prev, positions: newPositions };
+				socket.emit("setTactic", next);
+				return next;
+			});
+			setOpenStatusPickerId(null);
+		},
+		[mySquad, matchweekCount, setTactic],
+	);
+
+	const handleSwapPlayerStatuses = useCallback(
+		(draggedId, targetId) => {
+			setTactic((prev) => {
+				const newPositions = { ...prev.positions };
+				const draggedStatus = newPositions[draggedId] ?? "Excluído";
+				const targetStatus = newPositions[targetId] ?? "Excluído";
+
+				const draggedPlayer = mySquad.find((p) => p.id === draggedId);
+				const targetPlayer = mySquad.find((p) => p.id === targetId);
+				if (draggedPlayer?.isJunior || targetPlayer?.isJunior) return prev;
+
+				if (draggedStatus === "Titular" || targetStatus === "Titular") {
+					if (!draggedPlayer || !targetPlayer) return prev;
+					if (draggedPlayer.position !== targetPlayer.position) return prev;
+				}
+				if (targetStatus === "Titular" || targetStatus === "Suplente") {
+					if (
+						draggedPlayer &&
+						!isPlayerAvailable(draggedPlayer, matchweekCount + 1)
+					)
+						return prev;
+				}
+				if (draggedStatus === "Titular" || draggedStatus === "Suplente") {
+					if (
+						targetPlayer &&
+						!isPlayerAvailable(targetPlayer, matchweekCount + 1)
+					)
+						return prev;
+				}
+				newPositions[draggedId] = targetStatus;
+				newPositions[targetId] = draggedStatus;
+				return { ...prev, positions: newPositions };
+			});
+			setDragOverPlayerId(null);
+			setDragPlayerId(null);
+			dragPlayerStatusRef.current = null;
+		},
+		[mySquad, matchweekCount, setTactic],
+	);
+
+	const handleDragStart = useCallback((e) => {
+		const playerId = Number(e.currentTarget.dataset.playerId);
+		if (Number.isNaN(playerId)) return;
+		setDragPlayerId(playerId);
+		dragPlayerStatusRef.current = e.currentTarget.dataset.playerStatus;
+	}, []);
+
+	const handleReady = useCallback(() => {
+		const isReady = players.find((p) => p.name === me?.name)?.ready;
+		socket.emit("setReady", !isReady);
+	}, [players, me]);
+
+	const handleHalftimeReady = useCallback(() => {
+		socket.emit("setReady", true);
+	}, []);
+
+	// ── Context value ────────────────────────────────────────────────────────
+	const value = {
+		// State (from useGame)
+		tactic,
+		setTactic,
+		tacticFamiliarity,
+		setTacticFamiliarity,
+		allTacticFamiliarity,
+		setAllTacticFamiliarity,
+		swapSource,
+		setSwapSource,
+		swapTarget,
+		setSwapTarget,
+		subbedOut,
+		setSubbedOut,
+		confirmedSubs,
+		setConfirmedSubs,
+		subsMade,
+		setSubsMade,
+		// UI state (owned by this context)
+		openStatusPickerId,
+		setOpenStatusPickerId,
+		dragOverPlayerId,
+		setDragOverPlayerId,
+		dragPlayerId,
+		setDragPlayerId,
+		dragPlayerStatusRef,
+		// Computed
+		annotatedSquad,
+		titulares,
+		formationAvailabilityByValue,
+		isLineupComplete,
+		nextMatchOpponent,
+		nextMatchReferee,
+		// Handlers
+		updateTactic,
+		handleClearTactic,
+		handleAutoPick,
+		handleSelectOut,
+		handleSelectIn,
+		handleConfirmSub,
+		handleResetSub,
+		handleResetAllSubs,
+		handleSetPlayerStatus,
+		handleSwapPlayerStatuses,
+		handleDragStart,
+		handleReady,
+		handleHalftimeReady,
+		// Read-only game props (for TacticsView)
+		mySquad,
+		matchweekCount,
+		teamInfo,
+		nextMatchSummary,
+		players,
+		me,
+		showHalftimePanel,
+		isPlayingMatch,
+		disconnected,
+		isCupMatch,
+	};
+
+	return (
+		<TacticsContext.Provider value={value}>{children}</TacticsContext.Provider>
+	);
+}
+
+/**
+ * Consumes the TacticsContext. Must be used inside a <TacticsProvider>.
+ * Co-exported in the same file as the Provider (single-file context pattern).
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function useTactics() {
+	const ctx = useContext(TacticsContext);
+	if (!ctx)
+		throw new Error("useTactics must be used within a <TacticsProvider>");
+	return ctx;
+}

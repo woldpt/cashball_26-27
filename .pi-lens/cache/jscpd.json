@@ -1,0 +1,512 @@
+{
+  "success": true,
+  "clones": [
+    {
+      "fileA": "client/src/components/ui/CupBracketPage.jsx",
+      "startA": 370,
+      "fileB": "client/src/components/ui/CupBracketPage.jsx",
+      "startB": 112,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/components/modals/SeasonEndModal.jsx",
+      "startA": 239,
+      "fileB": "client/src/components/modals/SeasonEndModal.jsx",
+      "startB": 194,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/components/modals/PlayerHistoryModal.jsx",
+      "startA": 441,
+      "fileB": "client/src/components/modals/PlayerHistoryModal.jsx",
+      "startB": 416,
+      "lines": 22,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/components/modals/DismissalModal.jsx",
+      "startA": 26,
+      "fileB": "client/src/components/modals/WelcomeModal.jsx",
+      "startB": 37,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/components/match/MatchTabs.jsx",
+      "startA": 535,
+      "fileB": "client/src/components/match/MatchTabs.jsx",
+      "startB": 477,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/components/auth/LandingPage.jsx",
+      "startA": 276,
+      "fileB": "client/src/components/auth/LandingPage.jsx",
+      "startB": 186,
+      "lines": 76,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/components/auth/LandingPage.jsx",
+      "startA": 537,
+      "fileB": "client/src/components/auth/LandingPage.jsx",
+      "startB": 476,
+      "lines": 106,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/components/auth/LandingPage.jsx",
+      "startA": 287,
+      "fileB": "client/src/components/auth/LandingPage.jsx",
+      "startB": 198,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/components/auth/LandingPage.jsx",
+      "startA": 298,
+      "fileB": "client/src/components/auth/LandingPage.jsx",
+      "startB": 209,
+      "lines": 21,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/components/auth/LandingPage.jsx",
+      "startA": 361,
+      "fileB": "client/src/components/auth/LandingPage.jsx",
+      "startB": 252,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/TeamSquadView.jsx",
+      "startA": 464,
+      "fileB": "client/src/components/modals/TeamSquadModal.jsx",
+      "startB": 416,
+      "lines": 106,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/TeamSquadView.jsx",
+      "startA": 46,
+      "fileB": "client/src/components/modals/TeamSquadModal.jsx",
+      "startB": 47,
+      "lines": 17,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/TeamSquadView.jsx",
+      "startA": 62,
+      "fileB": "client/src/components/modals/TeamSquadModal.jsx",
+      "startB": 61,
+      "lines": 81,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/TeamSquadView.jsx",
+      "startA": 264,
+      "fileB": "client/src/components/modals/TeamSquadModal.jsx",
+      "startB": 218,
+      "lines": 18,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/TeamSquadView.jsx",
+      "startA": 294,
+      "fileB": "client/src/components/modals/TeamSquadModal.jsx",
+      "startB": 247,
+      "lines": 36,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/TeamSquadView.jsx",
+      "startA": 333,
+      "fileB": "client/src/components/modals/TeamSquadModal.jsx",
+      "startB": 286,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/TeamSquadView.jsx",
+      "startA": 363,
+      "fileB": "client/src/components/modals/TeamSquadModal.jsx",
+      "startB": 316,
+      "lines": 31,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/TeamSquadView.jsx",
+      "startA": 448,
+      "fileB": "client/src/components/modals/TeamSquadModal.jsx",
+      "startB": 400,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/TeamSquadView.jsx",
+      "startA": 465,
+      "fileB": "client/src/components/modals/TeamSquadModal.jsx",
+      "startB": 417,
+      "lines": 22,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/TeamSquadView.jsx",
+      "startA": 486,
+      "fileB": "client/src/components/modals/TeamSquadModal.jsx",
+      "startB": 437,
+      "lines": 32,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/TeamSquadView.jsx",
+      "startA": 532,
+      "fileB": "client/src/components/modals/TeamSquadModal.jsx",
+      "startB": 483,
+      "lines": 19,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/TeamSquadView.jsx",
+      "startA": 582,
+      "fileB": "client/src/components/modals/TeamSquadModal.jsx",
+      "startB": 533,
+      "lines": 39,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/MarketTab.jsx",
+      "startA": 278,
+      "fileB": "client/src/components/ui/TransferHub.jsx",
+      "startB": 496,
+      "lines": 94,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/MarketTab.jsx",
+      "startA": 64,
+      "fileB": "client/src/views/PlayersTab.jsx",
+      "startB": 35,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/MarketTab.jsx",
+      "startA": 320,
+      "fileB": "client/src/components/ui/TransferHub.jsx",
+      "startB": 504,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/FinancesTab.jsx",
+      "startA": 442,
+      "fileB": "client/src/views/FinancesTab.jsx",
+      "startB": 325,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/FinancesTab.jsx",
+      "startA": 453,
+      "fileB": "client/src/views/FinancesTab.jsx",
+      "startB": 336,
+      "lines": 20,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/CalendarioTab.jsx",
+      "startA": 481,
+      "fileB": "client/src/components/modals/TeamSquadModal.jsx",
+      "startB": 321,
+      "lines": 26,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/views/CalendarioTab.jsx",
+      "startA": 563,
+      "fileB": "client/src/components/modals/TeamSquadModal.jsx",
+      "startB": 400,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/utils/audio.js",
+      "startA": 61,
+      "fileB": "client/src/utils/audio.js",
+      "startB": 33,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/utils/audio.js",
+      "startA": 62,
+      "fileB": "client/src/utils/audio.js",
+      "startB": 4,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/utils/audio.js",
+      "startA": 67,
+      "fileB": "client/src/utils/audio.js",
+      "startB": 39,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/scripts/socketioContractValidator.ts",
+      "startA": 64,
+      "fileB": "server/scripts/socketioContractValidator.ts",
+      "startB": 53,
+      "lines": 6,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/game/playerUtils.ts",
+      "startA": 123,
+      "fileB": "server/game/playerUtils.ts",
+      "startB": 49,
+      "lines": 16,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/game/playerUtils.ts",
+      "startA": 140,
+      "fileB": "server/game/playerUtils.ts",
+      "startB": 66,
+      "lines": 39,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/game/commentary.ts",
+      "startA": 678,
+      "fileB": "server/game/commentary.ts",
+      "startB": 651,
+      "lines": 17,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/socketSessionHandlers.ts",
+      "startA": 504,
+      "fileB": "server/socketSessionHandlers.ts",
+      "startB": 251,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/socketSessionHandlers.ts",
+      "startA": 524,
+      "fileB": "server/socketSessionHandlers.ts",
+      "startB": 324,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/socketFinanceHandlers.ts",
+      "startA": 108,
+      "fileB": "server/socketFinanceHandlers.ts",
+      "startB": 84,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/npcTransferHelpers.ts",
+      "startA": 367,
+      "fileB": "server/npcTransferHelpers.ts",
+      "startB": 217,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/matchSummaryHelpers.ts",
+      "startA": 355,
+      "fileB": "server/matchSummaryHelpers.ts",
+      "startB": 280,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/matchSummaryHelpers.ts",
+      "startA": 381,
+      "fileB": "server/matchSummaryHelpers.ts",
+      "startB": 308,
+      "lines": 19,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/index.ts",
+      "startA": 103,
+      "fileB": "server/db/globalDatabase.ts",
+      "startB": 9,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/index.ts",
+      "startA": 392,
+      "fileB": "server/index.ts",
+      "startB": 344,
+      "lines": 6,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/index.ts",
+      "startA": 411,
+      "fileB": "server/index.ts",
+      "startB": 344,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/index.ts",
+      "startA": 488,
+      "fileB": "server/index.ts",
+      "startB": 430,
+      "lines": 7,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/contractHelpers.ts",
+      "startA": 1,
+      "fileB": "server/socketSessionHandlers.ts",
+      "startB": 5,
+      "lines": 17,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/coachDismissalHelpers.ts",
+      "startA": 354,
+      "fileB": "server/coachDismissalHelpers.ts",
+      "startB": 108,
+      "lines": 39,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/coachDismissalHelpers.ts",
+      "startA": 392,
+      "fileB": "server/coachDismissalHelpers.ts",
+      "startB": 146,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/coachDismissalHelpers.ts",
+      "startA": 488,
+      "fileB": "server/coachDismissalHelpers.ts",
+      "startB": 419,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/coachDismissalHelpers.ts",
+      "startA": 570,
+      "fileB": "server/coachDismissalHelpers.ts",
+      "startB": 108,
+      "lines": 17,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/auth.js",
+      "startA": 204,
+      "fileB": "server/auth.js",
+      "startB": 138,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/auth.js",
+      "startA": 213,
+      "fileB": "server/auth.js",
+      "startB": 147,
+      "lines": 15,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/auth.js",
+      "startA": 231,
+      "fileB": "server/auth.js",
+      "startB": 163,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/auth.js",
+      "startA": 254,
+      "fileB": "server/auth.js",
+      "startB": 138,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/auth.js",
+      "startA": 279,
+      "fileB": "server/auth.js",
+      "startB": 175,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/auth.js",
+      "startA": 369,
+      "fileB": "server/auth.js",
+      "startB": 148,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/auth.js",
+      "startA": 428,
+      "fileB": "server/auth.js",
+      "startB": 374,
+      "lines": 12,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/auth.js",
+      "startA": 564,
+      "fileB": "server/auth.js",
+      "startB": 420,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/auctionHelpers.ts",
+      "startA": 104,
+      "fileB": "server/auctionHelpers.ts",
+      "startB": 34,
+      "lines": 11,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/auctionHelpers.ts",
+      "startA": 227,
+      "fileB": "server/auctionHelpers.ts",
+      "startB": 180,
+      "lines": 9,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/auctionHelpers.ts",
+      "startA": 238,
+      "fileB": "server/auctionHelpers.ts",
+      "startB": 207,
+      "lines": 14,
+      "tokens": 0
+    },
+    {
+      "fileA": "server/adminRoutes.js",
+      "startA": 339,
+      "fileB": "server/adminRoutes.js",
+      "startB": 288,
+      "lines": 8,
+      "tokens": 0
+    }
+  ],
+  "duplicatedLines": 1272,
+  "totalLines": 35414,
+  "percentage": 3.59
+}

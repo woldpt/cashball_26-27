@@ -1,0 +1,643 @@
+  if (!me || !me.teamId) {
+      return (
+        <LandingPage
+          authPhase={authPhase}
+          setAuthPhase={setAuthPhase}
+          name={name}
+          setName={setName}
+          password={password}
+          setPassword={setPassword}
+          confirmPassword={confirmPassword}
+          setConfirmPassword={setConfirmPassword}
+          roomCode={roomCode}
+          setRoomCode={setRoomCode}
+          authSubmitting={authSubmitting}
+          authError={authError}
+          setAuthError={setAuthError}
+          isNewAccount={isNewAccount}
+          joining={joining}
+          disconnected={disconnected}
+          joinError={joinError}
+          setJoinError={setJoinError}
+          handleAuthenticate={handleAuthenticate}
+          handleJoin={handleJoin}
+          resetAuthFlow={resetAuthFlow}
+          selectJoinMode={selectJoinMode}
+          joinMode={joinMode}
+          handleLogout={handleLogout}
+          me={me}
+          availableSaves={availableSaves}
+          setAvailableSaves={setAvailableSaves}
+          backendUrl={backendUrl}
+        />
+      );
+    }
+
+  const teamInfo = teams.find((t) => t.id == me.teamId);
+  const myMatch = matchResults?.results?.find(
+    (r) => Number(r.homeTeamId) === Number(me.teamId) || Number(r.awayTeamId) === Number(me.teamId),
+  );
+  // Jogadores expulsos no meu jogo (para filtrar do painel de intervalo)
+  const mySideInHalftime = myMatch?.homeTeamId === me.teamId ? "home" : "away";
+  const redCardedHalftimeIds = new Set(
+    (myMatch?.events || [])
+      .filter((e) => e.type === "red" && e.team === mySideInHalftime)
+      .map((e) => e.playerId)
+      .filter(Boolean),
+  );
+  // Jogadores lesionados no meu jogo (para filtrar do painel de intervalo)
+  const injuredHalftimeIds = new Set(
+    (myMatch?.events || [])
+      .filter((e) => e.type === "injury" && e.team === mySideInHalftime)
+      .map((e) => e.playerId)
+      .filter(Boolean),
+  );
+  // Indica se o coach está na ronda actual da Taça
+  const myTeamInCup =
+    cupActiveTeamIds.length === 0 ||
+    cupActiveTeamIds.includes(me.teamId) ||
+    cupActiveTeamIds.includes(Number(me.teamId)) ||
+    cupActiveTeamIds.includes(String(me.teamId));
+  const annotatedSquad = mySquad
+    .map((p) => {
+      const isOut = activeTab === "live" && subbedOut.includes(p.id);
+      return {
+        ...p,
+        status: isOut ? "Out" : tactic.positions[p.id] || "Excluído",
+        isSubbedOut: isOut,
+        isUnavailable: !isPlayerAvailable(p, matchweekCount + 1),
+      };
+    })
+    .sort((a, b) => {
+      const posOrder = { GR: 1, DEF: 2, MED: 3, ATA: 4 };
+      const aPos = posOrder[a.position] || 5;
+      const bPos = posOrder[b.position] || 5;
+      if (aPos !== bPos) return aPos - bPos;
+      return a.name.localeCompare(b.name);
+    });
+
+ // ── MATCH PANEL ──────────────────────────────────────────────────────────
+  const panelMode = matchAction
+
+    ? "action"
+    : showHalftimePanel
+      ? "halftime"
+      : showMatchDetail
+        ? "detail"
+        : null;
+  const panelFixture = matchAction
+    ? (() => {
+        const fd = matchAction?.fixtureData;
+        if (fd) return fd;
+        const actionTeamId = matchAction?.teamId;
+        if (!actionTeamId) return null;
+        return matchResults?.results?.find(
+          (r) => Number(r.homeTeamId) === Number(actionTeamId) || Number(r.awayTeamId) === Number(actionTeamId),
+        ) || null;
+      })()
+    : showHalftimePanel
+    ? myMatch || null
+    : showMatchDetail
+    ? matchDetailFixture
+    : null;
+  const panelIsReady = !!players.find((p) => p.name === me?.name)?.ready;
+
+  const titulares = mySquad.filter((p) => tactic.positions[p.id] === "Titular");
+  const availablePositionCounts = getAvailablePositionCounts(
+    mySquad,
+    matchweekCount + 1,
+  );
+  const formationAvailabilityByValue = Object.fromEntries(
+    TACTIC_FORMATIONS.map(({ value }) => [
+      value,
+      isFormationAvailable(value, availablePositionCounts),
+    ]),
+  );
+  const isLineupComplete =
+    titulares.filter((p) => p.position === "GR").length === 1 &&
+    titulares.filter((p) => p.position !== "GR").length === 10;
+
+  const nextMatchOpponent = nextMatchSummary?.opponent || null;
+  const nextMatchReferee = nextMatchSummary?.referee || null;
+
+  // ── SEASON / YEAR HELPERS ────────────────────────────────────────────────
+  // seasonYear is set from the server's game.year field (received in gameState).
+  // Within-season jornada for the NEXT match to be played (1-14)
+  const currentJornada = (matchweekCount % 14) + 1;
+  // Within-season jornada for the LAST completed match (0 = none played yet)
+  const completedJornada =
+    matchweekCount > 0 ? ((matchweekCount - 1) % 14) + 1 : 0;
+
+  // ── FINANCIAL PROJECTIONS ─────────────────────────────────────────────────
+  // All values are estimates based on current season data (no historical log).
+  const totalWeeklyWage = mySquad.reduce((acc, p) => acc + (p.wage || 0), 0);
+  const capacityRevPerGame = (teamInfo?.stadium_capacity || 10000) * 15;
+  const loanAmount = teamInfo?.loan_amount || 0;
+  const loanInterestPerWeek = Math.round(loanAmount * 0.025);
+  const currentBudget = teamInfo?.budget || 0;
+
+  if (!cacheReady) {
+    return (
+      <div className="min-h-screen bg-surface text-on-surface flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <p className="text-3xl font-headline font-black text-primary tracking-tight">
+            CashBall <span className="text-on-surface">26/27</span>
+          </p>
+          <p className="text-xs text-on-surface-variant uppercase tracking-[0.3em] font-bold animate-pulse">
+            A carregar...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-dvh bg-surface text-on-surface font-body tracking-tight">
+      {renderError && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 99999 }}
+          className="flex flex-col items-center justify-center bg-black/95 gap-4 p-8 overflow-auto"
+        >
+          <p className="text-4xl">💥</p>
+          <h2 className="text-xl font-bold text-red-400">Erro de Renderização</h2>
+          <pre className="text-xs text-zinc-400 max-w-xl overflow-auto p-3 bg-zinc-900 rounded whitespace-pre-wrap">
+            {(() => {
+              try {
+                return renderError?.stack || String(renderError);
+              } catch (e) {
+                return `[ERROR DISPLAY] ${String(e)}`;
+              }
+            })()}
+          </pre>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 px-6 py-2 rounded-lg bg-red-500 text-white font-bold text-sm"
+          >
+            Recarregar
+          </button>
+        </div>
+      )}
+      {sessionDisplaced && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 9999 }}
+          className="flex flex-col items-center justify-center bg-black/90 gap-6 p-8"
+        >
+          <p className="text-5xl">📱</p>
+          <h2 className="text-xl font-bold text-white text-center">
+            Sessão aberta noutro dispositivo
+          </h2>
+          <p className="text-gray-400 text-sm text-center max-w-xs leading-relaxed">
+            A tua sessão foi assumida por outro dispositivo ou janela.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 px-6 py-2 rounded-lg bg-yellow-500 text-black font-bold text-sm"
+          >
+            Retomar aqui
+          </button>
+        </div>
+      )}
+      {/* Toast notifications */}
+      <div className="fixed top-16 right-4 z-100 flex flex-col gap-2 pointer-events-none">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className="bg-surface-container border border-outline-variant/60 text-on-surface text-sm font-bold px-5 py-3 rounded-md shadow-2xl toast-slide-in"
+          >
+            {t.msg}
+          </div>
+        ))}
+      </div>
+      <header
+        className="fixed top-0 left-0 right-0 h-14 z-160 flex items-center"
+        style={{
+          background: teamInfo?.color_primary || "#131313",
+          borderBottom: "1px solid #201f1f",
+        }}
+      >
+        <div className="relative flex items-center justify-between w-full px-4 lg:px-6">
+          {/* Left: brand + session info */}
+          <div className="flex items-center gap-3">
+            <h1
+              className="text-base font-headline font-black tracking-tighter uppercase"
+              style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+            >
+              CashBall <span style={{ opacity: 0.55 }}>26/27</span>
+            </h1>
+            <span
+              className="hidden md:block text-[10px] font-bold uppercase tracking-[0.2em]"
+              style={{
+                color: teamInfo?.color_secondary || "#e5e2e1",
+                opacity: 0.7,
+              }}
+            >
+              {seasonYear} · J{currentJornada} · {me.roomName || me.roomCode}
+            </span>
+          </div>
+
+          {/* Center: live clock (absolute so it's always centered) */}
+          {isMatchInProgress && (
+            <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none">
+              {isPlayingMatch ? (
+                <>
+                  <span
+                    className="text-xl font-headline font-black tabular-nums leading-none"
+                    style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+                  >
+                    {liveMinute}'
+                  </span>
+                  <span
+                    className="text-[8px] font-bold uppercase tracking-widest"
+                    style={{
+                      color: teamInfo?.color_secondary || "#e5e2e1",
+                      opacity: 0.55,
+                    }}
+                  >
+                    {liveMinute > 90
+                      ? "Prolongamento"
+                      : liveMinute > 45
+                        ? "2ª Parte"
+                        : "1ª Parte"}
+                  </span>
+                </>
+              ) : liveMinute === 45 && !isCupMatch ? (
+                <span
+                  className="text-xs font-black uppercase tracking-widest"
+                  style={{
+                    color: teamInfo?.color_secondary || "#e5e2e1",
+                    opacity: 0.7,
+                  }}
+                >
+                  Intervalo
+                </span>
+              ) : isCupMatch ? (
+                <span
+                  className="text-[10px] font-black uppercase tracking-widest"
+                  style={{
+                    color: teamInfo?.color_secondary || "#e5e2e1",
+                    opacity: 0.7,
+                  }}
+                >
+                  🏆 {cupMatchRoundName}
+                  {cupPreMatch
+                    ? " · Pré-Jogo"
+                    : cupExtraTimeBadge
+                      ? " · Prol."
+                      : ""}
+                </span>
+              ) : null}
+            </div>
+          )}
+
+          {/* Right: user menu + chat */}
+          <div className="flex items-center gap-1">
+            {/* RoomHub button — unified: Coaches + Chat */}
+            <button
+              onClick={() => setRoomHubOpen((v) => !v)}
+              title="Sala e Chat"
+              className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-white/10 transition-colors"
+            >
+              <span
+                className="material-symbols-outlined text-[20px] leading-none"
+                style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+              >
+                chat
+              </span>
+              {(unreadRoom + unreadGlobal > 0 || players.length > 0) && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-black leading-none flex items-center justify-center px-1">
+                  {unreadRoom + unreadGlobal > 9
+                    ? "9+"
+                    : unreadRoom + unreadGlobal || players.length}
+                </span>
+              )}
+            </button>
+
+            {/* User button — opens settings page; disabled during live match */}
+            <button
+              onClick={() => {
+                if (isPlayingMatch) return;
+                setActiveTab("user_settings");
+                window.scrollTo(0, 0);
+              }}
+              disabled={isPlayingMatch}
+              title={isPlayingMatch ? "Definições bloqueadas durante o jogo" : "Definições do Utilizador"}
+              className={`flex items-center gap-2 transition-colors rounded-lg px-2 py-1 ${
+                isPlayingMatch
+                  ? "opacity-40 cursor-not-allowed"
+                  : "hover:bg-white/10"
+              }`}
+            >
+              <PlayerAvatar seed={`${me.name}|${avatarSeed}`} size="sm" />
+              <div className="hidden lg:flex flex-col items-start">
+                <span
+                  className="text-sm font-bold leading-tight"
+                  style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+                >
+                  {me.name}
+                </span>
+                <span
+                  className="text-xs leading-tight opacity-70"
+                  style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+                >
+                  {teamInfo?.name}
+                </span>
+              </div>
+              <span
+                className="material-symbols-outlined text-[16px] leading-none opacity-60"
+                style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+              >
+                expand_more
+              </span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
+      <nav
+        className={`hidden lg:flex fixed left-0 top-14 bottom-0 bg-surface-container-low flex-col z-10 transition-all duration-200 ${sidebarCollapsed ? "w-14" : "w-64"}`}
+      >
+        {/* Toggle button */}
+        <button
+          onClick={() => {
+            const next = !sidebarCollapsed;
+            setSidebarCollapsed(next);
+            sidebarUserPrefRef.current = next;
+            try {
+              localStorage.setItem("sidebarCollapsed", String(next));
+            } catch {
+              /* ignore */
+            }
+          }}
+          title={sidebarCollapsed ? "Expandir sidebar" : "Recolher sidebar"}
+          className="shrink-0 flex items-center justify-center h-10 border-b border-outline-variant/20 text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-colors"
+        >
+          <span className="material-symbols-outlined text-[18px] leading-none">
+            {sidebarCollapsed ? "chevron_right" : "chevron_left"}
+          </span>
+        </button>
+        <div className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: { transition: { staggerChildren: 0.055 } },
+            }}
+          >
+            {[
+              { key: "club", label: "Clube", icon: "groups_3" },
+              { key: "finances", label: "Finanças", icon: "payments" },
+              { key: "players", label: "Plantel", icon: "group" },
+              { key: "training", label: "Treino", icon: "fitness_center" },
+              {
+                key: "calendario",
+                label: "Calendário",
+                icon: "calendar_month",
+              },
+              {
+                key: "standings",
+                label: "Classificações",
+                icon: "leaderboard",
+              },
+              {
+                key: "bracket",
+                label: "Taça",
+                icon: "emoji_events",
+              },
+              { key: "market", label: "Mercado", icon: "swap_horiz" },
+              { key: "leiloes", label: "Leilões", icon: "gavel" },
+            ].map(({ key, label, icon }) => (
+              <motion.button
+                key={key}
+                variants={{
+                  hidden: { opacity: 0, x: -12 },
+                  visible: {
+                    opacity: 1,
+                    x: 0,
+                    transition: { duration: 0.2 },
+                  },
+                }}
+                onClick={() => {
+                  if (isMatchInProgress) return;
+                  setActiveTab(key);
+                  if (key === "bracket") socket.emit("requestCupBracket");
+                  window.scrollTo(0, 0);
+                }}
+                title={sidebarCollapsed ? label : undefined}
+                className={`w-full flex items-center gap-3 px-2 py-3 text-sm font-bold transition-all text-left ${sidebarCollapsed ? "justify-center" : ""} ${
+                  isMatchInProgress
+                    ? "text-on-surface-variant/25 cursor-not-allowed"
+                    : activeTab === key
+                      ? "bg-primary-container/20 text-primary border-l-4 border-primary"
+                      : "text-on-surface-variant hover:bg-surface-bright hover:text-on-surface"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[20px] shrink-0 leading-none">
+                  {icon}
+                </span>
+                {!sidebarCollapsed && <span>{label}</span>}
+              </motion.button>
+            ))}
+          </motion.div>
+          <div className="pt-2">
+            <button
+              onClick={() => {
+                if (isMatchInProgress) return;
+                setActiveTab("tactic");
+                window.scrollTo(0, 0);
+                if (socket && teamInfo?.id && tactic) {
+                  socket.emit("requestTacticFamiliarity", teamInfo.id);
+                  socket.emit("requestAllTacticFamiliarity");
+                }
+              }}
+              title={
+                sidebarCollapsed
+                  ? isMatchInProgress
+                    ? "AO VIVO"
+                    : "JOGAR"
+                  : undefined
+              }
+              className={`w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest transition-all rounded-sm ${sidebarCollapsed ? "justify-center" : ""} ${
+                isMatchInProgress
+                  ? "bg-red-500/15 text-red-400 border border-red-500/30 cursor-not-allowed"
+                  : activeTab === "tactic"
+                    ? "bg-primary text-on-primary shadow-lg"
+                    : "bg-primary/10 text-primary border border-primary/40 hover:bg-primary/20"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[20px] shrink-0 leading-none">
+                {isMatchInProgress ? "sensors" : "strategy"}
+              </span>
+              {!sidebarCollapsed && (
+                <>
+                  <span className="flex-1 text-left">
+                    {isMatchInProgress ? "AO VIVO" : "JOGAR"}
+                  </span>
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span
+                      className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isMatchInProgress ? "bg-red-500" : activeTab === "tactic" ? "bg-on-primary/40" : "bg-primary"}`}
+                    />
+                    <span
+                      className={`relative inline-flex rounded-full h-2 w-2 ${isMatchInProgress ? "bg-red-500" : activeTab === "tactic" ? "bg-on-primary/60" : "bg-primary"}`}
+                    />
+                  </span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* ── MOBILE BOTTOM NAV ────────────────────────────────────────────── */}
+      {/* ── Mobile bottom nav (< lg) ─────────────────────────────── */}
+      {!isMatchInProgress && (
+        <>
+          {/* Overlay to close flyup when tapping outside */}
+          {mobileSubMenu && (
+            <div
+              className="lg:hidden fixed inset-0 z-38"
+              onClick={() => setMobileSubMenu(null)}
+            />
+          )}
+
+          {/* Flyup sub-menu panel */}
+          {mobileSubMenu && (
+            <div className="lg:hidden fixed bottom-24 left-0 right-0 z-39 px-3">
+              <div className="bg-surface-container-high border border-outline-variant/30 rounded-xl shadow-2xl overflow-hidden">
+                {mobileSubMenu === "gestao" && (
+                  <div className="flex">
+                    {[
+                      { key: "finances", label: "Finanças", icon: "payments" },
+                      { key: "players", label: "Plantel", icon: "group" },
+                      {
+                        key: "training",
+                        label: "Treino",
+                        icon: "fitness_center",
+                      },
+                    ].map(({ key, label, icon }) => (
+                      <button
+                        key={key}
+                        onClick={() => {
+                          setActiveTab(key);
+                          setMobileSubMenu(null);
+                          window.scrollTo(0, 0);
+                        }}
+                        className={`flex-1 flex flex-col items-center justify-center gap-1 py-4 transition-colors ${
+                          activeTab === key
+                            ? "text-primary bg-primary/10"
+                            : "text-on-surface-variant hover:bg-surface-bright"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[24px] leading-none">
+                          {icon}
+                        </span>
+                        <span className="text-[10px] font-black uppercase tracking-wider">
+                          {label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {mobileSubMenu === "transferencias" && (
+                  <div className="flex">
+                    {[
+                      { key: "market", label: "Mercado", icon: "swap_horiz" },
+                      { key: "leiloes", label: "Leilões", icon: "gavel" },
+                    ].map(({ key, label, icon }) => (
+                      <button
+                        key={key}
+                        onClick={() => {
+                          setActiveTab(key);
+                          setMobileSubMenu(null);
+                          window.scrollTo(0, 0);
+                        }}
+                        className={`flex-1 flex flex-col items-center justify-center gap-1 py-4 transition-colors ${
+                          activeTab === key
+                            ? "text-primary bg-primary/10"
+                            : "text-on-surface-variant hover:bg-surface-bright"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[24px] leading-none">
+                          {icon}
+                        </span>
+                        <span className="text-[10px] font-black uppercase tracking-wider">
+                          {label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {mobileSubMenu === "competicao" && (
+                  <div className="flex">
+                    {[
+                      {
+                        key: "standings",
+                        label: "Classif.",
+                        icon: "leaderboard",
+                      },
+                      {
+                        key: "calendario",
+                        label: "Calendário",
+                        icon: "calendar_month",
+                      },
+                      {
+                        key: "bracket",
+                        label: "Taça",
+                        icon: "emoji_events",
+                      },
+                    ].map(({ key, label, icon }) => (
+                      <button
+                        key={key}
+                        onClick={() => {
+                          setActiveTab(key);
+                          if (key === "bracket")
+                            socket.emit("requestCupBracket");
+                          setMobileSubMenu(null);
+                          window.scrollTo(0, 0);
+                        }}
+                        className={`flex-1 flex flex-col items-center justify-center gap-1 py-4 transition-colors ${
+                          activeTab === key
+                            ? "text-primary bg-primary/10"
+                            : "text-on-surface-variant hover:bg-surface-bright"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[24px] leading-none">
+                          {icon}
+                        </span>
+                        <span className="text-[10px] font-black uppercase tracking-wider">
+                          {label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Main nav bar — 5 buttons */}
+          <nav className="lg:hidden fixed bottom-8 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex">
+            {/* Clube */}
+            {(() => {
+              const isActive = activeTab === "club";
+              return (
+                <motion.button
+                  whileTap={{ scale: 0.88 }}
+                  onClick={() => {
+                    setActiveTab("club");
+                    setMobileSubMenu(null);
+                    window.scrollTo(0, 0);
+                  }}
+                  className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors relative ${
+                    isActive ? "text-primary" : "text-on-surface-variant"
+                  }`}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="mobileTabIndicator"
+                      className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-b-full"
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 35,

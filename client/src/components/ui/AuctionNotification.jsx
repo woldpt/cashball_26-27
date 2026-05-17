@@ -59,7 +59,6 @@ export function AuctionNotification({
     newOnes.forEach((a) => seenRef.current.add(a.playerId));
     queueRef.current.push(...newOnes);
     showNext();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeAuctions, currentPage]);
 
   if (!currentToast || currentPage === "leiloes") return null;

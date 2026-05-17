@@ -1,0 +1,4 @@
+{
+  "signature": "mcp-proxy.js::Unresolved from this turn — mcp-proxy.js:\n🔴 STOP — 1 issue(s) must be fixed:\n  L84: 'id' is declared but its value is never read.\n    💡 Fix: Remove the unused declaration or rename with '_' prefix if intentionally unused.",
+  "sessionId": "lens-mp6llvlp-caf0d92c"
+}

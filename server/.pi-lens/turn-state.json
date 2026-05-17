@@ -1,0 +1,28 @@
+{
+  "files": {
+    "auth.js": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 605
+        }
+      ],
+      "importsChanged": false,
+      "lastEdit": "2026-05-14T12:44:22.149Z"
+    },
+    "index.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 976
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-14T12:44:17.046Z"
+    }
+  },
+  "turnCycles": 0,
+  "maxCycles": 3,
+  "lastUpdated": "2026-05-14T12:44:22.149Z",
+  "sessionId": "lens-mp5cawnn-aa471df5"
+}

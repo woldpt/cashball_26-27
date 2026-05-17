@@ -1,0 +1,1028 @@
+{
+  "success": true,
+  "issues": [
+    {
+      "type": "file",
+      "name": "client/eslint.config.js",
+      "file": "client/eslint.config.js"
+    },
+    {
+      "type": "file",
+      "name": "client/vite.config.js",
+      "file": "client/vite.config.js"
+    },
+    {
+      "type": "file",
+      "name": "server/adminRoutes.js",
+      "file": "server/adminRoutes.js"
+    },
+    {
+      "type": "file",
+      "name": "server/auctionHelpers.ts",
+      "file": "server/auctionHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/auth.js",
+      "file": "server/auth.js"
+    },
+    {
+      "type": "file",
+      "name": "server/coachDismissalHelpers.ts",
+      "file": "server/coachDismissalHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/contractHelpers.ts",
+      "file": "server/contractHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/coreHelpers.ts",
+      "file": "server/coreHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/cupFlowHelpers.ts",
+      "file": "server/cupFlowHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/cupHelpers.ts",
+      "file": "server/cupHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/gameConstants.ts",
+      "file": "server/gameConstants.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/gameManager.ts",
+      "file": "server/gameManager.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/index.ts",
+      "file": "server/index.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/logBootstrap.js",
+      "file": "server/logBootstrap.js"
+    },
+    {
+      "type": "file",
+      "name": "server/matchFlowHelpers.ts",
+      "file": "server/matchFlowHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/matchSummaryHelpers.ts",
+      "file": "server/matchSummaryHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/npcTransferHelpers.ts",
+      "file": "server/npcTransferHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/presenceHelpers.ts",
+      "file": "server/presenceHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/socketChatHandlers.ts",
+      "file": "server/socketChatHandlers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/socketCupHandlers.ts",
+      "file": "server/socketCupHandlers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/socketFinanceHandlers.ts",
+      "file": "server/socketFinanceHandlers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/socketGameplayHandlers.ts",
+      "file": "server/socketGameplayHandlers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/socketSessionHandlers.ts",
+      "file": "server/socketSessionHandlers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/socketTrainingHandlers.ts",
+      "file": "server/socketTrainingHandlers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/socketTransferHandlers.ts",
+      "file": "server/socketTransferHandlers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/trainingHelpers.ts",
+      "file": "server/trainingHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/types.ts",
+      "file": "server/types.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/weeklyFlowHelpers.ts",
+      "file": "server/weeklyFlowHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "client/scripts/jsDocTypeChecker.js",
+      "file": "client/scripts/jsDocTypeChecker.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/App.jsx",
+      "file": "client/src/App.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/GameLayout.jsx",
+      "file": "client/src/GameLayout.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/countryFlags.js",
+      "file": "client/src/countryFlags.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/main.jsx",
+      "file": "client/src/main.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/socket.js",
+      "file": "client/src/socket.js"
+    },
+    {
+      "type": "file",
+      "name": "server/db/database.js",
+      "file": "server/db/database.js"
+    },
+    {
+      "type": "file",
+      "name": "server/db/globalDatabase.ts",
+      "file": "server/db/globalDatabase.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/db/init.js",
+      "file": "server/db/init.js"
+    },
+    {
+      "type": "file",
+      "name": "server/db/seed.js",
+      "file": "server/db/seed.js"
+    },
+    {
+      "type": "file",
+      "name": "server/game/commentary.ts",
+      "file": "server/game/commentary.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/game/engine.ts",
+      "file": "server/game/engine.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/game/matchCalculations.ts",
+      "file": "server/game/matchCalculations.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/game/playerUtils.ts",
+      "file": "server/game/playerUtils.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/game/tacticFamiliarity.ts",
+      "file": "server/game/tacticFamiliarity.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/scripts/gameStateAudit.ts",
+      "file": "server/scripts/gameStateAudit.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/scripts/socketioContractValidator.ts",
+      "file": "server/scripts/socketioContractValidator.ts"
+    },
+    {
+      "type": "file",
+      "name": "client/src/constants/index.js",
+      "file": "client/src/constants/index.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/contexts/GameContext.jsx",
+      "file": "client/src/contexts/GameContext.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/contexts/TacticsContext.jsx",
+      "file": "client/src/contexts/TacticsContext.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/hooks/useSocketListeners.js",
+      "file": "client/src/hooks/useSocketListeners.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/pages/AuctionsPage.jsx",
+      "file": "client/src/pages/AuctionsPage.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/pages/UserSettingsPage.jsx",
+      "file": "client/src/pages/UserSettingsPage.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/utils/audio.js",
+      "file": "client/src/utils/audio.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/utils/cacheVersion.js",
+      "file": "client/src/utils/cacheVersion.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/utils/fixtures.js",
+      "file": "client/src/utils/fixtures.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/utils/formatters.js",
+      "file": "client/src/utils/formatters.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/utils/localStorage.js",
+      "file": "client/src/utils/localStorage.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/utils/playerHelpers.js",
+      "file": "client/src/utils/playerHelpers.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/utils/teamHelpers.js",
+      "file": "client/src/utils/teamHelpers.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/BracketTab.jsx",
+      "file": "client/src/views/BracketTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/CalendarioTab.jsx",
+      "file": "client/src/views/CalendarioTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/ClubTab.jsx",
+      "file": "client/src/views/ClubTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/CupTab.jsx",
+      "file": "client/src/views/CupTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/FinancesTab.jsx",
+      "file": "client/src/views/FinancesTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/MarketTab.jsx",
+      "file": "client/src/views/MarketTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/PlayersTab.jsx",
+      "file": "client/src/views/PlayersTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/StandingsTab.jsx",
+      "file": "client/src/views/StandingsTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/TacticsView.jsx",
+      "file": "client/src/views/TacticsView.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/TeamSquadView.jsx",
+      "file": "client/src/views/TeamSquadView.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/TrainingTab.jsx",
+      "file": "client/src/views/TrainingTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/chat/RoomHub.jsx",
+      "file": "client/src/components/chat/RoomHub.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/auth/LandingPage.jsx",
+      "file": "client/src/components/auth/LandingPage.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/match/MatchPage.jsx",
+      "file": "client/src/components/match/MatchPage.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/match/MatchTabs.jsx",
+      "file": "client/src/components/match/MatchTabs.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/CupDrawPopup.jsx",
+      "file": "client/src/components/modals/CupDrawPopup.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/DismissalModal.jsx",
+      "file": "client/src/components/modals/DismissalModal.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/JobOfferModal.jsx",
+      "file": "client/src/components/modals/JobOfferModal.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/MatchPanel.jsx",
+      "file": "client/src/components/modals/MatchPanel.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/PenaltyShootoutPopup.jsx",
+      "file": "client/src/components/modals/PenaltyShootoutPopup.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/PenaltySuspensePopup.jsx",
+      "file": "client/src/components/modals/PenaltySuspensePopup.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/PlayerHistoryModal.jsx",
+      "file": "client/src/components/modals/PlayerHistoryModal.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/RefereePopup.jsx",
+      "file": "client/src/components/modals/RefereePopup.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/SeasonEndModal.jsx",
+      "file": "client/src/components/modals/SeasonEndModal.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/SkillLineChart.jsx",
+      "file": "client/src/components/modals/SkillLineChart.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/TeamSquadModal.jsx",
+      "file": "client/src/components/modals/TeamSquadModal.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/TransferProposalModal.jsx",
+      "file": "client/src/components/modals/TransferProposalModal.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/WelcomeModal.jsx",
+      "file": "client/src/components/modals/WelcomeModal.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/positionConstants.js",
+      "file": "client/src/components/modals/positionConstants.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/AggBadge.jsx",
+      "file": "client/src/components/shared/AggBadge.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/GameDialog.jsx",
+      "file": "client/src/components/shared/GameDialog.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/PlayerAvatar.jsx",
+      "file": "client/src/components/shared/PlayerAvatar.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/PlayerLink.jsx",
+      "file": "client/src/components/shared/PlayerLink.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/ui/AuctionNotification.jsx",
+      "file": "client/src/components/ui/AuctionNotification.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/ui/CupBracketPage.jsx",
+      "file": "client/src/components/ui/CupBracketPage.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/ui/LeagueStandings.jsx",
+      "file": "client/src/components/ui/LeagueStandings.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/ui/NewsTicker.jsx",
+      "file": "client/src/components/ui/NewsTicker.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/ui/PageTransition.jsx",
+      "file": "client/src/components/ui/PageTransition.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/ui/TrainingPage.jsx",
+      "file": "client/src/components/ui/TrainingPage.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/ui/TransferHub.jsx",
+      "file": "client/src/components/ui/TransferHub.jsx"
+    },
+    {
+      "type": "dependency",
+      "name": "@juicesharp/rpiv-btw",
+      "file": "package.json",
+      "line": 3
+    },
+    {
+      "type": "dependency",
+      "name": "@modelcontextprotocol/sdk",
+      "file": "package.json",
+      "line": 4
+    },
+    {
+      "type": "dependency",
+      "name": "pi-lens",
+      "file": "package.json",
+      "line": 5
+    }
+  ],
+  "unusedExports": [],
+  "unusedFiles": [
+    {
+      "type": "file",
+      "name": "client/eslint.config.js",
+      "file": "client/eslint.config.js"
+    },
+    {
+      "type": "file",
+      "name": "client/vite.config.js",
+      "file": "client/vite.config.js"
+    },
+    {
+      "type": "file",
+      "name": "server/adminRoutes.js",
+      "file": "server/adminRoutes.js"
+    },
+    {
+      "type": "file",
+      "name": "server/auctionHelpers.ts",
+      "file": "server/auctionHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/auth.js",
+      "file": "server/auth.js"
+    },
+    {
+      "type": "file",
+      "name": "server/coachDismissalHelpers.ts",
+      "file": "server/coachDismissalHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/contractHelpers.ts",
+      "file": "server/contractHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/coreHelpers.ts",
+      "file": "server/coreHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/cupFlowHelpers.ts",
+      "file": "server/cupFlowHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/cupHelpers.ts",
+      "file": "server/cupHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/gameConstants.ts",
+      "file": "server/gameConstants.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/gameManager.ts",
+      "file": "server/gameManager.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/index.ts",
+      "file": "server/index.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/logBootstrap.js",
+      "file": "server/logBootstrap.js"
+    },
+    {
+      "type": "file",
+      "name": "server/matchFlowHelpers.ts",
+      "file": "server/matchFlowHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/matchSummaryHelpers.ts",
+      "file": "server/matchSummaryHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/npcTransferHelpers.ts",
+      "file": "server/npcTransferHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/presenceHelpers.ts",
+      "file": "server/presenceHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/socketChatHandlers.ts",
+      "file": "server/socketChatHandlers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/socketCupHandlers.ts",
+      "file": "server/socketCupHandlers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/socketFinanceHandlers.ts",
+      "file": "server/socketFinanceHandlers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/socketGameplayHandlers.ts",
+      "file": "server/socketGameplayHandlers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/socketSessionHandlers.ts",
+      "file": "server/socketSessionHandlers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/socketTrainingHandlers.ts",
+      "file": "server/socketTrainingHandlers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/socketTransferHandlers.ts",
+      "file": "server/socketTransferHandlers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/trainingHelpers.ts",
+      "file": "server/trainingHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/types.ts",
+      "file": "server/types.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/weeklyFlowHelpers.ts",
+      "file": "server/weeklyFlowHelpers.ts"
+    },
+    {
+      "type": "file",
+      "name": "client/scripts/jsDocTypeChecker.js",
+      "file": "client/scripts/jsDocTypeChecker.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/App.jsx",
+      "file": "client/src/App.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/GameLayout.jsx",
+      "file": "client/src/GameLayout.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/countryFlags.js",
+      "file": "client/src/countryFlags.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/main.jsx",
+      "file": "client/src/main.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/socket.js",
+      "file": "client/src/socket.js"
+    },
+    {
+      "type": "file",
+      "name": "server/db/database.js",
+      "file": "server/db/database.js"
+    },
+    {
+      "type": "file",
+      "name": "server/db/globalDatabase.ts",
+      "file": "server/db/globalDatabase.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/db/init.js",
+      "file": "server/db/init.js"
+    },
+    {
+      "type": "file",
+      "name": "server/db/seed.js",
+      "file": "server/db/seed.js"
+    },
+    {
+      "type": "file",
+      "name": "server/game/commentary.ts",
+      "file": "server/game/commentary.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/game/engine.ts",
+      "file": "server/game/engine.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/game/matchCalculations.ts",
+      "file": "server/game/matchCalculations.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/game/playerUtils.ts",
+      "file": "server/game/playerUtils.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/game/tacticFamiliarity.ts",
+      "file": "server/game/tacticFamiliarity.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/scripts/gameStateAudit.ts",
+      "file": "server/scripts/gameStateAudit.ts"
+    },
+    {
+      "type": "file",
+      "name": "server/scripts/socketioContractValidator.ts",
+      "file": "server/scripts/socketioContractValidator.ts"
+    },
+    {
+      "type": "file",
+      "name": "client/src/constants/index.js",
+      "file": "client/src/constants/index.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/contexts/GameContext.jsx",
+      "file": "client/src/contexts/GameContext.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/contexts/TacticsContext.jsx",
+      "file": "client/src/contexts/TacticsContext.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/hooks/useSocketListeners.js",
+      "file": "client/src/hooks/useSocketListeners.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/pages/AuctionsPage.jsx",
+      "file": "client/src/pages/AuctionsPage.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/pages/UserSettingsPage.jsx",
+      "file": "client/src/pages/UserSettingsPage.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/utils/audio.js",
+      "file": "client/src/utils/audio.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/utils/cacheVersion.js",
+      "file": "client/src/utils/cacheVersion.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/utils/fixtures.js",
+      "file": "client/src/utils/fixtures.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/utils/formatters.js",
+      "file": "client/src/utils/formatters.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/utils/localStorage.js",
+      "file": "client/src/utils/localStorage.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/utils/playerHelpers.js",
+      "file": "client/src/utils/playerHelpers.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/utils/teamHelpers.js",
+      "file": "client/src/utils/teamHelpers.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/BracketTab.jsx",
+      "file": "client/src/views/BracketTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/CalendarioTab.jsx",
+      "file": "client/src/views/CalendarioTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/ClubTab.jsx",
+      "file": "client/src/views/ClubTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/CupTab.jsx",
+      "file": "client/src/views/CupTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/FinancesTab.jsx",
+      "file": "client/src/views/FinancesTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/MarketTab.jsx",
+      "file": "client/src/views/MarketTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/PlayersTab.jsx",
+      "file": "client/src/views/PlayersTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/StandingsTab.jsx",
+      "file": "client/src/views/StandingsTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/TacticsView.jsx",
+      "file": "client/src/views/TacticsView.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/TeamSquadView.jsx",
+      "file": "client/src/views/TeamSquadView.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/views/TrainingTab.jsx",
+      "file": "client/src/views/TrainingTab.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/chat/RoomHub.jsx",
+      "file": "client/src/components/chat/RoomHub.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/auth/LandingPage.jsx",
+      "file": "client/src/components/auth/LandingPage.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/match/MatchPage.jsx",
+      "file": "client/src/components/match/MatchPage.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/match/MatchTabs.jsx",
+      "file": "client/src/components/match/MatchTabs.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/CupDrawPopup.jsx",
+      "file": "client/src/components/modals/CupDrawPopup.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/DismissalModal.jsx",
+      "file": "client/src/components/modals/DismissalModal.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/JobOfferModal.jsx",
+      "file": "client/src/components/modals/JobOfferModal.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/MatchPanel.jsx",
+      "file": "client/src/components/modals/MatchPanel.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/PenaltyShootoutPopup.jsx",
+      "file": "client/src/components/modals/PenaltyShootoutPopup.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/PenaltySuspensePopup.jsx",
+      "file": "client/src/components/modals/PenaltySuspensePopup.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/PlayerHistoryModal.jsx",
+      "file": "client/src/components/modals/PlayerHistoryModal.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/RefereePopup.jsx",
+      "file": "client/src/components/modals/RefereePopup.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/SeasonEndModal.jsx",
+      "file": "client/src/components/modals/SeasonEndModal.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/SkillLineChart.jsx",
+      "file": "client/src/components/modals/SkillLineChart.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/TeamSquadModal.jsx",
+      "file": "client/src/components/modals/TeamSquadModal.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/TransferProposalModal.jsx",
+      "file": "client/src/components/modals/TransferProposalModal.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/WelcomeModal.jsx",
+      "file": "client/src/components/modals/WelcomeModal.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/modals/positionConstants.js",
+      "file": "client/src/components/modals/positionConstants.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/AggBadge.jsx",
+      "file": "client/src/components/shared/AggBadge.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/GameDialog.jsx",
+      "file": "client/src/components/shared/GameDialog.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/PlayerAvatar.jsx",
+      "file": "client/src/components/shared/PlayerAvatar.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/PlayerLink.jsx",
+      "file": "client/src/components/shared/PlayerLink.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/ui/AuctionNotification.jsx",
+      "file": "client/src/components/ui/AuctionNotification.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/ui/CupBracketPage.jsx",
+      "file": "client/src/components/ui/CupBracketPage.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/ui/LeagueStandings.jsx",
+      "file": "client/src/components/ui/LeagueStandings.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/ui/NewsTicker.jsx",
+      "file": "client/src/components/ui/NewsTicker.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/ui/PageTransition.jsx",
+      "file": "client/src/components/ui/PageTransition.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/ui/TrainingPage.jsx",
+      "file": "client/src/components/ui/TrainingPage.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/ui/TransferHub.jsx",
+      "file": "client/src/components/ui/TransferHub.jsx"
+    }
+  ],
+  "unusedDeps": [
+    {
+      "type": "dependency",
+      "name": "@juicesharp/rpiv-btw",
+      "file": "package.json",
+      "line": 3
+    },
+    {
+      "type": "dependency",
+      "name": "@modelcontextprotocol/sdk",
+      "file": "package.json",
+      "line": 4
+    },
+    {
+      "type": "dependency",
+      "name": "pi-lens",
+      "file": "package.json",
+      "line": 5
+    }
+  ],
+  "unlistedDeps": [],
+  "summary": "Found 101 issues"
+}

@@ -1,0 +1,25 @@
+{
+  "items": [
+    {
+      "type": "BUG",
+      "message": "-11 FIX: matchResults clears showHalftimePanel (2nd half replay)",
+      "file": "client/src/hooks/useSocketListeners.js",
+      "line": 1143,
+      "column": 7
+    },
+    {
+      "type": "BUG",
+      "message": "-15 FIX: Track socket connection state",
+      "file": "client/src/hooks/useSocketListeners.js",
+      "line": 1252,
+      "column": 7
+    },
+    {
+      "type": "BUG",
+      "message": "-07 FIX: All socket listeners extracted to useSocketListeners hook.",
+      "file": "client/src/App.jsx",
+      "line": 368,
+      "column": 4
+    }
+  ]
+}

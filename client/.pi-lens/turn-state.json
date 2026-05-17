@@ -1,0 +1,98 @@
+{
+  "files": {
+    "src/pages/UserSettingsPage.jsx": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 500
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-14T12:44:17.107Z"
+    },
+    "src/components/auth/LandingPage.jsx": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 738
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T00:03:19.687Z"
+    },
+    "src/App.jsx": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 5299
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T14:06:52.106Z"
+    },
+    "src/constants/index.js": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 128
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T12:42:34.894Z"
+    },
+    "src/contexts/TacticsContext.jsx": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 468
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T14:06:51.967Z"
+    },
+    "src/views/TacticsView.jsx": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 1231
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T12:42:35.146Z"
+    },
+    "src/components/match/MatchPage.jsx": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 278
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T12:49:38.513Z"
+    },
+    "src/contexts/GameContext.jsx": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 1207
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T14:33:01.513Z"
+    },
+    "src/GameLayout.jsx": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 2451
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-17T14:25:29.614Z"
+    }
+  },
+  "turnCycles": 0,
+  "maxCycles": 3,
+  "lastUpdated": "2026-05-17T14:33:01.513Z",
+  "sessionId": "lens-mp9tunyx-a43c5154"
+}

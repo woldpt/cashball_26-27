@@ -33,7 +33,11 @@
   - **PROIBIDO** usar `clipPath` em `PlayerAvatar.jsx`. Use apenas caminhos geométricos puros.
 - **Estado do Jogo:**
   - A fonte da verdade é `game.calendarIndex`. Nunca use `matchweek` para lógica de progresso.
-  - Não tente persistir `game.lockedCoaches` na base de dados.
+- **Contextos do Frontend:**
+  - **GameContext:** Única fonte de verdade para o estado do jogo (players, finances, match phase, etc.).
+  - **TacticsContext:** Gerencia o estado da UI de táticas (drag-and-drop, selection). Consome o `GameContext`.
+  - **Auth State:** Gerenciado no `App.jsx` e passado para o `GameLayout` via props.
+- **Não tente persistir `game.lockedCoaches` na base de dados.**
 
 ## 🔍 Auditing & Validation
 

@@ -116,7 +116,7 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
             ))}
 
             {/* X-axis labels — show actual matchweek numbers */}
-            {cleanHistory.map((p, i) => (
+            {cleanHistory.map((p) => (
               <text
                 key={p.matchweek}
                 x={getX(p.matchweek)}

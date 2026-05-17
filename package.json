@@ -1,0 +1,26 @@
+{
+  "dependencies": {
+    "@juicesharp/rpiv-btw": "^1.5.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "pi-lens": "^3.8.43"
+  },
+  "name": "cashball",
+  "version": "1.0.0",
+  "description": "Jogo de gestão de futebol baseado em texto/dados, inspirado no **Elifoot 98**, a correr no browser com suporte a **multiplayer assíncrono**. 1 a 8 treinadores humanos submetem tácticas quando podem; a simulação corre em directo quando todos confirmam \"Pronto\". Sem horários fixos — o ritmo é ditado pelos jogadores.",
+  "main": "mcp-proxy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/woldpt/cashball_26-27.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/woldpt/cashball_26-27/issues"
+  },
+  "homepage": "https://github.com/woldpt/cashball_26-27#readme"
+}
