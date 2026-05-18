@@ -64,11 +64,11 @@
       "modifiedRanges": [
         {
           "start": 1,
-          "end": 278
+          "end": 466
         }
       ],
       "importsChanged": true,
-      "lastEdit": "2026-05-17T12:49:38.513Z"
+      "lastEdit": "2026-05-18T13:01:41.976Z"
     },
     "src/contexts/GameContext.jsx": {
       "modifiedRanges": [
@@ -123,6 +123,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-18T12:42:15.980Z",
-  "sessionId": "lens-mpb6wwxg-53a4d3a6"
+  "lastUpdated": "2026-05-18T13:01:41.976Z",
+  "sessionId": "lens-mpb7cz60-fb8a12f7"
 }

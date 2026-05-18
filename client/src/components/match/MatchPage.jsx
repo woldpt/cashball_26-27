@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
 	TabJogo,
 	TabLineup,
@@ -6,6 +6,8 @@ import {
 	TabIntervencao,
 } from "./MatchTabs.jsx";
 import { useTactics } from "../../contexts/TacticsContext.jsx";
+import { generateLeagueFixtures } from "../../utils/fixtures.js";
+import { DIVISION_NAMES } from "../../constants/index.js";
 
 /**
  * Painel flutuante de jogo (ao vivo, intervalo, acção, detalhe).
@@ -20,7 +22,7 @@ export function MatchPage({
 	teams,
 	isCupMatch,
 	cupMatchRoundName,
-	// currentJornada reserved for future use
+	currentJornada,
 	isPlayingMatch,
 	onReady,
 	isReady,
@@ -62,6 +64,69 @@ export function MatchPage({
 	const effectiveSelectIn = matchAction
 		? (player) => setSwapTarget(player)
 		: handleSelectIn;
+
+	// ── Multi-league fixture data ────────────────────────────────────────────
+	const { myDivision, teamsByDivision, divisionFixtures } = useMemo(() => {
+		const myTeam = teams.find((t) => t.id === myTeamId);
+		const myDiv = myTeam?.division;
+
+		const byDiv = {};
+		teams.forEach((t) => {
+			if (!byDiv[t.division]) byDiv[t.division] = [];
+			byDiv[t.division].push(t);
+		});
+		Object.values(byDiv).forEach((arr) => arr.sort((a, b) => a.id - b.id));
+
+		const wk = currentJornada || 1;
+		const fixtures = {};
+		Object.entries(byDiv).forEach(([div, divTeams]) => {
+			const seedIds = divTeams.map((t) => t.id);
+			fixtures[div] = generateLeagueFixtures(seedIds, wk);
+		});
+
+		return {
+			myDivision: myDiv,
+			teamsByDivision: byDiv,
+			divisionFixtures: fixtures,
+		};
+	}, [teams, myTeamId, currentJornada]);
+
+	// ── Fixture Card (compacto) ──────────────────────────────────────────────
+	const FixtureCard = ({ homeTeamId, awayTeamId }) => {
+		const home = teams.find((t) => t.id === homeTeamId);
+		const away = teams.find((t) => t.id === awayTeamId);
+		return (
+			<div className="flex items-center gap-1 py-1 px-1.5 rounded-sm bg-zinc-900/60 border border-zinc-800/40">
+				<div
+					className="w-4 h-4 rounded-full flex items-center justify-center text-[6px] font-black shrink-0 border border-white/10"
+					style={{
+						background: home?.color_primary || "#333",
+						color: home?.color_secondary || "#fff",
+					}}
+				>
+					{home?.name?.[0] ?? "?"}
+				</div>
+				<span className="flex-1 text-[10px] font-bold text-zinc-300 truncate">
+					{home?.name || "—"}
+				</span>
+				<span className="text-zinc-600 text-[8px] font-black mx-0.5 shrink-0">
+					vs
+				</span>
+				<span className="flex-1 text-[10px] font-bold text-zinc-300 truncate text-right">
+					{away?.name || "—"}
+				</span>
+				<div
+					className="w-4 h-4 rounded-full flex items-center justify-center text-[6px] font-black shrink-0 border border-white/10"
+					style={{
+						background: away?.color_primary || "#333",
+						color: away?.color_secondary || "#fff",
+					}}
+				>
+					{away?.name?.[0] ?? "?"}
+				</div>
+			</div>
+		);
+	};
 
 	// ── Tab routing ───────────────────────────────────────────────────────────
 	const getDefaultTab = (m) =>
@@ -179,54 +244,177 @@ export function MatchPage({
 
 			{/* Content */}
 			<div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-				{activeTab === "jogo" && (
-					<TabJogo fixture={fixture} liveMinute={liveMinute} teams={teams} />
-				)}
-				{activeTab === "locais" && (
-					<TabAdversario
-						fixture={fixture}
-						myTeamId={fixture?.homeTeamId}
-						teams={teams}
-					/>
-				)}
-				{activeTab === "visitantes" && (
-					<TabAdversario
-						fixture={fixture}
-						myTeamId={fixture?.awayTeamId}
-						teams={teams}
-					/>
-				)}
-				{activeTab === "lineup" && (
-					<TabLineup fixture={fixture} liveMinute={liveMinute} teams={teams} />
-				)}
-				{activeTab === "adversario" && mode !== "detail" && (
-					<TabAdversario fixture={fixture} myTeamId={myTeamId} teams={teams} />
-				)}
-				{activeTab === "intervencao" && mode !== "detail" && (
-					<TabIntervencao
-						mode={mode}
-						matchAction={matchAction}
-						injuryCountdown={injuryCountdown}
-						tactic={tactic}
-						onUpdateTactic={updateTactic}
-						annotatedSquad={annotatedSquad}
-						subbedOut={subbedOut}
-						confirmedSubs={confirmedSubs}
-						subsMade={subsMade}
-						swapSource={swapSource}
-						swapTarget={swapTarget}
-						onSelectOut={effectiveSelectOut}
-						onSelectIn={effectiveSelectIn}
-						onConfirmSub={handleConfirmSub}
-						onResetSub={handleResetSub}
-						onResetAllSubs={handleResetAllSubs}
-						redCardedHalftimeIds={redCardedHalftimeIds}
-						injuredHalftimeIds={injuredHalftimeIds}
-						onResolveAction={onResolveAction}
-						fixture={fixture}
-						teams={teams}
-						myTeamId={myTeamId}
-					/>
+				{mode === "halftime" || mode === "action" ? (
+					<>
+						{activeTab === "jogo" && (
+							<TabJogo
+								fixture={fixture}
+								liveMinute={liveMinute}
+								teams={teams}
+							/>
+						)}
+						{activeTab === "locais" && (
+							<TabAdversario
+								fixture={fixture}
+								myTeamId={fixture?.homeTeamId}
+								teams={teams}
+							/>
+						)}
+						{activeTab === "visitantes" && (
+							<TabAdversario
+								fixture={fixture}
+								myTeamId={fixture?.awayTeamId}
+								teams={teams}
+							/>
+						)}
+						{activeTab === "lineup" && (
+							<TabLineup
+								fixture={fixture}
+								liveMinute={liveMinute}
+								teams={teams}
+							/>
+						)}
+						{activeTab === "adversario" && mode !== "detail" && (
+							<TabAdversario
+								fixture={fixture}
+								myTeamId={myTeamId}
+								teams={teams}
+							/>
+						)}
+						{activeTab === "intervencao" && mode !== "detail" && (
+							<TabIntervencao
+								mode={mode}
+								matchAction={matchAction}
+								injuryCountdown={injuryCountdown}
+								tactic={tactic}
+								onUpdateTactic={updateTactic}
+								annotatedSquad={annotatedSquad}
+								subbedOut={subbedOut}
+								confirmedSubs={confirmedSubs}
+								subsMade={subsMade}
+								swapSource={swapSource}
+								swapTarget={swapTarget}
+								onSelectOut={effectiveSelectOut}
+								onSelectIn={effectiveSelectIn}
+								onConfirmSub={handleConfirmSub}
+								onResetSub={handleResetSub}
+								onResetAllSubs={handleResetAllSubs}
+								redCardedHalftimeIds={redCardedHalftimeIds}
+								injuredHalftimeIds={injuredHalftimeIds}
+								onResolveAction={onResolveAction}
+								fixture={fixture}
+								teams={teams}
+								myTeamId={myTeamId}
+							/>
+						)}
+					</>
+				) : (
+					/* ── Grid layout: detail / overview mode ───────────────── */
+					<div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-3 p-3 min-h-0 overflow-auto">
+						{/* ── COL 1-3: Our game ── */}
+						<div className="lg:col-span-3 flex flex-col min-h-0 overflow-hidden rounded-lg bg-zinc-950/50 border border-zinc-800/40">
+							{activeTab === "jogo" && (
+								<TabJogo
+									fixture={fixture}
+									liveMinute={liveMinute}
+									teams={teams}
+								/>
+							)}
+							{activeTab === "locais" && (
+								<TabAdversario
+									fixture={fixture}
+									myTeamId={fixture?.homeTeamId}
+									teams={teams}
+								/>
+							)}
+							{activeTab === "visitantes" && (
+								<TabAdversario
+									fixture={fixture}
+									myTeamId={fixture?.awayTeamId}
+									teams={teams}
+								/>
+							)}
+							{activeTab === "lineup" && (
+								<TabLineup
+									fixture={fixture}
+									liveMinute={liveMinute}
+									teams={teams}
+								/>
+							)}
+							{activeTab === "adversario" && mode !== "detail" && (
+								<TabAdversario
+									fixture={fixture}
+									myTeamId={myTeamId}
+									teams={teams}
+								/>
+							)}
+						</div>
+
+						{/* ── COL 4-5 right sidebar: Our league's games ── */}
+						<div className="lg:col-span-2 flex flex-col min-h-0 overflow-hidden rounded-lg bg-zinc-950/50 border border-zinc-800/40">
+							<div className="shrink-0 px-2.5 py-1.5 border-b border-zinc-800 bg-zinc-950/70">
+								<h3 className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+									{DIVISION_NAMES[myDivision] || "Liga"} · J
+									{currentJornada || "—"}
+								</h3>
+							</div>
+							<div className="flex-1 overflow-y-auto space-y-1 p-2">
+								{(divisionFixtures[myDivision] || []).length === 0 ? (
+									<p className="text-zinc-600 text-[10px] font-bold text-center py-4">
+										Sem jogos disponíveis
+									</p>
+								) : (
+									(divisionFixtures[myDivision] || [])
+										.filter(
+											(f) =>
+												f.homeTeamId !== myTeamId && f.awayTeamId !== myTeamId,
+										)
+										.map((f, i) => (
+											<FixtureCard
+												key={i}
+												homeTeamId={f.homeTeamId}
+												awayTeamId={f.awayTeamId}
+											/>
+										))
+								)}
+							</div>
+						</div>
+
+						{/* ── BOTTOM: Other championships ── */}
+						<div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+							{Object.keys(teamsByDivision)
+								.filter((d) => Number(d) !== myDivision)
+								.sort()
+								.slice(0, 3)
+								.map((div) => (
+									<div
+										key={div}
+										className="flex flex-col min-h-0 rounded-lg bg-zinc-950/50 border border-zinc-800/40 overflow-hidden"
+									>
+										<div className="shrink-0 px-2.5 py-1.5 border-b border-zinc-800 bg-zinc-950/70">
+											<h4 className="text-[9px] font-black uppercase tracking-widest text-zinc-500">
+												{DIVISION_NAMES[Number(div)] || `Divisão ${div}`}
+											</h4>
+										</div>
+										<div className="flex-1 overflow-y-auto space-y-1 p-2">
+											{(divisionFixtures[div] || []).length === 0 ? (
+												<p className="text-zinc-600 text-[10px] font-bold text-center py-4">
+													Sem jogos
+												</p>
+											) : (
+												(divisionFixtures[div] || []).map((f, i) => (
+													<FixtureCard
+														key={i}
+														homeTeamId={f.homeTeamId}
+														awayTeamId={f.awayTeamId}
+													/>
+												))
+											)}
+										</div>
+									</div>
+								))}
+						</div>
+					</div>
 				)}
 			</div>
 
