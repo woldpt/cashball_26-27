@@ -163,6 +163,11 @@
     },
     {
       "type": "file",
+      "name": "client/src/framerMotion.js",
+      "file": "client/src/framerMotion.js"
+    },
+    {
+      "type": "file",
       "name": "client/src/main.jsx",
       "file": "client/src/main.jsx"
     },
@@ -674,6 +679,11 @@
     },
     {
       "type": "file",
+      "name": "client/src/framerMotion.js",
+      "file": "client/src/framerMotion.js"
+    },
+    {
+      "type": "file",
       "name": "client/src/main.jsx",
       "file": "client/src/main.jsx"
     },
@@ -1024,5 +1034,5 @@
     }
   ],
   "unlistedDeps": [],
-  "summary": "Found 101 issues"
+  "summary": "Found 102 issues"
 }

@@ -290,6 +290,22 @@
       "tokens": 0
     },
     {
+      "fileA": "client/src/App.jsx",
+      "startA": 273,
+      "fileB": "client/src/App.jsx",
+      "startB": 134,
+      "lines": 10,
+      "tokens": 0
+    },
+    {
+      "fileA": "client/src/App.jsx",
+      "startA": 348,
+      "fileB": "client/src/App.jsx",
+      "startB": 286,
+      "lines": 8,
+      "tokens": 0
+    },
+    {
       "fileA": "server/socketSessionHandlers.ts",
       "startA": 504,
       "fileB": "server/socketSessionHandlers.ts",
@@ -506,7 +522,7 @@
       "tokens": 0
     }
   ],
-  "duplicatedLines": 1272,
-  "totalLines": 35414,
+  "duplicatedLines": 1288,
+  "totalLines": 35851,
   "percentage": 3.59
 }

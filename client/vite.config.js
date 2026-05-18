@@ -4,11 +4,11 @@ import tailwindcss from "@tailwindcss/vite";
 import { execSync } from "node:child_process";
 
 function readGitValue(command, fallback) {
-  try {
-    return execSync(command, { encoding: "utf8" }).trim();
-  } catch {
-    return fallback;
-  }
+	try {
+		return execSync(command, { encoding: "utf8" }).trim();
+	} catch {
+		return fallback;
+	}
 }
 
 const gitCommitShortSha = readGitValue("git rev-parse --short HEAD", "unknown");
@@ -16,21 +16,36 @@ const gitCommitCount = readGitValue("git rev-list --count HEAD", "0");
 
 // https://vite.dev/config/
 export default defineConfig({
-  define: {
-    "import.meta.env.VITE_APP_COMMIT_SHA": JSON.stringify(gitCommitShortSha),
-    "import.meta.env.VITE_APP_COMMIT_COUNT": JSON.stringify(gitCommitCount),
-  },
-  plugins: [react(), tailwindcss()],
-  server: {
-    proxy: {
-      "/auth": "http://localhost:3000",
-      "/saves": "http://localhost:3000",
-      "/admin": "http://localhost:3000",
-      "/api": "http://localhost:3000",
-      "/socket.io": {
-        target: "http://localhost:3000",
-        ws: true,
-      },
-    },
-  },
+	define: {
+		"import.meta.env.VITE_APP_COMMIT_SHA": JSON.stringify(gitCommitShortSha),
+		"import.meta.env.VITE_APP_COMMIT_COUNT": JSON.stringify(gitCommitCount),
+	},
+	plugins: [
+		react(),
+		tailwindcss(),
+		{
+			name: "patch-framer-motion",
+			transform(code, id) {
+				// Remove o require() dinâmico do @emotion/is-prop-valid que quebra o Rolldown
+				if (id.includes("framer-motion") && id.includes("filter-props")) {
+					return code.replace(
+						/try\s*\{[^}]*@emotion\/is-prop[^}]*\}[^}]*\}[^}]*\}\s*catch[^}]*\{[^}]*\}/gs,
+						"",
+					);
+				}
+			},
+		},
+	],
+	server: {
+		proxy: {
+			"/auth": "http://localhost:3000",
+			"/saves": "http://localhost:3000",
+			"/admin": "http://localhost:3000",
+			"/api": "http://localhost:3000",
+			"/socket.io": {
+				target: "http://localhost:3000",
+				ws: true,
+			},
+		},
+	},
 });

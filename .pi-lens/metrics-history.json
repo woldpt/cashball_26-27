@@ -328,14 +328,14 @@
     },
     "client/src/GameLayout.jsx": {
       "latest": {
-        "commit": "5973087",
-        "timestamp": "2026-05-17T14:04:45.925Z",
+        "commit": "cf4174b",
+        "timestamp": "2026-05-18T12:39:42.508Z",
         "mi": 0,
         "cognitive": 671,
         "nesting": 6,
-        "lines": 2340,
+        "lines": 2363,
         "maxCyclomatic": 703,
-        "entropy": 7.77
+        "entropy": 7.76
       },
       "history": [
         {
@@ -347,6 +347,16 @@
           "lines": 2340,
           "maxCyclomatic": 703,
           "entropy": 7.77
+        },
+        {
+          "commit": "cf4174b",
+          "timestamp": "2026-05-18T12:39:42.508Z",
+          "mi": 0,
+          "cognitive": 671,
+          "nesting": 6,
+          "lines": 2363,
+          "maxCyclomatic": 703,
+          "entropy": 7.76
         }
       ],
       "trend": "stable"
@@ -475,7 +485,132 @@
         }
       ],
       "trend": "stable"
+    },
+    "client/dist/assets/index-BHYRmbvw.js": {
+      "latest": {
+        "commit": "cf4174b",
+        "timestamp": "2026-05-18T12:24:05.465Z",
+        "mi": 0,
+        "cognitive": 23705,
+        "nesting": 12,
+        "lines": 439,
+        "maxCyclomatic": 14392,
+        "entropy": 8.45
+      },
+      "history": [
+        {
+          "commit": "cf4174b",
+          "timestamp": "2026-05-18T12:24:05.465Z",
+          "mi": 0,
+          "cognitive": 23705,
+          "nesting": 12,
+          "lines": 439,
+          "maxCyclomatic": 14392,
+          "entropy": 8.45
+        }
+      ],
+      "trend": "stable"
+    },
+    "client/vite.config.js": {
+      "latest": {
+        "commit": "cf4174b",
+        "timestamp": "2026-05-18T12:26:58.491Z",
+        "mi": 59.3,
+        "cognitive": 3,
+        "nesting": 3,
+        "lines": 32,
+        "maxCyclomatic": 1,
+        "entropy": 4.43
+      },
+      "history": [
+        {
+          "commit": "cf4174b",
+          "timestamp": "2026-05-18T12:26:58.491Z",
+          "mi": 59.3,
+          "cognitive": 3,
+          "nesting": 3,
+          "lines": 32,
+          "maxCyclomatic": 1,
+          "entropy": 4.43
+        }
+      ],
+      "trend": "stable"
+    },
+    "client/src/main.jsx": {
+      "latest": {
+        "commit": "cf4174b",
+        "timestamp": "2026-05-18T12:33:31.452Z",
+        "mi": 67,
+        "cognitive": 0,
+        "nesting": 0,
+        "lines": 9,
+        "maxCyclomatic": 1,
+        "entropy": 2.82
+      },
+      "history": [
+        {
+          "commit": "cf4174b",
+          "timestamp": "2026-05-18T12:33:31.452Z",
+          "mi": 67,
+          "cognitive": 0,
+          "nesting": 0,
+          "lines": 9,
+          "maxCyclomatic": 1,
+          "entropy": 2.82
+        }
+      ],
+      "trend": "stable"
+    },
+    "client/src/framerMotion.js": {
+      "latest": {
+        "commit": "cf4174b",
+        "timestamp": "2026-05-18T12:39:30.737Z",
+        "mi": 84.3,
+        "cognitive": 0,
+        "nesting": 0,
+        "lines": 9,
+        "maxCyclomatic": 1,
+        "entropy": 2.32
+      },
+      "history": [
+        {
+          "commit": "cf4174b",
+          "timestamp": "2026-05-18T12:39:30.737Z",
+          "mi": 84.3,
+          "cognitive": 0,
+          "nesting": 0,
+          "lines": 9,
+          "maxCyclomatic": 1,
+          "entropy": 2.32
+        }
+      ],
+      "trend": "stable"
+    },
+    "client/eslint.config.js": {
+      "latest": {
+        "commit": "cf4174b",
+        "timestamp": "2026-05-18T12:41:17.860Z",
+        "mi": 46.5,
+        "cognitive": 0,
+        "nesting": 0,
+        "lines": 47,
+        "maxCyclomatic": 1,
+        "entropy": 4.15
+      },
+      "history": [
+        {
+          "commit": "cf4174b",
+          "timestamp": "2026-05-18T12:41:17.860Z",
+          "mi": 46.5,
+          "cognitive": 0,
+          "nesting": 0,
+          "lines": 47,
+          "maxCyclomatic": 1,
+          "entropy": 4.15
+        }
+      ],
+      "trend": "stable"
     }
   },
-  "capturedAt": "2026-05-18T09:01:49.709Z"
+  "capturedAt": "2026-05-18T12:41:22.860Z"
 }
