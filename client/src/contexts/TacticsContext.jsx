@@ -6,7 +6,6 @@ import {
 	useMemo,
 	useRef,
 	useState,
-	startTransition,
 } from "react";
 import { socket } from "../socket";
 import { TACTIC_FORMATIONS } from "../constants/index.js";
@@ -83,56 +82,21 @@ export function TacticsProvider({ children }) {
 		[mySquad, tactic.positions],
 	);
 
-	const isLineupComplete = useMemo(
-		() =>
-			titulares.filter((p) => p.position === "GR").length === 1 &&
-			titulares.filter((p) => p.position !== "GR").length === 10,
-		[titulares],
-	);
+	// Só conta titulares que estão efectivamente disponíveis (não lesionados / suspensos).
+	// Impede que um jogador indisponível pre-seleccionado de uma ronda anterior
+	// habilite o botão "Jogar Jornada" sem validação.
+	const isLineupComplete = useMemo(() => {
+		const validTitulares = annotatedSquad.filter(
+			(p) => p.status === "Titular" && !p.isUnavailable,
+		);
+		return (
+			validTitulares.filter((p) => p.position === "GR").length === 1 &&
+			validTitulares.filter((p) => p.position !== "GR").length === 10
+		);
+	}, [annotatedSquad]);
 
 	const nextMatchOpponent = nextMatchSummary?.opponent || null;
 	const nextMatchReferee = nextMatchSummary?.referee || null;
-
-	// ── Auto-tactic effect: auto-fill positions when squad first loads ───────
-	useEffect(() => {
-		if (!mySquad.length) return;
-		if (tactic.positions && Object.keys(tactic.positions).length > 0) return;
-
-		const availableCounts = getAvailablePositionCounts(
-			mySquad,
-			matchweekCount + 1,
-		);
-		const fallbackFormation = isFormationAvailable(
-			tactic.formation,
-			availableCounts,
-		)
-			? tactic.formation
-			: TACTIC_FORMATIONS.find((f) =>
-					isFormationAvailable(f.value, availableCounts),
-				)?.value;
-		if (!fallbackFormation) return;
-
-		const autoPositions = buildAutoPositions(
-			mySquad,
-			fallbackFormation,
-			matchweekCount + 1,
-		);
-		if (Object.keys(autoPositions).length === 0) return;
-
-		startTransition(() => {
-			setTactic((prev) => {
-				if (prev.positions && Object.keys(prev.positions).length > 0)
-					return prev;
-				const next = {
-					...prev,
-					formation: fallbackFormation,
-					positions: autoPositions,
-				};
-				socket.emit("setTactic", next);
-				return next;
-			});
-		});
-	}, [mySquad, tactic.formation, tactic.positions, matchweekCount, setTactic]);
 
 	// ── Close status picker on any outside click ─────────────────────────────
 	useEffect(() => {

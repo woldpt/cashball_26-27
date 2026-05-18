@@ -143,8 +143,8 @@
     },
     "client/src/hooks/useSocketListeners.js": {
       "latest": {
-        "commit": "d71fddd",
-        "timestamp": "2026-05-18T14:22:11.385Z",
+        "commit": "73d8dbf",
+        "timestamp": "2026-05-18T14:38:52.153Z",
         "mi": 2.3,
         "cognitive": 880,
         "nesting": 11,
@@ -202,14 +202,24 @@
           "lines": 1258,
           "maxCyclomatic": 579,
           "entropy": 7.26
+        },
+        {
+          "commit": "73d8dbf",
+          "timestamp": "2026-05-18T14:38:52.153Z",
+          "mi": 2.3,
+          "cognitive": 880,
+          "nesting": 11,
+          "lines": 1258,
+          "maxCyclomatic": 579,
+          "entropy": 7.26
         }
       ],
       "trend": "stable"
     },
     "client/src/constants/index.js": {
       "latest": {
-        "commit": "4d7f06c",
-        "timestamp": "2026-05-18T12:54:37.254Z",
+        "commit": "73d8dbf",
+        "timestamp": "2026-05-18T14:40:51.932Z",
         "mi": 34.8,
         "cognitive": 0,
         "nesting": 1,
@@ -237,20 +247,30 @@
           "lines": 108,
           "maxCyclomatic": 1,
           "entropy": 3.9
+        },
+        {
+          "commit": "73d8dbf",
+          "timestamp": "2026-05-18T14:40:51.932Z",
+          "mi": 34.8,
+          "cognitive": 0,
+          "nesting": 1,
+          "lines": 108,
+          "maxCyclomatic": 1,
+          "entropy": 3.9
         }
       ],
       "trend": "stable"
     },
     "client/src/contexts/TacticsContext.jsx": {
       "latest": {
-        "commit": "5973087",
-        "timestamp": "2026-05-17T13:56:45.195Z",
-        "mi": 18.7,
+        "commit": "73d8dbf",
+        "timestamp": "2026-05-18T14:38:17.111Z",
+        "mi": 18,
         "cognitive": 153,
         "nesting": 7,
-        "lines": 410,
+        "lines": 406,
         "maxCyclomatic": 141,
-        "entropy": 6.55
+        "entropy": 6.53
       },
       "history": [
         {
@@ -272,20 +292,30 @@
           "lines": 410,
           "maxCyclomatic": 141,
           "entropy": 6.55
+        },
+        {
+          "commit": "73d8dbf",
+          "timestamp": "2026-05-18T14:38:17.111Z",
+          "mi": 18,
+          "cognitive": 153,
+          "nesting": 7,
+          "lines": 406,
+          "maxCyclomatic": 141,
+          "entropy": 6.53
         }
       ],
       "trend": "stable"
     },
     "client/src/views/TacticsView.jsx": {
       "latest": {
-        "commit": "5973087",
-        "timestamp": "2026-05-17T12:27:26.298Z",
-        "mi": 0,
+        "commit": "73d8dbf",
+        "timestamp": "2026-05-18T14:38:12.229Z",
+        "mi": 1.2,
         "cognitive": 443,
         "nesting": 5,
-        "lines": 1447,
+        "lines": 1210,
         "maxCyclomatic": 472,
-        "entropy": 6.64
+        "entropy": 6.6
       },
       "history": [
         {
@@ -297,6 +327,16 @@
           "lines": 1447,
           "maxCyclomatic": 472,
           "entropy": 6.64
+        },
+        {
+          "commit": "73d8dbf",
+          "timestamp": "2026-05-18T14:38:12.229Z",
+          "mi": 1.2,
+          "cognitive": 443,
+          "nesting": 5,
+          "lines": 1210,
+          "maxCyclomatic": 472,
+          "entropy": 6.6
         }
       ],
       "trend": "stable"
@@ -373,8 +413,8 @@
     },
     "client/src/contexts/GameContext.jsx": {
       "latest": {
-        "commit": "d71fddd",
-        "timestamp": "2026-05-18T14:22:06.553Z",
+        "commit": "73d8dbf",
+        "timestamp": "2026-05-18T14:38:30.639Z",
         "mi": 3.8,
         "cognitive": 338,
         "nesting": 9,
@@ -416,6 +456,16 @@
         {
           "commit": "d71fddd",
           "timestamp": "2026-05-18T14:22:06.553Z",
+          "mi": 3.8,
+          "cognitive": 338,
+          "nesting": 9,
+          "lines": 1113,
+          "maxCyclomatic": 326,
+          "entropy": 7.62
+        },
+        {
+          "commit": "73d8dbf",
+          "timestamp": "2026-05-18T14:38:30.639Z",
           "mi": 3.8,
           "cognitive": 338,
           "nesting": 9,
@@ -558,14 +608,14 @@
     },
     "server/socketSessionHandlers.ts": {
       "latest": {
-        "commit": "d71fddd",
-        "timestamp": "2026-05-18T14:21:50.370Z",
-        "mi": 8,
-        "cognitive": 357,
+        "commit": "73d8dbf",
+        "timestamp": "2026-05-18T14:39:43.941Z",
+        "mi": 8.5,
+        "cognitive": 346,
         "nesting": 11,
-        "lines": 819,
-        "maxCyclomatic": 222,
-        "entropy": 7.07
+        "lines": 793,
+        "maxCyclomatic": 209,
+        "entropy": 7.06
       },
       "history": [
         {
@@ -587,9 +637,19 @@
           "lines": 819,
           "maxCyclomatic": 222,
           "entropy": 7.07
+        },
+        {
+          "commit": "73d8dbf",
+          "timestamp": "2026-05-18T14:39:43.941Z",
+          "mi": 8.5,
+          "cognitive": 346,
+          "nesting": 11,
+          "lines": 793,
+          "maxCyclomatic": 209,
+          "entropy": 7.06
         }
       ],
-      "trend": "stable"
+      "trend": "improving"
     },
     "client/src/utils/localStorage.js": {
       "latest": {
@@ -865,7 +925,107 @@
         }
       ],
       "trend": "stable"
+    },
+    "server/socketGameplayHandlers.ts": {
+      "latest": {
+        "commit": "73d8dbf",
+        "timestamp": "2026-05-18T14:39:36.152Z",
+        "mi": 22.1,
+        "cognitive": 174,
+        "nesting": 6,
+        "lines": 273,
+        "maxCyclomatic": 112,
+        "entropy": 6.04
+      },
+      "history": [
+        {
+          "commit": "73d8dbf",
+          "timestamp": "2026-05-18T14:39:36.152Z",
+          "mi": 22.1,
+          "cognitive": 174,
+          "nesting": 6,
+          "lines": 273,
+          "maxCyclomatic": 112,
+          "entropy": 6.04
+        }
+      ],
+      "trend": "stable"
+    },
+    "server/weeklyFlowHelpers.ts": {
+      "latest": {
+        "commit": "73d8dbf",
+        "timestamp": "2026-05-18T14:41:34.586Z",
+        "mi": 5.6,
+        "cognitive": 633,
+        "nesting": 12,
+        "lines": 1032,
+        "maxCyclomatic": 391,
+        "entropy": 7.64
+      },
+      "history": [
+        {
+          "commit": "73d8dbf",
+          "timestamp": "2026-05-18T14:41:34.586Z",
+          "mi": 5.6,
+          "cognitive": 633,
+          "nesting": 12,
+          "lines": 1032,
+          "maxCyclomatic": 391,
+          "entropy": 7.64
+        }
+      ],
+      "trend": "stable"
+    },
+    "server/game/engine.ts": {
+      "latest": {
+        "commit": "73d8dbf",
+        "timestamp": "2026-05-18T14:42:58.132Z",
+        "mi": 0,
+        "cognitive": 1068,
+        "nesting": 9,
+        "lines": 1619,
+        "maxCyclomatic": 549,
+        "entropy": 7.73
+      },
+      "history": [
+        {
+          "commit": "73d8dbf",
+          "timestamp": "2026-05-18T14:42:58.132Z",
+          "mi": 0,
+          "cognitive": 1068,
+          "nesting": 9,
+          "lines": 1619,
+          "maxCyclomatic": 549,
+          "entropy": 7.73
+        }
+      ],
+      "trend": "stable"
+    },
+    "client/src/utils/playerHelpers.js": {
+      "latest": {
+        "commit": "73d8dbf",
+        "timestamp": "2026-05-18T14:44:38.745Z",
+        "mi": 24.7,
+        "cognitive": 167,
+        "nesting": 5,
+        "lines": 232,
+        "maxCyclomatic": 55,
+        "entropy": 6.43
+      },
+      "history": [
+        {
+          "commit": "73d8dbf",
+          "timestamp": "2026-05-18T14:44:38.745Z",
+          "mi": 24.7,
+          "cognitive": 167,
+          "nesting": 5,
+          "lines": 232,
+          "maxCyclomatic": 55,
+          "entropy": 6.43
+        }
+      ],
+      "trend": "stable"
     }
   },
-  "capturedAt": "2026-05-18T14:23:25.390Z"
+  "capturedAt": "2026-05-18T14:44:43.745Z"
 }

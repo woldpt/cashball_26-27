@@ -48,7 +48,7 @@
         }
       ],
       "importsChanged": true,
-      "lastEdit": "2026-05-17T14:06:51.967Z"
+      "lastEdit": "2026-05-18T14:47:32.512Z"
     },
     "src/views/TacticsView.jsx": {
       "modifiedRanges": [
@@ -123,6 +123,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-18T14:17:51.657Z",
-  "sessionId": "lens-mpbae3im-255af895"
+  "lastUpdated": "2026-05-18T14:47:32.512Z",
+  "sessionId": "lens-mpbb50wi-48581b60"
 }

@@ -220,7 +220,14 @@ export function registerSessionSocketHandlers(
 					? (game.currentEvent as any).round
 					: 0,
 			year: game.year,
-			tactic: game.playersByName[name]?.tactic || null,
+			// Em fase de lobby (entre jornadas), enviar posições limpas: a seleção
+			// do 11 inicial nunca deve persistir de uma ronda para a seguinte.
+			tactic: (() => {
+				const t = game.playersByName[name]?.tactic;
+				if (!t) return null;
+				if (game.gamePhase === "lobby") return { ...t, positions: {} };
+				return t;
+			})(),
 			lockedCoaches: [...game.lockedCoaches],
 			lastHalfTimePayload:
 				game.gamePhase === "match_halftime"
