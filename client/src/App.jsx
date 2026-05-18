@@ -123,7 +123,10 @@ function App() {
 		if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
 
 		const joinWithRetry = () => {
-			console.log("[App] Auto-join attempt, socket.connected:", socket.connected);
+			console.log(
+				"[App] Auto-join attempt, socket.connected:",
+				socket.connected,
+			);
 			socket.emit("joinGame", {
 				name: savedSession.name,
 				password: savedSession.password,

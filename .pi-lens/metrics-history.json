@@ -133,8 +133,8 @@
     },
     "client/src/hooks/useSocketListeners.js": {
       "latest": {
-        "commit": "5973087",
-        "timestamp": "2026-05-17T12:17:51.226Z",
+        "commit": "d38dcd7",
+        "timestamp": "2026-05-18T09:01:44.708Z",
         "mi": 2.4,
         "cognitive": 905,
         "nesting": 11,
@@ -146,6 +146,16 @@
         {
           "commit": "5973087",
           "timestamp": "2026-05-17T12:17:51.226Z",
+          "mi": 2.4,
+          "cognitive": 905,
+          "nesting": 11,
+          "lines": 1236,
+          "maxCyclomatic": 584,
+          "entropy": 7.28
+        },
+        {
+          "commit": "d38dcd7",
+          "timestamp": "2026-05-18T09:01:44.708Z",
           "mi": 2.4,
           "cognitive": 905,
           "nesting": 11,
@@ -467,5 +477,5 @@
       "trend": "stable"
     }
   },
-  "capturedAt": "2026-05-17T21:50:50.170Z"
+  "capturedAt": "2026-05-18T09:01:49.709Z"
 }
