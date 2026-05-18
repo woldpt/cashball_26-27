@@ -80,14 +80,14 @@ export const SEASON_CALENDAR = [
 ];
 
 export const TACTIC_FORMATIONS = [
-	{ value: "4-4-2", label: "4-4-2 Clássico" },
-	{ value: "4-3-3", label: "4-3-3 Ofensivo" },
-	{ value: "3-5-2", label: "3-5-2 Controlo" },
-	{ value: "5-3-2", label: "5-3-2 Autocarro" },
-	{ value: "4-5-1", label: "4-5-1 Catenaccio" },
-	{ value: "3-4-3", label: "3-4-3 Total" },
-	{ value: "4-2-4", label: "4-2-4 Avassalador" },
-	{ value: "5-4-1", label: "5-4-1 Ferrolho" },
+	{ value: "4-4-2", label: "4-4-2" },
+	{ value: "4-3-3", label: "4-3-3" },
+	{ value: "3-5-2", label: "3-5-2" },
+	{ value: "5-3-2", label: "5-3-2" },
+	{ value: "4-5-1", label: "4-5-1" },
+	{ value: "3-4-3", label: "3-4-3" },
+	{ value: "4-2-4", label: "4-2-4" },
+	{ value: "5-4-1", label: "5-4-1" },
 ];
 
 export const DEFAULT_TACTIC = {
