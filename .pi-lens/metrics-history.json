@@ -133,8 +133,8 @@
     },
     "client/src/hooks/useSocketListeners.js": {
       "latest": {
-        "commit": "4d7f06c",
-        "timestamp": "2026-05-18T12:55:31.419Z",
+        "commit": "b5566ab",
+        "timestamp": "2026-05-18T14:16:38.036Z",
         "mi": 2.3,
         "cognitive": 880,
         "nesting": 11,
@@ -166,6 +166,16 @@
         {
           "commit": "4d7f06c",
           "timestamp": "2026-05-18T12:55:31.419Z",
+          "mi": 2.3,
+          "cognitive": 880,
+          "nesting": 11,
+          "lines": 1258,
+          "maxCyclomatic": 579,
+          "entropy": 7.26
+        },
+        {
+          "commit": "b5566ab",
+          "timestamp": "2026-05-18T14:16:38.036Z",
           "mi": 2.3,
           "cognitive": 880,
           "nesting": 11,
@@ -343,8 +353,8 @@
     },
     "client/src/contexts/GameContext.jsx": {
       "latest": {
-        "commit": "4d7f06c",
-        "timestamp": "2026-05-18T12:54:53.614Z",
+        "commit": "b5566ab",
+        "timestamp": "2026-05-18T14:16:48.019Z",
         "mi": 3.8,
         "cognitive": 338,
         "nesting": 9,
@@ -366,6 +376,16 @@
         {
           "commit": "4d7f06c",
           "timestamp": "2026-05-18T12:54:53.614Z",
+          "mi": 3.8,
+          "cognitive": 338,
+          "nesting": 9,
+          "lines": 1116,
+          "maxCyclomatic": 326,
+          "entropy": 7.62
+        },
+        {
+          "commit": "b5566ab",
+          "timestamp": "2026-05-18T14:16:48.019Z",
           "mi": 3.8,
           "cognitive": 338,
           "nesting": 9,
@@ -722,5 +742,5 @@
       "trend": "stable"
     }
   },
-  "capturedAt": "2026-05-18T12:55:36.421Z"
+  "capturedAt": "2026-05-18T14:16:53.020Z"
 }

@@ -42,6 +42,14 @@
       "tokens": 0
     },
     {
+      "fileA": "client/src/components/match/MatchPage.jsx",
+      "startA": 307,
+      "fileB": "client/src/components/match/MatchPage.jsx",
+      "startB": 237,
+      "lines": 68,
+      "tokens": 0
+    },
+    {
       "fileA": "client/src/components/auth/LandingPage.jsx",
       "startA": 276,
       "fileB": "client/src/components/auth/LandingPage.jsx",
@@ -522,7 +530,7 @@
       "tokens": 0
     }
   ],
-  "duplicatedLines": 1288,
-  "totalLines": 35851,
-  "percentage": 3.59
+  "duplicatedLines": 1355,
+  "totalLines": 36236,
+  "percentage": 3.74
 }

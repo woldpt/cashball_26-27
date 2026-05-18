@@ -74,7 +74,7 @@ export function GameProvider({
 	const [showCupDrawPopup, setShowCupDrawPopup] = useState(false);
 	const [cupDrawRevealIdx, setCupDrawRevealIdx] = useState(0);
 	const [cupRoundResults, setCupRoundResults] = useState(null);
-	const [setShowCupResults] = useState(false);
+
 	const [cupResultsFilter, setCupResultsFilter] = useState("all");
 	const [cupPenaltyPopup, setCupPenaltyPopup] = useState(null);
 	const [cupPenaltyKickIdx, setCupPenaltyKickIdx] = useState(0);
@@ -421,7 +421,6 @@ export function GameProvider({
 		if (!pendingCupRoundResults) return;
 		startTransition(() => {
 			setPendingCupRoundResults(null);
-			setShowCupResults(false);
 			setActiveTab("cup");
 			setIsCupMatch(false);
 			setCupPreMatch(false);
@@ -430,7 +429,7 @@ export function GameProvider({
 			setIsPlayingMatch(false);
 			setMatchResults(null);
 		});
-	}, [cupPenaltyPopup, pendingCupRoundResults, setShowCupResults]);
+	}, [cupPenaltyPopup, pendingCupRoundResults]);
 
 	// ── Tab-driven data fetches ─────────────────────────────────────────────
 	useEffect(() => {
@@ -947,7 +946,6 @@ export function GameProvider({
 		setCupDraw(null);
 		setShowCupDrawPopup(false);
 		setCupRoundResults(null);
-		setShowCupResults(false);
 		setCupPenaltyPopup(null);
 		setWelcomeModal(null);
 		setDismissalModal(null);
@@ -984,7 +982,7 @@ export function GameProvider({
 		setGameDialog(null);
 		setUnreadRoom(0);
 		setUnreadGlobal(0);
-	}, [setShowCupResults]);
+	}, []);
 
 	// ── Context value ────────────────────────────────────────────────────────
 	const value = {
