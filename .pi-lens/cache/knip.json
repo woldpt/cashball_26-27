@@ -228,6 +228,11 @@
     },
     {
       "type": "file",
+      "name": "client/src/constants/index.js",
+      "file": "client/src/constants/index.js"
+    },
+    {
+      "type": "file",
       "name": "client/src/contexts/GameContext.jsx",
       "file": "client/src/contexts/GameContext.jsx"
     },
@@ -235,11 +240,6 @@
       "type": "file",
       "name": "client/src/contexts/TacticsContext.jsx",
       "file": "client/src/contexts/TacticsContext.jsx"
-    },
-    {
-      "type": "file",
-      "name": "client/src/constants/index.js",
-      "file": "client/src/constants/index.js"
     },
     {
       "type": "file",
@@ -368,26 +368,6 @@
     },
     {
       "type": "file",
-      "name": "client/src/components/shared/AggBadge.jsx",
-      "file": "client/src/components/shared/AggBadge.jsx"
-    },
-    {
-      "type": "file",
-      "name": "client/src/components/shared/GameDialog.jsx",
-      "file": "client/src/components/shared/GameDialog.jsx"
-    },
-    {
-      "type": "file",
-      "name": "client/src/components/shared/PlayerAvatar.jsx",
-      "file": "client/src/components/shared/PlayerAvatar.jsx"
-    },
-    {
-      "type": "file",
-      "name": "client/src/components/shared/PlayerLink.jsx",
-      "file": "client/src/components/shared/PlayerLink.jsx"
-    },
-    {
-      "type": "file",
       "name": "client/src/components/modals/CupDrawPopup.jsx",
       "file": "client/src/components/modals/CupDrawPopup.jsx"
     },
@@ -455,6 +435,26 @@
       "type": "file",
       "name": "client/src/components/modals/positionConstants.js",
       "file": "client/src/components/modals/positionConstants.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/AggBadge.jsx",
+      "file": "client/src/components/shared/AggBadge.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/GameDialog.jsx",
+      "file": "client/src/components/shared/GameDialog.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/PlayerAvatar.jsx",
+      "file": "client/src/components/shared/PlayerAvatar.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/PlayerLink.jsx",
+      "file": "client/src/components/shared/PlayerLink.jsx"
     },
     {
       "type": "file",
@@ -739,6 +739,11 @@
     },
     {
       "type": "file",
+      "name": "client/src/constants/index.js",
+      "file": "client/src/constants/index.js"
+    },
+    {
+      "type": "file",
       "name": "client/src/contexts/GameContext.jsx",
       "file": "client/src/contexts/GameContext.jsx"
     },
@@ -746,11 +751,6 @@
       "type": "file",
       "name": "client/src/contexts/TacticsContext.jsx",
       "file": "client/src/contexts/TacticsContext.jsx"
-    },
-    {
-      "type": "file",
-      "name": "client/src/constants/index.js",
-      "file": "client/src/constants/index.js"
     },
     {
       "type": "file",
@@ -879,26 +879,6 @@
     },
     {
       "type": "file",
-      "name": "client/src/components/shared/AggBadge.jsx",
-      "file": "client/src/components/shared/AggBadge.jsx"
-    },
-    {
-      "type": "file",
-      "name": "client/src/components/shared/GameDialog.jsx",
-      "file": "client/src/components/shared/GameDialog.jsx"
-    },
-    {
-      "type": "file",
-      "name": "client/src/components/shared/PlayerAvatar.jsx",
-      "file": "client/src/components/shared/PlayerAvatar.jsx"
-    },
-    {
-      "type": "file",
-      "name": "client/src/components/shared/PlayerLink.jsx",
-      "file": "client/src/components/shared/PlayerLink.jsx"
-    },
-    {
-      "type": "file",
       "name": "client/src/components/modals/CupDrawPopup.jsx",
       "file": "client/src/components/modals/CupDrawPopup.jsx"
     },
@@ -966,6 +946,26 @@
       "type": "file",
       "name": "client/src/components/modals/positionConstants.js",
       "file": "client/src/components/modals/positionConstants.js"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/AggBadge.jsx",
+      "file": "client/src/components/shared/AggBadge.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/GameDialog.jsx",
+      "file": "client/src/components/shared/GameDialog.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/PlayerAvatar.jsx",
+      "file": "client/src/components/shared/PlayerAvatar.jsx"
+    },
+    {
+      "type": "file",
+      "name": "client/src/components/shared/PlayerLink.jsx",
+      "file": "client/src/components/shared/PlayerLink.jsx"
     },
     {
       "type": "file",

@@ -358,10 +358,7 @@ function App() {
 				</div>
 			) : (
 				<TacticsProvider>
-					<GameLayout
-						handleLogout={handleLogout}
-						setAuthPhase={setAuthPhase}
-					/>
+					<GameLayout handleLogout={handleLogout} setAuthPhase={setAuthPhase} />
 				</TacticsProvider>
 			)}
 		</GameProvider>
