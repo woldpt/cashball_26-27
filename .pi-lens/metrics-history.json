@@ -38,8 +38,8 @@
     },
     "client/src/components/auth/LandingPage.jsx": {
       "latest": {
-        "commit": "111050b",
-        "timestamp": "2026-05-17T00:45:29.239Z",
+        "commit": "fd59801",
+        "timestamp": "2026-05-17T21:46:22.172Z",
         "mi": 12.2,
         "cognitive": 92,
         "nesting": 7,
@@ -61,6 +61,16 @@
         {
           "commit": "111050b",
           "timestamp": "2026-05-17T00:45:29.239Z",
+          "mi": 12.2,
+          "cognitive": 92,
+          "nesting": 7,
+          "lines": 717,
+          "maxCyclomatic": 110,
+          "entropy": 5.95
+        },
+        {
+          "commit": "fd59801",
+          "timestamp": "2026-05-17T21:46:22.172Z",
           "mi": 12.2,
           "cognitive": 92,
           "nesting": 7,
@@ -330,7 +340,132 @@
         }
       ],
       "trend": "stable"
+    },
+    "client/src/socket.js": {
+      "latest": {
+        "commit": "fd59801",
+        "timestamp": "2026-05-17T21:47:01.806Z",
+        "mi": 52.5,
+        "cognitive": 6,
+        "nesting": 3,
+        "lines": 30,
+        "maxCyclomatic": 5,
+        "entropy": 4.62
+      },
+      "history": [
+        {
+          "commit": "fd59801",
+          "timestamp": "2026-05-17T21:47:01.806Z",
+          "mi": 52.5,
+          "cognitive": 6,
+          "nesting": 3,
+          "lines": 30,
+          "maxCyclomatic": 5,
+          "entropy": 4.62
+        }
+      ],
+      "trend": "stable"
+    },
+    "client/src/utils/cacheVersion.js": {
+      "latest": {
+        "commit": "fd59801",
+        "timestamp": "2026-05-17T21:47:08.378Z",
+        "mi": 53.7,
+        "cognitive": 11,
+        "nesting": 3,
+        "lines": 44,
+        "maxCyclomatic": 4,
+        "entropy": 5.04
+      },
+      "history": [
+        {
+          "commit": "fd59801",
+          "timestamp": "2026-05-17T21:47:08.378Z",
+          "mi": 53.7,
+          "cognitive": 11,
+          "nesting": 3,
+          "lines": 44,
+          "maxCyclomatic": 4,
+          "entropy": 5.04
+        }
+      ],
+      "trend": "stable"
+    },
+    "server/index.ts": {
+      "latest": {
+        "commit": "fd59801",
+        "timestamp": "2026-05-17T21:47:11.203Z",
+        "mi": 6.7,
+        "cognitive": 353,
+        "nesting": 8,
+        "lines": 872,
+        "maxCyclomatic": 26,
+        "entropy": 6.83
+      },
+      "history": [
+        {
+          "commit": "fd59801",
+          "timestamp": "2026-05-17T21:47:11.203Z",
+          "mi": 6.7,
+          "cognitive": 353,
+          "nesting": 8,
+          "lines": 872,
+          "maxCyclomatic": 26,
+          "entropy": 6.83
+        }
+      ],
+      "trend": "stable"
+    },
+    "server/socketSessionHandlers.ts": {
+      "latest": {
+        "commit": "fd59801",
+        "timestamp": "2026-05-17T21:49:50.185Z",
+        "mi": 8,
+        "cognitive": 357,
+        "nesting": 11,
+        "lines": 819,
+        "maxCyclomatic": 222,
+        "entropy": 7.07
+      },
+      "history": [
+        {
+          "commit": "fd59801",
+          "timestamp": "2026-05-17T21:49:50.185Z",
+          "mi": 8,
+          "cognitive": 357,
+          "nesting": 11,
+          "lines": 819,
+          "maxCyclomatic": 222,
+          "entropy": 7.07
+        }
+      ],
+      "trend": "stable"
+    },
+    "client/src/utils/localStorage.js": {
+      "latest": {
+        "commit": "fd59801",
+        "timestamp": "2026-05-17T21:50:45.167Z",
+        "mi": 41,
+        "cognitive": 45,
+        "nesting": 3,
+        "lines": 80,
+        "maxCyclomatic": 8,
+        "entropy": 4.82
+      },
+      "history": [
+        {
+          "commit": "fd59801",
+          "timestamp": "2026-05-17T21:50:45.167Z",
+          "mi": 41,
+          "cognitive": 45,
+          "nesting": 3,
+          "lines": 80,
+          "maxCyclomatic": 8,
+          "entropy": 4.82
+        }
+      ],
+      "trend": "stable"
     }
   },
-  "capturedAt": "2026-05-17T14:04:50.926Z"
+  "capturedAt": "2026-05-17T21:50:50.170Z"
 }

@@ -348,13 +348,13 @@
     },
     {
       "type": "file",
-      "name": "client/src/components/chat/RoomHub.jsx",
-      "file": "client/src/components/chat/RoomHub.jsx"
+      "name": "client/src/components/auth/LandingPage.jsx",
+      "file": "client/src/components/auth/LandingPage.jsx"
     },
     {
       "type": "file",
-      "name": "client/src/components/auth/LandingPage.jsx",
-      "file": "client/src/components/auth/LandingPage.jsx"
+      "name": "client/src/components/chat/RoomHub.jsx",
+      "file": "client/src/components/chat/RoomHub.jsx"
     },
     {
       "type": "file",
@@ -859,13 +859,13 @@
     },
     {
       "type": "file",
-      "name": "client/src/components/chat/RoomHub.jsx",
-      "file": "client/src/components/chat/RoomHub.jsx"
+      "name": "client/src/components/auth/LandingPage.jsx",
+      "file": "client/src/components/auth/LandingPage.jsx"
     },
     {
       "type": "file",
-      "name": "client/src/components/auth/LandingPage.jsx",
-      "file": "client/src/components/auth/LandingPage.jsx"
+      "name": "client/src/components/chat/RoomHub.jsx",
+      "file": "client/src/components/chat/RoomHub.jsx"
     },
     {
       "type": "file",
