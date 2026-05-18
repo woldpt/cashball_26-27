@@ -1166,14 +1166,16 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 															(e) =>
 																e.minute <= liveMinute &&
 																(e.type === "goal" ||
-																	e.type === "penalty_goal") &&
+																	e.type === "penalty_goal" ||
+																	e.type === "var_goal_pending") &&
 																e.team === "home",
 														);
 														const awayGoals = matchEvents.filter(
 															(e) =>
 																e.minute <= liveMinute &&
 																(e.type === "goal" ||
-																	e.type === "penalty_goal") &&
+																	e.type === "penalty_goal" ||
+																	e.type === "var_goal_pending") &&
 																e.team === "away",
 														);
 														const maxMinute = isCupExtraTime ? 120 : 90;
@@ -1736,7 +1738,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 																							(e) =>
 																								e.minute <= liveMinute &&
 																								(e.type === "goal" ||
-																									e.type === "penalty_goal") &&
+																									e.type === "penalty_goal" ||
+																									e.type === "var_goal_pending") &&
 																								e.team === "home",
 																						);
 																					const currentAway =
@@ -1744,7 +1747,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 																							(e) =>
 																								e.minute <= liveMinute &&
 																								(e.type === "goal" ||
-																									e.type === "penalty_goal") &&
+																									e.type === "penalty_goal" ||
+																									e.type === "var_goal_pending") &&
 																								e.team === "away",
 																						);
 																					const isHumanMatch = players.some(
@@ -1935,13 +1939,17 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 																const currentHome = matchEvents.filter(
 																	(e) =>
 																		e.minute <= liveMinute &&
-																		e.type === "goal" &&
+																		(e.type === "goal" ||
+																			e.type === "penalty_goal" ||
+																			e.type === "var_goal_pending") &&
 																		e.team === "home",
 																);
 																const currentAway = matchEvents.filter(
 																	(e) =>
 																		e.minute <= liveMinute &&
-																		e.type === "goal" &&
+																		(e.type === "goal" ||
+																			e.type === "penalty_goal" ||
+																			e.type === "var_goal_pending") &&
 																		e.team === "away",
 																);
 																const isHumanMatch = players.some(

@@ -1053,11 +1053,11 @@ export function MatchPanel({
 
   const homeGoals = visibleEvts.filter(
     (e) =>
-      (e.type === "goal" || e.type === "penalty_goal") && e.team === "home",
+      (e.type === "goal" || e.type === "penalty_goal" || e.type === "var_goal_pending") && e.team === "home",
   ).length;
   const awayGoals = visibleEvts.filter(
     (e) =>
-      (e.type === "goal" || e.type === "penalty_goal") && e.team === "away",
+      (e.type === "goal" || e.type === "penalty_goal" || e.type === "var_goal_pending") && e.team === "away",
   ).length;
 
   const displayHomeGoals =
