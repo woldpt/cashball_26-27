@@ -58,6 +58,7 @@ export function TacticsProvider({ children }) {
 	const [openStatusPickerId, setOpenStatusPickerId] = useState(null);
 	const [dragOverPlayerId, setDragOverPlayerId] = useState(null);
 	const [dragPlayerId, setDragPlayerId] = useState(null);
+	const [dragOverSection, setDragOverSection] = useState(null);
 	const dragPlayerStatusRef = useRef(null);
 
 	// ── Computed values ──────────────────────────────────────────────────────
@@ -296,9 +297,12 @@ export function TacticsProvider({ children }) {
 				const targetPlayer = mySquad.find((p) => p.id === targetId);
 				if (draggedPlayer?.isJunior || targetPlayer?.isJunior) return prev;
 
+				// Só bloqueia trocas GR ↔ jogador de campo (integridade da baliza)
 				if (draggedStatus === "Titular" || targetStatus === "Titular") {
 					if (!draggedPlayer || !targetPlayer) return prev;
-					if (draggedPlayer.position !== targetPlayer.position) return prev;
+					const draggedIsGR = draggedPlayer.position === "GR";
+					const targetIsGR = targetPlayer.position === "GR";
+					if (draggedIsGR !== targetIsGR) return prev;
 				}
 				if (targetStatus === "Titular" || targetStatus === "Suplente") {
 					if (
@@ -316,7 +320,69 @@ export function TacticsProvider({ children }) {
 				}
 				newPositions[draggedId] = targetStatus;
 				newPositions[targetId] = draggedStatus;
-				return { ...prev, positions: newPositions };
+				const next = { ...prev, positions: newPositions };
+				socket.emit("setTactic", next);
+				return next;
+			});
+			setDragOverPlayerId(null);
+			setDragPlayerId(null);
+			dragPlayerStatusRef.current = null;
+		},
+		[mySquad, matchweekCount, setTactic],
+	);
+
+	/**
+	 * Muda o status de um jogador para a secção-alvo sem trocar com ninguém.
+	 * Usado quando se arrasta para uma área vazia da lista (zona de drop).
+	 */
+	const handleDropToSection = useCallback(
+		(playerId, targetSection) => {
+			if (!playerId) return;
+			setTactic((prev) => {
+				const newPositions = { ...prev.positions };
+				const player = mySquad.find((p) => p.id === playerId);
+				if (!player || player.isJunior) return prev;
+
+				const currentSection = newPositions[playerId] ?? "Excluído";
+				if (currentSection === targetSection) return prev;
+
+				// Verificar disponibilidade
+				if (targetSection === "Titular" || targetSection === "Suplente") {
+					if (!isPlayerAvailable(player, matchweekCount + 1)) return prev;
+				}
+
+				// Verificar capacidade
+				if (targetSection === "Titular") {
+					const count = Object.entries(newPositions).filter(
+						([id, s]) => s === "Titular" && Number(id) !== playerId,
+					).length;
+					if (count >= 11) return prev;
+					// Regra do GR: só um GR no 11; deslocar o existente para suplentes
+					if (player.position === "GR") {
+						Object.entries(newPositions).forEach(([id, s]) => {
+							const p = mySquad.find((x) => x.id === Number(id));
+							if (
+								p &&
+								p.id !== playerId &&
+								p.position === "GR" &&
+								s === "Titular"
+							) {
+								newPositions[id] = "Suplente";
+							}
+						});
+					}
+				}
+				if (targetSection === "Suplente") {
+					const count = Object.entries(newPositions).filter(
+						([id, s]) => s === "Suplente" && Number(id) !== playerId,
+					).length;
+					if (count >= 5) return prev;
+				}
+
+				newPositions[playerId] = targetSection;
+				const next = { ...prev, positions: newPositions };
+				socket.emit("setTactic", next);
+				return next;
 			});
 			setDragOverPlayerId(null);
 			setDragPlayerId(null);
@@ -367,6 +433,8 @@ export function TacticsProvider({ children }) {
 		setDragOverPlayerId,
 		dragPlayerId,
 		setDragPlayerId,
+		dragOverSection,
+		setDragOverSection,
 		dragPlayerStatusRef,
 		// Computed
 		annotatedSquad,
@@ -386,6 +454,7 @@ export function TacticsProvider({ children }) {
 		handleResetAllSubs,
 		handleSetPlayerStatus,
 		handleSwapPlayerStatuses,
+		handleDropToSection,
 		handleDragStart,
 		handleReady,
 		handleHalftimeReady,

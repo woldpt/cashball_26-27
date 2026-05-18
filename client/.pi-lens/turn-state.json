@@ -44,11 +44,11 @@
       "modifiedRanges": [
         {
           "start": 1,
-          "end": 468
+          "end": 490
         }
       ],
       "importsChanged": true,
-      "lastEdit": "2026-05-18T14:47:32.512Z"
+      "lastEdit": "2026-05-18T15:18:45.103Z"
     },
     "src/views/TacticsView.jsx": {
       "modifiedRanges": [
@@ -123,6 +123,6 @@
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-18T14:47:32.512Z",
-  "sessionId": "lens-mpbb50wi-48581b60"
+  "lastUpdated": "2026-05-18T15:18:45.103Z",
+  "sessionId": "lens-mpbc0l5s-0b32b510"
 }

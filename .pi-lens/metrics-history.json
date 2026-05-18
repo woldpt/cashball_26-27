@@ -263,14 +263,14 @@
     },
     "client/src/contexts/TacticsContext.jsx": {
       "latest": {
-        "commit": "73d8dbf",
-        "timestamp": "2026-05-18T14:38:17.111Z",
-        "mi": 18,
-        "cognitive": 153,
+        "commit": "2ff1d39",
+        "timestamp": "2026-05-18T15:04:43.913Z",
+        "mi": 19.6,
+        "cognitive": 132,
         "nesting": 7,
-        "lines": 406,
-        "maxCyclomatic": 141,
-        "entropy": 6.53
+        "lines": 372,
+        "maxCyclomatic": 129,
+        "entropy": 6.49
       },
       "history": [
         {
@@ -302,14 +302,24 @@
           "lines": 406,
           "maxCyclomatic": 141,
           "entropy": 6.53
+        },
+        {
+          "commit": "2ff1d39",
+          "timestamp": "2026-05-18T15:04:43.913Z",
+          "mi": 19.6,
+          "cognitive": 132,
+          "nesting": 7,
+          "lines": 372,
+          "maxCyclomatic": 129,
+          "entropy": 6.49
         }
       ],
-      "trend": "stable"
+      "trend": "improving"
     },
     "client/src/views/TacticsView.jsx": {
       "latest": {
-        "commit": "73d8dbf",
-        "timestamp": "2026-05-18T14:38:12.229Z",
+        "commit": "2ff1d39",
+        "timestamp": "2026-05-18T15:04:43.889Z",
         "mi": 1.2,
         "cognitive": 443,
         "nesting": 5,
@@ -331,6 +341,16 @@
         {
           "commit": "73d8dbf",
           "timestamp": "2026-05-18T14:38:12.229Z",
+          "mi": 1.2,
+          "cognitive": 443,
+          "nesting": 5,
+          "lines": 1210,
+          "maxCyclomatic": 472,
+          "entropy": 6.6
+        },
+        {
+          "commit": "2ff1d39",
+          "timestamp": "2026-05-18T15:04:43.889Z",
           "mi": 1.2,
           "cognitive": 443,
           "nesting": 5,
@@ -1027,5 +1047,5 @@
       "trend": "stable"
     }
   },
-  "capturedAt": "2026-05-18T14:44:43.745Z"
+  "capturedAt": "2026-05-18T15:04:48.913Z"
 }

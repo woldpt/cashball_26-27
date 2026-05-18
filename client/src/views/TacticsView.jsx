@@ -28,11 +28,14 @@ export function TacticsView() {
 		setDragOverPlayerId,
 		dragPlayerId,
 		setDragPlayerId,
+		dragOverSection,
+		setDragOverSection,
 		updateTactic,
 		handleClearTactic,
 		handleAutoPick,
 		handleSetPlayerStatus,
 		handleSwapPlayerStatuses,
+		handleDropToSection,
 		handleDragStart,
 		handleReady,
 		handleHalftimeReady,
@@ -373,7 +376,26 @@ export function TacticsView() {
 						</div>
 					</div>
 					{/* ── COL 2: TITULARES ── */}
-					<div className="bg-surface-container rounded-lg overflow-hidden">
+					<div
+						className={`bg-surface-container rounded-lg overflow-hidden transition-[box-shadow,background-color] duration-150 ${
+							dragOverSection === "Titular"
+								? "ring-2 ring-primary/50 bg-primary/[0.03]"
+								: ""
+						}`}
+						onDragOver={(e) => {
+							e.preventDefault();
+							if (dragPlayerId) setDragOverSection("Titular");
+						}}
+						onDragLeave={(e) => {
+							if (!e.currentTarget.contains(e.relatedTarget))
+								setDragOverSection(null);
+						}}
+						onDrop={(e) => {
+							e.preventDefault();
+							if (dragPlayerId) handleDropToSection(dragPlayerId, "Titular");
+							setDragOverSection(null);
+						}}
+					>
 						<div className="px-4 py-2.5 flex items-center justify-between bg-surface-container-high/60 border-b border-outline-variant/10">
 							<span className="text-[9px] uppercase tracking-[0.2em] font-black text-on-surface-variant">
 								Titulares
@@ -409,12 +431,14 @@ export function TacticsView() {
 										onDragLeave={() => setDragOverPlayerId(null)}
 										onDrop={(e) => {
 											e.preventDefault();
+											e.stopPropagation();
 											if (dragPlayerId && dragPlayerId !== player.id)
 												handleSwapPlayerStatuses(dragPlayerId, player.id);
 											else {
 												setDragOverPlayerId(null);
 												setDragPlayerId(null);
 											}
+											setDragOverSection(null);
 										}}
 										onDragEnd={() => {
 											setDragOverPlayerId(null);
@@ -582,7 +606,26 @@ export function TacticsView() {
 					</div>
 
 					{/* ── COL 3: SUPLENTES + NÃO CONVOCADOS ── */}
-					<div className="bg-surface-container rounded-lg overflow-hidden">
+					<div
+						className={`bg-surface-container rounded-lg overflow-hidden transition-[box-shadow,background-color] duration-150 ${
+							dragOverSection === "Suplente"
+								? "ring-2 ring-amber-500/50 bg-amber-500/[0.03]"
+								: ""
+						}`}
+						onDragOver={(e) => {
+							e.preventDefault();
+							if (dragPlayerId) setDragOverSection("Suplente");
+						}}
+						onDragLeave={(e) => {
+							if (!e.currentTarget.contains(e.relatedTarget))
+								setDragOverSection(null);
+						}}
+						onDrop={(e) => {
+							e.preventDefault();
+							if (dragPlayerId) handleDropToSection(dragPlayerId, "Suplente");
+							setDragOverSection(null);
+						}}
+					>
 						<div className="px-4 py-2.5 flex items-center justify-between bg-surface-container-high/60 border-b border-outline-variant/10">
 							<span className="text-[9px] uppercase tracking-[0.2em] font-black text-on-surface-variant">
 								Suplentes
@@ -615,12 +658,14 @@ export function TacticsView() {
 										onDragLeave={() => setDragOverPlayerId(null)}
 										onDrop={(e) => {
 											e.preventDefault();
+											e.stopPropagation();
 											if (dragPlayerId && dragPlayerId !== player.id)
 												handleSwapPlayerStatuses(dragPlayerId, player.id);
 											else {
 												setDragOverPlayerId(null);
 												setDragPlayerId(null);
 											}
+											setDragOverSection(null);
 										}}
 										onDragEnd={() => {
 											setDragOverPlayerId(null);
@@ -787,7 +832,23 @@ export function TacticsView() {
 								(p.isUnavailable ||
 									(p.status !== "Titular" && p.status !== "Suplente")),
 						).length > 0 && (
-							<>
+							<div
+								onDragOver={(e) => {
+									e.preventDefault();
+									e.stopPropagation();
+									if (dragPlayerId) setDragOverSection("Excluído");
+								}}
+								onDragLeave={(e) => {
+									if (!e.currentTarget.contains(e.relatedTarget))
+										setDragOverSection(null);
+								}}
+								onDrop={(e) => {
+									e.preventDefault();
+									e.stopPropagation();
+									if (dragPlayerId) handleDropToSection(dragPlayerId, "Excluído");
+									setDragOverSection(null);
+								}}
+							>
 								<div className="px-4 py-1.5 bg-surface-container-lowest/80 text-[8px] font-black uppercase tracking-[0.2em] text-on-surface-variant/40 border-t border-outline-variant/10">
 									Não convocados
 								</div>
@@ -812,12 +873,14 @@ export function TacticsView() {
 											onDragLeave={() => setDragOverPlayerId(null)}
 											onDrop={(e) => {
 												e.preventDefault();
+												e.stopPropagation();
 												if (dragPlayerId && dragPlayerId !== player.id)
 													handleSwapPlayerStatuses(dragPlayerId, player.id);
 												else {
 													setDragOverPlayerId(null);
 													setDragPlayerId(null);
 												}
+												setDragOverSection(null);
 											}}
 											onDragEnd={() => {
 												setDragOverPlayerId(null);
@@ -935,7 +998,7 @@ export function TacticsView() {
 												})()}
 										</div>
 									))}
-							</>
+							</div>
 						)}
 					</div>
 
