@@ -19,10 +19,30 @@
       ],
       "importsChanged": true,
       "lastEdit": "2026-05-14T12:44:17.046Z"
+    },
+    "socketSessionHandlers.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 900
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-18T14:25:55.964Z"
+    },
+    "cupFlowHelpers.ts": {
+      "modifiedRanges": [
+        {
+          "start": 1,
+          "end": 1313
+        }
+      ],
+      "importsChanged": true,
+      "lastEdit": "2026-05-18T14:25:56.032Z"
     }
   },
   "turnCycles": 0,
   "maxCycles": 3,
-  "lastUpdated": "2026-05-14T12:44:22.149Z",
-  "sessionId": "lens-mp5cawnn-aa471df5"
+  "lastUpdated": "2026-05-18T14:25:56.032Z",
+  "sessionId": "lens-mpbajnhl-92c10173"
 }
