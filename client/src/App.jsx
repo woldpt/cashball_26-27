@@ -50,6 +50,54 @@ function App() {
 		(typeof import.meta !== "undefined" && import.meta.env?.VITE_BACKEND_URL) ||
 		"";
 
+	// ── Socket Listeners for Auth ──────────────────────────────────────────
+	useEffect(() => {
+		const handleJoinError = (msg) => {
+			setJoinError(msg);
+			setJoining(false);
+			setMe(null);
+			try {
+				window.localStorage.removeItem("cashballSession");
+			} catch {
+				/* ignore */
+			}
+			if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
+		};
+
+		const handleJoinSuccess = (data) => {
+			const { roomCode, roomName } = data;
+			setRoomCode(roomCode);
+			setMe((prev) => {
+				if (!prev) return null;
+				const updated = { ...prev, roomCode, roomName };
+				try {
+					window.localStorage.setItem(
+						"cashballSession",
+						JSON.stringify({
+							name: updated.name,
+							password: updated.password,
+							roomCode: updated.roomCode,
+						}),
+					);
+				} catch {
+					/* ignore */
+				}
+				return updated;
+			});
+			setJoining(false);
+			setJoinError("");
+			if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
+		};
+
+		socket.on("joinGameSuccess", handleJoinSuccess);
+		socket.on("joinError", handleJoinError);
+
+		return () => {
+			socket.off("joinGameSuccess", handleJoinSuccess);
+			socket.off("joinError", handleJoinError);
+		};
+	}, []);
+
 	// ── Load saved session after cache check ───────────────────────────────
 	useEffect(() => {
 		if (!cacheReady) return;
@@ -77,7 +125,7 @@ function App() {
 		socket.emit("joinGame", {
 			name: savedSession.name,
 			password: savedSession.password,
-			roomCode: savedSession.roomCode,
+			roomCode: savedSession.roomCode.toUpperCase(),
 		});
 		joinTimerRef.current = setTimeout(() => {
 			setMe((prev) => (prev && !prev.teamId ? null : prev));
