@@ -1127,11 +1127,30 @@ export function TacticsView() {
 								};
 								return (
 									<div
-										className="relative w-full"
+										className={`relative w-full transition-[box-shadow] duration-150 ${
+											dragPlayerId &&
+											dragOverSection === "Titular" &&
+											annotatedSquad.find((p) => p.id === dragPlayerId)?.status !== "Titular"
+												? "ring-4 ring-inset ring-primary/60"
+												: ""
+										}`}
 										style={{
 											aspectRatio: "9/12",
 											background:
 												"linear-gradient(180deg, #05430e 0%, #0b5e1a 50%, #05430e 100%)",
+										}}
+										onDragOver={(e) => {
+											e.preventDefault();
+											if (dragPlayerId) setDragOverSection("Titular");
+										}}
+										onDragLeave={(e) => {
+											if (!e.currentTarget.contains(e.relatedTarget))
+												setDragOverSection(null);
+										}}
+										onDrop={(e) => {
+											e.preventDefault();
+											if (dragPlayerId) handleDropToSection(dragPlayerId, "Titular");
+											setDragOverSection(null);
 										}}
 									>
 										<svg
@@ -1219,11 +1238,36 @@ export function TacticsView() {
 													{rowPlayers.map((player) => (
 														<div
 															key={player.id}
-															className="flex flex-col items-center gap-0.5"
+															className="flex flex-col items-center gap-0.5 cursor-grab active:cursor-grabbing"
 															style={{ maxWidth: "80px" }}
+															draggable
+															data-player-id={player.id}
+															data-player-status="Titular"
+															onDragStart={handleDragStart}
+															onDragOver={(e) => {
+																e.preventDefault();
+																e.stopPropagation();
+																setDragOverPlayerId(player.id);
+															}}
+															onDragLeave={() => setDragOverPlayerId(null)}
+															onDrop={(e) => {
+																e.preventDefault();
+																e.stopPropagation();
+																if (dragPlayerId && dragPlayerId !== player.id)
+																	handleSwapPlayerStatuses(dragPlayerId, player.id);
+																else {
+																	setDragOverPlayerId(null);
+																	setDragPlayerId(null);
+																}
+																setDragOverSection(null);
+															}}
+															onDragEnd={() => {
+																setDragOverPlayerId(null);
+																setDragPlayerId(null);
+															}}
 														>
 															<div
-																className={`w-11 h-11 rounded-full flex items-center justify-center font-black text-xs border-2 border-white/20 shrink-0 relative shadow-lg group-hover:scale-110 transition-transform ${posColors[player.position] || "bg-zinc-500 text-white"} ${player.isUnavailable ? "opacity-50 ring-2 ring-red-500" : ""}`}
+																className={`w-11 h-11 rounded-full flex items-center justify-center font-black text-xs border-2 border-white/20 shrink-0 relative shadow-lg transition-transform ${posColors[player.position] || "bg-zinc-500 text-white"} ${player.isUnavailable ? "opacity-50 ring-2 ring-red-500" : ""} ${dragPlayerId === player.id ? "opacity-40 scale-90" : ""} ${dragOverPlayerId === player.id && dragPlayerId !== player.id ? "ring-2 ring-white scale-110" : ""}`}
 															>
 																{POSITION_SHORT_LABELS[player.position] || "?"}
 																{player.isUnavailable && (
@@ -1267,6 +1311,17 @@ export function TacticsView() {
 													))}
 												</div>
 											) : null,
+										)}
+										{dragPlayerId &&
+											dragOverSection === "Titular" &&
+											annotatedSquad.find((p) => p.id === dragPlayerId)?.status !== "Titular" && (
+											<div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+												<div className="bg-black/50 border border-primary/50 px-4 py-2 rounded-lg backdrop-blur-sm">
+													<p className="text-primary font-black text-xs uppercase tracking-widest animate-pulse">
+														↓ Soltar para entrar em campo
+													</p>
+												</div>
+											</div>
 										)}
 										{!tactic.formation && titulares.length === 0 && (
 											<div className="absolute inset-0 flex items-center justify-center">
