@@ -183,20 +183,6 @@ export function TacticsView() {
 											</div>
 										</div>
 									)}
-									{!hasFamiliarity && (
-										<div
-											className={`flex flex-col gap-1 px-3 py-2 rounded-md border ${badgeColor}`}
-										>
-											<div className="flex items-center gap-2">
-												<span className="text-[10px] font-black uppercase tracking-widest">
-													Sem rotina
-												</span>
-											</div>
-											<div className="text-[9px] opacity-70">
-												Usa tácticas diferentes ou jogo novo
-											</div>
-										</div>
-									)}
 								</div>
 							);
 						})()}
@@ -845,7 +831,8 @@ export function TacticsView() {
 								onDrop={(e) => {
 									e.preventDefault();
 									e.stopPropagation();
-									if (dragPlayerId) handleDropToSection(dragPlayerId, "Excluído");
+									if (dragPlayerId)
+										handleDropToSection(dragPlayerId, "Excluído");
 									setDragOverSection(null);
 								}}
 							>
@@ -1130,7 +1117,8 @@ export function TacticsView() {
 										className={`relative w-full transition-[box-shadow] duration-150 ${
 											dragPlayerId &&
 											dragOverSection === "Titular" &&
-											annotatedSquad.find((p) => p.id === dragPlayerId)?.status !== "Titular"
+											annotatedSquad.find((p) => p.id === dragPlayerId)
+												?.status !== "Titular"
 												? "ring-4 ring-inset ring-primary/60"
 												: ""
 										}`}
@@ -1149,7 +1137,8 @@ export function TacticsView() {
 										}}
 										onDrop={(e) => {
 											e.preventDefault();
-											if (dragPlayerId) handleDropToSection(dragPlayerId, "Titular");
+											if (dragPlayerId)
+												handleDropToSection(dragPlayerId, "Titular");
 											setDragOverSection(null);
 										}}
 									>
@@ -1254,7 +1243,10 @@ export function TacticsView() {
 																e.preventDefault();
 																e.stopPropagation();
 																if (dragPlayerId && dragPlayerId !== player.id)
-																	handleSwapPlayerStatuses(dragPlayerId, player.id);
+																	handleSwapPlayerStatuses(
+																		dragPlayerId,
+																		player.id,
+																	);
 																else {
 																	setDragOverPlayerId(null);
 																	setDragPlayerId(null);
@@ -1314,15 +1306,16 @@ export function TacticsView() {
 										)}
 										{dragPlayerId &&
 											dragOverSection === "Titular" &&
-											annotatedSquad.find((p) => p.id === dragPlayerId)?.status !== "Titular" && (
-											<div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-												<div className="bg-black/50 border border-primary/50 px-4 py-2 rounded-lg backdrop-blur-sm">
-													<p className="text-primary font-black text-xs uppercase tracking-widest animate-pulse">
-														↓ Soltar para entrar em campo
-													</p>
+											annotatedSquad.find((p) => p.id === dragPlayerId)
+												?.status !== "Titular" && (
+												<div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+													<div className="bg-black/50 border border-primary/50 px-4 py-2 rounded-lg backdrop-blur-sm">
+														<p className="text-primary font-black text-xs uppercase tracking-widest animate-pulse">
+															↓ Soltar para entrar em campo
+														</p>
+													</div>
 												</div>
-											</div>
-										)}
+											)}
 										{!tactic.formation && titulares.length === 0 && (
 											<div className="absolute inset-0 flex items-center justify-center">
 												<p

@@ -318,14 +318,14 @@
     },
     "client/src/views/TacticsView.jsx": {
       "latest": {
-        "commit": "2ff1d39",
-        "timestamp": "2026-05-18T15:04:43.889Z",
-        "mi": 1.2,
-        "cognitive": 443,
-        "nesting": 5,
-        "lines": 1210,
-        "maxCyclomatic": 472,
-        "entropy": 6.6
+        "commit": "1d8ac9a",
+        "timestamp": "2026-05-18T17:38:46.665Z",
+        "mi": 0.1,
+        "cognitive": 513,
+        "nesting": 6,
+        "lines": 1328,
+        "maxCyclomatic": 519,
+        "entropy": 6.7
       },
       "history": [
         {
@@ -357,9 +357,19 @@
           "lines": 1210,
           "maxCyclomatic": 472,
           "entropy": 6.6
+        },
+        {
+          "commit": "1d8ac9a",
+          "timestamp": "2026-05-18T17:38:46.665Z",
+          "mi": 0.1,
+          "cognitive": 513,
+          "nesting": 6,
+          "lines": 1328,
+          "maxCyclomatic": 519,
+          "entropy": 6.7
         }
       ],
-      "trend": "stable"
+      "trend": "regressing"
     },
     "client/src/components/match/MatchPage.jsx": {
       "latest": {
@@ -1047,5 +1057,5 @@
       "trend": "stable"
     }
   },
-  "capturedAt": "2026-05-18T15:04:48.913Z"
+  "capturedAt": "2026-05-18T17:38:51.665Z"
 }

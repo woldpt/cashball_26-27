@@ -266,6 +266,14 @@
       "tokens": 0
     },
     {
+      "fileA": "client/src/contexts/TacticsContext.jsx",
+      "startA": 382,
+      "fileB": "client/src/contexts/TacticsContext.jsx",
+      "startB": 322,
+      "lines": 13,
+      "tokens": 0
+    },
+    {
       "fileA": "server/scripts/socketioContractValidator.ts",
       "startA": 64,
       "fileB": "server/scripts/socketioContractValidator.ts",
@@ -522,7 +530,7 @@
       "tokens": 0
     }
   ],
-  "duplicatedLines": 1347,
-  "totalLines": 36177,
-  "percentage": 3.72
+  "duplicatedLines": 1359,
+  "totalLines": 36246,
+  "percentage": 3.75
 }
