@@ -587,7 +587,10 @@ export function useSocketListeners(handlers, refs) {
 		});
 		socket.on("teamAssigned", (data) => {
 			const currentMe = refs.meRef.current;
-			if (!currentMe?.name || !currentMe?.roomCode) return;
+			// Só precisamos do name — o joinGame já foi emitido por este socket.
+			// O roomCode pode ainda não estar atualizado no ref porque o React
+			// não processou a atualização do handleJoinSuccess (mesmo event loop).
+			if (!currentMe?.name) return;
 			handlers.setMe((prev) =>
 				prev ? { ...prev, teamId: data.teamId } : prev,
 			);

@@ -297,8 +297,8 @@ function App() {
 		);
 	}
 
-	// ── Landing page (no team) ─────────────────────────────────────────────
-	if (!me || !me.teamId) {
+	// ── Landing page (no me at all) ────────────────────────────────────────
+	if (!me) {
 		return (
 			<LandingPage
 				authPhase={authPhase}
@@ -332,7 +332,7 @@ function App() {
 		);
 	}
 
-	// ── Game ───────────────────────────────────────────────────────────────
+	// ── Game (always mounted once me is set — catches teamAssigned early) ──
 	return (
 		<GameProvider
 			me={me}
@@ -345,9 +345,25 @@ function App() {
 			joinTimerRef={joinTimerRef}
 			backendUrl={backendUrl}
 		>
-			<TacticsProvider>
-				<GameLayout handleLogout={handleLogout} setAuthPhase={setAuthPhase} />
-			</TacticsProvider>
+			{!me.teamId ? (
+				<div className="min-h-screen bg-surface text-on-surface flex items-center justify-center">
+					<div className="text-center space-y-3">
+						<p className="text-3xl font-headline font-black text-primary tracking-tight">
+							CashBall <span className="text-on-surface">26/27</span>
+						</p>
+						<p className="text-xs text-on-surface-variant uppercase tracking-[0.3em] font-bold animate-pulse">
+							A entrar na sala...
+						</p>
+					</div>
+				</div>
+			) : (
+				<TacticsProvider>
+					<GameLayout
+						handleLogout={handleLogout}
+						setAuthPhase={setAuthPhase}
+					/>
+				</TacticsProvider>
+			)}
 		</GameProvider>
 	);
 }
