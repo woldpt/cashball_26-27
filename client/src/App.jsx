@@ -102,19 +102,18 @@ function App() {
 	useEffect(() => {
 		if (!cacheReady) return;
 		const session = loadSavedSession();
-		startTransition(() => setSavedSession(session));
+		// eslint-disable-next-line react-hooks/set-state-in-effect
+		setSavedSession(session);
 		if (session) {
-			startTransition(() => {
-				setMe({
-					name: session.name,
-					password: session.password,
-					roomCode: session.roomCode,
-				});
-				setName(session.name);
-				setPassword(session.password);
-				setRoomCode(session.roomCode);
-				setJoining(true);
+			setMe({
+				name: session.name,
+				password: session.password,
+				roomCode: session.roomCode,
 			});
+			setName(session.name);
+			setPassword(session.password);
+			setRoomCode(session.roomCode);
+			setJoining(true);
 		}
 	}, [cacheReady]);
 
@@ -122,21 +121,39 @@ function App() {
 	useEffect(() => {
 		if (!savedSession || me?.teamId) return;
 		if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
-		socket.emit("joinGame", {
-			name: savedSession.name,
-			password: savedSession.password,
-			roomCode: savedSession.roomCode.toUpperCase(),
-		});
-		joinTimerRef.current = setTimeout(() => {
-			setMe((prev) => (prev && !prev.teamId ? null : prev));
-			setJoining(false);
-			setJoinError(
-				"Sem resposta do servidor. Certifica-te que o servidor está ligado.",
-			);
-		}, 6000);
-		return () => {
-			if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
+
+		const joinWithRetry = () => {
+			console.log("[App] Auto-join attempt, socket.connected:", socket.connected);
+			socket.emit("joinGame", {
+				name: savedSession.name,
+				password: savedSession.password,
+				roomCode: savedSession.roomCode.toUpperCase(),
+			});
+
+			joinTimerRef.current = setTimeout(() => {
+				setMe((prev) => (prev && !prev.teamId ? null : prev));
+				setJoining(false);
+				setJoinError(
+					"Sem resposta do servidor. Certifica-te que o servidor está ligado.",
+				);
+			}, 6000);
 		};
+
+		if (socket.connected) {
+			joinWithRetry();
+		} else {
+			// Socket not ready yet — wait for connection then join
+			const onConnect = () => {
+				console.log("[App] Socket connected, joining with saved session");
+				socket.off("connect", onConnect);
+				joinWithRetry();
+			};
+			socket.on("connect", onConnect);
+			return () => {
+				socket.off("connect", onConnect);
+				if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
+			};
+		}
 	}, [savedSession, me?.teamId]);
 
 	// ── Re-fetch saved rooms for this coach ────────────────────────────────
