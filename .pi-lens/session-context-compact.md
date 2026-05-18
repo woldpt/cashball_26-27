@@ -20,7 +20,9 @@ Sessão dedicada a resolver o bug "Sem resposta do servidor" ao entrar numa sala
 - Estes listeners agora estão apenas em `App.jsx`, que é sempre montado (antes do `GameProvider`).
 
 ## Estado Atual
-- Commit feito: `d758fc0` — "fix: remove startTransition from session loading to fix auto-join race condition, add socket.connected check"
+- Commits realizados:
+  - `d758fc0`: "fix: remove startTransition from session loading to fix auto-join race condition, add socket.connected check"
+  - `7d43304`: "docs: add session context compact for room joining fix"
 - Push realizado com sucesso para `origin/master`.
 
 ## Próximos Passos (se necessário)
