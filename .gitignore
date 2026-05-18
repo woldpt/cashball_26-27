@@ -7,3 +7,4 @@ server/db/accounts.db
 server/server.log
 .vscode/mcp.json
 server/db/base.db
+.pi-lens/

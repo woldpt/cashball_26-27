@@ -1268,7 +1268,7 @@ export function TacticsView() {
 												</div>
 											) : null,
 										)}
-										{!tactic.formation && (
+										{!tactic.formation && titulares.length === 0 && (
 											<div className="absolute inset-0 flex items-center justify-center">
 												<p
 													className="text-zinc-300 text-sm font-bold text-center px-8 leading-relaxed"
@@ -1276,7 +1276,7 @@ export function TacticsView() {
 														textShadow: "0 1px 4px rgba(0,0,0,0.9)",
 													}}
 												>
-													Escolhe uma formação para ver os jogadores em campo
+													Arrasta jogadores para o campo ou escolhe uma formação
 												</p>
 											</div>
 										)}
