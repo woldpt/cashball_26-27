@@ -110,7 +110,11 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
   const [bidSuccess, setBidSuccess] = useState(false);
 
   const secs = useCountdown(auction.closed || auction.paused ? null : auction.endsAt);
-  const accent = posAccent(auction.position);
+  // Team color (same as MarketCard) — not position-based
+  const teamColor =
+    auction.color_primary ||
+    auction.team_color_primary ||
+    "#95d4b3";
   const countryName = FLAG_TO_COUNTRY?.[auction.nationality] || auction.nationality || "—";
 
   const isSeller = auction.sellerTeamId === me?.teamId;
@@ -172,24 +176,24 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
           className={`absolute inset-0 rounded-xl overflow-hidden flex flex-col ring-2 ${posRingClass(auction.position)} [backface-visibility:hidden] hover:scale-[1.04] transition-transform duration-300 [transform-origin:center_center] [transform:translateZ(0)]`}
           style={{
             WebkitBackfaceVisibility: "hidden",
-            background: `linear-gradient(165deg, ${hexToRgba(accent, 0.3)} 0%, ${hexToRgba(accent, 0.18)} 42%, rgba(35,39,56,0.93) 100%)`,
-            border: `2px solid ${isClosed || isPaused ? "#333" : hexToRgba(accent, 0.24)}`,
+            background: `linear-gradient(165deg, ${hexToRgba(teamColor, 0.3)} 0%, ${hexToRgba(teamColor, 0.18)} 42%, rgba(35,39,56,0.93) 100%)`,
+            border: `2px solid ${isClosed || isPaused ? "#333" : hexToRgba(teamColor, 0.24)}`,
             boxShadow: isClosed || isPaused
               ? "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)"
-              : `0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1), 0 0 28px 0 ${hexToRgba(accent, 0.35)}, 0 0 60px 0 ${hexToRgba(accent, 0.12)}`,
+              : `0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1), 0 0 28px 0 ${hexToRgba(teamColor, 0.35)}, 0 0 60px 0 ${hexToRgba(teamColor, 0.12)}`,
           }}
         >
           {/* Orb de brilho atrás do avatar */}
           <div
             className="absolute -top-6 -left-6 w-40 h-40 pointer-events-none"
             style={{
-              background: `radial-gradient(circle, ${hexToRgba(accent, 0.25)} 0%, transparent 70%)`,
+              background: `radial-gradient(circle, ${hexToRgba(teamColor, 0.25)} 0%, transparent 70%)`,
             }}
           />
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: `radial-gradient(ellipse at top right, rgba(255,255,255,0.1) 0%, transparent 60%), radial-gradient(ellipse at bottom left, ${hexToRgba(accent, 0.24)} 0%, transparent 70%)`,
+              background: `radial-gradient(ellipse at top right, rgba(255,255,255,0.1) 0%, transparent 60%), radial-gradient(ellipse at bottom left, ${hexToRgba(teamColor, 0.24)} 0%, transparent 70%)`,
             }}
           />
           {/* Shimmer animado */}
@@ -205,22 +209,22 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
           <div
             className="px-4 pt-4 pb-3 flex items-start gap-3"
             style={{
-              background: `linear-gradient(135deg, ${accent}18 0%, transparent 100%)`,
-              borderBottom: `1px solid ${accent}22`,
+              background: `linear-gradient(135deg, ${teamColor}18 0%, transparent 100%)`,
+              borderBottom: `1px solid ${teamColor}22`,
             }}
           >
             {/* Avatar */}
             <PlayerAvatar
               seed={auction.playerId}
               position={auction.position}
-              teamColor={accent}
+              teamColor={teamColor}
               size="md"
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <span
                   className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-sm"
-                  style={{ background: `${accent}22`, color: accent }}
+                  style={{ background: `${teamColor}22`, color: teamColor }}
                 >
                   {auction.position}
                 </span>
@@ -248,7 +252,7 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
             <div className="flex flex-col items-end shrink-0 gap-1">
               <span
                 className="font-black text-2xl leading-none tabular-nums"
-                style={{ color: accent }}
+                style={{ color: teamColor }}
               >
                 {auction.skill}
               </span>
@@ -279,7 +283,7 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
               <>
                 <span
                   className="font-mono font-black text-2xl tabular-nums leading-none"
-                  style={{ color: secs != null && secs <= 15 ? "#f87171" : accent }}
+                  style={{ color: secs != null && secs <= 15 ? "#f87171" : teamColor }}
                 >
                   {secs != null ? `${secs}s` : "—"}
                 </span>
@@ -402,11 +406,11 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
               <div className="flex flex-col gap-2">
                 <div
                   className="flex items-center rounded-lg overflow-hidden"
-                  style={{ border: `1px solid ${accent}50`, background: "#111118" }}
+                  style={{ border: `1px solid ${teamColor}50`, background: "#111118" }}
                 >
                   <span
                     className="material-symbols-outlined text-sm px-3 shrink-0"
-                    style={{ color: accent }}
+                    style={{ color: teamColor }}
                   >
                     currency_exchange
                   </span>
@@ -436,7 +440,7 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
                     handleBid();
                   }}
                   className="w-full py-2.5 rounded-lg font-headline font-black uppercase text-sm tracking-wide transition-all active:scale-95 hover:brightness-110"
-                  style={{ background: accent, color: "#0d0d14" }}
+                  style={{ background: teamColor, color: "#0d0d14" }}
                 >
                   Licitar
                 </button>
@@ -451,15 +455,15 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
           style={{
             WebkitBackfaceVisibility: "hidden",
             transform: "rotateY(180deg)",
-            background: `linear-gradient(15deg, ${hexToRgba(accent, 0.18)} 0%, rgba(36,40,58,0.95) 52%, ${hexToRgba(accent, 0.2)} 100%)`,
-            border: `2px solid ${hexToRgba(accent, 0.24)}`,
-            boxShadow: `0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1), 0 0 28px 0 ${hexToRgba(accent, 0.25)}, 0 0 60px 0 ${hexToRgba(accent, 0.08)}`,
+            background: `linear-gradient(15deg, ${hexToRgba(teamColor, 0.18)} 0%, rgba(36,40,58,0.95) 52%, ${hexToRgba(teamColor, 0.2)} 100%)`,
+            border: `2px solid ${hexToRgba(teamColor, 0.24)}`,
+            boxShadow: `0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1), 0 0 28px 0 ${hexToRgba(teamColor, 0.25)}, 0 0 60px 0 ${hexToRgba(teamColor, 0.08)}`,
           }}
         >
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: `radial-gradient(ellipse at bottom left, rgba(255,255,255,0.08) 0%, transparent 62%), radial-gradient(ellipse at top right, ${hexToRgba(accent, 0.24)} 0%, transparent 72%)`,
+              background: `radial-gradient(ellipse at bottom left, rgba(255,255,255,0.08) 0%, transparent 62%), radial-gradient(ellipse at top right, ${hexToRgba(teamColor, 0.24)} 0%, transparent 72%)`,
             }}
           />
           {/* Shimmer animado */}
@@ -474,14 +478,14 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
           <div
             className="px-4 pt-4 pb-3 flex items-center gap-3"
             style={{
-              background: `linear-gradient(135deg, ${accent}18 0%, transparent 100%)`,
-              borderBottom: `1px solid ${accent}22`,
+              background: `linear-gradient(135deg, ${teamColor}18 0%, transparent 100%)`,
+              borderBottom: `1px solid ${teamColor}22`,
             }}
           >
             <PlayerAvatar
               seed={auction.playerId}
               position={auction.position}
-              teamColor={accent}
+              teamColor={teamColor}
               size="sm"
             />
             <div className="min-w-0 flex-1">
@@ -529,7 +533,7 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
               </div>
               <div className="p-3">
                 <p className="text-[8px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Preço Base</p>
-                <p className="font-black text-sm font-mono tabular-nums" style={{ color: accent }}>
+                <p className="font-black text-sm font-mono tabular-nums" style={{ color: teamColor }}>
                   {formatCurrency(auction.startingPrice)}
                 </p>
               </div>
