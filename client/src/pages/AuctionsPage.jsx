@@ -153,7 +153,7 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
 
   return (
     <div
-      className="[perspective:1200px] hover:scale-[1.04] transition-transform duration-300"
+      className="[perspective:1200px]"
       onClick={() => setFlipped(!flipped)}
     >
       {/* Card wrapper with flip transform */}
@@ -169,7 +169,7 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
       >
         {/* ── FRENTE ────────────────────────────────────────────────────── */}
         <div
-          className={`absolute inset-0 rounded-xl overflow-hidden flex flex-col hover:scale-[1.04] transition-transform duration-300 ring-2 ${posRingClass(auction.position)} [backface-visibility:hidden]`}
+          className={`absolute inset-0 rounded-xl overflow-hidden flex flex-col ring-2 ${posRingClass(auction.position)} [backface-visibility:hidden] hover:scale-[1.04] transition-transform duration-300 [transform-origin:center_center] [transform:translateZ(0)]`}
           style={{
             WebkitBackfaceVisibility: "hidden",
             background: `linear-gradient(165deg, ${hexToRgba(accent, 0.3)} 0%, ${hexToRgba(accent, 0.18)} 42%, rgba(35,39,56,0.93) 100%)`,
