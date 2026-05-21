@@ -17,6 +17,40 @@ function posAccent(pos) {
   return POS_ACCENT[pos] || DEFAULT_ACCENT;
 }
 
+/* ── Color helpers (same as TransferHub) ─────────────────────────────────── */
+function normalizeHex(hex) {
+  if (typeof hex !== "string") return null;
+  const clean = hex.trim().replace("#", "");
+  if (/^[0-9a-fA-F]{3}$/.test(clean)) {
+    return `#${clean
+      .split("")
+      .map((c) => c + c)
+      .join("")}`;
+  }
+  if (/^[0-9a-fA-F]{6}$/.test(clean)) return `#${clean}`;
+  return null;
+}
+
+function hexToRgba(hex, alpha) {
+  const n = normalizeHex(hex);
+  if (!n) return `rgba(149,212,179,${alpha})`;
+  const r = Number.parseInt(n.slice(1, 3), 16);
+  const g = Number.parseInt(n.slice(3, 5), 16);
+  const b = Number.parseInt(n.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function posRingClass(pos) {
+  return (
+    {
+      GR: "ring-yellow-400/60 border-yellow-400/35",
+      DEF: "ring-blue-400/60 border-blue-400/35",
+      MED: "ring-emerald-400/60 border-emerald-400/35",
+      ATA: "ring-rose-400/60 border-rose-400/35",
+    }[pos] || "ring-zinc-400/50 border-zinc-500/35"
+  );
+}
+
 /* ── Countdown hook ───────────────────────────────────────────────────────── */
 function useCountdown(endsAt) {
   const [secs, setSecs] = useState(null);
@@ -119,14 +153,14 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
 
   return (
     <div
-      className="relative select-none cursor-pointer hover:scale-[1.04] transition-transform duration-300"
-      style={{ perspective: "1200px", minHeight: 380 }}
+      className="[perspective:1200px] hover:scale-[1.04] transition-transform duration-300"
       onClick={() => setFlipped(!flipped)}
     >
       {/* Card wrapper with flip transform */}
       <div
+        className="block w-full text-left"
         style={{
-          transition: "transform 0.55s cubic-bezier(0.4,0,0.2,1)",
+          transition: "transform 0.3s ease",
           transformStyle: "preserve-3d",
           transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
           position: "relative",
@@ -135,15 +169,38 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
       >
         {/* ── FRENTE ────────────────────────────────────────────────────── */}
         <div
-          className="absolute inset-0 rounded-xl overflow-hidden flex flex-col"
+          className={`absolute inset-0 rounded-xl overflow-hidden flex flex-col hover:scale-[1.04] transition-transform duration-300 ring-2 ${posRingClass(auction.position)} [backface-visibility:hidden]`}
           style={{
-            backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
-            background: "#0d0d14",
-            border: `2px solid ${isClosed || isPaused ? "#333" : accent}`,
-            boxShadow: isClosed || isPaused ? "none" : `0 0 24px 0 ${accent}33`,
+            background: `linear-gradient(165deg, ${hexToRgba(accent, 0.3)} 0%, ${hexToRgba(accent, 0.18)} 42%, rgba(35,39,56,0.93) 100%)`,
+            border: `2px solid ${isClosed || isPaused ? "#333" : hexToRgba(accent, 0.24)}`,
+            boxShadow: isClosed || isPaused
+              ? "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)"
+              : `0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1), 0 0 28px 0 ${hexToRgba(accent, 0.35)}, 0 0 60px 0 ${hexToRgba(accent, 0.12)}`,
           }}
         >
+          {/* Orb de brilho atrás do avatar */}
+          <div
+            className="absolute -top-6 -left-6 w-40 h-40 pointer-events-none"
+            style={{
+              background: `radial-gradient(circle, ${hexToRgba(accent, 0.25)} 0%, transparent 70%)`,
+            }}
+          />
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `radial-gradient(ellipse at top right, rgba(255,255,255,0.1) 0%, transparent 60%), radial-gradient(ellipse at bottom left, ${hexToRgba(accent, 0.24)} 0%, transparent 70%)`,
+            }}
+          />
+          {/* Shimmer animado */}
+          <div
+            className="absolute inset-0 pointer-events-none overflow-hidden"
+            style={{
+              background: "linear-gradient(105deg, transparent 25%, rgba(255,255,255,0.1) 50%, transparent 75%)",
+              backgroundSize: "200% 100%",
+              animation: "shimmer 3s infinite linear",
+            }}
+          />
           {/* Header */}
           <div
             className="px-4 pt-4 pb-3 flex items-start gap-3"
@@ -390,15 +447,30 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
 
         {/* ── VERSO ─────────────────────────────────────────────────────── */}
         <div
-          className="absolute inset-0 rounded-xl overflow-hidden flex flex-col"
+          className={`absolute inset-0 rounded-xl overflow-hidden flex flex-col ring-2 ${posRingClass(auction.position)} [backface-visibility:hidden]`}
           style={{
-            backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
             transform: "rotateY(180deg)",
-            background: "#0d0d14",
-            border: `2px solid ${accent}`,
+            background: `linear-gradient(15deg, ${hexToRgba(accent, 0.18)} 0%, rgba(36,40,58,0.95) 52%, ${hexToRgba(accent, 0.2)} 100%)`,
+            border: `2px solid ${hexToRgba(accent, 0.24)}`,
+            boxShadow: `0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1), 0 0 28px 0 ${hexToRgba(accent, 0.25)}, 0 0 60px 0 ${hexToRgba(accent, 0.08)}`,
           }}
         >
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: `radial-gradient(ellipse at bottom left, rgba(255,255,255,0.08) 0%, transparent 62%), radial-gradient(ellipse at top right, ${hexToRgba(accent, 0.24)} 0%, transparent 72%)`,
+            }}
+          />
+          {/* Shimmer animado */}
+          <div
+            className="absolute inset-0 pointer-events-none overflow-hidden"
+            style={{
+              background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%)",
+              backgroundSize: "200% 100%",
+              animation: "shimmer 3s infinite linear",
+            }}
+          />
           <div
             className="px-4 pt-4 pb-3 flex items-center gap-3"
             style={{
