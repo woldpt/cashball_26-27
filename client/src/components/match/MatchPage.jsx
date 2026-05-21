@@ -95,35 +95,25 @@ export function MatchPage({
 	const FixtureCard = ({ homeTeamId, awayTeamId }) => {
 		const home = teams.find((t) => t.id === homeTeamId);
 		const away = teams.find((t) => t.id === awayTeamId);
+		const hAccent = home?.color_primary || "#6366f1";
+		const aAccent = away?.color_primary || "#6366f1";
 		return (
-			<div className="flex items-center gap-1 py-1 px-1.5 rounded-sm bg-zinc-900/60 border border-zinc-800/40">
-				<div
-					className="w-4 h-4 rounded-full flex items-center justify-center text-[6px] font-black shrink-0 border border-white/10"
-					style={{
-						background: home?.color_primary || "#333",
-						color: home?.color_secondary || "#fff",
-					}}
-				>
-					{home?.name?.[0] ?? "?"}
-				</div>
+			<div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-800/40 bg-zinc-950/60 hover:bg-zinc-900/50 transition-colors">
+				<span
+					className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+					style={{ background: hAccent, boxShadow: `0 0 6px ${hAccent}60` }}
+				/>
 				<span className="flex-1 text-[10px] font-bold text-zinc-300 truncate">
 					{home?.name || "—"}
 				</span>
-				<span className="text-zinc-600 text-[8px] font-black mx-0.5 shrink-0">
-					vs
-				</span>
+				<span className="text-[8px] font-black text-zinc-600 shrink-0">vs</span>
 				<span className="flex-1 text-[10px] font-bold text-zinc-300 truncate text-right">
 					{away?.name || "—"}
 				</span>
-				<div
-					className="w-4 h-4 rounded-full flex items-center justify-center text-[6px] font-black shrink-0 border border-white/10"
-					style={{
-						background: away?.color_primary || "#333",
-						color: away?.color_secondary || "#fff",
-					}}
-				>
-					{away?.name?.[0] ?? "?"}
-				</div>
+				<span
+					className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+					style={{ background: aAccent, boxShadow: `0 0 6px ${aAccent}60` }}
+				/>
 			</div>
 		);
 	};
@@ -181,43 +171,57 @@ export function MatchPage({
 		);
 	}
 
+	// ── Helpers ──────────────────────────────────────────────────────────
+	const getTeamName = (teamId) => teams.find((t) => t.id === teamId)?.name || "—";
+	const getTeamColor = (teamId) => teams.find((t) => t.id === teamId)?.color_primary || "#6366f1";
+	const homeTeam = teams.find((t) => t.id === fixture?.homeTeamId);
+	const awayTeam = teams.find((t) => t.id === fixture?.awayTeamId);
+	const hColor = homeTeam?.color_primary || "#6366f1";
+	const aColor = awayTeam?.color_primary || "#f43f5e";
+
 	return (
 		<div
-			className={`fixed inset-y-0 left-0 right-0 ${sidebarLeft} z-120 flex flex-col bg-[#0d0d14]`}
+			className={`fixed inset-y-0 left-0 right-0 ${sidebarLeft} z-120 flex flex-col bg-[linear-gradient(180deg,#0d0d14_0%,#11111b_100%)]`}
 		>
 			{/* Header */}
-			<div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-zinc-800 bg-zinc-950/80">
+			<div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-sm">
 				<button
 					onClick={onClose}
-					className="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-colors"
+					className="w-8 h-8 rounded-xl bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-400 hover:text-white flex items-center justify-center transition-all border border-zinc-700/50 hover:border-zinc-600/50"
 				>
 					←
 				</button>
-				<div className="flex-1 flex items-center gap-2">
+				<div className="flex-1 flex items-center gap-2 min-w-0">
+					{/* Home team indicator */}
+					<span
+						className="w-1.5 h-8 rounded-full shrink-0 shadow-sm"
+						style={{ background: hColor, boxShadow: `0 0 8px ${hColor}60` }}
+					/>
 					<span className="text-sm font-black text-white truncate">
-						{fixture?.homeTeamId === myTeamId
-							? teams.find((t) => t.id === fixture?.homeTeamId)?.name || "Casa"
-							: teams.find((t) => t.id === fixture?.awayTeamId)?.name || "Fora"}
+						{getTeamName(fixture?.homeTeamId)}
 						{" vs "}
-						{fixture?.awayTeamId === myTeamId
-							? teams.find((t) => t.id === fixture?.awayTeamId)?.name || "Fora"
-							: teams.find((t) => t.id === fixture?.homeTeamId)?.name || "Casa"}
+						{getTeamName(fixture?.awayTeamId)}
 					</span>
+					{/* Away team indicator */}
+					<span
+						className="w-1.5 h-8 rounded-full shrink-0 shadow-sm"
+						style={{ background: aColor, boxShadow: `0 0 8px ${aColor}60` }}
+					/>
 					{isCupMatch && (
-						<span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-400">
+						<span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
 							{cupMatchRoundName || "Taça"}
 						</span>
 					)}
 				</div>
 				{isPlayingMatch && (
-					<span className="text-[10px] font-black text-primary animate-pulse">
+					<span className="text-[10px] font-black text-primary animate-pulse bg-primary/10 px-2 py-1 rounded-lg border border-primary/30">
 						{liveMinute}'
 					</span>
 				)}
 			</div>
 
 			{/* Tab navigation */}
-			<div className="shrink-0 flex w-full border-b border-zinc-800 bg-zinc-950/60">
+			<div className="shrink-0 flex w-full border-b border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm">
 				{tabs.map((tab) => {
 					const disabled =
 						tab.key === "intervencao" &&
@@ -228,12 +232,12 @@ export function MatchPage({
 							key={tab.key}
 							onClick={() => !disabled && setActiveTab(tab.key)}
 							disabled={disabled}
-							className={`flex-1 min-w-0 py-2 px-1 text-[10px] font-black uppercase tracking-widest transition-colors border-b-2 whitespace-nowrap ${
+							className={`flex-1 min-w-0 py-2.5 px-1 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 whitespace-nowrap ${
 								activeTab === tab.key
-									? "text-white border-primary bg-primary/5"
+									? "text-white border-primary bg-primary/5 shadow-[inset_0_-1px_0_0_#6366f1]"
 									: disabled
 										? "text-zinc-700 cursor-not-allowed border-transparent"
-										: "text-zinc-500 hover:text-zinc-300 border-transparent"
+										: "text-zinc-500 hover:text-zinc-300 border-transparent hover:bg-zinc-800/30"
 							}`}
 						>
 							{tab.label}
