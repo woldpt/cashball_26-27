@@ -120,7 +120,7 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
   return (
     <div
       className="relative select-none cursor-pointer hover:scale-[1.04] transition-transform duration-300"
-      style={{ perspective: "1000px", minHeight: 380 }}
+      style={{ perspective: "1200px", minHeight: 380 }}
       onClick={() => setFlipped(!flipped)}
     >
       {/* Card wrapper with flip transform */}
