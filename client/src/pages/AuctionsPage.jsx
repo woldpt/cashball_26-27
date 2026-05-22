@@ -173,7 +173,7 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
       >
         {/* ── FRENTE ────────────────────────────────────────────────────── */}
         <div
-          className={`absolute inset-0 rounded-xl overflow-hidden flex flex-col ring-2 ${posRingClass(auction.position)} [backface-visibility:hidden] hover:scale-[1.04] transition-transform duration-300 [transform-origin:center_center] [transform:translateZ(0)]`}
+          className={`absolute inset-0 rounded-xl overflow-hidden flex flex-col ring-2 ${posRingClass(auction.position)} [backface-visibility:hidden] transition-transform duration-300 [transform-origin:center_center] [transform:translateZ(0)]`}
           style={{
             WebkitBackfaceVisibility: "hidden",
             background: `linear-gradient(165deg, ${hexToRgba(teamColor, 0.3)} 0%, ${hexToRgba(teamColor, 0.18)} 42%, rgba(35,39,56,0.93) 100%)`,
