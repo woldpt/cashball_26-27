@@ -1055,7 +1055,32 @@
         }
       ],
       "trend": "stable"
+    },
+    "client/src/components/shared/PlayerAvatar.jsx": {
+      "latest": {
+        "commit": "830b6c7",
+        "timestamp": "2026-05-21T12:35:03.076Z",
+        "mi": 0,
+        "cognitive": 159,
+        "nesting": 3,
+        "lines": 1256,
+        "maxCyclomatic": 1268,
+        "entropy": 5.88
+      },
+      "history": [
+        {
+          "commit": "830b6c7",
+          "timestamp": "2026-05-21T12:35:03.076Z",
+          "mi": 0,
+          "cognitive": 159,
+          "nesting": 3,
+          "lines": 1256,
+          "maxCyclomatic": 1268,
+          "entropy": 5.88
+        }
+      ],
+      "trend": "stable"
     }
   },
-  "capturedAt": "2026-05-18T17:38:51.665Z"
+  "capturedAt": "2026-05-21T12:35:08.076Z"
 }

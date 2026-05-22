@@ -80,7 +80,7 @@ const POSITION_PROFILE = {
   GR: {
     faceWeights: { round: 1.6, oval: 1.0, strong: 2.4 },
     expressionWeights: { smile: 0.7, grin: 0.3, neutral: 1.0, serious: 2.0, focused: 3.6 },
-    hairWeights: { bald: 0.18, buzz: 1.4, classic: 2.4, sidepart: 1.6, spiky: 0.9, curly: 0.7, afro: 0.5, long: 0.5 },
+    hairWeights: { bald: 0.18, buzz: 1.4, classic: 2.4, sidepart: 2.0, spiky: 0.4, texturized: 2.2, swept: 1.8, crewcut: 1.6, curly: 0.7, afro: 0.5, long: 0.5 },
     eyeWeights: { soft: 0.6, hero: 0.7, sharp: 3.0 },
     browWeights: { soft: 0.5, flat: 1.4, bold: 2.4 },
     headbandChance: 0.4,
@@ -97,7 +97,7 @@ const POSITION_PROFILE = {
   DEF: {
     faceWeights: { round: 0.7, oval: 0.9, strong: 4.2 },
     expressionWeights: { smile: 0.45, grin: 0.2, neutral: 1.0, serious: 3.4, focused: 2.0 },
-    hairWeights: { bald: 0.12, buzz: 1.6, classic: 2.0, sidepart: 1.4, spiky: 1.6, curly: 0.6, afro: 0.5, long: 0.5 },
+    hairWeights: { bald: 0.12, buzz: 1.6, classic: 2.4, sidepart: 1.8, spiky: 0.6, texturized: 2.6, swept: 2.0, crewcut: 1.8, curly: 0.6, afro: 0.5, long: 0.5 },
     eyeWeights: { soft: 0.4, hero: 0.6, sharp: 3.4 },
     browWeights: { soft: 0.3, flat: 1.7, bold: 2.6 },
     headbandChance: 0,
@@ -114,7 +114,7 @@ const POSITION_PROFILE = {
   MED: {
     faceWeights: { round: 1.5, oval: 3.0, strong: 0.8 },
     expressionWeights: { smile: 1.7, grin: 0.7, neutral: 2.6, serious: 0.9, focused: 0.85 },
-    hairWeights: { bald: 0.04, buzz: 0.5, classic: 2.6, sidepart: 2.8, spiky: 2.0, curly: 1.2, afro: 0.8, long: 0.9 },
+    hairWeights: { bald: 0.04, buzz: 0.5, classic: 2.8, sidepart: 2.4, spiky: 0.8, texturized: 2.8, swept: 2.2, crewcut: 1.4, curly: 1.2, afro: 0.8, long: 0.9 },
     eyeWeights: { soft: 2.4, hero: 1.7, sharp: 1.0 },
     browWeights: { soft: 1.9, flat: 0.9, bold: 0.9 },
     headbandChance: 0,
@@ -131,7 +131,7 @@ const POSITION_PROFILE = {
   ATA: {
     faceWeights: { round: 0.9, oval: 4.0, strong: 1.0 },
     expressionWeights: { smile: 3.0, grin: 2.4, neutral: 1.1, serious: 0.6, focused: 0.45 },
-    hairWeights: { bald: 0.02, buzz: 0.3, classic: 2.0, sidepart: 1.2, spiky: 5.5, curly: 1.0, afro: 0.7, long: 1.6 },
+    hairWeights: { bald: 0.02, buzz: 0.3, classic: 2.4, sidepart: 1.8, spiky: 1.0, texturized: 3.0, swept: 2.2, crewcut: 1.4, curly: 1.0, afro: 0.7, long: 1.6 },
     eyeWeights: { soft: 0.8, hero: 4.0, sharp: 0.7 },
     browWeights: { soft: 1.0, flat: 0.5, bold: 1.9 },
     headbandChance: 0,
@@ -148,7 +148,7 @@ const POSITION_PROFILE = {
   default: {
     faceWeights: { round: 1.4, oval: 1.6, strong: 1.3 },
     expressionWeights: { smile: 1.5, grin: 1.0, neutral: 1.5, serious: 1.2, focused: 1.0 },
-    hairWeights: { bald: 0.08, buzz: 0.9, classic: 2.4, sidepart: 1.6, spiky: 1.6, curly: 1.0, afro: 0.7, long: 0.8 },
+    hairWeights: { bald: 0.08, buzz: 0.9, classic: 2.4, sidepart: 2.0, spiky: 0.6, texturized: 2.6, swept: 2.0, crewcut: 1.6, curly: 1.0, afro: 0.7, long: 0.8 },
     eyeWeights: { soft: 1.2, hero: 1.4, sharp: 1.2 },
     browWeights: { soft: 1.3, flat: 1.1, bold: 1.4 },
     headbandChance: 0,
@@ -315,6 +315,9 @@ function PlayerAvatarInner({ seed, position, teamColor, size = "lg", className =
     { value: "classic", weight: profile.hairWeights.classic },
     { value: "sidepart", weight: profile.hairWeights.sidepart },
     { value: "spiky", weight: profile.hairWeights.spiky },
+    { value: "texturized", weight: profile.hairWeights.texturized },
+    { value: "swept", weight: profile.hairWeights.swept },
+    { value: "crewcut", weight: profile.hairWeights.crewcut },
     { value: "curly", weight: profile.hairWeights.curly },
     { value: "afro", weight: profile.hairWeights.afro },
     { value: "long", weight: profile.hairWeights.long },
@@ -527,10 +530,70 @@ function PlayerAvatarInner({ seed, position, teamColor, size = "lg", className =
       );
     }
 
+    // texturizado — cabelo curto com textura orgânica, volume natural
+    if (hairStyle === "texturized") {
+      return (
+        <g fill={hair.base} stroke={hairStroke} strokeWidth="1.8" strokeLinejoin="round">
+          <path
+            d={`M${headLeft - 2} ${face.top + 18}
+                C${headLeft - 4} ${face.top + 6} ${headLeft + 6} ${face.top - 1} ${centerX} ${face.top - 1}
+                C${headRight - 6} ${face.top - 1} ${headRight + 4} ${face.top + 6} ${headRight + 2} ${face.top + 18}
+                Q${centerX} ${face.top + 14} ${headLeft - 2} ${face.top + 18} Z`}
+          />
+          {/* Textura — mechas orgânicas curvas, sem picos */}
+          <path d={`M${headLeft} ${face.top + 14} Q${headLeft + 4} ${face.top + 6} ${headLeft + 10} ${face.top + 10}`} />
+          <path d={`M${headLeft + 16} ${face.top + 10} Q${headLeft + 20} ${face.top + 2} ${headLeft + 28} ${face.top + 8}`} />
+          <path d={`M${centerX - 8} ${face.top + 2} Q${centerX - 4} ${face.top - 4} ${centerX + 2} ${face.top + 2}`} />
+          <path d={`M${centerX + 6} ${face.top + 4} Q${centerX + 12} ${face.top - 2} ${centerX + 18} ${face.top + 6}`} />
+          <path d={`M${headRight - 20} ${face.top + 10} Q${headRight - 16} ${face.top + 2} ${headRight - 10} ${face.top + 8}`} />
+          <path d={`M${headRight - 6} ${face.top + 14} Q${headRight - 2} ${face.top + 6} ${headRight + 2} ${face.top + 12}`} />
+        </g>
+      );
+    }
+
+    // swept — cabelo médio varrido com fluxo natural suave
+    if (hairStyle === "swept") {
+      return (
+        <g fill={hair.base} stroke={hairStroke} strokeWidth="1.8" strokeLinejoin="round">
+          <path
+            d={`M${headLeft - 2} ${face.top + 20}
+                C${headLeft - 4} ${face.top + 6} ${headLeft + 4} ${face.top - 3} ${centerX + 2} ${face.top - 2}
+                C${headRight - 4} ${face.top - 2} ${headRight + 4} ${face.top + 6} ${headRight + 2} ${face.top + 20}
+                Q${centerX} ${face.top + 14} ${headLeft - 2} ${face.top + 20} Z`}
+          />
+          {/* Fluxo varrido — mechas curvas para a direita */}
+          <path d={`M${headLeft + 2} ${face.top + 14} Q${headLeft + 12} ${face.top + 4} ${headLeft + 30} ${face.top + 12}`} />
+          <path d={`M${headLeft + 8} ${face.top + 12} Q${headLeft + 22} ${face.top + 2} ${headLeft + 42} ${face.top + 14}`} />
+          <path d={`M${headLeft + 14} ${face.top + 10} Q${headLeft + 30} ${face.top} ${headLeft + 50} ${face.top + 16}`} />
+          <path d={`M${headLeft + 24} ${face.top + 8} Q${headLeft + 40} ${face.top - 2} ${headLeft + 58} ${face.top + 12}`} />
+        </g>
+      );
+    }
+
+    // crewcut — curto nas laterais, ligeiramente mais comprido no topo
+    if (hairStyle === "crewcut") {
+      return (
+        <g fill={hair.base} stroke={hairStroke} strokeWidth="1.8" strokeLinejoin="round">
+          <path
+            d={`M${headLeft - 1} ${face.top + 22}
+                C${headLeft - 2} ${face.top + 10} ${headLeft + 6} ${face.top + 2} ${centerX} ${face.top + 2}
+                C${headRight - 6} ${face.top + 2} ${headRight + 2} ${face.top + 10} ${headRight + 1} ${face.top + 22}
+                Q${centerX} ${face.top + 16} ${headLeft - 1} ${face.top + 22} Z`}
+          />
+          {/* Topo texturizado — textura curta, sem picos */}
+          <path d={`M${headLeft + 6} ${face.top + 12} Q${headLeft + 10} ${face.top + 4} ${headLeft + 18} ${face.top + 10}`} />
+          <path d={`M${headLeft + 22} ${face.top + 8} Q${headLeft + 26} ${face.top + 2} ${headLeft + 34} ${face.top + 8}`} />
+          <path d={`M${centerX - 4} ${face.top + 6} Q${centerX} ${face.top} ${centerX + 6} ${face.top + 6}`} />
+          <path d={`M${headRight - 18} ${face.top + 10} Q${headRight - 14} ${face.top + 4} ${headRight - 8} ${face.top + 8}`} />
+          <path d={`M${headRight - 4} ${face.top + 14} Q${headRight} ${face.top + 8} ${headRight + 2} ${face.top + 12}`} />
+        </g>
+      );
+    }
+
     return null;
   };
 
-  // Brilho do cabelo - traços curvos a seguir a curvatura (cell-shading)
+  // Brilho do cabelo — fios orgânicos com variação por opacidade (cell-shading)
   const renderHairShine = () => {
     if (hairStyle === "bald" || hairStyle === "buzz") return null;
     return (
@@ -547,6 +610,11 @@ function PlayerAvatarInner({ seed, position, teamColor, size = "lg", className =
         <path
           d={`M${centerX + 4} ${face.top + 8} Q${centerX + 10} ${face.top + 4} ${centerX + 16} ${face.top + 12}`}
         />
+        {/* Fios individuais de brilho — espessura variável */}
+        <g stroke={hair.shine} strokeWidth="1.2" strokeLinecap="round" opacity={`${hairShineOpacity * 0.6}`}>
+          <path d={`M${centerX - 10} ${face.top + 10} Q${centerX - 6} ${face.top + 6} ${centerX - 4} ${face.top + 10}`} />
+          <path d={`M${centerX + 4} ${face.top + 10} Q${centerX + 6} ${face.top + 6} ${centerX + 8} ${face.top + 10}`} />
+        </g>
       </g>
     );
   };

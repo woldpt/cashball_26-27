@@ -1,0 +1,455 @@
+{
+  "systemMessage": {
+    "emit": [
+      "socketChatHandlers.ts",
+      "socketChatHandlers.ts",
+      "socketFinanceHandlers.ts",
+      "socketFinanceHandlers.ts",
+      "socketFinanceHandlers.ts",
+      "socketFinanceHandlers.ts",
+      "socketFinanceHandlers.ts",
+      "socketFinanceHandlers.ts",
+      "socketFinanceHandlers.ts",
+      "socketFinanceHandlers.ts",
+      "socketFinanceHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts"
+    ],
+    "receive": []
+  },
+  "chatHistory": {
+    "emit": [
+      "socketChatHandlers.ts",
+      "socketChatHandlers.ts",
+      "socketChatHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "sendChatMessage": {
+    "emit": [],
+    "receive": [
+      "socketChatHandlers.ts"
+    ]
+  },
+  "getChatHistory": {
+    "emit": [],
+    "receive": [
+      "socketChatHandlers.ts"
+    ]
+  },
+  "disconnect": {
+    "emit": [],
+    "receive": [
+      "socketChatHandlers.ts",
+      "socketGameplayHandlers.ts"
+    ]
+  },
+  "cupBracketData": {
+    "emit": [
+      "socketCupHandlers.ts"
+    ],
+    "receive": []
+  },
+  "requestCupBracket": {
+    "emit": [],
+    "receive": [
+      "socketCupHandlers.ts"
+    ]
+  },
+  "cupExtraTimeDone": {
+    "emit": [],
+    "receive": [
+      "socketCupHandlers.ts"
+    ]
+  },
+  "cupDrawAcknowledged": {
+    "emit": [],
+    "receive": [
+      "socketCupHandlers.ts"
+    ]
+  },
+  "cupKickOff": {
+    "emit": [],
+    "receive": [
+      "socketCupHandlers.ts"
+    ]
+  },
+  "cupHalfTimeReady": {
+    "emit": [],
+    "receive": [
+      "socketCupHandlers.ts"
+    ]
+  },
+  "leagueAnimDone": {
+    "emit": [],
+    "receive": [
+      "socketCupHandlers.ts"
+    ]
+  },
+  "buildStadium": {
+    "emit": [],
+    "receive": [
+      "socketFinanceHandlers.ts"
+    ]
+  },
+  "takeLoan": {
+    "emit": [],
+    "receive": [
+      "socketFinanceHandlers.ts"
+    ]
+  },
+  "payLoan": {
+    "emit": [],
+    "receive": [
+      "socketFinanceHandlers.ts"
+    ]
+  },
+  "tacticFamiliarity": {
+    "emit": [
+      "socketGameplayHandlers.ts"
+    ],
+    "receive": []
+  },
+  "allTacticFamiliarity": {
+    "emit": [
+      "socketGameplayHandlers.ts"
+    ],
+    "receive": []
+  },
+  "teamSquadData": {
+    "emit": [
+      "socketGameplayHandlers.ts"
+    ],
+    "receive": []
+  },
+  "matchActionResolved": {
+    "emit": [
+      "socketGameplayHandlers.ts"
+    ],
+    "receive": []
+  },
+  "setTactic": {
+    "emit": [],
+    "receive": [
+      "socketGameplayHandlers.ts"
+    ]
+  },
+  "requestTacticFamiliarity": {
+    "emit": [],
+    "receive": [
+      "socketGameplayHandlers.ts"
+    ]
+  },
+  "requestAllTacticFamiliarity": {
+    "emit": [],
+    "receive": [
+      "socketGameplayHandlers.ts"
+    ]
+  },
+  "setReady": {
+    "emit": [],
+    "receive": [
+      "socketGameplayHandlers.ts"
+    ]
+  },
+  "requestTeamSquad": {
+    "emit": [],
+    "receive": [
+      "socketGameplayHandlers.ts"
+    ]
+  },
+  "request_substitution": {
+    "emit": [],
+    "receive": [
+      "socketGameplayHandlers.ts"
+    ]
+  },
+  "resolveMatchAction": {
+    "emit": [],
+    "receive": [
+      "socketGameplayHandlers.ts"
+    ]
+  },
+  "kickCoach": {
+    "emit": [],
+    "receive": [
+      "socketGameplayHandlers.ts"
+    ]
+  },
+  "acceptJobOffer": {
+    "emit": [],
+    "receive": [
+      "socketGameplayHandlers.ts"
+    ]
+  },
+  "declineJobOffer": {
+    "emit": [],
+    "receive": [
+      "socketGameplayHandlers.ts"
+    ]
+  },
+  "matchActionExpired": {
+    "emit": [
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "teamsData": {
+    "emit": [
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "teamForms": {
+    "emit": [
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "mySquad": {
+    "emit": [
+      "socketSessionHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts"
+    ],
+    "receive": []
+  },
+  "marketUpdate": {
+    "emit": [
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "gameState": {
+    "emit": [
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "topScorers": {
+    "emit": [
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "teamAssigned": {
+    "emit": [
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "joinError": {
+    "emit": [
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "coachDismissed": {
+    "emit": [
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "joinGameSuccess": {
+    "emit": [
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "nextMatchSummary": {
+    "emit": [
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "calendarData": {
+    "emit": [
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "palmaresData": {
+    "emit": [
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "clubNewsData": {
+    "emit": [
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "playerHistoryData": {
+    "emit": [
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "financeData": {
+    "emit": [
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "joinGame": {
+    "emit": [],
+    "receive": [
+      "socketSessionHandlers.ts"
+    ]
+  },
+  "requestNextMatchSummary": {
+    "emit": [],
+    "receive": [
+      "socketSessionHandlers.ts"
+    ]
+  },
+  "requestCalendar": {
+    "emit": [],
+    "receive": [
+      "socketSessionHandlers.ts"
+    ]
+  },
+  "requestPalmares": {
+    "emit": [],
+    "receive": [
+      "socketSessionHandlers.ts"
+    ]
+  },
+  "requestClubNews": {
+    "emit": [],
+    "receive": [
+      "socketSessionHandlers.ts"
+    ]
+  },
+  "requestPlayerHistory": {
+    "emit": [],
+    "receive": [
+      "socketSessionHandlers.ts"
+    ]
+  },
+  "leaveRoom": {
+    "emit": [],
+    "receive": [
+      "socketSessionHandlers.ts"
+    ]
+  },
+  "requestFinanceData": {
+    "emit": [],
+    "receive": [
+      "socketSessionHandlers.ts"
+    ]
+  },
+  "renewContractCounterOffer": {
+    "emit": [
+      "socketTransferHandlers.ts"
+    ],
+    "receive": []
+  },
+  "auctionBidConfirmed": {
+    "emit": [
+      "socketTransferHandlers.ts"
+    ],
+    "receive": []
+  },
+  "transferProposalResult": {
+    "emit": [
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts"
+    ],
+    "receive": []
+  },
+  "buyPlayer": {
+    "emit": [],
+    "receive": [
+      "socketTransferHandlers.ts"
+    ]
+  },
+  "listPlayerForTransfer": {
+    "emit": [],
+    "receive": [
+      "socketTransferHandlers.ts"
+    ]
+  },
+  "removeFromTransferList": {
+    "emit": [],
+    "receive": [
+      "socketTransferHandlers.ts"
+    ]
+  },
+  "renewContract": {
+    "emit": [],
+    "receive": [
+      "socketTransferHandlers.ts"
+    ]
+  },
+  "acceptCounterOffer": {
+    "emit": [],
+    "receive": [
+      "socketTransferHandlers.ts"
+    ]
+  },
+  "placeAuctionBid": {
+    "emit": [],
+    "receive": [
+      "socketTransferHandlers.ts"
+    ]
+  },
+  "makeTransferProposal": {
+    "emit": [],
+    "receive": [
+      "socketTransferHandlers.ts"
+    ]
+  }
+}

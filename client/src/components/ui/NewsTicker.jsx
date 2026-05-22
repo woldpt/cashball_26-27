@@ -66,7 +66,7 @@ export function NewsTicker({ newsTickerItems, hideOnMobile = false, hidden = fal
   const duration = Math.max(80, playlist.length * 25);
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 z-30 lg:z-50 h-8 items-stretch bg-zinc-950 border-t border-zinc-700 overflow-hidden ${hideOnMobile ? "hidden lg:flex" : "flex"}`}>
+    <div className={`fixed bottom-0 left-0 right-0 z-30 lg:z-50 h-8 items-stretch bg-black border-t border-gray-800 overflow-hidden ${hideOnMobile ? "hidden lg:flex" : "flex"}`}>
       <div className="shrink-0 bg-red-600 text-white text-xs font-black px-3 flex items-center uppercase tracking-widest select-none">
         Alerta CM
       </div>
@@ -79,7 +79,7 @@ export function NewsTicker({ newsTickerItems, hideOnMobile = false, hidden = fal
         `}</style>
         <div
           key={newsTickerItems.length}
-          className="absolute whitespace-nowrap flex items-center h-full text-xs text-zinc-200"
+          className="absolute whitespace-nowrap flex items-center h-full text-[10px] text-zinc-300"
           style={{
             gap: "5rem",
             animation: `tickerScroll ${duration}s linear infinite`,

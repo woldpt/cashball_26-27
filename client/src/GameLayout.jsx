@@ -413,7 +413,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
 			{/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
 			<nav
-				className={`hidden lg:flex fixed left-0 top-14 bottom-0 bg-surface-container-low flex-col z-10 transition-all duration-200 ${sidebarCollapsed ? "w-14" : "w-64"}`}
+				className={`hidden lg:flex fixed left-0 top-14 bottom-0 flex-col z-10 transition-all duration-200 ${sidebarCollapsed ? "w-14" : "w-64"}`}
+			style={{ background: "#181818", borderRight: "1px solid #2a2a2a" }}
 			>
 				{/* Toggle button */}
 				<button
