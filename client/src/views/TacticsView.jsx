@@ -1,10 +1,7 @@
 ﻿import { useTactics } from "../contexts/TacticsContext.jsx";
 import { PlayerLink } from "../components/shared/PlayerLink.jsx";
 import { socket } from "../socket.js";
-import {
-  POSITION_SHORT_LABELS,
-  TACTIC_FORMATIONS,
-} from "../constants/index.js";
+import { TACTIC_FORMATIONS } from "../constants/index.js";
 
 /** Cores por posição */
 const POS_COLORS = {
@@ -79,6 +76,8 @@ const MAX_COUNT = 21;
  * @param {{ player: Object, size?: string }} props
  * @returns {JSX.Element}
  */
+const POS_INITIAL = { GR: "G", DEF: "D", MED: "M", ATA: "A" };
+
 function PlayerAvatar({ player, size = "w-7 h-7" }) {
   const pos = POS_COLORS[player.position] || { bg: "bg-gray-600" };
   return (
@@ -86,7 +85,7 @@ function PlayerAvatar({ player, size = "w-7 h-7" }) {
       className={`${size} rounded-full ${pos.bg} flex items-center justify-center shrink-0 font-black text-white shadow-md`}
       style={{ fontSize: "11px" }}
     >
-      {player.name?.charAt(0)?.toUpperCase() ?? "?"}
+      {POS_INITIAL[player.position] ?? "?"}
     </div>
   );
 }
@@ -111,7 +110,6 @@ function PlayerRow({
   isDragging,
   children,
 }) {
-  const pos = POS_COLORS[player.position] || { text: "text-gray-400" };
   const f = player.form ?? 100;
   const formIcon = f >= 115 ? "💪" : f <= 85 ? "😩" : "👍";
   return (
@@ -130,59 +128,43 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
 `}
     >
       <PlayerAvatar player={player} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1 min-w-0">
-          <span className="text-xs font-semibold text-[#e8e8e8] truncate leading-none">
-            {onClick ? (
-              <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
-            ) : (
-              player.name
-            )}
-          </span>
-          {!!player.is_star &&
-            (player.position === "MED" || player.position === "ATA") && (
-              <span className="text-amber-400 text-[9px] shrink-0">★</span>
-            )}
-          {player.isUnavailable &&
-            (() => {
-              const susp = player.suspension_until_matchweek || 0;
-              const inj = player.injury_until_matchweek || 0;
-              const cooldown = player.transfer_cooldown_until_matchweek || 0;
-              const isSusp = susp > matchweekCount;
-              const isCooldown =
-                !isSusp &&
-                !(inj > matchweekCount) &&
-                cooldown > 0 &&
-                cooldown >= matchweekCount;
-              if (isCooldown)
-                return <span className="text-[10px] shrink-0">✈️</span>;
-              const left = isSusp
-                ? susp - matchweekCount
-                : inj - matchweekCount;
-              return (
-                <span className="text-[9px] shrink-0 text-red-400">
-                  {isSusp ? "🟥" : "🩹"}({left})
-                </span>
-              );
-            })()}
-        </div>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <span className={`text-[9px] font-bold uppercase ${pos.text}`}>
-            {POSITION_SHORT_LABELS[player.position] ?? "?"}
-          </span>
-          <span className="text-[9px] text-gray-600">·</span>
-          <span className="text-[9px] text-gray-500">
-            {player.resistance ?? "–"}
-          </span>
-          <span className="text-[9px] text-gray-600">·</span>
-          <span className="text-[9px]">{formIcon}</span>
-        </div>
-      </div>
-      <div className="flex items-center gap-1.5 shrink-0">
-        <span className="text-sm font-black text-[#e8e8e8]">
+      <span className="flex-1 min-w-0 text-xs font-semibold text-[#e8e8e8] truncate leading-none">
+        {onClick ? (
+          <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
+        ) : (
+          player.name
+        )}
+        {!!player.is_star &&
+          (player.position === "MED" || player.position === "ATA") && (
+            <span className="text-amber-400 text-[9px] ml-0.5">★</span>
+          )}
+        {player.isUnavailable &&
+          (() => {
+            const susp = player.suspension_until_matchweek || 0;
+            const inj = player.injury_until_matchweek || 0;
+            const cooldown = player.transfer_cooldown_until_matchweek || 0;
+            const isSusp = susp > matchweekCount;
+            const isCooldown =
+              !isSusp &&
+              !(inj > matchweekCount) &&
+              cooldown > 0 &&
+              cooldown >= matchweekCount;
+            if (isCooldown)
+              return <span className="text-[10px] ml-0.5">✈️</span>;
+            const left = isSusp ? susp - matchweekCount : inj - matchweekCount;
+            return (
+              <span className="text-[9px] ml-0.5 text-red-400">
+                {isSusp ? "🟥" : "🩹"}({left})
+              </span>
+            );
+          })()}
+      </span>
+      <div className="flex items-center gap-2 shrink-0 text-[11px]">
+        <span className="text-gray-500">{player.resistance ?? "–"}</span>
+        <span>{formIcon}</span>
+        <span className="font-black text-[#e8e8e8] text-sm">
           {player.skill}
         </span>
-        <span className={`w-2 h-2 rounded-full ${dotColor || "bg-gray-600"}`} />
       </div>
       {children}
     </div>
@@ -348,31 +330,6 @@ ${disabled ? "opacity-30 cursor-not-allowed text-gray-500" : player.status === s
             {/* Proximo jogo */}
             {nextMatchSummary && (
               <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-                <div className="px-4 py-3 border-b border-[#1a1a1a] flex items-center justify-between">
-                  <div>
-                    <p className="text-[9px] uppercase tracking-widest text-gray-600 font-bold">
-                      {nextMatchSummary.isCup
-                        ? "🏆 Taça"
-                        : `Jornada ${matchweekCount}`}
-                    </p>
-                    <p className="text-xs font-black text-white leading-tight mt-0.5">
-                      <span className="text-gray-500 font-normal">
-                        {nextMatchSummary.isHome ? "Casa" : "Fora"} vs{" "}
-                      </span>
-                      {nextMatchOpponent?.name ?? "—"}
-                    </p>
-                  </div>
-                  {nextMatchSummary.lastScore !== undefined && (
-                    <div className="text-right">
-                      <p className="text-[9px] text-gray-600 uppercase">
-                        Último
-                      </p>
-                      <p className="text-sm font-black text-[#4ade80]">
-                        {nextMatchSummary.lastScore}
-                      </p>
-                    </div>
-                  )}
-                </div>
                 {(() => {
                   const morale = teamInfo?.morale ?? 75;
                   const fillColor =
@@ -426,44 +383,6 @@ ${disabled ? "opacity-30 cursor-not-allowed text-gray-500" : player.status === s
                   Limpar
                 </button>
               </div>
-
-              {/* Familiaridade badge */}
-              {(() => {
-                const fam = tacticFamiliarity;
-                if (!fam || fam.bonus <= 0 || fam.count < 1) return null;
-                const bc =
-                  fam.count >= 10
-                    ? "bg-amber-500/10 border-amber-500/20 text-amber-300"
-                    : fam.count >= 6
-                      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
-                      : "bg-sky-500/10 border-sky-500/20 text-sky-300";
-                const stars =
-                  fam.count >= 10
-                    ? "⭐⭐⭐⭐⭐"
-                    : fam.count >= 8
-                      ? "⭐⭐⭐⭐"
-                      : fam.count >= 6
-                        ? "⭐⭐⭐"
-                        : fam.count >= 4
-                          ? "⭐⭐"
-                          : "⭐";
-                return (
-                  <div
-                    className={`mx-3 mt-2.5 mb-0.5 flex items-center gap-2 px-3 py-2 rounded-xl border ${bc}`}
-                  >
-                    <span className="text-sm">{stars}</span>
-                    <div className="min-w-0">
-                      <p className="text-[9px] font-bold truncate">
-                        {fam.formation} · {fam.style}
-                      </p>
-                      <p className="text-[9px] opacity-50">
-                        +{Math.round(fam.bonus * 100)}% · {fam.count} jogo
-                        {fam.count > 1 ? "s" : ""}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })()}
 
               {/* Lista formacoes */}
               <div className="px-3 py-2.5 space-y-1">
@@ -542,41 +461,45 @@ ${
                   Mentalidade
                 </span>
               </div>
-              <div className="px-3 py-3 flex gap-2">
-                {[
-                  ["Defensive", "🛡️", "Defensivo"],
-                  ["Balanced", "⚖️", "Equilibrado"],
-                  ["Offensive", "⚔️", "Ofensivo"],
-                ].map(([val, icon, lbl]) => {
-                  const isActive = tactic.style === val;
+              <div className="px-3 py-3">
+                {(() => {
+                  const STYLES = ["Defensive", "Balanced", "Offensive"];
+                  const LABELS = {
+                    Defensive: "Defensivo",
+                    Balanced: "Neutro",
+                    Offensive: "Ofensivo",
+                  };
+                  const idx = STYLES.indexOf(tactic.style ?? "Balanced");
+                  const safeIdx = idx < 0 ? 1 : idx;
                   return (
-                    <button
-                      key={val}
-                      onClick={() => updateTactic({ style: val })}
-                      className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-2xl border transition-all active:scale-95
-${
-  isActive
-    ? "border-[#4ade80]/40 text-[#4ade80]"
-    : "bg-[#161616] border-[#1e1e1e] text-gray-500 hover:text-gray-300 hover:border-surface-container-high"
-}`}
-                      style={
-                        isActive
-                          ? {
-                              background:
-                                "linear-gradient(135deg,rgba(74,222,128,0.12),rgba(74,222,128,0.05))",
-                            }
-                          : {}
-                      }
-                    >
-                      <span className="text-base leading-none">{icon}</span>
-                      <span
-                        className={`text-[8px] font-black uppercase leading-none tracking-wide ${isActive ? "text-[#4ade80]" : ""}`}
-                      >
-                        {lbl}
-                      </span>
-                    </button>
+                    <div className="relative flex bg-[#161616] rounded-full p-0.5">
+                      {/* Pill deslizante */}
+                      <div
+                        className="absolute inset-y-0.5 rounded-full transition-all duration-200 pointer-events-none"
+                        style={{
+                          left: `calc(${safeIdx * 33.333}% + 2px)`,
+                          width: "calc(33.333% - 4px)",
+                          background:
+                            "linear-gradient(135deg, rgba(74,222,128,0.22), rgba(74,222,128,0.08))",
+                          border: "1px solid rgba(74,222,128,0.35)",
+                        }}
+                      />
+                      {STYLES.map((val, i) => (
+                        <button
+                          key={val}
+                          onClick={() => updateTactic({ style: val })}
+                          className={`relative z-10 flex-1 py-2 text-[9px] font-black uppercase tracking-wide rounded-full transition-colors ${
+                            tactic.style === val
+                              ? "text-[#4ade80]"
+                              : "text-gray-500 hover:text-gray-300"
+                          }`}
+                        >
+                          {LABELS[val]}
+                        </button>
+                      ))}
+                    </div>
                   );
-                })}
+                })()}
               </div>
             </div>
           </div>
