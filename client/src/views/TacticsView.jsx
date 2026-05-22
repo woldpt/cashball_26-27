@@ -115,6 +115,8 @@ function PlayerRow({
   return (
     <div
       draggable={draggable}
+      data-player-id={player.id}
+      data-player-status={player.status ?? ""}
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
