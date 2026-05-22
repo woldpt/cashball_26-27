@@ -1003,11 +1003,11 @@ ${
             </div>
           </div>
 
-          {/* COL 2 — TITULARES + SUPLENTES */}
-          <div className="flex-1 flex flex-col gap-2 min-w-0">
+          {/* COL 2 — TITULARES (esq) + SUPLENTES/NÃO CONV. (dir) */}
+          <div className="flex-1 flex flex-row gap-2 min-w-0">
             {/* Titulares */}
             <div
-              className={`bg-[#111] border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/30 bg-[#4ade80]/2" : "border-[#1e1e1e]"}`}
+              className={`flex-1 min-w-0 bg-[#111] border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/30 bg-[#4ade80]/2" : "border-[#1e1e1e]"}`}
               onDragOver={(e) => {
                 e.preventDefault();
                 if (dragPlayerId) setDragOverSection("Titular");
@@ -1099,165 +1099,77 @@ ${
               </div>
             </div>
 
-            {/* Suplentes + Nao convocados */}
-            <div
-              className={`bg-[#111] border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Suplente" ? "border-yellow-500/30 bg-yellow-500/2" : "border-[#1e1e1e]"}`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                if (dragPlayerId) setDragOverSection("Suplente");
-              }}
-              onDragLeave={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget))
-                  setDragOverSection(null);
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (dragPlayerId) handleDropToSection(dragPlayerId, "Suplente");
-                setDragOverSection(null);
-              }}
-            >
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
-                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
-                  Suplentes
-                </span>
-                <span className="text-[10px] font-black">
-                  <span className="text-yellow-400">{subCount}</span>
-                  <span className="text-gray-700">/5</span>
-                </span>
-              </div>
-              <div className="px-2 py-1 space-y-0.5">
-                {annotatedSquad
-                  .filter((p) => p.status === "Suplente" && !p.isUnavailable)
-                  .map((player) => (
-                    <PlayerRow
-                      key={player.id}
-                      player={player}
-                      matchweekCount={matchweekCount}
-                      onClick
-                      dotColor={STATUS_DOT.Suplente}
-                      draggable={!player.isJunior}
-                      onDragStart={handleDragStart}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        setDragOverPlayerId(player.id);
-                      }}
-                      onDragLeave={() => setDragOverPlayerId(null)}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (dragPlayerId && dragPlayerId !== player.id)
-                          handleSwapPlayerStatuses(dragPlayerId, player.id);
-                        else {
-                          setDragOverPlayerId(null);
-                          setDragPlayerId(null);
-                        }
-                        setDragOverSection(null);
-                      }}
-                      onDragEnd={() => {
-                        setDragOverPlayerId(null);
-                        setDragPlayerId(null);
-                      }}
-                      isOver={
-                        dragOverPlayerId === player.id &&
-                        dragPlayerId !== player.id
-                      }
-                      isDragging={dragPlayerId === player.id}
-                    >
-                      {!player.isJunior && (
-                        <div className="relative shrink-0">
-                          <button
-                            className="w-3 h-3 rounded-full bg-yellow-400/80 hover:bg-yellow-400 transition-colors ml-0.5"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenStatusPickerId((prev) =>
-                                prev === player.id ? null : player.id,
-                              );
-                            }}
-                          />
-                          <StatusPicker player={player} />
-                        </div>
-                      )}
-                    </PlayerRow>
-                  ))}
-                {subCount === 0 && (
-                  <p className="py-4 text-center text-[11px] text-gray-700 font-bold">
-                    Nenhum suplente
-                  </p>
-                )}
-              </div>
-
-              {/* Nao convocados */}
-              {notCalledCount > 0 && (
-                <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (dragPlayerId) setDragOverSection("Excluído");
-                  }}
-                  onDragLeave={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget))
-                      setDragOverSection(null);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (dragPlayerId)
-                      handleDropToSection(dragPlayerId, "Excluído");
+            {/* Suplentes + Nao convocados (coluna direita) */}
+            <div className="flex-1 min-w-0 flex flex-col gap-2">
+              {/* Suplentes */}
+              <div
+                className={`bg-[#111] border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Suplente" ? "border-yellow-500/30 bg-yellow-500/2" : "border-[#1e1e1e]"}`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (dragPlayerId) setDragOverSection("Suplente");
+                }}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget))
                     setDragOverSection(null);
-                  }}
-                  className={`border-t transition-colors ${dragOverSection === "Excluído" ? "border-gray-500/30" : "border-[#1a1a1a]"}`}
-                >
-                  <div className="px-4 py-2">
-                    <span className="text-[9px] uppercase tracking-widest text-gray-700 font-bold">
-                      Não Convocados
-                    </span>
-                  </div>
-                  <div className="px-2 pb-1 space-y-0.5 opacity-40">
-                    {annotatedSquad
-                      .filter(
-                        (p) =>
-                          !p.isJunior &&
-                          (p.isUnavailable ||
-                            (p.status !== "Titular" &&
-                              p.status !== "Suplente")),
-                      )
-                      .map((player) => (
-                        <PlayerRow
-                          key={player.id}
-                          player={player}
-                          matchweekCount={matchweekCount}
-                          dotColor={STATUS_DOT.Excluido}
-                          draggable
-                          onDragStart={handleDragStart}
-                          onDragOver={(e) => {
-                            e.preventDefault();
-                            setDragOverPlayerId(player.id);
-                          }}
-                          onDragLeave={() => setDragOverPlayerId(null)}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (dragPlayerId && dragPlayerId !== player.id)
-                              handleSwapPlayerStatuses(dragPlayerId, player.id);
-                            else {
-                              setDragOverPlayerId(null);
-                              setDragPlayerId(null);
-                            }
-                            setDragOverSection(null);
-                          }}
-                          onDragEnd={() => {
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragPlayerId)
+                    handleDropToSection(dragPlayerId, "Suplente");
+                  setDragOverSection(null);
+                }}
+              >
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
+                  <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+                    Suplentes
+                  </span>
+                  <span className="text-[10px] font-black">
+                    <span className="text-yellow-400">{subCount}</span>
+                    <span className="text-gray-700">/5</span>
+                  </span>
+                </div>
+                <div className="px-2 py-1 space-y-0.5">
+                  {annotatedSquad
+                    .filter((p) => p.status === "Suplente" && !p.isUnavailable)
+                    .map((player) => (
+                      <PlayerRow
+                        key={player.id}
+                        player={player}
+                        matchweekCount={matchweekCount}
+                        onClick
+                        dotColor={STATUS_DOT.Suplente}
+                        draggable={!player.isJunior}
+                        onDragStart={handleDragStart}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setDragOverPlayerId(player.id);
+                        }}
+                        onDragLeave={() => setDragOverPlayerId(null)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (dragPlayerId && dragPlayerId !== player.id)
+                            handleSwapPlayerStatuses(dragPlayerId, player.id);
+                          else {
                             setDragOverPlayerId(null);
                             setDragPlayerId(null);
-                          }}
-                          isOver={
-                            dragOverPlayerId === player.id &&
-                            dragPlayerId !== player.id
                           }
-                          isDragging={dragPlayerId === player.id}
-                        >
+                          setDragOverSection(null);
+                        }}
+                        onDragEnd={() => {
+                          setDragOverPlayerId(null);
+                          setDragPlayerId(null);
+                        }}
+                        isOver={
+                          dragOverPlayerId === player.id &&
+                          dragPlayerId !== player.id
+                        }
+                        isDragging={dragPlayerId === player.id}
+                      >
+                        {!player.isJunior && (
                           <div className="relative shrink-0">
                             <button
-                              className="w-3 h-3 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors ml-0.5"
+                              className="w-3 h-3 rounded-full bg-yellow-400/80 hover:bg-yellow-400 transition-colors ml-0.5"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setOpenStatusPickerId((prev) =>
@@ -1265,14 +1177,110 @@ ${
                                 );
                               }}
                             />
-                            <StatusPicker player={player} above />
+                            <StatusPicker player={player} />
                           </div>
-                        </PlayerRow>
-                      ))}
-                  </div>
+                        )}
+                      </PlayerRow>
+                    ))}
+                  {subCount === 0 && (
+                    <p className="py-4 text-center text-[11px] text-gray-700 font-bold">
+                      Nenhum suplente
+                    </p>
+                  )}
                 </div>
-              )}
+
+                {/* Nao convocados */}
+                {notCalledCount > 0 && (
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (dragPlayerId) setDragOverSection("Excluído");
+                    }}
+                    onDragLeave={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget))
+                        setDragOverSection(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (dragPlayerId)
+                        handleDropToSection(dragPlayerId, "Excluído");
+                      setDragOverSection(null);
+                    }}
+                    className={`border-t transition-colors ${dragOverSection === "Excluído" ? "border-gray-500/30" : "border-[#1a1a1a]"}`}
+                  >
+                    <div className="px-4 py-2">
+                      <span className="text-[9px] uppercase tracking-widest text-gray-700 font-bold">
+                        Não Convocados
+                      </span>
+                    </div>
+                    <div className="px-2 pb-1 space-y-0.5 opacity-40">
+                      {annotatedSquad
+                        .filter(
+                          (p) =>
+                            !p.isJunior &&
+                            (p.isUnavailable ||
+                              (p.status !== "Titular" &&
+                                p.status !== "Suplente")),
+                        )
+                        .map((player) => (
+                          <PlayerRow
+                            key={player.id}
+                            player={player}
+                            matchweekCount={matchweekCount}
+                            dotColor={STATUS_DOT.Excluido}
+                            draggable
+                            onDragStart={handleDragStart}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              setDragOverPlayerId(player.id);
+                            }}
+                            onDragLeave={() => setDragOverPlayerId(null)}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (dragPlayerId && dragPlayerId !== player.id)
+                                handleSwapPlayerStatuses(
+                                  dragPlayerId,
+                                  player.id,
+                                );
+                              else {
+                                setDragOverPlayerId(null);
+                                setDragPlayerId(null);
+                              }
+                              setDragOverSection(null);
+                            }}
+                            onDragEnd={() => {
+                              setDragOverPlayerId(null);
+                              setDragPlayerId(null);
+                            }}
+                            isOver={
+                              dragOverPlayerId === player.id &&
+                              dragPlayerId !== player.id
+                            }
+                            isDragging={dragPlayerId === player.id}
+                          >
+                            <div className="relative shrink-0">
+                              <button
+                                className="w-3 h-3 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors ml-0.5"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenStatusPickerId((prev) =>
+                                    prev === player.id ? null : player.id,
+                                  );
+                                }}
+                              />
+                              <StatusPicker player={player} above />
+                            </div>
+                          </PlayerRow>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+            {/* fim coluna direita */}
           </div>
 
           {/* COL 3 — CAMPO + JOGAR (desktop only — mobile usa FAB) */}
