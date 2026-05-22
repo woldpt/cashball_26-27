@@ -711,8 +711,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             </div>
           )}
 
-          {/* Main nav bar — 5 buttons */}
-          <nav className="lg:hidden fixed bottom-8 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex">
+          {/* Main nav bar — 5 buttons, JOGAR no centro */}
+          <nav className="lg:hidden fixed bottom-8 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex items-stretch">
             {/* Clube */}
             {(() => {
               const isActive = activeTab === "club";
@@ -777,6 +777,59 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   </span>
                   <span>Gestão</span>
                 </motion.button>
+              );
+            })()}
+
+            {/* ── JOGAR — centro elevado ── */}
+            {(() => {
+              const isActive = activeTab === "tactic";
+              return (
+                <div className="flex-1 flex items-end justify-center pb-1 relative">
+                  {/* glow halo */}
+                  {!isActive && (
+                    <span
+                      className="absolute bottom-2 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full blur-lg opacity-50 animate-pulse pointer-events-none"
+                      style={{ background: "var(--color-primary, #a8e6b0)" }}
+                    />
+                  )}
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => {
+                      setActiveTab("tactic");
+                      setMobileSubMenu(null);
+                      window.scrollTo(0, 0);
+                      if (socket && teamInfo?.id && tactic) {
+                        socket.emit("requestTacticFamiliarity", teamInfo.id);
+                        socket.emit("requestAllTacticFamiliarity");
+                      }
+                    }}
+                    className={`relative flex flex-col items-center justify-center gap-0.5 w-14 h-14 rounded-full font-black text-[9px] uppercase tracking-wider transition-all overflow-hidden shadow-lg ${
+                      isActive
+                        ? "bg-primary text-on-primary shadow-primary/40"
+                        : "bg-primary text-on-primary shadow-primary/30"
+                    }`}
+                    style={{ marginBottom: "10px" }}
+                  >
+                    {/* shimmer sweep */}
+                    <span
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background:
+                          "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%)",
+                        animation: "shimmer-sweep 2.6s ease-in-out infinite",
+                      }}
+                    />
+                    <span className="material-symbols-outlined text-[24px] leading-none relative z-10">
+                      strategy
+                    </span>
+                    <span className="relative z-10 leading-none">JOGAR</span>
+                    {/* ping dot */}
+                    <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-on-primary/60 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-on-primary/80" />
+                    </span>
+                  </motion.button>
+                </div>
               );
             })()}
 
@@ -846,48 +899,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     swap_horiz
                   </span>
                   <span>Transfer.</span>
-                </motion.button>
-              );
-            })()}
-
-            {/* JOGAR */}
-            {(() => {
-              const isActive = activeTab === "tactic";
-              const goldColor = "#d4af37";
-              return (
-                <motion.button
-                  whileTap={{ scale: 0.88 }}
-                  onClick={() => {
-                    setActiveTab("tactic");
-                    setMobileSubMenu(null);
-                    window.scrollTo(0, 0);
-                    if (socket && teamInfo?.id && tactic) {
-                      socket.emit("requestTacticFamiliarity", teamInfo.id);
-                      socket.emit("requestAllTacticFamiliarity");
-                    }
-                  }}
-                  className="flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-black uppercase tracking-wider transition-colors relative"
-                  style={{
-                    color: isActive ? goldColor : goldColor,
-                    opacity: isActive ? 1 : 0.75,
-                  }}
-                >
-                  {isActive && (
-                    <motion.span
-                      layoutId="mobileTabIndicator"
-                      style={{ backgroundColor: goldColor }}
-                      className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full"
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 35,
-                      }}
-                    />
-                  )}
-                  <span className="material-symbols-outlined text-[22px] leading-none">
-                    strategy
-                  </span>
-                  <span>JOGAR!</span>
                 </motion.button>
               );
             })()}
