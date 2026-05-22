@@ -129,21 +129,24 @@ async function generateFixturesForDivision(
   seeds: number[],
 ): Promise<MatchFixture[]> {
   // Se não há seeds, buscar equipas da DB ordenadas (sem embaralhar)
-  let seedIds = seeds.length > 0 ? seeds : await new Promise<number[]>((resolve) => {
-    db.all(
-      "SELECT id FROM teams WHERE division = ? ORDER BY id",
-      [division],
-      (err: any, rows: Array<{ id: number }>) => {
-        if (err || !rows || rows.length < 2) return resolve([]);
-        resolve(rows.map((r) => r.id));
-      },
-    );
-  });
+  let seedIds =
+    seeds.length > 0
+      ? seeds
+      : await new Promise<number[]>((resolve) => {
+          db.all(
+            "SELECT id FROM teams WHERE division = ? ORDER BY id",
+            [division],
+            (err: any, rows: Array<{ id: number }>) => {
+              if (err || !rows || rows.length < 2) return resolve([]);
+              resolve(rows.map((r) => r.id));
+            },
+          );
+        });
 
   const n = seedIds.length;
   if (n < 2) return [];
 
-  const totalRounds = n - 1;           // jornadas na primeira volta
+  const totalRounds = n - 1; // jornadas na primeira volta
   const totalMatchweeks = totalRounds * 2;
   const normMw = ((matchweek - 1) % totalMatchweeks) + 1;
   const isSecondLeg = normMw > totalRounds;
@@ -347,46 +350,46 @@ async function applyInjuryEvent({
   }
 
   const fallback = () => pickBestPlayer(substituteCandidates)?.id || null;
- const result = await waitForMatchAction({
-      game,
-      io,
-      type: "injury",
+  const result = await waitForMatchAction({
+    game,
+    io,
+    type: "injury",
+    teamId,
+    payload: {
+      minute: fixture._minute,
       teamId,
-      payload: {
-        minute: fixture._minute,
-        teamId,
-        injuredPlayer: {
-          id: injuredPlayer.id,
-          name: injuredPlayer.name,
-          position: injuredPlayer.position,
-        },
-        benchPlayers: substituteCandidates.map((p) => ({
-          id: p.id,
-          name: p.name,
-          position: p.position,
-          skill: p.skill,
-        })),
-        currentScore: {
-          home: fixture.finalHomeGoals,
-          away: fixture.finalAwayGoals,
-        },
+      injuredPlayer: {
+        id: injuredPlayer.id,
+        name: injuredPlayer.name,
+        position: injuredPlayer.position,
       },
-      timeoutMs: 60000,
-      fallback,
-      fixtureData: {
-        homeTeamId: fixture.homeTeamId,
-        awayTeamId: fixture.awayTeamId,
-        homeTeam: fixture.homeTeam,
-        awayTeam: fixture.awayTeam,
-        attendance: fixture.attendance,
-        referee: fixture.referee,
-        homePossession: fixture.homePossession,
-        awayPossession: fixture.awayPossession,
-        homeGoals: fixture.finalHomeGoals,
-        awayGoals: fixture.finalAwayGoals,
-        events: fixture.events || [],
+      benchPlayers: substituteCandidates.map((p) => ({
+        id: p.id,
+        name: p.name,
+        position: p.position,
+        skill: p.skill,
+      })),
+      currentScore: {
+        home: fixture.finalHomeGoals,
+        away: fixture.finalAwayGoals,
       },
-    });
+    },
+    timeoutMs: 60000,
+    fallback,
+    fixtureData: {
+      homeTeamId: fixture.homeTeamId,
+      awayTeamId: fixture.awayTeamId,
+      homeTeam: fixture.homeTeam,
+      awayTeam: fixture.awayTeam,
+      attendance: fixture.attendance,
+      referee: fixture.referee,
+      homePossession: fixture.homePossession,
+      awayPossession: fixture.awayPossession,
+      homeGoals: fixture.finalHomeGoals,
+      awayGoals: fixture.finalAwayGoals,
+      events: fixture.events || [],
+    },
+  });
 
   const replacement =
     result.choice && availableBench.find((p) => p.id === result.choice);
@@ -461,43 +464,44 @@ async function applyPenaltyEvent({
     isPlayerAvailable(p, currentMatchweek),
   );
   // Fallback: se nenhum jogador disponível (todos expulsos/lesionados), usar squad completo
-  const takerCandidates = filteredCandidates.length > 0 ? filteredCandidates : squad;
+  const takerCandidates =
+    filteredCandidates.length > 0 ? filteredCandidates : squad;
   const fallback = () => selectPenaltyTaker(takerCandidates)?.id || null;
-const result = await waitForMatchAction({
-      game,
-      io,
-      type: "penalty",
+  const result = await waitForMatchAction({
+    game,
+    io,
+    type: "penalty",
+    teamId,
+    payload: {
+      minute: fixture._minute,
       teamId,
-      payload: {
-        minute: fixture._minute,
-        teamId,
-        takerCandidates: takerCandidates.map((p) => ({
-          id: p.id,
-          name: p.name,
-          position: p.position,
-          skill: p.skill,
-        })),
-        currentScore: {
-          home: fixture.finalHomeGoals,
-          away: fixture.finalAwayGoals,
-        },
+      takerCandidates: takerCandidates.map((p) => ({
+        id: p.id,
+        name: p.name,
+        position: p.position,
+        skill: p.skill,
+      })),
+      currentScore: {
+        home: fixture.finalHomeGoals,
+        away: fixture.finalAwayGoals,
       },
-      timeoutMs: 12000,
-      fallback,
-      fixtureData: {
-        homeTeamId: fixture.homeTeamId,
-        awayTeamId: fixture.awayTeamId,
-        homeTeam: fixture.homeTeam,
-        awayTeam: fixture.awayTeam,
-        attendance: fixture.attendance,
-        referee: fixture.referee,
-        homePossession: fixture.homePossession,
-        awayPossession: fixture.awayPossession,
-        homeGoals: fixture.finalHomeGoals,
-        awayGoals: fixture.finalAwayGoals,
-        events: fixture.events || [],
-      },
-    });
+    },
+    timeoutMs: 12000,
+    fallback,
+    fixtureData: {
+      homeTeamId: fixture.homeTeamId,
+      awayTeamId: fixture.awayTeamId,
+      homeTeam: fixture.homeTeam,
+      awayTeam: fixture.awayTeam,
+      attendance: fixture.attendance,
+      referee: fixture.referee,
+      homePossession: fixture.homePossession,
+      awayPossession: fixture.awayPossession,
+      homeGoals: fixture.finalHomeGoals,
+      awayGoals: fixture.finalAwayGoals,
+      events: fixture.events || [],
+    },
+  });
 
   const taker =
     result.choice && takerCandidates.find((p) => p.id === result.choice)
@@ -585,7 +589,16 @@ export function generateIntroEvents(
 ): void {
   // Weather
   if (!fixture._weather) {
-    const weatherRoll = Math.random();
+    // Semente determinística idêntica à usada na previsão (matchSummaryHelpers)
+    const season = fixture.season ?? 1;
+    const matchweek = fixture.matchweek ?? 1;
+    const homeId = fixture.homeTeamId ?? 0;
+    const awayId = fixture.awayTeamId ?? 0;
+    let ws = (season * 1000 + matchweek * 31 + homeId + awayId) >>> 0 || 1;
+    ws ^= ws << 13;
+    ws ^= ws >>> 17;
+    ws ^= ws << 5;
+    const weatherRoll = (ws >>> 0) / 0xffffffff;
     let weatherCondition: string;
     if (weatherRoll < 0.35) weatherCondition = "sol";
     else if (weatherRoll < 0.65) weatherCondition = "chuva";
@@ -880,7 +893,11 @@ async function simulateMatchSegment(
         : true,
     }));
     const bench = (fullRoster || [])
-      .filter((p: any) => !starterIds.has(p.id) && (!tactic?.positions || tactic.positions[p.id] === "Suplente"))
+      .filter(
+        (p: any) =>
+          !starterIds.has(p.id) &&
+          (!tactic?.positions || tactic.positions[p.id] === "Suplente"),
+      )
       .map((p: any) => ({
         id: p.id,
         name: p.name,
@@ -892,8 +909,16 @@ async function simulateMatchSegment(
     return [...starters, ...bench];
   };
   if (!fixture.homeLineup || fixture.homeLineup.length === 0) {
-    fixture.homeLineup = lineupSnapshot(homeSquad, homeTactic, fixture._homeFullRoster);
-    fixture.awayLineup = lineupSnapshot(awaySquad, awayTactic, fixture._awayFullRoster);
+    fixture.homeLineup = lineupSnapshot(
+      homeSquad,
+      homeTactic,
+      fixture._homeFullRoster,
+    );
+    fixture.awayLineup = lineupSnapshot(
+      awaySquad,
+      awayTactic,
+      fixture._awayFullRoster,
+    );
   }
 
   // Persistent lineup tracking across all minutes in this segment
@@ -987,15 +1012,20 @@ async function simulateMatchSegment(
   // db.get é assíncrono; encapsulamos num Promise para poder await
   const calcFamiliarity = async (teamId: number, tacticLocal: any) => {
     if (!tacticLocal?.formation) return 0;
-    const playerState = (Object.values(game.playersByName).find(
+    const playerState = Object.values(game.playersByName).find(
       (p) => (p as any).teamId === teamId && (p as any).socketId,
-    )) as any;
+    ) as any;
     if (!playerState) return 0;
     try {
       const count = await new Promise<number>((resolve) =>
         game.db.get(
           "SELECT COUNT(*) AS cnt FROM player_tactic_history WHERE team_id = ? AND player_name = ? AND formation = ? AND style = ?",
-          [teamId, playerState.name, tacticLocal.formation, normaliseStyle(tacticLocal.style)],
+          [
+            teamId,
+            playerState.name,
+            tacticLocal.formation,
+            normaliseStyle(tacticLocal.style),
+          ],
           (err, row) => {
             if (err || !row) return resolve(0);
             resolve(row.cnt);
@@ -1003,8 +1033,12 @@ async function simulateMatchSegment(
         ),
       );
       const thresholds = [
-        { min: 21, b: 0.06 }, { min: 16, b: 0.05 }, { min: 11, b: 0.04 },
-        { min: 6, b: 0.03 }, { min: 3, b: 0.02 }, { min: 1, b: 0.01 },
+        { min: 21, b: 0.06 },
+        { min: 16, b: 0.05 },
+        { min: 11, b: 0.04 },
+        { min: 6, b: 0.03 },
+        { min: 3, b: 0.02 },
+        { min: 1, b: 0.01 },
       ];
       const tier = thresholds.find((t) => count >= t.min);
       return tier ? tier.b : 0;
@@ -1132,11 +1166,13 @@ async function simulateMatchSegment(
       probGoal *= getWeatherGoalMultiplier(fixture._weather);
 
       // Posse de bola: quem domina o meio campo tem ligeiramente mais probabilidade
-      const totalMid = (currentHome.midStrength || 0) + (currentAway.midStrength || 0);
-      const homePossession = totalMid > 0 ? (currentHome.midStrength || 0) / totalMid : 0.5;
+      const totalMid =
+        (currentHome.midStrength || 0) + (currentAway.midStrength || 0);
+      const homePossession =
+        totalMid > 0 ? (currentHome.midStrength || 0) / totalMid : 0.5;
       const possessionFactor = isHome
-        ? 0.90 + homePossession * 0.20          // range 0.90–1.10
-        : 0.90 + (1 - homePossession) * 0.20;
+        ? 0.9 + homePossession * 0.2 // range 0.90–1.10
+        : 0.9 + (1 - homePossession) * 0.2;
       probGoal *= possessionFactor;
 
       // Guardar posse no fixture para exibição no cliente
@@ -1378,7 +1414,11 @@ async function simulateMatchSegment(
     }
 
     // User substitutions (ignorar no último minuto regulamentar da liga)
-    if (!isLastLeagueMinute && game.pendingSubstitutions && game.pendingSubstitutions.size > 0) {
+    if (
+      !isLastLeagueMinute &&
+      game.pendingSubstitutions &&
+      game.pendingSubstitutions.size > 0
+    ) {
       const teamsToSub = [fixture.homeTeamId, fixture.awayTeamId].filter((id) =>
         game.pendingSubstitutions.has(id),
       );
@@ -1405,43 +1445,43 @@ async function simulateMatchSegment(
         );
 
         if (onPitch.length > 0 && availableBench.length > 0) {
-  const result = await waitForMatchAction({
-      game,
-      io,
-      type: "user_substitution",
-      teamId,
-      payload: {
-        minute: fixture._minute,
-        teamId,
-        onPitch: onPitch.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          position: p.position,
-          skill: p.skill,
-        })),
-        benchPlayers: availableBench.map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          position: p.position,
-          skill: p.skill,
-        })),
-      },
-      timeoutMs: 60000,
-      fallback: () => null,
-      fixtureData: {
-        homeTeamId: fixture.homeTeamId,
-        awayTeamId: fixture.awayTeamId,
-        homeTeam: fixture.homeTeam,
-        awayTeam: fixture.awayTeam,
-        attendance: fixture.attendance,
-        referee: fixture.referee,
-        homePossession: fixture.homePossession,
-        awayPossession: fixture.awayPossession,
-        homeGoals: fixture.finalHomeGoals,
-        awayGoals: fixture.finalAwayGoals,
-        events: fixture.events || [],
-      },
-    });
+          const result = await waitForMatchAction({
+            game,
+            io,
+            type: "user_substitution",
+            teamId,
+            payload: {
+              minute: fixture._minute,
+              teamId,
+              onPitch: onPitch.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                position: p.position,
+                skill: p.skill,
+              })),
+              benchPlayers: availableBench.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                position: p.position,
+                skill: p.skill,
+              })),
+            },
+            timeoutMs: 60000,
+            fallback: () => null,
+            fixtureData: {
+              homeTeamId: fixture.homeTeamId,
+              awayTeamId: fixture.awayTeamId,
+              homeTeam: fixture.homeTeam,
+              awayTeam: fixture.awayTeam,
+              attendance: fixture.attendance,
+              referee: fixture.referee,
+              homePossession: fixture.homePossession,
+              awayPossession: fixture.awayPossession,
+              homeGoals: fixture.finalHomeGoals,
+              awayGoals: fixture.finalAwayGoals,
+              events: fixture.events || [],
+            },
+          });
 
           if (
             result.choice &&
