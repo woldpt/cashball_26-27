@@ -33,14 +33,19 @@ export function RefereePopup({
               <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black mb-2">
                 Árbitro
               </p>
-              <h3 className="text-2xl font-black text-white">
+              <h3 className="text-2xl font-black text-white truncate">
                 {refereePopup.name}
               </h3>
             </div>
             <div className="p-5 space-y-4">
-              <div className="flex items-center justify-between text-xs uppercase tracking-widest font-black text-zinc-500">
-                <span>{teamInfo?.name || "Equipa A"}</span>
-                <span>{nextMatchOpponent?.name || "Equipa B"}</span>
+              <div className="flex items-center justify-between gap-2 text-xs uppercase tracking-widest font-black text-zinc-500">
+                <span className="truncate max-w-[45%]">
+                  {teamInfo?.name || "Equipa A"}
+                </span>
+                <span className="shrink-0">vs</span>
+                <span className="truncate max-w-[45%] text-right">
+                  {nextMatchOpponent?.name || "Equipa B"}
+                </span>
               </div>
               <div className="relative h-4 rounded-full bg-zinc-950 border border-zinc-800 overflow-hidden">
                 <div
@@ -63,8 +68,9 @@ export function RefereePopup({
                   style={{ left: `calc(${refereePopup.balance}% - 2px)` }}
                 />
               </div>
-              <div className="flex items-center justify-between text-sm font-black">
+              <div className="flex items-center justify-between gap-2 text-sm font-black">
                 <span
+                  className="truncate"
                   style={{
                     color:
                       refereePopup.balance >= 50
@@ -73,10 +79,12 @@ export function RefereePopup({
                   }}
                 >
                   {refereePopup.balance >= 50
-                    ? `${teamInfo?.name || "Equipa A"} ganha vantagem`
-                    : `${nextMatchOpponent?.name || "Equipa B"} ganha vantagem`}
+                    ? `${teamInfo?.name || "Equipa A"} favorecido`
+                    : `${nextMatchOpponent?.name || "Equipa B"} favorecido`}
                 </span>
-                <span className="text-zinc-400">{refereePopup.balance}%</span>
+                <span className="text-zinc-400 shrink-0">
+                  {refereePopup.balance}%
+                </span>
               </div>
               <p className="text-sm text-zinc-400 leading-relaxed">
                 A balança mostra para que lado este árbitro tende a inclinar a

@@ -183,6 +183,320 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
   );
 }
 
+const WEATHER_LABELS = {
+  sol: "Sol",
+  chuva: "Chuva",
+  vento: "Vento",
+  chuva_forte: "Tempestade",
+  frio: "Frio",
+  nevoeiro: "Nevoeiro",
+  neve: "Neve",
+};
+
+/**
+ * Gera odds (1 X 2) a partir dos dados do próximo jogo.
+ * @param {{ position: number|null }} team
+ * @param {{ position: number|null }} opponent
+ * @param {string} venue - "Casa" | "Fora"
+ * @param {number} seed
+ * @returns {{ home: string, draw: string, away: string }}
+ */
+function computeOdds(team, opponent, venue, seed) {
+  const teamPos = team?.position ?? 8;
+  const oppPos = opponent?.position ?? 8;
+  const numTeams = 10;
+  // Base probabilities
+  let pHome = (numTeams + 1 - (venue === "Casa" ? teamPos : oppPos)) / numTeams;
+  let pAway = (numTeams + 1 - (venue === "Casa" ? oppPos : teamPos)) / numTeams;
+  // Home advantage boost
+  pHome *= venue === "Casa" ? 1.18 : 0.85;
+  pAway *= venue === "Fora" ? 1.18 : 0.85;
+  // Draw probability roughly ~0.28, adjusted
+  let pDraw = 0.28 + ((seed % 7) - 3) * 0.01;
+  // Normalize
+  const total = pHome + pAway + pDraw;
+  pHome /= total;
+  pAway /= total;
+  pDraw /= total;
+  // Apply bookmaker margin ~5%
+  const margin = 1.05;
+  const toOdds = (p) =>
+    p > 0.01 ? (Math.round((1 / (p * margin)) * 100) / 100).toFixed(2) : "—";
+  return { home: toOdds(pHome), draw: toOdds(pDraw), away: toOdds(pAway) };
+}
+
+/**
+ * Card de análise do próximo confronto — inclui árbitro, tempo e odds.
+ * @param {{ nextMatchSummary: Object, teamInfo: Object|null }} props
+ * @returns {JSX.Element|null}
+ */
+function NextMatchCard({ nextMatchSummary, teamInfo }) {
+  if (!nextMatchSummary || !nextMatchSummary.opponent) return null;
+  const s = nextMatchSummary;
+  const opp = s.opponent;
+  const isHome = s.venue === "Casa";
+  const myPts = teamInfo?.points ?? 0;
+  const ptsDiff = myPts - (opp.points ?? 0);
+  const ptsDiffLabel =
+    ptsDiff > 0 ? `+${ptsDiff}` : ptsDiff < 0 ? `${ptsDiff}` : "=";
+  const ptsDiffColor =
+    ptsDiff > 0
+      ? "text-green-400"
+      : ptsDiff < 0
+        ? "text-red-400"
+        : "text-gray-400";
+  const competition = s.isCup
+    ? (s.cupRoundName ?? "Taça")
+    : `Jornada ${s.matchweek}`;
+
+  // Último confronto
+  const lc = opp.lastConfrontation;
+  const lcResult = lc
+    ? (() => {
+        const weWereHome =
+          lc.home_team_id === s.team?.id || lc.home_team_id === teamInfo?.id;
+        const ourScore = weWereHome ? lc.home_score : lc.away_score;
+        const theirScore = weWereHome ? lc.away_score : lc.home_score;
+        const venue = weWereHome ? "Casa" : "Fora";
+        const comp = lc.competition === "Cup" ? "Taça" : "Liga";
+        const season = lc.season ? `Época ${lc.season}` : null;
+        return { ourScore, theirScore, venue, comp, season };
+      })()
+    : null;
+
+  // Odds
+  const seed = (s.matchweek ?? 1) + (s.team?.id ?? 0) + (opp.id ?? 0);
+  const odds = computeOdds(s.team, opp, s.venue, seed);
+
+  // Tempo
+  const wf = s.weatherForecast;
+  const weatherLabel = wf
+    ? (WEATHER_LABELS[wf.condition] ?? wf.condition)
+    : null;
+
+  // Árbitro
+  const ref = s.referee;
+
+  return (
+    <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+      {/* Cabeçalho: competição + venue */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
+        <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+          {competition}
+        </span>
+        <span
+          className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${isHome ? "bg-sky-500/15 text-sky-400" : "bg-amber-500/15 text-amber-400"}`}
+        >
+          {isHome ? "Casa" : "Fora"}
+        </span>
+      </div>
+
+      {/* Corpo */}
+      <div className="px-4 py-3 flex flex-col sm:flex-row gap-3 sm:gap-0 sm:items-start sm:divide-x sm:divide-[#1e1e1e]">
+        {/* — Secção principal: VS + stats — */}
+        <div className="sm:flex-1 sm:pr-4 flex flex-col gap-2.5">
+          {/* VS row */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-[10px] text-gray-600 font-bold uppercase tracking-wide">
+              VS
+            </span>
+            <span className="text-sm font-black text-white truncate">
+              {opp.name}
+            </span>
+            {opp.position && (
+              <span className="shrink-0 text-[9px] text-gray-600 font-bold">
+                {opp.position}º
+              </span>
+            )}
+          </div>
+
+          {/* Stats row */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {s.team?.position && (
+              <div className="flex flex-col items-center">
+                <span className="text-[7px] uppercase tracking-wide text-gray-700 font-bold">
+                  Posição
+                </span>
+                <span className="text-[11px] font-black text-white">
+                  {s.team.position}º
+                </span>
+              </div>
+            )}
+            <div className="w-px h-6 bg-[#222]" />
+            <div className="flex flex-col items-center">
+              <span className="text-[7px] uppercase tracking-wide text-gray-700 font-bold">
+                Pts Adv.
+              </span>
+              <span
+                className={`text-[11px] font-black tabular-nums ${ptsDiffColor}`}
+              >
+                {ptsDiffLabel}
+              </span>
+            </div>
+            <div className="w-px h-6 bg-[#222]" />
+            <div className="flex flex-col items-center">
+              <span className="text-[7px] uppercase tracking-wide text-gray-700 font-bold">
+                GM / GS
+              </span>
+              <span className="text-[11px] font-black text-white tabular-nums">
+                {opp.goalsFor ?? 0}/{opp.goalsAgainst ?? 0}
+              </span>
+            </div>
+
+            {/* Últimos 5 do adversário */}
+            {opp.last5?.length > 0 && (
+              <>
+                <div className="w-px h-6 bg-[#222]" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[7px] uppercase tracking-wide text-gray-700 font-bold">
+                    Últimos 5
+                  </span>
+                  <div className="flex gap-0.5">
+                    {opp.last5.map((r, i) => (
+                      <span
+                        key={i}
+                        className={`w-3.5 h-3.5 rounded-sm text-[8px] font-black flex items-center justify-center ${r === "W" ? "bg-green-500/20 text-green-400" : r === "L" ? "bg-red-500/20 text-red-400" : "bg-gray-700/40 text-gray-500"}`}
+                      >
+                        {r === "W" ? "V" : r === "L" ? "D" : "E"}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* — Último confronto — */}
+        <div className="sm:flex-1 sm:px-4 flex flex-col gap-1">
+          <span className="text-[7px] uppercase tracking-widest text-gray-700 font-bold">
+            Último confronto
+          </span>
+          {lcResult ? (
+            <>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-black text-white tabular-nums leading-none">
+                  {lcResult.ourScore}–{lcResult.theirScore}
+                </span>
+                <span
+                  className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${lcResult.ourScore > lcResult.theirScore ? "bg-green-500/15 text-green-400" : lcResult.ourScore < lcResult.theirScore ? "bg-red-500/15 text-red-400" : "bg-gray-700/30 text-gray-500"}`}
+                >
+                  {lcResult.ourScore > lcResult.theirScore
+                    ? "Vitória"
+                    : lcResult.ourScore < lcResult.theirScore
+                      ? "Derrota"
+                      : "Empate"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[9px] text-gray-600 uppercase font-bold">
+                  {lcResult.venue}
+                </span>
+                <span className="text-[9px] text-gray-700">·</span>
+                <span className="text-[9px] text-gray-600 font-bold">
+                  {lcResult.comp}
+                </span>
+                {lcResult.season && (
+                  <>
+                    <span className="text-[9px] text-gray-700">·</span>
+                    <span className="text-[9px] text-gray-600">
+                      {lcResult.season}
+                    </span>
+                  </>
+                )}
+              </div>
+            </>
+          ) : (
+            <span className="text-[10px] text-gray-700 font-bold italic">
+              Sem histórico
+            </span>
+          )}
+        </div>
+
+        {/* — Odds + Árbitro + Tempo — */}
+        <div className="sm:flex-1 sm:pl-4 flex flex-col gap-2.5">
+          {/* Odds */}
+          <div>
+            <span className="text-[7px] uppercase tracking-widest text-gray-700 font-bold block mb-1.5">
+              Apostas
+            </span>
+            <div className="flex gap-1.5">
+              {[
+                {
+                  label: "1",
+                  value: odds.home,
+                  color: "text-sky-400",
+                  bg: "bg-sky-500/10",
+                },
+                {
+                  label: "X",
+                  value: odds.draw,
+                  color: "text-gray-400",
+                  bg: "bg-gray-700/20",
+                },
+                {
+                  label: "2",
+                  value: odds.away,
+                  color: "text-amber-400",
+                  bg: "bg-amber-500/10",
+                },
+              ].map(({ label, value, color, bg }) => (
+                <div
+                  key={label}
+                  className={`flex-1 ${bg} rounded-lg px-1.5 py-1.5 flex flex-col items-center gap-0.5`}
+                >
+                  <span className="text-[8px] text-gray-600 font-black uppercase">
+                    {label}
+                  </span>
+                  <span
+                    className={`text-[12px] font-black tabular-nums ${color}`}
+                  >
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Árbitro + Tempo em linha */}
+          <div className="flex items-start gap-3">
+            {ref && (
+              <div className="flex-1 min-w-0">
+                <span className="text-[7px] uppercase tracking-widest text-gray-700 font-bold block mb-0.5">
+                  Árbitro
+                </span>
+                <span className="text-[10px] font-bold text-gray-400 truncate block">
+                  {ref.name}
+                </span>
+                <div className="mt-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${ref.balance}%`,
+                      background: ref.balance >= 50 ? "#16a34a" : "#dc2626",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            {wf && (
+              <div className="shrink-0 flex flex-col items-center gap-0.5">
+                <span className="text-[7px] uppercase tracking-widest text-gray-700 font-bold">
+                  Tempo
+                </span>
+                <span className="text-xl leading-none">{wf.emoji}</span>
+                <span className="text-[8px] text-gray-600 font-bold">
+                  {weatherLabel}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Pagina de Tacticas — totalmente auto-contida via useTactics().
  * @returns {JSX.Element}
@@ -312,6 +626,13 @@ ${disabled ? "opacity-30 cursor-not-allowed text-gray-500" : player.status === s
         <div className="px-4 py-2 text-red-400 text-[10px] font-bold text-center bg-red-500/10 border border-red-500/20 rounded-2xl">
           ⚠️ Desligado — a reconectar...
         </div>
+      )}
+
+      {nextMatchSummary && nextMatchOpponent && (
+        <NextMatchCard
+          nextMatchSummary={nextMatchSummary}
+          teamInfo={teamInfo}
+        />
       )}
 
       {nextMatchSummary?.isCup && !nextMatchOpponent ? (
@@ -610,8 +931,24 @@ ${
                     Balanced: "Neutro",
                     Offensive: "Ofensivo",
                   };
+                  const PILL_COLORS = {
+                    Defensive: "rgba(59,130,246,0.22)",
+                    Balanced: "rgba(74,222,128,0.22)",
+                    Offensive: "rgba(244,63,94,0.22)",
+                  };
+                  const PILL_BORDERS = {
+                    Defensive: "rgba(59,130,246,0.45)",
+                    Balanced: "rgba(74,222,128,0.35)",
+                    Offensive: "rgba(244,63,94,0.45)",
+                  };
+                  const TEXT_COLORS = {
+                    Defensive: "text-blue-400",
+                    Balanced: "text-[#4ade80]",
+                    Offensive: "text-rose-400",
+                  };
                   const idx = STYLES.indexOf(tactic.style ?? "Balanced");
                   const safeIdx = idx < 0 ? 1 : idx;
+                  const activeStyle = tactic.style ?? "Balanced";
                   return (
                     <div className="relative flex bg-[#161616] rounded-full p-0.5">
                       {/* Pill deslizante */}
@@ -620,18 +957,17 @@ ${
                         style={{
                           left: `calc(${safeIdx * 33.333}% + 2px)`,
                           width: "calc(33.333% - 4px)",
-                          background:
-                            "linear-gradient(135deg, rgba(74,222,128,0.22), rgba(74,222,128,0.08))",
-                          border: "1px solid rgba(74,222,128,0.35)",
+                          background: `linear-gradient(135deg, ${PILL_COLORS[activeStyle]}, rgba(0,0,0,0))`,
+                          border: `1px solid ${PILL_BORDERS[activeStyle]}`,
                         }}
                       />
-                      {STYLES.map((val, i) => (
+                      {STYLES.map((val) => (
                         <button
                           key={val}
                           onClick={() => updateTactic({ style: val })}
                           className={`relative z-10 flex-1 py-2 text-[9px] font-black uppercase tracking-wide rounded-full transition-colors ${
                             tactic.style === val
-                              ? "text-[#4ade80]"
+                              ? TEXT_COLORS[val]
                               : "text-gray-500 hover:text-gray-300"
                           }`}
                         >
