@@ -344,26 +344,28 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
             </div>
 
             {/* Últimos 5 do adversário */}
-            {opp.last5?.length > 0 && (
-              <>
-                <div className="w-px h-6 bg-[#222]" />
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[7px] uppercase tracking-wide text-gray-700 font-bold">
-                    Últimos 5
-                  </span>
-                  <div className="flex gap-0.5">
-                    {opp.last5.map((r, i) => (
-                      <span
-                        key={i}
-                        className={`w-3.5 h-3.5 rounded-sm text-[8px] font-black flex items-center justify-center ${r === "W" ? "bg-green-500/20 text-green-400" : r === "L" ? "bg-red-500/20 text-red-400" : "bg-gray-700/40 text-gray-500"}`}
-                      >
-                        {r === "W" ? "V" : r === "L" ? "D" : "E"}
-                      </span>
-                    ))}
+            {opp.last5 &&
+              typeof opp.last5 === "string" &&
+              opp.last5.length > 0 && (
+                <>
+                  <div className="w-px h-6 bg-[#222]" />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[7px] uppercase tracking-wide text-gray-700 font-bold">
+                      Últimos 5
+                    </span>
+                    <div className="flex gap-0.5">
+                      {opp.last5.split("").map((r, i) => (
+                        <span
+                          key={i}
+                          className={`w-3.5 h-3.5 rounded-sm text-[8px] font-black flex items-center justify-center ${r === "V" ? "bg-green-500/20 text-green-400" : r === "D" ? "bg-red-500/20 text-red-400" : "bg-gray-700/40 text-gray-500"}`}
+                        >
+                          {r}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
+                </>
+              )}
           </div>
         </div>
 
