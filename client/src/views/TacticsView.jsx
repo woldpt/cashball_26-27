@@ -281,9 +281,20 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
     <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
       {/* Cabeçalho: competição + venue */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
-        <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
-          {competition}
-        </span>
+        <div className="flex items-center gap-2">
+          {s.isCup ? (
+            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400">
+              🏆 Taça
+            </span>
+          ) : (
+            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-500">
+              ⚽ Liga
+            </span>
+          )}
+          <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+            {competition}
+          </span>
+        </div>
         <span
           className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${isHome ? "bg-sky-500/15 text-sky-400" : "bg-amber-500/15 text-amber-400"}`}
         >
@@ -470,12 +481,21 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
                 <span className="text-[10px] font-bold text-gray-400 truncate block">
                   {ref.name}
                 </span>
-                <div className="mt-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
+                <div className="mt-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden relative">
                   <div
-                    className="h-full rounded-full"
+                    className="absolute inset-y-0 left-0 rounded-l-full"
                     style={{
                       width: `${ref.balance}%`,
-                      background: ref.balance >= 50 ? "#16a34a" : "#dc2626",
+                      background: teamInfo?.color_primary || "#16a34a",
+                      opacity: 0.9,
+                    }}
+                  />
+                  <div
+                    className="absolute inset-y-0 right-0 rounded-r-full"
+                    style={{
+                      width: `${100 - ref.balance}%`,
+                      background: opp?.color_primary || "#dc2626",
+                      opacity: 0.9,
                     }}
                   />
                 </div>
