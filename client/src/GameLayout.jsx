@@ -431,7 +431,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             {sidebarCollapsed ? "chevron_right" : "chevron_left"}
           </span>
         </button>
-        <div className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
+        <div className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto overflow-x-hidden scrollbar-hide">
           <motion.div
             initial="hidden"
             animate="visible"
@@ -495,52 +495,88 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               </motion.button>
             ))}
           </motion.div>
-          <div className="pt-2">
-            <button
-              onClick={() => {
-                if (isMatchInProgress) return;
-                setActiveTab("tactic");
-                window.scrollTo(0, 0);
-                if (socket && teamInfo?.id && tactic) {
-                  socket.emit("requestTacticFamiliarity", teamInfo.id);
-                  socket.emit("requestAllTacticFamiliarity");
-                }
-              }}
-              title={
-                sidebarCollapsed
-                  ? isMatchInProgress
-                    ? "AO VIVO"
-                    : "JOGAR"
-                  : undefined
+        </div>
+
+        {/* JOGAR — pinned to bottom */}
+        <div
+          className={`shrink-0 p-2 border-t border-outline-variant/20 ${!isMatchInProgress && activeTab !== "tactic" ? "relative" : ""}`}
+        >
+          {/* glow halo behind button (idle only) */}
+          {!isMatchInProgress && activeTab !== "tactic" && (
+            <span
+              className="absolute inset-1 rounded-sm blur-md opacity-40 animate-pulse pointer-events-none"
+              style={{ background: "var(--color-primary, #a8e6b0)" }}
+            />
+          )}
+          <button
+            onClick={() => {
+              if (isMatchInProgress) return;
+              setActiveTab("tactic");
+              window.scrollTo(0, 0);
+              if (socket && teamInfo?.id && tactic) {
+                socket.emit("requestTacticFamiliarity", teamInfo.id);
+                socket.emit("requestAllTacticFamiliarity");
               }
-              className={`w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest transition-all rounded-sm ${sidebarCollapsed ? "justify-center" : ""} ${
-                isMatchInProgress
-                  ? "bg-red-500/15 text-red-400 border border-red-500/30 cursor-not-allowed"
-                  : activeTab === "tactic"
-                    ? "bg-primary text-on-primary shadow-lg"
-                    : "bg-primary/10 text-primary border border-primary/40 hover:bg-primary/20"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[20px] shrink-0 leading-none">
-                {isMatchInProgress ? "sensors" : "strategy"}
-              </span>
-              {!sidebarCollapsed && (
-                <>
-                  <span className="flex-1 text-left">
-                    {isMatchInProgress ? "AO VIVO" : "JOGAR"}
-                  </span>
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span
-                      className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isMatchInProgress ? "bg-red-500" : activeTab === "tactic" ? "bg-on-primary/40" : "bg-primary"}`}
-                    />
-                    <span
-                      className={`relative inline-flex rounded-full h-2 w-2 ${isMatchInProgress ? "bg-red-500" : activeTab === "tactic" ? "bg-on-primary/60" : "bg-primary"}`}
-                    />
-                  </span>
-                </>
-              )}
-            </button>
-          </div>
+            }}
+            title={
+              sidebarCollapsed
+                ? isMatchInProgress
+                  ? "AO VIVO"
+                  : "JOGAR"
+                : undefined
+            }
+            className={`relative w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest transition-all rounded-sm overflow-hidden ${
+              sidebarCollapsed ? "justify-center" : ""
+            } ${
+              isMatchInProgress
+                ? "bg-red-500/15 text-red-400 border border-red-500/30 cursor-not-allowed"
+                : activeTab === "tactic"
+                  ? "bg-primary text-on-primary shadow-lg shadow-primary/30"
+                  : "bg-primary/15 text-primary border border-primary/50 hover:bg-primary/25 shadow-md shadow-primary/20"
+            }`}
+          >
+            {/* shimmer sweep (idle only) */}
+            {!isMatchInProgress && (
+              <span
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.22) 50%, transparent 70%)",
+                  animation: "shimmer-sweep 2.6s ease-in-out infinite",
+                }}
+              />
+            )}
+            <span className="material-symbols-outlined text-[20px] shrink-0 leading-none relative z-10">
+              {isMatchInProgress ? "sensors" : "strategy"}
+            </span>
+            {!sidebarCollapsed && (
+              <>
+                <span className="flex-1 text-left relative z-10">
+                  {isMatchInProgress ? "AO VIVO" : "JOGAR"}
+                </span>
+                <span className="relative flex h-2 w-2 shrink-0 z-10">
+                  <span
+                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                      isMatchInProgress
+                        ? "bg-red-500"
+                        : activeTab === "tactic"
+                          ? "bg-on-primary/40"
+                          : "bg-primary"
+                    }`}
+                  />
+                  <span
+                    className={`relative inline-flex rounded-full h-2 w-2 ${
+                      isMatchInProgress
+                        ? "bg-red-500"
+                        : activeTab === "tactic"
+                          ? "bg-on-primary/60"
+                          : "bg-primary"
+                    }`}
+                  />
+                </span>
+              </>
+            )}
+          </button>
         </div>
       </nav>
 
