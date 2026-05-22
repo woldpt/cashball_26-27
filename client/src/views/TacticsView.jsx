@@ -583,6 +583,15 @@ export function TacticsView() {
     ).length;
     const subsFull = subCount >= 5;
     const titularesFull = titCount >= 11;
+    const posCount =
+      player.position !== "GR"
+        ? Object.entries(tactic.positions).filter(([id, s]) => {
+            if (s !== "Titular" || Number(id) === player.id) return false;
+            const p = annotatedSquad.find((x) => x.id === Number(id));
+            return p?.position === player.position;
+          }).length
+        : 0;
+    const posFull = posCount >= 5;
     return (
       <div
         className={`absolute right-0 ${above ? "bottom-full mb-1" : "top-full mt-1"} z-50 bg-[#111] border border-[#222] rounded-2xl shadow-2xl p-1.5 flex flex-col gap-0.5 min-w-38.75`}
@@ -601,6 +610,7 @@ export function TacticsView() {
             (status === "Titular" &&
               titularesFull &&
               player.status !== "Titular") ||
+            (status === "Titular" && posFull && player.status !== "Titular") ||
             (status === "Suplente" && subsFull && player.status !== "Suplente");
           return (
             <button

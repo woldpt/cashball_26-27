@@ -252,11 +252,15 @@ export function TacticsProvider({ children }) {
 						([id, s]) => s === "Titular" && Number(id) !== playerId,
 					).length;
 					if (currentTitulares >= 11) return prev;
+				// Máximo 5 por posição de campo (DEF/MED/ATA)
+				if (player && player.position !== "GR") {
+					const posCount = Object.entries(newPositions).filter(([id, s]) => {
+						if (s !== "Titular" || Number(id) === playerId) return false;
+						const p = mySquad.find((x) => x.id === Number(id));
+						return p?.position === player.position;
+					}).length;
+					if (posCount >= 5) return prev;
 				}
-
-				if (status === "Suplente") {
-					const currentSubs = Object.entries(newPositions).filter(
-						([id, s]) => s === "Suplente" && Number(id) !== playerId,
 					).length;
 					if (currentSubs >= 5) return prev;
 				}
@@ -357,6 +361,15 @@ export function TacticsProvider({ children }) {
 						([id, s]) => s === "Titular" && Number(id) !== playerId,
 					).length;
 					if (count >= 11) return prev;
+					// Máximo 5 por posição de campo (DEF/MED/ATA)
+					if (player.position !== "GR") {
+						const posCount = Object.entries(newPositions).filter(([id, s]) => {
+							if (s !== "Titular" || Number(id) === playerId) return false;
+							const p = mySquad.find((x) => x.id === Number(id));
+							return p?.position === player.position;
+						}).length;
+						if (posCount >= 5) return prev;
+					}
 					// Regra do GR: só um GR no 11; deslocar o existente para suplentes
 					if (player.position === "GR") {
 						Object.entries(newPositions).forEach(([id, s]) => {
