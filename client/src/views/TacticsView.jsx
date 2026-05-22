@@ -159,11 +159,23 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
             );
           })()}
       </span>
-      <div className="flex items-center gap-2 shrink-0 text-[11px]">
-        <span className="text-gray-500">{player.resistance ?? "–"}</span>
-        <span>{formIcon}</span>
-        <span className="font-black text-[#e8e8e8] text-sm">
-          {player.skill}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <span className="flex flex-col items-center leading-none">
+          <span className="text-[7px] text-gray-600 uppercase tracking-wide">
+            RES
+          </span>
+          <span className="text-[11px] text-gray-400 font-bold tabular-nums mt-0.5">
+            {player.resistance ?? "–"}
+          </span>
+        </span>
+        <span className="text-[10px] mx-0.5">{formIcon}</span>
+        <span className="flex flex-col items-center leading-none">
+          <span className="text-[7px] text-gray-600 uppercase tracking-wide">
+            Q
+          </span>
+          <span className="text-sm font-black text-white tabular-nums mt-0.5">
+            {player.skill}
+          </span>
         </span>
       </div>
       {children}
@@ -327,9 +339,138 @@ ${disabled ? "opacity-30 cursor-not-allowed text-gray-500" : player.status === s
         <div className="flex flex-col lg:flex-row gap-3 items-start">
           {/* COL 1 — FORMAÇÃO + MENTALIDADE */}
           <div className="lg:w-57.5 shrink-0 flex flex-col gap-2">
-            {/* Proximo jogo */}
+            {/* Proximo jogo — mobile: moral + mentality side by side */}
+            <div className="flex gap-2 lg:hidden">
+              {nextMatchSummary && (
+                <div className="flex-1 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+                  {(() => {
+                    const morale = teamInfo?.morale ?? 75;
+                    const fillColor =
+                      morale > 75
+                        ? "bg-green-500"
+                        : morale >= 50
+                          ? "bg-yellow-500"
+                          : "bg-red-500";
+                    const textColor =
+                      morale > 75
+                        ? "text-green-400"
+                        : morale >= 50
+                          ? "text-yellow-400"
+                          : "text-red-400";
+                    const label =
+                      morale > 75 ? "Alta" : morale >= 50 ? "Média" : "Baixa";
+                    return (
+                      <div className="px-3 py-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[9px] uppercase tracking-widest text-gray-600 font-bold">
+                            Moral
+                          </span>
+                          <span
+                            className={`text-[9px] font-black uppercase ${textColor}`}
+                          >
+                            {label}
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
+                            style={{ width: `${morale}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+              <div className="flex-1 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+                <div className="px-3 py-2">
+                  {(() => {
+                    const STYLES = ["Defensive", "Balanced", "Offensive"];
+                    const LABELS = {
+                      Defensive: "DEF",
+                      Balanced: "NEU",
+                      Offensive: "ATK",
+                    };
+                    const idx = STYLES.indexOf(tactic.style ?? "Balanced");
+                    const safeIdx = idx < 0 ? 1 : idx;
+                    return (
+                      <div className="relative flex bg-[#161616] rounded-full p-0.5">
+                        <div
+                          className="absolute inset-y-0.5 rounded-full transition-all duration-200 pointer-events-none"
+                          style={{
+                            left: `calc(${safeIdx * 33.333}% + 2px)`,
+                            width: "calc(33.333% - 4px)",
+                            background:
+                              "linear-gradient(135deg, rgba(74,222,128,0.22), rgba(74,222,128,0.08))",
+                            border: "1px solid rgba(74,222,128,0.35)",
+                          }}
+                        />
+                        {STYLES.map((val) => (
+                          <button
+                            key={val}
+                            onClick={() => updateTactic({ style: val })}
+                            className={`relative z-10 flex-1 py-1.5 text-[9px] font-black uppercase tracking-wide rounded-full transition-colors ${tactic.style === val ? "text-[#4ade80]" : "text-gray-500 hover:text-gray-300"}`}
+                          >
+                            {LABELS[val]}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            {/* Formação mobile — chips horizontais */}
+            <div className="lg:hidden bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-[#1a1a1a]">
+                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+                  Formação
+                </span>
+                <button
+                  onClick={handleClearTactic}
+                  className="text-[9px] text-gray-600 uppercase hover:text-red-400 transition-colors font-bold"
+                >
+                  Limpar
+                </button>
+              </div>
+              <div className="px-3 py-2 flex flex-wrap gap-1.5">
+                {TACTIC_FORMATIONS.map(({ value, label }) => {
+                  const isAvailable =
+                    formationAvailabilityByValue[value] === true;
+                  const isActive =
+                    titulares.length > 0 && tactic.formation === value;
+                  return (
+                    <button
+                      key={value}
+                      disabled={!isAvailable}
+                      onClick={() => isAvailable && handleAutoPick(value)}
+                      className={`px-3 py-1.5 text-[11px] font-black rounded-xl transition-all active:scale-95 ${
+                        !isAvailable
+                          ? "bg-[#161616] text-gray-700 cursor-not-allowed"
+                          : isActive
+                            ? "text-[#0a1a0a] shadow-lg shadow-green-500/20"
+                            : "bg-[#1a1a1a] text-gray-300 hover:bg-[#222]"
+                      }`}
+                      style={
+                        isActive
+                          ? {
+                              background:
+                                "linear-gradient(135deg,#4ade80,#22c55e)",
+                            }
+                          : {}
+                      }
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Proximo jogo — desktop only */}
             {nextMatchSummary && (
-              <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+              <div className="hidden lg:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
                 {(() => {
                   const morale = teamInfo?.morale ?? 75;
                   const fillColor =
@@ -370,8 +511,8 @@ ${disabled ? "opacity-30 cursor-not-allowed text-gray-500" : player.status === s
               </div>
             )}
 
-            {/* Formação */}
-            <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+            {/* Formação — desktop only */}
+            <div className="hidden lg:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
                 <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
                   Formação
@@ -454,8 +595,8 @@ ${
               </div>
             </div>
 
-            {/* Mentalidade */}
-            <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+            {/* Mentalidade — desktop only */}
+            <div className="hidden lg:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
               <div className="px-4 py-2.5 border-b border-[#1a1a1a]">
                 <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
                   Mentalidade
@@ -776,8 +917,8 @@ ${
             </div>
           </div>
 
-          {/* COL 3 — CAMPO + JOGAR */}
-          <div className="lg:w-72.5 shrink-0 flex flex-col gap-2">
+          {/* COL 3 — CAMPO + JOGAR (desktop only — mobile usa FAB) */}
+          <div className="max-lg:hidden lg:w-72.5 shrink-0 flex flex-col gap-2">
             {/* Botao JOGAR — desktop */}
             <div className="max-lg:hidden">
               <button
