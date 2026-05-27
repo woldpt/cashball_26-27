@@ -7,11 +7,11 @@ COUNTRY_FLAGS.forEach(({ flag, label }) => {
 
 export const SKIN_REGIONS = {
 	europe: [0, 1],
-	east_asia: [0, 1],
+	east_asia: [6, 7],
 	latam: [1, 2, 3],
 	mediterranean: [1, 2],
 	south_asia: [1, 2, 3],
-	southeast_asia: [1, 2],
+	southeast_asia: [1, 2, 6, 7],
 	africa: [3, 4, 5],
 	oceania: [0, 1],
 };

@@ -271,9 +271,12 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
     { base: "#b27a4f", shadow: "#7a4a2c", blush: "#9c4f40", lip: "#5a2f24" },
     { base: "#8a5638", shadow: "#54331e", blush: "#7a3d33", lip: "#3f221b" },
     { base: "#5e3a26", shadow: "#321d12", blush: "#5a2c25", lip: "#2a1612" },
+    { base: "#f5e0b8", shadow: "#d4b080", blush: "#e8a888", lip: "#a05848" },
+    { base: "#e0c490", shadow: "#b89860", blush: "#d49870", lip: "#884830" },
   ];
 
   const region = FLAG_TO_SKIN_REGION[nationality];
+  const isAsian = region === "east_asia" || region === "southeast_asia";
   const skinIndices = region ? SKIN_REGIONS[region] : null;
   const skin = skinIndices
     ? SKIN_TONES[skinIndices[Math.floor(rng() * skinIndices.length)]]
@@ -986,24 +989,25 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
 
   // ---------- OLHOS estilo Tsubasa ----------
   const renderEye = (x, direction) => {
+    const asianScale = isAsian ? 0.85 : 1.0;
+    const localEyeRx = eyeRx * asianScale;
     const lidLift = (eyeStyle === "sharp" ? 4 + angryTilt * 0.4 : eyeStyle === "hero" ? 7.5 : 6.5) + profile.lidBoost;
     const irisShift = direction === "left" ? 1.2 : -1.2;
     const isClosed = eyeStyle === "sharp" && expression === "focused";
 
     if (isClosed) {
-      // Olhos meio-fechados de concentração (efeito Tsubasa serious)
       return (
         <g>
           <path
-            d={`M${x - eyeRx} ${eyeY + 1}
-                Q${x} ${eyeY - lidLift * 0.5} ${x + eyeRx} ${eyeY + 1}`}
+            d={`M${x - localEyeRx} ${eyeY + 1}
+                Q${x} ${eyeY - lidLift * 0.5} ${x + localEyeRx} ${eyeY + 1}`}
             stroke={OUTLINE}
             strokeWidth="3.5"
             fill="none"
             strokeLinecap="round"
           />
           <path
-            d={`M${x - eyeRx + 2} ${eyeY + 3} L${x + eyeRx - 2} ${eyeY + 3}`}
+            d={`M${x - localEyeRx + 2} ${eyeY + 3} L${x + localEyeRx - 2} ${eyeY + 3}`}
             stroke={OUTLINE}
             strokeWidth="2"
             strokeLinecap="round"
@@ -1016,11 +1020,11 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
       <g>
         {/* Esclera - pontas afiladas em V */}
         <path
-          d={`M${x - eyeRx} ${eyeY}
-              Q${x - eyeRx + 1} ${eyeY - eyeRy} ${x} ${eyeY - eyeRy}
-              Q${x + eyeRx - 1} ${eyeY - eyeRy} ${x + eyeRx} ${eyeY}
-              Q${x + eyeRx - 1} ${eyeY + eyeRy * 0.85} ${x} ${eyeY + eyeRy * 0.85}
-              Q${x - eyeRx + 1} ${eyeY + eyeRy * 0.85} ${x - eyeRx} ${eyeY} Z`}
+          d={`M${x - localEyeRx} ${eyeY}
+              Q${x - localEyeRx + 1} ${eyeY - eyeRy} ${x} ${eyeY - eyeRy}
+              Q${x + localEyeRx - 1} ${eyeY - eyeRy} ${x + localEyeRx} ${eyeY}
+              Q${x + localEyeRx - 1} ${eyeY + eyeRy * 0.85} ${x} ${eyeY + eyeRy * 0.85}
+              Q${x - localEyeRx + 1} ${eyeY + eyeRy * 0.85} ${x - localEyeRx} ${eyeY} Z`}
           fill={EYE_WHITE}
           stroke={OUTLINE}
           strokeWidth="1.6"
@@ -1028,10 +1032,10 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
 
         {/* Sombra superior na esclera (estilo cell-shading Tsubasa) */}
         <path
-          d={`M${x - eyeRx + 1} ${eyeY - 0.5}
-              Q${x} ${eyeY - eyeRy + 0.5} ${x + eyeRx - 1} ${eyeY - 0.5}
-              L${x + eyeRx - 2} ${eyeY - eyeRy * 0.4}
-              Q${x} ${eyeY - eyeRy * 0.55} ${x - eyeRx + 2} ${eyeY - eyeRy * 0.4} Z`}
+          d={`M${x - localEyeRx + 1} ${eyeY - 0.5}
+              Q${x} ${eyeY - eyeRy + 0.5} ${x + localEyeRx - 1} ${eyeY - 0.5}
+              L${x + localEyeRx - 2} ${eyeY - eyeRy * 0.4}
+              Q${x} ${eyeY - eyeRy * 0.55} ${x - localEyeRx + 2} ${eyeY - eyeRy * 0.4} Z`}
           fill={hexToRgba(OUTLINE, 0.18)}
         />
 
@@ -1081,35 +1085,59 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
 
         {/* Pálpebra superior carregada - Tsubasa style */}
         <path
-          d={`M${x - eyeRx - 1} ${eyeY + 0.5}
-              Q${x - eyeRx + 2} ${eyeY - eyeRy - 1} ${x} ${eyeY - eyeRy - 1}
-              Q${x + eyeRx - 2} ${eyeY - eyeRy - 1} ${x + eyeRx + 1} ${eyeY + 0.5}
-              L${x + eyeRx + 1} ${eyeY - 1}
-              Q${x + eyeRx - 2} ${eyeY - eyeRy + 0.5} ${x} ${eyeY - eyeRy + 0.5}
-              Q${x - eyeRx + 2} ${eyeY - eyeRy + 0.5} ${x - eyeRx - 1} ${eyeY - 1} Z`}
+          d={`M${x - localEyeRx - 1} ${eyeY + 0.5}
+              Q${x - localEyeRx + 2} ${eyeY - eyeRy - 1} ${x} ${eyeY - eyeRy - 1}
+              Q${x + localEyeRx - 2} ${eyeY - eyeRy - 1} ${x + localEyeRx + 1} ${eyeY + 0.5}
+              L${x + localEyeRx + 1} ${eyeY - 1}
+              Q${x + localEyeRx - 2} ${eyeY - eyeRy + 0.5} ${x} ${eyeY - eyeRy + 0.5}
+              Q${x - localEyeRx + 2} ${eyeY - eyeRy + 0.5} ${x - localEyeRx - 1} ${eyeY - 1} Z`}
           fill={OUTLINE}
         />
 
         {/* Pestanas superiores (3 traços externos) */}
         <g stroke={OUTLINE} strokeWidth="1.6" strokeLinecap="round" fill="none">
-          <path d={`M${x - eyeRx - 1} ${eyeY - 0.5} L${x - eyeRx - 4} ${eyeY - eyeRy * 0.5}`} />
+          <path d={`M${x - localEyeRx - 1} ${eyeY - 0.5} L${x - localEyeRx - 4} ${eyeY - eyeRy * 0.5}`} />
           {direction === "left" && (
-            <path d={`M${x - eyeRx + 1} ${eyeY - eyeRy + 0.5} L${x - eyeRx - 2} ${eyeY - eyeRy - 2}`} />
+            <path d={`M${x - localEyeRx + 1} ${eyeY - eyeRy + 0.5} L${x - localEyeRx - 2} ${eyeY - eyeRy - 2}`} />
           )}
           {direction === "right" && (
-            <path d={`M${x + eyeRx - 1} ${eyeY - eyeRy + 0.5} L${x + eyeRx + 2} ${eyeY - eyeRy - 2}`} />
+            <path d={`M${x + localEyeRx - 1} ${eyeY - eyeRy + 0.5} L${x + localEyeRx + 2} ${eyeY - eyeRy - 2}`} />
           )}
         </g>
 
         {/* Pálpebra inferior fina, desconectada */}
         <path
-          d={`M${x - eyeRx + 3} ${eyeY + eyeRy * 0.85}
-              L${x + eyeRx - 3} ${eyeY + eyeRy * 0.85}`}
+          d={`M${x - localEyeRx + 3} ${eyeY + eyeRy * 0.85}
+              L${x + localEyeRx - 3} ${eyeY + eyeRy * 0.85}`}
           stroke={hexToRgba(OUTLINE, 0.55)}
           strokeWidth="1.4"
           strokeLinecap="round"
           fill="none"
         />
+
+        {/* Prega epicântica (olhos asiáticos) — cobre o canto interno */}
+        {isAsian && direction === "left" && (
+          <path
+            d={`M${x - localEyeRx + 2} ${eyeY - eyeRy * 0.6}
+                Q${x - localEyeRx - 3} ${eyeY - 1} ${x - localEyeRx + 1} ${eyeY + eyeRy * 0.4}
+                Q${x - localEyeRx + 3} ${eyeY + 1} ${x - localEyeRx + 2} ${eyeY - eyeRy * 0.6} Z`}
+            fill={skin.base}
+            stroke={OUTLINE}
+            strokeWidth="1.4"
+            strokeLinejoin="round"
+          />
+        )}
+        {isAsian && direction === "right" && (
+          <path
+            d={`M${x + localEyeRx - 2} ${eyeY - eyeRy * 0.6}
+                Q${x + localEyeRx + 3} ${eyeY - 1} ${x + localEyeRx - 1} ${eyeY + eyeRy * 0.4}
+                Q${x + localEyeRx - 3} ${eyeY + 1} ${x + localEyeRx - 2} ${eyeY - eyeRy * 0.6} Z`}
+            fill={skin.base}
+            stroke={OUTLINE}
+            strokeWidth="1.4"
+            strokeLinejoin="round"
+          />
+        )}
       </g>
     );
   };
