@@ -1,17 +1,10 @@
-import { AggBadge } from "../shared/AggBadge.jsx";
-import { PlayerLink } from "../shared/PlayerLink.jsx";
 import {
-  FLAG_TO_COUNTRY,
   DIVISION_NAMES,
-  ENABLE_ROW_BG,
   POSITION_TEXT_CLASS,
-  POSITION_BG_CLASS,
-  POSITION_BORDER_CLASS,
-  POSITION_LABEL_MAP,
 } from "../../constants/index.js";
 import { generateLeagueFixtures } from "../../utils/fixtures.js";
-import { getPlayerStat } from "../../utils/playerHelpers.js";
 import { isSameTeamId } from "../../utils/teamHelpers.js";
+import { TeamSquadCard } from "../shared/TeamSquadCard.jsx";
 import { useState } from "react";
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
@@ -53,7 +46,6 @@ export function TeamSquadModal({
     !isOwnTeam &&
     !players.some((p) => isSameTeamId(p.teamId, selectedTeam?.id));
   const showProposalCol = isNpcTeam;
-  const colCount = showProposalCol ? 10 : 9;
 
   const selectedTeamDivision = selectedTeam?.division;
   const selectedDivTeams = teams
@@ -433,165 +425,49 @@ export function TeamSquadModal({
                 <div className="p-8 text-center text-zinc-400 font-bold">
                   A carregar plantel...
                 </div>
+              ) : selectedTeamSquad.length === 0 ? (
+                <div className="p-8 text-center text-zinc-500 font-bold">
+                  Sem jogadores encontrados.
+                </div>
               ) : (
-                <table className="w-full min-w-170 text-left text-sm border-collapse">
-                  <thead className="sticky top-0 bg-surface text-on-surface-variant uppercase text-[11px] tracking-widest border-b border-outline-variant/20">
-                    <tr>
-                      <th className="px-4 py-3 font-black">Pos</th>
-                      <th className="px-4 py-3 font-black">Nome</th>
-                      <th className="px-4 py-3 font-black text-center">Nac.</th>
-                      <th className="px-4 py-3 font-black text-center">Qual</th>
-                      <th className="px-4 py-3 font-black text-center">Agr.</th>
-                      <th className="px-4 py-3 font-black text-center">
-                        Golos
-                      </th>
-                      <th className="px-4 py-3 font-black text-center">
-                        Vermelhos
-                      </th>
-                      <th className="px-4 py-3 font-black text-center">
-                        Lesões
-                      </th>
-                      <th className="px-4 py-3 font-black text-center">
-                        Susp.
-                      </th>
-                      {showProposalCol && (
-                        <th className="px-4 py-3 font-black text-center">
-                          Proposta
-                        </th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-800/60">
-                    {selectedTeamSquad.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={colCount}
-                          className="px-4 py-8 text-center text-zinc-500 font-bold"
-                        >
-                          Sem jogadores encontrados.
-                        </td>
-                      </tr>
-                    ) : (
-                      selectedTeamSquad.map((player) => (
-                        <tr
-                          key={player.id}
-                          className={`hover:bg-zinc-800/50 transition-colors ${ENABLE_ROW_BG ? POSITION_BG_CLASS[player.position] : ""}`}
-                        >
-                          <td className="px-4 py-2.5 text-center">
-                            <span
-                              className={`px-2 py-0.5 bg-surface-bright rounded-sm text-[10px] font-black border-l-2 ${POSITION_BORDER_CLASS[player.position] || "border-zinc-500"} ${POSITION_TEXT_CLASS[player.position] || "text-zinc-300"}`}
-                            >
-                              {POSITION_LABEL_MAP[player.position] ||
-                                player.position}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5 font-bold text-white">
-                            <PlayerLink playerId={player.id}>
-                              {player.name}
-                            </PlayerLink>
-                            {player.isJunior && (
-                              <span className="ml-1 text-[9px] font-black uppercase px-1 py-0.5 rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
-                                🎓
-                              </span>
-                            )}
-                            {!!player.is_star &&
-                              (player.position === "MED" ||
-                                player.position === "ATA") && (
-                                <span
-                                  className="ml-1 text-amber-400 font-black"
-                                  title="Craque"
-                                >
-                                  *
-                                </span>
-                              )}
-                            {(player.transfer_cooldown_until_matchweek || 0) > 0 &&
-                              (player.transfer_cooldown_until_matchweek || 0) >= currentMatchweek && (
-                              <span
-                                className="ml-1"
-                                title="Em viagem — disponível na próxima jornada"
-                              >
-                                ✈️
-                              </span>
-                            )}
-                          </td>
-                          <td
-                            className="px-4 py-2.5 text-center text-lg"
-                            title={
-                              FLAG_TO_COUNTRY[player.nationality] ||
-                              player.nationality ||
-                              "—"
+                <div className="flex flex-col gap-1.5 p-4">
+                  {(["GR", "DEF", "MED", "ATA"]).map((pos) => {
+                    const group = selectedTeamSquad.filter((p) => p.position === pos);
+                    if (!group.length) return null;
+                    const posLabel =
+                      pos === "GR"
+                        ? "Guarda-redes"
+                        : pos === "DEF"
+                          ? "Defesas"
+                          : pos === "MED"
+                            ? "Médios"
+                            : "Avançados";
+                    return (
+                      <div key={pos}>
+                        <div className="flex items-center gap-2 px-1 py-2 mt-1 first:mt-0">
+                          <span className={`text-[10px] font-black uppercase tracking-widest ${POSITION_TEXT_CLASS[pos] || "text-zinc-400"}`}>
+                            {posLabel}
+                          </span>
+                          <span className="text-[9px] text-on-surface-variant/30 font-bold">
+                            {group.length}
+                          </span>
+                        </div>
+                        {group.map((player) => (
+                          <TeamSquadCard
+                            key={player.id}
+                            player={player}
+                            matchweekCount={currentMatchweek}
+                            showProposalCol={showProposalCol}
+                            myBudget={myBudget}
+                            onProposal={(data) =>
+                              setTransferProposalModal(data)
                             }
-                          >
-                            {player.nationality || "—"}
-                          </td>
-                          <td className="px-4 py-2.5 text-center">
-                            {player.prev_skill !== null &&
-                              player.prev_skill !== undefined &&
-                              player.prev_skill !== player.skill && (
-                                <span
-                                  className={`mr-1 text-xs font-black ${player.skill > player.prev_skill ? "text-emerald-400" : "text-red-400"}`}
-                                >
-                                  {player.skill > player.prev_skill ? "▲" : "▼"}
-                                </span>
-                              )}
-                            <span className="bg-zinc-950 text-white font-black px-2 py-1.5 rounded text-sm border border-zinc-800">
-                              {player.skill}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5 text-center">
-                            <AggBadge value={player.aggressiveness} />
-                          </td>
-                          <td className="px-4 py-2.5 text-center font-black text-emerald-400">
-                            {getPlayerStat(player, ["goals"])}{" "}
-                            <span className="text-zinc-500 text-xs font-normal">
-                              ({getPlayerStat(player, ["career_goals"])})
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5 text-center font-black text-red-400">
-                            {getPlayerStat(player, ["red_cards"])}{" "}
-                            <span className="text-zinc-500 text-xs font-normal">
-                              ({getPlayerStat(player, ["career_reds"])})
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5 text-center font-black text-orange-400">
-                            {getPlayerStat(player, ["injuries"])}{" "}
-                            <span className="text-zinc-500 text-xs font-normal">
-                              ({getPlayerStat(player, ["career_injuries"])})
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5 text-center font-black text-amber-400">
-                            {getPlayerStat(player, ["suspension_games"])}
-                          </td>
-                          {showProposalCol && (
-                            <td className="px-4 py-2.5 text-center">
-                              {!player.isJunior &&
-                              Math.round((player.value || 0) * 1.35) <=
-                                myBudget ? (
-                                <button
-                                  onClick={() =>
-                                    setTransferProposalModal({
-                                      player,
-                                      suggestedPrice: Math.round(
-                                        (player.value || 0) * 1.35,
-                                      ),
-                                    })
-                                  }
-                                  className="px-3 py-1.5 rounded text-xs font-black uppercase bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-500 transition-colors whitespace-nowrap"
-                                >
-                                  Proposta
-                                </button>
-                              ) : (
-                                <span className="text-[10px] text-zinc-600 font-bold uppercase">
-                                  Sem saldo
-                                </span>
-                              )}
-                            </td>
-                          )}
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                          />
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </motion.div>
