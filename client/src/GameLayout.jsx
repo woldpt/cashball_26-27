@@ -2197,24 +2197,17 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         setJobOfferModal={setJobOfferModal}
       />
 
-<<<<<<< HEAD
-			<NewsTicker
+<NewsTicker
 				newsTickerItems={newsTickerItems}
 				hidden={isMatchInProgress}
 				sidebarCollapsed={sidebarCollapsed}
 			/>
-=======
+
       <SeasonEndModal
         data={seasonEndModal}
         teams={teams}
         me={me}
         onClose={() => setSeasonEndModal(null)}
-      />
->>>>>>> b2faf4ca6a5023f2e6f0d119d763cc24612323f9
-
-      <NewsTicker
-        newsTickerItems={newsTickerItems}
-        hidden={isMatchInProgress}
       />
 
       <PlayerHistoryModal
