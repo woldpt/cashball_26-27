@@ -176,20 +176,6 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
           </span>
         </div>
       </div>
-          <span className="text-[11px] text-gray-400 font-bold tabular-nums mt-0.5">
-            {player.resistance ?? "–"}
-          </span>
-        </span>
-        <span className="text-[10px] mx-0.5">{formIcon}</span>
-        <span className="flex flex-col items-center leading-none">
-          <span className="text-[7px] text-gray-600 uppercase tracking-wide">
-            Q
-          </span>
-          <span className="text-sm font-black text-white tabular-nums mt-0.5">
-            {player.skill}
-          </span>
-        </span>
-      </div>
       {children}
     </div>
   );
