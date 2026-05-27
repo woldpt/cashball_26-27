@@ -1,6 +1,7 @@
 import { AggBadge } from "../components/shared/AggBadge.jsx";
 import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
 import { PlayerLink } from "../components/shared/PlayerLink.jsx";
+import { StatTile } from "../components/shared/StatTile.jsx";
 import {
   POSITION_TEXT_CLASS,
   POSITION_BORDER_CLASS,
@@ -38,21 +39,6 @@ const SHIMMER_STYLE = {
   backgroundSize: "220% 100%",
   animation: "shimmer 3s linear infinite",
 };
-
-function StatTile({ label, children, accent = "border-outline-variant/15" }) {
-  return (
-    <div
-      className={`flex flex-col items-center justify-center bg-surface/50 rounded-md px-1 py-1.5 border ${accent}`}
-    >
-      <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-1">
-        {label}
-      </div>
-      <div className="leading-none flex items-center justify-center min-h-4">
-        {children}
-      </div>
-    </div>
-  );
-}
 
 function PlayerCard({ player, matchweekCount }) {
   const isListed =
@@ -196,26 +182,20 @@ function PlayerCard({ player, matchweekCount }) {
           <StatTile label="Agr">
             <AggBadge value={player.aggressiveness} />
           </StatTile>
-          <StatTile label="Res">
+          <StatTile icon="shield" label="Res">
             {player.resistance != null ? (
-              <span className="text-cyan-400 font-black text-[12px]">
-                🛡️{player.resistance}
-              </span>
+              <span className="text-cyan-400">{player.resistance}</span>
             ) : (
-              <span className="text-zinc-600 text-xs">—</span>
+              <span className="text-zinc-600">—</span>
             )}
           </StatTile>
           <StatTile label="For">
-            <span className={`font-black text-[12px] ${formColor}`}>
-              {formArrow}
-            </span>
+            <span className={`text-white ${formColor}`}>{formArrow}</span>
           </StatTile>
           <StatTile label="Gol">
-            <span className="font-black text-emerald-400 text-[12px] tabular-nums">
-              {getPlayerStat(player, ["goals"])}
-              <span className="text-zinc-600 text-[9px] font-normal ml-0.5">
-                /{getPlayerStat(player, ["career_goals"])}
-              </span>
+            {getPlayerStat(player, ["goals"])}
+            <span className="text-zinc-600 text-[9px] font-normal ml-0.5">
+              /{getPlayerStat(player, ["career_goals"])}
             </span>
           </StatTile>
         </div>

@@ -3,6 +3,7 @@ import { formatCurrency } from "../utils/formatters.js";
 import { FLAG_TO_COUNTRY } from "../constants/index.js";
 import { AggBadge } from "../components/shared/AggBadge.jsx";
 import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
+import { StatTile } from "../components/shared/StatTile.jsx";
 
 /* ── Position accent colours ─────────────────────────────────────────────── */
 const POS_ACCENT = {
@@ -72,26 +73,7 @@ function getTimeAgo(ts) {
   return `${Math.floor(diff / 3600000)}h`;
 }
 
-/* ── Small stat block ─────────────────────────────────────────────────────── */
-function StatBlock({ icon, label, value }) {
-  return (
-    <div
-      className="rounded-md p-2.5 flex flex-col gap-1"
-      style={{ background: "#111118", border: "1px solid #26263a" }}
-    >
-      <span
-        className="material-symbols-outlined text-sm leading-none"
-        style={{ color: "#52525b" }}
-      >
-        {icon}
-      </span>
-      <p className="text-[8px] text-zinc-500 uppercase tracking-widest font-bold">
-        {label}
-      </p>
-      <p className="font-black text-white text-lg leading-none">{value}</p>
-    </div>
-  );
-}
+// StatBlock replaced by shared StatTile (components/shared/StatTile.jsx)
 
 /* ── Single auction card (flip) ───────────────────────────────────────────── */
 /**
@@ -507,11 +489,19 @@ function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
             {/* Stats grid */}
             <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-2">Historial</p>
             <div className="grid grid-cols-2 gap-2 mb-3">
-              <StatBlock icon="sports_soccer" label="Jogos" value={auction.games_played ?? 0} />
-              <StatBlock icon="stat_3" label="Golos" value={auction.goals ?? 0} />
-              <StatBlock icon="square" label="Vermelhos" value={auction.red_cards ?? 0} />
-              <StatBlock icon="personal_injury" label="Lesões" value={auction.injuries ?? 0} />
-            </div>
+               <StatTile icon="sports_soccer" label="Jogos">
+                 {auction.games_played ?? 0}
+               </StatTile>
+               <StatTile icon="stat_3" label="Golos">
+                 {auction.goals ?? 0}
+               </StatTile>
+               <StatTile icon="square" label="Vermelhos">
+                 {auction.red_cards ?? 0}
+               </StatTile>
+               <StatTile icon="personal_injury" label="Lesões">
+                 {auction.injuries ?? 0}
+               </StatTile>
+             </div>
             {auction.aggressiveness != null && (
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-wide">Agressividade</span>
