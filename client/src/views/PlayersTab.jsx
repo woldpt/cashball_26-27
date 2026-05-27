@@ -183,29 +183,29 @@ function SquadRow({ player, matchweekCount, onOpenPlayerHistory }) {
 
       {/* Atributos primários (Agr / Res / For) */}
       <div className="hidden md:flex items-center gap-2 shrink-0 self-center px-2 border-l border-outline-variant/15 ml-1">
-        <div className="flex flex-col items-center justify-center min-w-9">
+        <div className="flex flex-col items-center justify-center w-10">
           <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
             Agr
           </div>
           <AggBadge value={player.aggressiveness} />
         </div>
-        <div className="flex flex-col items-center justify-center min-w-9">
+        <div className="flex flex-col items-center justify-center w-10">
           <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
             Res
           </div>
           {player.resistance != null ? (
             <span className="text-cyan-400 font-black text-[12px]">
-              🛡️{player.resistance}
+              {player.resistance}
             </span>
           ) : (
             <span className="text-zinc-600 text-xs">—</span>
           )}
         </div>
-        <div className="flex flex-col items-center justify-center min-w-9">
+        <div className="flex flex-col items-center justify-center w-10">
           <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
             For
           </div>
-          <span className={`font-black text-sm ${formColor}`}>{formArrow}</span>
+          <span className={`font-black text-[12px] ${formColor}`}>{formArrow}</span>
         </div>
       </div>
 
