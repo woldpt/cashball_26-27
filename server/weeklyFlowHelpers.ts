@@ -8,7 +8,11 @@ import {
   clearPhaseTimer,
   makePhaseToken,
 } from "./matchFlowHelpers";
-import { withJuniorGRs, ensureFullBench, generateIntroEvents } from "./game/engine";
+import {
+  withJuniorGRs,
+  ensureFullBench,
+  generateIntroEvents,
+} from "./game/engine";
 import { generateAITactic } from "./game/matchCalculations";
 
 interface WeeklyFlowDeps {
@@ -25,7 +29,11 @@ interface WeeklyFlowDeps {
   pauseAllRunningAuctions: (game: ActiveGame, io: any) => void;
   resumeAllPausedAuctions: (game: ActiveGame) => void;
   simulateMatchSegment: (...args: any[]) => Promise<void>;
-  calculateMatchAttendance: (db: any, homeTeamId: number, opponentTeamId?: number) => Promise<number>;
+  calculateMatchAttendance: (
+    db: any,
+    homeTeamId: number,
+    opponentTeamId?: number,
+  ) => Promise<number>;
   pickRefereeSummary: (
     roomCode: string,
     teamId: number,
@@ -99,7 +107,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
   // Initialize fixture seeds for the given divisions if not yet set.
   // Seeds are normally generated at season end; this handles epoch 1 and any
   // gap where seeds were never persisted.
-  async function ensureFixtureSeeds(game: ActiveGame, divs: number[]): Promise<void> {
+  async function ensureFixtureSeeds(
+    game: ActiveGame,
+    divs: number[],
+  ): Promise<void> {
     let changed = false;
     for (const div of divs) {
       if (!game.fixtureSeeds[div] || game.fixtureSeeds[div].length === 0) {
@@ -122,7 +133,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     if (changed) {
       console.log(
         `[${game.roomCode}] 🎲 fixtureSeeds inicializados (season 1):`,
-        Object.entries(game.fixtureSeeds).map(([d, ids]) => `div${d}=${(ids as number[]).length}eq`).join(", "),
+        Object.entries(game.fixtureSeeds)
+          .map(([d, ids]) => `div${d}=${(ids as number[]).length}eq`)
+          .join(", "),
       );
       saveGameState(game);
     }
@@ -177,10 +190,20 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         let t1 = p1 ? p1.tactic : fixture._t1;
         let t2 = p2 ? p2.tactic : fixture._t2;
         if (!t1) {
-          t1 = await generateAITactic(game.db, fixture.homeTeamId, fixture.awayTeamId, game.matchweek || 1);
+          t1 = await generateAITactic(
+            game.db,
+            fixture.homeTeamId,
+            fixture.awayTeamId,
+            game.matchweek || 1,
+          );
         }
         if (!t2) {
-          t2 = await generateAITactic(game.db, fixture.awayTeamId, fixture.homeTeamId, game.matchweek || 1);
+          t2 = await generateAITactic(
+            game.db,
+            fixture.awayTeamId,
+            fixture.homeTeamId,
+            game.matchweek || 1,
+          );
         }
         if (p1) fixture._t1 = t1;
         if (p2) fixture._t2 = t2;
@@ -215,7 +238,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           : true,
       }));
       const bench = (fullRoster || [])
-        .filter((p: any) => !starterIds.has(p.id) && (!tactic?.positions || tactic.positions[p.id] === "Suplente"))
+        .filter(
+          (p: any) =>
+            !starterIds.has(p.id) &&
+            (!tactic?.positions || tactic.positions[p.id] === "Suplente"),
+        )
         .map((p: any) => ({
           id: p.id,
           name: p.name,
@@ -291,9 +318,17 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
             // Update the lineup snapshot to reflect the new squad composition
             if (teamSide === "home") {
-              fixture.homeLineup = lineupSnapshot(squad, tactic, fixture._homeFullRoster);
+              fixture.homeLineup = lineupSnapshot(
+                squad,
+                tactic,
+                fixture._homeFullRoster,
+              );
             } else {
-              fixture.awayLineup = lineupSnapshot(squad, tactic, fixture._awayFullRoster);
+              fixture.awayLineup = lineupSnapshot(
+                squad,
+                tactic,
+                fixture._awayFullRoster,
+              );
             }
 
             // Emit halftime_sub events so the client lineup display reflects the changes
@@ -360,6 +395,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     if (startMin === 1) {
       for (let fi = 0; fi < game.currentFixtures.length; fi++) {
         const fixture = game.currentFixtures[fi];
+        // Estampar season/matchweek para a engine gerar o mesmo tempo que a previsão
+        fixture.season = game.season;
+        fixture.matchweek = game.matchweek;
         const { t1, t2 } = fixtureTactics[fi];
         generateIntroEvents(fixture, t1, t2);
       }
@@ -660,7 +698,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
           persistMatchResults(game, fixtures, completedMatchweek, () => {
             applyPostMatchQualityEvolution(game.db, fixtures, game.matchweek)
-              .then(() => applyTrainingBonuses(game, fixtures, completedCalendarIndex))
+              .then(() =>
+                applyTrainingBonuses(game, fixtures, completedCalendarIndex),
+              )
               .then(async () => {
                 if (seasonDone) {
                   try {
@@ -761,14 +801,22 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                           .filter((p) => p.socketId && p.teamId != null)
                           .map((p) => p.teamId as number);
 
-                        const emitSquadsAndFinish = (byTeam: Map<number, any[]>) => {
+                        const emitSquadsAndFinish = (
+                          byTeam: Map<number, any[]>,
+                        ) => {
                           connectedPlayers.forEach((player) => {
-                            if (!player.socketId || player.teamId == null) return;
-                            const squad = byTeam.get(player.teamId as number) || [];
+                            if (!player.socketId || player.teamId == null)
+                              return;
+                            const squad =
+                              byTeam.get(player.teamId as number) || [];
                             io.to(player.socketId as string).emit(
                               "mySquad",
                               ensureFullBench(
-                                withJuniorGRs(squad, player.teamId as number, game.matchweek || 1),
+                                withJuniorGRs(
+                                  squad,
+                                  player.teamId as number,
+                                  game.matchweek || 1,
+                                ),
                                 player.teamId as number,
                                 game.matchweek || 1,
                               ),
@@ -784,7 +832,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                           return;
                         }
 
-                        const placeholders = activeTeamIds.map(() => "?").join(",");
+                        const placeholders = activeTeamIds
+                          .map(() => "?")
+                          .join(",");
                         game.db.all(
                           `SELECT * FROM players WHERE team_id IN (${placeholders})`,
                           activeTeamIds,
@@ -853,7 +903,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         );
         // Fall through to advance the lobby
       } else if (!connectedPlayers.every((player) => player.ready)) {
-        const notReady = connectedPlayers.filter((p) => !p.ready).map((p) => p.name);
+        const notReady = connectedPlayers
+          .filter((p) => !p.ready)
+          .map((p) => p.name);
         console.warn(
           `[${game.roomCode}] ⏸ checkAllReady blocked: ${notReady.length} connected player(s) not ready: ${notReady.join(", ")}`,
         );
@@ -973,18 +1025,24 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 allTeamIds.add(f.homeTeamId);
                 allTeamIds.add(f.awayTeamId);
               }
-              const teamRows = await new Promise<Array<{ id: number; name: string }>>(
-                (resolve) => {
-                  game.db.all(
-                    "SELECT id, name FROM teams WHERE id IN (" + Array.from(allTeamIds).map(() => "?").join(",") + ")",
-                    [...allTeamIds],
-                    (err: any, rows: Array<{ id: number; name: string }>) => {
-                      resolve(rows || []);
-                    },
-                  );
-                },
+              const teamRows = await new Promise<
+                Array<{ id: number; name: string }>
+              >((resolve) => {
+                game.db.all(
+                  "SELECT id, name FROM teams WHERE id IN (" +
+                    Array.from(allTeamIds)
+                      .map(() => "?")
+                      .join(",") +
+                    ")",
+                  [...allTeamIds],
+                  (err: any, rows: Array<{ id: number; name: string }>) => {
+                    resolve(rows || []);
+                  },
+                );
+              });
+              const teamMap = new Map(
+                teamRows.map((t) => [t.id, t.name] as [number, string]),
               );
-              const teamMap = new Map(teamRows.map((t) => [t.id, t.name] as [number, string]));
               for (const f of game.currentFixtures) {
                 const homeName = teamMap.get(f.homeTeamId);
                 const awayName = teamMap.get(f.awayTeamId);
@@ -1030,7 +1088,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           // Captura lineups da primeira parte a partir dos squads que realmente jogaram.
           // Liga fixtures não têm homeLineup/awayLineup definidos antes deste ponto.
           // Necessário para applyTrainingBonuses ver todos os jogadores participantes.
-          const lineupSnapshot2 = (squad: any[], tactic: any, fullRoster?: any[]) => {
+          const lineupSnapshot2 = (
+            squad: any[],
+            tactic: any,
+            fullRoster?: any[],
+          ) => {
             const starterIds = new Set(squad.map((p: any) => p.id));
             const starters = squad.map((p: any) => ({
               id: p.id,
@@ -1043,7 +1105,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 : true,
             }));
             const bench = (fullRoster || [])
-              .filter((p: any) => !starterIds.has(p.id) && (!tactic?.positions || tactic.positions[p.id] === "Suplente"))
+              .filter(
+                (p: any) =>
+                  !starterIds.has(p.id) &&
+                  (!tactic?.positions || tactic.positions[p.id] === "Suplente"),
+              )
               .map((p: any) => ({
                 id: p.id,
                 name: p.name,
@@ -1065,9 +1131,17 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             const t1 = (p1?.tactic as object) || fx._t1 || {};
             const t2 = (p2?.tactic as object) || fx._t2 || {};
             if (!fx.homeLineup && fx._homeSquad)
-              fx.homeLineup = lineupSnapshot2(fx._homeSquad, t1, fx._homeFullRoster);
+              fx.homeLineup = lineupSnapshot2(
+                fx._homeSquad,
+                t1,
+                fx._homeFullRoster,
+              );
             if (!fx.awayLineup && fx._awaySquad)
-              fx.awayLineup = lineupSnapshot2(fx._awaySquad, t2, fx._awayFullRoster);
+              fx.awayLineup = lineupSnapshot2(
+                fx._awaySquad,
+                t2,
+                fx._awayFullRoster,
+              );
           }
 
           // segmentRunning is now false; safe to auto-advance if all coaches were dismissed.

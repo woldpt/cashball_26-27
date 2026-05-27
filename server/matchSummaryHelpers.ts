@@ -1,6 +1,9 @@
 import type { ActiveGame } from "./types";
 import { SEASON_CALENDAR } from "./gameConstants";
-import { getTacticFamiliarity, applyTacticDecay } from "./game/tacticFamiliarity";
+import {
+  getTacticFamiliarity,
+  applyTacticDecay,
+} from "./game/tacticFamiliarity";
 
 interface MatchSummaryDeps {
   runAll: <T extends Record<string, any> = Record<string, any>>(
@@ -37,7 +40,10 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     pickRefereeSummary,
   } = deps;
 
-  async function ensureFixtureSeeds(game: ActiveGame, divs: number[]): Promise<void> {
+  async function ensureFixtureSeeds(
+    game: ActiveGame,
+    divs: number[],
+  ): Promise<void> {
     let changed = false;
     for (const div of divs) {
       if (!game.fixtureSeeds[div] || game.fixtureSeeds[div].length === 0) {
@@ -55,8 +61,13 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     void changed;
   }
 
-  function generateWeatherForecast() {
-    const weatherRoll = Math.random();
+  function generateWeatherForecast(seed: number) {
+    // PRNG determinística (xorshift32) para garantir previsão estável por jornada
+    let s = seed >>> 0 || 1;
+    s ^= s << 13;
+    s ^= s >>> 17;
+    s ^= s << 5;
+    const weatherRoll = (s >>> 0) / 0xffffffff;
     let condition: string;
     let emoji: string;
     if (weatherRoll < 0.35) {
@@ -118,14 +129,14 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
 
     // Pick the more recent of the two using calendarIndex within season.
     const leagueIdx = leagueRow
-      ? SEASON_CALENDAR.find(
+      ? (SEASON_CALENDAR.find(
           (e) => e.type === "league" && e.matchweek === leagueRow.matchweek,
-        )?.calendarIndex ?? -1
+        )?.calendarIndex ?? -1)
       : -1;
     const cupIdx = cupRow
-      ? SEASON_CALENDAR.find(
+      ? (SEASON_CALENDAR.find(
           (e) => e.type === "cup" && e.round === cupRow.round,
-        )?.calendarIndex ?? -1
+        )?.calendarIndex ?? -1)
       : -1;
 
     let pick: "league" | "cup";
@@ -157,10 +168,9 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     const goalsAgainst = isHome ? cupRow.away_score : cupRow.home_score;
     const cupEntry = SEASON_CALENDAR.find(
       (e) => e.type === "cup" && e.round === cupRow.round,
-    ) as Extract<typeof SEASON_CALENDAR[number], { type: "cup" }> | undefined;
+    ) as Extract<(typeof SEASON_CALENDAR)[number], { type: "cup" }> | undefined;
 
-    const hasEt =
-      cupRow.home_et_score != null && cupRow.away_et_score != null;
+    const hasEt = cupRow.home_et_score != null && cupRow.away_et_score != null;
     const hasPen =
       cupRow.home_penalties != null && cupRow.away_penalties != null;
 
@@ -287,7 +297,12 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         game.matchweek,
       );
 
-      const weather = generateWeatherForecast();
+      const weatherSeedCup =
+        (game.season ?? 1) * 1000 +
+        (game.matchweek ?? 1) * 31 +
+        team.id +
+        opponent.id;
+      const weather = generateWeatherForecast(weatherSeedCup);
 
       return {
         matchweek: game.matchweek,
@@ -362,7 +377,12 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       game.matchweek,
     );
 
-    const weather = generateWeatherForecast();
+    const weatherSeedLeague =
+      (game.season ?? 1) * 1000 +
+      (game.matchweek ?? 1) * 31 +
+      team.id +
+      opponent.id;
+    const weather = generateWeatherForecast(weatherSeedLeague);
 
     return {
       matchweek: game.matchweek,
@@ -460,7 +480,11 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                 applyFormDelta(awayLineupIds, awayWon);
 
                 // Registra táctica para cada coach humano com equipa nos fixtures
-                const recordTacticHistory = (teamId: number, tactic: any, result: string) => {
+                const recordTacticHistory = (
+                  teamId: number,
+                  tactic: any,
+                  result: string,
+                ) => {
                   if (!tactic?.formation || !tactic?.style) return;
                   const playerState = Object.values(game.playersByName).find(
                     (p) => p.teamId === teamId && p.socketId,
@@ -468,10 +492,23 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                   if (playerState) {
                     game.db.run(
                       "INSERT INTO player_tactic_history (team_id, player_name, formation, style, matchweek, competition, result) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                      [teamId, playerState.name, tactic.formation, tactic.style, matchweek, "league", result],
+                      [
+                        teamId,
+                        playerState.name,
+                        tactic.formation,
+                        tactic.style,
+                        matchweek,
+                        "league",
+                        result,
+                      ],
                     );
                     // Decaimento: tácticas não usadas há mais de 2 jornadas perdem 1 registo
-                    applyTacticDecay(game.db, teamId, playerState.name, matchweek);
+                    applyTacticDecay(
+                      game.db,
+                      teamId,
+                      playerState.name,
+                      matchweek,
+                    );
                   }
                 };
 

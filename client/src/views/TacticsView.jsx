@@ -1,658 +1,1567 @@
-import { useTactics } from "../contexts/TacticsContext.jsx";
+﻿import { useTactics } from "../contexts/TacticsContext.jsx";
 import { PlayerLink } from "../components/shared/PlayerLink.jsx";
 import { socket } from "../socket.js";
-import {
-	POSITION_SHORT_LABELS,
-	TACTIC_FORMATIONS,
-} from "../constants/index.js";
+import { TACTIC_FORMATIONS } from "../constants/index.js";
 
-/** Badge de posição estilo Stitch: quadrado colorido */
-const POS_BADGE_BG = {
-	GR: "bg-yellow-600",
-	DEF: "bg-blue-600",
-	MED: "bg-green-600",
-	ATA: "bg-red-600",
+/** Cores por posição */
+const POS_COLORS = {
+  GR: {
+    bg: "bg-yellow-500",
+    ring: "ring-yellow-400",
+    text: "text-yellow-400",
+    dot: "bg-yellow-400",
+    hex: "#eab308",
+  },
+  DEF: {
+    bg: "bg-blue-500",
+    ring: "ring-blue-400",
+    text: "text-blue-400",
+    dot: "bg-blue-400",
+    hex: "#3b82f6",
+  },
+  MED: {
+    bg: "bg-emerald-500",
+    ring: "ring-emerald-400",
+    text: "text-emerald-400",
+    dot: "bg-emerald-400",
+    hex: "#10b981",
+  },
+  ATA: {
+    bg: "bg-rose-500",
+    ring: "ring-rose-400",
+    text: "text-rose-400",
+    dot: "bg-rose-400",
+    hex: "#f43f5e",
+  },
 };
 
-/** Cor do dot de status */
 const STATUS_DOT = {
-	Titular: "bg-green-500",
-	Suplente: "bg-yellow-500",
-	Excluído: "bg-gray-700",
+  Titular: "bg-green-400",
+  Suplente: "bg-yellow-400",
+  Excluido: "bg-gray-600",
 };
+
+const TIER_COLORS = {
+  Mestre: {
+    bar: "bg-amber-400",
+    text: "text-amber-300",
+    bg: "bg-amber-500/10",
+  },
+  Dominante: {
+    bar: "bg-emerald-400",
+    text: "text-emerald-300",
+    bg: "bg-emerald-500/10",
+  },
+  Consolidada: {
+    bar: "bg-emerald-500",
+    text: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+  },
+  Familiar: { bar: "bg-sky-400", text: "text-sky-300", bg: "bg-sky-500/10" },
+  "Ganhando rotina": {
+    bar: "bg-sky-500",
+    text: "text-sky-400",
+    bg: "bg-sky-500/10",
+  },
+  "A familiarizar": {
+    bar: "bg-slate-500",
+    text: "text-slate-400",
+    bg: "bg-slate-500/10",
+  },
+};
+const MAX_COUNT = 21;
 
 /**
- * Linha de jogador estilo Stitch.
- * Mostra: badge posição | nome | skill | resistência | forma | dot status
+ * Avatar circular com inicial + cor de posicao
+ * @param {{ player: Object, size?: string }} props
+ * @returns {JSX.Element}
  */
-function PlayerRow({ player, matchweekCount, onClick, dotColor, draggable, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd, isOver, isDragging, children }) {
-	return (
-		<div
-			draggable={draggable}
-			onDragStart={onDragStart}
-			onDragOver={onDragOver}
-			onDragLeave={onDragLeave}
-			onDrop={onDrop}
-			onDragEnd={onDragEnd}
-			className={`relative player-row flex items-center justify-between p-1.5 rounded cursor-pointer border transition-colors select-none
-				${isDragging ? "opacity-40" : ""}
-				${isOver ? "border-[#4ade80]/50 bg-[#4ade80]/5" : "border-transparent hover:border-[#333]"}
-				${player.isUnavailable ? "opacity-50" : ""}
-				${!draggable ? "cursor-default" : "cursor-grab active:cursor-grabbing"}
-			`}
-		>
-			{/* Badge posição */}
-			<div className="flex items-center space-x-2 truncate min-w-0">
-				<span className={`w-4 h-4 rounded ${POS_BADGE_BG[player.position] || "bg-gray-600"} text-[9px] font-bold flex items-center justify-center text-white shrink-0`}>
-					{POSITION_SHORT_LABELS[player.position]?.[0] ?? "?"}
-				</span>
-				<span className="font-medium truncate text-[#e0e0e0] text-xs">
-					{onClick ? (
-						<PlayerLink playerId={player.id}>{player.name}</PlayerLink>
-					) : (
-						player.name
-					)}
-					{!!player.is_star && (player.position === "MED" || player.position === "ATA") && (
-						<span className="ml-1 text-amber-400 text-[10px]">★</span>
-					)}
-					{player.isUnavailable && (() => {
-						const susp = player.suspension_until_matchweek || 0;
-						const inj = player.injury_until_matchweek || 0;
-						const cooldown = player.transfer_cooldown_until_matchweek || 0;
-						const isSusp = susp > matchweekCount;
-						const isCooldown = !isSusp && !(inj > matchweekCount) && cooldown > 0 && cooldown >= matchweekCount;
-						if (isCooldown) return <span className="ml-1 text-xs" title="Em viagem">✈️ (1)</span>;
-						const left = isSusp ? susp - matchweekCount : inj - matchweekCount;
-						return <span className="ml-1 text-xs">{isSusp ? "🟥" : "🩹"} ({left})</span>;
-					})()}
-				</span>
-			</div>
-			{/* Stats + dot */}
-			<div className="flex items-center space-x-2 shrink-0 text-[10px]">
-				<span className="font-bold text-[#e0e0e0]">{player.skill}</span>
-				<span className="text-blue-400 flex items-center">
-					<svg className="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20">
-						<path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
-					</svg>
-					{player.resistance ?? "–"}
-				</span>
-				{(() => {
-					const f = player.form ?? 100;
-					return (
-						<span className={f >= 115 ? "text-green-400" : f <= 85 ? "text-red-400" : "text-gray-500"}>
-							{f >= 115 ? "💪" : f <= 85 ? "😩" : "👍"}
-						</span>
-					);
-				})()}
-				<span className={`w-2 h-2 rounded-full shrink-0 ${dotColor || "bg-gray-700"}`} />
-			</div>
-			{children}
-		</div>
-	);
+const POS_INITIAL = { GR: "G", DEF: "D", MED: "M", ATA: "A" };
+
+function PlayerAvatar({ player, size = "w-7 h-7" }) {
+  const pos = POS_COLORS[player.position] || { bg: "bg-gray-600" };
+  return (
+    <div
+      className={`${size} rounded-full ${pos.bg} flex items-center justify-center shrink-0 font-black text-white shadow-md`}
+      style={{ fontSize: "11px" }}
+    >
+      {POS_INITIAL[player.position] ?? "?"}
+    </div>
+  );
 }
 
 /**
- * Página de Tácticas — totalmente auto-contida via useTactics().
+ * Linha de jogador — estilo screenshot
+ * @param {Object} props
+ * @returns {JSX.Element}
+ */
+function PlayerRow({
+  player,
+  matchweekCount,
+  onClick,
+  dotColor,
+  draggable,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
+  isOver,
+  isDragging,
+  children,
+}) {
+  const f = player.form ?? 100;
+  const formIcon = f >= 115 ? "💪" : f <= 85 ? "😩" : "👍";
+  return (
+    <div
+      draggable={draggable}
+      data-player-id={player.id}
+      data-player-status={player.status ?? ""}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+      className={`relative flex items-center gap-2 px-2 py-1.5 rounded-xl transition-all select-none
+${isDragging ? "opacity-30 scale-95" : ""}
+${isOver ? "bg-white/5 ring-1 ring-[#4ade80]/40" : "hover:bg-white/5"}
+${player.isUnavailable ? "opacity-50" : ""}
+${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
+`}
+    >
+      <PlayerAvatar player={player} />
+      <span className="flex-1 min-w-0 text-xs font-semibold text-[#e8e8e8] truncate leading-none">
+        {onClick ? (
+          <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
+        ) : (
+          player.name
+        )}
+        {!!player.is_star &&
+          (player.position === "MED" || player.position === "ATA") && (
+            <span className="text-amber-400 text-[9px] ml-0.5">★</span>
+          )}
+        {player.isUnavailable &&
+          (() => {
+            const susp = player.suspension_until_matchweek || 0;
+            const inj = player.injury_until_matchweek || 0;
+            const cooldown = player.transfer_cooldown_until_matchweek || 0;
+            const isSusp = susp > matchweekCount;
+            const isCooldown =
+              !isSusp &&
+              !(inj > matchweekCount) &&
+              cooldown > 0 &&
+              cooldown >= matchweekCount;
+            if (isCooldown)
+              return <span className="text-[10px] ml-0.5">✈️</span>;
+            const left = isSusp ? susp - matchweekCount : inj - matchweekCount;
+            return (
+              <span className="text-[9px] ml-0.5 text-red-400">
+                {isSusp ? "🟥" : "🩹"}({left})
+              </span>
+            );
+          })()}
+      </span>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <span className="flex flex-col items-center leading-none">
+          <span className="text-[7px] text-gray-600 uppercase tracking-wide">
+            RES
+          </span>
+          <span className="text-[11px] text-gray-400 font-bold tabular-nums mt-0.5">
+            {player.resistance ?? "–"}
+          </span>
+        </span>
+        <span className="text-[10px] mx-0.5">{formIcon}</span>
+        <span className="flex flex-col items-center leading-none">
+          <span className="text-[7px] text-gray-600 uppercase tracking-wide">
+            Q
+          </span>
+          <span className="text-sm font-black text-white tabular-nums mt-0.5">
+            {player.skill}
+          </span>
+        </span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+const WEATHER_LABELS = {
+  sol: "Sol",
+  chuva: "Chuva",
+  vento: "Vento",
+  chuva_forte: "Tempestade",
+  frio: "Frio",
+  nevoeiro: "Nevoeiro",
+  neve: "Neve",
+};
+
+/**
+ * Gera odds (1 X 2) a partir dos dados do próximo jogo.
+ * @param {{ position: number|null }} team
+ * @param {{ position: number|null }} opponent
+ * @param {string} venue - "Casa" | "Fora"
+ * @param {number} seed
+ * @returns {{ home: string, draw: string, away: string }}
+ */
+function computeOdds(team, opponent, venue, seed) {
+  const teamPos = team?.position ?? 8;
+  const oppPos = opponent?.position ?? 8;
+  const numTeams = 10;
+  // Base probabilities
+  let pHome = (numTeams + 1 - (venue === "Casa" ? teamPos : oppPos)) / numTeams;
+  let pAway = (numTeams + 1 - (venue === "Casa" ? oppPos : teamPos)) / numTeams;
+  // Home advantage boost
+  pHome *= venue === "Casa" ? 1.18 : 0.85;
+  pAway *= venue === "Fora" ? 1.18 : 0.85;
+  // Draw probability roughly ~0.28, adjusted
+  let pDraw = 0.28 + ((seed % 7) - 3) * 0.01;
+  // Normalize
+  const total = pHome + pAway + pDraw;
+  pHome /= total;
+  pAway /= total;
+  pDraw /= total;
+  // Apply bookmaker margin ~5%
+  const margin = 1.05;
+  const toOdds = (p) =>
+    p > 0.01 ? (Math.round((1 / (p * margin)) * 100) / 100).toFixed(2) : "—";
+  return { home: toOdds(pHome), draw: toOdds(pDraw), away: toOdds(pAway) };
+}
+
+/**
+ * Card de análise do próximo confronto — inclui árbitro, tempo e odds.
+ * @param {{ nextMatchSummary: Object, teamInfo: Object|null }} props
+ * @returns {JSX.Element|null}
+ */
+function NextMatchCard({ nextMatchSummary, teamInfo }) {
+  if (!nextMatchSummary || !nextMatchSummary.opponent) return null;
+  const s = nextMatchSummary;
+  const opp = s.opponent;
+  const isHome = s.venue === "Casa";
+  const myPts = teamInfo?.points ?? 0;
+  const ptsDiff = myPts - (opp.points ?? 0);
+  const ptsDiffLabel =
+    ptsDiff > 0 ? `+${ptsDiff}` : ptsDiff < 0 ? `${ptsDiff}` : "=";
+  const ptsDiffColor =
+    ptsDiff > 0
+      ? "text-green-400"
+      : ptsDiff < 0
+        ? "text-red-400"
+        : "text-gray-400";
+  const competition = s.isCup
+    ? (s.cupRoundName ?? "Taça")
+    : `Jornada ${s.matchweek}`;
+
+  // Último confronto
+  const lc = opp.lastConfrontation;
+  const lcResult = lc
+    ? (() => {
+        const weWereHome =
+          lc.home_team_id === s.team?.id || lc.home_team_id === teamInfo?.id;
+        const ourScore = weWereHome ? lc.home_score : lc.away_score;
+        const theirScore = weWereHome ? lc.away_score : lc.home_score;
+        const venue = weWereHome ? "Casa" : "Fora";
+        const comp = lc.competition === "Cup" ? "Taça" : "Liga";
+        const season = lc.season ? `Época ${lc.season}` : null;
+        return { ourScore, theirScore, venue, comp, season };
+      })()
+    : null;
+
+  // Odds
+  const seed = (s.matchweek ?? 1) + (s.team?.id ?? 0) + (opp.id ?? 0);
+  const odds = computeOdds(s.team, opp, s.venue, seed);
+
+  // Tempo
+  const wf = s.weatherForecast;
+  const weatherLabel = wf
+    ? (WEATHER_LABELS[wf.condition] ?? wf.condition)
+    : null;
+
+  // Árbitro
+  const ref = s.referee;
+
+  return (
+    <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+      {/* Cabeçalho: competição + venue */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
+        <div className="flex items-center gap-2">
+          {s.isCup ? (
+            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400">
+              🏆 Taça
+            </span>
+          ) : (
+            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-500">
+              ⚽ Liga
+            </span>
+          )}
+          <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+            {competition}
+          </span>
+        </div>
+        <span
+          className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${isHome ? "bg-sky-500/15 text-sky-400" : "bg-amber-500/15 text-amber-400"}`}
+        >
+          {isHome ? "Casa" : "Fora"}
+        </span>
+      </div>
+
+      {/* Corpo */}
+      <div className="px-4 py-3 flex flex-col sm:flex-row gap-3 sm:gap-0 sm:items-start sm:divide-x sm:divide-[#1e1e1e]">
+        {/* — Secção principal: VS + stats — */}
+        <div className="sm:flex-1 sm:pr-4 flex flex-col gap-2.5">
+          {/* VS row */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-[10px] text-gray-600 font-bold uppercase tracking-wide">
+              VS
+            </span>
+            <span className="text-sm font-black text-white truncate">
+              {opp.name}
+            </span>
+            {opp.position && (
+              <span className="shrink-0 text-[9px] text-gray-600 font-bold">
+                {opp.position}º
+              </span>
+            )}
+          </div>
+
+          {/* Stats row */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {s.team?.position && (
+              <div className="flex flex-col items-center">
+                <span className="text-[7px] uppercase tracking-wide text-gray-700 font-bold">
+                  Posição
+                </span>
+                <span className="text-[11px] font-black text-white">
+                  {s.team.position}º
+                </span>
+              </div>
+            )}
+            <div className="w-px h-6 bg-[#222]" />
+            <div className="flex flex-col items-center">
+              <span className="text-[7px] uppercase tracking-wide text-gray-700 font-bold">
+                Pts Adv.
+              </span>
+              <span
+                className={`text-[11px] font-black tabular-nums ${ptsDiffColor}`}
+              >
+                {ptsDiffLabel}
+              </span>
+            </div>
+            <div className="w-px h-6 bg-[#222]" />
+            <div className="flex flex-col items-center">
+              <span className="text-[7px] uppercase tracking-wide text-gray-700 font-bold">
+                GM / GS
+              </span>
+              <span className="text-[11px] font-black text-white tabular-nums">
+                {opp.goalsFor ?? 0}/{opp.goalsAgainst ?? 0}
+              </span>
+            </div>
+
+            {/* Últimos 5 do adversário */}
+            {opp.last5 &&
+              typeof opp.last5 === "string" &&
+              opp.last5.length > 0 && (
+                <>
+                  <div className="w-px h-6 bg-[#222]" />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[7px] uppercase tracking-wide text-gray-700 font-bold">
+                      Últimos 5
+                    </span>
+                    <div className="flex gap-0.5">
+                      {opp.last5.split("").map((r, i) => (
+                        <span
+                          key={i}
+                          className={`w-3.5 h-3.5 rounded-sm text-[8px] font-black flex items-center justify-center ${r === "V" ? "bg-green-500/20 text-green-400" : r === "D" ? "bg-red-500/20 text-red-400" : "bg-gray-700/40 text-gray-500"}`}
+                        >
+                          {r}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+          </div>
+        </div>
+
+        {/* — Último confronto — */}
+        <div className="sm:flex-1 sm:px-4 flex flex-col gap-1">
+          <span className="text-[7px] uppercase tracking-widest text-gray-700 font-bold">
+            Último confronto
+          </span>
+          {lcResult ? (
+            <>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-black text-white tabular-nums leading-none">
+                  {lcResult.ourScore}–{lcResult.theirScore}
+                </span>
+                <span
+                  className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${lcResult.ourScore > lcResult.theirScore ? "bg-green-500/15 text-green-400" : lcResult.ourScore < lcResult.theirScore ? "bg-red-500/15 text-red-400" : "bg-gray-700/30 text-gray-500"}`}
+                >
+                  {lcResult.ourScore > lcResult.theirScore
+                    ? "Vitória"
+                    : lcResult.ourScore < lcResult.theirScore
+                      ? "Derrota"
+                      : "Empate"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[9px] text-gray-600 uppercase font-bold">
+                  {lcResult.venue}
+                </span>
+                <span className="text-[9px] text-gray-700">·</span>
+                <span className="text-[9px] text-gray-600 font-bold">
+                  {lcResult.comp}
+                </span>
+                {lcResult.season && (
+                  <>
+                    <span className="text-[9px] text-gray-700">·</span>
+                    <span className="text-[9px] text-gray-600">
+                      {lcResult.season}
+                    </span>
+                  </>
+                )}
+              </div>
+            </>
+          ) : (
+            <span className="text-[10px] text-gray-700 font-bold italic">
+              Sem histórico
+            </span>
+          )}
+        </div>
+
+        {/* — Odds + Árbitro + Tempo — */}
+        <div className="sm:flex-1 sm:pl-4 flex flex-col gap-2.5">
+          {/* Odds */}
+          <div>
+            <span className="text-[7px] uppercase tracking-widest text-gray-700 font-bold block mb-1.5">
+              Apostas
+            </span>
+            <div className="flex gap-1.5">
+              {[
+                {
+                  label: "1",
+                  value: odds.home,
+                  color: "text-sky-400",
+                  bg: "bg-sky-500/10",
+                },
+                {
+                  label: "X",
+                  value: odds.draw,
+                  color: "text-gray-400",
+                  bg: "bg-gray-700/20",
+                },
+                {
+                  label: "2",
+                  value: odds.away,
+                  color: "text-amber-400",
+                  bg: "bg-amber-500/10",
+                },
+              ].map(({ label, value, color, bg }) => (
+                <div
+                  key={label}
+                  className={`flex-1 ${bg} rounded-lg px-1.5 py-1.5 flex flex-col items-center gap-0.5`}
+                >
+                  <span className="text-[8px] text-gray-600 font-black uppercase">
+                    {label}
+                  </span>
+                  <span
+                    className={`text-[12px] font-black tabular-nums ${color}`}
+                  >
+                    {value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Árbitro + Tempo em linha */}
+          <div className="flex items-start gap-3">
+            {ref && (
+              <div className="flex-1 min-w-0">
+                <span className="text-[7px] uppercase tracking-widest text-gray-700 font-bold block mb-0.5">
+                  Árbitro
+                </span>
+                <span className="text-[10px] font-bold text-gray-400 truncate block">
+                  {ref.name}
+                </span>
+                <div className="mt-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden relative">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-l-full"
+                    style={{
+                      width: `${ref.balance}%`,
+                      background: teamInfo?.color_primary || "#16a34a",
+                      opacity: 0.9,
+                    }}
+                  />
+                  <div
+                    className="absolute inset-y-0 right-0 rounded-r-full"
+                    style={{
+                      width: `${100 - ref.balance}%`,
+                      background: opp?.color_primary || "#dc2626",
+                      opacity: 0.9,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            {wf && (
+              <div className="shrink-0 flex flex-col items-center gap-0.5">
+                <span className="text-[7px] uppercase tracking-widest text-gray-700 font-bold">
+                  Tempo
+                </span>
+                <span className="text-xl leading-none">{wf.emoji}</span>
+                <span className="text-[8px] text-gray-600 font-bold">
+                  {weatherLabel}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Pagina de Tacticas — totalmente auto-contida via useTactics().
+ * @returns {JSX.Element}
  */
 export function TacticsView() {
-	const {
-		tactic,
-		tacticFamiliarity,
-		allTacticFamiliarity,
-		annotatedSquad,
-		titulares,
-		formationAvailabilityByValue,
-		isLineupComplete,
-		nextMatchOpponent,
-		openStatusPickerId,
-		setOpenStatusPickerId,
-		dragOverPlayerId,
-		setDragOverPlayerId,
-		dragPlayerId,
-		setDragPlayerId,
-		dragOverSection,
-		setDragOverSection,
-		updateTactic,
-		handleClearTactic,
-		handleAutoPick,
-		handleSetPlayerStatus,
-		handleSwapPlayerStatuses,
-		handleDropToSection,
-		handleDragStart,
-		handleReady,
-		handleHalftimeReady,
-		matchweekCount,
-		teamInfo,
-		nextMatchSummary,
-		players,
-		me,
-		showHalftimePanel,
-		isPlayingMatch,
-		disconnected,
-		isCupMatch,
-	} = useTactics();
+  const {
+    tactic,
+    tacticFamiliarity,
+    allTacticFamiliarity,
+    annotatedSquad,
+    titulares,
+    formationAvailabilityByValue,
+    isLineupComplete,
+    nextMatchOpponent,
+    openStatusPickerId,
+    setOpenStatusPickerId,
+    dragOverPlayerId,
+    setDragOverPlayerId,
+    dragPlayerId,
+    setDragPlayerId,
+    dragOverSection,
+    setDragOverSection,
+    updateTactic,
+    handleClearTactic,
+    handleAutoPick,
+    handleSetPlayerStatus,
+    handleSwapPlayerStatuses,
+    handleDropToSection,
+    handleDragStart,
+    handleReady,
+    handleHalftimeReady,
+    matchweekCount,
+    teamInfo,
+    nextMatchSummary,
+    players,
+    me,
+    showHalftimePanel,
+    isPlayingMatch,
+    disconnected,
+    isCupMatch,
+  } = useTactics();
 
-	/* ── helpers ── */
-	const getBestForFormation = (formation) => {
-		const styles = ["OFENSIVO", "DEFENSIVO", "EQUILIBRADO"];
-		let best = null;
-		for (const s of styles) {
-			const entry = allTacticFamiliarity[`${formation}|${s}`];
-			if (entry && (!best || entry.count > best.count)) best = entry;
-		}
-		return best;
-	};
+  const getBestForFormation = (formation) => {
+    const styles = ["OFENSIVO", "DEFENSIVO", "EQUILIBRADO"];
+    let best = null;
+    for (const s of styles) {
+      const entry = allTacticFamiliarity[`${formation}|${s}`];
+      if (entry && (!best || entry.count > best.count)) best = entry;
+    }
+    return best;
+  };
 
-	const TIER_COLORS = {
-		Mestre: { bar: "bg-amber-400", text: "text-amber-300", bg: "bg-amber-500/10" },
-		Dominante: { bar: "bg-emerald-400", text: "text-emerald-300", bg: "bg-emerald-500/10" },
-		Consolidada: { bar: "bg-emerald-500", text: "text-emerald-400", bg: "bg-emerald-500/10" },
-		Familiar: { bar: "bg-sky-400", text: "text-sky-300", bg: "bg-sky-500/10" },
-		"Ganhando rotina": { bar: "bg-sky-500", text: "text-sky-400", bg: "bg-sky-500/10" },
-		"A familiarizar": { bar: "bg-slate-500", text: "text-slate-400", bg: "bg-slate-500/10" },
-	};
-	const MAX_COUNT = 21;
+  function StatusPicker({ player, above = false }) {
+    if (openStatusPickerId !== player.id) return null;
+    const subCount = Object.entries(tactic.positions).filter(
+      ([id, s]) => s === "Suplente" && Number(id) !== player.id,
+    ).length;
+    const titCount = Object.entries(tactic.positions).filter(
+      ([id, s]) => s === "Titular" && Number(id) !== player.id,
+    ).length;
+    const subsFull = subCount >= 5;
+    const titularesFull = titCount >= 11;
+    const posCount =
+      player.position !== "GR"
+        ? Object.entries(tactic.positions).filter(([id, s]) => {
+            if (s !== "Titular" || Number(id) === player.id) return false;
+            const p = annotatedSquad.find((x) => x.id === Number(id));
+            return p?.position === player.position;
+          }).length
+        : 0;
+    const posFull = posCount >= 5;
+    return (
+      <div
+        className={`absolute right-0 ${above ? "bottom-full mb-1" : "top-full mt-1"} z-50 bg-[#111] border border-[#222] rounded-2xl shadow-2xl p-1.5 flex flex-col gap-0.5 min-w-38.75`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {[
+          ["Titular", "🟢", "Titular"],
+          ["Suplente", "🟡", "Suplente"],
+          ["Excluído", "⚫", "Não convocado"],
+        ].map(([status, emoji, label]) => {
+          const unavail =
+            player.isUnavailable &&
+            (status === "Titular" || status === "Suplente");
+          const disabled =
+            unavail ||
+            (status === "Titular" &&
+              titularesFull &&
+              player.status !== "Titular") ||
+            (status === "Titular" && posFull && player.status !== "Titular") ||
+            (status === "Suplente" && subsFull && player.status !== "Suplente");
+          return (
+            <button
+              key={status}
+              onClick={() =>
+                !disabled && handleSetPlayerStatus(player.id, status)
+              }
+              className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 text-left transition-colors
+${disabled ? "opacity-30 cursor-not-allowed text-gray-500" : player.status === status ? "bg-white/10 text-white" : "hover:bg-white/5 text-gray-400 hover:text-white"}`}
+            >
+              {emoji} {label}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
-	/* ── status picker popup ── */
-	function StatusPicker({ player, above = false }) {
-		if (openStatusPickerId !== player.id) return null;
-		const subCount = Object.entries(tactic.positions).filter(([id, s]) => s === "Suplente" && Number(id) !== player.id).length;
-		const titCount = Object.entries(tactic.positions).filter(([id, s]) => s === "Titular" && Number(id) !== player.id).length;
-		const subsFull = subCount >= 5;
-		const titularesFull = titCount >= 11;
-		return (
-			<div
-				className={`absolute right-1 ${above ? "bottom-full mb-1" : "top-full"} z-50 bg-[#1e1e1e] border border-[#333] rounded-md shadow-xl p-1 flex flex-col gap-0.5 min-w-[140px]`}
-				onClick={(e) => e.stopPropagation()}
-			>
-				{[["Titular", "🟢", "Titular"], ["Suplente", "🟡", "Suplente"], ["Excluído", "⚫️", "Não convocado"]].map(([status, emoji, label]) => {
-					const unavail = player.isUnavailable && (status === "Titular" || status === "Suplente");
-					const disabled = unavail
-						|| (status === "Titular" && titularesFull && player.status !== "Titular")
-						|| (status === "Suplente" && subsFull && player.status !== "Suplente");
-					return (
-						<button
-							key={status}
-							onClick={() => !disabled && handleSetPlayerStatus(player.id, status)}
-							className={`px-3 py-2 rounded text-xs font-bold flex items-center gap-2 text-left ${disabled ? "opacity-40 cursor-not-allowed text-gray-500" : player.status === status ? "bg-[#2a2a2a] text-[#e0e0e0]" : "hover:bg-[#2a2a2a] text-[#9e9e9e]"}`}
-						>
-							{emoji} {label}
-						</button>
-					);
-				})}
-			</div>
-		);
-	}
+  const myReady = players.find((p) => p.name === me?.name)?.ready;
+  const isHalftime = showHalftimePanel && !isPlayingMatch;
+  const isEliminatedCupSpectator =
+    nextMatchSummary?.isCup && !nextMatchOpponent;
+  const canPlay = isEliminatedCupSpectator || isHalftime || isLineupComplete;
+  const playLabel = myReady
+    ? "⏳ A aguardar..."
+    : isEliminatedCupSpectator
+      ? "Avançar para Taça"
+      : isHalftime && isCupMatch
+        ? "2ª Parte — Taça"
+        : isHalftime
+          ? "2ª Parte"
+          : "Jogar Jornada";
 
-	return (
-		<div>
-			{/* Warnings */}
-			{disconnected && (
-				<div className="mb-3 px-4 py-2 text-red-400 text-[10px] font-bold text-center bg-red-500/5 border border-red-500/20 rounded-lg">
-					⚠️ Desligado — a reconectar...
-				</div>
-			)}
+  const titCount = annotatedSquad.filter((p) => p.status === "Titular").length;
+  const subCount = annotatedSquad.filter(
+    (p) => p.status === "Suplente" && !p.isUnavailable,
+  ).length;
+  const notCalledCount = annotatedSquad.filter(
+    (p) =>
+      !p.isJunior &&
+      (p.isUnavailable || (p.status !== "Titular" && p.status !== "Suplente")),
+  ).length;
 
-			{nextMatchSummary?.isCup && !nextMatchOpponent ? (
-				<div className="bg-[#1e1e1e] border border-[#333] rounded-lg flex flex-col items-center gap-4 py-8 text-center px-6">
-					<p className="text-5xl">🏆</p>
-					<p className="text-[#9e9e9e] font-bold text-sm leading-relaxed">
-						Já foste eliminado desta ronda da Taça.<br />
-						Avança para observar os jogos e seguir em frente.
-					</p>
-					{(() => {
-						const isReady = players.find((p) => p.name === me?.name)?.ready;
-						return (
-							<button
-								onClick={handleReady}
-								disabled={!!isReady}
-								className={`mt-2 px-8 py-3.5 font-bold rounded text-sm uppercase tracking-wider transition-all ${isReady ? "bg-[#2a2a2a] text-[#9e9e9e] cursor-not-allowed opacity-60" : "bg-green-200 text-green-900 hover:brightness-105 active:scale-95"}`}
-							>
-								{isReady ? "⏳ A aguardar..." : "Ver jogos da Taça"}
-							</button>
-						);
-					})()}
-				</div>
-			) : (
-				<div className="flex flex-col lg:flex-row gap-3 items-start">
+  return (
+    <div className="space-y-3">
+      {disconnected && (
+        <div className="px-4 py-2 text-red-400 text-[10px] font-bold text-center bg-red-500/10 border border-red-500/20 rounded-2xl">
+          ⚠️ Desligado — a reconectar...
+        </div>
+      )}
 
-					{/* ── COL 1: FORMAÇÃO ── */}
-					<div className="lg:w-[220px] flex-shrink-0 space-y-0 bg-[#1e1e1e] border border-[#333] rounded-lg overflow-hidden">
-						{/* Header */}
-						<div className="flex justify-between items-center px-3 py-2.5 border-b border-[#333]">
-							<h2 className="text-xs font-bold text-gray-300 uppercase tracking-wider">Formação</h2>
-							<button className="text-[10px] text-gray-500 uppercase hover:text-red-400 transition-colors" onClick={handleClearTactic}>
-								Limpar
-							</button>
-						</div>
+      {nextMatchSummary && nextMatchOpponent && (
+        <NextMatchCard
+          nextMatchSummary={nextMatchSummary}
+          teamInfo={teamInfo}
+        />
+      )}
 
-						{/* Moral */}
-						{(() => {
-							const morale = teamInfo?.morale ?? 75;
-							const fillColor = morale > 75 ? "bg-green-500" : morale >= 50 ? "bg-yellow-500" : "bg-red-500";
-							const textColor = morale > 75 ? "text-green-400" : morale >= 50 ? "text-yellow-500" : "text-red-400";
-							const label = morale > 75 ? "Boa" : morale >= 50 ? "Média" : "Baixa";
-							return (
-								<div className="px-3 py-2.5 border-b border-[#333]">
-									<div className="flex justify-between text-xs mb-1.5">
-										<span className="text-gray-400 uppercase text-[10px] tracking-wider">Moral</span>
-										<span className={`text-[10px] font-bold ${textColor}`}>{label}</span>
-									</div>
-									<div className="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
-										<div className={`${fillColor} h-full rounded-full transition-all duration-500`} style={{ width: `${morale}%` }} />
-									</div>
-								</div>
-							);
-						})()}
+      {nextMatchSummary?.isCup && !nextMatchOpponent ? (
+        <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl flex flex-col items-center gap-4 py-10 text-center px-6">
+          <p className="text-5xl">🏆</p>
+          <p className="text-[#666] font-bold text-sm leading-relaxed">
+            Já foste eliminado desta ronda da Taça.
+            <br />
+            Avança para observar os jogos e seguir em frente.
+          </p>
+          <button
+            onClick={handleReady}
+            disabled={!!myReady}
+            className={`mt-2 px-10 py-3.5 font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-95 ${myReady ? "bg-[#1a1a1a] text-[#444] cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
+            style={
+              myReady
+                ? {}
+                : { background: "linear-gradient(135deg, #4ade80, #22c55e)" }
+            }
+          >
+            {myReady ? "⏳ A aguardar..." : "Ver jogos da Taça"}
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col lg:flex-row gap-3 items-start">
+          {/* COL 1 — FORMAÇÃO + MENTALIDADE */}
+          <div className="lg:w-57.5 shrink-0 flex flex-col gap-2">
+            {/* Proximo jogo — mobile: moral + mentality side by side */}
+            <div className="flex gap-2 lg:hidden">
+              {nextMatchSummary && (
+                <div className="flex-1 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+                  {(() => {
+                    const morale = teamInfo?.morale ?? 75;
+                    const fillColor =
+                      morale > 75
+                        ? "bg-green-500"
+                        : morale >= 50
+                          ? "bg-yellow-500"
+                          : "bg-red-500";
+                    const textColor =
+                      morale > 75
+                        ? "text-green-400"
+                        : morale >= 50
+                          ? "text-yellow-400"
+                          : "text-red-400";
+                    const label =
+                      morale > 75 ? "Alta" : morale >= 50 ? "Média" : "Baixa";
+                    return (
+                      <div className="px-3 py-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[9px] uppercase tracking-widest text-gray-600 font-bold">
+                            Moral
+                          </span>
+                          <span
+                            className={`text-[9px] font-black uppercase ${textColor}`}
+                          >
+                            {label}
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
+                            style={{ width: `${morale}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+              <div className="flex-1 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+                <div className="px-3 py-2">
+                  {(() => {
+                    const STYLES = ["Defensive", "Balanced", "Offensive"];
+                    const LABELS = {
+                      Defensive: "DEF",
+                      Balanced: "NEU",
+                      Offensive: "ATK",
+                    };
+                    const idx = STYLES.indexOf(tactic.style ?? "Balanced");
+                    const safeIdx = idx < 0 ? 1 : idx;
+                    return (
+                      <div className="relative flex bg-[#161616] rounded-full p-0.5">
+                        <div
+                          className="absolute inset-y-0.5 rounded-full transition-all duration-200 pointer-events-none"
+                          style={{
+                            left: `calc(${safeIdx * 33.333}% + 2px)`,
+                            width: "calc(33.333% - 4px)",
+                            background:
+                              "linear-gradient(135deg, rgba(74,222,128,0.22), rgba(74,222,128,0.08))",
+                            border: "1px solid rgba(74,222,128,0.35)",
+                          }}
+                        />
+                        {STYLES.map((val) => (
+                          <button
+                            key={val}
+                            onClick={() => updateTactic({ style: val })}
+                            className={`relative z-10 flex-1 py-1.5 text-[9px] font-black uppercase tracking-wide rounded-full transition-colors ${tactic.style === val ? "text-[#4ade80]" : "text-gray-500 hover:text-gray-300"}`}
+                          >
+                            {LABELS[val]}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
 
-						{/* Mentalidade */}
-						<div className="px-3 py-2.5 border-b border-[#333]">
-							<h3 className="text-[10px] text-gray-400 mb-2 uppercase tracking-wider">Mentalidade</h3>
-							<div className="flex space-x-1">
-								{[
-									["Defensive", "🛡️", "Defensivo", "Prioriza não sofrer golos."],
-									["Balanced", "⚖️", "Equilibrado", "Postura neutra."],
-									["Offensive", "⚔️", "Ofensivo", "Pressão total."],
-								].map(([val, icon, lbl, tooltip]) => {
-									const isActive = tactic.style === val;
-									return (
-										<button
-											key={val}
-											onClick={() => updateTactic({ style: val })}
-											title={tooltip}
-											className={`flex-1 rounded p-1.5 text-center flex flex-col items-center justify-center border transition-all active:scale-95 ${
-												isActive
-													? "bg-[#4ade80]/20 border-[#4ade80] text-[#4ade80]"
-													: "bg-[#2a2a2a] border-[#444] text-gray-400 opacity-60 hover:opacity-80"
-											}`}
-										>
-											<span className="text-base leading-none mb-0.5">{icon}</span>
-											<span className={`text-[8px] uppercase font-bold leading-none ${isActive ? "text-[#4ade80]" : ""}`}>{lbl}</span>
-										</button>
-									);
-								})}
-							</div>
-						</div>
+            {/* Formação mobile — chips horizontais */}
+            <div className="lg:hidden bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-[#1a1a1a]">
+                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+                  Formação
+                </span>
+                <button
+                  onClick={handleClearTactic}
+                  className="text-[9px] text-gray-600 uppercase hover:text-red-400 transition-colors font-bold"
+                >
+                  Limpar
+                </button>
+              </div>
+              <div className="px-3 py-2 flex flex-wrap gap-1.5">
+                {TACTIC_FORMATIONS.map(({ value, label }) => {
+                  const isAvailable =
+                    formationAvailabilityByValue[value] === true;
+                  const isActive =
+                    titulares.length > 0 && tactic.formation === value;
+                  return (
+                    <button
+                      key={value}
+                      disabled={!isAvailable}
+                      onClick={() => isAvailable && handleAutoPick(value)}
+                      className={`px-3 py-1.5 text-[11px] font-black rounded-xl transition-all active:scale-95 ${
+                        !isAvailable
+                          ? "bg-[#161616] text-gray-700 cursor-not-allowed"
+                          : isActive
+                            ? "text-[#0a1a0a] shadow-lg shadow-green-500/20"
+                            : "bg-[#1a1a1a] text-gray-300 hover:bg-[#222]"
+                      }`}
+                      style={
+                        isActive
+                          ? {
+                              background:
+                                "linear-gradient(135deg,#4ade80,#22c55e)",
+                            }
+                          : {}
+                      }
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-						{/* Familiaridade atual */}
-						{(() => {
-							const fam = tacticFamiliarity;
-							if (!fam || fam.bonus <= 0 || fam.count < 1) return null;
-							const badgeColor = fam.count >= 10
-								? "bg-amber-500/15 border-amber-500/30 text-amber-300"
-								: fam.count >= 6
-									? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
-									: "bg-sky-500/15 border-sky-500/30 text-sky-300";
-							const stars = fam.count >= 10 ? "⭐⭐⭐⭐⭐" : fam.count >= 8 ? "⭐⭐⭐⭐" : fam.count >= 6 ? "⭐⭐⭐" : fam.count >= 4 ? "⭐⭐" : "⭐";
-							return (
-								<div className="px-3 py-2 border-b border-[#333]">
-									<div className={`flex flex-col gap-1 px-2 py-1.5 rounded border ${badgeColor}`}>
-										<div className="flex items-center gap-2">
-											<span className="text-sm">{stars}</span>
-											<span className="text-[9px] opacity-70">(+{Math.round(fam.bonus * 100)}%)</span>
-										</div>
-										<div className="flex items-center gap-1.5 text-[9px] opacity-70">
-											<span>{fam.formation}</span><span>·</span>
-											<span>{fam.style}</span><span>·</span>
-											<span>{fam.count} jogo{fam.count > 1 ? "s" : ""}</span>
-										</div>
-									</div>
-								</div>
-							);
-						})()}
+            {/* Proximo jogo — desktop only */}
+            {nextMatchSummary && (
+              <div className="hidden lg:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+                {(() => {
+                  const morale = teamInfo?.morale ?? 75;
+                  const fillColor =
+                    morale > 75
+                      ? "bg-green-500"
+                      : morale >= 50
+                        ? "bg-yellow-500"
+                        : "bg-red-500";
+                  const textColor =
+                    morale > 75
+                      ? "text-green-400"
+                      : morale >= 50
+                        ? "text-yellow-400"
+                        : "text-red-400";
+                  const label =
+                    morale > 75 ? "Alta" : morale >= 50 ? "Média" : "Baixa";
+                  return (
+                    <div className="px-4 py-2.5">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[9px] uppercase tracking-widest text-gray-600 font-bold">
+                          Moral
+                        </span>
+                        <span
+                          className={`text-[9px] font-black uppercase ${textColor}`}
+                        >
+                          {label}
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
+                          style={{ width: `${morale}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
 
-						{/* Lista de formações */}
-						<div className="px-3 py-2.5 space-y-1.5">
-							{TACTIC_FORMATIONS.map(({ value, label }) => {
-								const isAvailable = formationAvailabilityByValue[value] === true;
-								const isActive = titulares.length > 0 && tactic.formation === value;
-								const best = getBestForFormation(value);
-								const colors = best ? (TIER_COLORS[best.label] || TIER_COLORS["A familiarizar"]) : null;
-								const pct = best ? Math.min(100, Math.round((best.count / MAX_COUNT) * 100)) : 0;
+            {/* Formação — desktop only */}
+            <div className="hidden lg:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
+                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+                  Formação
+                </span>
+                <button
+                  onClick={handleClearTactic}
+                  className="text-[9px] text-gray-600 uppercase tracking-wider hover:text-red-400 transition-colors font-bold"
+                >
+                  Limpar
+                </button>
+              </div>
 
-								return (
-									<div key={value} className="flex items-center gap-2">
-										<button
-											disabled={!isAvailable}
-											title={isAvailable ? undefined : "Indisponível: faltam jogadores aptos"}
-											onClick={() => isAvailable && handleAutoPick(value)}
-											className={`shrink-0 w-[90px] px-2 py-1.5 text-xs font-bold rounded text-left transition-all active:scale-95 ${
-												!isAvailable
-													? "bg-[#2a2a2a] text-gray-600 cursor-not-allowed"
-													: isActive
-														? "bg-green-200 text-green-900 shadow"
-														: "bg-[#2a2a2a] text-gray-300 hover:bg-[#333]"
-											}`}
-										>
-											{label}
-										</button>
-										{best ? (
-											<div className={`flex-1 flex items-center gap-1.5 px-1.5 py-1 rounded ${colors.bg}`}>
-												<div className="flex-1 h-1 bg-[#333] rounded-full overflow-hidden">
-													<div className={`h-full rounded-full ${colors.bar}`} style={{ width: `${pct}%` }} />
-												</div>
-												<span className={`text-[8px] font-bold uppercase shrink-0 ${colors.text}`}>{best.label}</span>
-											</div>
-										) : (
-											<div className="flex-1 flex items-center gap-1.5 px-1.5 py-1 rounded bg-[#2a2a2a]/40">
-												<div className="flex-1 h-1 bg-[#333] rounded-full" />
-												<span className="text-[8px] text-gray-600 uppercase shrink-0">—</span>
-											</div>
-										)}
-									</div>
-								);
-							})}
-						</div>
-					</div>
+              {/* Lista formacoes */}
+              <div className="px-3 py-2.5 space-y-1">
+                {TACTIC_FORMATIONS.map(({ value, label }) => {
+                  const isAvailable =
+                    formationAvailabilityByValue[value] === true;
+                  const isActive =
+                    titulares.length > 0 && tactic.formation === value;
+                  const best = getBestForFormation(value);
+                  const colors = best
+                    ? TIER_COLORS[best.label] || TIER_COLORS["A familiarizar"]
+                    : null;
+                  const pct = best
+                    ? Math.min(100, Math.round((best.count / MAX_COUNT) * 100))
+                    : 0;
+                  return (
+                    <div key={value} className="flex items-center gap-2">
+                      <button
+                        disabled={!isAvailable}
+                        title={
+                          isAvailable
+                            ? undefined
+                            : "Indisponível: faltam jogadores aptos"
+                        }
+                        onClick={() => isAvailable && handleAutoPick(value)}
+                        className={`shrink-0 w-21 px-2 py-1.5 text-[11px] font-black rounded-xl text-center transition-all active:scale-95
+${
+  !isAvailable
+    ? "bg-[#161616] text-gray-700 cursor-not-allowed"
+    : isActive
+      ? "text-[#0a1a0a] shadow-lg shadow-green-500/20"
+      : "bg-[#1a1a1a] text-gray-300 hover:bg-[#222] hover:text-white"
+}`}
+                        style={
+                          isActive
+                            ? {
+                                background:
+                                  "linear-gradient(135deg,#4ade80,#22c55e)",
+                              }
+                            : {}
+                        }
+                      >
+                        {label}
+                      </button>
+                      {best ? (
+                        <div
+                          className={`flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-xl ${colors.bg}`}
+                        >
+                          <div className="flex-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${colors.bar}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span
+                            className={`text-[8px] font-black uppercase shrink-0 ${colors.text}`}
+                          >
+                            {best.label}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex-1 px-2 py-1.5 rounded-xl bg-[#161616]/60">
+                          <div className="h-1 bg-[#1a1a1a] rounded-full" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
-					{/* ── COL 2+3: TITULARES + SUPLENTES ── */}
-					<div className="flex-1 flex flex-col sm:flex-row gap-3 min-w-0">
+            {/* Mentalidade — desktop only */}
+            <div className="hidden lg:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+              <div className="px-4 py-2.5 border-b border-[#1a1a1a]">
+                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+                  Mentalidade
+                </span>
+              </div>
+              <div className="px-3 py-3">
+                {(() => {
+                  const STYLES = ["Defensive", "Balanced", "Offensive"];
+                  const LABELS = {
+                    Defensive: "Defensivo",
+                    Balanced: "Neutro",
+                    Offensive: "Ofensivo",
+                  };
+                  const PILL_COLORS = {
+                    Defensive: "rgba(59,130,246,0.22)",
+                    Balanced: "rgba(74,222,128,0.22)",
+                    Offensive: "rgba(244,63,94,0.22)",
+                  };
+                  const PILL_BORDERS = {
+                    Defensive: "rgba(59,130,246,0.45)",
+                    Balanced: "rgba(74,222,128,0.35)",
+                    Offensive: "rgba(244,63,94,0.45)",
+                  };
+                  const TEXT_COLORS = {
+                    Defensive: "text-blue-400",
+                    Balanced: "text-[#4ade80]",
+                    Offensive: "text-rose-400",
+                  };
+                  const idx = STYLES.indexOf(tactic.style ?? "Balanced");
+                  const safeIdx = idx < 0 ? 1 : idx;
+                  const activeStyle = tactic.style ?? "Balanced";
+                  return (
+                    <div className="relative flex bg-[#161616] rounded-full p-0.5">
+                      {/* Pill deslizante */}
+                      <div
+                        className="absolute inset-y-0.5 rounded-full transition-all duration-200 pointer-events-none"
+                        style={{
+                          left: `calc(${safeIdx * 33.333}% + 2px)`,
+                          width: "calc(33.333% - 4px)",
+                          background: `linear-gradient(135deg, ${PILL_COLORS[activeStyle]}, rgba(0,0,0,0))`,
+                          border: `1px solid ${PILL_BORDERS[activeStyle]}`,
+                        }}
+                      />
+                      {STYLES.map((val) => (
+                        <button
+                          key={val}
+                          onClick={() => updateTactic({ style: val })}
+                          className={`relative z-10 flex-1 py-2 text-[9px] font-black uppercase tracking-wide rounded-full transition-colors ${
+                            tactic.style === val
+                              ? TEXT_COLORS[val]
+                              : "text-gray-500 hover:text-gray-300"
+                          }`}
+                        >
+                          {LABELS[val]}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
 
-						{/* Titulares */}
-						<section
-							className={`bg-[#1e1e1e] border rounded-lg overflow-hidden flex-1 min-w-0 flex flex-col transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/50" : "border-[#333]"}`}
-							onDragOver={(e) => { e.preventDefault(); if (dragPlayerId) setDragOverSection("Titular"); }}
-							onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverSection(null); }}
-							onDrop={(e) => { e.preventDefault(); if (dragPlayerId) handleDropToSection(dragPlayerId, "Titular"); setDragOverSection(null); }}
-						>
-							<div className="flex justify-between items-center px-2 py-2 border-b border-[#333]">
-								<h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Titulares</h2>
-								<span className="text-[10px] text-gray-500">
-									<span className={annotatedSquad.filter((p) => p.status === "Titular").length === 11 ? "text-[#4ade80]" : "text-[#e0e0e0]"}>
-										{annotatedSquad.filter((p) => p.status === "Titular").length}
-									</span>/11
-								</span>
-							</div>
-							<div className="flex-1 overflow-y-auto px-1 py-1 space-y-0.5">
-								{annotatedSquad.filter((p) => p.status === "Titular").map((player) => (
-									<PlayerRow
-										key={player.id}
-										player={player}
-										matchweekCount={matchweekCount}
-										onClick
-										dotColor={STATUS_DOT.Titular}
-										draggable={!player.isJunior}
-										onDragStart={handleDragStart}
-										onDragOver={(e) => { e.preventDefault(); setDragOverPlayerId(player.id); }}
-										onDragLeave={() => setDragOverPlayerId(null)}
-										onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (dragPlayerId && dragPlayerId !== player.id) handleSwapPlayerStatuses(dragPlayerId, player.id); else { setDragOverPlayerId(null); setDragPlayerId(null); } setDragOverSection(null); }}
-										onDragEnd={() => { setDragOverPlayerId(null); setDragPlayerId(null); }}
-										isOver={dragOverPlayerId === player.id && dragPlayerId !== player.id}
-										isDragging={dragPlayerId === player.id}
-									>
-										{!player.isJunior && (
-											<>
-												<button
-													className="shrink-0 w-2 h-2 rounded-full bg-green-500 ml-1"
-													onClick={(e) => { e.stopPropagation(); setOpenStatusPickerId((prev) => prev === player.id ? null : player.id); }}
-												/>
-												<StatusPicker player={player} />
-											</>
-										)}
-									</PlayerRow>
-								))}
-								{annotatedSquad.filter((p) => p.status === "Titular").length === 0 && (
-									<p className="px-2 py-6 text-center text-[11px] text-gray-600 font-bold">Nenhum titular designado</p>
-								)}
-							</div>
-						</section>
+          {/* COL 2 — TITULARES (esq) + SUPLENTES/NÃO CONV. (dir) */}
+          <div className="flex-1 flex flex-row gap-2 min-w-0">
+            {/* Titulares */}
+            <div
+              className={`flex-1 min-w-0 bg-[#111] border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/30 bg-[#4ade80]/2" : "border-[#1e1e1e]"}`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (dragPlayerId) setDragOverSection("Titular");
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget))
+                  setDragOverSection(null);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragPlayerId) handleDropToSection(dragPlayerId, "Titular");
+                setDragOverSection(null);
+              }}
+            >
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
+                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+                  Titulares
+                </span>
+                <span className="text-[10px] font-black">
+                  <span
+                    className={
+                      titCount === 11 ? "text-[#4ade80]" : "text-white"
+                    }
+                  >
+                    {titCount}
+                  </span>
+                  <span className="text-gray-700">/11</span>
+                </span>
+              </div>
+              <div className="px-2 py-1 space-y-0.5">
+                {annotatedSquad
+                  .filter((p) => p.status === "Titular")
+                  .map((player) => (
+                    <PlayerRow
+                      key={player.id}
+                      player={player}
+                      matchweekCount={matchweekCount}
+                      onClick
+                      dotColor={STATUS_DOT.Titular}
+                      draggable={!player.isJunior}
+                      onDragStart={handleDragStart}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDragOverPlayerId(player.id);
+                      }}
+                      onDragLeave={() => setDragOverPlayerId(null)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (dragPlayerId && dragPlayerId !== player.id)
+                          handleSwapPlayerStatuses(dragPlayerId, player.id);
+                        else {
+                          setDragOverPlayerId(null);
+                          setDragPlayerId(null);
+                        }
+                        setDragOverSection(null);
+                      }}
+                      onDragEnd={() => {
+                        setDragOverPlayerId(null);
+                        setDragPlayerId(null);
+                      }}
+                      isOver={
+                        dragOverPlayerId === player.id &&
+                        dragPlayerId !== player.id
+                      }
+                      isDragging={dragPlayerId === player.id}
+                    >
+                      {!player.isJunior && (
+                        <div className="relative shrink-0">
+                          <button
+                            className="w-3 h-3 rounded-full bg-green-400/80 hover:bg-green-400 transition-colors ml-0.5"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenStatusPickerId((prev) =>
+                                prev === player.id ? null : player.id,
+                              );
+                            }}
+                          />
+                          <StatusPicker player={player} />
+                        </div>
+                      )}
+                    </PlayerRow>
+                  ))}
+                {titCount === 0 && (
+                  <p className="py-6 text-center text-[11px] text-gray-700 font-bold">
+                    Nenhum titular designado
+                  </p>
+                )}
+              </div>
+            </div>
 
-						{/* Suplentes + Não convocados */}
-						<section
-							className={`bg-[#1e1e1e] border rounded-lg overflow-hidden flex-1 min-w-0 flex flex-col transition-colors ${dragOverSection === "Suplente" ? "border-yellow-500/50" : "border-[#333]"}`}
-							onDragOver={(e) => { e.preventDefault(); if (dragPlayerId) setDragOverSection("Suplente"); }}
-							onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverSection(null); }}
-							onDrop={(e) => { e.preventDefault(); if (dragPlayerId) handleDropToSection(dragPlayerId, "Suplente"); setDragOverSection(null); }}
-						>
-							<div className="flex justify-between items-center px-2 py-2 border-b border-[#333]">
-								<h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Suplentes</h2>
-								<span className="text-[10px] text-gray-500">
-									<span className="text-yellow-400">{annotatedSquad.filter((p) => p.status === "Suplente" && !p.isUnavailable).length}</span>/5
-								</span>
-							</div>
-							<div className="px-1 py-1 space-y-0.5">
-								{annotatedSquad.filter((p) => p.status === "Suplente" && !p.isUnavailable).map((player) => (
-									<PlayerRow
-										key={player.id}
-										player={player}
-										matchweekCount={matchweekCount}
-										onClick
-										dotColor={STATUS_DOT.Suplente}
-										draggable={!player.isJunior}
-										onDragStart={handleDragStart}
-										onDragOver={(e) => { e.preventDefault(); setDragOverPlayerId(player.id); }}
-										onDragLeave={() => setDragOverPlayerId(null)}
-										onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (dragPlayerId && dragPlayerId !== player.id) handleSwapPlayerStatuses(dragPlayerId, player.id); else { setDragOverPlayerId(null); setDragPlayerId(null); } setDragOverSection(null); }}
-										onDragEnd={() => { setDragOverPlayerId(null); setDragPlayerId(null); }}
-										isOver={dragOverPlayerId === player.id && dragPlayerId !== player.id}
-										isDragging={dragPlayerId === player.id}
-									>
-										{!player.isJunior && (
-											<>
-												<button
-													className="shrink-0 w-2 h-2 rounded-full bg-yellow-500 ml-1"
-													onClick={(e) => { e.stopPropagation(); setOpenStatusPickerId((prev) => prev === player.id ? null : player.id); }}
-												/>
-												<StatusPicker player={player} />
-											</>
-										)}
-									</PlayerRow>
-								))}
-								{annotatedSquad.filter((p) => p.status === "Suplente").length === 0 && (
-									<p className="px-2 py-4 text-center text-[11px] text-gray-600 font-bold">Nenhum suplente</p>
-								)}
-							</div>
+            {/* Suplentes + Nao convocados (coluna direita) */}
+            <div className="flex-1 min-w-0 flex flex-col gap-2">
+              {/* Suplentes */}
+              <div
+                className={`bg-[#111] border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Suplente" ? "border-yellow-500/30 bg-yellow-500/2" : "border-[#1e1e1e]"}`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (dragPlayerId) setDragOverSection("Suplente");
+                }}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget))
+                    setDragOverSection(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragPlayerId)
+                    handleDropToSection(dragPlayerId, "Suplente");
+                  setDragOverSection(null);
+                }}
+              >
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
+                  <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+                    Suplentes
+                  </span>
+                  <span className="text-[10px] font-black">
+                    <span className="text-yellow-400">{subCount}</span>
+                    <span className="text-gray-700">/5</span>
+                  </span>
+                </div>
+                <div className="px-2 py-1 space-y-0.5">
+                  {annotatedSquad
+                    .filter((p) => p.status === "Suplente" && !p.isUnavailable)
+                    .map((player) => (
+                      <PlayerRow
+                        key={player.id}
+                        player={player}
+                        matchweekCount={matchweekCount}
+                        onClick
+                        dotColor={STATUS_DOT.Suplente}
+                        draggable={!player.isJunior}
+                        onDragStart={handleDragStart}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setDragOverPlayerId(player.id);
+                        }}
+                        onDragLeave={() => setDragOverPlayerId(null)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (dragPlayerId && dragPlayerId !== player.id)
+                            handleSwapPlayerStatuses(dragPlayerId, player.id);
+                          else {
+                            setDragOverPlayerId(null);
+                            setDragPlayerId(null);
+                          }
+                          setDragOverSection(null);
+                        }}
+                        onDragEnd={() => {
+                          setDragOverPlayerId(null);
+                          setDragPlayerId(null);
+                        }}
+                        isOver={
+                          dragOverPlayerId === player.id &&
+                          dragPlayerId !== player.id
+                        }
+                        isDragging={dragPlayerId === player.id}
+                      >
+                        {!player.isJunior && (
+                          <div className="relative shrink-0">
+                            <button
+                              className="w-3 h-3 rounded-full bg-yellow-400/80 hover:bg-yellow-400 transition-colors ml-0.5"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenStatusPickerId((prev) =>
+                                  prev === player.id ? null : player.id,
+                                );
+                              }}
+                            />
+                            <StatusPicker player={player} />
+                          </div>
+                        )}
+                      </PlayerRow>
+                    ))}
+                  {subCount === 0 && (
+                    <p className="py-4 text-center text-[11px] text-gray-700 font-bold">
+                      Nenhum suplente
+                    </p>
+                  )}
+                </div>
 
-							{/* Não convocados */}
-							{annotatedSquad.filter((p) => !p.isJunior && (p.isUnavailable || (p.status !== "Titular" && p.status !== "Suplente"))).length > 0 && (
-								<div
-									onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); if (dragPlayerId) setDragOverSection("Excluído"); }}
-									onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverSection(null); }}
-									onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (dragPlayerId) handleDropToSection(dragPlayerId, "Excluído"); setDragOverSection(null); }}
-								>
-									<div className="px-2 py-1.5 border-t border-[#333]">
-										<h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Não Convocados</h2>
-									</div>
-									<div className="px-1 py-1 space-y-0.5 opacity-50">
-										{annotatedSquad.filter((p) => !p.isJunior && (p.isUnavailable || (p.status !== "Titular" && p.status !== "Suplente"))).map((player) => (
-											<PlayerRow
-												key={player.id}
-												player={player}
-												matchweekCount={matchweekCount}
-												dotColor={STATUS_DOT.Excluído}
-												draggable
-												onDragStart={handleDragStart}
-												onDragOver={(e) => { e.preventDefault(); setDragOverPlayerId(player.id); }}
-												onDragLeave={() => setDragOverPlayerId(null)}
-												onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (dragPlayerId && dragPlayerId !== player.id) handleSwapPlayerStatuses(dragPlayerId, player.id); else { setDragOverPlayerId(null); setDragPlayerId(null); } setDragOverSection(null); }}
-												onDragEnd={() => { setDragOverPlayerId(null); setDragPlayerId(null); }}
-												isOver={dragOverPlayerId === player.id && dragPlayerId !== player.id}
-												isDragging={dragPlayerId === player.id}
-											>
-												<button
-													className="shrink-0 w-2 h-2 rounded-full bg-gray-700 ml-1"
-													onClick={(e) => { e.stopPropagation(); setOpenStatusPickerId((prev) => prev === player.id ? null : player.id); }}
-												/>
-												<StatusPicker player={player} above />
-											</PlayerRow>
-										))}
-									</div>
-								</div>
-							)}
-						</section>
-					</div>
+                {/* Nao convocados */}
+                {notCalledCount > 0 && (
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (dragPlayerId) setDragOverSection("Excluído");
+                    }}
+                    onDragLeave={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget))
+                        setDragOverSection(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (dragPlayerId)
+                        handleDropToSection(dragPlayerId, "Excluído");
+                      setDragOverSection(null);
+                    }}
+                    className={`border-t transition-colors ${dragOverSection === "Excluído" ? "border-gray-500/30" : "border-[#1a1a1a]"}`}
+                  >
+                    <div className="px-4 py-2">
+                      <span className="text-[9px] uppercase tracking-widest text-gray-700 font-bold">
+                        Não Convocados
+                      </span>
+                    </div>
+                    <div className="px-2 pb-1 space-y-0.5 opacity-40">
+                      {annotatedSquad
+                        .filter(
+                          (p) =>
+                            !p.isJunior &&
+                            (p.isUnavailable ||
+                              (p.status !== "Titular" &&
+                                p.status !== "Suplente")),
+                        )
+                        .map((player) => (
+                          <PlayerRow
+                            key={player.id}
+                            player={player}
+                            matchweekCount={matchweekCount}
+                            dotColor={STATUS_DOT.Excluido}
+                            draggable
+                            onDragStart={handleDragStart}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              setDragOverPlayerId(player.id);
+                            }}
+                            onDragLeave={() => setDragOverPlayerId(null)}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (dragPlayerId && dragPlayerId !== player.id)
+                                handleSwapPlayerStatuses(
+                                  dragPlayerId,
+                                  player.id,
+                                );
+                              else {
+                                setDragOverPlayerId(null);
+                                setDragPlayerId(null);
+                              }
+                              setDragOverSection(null);
+                            }}
+                            onDragEnd={() => {
+                              setDragOverPlayerId(null);
+                              setDragPlayerId(null);
+                            }}
+                            isOver={
+                              dragOverPlayerId === player.id &&
+                              dragPlayerId !== player.id
+                            }
+                            isDragging={dragPlayerId === player.id}
+                          >
+                            <div className="relative shrink-0">
+                              <button
+                                className="w-3 h-3 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors ml-0.5"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenStatusPickerId((prev) =>
+                                    prev === player.id ? null : player.id,
+                                  );
+                                }}
+                              />
+                              <StatusPicker player={player} above />
+                            </div>
+                          </PlayerRow>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* fim coluna direita */}
+          </div>
 
-					{/* ── COL 4: CAMPO + JOGAR ── */}
-					<div className="lg:w-[280px] flex-shrink-0 flex flex-col gap-3">
+          {/* COL 3 — CAMPO + JOGAR (desktop only — mobile usa FAB) */}
+          <div className="max-lg:hidden lg:w-72.5 shrink-0 flex flex-col gap-2">
+            {/* Botao JOGAR — desktop */}
+            <div className="max-lg:hidden">
+              <button
+                onClick={isHalftime ? handleHalftimeReady : handleReady}
+                disabled={myReady || !canPlay}
+                className={`w-full py-4 font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-95 relative overflow-hidden
+${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161616] text-gray-700 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
+                style={
+                  myReady || !canPlay
+                    ? {}
+                    : {
+                        background:
+                          "linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%)",
+                      }
+                }
+              >
+                {!myReady && canPlay && (
+                  <span className="absolute inset-0 bg-linear-to-r from-white/10 to-transparent pointer-events-none" />
+                )}
+                {playLabel}
+              </button>
+              {!canPlay && !myReady && (
+                <p className="text-[10px] font-bold text-red-400/70 mt-1.5 text-center">
+                  Faltam titulares: 1 GR + 10 de campo
+                </p>
+              )}
+              {canPlay && !myReady && (
+                <p className="text-[9px] text-center text-gray-700 mt-1">
+                  A jornada avança quando todos clicarem.
+                </p>
+              )}
+            </div>
 
-						{/* Botão JOGAR — desktop */}
-						<div className="max-lg:hidden">
-							{(() => {
-								const isReady = players.find((p) => p.name === me.name)?.ready;
-								const isHalftime = showHalftimePanel && !isPlayingMatch;
-								const isEliminatedCupSpectator = nextMatchSummary?.isCup && !nextMatchOpponent;
-								const isDisabled = isEliminatedCupSpectator ? !!isReady : !isHalftime && !isReady && !isLineupComplete;
-								return (
-									<>
-										<button
-											onClick={isHalftime ? handleHalftimeReady : handleReady}
-											disabled={isDisabled}
-											className={`w-full p-4 font-bold rounded text-sm uppercase tracking-wider transition-all active:scale-95 ${
-												isReady
-													? "bg-[#2a2a2a] text-[#9e9e9e] cursor-not-allowed"
-													: isDisabled
-														? "bg-[#2a2a2a] text-gray-600 cursor-not-allowed opacity-60"
-														: "bg-green-200 text-green-900 hover:brightness-105 shadow-lg"
-											}`}
-										>
-											{isReady
-												? "⏳ A aguardar..."
-												: isEliminatedCupSpectator
-													? "Avançar para Taça"
-													: isHalftime && isCupMatch
-														? "2ª Parte — Taça"
-														: isHalftime
-															? "2ª Parte"
-															: "Jogar Jornada"}
-										</button>
-										{isDisabled && !isEliminatedCupSpectator && !isReady && (
-											<p className="text-[10px] font-bold text-red-400 mt-2 text-center">
-												Faltam titulares: 1 GR + 10 de campo
-											</p>
-										)}
-										{!isDisabled && !isReady && (
-											<p className="text-[9px] text-center text-gray-500 mt-1">
-												A jornada avança quando todos clicarem.
-											</p>
-										)}
-									</>
-								);
-							})()}
-						</div>
+            {/* Campo de futebol */}
+            <div
+              className={`relative w-full rounded-2xl overflow-hidden transition-all duration-200 ${dragPlayerId && dragOverSection === "Titular" && annotatedSquad.find((p) => p.id === dragPlayerId)?.status !== "Titular" ? "ring-2 ring-[#4ade80]/40 shadow-lg shadow-[#4ade80]/10" : ""}`}
+              style={{
+                aspectRatio: "9/12",
+                background:
+                  "radial-gradient(ellipse at 50% 25%, #1f5c1a 0%, #123a0d 50%, #09200a 100%)",
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (dragPlayerId) setDragOverSection("Titular");
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget))
+                  setDragOverSection(null);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragPlayerId) handleDropToSection(dragPlayerId, "Titular");
+                setDragOverSection(null);
+              }}
+            >
+              {/* Linhas do campo SVG */}
+              <svg
+                className="absolute inset-0 w-full h-full pointer-events-none"
+                viewBox="0 0 9 12"
+                preserveAspectRatio="none"
+                fill="none"
+                stroke="rgba(255,255,255,0.15)"
+                strokeWidth="0.065"
+              >
+                <rect x="0.45" y="0.45" width="8.1" height="11.1" rx="0.05" />
+                <line x1="0.45" y1="6" x2="8.55" y2="6" />
+                <circle cx="4.5" cy="6" r="1.2" />
+                <rect x="1.9" y="8.9" width="5.2" height="2.65" />
+                <rect x="3.1" y="10.2" width="2.8" height="1.35" />
+                <rect x="1.9" y="0.45" width="5.2" height="2.65" />
+                <rect x="3.1" y="0.45" width="2.8" height="1.35" />
+                <circle
+                  cx="4.5"
+                  cy="9.8"
+                  r="0.07"
+                  fill="rgba(255,255,255,0.2)"
+                  stroke="none"
+                />
+                <circle
+                  cx="4.5"
+                  cy="2.2"
+                  r="0.07"
+                  fill="rgba(255,255,255,0.2)"
+                  stroke="none"
+                />
+                <circle
+                  cx="4.5"
+                  cy="6"
+                  r="0.07"
+                  fill="rgba(255,255,255,0.2)"
+                  stroke="none"
+                />
+              </svg>
 
-						{/* Mobile FAB */}
-						{(() => {
-							const fabReady = players.find((p) => p.name === me.name)?.ready;
-							const fabHalftime = showHalftimePanel && !isPlayingMatch;
-							const fabCupSpec = nextMatchSummary?.isCup && !nextMatchOpponent;
-							if (fabReady) return null;
-							if (!fabHalftime && !fabCupSpec && !isLineupComplete) return null;
-							const fabIcon = fabHalftime ? "skip_next" : fabCupSpec ? "arrow_forward" : "play_arrow";
-							const fabLabel = fabHalftime ? "2ª Parte" : fabCupSpec ? "Ver Taça" : "Jogar";
-							return (
-								<button
-									onClick={fabHalftime ? handleHalftimeReady : handleReady}
-									aria-label={fabLabel}
-									className="lg:hidden fixed bottom-28 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200"
-									style={{
-										background: "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.25) 0%, transparent 70%), #10b981",
-										boxShadow: "0 0 32px 8px rgba(16,185,129,0.50), 0 8px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.25)",
-									}}
-								>
-									<span className="absolute inset-0 rounded-full bg-[#4ade80]/40 animate-ping" />
-									<span className="absolute inset-0 rounded-full bg-[#4ade80]/20 animate-ping" style={{ animationDelay: "0.3s" }} />
-									<span className="material-symbols-outlined text-[28px] text-white drop-shadow-lg relative z-10 leading-none">{fabIcon}</span>
-								</button>
-							);
-						})()}
+              <div className="absolute inset-0 bg-linear-to-b from-black/5 via-transparent to-black/25 pointer-events-none" />
 
-						{/* Campo */}
-						<div
-							className={`relative w-full rounded-lg overflow-hidden transition-[box-shadow] duration-150 ${dragPlayerId && dragOverSection === "Titular" && annotatedSquad.find((p) => p.id === dragPlayerId)?.status !== "Titular" ? "ring-2 ring-[#4ade80]/60" : ""}`}
-							style={{
-								aspectRatio: "9/12",
-								background: "linear-gradient(to bottom, #2d5a27 0%, #1a3816 100%)",
-							}}
-							onDragOver={(e) => { e.preventDefault(); if (dragPlayerId) setDragOverSection("Titular"); }}
-							onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOverSection(null); }}
-							onDrop={(e) => { e.preventDefault(); if (dragPlayerId) handleDropToSection(dragPlayerId, "Titular"); setDragOverSection(null); }}
-						>
-							{/* Linhas do campo */}
-							<div className="absolute inset-[10px] border border-white/20 pointer-events-none">
-								<div className="absolute top-0 bottom-0 left-1/2 w-px bg-white/20" />
-								<div className="absolute top-1/2 left-1/2 w-10 h-10 border border-white/20 rounded-full -translate-x-1/2 -translate-y-1/2" />
-							</div>
+              {/* Jogadores no campo */}
+              {(() => {
+                const tits = annotatedSquad.filter(
+                  (p) => p.status === "Titular",
+                );
+                const rows = [
+                  tits.filter((p) => p.position === "ATA"),
+                  tits.filter((p) => p.position === "MED"),
+                  tits.filter((p) => p.position === "DEF"),
+                  tits.filter((p) => p.position === "GR"),
+                ];
+                const rowYs = ["6%", "27%", "52%", "75%"];
+                return rows.map((rowPlayers, ri) =>
+                  rowPlayers.length > 0 ? (
+                    <div
+                      key={ri}
+                      className="absolute w-full flex justify-evenly items-start px-3"
+                      style={{ top: rowYs[ri] }}
+                    >
+                      {rowPlayers.map((player) => {
+                        const pos = POS_COLORS[player.position] || {
+                          hex: "#6b7280",
+                        };
+                        const isDraggingThis = dragPlayerId === player.id;
+                        const isOverThis =
+                          dragOverPlayerId === player.id &&
+                          dragPlayerId !== player.id;
+                        return (
+                          <div
+                            key={player.id}
+                            className={`flex flex-col items-center transition-all duration-150 ${isDraggingThis ? "opacity-20 scale-90" : ""} ${isOverThis ? "scale-110" : ""}`}
+                            style={{ maxWidth: "58px" }}
+                            draggable
+                            data-player-id={player.id}
+                            data-player-status="Titular"
+                            onDragStart={handleDragStart}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setDragOverPlayerId(player.id);
+                            }}
+                            onDragLeave={() => setDragOverPlayerId(null)}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (dragPlayerId && dragPlayerId !== player.id)
+                                handleSwapPlayerStatuses(
+                                  dragPlayerId,
+                                  player.id,
+                                );
+                              else {
+                                setDragOverPlayerId(null);
+                                setDragPlayerId(null);
+                              }
+                              setDragOverSection(null);
+                            }}
+                            onDragEnd={() => {
+                              setDragOverPlayerId(null);
+                              setDragPlayerId(null);
+                            }}
+                          >
+                            <div
+                              className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-sm relative cursor-grab active:cursor-grabbing ${player.isUnavailable ? "opacity-50" : ""}`}
+                              style={{
+                                background: `radial-gradient(circle at 35% 28%, rgba(255,255,255,0.28) 0%, transparent 65%), ${pos.hex}`,
+                                boxShadow: `0 4px 16px rgba(0,0,0,0.55), 0 0 0 2px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.22)`,
+                              }}
+                            >
+                              {player.name?.charAt(0)?.toUpperCase() ?? "?"}
+                              {player.isUnavailable && (
+                                <span className="absolute -top-1 -right-1 text-[9px] bg-black/60 rounded-full px-0.5 leading-none">
+                                  {(player.suspension_until_matchweek || 0) >
+                                  matchweekCount
+                                    ? "🟥"
+                                    : (player.injury_until_matchweek || 0) >
+                                        matchweekCount
+                                      ? "🩹"
+                                      : "✈️"}
+                                </span>
+                              )}
+                            </div>
+                            <button
+                              className="mt-1 text-[8px] font-bold text-white/80 hover:text-[#4ade80] transition-colors leading-none px-1.5 py-0.5 rounded-lg bg-black/40"
+                              style={{
+                                maxWidth: "56px",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                              onClick={() =>
+                                socket.emit("requestPlayerHistory", {
+                                  playerId: player.id,
+                                })
+                              }
+                            >
+                              {player.name.split(" ").pop()}
+                            </button>
+                            <span
+                              className="text-[9px] font-black mt-0.5 leading-none"
+                              style={{
+                                color: pos.hex,
+                                textShadow: "0 1px 5px rgba(0,0,0,0.95)",
+                              }}
+                            >
+                              {player.skill}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null,
+                );
+              })()}
 
-							{/* Jogadores no campo */}
-							{(() => {
-								const tits = annotatedSquad.filter((p) => p.status === "Titular");
-								const grPlayers = tits.filter((p) => p.position === "GR");
-								const defPlayers = tits.filter((p) => p.position === "DEF");
-								const medPlayers = tits.filter((p) => p.position === "MED");
-								const ataPlayers = tits.filter((p) => p.position === "ATA");
-								const rows = [ataPlayers, medPlayers, defPlayers, grPlayers];
-								const rowYs = ["7%", "30%", "55%", "79%"];
-								const posColors = {
-									GR: "bg-yellow-600",
-									DEF: "bg-blue-600",
-									MED: "bg-green-600",
-									ATA: "bg-red-600",
-								};
-								return rows.map((rowPlayers, ri) =>
-									rowPlayers.length > 0 ? (
-										<div
-											key={ri}
-											className="absolute w-full flex justify-evenly items-start px-4"
-											style={{ top: rowYs[ri] }}
-										>
-											{rowPlayers.map((player) => (
-												<div
-													key={player.id}
-													className={`field-player flex flex-col items-center cursor-grab active:cursor-grabbing ${dragPlayerId === player.id ? "opacity-40" : ""} ${dragOverPlayerId === player.id && dragPlayerId !== player.id ? "scale-110" : ""}`}
-													style={{ maxWidth: "60px" }}
-													draggable
-													data-player-id={player.id}
-													data-player-status="Titular"
-													onDragStart={handleDragStart}
-													onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverPlayerId(player.id); }}
-													onDragLeave={() => setDragOverPlayerId(null)}
-													onDrop={(e) => { e.preventDefault(); e.stopPropagation(); if (dragPlayerId && dragPlayerId !== player.id) handleSwapPlayerStatuses(dragPlayerId, player.id); else { setDragOverPlayerId(null); setDragPlayerId(null); } setDragOverSection(null); }}
-													onDragEnd={() => { setDragOverPlayerId(null); setDragPlayerId(null); }}
-												>
-													<div className={`w-8 h-8 rounded-full ${posColors[player.position] || "bg-gray-500"} text-white font-bold flex items-center justify-center text-xs shadow-md border-2 border-white/20 relative ${player.isUnavailable ? "opacity-50 ring-2 ring-red-500" : ""}`}>
-														{POSITION_SHORT_LABELS[player.position]?.[0] ?? "?"}
-														{player.isUnavailable && (
-															<span className="absolute -top-1 -right-1 text-[9px] leading-none">
-																{(player.suspension_until_matchweek || 0) > matchweekCount ? "🟥" : (player.injury_until_matchweek || 0) > matchweekCount ? "🩹" : "✈️"}
-															</span>
-														)}
-													</div>
-													<span
-														className="text-[8px] bg-black/50 px-1 rounded mt-1 font-bold text-white cursor-pointer hover:text-[#4ade80] transition-colors"
-														style={{ maxWidth: "56px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-														onClick={() => socket.emit("requestPlayerHistory", { playerId: player.id })}
-													>
-														{player.name.split(" ").pop()}
-													</span>
-													<span className="text-[8px] text-[#4ade80] font-bold" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.95)" }}>
-														{player.skill}
-													</span>
-												</div>
-											))}
-										</div>
-									) : null
-								);
-							})()}
+              {/* Drop overlay */}
+              {dragPlayerId &&
+                dragOverSection === "Titular" &&
+                annotatedSquad.find((p) => p.id === dragPlayerId)?.status !==
+                  "Titular" && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 bg-[#4ade80]/4">
+                    <div className="bg-black/55 border border-[#4ade80]/35 px-4 py-2.5 rounded-2xl backdrop-blur-sm">
+                      <p className="text-[#4ade80] font-black text-xs uppercase tracking-widest animate-pulse">
+                        ↓ Soltar para entrada
+                      </p>
+                    </div>
+                  </div>
+                )}
 
-							{dragPlayerId && dragOverSection === "Titular" && annotatedSquad.find((p) => p.id === dragPlayerId)?.status !== "Titular" && (
-								<div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-									<div className="bg-black/50 border border-[#4ade80]/50 px-4 py-2 rounded-lg backdrop-blur-sm">
-										<p className="text-[#4ade80] font-black text-xs uppercase tracking-widest animate-pulse">↓ Soltar para entrar em campo</p>
-									</div>
-								</div>
-							)}
-							{!tactic.formation && titulares.length === 0 && (
-								<div className="absolute inset-0 flex items-center justify-center">
-									<p className="text-gray-300 text-sm font-bold text-center px-8 leading-relaxed" style={{ textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}>
-										Arrasta jogadores para o campo ou escolhe uma formação
-									</p>
-								</div>
-							)}
-							<div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
-						</div>
-					</div>
-				</div>
-			)}
-		</div>
-	);
+              {!tactic.formation && titulares.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p className="text-white/30 text-xs font-bold text-center px-8 leading-relaxed">
+                    Arrasta jogadores para o campo ou escolhe uma formação
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile FAB */}
+      {(() => {
+        const fabHalftime = showHalftimePanel && !isPlayingMatch;
+        const fabCupSpec = nextMatchSummary?.isCup && !nextMatchOpponent;
+        if (myReady) return null;
+        if (!fabHalftime && !fabCupSpec && !isLineupComplete) return null;
+        const fabIcon = fabHalftime
+          ? "skip_next"
+          : fabCupSpec
+            ? "arrow_forward"
+            : "play_arrow";
+        return (
+          <button
+            onClick={fabHalftime ? handleHalftimeReady : handleReady}
+            className="lg:hidden fixed bottom-28 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200"
+            style={{
+              background:
+                "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.3) 0%, transparent 70%), #22c55e",
+              boxShadow:
+                "0 0 40px 8px rgba(34,197,94,0.4), 0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25)",
+            }}
+          >
+            <span className="absolute inset-0 rounded-full bg-[#4ade80]/25 animate-ping" />
+            <span className="material-symbols-outlined text-[28px] text-white drop-shadow-lg relative z-10 leading-none">
+              {fabIcon}
+            </span>
+          </button>
+        );
+      })()}
+    </div>
+  );
 }
