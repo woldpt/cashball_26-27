@@ -205,6 +205,13 @@ export function createTrainingHelpers(_deps: { io: any }) {
                       values,
                       (uErr: any) => {
                         if (uErr) console.error(`[${game.roomCode}] training: update player ${upd.playerId}:`, uErr);
+                        // Record skill snapshot when skill changed via training
+                        if (upd.fields.skill != null) {
+                          game.db.run(
+                            `INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) VALUES (?, ?, ?, ?)`,
+                            [upd.playerId, completedCalendarIndex, game.season || 1, upd.fields.skill],
+                          );
+                        }
                         finish();
                       },
                     );

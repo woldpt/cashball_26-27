@@ -175,3 +175,16 @@ CREATE TABLE IF NOT EXISTS training_player_history (
 CREATE INDEX IF NOT EXISTS idx_team_training_team_matchweek ON team_training(team_id, matchweek);
 CREATE INDEX IF NOT EXISTS idx_training_history_player_matchweek ON training_player_history(player_id, matchweek);
 CREATE INDEX IF NOT EXISTS idx_training_history_team_matchweek ON training_player_history(team_id, matchweek);
+
+CREATE TABLE IF NOT EXISTS player_skill_snapshots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  player_id INTEGER NOT NULL,
+  matchweek INTEGER NOT NULL,
+  season INTEGER NOT NULL,
+  skill INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY(player_id) REFERENCES players(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_skill_snapshots_player ON player_skill_snapshots(player_id, season, matchweek);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_skill_snapshots_unique ON player_skill_snapshots(player_id, matchweek, season);

@@ -924,6 +924,28 @@ for (const m of trainingMigrations) {
 	});
 }
 
+// Migration: player_skill_snapshots table
+db.run(
+	`CREATE TABLE IF NOT EXISTS player_skill_snapshots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  player_id INTEGER NOT NULL,
+  matchweek INTEGER NOT NULL,
+  season INTEGER NOT NULL,
+  skill INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY(player_id) REFERENCES players(id)
+)`,
+	(err: any) => {
+		if (err) console.warn("[migration] player_skill_snapshots table:", err.message);
+	},
+);
+db.run(
+	`CREATE INDEX IF NOT EXISTS idx_skill_snapshots_player ON player_skill_snapshots(player_id, season, matchweek)`,
+	(err: any) => {
+		if (err) console.warn("[migration] player_skill_snapshots index:", err.message);
+	},
+);
+
 const PORT = 3000;
 server.listen(PORT, () => {
 	const portMsg = `Listening on port ${PORT}`;

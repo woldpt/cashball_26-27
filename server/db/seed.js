@@ -30,6 +30,19 @@ if (!allTeamsData || allTeamsData.length === 0) {
   process.exit(1);
 }
 
+// Ensure player_skill_snapshots table exists
+db.run(`CREATE TABLE IF NOT EXISTS player_skill_snapshots (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  player_id INTEGER NOT NULL,
+  matchweek INTEGER NOT NULL,
+  season INTEGER NOT NULL,
+  skill INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY(player_id) REFERENCES players(id)
+)`);
+db.run(`CREATE INDEX IF NOT EXISTS idx_skill_snapshots_player ON player_skill_snapshots(player_id, season, matchweek)`);
+db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_skill_snapshots_unique ON player_skill_snapshots(player_id, matchweek, season)`);
+
 function randomAggressiveness() {
   return 1 + Math.floor(Math.random() * 5);
 }
@@ -266,14 +279,23 @@ db.serialize(() => {
             "[seed] joined_matchweek backfill failed:",
             updateErr.message,
           );
-        db.run("COMMIT", (commitErr) => {
-          if (commitErr) {
-            console.error("[seed] COMMIT failed:", commitErr.message);
-            process.exit(1);
-          }
-          console.log("Base Seed complete.");
-          db.close(() => process.exit(0));
-        });
+        // Initial skill snapshots for all players (matchweek=1, season=1)
+        db.run(
+          `INSERT OR IGNORE INTO player_skill_snapshots (player_id, matchweek, season, skill)
+           SELECT id, 1, 1, skill FROM players WHERE team_id IS NOT NULL AND skill IS NOT NULL`,
+          (snapErr) => {
+            if (snapErr)
+              console.warn("[seed] skill snapshots failed:", snapErr.message);
+            db.run("COMMIT", (commitErr) => {
+              if (commitErr) {
+                console.error("[seed] COMMIT failed:", commitErr.message);
+                process.exit(1);
+              }
+              console.log("Base Seed complete.");
+              db.close(() => process.exit(0));
+            });
+          },
+        );
       },
     );
   });

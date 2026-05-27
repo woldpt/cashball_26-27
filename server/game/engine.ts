@@ -310,9 +310,18 @@ async function applyInjuryEvent({
   const injuryUntil = currentMatchweek + injuryWeeks;
   const qualityLoss =
     injuryLabel === "grave" ? 2 + Math.floor(Math.random() * 4) : 0;
+  const oldSkill = injuredPlayer.skill ?? 0;
+  const newSkill = Math.max(0, oldSkill - qualityLoss);
   db.run(
-    "UPDATE players SET injuries = injuries + 1, career_injuries = career_injuries + 1, prev_skill = skill, skill = MAX(0, skill - ?), injury_until_matchweek = CASE WHEN injury_until_matchweek > ? THEN injury_until_matchweek ELSE ? END WHERE id = ?",
-    [qualityLoss, injuryUntil, injuryUntil, injuredPlayer.id],
+    "UPDATE players SET injuries = injuries + 1, career_injuries = career_injuries + 1, prev_skill = skill, skill = ?, injury_until_matchweek = CASE WHEN injury_until_matchweek > ? THEN injury_until_matchweek ELSE ? END WHERE id = ?",
+    [newSkill, injuryUntil, injuryUntil, injuredPlayer.id],
+    () => {
+      // Record skill snapshot before injury
+      db.run(
+        "INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) VALUES (?, ?, ?, ?)",
+        [injuredPlayer.id, currentMatchweek, game.season || 1, oldSkill],
+      );
+    },
   );
 
   fixture.events.push({
@@ -1583,6 +1592,7 @@ async function applyPostMatchQualityEvolution(
   db: Db,
   fixtures: MatchFixture[],
   currentMatchweek: number,
+  season: number,
 ) {
   return new Promise<void>((resolve) => {
     const teamResults = new Map();
@@ -1713,7 +1723,14 @@ async function applyPostMatchQualityEvolution(
           // Mesmo sem evoluções, limpar prev_skill de semanas anteriores
           db.run(
             "UPDATE players SET prev_skill = NULL WHERE team_id IS NOT NULL",
-            () => resolve(),
+            () => {
+              // Snapshot all players' skill for continuity
+              db.run(
+                "INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) SELECT id, ?, ?, skill FROM players WHERE team_id IS NOT NULL AND skill IS NOT NULL",
+                [currentMatchweek, season],
+                () => resolve(),
+              );
+            },
           );
           return;
         }
@@ -1724,20 +1741,27 @@ async function applyPostMatchQualityEvolution(
           db.run(
             "UPDATE players SET prev_skill = NULL WHERE team_id IS NOT NULL",
           );
-          updates.forEach((update) => {
+updates.forEach((update) => {
             db.run(
               "UPDATE players SET prev_skill = skill, skill = ? WHERE id = ?",
               [update.skill, update.id],
               () => {
                 remaining -= 1;
-                if (remaining === 0) resolve();
+                if (remaining === 0) {
+                  // Snapshot all players' skill after evolution
+                  db.run(
+                    "INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) SELECT id, ?, ?, skill FROM players WHERE team_id IS NOT NULL AND skill IS NOT NULL",
+                    [currentMatchweek, season],
+                    () => resolve(),
+                  );
+                }
               },
             );
           });
-        });
-      },
-    );
-  });
+      });
+    },
+  );
+});
 }
 
 module.exports = {

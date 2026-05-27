@@ -51,6 +51,7 @@ interface WeeklyFlowDeps {
     db: any,
     fixtures: any[],
     currentMatchweek: number,
+    season: number,
   ) => Promise<void>;
   applyTrainingBonuses: (
     game: ActiveGame,
@@ -711,7 +712,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           const seasonDone = game.calendarIndex >= SEASON_CALENDAR.length;
 
           persistMatchResults(game, fixtures, completedMatchweek, () => {
-            applyPostMatchQualityEvolution(game.db, fixtures, completedMatchweek)
+            applyPostMatchQualityEvolution(game.db, fixtures, completedMatchweek, game.season || 1)
               .then(() =>
                 applyTrainingBonuses(game, fixtures, completedCalendarIndex),
               )

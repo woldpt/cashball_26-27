@@ -725,25 +725,30 @@ export function registerSessionSocketHandlers(
 					[playerId],
 				);
 
-				// Skill history — use prev_skill + current skill for trend data.
-				// Full 19-week history requires a player_skill_snapshots table (future).
-				const skillRow = await runGet(
+				// Skill history — from player_skill_snapshots table
+				const skillRows = await runAll(
 					game.db,
-					`SELECT prev_skill, skill, joined_matchweek FROM players WHERE id = ?`,
+					`SELECT matchweek, season, skill FROM player_skill_snapshots
+					 WHERE player_id = ?
+					 ORDER BY season ASC, matchweek ASC`,
 					[playerId],
 				);
 				const currentMw = game.matchweek || game.calendarIndex || 0;
-				const skillHistory: Array<{ matchweek: number; skill: number }> = [];
-				if (skillRow) {
-					// Add prev_skill point if it exists (skill changed last week)
-					if (skillRow.prev_skill != null) {
-						skillHistory.push({
-							matchweek: Math.max(1, currentMw - 1),
-							skill: skillRow.prev_skill,
-						});
+				const skillHistory: Array<{ matchweek: number; skill: number }> = (skillRows || []).map(
+					(r) => ({ matchweek: r.matchweek, skill: r.skill }),
+				);
+
+				// Always append current skill to ensure the chart shows latest value
+				const playerRow = await runGet(
+					game.db,
+					`SELECT skill FROM players WHERE id = ?`,
+					[playerId],
+				);
+				if (playerRow && playerRow.skill != null) {
+					const lastSnap = skillHistory.length > 0 ? skillHistory[skillHistory.length - 1] : null;
+					if (!lastSnap || lastSnap.matchweek !== currentMw) {
+						skillHistory.push({ matchweek: currentMw, skill: playerRow.skill });
 					}
-					// Always add current skill point
-					skillHistory.push({ matchweek: currentMw, skill: skillRow.skill });
 				}
 
 				socket.emit("playerHistoryData", {
