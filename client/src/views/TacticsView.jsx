@@ -265,6 +265,8 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
   // Odds
   const seed = (s.matchweek ?? 1) + (s.team?.id ?? 0) + (opp.id ?? 0);
   const odds = computeOdds(s.team, opp, s.venue, seed);
+  const homeTeamName = isHome ? (s.team?.name ?? "Casa") : (opp.name ?? "Visitado");
+  const awayTeamName = isHome ? (opp.name ?? "Visitante") : (s.team?.name ?? "Visitante");
 
   // Tempo
   const wf = s.weatherForecast;
@@ -434,19 +436,19 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
             <div className="flex gap-1.5">
               {[
                 {
-                  label: "1",
+                  label: homeTeamName,
                   value: odds.home,
                   color: "text-sky-400",
                   bg: "bg-sky-500/10",
                 },
                 {
-                  label: "X",
+                  label: "Empate",
                   value: odds.draw,
                   color: "text-gray-400",
                   bg: "bg-gray-700/20",
                 },
                 {
-                  label: "2",
+                  label: awayTeamName,
                   value: odds.away,
                   color: "text-amber-400",
                   bg: "bg-amber-500/10",
