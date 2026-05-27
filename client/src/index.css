@@ -169,3 +169,26 @@ body {
     transform: translateY(0);
   }
 }
+
+/* Heartbeat for JOGAR button */
+@keyframes heartbeat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(1.07);
+  }
+  20% {
+    transform: scale(0.95);
+  }
+  30% {
+    transform: scale(1.04);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+.animate-heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}

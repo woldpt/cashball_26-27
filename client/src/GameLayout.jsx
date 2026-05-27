@@ -504,7 +504,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           {/* glow halo behind button (idle only) */}
           {!isMatchInProgress && activeTab !== "tactic" && (
             <span
-              className="absolute inset-1 rounded-sm blur-md opacity-40 animate-pulse pointer-events-none"
+              className="absolute inset-1 rounded-sm blur-md opacity-30 pointer-events-none"
               style={{ background: "var(--color-primary, #a8e6b0)" }}
             />
           )}
@@ -525,9 +525,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   : "JOGAR"
                 : undefined
             }
-            className={`relative w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest transition-all rounded-sm overflow-hidden ${
+            className={`relative w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest rounded-sm overflow-hidden ${
               sidebarCollapsed ? "justify-center" : ""
-            } ${
+            } ${!isMatchInProgress ? "animate-heartbeat" : ""} ${
               isMatchInProgress
                 ? "bg-red-500/15 text-red-400 border border-red-500/30 cursor-not-allowed"
                 : activeTab === "tactic"
@@ -788,7 +788,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   {/* glow halo */}
                   {!isActive && (
                     <span
-                      className="absolute bottom-2 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full blur-lg opacity-50 animate-pulse pointer-events-none"
+                      className="absolute bottom-2 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full blur-lg opacity-40 pointer-events-none"
                       style={{ background: "var(--color-primary, #a8e6b0)" }}
                     />
                   )}
@@ -803,7 +803,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         socket.emit("requestAllTacticFamiliarity");
                       }
                     }}
-                    className={`relative flex flex-col items-center justify-center gap-0.5 w-14 h-14 rounded-full font-black text-[9px] uppercase tracking-wider transition-all overflow-hidden shadow-lg ${
+                    className={`relative flex flex-col items-center justify-center gap-0.5 w-14 h-14 rounded-full font-black text-[9px] uppercase tracking-wider transition-all overflow-hidden shadow-lg animate-heartbeat ${
                       isActive
                         ? "bg-primary text-on-primary shadow-primary/40"
                         : "bg-primary text-on-primary shadow-primary/30"
