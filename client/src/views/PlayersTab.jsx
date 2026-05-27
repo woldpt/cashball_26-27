@@ -184,12 +184,15 @@ function SquadRow({ player, matchweekCount, onOpenPlayerHistory }) {
       {/* Atributos primários (Agr / Res / For) */}
       <div className="hidden md:flex items-center gap-2 shrink-0 self-center px-2 border-l border-outline-variant/15 ml-1">
         <div className="flex flex-col items-center justify-center min-w-9">
-          <AggBadge value={player.aggressiveness} />
-          <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mt-0.5">
+          <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
             Agr
           </div>
+          <AggBadge value={player.aggressiveness} />
         </div>
         <div className="flex flex-col items-center justify-center min-w-9">
+          <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
+            Res
+          </div>
           {player.resistance != null ? (
             <span className="text-cyan-400 font-black text-[12px]">
               🛡️{player.resistance}
@@ -197,62 +200,59 @@ function SquadRow({ player, matchweekCount, onOpenPlayerHistory }) {
           ) : (
             <span className="text-zinc-600 text-xs">—</span>
           )}
-          <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mt-0.5">
-            Res
-          </div>
         </div>
         <div className="flex flex-col items-center justify-center min-w-9">
-          <span className={`font-black text-sm ${formColor}`}>{formArrow}</span>
-          <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mt-0.5">
+          <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
             For
           </div>
+          <span className={`font-black text-sm ${formColor}`}>{formArrow}</span>
         </div>
       </div>
 
       {/* Stats inline (Jogos / Golos / Verm / Lesões - época / carreira) */}
       <div className="hidden xl:flex items-center gap-3 shrink-0 self-center px-2 border-l border-outline-variant/15 ml-1 text-[10px] tabular-nums">
         <span title="Jogos: época / carreira" className="flex flex-col items-center min-w-12">
+          <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
+            Jog
+          </span>
           <span className="text-zinc-300 font-black">
             {getPlayerStat(player, ["games_played"])}
             <span className="text-zinc-600 font-normal">
               /{getPlayerStat(player, ["career_games"])}
             </span>
           </span>
-          <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black">
-            Jog
-          </span>
         </span>
         <span title="Golos: época / carreira" className="flex flex-col items-center min-w-12">
+          <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
+            Gol
+          </span>
           <span className="text-emerald-400 font-black">
             ⚽{getPlayerStat(player, ["goals"])}
             <span className="text-zinc-600 font-normal">
               /{getPlayerStat(player, ["career_goals"])}
             </span>
           </span>
-          <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black">
-            Gol
-          </span>
         </span>
         <span title="Cartões vermelhos: época / carreira" className="flex flex-col items-center min-w-10">
+          <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
+            Vrm
+          </span>
           <span className="text-red-400 font-black">
             🟥{getPlayerStat(player, ["red_cards"])}
             <span className="text-zinc-600 font-normal">
               /{getPlayerStat(player, ["career_reds"])}
             </span>
           </span>
-          <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black">
-            Vrm
-          </span>
         </span>
         <span title="Lesões: época / carreira" className="flex flex-col items-center min-w-10">
+          <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
+            Les
+          </span>
           <span className="text-orange-400 font-black">
             🩹{getPlayerStat(player, ["injuries"])}
             <span className="text-zinc-600 font-normal">
               /{getPlayerStat(player, ["career_injuries"])}
             </span>
-          </span>
-          <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black">
-            Les
           </span>
         </span>
       </div>
