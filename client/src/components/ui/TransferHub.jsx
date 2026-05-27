@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
 import { AggBadge } from "../shared/AggBadge.jsx";
 
+import { hexToRgba, posRingClass } from "../../utils/colorHelpers.js";
 /** @param {number} value */
 function fmt(value) {
   return new Intl.NumberFormat("pt-PT", {
@@ -23,18 +24,6 @@ function posLabel(pos) {
   );
 }
 
-/** @param {string} pos */
-function posRingClass(pos) {
-  return (
-    {
-      GR: "ring-yellow-400/60 border-yellow-400/35",
-      DEF: "ring-blue-400/60 border-blue-400/35",
-      MED: "ring-emerald-400/60 border-emerald-400/35",
-      ATA: "ring-rose-400/60 border-rose-400/35",
-    }[pos] || "ring-zinc-400/50 border-zinc-500/35"
-  );
-}
-
 /** @param {string} status */
 function statusConfig(status) {
   if (status === "auction") {
@@ -53,30 +42,6 @@ function statusConfig(status) {
     label: "Sem Lista",
     cls: "bg-zinc-700/20 text-zinc-400 border border-zinc-600/30",
   };
-}
-
-/** @param {string} hex */
-function normalizeHex(hex) {
-  if (typeof hex !== "string") return null;
-  const clean = hex.trim().replace("#", "");
-  if (/^[0-9a-fA-F]{3}$/.test(clean)) {
-    return `#${clean
-      .split("")
-      .map((c) => c + c)
-      .join("")}`;
-  }
-  if (/^[0-9a-fA-F]{6}$/.test(clean)) return `#${clean}`;
-  return null;
-}
-
-/** @param {string} hex @param {number} alpha */
-function hexToRgba(hex, alpha) {
-  const n = normalizeHex(hex);
-  if (!n) return `rgba(149,212,179,${alpha})`;
-  const r = Number.parseInt(n.slice(1, 3), 16);
-  const g = Number.parseInt(n.slice(3, 5), 16);
-  const b = Number.parseInt(n.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 function MarketCard({
