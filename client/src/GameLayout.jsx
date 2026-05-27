@@ -2397,6 +2397,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 			<NewsTicker
 				newsTickerItems={newsTickerItems}
 				hidden={isMatchInProgress}
+				sidebarCollapsed={sidebarCollapsed}
 			/>
 
 			<PlayerHistoryModal

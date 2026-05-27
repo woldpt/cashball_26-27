@@ -45,9 +45,9 @@ function buildPlaylist(newsItems) {
 }
 
 /**
- * @param {{ newsTickerItems: Array, hideOnMobile?: boolean, hidden?: boolean }} props
+ * @param {{ newsTickerItems: Array, hideOnMobile?: boolean, hidden?: boolean, sidebarCollapsed?: boolean }} props
  */
-export function NewsTicker({ newsTickerItems, hideOnMobile = false, hidden = false }) {
+export function NewsTicker({ newsTickerItems, hideOnMobile = false, hidden = false, sidebarCollapsed = false }) {
   // Rebuild playlist whenever real news changes.
   // useMemo keeps the filler stable between unrelated re-renders.
   const playlist = useMemo(
@@ -66,7 +66,7 @@ export function NewsTicker({ newsTickerItems, hideOnMobile = false, hidden = fal
   const duration = Math.max(80, playlist.length * 25);
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 z-30 lg:z-50 h-8 items-stretch bg-black border-t border-gray-800 overflow-hidden ${hideOnMobile ? "hidden lg:flex" : "flex"}`}>
+    <div className={`fixed bottom-0 right-0 z-30 lg:z-50 h-8 items-stretch bg-black border-t border-gray-800 overflow-hidden ${hideOnMobile ? "hidden lg:flex" : "flex"} left-0 ${sidebarCollapsed ? "lg:left-14" : "lg:left-64"}`}>
       <div className="shrink-0 bg-red-600 text-white text-xs font-black px-3 flex items-center uppercase tracking-widest select-none">
         Alerta CM
       </div>
