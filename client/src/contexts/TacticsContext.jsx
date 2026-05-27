@@ -155,10 +155,12 @@ export function TacticsProvider({ children }) {
 
   const handleSelectOut = useCallback(
     (playerId) => {
-      setSwapSource((prev) => (prev === playerId ? null : playerId));
-      if (swapSource !== null) setSwapTarget(null);
+      setSwapSource((prev) => {
+        if (prev !== null) setSwapTarget(null);
+        return prev === playerId ? null : playerId;
+      });
     },
-    [swapSource, setSwapSource, setSwapTarget],
+    [setSwapSource, setSwapTarget],
   );
 
   const handleSelectIn = useCallback(
@@ -278,7 +280,11 @@ export function TacticsProvider({ children }) {
                 p.position === "GR" &&
                 newPositions[p.id] === "Titular"
               ) {
-                newPositions[p.id] = "Suplente";
+                // Deslocar GR existente: verificar se há espaço nos suplentes
+                const currentSubs = Object.entries(newPositions).filter(
+                  ([id, s]) => s === "Suplente" && Number(id) !== p.id,
+                ).length;
+                newPositions[p.id] = currentSubs < 5 ? "Suplente" : "Excluído";
               }
             });
           }
@@ -328,6 +334,26 @@ export function TacticsProvider({ children }) {
         }
         newPositions[draggedId] = targetStatus;
         newPositions[targetId] = draggedStatus;
+
+        // Verificar limite de 5 por posição após a troca
+        // (só relevante quando um jogador não-Titular passa a Titular)
+        if (targetStatus === "Titular" && draggedPlayer?.position !== "GR") {
+          const posCount = Object.entries(newPositions).filter(([id, s]) => {
+            if (s !== "Titular") return false;
+            const p = mySquad.find((x) => x.id === Number(id));
+            return p?.position === draggedPlayer?.position;
+          }).length;
+          if (posCount > 5) return prev;
+        }
+        if (draggedStatus === "Titular" && targetPlayer?.position !== "GR") {
+          const posCount = Object.entries(newPositions).filter(([id, s]) => {
+            if (s !== "Titular") return false;
+            const p = mySquad.find((x) => x.id === Number(id));
+            return p?.position === targetPlayer?.position;
+          }).length;
+          if (posCount > 5) return prev;
+        }
+
         const next = { ...prev, positions: newPositions };
         socket.emit("setTactic", next);
         return next;
@@ -374,7 +400,7 @@ export function TacticsProvider({ children }) {
             }).length;
             if (posCount >= 5) return prev;
           }
-          // Regra do GR: só um GR no 11; deslocar o existente para suplentes
+          // Regra do GR: só um GR no 11; deslocar o existente para suplentes (ou excluídos se suplentes cheios)
           if (player.position === "GR") {
             Object.entries(newPositions).forEach(([id, s]) => {
               const p = mySquad.find((x) => x.id === Number(id));
@@ -384,7 +410,10 @@ export function TacticsProvider({ children }) {
                 p.position === "GR" &&
                 s === "Titular"
               ) {
-                newPositions[id] = "Suplente";
+                const currentSubs = Object.entries(newPositions).filter(
+                  ([sid, ss]) => ss === "Suplente" && Number(sid) !== p.id,
+                ).length;
+                newPositions[id] = currentSubs < 5 ? "Suplente" : "Excluído";
               }
             });
           }

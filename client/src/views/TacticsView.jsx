@@ -38,7 +38,7 @@ const POS_COLORS = {
 const STATUS_DOT = {
   Titular: "bg-green-400",
   Suplente: "bg-yellow-400",
-  Excluido: "bg-gray-600",
+  "Excluído": "bg-gray-600",
 };
 
 const TIER_COLORS = {
@@ -150,7 +150,7 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
               !isSusp &&
               !(inj > matchweekCount) &&
               cooldown > 0 &&
-              cooldown >= matchweekCount;
+              cooldown > matchweekCount;
             if (isCooldown)
               return <span className="text-[10px] ml-0.5">✈️</span>;
             const left = isSusp ? susp - matchweekCount : inj - matchweekCount;
@@ -521,6 +521,74 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
  * Pagina de Tacticas — totalmente auto-contida via useTactics().
  * @returns {JSX.Element}
  */
+/**
+ * StatusPicker — popup de seleção de estado do jogador.
+ * Extraído para fora do componente TacticsView para evitar re-criação
+ * da definição a cada render (prevenindo remount/flickering).
+ */
+function StatusPicker({
+  player,
+  above = false,
+  openStatusPickerId,
+  tacticPositions,
+  annotatedSquad,
+  handleSetPlayerStatus,
+}) {
+  if (openStatusPickerId !== player.id) return null;
+  const subCount = Object.entries(tacticPositions).filter(
+    ([id, s]) => s === "Suplente" && Number(id) !== player.id,
+  ).length;
+  const titCount = Object.entries(tacticPositions).filter(
+    ([id, s]) => s === "Titular" && Number(id) !== player.id,
+  ).length;
+  const subsFull = subCount >= 5;
+  const titularesFull = titCount >= 11;
+  const posCount =
+    player.position !== "GR"
+      ? Object.entries(tacticPositions).filter(([id, s]) => {
+          if (s !== "Titular" || Number(id) === player.id) return false;
+          const p = annotatedSquad.find((x) => x.id === Number(id));
+          return p?.position === player.position;
+        }).length
+      : 0;
+  const posFull = posCount >= 5;
+  return (
+    <div
+      className={`absolute right-0 ${above ? "bottom-full mb-1" : "top-full mt-1"} z-50 bg-[#111] border border-[#222] rounded-2xl shadow-2xl p-1.5 flex flex-col gap-0.5 min-w-38.75`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {[
+        ["Titular", "🟢", "Titular"],
+        ["Suplente", "🟡", "Suplente"],
+        ["Excluído", "⚫", "Não convocado"],
+      ].map(([status, emoji, label]) => {
+        const unavail =
+          player.isUnavailable &&
+          (status === "Titular" || status === "Suplente");
+        const disabled =
+          unavail ||
+          (status === "Titular" &&
+            titularesFull &&
+            player.status !== "Titular") ||
+          (status === "Titular" && posFull && player.status !== "Titular") ||
+          (status === "Suplente" && subsFull && player.status !== "Suplente");
+        return (
+          <button
+            key={status}
+            onClick={() =>
+              !disabled && handleSetPlayerStatus(player.id, status)
+            }
+            className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 text-left transition-colors
+${disabled ? "opacity-30 cursor-not-allowed text-gray-500" : player.status === status ? "bg-white/10 text-white" : "hover:bg-white/5 text-gray-400 hover:text-white"}`}
+          >
+            {emoji} {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function TacticsView() {
   const {
     tactic,
@@ -568,62 +636,6 @@ export function TacticsView() {
     }
     return best;
   };
-
-  function StatusPicker({ player, above = false }) {
-    if (openStatusPickerId !== player.id) return null;
-    const subCount = Object.entries(tactic.positions).filter(
-      ([id, s]) => s === "Suplente" && Number(id) !== player.id,
-    ).length;
-    const titCount = Object.entries(tactic.positions).filter(
-      ([id, s]) => s === "Titular" && Number(id) !== player.id,
-    ).length;
-    const subsFull = subCount >= 5;
-    const titularesFull = titCount >= 11;
-    const posCount =
-      player.position !== "GR"
-        ? Object.entries(tactic.positions).filter(([id, s]) => {
-            if (s !== "Titular" || Number(id) === player.id) return false;
-            const p = annotatedSquad.find((x) => x.id === Number(id));
-            return p?.position === player.position;
-          }).length
-        : 0;
-    const posFull = posCount >= 5;
-    return (
-      <div
-        className={`absolute right-0 ${above ? "bottom-full mb-1" : "top-full mt-1"} z-50 bg-[#111] border border-[#222] rounded-2xl shadow-2xl p-1.5 flex flex-col gap-0.5 min-w-38.75`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {[
-          ["Titular", "🟢", "Titular"],
-          ["Suplente", "🟡", "Suplente"],
-          ["Excluído", "⚫", "Não convocado"],
-        ].map(([status, emoji, label]) => {
-          const unavail =
-            player.isUnavailable &&
-            (status === "Titular" || status === "Suplente");
-          const disabled =
-            unavail ||
-            (status === "Titular" &&
-              titularesFull &&
-              player.status !== "Titular") ||
-            (status === "Titular" && posFull && player.status !== "Titular") ||
-            (status === "Suplente" && subsFull && player.status !== "Suplente");
-          return (
-            <button
-              key={status}
-              onClick={() =>
-                !disabled && handleSetPlayerStatus(player.id, status)
-              }
-              className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2 text-left transition-colors
-${disabled ? "opacity-30 cursor-not-allowed text-gray-500" : player.status === status ? "bg-white/10 text-white" : "hover:bg-white/5 text-gray-400 hover:text-white"}`}
-            >
-              {emoji} {label}
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
 
   const myReady = players.find((p) => p.name === me?.name)?.ready;
   const isHalftime = showHalftimePanel && !isPlayingMatch;
@@ -1094,7 +1106,13 @@ ${
                               );
                             }}
                           />
-                          <StatusPicker player={player} />
+                          <StatusPicker
+                            player={player}
+                            openStatusPickerId={openStatusPickerId}
+                            tacticPositions={tactic.positions}
+                            annotatedSquad={annotatedSquad}
+                            handleSetPlayerStatus={handleSetPlayerStatus}
+                          />
                         </div>
                       )}
                     </PlayerRow>
@@ -1185,7 +1203,13 @@ ${
                                 );
                               }}
                             />
-                            <StatusPicker player={player} />
+                          <StatusPicker
+                            player={player}
+                            openStatusPickerId={openStatusPickerId}
+                            tacticPositions={tactic.positions}
+                            annotatedSquad={annotatedSquad}
+                            handleSetPlayerStatus={handleSetPlayerStatus}
+                          />
                           </div>
                         )}
                       </PlayerRow>
@@ -1237,7 +1261,7 @@ ${
                             key={player.id}
                             player={player}
                             matchweekCount={matchweekCount}
-                            dotColor={STATUS_DOT.Excluido}
+                            dotColor={STATUS_DOT["Excluído"]}
                             draggable
                             onDragStart={handleDragStart}
                             onDragOver={(e) => {
@@ -1279,7 +1303,14 @@ ${
                                   );
                                 }}
                               />
-                              <StatusPicker player={player} above />
+                              <StatusPicker
+                                player={player}
+                                above
+                                openStatusPickerId={openStatusPickerId}
+                                tacticPositions={tactic.positions}
+                                annotatedSquad={annotatedSquad}
+                                handleSetPlayerStatus={handleSetPlayerStatus}
+                              />
                             </div>
                           </PlayerRow>
                         ))}

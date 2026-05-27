@@ -284,12 +284,12 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               )
               .map(([id]) => Number(id));
 
-            // Filter out injured players from incoming substitutions
+            // Filter out injured and red-carded players from incoming substitutions
             const injuredIds = new Set(
               (fixture.events || [])
                 .filter(
                   (e: any) =>
-                    e.type === "injury" && e.team === teamSide && e.playerId,
+                    (e.type === "injury" || e.type === "red") && e.team === teamSide && e.playerId,
                 )
                 .map((e: any) => e.playerId),
             );
@@ -551,10 +551,24 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           (p) => !!p.socketId,
         );
         if (anyConnected) {
-          // Coaches are connected but not ready — don't force; they may be adjusting tactics
+          // Coaches are connected but not ready — reschedule with a shorter grace period
           console.log(
-            `[${game.roomCode}] ⏱ Halftime safety: coaches connected but not ready, extending timeout`,
+            `[${game.roomCode}] ⏱ Halftime safety: coaches connected but not ready, rescheduling in 60s`,
           );
+          game.phaseTimer = setTimeout(() => {
+            if (
+              game.gamePhase !== "match_halftime" ||
+              game.phaseToken !== halftimeToken
+            )
+              return;
+            console.warn(
+              `[${game.roomCode}] ⏱ Halftime safety: coaches still not ready after grace period — auto-advancing`,
+            );
+            Object.values(game.playersByName).forEach((p) => {
+              p.ready = true;
+            });
+            checkAllReady(game);
+          }, 60_000);
           return;
         }
 
@@ -697,7 +711,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           const seasonDone = game.calendarIndex >= SEASON_CALENDAR.length;
 
           persistMatchResults(game, fixtures, completedMatchweek, () => {
-            applyPostMatchQualityEvolution(game.db, fixtures, game.matchweek)
+            applyPostMatchQualityEvolution(game.db, fixtures, completedMatchweek)
               .then(() =>
                 applyTrainingBonuses(game, fixtures, completedCalendarIndex),
               )

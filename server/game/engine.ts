@@ -536,7 +536,7 @@ async function applyPenaltyEvent({
       penaltyResult: "GOLO!!!",
     });
   } else {
-    // Miss type proportions: 60% save · 20% post/wide · 20% panenka
+    // Miss type proportions: 60% save · 10% post · 10% wide · 20% panenka
     const missRoll = Math.random();
     let missType: string;
     if (missRoll < 0.6) {
@@ -774,7 +774,16 @@ async function simulateMatchSegment(
 
     // Weather event — emitted once at the start of each match
     if (!fixture._weather) {
-      const weatherRoll = Math.random();
+      // Semente determinística idêntica à usada em generateIntroEvents / matchSummaryHelpers
+      const season = fixture.season ?? 1;
+      const matchweek = fixture.matchweek ?? 1;
+      const homeId = fixture.homeTeamId ?? 0;
+      const awayId = fixture.awayTeamId ?? 0;
+      let ws = (season * 1000 + matchweek * 31 + homeId + awayId) >>> 0 || 1;
+      ws ^= ws << 13;
+      ws ^= ws >>> 17;
+      ws ^= ws << 5;
+      const weatherRoll = (ws >>> 0) / 0xffffffff;
       let weatherCondition: string;
       if (weatherRoll < 0.35) weatherCondition = "sol";
       else if (weatherRoll < 0.65) weatherCondition = "chuva";
@@ -1559,7 +1568,7 @@ async function simulateMatchSegment(
           : null;
     if (winnerName) {
       fixture.events.push({
-        minute: Math.max(fixture.finalHomeGoals, fixture.finalAwayGoals) + 90,
+        minute: 120,
         type: "phase_end",
         team: null,
         emoji: "🏆",

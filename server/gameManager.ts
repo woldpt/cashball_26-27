@@ -792,7 +792,9 @@ function saveGameState(game: ActiveGame): void {
       ? JSON.stringify(game.lastHalftimePayload)
       : "null",
   );
-  upsert("lockedCoaches", JSON.stringify([...game.lockedCoaches]));
+  // lockedCoaches is intentionally NOT persisted — it is transient state.
+  // Coaches re-add themselves as they reconnect (via assignPlayer).
+  // See restore path above for the rationale.
   upsert("roomName", (game as any).roomName || "");
   upsert("roomCreator", game.roomCreator || "");
   upsert(
