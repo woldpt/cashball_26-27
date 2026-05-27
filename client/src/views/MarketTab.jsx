@@ -97,6 +97,7 @@ function PlayerCard({ player, matchweekCount }) {
               <PlayerAvatar
                 seed={player.id}
                 position={player.position}
+                nationality={player.nationality}
                 size="lg"
               />
             </div>

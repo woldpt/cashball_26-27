@@ -87,6 +87,7 @@ function SquadRow({ player, matchweekCount, onOpenPlayerHistory }) {
         <PlayerAvatar
           seed={player.id}
           position={player.position}
+          nationality={player.nationality}
           size="md"
         />
         <span

@@ -131,6 +131,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
               seed={auction.playerId}
               position={auction.position}
               teamColor={teamColor}
+              nationality={auction.nationality}
               size="md"
             />
             <div className="min-w-0 flex-1">
@@ -394,6 +395,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
               seed={auction.playerId}
               position={auction.position}
               teamColor={teamColor}
+              nationality={auction.nationality}
               size="sm"
             />
             <div className="min-w-0 flex-1">
