@@ -161,11 +161,21 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
             );
           })()}
       </span>
-      <div className="flex items-center gap-1.5 shrink-0">
-        <span className="flex flex-col items-center leading-none">
-          <span className="text-[7px] text-gray-600 uppercase tracking-wide">
-            RES
+     <div className="w-24 shrink-0 flex items-center justify-end gap-0.5">
+        <div className="flex flex-col items-end leading-none">
+          <span className="text-[7px] text-gray-600 tracking-wide">RES</span>
+          <span className="text-[11px] text-gray-400 font-bold tabular-nums mt-0.5">
+            {player.resistance ?? "–"}
           </span>
+        </div>
+        <span className="text-[10px]">{formIcon}</span>
+        <div className="flex flex-col items-end leading-none">
+          <span className="text-[7px] text-gray-600 tracking-wide">Q</span>
+          <span className="text-sm font-black text-white tabular-nums mt-0.5">
+            {player.skill}
+          </span>
+        </div>
+      </div>
           <span className="text-[11px] text-gray-400 font-bold tabular-nums mt-0.5">
             {player.resistance ?? "–"}
           </span>
