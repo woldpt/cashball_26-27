@@ -1026,7 +1026,7 @@ ${
           </div>
 
           {/* COL 2 — TITULARES (esq) + SUPLENTES/NÃO CONV. (dir) */}
-          <div className={`flex-1 flex flex-row gap-2 min-w-0 ${!isLineupComplete && !myReady ? "animate-heartbeat-border rounded-2xl" : ""}`}>
+          <div className="flex-1 flex flex-row gap-2 min-w-0">
             {/* Titulares */}
             <div
               className={`flex-1 min-w-0 bg-[#111] border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/30 bg-[#4ade80]/2" : "border-[#1e1e1e]"}`}
