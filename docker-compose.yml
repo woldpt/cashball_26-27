@@ -4,8 +4,6 @@ services:
     restart: unless-stopped
     env_file:
       - ./server/.env
-    ports:
-      - "3000:3000"
     volumes:
       - ./server/db:/app/db
     networks:
@@ -16,7 +14,7 @@ services:
           "CMD",
           "node",
           "-e",
-          "require('http').get('http://localhost:3000/health', r => { r.statusCode === 200 ? process.exit(0) : process.exit(1) }).on('error', () => process.exit(1))",
+          "require('http').get('http://localhost:3000/health', (r) => { r.statusCode === 200 ? process.exit(0) : process.exit(1) });",
         ]
       interval: 10s
       timeout: 5s
