@@ -1,4 +1,3 @@
-// eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
 import { getEffectiveLineup } from "../../utils/playerHelpers.js";
 import {
@@ -23,19 +22,8 @@ function posAccent(pos) {
   return POS_ACCENT[pos] || "#d97706";
 }
 
-function posRingClass(pos) {
-  return (
-    {
-      GR: "ring-yellow-400/60",
-      DEF: "ring-blue-400/60",
-      MED: "ring-emerald-400/60",
-      ATA: "ring-rose-400/60",
-    }[pos] || "ring-zinc-400/50"
-  );
-}
-
 /* ── TabJogo — Match events, possession, commentary ──────────────────────── */
-export function TabJogo({ fixture, liveMinute, teams }) {
+export function TabJogo({ fixture, liveMinute, teams, mode }) {
   if (!fixture) return null;
   const hInfo = teams.find((t) => t.id === fixture.homeTeamId);
   const aInfo = teams.find((t) => t.id === fixture.awayTeamId);
@@ -62,8 +50,56 @@ export function TabJogo({ fixture, liveMinute, teams }) {
   const ref = fixture.referee;
   const refBalance = ref?.balance ?? 50;
 
+  const homeGoals = fixture.finalHomeGoals ?? 0;
+  const awayGoals = fixture.finalAwayGoals ?? 0;
+  const isHalftime = mode === "halftime";
+
   return (
     <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      {/* ── Halftime score banner ──────────────────────────────────────── */}
+      {isHalftime && (
+        <div className="rounded-xl overflow-hidden border border-zinc-800/60 bg-[linear-gradient(135deg,#111118,#1a1a2e)] backdrop-blur-sm shadow-[0_0_24px_rgba(0,0,0,0.4)]">
+          {/* Score line */}
+          <div className="flex items-center justify-center gap-5 pt-4 pb-1.5">
+            <div className="flex flex-col items-center gap-1 min-w-0 max-w-[30%]">
+              <span
+                className="w-3 h-3 rounded-full shrink-0 shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                style={{ background: hInfo?.color_primary || "#6366f1", boxShadow: `0 0 10px ${hInfo?.color_primary || "#6366f1"}80` }}
+              />
+              <span className="text-[9px] font-black text-zinc-400 truncate text-center leading-tight uppercase tracking-[0.15em]">
+                {hInfo?.name || "Casa"}
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <span className="text-3xl font-black tabular-nums text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                {homeGoals}
+              </span>
+              <span className="text-zinc-600 text-lg font-black">—</span>
+              <span className="text-3xl font-black tabular-nums text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                {awayGoals}
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-1 min-w-0 max-w-[30%]">
+              <span
+                className="w-3 h-3 rounded-full shrink-0"
+                style={{ background: aInfo?.color_primary || "#f43f5e", boxShadow: `0 0 10px ${aInfo?.color_primary || "#f43f5e"}80` }}
+              />
+              <span className="text-[9px] font-black text-zinc-400 truncate text-center leading-tight uppercase tracking-[0.15em]">
+                {aInfo?.name || "Fora"}
+              </span>
+            </div>
+          </div>
+          {/* Interval badge */}
+          <div className="flex items-center justify-center pb-3.5">
+            <span className="inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.3em] px-2.5 py-1 rounded-full bg-zinc-900/80 border border-zinc-700/50 text-zinc-400">
+              <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+              Intervalo
+              <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* ── Top bar: attendance, referee, weather ──────────────────────── */}
       {(fixture.attendance || ref?.refereeName || weatherEvent) && (
         <div className="flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg border border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm">
@@ -627,6 +663,12 @@ export function TabIntervencao({
   const oppTeamId = isHome ? fixture?.awayTeamId : fixture?.homeTeamId;
   const oppInfo = teams?.find((t) => t.id === oppTeamId);
 
+  // ── Halftime score ───────────────────────────────────────────────────
+  const homeGoals = fixture?.finalHomeGoals ?? 0;
+  const awayGoals = fixture?.finalAwayGoals ?? 0;
+  const myTeamGoals = isHome ? homeGoals : awayGoals;
+  const oppGoals = isHome ? awayGoals : homeGoals;
+
   const sortPlayers = (arr = []) =>
     [...arr].sort(
       (a, b) =>
@@ -741,7 +783,7 @@ export function TabIntervencao({
               { value: "Defensive", label: "Defensivo", color: "blue", accent: "#3b82f6" },
               { value: "Balanced", label: "Equilibrado", color: "primary", accent: "#6366f1" },
               { value: "Offensive", label: "Ofensivo", color: "amber", accent: "#f59e0b" },
-            ].map(({ value, label, color, accent }) => (
+            ].map(({ value, label, accent }) => (
               <button
                 key={value}
                 onClick={() => onUpdateTactic({ style: value })}
@@ -780,6 +822,21 @@ export function TabIntervencao({
             {titleText}
           </p>
         </div>
+        {isHalftime && (
+          <div className="flex items-center justify-center gap-3 mt-2">
+            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-wide truncate max-w-[80px]">
+              {teams?.find((t) => t.id === fixture?.homeTeamId)?.name || "Casa"}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-lg font-black tabular-nums text-white">{myTeamGoals}</span>
+              <span className="text-zinc-600 text-sm font-black">–</span>
+              <span className="text-lg font-black tabular-nums text-white">{oppGoals}</span>
+            </span>
+            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-wide truncate max-w-[80px] text-right">
+              {oppInfo?.name || "Fora"}
+            </span>
+          </div>
+        )}
         {isForcedSwap && injuryCountdown !== null && (
           <p className="text-center text-amber-300 font-black text-[10px] mt-1 tracking-wide animate-pulse">
             Auto-substituição em {injuryCountdown}s

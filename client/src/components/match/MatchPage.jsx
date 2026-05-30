@@ -173,7 +173,6 @@ export function MatchPage({
 
 	// ── Helpers ──────────────────────────────────────────────────────────
 	const getTeamName = (teamId) => teams.find((t) => t.id === teamId)?.name || "—";
-	const getTeamColor = (teamId) => teams.find((t) => t.id === teamId)?.color_primary || "#6366f1";
 	const homeTeam = teams.find((t) => t.id === fixture?.homeTeamId);
 	const awayTeam = teams.find((t) => t.id === fixture?.awayTeamId);
 	const hColor = homeTeam?.color_primary || "#6366f1";
@@ -220,6 +219,43 @@ export function MatchPage({
 				)}
 			</div>
 
+			{/* ── Halftime score banner ──────────────────────────────────── */}
+			{mode === "halftime" && fixture && (
+				<div className="shrink-0 flex items-stretch border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-sm">
+					<div
+						className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5"
+						style={{
+							backgroundColor: hColor + "20",
+							color: hColor,
+						}}
+					>
+						<span
+							className="w-2 h-2 rounded-full shrink-0"
+							style={{ background: hColor, boxShadow: `0 0 6px ${hColor}60` }}
+						/>
+						{homeTeam?.name || "Casa"}
+					</div>
+					<div className="flex items-center justify-center gap-3 px-6 bg-zinc-950 text-white font-black text-xl tracking-widest">
+						<span className="tabular-nums">{fixture.finalHomeGoals ?? 0}</span>
+						<span className="text-zinc-600 text-base">—</span>
+						<span className="tabular-nums">{fixture.finalAwayGoals ?? 0}</span>
+					</div>
+					<div
+						className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5"
+						style={{
+							backgroundColor: aColor + "20",
+							color: aColor,
+						}}
+					>
+						{awayTeam?.name || "Fora"}
+						<span
+							className="w-2 h-2 rounded-full shrink-0"
+							style={{ background: aColor, boxShadow: `0 0 6px ${aColor}60` }}
+						/>
+					</div>
+				</div>
+			)}
+
 			{/* Tab navigation */}
 			<div className="shrink-0 flex w-full border-b border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm">
 				{tabs.map((tab) => {
@@ -255,6 +291,7 @@ export function MatchPage({
 								fixture={fixture}
 								liveMinute={liveMinute}
 								teams={teams}
+								mode={mode}
 							/>
 						)}
 						{activeTab === "locais" && (
@@ -322,6 +359,7 @@ export function MatchPage({
 									fixture={fixture}
 									liveMinute={liveMinute}
 									teams={teams}
+									mode={mode}
 								/>
 							)}
 							{activeTab === "locais" && (
