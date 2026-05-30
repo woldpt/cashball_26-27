@@ -196,6 +196,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     setSeasonEndModal,
   } = useGame();
 
+  // ── Derived ───────────────────────────────────────────────────────────
+  const myReady = players.find((p) => p.name === me?.name)?.ready;
+
   // ── Tactic-specific from TacticsContext ─────────────────────────────────
   const { tactic, annotatedSquad } = useTactics();
 
@@ -499,10 +502,10 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
         {/* JOGAR — pinned to bottom */}
         <div
-          className={`shrink-0 p-2 border-t border-outline-variant/20 ${!isMatchInProgress && activeTab !== "tactic" ? "relative" : ""}`}
+          className={`shrink-0 p-2 border-t border-outline-variant/20 ${!isMatchInProgress && activeTab !== "tactic" && !myReady ? "relative" : ""}`}
         >
           {/* glow halo behind button (idle only) */}
-          {!isMatchInProgress && activeTab !== "tactic" && (
+          {!isMatchInProgress && activeTab !== "tactic" && !myReady && (
             <span
               className="absolute inset-1 rounded-sm blur-md opacity-30 pointer-events-none"
               style={{ background: "var(--color-primary, #a8e6b0)" }}
@@ -527,7 +530,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             }
             className={`relative w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest rounded-sm overflow-hidden ${
               sidebarCollapsed ? "justify-center" : ""
-            } ${!isMatchInProgress ? "animate-heartbeat" : ""} ${
+            } ${!isMatchInProgress && activeTab !== "tactic" && !myReady ? "animate-heartbeat" : ""} ${
               isMatchInProgress
                 ? "bg-red-500/15 text-red-400 border border-red-500/30 cursor-not-allowed"
                 : activeTab === "tactic"
@@ -536,7 +539,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             }`}
           >
             {/* shimmer sweep (idle only) */}
-            {!isMatchInProgress && (
+            {!isMatchInProgress && activeTab !== "tactic" && !myReady && (
               <span
                 className="absolute inset-0 pointer-events-none"
                 style={{
@@ -786,7 +789,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               return (
                 <div className="flex-1 flex items-end justify-center pb-1 relative">
                   {/* glow halo */}
-                  {!isActive && (
+                  {!isActive && !myReady && (
                     <span
                       className="absolute bottom-2 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full blur-lg opacity-40 pointer-events-none"
                       style={{ background: "var(--color-primary, #a8e6b0)" }}
@@ -803,31 +806,35 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         socket.emit("requestAllTacticFamiliarity");
                       }
                     }}
-                    className={`relative flex flex-col items-center justify-center gap-0.5 w-14 h-14 rounded-full font-black text-[9px] uppercase tracking-wider transition-all overflow-hidden shadow-lg animate-heartbeat ${
+                    className={`relative flex flex-col items-center justify-center gap-0.5 w-14 h-14 rounded-full font-black text-[9px] uppercase tracking-wider transition-all overflow-hidden shadow-lg ${!isActive && !myReady ? "animate-heartbeat" : ""} ${
                       isActive
                         ? "bg-primary text-on-primary shadow-primary/40"
                         : "bg-primary text-on-primary shadow-primary/30"
                     }`}
                     style={{ marginBottom: "10px" }}
                   >
-                    {/* shimmer sweep */}
-                    <span
-                      className="absolute inset-0 pointer-events-none"
-                      style={{
-                        background:
-                          "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%)",
-                        animation: "shimmer-sweep 2.6s ease-in-out infinite",
-                      }}
-                    />
+                    {/* shimmer sweep (idle) */}
+                    {!isActive && !myReady && (
+                      <span
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          background:
+                            "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%)",
+                          animation: "shimmer-sweep 2.6s ease-in-out infinite",
+                        }}
+                      />
+                    )}
                     <span className="material-symbols-outlined text-[24px] leading-none relative z-10">
                       strategy
                     </span>
                     <span className="relative z-10 leading-none">JOGAR</span>
                     {/* ping dot */}
-                    <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-on-primary/60 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-on-primary/80" />
-                    </span>
+                    {!myReady && (
+                      <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-on-primary/60 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-on-primary/80" />
+                      </span>
+                    )}
                   </motion.button>
                 </div>
               );

@@ -703,7 +703,7 @@ export function TacticsView() {
       ) : (
         <div className="flex flex-col lg:flex-row gap-3 items-start">
           {/* COL 1 — FORMAÇÃO + MENTALIDADE */}
-          <div className="lg:w-57.5 shrink-0 flex flex-col gap-2">
+          <div className={`lg:w-57.5 shrink-0 flex flex-col gap-2 ${!isLineupComplete && !myReady ? "animate-heartbeat-border rounded-2xl" : ""}`}>
             {/* Proximo jogo — mobile: moral + mentality side by side */}
             <div className="flex gap-2 lg:hidden">
               {nextMatchSummary && (
@@ -787,7 +787,7 @@ export function TacticsView() {
             </div>
 
             {/* Formação mobile — chips horizontais */}
-            <div className="lg:hidden bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+            <div className={`lg:hidden bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden ${!isLineupComplete && !myReady ? "animate-heartbeat-border" : ""}`}>
               <div className="flex items-center justify-between px-3 py-2 border-b border-[#1a1a1a]">
                 <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
                   Formação
@@ -1026,7 +1026,7 @@ ${
           </div>
 
           {/* COL 2 — TITULARES (esq) + SUPLENTES/NÃO CONV. (dir) */}
-          <div className="flex-1 flex flex-row gap-2 min-w-0">
+          <div className={`flex-1 flex flex-row gap-2 min-w-0 ${!isLineupComplete && !myReady ? "animate-heartbeat-border rounded-2xl" : ""}`}>
             {/* Titulares */}
             <div
               className={`flex-1 min-w-0 bg-[#111] border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/30 bg-[#4ade80]/2" : "border-[#1e1e1e]"}`}
@@ -1331,7 +1331,7 @@ ${
               <button
                 onClick={isHalftime ? handleHalftimeReady : handleReady}
                 disabled={myReady || !canPlay}
-                className={`w-full py-4 font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-95 relative overflow-hidden
+                className={`w-full py-4 font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-95 relative overflow-hidden ${canPlay && !myReady ? "animate-heartbeat" : ""}
 ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161616] text-gray-700 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
                 style={
                   myReady || !canPlay
@@ -1576,7 +1576,7 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
         return (
           <button
             onClick={fabHalftime ? handleHalftimeReady : handleReady}
-            className="lg:hidden fixed bottom-28 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200"
+            className={`lg:hidden fixed bottom-28 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200 ${!myReady ? "animate-heartbeat" : ""}`}
             style={{
               background:
                 "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.3) 0%, transparent 70%), #22c55e",
