@@ -113,6 +113,19 @@ export function runExec(
   });
 }
 
+/**
+ * Returns all teams with coach_name from managers table via JOIN.
+ * Use this instead of SELECT * FROM teams when you need coach names.
+ */
+export function getTeamsWithCoachNames(db: Db): Promise<AnyRow[]> {
+  return runAll(
+    db,
+    `SELECT t.*, m.name AS coach_name
+     FROM teams t
+     LEFT JOIN managers m ON t.manager_id = m.id`,
+  );
+}
+
 export function getStandingsRows(teams: AnyRow[] = []) {
   return [...teams].sort((a, b) => {
     const aGoalDifference = (a.goals_for || 0) - (a.goals_against || 0);

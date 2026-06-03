@@ -4,6 +4,7 @@ import type { CalendarEntry } from "./gameConstants";
 import { SEASON_CALENDAR, SPONSOR_REVENUE_BY_DIVISION } from "./gameConstants";
 import { clearPhaseTimer } from "./matchFlowHelpers";
 import { generateAITactic } from "./game/matchCalculations";
+import { getTeamsWithCoachNames } from "./coreHelpers";
 
 interface CupFlowDeps {
 	io: any;
@@ -370,7 +371,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		game.phaseToken = "";
 		saveGameState(game);
 
-		const updatedTeams = await runAll(game.db, "SELECT * FROM teams");
+		const updatedTeams = await getTeamsWithCoachNames(game.db);
 		io.to(game.roomCode).emit("teamsData", updatedTeams);
 		io.to(game.roomCode).emit("topScorers", []); // Reset top scorers for new season
 		io.to(game.roomCode).emit("teamForms", {}); // Reset form display for new season
@@ -1022,7 +1023,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						resolve,
 					);
 				});
-				const updatedTeams = await runAll(game.db, "SELECT * FROM teams");
+				const updatedTeams = await getTeamsWithCoachNames(game.db);
 				io.to(game.roomCode).emit("teamsData", updatedTeams);
 				if (winnerTeam) {
 					io.to(game.roomCode).emit("systemMessage", {

@@ -1,5 +1,5 @@
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
-import { getAllTeamForms } from "./coreHelpers";
+import { getAllTeamForms, getTeamsWithCoachNames } from "./coreHelpers";
 import { SPONSOR_REVENUE_BY_DIVISION } from "./gameConstants";
 import { getGlobalMessages } from "./db/globalDatabase";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
@@ -179,14 +179,16 @@ export function registerSessionSocketHandlers(
 			io.to(roomCode).emit("roomLocked", { coaches: [...game.lockedCoaches] });
 		}
 
-		game.db.all("SELECT * FROM teams", (err: any, teams: any[]) => {
-			socket.emit("teamsData", teams);
-			getAllTeamForms(game.db, game.season)
-				.then((forms) => {
-					socket.emit("teamForms", forms);
-				})
-				.catch(() => {});
-		});
+		getTeamsWithCoachNames(game.db)
+			.then((teams: any[]) => {
+				socket.emit("teamsData", teams);
+				getAllTeamForms(game.db, game.season)
+					.then((forms) => {
+						socket.emit("teamForms", forms);
+					})
+					.catch(() => {});
+			})
+			.catch(() => {});
 		game.db.all(
 			"SELECT * FROM players WHERE team_id = ?",
 			[team.id],
@@ -465,15 +467,14 @@ export function registerSessionSocketHandlers(
 											teamName: dismissalInfo.teamName || "equipa anterior",
 										});
 
-										game.db.all(
-											"SELECT * FROM teams",
-											(errT: any, teams: any[]) => {
-												if (!errT) socket.emit("teamsData", teams);
+										getTeamsWithCoachNames(game.db)
+											.then((teams: any[]) => {
+												socket.emit("teamsData", teams);
 												getAllTeamForms(game.db, game.season)
 													.then((forms) => socket.emit("teamForms", forms))
 													.catch(() => {});
-											},
-										);
+											})
+											.catch(() => {});
 
 										socket.emit("gameState", {
 											gamePhase: game.gamePhase,

@@ -1,7 +1,7 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import type { CalendarEntry } from "./gameConstants";
 import { SEASON_CALENDAR } from "./gameConstants";
-import { getAllTeamForms } from "./coreHelpers";
+import { getAllTeamForms, getTeamsWithCoachNames } from "./coreHelpers";
 import {
   finalizeAllRunningAuctions,
   pauseAllRunningAuctions,
@@ -796,78 +796,77 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 }
 
                 // Broadcast updated standings and squad info
+                getTeamsWithCoachNames(game.db)
+                  .then((teams: any[]) => {
+                    io.to(game.roomCode).emit("teamsData", teams);
+                  })
+                  .catch(() => {});
+                getAllTeamForms(game.db, game.season)
+                  .then((forms) => {
+                    io.to(game.roomCode).emit("teamForms", forms);
+                  })
+                  .catch(() => {});
+
                 game.db.all(
-                  "SELECT * FROM teams",
-                  (err2: any, teams: any[]) => {
-                    if (!err2) io.to(game.roomCode).emit("teamsData", teams);
-                    getAllTeamForms(game.db, game.season)
-                      .then((forms) => {
-                        io.to(game.roomCode).emit("teamForms", forms);
-                      })
-                      .catch(() => {});
+                  "SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20",
+                  (err3: any, scorers: any[]) => {
+                    io.to(game.roomCode).emit("topScorers", scorers || []);
 
-                    game.db.all(
-                      "SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20",
-                      (err3: any, scorers: any[]) => {
-                        io.to(game.roomCode).emit("topScorers", scorers || []);
+                    const connectedPlayers = getPlayerList(game);
+                    const activeTeamIds = connectedPlayers
+                      .filter((p) => p.socketId && p.teamId != null)
+                      .map((p) => p.teamId as number);
 
-                        const connectedPlayers = getPlayerList(game);
-                        const activeTeamIds = connectedPlayers
-                          .filter((p) => p.socketId && p.teamId != null)
-                          .map((p) => p.teamId as number);
-
-                        const emitSquadsAndFinish = (
-                          byTeam: Map<number, any[]>,
-                        ) => {
-                          connectedPlayers.forEach((player) => {
-                            if (!player.socketId || player.teamId == null)
-                              return;
-                            const squad =
-                              byTeam.get(player.teamId as number) || [];
-                            io.to(player.socketId as string).emit(
-                              "mySquad",
-                              ensureFullBench(
-                                withJuniorGRs(
-                                  squad,
-                                  player.teamId as number,
-                                  game.matchweek || 1,
-                                ),
-                                player.teamId as number,
-                                game.matchweek || 1,
-                              ),
-                            );
-                          });
-                          emitPresence(game);
-                          resolveOuter();
-                        };
-
-                        if (activeTeamIds.length === 0) {
-                          emitPresence(game);
-                          resolveOuter();
+                    const emitSquadsAndFinish = (
+                      byTeam: Map<number, any[]>,
+                    ) => {
+                      connectedPlayers.forEach((player) => {
+                        if (!player.socketId || player.teamId == null)
                           return;
-                        }
-
-                        const placeholders = activeTeamIds
-                          .map(() => "?")
-                          .join(",");
-                        game.db.all(
-                          `SELECT * FROM players WHERE team_id IN (${placeholders})`,
-                          activeTeamIds,
-                          (err4: any, allPlayers: any[]) => {
-                            const byTeam = new Map<number, any[]>();
-                            if (!err4 && allPlayers) {
-                              for (const p of allPlayers) {
-                                const list = byTeam.get(p.team_id) || [];
-                                list.push(p);
-                                byTeam.set(p.team_id, list);
-                              }
-                            }
-                            emitSquadsAndFinish(byTeam);
-                          },
+                        const squad =
+                          byTeam.get(player.teamId as number) || [];
+                        io.to(player.socketId as string).emit(
+                          "mySquad",
+                          ensureFullBench(
+                            withJuniorGRs(
+                              squad,
+                              player.teamId as number,
+                              game.matchweek || 1,
+                            ),
+                            player.teamId as number,
+                            game.matchweek || 1,
+                          ),
                         );
-                        return;
+                      });
+                      emitPresence(game);
+                      resolveOuter();
+                    };
+
+                    if (activeTeamIds.length === 0) {
+                      emitPresence(game);
+                      resolveOuter();
+                      return;
+                    }
+
+                    const placeholders = activeTeamIds
+                      .map(() => "?")
+                      .join(",");
+                    game.db.all(
+                      `SELECT * FROM players WHERE team_id IN (${placeholders})`,
+                      activeTeamIds,
+                      (err4: any, allPlayers: any[]) => {
+                        const byTeam = new Map<number, any[]>();
+                        if (!err4 && allPlayers) {
+                          for (const p of allPlayers) {
+                            const list = byTeam.get(p.team_id) || [];
+                            list.push(p);
+                            byTeam.set(p.team_id, list);
+                          }
+                        }
+                        emitSquadsAndFinish(byTeam);
                       },
                     );
+                    return;
                   },
                 );
               })

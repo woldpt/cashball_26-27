@@ -5,6 +5,7 @@ import {
   runGet,
   runAll,
   validatePositiveInt,
+  getTeamsWithCoachNames,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 
@@ -182,7 +183,7 @@ export function registerTransferSocketHandlers(
       }
 
       refreshMarket(game);
-      const teams = await runAll(game.db, "SELECT * FROM teams");
+      const teams = await getTeamsWithCoachNames(game.db);
       io.to(game.roomCode).emit("teamsData", teams);
       const squad = await runAll(
         game.db,
@@ -641,9 +642,9 @@ export function registerTransferSocketHandlers(
                       },
                     );
                     refreshMarket(game);
-                    game.db.all("SELECT * FROM teams", (_e1, teams) =>
-                      io.to(game.roomCode).emit("teamsData", teams),
-                    );
+                    getTeamsWithCoachNames(game.db)
+                      .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
+                      .catch(() => {});
                     game.db.all(
                       "SELECT * FROM players WHERE team_id = ?",
                       [playerState.teamId],

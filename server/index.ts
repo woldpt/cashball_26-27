@@ -56,6 +56,7 @@ const {
 	runAll,
 	runGet,
 	getStandingsRows,
+	getTeamsWithCoachNames,
 	pickRefereeSummary,
 	calculateMatchAttendance,
 } = require("./coreHelpers") as typeof import("./coreHelpers");

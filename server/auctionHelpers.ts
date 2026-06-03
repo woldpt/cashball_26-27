@@ -1,5 +1,5 @@
 import type { ActiveGame, PlayerSession } from "./types";
-import { logClubNews } from "./coreHelpers";
+import { logClubNews, getTeamsWithCoachNames } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 
 interface AuctionDeps {
@@ -339,11 +339,9 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                         delete game.auctions?.[playerId];
                         delete game.auctionTimers?.[playerId];
                         refreshMarket(game);
-                        game.db.all(
-                          "SELECT * FROM teams",
-                          (errTeams: Error | null, teams: any[]) => {
-                            if (!errTeams)
-                              io.to(game.roomCode).emit("teamsData", teams);
+                        getTeamsWithCoachNames(game.db)
+                          .then((teams) => {
+                            io.to(game.roomCode).emit("teamsData", teams);
                             emitSquadForPlayer(game, buyerTeamId);
                             if (auction.sellerTeamId !== buyerTeamId) {
                               emitSquadForPlayer(game, auction.sellerTeamId);
@@ -356,8 +354,8 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                               buyerTeamName,
                               finalBid,
                             });
-                          },
-                        );
+                          })
+                          .catch(() => {});
                       },
                     );
                   },

@@ -1,5 +1,5 @@
 import type { ActiveGame, PlayerSession } from "./types";
-import { runExec } from "./coreHelpers";
+import { runExec, getTeamsWithCoachNames } from "./coreHelpers";
 
 interface FinanceHandlerDeps {
   io: any;
@@ -70,9 +70,9 @@ export function registerFinanceSocketHandlers(
     }
 
     // Emitir teamsData para toda a sala (actualiza budget e capacity)
-    game.db.all("SELECT * FROM teams", (_err2: any, teams: any[]) => {
-      io.to(game.roomCode).emit("teamsData", teams);
-    });
+    getTeamsWithCoachNames(game.db)
+      .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
+      .catch(() => {});
     io.to(game.roomCode).emit("stadiumBuilt", {
       teamId: playerState.teamId,
       teamName: team.name || "",
@@ -99,9 +99,9 @@ export function registerFinanceSocketHandlers(
       );
       return;
     }
-    game.db.all("SELECT * FROM teams", (_err: any, teams: any[]) =>
-      io.to(game.roomCode).emit("teamsData", teams),
-    );
+    getTeamsWithCoachNames(game.db)
+      .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
+      .catch(() => {});
     socket.emit("systemMessage", "Empréstimo de 500.000€ aprovado (Juro 1,5%/Semana).");
   });
 
@@ -120,9 +120,9 @@ export function registerFinanceSocketHandlers(
       socket.emit("systemMessage", "Não deves esse valor, ou não tens 500k disponíveis.");
       return;
     }
-    game.db.all("SELECT * FROM teams", (_err: any, teams: any[]) =>
-      io.to(game.roomCode).emit("teamsData", teams),
-    );
+    getTeamsWithCoachNames(game.db)
+      .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
+      .catch(() => {});
     socket.emit("systemMessage", "Dívida paga (500.000€) ao Banco.");
   });
 }

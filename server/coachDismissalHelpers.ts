@@ -1,5 +1,5 @@
 import type { ActiveGame } from "./types";
-import { getAllTeamForms, logClubNews } from "./coreHelpers";
+import { getAllTeamForms, logClubNews, getTeamsWithCoachNames } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 
 type Db = any;
@@ -156,9 +156,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       broadcast: true,
     });
 
-    game.db.all("SELECT * FROM teams", (err: any, allTeamsData: any[]) => {
-      if (!err) io.to(game.roomCode).emit("teamsData", allTeamsData);
-    });
+    getTeamsWithCoachNames(game.db)
+      .then((allTeamsData) => io.to(game.roomCode).emit("teamsData", allTeamsData))
+      .catch(() => {});
   }
 
   async function dismissHumanCoach(
@@ -407,9 +407,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       broadcast: true,
     });
 
-    game.db.all("SELECT * FROM teams", (err: any, allTeamsData: any[]) => {
-      if (!err) io.to(game.roomCode).emit("teamsData", allTeamsData);
-    });
+    getTeamsWithCoachNames(game.db)
+      .then((allTeamsData) => io.to(game.roomCode).emit("teamsData", allTeamsData))
+      .catch(() => {});
   }
 
   // ── MAIN FUNCTION ─────────────────────────────────────────────────────────
@@ -629,9 +629,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     });
 
     // Broadcast updated teams
-    game.db.all("SELECT * FROM teams", (err: any, teams: any[]) => {
-      if (!err) io.to(game.roomCode).emit("teamsData", teams);
-    });
+    getTeamsWithCoachNames(game.db)
+      .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
+      .catch(() => {});
 
     saveGameState(game);
   };

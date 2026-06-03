@@ -1,5 +1,5 @@
 import type { ActiveGame } from "./types";
-import { logClubNews } from "./coreHelpers";
+import { logClubNews, getTeamsWithCoachNames } from "./coreHelpers";
 
 type AnyRow = Record<string, any>;
 
@@ -148,9 +148,9 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
             io,
           );
           // Broadcast updated team budgets
-          game.db.all("SELECT * FROM teams", (_err: any, teams: any[]) => {
-            if (teams) io.to(game.roomCode).emit("teamsData", teams);
-          });
+          getTeamsWithCoachNames(game.db)
+            .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
+            .catch(() => {});
         }
 
         npcTeam.budget -= price;
