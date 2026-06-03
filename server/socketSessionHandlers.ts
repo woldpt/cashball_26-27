@@ -272,26 +272,28 @@ export function registerSessionSocketHandlers(
 					);
 				}
 				const d = details || team;
-				getRoomCoaches(roomCode, name).then((coaches) => {
-					socket.emit("teamAssigned", {
-						teamName: d.name,
-						teamId: d.id,
-						division: d.division ?? 4,
-						budget: d.budget ?? 0,
-						points: d.points ?? 0,
-						wins: d.wins ?? 0,
-						draws: d.draws ?? 0,
-						losses: d.losses ?? 0,
-						goalsFor: d.goals_for ?? 0,
-						goalsAgainst: d.goals_against ?? 0,
-						colorPrimary: d.color_primary ?? "#888888",
-						colorSecondary: d.color_secondary ?? "#ffffff",
-						stadiumCapacity: d.stadium_capacity ?? 0,
-						stadiumName: d.stadium_name ?? "",
-						coaches,
-						isNew,
+				getRoomCoaches(roomCode, name)
+					.catch((): string[] => [])
+					.then((coaches) => {
+						socket.emit("teamAssigned", {
+							teamName: d.name,
+							teamId: d.id,
+							division: d.division ?? 4,
+							budget: d.budget ?? 0,
+							points: d.points ?? 0,
+							wins: d.wins ?? 0,
+							draws: d.draws ?? 0,
+							losses: d.losses ?? 0,
+							goalsFor: d.goals_for ?? 0,
+							goalsAgainst: d.goals_against ?? 0,
+							colorPrimary: d.color_primary ?? "#888888",
+							colorSecondary: d.color_secondary ?? "#ffffff",
+							stadiumCapacity: d.stadium_capacity ?? 0,
+							stadiumName: d.stadium_name ?? "",
+							coaches,
+							isNew,
+						});
 					});
-				});
 			},
 		);
 

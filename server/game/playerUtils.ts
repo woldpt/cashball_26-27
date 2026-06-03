@@ -111,10 +111,14 @@ export function withJuniorGRs(
 
 /**
  * Generates a deterministic ephemeral junior field player for a team.
- * Position cycles through DEF / MED / ATA based on slotIndex.
+ * The `position` is passed explicitly by the caller — see `ensureFullBench`, which
+ * picks the most-deficient position instead of cycling blindly.
  * Uses negative IDs (different base from GR juniors) so all DB writes are harmless no-ops.
  * The same (teamId, matchweek, slotIndex) always produces the same name and ID.
  * ID scheme: -(teamId * 1000 + slotIndex + 1)
+ *
+ * ⚠️  Callers MUST use slotIndex >= 100 to avoid ID collisions with junior GR players,
+ * which use the scheme -(teamId * 10 + slotIndex + 1) with slotIndex 0–1.
  */
 export function generateJuniorFieldPlayer(
   teamId: number,
@@ -217,6 +221,8 @@ export function ensureFullBench(
       const pos = (["DEF", "MED", "ATA"] as const).reduce((worst, p) =>
         availableByPos[p] < availableByPos[worst] ? p : worst,
       );
+      // slotIndex starts at 100 to keep IDs clear of junior GR players
+      // (GR scheme: -(teamId * 10 + slotIndex + 1), slotIndex 0–1)
       result.push(generateJuniorFieldPlayer(teamId, matchweek, 100 + i, pos));
       availableByPos[pos]++;
     }

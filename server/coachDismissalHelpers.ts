@@ -110,26 +110,28 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
 
     // Notificar coach
     if (player.socketId) {
-      getRoomCoaches(game.roomCode, coachName).then((coaches) => {
-        io.to(player.socketId as string).emit("teamAssigned", {
-          teamName: team.name,
-          teamId: team.id,
-          division: team.division,
-          budget: team.budget ?? 0,
-          points: team.points ?? 0,
-          wins: team.wins ?? 0,
-          draws: team.draws ?? 0,
-          losses: team.losses ?? 0,
-          goalsFor: team.goals_for ?? 0,
-          goalsAgainst: team.goals_against ?? 0,
-          colorPrimary: team.color_primary ?? "#888888",
-          colorSecondary: team.color_secondary ?? "#ffffff",
-          stadiumCapacity: team.stadium_capacity ?? 0,
-          stadiumName: team.stadium_name ?? "",
-          coaches,
-          isNew: true,
+      getRoomCoaches(game.roomCode, coachName)
+        .catch((): string[] => [])
+        .then((coaches) => {
+          io.to(player.socketId as string).emit("teamAssigned", {
+            teamName: team.name,
+            teamId: team.id,
+            division: team.division,
+            budget: team.budget ?? 0,
+            points: team.points ?? 0,
+            wins: team.wins ?? 0,
+            draws: team.draws ?? 0,
+            losses: team.losses ?? 0,
+            goalsFor: team.goals_for ?? 0,
+            goalsAgainst: team.goals_against ?? 0,
+            colorPrimary: team.color_primary ?? "#888888",
+            colorSecondary: team.color_secondary ?? "#ffffff",
+            stadiumCapacity: team.stadium_capacity ?? 0,
+            stadiumName: team.stadium_name ?? "",
+            coaches,
+            isNew: true,
+          });
         });
-      });
 
       game.db.all(
         "SELECT * FROM players WHERE team_id = ?",
@@ -359,26 +361,28 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
 
     // Notify coach
     if (player.socketId) {
-      getRoomCoaches(game.roomCode, coachName).then((coaches) => {
-        io.to(player.socketId as string).emit("teamAssigned", {
-          teamName: team.name,
-          teamId: team.id,
-          division: team.division,
-          budget: team.budget ?? 0,
-          points: team.points ?? 0,
-          wins: team.wins ?? 0,
-          draws: team.draws ?? 0,
-          losses: team.losses ?? 0,
-          goalsFor: team.goals_for ?? 0,
-          goalsAgainst: team.goals_against ?? 0,
-          colorPrimary: team.color_primary ?? "#888888",
-          colorSecondary: team.color_secondary ?? "#ffffff",
-          stadiumCapacity: team.stadium_capacity ?? 0,
-          stadiumName: team.stadium_name ?? "",
-          coaches,
-          isNew: true,
+      getRoomCoaches(game.roomCode, coachName)
+        .catch((): string[] => [])
+        .then((coaches) => {
+          io.to(player.socketId as string).emit("teamAssigned", {
+            teamName: team.name,
+            teamId: team.id,
+            division: team.division,
+            budget: team.budget ?? 0,
+            points: team.points ?? 0,
+            wins: team.wins ?? 0,
+            draws: team.draws ?? 0,
+            losses: team.losses ?? 0,
+            goalsFor: team.goals_for ?? 0,
+            goalsAgainst: team.goals_against ?? 0,
+            colorPrimary: team.color_primary ?? "#888888",
+            colorSecondary: team.color_secondary ?? "#ffffff",
+            stadiumCapacity: team.stadium_capacity ?? 0,
+            stadiumName: team.stadium_name ?? "",
+            coaches,
+            isNew: true,
+          });
         });
-      });
 
       game.db.all(
         "SELECT * FROM players WHERE team_id = ?",
@@ -578,26 +582,28 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     if (!team) return;
 
     if (player.socketId) {
-      getRoomCoaches(game.roomCode, coachName).then((coaches) => {
-        io.to(player.socketId as string).emit("teamAssigned", {
-          teamName: team.name,
-          teamId: team.id,
-          division: team.division,
-          budget: team.budget ?? 0,
-          points: team.points ?? 0,
-          wins: team.wins ?? 0,
-          draws: team.draws ?? 0,
-          losses: team.losses ?? 0,
-          goalsFor: team.goals_for ?? 0,
-          goalsAgainst: team.goals_against ?? 0,
-          colorPrimary: team.color_primary ?? "#888888",
-          colorSecondary: team.color_secondary ?? "#ffffff",
-          stadiumCapacity: team.stadium_capacity ?? 0,
-          stadiumName: team.stadium_name ?? "",
-          coaches,
-          isNew: false,
+      getRoomCoaches(game.roomCode, coachName)
+        .catch((): string[] => [])
+        .then((coaches) => {
+          io.to(player.socketId as string).emit("teamAssigned", {
+            teamName: team.name,
+            teamId: team.id,
+            division: team.division,
+            budget: team.budget ?? 0,
+            points: team.points ?? 0,
+            wins: team.wins ?? 0,
+            draws: team.draws ?? 0,
+            losses: team.losses ?? 0,
+            goalsFor: team.goals_for ?? 0,
+            goalsAgainst: team.goals_against ?? 0,
+            colorPrimary: team.color_primary ?? "#888888",
+            colorSecondary: team.color_secondary ?? "#ffffff",
+            stadiumCapacity: team.stadium_capacity ?? 0,
+            stadiumName: team.stadium_name ?? "",
+            coaches,
+            isNew: false,
+          });
         });
-      });
 
       game.db.all(
         "SELECT * FROM players WHERE team_id = ?",

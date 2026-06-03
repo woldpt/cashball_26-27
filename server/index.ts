@@ -437,15 +437,22 @@ app.get("/auth/manager-info", async (req, res) => {
 		const result = await getManagerInfo(name);
 		if (!result.ok) return res.status(404).json({ error: result.error });
 
-		const rooms: any[] = [];
-		for (const code of result.info.rooms) {
-			const dbPath = path.join(resolveDbDir(), `game_${code}.db`);
-			if (!fs.existsSync(dbPath)) continue;
-			const info = await getRoomInfo(code, name);
-			if (!info.teamName) continue;
-			const coaches = await getRoomCoaches(code, name);
-			rooms.push({ ...info, coaches });
-		}
+		const rooms = (
+			await Promise.all(
+				result.info.rooms
+					.filter((code) =>
+						fs.existsSync(path.join(resolveDbDir(), `game_${code}.db`)),
+					)
+					.map(async (code) => {
+						const [info, coaches] = await Promise.all([
+							getRoomInfo(code, name),
+							getRoomCoaches(code, name),
+						]);
+						if (!info.teamName) return null;
+						return { ...info, coaches };
+					}),
+			)
+		).filter(Boolean);
 
 		return res.json({
 			name: result.info.name,
