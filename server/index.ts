@@ -42,6 +42,7 @@ const {
 	createManager,
 	recordRoomAccess,
 	getManagerRooms,
+	getRoomCoaches,
 	deleteRoomAccess,
 	changePassword,
 	getManagerInfo,
@@ -442,7 +443,8 @@ app.get("/auth/manager-info", async (req, res) => {
 			if (!fs.existsSync(dbPath)) continue;
 			const info = await getRoomInfo(code, name);
 			if (!info.teamName) continue;
-			rooms.push(info);
+			const coaches = await getRoomCoaches(code, name);
+			rooms.push({ ...info, coaches });
 		}
 
 		return res.json({
@@ -676,6 +678,7 @@ const coachDismissalHelpers = createCoachDismissalHelpers({
 	runAll,
 	runGet,
 	saveGameState,
+	getRoomCoaches,
 });
 const processCoachEvents = coachDismissalHelpers.processCoachEvents;
 const handleAcceptJobOffer = coachDismissalHelpers.handleAcceptJobOffer;
@@ -731,6 +734,7 @@ io.on("connection", (socket) => {
 		verifyOrCreateManager,
 		getGame,
 		recordRoomAccess,
+		getRoomCoaches,
 		getGameBySocket,
 		getPlayerBySocket,
 		bindSocket,

@@ -340,6 +340,11 @@ export function UserSettingsPage({
 												<p className="text-xs text-on-surface-variant/50 font-medium truncate">
 													{r.roomCode}
 												</p>
+											{r.coaches && r.coaches.length > 0 && (
+												<span className="text-[10px] font-bold text-amber-400/80 truncate hidden sm:block">
+													{r.coaches.join(", ")}
+												</span>
+											)}
 											</div>
 										</div>
 										<div className="flex items-center gap-3 shrink-0">

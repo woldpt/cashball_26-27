@@ -417,6 +417,32 @@ function changePassword(name, currentPassword, newPassword) {
  * @param {string} name
  * @returns {Promise<{ok: boolean, error?: string, info?: {name: string, rooms: string[]}}>}
  */
+/**
+ * Return the names of all human coaches linked to a room.
+ *
+ * @param {string} roomCode
+ * @param {string} [excludeName] - Optional name to exclude from the list
+ * @returns {Promise<string[]>}
+ */
+function getRoomCoaches(roomCode, excludeName) {
+	return new Promise((resolve) => {
+		db.all(
+			"SELECT manager_name FROM room_managers WHERE room_code = ? COLLATE NOCASE ORDER BY manager_name",
+			[roomCode.toUpperCase()],
+			(err, rows) => {
+				if (err) return resolve([]);
+				const names = rows.map((r) => r.manager_name);
+				if (excludeName) {
+					const excl = excludeName.toLowerCase();
+					resolve(names.filter((n) => n.toLowerCase() !== excl));
+				} else {
+					resolve(names);
+				}
+			},
+		);
+	});
+}
+
 function getManagerInfo(name) {
 	const normalizedName = typeof name === "string" ? name.trim() : "";
 	if (!normalizedName) {
@@ -595,6 +621,7 @@ module.exports = {
 	recordRoomAccess,
 	deleteRoomAccess,
 	getManagerRooms,
+	getRoomCoaches,
 	changePassword,
 	getManagerInfo,
 	getAvatarSeed,

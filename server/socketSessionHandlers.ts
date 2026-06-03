@@ -29,6 +29,10 @@ interface SessionHandlerDeps {
 		onReady?: (game: ActiveGame | null, error?: Error) => void,
 	) => ActiveGame | null;
 	recordRoomAccess: (name: string, roomCode: string) => void;
+	getRoomCoaches: (
+		roomCode: string,
+		excludeName?: string,
+	) => Promise<string[]>;
 	getGameBySocket: (socketId: string) => ActiveGame | null;
 	getPlayerBySocket: (
 		game: ActiveGame,
@@ -106,6 +110,7 @@ export function registerSessionSocketHandlers(
 		verifyOrCreateManager,
 		getGame,
 		recordRoomAccess,
+		getRoomCoaches,
 		getGameBySocket,
 		getPlayerBySocket,
 		bindSocket,
@@ -267,22 +272,25 @@ export function registerSessionSocketHandlers(
 					);
 				}
 				const d = details || team;
-				socket.emit("teamAssigned", {
-					teamName: d.name,
-					teamId: d.id,
-					division: d.division ?? 4,
-					budget: d.budget ?? 0,
-					points: d.points ?? 0,
-					wins: d.wins ?? 0,
-					draws: d.draws ?? 0,
-					losses: d.losses ?? 0,
-					goalsFor: d.goals_for ?? 0,
-					goalsAgainst: d.goals_against ?? 0,
-					colorPrimary: d.color_primary ?? "#888888",
-					colorSecondary: d.color_secondary ?? "#ffffff",
-					stadiumCapacity: d.stadium_capacity ?? 0,
-					stadiumName: d.stadium_name ?? "",
-					isNew,
+				getRoomCoaches(roomCode, name).then((coaches) => {
+					socket.emit("teamAssigned", {
+						teamName: d.name,
+						teamId: d.id,
+						division: d.division ?? 4,
+						budget: d.budget ?? 0,
+						points: d.points ?? 0,
+						wins: d.wins ?? 0,
+						draws: d.draws ?? 0,
+						losses: d.losses ?? 0,
+						goalsFor: d.goals_for ?? 0,
+						goalsAgainst: d.goals_against ?? 0,
+						colorPrimary: d.color_primary ?? "#888888",
+						colorSecondary: d.color_secondary ?? "#ffffff",
+						stadiumCapacity: d.stadium_capacity ?? 0,
+						stadiumName: d.stadium_name ?? "",
+						coaches,
+						isNew,
+					});
 				});
 			},
 		);

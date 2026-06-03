@@ -195,6 +195,17 @@ export function WelcomeModal({ welcomeModal, me, setWelcomeModal }) {
               )}
 
               {/* Invite code */}
+              {welcomeModal.coaches && welcomeModal.coaches.length > 0 && (
+                <div className="w-full bg-zinc-800/60 rounded-lg p-2.5 border border-emerald-900/30 mb-3">
+                  <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider block mb-1">
+                    Outros Treinadores:
+                  </span>
+                  <span className="font-bold text-amber-400 text-xs">
+                    {welcomeModal.coaches.join(", ")}
+                  </span>
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={() => {
