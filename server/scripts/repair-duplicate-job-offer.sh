@@ -66,7 +66,15 @@ echo "└───────────────────────�
 echo ""
 echo "┌── EQUIPAS ÓRFÃS (manager_id = NULL, com jogos) ─────────────┐"
 ORPHAN_COUNT=0
-sql -separator '|' "
+# Bug 9 fix: use process substitution < <(...) so the while runs in the current
+# shell — a piped while-loop runs in a subshell and ORPHAN_COUNT++ would be lost.
+while IFS='|' read -r id name division points wins draws losses; do
+  if [ -n "$id" ]; then
+    printf "│ %2s. %-25s D%s Pts:%-3s V%-2s E%-2s D%-2s │\n" \
+      "$((ORPHAN_COUNT + 1))" "$name" "$division" "$points" "$wins" "$draws" "$losses"
+    ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
+  fi
+done < <(sql -separator '|' "
   SELECT DISTINCT t.id, t.name, t.division, t.points, t.wins, t.draws, t.losses
   FROM teams t
   WHERE t.manager_id IS NULL
@@ -76,13 +84,7 @@ sql -separator '|' "
       SELECT away_team_id FROM matches WHERE played = 1
     )
   ORDER BY t.division, t.name;
-" | while IFS='|' read -r id name division points wins draws losses; do
-  if [ -n "$id" ]; then
-    printf "│ %2s. %-25s D%s Pts:%-3s V%-2s E%-2s D%-2s │\n" \
-      "$((ORPHAN_COUNT + 1))" "$name" "$division" "$points" "$wins" "$draws" "$losses"
-    ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
-  fi
-done
+")
 echo "└────────────────────────────────────────────────────────────┘"
 
 # Diagnosis

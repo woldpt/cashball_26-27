@@ -130,20 +130,29 @@ export function registerAdminSocketHandlers(
 
       const result = await adminRenameManager(data.oldName, data.newName, activeGames);
 
-      // If rename succeeded, save game state for any affected rooms
-      if (result.ok && saveGameState) {
-        for (const roomCode of Object.keys(activeGames)) {
-          const game = activeGames[roomCode];
-          if (game && game.playersByName && game.playersByName[data.newName]) {
-            try {
-              saveGameState(game);
-            } catch (_) {}
+      if (result.ok) {
+        // Save game state for any affected rooms
+        if (saveGameState) {
+          for (const game of Object.values(activeGames)) {
+            if (game?.playersByName?.[data.newName]) {
+              try { saveGameState(game); } catch (_) {}
+            }
+          }
+        }
+
+        // Bug 1+5 fix: force re-login for the renamed user so their localStorage
+        // (which still has the old name) doesn't auto-create a ghost account on reconnect.
+        for (const game of Object.values(activeGames)) {
+          const player = game.playersByName?.[data.newName];
+          if (player?.socketId) {
+            io.to(player.socketId).emit("sessionDisplaced");
+            break; // a user can only be in one room
           }
         }
       }
 
-      // Emit a refresh signal to all connected clients so the admin panel refreshes
-      io.emit("adminUsersUpdated");
+      // Bug 4 fix: emit only to admin socket, not globally
+      socket.emit("adminUsersUpdated");
 
       if (callback) callback(result);
     },
@@ -172,7 +181,8 @@ export function registerAdminSocketHandlers(
         result = await adminRemoveRoomAccess(data.name, data.roomCode);
       }
 
-      io.emit("adminUsersUpdated");
+      // Bug 6 fix: only notify admin if operation actually succeeded
+      if (result.ok) socket.emit("adminUsersUpdated");
       if (callback) callback(result);
     },
   );
@@ -206,7 +216,8 @@ export function registerAdminSocketHandlers(
       }
 
       const result = await deleteManager(data.name);
-      io.emit("adminUsersUpdated");
+      // Bug 6 fix: only notify admin if operation actually succeeded
+      if (result.ok) socket.emit("adminUsersUpdated");
       if (callback) callback(result);
     },
   );

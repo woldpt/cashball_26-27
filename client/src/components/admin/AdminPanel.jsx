@@ -73,64 +73,59 @@ export function AdminPanel({ open, onClose }) {
     setError("");
   }
 
-  function handleSaveProfile() {
+  // Bug 2 fix: run rename THEN password change sequentially, never in parallel.
+  // Running both in parallel caused password change to fail because it used the
+  // new name before the rename had completed on the server.
+  async function handleSaveProfile() {
     if (!selectedUser) return;
-    setEditLoading(true);
-    setError("");
-    setSuccess("");
 
-    const promises = [];
-    const changes = [];
+    const doRename = editName.trim() !== "" && editName.trim() !== selectedUser.name;
+    const doPassword = editPassword.trim() !== "";
 
-    // Rename if changed
-    if (editName.trim() && editName.trim() !== selectedUser.name) {
-      changes.push(`nome → "${editName.trim()}"`);
-      promises.push(
-        new Promise((resolve) => {
-          socket.emit(
-            "adminRenameUser",
-            { oldName: selectedUser.name, newName: editName.trim() },
-            resolve,
-          );
-        }),
-      );
-    }
-
-    // Change password if provided
-    if (editPassword.trim()) {
-      changes.push("palavra-passe alterada");
-      promises.push(
-        new Promise((resolve) => {
-          socket.emit(
-            "adminChangePassword",
-            { name: editName.trim() || selectedUser.name, newPassword: editPassword.trim() },
-            resolve,
-          );
-        }),
-      );
-    }
-
-    if (promises.length === 0) {
-      setEditLoading(false);
+    if (!doRename && !doPassword) {
       setError("Nenhuma alteração para guardar.");
       return;
     }
 
-    Promise.all(promises).then((results) => {
-      setEditLoading(false);
-      const errors = results.filter((r) => !r?.ok);
-      if (errors.length > 0) {
-        setError(errors.map((e) => e?.error).join("; "));
-      } else {
-        setSuccess(`${changes.join("; ")} com sucesso!`);
-        setEditPassword("");
-        // Refresh list and update selected user
-        fetchUsers();
-        if (changes.some((c) => c.includes("nome"))) {
-          setSelectedUser({ ...selectedUser, name: editName.trim() });
-        }
+    setEditLoading(true);
+    setError("");
+    setSuccess("");
+
+    const changes = [];
+    let currentName = selectedUser.name;
+
+    // Step 1: rename first (if needed)
+    if (doRename) {
+      const result = await new Promise((resolve) =>
+        socket.emit("adminRenameUser", { oldName: currentName, newName: editName.trim() }, resolve),
+      );
+      if (!result?.ok) {
+        setEditLoading(false);
+        setError(result?.error || "Erro ao renomear.");
+        return;
       }
-    });
+      changes.push(`nome → "${editName.trim()}"`);
+      currentName = editName.trim();
+    }
+
+    // Step 2: change password AFTER rename is confirmed complete
+    if (doPassword) {
+      const result = await new Promise((resolve) =>
+        socket.emit("adminChangePassword", { name: currentName, newPassword: editPassword.trim() }, resolve),
+      );
+      if (!result?.ok) {
+        setEditLoading(false);
+        setError(result?.error || "Erro ao alterar palavra-passe.");
+        return;
+      }
+      changes.push("palavra-passe alterada");
+    }
+
+    setEditLoading(false);
+    setSuccess(changes.join("; ") + " com sucesso!");
+    setEditPassword("");
+    fetchUsers();
+    if (doRename) setSelectedUser({ ...selectedUser, name: editName.trim() });
   }
 
   function handleDeleteUser() {
@@ -190,9 +185,10 @@ export function AdminPanel({ open, onClose }) {
   // ── Guard: only admin can see this ────────────────────────────────────────
   if (!isAdmin || !open) return null;
 
+  // Bug 7 fix: second branch was dead code (selectedUser is always falsy there)
   const userRooms = selectedUser
     ? (adminUsers.find((u) => u.name === selectedUser.name)?.rooms || [])
-    : (selectedUser?.rooms || []);
+    : [];
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -342,7 +338,7 @@ export function AdminPanel({ open, onClose }) {
                           Nova Palavra-passe
                         </label>
                         <input
-                          type="text"
+                          type="password"
                           value={editPassword}
                           onChange={(e) => setEditPassword(e.target.value)}
                           placeholder="Deixar em branco para não alterar"
