@@ -83,6 +83,9 @@ export function GameProvider({
 	const [jobOfferModal, setJobOfferModal] = useState(null);
 	const [dismissalModal, setDismissalModal] = useState(null);
 	const [seasonEndModal, setSeasonEndModal] = useState(null);
+	// ── Admin panel ──
+	const [adminPanelOpen, setAdminPanelOpen] = useState(false);
+	const [adminUsers, setAdminUsers] = useState([]);
 	const [isCupMatch, setIsCupMatch] = useState(false);
 	const [cupPreMatch, setCupPreMatch] = useState(false);
 	const [cupMatchRoundName, setCupMatchRoundName] = useState("");
@@ -574,6 +577,7 @@ export function GameProvider({
 			setWelcomeModal,
 			setJobOfferModal,
 			setDismissalModal,
+			setAdminUsers,
 			setTransferProposalModal,
 			setMe,
 			setRoomCode,
@@ -1038,6 +1042,11 @@ export function GameProvider({
 		setDismissalModal,
 		seasonEndModal,
 		setSeasonEndModal,
+		// Admin
+		adminPanelOpen,
+		setAdminPanelOpen,
+		adminUsers,
+		setAdminUsers,
 		isCupMatch,
 		cupPreMatch,
 		cupMatchRoundName,

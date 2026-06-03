@@ -191,6 +191,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     setCupDrawRevealIdx,
     setCupPenaltyKickIdx,
     setSeasonEndModal,
+    adminPanelOpen,
+    setAdminPanelOpen,
   } = useGame();
 
   // ── Derived ───────────────────────────────────────────────────────────
@@ -403,6 +405,22 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 expand_more
               </span>
             </button>
+
+            {/* ── Admin: user management ── */}
+            {me?.name?.toLowerCase() === "fabio" && (
+              <button
+                onClick={() => setAdminPanelOpen(true)}
+                title="Gestão de Utilizadores"
+                className="flex items-center gap-1 transition-colors rounded-lg px-2 py-1 hover:bg-amber-500/20"
+              >
+                <span className="material-symbols-outlined text-amber-400 text-lg">
+                  admin_panel_settings
+                </span>
+                <span className="hidden lg:inline text-[10px] font-black uppercase tracking-wider text-amber-400">
+                  Admin
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -2189,6 +2207,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         awaitingCoaches={awaitingCoaches}
         chatOpenRef={chatOpenRef}
         activeChatTabRef={activeChatTabRef}
+      />
+
+      <AdminPanel
+        open={adminPanelOpen}
+        onClose={() => setAdminPanelOpen(false)}
       />
     </div>
   );

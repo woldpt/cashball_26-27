@@ -85,6 +85,8 @@ const { registerGameplaySocketHandlers } =
 	require("./socketGameplayHandlers") as typeof import("./socketGameplayHandlers");
 const { registerChatHandlers } =
 	require("./socketChatHandlers") as typeof import("./socketChatHandlers");
+const { registerAdminSocketHandlers } =
+	require("./socketAdminHandlers") as typeof import("./socketAdminHandlers");
 const { createTrainingHandlers } =
 	require("./socketTrainingHandlers") as typeof import("./socketTrainingHandlers");
 const { createTrainingHelpers } =
@@ -811,6 +813,19 @@ io.on("connection", (socket) => {
 		io,
 		getGameBySocket,
 		getPlayerBySocket,
+	});
+
+	registerAdminSocketHandlers(socket, {
+		io,
+		getGameBySocket,
+		activeGames: activeGames as Record<string, any>,
+		adminListUsers,
+		adminChangePassword,
+		adminRenameManager,
+		adminAddRoomAccess,
+		adminRemoveRoomAccess,
+		deleteManager,
+		saveGameState,
 	});
 
 	// Training handlers

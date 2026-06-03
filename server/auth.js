@@ -614,6 +614,394 @@ function deleteManager(name) {
 	});
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Admin-only functions (for the user management panel)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * List all manager accounts with their room assignments.
+ * Admin-only — no password check.
+ *
+ * @returns {Promise<{ok: boolean, users?: Array<{name: string, email: string, birthYear: number|null, rooms: string[]}>, error?: string}>}
+ */
+function adminListUsers() {
+	return new Promise((resolve) => {
+		db.all(
+			"SELECT id, name, email, birth_year FROM managers ORDER BY name COLLATE NOCASE",
+			[],
+			async (err, rows) => {
+				if (err) {
+					console.error("[auth] adminListUsers error:", err.message);
+					return resolve({ ok: false, error: "Erro ao listar utilizadores." });
+				}
+
+				const users = [];
+				for (const row of rows) {
+					const rooms = await getManagerRooms(row.name);
+					users.push({
+						name: row.name,
+						email: row.email || "",
+						birthYear: row.birth_year || null,
+						rooms,
+					});
+				}
+				resolve({ ok: true, users });
+			},
+		);
+	});
+}
+
+/**
+ * Change a manager's password without requiring the current one.
+ * Admin-only override.
+ *
+ * @param {string} name
+ * @param {string} newPassword
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+function adminChangePassword(name, newPassword) {
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	const normalizedNew = typeof newPassword === "string" ? newPassword : "";
+
+	if (!normalizedName || !normalizedNew) {
+		return Promise.resolve({ ok: false, error: "Credenciais inválidas." });
+	}
+	if (normalizedNew.length < 3) {
+		return Promise.resolve({
+			ok: false,
+			error: "A palavra-passe deve ter pelo menos 3 caracteres.",
+		});
+	}
+
+	return new Promise((resolve) => {
+		db.get(
+			"SELECT id FROM managers WHERE name = ? COLLATE NOCASE",
+			[normalizedName],
+			async (err, row) => {
+				if (err) {
+					console.error("[auth] adminChangePassword error:", err.message);
+					return resolve({ ok: false, error: "Erro interno." });
+				}
+				if (!row) {
+					return resolve({ ok: false, error: "Utilizador não encontrado." });
+				}
+
+				const hash = await bcrypt.hash(normalizedNew, 10);
+				db.run(
+					"UPDATE managers SET password_hash = ? WHERE id = ?",
+					[hash, row.id],
+					(err2) => {
+						if (err2) {
+							console.error("[auth] adminChangePassword update error:", err2.message);
+							return resolve({ ok: false, error: "Erro ao alterar palavra-passe." });
+						}
+						authCacheInvalidate(normalizedName);
+						console.log(`[auth] Admin changed password for "${normalizedName}"`);
+						resolve({ ok: true });
+					},
+				);
+			},
+		);
+	});
+}
+
+/**
+ * Rename a manager account across ALL databases:
+ *   - accounts.db.managers
+ *   - accounts.db.room_managers
+ *   - Every per-room game_XXXX.db.managers
+ *
+ * Returns partial-success info so the admin knows if some per-room DBs
+ * could not be updated (e.g. because the room is actively in memory).
+ *
+ * @param {string} oldName
+ * @param {string} newName
+ * @param {object} [activeGames] - Optional in-memory game state map for live sync
+ * @returns {Promise<{ok: boolean, error?: string, warnings?: string[]}>}
+ */
+function adminRenameManager(oldName, newName, activeGames) {
+	const normalizedOld = typeof oldName === "string" ? oldName.trim() : "";
+	const normalizedNew = typeof newName === "string" ? newName.trim() : "";
+
+	if (!normalizedOld || !normalizedNew) {
+		return Promise.resolve({ ok: false, error: "Nomes inválidos." });
+	}
+	if (normalizedOld.toLowerCase() === normalizedNew.toLowerCase()) {
+		return Promise.resolve({ ok: false, error: "O novo nome é igual ao actual." });
+	}
+	if (normalizedNew.length < 2) {
+		return Promise.resolve({
+			ok: false,
+			error: "O nome deve ter pelo menos 2 caracteres.",
+		});
+	}
+
+	return new Promise((resolve) => {
+		// Check new name doesn't already exist
+		db.get(
+			"SELECT id FROM managers WHERE name = ? COLLATE NOCASE",
+			[normalizedNew],
+			async (err, existing) => {
+				if (err) {
+					console.error("[auth] adminRenameManager check error:", err.message);
+					return resolve({ ok: false, error: "Erro interno." });
+				}
+				if (existing) {
+					return resolve({
+						ok: false,
+						error: `Já existe uma conta com o nome "${normalizedNew}".`,
+					});
+				}
+
+				const warnings = [];
+
+				// 1. Rename in accounts.db.managers
+				db.run(
+					"UPDATE managers SET name = ? WHERE name = ? COLLATE NOCASE",
+					[normalizedNew, normalizedOld],
+					(updateErr) => {
+						if (updateErr) {
+							console.error("[auth] adminRenameManager update managers error:", updateErr.message);
+							return resolve({ ok: false, error: "Erro ao renomear conta." });
+						}
+
+						// Invalidate cache for both old and new names
+						authCacheInvalidate(normalizedOld);
+						authCacheInvalidate(normalizedNew);
+
+						// 2. Rename in accounts.db.room_managers
+						db.run(
+							"UPDATE room_managers SET manager_name = ? WHERE manager_name = ? COLLATE NOCASE",
+							[normalizedNew, normalizedOld],
+							(rmErr) => {
+								if (rmErr) {
+									console.error("[auth] adminRenameManager update room_managers error:", rmErr.message);
+									warnings.push("Falha ao actualizar room_managers.");
+								}
+
+								// 3. Rename in each per-room game DB
+								db.all(
+									"SELECT room_code FROM room_managers WHERE manager_name = ? COLLATE NOCASE",
+									[normalizedNew],
+									(roomErr, roomRows) => {
+										if (roomErr) {
+											console.error("[auth] adminRenameManager fetch rooms error:", roomErr.message);
+											return resolve({ ok: true, warnings: [...warnings, "Não foi possível verificar salas para renomeação."] });
+										}
+
+										const roomCodes = (roomRows || []).map((r) => r.room_code);
+										let pending = roomCodes.length;
+
+										if (pending === 0) {
+											// No rooms to update — done
+											console.log(`[auth] Admin renamed "${normalizedOld}" → "${normalizedNew}" (no rooms)`);
+											return resolve({ ok: true, warnings: warnings.length > 0 ? warnings : undefined });
+										}
+
+										const done = () => {
+											pending--;
+											if (pending <= 0) {
+												console.log(`[auth] Admin renamed "${normalizedOld}" → "${normalizedNew}" (${roomCodes.length} rooms)`);
+												resolve({ ok: true, warnings: warnings.length > 0 ? warnings : undefined });
+											}
+										};
+
+										for (const roomCode of roomCodes) {
+											const gameDbPath = path.join(
+												path.dirname(DB_PATH),
+												`game_${roomCode}.db`,
+											);
+
+											// If the game is active in memory, update playersByName there too
+											if (activeGames && activeGames[roomCode]) {
+												const game = activeGames[roomCode];
+												if (game.playersByName && game.playersByName[normalizedOld]) {
+													game.playersByName[normalizedNew] = game.playersByName[normalizedOld];
+													game.playersByName[normalizedNew].name = normalizedNew;
+													delete game.playersByName[normalizedOld];
+
+													// Update socketToName
+													const sockId = game.playersByName[normalizedNew]?.socketId;
+													if (sockId && game.socketToName) {
+														game.socketToName[sockId] = normalizedNew;
+													}
+
+													// Update lockedCoaches
+													if (game.lockedCoaches && game.lockedCoaches.has(normalizedOld)) {
+														game.lockedCoaches.delete(normalizedOld);
+														game.lockedCoaches.add(normalizedNew);
+													}
+
+													// Update roomCreator
+													if (game.roomCreator === normalizedOld) {
+														game.roomCreator = normalizedNew;
+													}
+
+													// Update phaseAcks
+													if (game.phaseAcks && game.phaseAcks.has(normalizedOld)) {
+														game.phaseAcks.delete(normalizedOld);
+														game.phaseAcks.add(normalizedNew);
+													}
+
+													// Update dismissedCoachSince
+													if (game.dismissedCoachSince && game.dismissedCoachSince[normalizedOld]) {
+														game.dismissedCoachSince[normalizedNew] = game.dismissedCoachSince[normalizedOld];
+														delete game.dismissedCoachSince[normalizedOld];
+													}
+
+													// Update dismissalsThisSeason
+													if (game.dismissalsThisSeason && game.dismissalsThisSeason.has(normalizedOld)) {
+														game.dismissalsThisSeason.delete(normalizedOld);
+														game.dismissalsThisSeason.add(normalizedNew);
+													}
+
+													// Update pendingJobOffers
+													if (game.pendingJobOffers && game.pendingJobOffers[normalizedOld]) {
+														game.pendingJobOffers[normalizedNew] = game.pendingJobOffers[normalizedOld];
+														delete game.pendingJobOffers[normalizedOld];
+													}
+
+													// Emit a name-changed event to the affected coach so they can refresh
+													if (sockId) {
+														try {
+															// Emit via the game's socket reference if available
+															// (actual emit happens in socket handler since io isn't available here)
+														} catch (_) {}
+													}
+												}
+											}
+
+											// Open per-room DB and update managers table
+											if (fs.existsSync(gameDbPath)) {
+												try {
+													const gameDb = new sqlite3.Database(gameDbPath);
+													gameDb.run(
+														"UPDATE managers SET name = ? WHERE name = ? COLLATE NOCASE",
+														[normalizedNew, normalizedOld],
+														(gdbErr) => {
+															if (gdbErr) {
+																console.error(
+																	`[auth] adminRenameManager error on ${roomCode}:`,
+																	gdbErr.message,
+																);
+																warnings.push(`Falha ao actualizar sala ${roomCode}.`);
+															}
+															gameDb.close();
+															done();
+														},
+													);
+												} catch (perr) {
+													console.error(
+														`[auth] adminRenameManager open error on ${roomCode}:`,
+														perr.message,
+													);
+													warnings.push(`Falha ao abrir sala ${roomCode}.`);
+													done();
+												}
+											} else {
+												// Game DB doesn't exist — skip (room might have been deleted)
+												warnings.push(`Sala ${roomCode} não encontrada no disco.`);
+												done();
+											}
+										}
+									},
+								);
+							},
+						);
+					},
+				);
+			},
+		);
+	});
+}
+
+/**
+ * Add room access for a manager (so the room appears in their saves list).
+ * Validates that the game DB file exists before inserting.
+ *
+ * @param {string} managerName
+ * @param {string} roomCode
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+function adminAddRoomAccess(managerName, roomCode) {
+	const normalizedName = typeof managerName === "string" ? managerName.trim() : "";
+	const normalizedRoom = typeof roomCode === "string" ? roomCode.trim().toUpperCase() : "";
+
+	if (!normalizedName || !normalizedRoom) {
+		return Promise.resolve({ ok: false, error: "Nome ou código de sala inválidos." });
+	}
+
+	// Validate room exists on disk
+	const gameDbPath = path.join(path.dirname(DB_PATH), `game_${normalizedRoom}.db`);
+	if (!fs.existsSync(gameDbPath)) {
+		return Promise.resolve({
+			ok: false,
+			error: `A sala "${normalizedRoom}" não existe.`,
+		});
+	}
+
+	return new Promise((resolve) => {
+		// Check manager exists first
+		db.get(
+			"SELECT id FROM managers WHERE name = ? COLLATE NOCASE",
+			[normalizedName],
+			(err, row) => {
+				if (err) {
+					console.error("[auth] adminAddRoomAccess error:", err.message);
+					return resolve({ ok: false, error: "Erro interno." });
+				}
+				if (!row) {
+					return resolve({ ok: false, error: "Utilizador não encontrado." });
+				}
+
+				db.run(
+					"INSERT OR IGNORE INTO room_managers (room_code, manager_name) VALUES (?, ?)",
+					[normalizedRoom, normalizedName],
+					(insErr) => {
+						if (insErr) {
+							console.error("[auth] adminAddRoomAccess insert error:", insErr.message);
+							return resolve({ ok: false, error: "Erro ao adicionar sala." });
+						}
+						console.log(`[auth] Admin added room ${normalizedRoom} to "${normalizedName}"`);
+						resolve({ ok: true });
+					},
+				);
+			},
+		);
+	});
+}
+
+/**
+ * Remove room access for a manager.
+ *
+ * @param {string} managerName
+ * @param {string} roomCode
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+function adminRemoveRoomAccess(managerName, roomCode) {
+	const normalizedName = typeof managerName === "string" ? managerName.trim() : "";
+	const normalizedRoom = typeof roomCode === "string" ? roomCode.trim().toUpperCase() : "";
+
+	if (!normalizedName || !normalizedRoom) {
+		return Promise.resolve({ ok: false, error: "Nome ou código de sala inválidos." });
+	}
+
+	return new Promise((resolve) => {
+		db.run(
+			"DELETE FROM room_managers WHERE room_code = ? COLLATE NOCASE AND manager_name = ? COLLATE NOCASE",
+			[normalizedRoom, normalizedName],
+			(err) => {
+				if (err) {
+					console.error("[auth] adminRemoveRoomAccess error:", err.message);
+					return resolve({ ok: false, error: "Erro ao remover sala." });
+				}
+				console.log(`[auth] Admin removed room ${normalizedRoom} from "${normalizedName}"`);
+				resolve({ ok: true });
+			},
+		);
+	});
+}
+
 module.exports = {
 	verifyOrCreateManager,
 	verifyManager,
@@ -628,4 +1016,10 @@ module.exports = {
 	setAvatarSeed,
 	updateManagerProfile,
 	deleteManager,
+	// Admin functions
+	adminListUsers,
+	adminChangePassword,
+	adminRenameManager,
+	adminAddRoomAccess,
+	adminRemoveRoomAccess,
 };

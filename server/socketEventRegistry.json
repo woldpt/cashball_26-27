@@ -451,5 +451,41 @@
     "receive": [
       "socketTransferHandlers.ts"
     ]
+  },
+  "adminListUsers": {
+    "emit": [],
+    "receive": [
+      "socketAdminHandlers.ts"
+    ]
+  },
+  "adminChangePassword": {
+    "emit": [],
+    "receive": [
+      "socketAdminHandlers.ts"
+    ]
+  },
+  "adminRenameUser": {
+    "emit": [],
+    "receive": [
+      "socketAdminHandlers.ts"
+    ]
+  },
+  "adminUpdateRoomAccess": {
+    "emit": [],
+    "receive": [
+      "socketAdminHandlers.ts"
+    ]
+  },
+  "adminDeleteUser": {
+    "emit": [],
+    "receive": [
+      "socketAdminHandlers.ts"
+    ]
+  },
+  "adminUsersUpdated": {
+    "emit": [
+      "socketAdminHandlers.ts"
+    ],
+    "receive": []
   }
 }

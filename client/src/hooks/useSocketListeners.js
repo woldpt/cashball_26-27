@@ -1218,6 +1218,11 @@ export function useSocketListeners(handlers, refs) {
 				},
 			});
 		});
+		// Admin panel: refresh user list when server pushes an update
+		socket.on("adminUsersUpdated", () => {
+			if (!inRoom()) return;
+			// Re-fetch users if admin panel is open (handled by the panel itself on next ad-hoc listUsers)
+		});
 
 		return () => {
 			socket.off("teamsData");
@@ -1281,6 +1286,7 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("disconnect", onDisconnect);
 			socket.off("sessionDisplaced");
 			socket.off("kicked");
+			socket.off("adminUsersUpdated");
 		};
 	}, []); // eslint-disable-line react-hooks/exhaustive-deps
 }
