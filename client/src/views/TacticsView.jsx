@@ -101,7 +101,6 @@ function PlayerRow({
   player,
   matchweekCount,
   onClick,
-  dotColor,
   draggable,
   onDragStart,
   onDragOver,
@@ -596,7 +595,6 @@ ${disabled ? "opacity-30 cursor-not-allowed text-gray-500" : player.status === s
 export function TacticsView() {
   const {
     tactic,
-    tacticFamiliarity,
     allTacticFamiliarity,
     annotatedSquad,
     titulares,

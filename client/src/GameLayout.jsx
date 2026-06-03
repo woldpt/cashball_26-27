@@ -12,6 +12,7 @@ import { PlayerHistoryModal } from "./components/modals/PlayerHistoryModal.jsx";
 import { CupDrawPopup } from "./components/modals/CupDrawPopup.jsx";
 import { PenaltySuspensePopup } from "./components/modals/PenaltySuspensePopup.jsx";
 import { PenaltyShootoutPopup } from "./components/modals/PenaltyShootoutPopup.jsx";
+import { WaitingCoachesModal } from "./components/modals/WaitingCoachesModal.jsx";
 import { MatchPage } from "./components/match/MatchPage.jsx";
 
 import { GameDialog } from "./components/shared/GameDialog.jsx";
@@ -73,8 +74,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     marketSort,
     setMarketSort,
     activeAuctions,
-    nextMatchSummary,
-    nextMatchSummaryLoading,
     gameDialog,
     setGameDialog,
     cupDraw,
@@ -169,10 +168,10 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     redCardedHalftimeIds,
     injuredHalftimeIds,
     myTeamInCup,
+    lockedCoaches,
     panelMode,
     panelFixture,
     panelIsReady,
-    nextMatchOpponent,
     currentJornada,
     completedJornada,
     totalWeeklyWage,
@@ -2113,8 +2112,21 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           matchAction={matchAction}
           injuryCountdown={injuryCountdown}
           onResolveAction={handleResolveMatchAction}
+          matchResults={matchResults}
         />
       )}
+
+      {/* Modal de espera multiplayer no intervalo */}
+      <WaitingCoachesModal
+        players={players}
+        visible={
+          panelMode === "halftime" &&
+          panelIsReady &&
+          lockedCoaches &&
+          lockedCoaches.length >= 2
+        }
+        onCancel={() => socket.emit("setReady", false)}
+      />
 
       <DismissalModal
         dismissalModal={dismissalModal}
