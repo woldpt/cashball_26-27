@@ -499,6 +499,11 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     }
 
     // 5. Loop coaches humanos activos sobreviventes — verificar convites
+    // Track NPC teams already offered (this cycle + stale offers from prior weeks)
+    // to prevent the same NPC club from being offered to two different coaches.
+    const offeredTeamIds = new Set<number>(
+      Object.values(game.pendingJobOffers).map((o) => o.toTeamId),
+    );
     for (const player of Object.values(game.playersByName)) {
       if (player.teamId === null || player.teamId === undefined) continue;
 
@@ -515,10 +520,13 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       const inviteChance = INVITE_BY_WINS[winCount] ?? 0;
       if (inviteChance <= 0 || Math.random() >= inviteChance) continue;
 
-      // Equipa NPC na divisão superior
+      // Equipa NPC na divisão superior (excluir equipas já oferecidas a outro coach)
       const targetDivision = team.division - 1;
       const npcCandidates = allTeams.filter(
-        (t) => t.division === targetDivision && !humanTeamIds.has(t.id),
+        (t) =>
+          t.division === targetDivision &&
+          !humanTeamIds.has(t.id) &&
+          !offeredTeamIds.has(t.id),
       );
       if (npcCandidates.length === 0) continue;
 
@@ -530,6 +538,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       });
       const pool = struggling.length > 0 ? struggling : npcCandidates;
       const toTeam = pool[Math.floor(Math.random() * pool.length)];
+      offeredTeamIds.add(toTeam.id);
       await offerJobToCoach(game, coachName, teamId, toTeam, team);
     }
 
@@ -550,6 +559,23 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     if (!player) return;
 
     const { fromTeamId, toTeamId } = offer;
+
+    // Guard: verificar se o clube de destino ainda está disponível
+    // (defesa contra race conditions onde dois coaches aceitam o mesmo convite)
+    const existingCoach = Object.values(game.playersByName).find(
+      (p) => p.teamId === toTeamId && p.name !== coachName,
+    );
+    if (existingCoach) {
+      delete game.pendingJobOffers[coachName];
+      if (player.socketId) {
+        io.to(player.socketId).emit("systemMessage", {
+          text: "Este clube já foi atribuído a outro treinador. O convite expirou.",
+          broadcast: false,
+        });
+      }
+      saveGameState(game);
+      return;
+    }
 
     const mgr = await runGet<{ id: number }>(
       game.db,

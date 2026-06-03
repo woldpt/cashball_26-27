@@ -6,7 +6,7 @@ import { generateLeagueFixtures } from "../../utils/fixtures.js";
 import { isSameTeamId } from "../../utils/teamHelpers.js";
 import { TeamSquadCard } from "../shared/TeamSquadCard.jsx";
 import { useState } from "react";
-// eslint-disable-next-line no-unused-vars
+ 
 import { motion, AnimatePresence } from "framer-motion";
 
 /**

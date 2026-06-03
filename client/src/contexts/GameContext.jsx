@@ -843,7 +843,8 @@ export function GameProvider({
 				);
 			})()
 		: showHalftimePanel
-			? myMatch || null
+			? myMatch ||
+				(isCupMatch ? matchResults?.results?.[0] || null : null)
 			: showMatchDetail
 				? matchDetailFixture
 				: null;

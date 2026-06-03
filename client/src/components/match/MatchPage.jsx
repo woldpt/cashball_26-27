@@ -35,6 +35,7 @@ export function MatchPage({
 	injuryCountdown,
 	onResolveAction,
 	sidebarCollapsed,
+	matchResults,
 }) {
 	// ── Tactic state & handlers from context ─────────────────────────────────
 	const {
@@ -90,6 +91,16 @@ export function MatchPage({
 			divisionFixtures: fixtures,
 		};
 	}, [teams, myTeamId, currentJornada]);
+
+	// Extract cup fixtures from matchResults for the sidebar when in cup mode
+	const cupOtherFixtures = useMemo(() => {
+		if (!isCupMatch || !matchResults?.results) return [];
+		return matchResults.results.filter(
+			(r) =>
+				Number(r.homeTeamId) !== Number(myTeamId) &&
+				Number(r.awayTeamId) !== Number(myTeamId),
+		);
+	}, [isCupMatch, matchResults, myTeamId]);
 
 	// ── Fixture Card (compacto) ──────────────────────────────────────────────
 	const FixtureCard = ({ homeTeamId, awayTeamId }) => {
@@ -348,6 +359,24 @@ export function MatchPage({
 								myTeamId={myTeamId}
 							/>
 						)}
+
+						{/* Cup: show other fixtures in a compact strip */}
+						{isCupMatch && cupOtherFixtures.length > 0 && (
+							<div className="shrink-0 border-t border-zinc-800/60 bg-zinc-950/80 backdrop-blur-sm px-4 py-2">
+								<h4 className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2">
+									{cupMatchRoundName || "Taça"} · Outros jogos
+								</h4>
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+									{cupOtherFixtures.map((r, i) => (
+										<FixtureCard
+											key={i}
+											homeTeamId={r.homeTeamId}
+											awayTeamId={r.awayTeamId}
+										/>
+									))}
+								</div>
+							</div>
+						)}
 					</>
 				) : (
 					/* ── Grid layout: detail / overview mode ───────────────── */
@@ -392,16 +421,31 @@ export function MatchPage({
 							)}
 						</div>
 
-						{/* ── COL 4-5 right sidebar: Our league's games ── */}
+						{/* ── COL 4-5 right sidebar: Other games ── */}
 						<div className="lg:col-span-2 flex flex-col min-h-0 overflow-hidden rounded-lg bg-zinc-950/50 border border-zinc-800/40">
 							<div className="shrink-0 px-2.5 py-1.5 border-b border-zinc-800 bg-zinc-950/70">
 								<h3 className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-									{DIVISION_NAMES[myDivision] || "Liga"} · J
-									{currentJornada || "—"}
+									{isCupMatch
+										? `${cupMatchRoundName || "Taça"} · Outros jogos`
+										: `${DIVISION_NAMES[myDivision] || "Liga"} · J${currentJornada || "—"}`}
 								</h3>
 							</div>
 							<div className="flex-1 overflow-y-auto space-y-1 p-2">
-								{(divisionFixtures[myDivision] || []).length === 0 ? (
+								{isCupMatch ? (
+									cupOtherFixtures.length === 0 ? (
+										<p className="text-zinc-600 text-[10px] font-bold text-center py-4">
+											Sem outros jogos
+										</p>
+									) : (
+										cupOtherFixtures.map((r, i) => (
+											<FixtureCard
+												key={i}
+												homeTeamId={r.homeTeamId}
+												awayTeamId={r.awayTeamId}
+											/>
+										))
+									)
+								) : (divisionFixtures[myDivision] || []).length === 0 ? (
 									<p className="text-zinc-600 text-[10px] font-bold text-center py-4">
 										Sem jogos disponíveis
 									</p>

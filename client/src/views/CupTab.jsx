@@ -24,8 +24,13 @@ export function CupTab({
             (r) =>
               r.homeTeamId === me.teamId || r.awayTeamId === me.teamId,
           );
+          // If the user's team is not in this round (e.g. eliminated in a
+          // previous cup round), ignore the "mine" filter so the results
+          // are visible and the user isn't stuck on an empty view.
           const shown =
-            cupResultsFilter === "mine" ? myResults : allResults;
+            cupResultsFilter === "mine" && myResults.length > 0
+              ? myResults
+              : allResults;
           return (
             <div>
               <div className="flex items-start justify-between mb-5">

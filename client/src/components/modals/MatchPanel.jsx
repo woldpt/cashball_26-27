@@ -1,5 +1,5 @@
 import { useState } from "react";
-// eslint-disable-next-line no-unused-vars
+ 
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { getEffectiveLineup } from "../../utils/playerHelpers.js";
 import {

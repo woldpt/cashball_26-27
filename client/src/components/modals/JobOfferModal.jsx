@@ -1,6 +1,6 @@
 import { socket } from "../../socket.js";
 import { DIVISION_NAMES, POSITION_LABEL_MAP } from "../../constants/index.js";
-// eslint-disable-next-line no-unused-vars
+ 
 import { motion, AnimatePresence } from "framer-motion";
 
 const POSITION_COLORS = {
