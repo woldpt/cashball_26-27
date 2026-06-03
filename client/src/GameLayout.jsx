@@ -1503,7 +1503,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                           })()}
                           </div>
                           {/* ── MY DIVISION COLUMN ── */}
-                          {!isCupMatch && (() => {
+                          {!isCupMatch && matchResults?.results && (() => {
                             const myDiv = teams.find(t => t.id === me.teamId)?.division;
                             const divMatches = matchResults.results
                               .filter(m => teams.find(t => t.id === m.homeTeamId)?.division === myDiv)

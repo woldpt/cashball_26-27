@@ -31,19 +31,14 @@ export function WaitingCoachesModal({ players, visible }) {
         isMe: coachName === me?.name,
       };
     }
-    // Offline
-    const isOffline = awaitingCoaches.includes(coachName);
-    if (isOffline) {
-      // Tentar obter teamId via lockedCoaches — não temos `teamId` para offline
-      return {
-        name: coachName,
-        teamName: "Desconectado",
-        teamColor: null,
-        status: "offline",
-        isMe: coachName === me?.name,
-      };
-    }
-    return null;
+    // Offline ou estado desconhecido (incluído em lockedCoaches mas não em players)
+    return {
+      name: coachName,
+      teamName: awaitingCoaches.includes(coachName) ? "Desconectado" : "Ausente",
+      teamColor: null,
+      status: "offline",
+      isMe: coachName === me?.name,
+    };
   };
 
   const coaches = lockedCoaches

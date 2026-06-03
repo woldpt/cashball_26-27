@@ -7,7 +7,7 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
   const closed = activeAuctions.filter((a) => a.closed);
 
   const teamColorById = new Map(
-    (teams || []).map((t) => [Number(t.id), getTeamColor(t.id)])
+    (teams || []).map((t) => [Number(t.id), t.color_primary ?? getTeamColor(t.id)])
   );
 
   return (
