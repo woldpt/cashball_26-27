@@ -1605,6 +1605,7 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
           !showHalftimePanel &&
           lockedCoaches.length >= 2
         }
+        onCancel={handleReady}
       />
     </div>
   );

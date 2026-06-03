@@ -66,7 +66,7 @@ export function TeamSquadCard({
   const isSuspended = susp > matchweekCount;
   const isInjured = inj > matchweekCount;
   const isCooldown =
-    !isSuspended && !isInjured && cooldown > 0 && cooldown >= matchweekCount;
+    !isSuspended && !isInjured && cooldown > 0 && cooldown > matchweekCount;
 
   const skillDelta =
     player.prev_skill != null && player.prev_skill !== player.skill

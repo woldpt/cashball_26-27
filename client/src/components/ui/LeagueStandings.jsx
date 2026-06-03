@@ -163,12 +163,9 @@ function DivisionTable({
                           TU
                         </span>
                       )}
-                      {!isMe && isHuman && (
-                        <span
-                          className="shrink-0 text-amber-400 text-[8px]"
-                          title={coachNames?.[t.id] || "Treinador humano"}
-                        >
-                          👤
+                      {!isMe && isHuman && coachNames?.[t.id] && (
+                        <span className="shrink-0 px-1.5 py-px bg-amber-400/15 text-amber-400 text-[8px] font-black rounded-sm border border-amber-400/30 whitespace-nowrap">
+                          {coachNames[t.id]}
                         </span>
                       )}
                     </div>

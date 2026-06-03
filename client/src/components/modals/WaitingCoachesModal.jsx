@@ -7,10 +7,11 @@ import { useGame } from "../../contexts/GameContext.jsx";
  *
  * @param {{
  *   players: Array<{name: string, teamId: number|null, ready: boolean, socketId: string|null}>,
- *   visible: boolean
+ *   visible: boolean,
+ *   onCancel?: () => void
  * }} props
  */
-export function WaitingCoachesModal({ players, visible }) {
+export function WaitingCoachesModal({ players, visible, onCancel }) {
   const { teams, lockedCoaches, awaitingCoaches, me } = useGame();
 
   // Só mostrar se lockedCoaches >= 2 (multiplayer) e visible
@@ -187,12 +188,18 @@ export function WaitingCoachesModal({ players, visible }) {
             </div>
 
             {/* Rodapé */}
-            <div className="px-4 py-2.5 border-t border-[#1a1a1a]">
+            <div className="px-4 py-2.5 border-t border-[#1a1a1a] space-y-2">
               <p className="text-[10px] text-gray-600 font-bold text-center">
                 {allReady
                   ? "Todos prontos! O jogo vai começar..."
                   : "O jogo começa quando todos estiverem Ready."}
               </p>
+              <button
+                onClick={onCancel}
+                className="w-full py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl bg-[#1a1a1a] text-gray-500 hover:bg-[#222] hover:text-gray-300 active:scale-[0.97] transition-all"
+              >
+                ✕ Cancelar e refazer táctica
+              </button>
             </div>
           </motion.div>
         </motion.div>
