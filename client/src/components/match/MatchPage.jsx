@@ -4,6 +4,7 @@ import {
 	TabLineup,
 	TabAdversario,
 	TabIntervencao,
+	MatchIntervencaoView,
 } from "./MatchTabs.jsx";
 import { useTactics } from "../../contexts/TacticsContext.jsx";
 import { generateLeagueFixtures } from "../../utils/fixtures.js";
@@ -267,98 +268,63 @@ export function MatchPage({
 				</div>
 			)}
 
-			{/* Tab navigation */}
-			<div className="shrink-0 flex w-full border-b border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm">
-				{tabs.map((tab) => {
-					const disabled =
-						tab.key === "intervencao" &&
-						mode !== "action" &&
-						mode !== "halftime";
-					return (
-						<button
-							key={tab.key}
-							onClick={() => !disabled && setActiveTab(tab.key)}
-							disabled={disabled}
-							className={`flex-1 min-w-0 py-2.5 px-1 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 whitespace-nowrap ${
-								activeTab === tab.key
-									? "text-white border-primary bg-primary/5 shadow-[inset_0_-1px_0_0_#6366f1]"
-									: disabled
-										? "text-zinc-700 cursor-not-allowed border-transparent"
-										: "text-zinc-500 hover:text-zinc-300 border-transparent hover:bg-zinc-800/30"
-							}`}
-						>
-							{tab.label}
-						</button>
-					);
-				})}
-			</div>
+			{/* Tab navigation (hidden for halftime/action — MatchIntervencaoView replaces it) */}
+			{mode !== "halftime" && mode !== "action" && (
+				<div className="shrink-0 flex w-full border-b border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm">
+					{tabs.map((tab) => {
+						const disabled =
+							tab.key === "intervencao" &&
+							mode !== "action" &&
+							mode !== "halftime";
+						return (
+							<button
+								key={tab.key}
+								onClick={() => !disabled && setActiveTab(tab.key)}
+								disabled={disabled}
+								className={`flex-1 min-w-0 py-2.5 px-1 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 whitespace-nowrap ${
+									activeTab === tab.key
+										? "text-white border-primary bg-primary/5 shadow-[inset_0_-1px_0_0_#6366f1]"
+										: disabled
+											? "text-zinc-700 cursor-not-allowed border-transparent"
+											: "text-zinc-500 hover:text-zinc-300 border-transparent hover:bg-zinc-800/30"
+								}`}
+							>
+								{tab.label}
+							</button>
+						);
+					})}
+				</div>
+			)}
 
 			{/* Content */}
 			<div className="flex-1 flex flex-col min-h-0 overflow-hidden">
 				{mode === "halftime" || mode === "action" ? (
 					<>
-						{activeTab === "jogo" && (
-							<TabJogo
-								fixture={fixture}
-								liveMinute={liveMinute}
-								teams={teams}
-								mode={mode}
-							/>
-						)}
-						{activeTab === "locais" && (
-							<TabAdversario
-								fixture={fixture}
-								myTeamId={fixture?.homeTeamId}
-								teams={teams}
-							/>
-						)}
-						{activeTab === "visitantes" && (
-							<TabAdversario
-								fixture={fixture}
-								myTeamId={fixture?.awayTeamId}
-								teams={teams}
-							/>
-						)}
-						{activeTab === "lineup" && (
-							<TabLineup
-								fixture={fixture}
-								liveMinute={liveMinute}
-								teams={teams}
-							/>
-						)}
-						{activeTab === "adversario" && mode !== "detail" && (
-							<TabAdversario
-								fixture={fixture}
-								myTeamId={myTeamId}
-								teams={teams}
-							/>
-						)}
-						{activeTab === "intervencao" && mode !== "detail" && (
-							<TabIntervencao
-								mode={mode}
-								matchAction={matchAction}
-								injuryCountdown={injuryCountdown}
-								tactic={tactic}
-								onUpdateTactic={updateTactic}
-								annotatedSquad={annotatedSquad}
-								subbedOut={subbedOut}
-								confirmedSubs={confirmedSubs}
-								subsMade={subsMade}
-								swapSource={swapSource}
-								swapTarget={swapTarget}
-								onSelectOut={effectiveSelectOut}
-								onSelectIn={effectiveSelectIn}
-								onConfirmSub={handleConfirmSub}
-								onResetSub={handleResetSub}
-								onResetAllSubs={handleResetAllSubs}
-								redCardedHalftimeIds={redCardedHalftimeIds}
-								injuredHalftimeIds={injuredHalftimeIds}
-								onResolveAction={onResolveAction}
-								fixture={fixture}
-								teams={teams}
-								myTeamId={myTeamId}
-							/>
-						)}
+						<MatchIntervencaoView
+							mode={mode}
+							fixture={fixture}
+							liveMinute={liveMinute}
+							teams={teams}
+							myTeamId={myTeamId}
+							matchAction={matchAction}
+							injuryCountdown={injuryCountdown}
+							tactic={tactic}
+							onUpdateTactic={updateTactic}
+							annotatedSquad={annotatedSquad}
+							subbedOut={subbedOut}
+							confirmedSubs={confirmedSubs}
+							subsMade={subsMade}
+							swapSource={swapSource}
+							swapTarget={swapTarget}
+							onSelectOut={effectiveSelectOut}
+							onSelectIn={effectiveSelectIn}
+							onConfirmSub={handleConfirmSub}
+							onResetSub={handleResetSub}
+							onResetAllSubs={handleResetAllSubs}
+							redCardedHalftimeIds={redCardedHalftimeIds}
+							injuredHalftimeIds={injuredHalftimeIds}
+							onResolveAction={onResolveAction}
+						/>
 
 						{/* Cup: show other fixtures in a compact strip */}
 						{isCupMatch && cupOtherFixtures.length > 0 && (

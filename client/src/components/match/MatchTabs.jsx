@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { getEffectiveLineup } from "../../utils/playerHelpers.js";
 import {
@@ -286,6 +287,26 @@ function FormBadge({ form }) {
     >
       {f >= 115 ? "💪" : f <= 85 ? "😩" : "👍"}
     </span>
+  );
+}
+
+function FormBar({ form }) {
+  const f = form ?? 100;
+  const pct = Math.max(0, Math.min(100, f));
+  const color =
+    f >= 115 ? "#34d399" : f <= 85 ? "#f87171" : "#a1a1aa";
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="h-1.5 w-9 rounded-full bg-zinc-800 overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-300"
+          style={{ width: `${pct}%`, background: color }}
+        />
+      </div>
+      <span className="text-[9px] font-black tabular-nums" style={{ color }}>
+        {f}%
+      </span>
+    </div>
   );
 }
 
@@ -610,6 +631,24 @@ const _sortByPos = (arr) =>
       (POS_ORDER[a.position] ?? 9) - (POS_ORDER[b.position] ?? 9) ||
       (b.skill ?? 0) - (a.skill ?? 0),
   );
+
+const MATCH_EVENT_TYPES = [
+  "goal",
+  "penalty_goal",
+  "own_goal",
+  "penalty_miss",
+  "yellow",
+  "red",
+  "injury",
+  "substitution",
+  "phase_start",
+];
+
+function _filterEvents(evts, liveMinute) {
+  return evts
+    .filter((e) => e.minute <= liveMinute && MATCH_EVENT_TYPES.includes(e.type))
+    .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+}
 
 /* ── TabIntervencao — Substitution / management ─────────────────────────── */
 export function TabIntervencao({
@@ -1128,6 +1167,895 @@ export function TabIntervencao({
         </div>
       </div>
 
+      {isHalftime && confirmedSubs.length > 0 && (
+        <div className="shrink-0 border-t border-zinc-800/30 px-4 py-1.5 flex justify-center bg-zinc-950/50">
+          <button
+            onClick={onResetAllSubs}
+            className="text-[9px] font-black uppercase tracking-[0.25em] text-rose-400/80 hover:text-rose-300 transition-colors"
+          >
+            ↺ Anular todas as substituições
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── MatchIntervencaoView — 3-col unified halftime / action view ───────── */
+export function MatchIntervencaoView({
+  mode,
+  fixture,
+  liveMinute,
+  teams,
+  myTeamId,
+  matchAction,
+  injuryCountdown,
+  tactic,
+  onUpdateTactic,
+  annotatedSquad,
+  subbedOut,
+  confirmedSubs,
+  subsMade,
+  swapSource,
+  swapTarget,
+  onSelectOut,
+  onSelectIn,
+  onConfirmSub,
+  onResetSub,
+  onResetAllSubs,
+  redCardedHalftimeIds,
+  injuredHalftimeIds,
+  onResolveAction,
+}) {
+  const [centerTab, setCenterTab] = useState("nossa");
+
+  /* ── Mode booleans ────────────────────────────────────────────────── */
+  const isHalftime = mode === "halftime";
+  const actionType = matchAction?.type || null;
+  const isPenalty = actionType === "penalty";
+  const isForcedSwap = actionType === "injury" || actionType === "gk_red_card";
+  const isActionSub = actionType === "user_substitution";
+
+  const selectedOutId =
+    typeof swapSource === "object" && swapSource !== null
+      ? swapSource.id
+      : swapSource;
+  const selectedInId =
+    typeof swapTarget === "object" && swapTarget !== null
+      ? swapTarget.id
+      : swapTarget;
+
+  const forceOutPlayer =
+    matchAction?.injuredPlayer ||
+    matchAction?.sentOffPlayer ||
+    matchAction?.dismissedPlayer ||
+    null;
+
+  /* ── Team info ────────────────────────────────────────────────────── */
+  const isHome = myTeamId && fixture?.homeTeamId === myTeamId;
+  const oppTeamId = isHome ? fixture?.awayTeamId : fixture?.homeTeamId;
+  const oppInfo = teams?.find((t) => t.id === oppTeamId);
+  const hInfo = teams?.find((t) => t.id === fixture?.homeTeamId);
+  const aInfo = teams?.find((t) => t.id === fixture?.awayTeamId);
+
+  /* ── Our squad ────────────────────────────────────────────────────── */
+  const sortPlayers = (arr = []) =>
+    [...arr].sort(
+      (a, b) =>
+        (POS_ORDER[a.position] ?? 9) - (POS_ORDER[b.position] ?? 9) ||
+        (b.skill ?? 0) - (a.skill ?? 0),
+    );
+
+  const onPitchPlayers = isHalftime
+    ? sortPlayers(
+        annotatedSquad.filter(
+          (p) =>
+            tactic.positions[p.id] === "Titular" &&
+            !subbedOut.includes(p.id) &&
+            !redCardedHalftimeIds.has(p.id) &&
+            !injuredHalftimeIds?.has(p.id),
+        ),
+      )
+    : isPenalty
+      ? sortPlayers(matchAction?.takerCandidates || [])
+      : isActionSub
+        ? sortPlayers(matchAction?.onPitch || [])
+        : forceOutPlayer
+          ? [forceOutPlayer]
+          : [];
+
+  const benchPlayers = isHalftime
+    ? sortPlayers(
+        annotatedSquad
+          .filter((p) => tactic.positions[p.id] === "Suplente")
+          .filter((p) => !injuredHalftimeIds?.has(p.id)),
+      )
+    : isPenalty
+      ? []
+      : sortPlayers(matchAction?.benchPlayers || []);
+
+  const playerById = (id) =>
+    annotatedSquad.find((p) => p.id === id) ||
+    onPitchPlayers.find((p) => p.id === id) ||
+    benchPlayers.find((p) => p.id === id) ||
+    null;
+
+  const effectiveOutId =
+    selectedOutId || (isForcedSwap ? forceOutPlayer?.id : null);
+  const sourcePlayer = playerById(effectiveOutId);
+  const targetPlayer = playerById(selectedInId);
+
+  const canConfirmSwap =
+    !!effectiveOutId &&
+    !!selectedInId &&
+    (!isHalftime || subsMade < MAX_MATCH_SUBS);
+
+  /* ── Handlers ─────────────────────────────────────────────────────── */
+  const handlePickOut = (player) => {
+    if (!player) return;
+    onSelectOut(isHalftime ? player.id : player);
+  };
+
+  const handlePickIn = (player) => {
+    if (!player) return;
+    onSelectIn(isHalftime ? player.id : player);
+  };
+
+  /* ── Opponent data (for "Adversário" tab) ─────────────────────────── */
+  const hasLineups = fixture?.homeLineup && fixture?.awayLineup;
+  const oppLineup = isHome ? fixture?.awayLineup : fixture?.homeLineup;
+  const oppTactic = isHome ? fixture?._t2 : fixture?._t1;
+  const oppFormation = oppTactic?.formation || null;
+  const oppStyleRaw = oppTactic?.style?.toUpperCase?.() || null;
+  const oppStyleLabel =
+    oppStyleRaw === "OFENSIVO"
+      ? "Ofensivo"
+      : oppStyleRaw === "DEFENSIVO"
+        ? "Defensivo"
+        : oppStyleRaw === "EQUILIBRADO"
+          ? "Equilibrado"
+          : null;
+  const oppStarters = hasLineups
+    ? _sortByPos(oppLineup.filter((p) => p.is_starter === true).slice(0, 11))
+    : [];
+  const oppBench = hasLineups
+    ? _sortByPos(oppLineup.filter((p) => p.is_starter === false))
+    : [];
+
+  const oppPositionRows = {
+    ATA: oppStarters.filter((p) => p.position === "ATA"),
+    MED: oppStarters.filter((p) => p.position === "MED"),
+    DEF: oppStarters.filter((p) => p.position === "DEF"),
+    GR: oppStarters.filter((p) => p.position === "GR"),
+  };
+
+  const oppPosColors = {
+    GR: "bg-amber-500 text-zinc-950",
+    DEF: "bg-sky-500 text-zinc-950",
+    MED: "bg-emerald-500 text-zinc-950",
+    ATA: "bg-rose-500 text-white",
+  };
+
+  /* ── Cronologia events ────────────────────────────────────────────── */
+  const evts = fixture?.events || [];
+  const weatherEvent = evts.find((e) => e.type === "weather");
+  const visibleEvts = _filterEvents(evts, liveMinute);
+  const ref = fixture?.referee;
+  const refBalance = ref?.balance ?? 50;
+  const homeGoals = fixture?.finalHomeGoals ?? 0;
+  const awayGoals = fixture?.finalAwayGoals ?? 0;
+
+  /* ── Shared helpers ───────────────────────────────────────────────── */
+  const getEventIcon = (e) =>
+    e.emoji ||
+    (e.type === "goal" || e.type === "penalty_goal"
+      ? "⚽"
+      : e.type === "own_goal"
+        ? "⚽🔙"
+        : e.type === "yellow"
+          ? "🟨"
+          : e.type === "red"
+            ? "🟥"
+            : e.type === "injury"
+              ? "🤕"
+              : e.type === "substitution"
+                ? "🔄"
+                : "");
+
+  /* ── Action title ─────────────────────────────────────────────────── */
+  const titleText = isHalftime
+    ? "Gestão da Equipa"
+    : isPenalty
+      ? "Escolhe o marcador"
+      : isForcedSwap
+        ? `Substituição obrigatória · ${forceOutPlayer?.name || "jogador"}`
+        : "Pausa para substituição";
+
+  const actionTheme = isPenalty
+    ? "from-amber-600/20 via-amber-500/5 to-transparent"
+    : isForcedSwap
+      ? "from-red-700/20 via-orange-500/10 to-transparent"
+      : isActionSub
+        ? "from-cyan-500/20 via-blue-500/10 to-transparent"
+        : "from-emerald-500/15 via-primary/10 to-transparent";
+
+  /* ── Render ───────────────────────────────────────────────────────── */
+  return (
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-[linear-gradient(170deg,#0d0d14_0%,#11111b_45%,#0e1018_100%)]">
+      {/* Title bar */}
+      <div
+        className={`shrink-0 px-3 py-2 border-b border-zinc-800/60 bg-gradient-to-r ${actionTheme} backdrop-blur-sm`}
+      >
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-100 text-center">
+          {titleText}
+        </p>
+        {isForcedSwap && injuryCountdown !== null && (
+          <p className="text-center text-amber-300 font-black text-[10px] mt-1 tracking-wide animate-pulse">
+            Auto-substituição em {injuryCountdown}s
+          </p>
+        )}
+      </div>
+
+      {/* ── 3-column grid ──────────────────────────────────────────── */}
+      <div className="flex-1 min-h-0 grid grid-cols-[1.3fr_1fr] md:grid-cols-[0.9fr_1.4fr_1fr] overflow-hidden">
+        {/* ═══ COL ESQUERDA — Cronologia ═══════════════════════════ */}
+        <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
+          <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-zinc-800/60 bg-zinc-950/70">
+            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
+            <span className="text-[8px] font-black uppercase tracking-[0.25em] text-amber-400">
+              Cronologia
+            </span>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+            {/* Halftime score banner */}
+            {isHalftime && (
+              <div className="rounded-lg overflow-hidden border border-zinc-800/60 bg-[linear-gradient(135deg,#111118,#1a1a2e)] mb-2">
+                <div className="flex items-center justify-center gap-3 px-2 py-2.5">
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ background: hInfo?.color_primary || "#6366f1" }}
+                    />
+                    <span className="text-[8px] font-black text-zinc-500 uppercase tracking-wider truncate max-w-[70px]">
+                      {hInfo?.name || "Casa"}
+                    </span>
+                  </div>
+                  <span className="text-lg font-black tabular-nums text-white">
+                    {homeGoals}
+                  </span>
+                  <span className="text-zinc-600 text-sm font-black">—</span>
+                  <span className="text-lg font-black tabular-nums text-white">
+                    {awayGoals}
+                  </span>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ background: aInfo?.color_primary || "#f43f5e" }}
+                    />
+                    <span className="text-[8px] font-black text-zinc-500 uppercase tracking-wider truncate max-w-[70px]">
+                      {aInfo?.name || "Fora"}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center pb-2.5">
+                  <span className="inline-flex items-center gap-1 text-[7px] font-black uppercase tracking-[0.25em] px-2 py-0.5 rounded-full bg-zinc-900/80 border border-zinc-700/50 text-zinc-500">
+                    <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+                    Intervalo
+                    <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Ref / weather bar */}
+            {(fixture?.attendance || ref?.refereeName || weatherEvent) && (
+              <div className="flex flex-wrap items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-800/60 bg-zinc-950/60 text-[9px]">
+                {fixture?.attendance && (
+                  <span className="text-zinc-500 font-bold">
+                    🏟️ {fixture.attendance.toLocaleString("pt-PT")}
+                  </span>
+                )}
+                {ref?.refereeName && (
+                  <span className="text-zinc-500 font-bold">
+                    👤 {ref.refereeName}{" "}
+                    <span
+                      className={`font-black tabular-nums ${refBalance >= 60 ? "text-emerald-400" : refBalance <= 40 ? "text-red-400" : "text-zinc-400"}`}
+                    >
+                      {refBalance}
+                    </span>
+                  </span>
+                )}
+                {weatherEvent && (
+                  <span className="text-zinc-500 font-bold">
+                    {weatherEvent.emoji}{" "}
+                    {WEATHER_LABELS[weatherEvent.emoji] || ""}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Events */}
+            {visibleEvts.length === 0 ? (
+              <div className="rounded-lg border border-zinc-800/40 bg-zinc-950/40 py-6 flex flex-col items-center gap-1.5">
+                <span className="text-xl text-zinc-700">⚽</span>
+                <p className="text-zinc-600 text-[10px] font-bold">
+                  Sem eventos
+                </p>
+              </div>
+            ) : (
+              visibleEvts.map((e, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-zinc-800/30 bg-zinc-950/40"
+                  >
+                    <span className="text-zinc-600 font-black w-7 shrink-0 text-right tabular-nums text-[10px]">
+                      {e.minute != null ? `${e.minute}'` : "—"}
+                    </span>
+                    <span className="w-4 shrink-0 text-center text-xs">
+                      {getEventIcon(e)}
+                    </span>
+                    <span className="flex-1 truncate text-[10px] font-bold text-white">
+                      <PlayerLink playerId={e.playerId}>
+                        {e.playerName || e.player_name || ""}
+                      </PlayerLink>
+                    </span>
+                  </div>
+                ))
+            )}
+          </div>
+        </div>
+
+        {/* ═══ COL CENTRAL — Nossa Equipa / Adversário ═══════════ */}
+        <div className="flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
+          {/* Internal tab nav (halftime only) */}
+          {isHalftime && (
+            <div className="shrink-0 flex border-b border-zinc-800/60 bg-zinc-950/70">
+              {[
+                { key: "nossa", label: "Nossa Equipa" },
+                { key: "adversario", label: "Adversário" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setCenterTab(tab.key)}
+                  className={`flex-1 min-w-0 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${
+                    centerTab === tab.key
+                      ? "text-white border-primary bg-primary/5"
+                      : "text-zinc-500 hover:text-zinc-300 border-transparent hover:bg-zinc-800/30"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Confirmed subs strip (halftime, nossa tab) */}
+          {isHalftime && centerTab === "nossa" && confirmedSubs.length > 0 && (
+            <div className="shrink-0 px-2.5 py-1.5 border-b border-cyan-900/40 bg-cyan-950/20 flex flex-wrap gap-1">
+              {confirmedSubs.map((sub) => {
+                const outP = annotatedSquad.find((p) => p.id === sub.out);
+                const inP = annotatedSquad.find((p) => p.id === sub.in);
+                return (
+                  <div
+                    key={`${sub.out}-${sub.in}`}
+                    className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold border border-cyan-800/40 bg-zinc-950/80"
+                  >
+                    <span className="text-cyan-400 shrink-0">🔄</span>
+                    <span className="text-rose-300 truncate max-w-[70px]">
+                      {outP?.name ?? "?"}
+                    </span>
+                    <span className="text-zinc-600 shrink-0">→</span>
+                    <span className="text-emerald-300 truncate max-w-[70px]">
+                      {inP?.name ?? "?"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Column content ───────────────────────────────── */}
+          <div className="flex-1 overflow-y-auto">
+            {!isHalftime || centerTab === "nossa" ? (
+              /* ── Our team / action mode ────────────────── */
+              <>
+                {/* Mentality buttons (halftime) */}
+                {isHalftime && (
+                  <div className="px-3 py-2.5 border-b border-zinc-800/60">
+                    <span className="block text-[8px] font-black uppercase tracking-[0.25em] text-zinc-500 mb-2">
+                      Mentalidade
+                    </span>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {[
+                        { value: "Defensive", label: "Defensivo", accent: "#3b82f6" },
+                        { value: "Balanced", label: "Equilibrado", accent: "#6366f1" },
+                        { value: "Offensive", label: "Ofensivo", accent: "#f59e0b" },
+                      ].map(({ value, label, accent }) => (
+                        <button
+                          key={value}
+                          onClick={() => onUpdateTactic({ style: value })}
+                          className={`py-2 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all border ${
+                            tactic.style === value
+                              ? "text-white shadow-[0_0_20px_rgba(99,102,241,0.15)]"
+                              : "bg-zinc-900/60 border-zinc-800/60 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                          }`}
+                          style={
+                            tactic.style === value
+                              ? {
+                                  background: `${accent}25`,
+                                  borderColor: `${accent}40`,
+                                  boxShadow: `0 0 20px ${accent}25`,
+                                }
+                              : {}
+                          }
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Section header */}
+                <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 bg-zinc-950/60 border-b border-zinc-800/40">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+                  <span className="text-[8px] font-black uppercase tracking-[0.25em] text-emerald-400">
+                    {isPenalty ? "Candidatos" : "Titulares"}
+                  </span>
+                </div>
+
+                {/* Players */}
+                {onPitchPlayers.map((p) => {
+                  const grAvailableOnBench = benchPlayers.some(
+                    (bp) => bp.position === "GR" && !subbedOut.includes(bp.id),
+                  );
+                  const noGrReplacement =
+                    isHalftime && p.position === "GR" && !grAvailableOnBench;
+                  const isLockedForced =
+                    isForcedSwap && !!forceOutPlayer && p.id !== forceOutPlayer.id;
+                  const disabled =
+                    noGrReplacement ||
+                    isLockedForced ||
+                    (isHalftime && subsMade >= MAX_MATCH_SUBS) ||
+                    (isPenalty &&
+                      !(matchAction?.takerCandidates || []).find(
+                        (c) => c.id === p.id,
+                      ));
+                  const selected = effectiveOutId === p.id;
+                  const accent = posAccent(p.position);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => !disabled && handlePickOut(p)}
+                      title={
+                        noGrReplacement
+                          ? "Não há GR no banco para substituir"
+                          : undefined
+                      }
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 border-b border-zinc-800/30 text-left select-none transition-all ${
+                        selected
+                          ? "bg-rose-500/10"
+                          : disabled
+                            ? "opacity-40 cursor-not-allowed"
+                            : "cursor-pointer hover:bg-zinc-800/40"
+                      }`}
+                    >
+                      {/* Position badge */}
+                      <span
+                        className={`shrink-0 px-1.5 py-0.5 rounded-md text-[8px] font-black border ${
+                          selected
+                            ? "bg-rose-500/20 text-rose-200 border-rose-400/40"
+                            : ""
+                        }`}
+                        style={
+                          selected
+                            ? {}
+                            : {
+                                color: accent,
+                                borderColor: `${accent}30`,
+                                background: `${accent}10`,
+                              }
+                        }
+                      >
+                        {POSITION_SHORT_LABELS[p.position]}
+                      </span>
+                      {/* Name */}
+                      <span
+                        className={`flex-1 truncate text-[11px] font-bold ${
+                          selected ? "text-rose-100" : "text-zinc-100"
+                        }`}
+                      >
+                        {p.name}
+                        {!!p.is_star &&
+                          (p.position === "MED" || p.position === "ATA") && (
+                            <span className="ml-0.5 text-amber-400 font-black">
+                              *
+                            </span>
+                          )}
+                      </span>
+                      {/* Stats */}
+                      <div className="shrink-0 flex items-center gap-2">
+                        {!isPenalty && <FormBar form={p.form} />}
+                        {!isPenalty && p.skill != null && (
+                          <span
+                            className={`text-[10px] font-black tabular-nums w-5 text-right ${
+                              selected ? "text-rose-300" : "text-zinc-500"
+                            }`}
+                          >
+                            {p.skill}
+                          </span>
+                        )}
+                        {/* Swap-out indicator */}
+                        {isHalftime && (
+                          <span
+                            className={`text-sm shrink-0 transition-colors ${
+                              selected
+                                ? "text-rose-400"
+                                : disabled
+                                  ? "text-zinc-700"
+                                  : "text-zinc-500 group-hover:text-emerald-400"
+                            }`}
+                          >
+                            ↔
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+                {onPitchPlayers.length === 0 && (
+                  <p className="text-center text-zinc-600 text-xs font-bold py-6">
+                    Sem opções em campo
+                  </p>
+                )}
+              </>
+            ) : (
+              /* ── Adversário tab ─────────────────────────── */
+              <div className="p-2 space-y-2">
+                {/* Opponent header */}
+                <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-zinc-800/60 bg-zinc-950/60">
+                  <span
+                    className="text-[10px] font-black uppercase tracking-[0.2em] truncate"
+                    style={{ color: oppInfo?.color_primary || "#f59e0b" }}
+                  >
+                    {oppInfo?.name || "Adversário"}
+                  </span>
+                  <div className="ml-auto flex items-center gap-2">
+                    {(oppFormation || oppStyleLabel) && (
+                      <span className="text-[8px] font-black text-zinc-500 shrink-0">
+                        {[oppFormation, oppStyleLabel]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {!hasLineups ? (
+                  <div className="rounded-lg border border-zinc-800/40 bg-zinc-950/40 py-8 flex flex-col items-center gap-2">
+                    <span className="text-3xl text-zinc-700">📋</span>
+                    <p className="text-zinc-500 text-xs font-bold text-center px-4">
+                      Escalações indisponíveis durante a simulação
+                    </p>
+                  </div>
+                ) : oppStarters.length === 0 ? (
+                  <div className="rounded-lg border border-zinc-800/40 bg-zinc-950/40 py-8 flex flex-col items-center gap-2">
+                    <span className="text-3xl text-zinc-700">🤷</span>
+                    <p className="text-zinc-500 text-xs font-bold text-center px-4">
+                      Sem dados da escalação do adversário
+                    </p>
+                  </div>
+                ) : (
+                  /* Pitch SVG */
+                  <div
+                    className="relative rounded-lg overflow-hidden border border-zinc-800/60 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]"
+                    style={{ aspectRatio: "9/16", maxHeight: "380px" }}
+                  >
+                    <svg
+                      className="absolute inset-0 w-full h-full"
+                      viewBox="0 0 315 560"
+                      preserveAspectRatio="xMidYMid meet"
+                      aria-hidden="true"
+                    >
+                      <rect x="10" y="10" width="295" height="540" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" rx="3" />
+                      <line x1="10" y1="280" x2="305" y2="280" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
+                      <circle cx="157" cy="280" r="50" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                      <circle cx="157" cy="280" r="3" fill="rgba(255,255,255,0.25)" />
+                      <rect x="25" y="10" width="265" height="150" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                      <rect x="85" y="10" width="145" height="40" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+                      <rect x="25" y="400" width="265" height="150" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                      <rect x="85" y="510" width="145" height="40" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+                    </svg>
+
+                    {["GR", "DEF", "MED", "ATA"].map((key) => {
+                      const rowPlayers = oppPositionRows[key] || [];
+                      if (rowPlayers.length === 0) return null;
+                      return (
+                        <div
+                          key={key}
+                          className="absolute w-full flex justify-evenly items-start px-3"
+                          style={{
+                            top:
+                              key === "GR"
+                                ? "8%"
+                                : key === "DEF"
+                                  ? "31%"
+                                  : key === "MED"
+                                    ? "56%"
+                                    : "81%",
+                          }}
+                        >
+                          {rowPlayers.map((player) => (
+                            <div
+                              key={player.id ?? player.name}
+                              className="flex flex-col items-center gap-0.5"
+                              style={{ maxWidth: "90px" }}
+                            >
+                              <div
+                                className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-[10px] border border-white/30 shadow-lg ${oppPosColors[player.position] || "bg-zinc-500 text-white"}`}
+                              >
+                                {POSITION_SHORT_LABELS[player.position] || "?"}
+                              </div>
+                              <div
+                                className="bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-[9px] font-black text-white text-center truncate"
+                                style={{ maxWidth: "85px" }}
+                              >
+                                {player.name}
+                                {!!player.is_star &&
+                                  (player.position === "MED" ||
+                                    player.position === "ATA") && (
+                                    <span className="ml-0.5 text-amber-400">
+                                      *
+                                    </span>
+                                  )}
+                              </div>
+                              <span className="text-[9px] font-black text-amber-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                                {player.skill ?? "-"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+
+                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/40 to-transparent" />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ═══ COL DIREITA — Banco ═══════════════════════════════ */}
+        <div className="flex flex-col min-h-0 overflow-hidden">
+          <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-zinc-800/60 bg-zinc-950/70">
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)] ${
+                isHalftime && centerTab === "adversario"
+                  ? "bg-amber-400"
+                  : "bg-cyan-400"
+              }`}
+            />
+            <span
+              className={`text-[8px] font-black uppercase tracking-[0.25em] ${
+                isHalftime && centerTab === "adversario"
+                  ? "text-amber-400"
+                  : "text-cyan-400"
+              }`}
+            >
+              {isHalftime && centerTab === "adversario"
+                ? "Banco Adversário"
+                : isPenalty
+                  ? "Escolha"
+                  : "Suplentes"}
+            </span>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {/* ── Our bench (interactive) ─────────────────────── */}
+            {(!isHalftime || centerTab === "nossa") && !isPenalty && (
+              <>
+                {benchPlayers.map((p) => {
+                  const alreadyUsed =
+                    isHalftime && subbedOut.includes(p.id);
+                  const positionMismatch =
+                    !!sourcePlayer &&
+                    (sourcePlayer.position === "GR") !== (p.position === "GR");
+                  const disabled =
+                    alreadyUsed ||
+                    positionMismatch ||
+                    (isHalftime && subsMade >= MAX_MATCH_SUBS);
+                  const selected = selectedInId === p.id;
+                  const accent = posAccent(p.position);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => !disabled && handlePickIn(p)}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 border-b border-zinc-800/30 text-left select-none transition-all ${
+                        alreadyUsed
+                          ? "opacity-25 cursor-not-allowed"
+                          : selected
+                            ? "bg-emerald-500/10"
+                            : disabled
+                              ? "opacity-40 cursor-not-allowed"
+                              : "cursor-pointer hover:bg-zinc-800/40"
+                      }`}
+                    >
+                      {/* Position badge */}
+                      <span
+                        className={`shrink-0 px-1.5 py-0.5 rounded-md text-[8px] font-black border ${
+                          alreadyUsed
+                            ? "border-zinc-700/50 text-zinc-600"
+                            : selected
+                              ? "bg-emerald-500/20 text-emerald-200 border-emerald-400/40"
+                              : ""
+                        }`}
+                        style={
+                          alreadyUsed || selected
+                            ? {}
+                            : {
+                                color: accent,
+                                borderColor: `${accent}30`,
+                                background: `${accent}10`,
+                              }
+                        }
+                      >
+                        {POSITION_SHORT_LABELS[p.position]}
+                      </span>
+                      {/* Name */}
+                      <span
+                        className={`flex-1 truncate text-[11px] font-bold ${
+                          alreadyUsed
+                            ? "text-zinc-600"
+                            : selected
+                              ? "text-emerald-100"
+                              : "text-zinc-100"
+                        }`}
+                      >
+                        {alreadyUsed ? p.name : p.name}
+                        {!alreadyUsed &&
+                          !!p.is_star &&
+                          (p.position === "MED" || p.position === "ATA") && (
+                            <span className="ml-0.5 text-amber-400 font-black">
+                              *
+                            </span>
+                          )}
+                      </span>
+                      {/* Stats */}
+                      <div className="shrink-0 flex items-center gap-2">
+                        {!alreadyUsed && <FormBar form={p.form} />}
+                        <span
+                          className={`text-[10px] font-black tabular-nums w-5 text-right ${
+                            alreadyUsed
+                              ? "text-zinc-700"
+                              : selected
+                                ? "text-emerald-300"
+                                : "text-zinc-500"
+                          }`}
+                        >
+                          {alreadyUsed ? "—" : (p.skill ?? "—")}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+                {benchPlayers.length === 0 && (
+                  <p className="text-center text-zinc-600 text-xs font-bold py-6">
+                    Sem suplentes disponíveis
+                  </p>
+                )}
+              </>
+            )}
+
+            {/* ── Penalty info ────────────────────────────────── */}
+            {isPenalty && (
+              <p className="text-center text-zinc-500 text-xs font-bold py-8 px-4">
+                Seleciona o marcador na coluna central.
+              </p>
+            )}
+
+            {/* ── Opponent bench (read-only) ──────────────────── */}
+            {isHalftime && centerTab === "adversario" && (
+              <>
+                {!hasLineups || oppBench.length === 0 ? (
+                  <p className="text-center text-zinc-600 text-xs font-bold py-6 px-2">
+                    Sem dados do banco adversário
+                  </p>
+                ) : (
+                  oppBench.map((player) => (
+                    <div
+                      key={player.id ?? player.name}
+                      className="flex items-center gap-2.5 px-3 py-2.5 border-b border-zinc-800/30"
+                    >
+                      <span
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-black border border-white/20 shrink-0 ${oppPosColors[player.position] || "bg-zinc-500 text-white"}`}
+                      >
+                        {POSITION_SHORT_LABELS[player.position] || "?"}
+                      </span>
+                      <span className="flex-1 truncate text-[11px] font-bold text-zinc-300">
+                        {player.name}
+                        {!!player.is_star &&
+                          (player.position === "MED" ||
+                            player.position === "ATA") && (
+                            <span className="ml-0.5 text-amber-400 font-black">
+                              *
+                            </span>
+                          )}
+                      </span>
+                      <span className="text-[10px] font-black tabular-nums text-zinc-500 shrink-0">
+                        {player.skill ?? "—"}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ BOTTOM BAR — Confirmation ═══════════════════════════ */}
+      <div className="shrink-0 border-t border-zinc-800/60 bg-zinc-950/80 backdrop-blur-sm px-3 py-2.5">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex-1 flex items-center gap-2 min-w-0">
+            <span className="text-[9px] text-zinc-600 shrink-0 font-bold uppercase tracking-wide">
+              Sai
+            </span>
+            <span className="bg-rose-950/80 text-rose-200 border border-rose-800/50 text-[10px] font-black px-2.5 py-1 rounded-lg truncate max-w-[35%]">
+              {effectiveOutId ? sourcePlayer?.name || "?" : "—"}
+            </span>
+            {!isPenalty && (
+              <>
+                <span className="text-zinc-500 shrink-0 font-black text-sm">→</span>
+                <span className="text-[9px] text-zinc-600 shrink-0 font-bold uppercase tracking-wide">
+                  Entra
+                </span>
+                <span className="bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-[10px] font-black px-2.5 py-1 rounded-lg truncate max-w-[35%]">
+                  {selectedInId ? targetPlayer?.name || "?" : "—"}
+                </span>
+              </>
+            )}
+          </div>
+
+          {isHalftime ? (
+            <>
+              <button
+                onClick={onResetSub}
+                className="shrink-0 w-7 h-7 rounded-lg bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-500 hover:text-white text-xs flex items-center justify-center transition-colors border border-zinc-700/50"
+              >
+                ✕
+              </button>
+              <button
+                onClick={onConfirmSub}
+                disabled={!canConfirmSwap}
+                className={`shrink-0 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all border ${
+                  canConfirmSwap
+                    ? "bg-emerald-600/90 border-emerald-400/40 text-white shadow-[0_0_16px_rgba(16,185,129,0.25)] hover:bg-emerald-500/90"
+                    : "bg-zinc-800/80 border-zinc-700/50 text-zinc-600 cursor-not-allowed"
+                }`}
+              >
+                Substituir
+              </button>
+            </>
+          ) : (
+            <button
+              disabled={isPenalty ? !effectiveOutId : !canConfirmSwap}
+              onClick={() =>
+                isPenalty
+                  ? onResolveAction(effectiveOutId || null)
+                  : onResolveAction({
+                      playerOut: effectiveOutId,
+                      playerIn: selectedInId,
+                    })
+              }
+              className="shrink-0 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide bg-primary/90 hover:brightness-110 text-on-primary disabled:opacity-50 disabled:cursor-not-allowed border border-primary/40 shadow-[0_0_16px_rgba(99,102,241,0.2)]"
+            >
+              Substituir
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Reset all subs (halftime) */}
       {isHalftime && confirmedSubs.length > 0 && (
         <div className="shrink-0 border-t border-zinc-800/30 px-4 py-1.5 flex justify-center bg-zinc-950/50">
           <button
