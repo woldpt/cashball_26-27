@@ -37,11 +37,6 @@ const POS_COLORS = {
   },
 };
 
-const STATUS_DOT = {
-  Titular: "bg-green-400",
-  Suplente: "bg-yellow-400",
-  "Excluído": "bg-gray-600",
-};
 
 const TIER_COLORS = {
   Mestre: {
@@ -162,17 +157,49 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
             );
           })()}
       </span>
-     <div className="w-24 shrink-0 flex items-center justify-end gap-0.5">
-        <div className="flex flex-col items-end leading-none">
-          <span className="text-[7px] text-gray-600 tracking-wide">RES</span>
-          <span className="text-[11px] text-gray-400 font-bold tabular-nums mt-0.5">
+      <div className="flex items-center gap-1.5 shrink-0">
+        {/* Resistência */}
+        <div className="flex flex-col items-end gap-0.5">
+          <span className="text-[7px] uppercase tracking-widest text-gray-500 font-bold leading-none">
+            RES
+          </span>
+          <span
+            className={`text-[13px] font-black tabular-nums leading-none ${
+              (player.resistance ?? 0) >= 4
+                ? "text-green-400"
+                : (player.resistance ?? 0) >= 3
+                  ? "text-yellow-400"
+                  : "text-red-400"
+            }`}
+          >
             {player.resistance ?? "–"}
           </span>
         </div>
-        <span className="text-[10px]">{formIcon}</span>
-        <div className="flex flex-col items-end leading-none">
-          <span className="text-[7px] text-gray-600 tracking-wide">Q</span>
-          <span className="text-sm font-black text-white tabular-nums mt-0.5">
+        <div className="w-px h-5 bg-gray-700/60" />
+
+        {/* Forma */}
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-[7px] uppercase tracking-widest text-gray-500 font-bold leading-none">
+            FORMA
+          </span>
+          <span className="text-[13px] leading-none">{formIcon}</span>
+        </div>
+        <div className="w-px h-5 bg-gray-700/60" />
+
+        {/* Q (Skill) */}
+        <div className="flex flex-col items-end gap-0.5">
+          <span className="text-[7px] uppercase tracking-widest text-gray-500 font-bold leading-none">
+            Q
+          </span>
+          <span
+            className={`text-[13px] font-black tabular-nums leading-none ${
+              player.skill >= 40
+                ? "text-green-400"
+                : player.skill >= 25
+                  ? "text-yellow-400"
+                  : "text-red-400"
+            }`}
+          >
             {player.skill}
           </span>
         </div>
@@ -1069,7 +1096,6 @@ ${
                       player={player}
                       matchweekCount={matchweekCount}
                       onClick
-                      dotColor={STATUS_DOT.Titular}
                       draggable={!player.isJunior}
                       onDragStart={handleDragStart}
                       onDragOver={(e) => {
@@ -1155,7 +1181,6 @@ ${
                         player={player}
                         matchweekCount={matchweekCount}
                         onClick
-                        dotColor={STATUS_DOT.Suplente}
                         draggable={!player.isJunior}
                         onDragStart={handleDragStart}
                         onDragOver={(e) => {
@@ -1242,7 +1267,6 @@ ${
                             key={player.id}
                             player={player}
                             matchweekCount={matchweekCount}
-                            dotColor={STATUS_DOT["Excluído"]}
                             draggable
                             onDragStart={handleDragStart}
                             onDragOver={(e) => {
