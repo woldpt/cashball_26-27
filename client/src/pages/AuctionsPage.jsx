@@ -1,9 +1,14 @@
 import { formatCurrency } from "../utils/formatters.js";
 import { AuctionCard } from "../components/auctions/AuctionCard.jsx";
+import { getTeamColor } from "../utils/teamHelpers.js";
 
 export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchweekCount = 0, socket }) {
   const live = activeAuctions.filter((a) => !a.closed);
   const closed = activeAuctions.filter((a) => a.closed);
+
+  const teamColorById = new Map(
+    (teams || []).map((t) => [Number(t.id), getTeamColor(t.id)])
+  );
 
   return (
     <div className="bg-surface-container rounded-lg shadow-sm overflow-hidden p-4 md:p-6 max-w-6xl mx-auto">
@@ -40,6 +45,7 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
                 teamInfo={teamInfo}
                 matchweekCount={matchweekCount}
                 socket={socket}
+                teamColorById={teamColorById}
               />
             ))}
           </div>
@@ -61,6 +67,7 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
                 teamInfo={teamInfo}
                 matchweekCount={matchweekCount}
                 socket={socket}
+                teamColorById={teamColorById}
               />
             ))}
           </div>

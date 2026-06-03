@@ -25,15 +25,16 @@ function getTimeAgo(ts) {
   return `${Math.floor(diff / 3600000)}h`;
 }
 
-export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket }) {
+export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket, teamColorById }) {
   const [flipped, setFlipped] = useState(false);
   const [bidError, setBidError] = useState("");
   const [bidSuccess, setBidSuccess] = useState(false);
 
   const secs = useCountdown(auction.closed || auction.paused ? null : auction.endsAt);
   const teamColor =
-    auction.color_primary ||
     auction.team_color_primary ||
+    auction.color_primary ||
+    teamColorById?.get(Number(auction.sellerTeamId)) ||
     "#95d4b3";
   const countryName = FLAG_TO_COUNTRY?.[auction.nationality] || auction.nationality || "—";
 
