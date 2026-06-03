@@ -186,19 +186,26 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
         </div>
         <div className="w-px h-5 bg-gray-700/60" />
 
-        {/* Q (Skill) */}
+        {/* Skill */}
         <div className="flex flex-col items-end gap-0.5">
           <span className="text-[7px] uppercase tracking-widest text-gray-500 font-bold leading-none">
-            Q
+            Qualidade
           </span>
           <span
-            className={`text-[13px] font-black tabular-nums leading-none ${
+            className={`text-[15px] font-black tabular-nums leading-none px-2 py-0.5 rounded-lg border ${
               player.skill >= 40
-                ? "text-green-400"
+                ? "bg-green-500/15 text-green-300 border-green-500/30"
                 : player.skill >= 25
-                  ? "text-yellow-400"
-                  : "text-red-400"
+                  ? "bg-yellow-500/15 text-yellow-300 border-yellow-500/30"
+                  : "bg-red-500/15 text-red-300 border-red-500/30"
             }`}
+            style={{
+              textShadow: player.skill >= 40
+                ? "0 0 10px rgba(34,197,94,0.3)"
+                : player.skill >= 25
+                  ? "0 0 10px rgba(234,179,8,0.3)"
+                  : "0 0 10px rgba(239,68,68,0.3)",
+            }}
           >
             {player.skill}
           </span>
