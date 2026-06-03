@@ -8,6 +8,7 @@ import { WelcomeModal } from "./components/modals/WelcomeModal.jsx";
 import { DismissalModal } from "./components/modals/DismissalModal.jsx";
 import { SeasonEndModal } from "./components/modals/SeasonEndModal.jsx";
 import { JobOfferModal } from "./components/modals/JobOfferModal.jsx";
+import { AdminPanel } from "./components/admin/AdminPanel.jsx";
 import { PlayerHistoryModal } from "./components/modals/PlayerHistoryModal.jsx";
 import { CupDrawPopup } from "./components/modals/CupDrawPopup.jsx";
 import { PenaltySuspensePopup } from "./components/modals/PenaltySuspensePopup.jsx";
