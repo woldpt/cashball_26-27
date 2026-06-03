@@ -50,6 +50,12 @@ const {
 	setAvatarSeed,
 	updateManagerProfile,
 	deleteManager,
+	// Admin-only functions
+	adminListUsers,
+	adminChangePassword,
+	adminRenameManager,
+	adminAddRoomAccess,
+	adminRemoveRoomAccess,
 } = require("./auth");
 const {
 	getSeasonEndMatchweek,
