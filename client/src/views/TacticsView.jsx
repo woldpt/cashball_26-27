@@ -165,9 +165,9 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
           </span>
           <span
             className={`text-[13px] font-black tabular-nums leading-none ${
-              (player.resistance ?? 0) >= 85
+              (player.resistance ?? 0) >= 4
                 ? "text-green-400"
-                : (player.resistance ?? 0) >= 60
+                : (player.resistance ?? 0) >= 3
                   ? "text-yellow-400"
                   : "text-red-400"
             }`}
