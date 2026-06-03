@@ -92,7 +92,6 @@ export function GameProvider({
 	const [palmares, setPalmares] = useState({ trophies: [], allChampions: [] });
 	const [palmaresTeamId, setPalmaresTeamId] = useState(null);
 	const [clubNews, setClubNews] = useState([]);
-	const [newsTickerItems, setNewsTickerItems] = useState([]);
 	const [playerHistoryModal, setPlayerHistoryModal] = useState(null);
 	const [financeData, setFinanceData] = useState(null);
 	const [showTransferSales, setShowTransferSales] = useState(false);
@@ -175,16 +174,6 @@ export function GameProvider({
 			4000,
 		);
 	}, []);
-
-	const pushTickerItem = useCallback(
-		(text, playerId = null, playerName = null, teamId = null) => {
-			setNewsTickerItems((prev) => [
-				...prev.slice(-49),
-				{ id: Date.now() + Math.random(), text, playerId, playerName, teamId },
-			]);
-		},
-		[],
-	);
 
 	// ── Avatar seed fetch ───────────────────────────────────────────────────
 	useEffect(() => {
@@ -533,7 +522,6 @@ export function GameProvider({
 			setMyAuctionBid,
 			setAuctionResult,
 			setActiveAuctions,
-			setNewsTickerItems,
 			setTopScorers,
 			setSeasonEndModal,
 			setSeasonYear,
@@ -599,7 +587,6 @@ export function GameProvider({
 			setUnreadRoom,
 			setUnreadGlobal,
 			addToast,
-			pushTickerItem,
 			setSubstitutionPause,
 			setTacticFamiliarity,
 			setAllTacticFamiliarity,
@@ -969,7 +956,6 @@ export function GameProvider({
 		setCupBracketData(null);
 		setSeasonYear(2026);
 		setClubNews([]);
-		setNewsTickerItems([]);
 		setFinanceData(null);
 		setJobOfferModal(null);
 		setSeasonEndModal(null);
@@ -1060,7 +1046,6 @@ export function GameProvider({
 		palmares,
 		palmaresTeamId,
 		clubNews,
-		newsTickerItems,
 		playerHistoryModal,
 		setPlayerHistoryModal,
 		financeData,
@@ -1144,7 +1129,6 @@ export function GameProvider({
 		backendUrl,
 		// Handlers
 		addToast,
-		pushTickerItem,
 		handleHalftimeReady,
 		handleOpenTeamSquad,
 		closeRefereePopup,

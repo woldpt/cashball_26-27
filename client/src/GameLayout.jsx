@@ -19,7 +19,6 @@ import { TransferProposalModal } from "./components/modals/TransferProposalModal
 import { AuctionNotification } from "./components/ui/AuctionNotification.jsx";
 import { AuctionsPage } from "./pages/AuctionsPage.jsx";
 import { UserSettingsPage } from "./pages/UserSettingsPage.jsx";
-import { NewsTicker } from "./components/ui/NewsTicker.jsx";
 import { RoomHub } from "./components/chat/RoomHub.jsx";
 import { StandingsTab } from "./views/StandingsTab.jsx";
 import { BracketTab } from "./views/BracketTab.jsx";
@@ -101,7 +100,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     palmares,
     palmaresTeamId,
     clubNews,
-    newsTickerItems,
     playerHistoryModal,
     setPlayerHistoryModal,
     financeData,
@@ -2133,12 +2131,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         jobOfferModal={jobOfferModal}
         setJobOfferModal={setJobOfferModal}
       />
-
-<NewsTicker
-				newsTickerItems={newsTickerItems}
-				hidden={isMatchInProgress}
-				sidebarCollapsed={sidebarCollapsed}
-			/>
 
       <SeasonEndModal
         data={seasonEndModal}

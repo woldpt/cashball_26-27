@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { socket } from "../socket.js";
-import { formatCurrency } from "../utils/formatters.js";
 import { isSameTeamId } from "../utils/teamHelpers.js";
 import { playGoalSound, playVarSound } from "../utils/audio.js";
 
@@ -131,22 +130,7 @@ export function useSocketListeners(handlers, refs) {
 			});
 		});
 		socket.on("auctionClosed", (result) => {
-			if (result.sold) {
-				handlers.pushTickerItem(
-					`${result.playerName} transferido para ${result.buyerTeamName} por ${formatCurrency(result.finalBid)}`,
-					result.playerId,
-					result.playerName,
-					result.buyerTeamId,
-				);
-			} else {
-				handlers.pushTickerItem(
-					`Leilão de ${result.playerName} encerrado sem licitações`,
-					result.playerId,
-					result.playerName,
-					null,
-				);
-			}
-			// Mark auction with result in activeAuctions; removal happens when matchweek advances
+				// Mark auction with result in activeAuctions; removal happens when matchweek advances
 			handlers.setActiveAuctions((prev) =>
 				prev.map((a) =>
 					a.playerId === result.playerId ? { ...a, result, closed: true } : a,
@@ -201,28 +185,7 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setSeasonEndModal(data);
 			if (data.year) handlers.setSeasonYear(data.year);
 			handlers.setMatchweekCount(0);
-			// Also push ticker items for context
-			if (data.champion) {
-				handlers.pushTickerItem(
-					`Campeão: ${data.champion.name}`,
-					null,
-					null,
-					data.champion.id,
-				);
-			}
-			for (const p of data.promotions || []) {
-				const teamName =
-					p.teamName ||
-					refs.teamsRef.current.find((t) => t.id === p.teamId)?.name ||
-					`Equipa ${p.teamId}`;
-				handlers.pushTickerItem(
-					`${teamName} promovida/descida para divisão ${p.toDiv}`,
-					null,
-					null,
-					p.teamId,
-				);
-			}
-		});
+			});
 		socket.on("teamSquadData", ({ teamId, squad }) => {
 			if (
 				refs.selectedTeamRef.current &&
@@ -471,22 +434,7 @@ export function useSocketListeners(handlers, refs) {
 		socket.on("cupRoundResults", (data) => {
 			refs.isCupDrawRef.current = false;
 			socket.emit("requestCupBracket");
-			for (const r of data.results || []) {
-				const homeName =
-					r.homeTeam?.name ||
-					refs.teamsRef.current.find((t) => t.id === r.homeTeamId)?.name ||
-					"?";
-				const awayName =
-					r.awayTeam?.name ||
-					refs.teamsRef.current.find((t) => t.id === r.awayTeamId)?.name ||
-					"?";
-				handlers.pushTickerItem(
-					`Taça: ${homeName} ${r.homeGoals}-${r.awayGoals} ${awayName}`,
-					null,
-					null,
-					r.winnerId || r.homeTeamId,
-				);
-			}
+	
 			handlers.setCupRoundResults(data);
 			// Don't navigate away yet — if a penalty shootout popup is open, wait for it to close first.
 			handlers.setPendingCupRoundResults(data);
@@ -527,20 +475,11 @@ export function useSocketListeners(handlers, refs) {
 		});
 		socket.on(
 			"clubNewsUpdated",
-			({ teamId, title, playerId, playerName, isAuction }) => {
+			({ teamId }) => {
 				// Use meRef (not me) to avoid stale closure — this listener is registered once with [] deps
 				const currentMe = refs.meRef.current;
 				if (currentMe?.teamId === teamId) {
 					socket.emit("requestClubNews", { teamId });
-				}
-				// Auction transfers are already covered by the auctionClosed handler — skip to avoid duplicates
-				if (title && !isAuction) {
-					handlers.pushTickerItem(
-						title,
-						playerId || null,
-						playerName || null,
-						teamId || null,
-					);
 				}
 			},
 		);
@@ -548,14 +487,8 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setPlayerHistoryModal(data),
 		);
 		socket.on("financeData", (data) => handlers.setFinanceData(data));
-		socket.on("stadiumBuilt", ({ teamId, teamName, newCapacity }) => {
-			handlers.pushTickerItem(
-				`🏟️ ${teamName} ampliou o estádio para ${newCapacity.toLocaleString("pt-PT")} lugares!`,
-				null,
-				null,
-				teamId,
-			);
-			// Re-pedir financeData se somos o clube em questão
+		socket.on("stadiumBuilt", ({ teamId }) => {
+				// Re-pedir financeData se somos o clube em questão
 			const currentMe = refs.meRef.current;
 			if (currentMe?.teamId && Number(currentMe.teamId) === Number(teamId)) {
 				socket.emit("requestFinanceData", { teamId: currentMe.teamId });
@@ -612,7 +545,6 @@ export function useSocketListeners(handlers, refs) {
 		});
 		socket.on("gameState", (data) => {
 			if (!inRoom()) return;
-			handlers.setNewsTickerItems([]);
 			if (data.allMatchResults)
 				handlers.setAllMatchResults(data.allMatchResults);
 			if (data.matchweek) handlers.setMatchweekCount(data.matchweek - 1);
@@ -1133,14 +1065,8 @@ export function useSocketListeners(handlers, refs) {
 			);
 		});
 
-		socket.on("coachDisconnected", ({ coachName, teamId }) => {
+		socket.on("coachDisconnected", () => {
 			if (!inRoom()) return;
-			handlers.pushTickerItem(
-				`${coachName} desconectou-se`,
-				null,
-				null,
-				teamId,
-			);
 		});
 
 		socket.on("matchActionExpired", ({ type }) => {
@@ -1172,25 +1098,8 @@ export function useSocketListeners(handlers, refs) {
 					(t) => t.id === r.homeTeamId,
 				)?.division;
 				if (myDivision && homeDiv !== myDivision) continue;
-				const home =
-					r.homeTeam?.name ||
-					refs.teamsRef.current.find((t) => t.id === r.homeTeamId)?.name ||
-					"?";
-				const away =
-					r.awayTeam?.name ||
-					refs.teamsRef.current.find((t) => t.id === r.awayTeamId)?.name ||
-					"?";
-				const teamId =
-					r.homeTeamId === myTeamId || r.awayTeamId === myTeamId
-						? myTeamId
-						: r.homeTeamId;
-				handlers.pushTickerItem(
-					`${home} ${r.finalHomeGoals ?? r.homeGoals ?? "?"}-${r.finalAwayGoals ?? r.awayGoals ?? "?"} ${away}`,
-					null,
-					null,
-					teamId,
-				);
-			}
+	
+				}
 			handlers.setMatchResults(data);
 			handlers.setMatchweekCount(data.matchweek);
 			handlers.setShowHalftimePanel(false);
