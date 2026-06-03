@@ -15,6 +15,7 @@
 | **Frontend JSDoc Check** | `cd client && npm run check:types`                 |
 | **Socket Audit**         | `cd server && npm run audit:socketio`              |
 | **Game-State Audit**     | `cd server && npm run audit:gamestate <ROOM_CODE>` |
+| **Repair Job Offer**     | `cd server && npm run repair:joboffer <ROOM_CODE> [--fix]` |
 | **Full Stack**           | `docker compose up --build`                        |
 
 ## ⚠️ REGRESSION PREVENTION (Crucial)

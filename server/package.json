@@ -12,7 +12,8 @@
     "seed": "node db/seed.js",
     "seed:real": "node db/seed.js --real",
     "audit:gamestate": "tsx scripts/gameStateAudit.ts",
-    "audit:socketio": "tsx scripts/socketioContractValidator.ts"
+    "audit:socketio": "tsx scripts/socketioContractValidator.ts",
+    "repair:joboffer": "tsx scripts/repairDuplicateJobOffer.ts"
   },
   "keywords": [],
   "author": "",
