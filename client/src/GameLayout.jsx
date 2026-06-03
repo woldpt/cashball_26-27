@@ -947,9 +947,12 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       <div
                         className={`bg-surface-container text-on-surface font-body p-3 sm:p-6 border border-outline-variant/20 shadow-sm relative overflow-hidden${isMatchInProgress ? " rounded-lg" : " min-h-150 rounded-lg"}`}
                       >
-                        {/* ── HERO: MY MATCH ─────────────────────── */}
-                        {matchResults &&
-                          (() => {
+                        {/* ── ROW 1: MY GAME + MY DIVISION ── */}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
+                          <div className="lg:col-span-2">
+                            {/* ── HERO: MY MATCH ─────────────────────── */}
+                            {matchResults &&
+                              (() => {
                             const myMatch = matchResults.results.find(
                               (m) =>
                                 m.homeTeamId === me.teamId ||
@@ -1007,7 +1010,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                             );
 
                             return (
-                              <div className="relative overflow-hidden mb-4 rounded-lg bg-surface-container-low border border-outline-variant/10">
+                              <div className="relative overflow-hidden rounded-lg bg-surface-container-low border border-outline-variant/10">
                                 {/* Stadium radial glow */}
                                 <div
                                   className="absolute inset-0 pointer-events-none"
@@ -1498,233 +1501,160 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                               </div>
                             );
                           })()}
-
-                        {/* ── MULTIVIEW GRID ─────────────────────── */}
-                        {!isCupMatch && (
-                          <div className="overflow-x-auto mt-2">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4 min-w-90">
-                              {(() => {
-                                const myDiv = teams.find(
-                                  (t) => t.id === me.teamId,
-                                )?.division;
-                                const divs = [
-                                  myDiv,
-                                  ...[1, 2, 3, 4].filter((d) => d !== myDiv),
-                                ];
-                                return divs.map((div) => {
-                                  const isMyDiv = myDiv === div;
-                                  const divMatches = matchResults.results
-                                    .filter(
-                                      (m) =>
-                                        teams.find((t) => t.id === m.homeTeamId)
-                                          ?.division === div,
-                                    )
-                                    .filter(
-                                      (m) =>
-                                        m.homeTeamId !== me.teamId &&
-                                        m.awayTeamId !== me.teamId,
-                                    );
-                                  return (
-                                    <div
-                                      key={div}
-                                      className="flex flex-col gap-2"
-                                    >
-                                      {/* Division header */}
-                                      <div
-                                        className={`px-3 py-2 rounded-t-md border-b-2 bg-surface-container-high ${isMyDiv ? "border-primary" : "border-outline-variant/20"}`}
-                                      >
-                                        <h3
-                                          className={`font-headline font-extrabold text-[9px] sm:text-[10px] lg:text-[11px] tracking-tighter uppercase ${isMyDiv ? "text-primary" : "text-on-surface/50"}`}
+                          </div>
+                          {/* ── MY DIVISION COLUMN ── */}
+                          {!isCupMatch && (() => {
+                            const myDiv = teams.find(t => t.id === me.teamId)?.division;
+                            const divMatches = matchResults.results
+                              .filter(m => teams.find(t => t.id === m.homeTeamId)?.division === myDiv)
+                              .filter(m => m.homeTeamId !== me.teamId && m.awayTeamId !== me.teamId);
+                            return (
+                              <div className="lg:col-span-1 flex flex-col min-h-0 rounded-lg bg-surface-container-low border border-outline-variant/10 overflow-hidden">
+                                <div className="shrink-0 px-2.5 py-1.5 border-b border-outline-variant/10 bg-surface-container-high">
+                                  <h3 className="font-headline font-extrabold text-[10px] sm:text-[11px] tracking-tighter uppercase text-primary">
+                                    {DIVISION_NAMES[myDiv] || `Div ${myDiv}`} · J {matchResults.matchweek}
+                                  </h3>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-1 p-2">
+                                  {divMatches.length === 0 ? (
+                                    <p className="text-on-surface-variant/30 text-[10px] font-bold text-center py-4">Sem jogos</p>
+                                  ) : (
+                                    divMatches.map((match, idx) => {
+                                      const hInfo = teams.find(t => t.id === match.homeTeamId);
+                                      const aInfo = teams.find(t => t.id === match.awayTeamId);
+                                      const matchEvents = match.events || [];
+                                      const currentHome = matchEvents.filter(e => e.minute <= liveMinute && (e.type === "goal" || e.type === "penalty_goal" || e.type === "var_goal_pending") && e.team === "home");
+                                      const currentAway = matchEvents.filter(e => e.minute <= liveMinute && (e.type === "goal" || e.type === "penalty_goal" || e.type === "var_goal_pending") && e.team === "away");
+                                      const isHumanMatch = players.some(p => p.teamId === match.homeTeamId || p.teamId === match.awayTeamId);
+                                      const flashHome = goalFlashRef[`${match.homeTeamId}_${match.awayTeamId}_home`];
+                                      const flashAway = goalFlashRef[`${match.homeTeamId}_${match.awayTeamId}_away`];
+                                      const now = Date.now();
+                                      const homeFlashing = flashHome && now - flashHome < 1500;
+                                      const awayFlashing = flashAway && now - flashAway < 1500;
+                                      const lastHomeEvent = getMatchLastEventText(matchEvents, liveMinute, "home");
+                                      const lastAwayEvent = getMatchLastEventText(matchEvents, liveMinute, "away");
+                                      return (
+                                        <button
+                                          key={idx}
+                                          onClick={() => { setMatchDetailFixture(match); setShowMatchDetail(true); }}
+                                          className={`w-full text-left rounded-md overflow-hidden transition-colors ${isHumanMatch ? "bg-primary-container/10 border-l-2 border-primary/60" : "bg-surface-container hover:bg-surface-bright"}`}
                                         >
-                                          {DIVISION_NAMES[div] || `Div ${div}`}
-                                        </h3>
-                                      </div>
-                                      {/* Match cards */}
-                                      <div className="flex flex-col gap-1.5">
-                                        {divMatches.length === 0 && (
-                                          <div className="text-[10px] text-on-surface-variant/30 px-3 py-2 text-center italic">
-                                            Sem jogos
+                                          <div className="flex justify-between items-center px-3 py-2">
+                                            <span className="flex items-center gap-1.5 flex-1 min-w-0 pr-1">
+                                              <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: hInfo?.color_primary || "#555" }} />
+                                              <span className="flex flex-col min-w-0">
+                                                <span className={`text-[10px] font-bold truncate ${isHumanMatch && players.some(p => p.teamId === match.homeTeamId) ? "text-primary" : "text-on-surface/80"}`}>{hInfo?.name}</span>
+                                                {(() => { const c = players.find(p => p.teamId === match.homeTeamId); return c ? <span className="text-[9px] text-amber-400 font-bold truncate leading-none">{c.name}</span> : null; })()}
+                                              </span>
+                                            </span>
+                                            <span className="font-headline font-black text-xs shrink-0 flex items-center gap-1 px-1">
+                                              <span style={{ color: homeFlashing ? "#ff4444" : undefined, transition: homeFlashing ? "none" : "color 1.25s ease" }}>{currentHome.length}</span>
+                                              <span className="text-on-surface/20 text-xs">-</span>
+                                              <span style={{ color: awayFlashing ? "#ff4444" : undefined, transition: awayFlashing ? "none" : "color 1.25s ease" }}>{currentAway.length}</span>
+                                            </span>
+                                            <span className="flex items-center gap-1.5 flex-1 min-w-0 pl-1 justify-end">
+                                              <span className="flex flex-col min-w-0 items-end">
+                                                <span className={`text-[10px] font-bold truncate ${isHumanMatch && players.some(p => p.teamId === match.awayTeamId) ? "text-primary" : "text-on-surface/80"}`}>{aInfo?.name}</span>
+                                                {(() => { const c = players.find(p => p.teamId === match.awayTeamId); return c ? <span className="text-[9px] text-amber-400 font-bold truncate leading-none">{c.name}</span> : null; })()}
+                                              </span>
+                                              <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: aInfo?.color_primary || "#555" }} />
+                                            </span>
                                           </div>
-                                        )}
-                                        {divMatches.map((match, idx) => {
-                                          const hInfo = teams.find(
-                                            (t) => t.id === match.homeTeamId,
-                                          );
-                                          const aInfo = teams.find(
-                                            (t) => t.id === match.awayTeamId,
-                                          );
-                                          const matchEvents =
-                                            match.events || [];
-                                          const currentHome =
-                                            matchEvents.filter(
-                                              (e) =>
-                                                e.minute <= liveMinute &&
-                                                (e.type === "goal" ||
-                                                  e.type === "penalty_goal" ||
-                                                  e.type ===
-                                                    "var_goal_pending") &&
-                                                e.team === "home",
-                                            );
-                                          const currentAway =
-                                            matchEvents.filter(
-                                              (e) =>
-                                                e.minute <= liveMinute &&
-                                                (e.type === "goal" ||
-                                                  e.type === "penalty_goal" ||
-                                                  e.type ===
-                                                    "var_goal_pending") &&
-                                                e.team === "away",
-                                            );
-                                          const isHumanMatch = players.some(
-                                            (p) =>
-                                              p.teamId === match.homeTeamId ||
-                                              p.teamId === match.awayTeamId,
-                                          );
-                                          const flashHome =
-                                            goalFlashRef[
-                                              `${match.homeTeamId}_${match.awayTeamId}_home`
-                                            ];
-                                          const flashAway =
-                                            goalFlashRef[
-                                              `${match.homeTeamId}_${match.awayTeamId}_away`
-                                            ];
+                                          {(lastHomeEvent || lastAwayEvent) && (
+                                            <div className="flex px-3 pb-1.5 gap-1">
+                                              <span className="flex-1 text-[9px] text-on-surface-variant/40 truncate">{lastHomeEvent}</span>
+                                              <span className="flex-1 text-[9px] text-on-surface-variant/40 truncate text-right">{lastAwayEvent}</span>
+                                            </div>
+                                          )}
+                                        </button>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+
+                        {/* ── ROW 2: OTHER DIVISIONS ── */}
+                        {!isCupMatch && (() => {
+                          const myDiv = teams.find(t => t.id === me.teamId)?.division;
+                          const otherDivs = [1, 2, 3, 4].filter(d => d !== myDiv);
+                          return (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+                              {otherDivs.map((div) => {
+                                const divMatches = matchResults.results
+                                  .filter(m => teams.find(t => t.id === m.homeTeamId)?.division === div)
+                                  .filter(m => m.homeTeamId !== me.teamId && m.awayTeamId !== me.teamId);
+                                return (
+                                  <div key={div} className="flex flex-col gap-2">
+                                    <div className="px-3 py-2 rounded-t-md border-b-2 bg-surface-container-high border-outline-variant/20">
+                                      <h3 className="font-headline font-extrabold text-[9px] sm:text-[10px] lg:text-[11px] tracking-tighter uppercase text-on-surface/50">
+                                        {DIVISION_NAMES[div] || `Div ${div}`}
+                                      </h3>
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                      {divMatches.length === 0 ? (
+                                        <div className="text-[10px] text-on-surface-variant/30 px-3 py-2 text-center italic">Sem jogos</div>
+                                      ) : (
+                                        divMatches.map((match, idx) => {
+                                          const hInfo = teams.find(t => t.id === match.homeTeamId);
+                                          const aInfo = teams.find(t => t.id === match.awayTeamId);
+                                          const matchEvents = match.events || [];
+                                          const currentHome = matchEvents.filter(e => e.minute <= liveMinute && (e.type === "goal" || e.type === "penalty_goal" || e.type === "var_goal_pending") && e.team === "home");
+                                          const currentAway = matchEvents.filter(e => e.minute <= liveMinute && (e.type === "goal" || e.type === "penalty_goal" || e.type === "var_goal_pending") && e.team === "away");
+                                          const isHumanMatch = players.some(p => p.teamId === match.homeTeamId || p.teamId === match.awayTeamId);
+                                          const flashHome = goalFlashRef[`${match.homeTeamId}_${match.awayTeamId}_home`];
+                                          const flashAway = goalFlashRef[`${match.homeTeamId}_${match.awayTeamId}_away`];
                                           const now = Date.now();
-                                          const homeFlashing =
-                                            flashHome && now - flashHome < 1500;
-                                          const awayFlashing =
-                                            flashAway && now - flashAway < 1500;
-                                          const lastHomeEvent =
-                                            getMatchLastEventText(
-                                              matchEvents,
-                                              liveMinute,
-                                              "home",
-                                            );
-                                          const lastAwayEvent =
-                                            getMatchLastEventText(
-                                              matchEvents,
-                                              liveMinute,
-                                              "away",
-                                            );
+                                          const homeFlashing = flashHome && now - flashHome < 1500;
+                                          const awayFlashing = flashAway && now - flashAway < 1500;
+                                          const lastHomeEvent = getMatchLastEventText(matchEvents, liveMinute, "home");
+                                          const lastAwayEvent = getMatchLastEventText(matchEvents, liveMinute, "away");
                                           return (
                                             <button
                                               key={idx}
-                                              onClick={() => {
-                                                setMatchDetailFixture(match);
-                                                setShowMatchDetail(true);
-                                              }}
+                                              onClick={() => { setMatchDetailFixture(match); setShowMatchDetail(true); }}
                                               className={`w-full text-left rounded-md overflow-hidden transition-colors ${isHumanMatch ? "bg-primary-container/10 border-l-2 border-primary/60" : "bg-surface-container hover:bg-surface-bright"}`}
                                             >
                                               <div className="flex justify-between items-center px-3 py-2">
                                                 <span className="flex items-center gap-1.5 flex-1 min-w-0 pr-1">
-                                                  <span
-                                                    className="w-2 h-2 rounded-sm shrink-0"
-                                                    style={{
-                                                      background:
-                                                        hInfo?.color_primary ||
-                                                        "#555",
-                                                    }}
-                                                  />
+                                                  <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: hInfo?.color_primary || "#555" }} />
                                                   <span className="flex flex-col min-w-0">
-                                                    <span
-                                                      className={`text-[9px] sm:text-[10px] lg:text-[11px] font-bold truncate ${isHumanMatch && players.some((p) => p.teamId === match.homeTeamId) ? "text-primary" : "text-on-surface/80"}`}
-                                                    >
-                                                      {hInfo?.name}
-                                                    </span>
-                                                    {(() => {
-                                                      const c = players.find(
-                                                        (p) =>
-                                                          p.teamId ===
-                                                          match.homeTeamId,
-                                                      );
-                                                      return c ? (
-                                                        <span className="text-[8px] sm:text-[9px] text-amber-400 font-bold truncate leading-none">
-                                                          {c.name}
-                                                        </span>
-                                                      ) : null;
-                                                    })()}
+                                                    <span className={`text-[9px] sm:text-[10px] lg:text-[11px] font-bold truncate ${isHumanMatch && players.some(p => p.teamId === match.homeTeamId) ? "text-primary" : "text-on-surface/80"}`}>{hInfo?.name}</span>
+                                                    {(() => { const c = players.find(p => p.teamId === match.homeTeamId); return c ? <span className="text-[8px] sm:text-[9px] text-amber-400 font-bold truncate leading-none">{c.name}</span> : null; })()}
                                                   </span>
                                                 </span>
                                                 <span className="font-headline font-black text-xs sm:text-sm shrink-0 flex items-center gap-1 px-1">
-                                                  <span
-                                                    style={{
-                                                      color: homeFlashing
-                                                        ? "#ff4444"
-                                                        : undefined,
-                                                      transition: homeFlashing
-                                                        ? "none"
-                                                        : "color 1.25s ease",
-                                                    }}
-                                                  >
-                                                    {currentHome.length}
-                                                  </span>
-                                                  <span className="text-on-surface/20 text-xs">
-                                                    -
-                                                  </span>
-                                                  <span
-                                                    style={{
-                                                      color: awayFlashing
-                                                        ? "#ff4444"
-                                                        : undefined,
-                                                      transition: awayFlashing
-                                                        ? "none"
-                                                        : "color 1.25s ease",
-                                                    }}
-                                                  >
-                                                    {currentAway.length}
-                                                  </span>
+                                                  <span style={{ color: homeFlashing ? "#ff4444" : undefined, transition: homeFlashing ? "none" : "color 1.25s ease" }}>{currentHome.length}</span>
+                                                  <span className="text-on-surface/20 text-xs">-</span>
+                                                  <span style={{ color: awayFlashing ? "#ff4444" : undefined, transition: awayFlashing ? "none" : "color 1.25s ease" }}>{currentAway.length}</span>
                                                 </span>
                                                 <span className="flex items-center gap-1.5 flex-1 min-w-0 pl-1 justify-end">
                                                   <span className="flex flex-col min-w-0 items-end">
-                                                    <span
-                                                      className={`text-[9px] sm:text-[10px] lg:text-[11px] font-bold truncate ${isHumanMatch && players.some((p) => p.teamId === match.awayTeamId) ? "text-primary" : "text-on-surface/80"}`}
-                                                    >
-                                                      {aInfo?.name}
-                                                    </span>
-                                                    {(() => {
-                                                      const c = players.find(
-                                                        (p) =>
-                                                          p.teamId ===
-                                                          match.awayTeamId,
-                                                      );
-                                                      return c ? (
-                                                        <span className="text-[8px] sm:text-[9px] text-amber-400 font-bold truncate leading-none">
-                                                          {c.name}
-                                                        </span>
-                                                      ) : null;
-                                                    })()}
+                                                    <span className={`text-[9px] sm:text-[10px] lg:text-[11px] font-bold truncate ${isHumanMatch && players.some(p => p.teamId === match.awayTeamId) ? "text-primary" : "text-on-surface/80"}`}>{aInfo?.name}</span>
+                                                    {(() => { const c = players.find(p => p.teamId === match.awayTeamId); return c ? <span className="text-[8px] sm:text-[9px] text-amber-400 font-bold truncate leading-none">{c.name}</span> : null; })()}
                                                   </span>
-                                                  <span
-                                                    className="w-2 h-2 rounded-sm shrink-0"
-                                                    style={{
-                                                      background:
-                                                        aInfo?.color_primary ||
-                                                        "#555",
-                                                    }}
-                                                  />
+                                                  <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: aInfo?.color_primary || "#555" }} />
                                                 </span>
                                               </div>
-                                              {(lastHomeEvent ||
-                                                lastAwayEvent) && (
+                                              {(lastHomeEvent || lastAwayEvent) && (
                                                 <div className="flex px-3 pb-1.5 gap-1">
-                                                  <span className="flex-1 text-[8px] sm:text-[9px] text-on-surface-variant/40 truncate">
-                                                    {lastHomeEvent}
-                                                  </span>
-                                                  <span className="flex-1 text-[8px] sm:text-[9px] text-on-surface-variant/40 truncate text-right">
-                                                    {lastAwayEvent}
-                                                  </span>
+                                                  <span className="flex-1 text-[8px] sm:text-[9px] text-on-surface-variant/40 truncate">{lastHomeEvent}</span>
+                                                  <span className="flex-1 text-[8px] sm:text-[9px] text-on-surface-variant/40 truncate text-right">{lastAwayEvent}</span>
                                                 </div>
                                               )}
                                             </button>
                                           );
-                                        })}
-                                      </div>
+                                        })
+                                      )}
                                     </div>
-                                  );
-                                });
-                              })()}
+                                  </div>
+                                );
+                              })}
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         {/* ── CUP MULTIVIEW (single list, no division groups) ── */}
                         {isCupMatch && matchResults?.results && (
