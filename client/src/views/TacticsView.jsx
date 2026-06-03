@@ -1,5 +1,7 @@
 ﻿import { useTactics } from "../contexts/TacticsContext.jsx";
+import { useGame } from "../contexts/GameContext.jsx";
 import { PlayerLink } from "../components/shared/PlayerLink.jsx";
+import { WaitingCoachesModal } from "../components/modals/WaitingCoachesModal.jsx";
 import { socket } from "../socket.js";
 import { TACTIC_FORMATIONS } from "../constants/index.js";
 
@@ -628,6 +630,8 @@ export function TacticsView() {
     disconnected,
     isCupMatch,
   } = useTactics();
+
+  const { lockedCoaches } = useGame();
 
   const getBestForFormation = (formation) => {
     const styles = ["OFENSIVO", "DEFENSIVO", "EQUILIBRADO"];
@@ -1591,6 +1595,17 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
           </button>
         );
       })()}
+
+      {/* Modal de espera multiplayer — aparece após confirmar táctica */}
+      <WaitingCoachesModal
+        players={players}
+        visible={
+          myReady &&
+          !isPlayingMatch &&
+          !showHalftimePanel &&
+          lockedCoaches.length >= 2
+        }
+      />
     </div>
   );
 }
