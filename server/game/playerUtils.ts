@@ -198,10 +198,27 @@ export function ensureFullBench(
   // Ensure at least 14 field players (10 starters + 4 bench)
   if (availableFieldCount < 14) {
     const needed = 14 - availableFieldCount;
-    const positions: Array<"DEF" | "MED" | "ATA"> = ["DEF", "MED", "ATA"];
+
+    // Count available players per position to fill the most deficient one first
+    const availableByPos: Record<"DEF" | "MED" | "ATA", number> = {
+      DEF: squad.filter(
+        (p) => p.position === "DEF" && isPlayerAvailable(p, matchweek),
+      ).length,
+      MED: squad.filter(
+        (p) => p.position === "MED" && isPlayerAvailable(p, matchweek),
+      ).length,
+      ATA: squad.filter(
+        (p) => p.position === "ATA" && isPlayerAvailable(p, matchweek),
+      ).length,
+    };
+
     for (let i = 0; i < needed; i++) {
-      const pos = positions[i % 3];
+      // Pick the field position with the fewest available players
+      const pos = (["DEF", "MED", "ATA"] as const).reduce((worst, p) =>
+        availableByPos[p] < availableByPos[worst] ? p : worst,
+      );
       result.push(generateJuniorFieldPlayer(teamId, matchweek, 100 + i, pos));
+      availableByPos[pos]++;
     }
   }
 
