@@ -602,7 +602,6 @@ export function TacticsView() {
     isLineupComplete,
     nextMatchOpponent,
     openStatusPickerId,
-    setOpenStatusPickerId,
     dragOverPlayerId,
     setDragOverPlayerId,
     dragPlayerId,
@@ -1100,24 +1099,13 @@ ${
                       isDragging={dragPlayerId === player.id}
                     >
                       {!player.isJunior && (
-                        <div className="relative shrink-0">
-                          <button
-                            className="w-3 h-3 rounded-full bg-green-400/80 hover:bg-green-400 transition-colors ml-0.5"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenStatusPickerId((prev) =>
-                                prev === player.id ? null : player.id,
-                              );
-                            }}
-                          />
-                          <StatusPicker
-                            player={player}
-                            openStatusPickerId={openStatusPickerId}
-                            tacticPositions={tactic.positions}
-                            annotatedSquad={annotatedSquad}
-                            handleSetPlayerStatus={handleSetPlayerStatus}
-                          />
-                        </div>
+                        <StatusPicker
+                          player={player}
+                          openStatusPickerId={openStatusPickerId}
+                          tacticPositions={tactic.positions}
+                          annotatedSquad={annotatedSquad}
+                          handleSetPlayerStatus={handleSetPlayerStatus}
+                        />
                       )}
                     </PlayerRow>
                   ))}
@@ -1197,16 +1185,6 @@ ${
                         isDragging={dragPlayerId === player.id}
                       >
                         {!player.isJunior && (
-                          <div className="relative shrink-0">
-                            <button
-                              className="w-3 h-3 rounded-full bg-yellow-400/80 hover:bg-yellow-400 transition-colors ml-0.5"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenStatusPickerId((prev) =>
-                                  prev === player.id ? null : player.id,
-                                );
-                              }}
-                            />
                           <StatusPicker
                             player={player}
                             openStatusPickerId={openStatusPickerId}
@@ -1214,7 +1192,6 @@ ${
                             annotatedSquad={annotatedSquad}
                             handleSetPlayerStatus={handleSetPlayerStatus}
                           />
-                          </div>
                         )}
                       </PlayerRow>
                     ))}
@@ -1297,25 +1274,14 @@ ${
                             }
                             isDragging={dragPlayerId === player.id}
                           >
-                            <div className="relative shrink-0">
-                              <button
-                                className="w-3 h-3 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors ml-0.5"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenStatusPickerId((prev) =>
-                                    prev === player.id ? null : player.id,
-                                  );
-                                }}
-                              />
-                              <StatusPicker
-                                player={player}
-                                above
-                                openStatusPickerId={openStatusPickerId}
-                                tacticPositions={tactic.positions}
-                                annotatedSquad={annotatedSquad}
-                                handleSetPlayerStatus={handleSetPlayerStatus}
-                              />
-                            </div>
+                            <StatusPicker
+                              player={player}
+                              above
+                              openStatusPickerId={openStatusPickerId}
+                              tacticPositions={tactic.positions}
+                              annotatedSquad={annotatedSquad}
+                              handleSetPlayerStatus={handleSetPlayerStatus}
+                            />
                           </PlayerRow>
                         ))}
                     </div>
