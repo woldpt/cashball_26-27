@@ -193,9 +193,9 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
           </span>
           <span
             className={`text-[13px] font-black tabular-nums leading-none ${
-              player.skill >= 85
+              player.skill >= 40
                 ? "text-green-400"
-                : player.skill >= 60
+                : player.skill >= 25
                   ? "text-yellow-400"
                   : "text-red-400"
             }`}
