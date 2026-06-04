@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { getEffectiveLineup } from "../../utils/playerHelpers.js";
 import {
@@ -1207,6 +1208,8 @@ export function MatchIntervencaoView({
   injuredHalftimeIds,
   onResolveAction,
 }) {
+  const [centerTab, setCenterTab] = useState("subs");
+
   /* ── Mode booleans ────────────────────────────────────────────────── */
   const isHalftime = mode === "halftime";
   const actionType = matchAction?.type || null;
@@ -1340,8 +1343,6 @@ export function MatchIntervencaoView({
   const visibleEvts = _filterEvents(evts, liveMinute);
   const ref = fixture?.referee;
   const refBalance = ref?.balance ?? 50;
-  const homeGoals = fixture?.finalHomeGoals ?? 0;
-  const awayGoals = fixture?.finalAwayGoals ?? 0;
 
   /* ── Shared helpers ───────────────────────────────────────────────── */
   const getEventIcon = (e) =>
@@ -1395,7 +1396,7 @@ export function MatchIntervencaoView({
       </div>
 
       {/* ── 3-column grid (mobile: single col — cronologia below) ──── */}
-      <div className="flex-1 min-h-0 flex flex-col md:grid md:grid-cols-[0.85fr_1.3fr_0.65fr] overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col md:grid md:grid-cols-[0.85fr_1.6fr] overflow-hidden">
         {/* ═══ COL ESQUERDA — Cronologia (desktop: grid col, mobile: above main) ═══ */}
         <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
           <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-zinc-800/60 bg-zinc-950/70">
@@ -1405,45 +1406,6 @@ export function MatchIntervencaoView({
             </span>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
-            {/* Halftime score banner */}
-            {isHalftime && (
-              <div className="rounded-lg overflow-hidden border border-zinc-800/60 bg-[linear-gradient(135deg,#111118,#1a1a2e)] mb-2">
-                <div className="flex items-center justify-center gap-3 px-2 py-2.5">
-                  <div className="flex flex-col items-center gap-0.5">
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ background: hInfo?.color_primary || "#6366f1" }}
-                    />
-                    <span className="text-[8px] font-black text-zinc-500 uppercase tracking-wider truncate max-w-[70px]">
-                      {hInfo?.name || "Casa"}
-                    </span>
-                  </div>
-                  <span className="text-lg font-black tabular-nums text-white">
-                    {homeGoals}
-                  </span>
-                  <span className="text-zinc-600 text-sm font-black">—</span>
-                  <span className="text-lg font-black tabular-nums text-white">
-                    {awayGoals}
-                  </span>
-                  <div className="flex flex-col items-center gap-0.5">
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ background: aInfo?.color_primary || "#f43f5e" }}
-                    />
-                    <span className="text-[8px] font-black text-zinc-500 uppercase tracking-wider truncate max-w-[70px]">
-                      {aInfo?.name || "Fora"}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-center pb-2.5">
-                  <span className="inline-flex items-center gap-1 text-[7px] font-black uppercase tracking-[0.25em] px-2 py-0.5 rounded-full bg-zinc-900/80 border border-zinc-700/50 text-zinc-500">
-                    <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
-                    Intervalo
-                    <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
-                  </span>
-                </div>
-              </div>
-            )}
 
             {/* Possession bar */}
             {fixture.homePossession != null && (
@@ -1538,7 +1500,28 @@ export function MatchIntervencaoView({
         </div>
 
         {/* ═══ COL CENTRAL — Substituições ═══════════ */}
-        <div className="flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
+        <div className="flex flex-col min-h-0 overflow-hidden">
+          <div className="shrink-0 flex border-b border-zinc-800/60 bg-zinc-950/70">
+            {[
+              { key: "subs", label: "Substituições" },
+              { key: "adversario", label: "Adversário" },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setCenterTab(tab.key)}
+                className={`flex-1 min-w-0 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${
+                  centerTab === tab.key
+                    ? "text-white border-primary bg-primary/5"
+                    : "text-zinc-500 hover:text-zinc-300 border-transparent hover:bg-zinc-800/30"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {centerTab === "subs" ? (
+                <div className="flex flex-col min-h-0 overflow-hidden ">
           {/* Confirmed subs strip (halftime only) */}
           {isHalftime && confirmedSubs.length > 0 && (
             <div className="shrink-0 px-2.5 py-1.5 border-b border-cyan-900/40 bg-cyan-950/20 flex flex-wrap gap-1">
@@ -1605,7 +1588,7 @@ export function MatchIntervencaoView({
 
                 <div className="flex-1 grid grid-cols-2 min-h-0 overflow-hidden">
                   {/* Left: Titulares */}
-                  <div className="flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
+                  <div className="flex flex-col min-h-0 overflow-hidden ">
                     <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/60 bg-zinc-950/60">
                       <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold">
                         {isPenalty ? "Candidatos" : "Titulares"}
@@ -1932,8 +1915,8 @@ export function MatchIntervencaoView({
           </div>
         </div>
 
-        {/* ═══ COL DIREITA — Adversário ═══════════ */}
-        <div className="hidden md:flex flex-col min-h-0 overflow-hidden">
+
+          ) : (
               <div className="flex flex-col h-full">
                 {/* Opponent header */}
                 <div className="shrink-0 flex items-center gap-2 px-2.5 py-2 m-2 rounded-lg border border-zinc-800/60 bg-zinc-950/60">
@@ -2092,7 +2075,7 @@ export function MatchIntervencaoView({
                   </div>
                 </div>
               </div>
-
+          )}
         </div>
       </div>
 
