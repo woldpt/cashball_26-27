@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { motion } from "framer-motion";
 import { getEffectiveLineup } from "../../utils/playerHelpers.js";
 import {
@@ -1207,8 +1207,6 @@ export function MatchIntervencaoView({
   injuredHalftimeIds,
   onResolveAction,
 }) {
-  const [centerTab, setCenterTab] = useState("nossa");
-
   /* ── Mode booleans ────────────────────────────────────────────────── */
   const isHalftime = mode === "halftime";
   const actionType = matchAction?.type || null;
@@ -1397,7 +1395,7 @@ export function MatchIntervencaoView({
       </div>
 
       {/* ── 3-column grid (mobile: single col — cronologia below) ──── */}
-      <div className="flex-1 min-h-0 flex flex-col md:grid md:grid-cols-[0.85fr_1.6fr] overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col md:grid md:grid-cols-[0.85fr_1.3fr_0.65fr] overflow-hidden">
         {/* ═══ COL ESQUERDA — Cronologia (desktop: grid col, mobile: above main) ═══ */}
         <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
           <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-zinc-800/60 bg-zinc-950/70">
@@ -1539,32 +1537,10 @@ export function MatchIntervencaoView({
           </div>
         </div>
 
-        {/* ═══ COL CENTRAL — Nossa Equipa / Adversário ═══════════ */}
-        <div className="flex flex-col min-h-0 overflow-hidden">
-          {/* Internal tab nav (halftime only) */}
-          {isHalftime && (
-            <div className="shrink-0 flex border-b border-zinc-800/60 bg-zinc-950/70">
-              {[
-                { key: "nossa", label: "Nossa Equipa" },
-                { key: "adversario", label: "Adversário" },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setCenterTab(tab.key)}
-                  className={`flex-1 min-w-0 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${
-                    centerTab === tab.key
-                      ? "text-white border-primary bg-primary/5"
-                      : "text-zinc-500 hover:text-zinc-300 border-transparent hover:bg-zinc-800/30"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Confirmed subs strip (halftime, nossa tab) */}
-          {isHalftime && centerTab === "nossa" && confirmedSubs.length > 0 && (
+        {/* ═══ COL CENTRAL — Substituições ═══════════ */}
+        <div className="flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
+          {/* Confirmed subs strip (halftime only) */}
+          {isHalftime && confirmedSubs.length > 0 && (
             <div className="shrink-0 px-2.5 py-1.5 border-b border-cyan-900/40 bg-cyan-950/20 flex flex-wrap gap-1">
               {confirmedSubs.map((sub) => {
                 const outP = annotatedSquad.find((p) => p.id === sub.out);
@@ -1588,10 +1564,7 @@ export function MatchIntervencaoView({
             </div>
           )}
 
-          {/* ── Column content ───────────────────────────────── */}
           <div className="flex-1 overflow-y-auto">
-            {!isHalftime || centerTab === "nossa" ? (
-              /* ── Our team / action mode ────────────────── */
               <div className="flex flex-col h-full">
                 {/* Mentality buttons (halftime) */}
                 {isHalftime && (
@@ -1956,8 +1929,11 @@ export function MatchIntervencaoView({
                   )}
                 </div>
               </div>
-            ) : (
-              /* ── Adversário tab ─────────────────────────── */
+          </div>
+        </div>
+
+        {/* ═══ COL DIREITA — Adversário ═══════════ */}
+        <div className="hidden md:flex flex-col min-h-0 overflow-hidden">
               <div className="flex flex-col h-full">
                 {/* Opponent header */}
                 <div className="shrink-0 flex items-center gap-2 px-2.5 py-2 m-2 rounded-lg border border-zinc-800/60 bg-zinc-950/60">
@@ -2116,8 +2092,7 @@ export function MatchIntervencaoView({
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+
         </div>
       </div>
 
