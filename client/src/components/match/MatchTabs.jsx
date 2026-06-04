@@ -1397,7 +1397,7 @@ export function MatchIntervencaoView({
       </div>
 
       {/* ── 3-column grid ──────────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 grid grid-cols-[1.3fr_1fr] md:grid-cols-[0.9fr_1.4fr_1fr] overflow-hidden">
+      <div className="flex-1 min-h-0 grid grid-cols-[1.3fr_1fr] md:grid-cols-[0.85fr_1.6fr] overflow-hidden">
         {/* ═══ COL ESQUERDA — Cronologia ═══════════════════════════ */}
         <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
           <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-zinc-800/60 bg-zinc-950/70">
@@ -1443,6 +1443,40 @@ export function MatchIntervencaoView({
                     Intervalo
                     <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
                   </span>
+                </div>
+              </div>
+            )}
+
+            {/* Possession bar */}
+            {fixture.homePossession != null && (
+              <div className="rounded-lg overflow-hidden border border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm mb-2">
+                <div className="flex justify-between items-center px-2.5 py-1.5">
+                  <span className="text-[10px] font-black text-white tabular-nums">
+                    {fixture.homePossession}%
+                  </span>
+                  <span className="text-[7px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                    Posse
+                  </span>
+                  <span className="text-[10px] font-black text-white tabular-nums">
+                    {fixture.awayPossession}%
+                  </span>
+                </div>
+                <div className="h-1.5 mx-2.5 mb-1.5 rounded-full overflow-hidden bg-zinc-800/80 flex">
+                  <div
+                    className="h-full rounded-l-full transition-all duration-700 ease-out"
+                    style={{
+                      width: `${fixture.homePossession}%`,
+                      background: `linear-gradient(90deg, ${hInfo?.color_primary || "#6366f1"}, ${hInfo?.color_primary || "#6366f1"}cc)`,
+                      boxShadow: `0 0 8px ${hInfo?.color_primary || "#6366f1"}44`,
+                    }}
+                  />
+                  <div
+                    className="h-full flex-1 rounded-r-full transition-all duration-700 ease-out"
+                    style={{
+                      background: `linear-gradient(90deg, ${aInfo?.color_primary || "#f43f5e"}cc, ${aInfo?.color_primary || "#f43f5e"})`,
+                      boxShadow: `0 0 8px ${aInfo?.color_primary || "#f43f5e"}44`,
+                    }}
+                  />
                 </div>
               </div>
             )}
@@ -1506,7 +1540,7 @@ export function MatchIntervencaoView({
         </div>
 
         {/* ═══ COL CENTRAL — Nossa Equipa / Adversário ═══════════ */}
-        <div className="flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
+        <div className="flex flex-col min-h-0 overflow-hidden">
           {/* Internal tab nav (halftime only) */}
           {isHalftime && (
             <div className="shrink-0 flex border-b border-zinc-800/60 bg-zinc-950/70">
@@ -1558,7 +1592,7 @@ export function MatchIntervencaoView({
           <div className="flex-1 overflow-y-auto">
             {!isHalftime || centerTab === "nossa" ? (
               /* ── Our team / action mode ────────────────── */
-              <>
+              <div className="flex flex-col h-full">
                 {/* Mentality buttons (halftime) */}
                 {isHalftime && (
                   <div className="px-3 py-2.5 border-b border-zinc-800/60">
@@ -1596,13 +1630,15 @@ export function MatchIntervencaoView({
                   </div>
                 )}
 
-                {/* Section header */}
-                <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 bg-zinc-950/60 border-b border-zinc-800/40">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-                  <span className="text-[8px] font-black uppercase tracking-[0.25em] text-emerald-400">
-                    {isPenalty ? "Candidatos" : "Titulares"}
-                  </span>
-                </div>
+                <div className="flex-1 grid grid-cols-2 min-h-0 overflow-hidden">
+                  {/* Left: Titulares */}
+                  <div className="flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
+                    <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/60 bg-zinc-950/60">
+                      <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold">
+                        {isPenalty ? "Candidatos" : "Titulares"}
+                      </span>
+                    </div>
+                    <div className="flex-1 overflow-y-auto">
 
                 {/* Players */}
                 {onPitchPlayers.map((p) => {
@@ -1674,21 +1710,66 @@ export function MatchIntervencaoView({
                           )}
                       </span>
                       {/* Stats */}
-                      <div className="shrink-0 flex items-center gap-2">
-                        {!isPenalty && <FormBar form={p.form} />}
-                        {!isPenalty && p.skill != null && (
-                          <span
-                            className={`text-[10px] font-black tabular-nums w-5 text-right ${
-                              selected ? "text-rose-300" : "text-zinc-500"
-                            }`}
-                          >
-                            {p.skill}
-                          </span>
-                        )}
+                      <div className="shrink-0 flex items-center gap-1.5">
+                            {/* Resistência */}
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-bold leading-none">
+                                RES
+                              </span>
+                              <span
+                                className={`text-[13px] font-black tabular-nums leading-none ${
+                                  (p.resistance ?? 0) >= 4
+                                    ? "text-green-400"
+                                    : (p.resistance ?? 0) >= 3
+                                      ? "text-yellow-400"
+                                      : "text-red-400"
+                                }`}
+                              >
+                                {p.resistance ?? "–"}
+                              </span>
+                            </div>
+                            <div className="w-px h-5 bg-zinc-700/60" />
+
+                            {/* Forma */}
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-bold leading-none">
+                                FORMA
+                              </span>
+                              <span className="text-[13px] leading-none">
+                                {(p.form ?? 100) >= 115 ? "💪" : (p.form ?? 100) <= 85 ? "😩" : "👍"}
+                              </span>
+                            </div>
+                            <div className="w-px h-5 bg-zinc-700/60" />
+
+                            {/* Qualidade */}
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-bold leading-none">
+                                Qualidade
+                              </span>
+                              <span
+                                className={`text-[15px] font-black tabular-nums leading-none px-2 py-0.5 rounded-lg border ${
+                                  (p.skill ?? 0) >= 40
+                                    ? "bg-green-500/15 text-green-300 border-green-500/30"
+                                    : (p.skill ?? 0) >= 25
+                                      ? "bg-yellow-500/15 text-yellow-300 border-yellow-500/30"
+                                      : "bg-red-500/15 text-red-300 border-red-500/30"
+                                }`}
+                                style={{
+                                  textShadow:
+                                    (p.skill ?? 0) >= 40
+                                      ? "0 0 10px rgba(34,197,94,0.3)"
+                                      : (p.skill ?? 0) >= 25
+                                        ? "0 0 10px rgba(234,179,8,0.3)"
+                                        : "0 0 10px rgba(239,68,68,0.3)",
+                                }}
+                              >
+                                {p.skill ?? "–"}
+                              </span>
+                            </div>
                         {/* Swap-out indicator */}
-                        {isHalftime && (
+                        {isHalftime && !isPenalty && (
                           <span
-                            className={`text-sm shrink-0 transition-colors ${
+                            className={`text-sm shrink-0 transition-colors ml-1 ${
                               selected
                                 ? "text-rose-400"
                                 : disabled
@@ -1708,12 +1789,178 @@ export function MatchIntervencaoView({
                     Sem opções em campo
                   </p>
                 )}
-              </>
+                    </div>
+                  </div>
+
+                  {/* Right: Suplentes */}
+                  {!isPenalty && (
+                    <div className="flex flex-col min-h-0 overflow-hidden">
+                      <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/60 bg-zinc-950/60">
+                        <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold">
+                          Suplentes
+                        </span>
+                      </div>
+                      <div className="flex-1 overflow-y-auto">
+                        {benchPlayers.map((p) => {
+                          const alreadyUsed =
+                            isHalftime && subbedOut.includes(p.id);
+                          const positionMismatch =
+                            !!sourcePlayer &&
+                            (sourcePlayer.position === "GR") !== (p.position === "GR");
+                          const disabled =
+                            alreadyUsed ||
+                            positionMismatch ||
+                            (isHalftime && subsMade >= MAX_MATCH_SUBS);
+                          const selected = selectedInId === p.id;
+                          const accent = posAccent(p.position);
+                          return (
+                            <button
+                              key={p.id}
+                              onClick={() => !disabled && handlePickIn(p)}
+                              className={`w-full flex items-center gap-2.5 px-3 py-2.5 border-b border-zinc-800/30 text-left select-none transition-all ${
+                                alreadyUsed
+                                  ? "opacity-25 cursor-not-allowed"
+                                  : selected
+                                    ? "bg-emerald-500/10"
+                                    : disabled
+                                      ? "opacity-40 cursor-not-allowed"
+                                      : "cursor-pointer hover:bg-zinc-800/40"
+                              }`}
+                            >
+                              <span
+                                className={`shrink-0 px-1.5 py-0.5 rounded-md text-[8px] font-black border ${
+                                  alreadyUsed
+                                    ? "border-zinc-700/50 text-zinc-600"
+                                    : selected
+                                      ? "bg-emerald-500/20 text-emerald-200 border-emerald-400/40"
+                                      : ""
+                                }`}
+                                style={
+                                  alreadyUsed || selected
+                                    ? {}
+                                    : {
+                                        color: accent,
+                                        borderColor: `${accent}30`,
+                                        background: `${accent}10`,
+                                      }
+                                }
+                              >
+                                {POSITION_SHORT_LABELS[p.position]}
+                              </span>
+                              <span
+                                className={`flex-1 truncate text-[11px] font-bold ${
+                                  alreadyUsed
+                                    ? "text-zinc-600"
+                                    : selected
+                                      ? "text-emerald-100"
+                                      : "text-zinc-100"
+                                }`}
+                              >
+                                {p.name}
+                                {!!p.is_star &&
+                                  (p.position === "MED" || p.position === "ATA") && (
+                                    <span className="ml-0.5 text-amber-400 font-black">
+                                      *
+                                    </span>
+                                  )}
+                              </span>
+                              <div className="shrink-0 flex items-center gap-1.5">
+                                {alreadyUsed ? (
+                                  <span className="text-[10px] text-zinc-700 font-black">—</span>
+                                ) : (
+                                  <>
+                                    {/* Resistência */}
+                                    <div className="flex flex-col items-end gap-0.5">
+                                      <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-bold leading-none">
+                                        RES
+                                      </span>
+                                      <span
+                                        className={`text-[13px] font-black tabular-nums leading-none ${
+                                          (p.resistance ?? 0) >= 4
+                                            ? "text-green-400"
+                                            : (p.resistance ?? 0) >= 3
+                                              ? "text-yellow-400"
+                                              : "text-red-400"
+                                        }`}
+                                      >
+                                        {p.resistance ?? "–"}
+                                      </span>
+                                    </div>
+                                    <div className="w-px h-5 bg-zinc-700/60" />
+
+                                    {/* Forma */}
+                                    <div className="flex flex-col items-center gap-0.5">
+                                      <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-bold leading-none">
+                                        FORMA
+                                      </span>
+                                      <span className="text-[13px] leading-none">
+                                        {(p.form ?? 100) >= 115 ? "💪" : (p.form ?? 100) <= 85 ? "😩" : "👍"}
+                                      </span>
+                                    </div>
+                                    <div className="w-px h-5 bg-zinc-700/60" />
+
+                                    {/* Qualidade */}
+                                    <div className="flex flex-col items-end gap-0.5">
+                                      <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-bold leading-none">
+                                        Qualidade
+                                      </span>
+                                      <span
+                                        className={`text-[15px] font-black tabular-nums leading-none px-2 py-0.5 rounded-lg border ${
+                                          (p.skill ?? 0) >= 40
+                                            ? "bg-green-500/15 text-green-300 border-green-500/30"
+                                            : (p.skill ?? 0) >= 25
+                                              ? "bg-yellow-500/15 text-yellow-300 border-yellow-500/30"
+                                              : "bg-red-500/15 text-red-300 border-red-500/30"
+                                        }`}
+                                        style={{
+                                          textShadow:
+                                            (p.skill ?? 0) >= 40
+                                              ? "0 0 10px rgba(34,197,94,0.3)"
+                                              : (p.skill ?? 0) >= 25
+                                                ? "0 0 10px rgba(234,179,8,0.3)"
+                                                : "0 0 10px rgba(239,68,68,0.3)",
+                                        }}
+                                      >
+                                        {p.skill ?? "–"}
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                        {benchPlayers.length === 0 && (
+                          <p className="text-center text-zinc-600 text-xs font-bold py-6">
+                            Sem suplentes disponíveis
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Penalty info */}
+                  {isPenalty && (
+                    <div className="flex flex-col min-h-0 overflow-hidden">
+                      <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/60 bg-zinc-950/60">
+                        <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold">
+                          Escolha
+                        </span>
+                      </div>
+                      <div className="flex-1 flex items-center justify-center">
+                        <p className="text-center text-zinc-500 text-xs font-bold px-4">
+                          Seleciona o marcador na coluna central.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             ) : (
               /* ── Adversário tab ─────────────────────────── */
-              <div className="p-2 space-y-2">
+              <div className="flex flex-col h-full">
                 {/* Opponent header */}
-                <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg border border-zinc-800/60 bg-zinc-950/60">
+                <div className="shrink-0 flex items-center gap-2 px-2.5 py-2 m-2 rounded-lg border border-zinc-800/60 bg-zinc-950/60">
                   <span
                     className="text-[10px] font-black uppercase tracking-[0.2em] truncate"
                     style={{ color: oppInfo?.color_primary || "#f59e0b" }}
@@ -1731,7 +1978,10 @@ export function MatchIntervencaoView({
                   </div>
                 </div>
 
-                {!hasLineups ? (
+                <div className="flex-1 grid grid-cols-2 min-h-0 overflow-hidden">
+                  {/* Left: Pitch */}
+                  <div className="flex items-center justify-center p-2 overflow-hidden border-r border-zinc-800/60">
+                    {!hasLineups ? (
                   <div className="rounded-lg border border-zinc-800/40 bg-zinc-950/40 py-8 flex flex-col items-center gap-2">
                     <span className="text-3xl text-zinc-700">📋</span>
                     <p className="text-zinc-500 text-xs font-bold text-center px-4">
@@ -1821,13 +2071,55 @@ export function MatchIntervencaoView({
                     <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/40 to-transparent" />
                   </div>
                 )}
+                  </div>
+
+                  {/* Right: Opponent bench */}
+                  <div className="flex flex-col min-h-0 overflow-hidden">
+                    <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/60 bg-zinc-950/60">
+                      <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold">
+                        Banco Adversário
+                      </span>
+                    </div>
+                    <div className="flex-1 overflow-y-auto">
+                      {!hasLineups || oppBench.length === 0 ? (
+                        <p className="text-center text-zinc-600 text-xs font-bold py-6 px-2">
+                          Sem dados do banco adversário
+                        </p>
+                      ) : (
+                        oppBench.map((player) => (
+                          <div
+                            key={player.id ?? player.name}
+                            className="flex items-center gap-2.5 px-3 py-2.5 border-b border-zinc-800/30"
+                          >
+                            <span
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-black border border-white/20 shrink-0 ${oppPosColors[player.position] || "bg-zinc-500 text-white"}`}
+                            >
+                              {POSITION_SHORT_LABELS[player.position] || "?"}
+                            </span>
+                            <span className="flex-1 truncate text-[11px] font-bold text-zinc-300">
+                              {player.name}
+                              {!!player.is_star &&
+                                (player.position === "MED" ||
+                                  player.position === "ATA") && (
+                                  <span className="ml-0.5 text-amber-400 font-black">
+                                    *
+                                  </span>
+                                )}
+                            </span>
+                            <span className="text-[10px] font-black tabular-nums text-zinc-500 shrink-0">
+                              {player.skill ?? "—"}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         </div>
-
-        {/* ═══ COL DIREITA — Banco ═══════════════════════════════ */}
-        <div className="flex flex-col min-h-0 overflow-hidden">
+      <div className="hidden">
           <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-zinc-800/60 bg-zinc-950/70">
             <span
               className={`w-2 h-2 rounded-full shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)] ${
