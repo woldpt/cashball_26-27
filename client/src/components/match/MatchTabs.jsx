@@ -719,7 +719,7 @@ export function TabIntervencao({
     ? sortPlayers(
         annotatedSquad.filter(
           (p) =>
-            tactic.positions[p.id] === "Titular" &&
+            tactic?.positions?.[p.id] === "Titular" &&
             !subbedOut.includes(p.id) &&
             !redCardedHalftimeIds.has(p.id) &&
             !injuredHalftimeIds?.has(p.id),
@@ -736,7 +736,7 @@ export function TabIntervencao({
   const benchPlayers = isHalftime
     ? sortPlayers(
         annotatedSquad
-          .filter((p) => tactic.positions[p.id] === "Suplente")
+          .filter((p) => tactic?.positions?.[p.id] === "Suplente")
           .filter((p) => !injuredHalftimeIds?.has(p.id)),
       )
     : isPenalty
@@ -1250,7 +1250,7 @@ export function MatchIntervencaoView({
     ? sortPlayers(
         annotatedSquad.filter(
           (p) =>
-            tactic.positions[p.id] === "Titular" &&
+            tactic?.positions?.[p.id] === "Titular" &&
             !subbedOut.includes(p.id) &&
             !redCardedHalftimeIds.has(p.id) &&
             !injuredHalftimeIds?.has(p.id),
@@ -1267,7 +1267,7 @@ export function MatchIntervencaoView({
   const benchPlayers = isHalftime
     ? sortPlayers(
         annotatedSquad
-          .filter((p) => tactic.positions[p.id] === "Suplente")
+          .filter((p) => tactic?.positions?.[p.id] === "Suplente")
           .filter((p) => !injuredHalftimeIds?.has(p.id)),
       )
     : isPenalty
@@ -1396,10 +1396,10 @@ export function MatchIntervencaoView({
         )}
       </div>
 
-      {/* ── 3-column grid ──────────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[0.85fr_1.6fr] overflow-hidden">
-        {/* ═══ COL ESQUERDA — Cronologia ═══════════════════════════ */}
-        <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
+      {/* ── 3-column grid (mobile: single col — cronologia below) ──── */}
+      <div className="flex-1 min-h-0 flex flex-col md:grid md:grid-cols-[0.85fr_1.6fr] overflow-hidden">
+        {/* ═══ COL ESQUERDA — Cronologia (desktop: grid col, mobile: above main) ═══ */}
+        <div className="flex md:hidden flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
           <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-zinc-800/60 bg-zinc-950/70">
             <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
             <span className="text-[8px] font-black uppercase tracking-[0.25em] text-amber-400">
@@ -2116,170 +2116,6 @@ export function MatchIntervencaoView({
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-      <div className="hidden">
-          <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-zinc-800/60 bg-zinc-950/70">
-            <span
-              className={`w-2 h-2 rounded-full shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)] ${
-                isHalftime && centerTab === "adversario"
-                  ? "bg-amber-400"
-                  : "bg-cyan-400"
-              }`}
-            />
-            <span
-              className={`text-[8px] font-black uppercase tracking-[0.25em] ${
-                isHalftime && centerTab === "adversario"
-                  ? "text-amber-400"
-                  : "text-cyan-400"
-              }`}
-            >
-              {isHalftime && centerTab === "adversario"
-                ? "Banco Adversário"
-                : isPenalty
-                  ? "Escolha"
-                  : "Suplentes"}
-            </span>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {/* ── Our bench (interactive) ─────────────────────── */}
-            {(!isHalftime || centerTab === "nossa") && !isPenalty && (
-              <>
-                {benchPlayers.map((p) => {
-                  const alreadyUsed =
-                    isHalftime && subbedOut.includes(p.id);
-                  const positionMismatch =
-                    !!sourcePlayer &&
-                    (sourcePlayer.position === "GR") !== (p.position === "GR");
-                  const disabled =
-                    alreadyUsed ||
-                    positionMismatch ||
-                    (isHalftime && subsMade >= MAX_MATCH_SUBS);
-                  const selected = selectedInId === p.id;
-                  const accent = posAccent(p.position);
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => !disabled && handlePickIn(p)}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 border-b border-zinc-800/30 text-left select-none transition-all ${
-                        alreadyUsed
-                          ? "opacity-25 cursor-not-allowed"
-                          : selected
-                            ? "bg-emerald-500/10"
-                            : disabled
-                              ? "opacity-40 cursor-not-allowed"
-                              : "cursor-pointer hover:bg-zinc-800/40"
-                      }`}
-                    >
-                      {/* Position badge */}
-                      <span
-                        className={`shrink-0 px-1.5 py-0.5 rounded-md text-[8px] font-black border ${
-                          alreadyUsed
-                            ? "border-zinc-700/50 text-zinc-600"
-                            : selected
-                              ? "bg-emerald-500/20 text-emerald-200 border-emerald-400/40"
-                              : ""
-                        }`}
-                        style={
-                          alreadyUsed || selected
-                            ? {}
-                            : {
-                                color: accent,
-                                borderColor: `${accent}30`,
-                                background: `${accent}10`,
-                              }
-                        }
-                      >
-                        {POSITION_SHORT_LABELS[p.position]}
-                      </span>
-                      {/* Name */}
-                      <span
-                        className={`flex-1 truncate text-[11px] font-bold ${
-                          alreadyUsed
-                            ? "text-zinc-600"
-                            : selected
-                              ? "text-emerald-100"
-                              : "text-zinc-100"
-                        }`}
-                      >
-                        {alreadyUsed ? p.name : p.name}
-                        {!alreadyUsed &&
-                          !!p.is_star &&
-                          (p.position === "MED" || p.position === "ATA") && (
-                            <span className="ml-0.5 text-amber-400 font-black">
-                              *
-                            </span>
-                          )}
-                      </span>
-                      {/* Stats */}
-                      <div className="shrink-0 flex items-center gap-2">
-                        {!alreadyUsed && <FormBar form={p.form} />}
-                        <span
-                          className={`text-[10px] font-black tabular-nums w-5 text-right ${
-                            alreadyUsed
-                              ? "text-zinc-700"
-                              : selected
-                                ? "text-emerald-300"
-                                : "text-zinc-500"
-                          }`}
-                        >
-                          {alreadyUsed ? "—" : (p.skill ?? "—")}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-                {benchPlayers.length === 0 && (
-                  <p className="text-center text-zinc-600 text-xs font-bold py-6">
-                    Sem suplentes disponíveis
-                  </p>
-                )}
-              </>
-            )}
-
-            {/* ── Penalty info ────────────────────────────────── */}
-            {isPenalty && (
-              <p className="text-center text-zinc-500 text-xs font-bold py-8 px-4">
-                Seleciona o marcador na coluna central.
-              </p>
-            )}
-
-            {/* ── Opponent bench (read-only) ──────────────────── */}
-            {isHalftime && centerTab === "adversario" && (
-              <>
-                {!hasLineups || oppBench.length === 0 ? (
-                  <p className="text-center text-zinc-600 text-xs font-bold py-6 px-2">
-                    Sem dados do banco adversário
-                  </p>
-                ) : (
-                  oppBench.map((player) => (
-                    <div
-                      key={player.id ?? player.name}
-                      className="flex items-center gap-2.5 px-3 py-2.5 border-b border-zinc-800/30"
-                    >
-                      <span
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-black border border-white/20 shrink-0 ${oppPosColors[player.position] || "bg-zinc-500 text-white"}`}
-                      >
-                        {POSITION_SHORT_LABELS[player.position] || "?"}
-                      </span>
-                      <span className="flex-1 truncate text-[11px] font-bold text-zinc-300">
-                        {player.name}
-                        {!!player.is_star &&
-                          (player.position === "MED" ||
-                            player.position === "ATA") && (
-                            <span className="ml-0.5 text-amber-400 font-black">
-                              *
-                            </span>
-                          )}
-                      </span>
-                      <span className="text-[10px] font-black tabular-nums text-zinc-500 shrink-0">
-                        {player.skill ?? "—"}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </>
             )}
           </div>
         </div>
