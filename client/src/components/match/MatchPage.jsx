@@ -79,19 +79,31 @@ export function MatchPage({
 		});
 		Object.values(byDiv).forEach((arr) => arr.sort((a, b) => a.id - b.id));
 
-		const wk = currentJornada || 1;
-		const fixtures = {};
-		Object.entries(byDiv).forEach(([div, divTeams]) => {
-			const seedIds = divTeams.map((t) => t.id);
-			fixtures[div] = generateLeagueFixtures(seedIds, wk);
-		});
+		// Usar matchResults como fonte de verdade quando existem
+			// (contêm os fixtures reais do servidor em vez de gerados no cliente)
+			const wk = currentJornada || 1;
+			const fixtures = {};
+			Object.entries(byDiv).forEach(([div, divTeams]) => {
+				const divTeamIds = new Set(divTeams.map((t) => t.id));
+				// Se há matchResults, extrair os fixtures reais desta divisão
+				const realFixtures = matchResults?.results?.filter(
+					(r) => divTeamIds.has(r.homeTeamId),
+				);
+				if (realFixtures && realFixtures.length > 0) {
+					fixtures[div] = realFixtures;
+				} else {
+					// Fallback: gerar fixtures no cliente (aproximação)
+					const seedIds = divTeams.map((t) => t.id);
+					fixtures[div] = generateLeagueFixtures(seedIds, wk);
+				}
+			});
 
 		return {
 			myDivision: myDiv,
 			teamsByDivision: byDiv,
 			divisionFixtures: fixtures,
 		};
-	}, [teams, myTeamId, currentJornada]);
+	}, [teams, myTeamId, currentJornada, matchResults]);
 
 	// Extract cup fixtures from matchResults for the sidebar when in cup mode
 	const cupOtherFixtures = useMemo(() => {
@@ -104,13 +116,15 @@ export function MatchPage({
 	}, [isCupMatch, matchResults, myTeamId]);
 
 	// ── Fixture Card (compacto) ──────────────────────────────────────────────
-	const FixtureCard = ({ homeTeamId, awayTeamId }) => {
+	const FixtureCard = ({ homeTeamId, awayTeamId, fixtureData }) => {
 		const home = teams.find((t) => t.id === homeTeamId);
 		const away = teams.find((t) => t.id === awayTeamId);
 		const hAccent = home?.color_primary || "#6366f1";
 		const aAccent = away?.color_primary || "#6366f1";
+		// Se fixtureData tem resultado real (matchResults), mostrar scores
+		const hasResult = fixtureData?.finalHomeGoals != null;
 		return (
-			<div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-800/40 bg-zinc-950/60 hover:bg-zinc-900/50 transition-colors">
+			<div className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-zinc-800/40 bg-zinc-950/60 hover:bg-zinc-900/50 transition-colors">
 				<span
 					className="w-2 h-2 rounded-full shrink-0 shadow-sm"
 					style={{ background: hAccent, boxShadow: `0 0 6px ${hAccent}60` }}
@@ -118,7 +132,19 @@ export function MatchPage({
 				<span className="flex-1 text-[10px] font-bold text-zinc-300 truncate">
 					{home?.name || "—"}
 				</span>
-				<span className="text-[8px] font-black text-zinc-600 shrink-0">vs</span>
+				{hasResult ? (
+					<div className="flex items-center gap-1 shrink-0">
+						<span className="text-[11px] font-black tabular-nums text-zinc-100 min-w-[1.2em] text-right">
+							{fixtureData.finalHomeGoals}
+						</span>
+						<span className="text-[8px] font-black text-zinc-600">—</span>
+						<span className="text-[11px] font-black tabular-nums text-zinc-100 min-w-[1.2em] text-left">
+							{fixtureData.finalAwayGoals}
+						</span>
+					</div>
+				) : (
+					<span className="text-[8px] font-black text-zinc-600 shrink-0 mx-1">vs</span>
+				)}
 				<span className="flex-1 text-[10px] font-bold text-zinc-300 truncate text-right">
 					{away?.name || "—"}
 				</span>
@@ -338,6 +364,7 @@ export function MatchPage({
 											key={i}
 											homeTeamId={r.homeTeamId}
 											awayTeamId={r.awayTeamId}
+											fixtureData={r}
 										/>
 									))}
 								</div>
@@ -408,6 +435,7 @@ export function MatchPage({
 												key={i}
 												homeTeamId={r.homeTeamId}
 												awayTeamId={r.awayTeamId}
+												fixtureData={r}
 											/>
 										))
 									)
@@ -426,6 +454,7 @@ export function MatchPage({
 												key={i}
 												homeTeamId={f.homeTeamId}
 												awayTeamId={f.awayTeamId}
+												fixtureData={f}
 											/>
 										))
 								)}
@@ -459,6 +488,7 @@ export function MatchPage({
 														key={i}
 														homeTeamId={f.homeTeamId}
 														awayTeamId={f.awayTeamId}
+														fixtureData={f}
 													/>
 												))
 											)}
