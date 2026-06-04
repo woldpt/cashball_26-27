@@ -1399,7 +1399,7 @@ export function MatchIntervencaoView({
       {/* ── 3-column grid (mobile: single col — cronologia below) ──── */}
       <div className="flex-1 min-h-0 flex flex-col md:grid md:grid-cols-[0.85fr_1.6fr] overflow-hidden">
         {/* ═══ COL ESQUERDA — Cronologia (desktop: grid col, mobile: above main) ═══ */}
-        <div className="flex md:hidden flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
+        <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
           <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-zinc-800/60 bg-zinc-950/70">
             <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
             <span className="text-[8px] font-black uppercase tracking-[0.25em] text-amber-400">
