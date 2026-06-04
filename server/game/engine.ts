@@ -1331,46 +1331,150 @@ async function simulateMatchSegment(
       away.squad.map((p) => getAggressivenessValue(p)),
     );
 
-    const emitCard = (isHomeCard: boolean) => {
+    const executeRedCard = async (
+      offender: PlayerRow,
+      isHomeCard: boolean,
+      squad: PlayerRow[],
+      side: "home" | "away",
+    ) => {
+      db.run(
+        "UPDATE players SET red_cards = red_cards + 1, career_reds = career_reds + 1, suspension_games = suspension_games + 2, suspension_until_matchweek = CASE WHEN suspension_until_matchweek > ? THEN suspension_until_matchweek ELSE ? END WHERE id = ?",
+        [currentMatchweek + 2, currentMatchweek + 2, offender.id],
+      );
+      fixture.events.push({
+        minute,
+        type: "red",
+        team: side,
+        emoji: "🟥",
+        playerId: offender.id,
+        playerName: offender.name,
+        text: `[${minute}'] 🟥 ${redPhrase(offender.name)}`,
+      });
+
+      const lineupIds = isHomeCard ? homeLineupIds : awayLineupIds;
+      const fullRoster = isHomeCard ? homeFullRoster : awayFullRoster;
+      const tactic = isHomeCard ? homeTactic : awayTactic;
+      const teamId = isHomeCard ? fixture.homeTeamId : fixture.awayTeamId;
+
+      if (offender.position === "GR") {
+        // GK sent off — force substitution via intervention screen
+        const tacticPositions: Record<number, string> = tactic?.positions || {};
+        const benchIds = new Set(
+          Object.entries(tacticPositions)
+            .filter(([, status]) => status === "Suplente")
+            .map(([id]) => Number(id)),
+        );
+        const availableBench = fullRoster.filter(
+          (p) => !lineupIds.has(p.id) && (benchIds.size === 0 || benchIds.has(p.id)),
+        );
+
+        let substituteCandidates = availableBench;
+        const grBench = availableBench.filter((p) => p.position === "GR");
+        substituteCandidates = grBench.length > 0 ? grBench : availableBench;
+
+        const fallback = () => pickBestPlayer(substituteCandidates)?.id || null;
+        const result = await waitForMatchAction({
+          game,
+          io,
+          type: "gk_red_card",
+          teamId,
+          payload: {
+            minute,
+            teamId,
+            sentOffPlayer: {
+              id: offender.id,
+              name: offender.name,
+              position: offender.position,
+            },
+            benchPlayers: substituteCandidates.map((p) => ({
+              id: p.id,
+              name: p.name,
+              position: p.position,
+              skill: p.skill,
+            })),
+            currentScore: {
+              home: fixture.finalHomeGoals,
+              away: fixture.finalAwayGoals,
+            },
+          },
+          timeoutMs: 60000,
+          fallback,
+          fixtureData: {
+            homeTeamId: fixture.homeTeamId,
+            awayTeamId: fixture.awayTeamId,
+            homeTeam: fixture.homeTeam,
+            awayTeam: fixture.awayTeam,
+            attendance: fixture.attendance,
+            referee: fixture.referee,
+            homePossession: fixture.homePossession,
+            awayPossession: fixture.awayPossession,
+            homeGoals: fixture.finalHomeGoals,
+            awayGoals: fixture.finalAwayGoals,
+            events: fixture.events || [],
+          },
+        });
+
+        const replacement =
+          result.choice && availableBench.find((p) => p.id === result.choice);
+        if (replacement) {
+          const idx = squad.findIndex((p) => p.id === offender.id);
+          if (idx > -1) squad.splice(idx, 1, replacement);
+          lineupIds.delete(offender.id);
+          lineupIds.add(replacement.id);
+
+          const lineupRef =
+            side === "home" ? fixture.homeLineup : fixture.awayLineup;
+          if (lineupRef) {
+            const li = lineupRef.findIndex((p: any) => p.id === offender.id);
+            if (li > -1) {
+              lineupRef[li] = {
+                id: replacement.id,
+                name: replacement.name,
+                position: replacement.position,
+                is_star: replacement.is_star || 0,
+                skill: replacement.skill,
+              };
+            }
+          }
+
+          fixture.events.push({
+            minute,
+            type: "substitution",
+            team: side,
+            emoji: "🔁",
+            playerId: replacement.id,
+            playerName: replacement.name,
+            text: `[${minute}'] 🔁 ${subPhrase(offender.name, replacement.name)}`,
+          });
+        } else {
+          const idx = squad.findIndex((p) => p.id === offender.id);
+          if (idx > -1) squad.splice(idx, 1);
+          lineupIds.delete(offender.id);
+        }
+      } else {
+        // Non-GK red card — just remove the player
+        const idx = squad.findIndex((p: any) => p.id === offender.id);
+        if (idx > -1) {
+          squad.splice(idx, 1);
+          lineupIds.delete(offender.id);
+        }
+      }
+    };
+
+    const emitCard = async (isHomeCard: boolean) => {
       const squad = isHomeCard ? home.squad : away.squad;
       const side = isHomeCard ? "home" : "away";
       if (squad.length > 0) {
         const offender = squad[Math.floor(Math.random() * squad.length)];
         const offenderId = offender.id;
 
-        const executeRedCard = () => {
-          // Cartão vermelho — 2 jogos de suspensão
-          db.run(
-            "UPDATE players SET red_cards = red_cards + 1, career_reds = career_reds + 1, suspension_games = suspension_games + 2, suspension_until_matchweek = CASE WHEN suspension_until_matchweek > ? THEN suspension_until_matchweek ELSE ? END WHERE id = ?",
-            [currentMatchweek + 2, currentMatchweek + 2, offender.id],
-          );
-          fixture.events.push({
-            minute,
-            type: "red",
-            team: side,
-            emoji: "🟥",
-            playerId: offender.id,
-            playerName: offender.name,
-            text: `[${minute}'] 🟥 ${redPhrase(offender.name)}`,
-          });
-          const idx = squad.findIndex((p: any) => p.id === offender.id);
-          if (idx > -1) {
-            squad.splice(idx, 1);
-            (isHomeCard ? homeLineupIds : awayLineupIds).delete(offender.id);
-          }
-        };
-
         if (fixture._yellowCards[offenderId] >= 1) {
-          // If the player already has a yellow card, there's only a 15% chance this foul results in a second yellow (red).
-          // Otherwise, it's just a warning/foul with no card given.
           if (Math.random() < 0.15) {
-            executeRedCard();
+            await executeRedCard(offender, isHomeCard, squad, side);
           }
         } else if (Math.random() < 0.005) {
-          // Straight red card chance lowered from 4% to 0.5% (more realistic)
-          executeRedCard();
+          await executeRedCard(offender, isHomeCard, squad, side);
         } else {
-          // Cartão amarelo — sem expulsão
           fixture._yellowCards[offenderId] =
             (fixture._yellowCards[offenderId] || 0) + 1;
           fixture.events.push({
@@ -1388,8 +1492,8 @@ async function simulateMatchSegment(
 
     const homeCardProb = 0.015 * (1 + (homeAggAvg - 3) * 0.1);
     const awayCardProb = 0.015 * (1 + (awayAggAvg - 3) * 0.1);
-    if (Math.random() < homeCardProb) emitCard(true);
-    if (Math.random() < awayCardProb) emitCard(false);
+    if (Math.random() < homeCardProb) await emitCard(true);
+    if (Math.random() < awayCardProb) await emitCard(false);
 
     const injuryChance = Math.random();
     const weatherInjuryMult =

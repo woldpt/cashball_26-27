@@ -1019,7 +1019,8 @@ export function useSocketListeners(handlers, refs) {
 
 				if (
 					normalizedAction.type === "injury" ||
-					normalizedAction.type === "user_substitution"
+					normalizedAction.type === "user_substitution" ||
+					normalizedAction.type === "gk_red_card"
 				) {
 					handlers.setInjuryCountdown(60);
 					refs.injuryCountdownRef.current = setInterval(() => {
