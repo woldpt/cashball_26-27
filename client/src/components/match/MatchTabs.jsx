@@ -1521,7 +1521,7 @@ export function MatchIntervencaoView({
           </div>
 
           {centerTab === "subs" ? (
-                <div className="flex flex-col min-h-0 overflow-hidden ">
+                <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Confirmed subs strip (halftime only) */}
           {isHalftime && confirmedSubs.length > 0 && (
             <div className="shrink-0 px-2.5 py-1.5 border-b border-cyan-900/40 bg-cyan-950/20 flex flex-wrap gap-1">
@@ -1917,7 +1917,7 @@ export function MatchIntervencaoView({
 
 
           ) : (
-              <div className="flex flex-col h-full">
+              <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
                 {/* Opponent header */}
                 <div className="shrink-0 flex items-center gap-2 px-2.5 py-2 m-2 rounded-lg border border-zinc-800/60 bg-zinc-950/60">
                   <span
