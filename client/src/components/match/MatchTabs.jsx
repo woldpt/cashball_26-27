@@ -1397,7 +1397,7 @@ export function MatchIntervencaoView({
       </div>
 
       {/* ── 3-column grid ──────────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 grid grid-cols-[1.3fr_1fr] md:grid-cols-[0.85fr_1.6fr] overflow-hidden">
+      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[0.85fr_1.6fr] overflow-hidden">
         {/* ═══ COL ESQUERDA — Cronologia ═══════════════════════════ */}
         <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
           <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-zinc-800/60 bg-zinc-950/70">
