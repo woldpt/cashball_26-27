@@ -535,54 +535,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       emitPresence(game);
       saveGameState(game);
 
-      // Safety timeout: auto-advance halftime if coaches don't respond within 120s.
-      // This prevents permanently stuck matches when all coaches disconnect.
-      const HALFTIME_SAFETY_TIMEOUT_MS = 120_000;
-      const halftimeToken = game.phaseToken;
-      game.phaseTimer = setTimeout(() => {
-        // Only fire if we are still in halftime with the same token
-        if (
-          game.gamePhase !== "match_halftime" ||
-          game.phaseToken !== halftimeToken
-        )
-          return;
-
-        // Check if any connected coach exists
-        const anyConnected = Object.values(game.playersByName).some(
-          (p) => !!p.socketId,
-        );
-        if (anyConnected) {
-          // Coaches are connected but not ready — reschedule with a shorter grace period
-          console.log(
-            `[${game.roomCode}] ⏱ Halftime safety: coaches connected but not ready, rescheduling in 60s`,
-          );
-          game.phaseTimer = setTimeout(() => {
-            if (
-              game.gamePhase !== "match_halftime" ||
-              game.phaseToken !== halftimeToken
-            )
-              return;
-            console.warn(
-              `[${game.roomCode}] ⏱ Halftime safety: coaches still not ready after grace period — auto-advancing`,
-            );
-            Object.values(game.playersByName).forEach((p) => {
-              p.ready = true;
-            });
-            checkAllReady(game);
-          }, 60_000);
-          return;
-        }
-
-        console.warn(
-          `[${game.roomCode}] ⏱ Halftime safety timeout: no connected coaches after ${HALFTIME_SAFETY_TIMEOUT_MS / 1000}s — auto-advancing to second half`,
-        );
-        // Mark all as ready and trigger advance
-        Object.values(game.playersByName).forEach((p) => {
-          p.ready = true;
-        });
-        checkAllReady(game);
-      }, HALFTIME_SAFETY_TIMEOUT_MS);
-
       return;
     }
 
