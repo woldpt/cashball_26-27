@@ -910,7 +910,19 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setIsMatchActionPending(false);
 			handlers.setMatchAction(null);
 			handlers.setIsLiveSimulation(false);
-			handlers.setMatchResults(data);
+			handlers.setMatchResults({
+				matchweek: data.matchweek,
+				results: (data.results || []).map((fx) => ({
+					homeTeamId: fx.homeTeamId,
+					awayTeamId: fx.awayTeamId,
+					finalHomeGoals: fx.finalHomeGoals,
+					finalAwayGoals: fx.finalAwayGoals,
+					events: fx.events || [],
+					homeLineup: fx.homeLineup || [],
+					awayLineup: fx.awayLineup || [],
+					attendance: fx.attendance || null,
+				})),
+			});
 			handlers.setSubsMade(0);
 			handlers.setSubbedOut([]); // Reset substituted-out players for the new match
 			handlers.setConfirmedSubs([]);
