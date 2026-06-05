@@ -26,6 +26,7 @@ function getPosStyle(pos) {
 
 /* ── TabJogo — Match events, possession, commentary ──────────────────────── */
 export function TabJogo({ fixture, liveMinute, teams, mode }) {
+  const [lineupSide, setLineupSide] = useState("home");
   if (!fixture) return null;
   const hInfo = teams.find((t) => t.id === fixture.homeTeamId);
   const aInfo = teams.find((t) => t.id === fixture.awayTeamId);
@@ -55,222 +56,383 @@ export function TabJogo({ fixture, liveMinute, teams, mode }) {
   const homeGoals = fixture.finalHomeGoals ?? 0;
   const awayGoals = fixture.finalAwayGoals ?? 0;
   const isHalftime = mode === "halftime";
+  const hasLineups = fixture?.homeLineup && fixture?.awayLineup;
+
+  const homeLineup = hasLineups
+    ? getEffectiveLineup(fixture.homeLineup, evts, liveMinute, "home")
+    : null;
+  const awayLineup = hasLineups
+    ? getEffectiveLineup(fixture.awayLineup, evts, liveMinute, "away")
+    : null;
+
+  const currentLineup = lineupSide === "home" ? homeLineup : awayLineup;
+  const currentInfo = lineupSide === "home" ? hInfo : aInfo;
+
+  // ── Player rendering (inline from TabLineup) ───────────────────────
+  const sortedLineup = (arr) =>
+    [...arr].sort(
+      (a, b) => (POS_ORDER[a.position] ?? 9) - (POS_ORDER[b.position] ?? 9),
+    );
+
+  const renderPlayer = (p, opts = {}) => {
+    const { isOff = false, offReason = null } = opts;
+    const label = isOff
+      ? offReason === "red"
+        ? "🟥"
+        : offReason === "injury"
+          ? "🚑"
+          : "🔄"
+      : p.goals > 0
+        ? Array(p.goals).fill("⚽").join("")
+        : "";
+    return (
+      <div
+        key={p.id ?? p.name}
+        className={`flex items-center gap-2 py-1.5 px-2 rounded-md transition-colors ${isOff ? "opacity-40" : "hover:bg-surface-container/60"}`}
+      >
+        <span
+          className={`shrink-0 px-1.5 py-px rounded text-[9px] font-black uppercase tracking-widest border ${isOff ? "border-outline-variant/15 bg-surface-container/20 text-on-surface-variant/40" : getPosStyle(p.position).badgeBg + " " + getPosStyle(p.position).badgeText + " " + getPosStyle(p.position).badgeBorder}`}
+        >
+          {isOff ? "" : POSITION_SHORT_LABELS[p.position] || "?"}
+        </span>
+        <span
+          className={`flex-1 truncate text-xs font-black ${isOff ? "text-on-surface-variant/60 line-through" : "text-on-surface"}`}
+        >
+          <PlayerLink playerId={p.id}>{p.name}</PlayerLink>
+          {!!p.is_star && (p.position === "MED" || p.position === "ATA") && (
+            <span className="ml-0.5 text-amber-400 font-black">*</span>
+          )}
+        </span>
+        {!isOff && p.skill != null && (
+          <span className="text-[10px] font-black tabular-nums text-on-surface-variant/80 shrink-0 w-5 text-right">
+            {p.skill}
+          </span>
+        )}
+        {label ? <span className="text-[10px] shrink-0">{label}</span> : null}
+      </div>
+    );
+  };
 
   return (
-    <div className="flex-1 overflow-y-auto p-3 space-y-3">
-      {/* ── Halftime score banner ──────────────────────────────────────── */}
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      {/* ── Halftime banner (full-width) ─────────────────────────────── */}
       {isHalftime && (
-        <div className="rounded-lg overflow-hidden border border-outline/40 bg-surface-container-low shadow-sm shadow-black/30">
-          {/* Score line */}
-          <div className="flex items-center justify-center gap-5 pt-4 pb-1.5">
-            <div className="flex flex-col items-center gap-1 min-w-0 max-w-[30%]">
-              <span
-                className="w-3 h-3 rounded-full shrink-0"
-                style={{ background: hInfo?.color_primary || "#6366f1", boxShadow: `0 0 10px ${hInfo?.color_primary || "#6366f1"}80` }}
-              />
-              <span className="text-[9px] font-black text-on-surface-variant truncate text-center leading-tight uppercase tracking-[0.15em]">
-                {hInfo?.name || "Casa"}
-              </span>
+        <div className="shrink-0 p-3">
+          <div className="rounded-lg overflow-hidden border border-outline/40 bg-surface-container-low shadow-sm shadow-black/30">
+            {/* Score line */}
+            <div className="flex items-center justify-center gap-5 pt-4 pb-1.5">
+              <div className="flex flex-col items-center gap-1 min-w-0 max-w-[30%]">
+                <span
+                  className="w-3 h-3 rounded-full shrink-0"
+                  style={{ background: hInfo?.color_primary || "#6366f1", boxShadow: `0 0 10px ${hInfo?.color_primary || "#6366f1"}80` }}
+                />
+                <span className="text-[9px] font-black text-on-surface-variant truncate text-center leading-tight uppercase tracking-[0.15em]">
+                  {hInfo?.name || "Casa"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="text-3xl font-black font-headline tabular-nums text-on-surface tracking-tighter">
+                  {homeGoals}
+                </span>
+                <span className="text-on-surface-variant/60 text-lg font-black">—</span>
+                <span className="text-3xl font-black font-headline tabular-nums text-on-surface tracking-tighter">
+                  {awayGoals}
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1 min-w-0 max-w-[30%]">
+                <span
+                  className="w-3 h-3 rounded-full shrink-0"
+                  style={{ background: aInfo?.color_primary || "#f43f5e", boxShadow: `0 0 10px ${aInfo?.color_primary || "#f43f5e"}80` }}
+                />
+                <span className="text-[9px] font-black text-on-surface-variant truncate text-center leading-tight uppercase tracking-[0.15em]">
+                  {aInfo?.name || "Fora"}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2.5">
-              <span className="text-3xl font-black font-headline tabular-nums text-on-surface tracking-tighter">
-                {homeGoals}
+            {/* Interval badge */}
+            <div className="flex items-center justify-center pb-3.5">
+              <span className="inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.3em] px-2.5 py-1 rounded-full bg-surface-container-high/80 border border-outline/40 text-on-surface-variant">
+                <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+                Intervalo
+                <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
               </span>
-              <span className="text-on-surface-variant/60 text-lg font-black">—</span>
-              <span className="text-3xl font-black font-headline tabular-nums text-on-surface tracking-tighter">
-                {awayGoals}
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-1 min-w-0 max-w-[30%]">
-              <span
-                className="w-3 h-3 rounded-full shrink-0"
-                style={{ background: aInfo?.color_primary || "#f43f5e", boxShadow: `0 0 10px ${aInfo?.color_primary || "#f43f5e"}80` }}
-              />
-              <span className="text-[9px] font-black text-on-surface-variant truncate text-center leading-tight uppercase tracking-[0.15em]">
-                {aInfo?.name || "Fora"}
-              </span>
-            </div>
-          </div>
-          {/* Interval badge */}
-          <div className="flex items-center justify-center pb-3.5">
-            <span className="inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.3em] px-2.5 py-1 rounded-full bg-surface-container-high/80 border border-outline/40 text-on-surface-variant">
-              <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
-              Intervalo
-              <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* ── Top bar: attendance, referee, weather ──────────────────────── */}
-      {(fixture.attendance || ref?.refereeName || weatherEvent) && (
-        <div className="flex flex-wrap items-center gap-2 px-4 py-3 rounded-lg border border-outline/40 bg-surface-container">
-          {fixture.attendance && (
-            <span className="text-on-surface-variant text-[10px] font-black flex items-center gap-1.5">
-              <span className="text-base">🏟️</span>
-              <span>{hInfo?.stadium_name ? `${hInfo.stadium_name} · ` : ""}</span>
-              <span className="text-on-surface tabular-nums">
-                {fixture.attendance.toLocaleString("pt-PT")}
-              </span>
-              <span className="text-on-surface-variant/80">adeptos</span>
-            </span>
-          )}
-          {ref?.refereeName && (
-            <span className="text-on-surface-variant text-[10px] font-black flex items-center gap-1.5">
-              <span className="text-base">👤</span>
-              <span className="text-on-surface">{ref.refereeName}</span>
-              <span
-                className={`ml-1 font-black tabular-nums ${refBalance >= 60 ? "text-emerald-400" : refBalance <= 40 ? "text-red-400" : "text-on-surface-variant"}`}
-              >
-                {refBalance}
-              </span>
-            </span>
-          )}
-          {weatherEvent && (
-            <span className="text-on-surface-variant text-[10px] font-black flex items-center gap-1">
-              <span className="text-sm">{weatherEvent.emoji}</span>
-              <span>{WEATHER_LABELS[weatherEvent.emoji] || ""}</span>
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* ── Possession bar ─────────────────────────────────────────────── */}
-      {fixture.homePossession != null && (
-        <div className="bg-surface-container rounded-md overflow-hidden border border-outline-variant/25">
-          <div className="px-5 py-4 flex items-center justify-between bg-surface-container-high/50">
-            <span className="text-sm font-black font-headline tracking-tight text-on-surface tabular-nums">
-              {fixture.homePossession}%
-            </span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-              Posse de Bola
-            </span>
-            <span className="text-sm font-black font-headline tracking-tight text-on-surface tabular-nums">
-              {fixture.awayPossession}%
-            </span>
-          </div>
-          <div className="p-3 md:p-4 pt-0">
-            <div className="h-2 rounded-full overflow-hidden bg-surface-container-high/80 flex">
-              <div
-                className="h-full rounded-l-full transition-all duration-700 ease-out"
-                style={{
-                  width: `${fixture.homePossession}%`,
-                  background: `linear-gradient(90deg, ${hInfo?.color_primary || "#6366f1"}, ${hInfo?.color_primary || "#6366f1"}cc)`,
-                  boxShadow: `0 0 12px ${hInfo?.color_primary || "#6366f1"}44`,
-                }}
-              />
-              <div
-                className="h-full flex-1 rounded-r-full transition-all duration-700 ease-out"
-                style={{
-                  background: `linear-gradient(90deg, ${aInfo?.color_primary || "#f43f5e"}cc, ${aInfo?.color_primary || "#f43f5e"})`,
-                  boxShadow: `0 0 12px ${aInfo?.color_primary || "#f43f5e"}44`,
-                }}
-              />
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Events list ────────────────────────────────────────────────── */}
-      {visibleEvts.length === 0 ? (
-        <div className="rounded-lg border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
-          <span className="text-3xl text-on-surface-variant/40">⚽</span>
-          <p className="text-on-surface-variant/60 text-xs font-bold">Sem eventos a mostrar</p>
-        </div>
-      ) : (
-        <div className="space-y-1.5">
-          {visibleEvts.map((e, i) => {
-            const isHome = e.team === "home";
-            const evtTeam = isHome ? hInfo : aInfo;
-            const accent = evtTeam?.color_primary || "#6366f1";
-            const icon =
-              e.emoji ||
-              (e.type === "goal" || e.type === "penalty_goal"
-                ? "⚽"
-                : e.type === "own_goal"
-                  ? "⚽🔙"
-                  : e.type === "yellow"
-                    ? "🟨"
-                    : e.type === "red"
-                      ? "🟥"
-                      : e.type === "injury"
-                        ? "🤕"
-                        : e.type === "substitution"
-                          ? "🔄"
-                          : "");
-            return (
-              <div
-                key={i}
-                className="relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-surface-container/50 transition-all duration-200 hover:-translate-y-px hover:shadow-lg shadow-sm shadow-black/30"
-              >
-                <div className="shrink-0 w-1" style={{ background: `linear-gradient(to bottom, ${accent}99, ${accent})` }} />
-                <div className="flex items-center gap-2.5 flex-1 px-3 py-2">
-                  <span className="text-on-surface-variant/80 font-black w-8 shrink-0 text-right tabular-nums text-[11px]">
-                    {e.minute != null ? `${e.minute}'` : "—"}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* ═══ COLUNA 1: Info + Possessão + Cronologia + Narração ═══ */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-3">
+          {/* ── Top bar: attendance, referee, weather ──────────────────── */}
+          {(fixture.attendance || ref?.refereeName || weatherEvent) && (
+            <div className="flex flex-wrap items-center gap-2 px-4 py-3 rounded-lg border border-outline/40 bg-surface-container">
+              {fixture.attendance && (
+                <span className="text-on-surface-variant text-[10px] font-black flex items-center gap-1.5">
+                  <span className="text-base">🏟️</span>
+                  <span>{hInfo?.stadium_name ? `${hInfo.stadium_name} · ` : ""}</span>
+                  <span className="text-on-surface tabular-nums">
+                    {fixture.attendance.toLocaleString("pt-PT")}
                   </span>
-                  <span className="w-5 shrink-0 text-center text-sm">{icon}</span>
-                  <span className="flex-1 truncate text-xs font-black text-on-surface">
-                    <PlayerLink playerId={e.playerId}>
-                      {e.playerName || e.player_name || ""}
-                    </PlayerLink>
-                  </span>
+                  <span className="text-on-surface-variant/80">adeptos</span>
+                </span>
+              )}
+              {ref?.refereeName && (
+                <span className="text-on-surface-variant text-[10px] font-black flex items-center gap-1.5">
+                  <span className="text-base">👤</span>
+                  <span className="text-on-surface">{ref.refereeName}</span>
                   <span
-                    className="text-[9px] font-black uppercase tracking-widest shrink-0 px-1.5 py-px rounded"
-                    style={{
-                      color: accent,
-                      borderColor: `${accent}30`,
-                      background: `${accent}20`,
-                      borderWidth: "1px",
-                      borderStyle: "solid",
-                    }}
+                    className={`ml-1 font-black tabular-nums ${refBalance >= 60 ? "text-emerald-400" : refBalance <= 40 ? "text-red-400" : "text-on-surface-variant"}`}
                   >
-                    {evtTeam?.name || ""}
+                    {refBalance}
                   </span>
+                </span>
+              )}
+              {weatherEvent && (
+                <span className="text-on-surface-variant text-[10px] font-black flex items-center gap-1">
+                  <span className="text-sm">{weatherEvent.emoji}</span>
+                  <span>{WEATHER_LABELS[weatherEvent.emoji] || ""}</span>
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* ── Possession bar ─────────────────────────────────────────── */}
+          {fixture.homePossession != null && (
+            <div className="bg-surface-container rounded-md overflow-hidden border border-outline-variant/25">
+              <div className="px-5 py-4 flex items-center justify-between bg-surface-container-high/50">
+                <span className="text-sm font-black font-headline tracking-tight text-on-surface tabular-nums">
+                  {fixture.homePossession}%
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                  Posse de Bola
+                </span>
+                <span className="text-sm font-black font-headline tracking-tight text-on-surface tabular-nums">
+                  {fixture.awayPossession}%
+                </span>
+              </div>
+              <div className="p-3 md:p-4 pt-0">
+                <div className="h-2 rounded-full overflow-hidden bg-surface-container-high/80 flex">
+                  <div
+                    className="h-full rounded-l-full transition-all duration-700 ease-out"
+                    style={{
+                      width: `${fixture.homePossession}%`,
+                      background: `linear-gradient(90deg, ${hInfo?.color_primary || "#6366f1"}, ${hInfo?.color_primary || "#6366f1"}cc)`,
+                      boxShadow: `0 0 12px ${hInfo?.color_primary || "#6366f1"}44`,
+                    }}
+                  />
+                  <div
+                    className="h-full flex-1 rounded-r-full transition-all duration-700 ease-out"
+                    style={{
+                      background: `linear-gradient(90deg, ${aInfo?.color_primary || "#f43f5e"}cc, ${aInfo?.color_primary || "#f43f5e"})`,
+                      boxShadow: `0 0 12px ${aInfo?.color_primary || "#f43f5e"}44`,
+                    }}
+                  />
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          )}
 
-      {/* ── Commentary ─────────────────────────────────────────────────── */}
-      {(() => {
-        const commentary = evts
-          .filter((e) => e.minute <= liveMinute && e.text)
-          .sort((a, b) => (b.minute ?? 0) - (a.minute ?? 0));
-        if (commentary.length === 0) return null;
-        return (
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2 px-1">
-              Narração
-            </p>
+          {/* ── Events list (cronologia) ───────────────────────────────── */}
+          {visibleEvts.length === 0 ? (
+            <div className="rounded-lg border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
+              <span className="text-3xl text-on-surface-variant/40">⚽</span>
+              <p className="text-on-surface-variant/60 text-xs font-bold">Sem eventos a mostrar</p>
+            </div>
+          ) : (
             <div className="space-y-1.5">
-              {commentary.slice(0, 20).map((e, i) => {
-                const phrase = e.text
-                  .replace(/^\[(?:\d+'|HT)\]\s*\S*\s*/, "")
-                  .trim();
-                if (!phrase) return null;
+              {visibleEvts.map((e, i) => {
+                const isHome = e.team === "home";
+                const evtTeam = isHome ? hInfo : aInfo;
+                const accent = evtTeam?.color_primary || "#6366f1";
+                const icon =
+                  e.emoji ||
+                  (e.type === "goal" || e.type === "penalty_goal"
+                    ? "⚽"
+                    : e.type === "own_goal"
+                      ? "⚽🔙"
+                      : e.type === "yellow"
+                        ? "🟨"
+                        : e.type === "red"
+                          ? "🟥"
+                          : e.type === "injury"
+                            ? "🤕"
+                            : e.type === "substitution"
+                              ? "🔄"
+                              : "");
                 return (
                   <div
                     key={i}
-                    className="flex items-start gap-2 px-3 py-2 rounded-lg border border-outline-variant/25 bg-surface-container"
+                    className="relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-surface-container/50 transition-all duration-200 hover:-translate-y-px hover:shadow-lg shadow-sm shadow-black/30"
                   >
-                    <span className="text-on-surface-variant/60 font-black text-[10px] w-7 shrink-0 text-right pt-px tabular-nums">
-                      {e.minute != null ? `${e.minute}'` : "—"}
-                    </span>
-                    <span className="w-5 shrink-0 text-center text-sm pt-px">
-                      {e.emoji || ""}
-                    </span>
-                    <span className="flex-1 text-[11px] text-on-surface-variant leading-relaxed">
-                      {phrase}
-                    </span>
+                    <div className="shrink-0 w-1" style={{ background: `linear-gradient(to bottom, ${accent}99, ${accent})` }} />
+                    <div className="flex items-center gap-2.5 flex-1 px-3 py-2">
+                      <span className="text-on-surface-variant/80 font-black w-8 shrink-0 text-right tabular-nums text-[11px]">
+                        {e.minute != null ? `${e.minute}'` : "—"}
+                      </span>
+                      <span className="w-5 shrink-0 text-center text-sm">{icon}</span>
+                      <span className="flex-1 truncate text-xs font-black text-on-surface">
+                        <PlayerLink playerId={e.playerId}>
+                          {e.playerName || e.player_name || ""}
+                        </PlayerLink>
+                      </span>
+                      <span
+                        className="text-[9px] font-black uppercase tracking-widest shrink-0 px-1.5 py-px rounded"
+                        style={{
+                          color: accent,
+                          borderColor: `${accent}30`,
+                          background: `${accent}20`,
+                          borderWidth: "1px",
+                          borderStyle: "solid",
+                        }}
+                      >
+                        {evtTeam?.name || ""}
+                      </span>
+                    </div>
                   </div>
                 );
               })}
             </div>
+          )}
+
+          {/* ── Commentary (narração) ──────────────────────────────────── */}
+          {(() => {
+            const commentary = evts
+              .filter((e) => e.minute <= liveMinute && e.text)
+              .sort((a, b) => (b.minute ?? 0) - (a.minute ?? 0));
+            if (commentary.length === 0) return null;
+            return (
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2 px-1">
+                  Narração
+                </p>
+                <div className="space-y-1.5">
+                  {commentary.slice(0, 20).map((e, i) => {
+                    const phrase = e.text
+                      .replace(/^\[(?:\d+'|HT)\]\s*\S*\s*/, "")
+                      .trim();
+                    if (!phrase) return null;
+                    return (
+                      <div
+                        key={i}
+                        className="flex items-start gap-2 px-3 py-2 rounded-lg border border-outline-variant/25 bg-surface-container"
+                      >
+                        <span className="text-on-surface-variant/60 font-black text-[10px] w-7 shrink-0 text-right pt-px tabular-nums">
+                          {e.minute != null ? `${e.minute}'` : "—"}
+                        </span>
+                        <span className="w-5 shrink-0 text-center text-sm pt-px">
+                          {e.emoji || ""}
+                        </span>
+                        <span className="flex-1 text-[11px] text-on-surface-variant leading-relaxed">
+                          {phrase}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* ═══ COLUNA 2: Lineup (Locais/Visitantes com toggle) ═══ */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden border-l border-outline/40">
+          {/* Toggle buttons */}
+          <div className="shrink-0 p-2 flex items-center gap-2">
+            <button
+              onClick={() => setLineupSide("home")}
+              className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${
+                lineupSide === "home"
+                  ? "bg-primary/90 text-on-primary border-primary/40 shadow-[0_0_12px_rgba(99,102,241,0.2)]"
+                  : "bg-surface-container/60 text-on-surface-variant/80 border-outline-variant/25 hover:bg-surface-container-high/60"
+              }`}
+            >
+              {hInfo?.name || "Locais"}
+            </button>
+            <button
+              onClick={() => setLineupSide("away")}
+              className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${
+                lineupSide === "away"
+                  ? "bg-primary/90 text-on-primary border-primary/40 shadow-[0_0_12px_rgba(99,102,241,0.2)]"
+                  : "bg-surface-container/60 text-on-surface-variant/80 border-outline-variant/25 hover:bg-surface-container-high/60"
+              }`}
+            >
+              {aInfo?.name || "Visitantes"}
+            </button>
           </div>
-        );
-      })()}
+
+          {/* Lineup display */}
+          <div className="flex-1 overflow-y-auto">
+            {hasLineups && currentLineup ? (
+              <>
+                {/* Team header */}
+                <div className="px-5 py-4 border-b border-outline/40 shrink-0 flex items-center gap-2 bg-surface-container-high/50">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: currentInfo?.color_primary || "#6366f1", boxShadow: `0 0 8px ${currentInfo?.color_primary || "#6366f1"}60` }} />
+                  <h2
+                    className="text-base font-black font-headline tracking-tight text-tertiary uppercase truncate"
+                    style={{ color: currentInfo?.color_primary || "#6366f1" }}
+                  >
+                    {currentInfo?.name || "—"}
+                  </h2>
+                </div>
+
+                {/* Active players */}
+                <div className="px-2 py-1">
+                  {sortedLineup(currentLineup.active).map((p) => renderPlayer(p))}
+                </div>
+
+                {/* Off players */}
+                {currentLineup.offPlayers.length > 0 && (
+                  <>
+                    <div className="mx-2 my-1.5 border-t border-outline-variant/25" />
+                    <div className="px-2 py-1">
+                      {currentLineup.offPlayers.map((p) =>
+                        renderPlayer(p, { isOff: true, offReason: p.reason }),
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* Substitutes */}
+                {currentLineup.subPlayers.length > 0 && (
+                  <>
+                    <div className="mx-2 my-1.5 border-t border-outline-variant/25" />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 px-3 py-1">
+                      Entrou
+                    </p>
+                    <div className="px-2 pb-2">
+                      {currentLineup.subPlayers.map((p) => (
+                        <div
+                          key={p.id ?? p.name}
+                          className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-surface-container/60 transition-colors"
+                        >
+                          <span className="w-5 text-[9px] font-black text-emerald-400 shrink-0 flex items-center justify-center">
+                            ↑
+                          </span>
+                          <span className="flex-1 truncate text-xs font-black text-on-surface-variant">
+                            <PlayerLink playerId={p.id}>{p.name}</PlayerLink>
+                          </span>
+                          {p.goals > 0 && (
+                            <span className="text-[10px] shrink-0">
+                              {Array(p.goals).fill("⚽").join("")}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-center text-on-surface-variant/60 text-xs font-bold px-4">
+                  Sem dados de escalação
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
