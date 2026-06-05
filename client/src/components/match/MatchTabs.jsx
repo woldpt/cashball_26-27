@@ -1399,9 +1399,9 @@ export function MatchIntervencaoView({
       <div className="flex-1 min-h-0 flex flex-col md:grid md:grid-cols-[0.85fr_1.6fr] overflow-hidden">
         {/* ═══ COL ESQUERDA — Cronologia (desktop: grid col, mobile: above main) ═══ */}
         <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
-          <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-zinc-800/60 bg-zinc-950/70">
-            <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
-            <span className="text-[8px] font-black uppercase tracking-[0.25em] text-amber-400">
+          <div className="shrink-0 flex items-center gap-2 px-4 py-3 border-b border-zinc-800/60 bg-zinc-950/70">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0 shadow-[0_0_10px_rgba(250,204,21,0.5)]" />
+            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-amber-400">
               Cronologia
             </span>
           </div>
@@ -1409,19 +1409,19 @@ export function MatchIntervencaoView({
 
             {/* Possession bar */}
             {fixture.homePossession != null && (
-              <div className="rounded-lg overflow-hidden border border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm mb-2">
-                <div className="flex justify-between items-center px-2.5 py-1.5">
+              <div className="rounded-lg overflow-hidden border border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm mb-2.5">
+                <div className="flex justify-between items-center px-3 py-2">
                   <span className="text-[10px] font-black text-white tabular-nums">
                     {fixture.homePossession}%
                   </span>
-                  <span className="text-[7px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                  <span className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-500">
                     Posse
                   </span>
                   <span className="text-[10px] font-black text-white tabular-nums">
                     {fixture.awayPossession}%
                   </span>
                 </div>
-                <div className="h-1.5 mx-2.5 mb-1.5 rounded-full overflow-hidden bg-zinc-800/80 flex">
+                <div className="h-1.5 mx-3 mb-2 rounded-full overflow-hidden bg-zinc-800/80 flex">
                   <div
                     className="h-full rounded-l-full transition-all duration-700 ease-out"
                     style={{
@@ -1443,7 +1443,7 @@ export function MatchIntervencaoView({
 
             {/* Ref / weather bar */}
             {(fixture?.attendance || ref?.refereeName || weatherEvent) && (
-              <div className="flex flex-wrap items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-800/60 bg-zinc-950/60 text-[9px]">
+              <div className="flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg border border-zinc-800/60 bg-zinc-950/60 text-[10px]">
                 {fixture?.attendance && (
                   <span className="text-zinc-500 font-bold">
                     🏟️ {fixture.attendance.toLocaleString("pt-PT")}
@@ -1470,9 +1470,9 @@ export function MatchIntervencaoView({
 
             {/* Events */}
             {visibleEvts.length === 0 ? (
-              <div className="rounded-lg border border-zinc-800/40 bg-zinc-950/40 py-6 flex flex-col items-center gap-1.5">
-                <span className="text-xl text-zinc-700">⚽</span>
-                <p className="text-zinc-600 text-[10px] font-bold">
+              <div className="rounded-lg border border-zinc-800/40 bg-zinc-950/40 py-8 flex flex-col items-center gap-2">
+                <span className="text-2xl text-zinc-700">⚽</span>
+                <p className="text-zinc-600 text-[11px] font-bold">
                   Sem eventos
                 </p>
               </div>
@@ -1480,15 +1480,15 @@ export function MatchIntervencaoView({
               visibleEvts.map((e, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-zinc-800/30 bg-zinc-950/40"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-800/25 bg-zinc-950/40"
                   >
-                    <span className="text-zinc-600 font-black w-7 shrink-0 text-right tabular-nums text-[10px]">
+                    <span className="text-zinc-600 font-black w-8 shrink-0 text-right tabular-nums text-[11px]">
                       {e.minute != null ? `${e.minute}'` : "—"}
                     </span>
-                    <span className="w-4 shrink-0 text-center text-xs">
+                    <span className="w-5 shrink-0 text-center text-sm">
                       {getEventIcon(e)}
                     </span>
-                    <span className="flex-1 truncate text-[10px] font-bold text-white">
+                    <span className="flex-1 truncate text-[11px] font-black text-white">
                       <PlayerLink playerId={e.playerId}>
                         {e.playerName || e.player_name || ""}
                       </PlayerLink>
@@ -1509,7 +1509,7 @@ export function MatchIntervencaoView({
               <button
                 key={tab.key}
                 onClick={() => setCenterTab(tab.key)}
-                className={`flex-1 min-w-0 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 ${
+                className={`flex-1 min-w-0 py-3 text-[11px] font-black uppercase tracking-widest transition-all border-b-2 ${
                   centerTab === tab.key
                     ? "text-white border-primary bg-primary/5"
                     : "text-zinc-500 hover:text-zinc-300 border-transparent hover:bg-zinc-800/30"
@@ -1524,21 +1524,21 @@ export function MatchIntervencaoView({
                 <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Confirmed subs strip (halftime only) */}
           {isHalftime && confirmedSubs.length > 0 && (
-            <div className="shrink-0 px-2.5 py-1.5 border-b border-cyan-900/40 bg-cyan-950/20 flex flex-wrap gap-1">
+            <div className="shrink-0 px-3 py-2 border-b border-cyan-900/40 bg-cyan-950/20 flex flex-wrap gap-1.5">
               {confirmedSubs.map((sub) => {
                 const outP = annotatedSquad.find((p) => p.id === sub.out);
                 const inP = annotatedSquad.find((p) => p.id === sub.in);
                 return (
                   <div
                     key={`${sub.out}-${sub.in}`}
-                    className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold border border-cyan-800/40 bg-zinc-950/80"
+                    className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold border border-cyan-800/40 bg-zinc-950/80"
                   >
                     <span className="text-cyan-400 shrink-0">🔄</span>
-                    <span className="text-rose-300 truncate max-w-[70px]">
+                    <span className="text-rose-300 truncate max-w-[80px]">
                       {outP?.name ?? "?"}
                     </span>
-                    <span className="text-zinc-600 shrink-0">→</span>
-                    <span className="text-emerald-300 truncate max-w-[70px]">
+                    <span className="text-zinc-500 shrink-0">→</span>
+                    <span className="text-emerald-300 truncate max-w-[80px]">
                       {inP?.name ?? "?"}
                     </span>
                   </div>
@@ -1551,11 +1551,11 @@ export function MatchIntervencaoView({
               <div className="flex flex-col h-full">
                 {/* Mentality buttons (halftime) */}
                 {isHalftime && (
-                  <div className="px-3 py-2.5 border-b border-zinc-800/60">
-                    <span className="block text-[8px] font-black uppercase tracking-[0.25em] text-zinc-500 mb-2">
+                  <div className="px-4 py-3 border-b border-zinc-800/60">
+                    <span className="block text-[9px] font-black uppercase tracking-[0.25em] text-zinc-400 mb-2.5">
                       Mentalidade
                     </span>
-                    <div className="grid grid-cols-3 gap-1.5">
+                    <div className="grid grid-cols-3 gap-2">
                       {[
                         { value: "Defensive", label: "Defensivo", accent: "#3b82f6" },
                         { value: "Balanced", label: "Equilibrado", accent: "#6366f1" },
@@ -1564,7 +1564,7 @@ export function MatchIntervencaoView({
                         <button
                           key={value}
                           onClick={() => onUpdateTactic({ style: value })}
-                          className={`py-2 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all border ${
+                          className={`py-2.5 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all border ${
                             tactic.style === value
                               ? "text-white shadow-[0_0_20px_rgba(99,102,241,0.15)]"
                               : "bg-zinc-900/60 border-zinc-800/60 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
@@ -1589,8 +1589,8 @@ export function MatchIntervencaoView({
                 <div className="flex-1 grid grid-cols-2 min-h-0 overflow-hidden">
                   {/* Left: Titulares */}
                   <div className="flex flex-col min-h-0 overflow-hidden ">
-                    <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/60 bg-zinc-950/60">
-                      <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold">
+                    <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-zinc-800/60 bg-zinc-950/60">
+                      <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-black">
                         {isPenalty ? "Candidatos" : "Titulares"}
                       </span>
                     </div>
@@ -1624,17 +1624,17 @@ export function MatchIntervencaoView({
                           ? "Não há GR no banco para substituir"
                           : undefined
                       }
-                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 border-b border-zinc-800/30 text-left select-none transition-all ${
+                      className={`w-full flex items-center gap-3 px-4 py-3 border-b border-zinc-800/25 text-left select-none transition-all ${
                         selected
                           ? "bg-rose-500/10"
                           : disabled
                             ? "opacity-40 cursor-not-allowed"
-                            : "cursor-pointer hover:bg-zinc-800/40"
+                            : "cursor-pointer hover:bg-zinc-800/30"
                       }`}
                     >
                       {/* Position badge */}
                       <span
-                        className={`shrink-0 px-1.5 py-0.5 rounded-md text-[8px] font-black border ${
+                        className={`shrink-0 px-2 py-1 rounded-md text-[9px] font-black border ${
                           selected
                             ? "bg-rose-500/20 text-rose-200 border-rose-400/40"
                             : ""
@@ -1644,8 +1644,8 @@ export function MatchIntervencaoView({
                             ? {}
                             : {
                                 color: accent,
-                                borderColor: `${accent}30`,
-                                background: `${accent}10`,
+                                borderColor: `${accent}35`,
+                                background: `${accent}12`,
                               }
                         }
                       >
@@ -1653,7 +1653,7 @@ export function MatchIntervencaoView({
                       </span>
                       {/* Name */}
                       <span
-                        className={`flex-1 truncate text-[11px] font-bold ${
+                        className={`flex-1 truncate text-[12px] font-black ${
                           selected ? "text-rose-100" : "text-zinc-100"
                         }`}
                       >
@@ -1669,11 +1669,11 @@ export function MatchIntervencaoView({
                       <div className="shrink-0 flex items-center gap-1.5">
                             {/* Resistência */}
                             <div className="flex flex-col items-end gap-0.5">
-                              <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-bold leading-none">
+                              <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-black leading-none">
                                 RES
                               </span>
                               <span
-                                className={`text-[13px] font-black tabular-nums leading-none ${
+                                className={`text-[14px] font-black tabular-nums leading-none ${
                                   (p.resistance ?? 0) >= 4
                                     ? "text-green-400"
                                     : (p.resistance ?? 0) >= 3
@@ -1684,26 +1684,26 @@ export function MatchIntervencaoView({
                                 {p.resistance ?? "–"}
                               </span>
                             </div>
-                            <div className="w-px h-5 bg-zinc-700/60" />
+                            <div className="w-px h-6 bg-zinc-700/50" />
 
                             {/* Forma */}
                             <div className="flex flex-col items-center gap-0.5">
-                              <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-bold leading-none">
+                              <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-black leading-none">
                                 FORMA
                               </span>
-                              <span className="text-[13px] leading-none">
+                              <span className="text-[14px] leading-none">
                                 {(p.form ?? 100) >= 115 ? "💪" : (p.form ?? 100) <= 85 ? "😩" : "👍"}
                               </span>
                             </div>
-                            <div className="w-px h-5 bg-zinc-700/60" />
+                            <div className="w-px h-6 bg-zinc-700/50" />
 
                             {/* Qualidade */}
                             <div className="flex flex-col items-end gap-0.5">
-                              <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-bold leading-none">
+                              <span className="text-[8px] uppercase tracking-widest text-zinc-400 font-black leading-none">
                                 Qualidade
                               </span>
                               <span
-                                className={`text-[15px] font-black tabular-nums leading-none px-2 py-0.5 rounded-lg border ${
+                                className={`text-[16px] font-black tabular-nums leading-none px-2.5 py-1 rounded-lg border ${
                                   (p.skill ?? 0) >= 40
                                     ? "bg-green-500/15 text-green-300 border-green-500/30"
                                     : (p.skill ?? 0) >= 25
@@ -1713,10 +1713,10 @@ export function MatchIntervencaoView({
                                 style={{
                                   textShadow:
                                     (p.skill ?? 0) >= 40
-                                      ? "0 0 10px rgba(34,197,94,0.3)"
+                                      ? "0 0 12px rgba(34,197,94,0.35)"
                                       : (p.skill ?? 0) >= 25
-                                        ? "0 0 10px rgba(234,179,8,0.3)"
-                                        : "0 0 10px rgba(239,68,68,0.3)",
+                                        ? "0 0 12px rgba(234,179,8,0.35)"
+                                        : "0 0 12px rgba(239,68,68,0.35)",
                                 }}
                               >
                                 {p.skill ?? "–"}
@@ -1751,8 +1751,8 @@ export function MatchIntervencaoView({
                   {/* Right: Suplentes */}
                   {!isPenalty && (
                     <div className="flex flex-col min-h-0 overflow-hidden">
-                      <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/60 bg-zinc-950/60">
-                        <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold">
+                      <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-zinc-800/60 bg-zinc-950/60">
+                        <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-black">
                           Suplentes
                         </span>
                       </div>
@@ -1773,18 +1773,18 @@ export function MatchIntervencaoView({
                             <button
                               key={p.id}
                               onClick={() => !disabled && handlePickIn(p)}
-                              className={`w-full flex items-center gap-2.5 px-3 py-2.5 border-b border-zinc-800/30 text-left select-none transition-all ${
+                              className={`w-full flex items-center gap-3 px-4 py-3 border-b border-zinc-800/25 text-left select-none transition-all ${
                                 alreadyUsed
                                   ? "opacity-25 cursor-not-allowed"
                                   : selected
                                     ? "bg-emerald-500/10"
                                     : disabled
                                       ? "opacity-40 cursor-not-allowed"
-                                      : "cursor-pointer hover:bg-zinc-800/40"
+                                      : "cursor-pointer hover:bg-zinc-800/30"
                               }`}
                             >
                               <span
-                                className={`shrink-0 px-1.5 py-0.5 rounded-md text-[8px] font-black border ${
+                                className={`shrink-0 px-2 py-1 rounded-md text-[9px] font-black border ${
                                   alreadyUsed
                                     ? "border-zinc-700/50 text-zinc-600"
                                     : selected
@@ -1796,15 +1796,15 @@ export function MatchIntervencaoView({
                                     ? {}
                                     : {
                                         color: accent,
-                                        borderColor: `${accent}30`,
-                                        background: `${accent}10`,
+                                        borderColor: `${accent}35`,
+                                        background: `${accent}12`,
                                       }
                                 }
                               >
                                 {POSITION_SHORT_LABELS[p.position]}
                               </span>
                               <span
-                                className={`flex-1 truncate text-[11px] font-bold ${
+                                className={`flex-1 truncate text-[12px] font-black ${
                                   alreadyUsed
                                     ? "text-zinc-600"
                                     : selected
@@ -1827,11 +1827,11 @@ export function MatchIntervencaoView({
                                   <>
                                     {/* Resistência */}
                                     <div className="flex flex-col items-end gap-0.5">
-                                      <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-bold leading-none">
+                                      <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-black leading-none">
                                         RES
                                       </span>
                                       <span
-                                        className={`text-[13px] font-black tabular-nums leading-none ${
+                                        className={`text-[14px] font-black tabular-nums leading-none ${
                                           (p.resistance ?? 0) >= 4
                                             ? "text-green-400"
                                             : (p.resistance ?? 0) >= 3
@@ -1842,26 +1842,26 @@ export function MatchIntervencaoView({
                                         {p.resistance ?? "–"}
                                       </span>
                                     </div>
-                                    <div className="w-px h-5 bg-zinc-700/60" />
+                                    <div className="w-px h-6 bg-zinc-700/50" />
 
                                     {/* Forma */}
                                     <div className="flex flex-col items-center gap-0.5">
-                                      <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-bold leading-none">
+                                      <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-black leading-none">
                                         FORMA
                                       </span>
-                                      <span className="text-[13px] leading-none">
+                                      <span className="text-[14px] leading-none">
                                         {(p.form ?? 100) >= 115 ? "💪" : (p.form ?? 100) <= 85 ? "😩" : "👍"}
                                       </span>
                                     </div>
-                                    <div className="w-px h-5 bg-zinc-700/60" />
+                                    <div className="w-px h-6 bg-zinc-700/50" />
 
                                     {/* Qualidade */}
                                     <div className="flex flex-col items-end gap-0.5">
-                                      <span className="text-[7px] uppercase tracking-widest text-zinc-500 font-bold leading-none">
+                                      <span className="text-[8px] uppercase tracking-widest text-zinc-400 font-black leading-none">
                                         Qualidade
                                       </span>
                                       <span
-                                        className={`text-[15px] font-black tabular-nums leading-none px-2 py-0.5 rounded-lg border ${
+                                        className={`text-[16px] font-black tabular-nums leading-none px-2.5 py-1 rounded-lg border ${
                                           (p.skill ?? 0) >= 40
                                             ? "bg-green-500/15 text-green-300 border-green-500/30"
                                             : (p.skill ?? 0) >= 25
@@ -1871,10 +1871,10 @@ export function MatchIntervencaoView({
                                         style={{
                                           textShadow:
                                             (p.skill ?? 0) >= 40
-                                              ? "0 0 10px rgba(34,197,94,0.3)"
+                                              ? "0 0 12px rgba(34,197,94,0.35)"
                                               : (p.skill ?? 0) >= 25
-                                                ? "0 0 10px rgba(234,179,8,0.3)"
-                                                : "0 0 10px rgba(239,68,68,0.3)",
+                                                ? "0 0 12px rgba(234,179,8,0.35)"
+                                                : "0 0 12px rgba(239,68,68,0.35)",
                                         }}
                                       >
                                         {p.skill ?? "–"}
@@ -2034,8 +2034,8 @@ export function MatchIntervencaoView({
 
                   {/* Right: Opponent bench */}
                   <div className="flex flex-col min-h-0 overflow-hidden">
-                    <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/60 bg-zinc-950/60">
-                      <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold">
+                    <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-zinc-800/60 bg-zinc-950/60">
+                      <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-black">
                         Banco Adversário
                       </span>
                     </div>
@@ -2048,14 +2048,14 @@ export function MatchIntervencaoView({
                         oppBench.map((player) => (
                           <div
                             key={player.id ?? player.name}
-                            className="flex items-center gap-2.5 px-3 py-2.5 border-b border-zinc-800/30"
+                            className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800/25"
                           >
                             <span
-                              className={`w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-black border border-white/20 shrink-0 ${oppPosColors[player.position] || "bg-zinc-500 text-white"}`}
+                              className={`w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-black border border-white/20 shrink-0 ${oppPosColors[player.position] || "bg-zinc-500 text-white"}`}
                             >
                               {POSITION_SHORT_LABELS[player.position] || "?"}
                             </span>
-                            <span className="flex-1 truncate text-[11px] font-bold text-zinc-300">
+                            <span className="flex-1 truncate text-[12px] font-black text-zinc-300">
                               {player.name}
                               {!!player.is_star &&
                                 (player.position === "MED" ||
@@ -2065,7 +2065,7 @@ export function MatchIntervencaoView({
                                   </span>
                                 )}
                             </span>
-                            <span className="text-[10px] font-black tabular-nums text-zinc-500 shrink-0">
+                            <span className="text-[11px] font-black tabular-nums text-zinc-400 shrink-0">
                               {player.skill ?? "—"}
                             </span>
                           </div>
@@ -2080,22 +2080,22 @@ export function MatchIntervencaoView({
       </div>
 
       {/* ═══ BOTTOM BAR — Confirmation ═══════════════════════════ */}
-      <div className="shrink-0 border-t border-zinc-800/60 bg-zinc-950/80 backdrop-blur-sm px-3 py-2.5">
-        <div className="flex items-center gap-2 min-w-0">
+      <div className="shrink-0 border-t border-zinc-800/60 bg-zinc-950/80 backdrop-blur-sm px-4 py-3">
+        <div className="flex items-center gap-3 min-w-0">
           <div className="flex-1 flex items-center gap-2 min-w-0">
-            <span className="text-[9px] text-zinc-600 shrink-0 font-bold uppercase tracking-wide">
+            <span className="text-[10px] text-zinc-600 shrink-0 font-black uppercase tracking-wide">
               Sai
             </span>
-            <span className="bg-rose-950/80 text-rose-200 border border-rose-800/50 text-[10px] font-black px-2.5 py-1 rounded-lg truncate max-w-[35%]">
+            <span className="bg-rose-950/80 text-rose-200 border border-rose-800/50 text-[11px] font-black px-3 py-1.5 rounded-lg truncate max-w-[35%]">
               {effectiveOutId ? sourcePlayer?.name || "?" : "—"}
             </span>
             {!isPenalty && (
               <>
-                <span className="text-zinc-500 shrink-0 font-black text-sm">→</span>
-                <span className="text-[9px] text-zinc-600 shrink-0 font-bold uppercase tracking-wide">
+                <span className="text-zinc-500 shrink-0 font-black text-base">→</span>
+                <span className="text-[10px] text-zinc-600 shrink-0 font-black uppercase tracking-wide">
                   Entra
                 </span>
-                <span className="bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-[10px] font-black px-2.5 py-1 rounded-lg truncate max-w-[35%]">
+                <span className="bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-[11px] font-black px-3 py-1.5 rounded-lg truncate max-w-[35%]">
                   {selectedInId ? targetPlayer?.name || "?" : "—"}
                 </span>
               </>
@@ -2106,14 +2106,14 @@ export function MatchIntervencaoView({
             <>
               <button
                 onClick={onResetSub}
-                className="shrink-0 w-7 h-7 rounded-lg bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-500 hover:text-white text-xs flex items-center justify-center transition-colors border border-zinc-700/50"
+                className="shrink-0 w-8 h-8 rounded-lg bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-500 hover:text-white text-sm flex items-center justify-center transition-colors border border-zinc-700/50"
               >
                 ✕
               </button>
               <button
                 onClick={onConfirmSub}
                 disabled={!canConfirmSwap}
-                className={`shrink-0 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all border ${
+                className={`shrink-0 px-5 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all border ${
                   canConfirmSwap
                     ? "bg-emerald-600/90 border-emerald-400/40 text-white shadow-[0_0_16px_rgba(16,185,129,0.25)] hover:bg-emerald-500/90"
                     : "bg-zinc-800/80 border-zinc-700/50 text-zinc-600 cursor-not-allowed"
@@ -2133,7 +2133,7 @@ export function MatchIntervencaoView({
                       playerIn: selectedInId,
                     })
               }
-              className="shrink-0 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide bg-primary/90 hover:brightness-110 text-on-primary disabled:opacity-50 disabled:cursor-not-allowed border border-primary/40 shadow-[0_0_16px_rgba(99,102,241,0.2)]"
+              className="shrink-0 px-5 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide bg-primary/90 hover:brightness-110 text-on-primary disabled:opacity-50 disabled:cursor-not-allowed border border-primary/40 shadow-[0_0_16px_rgba(99,102,241,0.2)]"
             >
               Substituir
             </button>
@@ -2143,10 +2143,10 @@ export function MatchIntervencaoView({
 
       {/* Reset all subs (halftime) */}
       {isHalftime && confirmedSubs.length > 0 && (
-        <div className="shrink-0 border-t border-zinc-800/30 px-4 py-1.5 flex justify-center bg-zinc-950/50">
+        <div className="shrink-0 border-t border-zinc-800/30 px-5 py-2 flex justify-center bg-zinc-950/50">
           <button
             onClick={onResetAllSubs}
-            className="text-[9px] font-black uppercase tracking-[0.25em] text-rose-400/80 hover:text-rose-300 transition-colors"
+            className="text-[10px] font-black uppercase tracking-[0.25em] text-rose-400/80 hover:text-rose-300 transition-colors"
           >
             ↺ Anular todas as substituições
           </button>
