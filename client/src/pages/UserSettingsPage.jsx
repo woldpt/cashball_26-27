@@ -23,6 +23,8 @@ export function UserSettingsPage({
 	const [birthYear, setBirthYear] = useState("");
 	const [profileSaving, setProfileSaving] = useState(false);
 	const [profileMsg, setProfileMsg] = useState(null);
+	const [deletingRoom, setDeletingRoom] = useState(null); // null | { roomCode, password }
+	const [deletingRoomLoading, setDeletingRoomLoading] = useState(false);
 
 	useEffect(() => {
 		if (!me?.name) return;
@@ -130,6 +132,34 @@ export function UserSettingsPage({
 			setPasswordMsg({ type: "error", text: "Erro de ligação ao servidor." });
 		} finally {
 			setChangingPassword(false);
+		}
+	};
+
+	const handleDeleteRoom = (roomCode, password) => {
+		setDeletingRoom({ roomCode, password });
+	};
+
+	const confirmDeleteRoom = async () => {
+		if (!deletingRoom) return;
+		const { roomCode, password } = deletingRoom;
+		setDeletingRoom(null);
+		setDeletingRoomLoading(true);
+		try {
+			const res = await fetch(`${backendUrl}/saves/${roomCode}`, {
+				method: "DELETE",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ name: me.name, password }),
+			});
+			const data = await res.json();
+			if (data.ok) {
+				setRooms((prev) => prev.filter((r) => r.roomCode !== roomCode));
+			} else {
+				setProfileMsg({ type: "error", text: data.error || "Erro ao apagar sala." });
+			}
+		} catch {
+			setProfileMsg({ type: "error", text: "Erro de ligação ao servidor." });
+		} finally {
+			setDeletingRoomLoading(false);
 		}
 	};
 
@@ -347,7 +377,7 @@ export function UserSettingsPage({
 											)}
 											</div>
 										</div>
-										<div className="flex items-center gap-3 shrink-0">
+										<div className="flex items-center gap-2 shrink-0">
 											{r.teamName && (
 												<span className="text-xs font-bold text-on-surface-variant/80 hidden sm:block">
 													{r.teamName}
@@ -364,7 +394,48 @@ export function UserSettingsPage({
 											>
 												{isActive ? "Actual" : "Entrar"}
 											</button>
+											{!isActive && (
+												<button
+													onClick={() => handleDeleteRoom(r.roomCode, me.password)}
+													className="text-xs font-bold text-red-400/60 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-500/5 transition-colors"
+													title="Eliminar sala"
+												>
+													<span className="material-symbols-outlined text-[16px] leading-none">
+														delete
+													</span>
+												</button>
+											)}
 										</div>
+										{deletingRoom?.roomCode === r.roomCode && (
+											<div className="absolute inset-0 bg-surface/90 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center gap-2 z-10">
+												<p className="text-xs font-bold text-red-400 text-center px-4">
+													Tem a certeza que deseja eliminar a sala<br />
+													<strong>{r.roomName}</strong>? Esta acção é irreversível.
+												</p>
+												<div className="flex gap-2">
+													<button
+														onClick={(e) => {
+															e.stopPropagation();
+															setDeletingRoom(null);
+														}}
+														disabled={deletingRoomLoading}
+														className="text-xs font-black uppercase tracking-widest bg-surface-container-low border border-outline-variant/20 text-on-surface px-3 py-1.5 rounded-lg hover:bg-surface-bright transition-colors disabled:opacity-50"
+													>
+														Cancelar
+													</button>
+													<button
+														onClick={(e) => {
+															e.stopPropagation();
+														confirmDeleteRoom();
+													}}
+														disabled={deletingRoomLoading}
+														className="text-xs font-black uppercase tracking-widest bg-red-500/20 border border-red-500/30 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-500/30 transition-colors disabled:opacity-50"
+													>
+														{deletingRoomLoading ? "A eliminar..." : "Sim, eliminar"}
+													</button>
+												</div>
+											</div>
+										)}
 									</div>
 								);
 							})
