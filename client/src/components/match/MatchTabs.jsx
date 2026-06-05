@@ -937,12 +937,12 @@ export function TabIntervencao({
                       ? undefined
                       : { duration: 0.2, delay: Math.min(i, 6) * 0.02 }
                   }
-                  className={`w-full flex items-center gap-2 px-3 py-2.5 border-b border-zinc-800/30 text-left select-none transition-all border-l-2 ${
+                  className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-md text-left select-none transition-all ${
                     selected
-                      ? "bg-rose-500/10 border-l-rose-400"
+                      ? "bg-rose-500/10 border border-rose-500/20"
                       : disabled
-                        ? "opacity-40 cursor-not-allowed border-l-transparent"
-                        : "cursor-pointer hover:bg-zinc-800/40 border-l-transparent"
+                        ? "opacity-40 cursor-not-allowed bg-zinc-950/40 border border-zinc-800/20"
+                        : "cursor-pointer hover:bg-zinc-800/40 bg-zinc-950/40 border border-zinc-800/20"
                   }`}
                 >
                   {/* Position badge */}
@@ -1039,14 +1039,14 @@ export function TabIntervencao({
                       ? undefined
                       : { duration: 0.2, delay: Math.min(i, 6) * 0.02 }
                     }
-                    className={`w-full flex items-center gap-2 px-3 py-2.5 border-b border-zinc-800/30 text-left select-none transition-all border-l-2 ${
+                    className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-md text-left select-none transition-all ${
                       alreadyUsed
-                        ? "opacity-25 cursor-not-allowed border-l-transparent"
+                        ? "opacity-25 cursor-not-allowed bg-zinc-950/40 border border-zinc-800/20"
                         : selected
-                          ? "bg-emerald-500/10 border-l-emerald-400"
+                          ? "bg-emerald-500/10 border border-emerald-500/20"
                           : disabled
-                            ? "opacity-40 cursor-not-allowed border-l-transparent"
-                            : "cursor-pointer hover:bg-zinc-800/40 border-l-transparent"
+                            ? "opacity-40 cursor-not-allowed bg-zinc-950/40 border border-zinc-800/20"
+                            : "cursor-pointer hover:bg-zinc-800/40 bg-zinc-950/40 border border-zinc-800/20"
                     }`}
                   >
                     {/* Position badge */}
