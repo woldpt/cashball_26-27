@@ -373,9 +373,9 @@ export function MatchPage({
 					</>
 				) : (
 					/* ── Grid layout: detail / overview mode ───────────────── */
-					<div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-3 p-3 min-h-0 overflow-auto">
+					<div className={mode === "detail" ? "flex-1 grid grid-cols-1 gap-3 p-3 min-h-0 overflow-auto" : "flex-1 grid grid-cols-1 lg:grid-cols-5 gap-3 p-3 min-h-0 overflow-auto"}>
 						{/* ── COL 1-3: Our game ── */}
-						<div className="lg:col-span-3 flex flex-col min-h-0 overflow-hidden rounded-lg bg-zinc-950/50 border border-zinc-800/40">
+						<div className={mode === "detail" ? "flex flex-col min-h-0 overflow-hidden rounded-lg bg-zinc-950/50 border border-zinc-800/40" : "lg:col-span-3 flex flex-col min-h-0 overflow-hidden rounded-lg bg-zinc-950/50 border border-zinc-800/40"}>
 							{activeTab === "jogo" && (
 								<TabJogo
 									fixture={fixture}
@@ -414,6 +414,7 @@ export function MatchPage({
 							)}
 						</div>
 
+						{mode !== "detail" && (<>
 						{/* ── COL 4-5 right sidebar: Other games ── */}
 						<div className="lg:col-span-2 flex flex-col min-h-0 overflow-hidden rounded-lg bg-zinc-950/50 border border-zinc-800/40">
 							<div className="shrink-0 px-2.5 py-1.5 border-b border-zinc-800 bg-zinc-950/70">
@@ -496,6 +497,7 @@ export function MatchPage({
 									</div>
 								))}
 						</div>
+						</>)}
 					</div>
 				)}
 			</div>
