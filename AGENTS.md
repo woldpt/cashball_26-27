@@ -88,6 +88,8 @@ Nunca instancie helpers diretamente. Use sempre:
 2. **Extrair:** Forneça o ID da tela ao Claude.
 3. **Implementar:** Claude usa `stitch_get_screen` $\rightarrow$ React/Tailwind.
 
+**Estilo visual:** Siga sempre o `STYLE.md` como referência de design system. Todas as páginas e componentes devem usar os tokens, tipografia, cards, badges e convenções definidos lá. Referência de implementação: `client/src/views/PlayersTab.jsx`.
+
 ## 🚀 Commit Workflow
 
 - Mensagens de commit devem focar no **"porquê"** (ex: `fix: prevent duplicate NPC bids in auctions`) e não apenas no "o quê".

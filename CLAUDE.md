@@ -7,7 +7,7 @@ This file serves as the primary technical reference for the CashBall 26/27 codeb
 | Layer              | Technology          | Notes                                                                 |
 | :----------------- | :------------------ | :-------------------------------------------------------------------- |
 | **Frontend**       | React 19 + Vite 8   | **JavaScript only** (no TypeScript). Use JSDoc for type hints.        |
-| **Styling**        | Tailwind CSS 4      | Uses Material Symbols Outlined for icons.                             |
+| **Styling**        | Tailwind CSS 4      | Uses Material Symbols Outlined for icons. Style guide: `STYLE.md`.   |
 | **Backend**        | Node.js + Express 5 | **TypeScript** (strict: false).                                       |
 | **Real-time**      | Socket.io 4         | Centralized listeners in `client/src/hooks/useSocketListeners.js`.    |
 | **Database**       | SQLite 3            | Local file-based (`server/db/base.db`). No PostgreSQL-specific types. |
@@ -88,6 +88,20 @@ To maintain visual consistency, do not guess designs. Use the **Stitch AI MCP** 
 2. **Extract:** Provide the Screen ID to Claude.
 3. **Implement:** Claude uses `stitch_get_screen` to translate specs into React/Tailwind.
 4. **UI Rules:** Respect position colors (GR: `#eab308`, DEF: `#3b82f6`, MED: `#10b981`, ATA: `#f43f5e`) and Sidebar offsets (`lg:left-14` / `lg:left-64`).
+5. **Style Guide:** Always follow `STYLE.md` for tokens, typography, cards, badges, and responsive patterns. Reference implementation: `client/src/views/PlayersTab.jsx`.
+
+---
+
+## 🎨 Style Guide
+
+All pages and components must follow the design system documented in **`STYLE.md`**:
+
+- **Color tokens:** Use semantic tokens (`surface-container`, `on-surface`, `primary`, etc.) — never hardcoded hex colors.
+- **Position colors:** GR: `amber-400`, DEF: `blue-400`, MED: `emerald-400`, ATA: `rose-400`.
+- **Typography:** `font-headline` for numbers/values, `font-black uppercase tracking-widest` for labels, `tabular-nums` for all digits.
+- **Cards:** Use `bg-surface-container-low` / `bg-surface-container` with `border-l-4` accent borders.
+- **Badges:** `text-[9px] font-black uppercase` with `bg-{color}/20` + `border-{color}/30`.
+- **Reference implementation:** `client/src/views/PlayersTab.jsx`.
 
 ---
 

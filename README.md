@@ -67,3 +67,15 @@ A gestão económica é tão importante quanto a tática de campo.
 ## 📊 Dados e Estatísticas
 
 O jogo baseia-se em dados persistentes. Os clubes, plantéis e resultados são geridos de forma a garantir uma experiência contínua e competitiva.
+
+## 🎨 Design System
+
+A interface visual segue um design system consistente documentado em **`STYLE.md`**:
+
+- **Cores semânticas** baseadas em tokens Material Design 3 (`surface`, `primary`, `tertiary`, `error`)
+- **Cores por posição:** GR (âmbar), DEF (azul), MED (esmeralda), ATA (rosa)
+- **Tipografia:** headlines em `font-headline`, labels em uppercase com `tracking-widest`
+- **Cards com bordas laterais** coloridas e gradientes sutis de fundo
+- **Badges inline** para status (junior, renovado, suspenso, lesionado, à venda)
+- **Responsividade:** informação progressiva — basics sempre visíveis, stats detalhados em `md` e `xl`
+- **Referência:** `client/src/views/PlayersTab.jsx`

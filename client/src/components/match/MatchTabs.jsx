@@ -12,16 +12,16 @@ import { PlayerLink } from "../shared/PlayerLink.jsx";
 
 const POS_ORDER = { GR: 0, DEF: 1, MED: 2, ATA: 3 };
 
-/* ── Position accent colours ─────────────────────────────────────────────── */
-const POS_ACCENT = {
-  GR: "#eab308",
-  DEF: "#3b82f6",
-  MED: "#10b981",
-  ATA: "#f43f5e",
+/* ── Position styles (STYLE.md §4 card pattern) ───────────────────────────── */
+const POS_STYLES = {
+  GR: { bar: "from-amber-300 via-amber-400 to-amber-600", glow: "hover:border-amber-400/70 hover:shadow-amber-400/30", bgGrad: "from-amber-500/8", badgeBg: "bg-amber-400/20", badgeText: "text-amber-400", badgeBorder: "border-amber-400/30", accent: "#eab308" },
+  DEF: { bar: "from-blue-300 via-blue-400 to-blue-600", glow: "hover:border-blue-400/70 hover:shadow-blue-400/30", bgGrad: "from-blue-500/8", badgeBg: "bg-blue-400/20", badgeText: "text-blue-400", badgeBorder: "border-blue-400/30", accent: "#3b82f6" },
+  MED: { bar: "from-emerald-300 via-emerald-400 to-emerald-600", glow: "hover:border-emerald-400/70 hover:shadow-emerald-400/30", bgGrad: "from-emerald-500/8", badgeBg: "bg-emerald-400/20", badgeText: "text-emerald-400", badgeBorder: "border-emerald-400/30", accent: "#10b981" },
+  ATA: { bar: "from-rose-300 via-rose-400 to-rose-600", glow: "hover:border-rose-400/70 hover:shadow-rose-400/30", bgGrad: "from-rose-500/8", badgeBg: "bg-rose-400/20", badgeText: "text-rose-400", badgeBorder: "border-rose-400/30", accent: "#f43f5e" },
 };
 
-function posAccent(pos) {
-  return POS_ACCENT[pos] || "#d97706";
+function getPosStyle(pos) {
+  return POS_STYLES[pos] || POS_STYLES.MED;
 }
 
 /* ── TabJogo — Match events, possession, commentary ──────────────────────── */
@@ -60,24 +60,24 @@ export function TabJogo({ fixture, liveMinute, teams, mode }) {
     <div className="flex-1 overflow-y-auto p-3 space-y-3">
       {/* ── Halftime score banner ──────────────────────────────────────── */}
       {isHalftime && (
-        <div className="rounded-xl overflow-hidden border border-zinc-800/60 bg-[linear-gradient(135deg,#111118,#1a1a2e)] backdrop-blur-sm shadow-[0_0_24px_rgba(0,0,0,0.4)]">
+        <div className="rounded-lg overflow-hidden border border-outline/40 bg-surface-container-low shadow-sm shadow-black/30">
           {/* Score line */}
           <div className="flex items-center justify-center gap-5 pt-4 pb-1.5">
             <div className="flex flex-col items-center gap-1 min-w-0 max-w-[30%]">
               <span
-                className="w-3 h-3 rounded-full shrink-0 shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                className="w-3 h-3 rounded-full shrink-0"
                 style={{ background: hInfo?.color_primary || "#6366f1", boxShadow: `0 0 10px ${hInfo?.color_primary || "#6366f1"}80` }}
               />
-              <span className="text-[9px] font-black text-zinc-400 truncate text-center leading-tight uppercase tracking-[0.15em]">
+              <span className="text-[9px] font-black text-on-surface-variant truncate text-center leading-tight uppercase tracking-[0.15em]">
                 {hInfo?.name || "Casa"}
               </span>
             </div>
             <div className="flex items-center gap-2.5">
-              <span className="text-3xl font-black tabular-nums text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+              <span className="text-3xl font-black font-headline tabular-nums text-on-surface tracking-tighter">
                 {homeGoals}
               </span>
-              <span className="text-zinc-600 text-lg font-black">—</span>
-              <span className="text-3xl font-black tabular-nums text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+              <span className="text-on-surface-variant/60 text-lg font-black">—</span>
+              <span className="text-3xl font-black font-headline tabular-nums text-on-surface tracking-tighter">
                 {awayGoals}
               </span>
             </div>
@@ -86,14 +86,14 @@ export function TabJogo({ fixture, liveMinute, teams, mode }) {
                 className="w-3 h-3 rounded-full shrink-0"
                 style={{ background: aInfo?.color_primary || "#f43f5e", boxShadow: `0 0 10px ${aInfo?.color_primary || "#f43f5e"}80` }}
               />
-              <span className="text-[9px] font-black text-zinc-400 truncate text-center leading-tight uppercase tracking-[0.15em]">
+              <span className="text-[9px] font-black text-on-surface-variant truncate text-center leading-tight uppercase tracking-[0.15em]">
                 {aInfo?.name || "Fora"}
               </span>
             </div>
           </div>
           {/* Interval badge */}
           <div className="flex items-center justify-center pb-3.5">
-            <span className="inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.3em] px-2.5 py-1 rounded-full bg-zinc-900/80 border border-zinc-700/50 text-zinc-400">
+            <span className="inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.3em] px-2.5 py-1 rounded-full bg-surface-container-high/80 border border-outline/40 text-on-surface-variant">
               <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
               Intervalo
               <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
@@ -104,30 +104,30 @@ export function TabJogo({ fixture, liveMinute, teams, mode }) {
 
       {/* ── Top bar: attendance, referee, weather ──────────────────────── */}
       {(fixture.attendance || ref?.refereeName || weatherEvent) && (
-        <div className="flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg border border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-3 rounded-lg border border-outline/40 bg-surface-container">
           {fixture.attendance && (
-            <span className="text-zinc-400 text-[10px] font-bold flex items-center gap-1.5">
+            <span className="text-on-surface-variant text-[10px] font-black flex items-center gap-1.5">
               <span className="text-base">🏟️</span>
               <span>{hInfo?.stadium_name ? `${hInfo.stadium_name} · ` : ""}</span>
-              <span className="text-white tabular-nums">
+              <span className="text-on-surface tabular-nums">
                 {fixture.attendance.toLocaleString("pt-PT")}
               </span>
-              <span className="text-zinc-500">adeptos</span>
+              <span className="text-on-surface-variant/80">adeptos</span>
             </span>
           )}
           {ref?.refereeName && (
-            <span className="text-zinc-400 text-[10px] font-bold flex items-center gap-1.5">
+            <span className="text-on-surface-variant text-[10px] font-black flex items-center gap-1.5">
               <span className="text-base">👤</span>
-              <span className="text-white">{ref.refereeName}</span>
+              <span className="text-on-surface">{ref.refereeName}</span>
               <span
-                className={`ml-1 font-black tabular-nums ${refBalance >= 60 ? "text-emerald-400" : refBalance <= 40 ? "text-red-400" : "text-zinc-400"}`}
+                className={`ml-1 font-black tabular-nums ${refBalance >= 60 ? "text-emerald-400" : refBalance <= 40 ? "text-red-400" : "text-on-surface-variant"}`}
               >
                 {refBalance}
               </span>
             </span>
           )}
           {weatherEvent && (
-            <span className="text-zinc-400 text-[10px] font-bold flex items-center gap-1">
+            <span className="text-on-surface-variant text-[10px] font-black flex items-center gap-1">
               <span className="text-sm">{weatherEvent.emoji}</span>
               <span>{WEATHER_LABELS[weatherEvent.emoji] || ""}</span>
             </span>
@@ -137,46 +137,48 @@ export function TabJogo({ fixture, liveMinute, teams, mode }) {
 
       {/* ── Possession bar ─────────────────────────────────────────────── */}
       {fixture.homePossession != null && (
-        <div className="rounded-xl overflow-hidden border border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm">
-          <div className="flex justify-between items-center px-4 py-2">
-            <span className="text-sm font-black text-white tabular-nums">
+        <div className="bg-surface-container rounded-md overflow-hidden border border-outline-variant/25">
+          <div className="px-5 py-4 flex items-center justify-between bg-surface-container-high/50">
+            <span className="text-sm font-black font-headline tracking-tight text-on-surface tabular-nums">
               {fixture.homePossession}%
             </span>
-            <span className="text-[8px] font-black uppercase tracking-[0.25em] text-zinc-500">
+            <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
               Posse de Bola
             </span>
-            <span className="text-sm font-black text-white tabular-nums">
+            <span className="text-sm font-black font-headline tracking-tight text-on-surface tabular-nums">
               {fixture.awayPossession}%
             </span>
           </div>
-          <div className="h-2 mx-4 mb-2 rounded-full overflow-hidden bg-zinc-800/80 flex">
-            <div
-              className="h-full rounded-l-full transition-all duration-700 ease-out"
-              style={{
-                width: `${fixture.homePossession}%`,
-                background: `linear-gradient(90deg, ${hInfo?.color_primary || "#6366f1"}, ${hInfo?.color_primary || "#6366f1"}cc)`,
-                boxShadow: `0 0 12px ${hInfo?.color_primary || "#6366f1"}44`,
-              }}
-            />
-            <div
-              className="h-full flex-1 transition-all duration-700 ease-out"
-              style={{
-                background: `linear-gradient(90deg, ${aInfo?.color_primary || "#f43f5e"}cc, ${aInfo?.color_primary || "#f43f5e"})`,
-                boxShadow: `0 0 12px ${aInfo?.color_primary || "#f43f5e"}44`,
-              }}
-            />
+          <div className="p-3 md:p-4 pt-0">
+            <div className="h-2 rounded-full overflow-hidden bg-surface-container-high/80 flex">
+              <div
+                className="h-full rounded-l-full transition-all duration-700 ease-out"
+                style={{
+                  width: `${fixture.homePossession}%`,
+                  background: `linear-gradient(90deg, ${hInfo?.color_primary || "#6366f1"}, ${hInfo?.color_primary || "#6366f1"}cc)`,
+                  boxShadow: `0 0 12px ${hInfo?.color_primary || "#6366f1"}44`,
+                }}
+              />
+              <div
+                className="h-full flex-1 rounded-r-full transition-all duration-700 ease-out"
+                style={{
+                  background: `linear-gradient(90deg, ${aInfo?.color_primary || "#f43f5e"}cc, ${aInfo?.color_primary || "#f43f5e"})`,
+                  boxShadow: `0 0 12px ${aInfo?.color_primary || "#f43f5e"}44`,
+                }}
+              />
+            </div>
           </div>
         </div>
       )}
 
       {/* ── Events list ────────────────────────────────────────────────── */}
       {visibleEvts.length === 0 ? (
-        <div className="rounded-xl border border-zinc-800/40 bg-zinc-950/40 py-8 flex flex-col items-center gap-2">
-          <span className="text-3xl text-zinc-700">⚽</span>
-          <p className="text-zinc-600 text-xs font-bold">Sem eventos a mostrar</p>
+        <div className="rounded-lg border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
+          <span className="text-3xl text-on-surface-variant/40">⚽</span>
+          <p className="text-on-surface-variant/60 text-xs font-bold">Sem eventos a mostrar</p>
         </div>
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {visibleEvts.map((e, i) => {
             const isHome = e.team === "home";
             const evtTeam = isHome ? hInfo : aInfo;
@@ -199,29 +201,32 @@ export function TabJogo({ fixture, liveMinute, teams, mode }) {
             return (
               <div
                 key={i}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-zinc-800/30 bg-zinc-950/40 hover:bg-zinc-900/50 transition-colors"
+                className="relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-surface-container/50 transition-all duration-200 hover:-translate-y-px hover:shadow-lg shadow-sm shadow-black/30"
               >
-                <span className="text-zinc-500 font-black w-8 shrink-0 text-right tabular-nums text-[11px]">
-                  {e.minute != null ? `${e.minute}'` : "—"}
-                </span>
-                <span className="w-5 shrink-0 text-center text-sm">{icon}</span>
-                <span
-                  className="flex-1 truncate text-xs font-bold text-white"
-                >
-                  <PlayerLink playerId={e.playerId}>
-                    {e.playerName || e.player_name || ""}
-                  </PlayerLink>
-                </span>
-                <span
-                  className="text-[9px] font-black uppercase tracking-[0.2em] shrink-0 px-2 py-0.5 rounded-full border"
-                  style={{
-                    color: accent,
-                    borderColor: `${accent}30`,
-                    background: `${accent}10`,
-                  }}
-                >
-                  {evtTeam?.name || ""}
-                </span>
+                <div className="shrink-0 w-1" style={{ background: `linear-gradient(to bottom, ${accent}99, ${accent})` }} />
+                <div className="flex items-center gap-2.5 flex-1 px-3 py-2">
+                  <span className="text-on-surface-variant/80 font-black w-8 shrink-0 text-right tabular-nums text-[11px]">
+                    {e.minute != null ? `${e.minute}'` : "—"}
+                  </span>
+                  <span className="w-5 shrink-0 text-center text-sm">{icon}</span>
+                  <span className="flex-1 truncate text-xs font-black text-on-surface">
+                    <PlayerLink playerId={e.playerId}>
+                      {e.playerName || e.player_name || ""}
+                    </PlayerLink>
+                  </span>
+                  <span
+                    className="text-[9px] font-black uppercase tracking-widest shrink-0 px-1.5 py-px rounded"
+                    style={{
+                      color: accent,
+                      borderColor: `${accent}30`,
+                      background: `${accent}20`,
+                      borderWidth: "1px",
+                      borderStyle: "solid",
+                    }}
+                  >
+                    {evtTeam?.name || ""}
+                  </span>
+                </div>
               </div>
             );
           })}
@@ -236,7 +241,7 @@ export function TabJogo({ fixture, liveMinute, teams, mode }) {
         if (commentary.length === 0) return null;
         return (
           <div>
-            <p className="text-[8px] font-black uppercase tracking-[0.25em] text-zinc-500 mb-2 px-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2 px-1">
               Narração
             </p>
             <div className="space-y-1.5">
@@ -248,15 +253,15 @@ export function TabJogo({ fixture, liveMinute, teams, mode }) {
                 return (
                   <div
                     key={i}
-                    className="flex items-start gap-2 px-3 py-2 rounded-lg border border-zinc-800/30 bg-zinc-950/40"
+                    className="flex items-start gap-2 px-3 py-2 rounded-lg border border-outline-variant/25 bg-surface-container"
                   >
-                    <span className="text-zinc-600 font-black text-[10px] w-7 shrink-0 text-right pt-px tabular-nums">
+                    <span className="text-on-surface-variant/60 font-black text-[10px] w-7 shrink-0 text-right pt-px tabular-nums">
                       {e.minute != null ? `${e.minute}'` : "—"}
                     </span>
                     <span className="w-5 shrink-0 text-center text-sm pt-px">
                       {e.emoji || ""}
                     </span>
-                    <span className="flex-1 text-[11px] text-zinc-400 leading-relaxed">
+                    <span className="flex-1 text-[11px] text-on-surface-variant leading-relaxed">
                       {phrase}
                     </span>
                   </div>
@@ -284,7 +289,7 @@ function FormBadge({ form }) {
   const f = form ?? 100;
   return (
     <span
-      className={`text-[10px] font-black ${f >= 115 ? "text-emerald-400" : f <= 85 ? "text-rose-400" : "text-zinc-400"}`}
+      className={`text-[10px] font-black ${f >= 115 ? "text-emerald-400" : f <= 85 ? "text-rose-400" : "text-on-surface-variant"}`}
     >
       {f >= 115 ? "💪" : f <= 85 ? "😩" : "👍"}
     </span>
@@ -298,7 +303,7 @@ function FormBar({ form }) {
     f >= 115 ? "#34d399" : f <= 85 ? "#f87171" : "#a1a1aa";
   return (
     <div className="flex items-center gap-1.5">
-      <div className="h-1.5 w-9 rounded-full bg-zinc-800 overflow-hidden">
+      <div className="h-1.5 w-9 rounded-full bg-surface-container-high/80 overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-300"
           style={{ width: `${pct}%`, background: color }}
@@ -341,24 +346,18 @@ export function TabLineup({ fixture, liveMinute, teams }) {
       : p.goals > 0
         ? Array(p.goals).fill("⚽").join("")
         : "";
-    const accent = posAccent(p.position);
     return (
       <div
         key={p.id ?? p.name}
-        className={`flex items-center gap-2 py-1.5 px-2 rounded-md transition-colors ${isOff ? "opacity-40" : "hover:bg-zinc-800/40"}`}
+        className={`flex items-center gap-2 py-1.5 px-2 rounded-md transition-colors ${isOff ? "opacity-40" : "hover:bg-surface-container/60"}`}
       >
         <span
-          className={`w-5 text-[9px] font-black shrink-0 flex items-center justify-center rounded-sm border ${isOff ? "text-zinc-600 border-zinc-700/50" : `border-${posAccent(p.position).slice(1)}20`}`}
-          style={{
-            color: isOff ? "#52525b" : accent,
-            borderColor: isOff ? "#27272a" : `${accent}30`,
-            background: isOff ? "transparent" : `${accent}10`,
-          }}
+          className={`shrink-0 px-1.5 py-px rounded text-[9px] font-black uppercase tracking-widest border ${isOff ? "border-outline-variant/15 bg-surface-container/20 text-on-surface-variant/40" : getPosStyle(p.position).badgeBg + " " + getPosStyle(p.position).badgeText + " " + getPosStyle(p.position).badgeBorder}`}
         >
           {isOff ? "" : POSITION_SHORT_LABELS[p.position] || "?"}
         </span>
         <span
-          className={`flex-1 truncate text-xs font-bold ${isOff ? "text-zinc-600 line-through" : "text-zinc-200"}`}
+          className={`flex-1 truncate text-xs font-black ${isOff ? "text-on-surface-variant/60 line-through" : "text-on-surface"}`}
         >
           <PlayerLink playerId={p.id}>{p.name}</PlayerLink>
           {!!p.is_star && (p.position === "MED" || p.position === "ATA") && (
@@ -366,7 +365,7 @@ export function TabLineup({ fixture, liveMinute, teams }) {
           )}
         </span>
         {!isOff && p.skill != null && (
-          <span className="text-[10px] font-black tabular-nums text-zinc-500 shrink-0 w-5 text-right">
+          <span className="text-[10px] font-black tabular-nums text-on-surface-variant/80 shrink-0 w-5 text-right">
             {p.skill}
           </span>
         )}
@@ -381,7 +380,7 @@ export function TabLineup({ fixture, liveMinute, teams }) {
     );
 
   return (
-    <div className="flex divide-x divide-zinc-800/60 flex-1 overflow-hidden min-h-0 w-full bg-zinc-950/30">
+    <div className="flex divide-x divide-outline/40 flex-1 overflow-hidden min-h-0 w-full bg-surface-container/30">
       {[
         { info: hInfo, lineup: homeLineup, side: "home" },
         { info: aInfo, lineup: awayLineup, side: "away" },
@@ -391,16 +390,15 @@ export function TabLineup({ fixture, liveMinute, teams }) {
           <div key={idx} className="flex-1 flex flex-col min-w-0 overflow-y-auto">
             {/* Team header */}
             <div
-              className="px-3 py-2.5 border-b border-zinc-800/60 shrink-0 flex items-center gap-2"
-              style={{ background: `${accent}08` }}
+              className="px-5 py-4 border-b border-outline/40 shrink-0 flex items-center gap-2 bg-surface-container-high/50"
             >
               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: accent, boxShadow: `0 0 8px ${accent}60` }} />
-              <p
-                className="text-[10px] font-black uppercase tracking-[0.2em] truncate"
+              <h2
+                className="text-base font-black font-headline tracking-tight text-tertiary uppercase truncate"
                 style={{ color: accent }}
               >
                 {info?.name || "—"}
-              </p>
+              </h2>
             </div>
 
             {/* Active players */}
@@ -411,7 +409,7 @@ export function TabLineup({ fixture, liveMinute, teams }) {
             {/* Off players */}
             {lineup.offPlayers.length > 0 && (
               <>
-                <div className="mx-2 my-1.5 border-t border-zinc-800/40" />
+                <div className="mx-2 my-1.5 border-t border-outline-variant/25" />
                 <div className="px-2 py-1">
                   {lineup.offPlayers.map((p) =>
                     renderPlayer(p, { isOff: true, offReason: p.reason }),
@@ -423,20 +421,20 @@ export function TabLineup({ fixture, liveMinute, teams }) {
             {/* Substitutes */}
             {lineup.subPlayers.length > 0 && (
               <>
-                <div className="mx-2 my-1.5 border-t border-zinc-800/40" />
-                <p className="text-[8px] font-black uppercase tracking-[0.25em] text-zinc-600 px-2 py-1">
+                <div className="mx-2 my-1.5 border-t border-outline-variant/25" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 px-3 py-1">
                   Entrou
                 </p>
                 <div className="px-2 pb-2">
                   {lineup.subPlayers.map((p) => (
                     <div
                       key={p.id ?? p.name}
-                      className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-zinc-800/40 transition-colors"
+                      className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-surface-container/60 transition-colors"
                     >
                       <span className="w-5 text-[9px] font-black text-emerald-400 shrink-0 flex items-center justify-center">
                         ↑
                       </span>
-                      <span className="flex-1 truncate text-xs font-bold text-zinc-300">
+                      <span className="flex-1 truncate text-xs font-black text-on-surface-variant">
                         <PlayerLink playerId={p.id}>{p.name}</PlayerLink>
                       </span>
                       {p.goals > 0 && (
@@ -502,16 +500,16 @@ export function TabAdversario({ fixture, myTeamId, teams }) {
   return (
     <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
       {/* ── Opponent header ──────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm">
+      <div className="flex items-center gap-3 px-5 py-4 rounded-md bg-surface-container border border-outline-variant/25">
         <span
-          className="text-xs font-black uppercase tracking-[0.2em] truncate"
+          className="text-base font-black font-headline tracking-tight uppercase truncate"
           style={{ color: oppInfo?.color_primary || "#f59e0b" }}
         >
           {oppInfo?.name || "Adversário"}
         </span>
         <div className="ml-auto flex items-center gap-2">
           {(formation || styleLabel) && (
-            <span className="text-[9px] font-black text-zinc-500 shrink-0">
+            <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/80 shrink-0">
               {[formation, styleLabel].filter(Boolean).join(" · ")}
             </span>
           )}
@@ -519,23 +517,23 @@ export function TabAdversario({ fixture, myTeamId, teams }) {
       </div>
 
       {!hasLineups ? (
-        <div className="rounded-xl border border-zinc-800/40 bg-zinc-950/40 py-8 flex flex-col items-center gap-2">
-          <span className="text-3xl text-zinc-700">📋</span>
-          <p className="text-zinc-500 text-xs font-bold text-center px-4">
+        <div className="rounded-lg border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
+          <span className="text-3xl text-on-surface-variant/40">📋</span>
+          <p className="text-on-surface-variant/80 text-xs font-bold text-center px-4">
             Escalações indisponíveis durante a simulação
           </p>
         </div>
       ) : starters.length === 0 ? (
-        <div className="rounded-xl border border-zinc-800/40 bg-zinc-950/40 py-8 flex flex-col items-center gap-2">
-          <span className="text-3xl text-zinc-700">🤷</span>
-          <p className="text-zinc-500 text-xs font-bold text-center px-4">
+        <div className="rounded-lg border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
+          <span className="text-3xl text-on-surface-variant/40">🤷</span>
+          <p className="text-on-surface-variant/80 text-xs font-bold text-center px-4">
             Sem dados da escalação do adversário
           </p>
         </div>
       ) : (
         <div className="flex gap-3 flex-1 min-h-0">
           {/* ── Pitch / formation ──────────────────────────────────────── */}
-          <div className="flex-1 relative rounded-xl overflow-hidden border border-zinc-800/60 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
+          <div className="flex-1 relative rounded-lg overflow-hidden border border-outline/40 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
             <svg className="absolute inset-0 w-full h-full" viewBox="0 0 315 560" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
               <rect x="10" y="10" width="295" height="540" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" rx="3" />
               <line x1="10" y1="280" x2="305" y2="280" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
@@ -568,7 +566,7 @@ export function TabAdversario({ fixture, myTeamId, teams }) {
                         {POSITION_SHORT_LABELS[player.position] || "?"}
                       </div>
                       <div
-                        className="bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-[9px] font-black text-white text-center truncate"
+                        className="bg-black/70 px-1.5 py-0.5 rounded text-[9px] font-black text-white text-center truncate"
                         style={{ maxWidth: "85px" }}
                       >
                         {player.name}
@@ -592,32 +590,38 @@ export function TabAdversario({ fixture, myTeamId, teams }) {
 
           {/* ── Bench ──────────────────────────────────────────────────── */}
           <div className="flex-1 flex flex-col">
-            <p className="text-[8px] font-black uppercase tracking-[0.25em] text-zinc-500 mb-2 px-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2 px-1">
               Banco
             </p>
             <div className="flex-1 overflow-y-auto space-y-1">
-              {bench.map((player) => (
-                <div
-                  key={player.id ?? player.name}
-                  className="flex items-center gap-2 py-1.5 px-2.5 rounded-lg border border-zinc-800/30 bg-zinc-950/40 hover:bg-zinc-900/50 transition-colors"
-                >
-                  <span
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-black border border-white/20 shrink-0 ${posColors[player.position] || "bg-zinc-500 text-white"}`}
+              {bench.map((player) => {
+                const s = getPosStyle(player.position);
+                return (
+                  <div
+                    key={player.id ?? player.name}
+                    className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${s.glow} shadow-sm shadow-black/30`}
                   >
-                    {POSITION_SHORT_LABELS[player.position] || "?"}
-                  </span>
-                  <span className="flex-1 truncate text-[10px] font-bold text-zinc-300">
-                    {player.name}
-                    {!!player.is_star &&
-                      (player.position === "MED" || player.position === "ATA") && (
-                        <span className="ml-0.5 text-amber-400 font-black">*</span>
-                      )}
-                  </span>
-                  <span className="text-[9px] font-black tabular-nums text-zinc-500 shrink-0">
-                    {player.skill ?? "—"}
-                  </span>
-                </div>
-              ))}
+                    <div className={`shrink-0 w-1 bg-gradient-to-b ${s.bar}`} />
+                    <div className="flex items-center gap-2 flex-1 py-1.5 px-2.5">
+                      <span
+                        className={`shrink-0 px-1.5 py-px rounded text-[9px] font-black uppercase tracking-widest border ${s.badgeBg} ${s.badgeText} ${s.badgeBorder}`}
+                      >
+                        {POSITION_SHORT_LABELS[player.position] || "?"}
+                      </span>
+                      <span className="flex-1 truncate text-[10px] font-black text-on-surface">
+                        {player.name}
+                        {!!player.is_star &&
+                          (player.position === "MED" || player.position === "ATA") && (
+                            <span className="ml-0.5 text-amber-400 font-black">*</span>
+                          )}
+                      </span>
+                      <span className="text-[9px] font-black tabular-nums text-on-surface-variant/80 shrink-0">
+                        {player.skill ?? "—"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -796,13 +800,13 @@ export function TabIntervencao({
             return (
               <div
                 key={`${sub.out}-${sub.in}`}
-                className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold border border-cyan-800/40 bg-zinc-950/80 backdrop-blur-sm"
+                className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold border border-cyan-800/40 bg-surface-container-high/80"
               >
                 <span className="text-cyan-400 shrink-0">🔄</span>
                 <span className="text-rose-300 truncate max-w-[80px]">
                   {outP?.name ?? "?"}
                 </span>
-                <span className="text-zinc-600 shrink-0 mx-0.5">→</span>
+                <span className="text-on-surface-variant/60 shrink-0 mx-0.5">→</span>
                 <span className="text-emerald-300 truncate max-w-[80px]">
                   {inP?.name ?? "?"}
                 </span>
@@ -814,23 +818,23 @@ export function TabIntervencao({
 
       {/* ── Halftime tactics ─────────────────────────────────────────── */}
       {isHalftime && (
-        <div className="shrink-0 px-3 py-2.5 border-b border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm">
-          <span className="block text-[8px] font-black uppercase tracking-[0.25em] text-zinc-500 mb-2">
+        <div className="shrink-0 px-5 py-4 border-b border-outline/40 bg-surface-container-high/50">
+          <span className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2">
             Mentalidade
           </span>
           <div className="grid grid-cols-3 gap-1.5">
             {[
-              { value: "Defensive", label: "Defensivo", color: "blue", accent: "#3b82f6" },
-              { value: "Balanced", label: "Equilibrado", color: "primary", accent: "#6366f1" },
-              { value: "Offensive", label: "Ofensivo", color: "amber", accent: "#f59e0b" },
+              { value: "Defensive", label: "Defensivo", accent: "#3b82f6" },
+              { value: "Balanced", label: "Equilibrado", accent: "#6366f1" },
+              { value: "Offensive", label: "Ofensivo", accent: "#f59e0b" },
             ].map(({ value, label, accent }) => (
               <button
                 key={value}
                 onClick={() => onUpdateTactic({ style: value })}
                 className={`py-2 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all border ${
                   tactic.style === value
-                    ? `border-${accent}/40 text-white shadow-[0_0_20px_${accent}30]`
-                    : "bg-zinc-900/60 border-zinc-800/60 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                    ? "text-on-surface shadow-[0_0_20px_rgba(99,102,241,0.15)]"
+                    : "bg-surface-container-low/60 border-outline/40 text-on-surface-variant/80 hover:border-outline hover:text-on-surface-variant"
                 }`}
                 style={tactic.style === value ? {
                   background: `${accent}25`,
@@ -847,7 +851,7 @@ export function TabIntervencao({
 
       {/* ── Title bar ────────────────────────────────────────────────── */}
       <div
-        className={`shrink-0 px-3 py-2 border-b border-zinc-800/60 bg-gradient-to-r ${actionTheme} backdrop-blur-sm`}
+        className={`shrink-0 px-5 py-4 border-b border-outline/40 bg-gradient-to-r ${actionTheme}`}
       >
         <div className="flex items-center gap-2">
           {oppInfo && (
@@ -858,21 +862,21 @@ export function TabIntervencao({
               {oppInfo?.name || "Adversário"}
             </span>
           )}
-          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-100 text-center truncate flex-1">
+          <h2 className="text-base font-black font-headline tracking-tight text-on-surface uppercase text-center truncate flex-1">
             {titleText}
-          </p>
+          </h2>
         </div>
         {isHalftime && (
           <div className="flex items-center justify-center gap-3 mt-2">
-            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-wide truncate max-w-[80px]">
+            <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-wide truncate max-w-[80px]">
               {teams?.find((t) => t.id === fixture?.homeTeamId)?.name || "Casa"}
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="text-lg font-black tabular-nums text-white">{myTeamGoals}</span>
-              <span className="text-zinc-600 text-sm font-black">–</span>
-              <span className="text-lg font-black tabular-nums text-white">{oppGoals}</span>
+              <span className="text-lg font-black tabular-nums text-on-surface">{myTeamGoals}</span>
+              <span className="text-on-surface-variant/60 text-sm font-black">–</span>
+              <span className="text-lg font-black tabular-nums text-on-surface">{oppGoals}</span>
             </span>
-            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-wide truncate max-w-[80px] text-right">
+            <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-wide truncate max-w-[80px] text-right">
               {oppInfo?.name || "Fora"}
             </span>
           </div>
@@ -887,11 +891,14 @@ export function TabIntervencao({
       {/* ── Two columns ──────────────────────────────────────────────── */}
       <div className="flex flex-1 min-h-0 overflow-hidden flex-col md:flex-row">
         {/* ── On pitch ───────────────────────────────────────────────── */}
-        <div className="flex flex-col min-w-0 flex-1 overflow-hidden border-b md:border-b-0 md:border-r border-zinc-800/60">
-          <div className="shrink-0 flex items-center gap-2 px-3 py-2 bg-zinc-950/70 border-b border-zinc-800/60">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-            <span className="text-[8px] font-black uppercase tracking-[0.25em] text-emerald-400">
+        <div className="flex flex-col min-w-0 flex-1 overflow-hidden border-b md:border-b-0 md:border-r border-outline/40">
+          <div className="shrink-0 px-5 py-4 flex items-center justify-between bg-surface-container-high/50 border-b border-outline/40">
+            <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
               Em Campo
+            </h2>
+            <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-widest">
+              {onPitchPlayers.length} jogadores
             </span>
           </div>
           <div className="min-w-0 flex-1 overflow-y-auto">
@@ -912,7 +919,7 @@ export function TabIntervencao({
                     (c) => c.id === p.id,
                   ));
               const selected = effectiveOutId === p.id;
-              const accent = posAccent(p.position);
+              const s = getPosStyle(p.position);
               return (
                 <motion.button
                   key={p.id}
@@ -937,32 +944,28 @@ export function TabIntervencao({
                       ? undefined
                       : { duration: 0.2, delay: Math.min(i, 6) * 0.02 }
                   }
-                  className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-md text-left select-none transition-all ${
+                  className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${s.glow} shadow-sm shadow-black/30 w-full text-left select-none ${
                     selected
-                      ? "bg-rose-500/10 border border-rose-500/20"
+                      ? "border-rose-400/60 bg-rose-500/10"
                       : disabled
-                        ? "opacity-40 cursor-not-allowed bg-zinc-950/40 border border-zinc-800/20"
-                        : "cursor-pointer hover:bg-zinc-800/40 bg-zinc-950/40 border border-zinc-800/20"
+                        ? "opacity-40 cursor-not-allowed border-outline-variant/15 bg-surface-container/40"
+                        : "cursor-pointer"
                   }`}
                 >
+                  <div className={`shrink-0 w-1 bg-gradient-to-b ${s.bar}`} />
                   {/* Position badge */}
                   <span
-                    className={`shrink-0 px-1.5 py-0.5 rounded-md text-[8px] font-black border ${
+                    className={`shrink-0 px-1.5 py-px rounded text-[9px] font-black uppercase tracking-widest border ${
                       selected
                         ? "bg-rose-500/20 text-rose-200 border-rose-400/40"
-                        : `border-${accent}30 text-${accent}300`
+                        : s.badgeBg + " " + s.badgeText + " " + s.badgeBorder
                     }`}
-                    style={{
-                      color: selected ? "#fecdd3" : accent,
-                      borderColor: selected ? "#f43f5e60" : `${accent}30`,
-                      background: selected ? "#f43f5e20" : `${accent}10`,
-                    }}
                   >
                     {POSITION_SHORT_LABELS[p.position]}
                   </span>
                   {/* Name */}
                   <span
-                    className={`flex-1 truncate text-[11px] font-bold ${selected ? "text-rose-100" : "text-zinc-100"}`}
+                    className={`flex-1 truncate text-[11px] font-black ${selected ? "text-rose-100" : "text-on-surface"}`}
                   >
                     {p.name}
                     {!!p.is_star &&
@@ -975,7 +978,7 @@ export function TabIntervencao({
                   {/* Stats row */}
                   <div className="shrink-0 flex items-center gap-2 text-right">
                     <span
-                      className={`text-[11px] font-black tabular-nums ${selected ? "text-rose-300" : "text-zinc-400"}`}
+                      className={`text-[11px] font-black tabular-nums ${selected ? "text-rose-300" : "text-on-surface-variant"}`}
                     >
                       {p.skill ?? "—"}
                     </span>
@@ -988,7 +991,7 @@ export function TabIntervencao({
               );
             })}
             {onPitchPlayers.length === 0 && (
-              <p className="text-center text-zinc-600 text-xs font-bold py-6">
+              <p className="text-center text-on-surface-variant/60 text-xs font-bold py-6">
                 Sem opções em campo
               </p>
             )}
@@ -997,15 +1000,20 @@ export function TabIntervencao({
 
         {/* ── Bench ──────────────────────────────────────────────────── */}
         <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
-          <div className="shrink-0 flex items-center gap-2 px-3 py-2 bg-zinc-950/70 border-b border-zinc-800/60">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
-            <span className="text-[8px] font-black uppercase tracking-[0.25em] text-cyan-400">
+          <div className="shrink-0 px-5 py-4 flex items-center justify-between bg-surface-container-high/50 border-b border-outline/40">
+            <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
               {isPenalty ? "Escolha" : "Banco"}
-            </span>
+            </h2>
+            {!isPenalty && (
+              <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-widest">
+                {benchPlayers.length} jogadores
+              </span>
+            )}
           </div>
           <div className="min-w-0 flex-1 overflow-y-auto">
             {isPenalty ? (
-              <p className="text-center text-zinc-500 text-xs font-bold py-8 px-4">
+              <p className="text-center text-on-surface-variant/80 text-xs font-bold py-8 px-4">
                 Seleciona o marcador na coluna "Em Campo".
               </p>
             ) : (
@@ -1019,7 +1027,7 @@ export function TabIntervencao({
                   positionMismatch ||
                   (isHalftime && subsMade >= MAX_MATCH_SUBS);
                 const selected = selectedInId === p.id;
-                const accent = posAccent(p.position);
+                const s = getPosStyle(p.position);
                 return (
                   <motion.button
                     key={p.id}
@@ -1039,36 +1047,36 @@ export function TabIntervencao({
                       ? undefined
                       : { duration: 0.2, delay: Math.min(i, 6) * 0.02 }
                     }
-                    className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-md text-left select-none transition-all ${
+                    className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${selected ? "border-emerald-400/60 bg-emerald-500/10" : s.glow} shadow-sm shadow-black/30 w-full text-left select-none ${
                       alreadyUsed
-                        ? "opacity-25 cursor-not-allowed bg-zinc-950/40 border border-zinc-800/20"
-                        : selected
-                          ? "bg-emerald-500/10 border border-emerald-500/20"
-                          : disabled
-                            ? "opacity-40 cursor-not-allowed bg-zinc-950/40 border border-zinc-800/20"
-                            : "cursor-pointer hover:bg-zinc-800/40 bg-zinc-950/40 border border-zinc-800/20"
+                        ? "opacity-25 cursor-not-allowed border-outline-variant/15 bg-surface-container/40"
+                        : disabled
+                          ? "opacity-40 cursor-not-allowed border-outline-variant/15 bg-surface-container/40"
+                          : "cursor-pointer"
                     }`}
                   >
+                    <div className={`shrink-0 w-1 bg-gradient-to-b ${alreadyUsed ? "from-outline-variant/40 via-outline-variant/60 to-outline-variant/40" : s.bar}`} />
                     {/* Position badge */}
                     <span
-                      className={`shrink-0 px-1.5 py-0.5 rounded-md text-[8px] font-black border ${
+                      className={`shrink-0 px-1.5 py-px rounded text-[9px] font-black uppercase tracking-widest border ${
                         alreadyUsed
-                          ? "border-zinc-700/50 text-zinc-600"
+                          ? "border-outline-variant/15 bg-surface-container/20 text-on-surface-variant/40"
                           : selected
                             ? "bg-emerald-500/20 text-emerald-200 border-emerald-400/40"
-                            : `border-${accent}30 text-${accent}300`
+                            : s.badgeBg + " " + s.badgeText + " " + s.badgeBorder
                       }`}
-                      style={{
-                        color: alreadyUsed ? "#52525b" : selected ? "#a7f3d0" : accent,
-                        borderColor: alreadyUsed ? "#27272a" : selected ? "#10b98140" : `${accent}30`,
-                        background: alreadyUsed ? "transparent" : selected ? "#10b98120" : `${accent}10`,
-                      }}
                     >
                       {POSITION_SHORT_LABELS[p.position]}
                     </span>
                     {/* Name */}
                     <span
-                      className={`flex-1 truncate text-[11px] font-bold ${selected ? "text-emerald-100" : "text-zinc-100"}`}
+                      className={`flex-1 truncate text-[11px] font-black ${
+                        alreadyUsed
+                          ? "text-on-surface-variant/60"
+                          : selected
+                            ? "text-emerald-100"
+                            : "text-on-surface"
+                      }`}
                     >
                       {p.name}
                       {!alreadyUsed &&
@@ -1082,7 +1090,7 @@ export function TabIntervencao({
                     {/* Stats */}
                     <div className="shrink-0 flex items-center gap-2">
                       <span
-                        className={`text-[11px] font-black tabular-nums ${selected ? "text-emerald-300" : "text-zinc-500"}`}
+                        className={`text-[11px] font-black tabular-nums ${selected ? "text-emerald-300" : "text-on-surface-variant/80"}`}
                       >
                         {alreadyUsed ? "—" : (p.skill ?? "—")}
                       </span>
@@ -1098,7 +1106,7 @@ export function TabIntervencao({
               })
             )}
             {!isPenalty && benchPlayers.length === 0 && (
-              <p className="text-center text-zinc-600 text-xs font-bold py-6">
+              <p className="text-center text-on-surface-variant/60 text-xs font-bold py-6">
                 Sem opções no banco
               </p>
             )}
@@ -1107,19 +1115,19 @@ export function TabIntervencao({
       </div>
 
       {/* ── Bottom bar ───────────────────────────────────────────────── */}
-      <div className="shrink-0 border-t border-zinc-800/60 bg-zinc-950/80 backdrop-blur-sm px-3 py-2.5">
+      <div className="shrink-0 border-t border-outline/40 bg-surface-container-high px-5 py-3">
         <div className="flex items-center gap-2 min-w-0">
           <div className="flex-1 flex items-center gap-2 min-w-0">
-            <span className="text-[9px] text-zinc-600 shrink-0 font-bold uppercase tracking-wide">Sai</span>
+            <span className="text-[10px] text-on-surface-variant/60 shrink-0 font-black uppercase tracking-wide">Sai</span>
             <span className="bg-rose-950/80 text-rose-200 border border-rose-800/50 text-[10px] font-black px-2.5 py-1 rounded-lg truncate max-w-[35%]">
               {effectiveOutId ? playerById(effectiveOutId)?.name || "?" : "—"}
             </span>
             {!isPenalty && (
               <>
-                <span className="text-zinc-500 shrink-0 font-black text-sm">
+                <span className="text-on-surface-variant/80 shrink-0 font-black text-sm">
                   →
                 </span>
-                <span className="text-[9px] text-zinc-600 shrink-0 font-bold uppercase tracking-wide">
+                <span className="text-[10px] text-on-surface-variant/60 shrink-0 font-black uppercase tracking-wide">
                   Entra
                 </span>
                 <span className="bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-[10px] font-black px-2.5 py-1 rounded-lg truncate max-w-[35%]">
@@ -1133,7 +1141,7 @@ export function TabIntervencao({
             <>
               <button
                 onClick={onResetSub}
-                className="shrink-0 w-7 h-7 rounded-lg bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-500 hover:text-white text-xs flex items-center justify-center transition-colors border border-zinc-700/50"
+                className="shrink-0 w-7 h-7 rounded-lg bg-surface-container-high/80 hover:bg-surface-container-high text-on-surface-variant/80 hover:text-on-surface text-xs flex items-center justify-center transition-colors border border-outline/40"
               >
                 ✕
               </button>
@@ -1143,7 +1151,7 @@ export function TabIntervencao({
                 className={`shrink-0 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all border ${
                   canConfirmSwap
                     ? "bg-emerald-600/90 border-emerald-400/40 text-white shadow-[0_0_16px_rgba(16,185,129,0.25)] hover:bg-emerald-500/90"
-                    : "bg-zinc-800/80 border-zinc-700/50 text-zinc-600 cursor-not-allowed"
+                    : "bg-surface-container-high/80 border-outline/40 text-on-surface-variant/60 cursor-not-allowed"
                 }`}
               >
                 Substituir
@@ -1169,10 +1177,10 @@ export function TabIntervencao({
       </div>
 
       {isHalftime && confirmedSubs.length > 0 && (
-        <div className="shrink-0 border-t border-zinc-800/30 px-4 py-1.5 flex justify-center bg-zinc-950/50">
+        <div className="shrink-0 border-t border-outline-variant/25 px-5 py-2 flex justify-center bg-surface-container/50">
           <button
             onClick={onResetAllSubs}
-            className="text-[9px] font-black uppercase tracking-[0.25em] text-rose-400/80 hover:text-rose-300 transition-colors"
+            className="text-[10px] font-black uppercase tracking-[0.25em] text-rose-400/80 hover:text-rose-300 transition-colors"
           >
             ↺ Anular todas as substituições
           </button>
@@ -1383,11 +1391,11 @@ export function MatchIntervencaoView({
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-[linear-gradient(170deg,#0d0d14_0%,#11111b_45%,#0e1018_100%)]">
       {/* Title bar */}
       <div
-        className={`shrink-0 px-3 py-2 border-b border-zinc-800/60 bg-gradient-to-r ${actionTheme} backdrop-blur-sm`}
+        className={`shrink-0 px-5 py-4 border-b border-outline/40 bg-gradient-to-r ${actionTheme}`}
       >
-        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-zinc-100 text-center">
+        <h2 className="text-base font-black font-headline tracking-tight text-on-surface uppercase text-center">
           {titleText}
-        </p>
+        </h2>
         {isForcedSwap && injuryCountdown !== null && (
           <p className="text-center text-amber-300 font-black text-[10px] mt-1 tracking-wide animate-pulse">
             Auto-substituição em {injuryCountdown}s
@@ -1398,30 +1406,30 @@ export function MatchIntervencaoView({
       {/* ── 3-column grid (mobile: single col — cronologia below) ──── */}
       <div className="flex-1 min-h-0 flex flex-col md:grid md:grid-cols-[0.85fr_1.6fr] overflow-hidden">
         {/* ═══ COL ESQUERDA — Cronologia (desktop: grid col, mobile: above main) ═══ */}
-        <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-zinc-800/60">
-          <div className="shrink-0 flex items-center gap-2 px-4 py-3 border-b border-zinc-800/60 bg-zinc-950/70">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0 shadow-[0_0_10px_rgba(250,204,21,0.5)]" />
-            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-amber-400">
+        <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-outline/40">
+          <div className="shrink-0 px-5 py-4 flex items-center justify-between bg-surface-container-high/50 border-b border-outline/40">
+            <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0 shadow-[0_0_10px_rgba(250,204,21,0.5)]" />
               Cronologia
-            </span>
+            </h2>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
 
             {/* Possession bar */}
             {fixture.homePossession != null && (
-              <div className="rounded-lg overflow-hidden border border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm mb-2.5">
+              <div className="rounded-lg overflow-hidden border border-outline-variant/25 bg-surface-container mb-2.5">
                 <div className="flex justify-between items-center px-3 py-2">
-                  <span className="text-[10px] font-black text-white tabular-nums">
+                  <span className="text-[10px] font-black text-on-surface tabular-nums">
                     {fixture.homePossession}%
                   </span>
-                  <span className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
                     Posse
                   </span>
-                  <span className="text-[10px] font-black text-white tabular-nums">
+                  <span className="text-[10px] font-black text-on-surface tabular-nums">
                     {fixture.awayPossession}%
                   </span>
                 </div>
-                <div className="h-1.5 mx-3 mb-2 rounded-full overflow-hidden bg-zinc-800/80 flex">
+                <div className="h-1.5 mx-3 mb-2 rounded-full overflow-hidden bg-surface-container-high/80 flex">
                   <div
                     className="h-full rounded-l-full transition-all duration-700 ease-out"
                     style={{
@@ -1443,24 +1451,24 @@ export function MatchIntervencaoView({
 
             {/* Ref / weather bar */}
             {(fixture?.attendance || ref?.refereeName || weatherEvent) && (
-              <div className="flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg border border-zinc-800/60 bg-zinc-950/60 text-[10px]">
+              <div className="flex flex-wrap items-center gap-2 px-4 py-3 rounded-lg border border-outline-variant/25 bg-surface-container text-[10px]">
                 {fixture?.attendance && (
-                  <span className="text-zinc-500 font-bold">
+                  <span className="text-on-surface-variant/80 font-black">
                     🏟️ {fixture.attendance.toLocaleString("pt-PT")}
                   </span>
                 )}
                 {ref?.refereeName && (
-                  <span className="text-zinc-500 font-bold">
+                  <span className="text-on-surface-variant/80 font-black">
                     👤 {ref.refereeName}{" "}
                     <span
-                      className={`font-black tabular-nums ${refBalance >= 60 ? "text-emerald-400" : refBalance <= 40 ? "text-red-400" : "text-zinc-400"}`}
+                      className={`font-black tabular-nums ${refBalance >= 60 ? "text-emerald-400" : refBalance <= 40 ? "text-red-400" : "text-on-surface-variant"}`}
                     >
                       {refBalance}
                     </span>
                   </span>
                 )}
                 {weatherEvent && (
-                  <span className="text-zinc-500 font-bold">
+                  <span className="text-on-surface-variant/80 font-black">
                     {weatherEvent.emoji}{" "}
                     {WEATHER_LABELS[weatherEvent.emoji] || ""}
                   </span>
@@ -1470,9 +1478,9 @@ export function MatchIntervencaoView({
 
             {/* Events */}
             {visibleEvts.length === 0 ? (
-              <div className="rounded-lg border border-zinc-800/40 bg-zinc-950/40 py-8 flex flex-col items-center gap-2">
-                <span className="text-2xl text-zinc-700">⚽</span>
-                <p className="text-zinc-600 text-[11px] font-bold">
+              <div className="rounded-lg border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
+                <span className="text-2xl text-on-surface-variant/40">⚽</span>
+                <p className="text-on-surface-variant/60 text-[11px] font-bold">
                   Sem eventos
                 </p>
               </div>
@@ -1480,15 +1488,15 @@ export function MatchIntervencaoView({
               visibleEvts.map((e, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-800/25 bg-zinc-950/40"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg border border-outline-variant/25 bg-surface-container"
                   >
-                    <span className="text-zinc-600 font-black w-8 shrink-0 text-right tabular-nums text-[11px]">
+                    <span className="text-on-surface-variant/60 font-black w-8 shrink-0 text-right tabular-nums text-[11px]">
                       {e.minute != null ? `${e.minute}'` : "—"}
                     </span>
                     <span className="w-5 shrink-0 text-center text-sm">
                       {getEventIcon(e)}
                     </span>
-                    <span className="flex-1 truncate text-[11px] font-black text-white">
+                    <span className="flex-1 truncate text-[11px] font-black text-on-surface">
                       <PlayerLink playerId={e.playerId}>
                         {e.playerName || e.player_name || ""}
                       </PlayerLink>
@@ -1501,7 +1509,7 @@ export function MatchIntervencaoView({
 
         {/* ═══ COL CENTRAL — Substituições ═══════════ */}
         <div className="flex flex-col min-h-0 overflow-hidden">
-          <div className="shrink-0 flex border-b border-zinc-800/60 bg-zinc-950/70">
+          <div className="shrink-0 flex border-b border-outline/40 bg-surface-container-high/70">
             {[
               { key: "subs", label: "Substituições" },
               { key: "adversario", label: "Adversário" },
@@ -1511,8 +1519,8 @@ export function MatchIntervencaoView({
                 onClick={() => setCenterTab(tab.key)}
                 className={`flex-1 min-w-0 py-3 text-[11px] font-black uppercase tracking-widest transition-all border-b-2 ${
                   centerTab === tab.key
-                    ? "text-white border-primary bg-primary/5"
-                    : "text-zinc-500 hover:text-zinc-300 border-transparent hover:bg-zinc-800/30"
+                    ? "text-on-surface border-primary bg-primary/5"
+                    : "text-on-surface-variant/80 hover:text-on-surface-variant border-transparent hover:bg-surface-container/30"
                 }`}
               >
                 {tab.label}
@@ -1531,13 +1539,13 @@ export function MatchIntervencaoView({
                 return (
                   <div
                     key={`${sub.out}-${sub.in}`}
-                    className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold border border-cyan-800/40 bg-zinc-950/80"
+                    className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold border border-cyan-800/40 bg-surface-container-high/80"
                   >
                     <span className="text-cyan-400 shrink-0">🔄</span>
                     <span className="text-rose-300 truncate max-w-[80px]">
                       {outP?.name ?? "?"}
                     </span>
-                    <span className="text-zinc-500 shrink-0">→</span>
+                    <span className="text-on-surface-variant/80 shrink-0">→</span>
                     <span className="text-emerald-300 truncate max-w-[80px]">
                       {inP?.name ?? "?"}
                     </span>
@@ -1551,8 +1559,8 @@ export function MatchIntervencaoView({
               <div className="flex flex-col h-full">
                 {/* Mentality buttons (halftime) */}
                 {isHalftime && (
-                  <div className="px-4 py-3 border-b border-zinc-800/60">
-                    <span className="block text-[9px] font-black uppercase tracking-[0.25em] text-zinc-400 mb-2.5">
+                  <div className="px-4 py-3 border-b border-outline/40">
+                    <span className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2.5">
                       Mentalidade
                     </span>
                     <div className="grid grid-cols-3 gap-2">
@@ -1566,8 +1574,8 @@ export function MatchIntervencaoView({
                           onClick={() => onUpdateTactic({ style: value })}
                           className={`py-2.5 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all border ${
                             tactic.style === value
-                              ? "text-white shadow-[0_0_20px_rgba(99,102,241,0.15)]"
-                              : "bg-zinc-900/60 border-zinc-800/60 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                              ? "text-on-surface shadow-[0_0_20px_rgba(99,102,241,0.15)]"
+                              : "bg-surface-container-low/60 border-outline/40 text-on-surface-variant/80 hover:border-outline hover:text-on-surface-variant"
                           }`}
                           style={
                             tactic.style === value
@@ -1589,10 +1597,10 @@ export function MatchIntervencaoView({
                 <div className="flex-1 grid grid-cols-2 min-h-0 overflow-hidden">
                   {/* Left: Titulares */}
                   <div className="flex flex-col min-h-0 overflow-hidden ">
-                    <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-zinc-800/60 bg-zinc-950/60">
-                      <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-black">
+                    <div className="shrink-0 px-5 py-4 flex items-center justify-between bg-surface-container-high/50 border-b border-outline/40">
+                      <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">
                         {isPenalty ? "Candidatos" : "Titulares"}
-                      </span>
+                      </h2>
                     </div>
                     <div className="flex-1 overflow-y-auto">
 
@@ -1614,7 +1622,7 @@ export function MatchIntervencaoView({
                         (c) => c.id === p.id,
                       ));
                   const selected = effectiveOutId === p.id;
-                  const accent = posAccent(p.position);
+                  const s = getPosStyle(p.position);
                   return (
                     <button
                       key={p.id}
@@ -1624,37 +1632,29 @@ export function MatchIntervencaoView({
                           ? "Não há GR no banco para substituir"
                           : undefined
                       }
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-md text-left select-none transition-all ${
+                      className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${selected ? "border-rose-400/60 bg-rose-500/10" : s.glow} shadow-sm shadow-black/30 w-full text-left select-none ${
                         selected
-                          ? "bg-rose-500/10 border border-rose-500/20"
+                          ? ""
                           : disabled
-                            ? "opacity-40 cursor-not-allowed bg-zinc-950/40 border border-zinc-800/20"
-                            : "cursor-pointer hover:bg-zinc-800/30 bg-zinc-950/40 border border-zinc-800/20"
+                            ? "opacity-40 cursor-not-allowed border-outline-variant/15 bg-surface-container/40"
+                            : "cursor-pointer"
                       }`}
                     >
+                      <div className={`shrink-0 w-1 bg-gradient-to-b ${s.bar}`} />
                       {/* Position badge */}
                       <span
-                        className={`shrink-0 px-2 py-1 rounded-md text-[9px] font-black border ${
+                        className={`shrink-0 px-1.5 py-px rounded text-[9px] font-black uppercase tracking-widest border ${
                           selected
                             ? "bg-rose-500/20 text-rose-200 border-rose-400/40"
-                            : ""
+                            : s.badgeBg + " " + s.badgeText + " " + s.badgeBorder
                         }`}
-                        style={
-                          selected
-                            ? {}
-                            : {
-                                color: accent,
-                                borderColor: `${accent}35`,
-                                background: `${accent}12`,
-                              }
-                        }
                       >
                         {POSITION_SHORT_LABELS[p.position]}
                       </span>
                       {/* Name */}
                       <span
                         className={`flex-1 truncate text-[12px] font-black ${
-                          selected ? "text-rose-100" : "text-zinc-100"
+                          selected ? "text-rose-100" : "text-on-surface"
                         }`}
                       >
                         {p.name}
@@ -1669,7 +1669,7 @@ export function MatchIntervencaoView({
                       <div className="shrink-0 flex items-center gap-1.5">
                             {/* Resistência */}
                             <div className="flex flex-col items-end gap-0.5">
-                              <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-black leading-none">
+                              <span className="text-[8px] uppercase tracking-widest text-on-surface-variant/80 font-black leading-none">
                                 RES
                               </span>
                               <span
@@ -1684,22 +1684,22 @@ export function MatchIntervencaoView({
                                 {p.resistance ?? "–"}
                               </span>
                             </div>
-                            <div className="w-px h-6 bg-zinc-700/50" />
+                            <div className="w-px h-6 bg-outline-variant/25" />
 
                             {/* Forma */}
                             <div className="flex flex-col items-center gap-0.5">
-                              <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-black leading-none">
+                              <span className="text-[8px] uppercase tracking-widest text-on-surface-variant/80 font-black leading-none">
                                 FORMA
                               </span>
                               <span className="text-[14px] leading-none">
                                 {(p.form ?? 100) >= 115 ? "💪" : (p.form ?? 100) <= 85 ? "😩" : "👍"}
                               </span>
                             </div>
-                            <div className="w-px h-6 bg-zinc-700/50" />
+                            <div className="w-px h-6 bg-outline-variant/25" />
 
                             {/* Qualidade */}
                             <div className="flex flex-col items-end gap-0.5">
-                              <span className="text-[8px] uppercase tracking-widest text-zinc-400 font-black leading-none">
+                              <span className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black leading-none">
                                 Qualidade
                               </span>
                               <span
@@ -1729,8 +1729,8 @@ export function MatchIntervencaoView({
                               selected
                                 ? "text-rose-400"
                                 : disabled
-                                  ? "text-zinc-700"
-                                  : "text-zinc-500 group-hover:text-emerald-400"
+                                  ? "text-on-surface-variant/40"
+                                  : "text-on-surface-variant/80 group-hover:text-emerald-400"
                             }`}
                           >
                             ↔
@@ -1741,7 +1741,7 @@ export function MatchIntervencaoView({
                   );
                 })}
                 {onPitchPlayers.length === 0 && (
-                  <p className="text-center text-zinc-600 text-xs font-bold py-6">
+                  <p className="text-center text-on-surface-variant/60 text-xs font-bold py-6">
                     Sem opções em campo
                   </p>
                 )}
@@ -1751,10 +1751,10 @@ export function MatchIntervencaoView({
                   {/* Right: Suplentes */}
                   {!isPenalty && (
                     <div className="flex flex-col min-h-0 overflow-hidden">
-                      <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-zinc-800/60 bg-zinc-950/60">
-                        <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-black">
+                      <div className="shrink-0 px-5 py-4 flex items-center justify-between bg-surface-container-high/50 border-b border-outline/40">
+                        <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">
                           Suplentes
-                        </span>
+                        </h2>
                       </div>
                       <div className="flex-1 overflow-y-auto">
                         {benchPlayers.map((p) => {
@@ -1768,48 +1768,38 @@ export function MatchIntervencaoView({
                             positionMismatch ||
                             (isHalftime && subsMade >= MAX_MATCH_SUBS);
                           const selected = selectedInId === p.id;
-                          const accent = posAccent(p.position);
+                          const s = getPosStyle(p.position);
                           return (
                             <button
                               key={p.id}
                               onClick={() => !disabled && handlePickIn(p)}
-                              className={`w-full flex items-center gap-3 px-4 py-3 rounded-md text-left select-none transition-all ${
+                              className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${selected ? "border-emerald-400/60 bg-emerald-500/10" : s.glow} shadow-sm shadow-black/30 w-full text-left select-none ${
                                 alreadyUsed
-                                  ? "opacity-25 cursor-not-allowed bg-zinc-950/40 border border-zinc-800/20"
-                                  : selected
-                                    ? "bg-emerald-500/10 border border-emerald-500/20"
-                                    : disabled
-                                      ? "opacity-40 cursor-not-allowed bg-zinc-950/40 border border-zinc-800/20"
-                                      : "cursor-pointer hover:bg-zinc-800/30 bg-zinc-950/40 border border-zinc-800/20"
+                                  ? "opacity-25 cursor-not-allowed border-outline-variant/15 bg-surface-container/40"
+                                  : disabled
+                                    ? "opacity-40 cursor-not-allowed border-outline-variant/15 bg-surface-container/40"
+                                    : "cursor-pointer"
                               }`}
                             >
+                              <div className={`shrink-0 w-1 bg-gradient-to-b ${alreadyUsed ? "from-outline-variant/40 via-outline-variant/60 to-outline-variant/40" : s.bar}`} />
                               <span
-                                className={`shrink-0 px-2 py-1 rounded-md text-[9px] font-black border ${
+                                className={`shrink-0 px-1.5 py-px rounded text-[9px] font-black uppercase tracking-widest border ${
                                   alreadyUsed
-                                    ? "border-zinc-700/50 text-zinc-600"
+                                    ? "border-outline-variant/15 bg-surface-container/20 text-on-surface-variant/40"
                                     : selected
                                       ? "bg-emerald-500/20 text-emerald-200 border-emerald-400/40"
-                                      : ""
+                                      : s.badgeBg + " " + s.badgeText + " " + s.badgeBorder
                                 }`}
-                                style={
-                                  alreadyUsed || selected
-                                    ? {}
-                                    : {
-                                        color: accent,
-                                        borderColor: `${accent}35`,
-                                        background: `${accent}12`,
-                                      }
-                                }
                               >
                                 {POSITION_SHORT_LABELS[p.position]}
                               </span>
                               <span
                                 className={`flex-1 truncate text-[12px] font-black ${
                                   alreadyUsed
-                                    ? "text-zinc-600"
+                                    ? "text-on-surface-variant/60"
                                     : selected
                                       ? "text-emerald-100"
-                                      : "text-zinc-100"
+                                      : "text-on-surface"
                                 }`}
                               >
                                 {p.name}
@@ -1822,12 +1812,12 @@ export function MatchIntervencaoView({
                               </span>
                               <div className="shrink-0 flex items-center gap-1.5">
                                 {alreadyUsed ? (
-                                  <span className="text-[10px] text-zinc-700 font-black">—</span>
+                                  <span className="text-[10px] text-on-surface-variant/40 font-black">—</span>
                                 ) : (
                                   <>
                                     {/* Resistência */}
                                     <div className="flex flex-col items-end gap-0.5">
-                                      <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-black leading-none">
+                                      <span className="text-[8px] uppercase tracking-widest text-on-surface-variant/80 font-black leading-none">
                                         RES
                                       </span>
                                       <span
@@ -1842,22 +1832,22 @@ export function MatchIntervencaoView({
                                         {p.resistance ?? "–"}
                                       </span>
                                     </div>
-                                    <div className="w-px h-6 bg-zinc-700/50" />
+                                    <div className="w-px h-6 bg-outline-variant/25" />
 
                                     {/* Forma */}
                                     <div className="flex flex-col items-center gap-0.5">
-                                      <span className="text-[8px] uppercase tracking-widest text-zinc-500 font-black leading-none">
+                                      <span className="text-[8px] uppercase tracking-widest text-on-surface-variant/80 font-black leading-none">
                                         FORMA
                                       </span>
                                       <span className="text-[14px] leading-none">
                                         {(p.form ?? 100) >= 115 ? "💪" : (p.form ?? 100) <= 85 ? "😩" : "👍"}
                                       </span>
                                     </div>
-                                    <div className="w-px h-6 bg-zinc-700/50" />
+                                    <div className="w-px h-6 bg-outline-variant/25" />
 
                                     {/* Qualidade */}
                                     <div className="flex flex-col items-end gap-0.5">
-                                      <span className="text-[8px] uppercase tracking-widest text-zinc-400 font-black leading-none">
+                                      <span className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black leading-none">
                                         Qualidade
                                       </span>
                                       <span
@@ -1887,7 +1877,7 @@ export function MatchIntervencaoView({
                           );
                         })}
                         {benchPlayers.length === 0 && (
-                          <p className="text-center text-zinc-600 text-xs font-bold py-6">
+                          <p className="text-center text-on-surface-variant/60 text-xs font-bold py-6">
                             Sem suplentes disponíveis
                           </p>
                         )}
@@ -1898,13 +1888,13 @@ export function MatchIntervencaoView({
                   {/* Penalty info */}
                   {isPenalty && (
                     <div className="flex flex-col min-h-0 overflow-hidden">
-                      <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/60 bg-zinc-950/60">
-                        <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold">
+                      <div className="shrink-0 px-5 py-4 flex items-center justify-between bg-surface-container-high/50 border-b border-outline/40">
+                        <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">
                           Escolha
-                        </span>
+                        </h2>
                       </div>
                       <div className="flex-1 flex items-center justify-center">
-                        <p className="text-center text-zinc-500 text-xs font-bold px-4">
+                        <p className="text-center text-on-surface-variant/80 text-xs font-bold px-4">
                           Seleciona o marcador na coluna central.
                         </p>
                       </div>
@@ -1919,16 +1909,16 @@ export function MatchIntervencaoView({
           ) : (
               <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
                 {/* Opponent header */}
-                <div className="shrink-0 flex items-center gap-2 px-2.5 py-2 m-2 rounded-lg border border-zinc-800/60 bg-zinc-950/60">
+                <div className="shrink-0 flex items-center gap-2 px-4 py-3 m-2 rounded-md border border-outline-variant/25 bg-surface-container">
                   <span
-                    className="text-[10px] font-black uppercase tracking-[0.2em] truncate"
+                    className="text-base font-black font-headline tracking-tight uppercase truncate"
                     style={{ color: oppInfo?.color_primary || "#f59e0b" }}
                   >
                     {oppInfo?.name || "Adversário"}
                   </span>
                   <div className="ml-auto flex items-center gap-2">
                     {(oppFormation || oppStyleLabel) && (
-                      <span className="text-[8px] font-black text-zinc-500 shrink-0">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/80 shrink-0">
                         {[oppFormation, oppStyleLabel]
                           .filter(Boolean)
                           .join(" · ")}
@@ -1939,25 +1929,25 @@ export function MatchIntervencaoView({
 
                 <div className="flex-1 grid grid-cols-2 min-h-0 overflow-hidden">
                   {/* Left: Pitch */}
-                  <div className="flex items-center justify-center p-2 overflow-hidden border-r border-zinc-800/60">
+                  <div className="flex items-center justify-center p-2 overflow-hidden border-r border-outline/40">
                     {!hasLineups ? (
-                  <div className="rounded-lg border border-zinc-800/40 bg-zinc-950/40 py-8 flex flex-col items-center gap-2">
-                    <span className="text-3xl text-zinc-700">📋</span>
-                    <p className="text-zinc-500 text-xs font-bold text-center px-4">
+                  <div className="rounded-lg border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
+                    <span className="text-3xl text-on-surface-variant/40">📋</span>
+                    <p className="text-on-surface-variant/80 text-xs font-bold text-center px-4">
                       Escalações indisponíveis durante a simulação
                     </p>
                   </div>
                 ) : oppStarters.length === 0 ? (
-                  <div className="rounded-lg border border-zinc-800/40 bg-zinc-950/40 py-8 flex flex-col items-center gap-2">
-                    <span className="text-3xl text-zinc-700">🤷</span>
-                    <p className="text-zinc-500 text-xs font-bold text-center px-4">
+                  <div className="rounded-lg border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
+                    <span className="text-3xl text-on-surface-variant/40">🤷</span>
+                    <p className="text-on-surface-variant/80 text-xs font-bold text-center px-4">
                       Sem dados da escalação do adversário
                     </p>
                   </div>
                 ) : (
                   /* Pitch SVG */
                   <div
-                    className="relative rounded-lg overflow-hidden border border-zinc-800/60 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]"
+                    className="relative rounded-lg overflow-hidden border border-outline/40 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]"
                     style={{ aspectRatio: "9/16", maxHeight: "380px" }}
                   >
                     <svg
@@ -2006,7 +1996,7 @@ export function MatchIntervencaoView({
                                 {POSITION_SHORT_LABELS[player.position] || "?"}
                               </div>
                               <div
-                                className="bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-[9px] font-black text-white text-center truncate"
+                                className="bg-black/70 px-1.5 py-0.5 rounded text-[9px] font-black text-white text-center truncate"
                                 style={{ maxWidth: "85px" }}
                               >
                                 {player.name}
@@ -2034,42 +2024,48 @@ export function MatchIntervencaoView({
 
                   {/* Right: Opponent bench */}
                   <div className="flex flex-col min-h-0 overflow-hidden">
-                    <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-zinc-800/60 bg-zinc-950/60">
-                      <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-black">
+                    <div className="shrink-0 px-5 py-4 flex items-center justify-between bg-surface-container-high/50 border-b border-outline/40">
+                      <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">
                         Banco Adversário
-                      </span>
+                      </h2>
                     </div>
                     <div className="flex-1 overflow-y-auto">
                       {!hasLineups || oppBench.length === 0 ? (
-                        <p className="text-center text-zinc-600 text-xs font-bold py-6 px-2">
+                        <p className="text-center text-on-surface-variant/60 text-xs font-bold py-6 px-2">
                           Sem dados do banco adversário
                         </p>
                       ) : (
-                        oppBench.map((player) => (
-                          <div
-                            key={player.id ?? player.name}
-                            className="flex items-center gap-3 px-4 py-3 rounded-md bg-zinc-950/40 border border-zinc-800/20 mb-1 last:mb-0"
-                          >
-                            <span
-                              className={`w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-black border border-white/20 shrink-0 ${oppPosColors[player.position] || "bg-zinc-500 text-white"}`}
+                        oppBench.map((player) => {
+                          const s2 = getPosStyle(player.position);
+                          return (
+                            <div
+                              key={player.id ?? player.name}
+                              className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s2.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${s2.glow} shadow-sm shadow-black/30 mb-1 last:mb-0`}
                             >
-                              {POSITION_SHORT_LABELS[player.position] || "?"}
-                            </span>
-                            <span className="flex-1 truncate text-[12px] font-black text-zinc-300">
-                              {player.name}
-                              {!!player.is_star &&
-                                (player.position === "MED" ||
-                                  player.position === "ATA") && (
-                                  <span className="ml-0.5 text-amber-400 font-black">
-                                    *
-                                  </span>
-                                )}
-                            </span>
-                            <span className="text-[11px] font-black tabular-nums text-zinc-400 shrink-0">
-                              {player.skill ?? "—"}
-                            </span>
-                          </div>
-                        ))
+                              <div className={`shrink-0 w-1 bg-gradient-to-b ${s2.bar}`} />
+                              <div className="flex items-center gap-3 flex-1 px-4 py-3">
+                                <span
+                                  className={`shrink-0 px-1.5 py-px rounded text-[9px] font-black uppercase tracking-widest border ${s2.badgeBg} ${s2.badgeText} ${s2.badgeBorder}`}
+                                >
+                                  {POSITION_SHORT_LABELS[player.position] || "?"}
+                                </span>
+                                <span className="flex-1 truncate text-[12px] font-black text-on-surface">
+                                  {player.name}
+                                  {!!player.is_star &&
+                                    (player.position === "MED" ||
+                                      player.position === "ATA") && (
+                                      <span className="ml-0.5 text-amber-400 font-black">
+                                        *
+                                      </span>
+                                    )}
+                                </span>
+                                <span className="text-[11px] font-black tabular-nums text-on-surface-variant shrink-0">
+                                  {player.skill ?? "—"}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })
                       )}
                     </div>
                   </div>
@@ -2080,10 +2076,10 @@ export function MatchIntervencaoView({
       </div>
 
       {/* ═══ BOTTOM BAR — Confirmation ═══════════════════════════ */}
-      <div className="shrink-0 border-t border-zinc-800/60 bg-zinc-950/80 backdrop-blur-sm px-4 py-3">
+      <div className="shrink-0 border-t border-outline/40 bg-surface-container-high px-5 py-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex-1 flex items-center gap-2 min-w-0">
-            <span className="text-[10px] text-zinc-600 shrink-0 font-black uppercase tracking-wide">
+            <span className="text-[10px] text-on-surface-variant/60 shrink-0 font-black uppercase tracking-wide">
               Sai
             </span>
             <span className="bg-rose-950/80 text-rose-200 border border-rose-800/50 text-[11px] font-black px-3 py-1.5 rounded-lg truncate max-w-[35%]">
@@ -2091,8 +2087,8 @@ export function MatchIntervencaoView({
             </span>
             {!isPenalty && (
               <>
-                <span className="text-zinc-500 shrink-0 font-black text-base">→</span>
-                <span className="text-[10px] text-zinc-600 shrink-0 font-black uppercase tracking-wide">
+                <span className="text-on-surface-variant/80 shrink-0 font-black text-base">→</span>
+                <span className="text-[10px] text-on-surface-variant/60 shrink-0 font-black uppercase tracking-wide">
                   Entra
                 </span>
                 <span className="bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-[11px] font-black px-3 py-1.5 rounded-lg truncate max-w-[35%]">
@@ -2106,7 +2102,7 @@ export function MatchIntervencaoView({
             <>
               <button
                 onClick={onResetSub}
-                className="shrink-0 w-8 h-8 rounded-lg bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-500 hover:text-white text-sm flex items-center justify-center transition-colors border border-zinc-700/50"
+                className="shrink-0 w-8 h-8 rounded-lg bg-surface-container-high/80 hover:bg-surface-container-high text-on-surface-variant/80 hover:text-on-surface text-sm flex items-center justify-center transition-colors border border-outline/40"
               >
                 ✕
               </button>
@@ -2116,7 +2112,7 @@ export function MatchIntervencaoView({
                 className={`shrink-0 px-5 py-2 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all border ${
                   canConfirmSwap
                     ? "bg-emerald-600/90 border-emerald-400/40 text-white shadow-[0_0_16px_rgba(16,185,129,0.25)] hover:bg-emerald-500/90"
-                    : "bg-zinc-800/80 border-zinc-700/50 text-zinc-600 cursor-not-allowed"
+                    : "bg-surface-container-high/80 border-outline/40 text-on-surface-variant/60 cursor-not-allowed"
                 }`}
               >
                 Substituir
@@ -2143,7 +2139,7 @@ export function MatchIntervencaoView({
 
       {/* Reset all subs (halftime) */}
       {isHalftime && confirmedSubs.length > 0 && (
-        <div className="shrink-0 border-t border-zinc-800/30 px-5 py-2 flex justify-center bg-zinc-950/50">
+        <div className="shrink-0 border-t border-outline-variant/25 px-5 py-2 flex justify-center bg-surface-container/50">
           <button
             onClick={onResetAllSubs}
             className="text-[10px] font-black uppercase tracking-[0.25em] text-rose-400/80 hover:text-rose-300 transition-colors"

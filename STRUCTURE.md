@@ -8,7 +8,7 @@ Este ficheiro fornece uma visão detalhada da organização de ficheiros e diret
 | :------------------- | :---------------------------------------------------------- |
 | `AGENTS.md`          | Manual de operações e prevenção de regressões para agentes. |
 | `CLAUDE.md`          | Documentação técnica e padrões de engenharia.               |
-| `DESIGN.md`          | Diretrizes de design e workflow com Stitch AI.              |
+| `STYLE.md`           | Design system e diretrizes de estilo visual.                |
 | `README.md`          | Descrição geral do produto.                                 |
 | `docker-compose.yml` | Orquestração de containers (Frontend + Backend + DB).       |
 | `package.json`       | Dependências e scripts do workspace/root.                   |
