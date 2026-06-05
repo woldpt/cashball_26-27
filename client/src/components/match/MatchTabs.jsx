@@ -1624,12 +1624,12 @@ export function MatchIntervencaoView({
                           ? "Não há GR no banco para substituir"
                           : undefined
                       }
-                      className={`w-full flex items-center gap-3 px-4 py-3 border-b border-zinc-800/25 text-left select-none transition-all ${
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-md text-left select-none transition-all ${
                         selected
-                          ? "bg-rose-500/10"
+                          ? "bg-rose-500/10 border border-rose-500/20"
                           : disabled
-                            ? "opacity-40 cursor-not-allowed"
-                            : "cursor-pointer hover:bg-zinc-800/30"
+                            ? "opacity-40 cursor-not-allowed bg-zinc-950/40 border border-zinc-800/20"
+                            : "cursor-pointer hover:bg-zinc-800/30 bg-zinc-950/40 border border-zinc-800/20"
                       }`}
                     >
                       {/* Position badge */}
@@ -1773,14 +1773,14 @@ export function MatchIntervencaoView({
                             <button
                               key={p.id}
                               onClick={() => !disabled && handlePickIn(p)}
-                              className={`w-full flex items-center gap-3 px-4 py-3 border-b border-zinc-800/25 text-left select-none transition-all ${
+                              className={`w-full flex items-center gap-3 px-4 py-3 rounded-md text-left select-none transition-all ${
                                 alreadyUsed
-                                  ? "opacity-25 cursor-not-allowed"
+                                  ? "opacity-25 cursor-not-allowed bg-zinc-950/40 border border-zinc-800/20"
                                   : selected
-                                    ? "bg-emerald-500/10"
+                                    ? "bg-emerald-500/10 border border-emerald-500/20"
                                     : disabled
-                                      ? "opacity-40 cursor-not-allowed"
-                                      : "cursor-pointer hover:bg-zinc-800/30"
+                                      ? "opacity-40 cursor-not-allowed bg-zinc-950/40 border border-zinc-800/20"
+                                      : "cursor-pointer hover:bg-zinc-800/30 bg-zinc-950/40 border border-zinc-800/20"
                               }`}
                             >
                               <span
@@ -2048,7 +2048,7 @@ export function MatchIntervencaoView({
                         oppBench.map((player) => (
                           <div
                             key={player.id ?? player.name}
-                            className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800/25"
+                            className="flex items-center gap-3 px-4 py-3 rounded-md bg-zinc-950/40 border border-zinc-800/20 mb-1 last:mb-0"
                           >
                             <span
                               className={`w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-black border border-white/20 shrink-0 ${oppPosColors[player.position] || "bg-zinc-500 text-white"}`}
