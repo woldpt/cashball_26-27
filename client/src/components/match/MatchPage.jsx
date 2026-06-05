@@ -382,6 +382,7 @@ export function MatchPage({
 									liveMinute={liveMinute}
 									teams={teams}
 									mode={mode}
+									myTeamId={myTeamId}
 								/>
 							)}
 							{activeTab === "locais" && (

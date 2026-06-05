@@ -25,8 +25,7 @@ function getPosStyle(pos) {
 }
 
 /* ── TabJogo — Match events, possession, commentary ──────────────────────── */
-export function TabJogo({ fixture, liveMinute, teams, mode }) {
-  const [lineupSide, setLineupSide] = useState("home");
+export function TabJogo({ fixture, liveMinute, teams, mode, myTeamId }) {
   if (!fixture) return null;
   const hInfo = teams.find((t) => t.id === fixture.homeTeamId);
   const aInfo = teams.find((t) => t.id === fixture.awayTeamId);
@@ -58,59 +57,28 @@ export function TabJogo({ fixture, liveMinute, teams, mode }) {
   const isHalftime = mode === "halftime";
   const hasLineups = fixture?.homeLineup && fixture?.awayLineup;
 
-  const homeLineup = hasLineups
-    ? getEffectiveLineup(fixture.homeLineup, evts, liveMinute, "home")
-    : null;
-  const awayLineup = hasLineups
-    ? getEffectiveLineup(fixture.awayLineup, evts, liveMinute, "away")
-    : null;
+  // ── Determine our team lineup ──────────────────────────────────────
+  const isOurHome = fixture.homeTeamId === myTeamId;
+  const ourLineup = hasLineups
+    ? (isOurHome ? fixture.homeLineup : fixture.awayLineup) || []
+    : [];
 
-  const currentLineup = lineupSide === "home" ? homeLineup : awayLineup;
-  const currentInfo = lineupSide === "home" ? hInfo : aInfo;
+  // ── Pitch helpers (from TabAdversario) ─────────────────────────────
+  const starters = ourLineup.filter((p) => p.is_starter === true).slice(0, 11);
+  const bench = ourLineup.filter((p) => p.is_starter === false);
 
-  // ── Player rendering (inline from TabLineup) ───────────────────────
-  const sortedLineup = (arr) =>
-    [...arr].sort(
-      (a, b) => (POS_ORDER[a.position] ?? 9) - (POS_ORDER[b.position] ?? 9),
-    );
+  const rows = {
+    GR: starters.filter((p) => p.position === "GR"),
+    DEF: starters.filter((p) => p.position === "DEF"),
+    MED: starters.filter((p) => p.position === "MED"),
+    ATA: starters.filter((p) => p.position === "ATA"),
+  };
 
-  const renderPlayer = (p, opts = {}) => {
-    const { isOff = false, offReason = null } = opts;
-    const label = isOff
-      ? offReason === "red"
-        ? "🟥"
-        : offReason === "injury"
-          ? "🚑"
-          : "🔄"
-      : p.goals > 0
-        ? Array(p.goals).fill("⚽").join("")
-        : "";
-    return (
-      <div
-        key={p.id ?? p.name}
-        className={`flex items-center gap-2 py-1.5 px-2 rounded-md transition-colors ${isOff ? "opacity-40" : "hover:bg-surface-container/60"}`}
-      >
-        <span
-          className={`shrink-0 px-1.5 py-px rounded text-[9px] font-black uppercase tracking-widest border ${isOff ? "border-outline-variant/15 bg-surface-container/20 text-on-surface-variant/40" : getPosStyle(p.position).badgeBg + " " + getPosStyle(p.position).badgeText + " " + getPosStyle(p.position).badgeBorder}`}
-        >
-          {isOff ? "" : POSITION_SHORT_LABELS[p.position] || "?"}
-        </span>
-        <span
-          className={`flex-1 truncate text-xs font-black ${isOff ? "text-on-surface-variant/60 line-through" : "text-on-surface"}`}
-        >
-          <PlayerLink playerId={p.id}>{p.name}</PlayerLink>
-          {!!p.is_star && (p.position === "MED" || p.position === "ATA") && (
-            <span className="ml-0.5 text-amber-400 font-black">*</span>
-          )}
-        </span>
-        {!isOff && p.skill != null && (
-          <span className="text-[10px] font-black tabular-nums text-on-surface-variant/80 shrink-0 w-5 text-right">
-            {p.skill}
-          </span>
-        )}
-        {label ? <span className="text-[10px] shrink-0">{label}</span> : null}
-      </div>
-    );
+  const posColors = {
+    GR: "bg-amber-500 text-zinc-950",
+    DEF: "bg-sky-500 text-zinc-950",
+    MED: "bg-emerald-500 text-zinc-950",
+    ATA: "bg-rose-500 text-white",
   };
 
   return (
@@ -335,101 +303,107 @@ export function TabJogo({ fixture, liveMinute, teams, mode }) {
           })()}
         </div>
 
-        {/* ═══ COLUNA 2: Lineup (Locais/Visitantes com toggle) ═══ */}
+        {/* ═══ COLUNA 2: Pitch SVG + Suplentes (nosso equipo) ═══ */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden border-l border-outline/40">
-          {/* Toggle buttons */}
-          <div className="shrink-0 p-2 flex items-center gap-2">
-            <button
-              onClick={() => setLineupSide("home")}
-              className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${
-                lineupSide === "home"
-                  ? "bg-primary/90 text-on-primary border-primary/40 shadow-[0_0_12px_rgba(99,102,241,0.2)]"
-                  : "bg-surface-container/60 text-on-surface-variant/80 border-outline-variant/25 hover:bg-surface-container-high/60"
-              }`}
-            >
-              {hInfo?.name || "Locais"}
-            </button>
-            <button
-              onClick={() => setLineupSide("away")}
-              className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all border ${
-                lineupSide === "away"
-                  ? "bg-primary/90 text-on-primary border-primary/40 shadow-[0_0_12px_rgba(99,102,241,0.2)]"
-                  : "bg-surface-container/60 text-on-surface-variant/80 border-outline-variant/25 hover:bg-surface-container-high/60"
-              }`}
-            >
-              {aInfo?.name || "Visitantes"}
-            </button>
-          </div>
+          <div className="flex gap-3 flex-1 min-h-0">
+            {/* ── Pitch / formation ──────────────────────────────────────── */}
+            <div className="flex-1 relative rounded-lg overflow-hidden border border-outline/40 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 315 560" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                <rect x="10" y="10" width="295" height="540" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" rx="3" />
+                <line x1="10" y1="280" x2="305" y2="280" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
+                <circle cx="157" cy="280" r="50" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                <circle cx="157" cy="280" r="3" fill="rgba(255,255,255,0.25)" />
+                <rect x="25" y="10" width="265" height="150" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                <rect x="85" y="10" width="145" height="40" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+                <rect x="25" y="400" width="265" height="150" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+                <rect x="85" y="510" width="145" height="40" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+              </svg>
 
-          {/* Lineup display */}
-          <div className="flex-1 overflow-y-auto">
-            {hasLineups && currentLineup ? (
-              <>
-                {/* Team header */}
-                <div className="px-5 py-4 border-b border-outline/40 shrink-0 flex items-center gap-2 bg-surface-container-high/50">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: currentInfo?.color_primary || "#6366f1", boxShadow: `0 0 8px ${currentInfo?.color_primary || "#6366f1"}60` }} />
-                  <h2
-                    className="text-base font-black font-headline tracking-tight text-tertiary uppercase truncate"
-                    style={{ color: currentInfo?.color_primary || "#6366f1" }}
-                  >
-                    {currentInfo?.name || "—"}
-                  </h2>
-                </div>
-
-                {/* Active players */}
-                <div className="px-2 py-1">
-                  {sortedLineup(currentLineup.active).map((p) => renderPlayer(p))}
-                </div>
-
-                {/* Off players */}
-                {currentLineup.offPlayers.length > 0 && (
-                  <>
-                    <div className="mx-2 my-1.5 border-t border-outline-variant/25" />
-                    <div className="px-2 py-1">
-                      {currentLineup.offPlayers.map((p) =>
-                        renderPlayer(p, { isOff: true, offReason: p.reason }),
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {/* Substitutes */}
-                {currentLineup.subPlayers.length > 0 && (
-                  <>
-                    <div className="mx-2 my-1.5 border-t border-outline-variant/25" />
-                    <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 px-3 py-1">
-                      Entrou
-                    </p>
-                    <div className="px-2 pb-2">
-                      {currentLineup.subPlayers.map((p) => (
+              {hasLineups && starters.length > 0 ? (
+                ["GR", "DEF", "MED", "ATA"].map((key) => {
+                  const rowPlayers = rows[key] || [];
+                  if (rowPlayers.length === 0) return null;
+                  return (
+                    <div
+                      key={key}
+                      className="absolute w-full flex justify-evenly items-start px-3"
+                      style={{ top: key === "GR" ? "8%" : key === "DEF" ? "31%" : key === "MED" ? "56%" : "81%" }}
+                    >
+                      {rowPlayers.map((player) => (
                         <div
-                          key={p.id ?? p.name}
-                          className="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-surface-container/60 transition-colors"
+                          key={player.id ?? player.name}
+                          className="flex flex-col items-center gap-0.5"
+                          style={{ maxWidth: "90px" }}
                         >
-                          <span className="w-5 text-[9px] font-black text-emerald-400 shrink-0 flex items-center justify-center">
-                            ↑
+                          <div
+                            className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-[10px] border border-white/30 shadow-lg ${posColors[player.position] || "bg-zinc-500 text-white"}`}
+                          >
+                            {POSITION_SHORT_LABELS[player.position] || "?"}
+                          </div>
+                          <div
+                            className="bg-black/70 px-1.5 py-0.5 rounded text-[9px] font-black text-white text-center truncate"
+                            style={{ maxWidth: "85px" }}
+                          >
+                            {player.name}
+                            {!!player.is_star &&
+                              (player.position === "MED" || player.position === "ATA") && (
+                                <span className="ml-0.5 text-amber-400">*</span>
+                              )}
+                          </div>
+                          <span className="text-[9px] font-black text-amber-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                            {player.skill ?? "-"}
                           </span>
-                          <span className="flex-1 truncate text-xs font-black text-on-surface-variant">
-                            <PlayerLink playerId={p.id}>{p.name}</PlayerLink>
-                          </span>
-                          {p.goals > 0 && (
-                            <span className="text-[10px] shrink-0">
-                              {Array(p.goals).fill("⚽").join("")}
-                            </span>
-                          )}
                         </div>
                       ))}
                     </div>
-                  </>
+                  );
+                })
+              ) : null}
+
+              <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/40 to-transparent" />
+            </div>
+
+            {/* ── Bench ──────────────────────────────────────────────────── */}
+            <div className="flex-1 flex flex-col">
+              <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2 px-1">
+                Suplentes
+              </p>
+              <div className="flex-1 overflow-y-auto space-y-1">
+                {hasLineups && bench.map((player) => {
+                  const s = getPosStyle(player.position);
+                  return (
+                    <div
+                      key={player.id ?? player.name}
+                      className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${s.glow} shadow-sm shadow-black/30`}
+                    >
+                      <div className={`shrink-0 w-1 bg-gradient-to-b ${s.bar}`} />
+                      <div className="flex items-center gap-2 flex-1 py-1.5 px-2.5">
+                        <span
+                          className={`shrink-0 px-1.5 py-px rounded text-[9px] font-black uppercase tracking-widest border ${s.badgeBg} ${s.badgeText} ${s.badgeBorder}`}
+                        >
+                          {POSITION_SHORT_LABELS[player.position] || "?"}
+                        </span>
+                        <span className="flex-1 truncate text-[10px] font-black text-on-surface">
+                          {player.name}
+                          {!!player.is_star &&
+                            (player.position === "MED" || player.position === "ATA") && (
+                              <span className="ml-0.5 text-amber-400 font-black">*</span>
+                            )}
+                        </span>
+                        <span className="text-[9px] font-black tabular-nums text-on-surface-variant/80 shrink-0">
+                          {player.skill ?? "—"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {bench.length === 0 && (
+                  <p className="text-center text-on-surface-variant/60 text-xs font-bold py-6 px-2">
+                    Sem suplentes disponíveis
+                  </p>
                 )}
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-center text-on-surface-variant/60 text-xs font-bold px-4">
-                  Sem dados de escalação
-                </p>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
