@@ -210,7 +210,12 @@ export function UserSettingsPage({
 	const trophies = palmares?.trophies || [];
 
 	const trainedTeams = Array.from(
-		new Set(rooms.map((r) => r.teamName).filter(Boolean)),
+		new Set(
+			rooms
+				.filter((r) => r.roomCode === me?.roomCode)
+				.map((r) => r.teamName)
+				.filter(Boolean),
+		),
 	);
 
 	return (
