@@ -209,6 +209,10 @@ export function UserSettingsPage({
 
 	const trophies = palmares?.trophies || [];
 
+	const trainedTeams = Array.from(
+		new Set(rooms.map((r) => r.teamName).filter(Boolean)),
+	);
+
 	return (
 		<div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
 			{/* Back */}
@@ -334,6 +338,111 @@ export function UserSettingsPage({
 					</div>
 				</section>
 
+				{/* Clubes Treinados */}
+				<section>
+					<h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
+						<span className="material-symbols-outlined text-[18px]">
+							groups
+						</span>
+						Clubes Treinados
+					</h3>
+					<div className="bg-surface-container-low border border-outline-variant/20 rounded-xl p-5">
+						{trainedTeams.length === 0 ? (
+							<p className="text-sm text-on-surface-variant/60 font-medium text-center py-4">
+								Ainda sem clubes treinados.
+							</p>
+						) : (
+							<div className="space-y-2">
+								{trainedTeams.map((team, i) => (
+									<div
+										key={i}
+										className="flex items-center gap-3 py-2 px-3 rounded-lg bg-surface/40 border border-outline-variant/10"
+									>
+										<span className="text-xl">⚽</span>
+										<div>
+											<p className="text-sm font-bold">{team}</p>
+										</div>
+									</div>
+								))}
+							</div>
+						)}
+					</div>
+				</section>
+
+
+				{/* Change Password */}
+				<section>
+					<h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
+						<span className="material-symbols-outlined text-[18px]">lock</span>
+						Alterar Palavra-Passe
+					</h3>
+					<form
+						onSubmit={handleChangePassword}
+						className="bg-surface-container-low border border-outline-variant/20 rounded-xl p-5 space-y-4"
+					>
+						<div>
+							<label className="text-xs font-bold text-on-surface-variant block mb-1">
+								Palavra-passe actual
+							</label>
+							<input
+								type="password"
+								value={currentPassword}
+								onChange={(e) => setCurrentPassword(e.target.value)}
+								className="w-full bg-surface border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
+								placeholder="••••••••"
+							/>
+						</div>
+						<div>
+							<label className="text-xs font-bold text-on-surface-variant block mb-1">
+								Nova palavra-passe
+							</label>
+							<input
+								type="password"
+								value={newPassword}
+								onChange={(e) => setNewPassword(e.target.value)}
+								className="w-full bg-surface border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
+								placeholder="••••••••"
+							/>
+						</div>
+						<div>
+							<label className="text-xs font-bold text-on-surface-variant block mb-1">
+								Confirmar nova palavra-passe
+							</label>
+							<input
+								type="password"
+								value={confirmPassword}
+								onChange={(e) => setConfirmPassword(e.target.value)}
+								className="w-full bg-surface border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
+								placeholder="••••••••"
+							/>
+						</div>
+
+						{passwordMsg && (
+							<div
+								className={`text-xs font-bold px-4 py-2 rounded-lg ${
+									passwordMsg.type === "success"
+										? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+										: "bg-red-500/10 text-red-400 border border-red-500/20"
+								}`}
+							>
+								<span className="material-symbols-outlined text-[14px] align-text-bottom mr-1">
+									{passwordMsg.type === "success" ? "check_circle" : "error"}
+								</span>
+								{passwordMsg.text}
+							</div>
+						)}
+
+						<button
+							type="submit"
+							disabled={changingPassword}
+							className="w-full bg-primary text-on-primary font-black text-sm uppercase tracking-widest rounded-lg px-5 py-3 hover:bg-primary/90 transition-colors disabled:opacity-50"
+						>
+							{changingPassword ? "A guardar..." : "Guardar"}
+						</button>
+					</form>
+				</section>
+
+
 				{/* My Rooms */}
 				<section>
 					<h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
@@ -443,80 +552,8 @@ export function UserSettingsPage({
 					</div>
 				</section>
 
-				{/* Change Password */}
-				<section>
-					<h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
-						<span className="material-symbols-outlined text-[18px]">lock</span>
-						Alterar Palavra-Passe
-					</h3>
-					<form
-						onSubmit={handleChangePassword}
-						className="bg-surface-container-low border border-outline-variant/20 rounded-xl p-5 space-y-4"
-					>
-						<div>
-							<label className="text-xs font-bold text-on-surface-variant block mb-1">
-								Palavra-passe actual
-							</label>
-							<input
-								type="password"
-								value={currentPassword}
-								onChange={(e) => setCurrentPassword(e.target.value)}
-								className="w-full bg-surface border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
-								placeholder="••••••••"
-							/>
-						</div>
-						<div>
-							<label className="text-xs font-bold text-on-surface-variant block mb-1">
-								Nova palavra-passe
-							</label>
-							<input
-								type="password"
-								value={newPassword}
-								onChange={(e) => setNewPassword(e.target.value)}
-								className="w-full bg-surface border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
-								placeholder="••••••••"
-							/>
-						</div>
-						<div>
-							<label className="text-xs font-bold text-on-surface-variant block mb-1">
-								Confirmar nova palavra-passe
-							</label>
-							<input
-								type="password"
-								value={confirmPassword}
-								onChange={(e) => setConfirmPassword(e.target.value)}
-								className="w-full bg-surface border border-outline-variant/30 rounded-lg px-4 py-2.5 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
-								placeholder="••••••••"
-							/>
-						</div>
-
-						{passwordMsg && (
-							<div
-								className={`text-xs font-bold px-4 py-2 rounded-lg ${
-									passwordMsg.type === "success"
-										? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-										: "bg-red-500/10 text-red-400 border border-red-500/20"
-								}`}
-							>
-								<span className="material-symbols-outlined text-[14px] align-text-bottom mr-1">
-									{passwordMsg.type === "success" ? "check_circle" : "error"}
-								</span>
-								{passwordMsg.text}
-							</div>
-						)}
-
-						<button
-							type="submit"
-							disabled={changingPassword}
-							className="w-full bg-primary text-on-primary font-black text-sm uppercase tracking-widest rounded-lg px-5 py-3 hover:bg-primary/90 transition-colors disabled:opacity-50"
-						>
-							{changingPassword ? "A guardar..." : "Guardar"}
-						</button>
-					</form>
-				</section>
-
 				{/* Actions */}
-				<section>
+				<section className="md:col-span-2">
 					<h3 className="text-sm font-black uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
 						<span className="material-symbols-outlined text-[18px]">
 							settings
