@@ -6,8 +6,6 @@ services:
       - ./server/.env
     volumes:
       - ./server/db:/app/db
-    networks:
-      - cftunnel
     healthcheck:
       test:
         [
