@@ -71,7 +71,7 @@ export function PitchFormation({
   withOverlay = true,
 }) {
   return (
-    <div className="relative overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden">
       {PITCH_SVG}
       {Object.entries(rows).map(([posKey, players]) => (
         <PlayerRow
