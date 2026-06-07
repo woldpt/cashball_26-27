@@ -11,7 +11,7 @@ const MATCH_EVENT_TYPES = [
   "yellow", "red", "injury", "substitution", "phase_start",
 ];
 
-/* ── TabJogo — Match events, possession, commentary ─────────────────────── */
+/* ── TabJogo — Match events, possession ─────────────────────────────── */
 export function TabJogo({ fixture, liveMinute, teams, mode, myTeamId }) {
   if (!fixture) return null;
   const hInfo = teams.find((t) => t.id === fixture.homeTeamId);
@@ -78,7 +78,7 @@ export function TabJogo({ fixture, liveMinute, teams, mode, myTeamId }) {
       )}
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* ═══ COLUNA 1: Info + Possessão + Cronologia + Narração ═══ */}
+        {/* ═══ COLUNA 1: Info + Possessão + Cronologia ═══ */}
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
           <RefWeatherBar
             attendance={fixture.attendance}
@@ -101,7 +101,7 @@ export function TabJogo({ fixture, liveMinute, teams, mode, myTeamId }) {
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden border-l border-outline/40">
           <div className="flex gap-3 flex-1 min-h-0">
             <div className="flex-1 relative rounded-md overflow-hidden border border-outline/40 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
-              <PitchFormation rows={rows} posColors={posColors} />
+              <PitchFormation rows={rows} posColors={posColors} withOverlay={false} />
               <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/40 to-transparent" />
             </div>
 
@@ -143,7 +143,8 @@ function EventList({ events, hInfo, aInfo }) {
       {events.map((e, i) => {
         const isHome = e.team === "home";
         const accent = (isHome ? hInfo : aInfo)?.color_primary;
-        return <EventCard key={i} event={e} accent={accent} showTeamBadge />;
+        const teamName = (isHome ? hInfo : aInfo)?.name;
+        return <EventCard key={i} event={e} accent={accent} showTeamBadge teamName={teamName} />;
       })}
     </div>
   );

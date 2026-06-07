@@ -73,7 +73,7 @@ export function TabAdversario({ fixture, myTeamId, teams }) {
         <div className="flex gap-3 flex-1 min-h-0">
           {/* ── Pitch / formation ──────────────────────────────────────── */}
           <div className="flex-1 relative rounded-md overflow-hidden border border-outline/40 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
-            <PitchFormation rows={rows} posColors={posColors} />
+            <PitchFormation rows={rows} posColors={posColors} withOverlay={false} />
             <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/40 to-transparent" />
           </div>
 
