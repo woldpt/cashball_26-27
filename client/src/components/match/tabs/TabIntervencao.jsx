@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { POSITION_SHORT_LABELS, MAX_MATCH_SUBS } from "../../../constants/index.js";
 import { getPosStyle } from "../matchConstants.js";
 import {
