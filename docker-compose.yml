@@ -18,6 +18,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    networks:
+      cftunnel:
+        ipv4_address: 172.100.0.61
 
   frontend:
     build: ./client
