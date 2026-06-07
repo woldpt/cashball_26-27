@@ -516,17 +516,17 @@ export function TabLineup({ fixture, liveMinute, teams }) {
     );
 
   return (
-    <div className="flex divide-x divide-outline/40 flex-1 overflow-hidden min-h-0 w-full bg-surface-container/30">
+    <div className="flex gap-3 flex-1 overflow-hidden min-h-0 w-full p-3">
       {[
         { info: hInfo, lineup: homeLineup, side: "home" },
         { info: aInfo, lineup: awayLineup, side: "away" },
       ].map(({ info, lineup }, idx) => {
         const accent = info?.color_primary || "#6366f1";
         return (
-          <div key={idx} className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+          <div key={idx} className="flex-1 flex flex-col min-w-0 overflow-y-auto rounded-lg border border-outline/40 bg-surface-container shadow-sm">
             {/* Team header */}
             <div
-              className="px-5 py-4 border-b border-outline/40 shrink-0 flex items-center gap-2 bg-surface-container-high/50"
+              className="px-5 py-4 border-b border-outline/40 shrink-0 flex items-center gap-2 bg-surface-container-high/50 rounded-t-lg"
             >
               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: accent, boxShadow: `0 0 8px ${accent}60` }} />
               <h2
