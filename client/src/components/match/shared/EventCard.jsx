@@ -21,9 +21,7 @@ function getEventIcon(e) {
 }
 
 /* ── Event card ───────────────────────────────────────────────────────── */
-export function EventCard({ event, accent, showTeamBadge, showIcon = true }) {
-  const isHome = event.team === "home";
-  const teamName = event.teamName || (isHome ? event.homeTeam : event.awayTeam);
+export function EventCard({ event, accent, showTeamBadge, showIcon = true, teamName }) {
   const icon = getEventIcon(event);
   const name = event.playerName || event.player_name || "";
 

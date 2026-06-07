@@ -571,7 +571,7 @@ function AdversarioPanel({ hasLineups, oppInfo, oppFormation, oppStyleLabel, opp
           ) : oppPositionRows.ATA?.length === 0 && oppPositionRows.MED?.length === 0 ? (
             <EmptyState icon="🤷" message="Sem dados da escalação do adversário" />
           ) : (
-            <div className="relative rounded-lg overflow-hidden border border-outline/40 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "380px" }}>
+            <div className="relative rounded-md overflow-hidden border border-outline/40 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "380px" }}>
               <PitchFormation rows={oppPositionRows} posColors={oppPosColors} />
             </div>
           )}
