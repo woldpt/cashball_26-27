@@ -375,7 +375,7 @@ export function MatchPage({
 					/* ── Grid layout: detail / overview mode ───────────────── */
 					<div className={mode === "detail" ? "flex-1 grid grid-cols-1 gap-3 p-3 min-h-0 overflow-auto" : "flex-1 grid grid-cols-1 lg:grid-cols-5 gap-3 p-3 min-h-0 overflow-auto"}>
 						{/* ── COL 1-3: Our game ── */}
-						<div className={mode === "detail" ? "flex flex-col min-h-0 overflow-hidden rounded-lg bg-zinc-950/50 border border-zinc-800/40" : "lg:col-span-3 flex flex-col min-h-0 overflow-hidden rounded-lg bg-zinc-950/50 border border-zinc-800/40"}>
+						<div className={mode === "detail" ? "flex flex-col min-h-0 overflow-hidden rounded-md bg-zinc-950/50 border border-zinc-800/40" : "lg:col-span-3 flex flex-col min-h-0 overflow-hidden rounded-md bg-zinc-950/50 border border-zinc-800/40"}>
 							{activeTab === "jogo" && (
 								<TabJogo
 									fixture={fixture}
@@ -417,7 +417,7 @@ export function MatchPage({
 
 						{mode !== "detail" && (<>
 						{/* ── COL 4-5 right sidebar: Other games ── */}
-						<div className="lg:col-span-2 flex flex-col min-h-0 overflow-hidden rounded-lg bg-zinc-950/50 border border-zinc-800/40">
+						<div className="lg:col-span-2 flex flex-col min-h-0 overflow-hidden rounded-md bg-zinc-950/50 border border-zinc-800/40">
 							<div className="shrink-0 px-2.5 py-1.5 border-b border-zinc-800 bg-zinc-950/70">
 								<h3 className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
 									{isCupMatch
@@ -472,7 +472,7 @@ export function MatchPage({
 								.map((div) => (
 									<div
 										key={div}
-										className="flex flex-col min-h-0 rounded-lg bg-zinc-950/50 border border-zinc-800/40 overflow-hidden"
+										className="flex flex-col min-h-0 rounded-md bg-zinc-950/50 border border-zinc-800/40 overflow-hidden"
 									>
 										<div className="shrink-0 px-2.5 py-1.5 border-b border-zinc-800 bg-zinc-950/70">
 											<h4 className="text-[9px] font-black uppercase tracking-widest text-zinc-500">

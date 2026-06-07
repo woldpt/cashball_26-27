@@ -100,7 +100,7 @@ export function PlayerCard({
 
   return (
     <button
-      className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${s.glow || ""} shadow-sm shadow-black/30 w-full text-left select-none ${
+      className={`relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${s.glow || ""} shadow-sm shadow-black/30 w-full text-left select-none ${
         selected
           ? "border-rose-400/60 bg-rose-500/10"
           : disabled

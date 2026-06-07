@@ -17,7 +17,7 @@ export function RefWeatherBar({ attendance, referee, weatherEvent, teamStadium, 
   const refBalance = referee?.balance ?? 50;
 
   return (
-    <div className={`flex flex-wrap items-center gap-2 px-4 py-3 rounded-lg border border-outline/40 bg-surface-container text-[10px] font-black ${className || ""}`}>
+    <div className={`flex flex-wrap items-center gap-2 px-4 py-3 rounded-md border border-outline/40 bg-surface-container text-[10px] font-black ${className || ""}`}>
       {attendance && (
         <span className="text-on-surface-variant flex items-center gap-1.5">
           <span className="text-base">🏟️</span>

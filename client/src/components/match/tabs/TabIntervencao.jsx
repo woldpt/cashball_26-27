@@ -331,7 +331,7 @@ function OnPitchPlayerCard({
       initial={shouldReduceMotion ? false : { opacity: 0, x: -10, filter: "blur(2px)" }}
       animate={shouldReduceMotion ? undefined : { opacity: 1, x: 0, filter: "blur(0px)" }}
       transition={shouldReduceMotion ? undefined : { duration: 0.2, delay: Math.min(i, 6) * 0.02 }}
-      className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${s.glow} shadow-sm shadow-black/30 w-full text-left select-none ${
+      className={`relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${s.glow} shadow-sm shadow-black/30 w-full text-left select-none ${
         selected
           ? "border-rose-400/60 bg-rose-500/10"
           : disabled
@@ -383,7 +383,7 @@ function BenchPlayerCard({
       initial={shouldReduceMotion ? false : { opacity: 0, x: 10, filter: "blur(2px)" }}
       animate={shouldReduceMotion ? undefined : { opacity: 1, x: 0, filter: "blur(0px)" }}
       transition={shouldReduceMotion ? undefined : { duration: 0.2, delay: Math.min(i, 6) * 0.02 }}
-      className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${selected ? "border-emerald-400/60 bg-emerald-500/10" : s.glow} shadow-sm shadow-black/30 w-full text-left select-none ${
+      className={`relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${selected ? "border-emerald-400/60 bg-emerald-500/10" : s.glow} shadow-sm shadow-black/30 w-full text-left select-none ${
         alreadyUsed
           ? "opacity-25 cursor-not-allowed border-outline-variant/15 bg-surface-container/40"
           : disabled

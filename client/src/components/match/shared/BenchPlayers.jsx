@@ -5,7 +5,7 @@ export function BenchPlayerCard({ player, posStyle, showSkill = true, showStar =
   const s = posStyle || {};
   return (
     <div
-      className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${s.glow || ""} shadow-sm shadow-black/30`}
+      className={`relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${s.glow || ""} shadow-sm shadow-black/30`}
     >
       <div className={`shrink-0 w-1 bg-gradient-to-b ${s.bar}`} />
       <div className="flex items-center gap-2 flex-1 py-1.5 px-2.5">

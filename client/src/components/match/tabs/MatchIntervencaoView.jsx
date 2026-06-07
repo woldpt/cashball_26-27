@@ -305,7 +305,7 @@ export function MatchIntervencaoView({
 function CronologiaEvents({ events }) {
   if (events.length === 0) {
     return (
-      <div className="rounded-lg border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
+      <div className="rounded-md border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
         <span className="text-2xl text-on-surface-variant/40">⚽</span>
         <p className="text-on-surface-variant/60 text-[11px] font-bold">Sem eventos</p>
       </div>
@@ -423,7 +423,7 @@ function OnPitchPlayerCard({ player, effectiveOutId, handlePickOut, isHalftime, 
       key={player.id}
       onClick={() => !disabled && handlePickOut(player)}
       title={noGrReplacement ? "Não há GR no banco para substituir" : undefined}
-      className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${selected ? "border-rose-400/60 bg-rose-500/10" : s.glow} shadow-sm shadow-black/30 w-full text-left select-none ${
+      className={`relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${selected ? "border-rose-400/60 bg-rose-500/10" : s.glow} shadow-sm shadow-black/30 w-full text-left select-none ${
         selected ? "" : disabled ? "opacity-40 cursor-not-allowed border-outline-variant/15 bg-surface-container/40" : "cursor-pointer"
       }`}
     >
@@ -482,7 +482,7 @@ function BenchPlayerCard2({ player, selectedInId, handlePickIn, isHalftime, subb
     <button
       key={player.id}
       onClick={() => !disabled && handlePickIn(player)}
-      className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${selected ? "border-emerald-400/60 bg-emerald-500/10" : s.glow} shadow-sm shadow-black/30 w-full text-left select-none ${
+      className={`relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${selected ? "border-emerald-400/60 bg-emerald-500/10" : s.glow} shadow-sm shadow-black/30 w-full text-left select-none ${
         alreadyUsed ? "opacity-25 cursor-not-allowed border-outline-variant/15 bg-surface-container/40" : disabled ? "opacity-40 cursor-not-allowed border-outline-variant/15 bg-surface-container/40" : "cursor-pointer"
       }`}
     >
@@ -600,7 +600,7 @@ function AdversarioPanel({ hasLineups, oppInfo, oppFormation, oppStyleLabel, opp
 
 function EmptyState({ icon, message }) {
   return (
-    <div className="rounded-lg border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
+    <div className="rounded-md border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
       <span className="text-3xl text-on-surface-variant/40">{icon}</span>
       <p className="text-on-surface-variant/80 text-xs font-bold text-center px-4">{message}</p>
     </div>
