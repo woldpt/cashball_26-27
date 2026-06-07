@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { POSITION_SHORT_LABELS, MAX_MATCH_SUBS } from "../../../constants/index.js";
-import { getPosStyle, POS_STYLES } from "../matchConstants.js";
+import { getPosStyle } from "../matchConstants.js";
 import {
   PossessionBar,
   EventCard,
@@ -8,8 +8,6 @@ import {
   TacticsButtons,
   ConfirmedSubsStrip,
   PlayerCard,
-  BenchPlayers,
-  PitchFormation,
 } from "../shared/index.js";
 
 const POS_ORDER = { GR: 0, DEF: 1, MED: 2, ATA: 3 };

@@ -1,5 +1,6 @@
 import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { getPosStyle } from "../matchConstants.js";
+import { PitchFormation, BenchPlayers } from "../shared/index.js";
 
 const POS_ORDER = { GR: 0, DEF: 1, MED: 2, ATA: 3 };
 
@@ -73,13 +74,7 @@ export function TabAdversario({ fixture, myTeamId, teams }) {
         <div className="flex gap-3 flex-1 min-h-0">
           {/* ── Pitch / formation ──────────────────────────────────────── */}
           <div className="flex-1 relative rounded-lg overflow-hidden border border-outline/40 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
-            <PitchSvg />
-            {Object.entries(rows).map(([key, rowPlayers]) => {
-              if (!rowPlayers || rowPlayers.length === 0) return null;
-              return (
-                <PlayerRow key={key} posKey={key} players={rowPlayers} posColors={posColors} />
-              );
-            })}
+            <PitchFormation rows={rows} posColors={posColors} />
             <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/40 to-transparent" />
           </div>
 
@@ -105,50 +100,6 @@ function EmptyState({ icon, message }) {
     <div className="rounded-lg border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
       <span className="text-3xl text-on-surface-variant/40">{icon}</span>
       <p className="text-on-surface-variant/80 text-xs font-bold text-center px-4">{message}</p>
-    </div>
-  );
-}
-
-function PitchSvg() {
-  return (
-    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 315 560" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      <rect x="10" y="10" width="295" height="540" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" rx="3" />
-      <line x1="10" y1="280" x2="305" y2="280" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
-      <circle cx="157" cy="280" r="50" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-      <circle cx="157" cy="280" r="3" fill="rgba(255,255,255,0.25)" />
-      <rect x="25" y="10" width="265" height="150" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-      <rect x="85" y="10" width="145" height="40" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-      <rect x="25" y="400" width="265" height="150" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-      <rect x="85" y="510" width="145" height="40" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-    </svg>
-  );
-}
-
-function PlayerRow({ posKey, players, posColors }) {
-  const rowPositions = { GR: "8%", DEF: "31%", MED: "56%", ATA: "81%" };
-  return (
-    <div className="absolute w-full flex justify-evenly items-start px-3" style={{ top: rowPositions[posKey] || "50%" }}>
-      {players.map((player) => (
-        <div key={player.id ?? player.name} className="flex flex-col items-center gap-0.5" style={{ maxWidth: "90px" }}>
-          <div
-            className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-[10px] border border-white/30 shadow-lg ${posColors[player.position] || "bg-zinc-500 text-white"}`}
-          >
-            {POSITION_SHORT_LABELS[player.position] || "?"}
-          </div>
-          <div
-            className="bg-black/70 px-1.5 py-0.5 rounded text-[9px] font-black text-white text-center truncate"
-            style={{ maxWidth: "85px" }}
-          >
-            {player.name}
-            {!!player.is_star && (player.position === "MED" || player.position === "ATA") && (
-              <span className="ml-0.5 text-amber-400">*</span>
-            )}
-          </div>
-          <span className="text-[9px] font-black text-amber-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-            {player.skill ?? "-"}
-          </span>
-        </div>
-      ))}
     </div>
   );
 }

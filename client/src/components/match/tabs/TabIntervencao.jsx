@@ -1,6 +1,5 @@
-import {} from "react";
 import { POSITION_SHORT_LABELS, MAX_MATCH_SUBS } from "../../../constants/index.js";
-import { getPosStyle, POS_STYLES } from "../matchConstants.js";
+import { getPosStyle } from "../matchConstants.js";
 import {
   TacticsButtons,
   ConfirmedSubsStrip,

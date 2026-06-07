@@ -1,11 +1,11 @@
-
 import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
-import { PlayerLink } from "../../shared/PlayerLink.jsx";
+import { getPosStyle } from "../matchConstants.js";
 import {
   PitchFormation,
   PossessionBar,
   EventCard,
   RefWeatherBar,
+  BenchPlayers,
 } from "../shared/index.js";
 
 const POS_ORDER = { GR: 0, DEF: 1, MED: 2, ATA: 3 };
@@ -106,17 +106,7 @@ export function TabJogo({ fixture, liveMinute, teams, mode, myTeamId }) {
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden border-l border-outline/40">
           <div className="flex gap-3 flex-1 min-h-0">
             <div className="flex-1 relative rounded-lg overflow-hidden border border-outline/40 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
-              <PitchSvg />
-              {hasLineups && starters.length > 0 && (
-                <>
-                  {Object.entries(rows).map(([posKey, rowPlayers]) => {
-                    if (!rowPlayers || rowPlayers.length === 0) return null;
-                    return (
-                      <PlayerRow key={posKey} players={rowPlayers} posColors={posColors} />
-                    );
-                  })}
-                </>
-              )}
+              <PitchFormation rows={rows} posColors={posColors} />
               <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/40 to-transparent" />
             </div>
 
@@ -237,59 +227,4 @@ function BenchPlayerCard({ player }) {
       </div>
     </div>
   );
-}
-
-function PitchSvg() {
-  return (
-    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 315 560" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      <rect x="10" y="10" width="295" height="540" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" rx="3" />
-      <line x1="10" y1="280" x2="305" y2="280" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
-      <circle cx="157" cy="280" r="50" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-      <circle cx="157" cy="280" r="3" fill="rgba(255,255,255,0.25)" />
-      <rect x="25" y="10" width="265" height="150" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-      <rect x="85" y="10" width="145" height="40" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-      <rect x="25" y="400" width="265" height="150" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-      <rect x="85" y="510" width="145" height="40" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
-    </svg>
-  );
-}
-
-function PlayerRow({ players, posColors }) {
-  return (
-    <div className="absolute w-full flex justify-evenly items-start px-3">
-      {players.map((player) => (
-        <div key={player.id ?? player.name} className="flex flex-col items-center gap-0.5" style={{ maxWidth: "90px" }}>
-          <div
-            className={`w-9 h-9 rounded-full flex items-center justify-center font-black text-[10px] border border-white/30 shadow-lg ${posColors[player.position] || "bg-zinc-500 text-white"}`}
-          >
-            {POSITION_SHORT_LABELS[player.position] || "?"}
-          </div>
-          <div
-            className="bg-black/70 px-1.5 py-0.5 rounded text-[9px] font-black text-white text-center truncate"
-            style={{ maxWidth: "85px" }}
-          >
-            {player.name}
-            {!!player.is_star && (player.position === "MED" || player.position === "ATA") && (
-              <span className="ml-0.5 text-amber-400">*</span>
-            )}
-          </div>
-          <span className="text-[9px] font-black text-amber-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-            {player.skill ?? "-"}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ── Position style helper (inline copy — exported from MatchTabs.jsx) ── */
-const POS_STYLES = {
-  GR: { bar: "from-amber-300 via-amber-400 to-amber-600", glow: "hover:border-amber-400/70 hover:shadow-amber-400/30", bgGrad: "from-amber-500/8", badgeBg: "bg-amber-400/20", badgeText: "text-amber-400", badgeBorder: "border-amber-400/30", accent: "#eab308" },
-  DEF: { bar: "from-blue-300 via-blue-400 to-blue-600", glow: "hover:border-blue-400/70 hover:shadow-blue-400/30", bgGrad: "from-blue-500/8", badgeBg: "bg-blue-400/20", badgeText: "text-blue-400", badgeBorder: "border-blue-400/30", accent: "#3b82f6" },
-  MED: { bar: "from-emerald-300 via-emerald-400 to-emerald-600", glow: "hover:border-emerald-400/70 hover:shadow-emerald-400/30", bgGrad: "from-emerald-500/8", badgeBg: "bg-emerald-400/20", badgeText: "text-emerald-400", badgeBorder: "border-emerald-400/30", accent: "#10b981" },
-  ATA: { bar: "from-rose-300 via-rose-400 to-rose-600", glow: "hover:border-rose-400/70 hover:shadow-rose-400/30", bgGrad: "from-rose-500/8", badgeBg: "bg-rose-400/20", badgeText: "text-rose-400", badgeBorder: "border-rose-400/30", accent: "#f43f5e" },
-};
-
-function getPosStyle(pos) {
-  return POS_STYLES[pos] || POS_STYLES.MED;
 }
