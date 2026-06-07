@@ -7,7 +7,6 @@ import {
   RefWeatherBar,
   TacticsButtons,
   ConfirmedSubsStrip,
-  PlayerCard,
   PitchFormation,
 } from "../shared/index.js";
 
