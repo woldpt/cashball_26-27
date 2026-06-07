@@ -1,3 +1,8 @@
+/**
+ * AuctionsPage — Página de leilões ativos e recentes.
+ * Aplica o design system da STYLE.md: tokens semânticos, cards com header,
+ * grid responsivo e estados vazios padronizados.
+ */
 import { formatCurrency } from "../utils/formatters.js";
 import { AuctionCard } from "../components/auctions/AuctionCard.jsx";
 import { getTeamColor } from "../utils/teamHelpers.js";
@@ -11,75 +16,106 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
   );
 
   return (
-    <div className="bg-surface-container rounded-lg shadow-sm overflow-hidden p-4 md:p-6 max-w-6xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <span className="material-symbols-outlined text-3xl text-primary">gavel</span>
-        <div>
-          <h1 className="font-headline font-black text-2xl text-white leading-tight">Leilões</h1>
-          <p className="text-xs text-zinc-500">
-            {live.length === 0
-              ? "Sem leilões a decorrer"
-              : `${live.length} leilão${live.length !== 1 ? "s" : ""} a decorrer`}
-          </p>
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      {/* ── Summary widgets ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 md:p-4 shrink-0">
+        <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-primary">
+          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+            Leilões a decorrer
+          </span>
+          <span className="text-3xl font-black font-headline tracking-tighter text-on-surface tabular-nums">
+            {live.length}
+          </span>
         </div>
-        <div className="ml-auto text-right">
-          <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-wide">Caixa disponível</p>
-          <p className="font-mono font-black text-lg text-white tabular-nums">
+        <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-tertiary">
+          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+            Leilões recentes
+          </span>
+          <span className="text-3xl font-black font-headline tracking-tighter text-on-surface tabular-nums">
+            {closed.length}
+          </span>
+        </div>
+        <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-emerald-500">
+          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+            Caixa disponível
+          </span>
+          <span className="text-3xl font-black font-headline tracking-tighter text-on-surface tabular-nums">
             {formatCurrency(teamInfo?.budget || 0)}
-          </p>
+          </span>
         </div>
       </div>
 
+      {/* ── Active auctions panel ────────────────────────────────────── */}
       {live.length > 0 && (
-        <section className="mb-8">
-          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-3">
-            Em curso
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {live.map((auction) => (
-              <AuctionCard
-                key={auction.playerId}
-                auction={auction}
-                me={me}
-                teams={teams}
-                teamInfo={teamInfo}
-                matchweekCount={matchweekCount}
-                socket={socket}
-                teamColorById={teamColorById}
-              />
-            ))}
+        <div className="flex-1 overflow-y-auto p-3 md:p-4 pt-0">
+          <div className="bg-surface-container rounded-md overflow-hidden">
+            <div className="px-5 py-4 flex items-center justify-between bg-surface-container-high/50">
+              <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">
+                Em curso
+              </h2>
+              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                {live.length} leilão{live.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="p-3 md:p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {live.map((auction) => (
+                  <AuctionCard
+                    key={auction.playerId}
+                    auction={auction}
+                    me={me}
+                    teams={teams}
+                    teamInfo={teamInfo}
+                    matchweekCount={matchweekCount}
+                    socket={socket}
+                    teamColorById={teamColorById}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
-        </section>
+        </div>
       )}
 
+      {/* ── Closed auctions panel ────────────────────────────────────── */}
       {closed.length > 0 && (
-        <section>
-          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-3">
-            Recentes
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {closed.map((auction) => (
-              <AuctionCard
-                key={auction.playerId}
-                auction={auction}
-                me={me}
-                teams={teams}
-                teamInfo={teamInfo}
-                matchweekCount={matchweekCount}
-                socket={socket}
-                teamColorById={teamColorById}
-              />
-            ))}
+        <div className="flex-1 overflow-y-auto p-3 md:p-4 pt-0">
+          <div className="bg-surface-container rounded-md overflow-hidden">
+            <div className="px-5 py-4 flex items-center justify-between bg-surface-container-high/50">
+              <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">
+                Recentes
+              </h2>
+              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                {closed.length} leilão{closed.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="p-3 md:p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {closed.map((auction) => (
+                  <AuctionCard
+                    key={auction.playerId}
+                    auction={auction}
+                    me={me}
+                    teams={teams}
+                    teamInfo={teamInfo}
+                    matchweekCount={matchweekCount}
+                    socket={socket}
+                    teamColorById={teamColorById}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
-        </section>
+        </div>
       )}
 
+      {/* ── Empty state ──────────────────────────────────────────────── */}
       {live.length === 0 && closed.length === 0 && (
-        <div className="rounded-xl flex flex-col items-center justify-center py-20 gap-4 bg-surface/30 border border-outline-variant/20">
-          <span className="material-symbols-outlined text-5xl text-zinc-600">gavel</span>
-          <div className="text-center">
-            <p className="font-headline font-black text-zinc-500 text-lg">Sem leilões ativos</p>
-            <p className="text-zinc-600 text-sm mt-1">
+        <div className="flex-1 flex items-center justify-center p-3 md:p-4">
+          <div className="flex flex-col items-center gap-2 rounded-lg border border-outline-variant/25 bg-surface-container py-12">
+            <span className="text-3xl text-on-surface-variant/40">⚖️</span>
+            <p className="text-on-surface-variant/60 text-xs font-bold">Sem leilões a mostrar</p>
+            <p className="text-on-surface-variant/40 text-[10px] text-center max-w-[260px]">
               Quando um clube colocar um jogador em leilão, aparece aqui.
             </p>
           </div>
