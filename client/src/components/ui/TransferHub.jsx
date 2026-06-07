@@ -1,8 +1,14 @@
+/**
+ * TransferHub — Mercado de transferências (compra de jogadores).
+ * Aplica o design system da STYLE.md: tokens semânticos, cards com header,
+ * grid responsivo e estados vazios padronizados.
+ */
 import { useMemo, useState } from "react";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
 import { AggBadge } from "../shared/AggBadge.jsx";
 
 import { hexToRgba, posRingClass } from "../../utils/colorHelpers.js";
+
 /** @param {number} value */
 function fmt(value) {
   return new Intl.NumberFormat("pt-PT", {
@@ -77,7 +83,7 @@ function MarketCard({
   const tintEdge = hexToRgba(teamColor, 0.24);
 
   return (
-    <div className="[perspective:1200px] hover:scale-[1.04] transition-transform duration-300">
+    <div className="[perspective:1200px] hover:scale-[1.02] transition-transform duration-300">
       <div
         className="block w-full text-left"
         onClick={onFlip}
@@ -93,7 +99,7 @@ function MarketCard({
         aria-expanded={isFlipped}
       >
         <div
-          className={`relative h-[360px] w-full transition-transform duration-300 hover:scale-[1.04] [transform-style:preserve-3d] ${isFlipped ? "[transform:rotateY(180deg)]" : ""}`}
+          className={`relative h-[360px] w-full transition-transform duration-300 [transform-style:preserve-3d] ${isFlipped ? "[transform:rotateY(180deg)]" : ""}`}
         >
           <article
             className={`absolute inset-0 rounded-xl border-2 bg-surface-container-low/95 p-4 shadow-xl ring-2 ${posRingClass(player.position)} [backface-visibility:hidden] overflow-hidden`}
@@ -143,7 +149,7 @@ function MarketCard({
                       {isSuspended ? "🟥 Susp." : "🩹 Les."}
                     </span>
                   )}
-                  <span className="text-[10px] text-zinc-400 font-black uppercase tracking-wider">
+                  <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-wider">
                     {player.position}
                   </span>
                 </div>
@@ -152,7 +158,7 @@ function MarketCard({
               <div className="mt-3 flex items-center justify-between gap-3">
                 <PlayerAvatar seed={player.id} position={player.position} teamColor={teamColor} nationality={player.nationality} />
                 <div className="text-right min-w-0">
-                  <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-black">
+                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-black">
                     Qualidade
                   </p>
                   <p className="font-headline font-black text-4xl leading-none text-primary tabular-nums">
@@ -169,18 +175,18 @@ function MarketCard({
                       <span className="ml-1 text-amber-400">★</span>
                     )}
                 </p>
-                <p className="text-[11px] text-zinc-400 truncate mt-0.5">
+                <p className="text-[11px] text-on-surface-variant truncate mt-0.5">
                   {posLabel(player.position)}
                   {player.nationality ? ` · ${player.nationality}` : ""}
                 </p>
-                <p className="text-[11px] text-zinc-500 truncate">
+                <p className="text-[11px] text-on-surface-variant/60 truncate">
                   {player.team_name || "Sem clube"}
                 </p>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <div className="rounded-md border border-outline-variant/20 bg-surface-container p-2">
-                  <p className="text-[9px] uppercase tracking-widest text-zinc-500 font-black">
+                  <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-black">
                     Agr
                   </p>
                   <div className="mt-1">
@@ -188,7 +194,7 @@ function MarketCard({
                   </div>
                 </div>
                 <div className="rounded-md border border-outline-variant/20 bg-surface-container p-2">
-                  <p className="text-[9px] uppercase tracking-widest text-zinc-500 font-black">
+                  <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-black">
                     Golos
                   </p>
                   <p className="font-headline font-black text-lg leading-none text-emerald-400">
@@ -199,16 +205,16 @@ function MarketCard({
 
               <div className="mt-auto pt-4 flex items-end justify-between gap-2">
                 <div>
-                  <p className="text-[9px] uppercase tracking-widest text-zinc-500 font-black">
+                  <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-black">
                     Preço
                   </p>
                   <p
-                    className={`font-mono font-black text-sm tabular-nums ${affordable ? "text-zinc-100" : "text-rose-400"}`}
+                    className={`font-mono font-black text-sm tabular-nums ${affordable ? "text-on-surface" : "text-rose-400"}`}
                   >
                     {fmt(price)}
                   </p>
                 </div>
-                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
+                <span className="text-[10px] text-on-surface-variant/50 font-bold uppercase tracking-wider">
                   tocar para virar
                 </span>
               </div>
@@ -243,7 +249,7 @@ function MarketCard({
                   <p className="font-headline font-black uppercase text-sm text-on-surface truncate">
                     {player.name}
                   </p>
-                  <p className="text-[10px] text-zinc-400 truncate">
+                  <p className="text-[10px] text-on-surface-variant/60 truncate">
                     {player.team_name || "Sem clube"}
                   </p>
                 </div>
@@ -256,47 +262,47 @@ function MarketCard({
 
               <div className="mt-3 grid grid-cols-3 gap-1.5 text-xs">
                 <div className="rounded-md bg-surface-container p-1.5 border border-outline-variant/20 text-center">
-                  <p className="text-[8px] uppercase tracking-widest text-zinc-500 font-black">Qual.</p>
+                  <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Qual.</p>
                   <p className="font-headline font-black text-base text-primary">{player.skill ?? 0}</p>
                 </div>
                 <div className="rounded-md bg-surface-container p-1.5 border border-outline-variant/20 text-center">
-                  <p className="text-[8px] uppercase tracking-widest text-zinc-500 font-black">Forma</p>
-                  <p className={`font-black text-sm ${(player.form ?? 100) >= 115 ? "text-emerald-400" : (player.form ?? 100) <= 85 ? "text-rose-400" : "text-zinc-200"}`}>{player.form ?? 100}%</p>
+                  <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Forma</p>
+                  <p className={`font-black text-sm ${(player.form ?? 100) >= 115 ? "text-emerald-400" : (player.form ?? 100) <= 85 ? "text-rose-400" : "text-on-surface"}`}>{player.form ?? 100}%</p>
                 </div>
                 <div className="rounded-md bg-surface-container p-1.5 border border-outline-variant/20 text-center">
-                  <p className="text-[8px] uppercase tracking-widest text-zinc-500 font-black">Resist.</p>
+                  <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Resist.</p>
                   <p className="font-black text-sm text-cyan-400">{player.resistance ?? 0}</p>
                 </div>
                 <div className="rounded-md bg-surface-container p-1.5 border border-outline-variant/20 text-center">
-                  <p className="text-[8px] uppercase tracking-widest text-zinc-500 font-black">Jogos</p>
-                  <p className="font-black text-sm text-zinc-200">{player.games_played ?? 0}</p>
+                  <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Jogos</p>
+                  <p className="font-black text-sm text-on-surface">{player.games_played ?? 0}</p>
                 </div>
                 <div className="rounded-md bg-surface-container p-1.5 border border-outline-variant/20 text-center">
-                  <p className="text-[8px] uppercase tracking-widest text-zinc-500 font-black">Golos</p>
+                  <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Golos</p>
                   <p className="font-black text-sm text-emerald-400">{player.goals ?? 0}</p>
                 </div>
                 <div className="rounded-md bg-surface-container p-1.5 border border-outline-variant/20 text-center">
-                  <p className="text-[8px] uppercase tracking-widest text-zinc-500 font-black">Verm.</p>
-                  <p className={`font-black text-sm ${(player.red_cards ?? 0) > 0 ? "text-rose-400" : "text-zinc-300"}`}>{player.red_cards ?? 0}</p>
+                  <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Verm.</p>
+                  <p className={`font-black text-sm ${(player.red_cards ?? 0) > 0 ? "text-rose-400" : "text-on-surface"}`}>{player.red_cards ?? 0}</p>
                 </div>
               </div>
               <div className="mt-2 flex items-center justify-between gap-2">
-                <span className="text-[9px] text-zinc-500 font-black uppercase tracking-widest">Agressividade</span>
+                <span className="text-[9px] text-on-surface-variant font-black uppercase tracking-widest">Agressividade</span>
                 <AggBadge value={player.aggressiveness} />
               </div>
 
               <div className="mt-4 rounded-md bg-surface-container p-3 border border-outline-variant/20">
                 <div className="flex justify-between text-[11px]">
-                  <span className="text-zinc-500">Preço</span>
+                  <span className="text-on-surface-variant">Preço</span>
                   <span
-                    className={`font-mono font-black tabular-nums ${affordable ? "text-zinc-100" : "text-rose-400"}`}
+                    className={`font-mono font-black tabular-nums ${affordable ? "text-on-surface" : "text-rose-400"}`}
                   >
                     {fmt(price)}
                   </span>
                 </div>
                 <div className="flex justify-between text-[11px] mt-1">
-                  <span className="text-zinc-500">Ordenado</span>
-                  <span className="font-mono font-black text-zinc-300 tabular-nums">
+                  <span className="text-on-surface-variant">Ordenado</span>
+                  <span className="font-mono font-black text-on-surface tabular-nums">
                     {fmt(player.contract_requested_wage || player.wage || 0)}
                   </span>
                 </div>
@@ -306,7 +312,7 @@ function MarketCard({
                 {isListed ? (
                   isAuction ? (
                     isMyAuction ? (
-                      <div className="py-2 text-center text-zinc-500 text-[10px] font-black uppercase tracking-widest border border-outline-variant/20 rounded-md">
+                      <div className="py-2 text-center text-on-surface-variant/60 text-[10px] font-black uppercase tracking-widest border border-outline-variant/20 rounded-md">
                         O teu leilão
                       </div>
                     ) : (
@@ -343,7 +349,7 @@ function MarketCard({
                     </button>
                   )
                 ) : (
-                  <div className="py-2 text-center text-zinc-500 text-[10px] font-black uppercase tracking-widest border border-outline-variant/20 rounded-md">
+                  <div className="py-2 text-center text-on-surface-variant/60 text-[10px] font-black uppercase tracking-widest border border-outline-variant/20 rounded-md">
                     Sem transferência
                   </div>
                 )}
@@ -427,35 +433,26 @@ export function TransferHub({
   }, [players, search]);
 
   return (
-    <section className="bg-surface-container rounded-lg shadow-sm overflow-hidden border border-outline-variant/20">
-      <div className="border-b border-outline-variant/20 bg-surface/40 p-4 md:p-5">
-        <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
-          <div>
-            <h2 className="font-headline text-2xl font-black tracking-tighter uppercase text-on-surface leading-none">
-              Mercado de Transferências
-            </h2>
-            <p className="text-[10px] text-zinc-500 font-bold mt-0.5">
-              {visible.length} jogadores disponíveis
-            </p>
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest">
-              Caixa
-            </p>
-            <p className="text-sm font-black text-primary font-headline">
-              {fmt(budget)}
-            </p>
-          </div>
-        </div>
+    <section className="bg-surface-container rounded-md overflow-hidden">
+      <div className="px-5 py-4 flex items-center justify-between bg-surface-container-high/50">
+        <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">
+          Mercado de Transferências
+        </h2>
+        <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+          {visible.length} jogador{visible.length !== 1 ? "es" : ""}
+        </span>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+      <div className="p-3 md:p-4">
+        {/* ── Search + filters ─────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
           <div className="relative md:col-span-2">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-sm select-none pointer-events-none">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 text-sm select-none pointer-events-none">
               search
             </span>
             <input
               type="text"
-              className="w-full bg-surface border border-outline-variant/30 rounded-sm pl-9 pr-4 py-2.5 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-zinc-600 text-on-surface"
+              className="w-full bg-surface border border-outline-variant/30 rounded-sm pl-9 pr-4 py-2.5 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-on-surface-variant/30 text-on-surface"
               placeholder="Pesquisar jogador, clube ou nacionalidade…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -483,15 +480,18 @@ export function TransferHub({
             <option value="price-desc">Preço ↓</option>
           </select>
         </div>
-      </div>
 
-      <div className="p-4 md:p-5">
+        {/* ── Player grid ──────────────────────────────────────────────── */}
         {visible.length === 0 ? (
-          <div className="py-20 text-center text-zinc-600 text-sm font-bold uppercase tracking-widest">
-            Nenhum jogador disponível
+          <div className="flex flex-col items-center gap-2 rounded-lg border border-outline-variant/25 bg-surface-container py-12">
+            <span className="text-3xl text-on-surface-variant/40">🔄</span>
+            <p className="text-on-surface-variant/60 text-xs font-bold">Sem jogadores disponíveis</p>
+            <p className="text-on-surface-variant/40 text-[10px] text-center max-w-[260px]">
+              Os jogadores colocados em transferência aparecem aqui.
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {visible.map((player) => (
               <MarketCard
                 key={player.id}
