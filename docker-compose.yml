@@ -6,6 +6,8 @@ services:
       - ./server/.env
     volumes:
       - ./server/db:/app/db
+    networks:
+      - cftunnel
     healthcheck:
       test:
         [
@@ -30,7 +32,7 @@ services:
         condition: service_healthy
     networks:
       cftunnel:
-        ipv4_address: 172.100.0.57
+        ipv4_address: 172.200.0.57
 
 networks:
   cftunnel:

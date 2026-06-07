@@ -57,7 +57,7 @@ export function TabLineup({ fixture, liveMinute, teams }) {
       ].map(({ info, lineup }, idx) => {
         const accent = info?.color_primary || "#6366f1";
         return (
-          <div key={idx} className="flex-1 flex flex-col min-w-0 overflow-y-auto rounded-lg border border-outline/40 bg-surface-container shadow-sm">
+          <div key={idx} className="flex-1 flex flex-col min-w-0 overflow-y-auto rounded-md border border-outline/40 bg-surface-container shadow-sm">
             <div className="px-5 py-4 border-b border-outline/40 shrink-0 flex items-center gap-2 bg-surface-container-high/50 rounded-t-lg">
               <span className="w-2 h-2 rounded-full shrink-0" style={{ background: accent, boxShadow: `0 0 8px ${accent}60` }} />
               <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase truncate" style={{ color: accent }}>

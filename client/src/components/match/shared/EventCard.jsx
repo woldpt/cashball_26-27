@@ -29,7 +29,7 @@ export function EventCard({ event, accent, showTeamBadge, showIcon = true }) {
 
   return (
     <div
-      className="relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-surface-container/50 transition-all duration-200 hover:-translate-y-px hover:shadow-lg shadow-sm shadow-black/30"
+      className="relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-surface-container/50 transition-all duration-200 hover:-translate-y-px hover:shadow-lg shadow-sm shadow-black/30"
     >
       {accent && (
         <div className="shrink-0 w-1" style={{ background: `linear-gradient(to bottom, ${accent}99, ${accent})` }} />

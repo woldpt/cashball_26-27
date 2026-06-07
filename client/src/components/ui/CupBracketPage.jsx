@@ -80,8 +80,8 @@ function BracketTeamRow({ team, isWinner, played, score }) {
         {team ? team.name?.[0] || "?" : ""}
       </div>
       <span
-        className="flex-1 truncate text-[10px] font-bold leading-none"
-        style={{ color: team?.color_primary || "#9ca3af" }}
+        className="flex-1 truncate text-[10px] font-bold leading-none text-on-surface-variant"
+        style={{ color: team?.color_primary }}
       >
         {team?.name || (played ? "?" : "···")}
       </span>
@@ -120,7 +120,7 @@ function BracketCard({ match, myTeamId }) {
 
   return (
     <div
-      className={`rounded-lg border overflow-hidden relative transition-all ${
+      className={`rounded-md border overflow-hidden relative transition-all ${
         isMyMatch
           ? "border-amber-500/40 bg-amber-950/25 shadow shadow-amber-500/10"
           : "border-outline-variant/25 bg-surface-container-high"
@@ -381,10 +381,10 @@ function MatchRow({ match, myTeamId, players }) {
 
   return (
     <div
-      className={`relative flex items-center gap-3 px-4 py-3.5 rounded-lg border transition-all ${
+      className={`relative flex items-center gap-3 px-4 py-3 rounded-md border border-outline-variant/25 bg-surface-container transition-all duration-200 hover:-translate-y-px hover:shadow-lg shadow-sm shadow-black/30 ${
         isMyMatch
           ? "border-amber-500/45 bg-amber-950/20"
-          : "border-outline-variant/20 bg-surface-container"
+          : ""
       }`}
     >
       {isMyMatch && (
@@ -395,27 +395,27 @@ function MatchRow({ match, myTeamId, players }) {
 
       {/* Home */}
       <div
-        className={`flex-1 flex items-center justify-end gap-2 min-w-0 ${played && !homeWins ? "opacity-35" : ""}`}
+        className={`flex-1 flex items-center justify-end gap-2 min-w-0 ${played && !homeWins ? "opacity-40" : ""}`}
       >
         <div className="text-right min-w-0">
           <span
-            className="block font-black text-xs truncate"
-            style={{ color: homeTeam?.color_primary || "#e5e2e1" }}
+            className="block font-black text-xs truncate text-on-surface"
+            style={{ color: homeTeam?.color_primary }}
           >
             {homeTeam?.name || "?"}
           </span>
           {homeCoach && (
-            <span className="block text-[9px] text-amber-400/70 font-bold truncate">
+            <span className="block text-[9px] text-on-surface-variant/60 font-bold truncate">
               {homeCoach}
             </span>
           )}
         </div>
         <div
           className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 border ${
-            played && homeWins ? "border-[2px] shadow-sm" : "border-white/10"
+            played && homeWins ? "border-[2px] shadow-sm" : "border-outline-variant/20"
           }`}
           style={{
-            background: homeTeam?.color_primary || "#27272a",
+            background: homeTeam?.color_primary,
             color: homeTeam?.color_secondary || "#fff",
             borderColor:
               played && homeWins ? homeTeam?.color_primary : undefined,
@@ -448,7 +448,7 @@ function MatchRow({ match, myTeamId, players }) {
             )}
           </>
         ) : (
-          <span className="text-xs font-black text-on-surface-variant/30 animate-pulse">
+          <span className="text-xs font-black text-on-surface-variant/25 animate-pulse">
             vs
           </span>
         )}
@@ -456,14 +456,14 @@ function MatchRow({ match, myTeamId, players }) {
 
       {/* Away */}
       <div
-        className={`flex-1 flex items-center gap-2 min-w-0 ${played && !awayWins ? "opacity-35" : ""}`}
+        className={`flex-1 flex items-center gap-2 min-w-0 ${played && !awayWins ? "opacity-40" : ""}`}
       >
         <div
           className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 border ${
-            played && awayWins ? "border-[2px] shadow-sm" : "border-white/10"
+            played && awayWins ? "border-[2px] shadow-sm" : "border-outline-variant/20"
           }`}
           style={{
-            background: awayTeam?.color_primary || "#27272a",
+            background: awayTeam?.color_primary,
             color: awayTeam?.color_secondary || "#fff",
             borderColor:
               played && awayWins ? awayTeam?.color_primary : undefined,
@@ -477,13 +477,13 @@ function MatchRow({ match, myTeamId, players }) {
         </div>
         <div className="min-w-0">
           <span
-            className="block font-black text-xs truncate"
-            style={{ color: awayTeam?.color_primary || "#e5e2e1" }}
+            className="block font-black text-xs truncate text-on-surface"
+            style={{ color: awayTeam?.color_primary }}
           >
             {awayTeam?.name || "?"}
           </span>
           {awayCoach && (
-            <span className="block text-[9px] text-amber-400/70 font-bold truncate">
+            <span className="block text-[9px] text-on-surface-variant/60 font-bold truncate">
               {awayCoach}
             </span>
           )}
@@ -540,7 +540,7 @@ export function CupBracketPage({ bracketData, me, players, onRequestRefresh }) {
   // ── No data ────────────────────────────────────────────────────────────────
   if (!rounds.length || !rounds.some((r) => r.matches?.length > 0)) {
     return (
-      <div className="bg-surface-container rounded-xl border border-outline-variant/20 p-10 text-center">
+      <div className="bg-surface-container rounded-md border border-outline-variant/20 p-10 text-center">
         <span
           className="material-symbols-outlined text-amber-400/20 block mb-3"
           style={{ fontSize: 48 }}
@@ -567,7 +567,7 @@ export function CupBracketPage({ bracketData, me, players, onRequestRefresh }) {
   return (
     <div className="space-y-5">
       {/* ── HEADER ──────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-xl bg-surface-container border border-amber-900/25">
+      <div className="relative overflow-hidden rounded-md bg-surface-container border border-amber-900/25">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-amber-500/7 blur-3xl" />
           <div className="absolute -bottom-6 -left-6 w-40 h-40 rounded-full bg-amber-500/5 blur-2xl" />
@@ -675,7 +675,7 @@ export function CupBracketPage({ bracketData, me, players, onRequestRefresh }) {
       {/* ── DESKTOP BRACKET TREE (rounds 3-5 only) ──────────────────────────── */}
       {currentRound >= 3 && (
         <div className="hidden lg:block">
-          <div className="bg-surface-container rounded-xl border border-outline-variant/15 px-6 pt-3 pb-6">
+          <div className="bg-surface-container rounded-md border border-outline-variant/15 px-6 pt-3 pb-6">
             <BracketTree rounds={rounds} myTeamId={me?.teamId} />
           </div>
         </div>
@@ -684,12 +684,12 @@ export function CupBracketPage({ bracketData, me, players, onRequestRefresh }) {
       {/* ── MATCH LIST ──────────────────────────────────────────────────────── */}
       <div className="space-y-2">
         <div className="flex items-center gap-3 px-1 mb-1">
-          <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/45">
+          <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/40">
             {ROUND_NAMES[currentRound]}
           </span>
           <div className="flex-1 h-px bg-outline-variant/15" />
           {currentRoundData && (
-            <span className="text-[9px] text-on-surface-variant/35 font-bold shrink-0">
+            <span className="text-[9px] text-on-surface-variant/30 font-bold shrink-0">
               {currentRoundData.matches.filter((m) => m.played).length} /{" "}
               {currentRoundData.matches.length} jogados
             </span>
@@ -706,8 +706,8 @@ export function CupBracketPage({ bracketData, me, players, onRequestRefresh }) {
         ))}
 
         {!currentRoundData?.matches?.length && (
-          <div className="bg-surface-container rounded-lg px-4 py-8 text-center">
-            <p className="text-on-surface-variant/40 text-sm font-bold">
+          <div className="bg-surface-container rounded-md py-8 text-center">
+            <p className="text-on-surface-variant/50 text-sm font-bold">
               Sem jogos nesta ronda.
             </p>
           </div>
