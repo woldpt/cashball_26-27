@@ -44,6 +44,8 @@ export function MatchPage({
 		subsMade,
 		swapSource,
 		swapTarget,
+		setSwapSource,
+		setSwapTarget,
 		handleSelectOut,
 		handleSelectIn,
 		handleConfirmSub,
@@ -55,11 +57,11 @@ export function MatchPage({
 	// setSwapSource/setSwapTarget (the server resolves the swap).
 	// During normal halftime the UI handlers manage the swap lifecycle.
 	const effectiveSelectOut = matchAction
-		? (player) => handleSelectOut(player)
-		: handleSelectOut;
+		? (player) => setSwapSource(player)
+		: (playerId) => handleSelectOut(playerId);
 	const effectiveSelectIn = matchAction
-		? (player) => handleSelectIn(player)
-		: handleSelectIn;
+		? (player) => setSwapTarget(player)
+		: (playerId) => handleSelectIn(playerId);
 
 	// ── Multi-league fixture data ────────────────────────────────────────────
 	const { myDivision, divisionFixtures } = useMemo(() => {
@@ -230,7 +232,6 @@ export function MatchPage({
 						liveMinute={liveMinute}
 						teams={teams}
 						mode={mode}
-						myTeamId={myTeamId}
 					/>
 				)}
 

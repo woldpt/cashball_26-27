@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { POSITION_SHORT_LABELS, MAX_MATCH_SUBS } from "../../../constants/index.js";
+import { MAX_MATCH_SUBS } from "../../../constants/index.js";
 import {
   getPosStyle,
   PITCH_POS_COLORS,
-  MATCH_EVENT_TYPES,
   sortPlayersByPos,
   buildPositionRows,
   filterMatchEvents,
@@ -252,7 +251,6 @@ export function IntervencaoView({
               forceOutPlayer={forceOutPlayer}
               subbedOut={subbedOut}
               subsMade={subsMade}
-              isActionMode={mode === "action"}
             />
           ) : (
             <AdversarioPanel
