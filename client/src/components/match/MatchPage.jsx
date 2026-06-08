@@ -235,8 +235,8 @@ export function MatchPage({
 					/>
 				)}
 
-				{/* Sidebar: other games (non-intervention modes) */}
-				{!isIntervencao && (
+				{/* Sidebar: other games (live mode only, not detail) */}
+				{!isIntervencao && mode !== "detail" && (
 					<div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high/70 px-3 py-2">
 						<h4 className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-1.5">
 							{isCupMatch ? `${cupMatchRoundName || "Taça"} · Outros jogos` : `${DIVISION_NAMES[myDivision] || "Liga"} · J${currentJornada || "—"}`}
