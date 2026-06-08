@@ -7,7 +7,7 @@ services:
     volumes:
       - ./server/db:/app/db
     networks:
-      - cftunnel
+      - cashball-net
     healthcheck:
       test:
         [
@@ -28,9 +28,12 @@ services:
       backend:
         condition: service_healthy
     networks:
+      cashball-net:
       cftunnel:
-        ipv4_address: 172.200.0.57
+        ipv4_address: 172.100.0.57
 
 networks:
   cftunnel:
     external: true
+  cashball-net:
+    driver: bridge
