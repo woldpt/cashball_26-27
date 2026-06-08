@@ -87,6 +87,7 @@ export function GameProvider({
 	const [adminPanelOpen, setAdminPanelOpen] = useState(false);
 	const [adminUsers, setAdminUsers] = useState([]);
 	const [isCupMatch, setIsCupMatch] = useState(false);
+	const [calendarIndex, setCalendarIndex] = useState(0);
 	const [cupPreMatch, setCupPreMatch] = useState(false);
 	const [cupMatchRoundName, setCupMatchRoundName] = useState("");
 	const [cupExtraTimeBadge, setCupExtraTimeBadge] = useState(false);
@@ -442,7 +443,7 @@ export function GameProvider({
 		if (activeTab !== "tactic" || !me?.teamId) return;
 		startTransition(() => setNextMatchSummaryLoading(true));
 		socket.emit("requestNextMatchSummary", { teamId: me.teamId });
-	}, [activeTab, me?.teamId, matchweekCount]);
+	}, [activeTab, me?.teamId, matchweekCount, calendarIndex]);
 
 	useEffect(() => {
 		if (!matchweekCount) return;
@@ -547,6 +548,7 @@ export function GameProvider({
 			setSwapSource,
 			setSwapTarget,
 			setIsCupMatch,
+			setCalendarIndex,
 			setCupPreMatch,
 			setCupMatchRoundName,
 			setCupExtraTimeBadge,
@@ -1048,6 +1050,7 @@ export function GameProvider({
 		adminUsers,
 		setAdminUsers,
 		isCupMatch,
+		calendarIndex,
 		cupPreMatch,
 		cupMatchRoundName,
 		cupExtraTimeBadge,

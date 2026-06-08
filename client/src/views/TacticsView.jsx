@@ -739,7 +739,7 @@ export function TacticsView() {
           </button>
         </div>
       ) : (
-        <div className="flex flex-col lg:flex-row gap-3 items-start">
+        <div className="flex flex-col lg:flex-row gap-3 items-stretch md:items-start">
           {/* COL 1 — FORMAÇÃO + MENTALIDADE */}
           <div className={`lg:w-57.5 shrink-0 flex flex-col gap-2 ${!isLineupComplete && !myReady ? "animate-heartbeat-border rounded-2xl" : ""}`}>
             {/* Proximo jogo — mobile: moral + mentality side by side */}
