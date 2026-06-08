@@ -236,7 +236,7 @@ export const ENABLE_ROW_BG = true;
 
 // Text color classes for each position (soft palette)
 export const POSITION_TEXT_CLASS = {
-	GR: "text-yellow-500",
+	GR: "text-amber-500",
 	DEF: "text-blue-500",
 	MED: "text-emerald-500",
 	ATA: "text-rose-500",
