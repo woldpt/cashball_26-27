@@ -218,7 +218,8 @@ export function UserSettingsPage({
 		),
 	);
 
-	<div className="space-y-4">
+	return (
+		<div className="space-y-4">
 		{/* Back */}
 		<button
 			onClick={onBack}
@@ -651,4 +652,5 @@ export function UserSettingsPage({
 			</div>
 		</div>
 	</div>
+);
 }
