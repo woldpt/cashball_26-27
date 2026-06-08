@@ -2132,6 +2132,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           injuryCountdown={injuryCountdown}
           onResolveAction={handleResolveMatchAction}
           matchResults={matchResults}
+          isCupExtraTime={isCupExtraTime}
         />
       )}
 

@@ -33,6 +33,7 @@ export function MatchPage({
 	onResolveAction,
 	sidebarCollapsed,
 	matchResults,
+	isCupExtraTime,
 }) {
 	// ── Tactic state & handlers from context ─────────────────────────────────
 	const {
@@ -207,6 +208,8 @@ export function MatchPage({
 						liveMinute={liveMinute}
 						teams={teams}
 						myTeamId={myTeamId}
+						isCupMatch={isCupMatch}
+						isCupExtraTime={isCupExtraTime}
 						matchAction={matchAction}
 						injuryCountdown={injuryCountdown}
 						tactic={tactic}
@@ -273,9 +276,11 @@ export function MatchPage({
 							? "⏳ A AGUARDAR OUTRO TREINADOR..."
 							: cupPreMatch
 								? "▶ INICIAR JOGO — TAÇA"
-								: isCupMatch
-									? "▶ 2ª PARTE — TAÇA"
-									: "▶ INICIAR 2ª PARTE"}
+								: isCupMatch && (liveMinute ?? 0) >= 90 && !isCupExtraTime
+									? "▶ INICIAR PROLONGAMENTO"
+									: isCupMatch
+										? "▶ 2ª PARTE — TAÇA"
+										: "▶ INICIAR 2ª PARTE"}
 				</button>
 			)}
 			{mode === "action" && matchAction?.type === "user_substitution" && (
