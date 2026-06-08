@@ -485,56 +485,62 @@ function EmptyState({ icon, message }) {
 function BottomBar({ effectiveOutId, selectedInId, sourcePlayer, targetPlayer, isHalftime, isPenalty, canConfirmSwap, onResetSub, onConfirmSub, onResolveAction }) {
   return (
     <div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high px-5 py-3">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="flex-1 flex items-center gap-2 min-w-0">
+      {/* Mobile: stacked rows. Desktop: single row with inline labels. */}
+      <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 md:flex-1">
           <span className="text-[10px] text-on-surface-variant/60 shrink-0 font-black uppercase tracking-wide">Sai</span>
-          <span className="bg-rose-950/80 text-rose-200 border border-rose-800/50 text-[11px] font-black px-3 py-1.5 rounded-md truncate max-w-[35%]">
+          <span className="flex-1 md:flex-none bg-rose-950/80 text-rose-200 border border-rose-800/50 text-[11px] font-black px-3 py-1.5 rounded-md truncate md:max-w-[35%]">
             {effectiveOutId ? sourcePlayer?.name || "?" : "—"}
           </span>
           {!isPenalty && (
-            <>
-              <span className="text-on-surface-variant/80 shrink-0 font-black text-base">→</span>
-              <span className="text-[10px] text-on-surface-variant/60 shrink-0 font-black uppercase tracking-wide">Entra</span>
-              <span className="bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-[11px] font-black px-3 py-1.5 rounded-md truncate max-w-[35%]">
-                {selectedInId ? targetPlayer?.name || "?" : "—"}
-              </span>
-            </>
+            <span className="text-on-surface-variant/60 shrink-0 font-black text-base hidden md:inline">→</span>
           )}
         </div>
 
-        {isHalftime ? (
-          <>
+        {!isPenalty && (
+          <div className="flex items-center gap-2 min-w-0 md:flex-1">
+            <span className="text-[10px] text-on-surface-variant/60 shrink-0 font-black uppercase tracking-wide">Entra</span>
+            <span className="flex-1 md:flex-none bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-[11px] font-black px-3 py-1.5 rounded-md truncate md:max-w-[35%]">
+              {selectedInId ? targetPlayer?.name || "?" : "—"}
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 shrink-0">
+          {isHalftime ? (
+            <>
+              <button
+                onClick={onResetSub}
+                className="shrink-0 w-8 h-8 rounded-md bg-surface-container-high/80 hover:bg-surface-container-high text-on-surface-variant/80 hover:text-on-surface text-sm flex items-center justify-center transition-colors border border-outline/40"
+              >
+                ✕
+              </button>
+              <button
+                onClick={onConfirmSub}
+                disabled={!canConfirmSwap}
+                className={`flex-1 md:flex-none shrink-0 px-5 py-2 rounded-md text-[11px] font-black uppercase tracking-wide transition-all border ${
+                  canConfirmSwap
+                    ? "bg-emerald-600/90 border-emerald-400/40 text-white shadow-[0_0_16px_rgba(16,185,129,0.25)] hover:bg-emerald-500/90"
+                    : "bg-surface-container-high/80 border-outline/40 text-on-surface-variant/60 cursor-not-allowed"
+                }`}
+              >
+                Substituir
+              </button>
+            </>
+          ) : (
             <button
-              onClick={onResetSub}
-              className="shrink-0 w-8 h-8 rounded-md bg-surface-container-high/80 hover:bg-surface-container-high text-on-surface-variant/80 hover:text-on-surface text-sm flex items-center justify-center transition-colors border border-outline/40"
-            >
-              ✕
-            </button>
-            <button
-              onClick={onConfirmSub}
-              disabled={!canConfirmSwap}
-              className={`shrink-0 px-5 py-2 rounded-md text-[11px] font-black uppercase tracking-wide transition-all border ${
-                canConfirmSwap
-                  ? "bg-emerald-600/90 border-emerald-400/40 text-white shadow-[0_0_16px_rgba(16,185,129,0.25)] hover:bg-emerald-500/90"
-                  : "bg-surface-container-high/80 border-outline/40 text-on-surface-variant/60 cursor-not-allowed"
-              }`}
+              disabled={isPenalty ? !effectiveOutId : !canConfirmSwap}
+              onClick={() =>
+                isPenalty
+                  ? onResolveAction(effectiveOutId || null)
+                  : onResolveAction({ playerOut: effectiveOutId, playerIn: selectedInId })
+              }
+              className="flex-1 md:flex-none shrink-0 px-5 py-2 rounded-md text-[11px] font-black uppercase tracking-wide bg-primary/90 hover:brightness-110 text-on-primary disabled:opacity-50 disabled:cursor-not-allowed border border-primary/40 shadow-[0_0_16px_rgba(99,102,241,0.2)]"
             >
               Substituir
             </button>
-          </>
-        ) : (
-          <button
-            disabled={isPenalty ? !effectiveOutId : !canConfirmSwap}
-            onClick={() =>
-              isPenalty
-                ? onResolveAction(effectiveOutId || null)
-                : onResolveAction({ playerOut: effectiveOutId, playerIn: selectedInId })
-            }
-            className="shrink-0 px-5 py-2 rounded-md text-[11px] font-black uppercase tracking-wide bg-primary/90 hover:brightness-110 text-on-primary disabled:opacity-50 disabled:cursor-not-allowed border border-primary/40 shadow-[0_0_16px_rgba(99,102,241,0.2)]"
-          >
-            Substituir
-          </button>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

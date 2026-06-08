@@ -52,29 +52,10 @@ export function MatchView({ fixture, liveMinute, teams, mode }) {
         </div>
       )}
 
-      {/* ── 2-column layout ────────────────────────────────────────── */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* ═══ LEFT: Narrative ═══ */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-3">
-          <RefWeatherBar
-            attendance={fixture.attendance}
-            referee={ref}
-            weatherEvent={weatherEvent}
-            teamStadium={hInfo?.stadium_name}
-          />
-
-          <PossessionBar
-            homePossession={fixture.homePossession}
-            awayPossession={fixture.awayPossession}
-            homeColor={hInfo?.color_primary}
-            awayColor={aInfo?.color_primary}
-          />
-
-          <EventList events={visibleEvts} hInfo={hInfo} aInfo={aInfo} />
-        </div>
-
-        {/* ═══ RIGHT: Pitch + Bench ═══ */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      {/* ── Main layout: mobile = vertical stack, desktop = 2 columns ─────── */}
+      <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-y-auto md:overflow-hidden">
+        {/* ═══ LEFT (desktop) / TOP (mobile): Pitch + Bench ═══ */}
+        <div className="flex flex-col min-h-0 md:flex-1 md:overflow-hidden">
           {/* Team toggle badges */}
           <div className="shrink-0 flex items-center gap-2 px-3 py-2.5 bg-surface-container-high/50">
             <TeamBadge
@@ -93,31 +74,53 @@ export function MatchView({ fixture, liveMinute, teams, mode }) {
             />
           </div>
 
-          {/* Pitch */}
-          <div className="flex gap-3 flex-1 min-h-0">
-            <div className="flex-1 relative rounded-md overflow-hidden border border-outline-variant/25 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
-              {hasLineups ? (
-                <>
-                  <PitchFormation rows={rows} posColors={posColors} withOverlay={false} />
-                  <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/40 to-transparent" />
-                </>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <p className="text-on-surface-variant/60 text-xs font-bold">Sem escalação disponível</p>
-                </div>
-              )}
+          {/* Pitch + Bench: side by side on desktop, stacked on mobile */}
+          <div className="flex flex-col md:flex-row gap-3 p-3 md:flex-1 md:min-h-0">
+            {/* Pitch */}
+            <div className="md:flex-1 md:min-h-0 flex justify-center">
+              <div className="relative w-full md:max-w-none rounded-md overflow-hidden border border-outline-variant/25 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
+                {hasLineups ? (
+                  <>
+                    <PitchFormation rows={rows} posColors={posColors} withOverlay={false} />
+                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/40 to-transparent" />
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <p className="text-on-surface-variant/60 text-xs font-bold">Sem escalação disponível</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Bench */}
             {hasLineups && (
-              <div className="flex-1 flex flex-col">
-                <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2 px-1">
+              <div className="md:flex-1 md:min-h-0 md:max-w-[220px] md:overflow-y-auto flex flex-col">
+                <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2 px-1 shrink-0">
                   Suplentes
                 </p>
                 <BenchPlayers players={bench} posStyleFn={getPosStyle} />
               </div>
             )}
           </div>
+        </div>
+
+        {/* ═══ RIGHT (desktop) / BOTTOM (mobile): Narrative ═══ */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-3 border-t md:border-t-0 md:border-l border-outline-variant/20 min-h-0">
+          <RefWeatherBar
+            attendance={fixture.attendance}
+            referee={ref}
+            weatherEvent={weatherEvent}
+            teamStadium={hInfo?.stadium_name}
+          />
+
+          <PossessionBar
+            homePossession={fixture.homePossession}
+            awayPossession={fixture.awayPossession}
+            homeColor={hInfo?.color_primary}
+            awayColor={aInfo?.color_primary}
+          />
+
+          <EventList events={visibleEvts} hInfo={hInfo} aInfo={aInfo} />
         </div>
       </div>
     </div>
