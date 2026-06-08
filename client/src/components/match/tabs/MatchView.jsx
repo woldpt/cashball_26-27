@@ -77,8 +77,8 @@ export function MatchView({ fixture, liveMinute, teams, mode }) {
           {/* Pitch + Bench: side by side on desktop, stacked on mobile */}
           <div className="flex flex-col md:flex-row gap-3 p-3 md:flex-1 md:min-h-0">
             {/* Pitch */}
-            <div className="md:flex-1 md:min-h-0 flex justify-center">
-              <div className="relative w-full md:max-w-none rounded-md overflow-hidden border border-outline-variant/25 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
+            <div className="md:flex-1 md:min-h-0 md:flex md:items-center md:justify-center">
+              <div className="relative w-full max-w-[300px] md:max-w-none mx-auto md:mx-0 md:w-auto md:h-full rounded-md overflow-hidden border border-outline-variant/25 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16" }}>
                 {hasLineups ? (
                   <>
                     <PitchFormation rows={rows} posColors={posColors} withOverlay={false} />

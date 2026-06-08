@@ -433,13 +433,13 @@ function AdversarioPanel({ hasLineups, oppFormation, oppStyleLabel, oppRows, opp
 
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 min-h-0 overflow-hidden px-3 pb-3 pt-2">
         {/* Opponent pitch */}
-        <div className="flex items-center justify-center overflow-hidden">
+        <div className="md:flex-1 md:min-h-0 md:flex md:items-center md:justify-center overflow-hidden">
           {!hasLineups ? (
             <EmptyState icon="📋" message="Escalações indisponíveis durante a simulação" />
           ) : oppRows.ATA?.length === 0 && oppRows.MED?.length === 0 ? (
             <EmptyState icon="🤷" message="Sem dados da escalação do adversário" />
           ) : (
-            <div className="relative rounded-md overflow-hidden border border-outline-variant/25 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "380px" }}>
+            <div className="relative w-full max-w-[280px] md:max-w-none md:w-auto md:h-full mx-auto rounded-md overflow-hidden border border-outline-variant/25 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16" }}>
               <PitchFormation rows={oppRows} posColors={PITCH_POS_COLORS} />
             </div>
           )}

@@ -613,7 +613,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
           {/* Flyup sub-menu panel */}
           {mobileSubMenu && (
-            <div className="lg:hidden fixed bottom-24 left-0 right-0 z-39 px-3">
+            <div className="lg:hidden fixed bottom-16 left-0 right-0 z-39 px-3">
               <div className="bg-surface-container-high border border-outline-variant/30 rounded-xl shadow-2xl overflow-hidden">
                 {mobileSubMenu === "gestao" && (
                   <div className="flex">
@@ -731,7 +731,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           )}
 
           {/* Main nav bar — 5 buttons, JOGAR no centro */}
-          <nav className="lg:hidden fixed bottom-8 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex items-stretch">
+          <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex items-stretch pb-[env(safe-area-inset-bottom)]">
             {/* Clube */}
             {(() => {
               const isActive = activeTab === "club";
@@ -943,7 +943,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
       {panelMode === null && (
         <main
-          className={`pt-14 pb-24 lg:pb-12 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-14" : "lg:ml-64"}`}
+          className={`pt-14 pb-16 lg:pb-12 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-14" : "lg:ml-64"}`}
         >
           <div className="p-4 lg:p-6">
             <div className="grid grid-cols-1 gap-6">
