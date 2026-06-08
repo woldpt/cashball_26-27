@@ -316,9 +316,9 @@ function SubsPanel({
         </div>
       )}
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col md:grid md:grid-cols-2 min-h-0 overflow-hidden">
         {/* On-pitch column */}
-        <div className="flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-1 md:flex-none flex flex-col min-h-0 overflow-hidden">
           <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50">
             <h3 className="text-sm font-black font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
@@ -366,7 +366,7 @@ function SubsPanel({
 
         {/* Bench column */}
         {!isPenalty ? (
-          <div className="flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 md:flex-none flex flex-col min-h-0 overflow-hidden">
             <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50">
               <h3 className="text-sm font-black font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
@@ -403,7 +403,7 @@ function SubsPanel({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 md:flex-none flex flex-col min-h-0 overflow-hidden">
             <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50">
               <h3 className="text-sm font-black font-headline tracking-tight text-tertiary uppercase">Escolha</h3>
             </div>
@@ -431,7 +431,7 @@ function AdversarioPanel({ hasLineups, oppFormation, oppStyleLabel, oppRows, opp
         </div>
       )}
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 min-h-0 overflow-hidden px-3 pb-3 pt-2">
+      <div className="flex-1 flex flex-col md:grid md:grid-cols-2 min-h-0 overflow-hidden px-3 pb-3 pt-2">
         {/* Opponent pitch */}
         <div className="md:flex-1 md:min-h-0 md:flex md:items-center md:justify-center overflow-hidden">
           {!hasLineups ? (
@@ -446,7 +446,7 @@ function AdversarioPanel({ hasLineups, oppFormation, oppStyleLabel, oppRows, opp
         </div>
 
         {/* Opponent bench */}
-        <div className="flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-1 md:flex-none flex flex-col min-h-0 overflow-hidden">
           <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50">
             <h3 className="text-sm font-black font-headline tracking-tight text-tertiary uppercase">Banco</h3>
           </div>
