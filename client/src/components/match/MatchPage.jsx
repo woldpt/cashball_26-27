@@ -1,19 +1,15 @@
-import { useState, useMemo } from "react";
-import {
-	TabJogo,
-	TabLineup,
-	TabAdversario,
-	TabIntervencao,
-	MatchIntervencaoView,
-} from "./MatchTabs.jsx";
+import { useMemo } from "react";
+import { MatchView, IntervencaoView } from "./MatchTabs.jsx";
 import { useTactics } from "../../contexts/TacticsContext.jsx";
 import { generateLeagueFixtures } from "../../utils/fixtures.js";
 import { DIVISION_NAMES } from "../../constants/index.js";
 
 /**
  * Painel flutuante de jogo (ao vivo, intervalo, acção, detalhe).
- * As props de táctica já NÃO são passadas pelo App.jsx —
- * são consumidas directamente via useTactics().
+ *
+ * Routing simplificado:
+ *   - modo normal (live/detail) → MatchView (2 colunas: narrativa + pitch)
+ *   - modo halftime/action     → IntervencaoView (subs + cronologia + adversário)
  */
 export function MatchPage({
 	mode,
@@ -48,8 +44,6 @@ export function MatchPage({
 		subsMade,
 		swapSource,
 		swapTarget,
-		setSwapSource,
-		setSwapTarget,
 		handleSelectOut,
 		handleSelectIn,
 		handleConfirmSub,
@@ -61,14 +55,14 @@ export function MatchPage({
 	// setSwapSource/setSwapTarget (the server resolves the swap).
 	// During normal halftime the UI handlers manage the swap lifecycle.
 	const effectiveSelectOut = matchAction
-		? (player) => setSwapSource(player)
+		? (player) => handleSelectOut(player)
 		: handleSelectOut;
 	const effectiveSelectIn = matchAction
-		? (player) => setSwapTarget(player)
+		? (player) => handleSelectIn(player)
 		: handleSelectIn;
 
 	// ── Multi-league fixture data ────────────────────────────────────────────
-	const { myDivision, teamsByDivision, divisionFixtures } = useMemo(() => {
+	const { myDivision, divisionFixtures } = useMemo(() => {
 		const myTeam = teams.find((t) => t.id === myTeamId);
 		const myDiv = myTeam?.division;
 
@@ -79,28 +73,23 @@ export function MatchPage({
 		});
 		Object.values(byDiv).forEach((arr) => arr.sort((a, b) => a.id - b.id));
 
-		// Usar matchResults como fonte de verdade quando existem
-			// (contêm os fixtures reais do servidor em vez de gerados no cliente)
-			const wk = currentJornada || 1;
-			const fixtures = {};
-			Object.entries(byDiv).forEach(([div, divTeams]) => {
-				const divTeamIds = new Set(divTeams.map((t) => t.id));
-				// Se há matchResults, extrair os fixtures reais desta divisão
-				const realFixtures = matchResults?.results?.filter(
-					(r) => divTeamIds.has(r.homeTeamId),
-				);
-				if (realFixtures && realFixtures.length > 0) {
-					fixtures[div] = realFixtures;
-				} else {
-					// Fallback: gerar fixtures no cliente (aproximação)
-					const seedIds = divTeams.map((t) => t.id);
-					fixtures[div] = generateLeagueFixtures(seedIds, wk);
-				}
-			});
+		const wk = currentJornada || 1;
+		const fixtures = {};
+		Object.entries(byDiv).forEach(([div, divTeams]) => {
+			const divTeamIds = new Set(divTeams.map((t) => t.id));
+			const realFixtures = matchResults?.results?.filter(
+				(r) => divTeamIds.has(r.homeTeamId),
+			);
+			if (realFixtures && realFixtures.length > 0) {
+				fixtures[div] = realFixtures;
+			} else {
+				const seedIds = divTeams.map((t) => t.id);
+				fixtures[div] = generateLeagueFixtures(seedIds, wk);
+			}
+		});
 
 		return {
 			myDivision: myDiv,
-			teamsByDivision: byDiv,
 			divisionFixtures: fixtures,
 		};
 	}, [teams, myTeamId, currentJornada, matchResults]);
@@ -115,7 +104,7 @@ export function MatchPage({
 		);
 	}, [isCupMatch, matchResults, myTeamId]);
 
-	// ── Fixture Card (compacto) ──────────────────────────────────────────────
+	// ── Fixture Card (compact) ──────────────────────────────────────────────
 	const FixtureCard = ({ homeTeamId, awayTeamId, fixtureData }) => {
 		const home = teams.find((t) => t.id === homeTeamId);
 		const away = teams.find((t) => t.id === awayTeamId);
@@ -124,89 +113,22 @@ export function MatchPage({
 		const hasResult = fixtureData?.finalHomeGoals != null;
 		return (
 			<div className="flex items-center gap-1.5 px-3 py-2 rounded-md border border-outline-variant/25 bg-surface-container-low/60 hover:bg-surface-container/50 transition-colors">
-				<span
-					className="w-2 h-2 rounded-full shrink-0 shadow-sm"
-					style={{ background: hAccent, boxShadow: `0 0 6px ${hAccent}60` }}
-				/>
-				<span className="flex-1 text-[10px] font-bold text-on-surface-variant truncate">
-					{home?.name || "—"}
-				</span>
+				<span className="w-2 h-2 rounded-full shrink-0 shadow-sm" style={{ background: hAccent, boxShadow: `0 0 6px ${hAccent}60` }} />
+				<span className="flex-1 text-[10px] font-bold text-on-surface-variant truncate">{home?.name || "—"}</span>
 				{hasResult ? (
 					<div className="flex items-center gap-1 shrink-0">
-						<span className="text-[11px] font-black tabular-nums text-on-surface min-w-[1.2em] text-right">
-							{fixtureData.finalHomeGoals}
-						</span>
+						<span className="text-[11px] font-black tabular-nums text-on-surface min-w-[1.2em] text-right">{fixtureData.finalHomeGoals}</span>
 						<span className="text-[8px] font-black text-on-surface-variant/60">—</span>
-						<span className="text-[11px] font-black tabular-nums text-on-surface min-w-[1.2em] text-left">
-							{fixtureData.finalAwayGoals}
-						</span>
+						<span className="text-[11px] font-black tabular-nums text-on-surface min-w-[1.2em] text-left">{fixtureData.finalAwayGoals}</span>
 					</div>
 				) : (
 					<span className="text-[8px] font-black text-on-surface-variant/60 shrink-0 mx-1">vs</span>
 				)}
-				<span className="flex-1 text-[10px] font-bold text-on-surface-variant truncate text-right">
-					{away?.name || "—"}
-				</span>
-				<span
-					className="w-2 h-2 rounded-full shrink-0 shadow-sm"
-					style={{ background: aAccent, boxShadow: `0 0 6px ${aAccent}60` }}
-				/>
+				<span className="flex-1 text-[10px] font-bold text-on-surface-variant truncate text-right">{away?.name || "—"}</span>
+				<span className="w-2 h-2 rounded-full shrink-0 shadow-sm" style={{ background: aAccent, boxShadow: `0 0 6px ${aAccent}60` }} />
 			</div>
 		);
 	};
-
-	// ── Tab routing ───────────────────────────────────────────────────────────
-	const getDefaultTab = (m) =>
-		m === "action" || m === "halftime" ? "intervencao" : "jogo";
-	const [activeTab, setActiveTab] = useState(() => getDefaultTab(mode));
-	const [prevMode, setPrevMode] = useState(mode);
-	if (mode !== prevMode) {
-		setPrevMode(mode);
-		setActiveTab(getDefaultTab(mode));
-	}
-
-	const sidebarLeft = sidebarCollapsed ? "lg:left-14" : "lg:left-64";
-	const tabs =
-		mode === "detail"
-			? [
-					{ key: "jogo", label: "Jogo" },
-					{ key: "locais", label: "Locais" },
-					{ key: "visitantes", label: "Visitantes" },
-				]
-			: mode === "action"
-				? [
-						{ key: "jogo", label: "Jogo" },
-						{ key: "intervencao", label: "Intervenção" },
-					]
-				: mode === "halftime"
-					? [
-							{ key: "jogo", label: "Jogo" },
-							{ key: "adversario", label: "Adversário" },
-							{ key: "intervencao", label: "Intervenção" },
-						]
-					: [
-							{ key: "jogo", label: "Jogo" },
-							{ key: "lineup", label: "Lineup" },
-							{ key: "adversario", label: "Adversário" },
-							{ key: "intervencao", label: "Intervenção" },
-						];
-
-	const isCupContext = isCupMatch || cupPreMatch;
-	const canContinue = !isCupContext || myTeamInCup;
-
-	if (!fixture && mode !== "action" && mode !== "halftime") {
-		return (
-			<div
-				className={`fixed inset-y-0 left-0 right-0 ${sidebarLeft} z-120 flex flex-col bg-[#0d0d14]`}
-			>
-				<div className="flex-1 flex items-center justify-center">
-					<p className="text-sm font-bold text-on-surface-variant">
-						Sem dados do jogo disponíveis
-					</p>
-				</div>
-			</div>
-		);
-	}
 
 	// ── Helpers ──────────────────────────────────────────────────────────
 	const getTeamName = (teamId) => teams.find((t) => t.id === teamId)?.name || "—";
@@ -214,42 +136,42 @@ export function MatchPage({
 	const awayTeam = teams.find((t) => t.id === fixture?.awayTeamId);
 	const hColor = homeTeam?.color_primary || "#6366f1";
 	const aColor = awayTeam?.color_primary || "#f43f5e";
+	const isCupContext = isCupMatch || cupPreMatch;
+	const canContinue = !isCupContext || myTeamInCup;
+	const sidebarLeft = sidebarCollapsed ? "lg:left-14" : "lg:left-64";
+
+	// ── Mode-based rendering ──────────────────────────────────────────────
+	const isIntervencao = mode === "halftime" || mode === "action";
+
+	if (!fixture && !isIntervencao) {
+		return (
+			<div className={`fixed inset-y-0 left-0 right-0 ${sidebarLeft} z-120 flex flex-col bg-[#0d0d14]`}>
+				<div className="flex-1 flex items-center justify-center">
+					<p className="text-sm font-bold text-on-surface-variant">Sem dados do jogo disponíveis</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
-		<div
-			className={`fixed inset-y-0 left-0 right-0 ${sidebarLeft} z-120 flex flex-col bg-[linear-gradient(180deg,#0d0d14_0%,#11111b_100%)]`}
-		>
+		<div className={`fixed inset-y-0 left-0 right-0 ${sidebarLeft} z-120 flex flex-col bg-[linear-gradient(180deg,#0d0d14_0%,#11111b_100%)]`}>
 			{/* Header */}
 			<div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-outline/40 bg-surface-container-high backdrop-blur-sm">
-				<button
-					onClick={onClose}
-					className="w-8 h-8 rounded-xl bg-surface-container-high/80 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-all border border-outline/40 hover:border-outline"
-				>
-					←
-				</button>
+				<button onClick={onClose} className="w-8 h-8 rounded-xl bg-surface-container-high/80 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-all border border-outline/40 hover:border-outline">←</button>
 				<div className="flex-1 flex items-center gap-2 min-w-0">
-					<span
-						className="w-1.5 h-8 rounded-full shrink-0 shadow-sm"
-						style={{ background: hColor, boxShadow: `0 0 8px ${hColor}60` }}
-					/>
+					<span className="w-1.5 h-8 rounded-full shrink-0 shadow-sm" style={{ background: hColor, boxShadow: `0 0 8px ${hColor}60` }} />
 					<span className="text-sm font-black text-on-surface truncate">
-						{getTeamName(fixture?.homeTeamId)}
-						{" vs "}
-						{getTeamName(fixture?.awayTeamId)}
+						{getTeamName(fixture?.homeTeamId)} vs {getTeamName(fixture?.awayTeamId)}
 					</span>
-					{/* Away team indicator */}
-					<span
-						className="w-1.5 h-8 rounded-full shrink-0 shadow-sm"
-						style={{ background: aColor, boxShadow: `0 0 8px ${aColor}60` }}
-					/>
+					<span className="w-1.5 h-8 rounded-full shrink-0 shadow-sm" style={{ background: aColor, boxShadow: `0 0 8px ${aColor}60` }} />
 					{isCupMatch && (
-						<span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">
+						<span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30">
 							{cupMatchRoundName || "Taça"}
 						</span>
 					)}
 				</div>
 				{isPlayingMatch && (
-					<span className="text-[10px] font-black text-primary animate-pulse bg-primary/10 px-2 py-1 rounded-lg border border-primary/30">
+					<span className="text-[10px] font-black text-primary animate-pulse bg-primary/10 px-2 py-1 rounded-md border border-primary/30">
 						{liveMinute}'
 					</span>
 				)}
@@ -258,17 +180,8 @@ export function MatchPage({
 			{/* ── Halftime score banner ──────────────────────────────────── */}
 			{mode === "halftime" && fixture && (
 				<div className="shrink-0 flex items-stretch border-b border-outline/40 bg-surface-container-high backdrop-blur-sm">
-					<div
-						className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5"
-						style={{
-							backgroundColor: hColor + "20",
-							color: hColor,
-						}}
-					>
-						<span
-							className="w-2 h-2 rounded-full shrink-0"
-							style={{ background: hColor, boxShadow: `0 0 6px ${hColor}60` }}
-						/>
+					<div className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5" style={{ backgroundColor: hColor + "20", color: hColor }}>
+						<span className="w-2 h-2 rounded-full shrink-0" style={{ background: hColor, boxShadow: `0 0 6px ${hColor}60` }} />
 						{homeTeam?.name || "Casa"}
 					</div>
 					<div className="flex items-center justify-center gap-3 px-6 bg-surface-container-low text-on-surface font-black text-xl tracking-widest">
@@ -276,227 +189,64 @@ export function MatchPage({
 						<span className="text-on-surface-variant/60 text-base">—</span>
 						<span className="tabular-nums">{fixture.finalAwayGoals ?? 0}</span>
 					</div>
-					<div
-						className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5"
-						style={{
-							backgroundColor: aColor + "20",
-							color: aColor,
-						}}
-					>
+					<div className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5" style={{ backgroundColor: aColor + "20", color: aColor }}>
 						{awayTeam?.name || "Fora"}
-						<span
-							className="w-2 h-2 rounded-full shrink-0"
-							style={{ background: aColor, boxShadow: `0 0 6px ${aColor}60` }}
-						/>
+						<span className="w-2 h-2 rounded-full shrink-0" style={{ background: aColor, boxShadow: `0 0 6px ${aColor}60` }} />
 					</div>
 				</div>
 			)}
 
-			{/* Tab navigation (hidden for halftime/action — MatchIntervencaoView replaces it) */}
-			{mode !== "halftime" && mode !== "action" && (
-				<div className="shrink-0 flex w-full border-b border-outline/40 bg-surface-container-low/60 backdrop-blur-sm">
-					{tabs.map((tab) => {
-						const disabled =
-							tab.key === "intervencao" &&
-							mode !== "action" &&
-							mode !== "halftime";
-						return (
-							<button
-								key={tab.key}
-								onClick={() => !disabled && setActiveTab(tab.key)}
-								disabled={disabled}
-								className={`flex-1 min-w-0 py-2.5 px-1 text-[10px] font-black uppercase tracking-widest transition-all border-b-2 whitespace-nowrap ${
-									activeTab === tab.key
-										? "text-on-surface border-primary bg-primary/5"
-										: disabled
-											? "text-on-surface-variant/40 cursor-not-allowed border-transparent"
-											: "text-on-surface-variant hover:text-on-surface border-transparent hover:bg-surface-container/30"
-								}`}
-							>
-								{tab.label}
-							</button>
-						);
-					})}
-				</div>
-			)}
-
-			{/* Content */}
+			{/* ── Content ────────────────────────────────────────────────── */}
 			<div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-				{mode === "halftime" || mode === "action" ? (
-					<>
-						<MatchIntervencaoView
-							mode={mode}
-							fixture={fixture}
-							liveMinute={liveMinute}
-							teams={teams}
-							myTeamId={myTeamId}
-							matchAction={matchAction}
-							injuryCountdown={injuryCountdown}
-							tactic={tactic}
-							onUpdateTactic={updateTactic}
-							annotatedSquad={annotatedSquad}
-							subbedOut={subbedOut}
-							confirmedSubs={confirmedSubs}
-							subsMade={subsMade}
-							swapSource={swapSource}
-							swapTarget={swapTarget}
-							onSelectOut={effectiveSelectOut}
-							onSelectIn={effectiveSelectIn}
-							onConfirmSub={handleConfirmSub}
-							onResetSub={handleResetSub}
-							onResetAllSubs={handleResetAllSubs}
-							redCardedHalftimeIds={redCardedHalftimeIds}
-							injuredHalftimeIds={injuredHalftimeIds}
-							onResolveAction={onResolveAction}
-						/>
-
-						{/* Cup: show other fixtures in a compact strip */}
-						{isCupMatch && cupOtherFixtures.length > 0 && (
-							<div className="shrink-0 border-t border-outline/40 bg-surface-container-high backdrop-blur-sm px-4 py-2">
-								<h4 className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-2">
-									{cupMatchRoundName || "Taça"} · Outros jogos
-								</h4>
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-									{cupOtherFixtures.map((r, i) => (
-										<FixtureCard
-											key={i}
-											homeTeamId={r.homeTeamId}
-											awayTeamId={r.awayTeamId}
-											fixtureData={r}
-										/>
-									))}
-								</div>
-							</div>
-						)}
-					</>
+				{isIntervencao ? (
+					<IntervencaoView
+						mode={mode}
+						fixture={fixture}
+						liveMinute={liveMinute}
+						teams={teams}
+						myTeamId={myTeamId}
+						matchAction={matchAction}
+						injuryCountdown={injuryCountdown}
+						tactic={tactic}
+						onUpdateTactic={updateTactic}
+						annotatedSquad={annotatedSquad}
+						subbedOut={subbedOut}
+						confirmedSubs={confirmedSubs}
+						subsMade={subsMade}
+						swapSource={swapSource}
+						swapTarget={swapTarget}
+						onSelectOut={effectiveSelectOut}
+						onSelectIn={effectiveSelectIn}
+						onConfirmSub={handleConfirmSub}
+						onResetSub={handleResetSub}
+						onResetAllSubs={handleResetAllSubs}
+						redCardedHalftimeIds={redCardedHalftimeIds}
+						injuredHalftimeIds={injuredHalftimeIds}
+						onResolveAction={onResolveAction}
+					/>
 				) : (
-					/* ── Grid layout: detail / overview mode ───────────────── */
-					<div className={mode === "detail" ? "flex-1 grid grid-cols-1 gap-3 p-3 min-h-0 overflow-auto" : "flex-1 grid grid-cols-1 lg:grid-cols-5 gap-3 p-3 min-h-0 overflow-auto"}>
-						{/* ── COL 1-3: Our game ── */}
-						<div className={mode === "detail" ? "flex flex-col min-h-0 overflow-hidden rounded-md bg-surface-container-low/50 border border-outline-variant/25" : "lg:col-span-3 flex flex-col min-h-0 overflow-hidden rounded-md bg-surface-container-low/50 border border-outline-variant/25"}>
-							{activeTab === "jogo" && (
-								<TabJogo
-									fixture={fixture}
-									liveMinute={liveMinute}
-									teams={teams}
-									mode={mode}
-									myTeamId={myTeamId}
-								/>
-							)}
-							{activeTab === "locais" && (
-								<TabAdversario
-									fixture={fixture}
-									myTeamId={fixture?.homeTeamId}
-									teams={teams}
-								/>
-							)}
-							{activeTab === "visitantes" && (
-								<TabAdversario
-									fixture={fixture}
-									myTeamId={fixture?.awayTeamId}
-									teams={teams}
-								/>
-							)}
-							{activeTab === "lineup" && (
-								<TabLineup
-									fixture={fixture}
-									liveMinute={liveMinute}
-									teams={teams}
-								/>
-							)}
-							{activeTab === "adversario" && mode !== "detail" && (
-								<TabAdversario
-									fixture={fixture}
-									myTeamId={myTeamId}
-									teams={teams}
-								/>
-							)}
-						</div>
+					<MatchView
+						fixture={fixture}
+						liveMinute={liveMinute}
+						teams={teams}
+						mode={mode}
+						myTeamId={myTeamId}
+					/>
+				)}
 
-						{mode !== "detail" && (<>
-						{/* ── COL 4-5 right sidebar: Other games ── */}
-						<div className="lg:col-span-2 flex flex-col min-h-0 overflow-hidden rounded-md bg-surface-container-low/50 border border-outline-variant/25">
-							<div className="shrink-0 px-2.5 py-1.5 border-b border-outline bg-surface-container-high/70">
-								<h3 className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
-									{isCupMatch
-										? `${cupMatchRoundName || "Taça"} · Outros jogos`
-										: `${DIVISION_NAMES[myDivision] || "Liga"} · J${currentJornada || "—"}`}
-								</h3>
-							</div>
-							<div className="flex-1 overflow-y-auto space-y-1 p-2">
-								{isCupMatch ? (
-									cupOtherFixtures.length === 0 ? (
-										<p className="text-on-surface-variant/60 text-[10px] font-bold text-center py-4">
-											Sem outros jogos
-										</p>
-									) : (
-										cupOtherFixtures.map((r, i) => (
-											<FixtureCard
-												key={i}
-												homeTeamId={r.homeTeamId}
-												awayTeamId={r.awayTeamId}
-												fixtureData={r}
-											/>
-										))
-									)
-								) : (divisionFixtures[myDivision] || []).length === 0 ? (
-									<p className="text-on-surface-variant/60 text-[10px] font-bold text-center py-4">
-										Sem jogos disponíveis
-									</p>
-								) : (
-									(divisionFixtures[myDivision] || [])
-										.filter(
-											(f) =>
-												f.homeTeamId !== myTeamId && f.awayTeamId !== myTeamId,
-										)
-										.map((f, i) => (
-											<FixtureCard
-												key={i}
-												homeTeamId={f.homeTeamId}
-												awayTeamId={f.awayTeamId}
-												fixtureData={f}
-											/>
-										))
-								)}
-							</div>
+				{/* Sidebar: other games (only during non-intervention modes) */}
+				{!isIntervencao && mode !== "detail" && (
+					<div className="shrink-0 border-t border-outline/40 bg-surface-container-high/70 px-3 py-2">
+						<h4 className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-1.5">
+							{isCupMatch ? `${cupMatchRoundName || "Taça"} · Outros jogos` : `${DIVISION_NAMES[myDivision] || "Liga"} · J${currentJornada || "—"}`}
+						</h4>
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
+							{isCupMatch
+								? cupOtherFixtures.map((r, i) => <FixtureCard key={i} homeTeamId={r.homeTeamId} awayTeamId={r.awayTeamId} fixtureData={r} />)
+								: (divisionFixtures[myDivision] || [])
+										.filter((f) => f.homeTeamId !== myTeamId && f.awayTeamId !== myTeamId)
+										.map((f, i) => <FixtureCard key={i} homeTeamId={f.homeTeamId} awayTeamId={f.awayTeamId} fixtureData={f} />)}
 						</div>
-
-						{/* ── BOTTOM: Other championships ── */}
-						<div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-							{Object.keys(teamsByDivision)
-								.filter((d) => Number(d) !== myDivision)
-								.sort()
-								.slice(0, 3)
-								.map((div) => (
-									<div
-										key={div}
-										className="flex flex-col min-h-0 rounded-md bg-surface-container-low/50 border border-outline-variant/25 overflow-hidden"
-									>
-										<div className="shrink-0 px-2.5 py-1.5 border-b border-outline bg-surface-container-high/70">
-											<h4 className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
-												{DIVISION_NAMES[Number(div)] || `Divisão ${div}`}
-											</h4>
-										</div>
-										<div className="flex-1 overflow-y-auto space-y-1 p-2">
-											{(divisionFixtures[div] || []).length === 0 ? (
-												<p className="text-on-surface-variant/60 text-[10px] font-bold text-center py-4">
-													Sem jogos
-												</p>
-											) : (
-												(divisionFixtures[div] || []).map((f, i) => (
-													<FixtureCard
-														key={i}
-														homeTeamId={f.homeTeamId}
-														awayTeamId={f.awayTeamId}
-														fixtureData={f}
-													/>
-												))
-											)}
-										</div>
-									</div>
-								))}
-						</div>
-						</>)}
 					</div>
 				)}
 			</div>
@@ -528,18 +278,12 @@ export function MatchPage({
 				</button>
 			)}
 			{mode === "action" && matchAction?.type === "user_substitution" && (
-				<button
-					onClick={() => onResolveAction(null)}
-					className="shrink-0 w-full py-3.5 text-sm font-black uppercase tracking-widest bg-primary hover:brightness-110 text-on-primary transition-all border-t border-outline"
-				>
+				<button onClick={() => onResolveAction(null)} className="shrink-0 w-full py-3.5 text-sm font-black uppercase tracking-widest bg-primary hover:brightness-110 text-on-primary transition-all border-t border-outline">
 					▶ CONTINUAR
 				</button>
 			)}
 			{mode === "detail" && (
-				<button
-					onClick={onClose}
-					className="shrink-0 w-full py-3 text-sm font-black uppercase tracking-widest bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-all border-t border-outline"
-				>
+				<button onClick={onClose} className="shrink-0 w-full py-3 text-sm font-black uppercase tracking-widest bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-all border-t border-outline">
 					Fechar
 				</button>
 			)}
