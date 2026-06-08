@@ -86,6 +86,8 @@ export function GameProvider({
 	// ── Admin panel ──
 	const [adminPanelOpen, setAdminPanelOpen] = useState(false);
 	const [adminUsers, setAdminUsers] = useState([]);
+	// ── User dropdown ──
+	const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 	const [isCupMatch, setIsCupMatch] = useState(false);
 	const [calendarIndex, setCalendarIndex] = useState(0);
 	const [cupPreMatch, setCupPreMatch] = useState(false);
@@ -1049,6 +1051,9 @@ export function GameProvider({
 		setAdminPanelOpen,
 		adminUsers,
 		setAdminUsers,
+		// User dropdown
+		userDropdownOpen,
+		setUserDropdownOpen,
 		isCupMatch,
 		calendarIndex,
 		cupPreMatch,

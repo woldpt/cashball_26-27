@@ -194,6 +194,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     setSeasonEndModal,
     adminPanelOpen,
     setAdminPanelOpen,
+    userDropdownOpen,
+    setUserDropdownOpen,
   } = useGame();
 
   // ── Derived ───────────────────────────────────────────────────────────
@@ -365,63 +367,114 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               )}
             </button>
 
-            {/* User button — opens settings page; disabled during live match */}
-            <button
-              onClick={() => {
-                if (isPlayingMatch) return;
-                setActiveTab("user_settings");
-                window.scrollTo(0, 0);
-              }}
-              disabled={isPlayingMatch}
-              title={
-                isPlayingMatch
-                  ? "Definições bloqueadas durante o jogo"
-                  : "Definições do Utilizador"
-              }
-              className={`flex items-center gap-2 transition-colors rounded-lg px-2 py-1 ${
-                isPlayingMatch
-                  ? "opacity-40 cursor-not-allowed"
-                  : "hover:bg-white/10"
-              }`}
-            >
-              <PlayerAvatar seed={`${me.name}|${avatarSeed}`} size="sm" />
-              <div className="hidden lg:flex flex-col items-start">
-                <span
-                  className="text-sm font-bold leading-tight"
-                  style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
-                >
-                  {me.name}
-                </span>
-                <span
-                  className="text-xs leading-tight opacity-70"
-                  style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
-                >
-                  {teamInfo?.name}
-                </span>
-              </div>
-              <span
-                className="material-symbols-outlined text-[16px] leading-none opacity-60"
-                style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
-              >
-                expand_more
-              </span>
-            </button>
-
-            {/* ── Admin: user management ── */}
-            {me?.name?.toLowerCase() === "fabio" && (
+            {/* User dropdown — disabled during live match */}
+            <div className="relative">
               <button
-                onClick={() => setAdminPanelOpen(true)}
-                title="Gestão de Utilizadores"
-                className="flex items-center gap-1 transition-colors rounded-lg px-2 py-1 hover:bg-amber-500/20"
+                onClick={() => {
+                  if (isPlayingMatch) return;
+                  setUserDropdownOpen((v) => !v);
+                }}
+                disabled={isPlayingMatch}
+                title={
+                  isPlayingMatch
+                    ? "Definições bloqueadas durante o jogo"
+                    : "Definições do Utilizador"
+                }
+                className={`flex items-center gap-2 transition-colors rounded-lg px-2 py-1 ${
+                  isPlayingMatch
+                    ? "opacity-40 cursor-not-allowed"
+                    : "hover:bg-white/10"
+                }`}
               >
-                <span className="material-symbols-outlined text-amber-400 text-lg">
-                  admin_panel_settings
-                </span>
-                <span className="hidden lg:inline text-[10px] font-black uppercase tracking-wider text-amber-400">
-                  Admin
+                <PlayerAvatar seed={`${me.name}|${avatarSeed}`} size="sm" />
+                <div className="hidden lg:flex flex-col items-start">
+                  <span
+                    className="text-sm font-bold leading-tight"
+                    style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+                  >
+                    {me.name}
+                  </span>
+                  <span
+                    className="text-xs leading-tight opacity-70"
+                    style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+                  >
+                    {teamInfo?.name}
+                  </span>
+                </div>
+                <span
+                  className="material-symbols-outlined text-[16px] leading-none opacity-60"
+                  style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+                >
+                  {userDropdownOpen ? "expand_less" : "expand_more"}
                 </span>
               </button>
-            )}
+
+              {/* Dropdown menu */}
+              {userDropdownOpen && !isPlayingMatch && (
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-170"
+                    onClick={() => setUserDropdownOpen(false)}
+                  />
+                  {/* Menu */}
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="absolute right-0 top-full mt-1 w-56 bg-surface-container border border-outline-variant/30 rounded-lg shadow-xl overflow-hidden z-180"
+                  >
+                    {/* A minha conta */}
+                    <button
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        setActiveTab("user_settings");
+                        window.scrollTo(0, 0);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-on-surface hover:bg-surface-bright transition-colors text-left"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-on-surface-variant">
+                        person
+                      </span>
+                      A minha conta
+                    </button>
+
+                    {/* Admin (only for fabio) */}
+                    {me?.name?.toLowerCase() === "fabio" && (
+                      <button
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          setAdminPanelOpen(true);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-amber-400 hover:bg-amber-500/10 transition-colors text-left"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-amber-400">
+                          admin_panel_settings
+                        </span>
+                        Admin
+                      </button>
+                    )}
+
+                    {/* Divider */}
+                    <div className="border-t border-outline-variant/20" />
+
+                    {/* Sair */}
+                    <button
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-400 hover:bg-red-500/10 transition-colors text-left"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-red-400">
+                        logout
+                      </span>
+                      Sair
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
