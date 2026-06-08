@@ -49,11 +49,6 @@ export function IntervencaoView({
   const oppInfo = teams?.find((t) => t.id === oppTeamId);
   const hInfo = teams?.find((t) => t.id === fixture?.homeTeamId);
   const aInfo = teams?.find((t) => t.id === fixture?.awayTeamId);
-  const homeGoals = fixture?.finalHomeGoals ?? 0;
-  const awayGoals = fixture?.finalAwayGoals ?? 0;
-  const myTeamGoals = isHome ? homeGoals : awayGoals;
-  const oppGoals = isHome ? awayGoals : homeGoals;
-
   /* ── Our squad ────────────────────────────────────────────────── */
   const onPitchPlayers = isHalftime
     ? sortPlayersByPos(
@@ -150,7 +145,7 @@ export function IntervencaoView({
       <ConfirmedSubsStrip subs={confirmedSubs} annotatedSquad={annotatedSquad} />
 
       {/* Title bar */}
-      <div className={`shrink-0 px-5 py-4 border-b border-outline/40 bg-gradient-to-r ${actionTheme}`}>
+      <div className={`shrink-0 px-5 py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme}`}>
         <div className="flex items-center gap-2">
           {oppInfo && (
             <span className="text-[10px] font-black uppercase tracking-[0.2em] shrink-0" style={{ color: oppInfo?.color_primary || "#f59e0b" }}>
@@ -161,21 +156,6 @@ export function IntervencaoView({
             {titleText}
           </h2>
         </div>
-        {isHalftime && (
-          <div className="flex items-center justify-center gap-3 mt-2">
-            <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-wide truncate max-w-[80px]">
-              {teams?.find((t) => t.id === fixture?.homeTeamId)?.name || "Casa"}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="text-lg font-black tabular-nums text-on-surface">{myTeamGoals}</span>
-              <span className="text-on-surface-variant/60 text-sm font-black">–</span>
-              <span className="text-lg font-black tabular-nums text-on-surface">{oppGoals}</span>
-            </span>
-            <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-wide truncate max-w-[80px] text-right">
-              {oppInfo?.name || "Fora"}
-            </span>
-          </div>
-        )}
         {isForcedSwap && injuryCountdown !== null && (
           <p className="text-center text-amber-300 font-black text-[10px] mt-1 tracking-wide animate-pulse">
             Auto-substituição em {injuryCountdown}s
@@ -186,7 +166,7 @@ export function IntervencaoView({
       {/* ── 2 columns: Chronology | Subs/Adversário ────────────── */}
       <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
         {/* ── Mobile: compact chronology row ── */}
-        <div className="flex md:hidden gap-2 px-3 py-2 border-b border-outline/40 bg-surface-container/50">
+        <div className="flex md:hidden gap-2 px-3 py-2 border-b border-outline-variant/20 bg-surface-container/50">
           <PossessionBar
             homePossession={fixture.homePossession}
             awayPossession={fixture.awayPossession}
@@ -197,8 +177,8 @@ export function IntervencaoView({
         </div>
 
         {/* ═══ LEFT: Chronology ═══ */}
-        <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-outline/40 md:w-[280px] lg:w-[320px] shrink-0">
-          <div className="shrink-0 px-5 py-4 flex items-center justify-between bg-surface-container-high/50 border-b border-outline/40">
+        <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-outline-variant/20 md:w-[280px] lg:w-[320px] shrink-0">
+          <div className="shrink-0 px-5 py-4 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/20">
             <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
               Cronologia
@@ -224,24 +204,26 @@ export function IntervencaoView({
 
         {/* ═══ RIGHT: Subs / Adversário ═══ */}
         <div className="flex flex-col min-h-0 overflow-hidden flex-1">
-          {/* Tab toggle */}
-          <div className="shrink-0 flex border-b border-outline/40 bg-surface-container-high/70">
-            {[
-              { key: "subs", label: "Substituições" },
-              { key: "adversario", label: "Adversário" },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setCenterTab(tab.key)}
-                className={`flex-1 min-w-0 py-3 text-[11px] font-black uppercase tracking-widest transition-all border-b-2 ${
-                  centerTab === tab.key
-                    ? "text-on-surface border-primary bg-primary/5"
-                    : "text-on-surface-variant/80 hover:text-on-surface-variant border-transparent hover:bg-surface-container/30"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+          {/* Tab toggle — pill style */}
+          <div className="shrink-0 px-3 py-2.5 bg-surface-container-high/50">
+            <div className="flex rounded-md bg-surface-container p-1 gap-1">
+              {[
+                { key: "subs", label: "Substituições" },
+                { key: "adversario", label: "Adversário" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setCenterTab(tab.key)}
+                  className={`flex-1 min-w-0 py-2 text-[11px] font-black uppercase tracking-widest rounded-md transition-all ${
+                    centerTab === tab.key
+                      ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
+                      : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {centerTab === "subs" ? (
@@ -333,7 +315,7 @@ function SubsPanel({
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Tactics (halftime only) */}
       {isHalftime && (
-        <div className="px-4 py-3 border-b border-outline/40">
+        <div className="px-4 py-3 border-b border-outline-variant/20">
           <span className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2.5">
             Mentalidade
           </span>
@@ -344,7 +326,7 @@ function SubsPanel({
       <div className="flex-1 grid grid-cols-2 min-h-0 overflow-hidden">
         {/* On-pitch column */}
         <div className="flex flex-col min-h-0 overflow-hidden">
-          <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline/40">
+          <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50">
             <h3 className="text-sm font-black font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
               {isPenalty ? "Candidatos" : "Titulares"}
@@ -392,7 +374,7 @@ function SubsPanel({
         {/* Bench column */}
         {!isPenalty ? (
           <div className="flex flex-col min-h-0 overflow-hidden">
-            <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline/40">
+            <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50">
               <h3 className="text-sm font-black font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
                 Suplentes
@@ -429,7 +411,7 @@ function SubsPanel({
           </div>
         ) : (
           <div className="flex flex-col min-h-0 overflow-hidden">
-            <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline/40">
+            <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50">
               <h3 className="text-sm font-black font-headline tracking-tight text-tertiary uppercase">Escolha</h3>
             </div>
             <div className="flex-1 flex items-center justify-center">
@@ -469,7 +451,7 @@ function AdversarioPanel({ hasLineups, oppInfo, oppFormation, oppStyleLabel, opp
           ) : oppRows.ATA?.length === 0 && oppRows.MED?.length === 0 ? (
             <EmptyState icon="🤷" message="Sem dados da escalação do adversário" />
           ) : (
-            <div className="relative rounded-md overflow-hidden border border-outline/40 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "380px" }}>
+            <div className="relative rounded-md overflow-hidden border border-outline-variant/25 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "380px" }}>
               <PitchFormation rows={oppRows} posColors={PITCH_POS_COLORS} />
             </div>
           )}
@@ -477,7 +459,7 @@ function AdversarioPanel({ hasLineups, oppInfo, oppFormation, oppStyleLabel, opp
 
         {/* Opponent bench */}
         <div className="flex flex-col min-h-0 overflow-hidden">
-          <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline/40">
+          <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50">
             <h3 className="text-sm font-black font-headline tracking-tight text-tertiary uppercase">Banco</h3>
           </div>
           <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1.5">
@@ -514,7 +496,7 @@ function EmptyState({ icon, message }) {
 
 function BottomBar({ effectiveOutId, selectedInId, sourcePlayer, targetPlayer, isHalftime, isPenalty, canConfirmSwap, onResetSub, onConfirmSub, onResolveAction }) {
   return (
-    <div className="shrink-0 border-t border-outline/40 bg-surface-container-high px-5 py-3">
+    <div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high px-5 py-3">
       <div className="flex items-center gap-3 min-w-0">
         <div className="flex-1 flex items-center gap-2 min-w-0">
           <span className="text-[10px] text-on-surface-variant/60 shrink-0 font-black uppercase tracking-wide">Sai</span>

@@ -158,7 +158,7 @@ export function MatchPage({
 	return (
 		<div className={`fixed inset-y-0 left-0 right-0 ${sidebarLeft} z-120 flex flex-col bg-[linear-gradient(180deg,#0d0d14_0%,#11111b_100%)]`}>
 			{/* Header */}
-			<div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-outline/40 bg-surface-container-high backdrop-blur-sm">
+			<div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-outline-variant/25 bg-surface-container-high backdrop-blur-sm">
 				<button onClick={onClose} className="w-8 h-8 rounded-xl bg-surface-container-high/80 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-all border border-outline/40 hover:border-outline">←</button>
 				<div className="flex-1 flex items-center gap-2 min-w-0">
 					<span className="w-1.5 h-8 rounded-full shrink-0 shadow-sm" style={{ background: hColor, boxShadow: `0 0 8px ${hColor}60` }} />
@@ -181,7 +181,7 @@ export function MatchPage({
 
 			{/* ── Halftime score banner ──────────────────────────────────── */}
 			{mode === "halftime" && fixture && (
-				<div className="shrink-0 flex items-stretch border-b border-outline/40 bg-surface-container-high backdrop-blur-sm">
+				<div className="shrink-0 flex items-stretch border-b border-outline-variant/25 bg-surface-container-high backdrop-blur-sm">
 					<div className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5" style={{ backgroundColor: hColor + "20", color: hColor }}>
 						<span className="w-2 h-2 rounded-full shrink-0" style={{ background: hColor, boxShadow: `0 0 6px ${hColor}60` }} />
 						{homeTeam?.name || "Casa"}
@@ -237,7 +237,7 @@ export function MatchPage({
 
 				{/* Sidebar: other games (non-intervention modes) */}
 				{!isIntervencao && (
-					<div className="shrink-0 border-t border-outline/40 bg-surface-container-high/70 px-3 py-2">
+					<div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high/70 px-3 py-2">
 						<h4 className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-1.5">
 							{isCupMatch ? `${cupMatchRoundName || "Taça"} · Outros jogos` : `${DIVISION_NAMES[myDivision] || "Liga"} · J${currentJornada || "—"}`}
 						</h4>
