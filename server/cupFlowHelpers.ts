@@ -362,6 +362,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		game.gamePhase = "lobby";
 		game.currentEvent = SEASON_CALENDAR[0];
 		game.currentFixtures = [];
+		game.allMatchResults = {};
 		game.cupTeamIds = [];
 		game.cupHalftimePayload = null;
 		game.lastHalftimePayload = null;

@@ -6,6 +6,7 @@ const DIVISION_NAMES = {
   2: "Segunda Liga",
   3: "Liga 3",
   4: "Campeonato de Portugal",
+  5: "Distritais",
 };
 
 const TOTAL_MATCHWEEKS = 14;
