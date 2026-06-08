@@ -919,6 +919,7 @@ export function GameProvider({
 		setMarketPairs([]);
 		setTopScorers([]);
 		setMatchResults(null);
+		setAllMatchResults({});
 		setMatchweekCount(0);
 		setActiveTab("club");
 		setTactic(DEFAULT_TACTIC);

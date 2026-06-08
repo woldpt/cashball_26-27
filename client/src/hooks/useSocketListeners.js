@@ -184,6 +184,7 @@ export function useSocketListeners(handlers, refs) {
 			// Show the season-end awards modal
 			handlers.setSeasonEndModal(data);
 			if (data.year) handlers.setSeasonYear(data.year);
+			handlers.setAllMatchResults({});
 			handlers.setMatchweekCount(0);
 			});
 		socket.on("teamSquadData", ({ teamId, squad }) => {
