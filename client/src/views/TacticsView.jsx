@@ -1061,7 +1061,7 @@ ${
           </div>
 
           {/* COL 2 — TITULARES (esq) + SUPLENTES/NÃO CONV. (dir) */}
-          <div className="flex-1 flex flex-row gap-2 min-w-0">
+          <div className="flex-1 flex flex-col md:flex-row gap-2 min-w-0">
             {/* Titulares */}
             <div
               className={`flex-1 min-w-0 bg-[#111] border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/30 bg-[#4ade80]/2" : "border-[#1e1e1e]"}`}
@@ -1575,7 +1575,7 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
         return (
           <button
             onClick={fabHalftime ? handleHalftimeReady : handleReady}
-            className={`lg:hidden fixed bottom-28 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200 ${!myReady ? "animate-heartbeat" : ""}`}
+            className={`lg:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200 ${!myReady ? "animate-heartbeat" : ""}`}
             style={{
               background:
                 "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.3) 0%, transparent 70%), #22c55e",
