@@ -45,8 +45,6 @@ export function IntervencaoView({
 
   /* ── Team info ────────────────────────────────────────────────── */
   const isHome = myTeamId && fixture?.homeTeamId === myTeamId;
-  const oppTeamId = isHome ? fixture?.awayTeamId : fixture?.homeTeamId;
-  const oppInfo = teams?.find((t) => t.id === oppTeamId);
   const hInfo = teams?.find((t) => t.id === fixture?.homeTeamId);
   const aInfo = teams?.find((t) => t.id === fixture?.awayTeamId);
   /* ── Our squad ────────────────────────────────────────────────── */
@@ -146,16 +144,9 @@ export function IntervencaoView({
 
       {/* Title bar */}
       <div className={`shrink-0 px-5 py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme}`}>
-        <div className="flex items-center gap-2">
-          {oppInfo && (
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] shrink-0" style={{ color: oppInfo?.color_primary || "#f59e0b" }}>
-              {oppInfo?.name || "Adversário"}
-            </span>
-          )}
-          <h2 className="text-base font-black font-headline tracking-tight text-on-surface uppercase text-center truncate flex-1">
-            {titleText}
-          </h2>
-        </div>
+        <h2 className="text-base font-black font-headline tracking-tight text-on-surface uppercase text-center truncate">
+          {titleText}
+        </h2>
         {isForcedSwap && injuryCountdown !== null && (
           <p className="text-center text-amber-300 font-black text-[10px] mt-1 tracking-wide animate-pulse">
             Auto-substituição em {injuryCountdown}s
@@ -165,8 +156,8 @@ export function IntervencaoView({
 
       {/* ── 2 columns: Chronology | Subs/Adversário ────────────── */}
       <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
-        {/* ── Mobile: compact chronology row ── */}
-        <div className="flex md:hidden gap-2 px-3 py-2 border-b border-outline-variant/20 bg-surface-container/50">
+        {/* ═══ Mobile: mini chronology (collapsible strip) ═══ */}
+        <div className="flex md:hidden flex-col shrink-0 border-b border-outline-variant/20 bg-surface-container/50">
           <PossessionBar
             homePossession={fixture.homePossession}
             awayPossession={fixture.awayPossession}
@@ -174,9 +165,12 @@ export function IntervencaoView({
             awayColor={aInfo?.color_primary}
             compact
           />
+          <div className="max-h-36 overflow-y-auto px-3 py-2 space-y-1">
+            <EventList events={visibleEvts.slice(-4)} />
+          </div>
         </div>
 
-        {/* ═══ LEFT: Chronology ═══ */}
+        {/* ═══ LEFT: Chronology (desktop only) ═══ */}
         <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-outline-variant/20 md:w-[280px] lg:w-[320px] shrink-0">
           <div className="shrink-0 px-5 py-4 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/20">
             <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
@@ -248,7 +242,6 @@ export function IntervencaoView({
           ) : (
             <AdversarioPanel
               hasLineups={hasLineups}
-              oppInfo={oppInfo}
               oppFormation={oppFormation}
               oppStyleLabel={oppStyleLabel}
               oppRows={oppRows}
@@ -323,7 +316,7 @@ function SubsPanel({
         </div>
       )}
 
-      <div className="flex-1 grid grid-cols-2 min-h-0 overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 min-h-0 overflow-hidden">
         {/* On-pitch column */}
         <div className="flex flex-col min-h-0 overflow-hidden">
           <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50">
@@ -426,24 +419,19 @@ function SubsPanel({
   );
 }
 
-function AdversarioPanel({ hasLineups, oppInfo, oppFormation, oppStyleLabel, oppRows, oppBench }) {
+function AdversarioPanel({ hasLineups, oppFormation, oppStyleLabel, oppRows, oppBench }) {
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      <div className="shrink-0 flex items-center gap-2 px-4 py-3 mx-3 mt-3 rounded-md border border-outline-variant/25 bg-surface-container">
-        <span
-          className="text-base font-black font-headline tracking-tight uppercase truncate"
-          style={{ color: oppInfo?.color_primary || "#f59e0b" }}
-        >
-          {oppInfo?.name || "Adversário"}
-        </span>
-        {(oppFormation || oppStyleLabel) && (
-          <span className="ml-auto text-[10px] font-black uppercase tracking-widest text-on-surface-variant/80 shrink-0">
+      {/* Formation badge (if known) */}
+      {(oppFormation || oppStyleLabel) && (
+        <div className="shrink-0 px-3 pt-3">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md bg-surface-container border border-outline-variant/25 text-on-surface-variant">
             {[oppFormation, oppStyleLabel].filter(Boolean).join(" · ")}
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="flex-1 grid grid-cols-2 min-h-0 overflow-hidden px-3 pb-3 pt-2">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 min-h-0 overflow-hidden px-3 pb-3 pt-2">
         {/* Opponent pitch */}
         <div className="flex items-center justify-center overflow-hidden">
           {!hasLineups ? (
