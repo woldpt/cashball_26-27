@@ -662,7 +662,7 @@ export function TacticsView() {
     isCupMatch,
   } = useTactics();
 
-  const { lockedCoaches } = useGame();
+  const { lockedCoaches, liveMinute, isCupExtraTime } = useGame();
 
   const getBestForFormation = (formation) => {
     const styles = ["OFENSIVO", "DEFENSIVO", "EQUILIBRADO"];
@@ -676,6 +676,7 @@ export function TacticsView() {
 
   const myReady = players.find((p) => p.name === me?.name)?.ready;
   const isHalftime = showHalftimePanel && !isPlayingMatch;
+  const isPreExtraTime = isHalftime && isCupMatch && (liveMinute ?? 0) >= 90 && !isCupExtraTime;
   const isEliminatedCupSpectator =
     nextMatchSummary?.isCup && !nextMatchOpponent;
   const canPlay = isEliminatedCupSpectator || isHalftime || isLineupComplete;
@@ -683,11 +684,13 @@ export function TacticsView() {
     ? "⏳ A aguardar..."
     : isEliminatedCupSpectator
       ? "Avançar para Taça"
-      : isHalftime && isCupMatch
-        ? "2ª Parte — Taça"
-        : isHalftime
-          ? "2ª Parte"
-          : "Jogar Jornada";
+      : isPreExtraTime
+        ? "Ir para prolongamento"
+        : isHalftime && isCupMatch
+          ? "2ª Parte — Taça"
+          : isHalftime
+            ? "2ª Parte"
+            : "Jogar Jornada";
 
   const titCount = annotatedSquad.filter((p) => p.status === "Titular").length;
   const subCount = annotatedSquad.filter(
@@ -736,7 +739,7 @@ export function TacticsView() {
           </button>
         </div>
       ) : (
-        <div className="flex flex-col lg:flex-row gap-3 items-start">
+        <div className="flex flex-col lg:flex-row gap-3 items-stretch md:items-start">
           {/* COL 1 — FORMAÇÃO + MENTALIDADE */}
           <div className={`lg:w-57.5 shrink-0 flex flex-col gap-2 ${!isLineupComplete && !myReady ? "animate-heartbeat-border rounded-2xl" : ""}`}>
             {/* Proximo jogo — mobile: moral + mentality side by side */}

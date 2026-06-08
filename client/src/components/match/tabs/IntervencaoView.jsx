@@ -20,6 +20,7 @@ import {
 /* ── IntervencaoView — Substitutions + chronology + opponent ────────── */
 export function IntervencaoView({
   mode, fixture, liveMinute, teams, myTeamId,
+  isCupMatch, isCupExtraTime,
   matchAction, injuryCountdown, tactic, onUpdateTactic,
   annotatedSquad, subbedOut, confirmedSubs, subsMade,
   swapSource, swapTarget, onSelectOut, onSelectIn,
@@ -30,6 +31,7 @@ export function IntervencaoView({
 
   /* ── Mode booleans ────────────────────────────────────────────── */
   const isHalftime = mode === "halftime";
+  const isPreExtraTime = isHalftime && isCupMatch && (liveMinute ?? 0) >= 90 && !isCupExtraTime;
   const actionType = matchAction?.type || null;
   const isPenalty = actionType === "penalty";
   const isForcedSwap = actionType === "injury" || actionType === "gk_red_card";
@@ -110,13 +112,15 @@ export function IntervencaoView({
   const ref = fixture.referee;
 
   /* ── Action title ─────────────────────────────────────────────── */
-  const titleText = isHalftime
-    ? "Gestão da Equipa"
-    : isPenalty
-      ? "Escolhe o marcador"
-      : isForcedSwap
-        ? `Substituição obrigatória · ${forceOutPlayer?.name || "jogador"}`
-        : "Pausa para substituição";
+  const titleText = isPreExtraTime
+    ? "Pausa antes do prolongamento"
+    : isHalftime
+      ? "Gestão da Equipa"
+      : isPenalty
+        ? "Escolhe o marcador"
+        : isForcedSwap
+          ? `Substituição obrigatória · ${forceOutPlayer?.name || "jogador"}`
+          : "Pausa para substituição";
 
   const actionTheme = isPenalty
     ? "from-amber-600/20 via-amber-500/5 to-transparent"

@@ -549,6 +549,8 @@ export function useSocketListeners(handlers, refs) {
 				handlers.setAllMatchResults(data.allMatchResults);
 			if (data.matchweek) handlers.setMatchweekCount(data.matchweek - 1);
 			if (data.year) handlers.setSeasonYear(data.year);
+			if (typeof data.calendarIndex === "number")
+				handlers.setCalendarIndex(data.calendarIndex);
 			if (data.tactic) {
 				handlers.setTactic((prev) => ({
 					...prev,

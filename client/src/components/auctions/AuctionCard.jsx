@@ -96,31 +96,9 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             WebkitBackfaceVisibility: "hidden",
             background: `linear-gradient(165deg, ${hexToRgba(teamColor, 0.3)} 0%, ${hexToRgba(teamColor, 0.18)} 42%, rgba(35,39,56,0.93) 100%)`,
             border: `2px solid ${isClosed || isPaused ? "#333" : hexToRgba(teamColor, 0.24)}`,
-            boxShadow: isClosed || isPaused
-              ? "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)"
-              : `0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1), 0 0 28px 0 ${hexToRgba(teamColor, 0.35)}, 0 0 60px 0 ${hexToRgba(teamColor, 0.12)}`,
+            boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",
           }}
         >
-          <div
-            className="absolute -top-6 -left-6 w-40 h-40 pointer-events-none"
-            style={{
-              background: `radial-gradient(circle, ${hexToRgba(teamColor, 0.25)} 0%, transparent 70%)`,
-            }}
-          />
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `radial-gradient(ellipse at top right, rgba(255,255,255,0.1) 0%, transparent 60%), radial-gradient(ellipse at bottom left, ${hexToRgba(teamColor, 0.24)} 0%, transparent 70%)`,
-            }}
-          />
-          <div
-            className="absolute inset-0 pointer-events-none overflow-hidden"
-            style={{
-              background: "linear-gradient(105deg, transparent 25%, rgba(255,255,255,0.1) 50%, transparent 75%)",
-              backgroundSize: "200% 100%",
-              animation: "shimmer 3s infinite linear",
-            }}
-          />
           <div
             className="px-4 pt-4 pb-3 flex items-start gap-3"
             style={{
@@ -368,23 +346,9 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             transform: "rotateY(180deg)",
             background: `linear-gradient(15deg, ${hexToRgba(teamColor, 0.18)} 0%, rgba(36,40,58,0.95) 52%, ${hexToRgba(teamColor, 0.2)} 100%)`,
             border: `2px solid ${hexToRgba(teamColor, 0.24)}`,
-            boxShadow: `0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1), 0 0 28px 0 ${hexToRgba(teamColor, 0.25)}, 0 0 60px 0 ${hexToRgba(teamColor, 0.08)}`,
+            boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",
           }}
         >
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: `radial-gradient(ellipse at bottom left, rgba(255,255,255,0.08) 0%, transparent 62%), radial-gradient(ellipse at top right, ${hexToRgba(teamColor, 0.24)} 0%, transparent 72%)`,
-            }}
-          />
-          <div
-            className="absolute inset-0 pointer-events-none overflow-hidden"
-            style={{
-              background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%)",
-              backgroundSize: "200% 100%",
-              animation: "shimmer 3s infinite linear",
-            }}
-          />
           <div
             className="px-4 pt-4 pb-3 flex items-center gap-3"
             style={{
