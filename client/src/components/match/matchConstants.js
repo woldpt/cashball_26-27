@@ -34,9 +34,6 @@ export const PITCH_POS_COLORS = {
   default: "bg-zinc-500 text-white",
 };
 
-/* Row vertical positions on the pitch SVG (percentage from top) */
-export const PITCH_ROW_ORDER = ["ATA", "MED", "DEF", "GR"];
-
 /** Build position rows for PitchFormation from a starter array. */
 export function buildPositionRows(starters) {
   const rows = { ATA: [], MED: [], DEF: [], GR: [] };

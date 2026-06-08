@@ -185,6 +185,17 @@ export function IntervencaoView({
 
       {/* ── 2 columns: Chronology | Subs/Adversário ────────────── */}
       <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
+        {/* ── Mobile: compact chronology row ── */}
+        <div className="flex md:hidden gap-2 px-3 py-2 border-b border-outline/40 bg-surface-container/50">
+          <PossessionBar
+            homePossession={fixture.homePossession}
+            awayPossession={fixture.awayPossession}
+            homeColor={hInfo?.color_primary}
+            awayColor={aInfo?.color_primary}
+            compact
+          />
+        </div>
+
         {/* ═══ LEFT: Chronology ═══ */}
         <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-outline/40 md:w-[280px] lg:w-[320px] shrink-0">
           <div className="shrink-0 px-5 py-4 flex items-center justify-between bg-surface-container-high/50 border-b border-outline/40">
