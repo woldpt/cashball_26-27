@@ -26,9 +26,9 @@ function FormDots({ form = "" }) {
       {chars.map((r, i) => {
         let cls = "w-2 h-2 rounded-full ";
         if (r === "V") cls += "bg-emerald-500";
-        else if (r === "E") cls += "bg-zinc-500";
-        else if (r === null) cls += "bg-zinc-800";
-        else cls += "bg-red-500"; // D = derrota
+        else if (r === "E") cls += "bg-amber-500";
+        else if (r === null) cls += "bg-surface-container-high";
+        else cls += "bg-error"; // D = derrota
         return <span key={i} className={cls} />;
       })}
     </div>
@@ -316,22 +316,22 @@ function MatchweekRow({ matchweek, matches, teamMap }) {
                       className="flex items-center gap-2 text-[10px] py-1.5 border-b border-outline-variant/5 last:border-b-0"
                     >
                       <span
-                        className={`flex-1 truncate text-right font-bold ${
-                          homeWin ? "text-emerald-400" : draw ? "text-zinc-400" : "text-on-surface-variant/50"
-                        }`}
-                      >
-                        {homeTeam?.name || "?"}
-                      </span>
-                      <span className="px-2 py-px bg-surface-bright rounded-sm font-black text-[11px] text-on-surface min-w-[3.5rem] text-center">
-                        {homeGoals}-{awayGoals}
-                      </span>
-                      <span
-                        className={`flex-1 truncate font-bold ${
-                          awayGoals > homeGoals ? "text-emerald-400" : draw ? "text-zinc-400" : "text-on-surface-variant/50"
-                        }`}
-                      >
-                        {awayTeam?.name || "?"}
-                      </span>
+                         className={`flex-1 truncate text-right font-bold ${
+                           homeWin ? "text-emerald-400" : draw ? "text-on-surface-variant/50" : "text-on-surface-variant/50"
+                         }`}
+                       >
+                         {homeTeam?.name || "?"}
+                       </span>
+                       <span className="px-2 py-px bg-surface-bright rounded-sm font-black text-[11px] text-on-surface tabular-nums min-w-[3.5rem] text-center">
+                         {homeGoals}-{awayGoals}
+                       </span>
+                       <span
+                         className={`flex-1 truncate font-bold ${
+                           awayGoals > homeGoals ? "text-emerald-400" : draw ? "text-on-surface-variant/50" : "text-on-surface-variant/50"
+                         }`}
+                       >
+                         {awayTeam?.name || "?"}
+                       </span>
                     </div>
                   );
                 })}
