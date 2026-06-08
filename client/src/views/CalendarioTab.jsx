@@ -297,50 +297,42 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
 
       {/* ── SEASON STATS ──────────────────────────────────── */}
       {cal && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Unbeaten run */}
-          <div className="bg-surface-container rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">
-                Invencibilidade
-              </span>
-              <span className="material-symbols-outlined text-base text-amber-400">
-                emoji_events
-              </span>
+          <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-primary">
+            <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+              Invencibilidade
+            </span>
+            <div>
+              <p className="text-3xl font-headline font-black leading-none text-on-surface tabular-nums">
+                {String(unbeatenRun).padStart(2, "0")}
+              </p>
+              <p className="text-[9px] text-on-surface-variant/60 uppercase tracking-wide font-black">
+                {unbeatenRun === 1
+                  ? "1 jogo"
+                  : `${unbeatenRun} jogos`}{" "}
+                sem derrota
+              </p>
             </div>
-            <p className="text-3xl font-headline font-black leading-none mb-1 text-on-surface">
-              {String(unbeatenRun).padStart(2, "0")}
-            </p>
-            <p className="text-[9px] text-on-surface-variant/60 uppercase tracking-wide font-bold">
-              {unbeatenRun === 1
-                ? "1 jogo"
-                : `${unbeatenRun} jogos`}{" "}
-              sem derrota
-            </p>
           </div>
           {/* Next game */}
-          <div className="bg-surface-container rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">
-                Próximo Jogo
-              </span>
-              <span className="material-symbols-outlined text-base text-on-surface-variant/60">
-                {nextGameIsHome === false
-                  ? "flight_takeoff"
-                  : "home"}
-              </span>
+          <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-tertiary">
+            <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+              Próximo Jogo
+            </span>
+            <div>
+              <p className="text-base font-headline font-black leading-tight text-on-surface truncate">
+                {nextGameOpponent?.name ?? "—"}
+              </p>
+              <p className="text-[9px] text-on-surface-variant/60 uppercase tracking-wide font-black truncate">
+                {nextGameVenue ??
+                  (nextGameIsHome
+                    ? "Casa"
+                    : nextGameIsHome === false
+                      ? "Deslocação"
+                      : "—")}
+              </p>
             </div>
-            <p className="text-base font-headline font-black leading-tight mb-1 text-on-surface truncate">
-              {nextGameOpponent?.name ?? "—"}
-            </p>
-            <p className="text-[9px] text-on-surface-variant/60 uppercase tracking-wide font-bold truncate">
-              {nextGameVenue ??
-                (nextGameIsHome
-                  ? "Casa"
-                  : nextGameIsHome === false
-                    ? "Deslocação"
-                    : "—")}
-            </p>
           </div>
         </div>
       )}
@@ -378,10 +370,10 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                 return (
                   <div
                     key={entry.calendarIndex}
-                    className="flex items-stretch gap-0 rounded-lg overflow-hidden opacity-40 bg-surface-container border-l-2 border-l-red-800"
+                    className="flex items-stretch gap-0 rounded-lg overflow-hidden opacity-40 bg-surface-container border-l-2 border-l-error"
                   >
                     <div className="w-16 sm:w-28 shrink-0 flex flex-col justify-center gap-1 px-2 sm:px-3 py-3 border-r border-outline-variant/10">
-                      <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded self-start bg-red-900/30 text-red-400">
+                      <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded self-start bg-error/20 text-error">
                         Taça
                       </span>
                       <span className="text-[10px] font-black text-on-surface leading-tight">
@@ -389,11 +381,11 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                       </span>
                     </div>
                     <div className="flex-1 flex items-center gap-3 px-4 py-3 min-w-0">
-                      <div className="shrink-0 w-8 h-8 rounded flex items-center justify-center text-xs font-black border border-red-800/30 text-red-600 bg-red-900/10">
+                      <div className="shrink-0 w-8 h-8 rounded flex items-center justify-center text-xs font-black border border-error/30 text-error bg-error/10">
                         🏆
                       </div>
                       <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-black text-red-500 leading-tight">
+                        <span className="text-sm font-black text-error leading-tight">
                           Eliminado da Taça
                         </span>
                         <span className="text-[10px] text-on-surface-variant/40">
@@ -402,7 +394,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                       </div>
                     </div>
                     <div className="shrink-0 flex items-center justify-end px-4 py-3">
-                      <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-red-900/20 text-red-600">
+                      <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-error/20 text-error">
                         Eliminado
                       </span>
                     </div>
