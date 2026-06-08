@@ -334,12 +334,16 @@ app.get("/saves", apiLimiter, async (req, res) => {
 		// Load room info (name, team, year) for each room
 		const saves = await Promise.all(
 			roomCodes.map(async (roomCode) => {
-				const info = await getSaveInfo(roomCode, managerName as string | null);
+				const [info, coaches] = await Promise.all([
+					getSaveInfo(roomCode, managerName as string | null),
+					getRoomCoaches(roomCode, managerName as string),
+				]);
 				return {
 					code: roomCode,
 					name: info.roomName,
 					teamName: info.teamName,
 					year: info.year,
+					coaches,
 				};
 			}),
 		);

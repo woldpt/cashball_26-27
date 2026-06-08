@@ -689,6 +689,11 @@ const LandingPage = ({
 																	<span className="text-[10px] font-mono text-white/30">
 																		{save.code}
 																	</span>
+																	{save.coaches && save.coaches.length > 0 && (
+																		<span className="text-[9px] font-black uppercase px-1.5 py-px rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 tracking-widest inline-block mt-1 w-fit">
+																			{save.coaches.join(", ")}
+																		</span>
+																	)}
 																	{(save.teamName || save.year) && (
 																		<div className="flex items-center gap-2 mt-0.5">
 																			{save.teamName && (
