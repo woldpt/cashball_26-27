@@ -74,9 +74,9 @@ export function MatchView({ fixture, liveMinute, teams, mode }) {
         </div>
 
         {/* ═══ RIGHT: Pitch + Bench ═══ */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden border-l border-outline/40">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           {/* Team toggle badges */}
-          <div className="shrink-0 flex items-center gap-2 px-3 py-2.5 border-b border-outline/40 bg-surface-container-high/50">
+          <div className="shrink-0 flex items-center gap-2 px-3 py-2.5 bg-surface-container-high/50">
             <TeamBadge
               team={hInfo}
               side="home"
@@ -95,7 +95,7 @@ export function MatchView({ fixture, liveMinute, teams, mode }) {
 
           {/* Pitch */}
           <div className="flex gap-3 flex-1 min-h-0">
-            <div className="flex-1 relative rounded-md overflow-hidden border border-outline/40 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
+            <div className="flex-1 relative rounded-md overflow-hidden border border-outline-variant/25 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16", maxHeight: "420px" }}>
               {hasLineups ? (
                 <>
                   <PitchFormation rows={rows} posColors={posColors} withOverlay={false} />
@@ -148,7 +148,7 @@ function TeamBadge({ team, active, onClick, label }) {
 
 function HalftimeBanner({ hInfo, aInfo, homeGoals, awayGoals }) {
   return (
-    <div className="rounded-md overflow-hidden border border-outline/40 bg-surface-container-low shadow-sm shadow-black/30">
+    <div className="rounded-md overflow-hidden border border-outline-variant/25 bg-surface-container-low shadow-sm shadow-black/30">
       <div className="flex items-center justify-center gap-5 pt-4 pb-1.5">
         <TeamMiniBadge info={hInfo} />
         <div className="flex items-center gap-2.5">
@@ -163,7 +163,7 @@ function HalftimeBanner({ hInfo, aInfo, homeGoals, awayGoals }) {
         <TeamMiniBadge info={aInfo} />
       </div>
       <div className="flex items-center justify-center pb-3.5">
-        <span className="inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.3em] px-2.5 py-1 rounded-full bg-surface-container-high/80 border border-outline/40 text-on-surface-variant">
+        <span className="inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.3em] px-2.5 py-1 rounded-full bg-surface-container-high/80 border border-outline-variant/25 text-on-surface-variant">
           <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
           Intervalo
           <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
