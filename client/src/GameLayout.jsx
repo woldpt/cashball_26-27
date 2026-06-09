@@ -897,13 +897,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       strategy
                     </span>
                     <span className="relative z-10 leading-none">JOGAR</span>
-                    {/* ping dot */}
-                    {!myReady && (
-                      <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-on-primary/60 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-on-primary/80" />
-                      </span>
-                    )}
                   </motion.button>
                 </div>
               );

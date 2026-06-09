@@ -331,71 +331,11 @@ export function PlayersTab({
 
   return (
     <div className="space-y-4">
-      {/* ── Summary widgets ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-primary">
-          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Massa Salarial Semanal
-          </span>
-          <span className="text-3xl font-black font-headline tracking-tighter text-on-surface">
-            {formatCurrency(totalWeeklyWage)}
-          </span>
-        </div>
-        <div
-          className={`bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 ${currentBudget >= 0 ? "border-tertiary" : "border-error"}`}
-        >
-          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Orçamento Disponível
-          </span>
-          <span
-            className={`text-3xl font-black font-headline tracking-tighter ${currentBudget >= 0 ? "text-tertiary" : "text-error"}`}
-          >
-            {formatCurrency(currentBudget)}
-          </span>
-        </div>
-        {(() => {
-          const morale = teamInfo?.morale ?? 75;
-          const moraleColor =
-            morale >= 70
-              ? "text-emerald-400"
-              : morale >= 40
-                ? "text-tertiary"
-                : "text-error";
-          const moraleBorder =
-            morale >= 70
-              ? "border-emerald-500"
-              : morale >= 40
-                ? "border-tertiary"
-                : "border-error";
-          const moraleLabel =
-            morale >= 70 ? "Boa" : morale >= 40 ? "Razoável" : "Má";
-          return (
-            <div
-              className={`bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 ${moraleBorder}`}
-            >
-              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                Moral da Equipa
-              </span>
-              <div className="flex items-baseline gap-2">
-                <span
-                  className={`text-3xl font-black font-headline tracking-tighter ${moraleColor}`}
-                >
-                  {morale}%
-                </span>
-                <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">
-                  {moraleLabel}
-                </span>
-              </div>
-            </div>
-          );
-        })()}
-      </div>
-
       {/* ── Linhas do plantel ── */}
       <div className="bg-surface-container rounded-md overflow-hidden">
         <div className="px-5 py-4 flex items-center justify-between bg-surface-container-high/50">
           <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">
-            Gestão Contratual do Plantel
+            Gestão do Plantel
           </h2>
           <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-widest">
             {mySquad.length} jogadores
