@@ -247,7 +247,7 @@ export function ClubTab({
         </div>
 
         {/* Palmarés */}
-        <div className="bg-surface-container rounded-lg border border-outline-variant/25 p-4 flex flex-col">
+        <div className="bg-surface-container rounded-lg border border-outline-variant/25 p-4 flex flex-col w-4/5 mx-auto">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
               Palmarés
