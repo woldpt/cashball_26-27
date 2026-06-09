@@ -186,6 +186,7 @@ export function useSocketListeners(handlers, refs) {
 			if (data.year) handlers.setSeasonYear(data.year);
 			handlers.setAllMatchResults({});
 			handlers.setMatchweekCount(0);
+			handlers.setMatchResults(null);
 			});
 		socket.on("teamSquadData", ({ teamId, squad }) => {
 			if (
