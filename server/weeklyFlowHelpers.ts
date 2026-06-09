@@ -107,33 +107,50 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
   // Initialize fixture seeds for the given divisions if not yet set.
   // Seeds are normally generated at season end; this handles epoch 1 and any
-  // gap where seeds were never persisted.
+  // gap where seeds were never persisted, as well as stale seeds from a
+  // mid-rollover crash (teams mudaram de divisão mas os seeds antigos ficaram).
   async function ensureFixtureSeeds(
     game: ActiveGame,
     divs: number[],
   ): Promise<void> {
     let changed = false;
     for (const div of divs) {
-      if (!game.fixtureSeeds[div] || game.fixtureSeeds[div].length === 0) {
-        const ids = await new Promise<number[]>((resolve) => {
-          game.db.all(
-            "SELECT id FROM teams WHERE division = ? ORDER BY id",
-            [div],
-            (err: any, rows: Array<{ id: number }>) => {
-              if (err || !rows || rows.length < 2) return resolve([]);
-              resolve(rows.map((r) => r.id));
-            },
-          );
-        });
-        if (ids.length >= 2) {
-          game.fixtureSeeds[div] = ids;
-          changed = true;
-        }
+      // Query current teams in this division from DB (source of truth)
+      const rows = await new Promise<Array<{ id: number }>>((resolve) => {
+        game.db.all(
+          "SELECT id FROM teams WHERE division = ? ORDER BY id",
+          [div],
+          (err: any, rows: Array<{ id: number }>) => {
+            if (err || !rows) return resolve([]);
+            resolve(rows);
+          },
+        );
+      });
+      if (rows.length < 2) continue;
+
+      const dbIds = rows.map((r) => r.id);
+      const seedIds = game.fixtureSeeds[div] || [];
+      const dbSet = new Set(dbIds);
+
+      // Validate: seeds must contain exactly the same teams as the DB
+      const seedsMatch =
+        seedIds.length === dbIds.length &&
+        seedIds.every((id) => dbSet.has(id));
+
+      if (seedsMatch) continue;
+
+      // Regenerate: Fisher-Yates shuffle for unpredictability (mirrors applySeasonEnd)
+      const shuffled = [...dbIds];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
+      game.fixtureSeeds[div] = shuffled;
+      changed = true;
     }
     if (changed) {
       console.log(
-        `[${game.roomCode}] 🎲 fixtureSeeds inicializados (season 1):`,
+        `[${game.roomCode}] 🎲 fixtureSeeds regenerados (validação):`,
         Object.entries(game.fixtureSeeds)
           .map(([d, ids]) => `div${d}=${(ids as number[]).length}eq`)
           .join(", "),
