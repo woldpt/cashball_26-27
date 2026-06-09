@@ -334,27 +334,13 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			throw txErr;
 		}
 
-		// Reset to new season
-		game.season += 1;
-		game.year += 1;
-		game.calendarIndex = 0;
-		game.matchweek = 1;
-		game.gamePhase = "lobby";
-		game.currentEvent = SEASON_CALENDAR[0];
-		game.currentFixtures = [];
-		game.allMatchResults = {};
-		game.cupTeamIds = [];
-		game.cupHalftimePayload = null;
-		game.lastHalftimePayload = null;
-		game.dismissalsThisSeason = new Set<string>();
-		clearPhaseTimer(game);
-		game.phaseAcks = new Set();
-		game.phaseToken = "";
-		saveGameState(game);
-
+		// Carregar equipas com as NOVAS divisões (pós-promoção/despromoção)
+		// antes de resetar o estado do jogo, para que o saveGameState abaixo
+		// já persista os fixtureSeeds corretos e elimine a janela onde seeds
+		// antigos podiam ficar gravados na DB.
 		const updatedTeams = await getTeamsWithCoachNames(game.db);
 
-		// Gerar fixtureSeeds com as equipas nas suas NOVAS divisões (pós-promoção/despromoção)
+		// Gerar fixtureSeeds com as equipas nas suas NOVAS divisões
 		game.fixtureSeeds = {};
 		for (const div of [1, 2, 3, 4]) {
 			const divTeams = updatedTeams
@@ -375,6 +361,23 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				.map(([d, ids]) => `div${d}=${ids.length}eq`)
 				.join(", "),
 		);
+
+		// Reset to new season — agora com fixtureSeeds já corretos em memória
+		game.season += 1;
+		game.year += 1;
+		game.calendarIndex = 0;
+		game.matchweek = 1;
+		game.gamePhase = "lobby";
+		game.currentEvent = SEASON_CALENDAR[0];
+		game.currentFixtures = [];
+		game.allMatchResults = {};
+		game.cupTeamIds = [];
+		game.cupHalftimePayload = null;
+		game.lastHalftimePayload = null;
+		game.dismissalsThisSeason = new Set<string>();
+		clearPhaseTimer(game);
+		game.phaseAcks = new Set();
+		game.phaseToken = "";
 		saveGameState(game);
 
 		io.to(game.roomCode).emit("teamsData", updatedTeams);

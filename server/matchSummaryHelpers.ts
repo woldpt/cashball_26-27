@@ -46,16 +46,33 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
   ): Promise<void> {
     let changed = false;
     for (const div of divs) {
-      if (!game.fixtureSeeds[div] || game.fixtureSeeds[div].length === 0) {
-        const rows = await runAll<{ id: number }>(
-          game.db,
-          "SELECT id FROM teams WHERE division = ? ORDER BY id",
-          [div],
-        );
-        if (rows.length < 2) continue;
-        game.fixtureSeeds[div] = rows.map((r) => r.id);
-        changed = true;
+      // Query current teams in this division from DB (source of truth)
+      const rows = await runAll<{ id: number }>(
+        game.db,
+        "SELECT id FROM teams WHERE division = ? ORDER BY id",
+        [div],
+      );
+      if (rows.length < 2) continue;
+
+      const dbIds = rows.map((r) => r.id);
+      const seedIds = game.fixtureSeeds[div] || [];
+      const dbSet = new Set(dbIds);
+
+      // Validate: seeds must contain exactly the same teams as the DB
+      const seedsMatch =
+        seedIds.length === dbIds.length &&
+        seedIds.every((id) => dbSet.has(id));
+
+      if (seedsMatch) continue;
+
+      // Regenerate: Fisher-Yates shuffle for unpredictability (mirrors applySeasonEnd)
+      const shuffled = [...dbIds];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
+      game.fixtureSeeds[div] = shuffled;
+      changed = true;
     }
     // Seeds will be persisted by checkAllReady when the match starts.
     void changed;
