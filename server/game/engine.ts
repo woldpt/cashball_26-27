@@ -666,6 +666,33 @@ export function generateIntroEvents(
   }
 }
 
+// Pré-gera o comentário táctico do minuto 46 antes da simulação da segunda parte.
+// Chamada em weeklyFlowHelpers.ts antes de emitir matchSegmentStart, para que o
+// comentário já esteja no payload durante a pausa de 5s.
+// A guard na engine (!fixture._secondHalfStartComment) evita duplicação.
+export function generateSecondHalfIntroEvents(
+  fixture: MatchFixture,
+  homeTactic: any,
+  awayTactic: any,
+): void {
+  if (!fixture._secondHalfStartComment) {
+    const homeName = fixture.homeTeam?.name || fixture.homeTeamId;
+    const awayName = fixture.awayTeam?.name || fixture.awayTeamId;
+    const homeFormation = homeTactic?.formation || "4-4-2";
+    const awayFormation = awayTactic?.formation || "4-4-2";
+    const homeStyle = homeTactic?.style || "EQUILIBRADO";
+    const awayStyle = awayTactic?.style || "EQUILIBRADO";
+    fixture.events.push({
+      minute: 46,
+      type: "phase_start",
+      team: null,
+      emoji: "🔔",
+      text: `[46'] 🔔 ${secondHalfTacticPhrase(homeName, homeFormation, homeStyle, awayName, awayFormation, awayStyle)}`,
+    });
+    fixture._secondHalfStartComment = true;
+  }
+}
+
 async function simulateMatchSegment(
   db: Db,
   fixture: MatchFixture,
@@ -1753,11 +1780,47 @@ async function applyPostMatchQualityEvolution(
 
     // ── Player skill evolution ─────────────────────────────────────────────
     db.all(
-      "SELECT id, team_id, skill, injury_until_matchweek, suspension_until_matchweek FROM players WHERE team_id IS NOT NULL ORDER BY team_id, id",
+      "SELECT id, team_id, position, skill, injury_until_matchweek, suspension_until_matchweek FROM players WHERE team_id IS NOT NULL ORDER BY team_id, id",
       (err, players) => {
         if (err || !players || players.length === 0) {
           resolve();
           return;
+        }
+
+        // ── Build individual performance maps from fixture events ─────────
+        const playerGoals = new Map<number, number>();
+        const playerRedCards = new Map<number, boolean>();
+        const teamCleanSheetWin = new Map<number, boolean>();
+
+        for (const match of fixtures || []) {
+          // Track clean sheet wins: team won and opponent scored 0
+          if (
+            match.finalHomeGoals > match.finalAwayGoals &&
+            match.finalAwayGoals === 0
+          ) {
+            teamCleanSheetWin.set(match.homeTeamId, true);
+          }
+          if (
+            match.finalAwayGoals > match.finalHomeGoals &&
+            match.finalHomeGoals === 0
+          ) {
+            teamCleanSheetWin.set(match.awayTeamId, true);
+          }
+
+          // Parse events for goals and red cards
+          const events = match.events || [];
+          for (const evt of events) {
+            if (!evt.playerId) continue;
+            if (evt.type === "goal" || evt.type === "penalty_goal") {
+              playerGoals.set(
+                evt.playerId,
+                (playerGoals.get(evt.playerId) || 0) + 1,
+              );
+            }
+            if (evt.type === "red" || evt.type === "gk_red_card") {
+              playerRedCards.set(evt.playerId, true);
+            }
+          }
         }
 
         const teamGroups = new Map();
@@ -1786,7 +1849,7 @@ async function applyPostMatchQualityEvolution(
           // Convivência: jogadores abaixo da média do plantel evoluem ao
           // conviver com colegas mais talentosos (spec: "evoluem se
           // conviverem com jogadores mais talentosos")
-          if (diff >= 1 && Math.random() < Math.min(0.66, 0.15 + diff / 27)) {
+          if (diff >= 1 && Math.random() < Math.min(0.75, 0.20 + diff / 20)) {
             delta += 1;
           }
 
@@ -1794,7 +1857,7 @@ async function applyPostMatchQualityEvolution(
           if (
             teamResult === "W" &&
             diff >= 0 &&
-            Math.random() < Math.min(0.3, 0.06 + diff / 73)
+            Math.random() < Math.min(0.45, 0.10 + diff / 50)
           ) {
             delta += 1;
           }
@@ -1804,15 +1867,42 @@ async function applyPostMatchQualityEvolution(
           // Jogadores acima da média do plantel são mais afectados
           if (teamResult === "L") {
             const lossPressure = Math.min(
-              0.12,
-              0.02 + Math.max(0, -diff) / 250,
+              0.18,
+              0.04 + Math.max(0, -diff) / 150,
             );
             if (Math.random() < lossPressure) delta -= 1;
           }
 
           // Empate contra equipa mais forte — pequena hipótese de evolução
-          if (teamResult === "D" && diff >= 5 && Math.random() < 0.12) {
+          if (teamResult === "D" && diff >= 4 && Math.random() < 0.20) {
             delta += 1;
+          }
+
+          // ── Performance individual pós-jogo ──────────────────────────
+          const goals = playerGoals.get(player.id) || 0;
+
+          // Marcou 2+ golos: 25% de chance de +1 skill
+          if (goals >= 2 && Math.random() < 0.25) {
+            delta += 1;
+          }
+          // Marcou 1 golo: 10% de chance de +1 skill
+          else if (goals === 1 && Math.random() < 0.10) {
+            delta += 1;
+          }
+
+          // GR com clean sheet em vitória: 15% de chance de +1 skill
+          if (
+            player.position === "GR" &&
+            teamResult === "W" &&
+            teamCleanSheetWin.has(player.team_id) &&
+            Math.random() < 0.15
+          ) {
+            delta += 1;
+          }
+
+          // Cartão vermelho: 20% de chance de -1 skill
+          if (playerRedCards.has(player.id) && Math.random() < 0.20) {
+            delta -= 1;
           }
 
           if (delta !== 0) {
@@ -1881,6 +1971,7 @@ module.exports = {
   simulateExtraTime,
   simulatePenaltyShootout,
   generateIntroEvents,
+  generateSecondHalfIntroEvents,
 };
 
 // ─── EXTRA TIME ──────────────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ import {
   withJuniorGRs,
   ensureFullBench,
   generateIntroEvents,
+  generateSecondHalfIntroEvents,
 } from "./game/engine";
 import { generateAITactic } from "./game/matchCalculations";
 
@@ -418,6 +419,17 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         fixture.matchweek = game.matchweek;
         const { t1, t2 } = fixtureTactics[fi];
         generateIntroEvents(fixture, t1, t2);
+      }
+    }
+
+    // Pré-gerar comentário táctico do minuto 46 para que chegue ao cliente
+    // no payload do matchSegmentStart e seja visível durante a pausa de 5s.
+    // A guard na engine (!fixture._secondHalfStartComment) evita duplicação.
+    if (startMin === 46) {
+      for (let fi = 0; fi < game.currentFixtures.length; fi++) {
+        const fixture = game.currentFixtures[fi];
+        const { t1, t2 } = fixtureTactics[fi];
+        generateSecondHalfIntroEvents(fixture, t1, t2);
       }
     }
 
