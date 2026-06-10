@@ -52,7 +52,13 @@ export const MATCH_EVENT_TYPES = [
 
 /** Filter and sort events up to a given minute. */
 export function filterMatchEvents(events, liveMinute) {
+  // Durante a pausa de introdução (5s) o servidor já enviou eventos com
+  // minute = liveMinute + 1 (weather, phase_start). Incluímo-los para que
+  // a pausa não fique vazia. Os minutos de pausa são startMin - 1:
+  // 0 (início 1ª parte), 45 (início 2ª parte), 90 (início prolongamento).
+  const PAUSE_MINUTES = new Set([0, 45, 90]);
+  const maxMinute = PAUSE_MINUTES.has(liveMinute) ? liveMinute + 1 : liveMinute;
   return events
-    .filter((e) => e.minute <= liveMinute && MATCH_EVENT_TYPES.includes(e.type))
+    .filter((e) => e.minute <= maxMinute && MATCH_EVENT_TYPES.includes(e.type))
     .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
 }

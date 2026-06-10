@@ -710,8 +710,40 @@ export function useSocketListeners(handlers, refs) {
 					})),
 				});
 			} else if (data.startMin === 46) {
-				// Second half — dismiss halftime panel, keep existing match data
+				// Second half — dismiss halftime panel, merge intro events from payload
 				handlers.setShowHalftimePanel(false);
+				handlers.setMatchResults((prev) => {
+					if (!prev) return prev;
+					const updatedResults = (prev.results || []).map((r) => {
+						const update = (data.fixtures || []).find(
+							(f) =>
+								f.homeTeamId === r.homeTeamId &&
+								f.awayTeamId === r.awayTeamId,
+						);
+						if (!update) return r;
+						const existingEvents = r.events || [];
+						const newEvents = (update.events || []).filter(
+							(ne) =>
+								!existingEvents.some(
+									(ee) =>
+										ee.minute === ne.minute &&
+										ee.type === ne.type &&
+										ee.playerId === ne.playerId,
+								),
+						);
+						return {
+							...r,
+							events: [...existingEvents, ...newEvents],
+							homeLineup: update.homeLineup?.length
+								? update.homeLineup
+								: r.homeLineup,
+							awayLineup: update.awayLineup?.length
+								? update.awayLineup
+								: r.awayLineup,
+						};
+					});
+					return { ...prev, results: updatedResults };
+				});
 			}
 		});
 
