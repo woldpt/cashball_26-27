@@ -76,6 +76,7 @@ export function PitchFormation({
       {Object.entries(rows).map(([posKey, players]) => (
         <PlayerRow
           key={posKey}
+          posKey={posKey}
           players={players}
           posColors={posColors}
           starColor={starColor}

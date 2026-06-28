@@ -8,7 +8,7 @@
  *     MatchView.jsx           ← vista principal 2 colunas (narrativa + pitch)
  *     IntervencaoView.jsx     ← substituições + cronologia + adversário
  *   shared/
- *     MatchPlayerCard.jsx     ← card compacto → expandido hover
+ *     MatchPlayerCard.jsx     ← card de jogador (sempre expandido)
  *     PitchFormation.jsx      ← SVG pitch + formação
  *     BenchPlayers.jsx         ← lista de suplentes
  *     PossessionBar.jsx       ← barra de posse

@@ -2,13 +2,9 @@ import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { getPosStyle } from "../matchConstants.js";
 
 /**
- * Match player card — compact on desktop (hover to expand), always expanded on mobile.
+ * Match player card — always expanded (skill + RES + form).
  *
- * Desktop compact: [bar] [POS] Nome ★           42 ↔
- * Desktop hover:   [bar] [POS] Nome ★   42 │ RES 4 │ 💪 ↔
- * Mobile (always): [bar] [POS] Nome ★   42 │ RES 4 │ 💪 ↔
- *
- * Uses CSS-only responsive visibility: no React state needed.
+ * [bar] [POS] Nome ★   42 │ RES 4 │ 💪 ↔
  */
 export function MatchPlayerCard({
   player,
@@ -70,13 +66,8 @@ export function MatchPlayerCard({
         {hasStar && !disabled && <span className="ml-0.5 text-amber-400 font-black">*</span>}
       </span>
 
-      {/* ── Compact: skill only (desktop, no hover) ── */}
-      <span className={`shrink-0 text-[11px] font-black tabular-nums mr-2 ${skillColor} hidden md:inline-block md:group-hover:hidden`}>
-        {player.skill ?? "—"}
-      </span>
-
-      {/* ── Expanded: skill + RES + form (mobile always, desktop on hover) ── */}
-      <div className={`shrink-0 flex items-center gap-1.5 mr-2 flex md:hidden md:group-hover:flex`}>
+      {/* ── Expanded: skill + RES + form (always visible) ── */}
+      <div className="shrink-0 flex items-center gap-1.5 mr-2">
         <span className={`text-[11px] font-black tabular-nums ${skillColor}`}>
           {player.skill ?? "—"}
         </span>
