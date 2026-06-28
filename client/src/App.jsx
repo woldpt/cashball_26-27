@@ -345,7 +345,7 @@ function App() {
 			joinTimerRef={joinTimerRef}
 			backendUrl={backendUrl}
 		>
-			{!me.teamId ? (
+			{!me?.teamId ? (
 				<div className="min-h-screen bg-surface text-on-surface flex items-center justify-center">
 					<div className="text-center space-y-3">
 						<p className="text-3xl font-headline font-black text-primary tracking-tight">

@@ -1015,11 +1015,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                             {/* ── HERO: MY MATCH ─────────────────────── */}
                             {matchResults &&
                               (() => {
-                            const myMatch = matchResults.results.find(
-                              (m) =>
-                                m.homeTeamId === me.teamId ||
-                                m.awayTeamId === me.teamId,
-                            );
                             if (!myMatch) return null;
                             const hInfo = teams.find(
                               (t) => t.id === myMatch.homeTeamId,

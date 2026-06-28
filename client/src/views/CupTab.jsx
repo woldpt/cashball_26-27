@@ -91,11 +91,11 @@ export function CupTab({
                         <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">
                           {cupRoundResults.roundName}
                         </span>
-                        <span
-                           className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${cupRoundResults.isFinal ? "bg-amber-500/30 text-amber-300 border border-amber-500/30" : "bg-white/8 text-zinc-300"}`}
-                         >
-                          {finalLabel}
-                        </span>
+                        {cupRoundResults.isFinal && (
+                          <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-amber-500/30 text-amber-300 border border-amber-500/30">
+                            {finalLabel}
+                          </span>
+                        )}
                       </div>
 
                       <div className="px-4 py-5">
