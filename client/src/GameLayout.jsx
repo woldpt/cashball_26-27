@@ -166,6 +166,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     // Derived
     isMatchInProgress,
     teamInfo,
+    myMatch,
     redCardedHalftimeIds,
     injuredHalftimeIds,
     myTeamInCup,
