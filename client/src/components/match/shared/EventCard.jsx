@@ -1,50 +1,43 @@
 import { PlayerLink } from "../../shared/PlayerLink.jsx";
+import { MatchIcon } from "./MatchIcon.jsx";
+import { getEventIconStyle } from "../matchConstants.js";
 
-/* ── Event icon mapping (internal) ──────────────────────────────────── */
-function getEventIcon(e) {
-  return (
-    e.emoji ||
-    (e.type === "goal" || e.type === "penalty_goal"
-      ? "⚽"
-      : e.type === "own_goal"
-        ? "⚽🔙"
-        : e.type === "yellow"
-          ? "🟨"
-          : e.type === "red"
-            ? "🟥"
-            : e.type === "injury"
-              ? "🤕"
-              : e.type === "substitution"
-                ? "🔄"
-                : "")
-  );
-}
-
-/* ── Event card ───────────────────────────────────────────────────────── */
+/* ── Event card ─────────────────────────────────────────────────────────
+ * Passive display card. No hover elevation (only the embedded PlayerLink is
+ * interactive). Icons are rendered as inline SVGs via MatchIcon, replacing
+ * the old emoji chain (⚽, ⚽🔙, 🟨, 🟥, 🤕, 🔄). */
 export function EventCard({ event, accent, showTeamBadge, showIcon = true, teamName }) {
-  const icon = getEventIcon(event);
+  const iconStyle = getEventIconStyle(event.type);
+  // Custom events can still ship their own emoji via `event.emoji`.
+  const customEmoji = event.emoji && !iconStyle ? event.emoji : null;
   const name = event.playerName || event.player_name || "";
 
   return (
-    <div
-      className="relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-surface-container/50 transition-all duration-200 hover:-translate-y-px hover:shadow-lg shadow-sm shadow-black/30"
-    >
+    <div className="relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-surface-container/50 shadow-sm shadow-black/30">
       {accent && (
         <div className="shrink-0 w-1" style={{ background: `linear-gradient(to bottom, ${accent}99, ${accent})` }} />
       )}
       <div className="flex items-center gap-2.5 flex-1 px-3 py-2">
-        <span className="text-on-surface-variant/80 font-black w-8 shrink-0 text-right tabular-nums text-[11px]">
+        <span className="text-on-surface-variant/80 font-bold min-w-[2ch] shrink-0 text-right tabular-nums text-xs">
           {event.minute != null ? `${event.minute}'` : "—"}
         </span>
-        {showIcon && <span className="w-5 shrink-0 text-center text-sm">{icon}</span>}
-        <span className="flex-1 truncate text-xs font-black text-on-surface">
+        {showIcon && (
+          <span className="w-5 h-5 shrink-0 flex items-center justify-center">
+            {iconStyle ? (
+              <MatchIcon name={iconStyle.icon} className={`h-4 w-4 ${iconStyle.color}`} />
+            ) : customEmoji ? (
+              <span className="text-sm">{customEmoji}</span>
+            ) : null}
+          </span>
+        )}
+        <span className="flex-1 truncate text-xs font-semibold text-on-surface">
           <PlayerLink playerId={event.playerId}>
             {name}
           </PlayerLink>
         </span>
         {showTeamBadge && accent && (
           <span
-            className="text-[9px] font-black uppercase tracking-widest shrink-0 px-1.5 py-px rounded"
+            className="text-[10px] font-bold uppercase tracking-widest shrink-0 px-2 py-0.5 rounded"
             style={{
               color: accent,
               borderColor: `${accent}30`,

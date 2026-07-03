@@ -15,6 +15,9 @@ import {
   ConfirmedSubsStrip,
   PitchFormation,
   MatchPlayerCard,
+  MatchIcon,
+  PrimaryButton,
+  GhostButton,
 } from "../shared/index.js";
 
 /* ── IntervencaoView — Substitutions + chronology + opponent ────────── */
@@ -146,15 +149,29 @@ export function IntervencaoView({
       {/* Confirmed subs strip */}
       <ConfirmedSubsStrip subs={confirmedSubs} annotatedSquad={annotatedSquad} />
 
-      {/* Title bar */}
-      <div className={`shrink-0 px-5 py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme}`}>
-        <h2 className="text-base font-black font-headline tracking-tight text-on-surface uppercase text-center truncate">
-          {titleText}
-        </h2>
-        {isForcedSwap && injuryCountdown !== null && (
-          <p className="text-center text-amber-300 font-black text-[10px] mt-1 tracking-wide animate-pulse">
-            Auto-substituição em {injuryCountdown}s
-          </p>
+      {/* Title bar — also hosts the "Anular todas" ghost button when
+       * confirmed subs exist (was: previously buried in a strip BELOW the
+       * bottom bar, easy to miss). Surfacing it here at top-right makes
+       * it visible at the moment the user is reviewing their subs. */}
+      <div className={`shrink-0 px-5 py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme} flex items-center justify-between gap-4`}>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base font-bold font-headline tracking-tight text-on-surface uppercase text-center truncate">
+            {titleText}
+          </h2>
+          {isForcedSwap && injuryCountdown !== null && (
+            <p className="text-center text-amber-300 font-bold text-[11px] mt-1 tracking-wide animate-pulse">
+              Auto-substituição em {injuryCountdown}s
+            </p>
+          )}
+        </div>
+        {isHalftime && confirmedSubs.length > 0 && (
+          <GhostButton
+            onClick={onResetAllSubs}
+            icon={<MatchIcon name="reset" className="h-3.5 w-3.5 text-rose-400/80" />}
+            className="text-rose-400/80 hover:text-rose-300 hover:bg-rose-500/10 shrink-0"
+          >
+            Anular todas
+          </GhostButton>
         )}
       </div>
 
@@ -169,20 +186,20 @@ export function IntervencaoView({
             awayColor={aInfo?.color_primary}
             compact
           />
-          <div className="max-h-36 overflow-y-auto px-3 py-2 space-y-1">
+          <div className="max-h-36 overflow-y-auto px-3 py-2 space-y-1.5">
             <EventList events={visibleEvts.slice(-4)} />
           </div>
         </div>
 
         {/* ═══ LEFT: Chronology (desktop only) ═══ */}
         <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-outline-variant/20 md:w-[280px] lg:w-[320px] shrink-0">
-          <div className="shrink-0 px-5 py-4 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/20">
-            <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
+          <div className="shrink-0 px-5 py-4 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
+            <h2 className="text-base font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
               Cronologia
             </h2>
           </div>
-          <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+          <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
             <PossessionBar
               homePossession={fixture.homePossession}
               awayPossession={fixture.awayPossession}
@@ -202,9 +219,13 @@ export function IntervencaoView({
 
         {/* ═══ RIGHT: Subs / Adversário ═══ */}
         <div className="flex flex-col min-h-0 overflow-hidden flex-1">
-          {/* Tab toggle — pill style */}
-          <div className="shrink-0 px-3 py-2.5 bg-surface-container-high/50">
-            <div className="flex rounded-md bg-surface-container p-1 gap-1">
+          {/* Tab toggle — pill style.
+           * Loosened from `p-1 gap-1` (very cramped) to `p-1.5 gap-2`.
+           * Buttons bumped from `text-[11px]` / `py-2` / `font-black` to
+           * `text-xs` / `py-2.5` / `font-bold` — they read as captions,
+           * not actions, with the old sizing. */}
+          <div className="shrink-0 px-4 py-3 bg-surface-container-high/50 border-b border-outline-variant/15">
+            <div className="flex rounded-md bg-surface-container p-1.5 gap-2">
               {[
                 { key: "subs", label: "Substituições" },
                 { key: "adversario", label: "Adversário" },
@@ -212,7 +233,7 @@ export function IntervencaoView({
                 <button
                   key={tab.key}
                   onClick={() => setCenterTab(tab.key)}
-                  className={`flex-1 min-w-0 py-2 text-[11px] font-black uppercase tracking-widest rounded-md transition-all ${
+                  className={`flex-1 min-w-0 py-2.5 text-xs font-bold uppercase tracking-widest rounded-md transition-all ${
                     centerTab === tab.key
                       ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
                       : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
@@ -268,17 +289,6 @@ export function IntervencaoView({
         onConfirmSub={onConfirmSub}
         onResolveAction={onResolveAction}
       />
-
-      {isHalftime && confirmedSubs.length > 0 && (
-        <div className="shrink-0 border-t border-outline-variant/25 px-5 py-2 flex justify-center bg-surface-container/50">
-          <button
-            onClick={onResetAllSubs}
-            className="text-[10px] font-black uppercase tracking-[0.25em] text-rose-400/80 hover:text-rose-300 transition-colors"
-          >
-            ↺ Anular todas as substituições
-          </button>
-        </div>
-      )}
     </div>
   );
 }
@@ -290,12 +300,12 @@ function EventList({ events }) {
     return (
       <div className="rounded-md border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
         <span className="text-2xl text-on-surface-variant/40">⚽</span>
-        <p className="text-on-surface-variant/60 text-[11px] font-bold">Sem eventos</p>
+        <p className="text-on-surface-variant/60 text-[11px] font-medium">Sem eventos</p>
       </div>
     );
   }
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       {events.map((e, i) => (
         <EventCard key={i} event={e} showTeamBadge={false} />
       ))}
@@ -312,8 +322,8 @@ function SubsPanel({
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Tactics (halftime only) */}
       {isHalftime && (
-        <div className="px-4 py-3 border-b border-outline-variant/20">
-          <span className="block text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2.5">
+        <div className="px-4 py-4 border-b border-outline-variant/15">
+          <span className="block text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant mb-3">
             Mentalidade
           </span>
           <TacticsButtons value={tactic.style} onChange={onUpdateTactic} />
@@ -323,16 +333,16 @@ function SubsPanel({
       <div className="flex-1 flex flex-col md:grid md:grid-cols-2 min-h-0 overflow-hidden">
         {/* On-pitch column */}
         <div className="flex-1 md:flex-none flex flex-col min-h-0 overflow-hidden">
-          <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50">
-            <h3 className="text-sm font-black font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
+          <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
+            <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
               {isPenalty ? "Candidatos" : "Titulares"}
             </h3>
-            <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-widest">
+            <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
               {onPitchPlayers.length}
             </span>
           </div>
-          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
+          <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2">
             {onPitchPlayers.map((p) => {
               const grAvailableOnBench = benchPlayers.some(
                 (bp) => bp.position === "GR" && !subbedOut.includes(bp.id),
@@ -361,7 +371,7 @@ function SubsPanel({
               );
             })}
             {onPitchPlayers.length === 0 && (
-              <p className="text-center text-on-surface-variant/60 text-xs font-bold py-6">
+              <p className="text-center text-on-surface-variant/60 text-xs font-medium py-6">
                 Sem opções em campo
               </p>
             )}
@@ -370,17 +380,17 @@ function SubsPanel({
 
         {/* Bench column */}
         {!isPenalty ? (
-          <div className="flex-1 md:flex-none flex flex-col min-h-0 overflow-hidden">
-            <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50">
-              <h3 className="text-sm font-black font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
+          <div className="flex-1 md:flex-none flex flex-col min-h-0 overflow-hidden border-t md:border-t-0 md:border-l border-outline-variant/15">
+            <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
+              <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
                 Suplentes
               </h3>
-              <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-widest">
+              <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
                 {benchPlayers.length}
               </span>
             </div>
-            <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
+            <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2">
               {benchPlayers.map((p) => {
                 const alreadyUsed = isHalftime && subbedOut.includes(p.id);
                 const positionMismatch = !!forceOutPlayer && (forceOutPlayer.position === "GR") !== (p.position === "GR");
@@ -400,19 +410,19 @@ function SubsPanel({
                 );
               })}
               {benchPlayers.length === 0 && (
-                <p className="text-center text-on-surface-variant/60 text-xs font-bold py-6">
+                <p className="text-center text-on-surface-variant/60 text-xs font-medium py-6">
                   Sem suplentes disponíveis
                 </p>
               )}
             </div>
           </div>
         ) : (
-          <div className="flex-1 md:flex-none flex flex-col min-h-0 overflow-hidden">
-            <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50">
-              <h3 className="text-sm font-black font-headline tracking-tight text-tertiary uppercase">Escolha</h3>
+          <div className="flex-1 md:flex-none flex flex-col min-h-0 overflow-hidden border-t md:border-t-0 md:border-l border-outline-variant/15">
+            <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
+              <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">Escolha</h3>
             </div>
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-center text-on-surface-variant/80 text-xs font-bold px-4">
+              <p className="text-center text-on-surface-variant/80 text-xs font-medium px-4">
                 Seleciona o marcador na coluna "Titulares".
               </p>
             </div>
@@ -428,14 +438,15 @@ function AdversarioPanel({ hasLineups, oppFormation, oppStyleLabel, oppRows, opp
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Formation badge (if known) */}
       {(oppFormation || oppStyleLabel) && (
-        <div className="shrink-0 px-3 pt-3">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md bg-surface-container border border-outline-variant/25 text-on-surface-variant">
+        <div className="shrink-0 px-4 pt-4">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-md bg-surface-container border border-outline-variant/25 text-on-surface-variant">
             {[oppFormation, oppStyleLabel].filter(Boolean).join(" · ")}
           </span>
         </div>
       )}
 
-      <div className="flex-1 flex flex-col md:grid md:grid-cols-2 min-h-0 overflow-hidden px-3 pb-3 pt-2">
+      {/* Normalized padding — old code mixed `px-3 pt-2 pb-3 pt-3`. */}
+      <div className="flex-1 flex flex-col md:grid md:grid-cols-2 min-h-0 overflow-hidden p-4 gap-4">
         {/* Opponent pitch */}
         <div className="md:flex-1 md:min-h-0 md:flex md:items-center md:justify-center overflow-hidden">
           {!hasLineups ? (
@@ -451,12 +462,12 @@ function AdversarioPanel({ hasLineups, oppFormation, oppStyleLabel, oppRows, opp
 
         {/* Opponent bench */}
         <div className="flex-1 md:flex-none flex flex-col min-h-0 overflow-hidden">
-          <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50">
-            <h3 className="text-sm font-black font-headline tracking-tight text-tertiary uppercase">Banco</h3>
+          <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
+            <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">Banco</h3>
           </div>
-          <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1.5">
+          <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2">
             {!hasLineups || oppBench.length === 0 ? (
-              <p className="text-center text-on-surface-variant/60 text-xs font-bold py-6">
+              <p className="text-center text-on-surface-variant/60 text-xs font-medium py-6">
                 Sem dados do banco adversário
               </p>
             ) : (
@@ -481,68 +492,74 @@ function EmptyState({ icon, message }) {
   return (
     <div className="rounded-md border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
       <span className="text-3xl text-on-surface-variant/40">{icon}</span>
-      <p className="text-on-surface-variant/80 text-xs font-bold text-center px-4">{message}</p>
+      <p className="text-on-surface-variant/80 text-xs font-medium text-center px-4">{message}</p>
     </div>
   );
 }
 
+/* BottomBar — restructured into two grouped clusters separated by a
+ * vertical divider so the eye can scan "[who's leaving] → [who's coming in]"
+ * and "[reset] [confirm]" as two distinct action groups. Was: 6+ siblings
+ * flat in one row at gap-2/gap-3, with "Anular todas" buried BELOW the bar. */
 function BottomBar({ effectiveOutId, selectedInId, sourcePlayer, targetPlayer, isHalftime, isPenalty, canConfirmSwap, onResetSub, onConfirmSub, onResolveAction }) {
   return (
-    <div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high px-5 py-3">
-      {/* Mobile: stacked rows. Desktop: single row with inline labels. */}
-      <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 min-w-0">
-        <div className="flex items-center gap-2 min-w-0 md:flex-1">
-          <span className="text-[10px] text-on-surface-variant/60 shrink-0 font-black uppercase tracking-wide">Sai</span>
-          <span className="flex-1 md:flex-none bg-rose-950/80 text-rose-200 border border-rose-800/50 text-[11px] font-black px-3 py-1.5 rounded-md truncate md:max-w-[35%]">
-            {effectiveOutId ? sourcePlayer?.name || "?" : "—"}
-          </span>
-          {!isPenalty && (
-            <span className="text-on-surface-variant/60 shrink-0 font-black text-base hidden md:inline">→</span>
-          )}
-        </div>
-
+    <div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high px-4 md:px-5 py-3">
+      <div className="flex flex-col md:flex-row md:items-center gap-4 min-w-0">
+        {/* Cluster A: the Sai/Entra chain (skipped entirely for penalty mode). */}
         {!isPenalty && (
           <div className="flex items-center gap-2 min-w-0 md:flex-1">
-            <span className="text-[10px] text-on-surface-variant/60 shrink-0 font-black uppercase tracking-wide">Entra</span>
-            <span className="flex-1 md:flex-none bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-[11px] font-black px-3 py-1.5 rounded-md truncate md:max-w-[35%]">
-              {selectedInId ? targetPlayer?.name || "?" : "—"}
-            </span>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[10px] text-on-surface-variant/60 shrink-0 font-semibold uppercase tracking-wide">Sai</span>
+              <span className="flex-1 md:flex-none bg-rose-950/80 text-rose-200 border border-rose-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate md:max-w-[45%]">
+                {effectiveOutId ? sourcePlayer?.name || "?" : "—"}
+              </span>
+            </div>
+            <MatchIcon name="chevron-right" className="h-4 w-4 text-on-surface-variant/60 shrink-0" />
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[10px] text-on-surface-variant/60 shrink-0 font-semibold uppercase tracking-wide">Entra</span>
+              <span className="flex-1 md:flex-none bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate md:max-w-[45%]">
+                {selectedInId ? targetPlayer?.name || "?" : "—"}
+              </span>
+            </div>
           </div>
         )}
 
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Vertical divider between clusters on desktop. */}
+        {!isPenalty && <div className="hidden md:block w-px h-8 bg-outline-variant/20 shrink-0" />}
+
+        {/* Cluster B: Reset + Confirm buttons. */}
+        <div className="flex items-center gap-2 shrink-0 md:ml-auto">
           {isHalftime ? (
             <>
-              <button
+              <GhostButton
                 onClick={onResetSub}
-                className="shrink-0 w-8 h-8 rounded-md bg-surface-container-high/80 hover:bg-surface-container-high text-on-surface-variant/80 hover:text-on-surface text-sm flex items-center justify-center transition-colors border border-outline/40"
+                icon={<MatchIcon name="reset" className="h-3.5 w-3.5" />}
+                aria-label="Limpar seleção"
               >
-                ✕
-              </button>
-              <button
+                Limpar
+              </GhostButton>
+              <PrimaryButton
                 onClick={onConfirmSub}
                 disabled={!canConfirmSwap}
-                className={`flex-1 md:flex-none shrink-0 px-5 py-2 rounded-md text-[11px] font-black uppercase tracking-wide transition-all border ${
-                  canConfirmSwap
-                    ? "bg-emerald-600/90 border-emerald-400/40 text-white shadow-[0_0_16px_rgba(16,185,129,0.25)] hover:bg-emerald-500/90"
-                    : "bg-surface-container-high/80 border-outline/40 text-on-surface-variant/60 cursor-not-allowed"
-                }`}
+                tone="emerald"
+                icon={<MatchIcon name="confirm" className="h-4 w-4" />}
               >
                 Substituir
-              </button>
+              </PrimaryButton>
             </>
           ) : (
-            <button
+            <PrimaryButton
               disabled={isPenalty ? !effectiveOutId : !canConfirmSwap}
               onClick={() =>
                 isPenalty
                   ? onResolveAction(effectiveOutId || null)
                   : onResolveAction({ playerOut: effectiveOutId, playerIn: selectedInId })
               }
-              className="flex-1 md:flex-none shrink-0 px-5 py-2 rounded-md text-[11px] font-black uppercase tracking-wide bg-primary/90 hover:brightness-110 text-on-primary disabled:opacity-50 disabled:cursor-not-allowed border border-primary/40 shadow-[0_0_16px_rgba(99,102,241,0.2)]"
+              tone="indigo"
+              icon={<MatchIcon name="confirm" className="h-4 w-4" />}
             >
               Substituir
-            </button>
+            </PrimaryButton>
           )}
         </div>
       </div>

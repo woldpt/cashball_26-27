@@ -42,7 +42,7 @@ export function MatchView({ fixture, liveMinute, teams, mode }) {
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* ── Halftime score banner ──────────────────────────────────── */}
       {isHalftime && (
-        <div className="shrink-0 p-3">
+        <div className="shrink-0 p-4">
           <HalftimeBanner
             hInfo={hInfo}
             aInfo={aInfo}
@@ -57,7 +57,7 @@ export function MatchView({ fixture, liveMinute, teams, mode }) {
         {/* ═══ LEFT (desktop) / TOP (mobile): Pitch + Bench ═══ */}
         <div className="flex flex-col min-h-0 md:flex-1 md:overflow-hidden">
           {/* Team toggle badges */}
-          <div className="shrink-0 flex items-center gap-2 px-3 py-2.5 bg-surface-container-high/50">
+          <div className="shrink-0 flex items-center gap-2 px-4 py-3 bg-surface-container-high/50 border-b border-outline-variant/15">
             <TeamBadge
               team={hInfo}
               side="home"
@@ -75,7 +75,7 @@ export function MatchView({ fixture, liveMinute, teams, mode }) {
           </div>
 
           {/* Pitch + Bench: side by side on desktop, stacked on mobile */}
-          <div className="flex flex-col md:flex-row gap-3 p-3 md:flex-1 md:min-h-0">
+          <div className="flex flex-col md:flex-row gap-4 p-4 md:flex-1 md:min-h-0">
             {/* Pitch */}
             <div className="md:flex-1 md:min-h-0 md:flex md:items-center md:justify-center">
               <div className="relative w-full max-w-[300px] md:max-w-none mx-auto md:mx-0 md:w-auto md:h-full rounded-md overflow-hidden border border-outline-variant/25 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16" }}>
@@ -86,7 +86,7 @@ export function MatchView({ fixture, liveMinute, teams, mode }) {
                   </>
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <p className="text-on-surface-variant/60 text-xs font-bold">Sem escalação disponível</p>
+                    <p className="text-on-surface-variant/60 text-xs font-medium">Sem escalação disponível</p>
                   </div>
                 )}
               </div>
@@ -94,8 +94,8 @@ export function MatchView({ fixture, liveMinute, teams, mode }) {
 
             {/* Bench */}
             {hasLineups && (
-              <div className="md:flex-1 md:min-h-0 md:max-w-[220px] md:overflow-y-auto flex flex-col">
-                <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-2 px-1 shrink-0">
+              <div className="md:flex-1 md:min-h-0 md:max-w-[240px] md:overflow-y-auto flex flex-col">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant mb-2.5 px-1 shrink-0">
                   Suplentes
                 </p>
                 <BenchPlayers players={bench} posStyleFn={getPosStyle} />
@@ -104,14 +104,19 @@ export function MatchView({ fixture, liveMinute, teams, mode }) {
           </div>
         </div>
 
-        {/* ═══ RIGHT (desktop) / BOTTOM (mobile): Narrative ═══ */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-3 border-t md:border-t-0 md:border-l border-outline-variant/20 min-h-0">
-          <RefWeatherBar
-            attendance={fixture.attendance}
-            referee={ref}
-            weatherEvent={weatherEvent}
-            teamStadium={hInfo?.stadium_name}
-          />
+        {/* ═══ RIGHT (desktop) / BOTTOM (mobile): Narrative ═══
+         * Each contextual block wrapped in its own card so they're visually
+         * distinct (was: all three children stacked at space-y-3, which
+         * blended the three info sources into a single block). */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 border-t md:border-t-0 md:border-l border-outline-variant/20 min-h-0">
+          <div className="rounded-md overflow-hidden">
+            <RefWeatherBar
+              attendance={fixture.attendance}
+              referee={ref}
+              weatherEvent={weatherEvent}
+              teamStadium={hInfo?.stadium_name}
+            />
+          </div>
 
           <PossessionBar
             homePossession={fixture.homePossession}
@@ -134,7 +139,7 @@ function TeamBadge({ team, active, onClick, label }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-black uppercase tracking-widest transition-all border ${
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-widest transition-all border ${
         active
           ? "bg-surface-container border-primary/60 text-on-surface shadow-[0_0_12px_rgba(99,102,241,0.2)]"
           : "bg-surface-container-low/40 border-outline-variant/25 text-on-surface-variant/70 hover:border-outline hover:text-on-surface-variant"
@@ -152,21 +157,21 @@ function TeamBadge({ team, active, onClick, label }) {
 function HalftimeBanner({ hInfo, aInfo, homeGoals, awayGoals }) {
   return (
     <div className="rounded-md overflow-hidden border border-outline-variant/25 bg-surface-container-low shadow-sm shadow-black/30">
-      <div className="flex items-center justify-center gap-5 pt-4 pb-1.5">
+      <div className="flex items-center justify-center gap-5 pt-4 pb-2">
         <TeamMiniBadge info={hInfo} />
         <div className="flex items-center gap-2.5">
-          <span className="text-3xl font-black font-headline tabular-nums text-on-surface tracking-tighter">
+          <span className="text-3xl font-bold font-headline tabular-nums text-on-surface tracking-tighter">
             {homeGoals}
           </span>
-          <span className="text-on-surface-variant/60 text-lg font-black">—</span>
-          <span className="text-3xl font-black font-headline tabular-nums text-on-surface tracking-tighter">
+          <span className="text-on-surface-variant/60 text-lg font-bold">—</span>
+          <span className="text-3xl font-bold font-headline tabular-nums text-on-surface tracking-tighter">
             {awayGoals}
           </span>
         </div>
         <TeamMiniBadge info={aInfo} />
       </div>
       <div className="flex items-center justify-center pb-3.5">
-        <span className="inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.3em] px-2.5 py-1 rounded-full bg-surface-container-high/80 border border-outline-variant/25 text-on-surface-variant">
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.3em] px-2.5 py-1 rounded-full bg-surface-container-high/80 border border-outline-variant/25 text-on-surface-variant">
           <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
           Intervalo
           <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
@@ -183,7 +188,7 @@ function TeamMiniBadge({ info }) {
         className="w-3 h-3 rounded-full shrink-0"
         style={{ background: info?.color_primary || "#6366f1", boxShadow: `0 0 10px ${info?.color_primary || "#6366f1"}80` }}
       />
-      <span className="text-[9px] font-black text-on-surface-variant truncate text-center leading-tight uppercase tracking-[0.15em]">
+      <span className="text-[10px] font-semibold text-on-surface-variant truncate text-center leading-tight uppercase tracking-[0.15em]">
         {info?.name || "—"}
       </span>
     </div>
@@ -195,12 +200,12 @@ function EventList({ events, hInfo, aInfo }) {
     return (
       <div className="rounded-md border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
         <span className="text-3xl text-on-surface-variant/40">⚽</span>
-        <p className="text-on-surface-variant/60 text-xs font-bold">Sem eventos a mostrar</p>
+        <p className="text-on-surface-variant/60 text-xs font-medium">Sem eventos a mostrar</p>
       </div>
     );
   }
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       {events.map((e, i) => {
         const isHome = e.team === "home";
         const accent = (isHome ? hInfo : aInfo)?.color_primary;

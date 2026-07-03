@@ -6,3 +6,5 @@ export { RefWeatherBar, WEATHER_LABELS } from "./RefWeatherBar.jsx";
 export { TacticsButtons } from "./TacticsButtons.jsx";
 export { ConfirmedSubsStrip } from "./ConfirmedSubsStrip.jsx";
 export { MatchPlayerCard } from "./MatchPlayerCard.jsx";
+export { MatchIcon } from "./MatchIcon.jsx";
+export { PrimaryButton, GhostButton } from "./Button.jsx";

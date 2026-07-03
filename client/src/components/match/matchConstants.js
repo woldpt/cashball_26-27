@@ -3,6 +3,14 @@
 /* Position sort order */
 export const POS_ORDER = { GR: 0, DEF: 1, MED: 2, ATA: 3 };
 
+/* Full PT labels for position badges — used in `title=` tooltips. */
+export const POSITION_FULL_LABELS = {
+  GR: "Guarda-redes",
+  DEF: "Defesa",
+  MED: "Médio",
+  ATA: "Avançado",
+};
+
 /** Sort players by position (GR→DEF→MED→ATA), then by skill descending. */
 export function sortPlayersByPos(arr = []) {
   return [...arr].sort(
@@ -49,6 +57,26 @@ export const MATCH_EVENT_TYPES = [
   "goal", "penalty_goal", "own_goal", "penalty_miss",
   "yellow", "red", "injury", "substitution", "phase_start",
 ];
+
+/* Icon + color mapping for match events. Replaces the inline `getEventIcon`
+ * ternary chain in EventCard.jsx. The `icon` field references a MatchIcon
+ * name; the `color` field is a Tailwind text-* class applied to the SVG. */
+export const MATCH_EVENT_ICONS = {
+  goal:            { icon: "goal",          color: "text-emerald-400" },
+  penalty_goal:    { icon: "penalty-goal",  color: "text-emerald-400" },
+  own_goal:        { icon: "own-goal",      color: "text-rose-400" },
+  penalty_miss:    { icon: "penalty-miss",  color: "text-amber-400" },
+  yellow:          { icon: "yellow-card",   color: "text-yellow-400" },
+  red:             { icon: "red-card",      color: "text-red-400" },
+  injury:          { icon: "injury",        color: "text-rose-400" },
+  substitution:   { icon: "swap",          color: "text-cyan-400" },
+  phase_start:     { icon: "phase-start",   color: "text-on-surface-variant" },
+};
+
+/** Resolve icon + color for an event, falling back gracefully. */
+export function getEventIconStyle(type) {
+  return MATCH_EVENT_ICONS[type] || null;
+}
 
 /** Filter and sort events up to a given minute. */
 export function filterMatchEvents(events, liveMinute) {
