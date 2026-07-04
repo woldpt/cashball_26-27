@@ -507,20 +507,16 @@ function BottomBar({ effectiveOutId, selectedInId, sourcePlayer, targetPlayer, i
       <div className="flex flex-col md:flex-row md:items-center gap-4 min-w-0">
         {/* Cluster A: the Sai/Entra chain (skipped entirely for penalty mode). */}
         {!isPenalty && (
-          <div className="flex items-center gap-2 min-w-0 md:flex-1">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-[10px] text-on-surface-variant/60 shrink-0 font-semibold uppercase tracking-wide">Sai</span>
-              <span className="flex-1 md:flex-none bg-rose-950/80 text-rose-200 border border-rose-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate md:max-w-[45%]">
-                {effectiveOutId ? sourcePlayer?.name || "?" : "—"}
-              </span>
-            </div>
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto_minmax(0,1fr)] items-center gap-2 min-w-0 md:flex-1">
+            <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">Sai</span>
+            <span className="bg-rose-950/80 text-rose-200 border border-rose-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0">
+              {effectiveOutId ? sourcePlayer?.name || "?" : "—"}
+            </span>
             <MatchIcon name="chevron-right" className="h-4 w-4 text-on-surface-variant/60 shrink-0" />
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-[10px] text-on-surface-variant/60 shrink-0 font-semibold uppercase tracking-wide">Entra</span>
-              <span className="flex-1 md:flex-none bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate md:max-w-[45%]">
-                {selectedInId ? targetPlayer?.name || "?" : "—"}
-              </span>
-            </div>
+            <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">Entra</span>
+            <span className="bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0">
+              {selectedInId ? targetPlayer?.name || "?" : "—"}
+            </span>
           </div>
         )}
 
