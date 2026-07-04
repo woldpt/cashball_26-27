@@ -31,11 +31,10 @@ export function MatchPlayerCard({
   const resColor =
     resistance >= 4 ? "text-green-400" : resistance >= 3 ? "text-yellow-400" : "text-red-400";
 
-  // Form: SVG icons replace the old 💪/😩/👍 emoji triplet (which was
-  // ambiguous between 👍 and 💪 — both positive). The trending-up/down/flat
-  // icons are unambiguous and render consistently across OSes.
-  const formIcon =
-    form >= 115 ? "form-up" : form <= 85 ? "form-down" : "form-flat";
+  // Form: keep the 💪/😩/👍 emoji triplet used elsewhere in the app
+  // (TacticsView, PlayersTab, MarketTab, SquadCard, PlayerHistoryModal)
+  // for visual consistency. Color carries the unambiguous signal.
+  const formIcon = form >= 115 ? "💪" : form <= 85 ? "😩" : "👍";
   const formColor =
     form >= 115 ? "text-emerald-400" : form <= 85 ? "text-rose-400" : "text-on-surface-variant";
 
@@ -97,7 +96,7 @@ export function MatchPlayerCard({
           </span>
         </div>
         <div className="w-px h-5 bg-outline-variant/25" />
-        <MatchIcon name={formIcon} className={`h-4 w-4 ${formColor}`} />
+        <span className={`text-sm leading-none ${formColor}`}>{formIcon}</span>
       </div>
 
       {/* Swap affordance (halftime mode). Moved to the right end but
