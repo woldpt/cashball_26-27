@@ -679,6 +679,7 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                         bids: (a.bids && !Array.isArray(a.bids)) ? a.bids : {},
                         timer: null,
                         endsAt: null,
+                        pausedRemainingMs: a.pausedRemainingMs,
                       };
                       pausedPlayerIds.push(Number(a.playerId));
                     }
@@ -854,6 +855,7 @@ function saveGameState(game: ActiveGame): void {
       sellerTeamId: a.sellerTeamId,
       startingPrice: a.startingPrice,
       bids: a.bids || {},
+      pausedRemainingMs: a.pausedRemainingMs,
     }));
   upsert("pausedAuctions", JSON.stringify(pausedAuctions));
 

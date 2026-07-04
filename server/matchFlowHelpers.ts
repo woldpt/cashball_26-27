@@ -46,13 +46,20 @@ export function pauseAllRunningAuctions(game: ActiveGame, io: any) {
     const auction = game.auctions[playerId] as any;
     if (!auction || auction.status !== "open") continue;
 
+    // Capture remaining time BEFORE clearing the timer so resume can pick up where it left off
+    const remainingMs = Math.max(0, (auction.endsAt ?? Date.now()) - Date.now());
+    auction.pausedRemainingMs = remainingMs;
+
     if (game.auctionTimers?.[playerId]) {
       clearTimeout(game.auctionTimers[playerId] as any);
       delete game.auctionTimers[playerId];
     }
 
     auction.status = "paused";
-    io.to(game.roomCode).emit("auctionPaused", { playerId: Number(playerId) });
+    io.to(game.roomCode).emit("auctionPaused", {
+      playerId: Number(playerId),
+      pausedRemainingMs: remainingMs,
+    });
   }
 }
 

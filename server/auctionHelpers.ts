@@ -85,7 +85,11 @@ export function createAuctionHelpers(deps: AuctionDeps) {
 
       const now = Date.now();
       auction.status = "open";
-      auction.endsAt = now + 120000;
+      // Resume with the saved remaining time (10s floor; 120s fallback for legacy/restored auctions)
+      const remainingMs = Math.max(10000, auction.pausedRemainingMs ?? 120000);
+      auction.endsAt = now + remainingMs;
+      // Clear the saved remaining so future pause cycles capture fresh time
+      auction.pausedRemainingMs = undefined;
       // Garantir que o contador de relicitações existe (pode estar ausente em leilões restaurados da BD)
       if (!auction.npcRelicitationCount) auction.npcRelicitationCount = {};
       // Migrar bids antigos (numéricos) para novo formato com timestamp
@@ -98,7 +102,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
       if (!game.auctionTimers) game.auctionTimers = {};
       game.auctionTimers[playerId] = setTimeout(() => {
         finalizeAuction(game, playerId);
-      }, 120000);
+      }, remainingMs);
 
       // Recalculate current high bid
       let currentHighBid = 0;
