@@ -56,6 +56,7 @@ export function buildPositionRows(starters) {
 export const MATCH_EVENT_TYPES = [
   "goal", "penalty_goal", "own_goal", "penalty_miss",
   "yellow", "red", "injury", "substitution", "phase_start",
+  "weather", "betting",
 ];
 
 /* Icon + color mapping for match events. Replaces the inline `getEventIcon`
@@ -69,8 +70,10 @@ export const MATCH_EVENT_ICONS = {
   yellow:          { icon: "yellow-card",   color: "text-yellow-400" },
   red:             { icon: "red-card",      color: "text-red-400" },
   injury:          { icon: "injury",        color: "text-rose-400" },
-  substitution:   { icon: "swap",          color: "text-cyan-400" },
+  substitution:    { icon: "swap",          color: "text-cyan-400" },
   phase_start:     { icon: "phase-start",   color: "text-on-surface-variant" },
+  weather:         { icon: null,            color: "text-sky-400" },
+  betting:         { icon: null,            color: "text-amber-400" },
 };
 
 /** Resolve icon + color for an event, falling back gracefully. */

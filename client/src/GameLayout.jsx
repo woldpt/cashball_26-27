@@ -1555,6 +1555,75 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                                       );
                                     })()}
                                   </div>
+
+                                  {/* ── Pre-match intro narratives during the 5s pause (liveMinute === 0) ──
+                                      Sequência: meteorologia → apostas → tácticas. Mostra os eventos
+                                      "outside game" (minute 1) antes do pontapé de saída. */}
+                                  {isPlayingMatch &&
+                                    liveMinute === 0 &&
+                                    (() => {
+                                      const introTypes = [
+                                        "weather",
+                                        "betting",
+                                        "phase_start",
+                                      ];
+                                      const introEvts = matchEvents
+                                        .filter(
+                                          (e) =>
+                                            e.minute <= 1 &&
+                                            introTypes.includes(e.type) &&
+                                            e.text,
+                                        )
+                                        .sort(
+                                          (a, b) =>
+                                            introTypes.indexOf(a.type) -
+                                            introTypes.indexOf(b.type),
+                                        );
+                                      if (introEvts.length === 0) return null;
+                                      return (
+                                        <div className="w-full max-w-md mt-4 space-y-1.5">
+                                          {introEvts.map((e, i) => {
+                                            // Strip leading "[NN']" prefix and optional repeat emoji
+                                            const phrase = e.text
+                                              .replace(
+                                                /^\[(?:\d+'|HT)\]\s*/,
+                                                "",
+                                              )
+                                              .trim();
+                                            const accentByType = {
+                                              weather:
+                                                "text-sky-400/90 border-sky-400/20",
+                                              betting:
+                                                "text-amber-400/90 border-amber-400/20",
+                                              phase_start:
+                                                "text-on-surface/80 border-outline-variant/25",
+                                            };
+                                            return (
+                                              <div
+                                                key={`${e.minute}-${e.type}-${i}`}
+                                                className={`flex items-start gap-2 px-3 py-2 rounded-md bg-surface-container-low/60 border ${accentByType[e.type] || "border-outline-variant/20"}`}
+                                                style={{
+                                                  animation: `commentaryFadeIn 0.5s ease ${i * 0.15}s both`,
+                                                }}
+                                              >
+                                                <span className="text-base leading-none shrink-0 translate-y-px">
+                                                  {e.emoji || "•"}
+                                                </span>
+                                                <p
+                                                  className="text-[11px] sm:text-[13px] leading-snug font-medium tracking-wide"
+                                                  style={{
+                                                    fontFamily:
+                                                      "Georgia, 'Times New Roman', serif",
+                                                  }}
+                                                >
+                                                  {phrase}
+                                                </p>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      );
+                                    })()}
                                 </div>
                               </div>
                             );

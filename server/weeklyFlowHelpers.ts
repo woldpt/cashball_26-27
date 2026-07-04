@@ -408,15 +408,52 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       }
     }
 
-    // Pré-gerar eventos de introdução (weather + táctica) do minuto 1 para que
-    // cheguem ao cliente no payload do matchSegmentStart e sejam visíveis durante
-    // a pausa de 5s. A engine ignora-os no loop graças às guards _weather/_firstHalfStartComment.
+    // Pré-gerar eventos de introdução (weather + táctica + apostas) do minuto 1
+    // para que cheguem ao cliente no payload do matchSegmentStart e sejam visíveis
+    // durante a pausa de 5s. A engine ignora-os no loop graças às guards
+    // _weather/_firstHalfStartComment/_bettingIntroShown.
     if (startMin === 1) {
+      // Build a standings-position lookup for every team in every division,
+      // so the betting intro can compute odds from table position (parallel
+      // to TacticsView's computeOdds). One query covers all teams; we rank
+      // within each division.
+      const allTeams = await new Promise<
+        Array<{ id: number; division: number; points: number; gf: number; ga: number }>
+      >((resolve) => {
+        game.db.all(
+          "SELECT id, division, points, goals_for AS gf, goals_against AS ga FROM teams ORDER BY division ASC, points DESC, goals_for - goals_against DESC, goals_for DESC, id ASC",
+          (err: any, rows: Array<{ id: number; division: number; points: number; gf: number; ga: number }>) => {
+            if (err || !rows) return resolve([]);
+            resolve(rows);
+          },
+        );
+      });
+      const positionByTeamId = new Map<number, number>();
+      let prevDiv: number | null = null;
+      let divRank = 0;
+      for (const t of allTeams) {
+        if (t.division !== prevDiv) {
+          prevDiv = t.division;
+          divRank = 0;
+        }
+        divRank++;
+        positionByTeamId.set(t.id, divRank);
+      }
+
       for (let fi = 0; fi < game.currentFixtures.length; fi++) {
         const fixture = game.currentFixtures[fi];
         // Estampar season/matchweek para a engine gerar o mesmo tempo que a previsão
         fixture.season = game.season;
         fixture.matchweek = game.matchweek;
+        // Stamp standings position onto homeTeam/awayTeam for betting odds
+        if (fixture.homeTeam) {
+          (fixture.homeTeam as any).position =
+            positionByTeamId.get(fixture.homeTeamId) ?? 8;
+        }
+        if (fixture.awayTeam) {
+          (fixture.awayTeam as any).position =
+            positionByTeamId.get(fixture.awayTeamId) ?? 8;
+        }
         const { t1, t2 } = fixtureTactics[fi];
         generateIntroEvents(fixture, t1, t2);
       }

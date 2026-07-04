@@ -10,7 +10,14 @@ export function EventCard({ event, accent, showTeamBadge, showIcon = true, teamN
   const iconStyle = getEventIconStyle(event.type);
   // Custom events can still ship their own emoji via `event.emoji`.
   const customEmoji = event.emoji && !iconStyle ? event.emoji : null;
-  const name = event.playerName || event.player_name || "";
+  const name =
+    event.playerName || event.player_name || "";
+  // Intro / narrative events (weather, betting, phase_start, etc.) carry
+  // their copy in event.text rather than a playerName slot. Strip the
+  // leading "[NN']" or "[HT]" prefix so the minute badge isn't duplicated.
+  const narrativeText = !name && event.text
+    ? event.text.replace(/^\[(?:\d+'|HT)\]\s*/, "").trim()
+    : null;
 
   return (
     <div className="relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-surface-container/50 shadow-sm shadow-black/30">
@@ -31,9 +38,13 @@ export function EventCard({ event, accent, showTeamBadge, showIcon = true, teamN
           </span>
         )}
         <span className="flex-1 truncate text-xs font-semibold text-on-surface">
-          <PlayerLink playerId={event.playerId}>
-            {name}
-          </PlayerLink>
+          {name ? (
+            <PlayerLink playerId={event.playerId}>
+              {name}
+            </PlayerLink>
+          ) : (
+            narrativeText || ""
+          )}
         </span>
         {showTeamBadge && accent && (
           <span

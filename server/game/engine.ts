@@ -35,6 +35,8 @@ import {
   finalEndPhrase,
   tacticStartPhrase,
   secondHalfTacticPhrase,
+  computeMatchOdds,
+  bettingPhrase,
 } from "./commentary";
 import {
   clampSkill,
@@ -641,6 +643,29 @@ export function generateIntroEvents(
       emoji: weatherEmojis[weatherCondition] || "🌤️",
       text: `[1'] ${weatherEmojis[weatherCondition] || "🌤️"} ${weatherPhrase(weatherCondition)}`,
     });
+  }
+
+  // Previsão de apostas (intro) — gerada do mesmo modo que o TacticsView,
+  // para que chegue ao cliente durante a pausa de 5s antes do minuto 1.
+  if (!fixture._bettingIntroShown) {
+    const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
+    const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
+    const homePos = (fixture.homeTeam as any)?.position ?? 8;
+    const awayPos = (fixture.awayTeam as any)?.position ?? 8;
+    const seed =
+      (fixture.season ?? 1) * 1000 +
+      (fixture.matchweek ?? 1) * 31 +
+      (fixture.homeTeamId ?? 0) +
+      (fixture.awayTeamId ?? 0);
+    const odds = computeMatchOdds(homePos, awayPos, seed);
+    fixture.events.push({
+      minute: 1,
+      type: "betting",
+      team: null,
+      emoji: "📊",
+      text: `[1'] 📊 ${bettingPhrase(homeName, awayName, odds)}`,
+    });
+    fixture._bettingIntroShown = true;
   }
 
   // Comentário táctico de início

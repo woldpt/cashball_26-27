@@ -704,6 +704,46 @@ function tacticStartPhrase(
   ]);
 }
 
+// ── Pre-match betting intro ───────────────────────────────────────────────
+// Port of computeOdds from client/src/views/TacticsView.jsx so the betting
+// preview can be generated server-side as an intro event during the 5s pause.
+
+export function computeMatchOdds(
+  homePos: number,
+  awayPos: number,
+  seed: number,
+): { home: string; draw: string; away: string } {
+  const numTeams = 10;
+  let pHome = (numTeams + 1 - homePos) / numTeams;
+  let pAway = (numTeams + 1 - awayPos) / numTeams;
+  // Home advantage boost
+  pHome *= 1.18;
+  pAway *= 0.85;
+  let pDraw = 0.28 + ((seed % 7) - 3) * 0.01;
+  const total = pHome + pAway + pDraw;
+  pHome /= total;
+  pAway /= total;
+  pDraw /= total;
+  const margin = 1.05;
+  const toOdds = (p: number) =>
+    p > 0.01 ? (Math.round((1 / (p * margin)) * 100) / 100).toFixed(2) : "—";
+  return { home: toOdds(pHome), draw: toOdds(pDraw), away: toOdds(pAway) };
+}
+
+export function bettingPhrase(
+  homeName: string,
+  awayName: string,
+  odds: { home: string; draw: string; away: string },
+): string {
+  return pickPhrase([
+    `A casa de apostas pesa ${homeName}: ${odds.home} (1) · ${odds.draw} (X) · ${odds.away} (2) ${awayName}.`,
+    `As odds de abertura: ${homeName} a ${odds.home}, empate a ${odds.draw}, ${awayName} a ${odds.away}.`,
+    `Bola ao ar e às cotas: ${odds.home} (1) · ${odds.draw} (X) · ${odds.away} (2). ${homeName} frente a ${awayName}.`,
+    `Previsão dos bookmakers antes do pontapé de saída — ${homeName} ${odds.home}, X ${odds.draw}, ${awayName} ${odds.away}.`,
+    `Quem leva a aposta? ${homeName} paga ${odds.home}, o empate ${odds.draw}, ${awayName} ${odds.away}.`,
+  ]);
+}
+
 export {
   pickPhrase,
   goalPhrase,
