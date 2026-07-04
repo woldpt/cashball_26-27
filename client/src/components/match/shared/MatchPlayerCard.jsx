@@ -5,7 +5,7 @@ import { MatchIcon } from "./MatchIcon.jsx";
 /**
  * Match player card — always expanded (skill + RES + form).
  *
- * Layout: [bar] [POS] Nome ★  42 │ RES 4 │ <form-icon> [swap-icon]
+ * Layout: [bar] [POS] Nome ★  [skill+glow] │ RES [cyan] │ <emoji form> [swap-icon]
  *
  * Visual signals (was previously overlapping):
  *  - Default state: position gradient background + position-colored bar.
@@ -24,12 +24,12 @@ export function MatchPlayerCard({
 }) {
   const s = posStyle || getPosStyle(player.position);
 
-  const resistance = player.resistance ?? 0;
   const form = player.form ?? 100;
   const hasStar = !!player.is_star && (player.position === "MED" || player.position === "ATA");
 
-  const resColor =
-    resistance >= 4 ? "text-green-400" : resistance >= 3 ? "text-yellow-400" : "text-red-400";
+  // Skill color: position-colored (matches PlayersTab/TeamSquadCard/MarketTab
+  // which use POSITION_TEXT_CLASS). Selected state falls back to rose.
+  const skillColor = selected ? "text-rose-200" : s.badgeText;
 
   // Form: keep the 💪/😩/👍 emoji triplet used elsewhere in the app
   // (TacticsView, PlayersTab, MarketTab, SquadCard, PlayerHistoryModal)
@@ -37,8 +37,6 @@ export function MatchPlayerCard({
   const formIcon = form >= 115 ? "💪" : form <= 85 ? "😩" : "👍";
   const formColor =
     form >= 115 ? "text-emerald-400" : form <= 85 ? "text-rose-400" : "text-on-surface-variant";
-
-  const skillColor = selected ? "text-rose-300" : "text-on-surface-variant/80";
 
   // Single visual signal in the selected state: rose tint. The position
   // bgGrad gradient is suppressed so only one color system dominates.
@@ -83,15 +81,18 @@ export function MatchPlayerCard({
 
       {/* ── Expanded: skill + RES + form (always visible) ── */}
       <div className="shrink-0 flex items-center gap-2 mr-2">
-        <span className={`text-xs font-bold tabular-nums ${skillColor}`}>
+        <span
+          className={`text-lg font-black font-headline tabular-nums leading-none ${skillColor}`}
+          style={{ textShadow: "0 0 10px currentColor" }}
+        >
           {player.skill ?? "—"}
         </span>
         <div className="w-px h-5 bg-outline-variant/25" />
         <div className="flex flex-col items-end gap-0.5 leading-tight">
-          <span className="text-[9px] uppercase tracking-widest text-on-surface-variant/60 font-semibold">
+          <span className="text-[8px] uppercase tracking-widest text-on-surface-variant/40 font-semibold">
             RES
           </span>
-          <span className={`text-xs font-bold tabular-nums ${resColor}`}>
+          <span className="text-xs font-black tabular-nums text-cyan-400">
             {player.resistance ?? "–"}
           </span>
         </div>
