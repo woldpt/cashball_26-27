@@ -19,7 +19,7 @@ export function TacticsButtons({ value, onChange, className }) {
           <button
             key={optValue}
             onClick={() => onChange({ style: optValue })}
-            className={`flex flex-col items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-xs font-bold uppercase tracking-wide transition-all border ${
+            className={`flex flex-row items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-bold uppercase tracking-wide transition-all border ${
               isActive
                 ? "text-on-surface"
                 : "bg-surface-container-low/60 border-outline/40 text-on-surface-variant/80 hover:border-outline hover:text-on-surface-variant"

@@ -322,11 +322,11 @@ function SubsPanel({
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Tactics (halftime only) */}
       {isHalftime && (
-        <div className="px-4 py-4 border-b border-outline-variant/15">
-          <span className="block text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant mb-3">
+        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-outline-variant/15">
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
             Mentalidade
           </span>
-          <TacticsButtons value={tactic.style} onChange={onUpdateTactic} />
+          <TacticsButtons className="flex-1" value={tactic.style} onChange={onUpdateTactic} />
         </div>
       )}
 
