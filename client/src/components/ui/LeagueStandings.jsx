@@ -29,7 +29,7 @@ function FormDots({ form = "" }) {
         if (r === "V") cls += "bg-emerald-500";
         else if (r === "E") cls += "bg-amber-500";
         else if (r === null) cls += "bg-surface-container-high";
-        else cls += "bg-error"; // D = derrota
+        else cls += "bg-red-500"; // D = derrota
         return <span key={i} className={cls} />;
       })}
     </div>
