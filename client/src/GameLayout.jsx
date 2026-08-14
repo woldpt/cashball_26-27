@@ -15,10 +15,7 @@ import { PenaltySuspensePopup } from "./components/modals/PenaltySuspensePopup.j
 import { PenaltyShootoutPopup } from "./components/modals/PenaltyShootoutPopup.jsx";
 import { WaitingCoachesModal } from "./components/modals/WaitingCoachesModal.jsx";
 import { MatchPage } from "./components/match/MatchPage.jsx";
-import {
-  PreMatchIntro,
-  KickoffBadge,
-} from "./components/match/shared/index.js";
+import { LiveMatchHero, LiveFixtureRow } from "./components/live/index.js";
 
 import { GameDialog } from "./components/shared/GameDialog.jsx";
 import { TransferProposalModal } from "./components/modals/TransferProposalModal.jsx";
@@ -39,17 +36,6 @@ import { TacticsView } from "./views/TacticsView.jsx";
 import { TransferHub } from "./components/ui/TransferHub.jsx";
 import { DIVISION_NAMES } from "./constants/index.js";
 import { isSameTeamId } from "./utils/teamHelpers.js";
-import { getMatchLastEventText } from "./utils/playerHelpers.js";
-
-const WEATHER_LABELS = {
-  "☀️": "Sol",
-  "🌧️": "Chuva",
-  "⛈️": "Chuva forte",
-  "💨": "Vento",
-  "🥶": "Frio",
-  "🌫️": "Nevoeiro",
-  "❄️": "Neve",
-};
 
 /**
  * Renders the entire game UI. All state comes from useGame() and useTactics().
@@ -269,10 +255,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         ))}
       </div>
       <header
-        className="fixed top-0 left-0 right-0 h-14 z-160 flex items-center"
+        className="fixed top-0 left-0 right-0 h-14 z-160 flex items-center border-b border-outline-variant/20"
         style={{
-          background: teamInfo?.color_primary || "#131313",
-          borderBottom: "1px solid #201f1f",
+          background: `linear-gradient(90deg, ${teamInfo?.color_primary || "var(--color-surface-container-low)"} 0%, ${teamInfo?.color_primary || "var(--color-surface-container-low)"}45 55%, transparent 100%), var(--color-surface)`,
         }}
       >
         <div className="relative flex items-center justify-between w-full px-4 lg:px-6">
@@ -280,14 +265,14 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           <div className="flex items-center gap-3">
             <h1
               className="text-base font-headline font-black tracking-tighter uppercase"
-              style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+              style={{ color: teamInfo?.color_secondary || "var(--color-on-surface)" }}
             >
               CashBall <span style={{ opacity: 0.55 }}>26/27</span>
             </h1>
             <span
               className="hidden md:block text-[10px] font-bold uppercase tracking-[0.2em]"
               style={{
-                color: teamInfo?.color_secondary || "#e5e2e1",
+                color: teamInfo?.color_secondary || "var(--color-on-surface)",
                 opacity: 0.7,
               }}
             >
@@ -299,17 +284,17 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           {isMatchInProgress && (
             <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none">
               {isPlayingMatch ? (
-                <>
+                <span className="flex flex-col items-center gap-0.5 px-3.5 py-1 rounded-full bg-surface/40 border border-white/10 backdrop-blur-sm">
                   <span
-                    className="text-xl font-headline font-black tabular-nums leading-none"
-                    style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+                    className="text-lg font-headline font-black tabular-nums leading-none"
+                    style={{ color: teamInfo?.color_secondary || "var(--color-on-surface)" }}
                   >
                     {liveMinute}'
                   </span>
                   <span
-                    className="text-[8px] font-bold uppercase tracking-widest"
+                    className="text-[7px] font-bold uppercase tracking-widest leading-none"
                     style={{
-                      color: teamInfo?.color_secondary || "#e5e2e1",
+                      color: teamInfo?.color_secondary || "var(--color-on-surface)",
                       opacity: 0.55,
                     }}
                   >
@@ -319,12 +304,12 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         ? "2ª Parte"
                         : "1ª Parte"}
                   </span>
-                </>
+                </span>
               ) : liveMinute === 45 && !isCupMatch ? (
                 <span
-                  className="text-xs font-black uppercase tracking-widest"
+                  className="px-3 py-1 rounded-full bg-surface/40 border border-white/10 backdrop-blur-sm text-[10px] font-black uppercase tracking-widest"
                   style={{
-                    color: teamInfo?.color_secondary || "#e5e2e1",
+                    color: teamInfo?.color_secondary || "var(--color-on-surface)",
                     opacity: 0.7,
                   }}
                 >
@@ -332,9 +317,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 </span>
               ) : isCupMatch ? (
                 <span
-                  className="text-[10px] font-black uppercase tracking-widest"
+                  className="px-3 py-1 rounded-full bg-surface/40 border border-white/10 backdrop-blur-sm text-[9px] font-black uppercase tracking-widest"
                   style={{
-                    color: teamInfo?.color_secondary || "#e5e2e1",
+                    color: teamInfo?.color_secondary || "var(--color-on-surface)",
                     opacity: 0.7,
                   }}
                 >
@@ -359,7 +344,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             >
               <span
                 className="material-symbols-outlined text-[20px] leading-none"
-                style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+                style={{ color: teamInfo?.color_secondary || "var(--color-on-surface)" }}
               >
                 chat
               </span>
@@ -395,20 +380,20 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 <div className="hidden lg:flex flex-col items-start">
                   <span
                     className="text-sm font-bold leading-tight"
-                    style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+                    style={{ color: teamInfo?.color_secondary || "var(--color-on-surface)" }}
                   >
                     {me.name}
                   </span>
                   <span
                     className="text-xs leading-tight opacity-70"
-                    style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+                    style={{ color: teamInfo?.color_secondary || "var(--color-on-surface)" }}
                   >
                     {teamInfo?.name}
                   </span>
                 </div>
                 <span
                   className="material-symbols-outlined text-[16px] leading-none opacity-60"
-                  style={{ color: teamInfo?.color_secondary || "#e5e2e1" }}
+                  style={{ color: teamInfo?.color_secondary || "var(--color-on-surface)" }}
                 >
                   {userDropdownOpen ? "expand_less" : "expand_more"}
                 </span>
@@ -486,8 +471,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
       <nav
-        className={`hidden lg:flex fixed left-0 top-14 bottom-0 flex-col z-10 transition-all duration-200 ${sidebarCollapsed ? "w-14" : "w-64"}`}
-        style={{ background: "#181818", borderRight: "1px solid #2a2a2a" }}
+        className={`hidden lg:flex fixed left-0 top-14 bottom-0 flex-col z-10 transition-all duration-200 bg-surface-container-low border-r border-outline-variant/15 ${sidebarCollapsed ? "w-14" : "w-64"}`}
       >
         {/* Toggle button */}
         <button
@@ -557,11 +541,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   window.scrollTo(0, 0);
                 }}
                 title={sidebarCollapsed ? label : undefined}
-                className={`w-full flex items-center gap-3 px-2 py-3 text-sm font-bold transition-all text-left ${sidebarCollapsed ? "justify-center" : ""} ${
+                className={`w-full flex items-center gap-3 px-2 py-2.5 text-sm font-bold rounded-lg transition-all text-left ${sidebarCollapsed ? "justify-center" : ""} ${
                   isMatchInProgress
                     ? "text-on-surface-variant/25 cursor-not-allowed"
                     : activeTab === key
-                      ? "bg-primary-container/20 text-primary border-l-4 border-primary"
+                      ? "bg-primary-container/25 text-primary"
                       : "text-on-surface-variant hover:bg-surface-bright hover:text-on-surface"
                 }`}
               >
@@ -581,7 +565,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           {/* glow halo behind button (idle only) */}
           {!isMatchInProgress && activeTab !== "tactic" && !myReady && (
             <span
-              className="absolute inset-1 rounded-sm blur-md opacity-30 pointer-events-none"
+              className="absolute inset-1 rounded-lg blur-md opacity-30 pointer-events-none"
               style={{ background: "var(--color-primary, #a8e6b0)" }}
             />
           )}
@@ -602,7 +586,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   : "JOGAR"
                 : undefined
             }
-            className={`relative w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest rounded-sm overflow-hidden ${
+            className={`relative w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest rounded-lg overflow-hidden ${
               sidebarCollapsed ? "justify-center" : ""
             } ${!isMatchInProgress && activeTab !== "tactic" && !myReady ? "animate-heartbeat" : ""} ${
               isMatchInProgress
@@ -980,10 +964,10 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         </>
       )}
 
-      {/* LIVE bar during match (mobile) */}
+      {/* LIVE pill during match (mobile) */}
       {isMatchInProgress && !showHalftimePanel && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 h-10 z-40 flex items-center justify-center bg-red-500/10 border-t border-red-500/30 backdrop-blur-sm">
-          <span className="material-symbols-outlined text-red-400 text-[18px] leading-none mr-1.5 animate-pulse">
+        <div className="lg:hidden fixed bottom-3 left-1/2 -translate-x-1/2 h-9 px-5 z-40 flex items-center justify-center gap-1.5 rounded-full bg-red-500/10 border border-red-500/30 backdrop-blur-sm shadow-lg shadow-black/40">
+          <span className="material-symbols-outlined text-red-400 text-[18px] leading-none animate-pulse">
             sensors
           </span>
           <span className="text-red-400 text-[10px] font-black uppercase tracking-widest">
@@ -1018,579 +1002,31 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
                           <div className="lg:col-span-2">
                             {/* ── HERO: MY MATCH ─────────────────────── */}
-                            {matchResults &&
-                              (() => {
-                            if (!myMatch) return null;
-                            const hInfo = teams.find(
-                              (t) => t.id === myMatch.homeTeamId,
-                            );
-                            const aInfo = teams.find(
-                              (t) => t.id === myMatch.awayTeamId,
-                            );
-                            const matchEvents = myMatch.events || [];
-                            const weatherEvent = matchEvents.find(
-                              (e) => e.type === "weather",
-                            );
-
-                            // If ET is running for other fixtures but my match was decided at 90', hide this block
-                            if (isCupExtraTime) {
-                              const reg90Home = matchEvents.filter(
-                                (e) =>
-                                  e.minute <= 90 &&
-                                  e.type === "goal" &&
-                                  e.team === "home",
-                              ).length;
-                              const reg90Away = matchEvents.filter(
-                                (e) =>
-                                  e.minute <= 90 &&
-                                  e.type === "goal" &&
-                                  e.team === "away",
-                              ).length;
-                              if (reg90Home !== reg90Away) return null;
-                            }
-
-                            const homeGoals = matchEvents.filter(
-                              (e) =>
-                                e.minute <= liveMinute &&
-                                (e.type === "goal" ||
-                                  e.type === "penalty_goal" ||
-                                  e.type === "var_goal_pending") &&
-                                e.team === "home",
-                            );
-                            const awayGoals = matchEvents.filter(
-                              (e) =>
-                                e.minute <= liveMinute &&
-                                (e.type === "goal" ||
-                                  e.type === "penalty_goal" ||
-                                  e.type === "var_goal_pending") &&
-                                e.team === "away",
-                            );
-                            const maxMinute = isCupExtraTime ? 120 : 90;
-                            const progress = Math.min(
-                              100,
-                              (liveMinute / maxMinute) * 100,
-                            );
-
-                            return (
-                              <div className="relative overflow-hidden rounded-lg bg-surface-container-low border border-outline-variant/10">
-                                {/* Stadium radial glow */}
-                                <div
-                                  className="absolute inset-0 pointer-events-none"
-                                  style={{
-                                    background: `radial-gradient(ellipse 90% 50% at 50% 0%, ${hInfo?.color_primary || "#333"}18 0%, transparent 70%)`,
-                                  }}
-                                />
-
-                                <div className="relative z-10 flex flex-col items-center px-4 pt-5 pb-4">
-                                  {/* Match label */}
-                                  <div className="flex items-center justify-between w-full mb-5">
-                                    <div className="flex items-center gap-2">
-                                      {isPlayingMatch && (
-                                        <span className="w-2 h-2 rounded-full bg-error animate-pulse shrink-0" />
-                                      )}
-                                      <span className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/50 font-black">
-                                        {isCupMatch
-                                          ? `Taça · ${cupMatchRoundName}`
-                                          : `${DIVISION_NAMES[hInfo?.division] || ""} · Jornada ${matchResults.matchweek}`}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {/* Banner de pausa de substituição — visível aos outros treinadores */}
-                                  {substitutionPause && (
-                                    <div className="w-full mb-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-semibold">
-                                      <span className="material-symbols-outlined text-[16px] shrink-0">
-                                        pause_circle
-                                      </span>
-                                      <span>
-                                        {substitutionPause.coachName} está a
-                                        fazer substituições...
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  {/* Stadium + attendance — above teams/score */}
-                                  {myMatch.attendance && (
-                                    <div className="flex items-center justify-center gap-1 text-[10px] text-on-surface-variant/50 mb-3">
-                                      <span className="text-zinc-400 text-[11px] font-bold">
-                                        {hInfo?.stadium_name
-                                          ? `${hInfo.stadium_name} `
-                                          : ""}
-                                        🏟{" "}
-                                        {myMatch.attendance.toLocaleString(
-                                          "pt-PT",
-                                        )}{" "}
-                                        adeptos
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  {/* Weather badge */}
-                                  {weatherEvent && (
-                                    <div className="flex items-center justify-center gap-1 text-[10px] text-on-surface-variant/50 mb-3">
-                                      <span>{weatherEvent.emoji}</span>
-                                      <span>
-                                        {WEATHER_LABELS[weatherEvent.emoji] ||
-                                          ""}
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  {/* Teams + Score row */}
-                                  <div className="flex justify-center items-start gap-4 sm:gap-10 w-full max-w-xl">
-                                    {/* Home team */}
-                                    <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
-                                      <div className="relative mb-1">
-                                        <span
-                                          className={`w-14 h-14 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center text-base sm:text-xl font-black border-2 ${myMatch.homeTeamId === me.teamId ? "border-primary" : "border-outline-variant/20"}`}
-                                          style={{
-                                            backgroundColor:
-                                              hInfo?.color_primary || "#333",
-                                            color:
-                                              hInfo?.color_secondary || "#fff",
-                                          }}
-                                        >
-                                          {(hInfo?.name || "")
-                                            .substring(0, 3)
-                                            .toUpperCase()}
-                                        </span>
-                                        {(() => {
-                                          const homeCoach = players.find(
-                                            (p) =>
-                                              p.teamId === myMatch.homeTeamId,
-                                          );
-                                          if (!homeCoach) return null;
-                                          const isMe =
-                                            myMatch.homeTeamId === me.teamId;
-                                          return (
-                                            <div
-                                              className={`absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-sm font-black text-[8px] tracking-widest uppercase whitespace-nowrap shadow-lg ${isMe ? "bg-primary text-on-primary" : "bg-amber-500 text-zinc-950"}`}
-                                            >
-                                              {homeCoach.name}
-                                            </div>
-                                          );
-                                        })()}
-                                      </div>
-                                      <h2 className="text-sm sm:text-base font-headline font-black tracking-tighter uppercase leading-none text-center mt-2 truncate w-full px-1">
-                                        {hInfo?.name}
-                                      </h2>
-                                      {/* Home events */}
-                                      <div className="flex flex-col items-start w-full gap-0.5">
-                                        {matchEvents
-                                          .filter(
-                                            (e) =>
-                                              e.minute <= liveMinute &&
-                                              e.team === "home" &&
-                                              [
-                                                "goal",
-                                                "penalty_goal",
-                                                "own_goal",
-                                                "var_disallowed",
-                                                "var_goal_pending",
-                                                "yellow",
-                                                "red",
-                                                "injury",
-                                                "substitution",
-                                                "halftime_sub",
-                                              ].includes(e.type),
-                                          )
-                                          .sort((a, b) => a.minute - b.minute)
-                                          .map((e, i) => {
-                                            const isSub =
-                                              e.type === "substitution" ||
-                                              e.type === "halftime_sub";
-                                            const icon =
-                                              e.type === "goal" ||
-                                              e.type === "penalty_goal" ||
-                                              e.type === "var_goal_pending"
-                                                ? "⚽"
-                                                : e.type === "own_goal"
-                                                  ? "⚽🔙"
-                                                  : e.type === "var_disallowed"
-                                                    ? "🚩"
-                                                    : e.type === "yellow"
-                                                      ? "🟨"
-                                                      : e.type === "red"
-                                                        ? "🟥"
-                                                        : e.type === "injury"
-                                                          ? "🚑"
-                                                          : isSub
-                                                            ? "🔁"
-                                                            : "";
-                                            const subOutName =
-                                              e.type === "halftime_sub"
-                                                ? e.outPlayerName
-                                                : null;
-                                            const name =
-                                              e.playerName ||
-                                              e.player_name ||
-                                              e.player ||
-                                              "?";
-                                            const minuteLabel =
-                                              e.type === "halftime_sub"
-                                                ? "HT"
-                                                : `${e.minute}'`;
-                                            return (
-                                              <div
-                                                key={`${e.minute}-${e.type}-${e.playerId || name}-${i}`}
-                                                className="flex items-center gap-1 text-[9px] leading-tight w-full"
-                                              >
-                                                <span className="text-on-surface-variant/40 tabular-nums shrink-0">
-                                                  {minuteLabel}
-                                                </span>
-                                                <span className="shrink-0">
-                                                  {icon}
-                                                </span>
-                                                <span
-                                                  className={`font-bold truncate min-w-0 ${e.type === "goal" || e.type === "penalty_goal" || e.type === "var_goal_pending" ? "text-primary" : e.type === "own_goal" ? "text-orange-400" : e.type === "var_disallowed" ? "text-amber-400/60 line-through" : e.type === "red" ? "text-red-400" : isSub ? "text-emerald-400/80" : "text-on-surface-variant/70"}`}
-                                                >
-                                                  {isSub && subOutName ? (
-                                                    <span className="opacity-60 line-through mr-0.5">
-                                                      {subOutName}
-                                                    </span>
-                                                  ) : null}
-                                                  <PlayerLink
-                                                    playerId={e.playerId}
-                                                  >
-                                                    {name}
-                                                  </PlayerLink>
-                                                </span>
-                                              </div>
-                                            );
-                                          })}
-                                      </div>
-                                    </div>
-
-                                    {/* Score */}
-                                    {(() => {
-                                      const myFlashHome =
-                                        goalFlashRef[
-                                          `${myMatch.homeTeamId}_${myMatch.awayTeamId}_home`
-                                        ];
-                                      const myFlashAway =
-                                        goalFlashRef[
-                                          `${myMatch.homeTeamId}_${myMatch.awayTeamId}_away`
-                                        ];
-                                      const nowTs = Date.now();
-                                      const myHomeFlashing =
-                                        myFlashHome &&
-                                        nowTs - myFlashHome < 1500;
-                                      const myAwayFlashing =
-                                        myFlashAway &&
-                                        nowTs - myFlashAway < 1500;
-                                      return (
-                                        <button
-                                          onClick={() => {
-                                            if (
-                                              isPlayingMatch &&
-                                              !isMatchActionPending
-                                            ) {
-                                              socket.emit(
-                                                "request_substitution",
-                                              );
-                                            } else {
-                                              setMatchDetailFixture(myMatch);
-                                              setShowMatchDetail(true);
-                                            }
-                                          }}
-                                          className="flex flex-col items-center gap-1 shrink-0 cursor-pointer"
-                                        >
-                                          <div className="font-headline text-5xl sm:text-7xl font-black tracking-tighter flex items-center gap-3">
-                                            <span
-                                              style={{
-                                                color: myHomeFlashing
-                                                  ? "#ff4444"
-                                                  : undefined,
-                                                transition: myHomeFlashing
-                                                  ? "none"
-                                                  : "color 1.25s ease",
-                                              }}
-                                            >
-                                              {homeGoals.length}
-                                            </span>
-                                            <span className="text-on-surface/20 text-3xl sm:text-5xl">
-                                              :
-                                            </span>
-                                            <span
-                                              style={{
-                                                color: myAwayFlashing
-                                                  ? "#ff4444"
-                                                  : undefined,
-                                                transition: myAwayFlashing
-                                                  ? "none"
-                                                  : "color 1.25s ease",
-                                              }}
-                                            >
-                                              {awayGoals.length}
-                                            </span>
-                                          </div>
-                                        </button>
-                                      );
-                                    })()}
-
-                                    {/* Away team */}
-                                    <div className="flex flex-col items-center gap-2 flex-1 min-w-0">
-                                      <div className="relative mb-1">
-                                        <span
-                                          className={`w-14 h-14 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center text-base sm:text-xl font-black border-2 ${myMatch.awayTeamId === me.teamId ? "border-primary" : "border-outline-variant/20"}`}
-                                          style={{
-                                            backgroundColor:
-                                              aInfo?.color_primary || "#333",
-                                            color:
-                                              aInfo?.color_secondary || "#fff",
-                                          }}
-                                        >
-                                          {(aInfo?.name || "")
-                                            .substring(0, 3)
-                                            .toUpperCase()}
-                                        </span>
-                                        {(() => {
-                                          const awayCoach = players.find(
-                                            (p) =>
-                                              p.teamId === myMatch.awayTeamId,
-                                          );
-                                          if (!awayCoach) return null;
-                                          const isMe =
-                                            myMatch.awayTeamId === me.teamId;
-                                          return (
-                                            <div
-                                              className={`absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-sm font-black text-[8px] tracking-widest uppercase whitespace-nowrap shadow-lg ${isMe ? "bg-primary text-on-primary" : "bg-amber-500 text-zinc-950"}`}
-                                            >
-                                              {awayCoach.name}
-                                            </div>
-                                          );
-                                        })()}
-                                      </div>
-                                      <h2 className="text-sm sm:text-base font-headline font-black tracking-tighter uppercase leading-none text-center mt-2 truncate w-full px-1">
-                                        {aInfo?.name}
-                                      </h2>
-                                      {/* Away events */}
-                                      <div className="flex flex-col items-end w-full gap-0.5">
-                                        {matchEvents
-                                          .filter(
-                                            (e) =>
-                                              e.minute <= liveMinute &&
-                                              e.team === "away" &&
-                                              [
-                                                "goal",
-                                                "penalty_goal",
-                                                "own_goal",
-                                                "var_disallowed",
-                                                "var_goal_pending",
-                                                "yellow",
-                                                "red",
-                                                "injury",
-                                                "substitution",
-                                                "halftime_sub",
-                                              ].includes(e.type),
-                                          )
-                                          .sort((a, b) => a.minute - b.minute)
-                                          .map((e, i) => {
-                                            const isSub =
-                                              e.type === "substitution" ||
-                                              e.type === "halftime_sub";
-                                            const icon =
-                                              e.type === "penalty_goal"
-                                                ? "⚽(Pen)"
-                                                : e.type === "goal" ||
-                                                    e.type ===
-                                                      "var_goal_pending"
-                                                  ? "⚽"
-                                                  : e.type === "own_goal"
-                                                    ? "⚽🔙"
-                                                    : e.type ===
-                                                        "var_disallowed"
-                                                      ? "🚩"
-                                                      : e.type === "yellow"
-                                                        ? "🟨"
-                                                        : e.type === "red"
-                                                          ? "🟥"
-                                                          : e.type === "injury"
-                                                            ? "🚑"
-                                                            : isSub
-                                                              ? "🔁"
-                                                              : "";
-                                            const subOutName =
-                                              e.type === "halftime_sub"
-                                                ? e.outPlayerName
-                                                : null;
-                                            const name =
-                                              e.playerName ||
-                                              e.player_name ||
-                                              e.player ||
-                                              "?";
-                                            const minuteLabel =
-                                              e.type === "halftime_sub"
-                                                ? "HT"
-                                                : `${e.minute}'`;
-                                            return (
-                                              <div
-                                                key={`${e.minute}-${e.type}-${e.playerId || name}-${i}`}
-                                                className="flex items-center gap-1 text-[9px] leading-tight w-full justify-end"
-                                              >
-                                                <span
-                                                  className={`font-bold truncate min-w-0 ${e.type === "goal" || e.type === "penalty_goal" || e.type === "var_goal_pending" ? "text-primary" : e.type === "own_goal" ? "text-orange-400" : e.type === "var_disallowed" ? "text-amber-400/60 line-through" : e.type === "red" ? "text-red-400" : isSub ? "text-emerald-400/80" : "text-on-surface-variant/70"}`}
-                                                >
-                                                  {isSub && subOutName ? (
-                                                    <span className="opacity-60 line-through mr-0.5">
-                                                      {subOutName}
-                                                    </span>
-                                                  ) : null}
-                                                  <PlayerLink
-                                                    playerId={e.playerId}
-                                                  >
-                                                    {name}
-                                                  </PlayerLink>
-                                                </span>
-                                                <span className="shrink-0">
-                                                  {icon}
-                                                </span>
-                                                <span className="text-on-surface-variant/40 tabular-nums shrink-0">
-                                                  {minuteLabel}
-                                                </span>
-                                              </div>
-                                            );
-                                          })}
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Progress bar + attendance */}
-                                  <div className="w-full max-w-xs sm:max-w-sm mt-5 space-y-1.5">
-                                    <div className="relative h-1 bg-outline-variant/20 rounded-full overflow-hidden">
-                                      <div
-                                        className="h-full bg-primary transition-all duration-1000"
-                                        style={{ width: `${progress}%` }}
-                                      />
-                                      {matchEvents
-                                        .filter(
-                                          (e) =>
-                                            e.minute <= liveMinute &&
-                                            [
-                                              "goal",
-                                              "penalty_goal",
-                                              "own_goal",
-                                              "red",
-                                              "penalty_miss",
-                                            ].includes(e.type),
-                                        )
-                                        .map((e, i) => {
-                                          const isHomeEvent = e.team === "home";
-                                          const dotColor =
-                                            e.type === "goal" ||
-                                            e.type === "penalty_goal" ||
-                                            e.type === "own_goal"
-                                              ? isHomeEvent
-                                                ? hInfo?.color_primary || "#fff"
-                                                : aInfo?.color_primary || "#aaa"
-                                              : e.type === "red"
-                                                ? "#ef4444"
-                                                : "#a855f7"; // penalty_miss → purple
-                                          return (
-                                            <span
-                                              key={`${e.minute}-${e.type}-${e.playerId || i}`}
-                                              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
-                                              style={{
-                                                left: `${Math.min(98, Math.max(2, (e.minute / maxMinute) * 100))}%`,
-                                              }}
-                                            >
-                                              <span
-                                                className="block w-1.5 h-1.5 rounded-full"
-                                                style={{
-                                                  backgroundColor: dotColor,
-                                                }}
-                                              />
-                                            </span>
-                                          );
-                                        })}
-                                    </div>
-                                    <div className="flex justify-between text-[14px] text-on-surface-variant/30">
-                                      <span>0'</span>
-                                      <span className="font-bold text-primary/60">
-                                        {liveMinute}'
-                                      </span>
-                                      <span>
-                                        {isCupExtraTime ? "120'" : "90'"}
-                                      </span>
-                                    </div>
-                                    {/* ── Commentary phrase ── */}
-                                    {(() => {
-                                      const latestWithText = [...matchEvents]
-                                        .filter(
-                                          (e) =>
-                                            e.minute <= liveMinute && e.text,
-                                        )
-                                        .sort((a, b) => b.minute - a.minute)[0];
-                                      if (!latestWithText) return null;
-                                      // Strip leading "[NN']" or "[HT]" prefix plus optional emoji
-                                      const phrase = latestWithText.text
-                                        .replace(
-                                          /^\[(?:\d+'|HT)\]\s*\S*\s*/,
-                                          "",
-                                        )
-                                        .trim();
-                                      if (!phrase) return null;
-                                      const isGoal =
-                                        latestWithText.type === "goal" ||
-                                        latestWithText.type === "penalty_goal";
-                                      return (
-                                        <div
-                                          key={`${latestWithText.minute}-${latestWithText.type}`}
-                                          className="w-full text-center pt-3 pb-0.5 px-2"
-                                          style={{
-                                            animation:
-                                              "commentaryFadeIn 0.6s ease",
-                                          }}
-                                        >
-                                          <p
-                                            className={`text-[11px] sm:text-[16px] leading-snug italic font-medium tracking-wide ${
-                                              isGoal
-                                                ? "text-primary/90"
-                                                : "text-on-surface-variant/55"
-                                            }`}
-                                            style={{
-                                              fontFamily:
-                                                "Georgia, 'Times New Roman', serif",
-                                            }}
-                                          >
-                                            "{phrase}"
-                                          </p>
-                                        </div>
-                                      );
-                                    })()}
-                                  </div>
-
-                                  {/* ── Pre-match intros (5s pause) + kickoff moments ──
-                                      Clima/odds em chips escaneáveis + frase táctica como
-                                      linha narrativa; saída animada em cascade com badge
-                                      de kickoff; anúncio da 2ª parte e do prolongamento. */}
-                                  <PreMatchIntro
-                                    matchEvents={matchEvents}
-                                    liveMinute={liveMinute}
-                                    isPlayingMatch={isPlayingMatch}
-                                    hInfo={hInfo}
-                                    aInfo={aInfo}
-                                  />
-                                  {isPlayingMatch &&
-                                    (liveMinute === 45 || liveMinute === 90) && (
-                                      <KickoffBadge
-                                        label={
-                                          liveMinute === 45
-                                            ? "2ª PARTE"
-                                            : "PROLONGAMENTO"
-                                        }
-                                        hColor={
-                                          hInfo?.color_primary || "#6366f1"
-                                        }
-                                        aColor={
-                                          aInfo?.color_primary || "#f43f5e"
-                                        }
-                                      />
-                                    )}
-                                </div>
-                              </div>
-                            );
-                          })()}
+                            {matchResults && (
+                              <LiveMatchHero
+                                myMatch={myMatch}
+                                teams={teams}
+                                players={players}
+                                me={me}
+                                liveMinute={liveMinute}
+                                isPlayingMatch={isPlayingMatch}
+                                isMatchActionPending={isMatchActionPending}
+                                isCupMatch={isCupMatch}
+                                cupMatchRoundName={cupMatchRoundName}
+                                substitutionPause={substitutionPause}
+                                goalFlashRef={goalFlashRef}
+                                isCupExtraTime={isCupExtraTime}
+                                matchResults={matchResults}
+                                onScoreClick={() => {
+                                  if (isPlayingMatch && !isMatchActionPending) {
+                                    socket.emit("request_substitution");
+                                  } else {
+                                    setMatchDetailFixture(myMatch);
+                                    setShowMatchDetail(true);
+                                  }
+                                }}
+                              />
+                            )}
                           </div>
                           {/* ── MY DIVISION COLUMN ── */}
                           {!isCupMatch && matchResults?.results && (() => {
@@ -1609,56 +1045,17 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                                   {divMatches.length === 0 ? (
                                     <p className="text-on-surface-variant/30 text-[10px] font-bold text-center py-4">Sem jogos</p>
                                   ) : (
-                                    divMatches.map((match, idx) => {
-                                      const hInfo = teams.find(t => t.id === match.homeTeamId);
-                                      const aInfo = teams.find(t => t.id === match.awayTeamId);
-                                      const matchEvents = match.events || [];
-                                      const currentHome = matchEvents.filter(e => e.minute <= liveMinute && (e.type === "goal" || e.type === "penalty_goal" || e.type === "var_goal_pending") && e.team === "home");
-                                      const currentAway = matchEvents.filter(e => e.minute <= liveMinute && (e.type === "goal" || e.type === "penalty_goal" || e.type === "var_goal_pending") && e.team === "away");
-                                      const isHumanMatch = players.some(p => p.teamId === match.homeTeamId || p.teamId === match.awayTeamId);
-                                      const flashHome = goalFlashRef[`${match.homeTeamId}_${match.awayTeamId}_home`];
-                                      const flashAway = goalFlashRef[`${match.homeTeamId}_${match.awayTeamId}_away`];
-                                      const now = Date.now();
-                                      const homeFlashing = flashHome && now - flashHome < 1500;
-                                      const awayFlashing = flashAway && now - flashAway < 1500;
-                                      const lastHomeEvent = getMatchLastEventText(matchEvents, liveMinute, "home");
-                                      const lastAwayEvent = getMatchLastEventText(matchEvents, liveMinute, "away");
-                                      return (
-                                        <button
-                                          key={idx}
-                                          onClick={() => { setMatchDetailFixture(match); setShowMatchDetail(true); }}
-                                          className={`w-full text-left rounded-md overflow-hidden transition-colors ${isHumanMatch ? "bg-primary-container/10 border-l-2 border-primary/60" : "bg-surface-container hover:bg-surface-bright"}`}
-                                        >
-                                          <div className="flex justify-between items-center px-3 py-2">
-                                            <span className="flex items-center gap-1.5 flex-1 min-w-0 pr-1">
-                                              <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: hInfo?.color_primary || "#555" }} />
-                                              <span className="flex flex-col min-w-0">
-                                                <span className={`text-[10px] font-bold truncate ${isHumanMatch && players.some(p => p.teamId === match.homeTeamId) ? "text-primary" : "text-on-surface/80"}`}>{hInfo?.name}</span>
-                                                {(() => { const c = players.find(p => p.teamId === match.homeTeamId); return c ? <span className="text-[9px] text-amber-400 font-bold truncate leading-none">{c.name}</span> : null; })()}
-                                              </span>
-                                            </span>
-                                            <span className="font-headline font-black text-xs shrink-0 flex items-center gap-1 px-1">
-                                              <span style={{ color: homeFlashing ? "#ff4444" : undefined, transition: homeFlashing ? "none" : "color 1.25s ease" }}>{currentHome.length}</span>
-                                              <span className="text-on-surface/20 text-xs">-</span>
-                                              <span style={{ color: awayFlashing ? "#ff4444" : undefined, transition: awayFlashing ? "none" : "color 1.25s ease" }}>{currentAway.length}</span>
-                                            </span>
-                                            <span className="flex items-center gap-1.5 flex-1 min-w-0 pl-1 justify-end">
-                                              <span className="flex flex-col min-w-0 items-end">
-                                                <span className={`text-[10px] font-bold truncate ${isHumanMatch && players.some(p => p.teamId === match.awayTeamId) ? "text-primary" : "text-on-surface/80"}`}>{aInfo?.name}</span>
-                                                {(() => { const c = players.find(p => p.teamId === match.awayTeamId); return c ? <span className="text-[9px] text-amber-400 font-bold truncate leading-none">{c.name}</span> : null; })()}
-                                              </span>
-                                              <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: aInfo?.color_primary || "#555" }} />
-                                            </span>
-                                          </div>
-                                          {(lastHomeEvent || lastAwayEvent) && (
-                                            <div className="flex px-3 pb-1.5 gap-1">
-                                              <span className="flex-1 text-[9px] text-on-surface-variant/40 truncate">{lastHomeEvent}</span>
-                                              <span className="flex-1 text-[9px] text-on-surface-variant/40 truncate text-right">{lastAwayEvent}</span>
-                                            </div>
-                                          )}
-                                        </button>
-                                      );
-                                    })
+                                    divMatches.map((match, idx) => (
+                                      <LiveFixtureRow
+                                        key={idx}
+                                        match={match}
+                                        teams={teams}
+                                        players={players}
+                                        liveMinute={liveMinute}
+                                        goalFlashRef={goalFlashRef}
+                                        onOpenDetail={() => { setMatchDetailFixture(match); setShowMatchDetail(true); }}
+                                      />
+                                    ))
                                   )}
                                 </div>
                               </div>
@@ -1687,56 +1084,17 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                                       {divMatches.length === 0 ? (
                                         <div className="text-[10px] text-on-surface-variant/30 px-3 py-2 text-center italic">Sem jogos</div>
                                       ) : (
-                                        divMatches.map((match, idx) => {
-                                          const hInfo = teams.find(t => t.id === match.homeTeamId);
-                                          const aInfo = teams.find(t => t.id === match.awayTeamId);
-                                          const matchEvents = match.events || [];
-                                          const currentHome = matchEvents.filter(e => e.minute <= liveMinute && (e.type === "goal" || e.type === "penalty_goal" || e.type === "var_goal_pending") && e.team === "home");
-                                          const currentAway = matchEvents.filter(e => e.minute <= liveMinute && (e.type === "goal" || e.type === "penalty_goal" || e.type === "var_goal_pending") && e.team === "away");
-                                          const isHumanMatch = players.some(p => p.teamId === match.homeTeamId || p.teamId === match.awayTeamId);
-                                          const flashHome = goalFlashRef[`${match.homeTeamId}_${match.awayTeamId}_home`];
-                                          const flashAway = goalFlashRef[`${match.homeTeamId}_${match.awayTeamId}_away`];
-                                          const now = Date.now();
-                                          const homeFlashing = flashHome && now - flashHome < 1500;
-                                          const awayFlashing = flashAway && now - flashAway < 1500;
-                                          const lastHomeEvent = getMatchLastEventText(matchEvents, liveMinute, "home");
-                                          const lastAwayEvent = getMatchLastEventText(matchEvents, liveMinute, "away");
-                                          return (
-                                            <button
-                                              key={idx}
-                                              onClick={() => { setMatchDetailFixture(match); setShowMatchDetail(true); }}
-                                              className={`w-full text-left rounded-md overflow-hidden transition-colors ${isHumanMatch ? "bg-primary-container/10 border-l-2 border-primary/60" : "bg-surface-container hover:bg-surface-bright"}`}
-                                            >
-                                              <div className="flex justify-between items-center px-3 py-2">
-                                                <span className="flex items-center gap-1.5 flex-1 min-w-0 pr-1">
-                                                  <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: hInfo?.color_primary || "#555" }} />
-                                                  <span className="flex flex-col min-w-0">
-                                                    <span className={`text-[9px] sm:text-[10px] lg:text-[11px] font-bold truncate ${isHumanMatch && players.some(p => p.teamId === match.homeTeamId) ? "text-primary" : "text-on-surface/80"}`}>{hInfo?.name}</span>
-                                                    {(() => { const c = players.find(p => p.teamId === match.homeTeamId); return c ? <span className="text-[8px] sm:text-[9px] text-amber-400 font-bold truncate leading-none">{c.name}</span> : null; })()}
-                                                  </span>
-                                                </span>
-                                                <span className="font-headline font-black text-xs sm:text-sm shrink-0 flex items-center gap-1 px-1">
-                                                  <span style={{ color: homeFlashing ? "#ff4444" : undefined, transition: homeFlashing ? "none" : "color 1.25s ease" }}>{currentHome.length}</span>
-                                                  <span className="text-on-surface/20 text-xs">-</span>
-                                                  <span style={{ color: awayFlashing ? "#ff4444" : undefined, transition: awayFlashing ? "none" : "color 1.25s ease" }}>{currentAway.length}</span>
-                                                </span>
-                                                <span className="flex items-center gap-1.5 flex-1 min-w-0 pl-1 justify-end">
-                                                  <span className="flex flex-col min-w-0 items-end">
-                                                    <span className={`text-[9px] sm:text-[10px] lg:text-[11px] font-bold truncate ${isHumanMatch && players.some(p => p.teamId === match.awayTeamId) ? "text-primary" : "text-on-surface/80"}`}>{aInfo?.name}</span>
-                                                    {(() => { const c = players.find(p => p.teamId === match.awayTeamId); return c ? <span className="text-[8px] sm:text-[9px] text-amber-400 font-bold truncate leading-none">{c.name}</span> : null; })()}
-                                                  </span>
-                                                  <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: aInfo?.color_primary || "#555" }} />
-                                                </span>
-                                              </div>
-                                              {(lastHomeEvent || lastAwayEvent) && (
-                                                <div className="flex px-3 pb-1.5 gap-1">
-                                                  <span className="flex-1 text-[8px] sm:text-[9px] text-on-surface-variant/40 truncate">{lastHomeEvent}</span>
-                                                  <span className="flex-1 text-[8px] sm:text-[9px] text-on-surface-variant/40 truncate text-right">{lastAwayEvent}</span>
-                                                </div>
-                                              )}
-                                            </button>
-                                          );
-                                        })
+                                        divMatches.map((match, idx) => (
+                                          <LiveFixtureRow
+                                            key={idx}
+                                            match={match}
+                                            teams={teams}
+                                            players={players}
+                                            liveMinute={liveMinute}
+                                            goalFlashRef={goalFlashRef}
+                                            onOpenDetail={() => { setMatchDetailFixture(match); setShowMatchDetail(true); }}
+                                          />
+                                        ))
                                       )}
                                     </div>
                                   </div>
@@ -1748,188 +1106,27 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
                         {/* ── CUP MULTIVIEW (single list, no division groups) ── */}
                         {isCupMatch && matchResults?.results && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {matchResults.results
-                              .filter(
-                                (m) =>
-                                  m.homeTeamId !== me.teamId &&
-                                  m.awayTeamId !== me.teamId,
-                              )
+                              .filter((m) => m.homeTeamId !== me.teamId && m.awayTeamId !== me.teamId)
                               .filter((m) => {
                                 // After 90', only show games still in extra time (score tied at 90)
                                 if (liveMinute <= 90) return true;
-                                const goals90Home = (m.events || []).filter(
-                                  (e) =>
-                                    e.minute <= 90 &&
-                                    e.type === "goal" &&
-                                    e.team === "home",
-                                ).length;
-                                const goals90Away = (m.events || []).filter(
-                                  (e) =>
-                                    e.minute <= 90 &&
-                                    e.type === "goal" &&
-                                    e.team === "away",
-                                ).length;
+                                const goals90Home = (m.events || []).filter((e) => e.minute <= 90 && e.type === "goal" && e.team === "home").length;
+                                const goals90Away = (m.events || []).filter((e) => e.minute <= 90 && e.type === "goal" && e.team === "away").length;
                                 return goals90Home === goals90Away;
                               })
-                              .map((match, idx) => {
-                                const hInfo = teams.find(
-                                  (t) => t.id === match.homeTeamId,
-                                );
-                                const aInfo = teams.find(
-                                  (t) => t.id === match.awayTeamId,
-                                );
-                                const matchEvents = match.events || [];
-                                const currentHome = matchEvents.filter(
-                                  (e) =>
-                                    e.minute <= liveMinute &&
-                                    (e.type === "goal" ||
-                                      e.type === "penalty_goal" ||
-                                      e.type === "var_goal_pending") &&
-                                    e.team === "home",
-                                );
-                                const currentAway = matchEvents.filter(
-                                  (e) =>
-                                    e.minute <= liveMinute &&
-                                    (e.type === "goal" ||
-                                      e.type === "penalty_goal" ||
-                                      e.type === "var_goal_pending") &&
-                                    e.team === "away",
-                                );
-                                const isHumanMatch = players.some(
-                                  (p) =>
-                                    p.teamId === match.homeTeamId ||
-                                    p.teamId === match.awayTeamId,
-                                );
-                                const flashHome =
-                                  goalFlashRef[
-                                    `${match.homeTeamId}_${match.awayTeamId}_home`
-                                  ];
-                                const flashAway =
-                                  goalFlashRef[
-                                    `${match.homeTeamId}_${match.awayTeamId}_away`
-                                  ];
-                                // eslint-disable-next-line react-hooks/purity
-                                const now = Date.now();
-                                const homeFlashing =
-                                  flashHome && now - flashHome < 1500;
-                                const awayFlashing =
-                                  flashAway && now - flashAway < 1500;
-
-                                return (
-                                  <div
-                                    key={idx}
-                                    className={`bg-surface-container-low rounded-md overflow-hidden ${isHumanMatch ? "border-l-2 border-l-primary/50" : ""}`}
-                                  >
-                                    <div className="flex items-center">
-                                      <div className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 min-w-0">
-                                        <span
-                                          className="w-2 h-2 rounded-full shrink-0"
-                                          style={{
-                                            backgroundColor:
-                                              hInfo?.color_primary || "#666",
-                                          }}
-                                        />
-                                        <span className="flex flex-col min-w-0">
-                                          <span className="text-sm font-bold text-on-surface truncate">
-                                            {hInfo?.name}
-                                          </span>
-                                          {(() => {
-                                            const c = players.find(
-                                              (p) =>
-                                                p.teamId === match.homeTeamId,
-                                            );
-                                            return c ? (
-                                              <span className="text-[8px] text-amber-400 font-bold truncate leading-none">
-                                                {c.name}
-                                              </span>
-                                            ) : null;
-                                          })()}
-                                        </span>
-                                      </div>
-                                      <button
-                                        onClick={() => {
-                                          setMatchDetailFixture(match);
-                                          setShowMatchDetail(true);
-                                        }}
-                                        title="Ver detalhes da partida"
-                                        className="px-3 py-1.5 bg-surface-container hover:bg-surface-bright text-on-surface text-center font-headline min-w-13 flex gap-1 items-center justify-center text-sm leading-none transition-colors cursor-pointer"
-                                      >
-                                        <span
-                                          className="font-black"
-                                          style={{
-                                            color: homeFlashing
-                                              ? "#ff4444"
-                                              : undefined,
-                                            transition: homeFlashing
-                                              ? "none"
-                                              : "color 1.25s ease",
-                                          }}
-                                        >
-                                          {currentHome.length}
-                                        </span>
-                                        <span className="text-on-surface-variant/30 text-xs">
-                                          -
-                                        </span>
-                                        <span
-                                          className="font-black"
-                                          style={{
-                                            color: awayFlashing
-                                              ? "#ff4444"
-                                              : undefined,
-                                            transition: awayFlashing
-                                              ? "none"
-                                              : "color 1.25s ease",
-                                          }}
-                                        >
-                                          {currentAway.length}
-                                        </span>
-                                      </button>
-                                      <div className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 min-w-0 justify-end">
-                                        <span className="flex flex-col min-w-0 items-end">
-                                          <span className="text-sm font-bold text-on-surface truncate">
-                                            {aInfo?.name}
-                                          </span>
-                                          {(() => {
-                                            const c = players.find(
-                                              (p) =>
-                                                p.teamId === match.awayTeamId,
-                                            );
-                                            return c ? (
-                                              <span className="text-[8px] text-amber-400 font-bold truncate leading-none">
-                                                {c.name}
-                                              </span>
-                                            ) : null;
-                                          })()}
-                                        </span>
-                                        <span
-                                          className="w-2 h-2 rounded-full shrink-0"
-                                          style={{
-                                            backgroundColor:
-                                              aInfo?.color_primary || "#666",
-                                          }}
-                                        />
-                                      </div>
-                                    </div>
-                                    <div className="flex text-[9px] text-on-surface-variant/40 px-2.5 pb-1">
-                                      <span className="flex-1 truncate">
-                                        {getMatchLastEventText(
-                                          matchEvents,
-                                          liveMinute,
-                                          "home",
-                                        )}
-                                      </span>
-                                      <span className="flex-1 truncate text-right">
-                                        {getMatchLastEventText(
-                                          matchEvents,
-                                          liveMinute,
-                                          "away",
-                                        )}
-                                      </span>
-                                    </div>
-                                  </div>
-                                );
-                              })}
+                              .map((match, idx) => (
+                                <LiveFixtureRow
+                                  key={idx}
+                                  match={match}
+                                  teams={teams}
+                                  players={players}
+                                  liveMinute={liveMinute}
+                                  goalFlashRef={goalFlashRef}
+                                  onOpenDetail={() => { setMatchDetailFixture(match); setShowMatchDetail(true); }}
+                                />
+                              ))}
                           </div>
                         )}
                       </div>
