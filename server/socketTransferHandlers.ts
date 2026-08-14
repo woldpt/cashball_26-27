@@ -298,6 +298,13 @@ export function registerTransferSocketHandlers(
     if (!game) return;
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
+    if (isMatchInProgress(game)) {
+      socket.emit(
+        "systemMessage",
+        "Não é possível gerir o plantel durante uma partida.",
+      );
+      return;
+    }
 
     game.db.run(
       "UPDATE players SET transfer_status = 'none', transfer_price = 0 WHERE id = ? AND team_id = ? AND transfer_status = 'fixed'",
@@ -325,6 +332,13 @@ export function registerTransferSocketHandlers(
     if (!game) return;
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
+    if (isMatchInProgress(game)) {
+      socket.emit(
+        "systemMessage",
+        "Não é possível gerir o plantel durante uma partida.",
+      );
+      return;
+    }
 
     game.db.get(
       "SELECT * FROM players WHERE id = ? AND team_id = ?",
@@ -415,6 +429,13 @@ export function registerTransferSocketHandlers(
     if (!game) return;
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
+    if (isMatchInProgress(game)) {
+      socket.emit(
+        "systemMessage",
+        "Não é possível gerir o plantel durante uma partida.",
+      );
+      return;
+    }
 
     const pending = game.pendingRenewalCounterOffers?.[playerId];
     if (!pending || pending.teamId !== playerState.teamId) return;
@@ -463,6 +484,11 @@ export function registerTransferSocketHandlers(
     if (!game) return ack?.({ ok: false, error: "Jogo não encontrado." });
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return ack?.({ ok: false, error: "Jogador não encontrado." });
+
+    if (isMatchInProgress(game)) {
+      ack?.({ ok: false, error: "Não é possível licitar durante uma partida." });
+      return;
+    }
 
     const validPlayerId = validatePositiveInt(playerId);
     const validBidAmount = validatePositiveInt(bidAmount);

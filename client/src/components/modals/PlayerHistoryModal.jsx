@@ -311,8 +311,13 @@ export function PlayerHistoryModal({
                         openAuctionBid?.(player);
                         setPlayerHistoryModal(null);
                       }}
-                      disabled={!canAfford}
-                      className="w-full px-4 py-2.5 bg-primary text-on-primary hover:brightness-110 disabled:opacity-30 text-[10px] uppercase font-black rounded-sm transition-all"
+                      disabled={!canAfford || matchInProgress}
+                      title={
+                        matchInProgress
+                          ? "Disponível após as partidas"
+                          : undefined
+                      }
+                      className="w-full px-4 py-2.5 bg-primary text-on-primary hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] uppercase font-black rounded-sm transition-all"
                     >
                       {canAfford
                         ? "🔨 Licitar no Leilão"
@@ -332,8 +337,13 @@ export function PlayerHistoryModal({
                         });
                         setPlayerHistoryModal(null);
                       }}
-                      disabled={!canAfford}
-                      className="w-full px-4 py-2.5 bg-primary text-on-primary hover:brightness-110 disabled:opacity-30 text-[10px] uppercase font-black rounded-sm transition-all"
+                      disabled={!canAfford || matchInProgress}
+                      title={
+                        matchInProgress
+                          ? "Disponível após as partidas"
+                          : undefined
+                      }
+                      className="w-full px-4 py-2.5 bg-primary text-on-primary hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] uppercase font-black rounded-sm transition-all"
                     >
                       {canAfford ? "💰 Comprar Jogador" : "Saldo Insuficiente"}
                     </button>
@@ -354,7 +364,13 @@ export function PlayerHistoryModal({
                           renewPlayerContract?.(player);
                           setPlayerHistoryModal(null);
                         }}
-                        className="w-full px-4 py-2.5 bg-primary text-on-primary hover:brightness-110 text-[10px] uppercase font-black rounded-sm transition-all"
+                        disabled={matchInProgress}
+                        title={
+                          matchInProgress
+                            ? "Disponível após as partidas"
+                            : "Renovar Contrato"
+                        }
+                        className="w-full px-4 py-2.5 bg-primary text-on-primary hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] uppercase font-black rounded-sm transition-all"
                       >
                         📝 Renovar Contrato
                       </button>
@@ -381,7 +397,13 @@ export function PlayerHistoryModal({
                             removeFromTransferList?.(player);
                             setPlayerHistoryModal(null);
                           }}
-                          className="w-full px-4 py-2.5 bg-error-container text-on-error-container hover:brightness-110 text-[10px] uppercase font-black rounded-sm transition-all"
+                          disabled={matchInProgress}
+                          title={
+                            matchInProgress
+                              ? "Disponível após as partidas"
+                              : "Retirar da Lista"
+                          }
+                          className="w-full px-4 py-2.5 bg-error-container text-on-error-container hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] uppercase font-black rounded-sm transition-all"
                         >
                           ✕ Retirar da Lista
                         </button>
@@ -391,7 +413,13 @@ export function PlayerHistoryModal({
                             listPlayerFixed?.(player);
                             setPlayerHistoryModal(null);
                           }}
-                          className="w-full px-4 py-2.5 bg-secondary-container hover:bg-surface-bright text-on-surface text-[10px] uppercase font-black rounded-sm transition-all"
+                          disabled={matchInProgress}
+                          title={
+                            matchInProgress
+                              ? "Disponível após as partidas"
+                              : "Listar para Transferência"
+                          }
+                          className="w-full px-4 py-2.5 bg-secondary-container hover:bg-surface-bright disabled:opacity-30 disabled:cursor-not-allowed text-on-surface text-[10px] uppercase font-black rounded-sm transition-all"
                         >
                           🏷️ Listar para Transferência
                         </button>
