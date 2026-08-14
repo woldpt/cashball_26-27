@@ -13,7 +13,7 @@ import {
   RefWeatherBar,
   TacticsButtons,
   ConfirmedSubsStrip,
-  PitchFormation,
+  MatchPitch,
   MatchPlayerCard,
   MatchIcon,
   PrimaryButton,
@@ -330,9 +330,9 @@ function SubsPanel({
         </div>
       )}
 
-      <div className="flex-1 flex flex-col md:grid md:grid-cols-2 min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col md:grid md:grid-cols-2 md:auto-rows-fr min-h-0 overflow-hidden">
         {/* On-pitch column */}
-        <div className="flex-1 md:flex-none flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-1 md:flex-none min-w-0 flex flex-col min-h-0 overflow-hidden">
           <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
             <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
@@ -380,7 +380,7 @@ function SubsPanel({
 
         {/* Bench column */}
         {!isPenalty ? (
-          <div className="flex-1 md:flex-none flex flex-col min-h-0 overflow-hidden border-t md:border-t-0 md:border-l border-outline-variant/15">
+          <div className="flex-1 md:flex-none min-w-0 flex flex-col min-h-0 overflow-hidden border-t md:border-t-0 md:border-l border-outline-variant/15">
             <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
               <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
@@ -446,22 +446,20 @@ function AdversarioPanel({ hasLineups, oppFormation, oppStyleLabel, oppRows, opp
       )}
 
       {/* Normalized padding — old code mixed `px-3 pt-2 pb-3 pt-3`. */}
-      <div className="flex-1 flex flex-col md:grid md:grid-cols-2 min-h-0 overflow-hidden p-4 gap-4">
+      <div className="flex-1 flex flex-col md:grid md:grid-cols-2 md:auto-rows-fr min-h-0 overflow-hidden p-4 gap-4">
         {/* Opponent pitch */}
-        <div className="md:flex-1 md:min-h-0 md:flex md:items-center md:justify-center overflow-hidden">
+        <div className="md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center overflow-hidden">
           {!hasLineups ? (
             <EmptyState icon="📋" message="Escalações indisponíveis durante a simulação" />
           ) : oppRows.ATA?.length === 0 && oppRows.MED?.length === 0 ? (
             <EmptyState icon="🤷" message="Sem dados da escalação do adversário" />
           ) : (
-            <div className="relative w-full max-w-[280px] md:max-w-none md:w-auto md:h-full mx-auto rounded-md overflow-hidden border border-outline-variant/25 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16" }}>
-              <PitchFormation rows={oppRows} posColors={PITCH_POS_COLORS} />
-            </div>
+            <MatchPitch rows={oppRows} posColors={PITCH_POS_COLORS} />
           )}
         </div>
 
         {/* Opponent bench */}
-        <div className="flex-1 md:flex-none flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-1 md:flex-none min-w-0 flex flex-col min-h-0 overflow-hidden">
           <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
             <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">Banco</h3>
           </div>

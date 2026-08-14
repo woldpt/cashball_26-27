@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { getPosStyle, PITCH_POS_COLORS, buildPositionRows, filterMatchEvents } from "../matchConstants.js";
 import {
-  PitchFormation,
+  MatchPitch,
   PossessionBar,
   EventCard,
   RefWeatherBar,
@@ -9,7 +9,7 @@ import {
 } from "../shared/index.js";
 
 /* ── MatchView — Main match view (2 columns: narrative + pitch) ─────── */
-export function MatchView({ fixture, liveMinute, teams, mode }) {
+export function MatchView({ fixture, liveMinute, teams }) {
   const [pitchSide, setPitchSide] = useState("home");
 
   if (!fixture) return null;
@@ -21,7 +21,6 @@ export function MatchView({ fixture, liveMinute, teams, mode }) {
   const visibleEvts = filterMatchEvents(evts, liveMinute);
   const ref = fixture.referee;
   const weatherEvent = evts.find((e) => e.type === "weather");
-  const isHalftime = mode === "halftime";
   const hasLineups = fixture?.homeLineup && fixture?.awayLineup;
 
   /* ── Pitch side data ──────────────────────────────────────────────── */
@@ -40,18 +39,6 @@ export function MatchView({ fixture, liveMinute, teams, mode }) {
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      {/* ── Halftime score banner ──────────────────────────────────── */}
-      {isHalftime && (
-        <div className="shrink-0 p-4">
-          <HalftimeBanner
-            hInfo={hInfo}
-            aInfo={aInfo}
-            homeGoals={fixture.finalHomeGoals ?? 0}
-            awayGoals={fixture.finalAwayGoals ?? 0}
-          />
-        </div>
-      )}
-
       {/* ── Main layout: mobile = vertical stack, desktop = 2 columns ─────── */}
       <div className="flex flex-col md:flex-row flex-1 min-h-0 overflow-y-auto md:overflow-hidden">
         {/* ═══ LEFT (desktop) / TOP (mobile): Pitch + Bench ═══ */}
@@ -77,19 +64,8 @@ export function MatchView({ fixture, liveMinute, teams, mode }) {
           {/* Pitch + Bench: side by side on desktop, stacked on mobile */}
           <div className="flex flex-col md:flex-row gap-4 p-4 md:flex-1 md:min-h-0">
             {/* Pitch */}
-            <div className="md:flex-1 md:min-h-0 md:flex md:items-center md:justify-center">
-              <div className="relative w-full max-w-[300px] md:max-w-none mx-auto md:mx-0 md:w-auto md:h-full rounded-md overflow-hidden border border-outline-variant/25 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)]" style={{ aspectRatio: "9/16" }}>
-                {hasLineups ? (
-                  <>
-                    <PitchFormation rows={rows} posColors={posColors} withOverlay={false} />
-                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/40 to-transparent" />
-                  </>
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <p className="text-on-surface-variant/60 text-xs font-medium">Sem escalação disponível</p>
-                  </div>
-                )}
-              </div>
+            <div className="md:flex-1 md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center">
+              <MatchPitch rows={rows} posColors={posColors} />
             </div>
 
             {/* Bench */}
@@ -154,46 +130,7 @@ function TeamBadge({ team, active, onClick, label }) {
   );
 }
 
-function HalftimeBanner({ hInfo, aInfo, homeGoals, awayGoals }) {
-  return (
-    <div className="rounded-md overflow-hidden border border-outline-variant/25 bg-surface-container-low shadow-sm shadow-black/30">
-      <div className="flex items-center justify-center gap-5 pt-4 pb-2">
-        <TeamMiniBadge info={hInfo} />
-        <div className="flex items-center gap-2.5">
-          <span className="text-3xl font-bold font-headline tabular-nums text-on-surface tracking-tighter">
-            {homeGoals}
-          </span>
-          <span className="text-on-surface-variant/60 text-lg font-bold">—</span>
-          <span className="text-3xl font-bold font-headline tabular-nums text-on-surface tracking-tighter">
-            {awayGoals}
-          </span>
-        </div>
-        <TeamMiniBadge info={aInfo} />
-      </div>
-      <div className="flex items-center justify-center pb-3.5">
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.3em] px-2.5 py-1 rounded-full bg-surface-container-high/80 border border-outline-variant/25 text-on-surface-variant">
-          <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
-          Intervalo
-          <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function TeamMiniBadge({ info }) {
-  return (
-    <div className="flex flex-col items-center gap-1 min-w-0 max-w-[30%]">
-      <span
-        className="w-3 h-3 rounded-full shrink-0"
-        style={{ background: info?.color_primary || "#6366f1", boxShadow: `0 0 10px ${info?.color_primary || "#6366f1"}80` }}
-      />
-      <span className="text-[10px] font-semibold text-on-surface-variant truncate text-center leading-tight uppercase tracking-[0.15em]">
-        {info?.name || "—"}
-      </span>
-    </div>
-  );
-}
+/* ── EventList ─────────────────────────────────────────────────────────── */
 
 function EventList({ events, hInfo, aInfo }) {
   if (events.length === 0) {

@@ -234,7 +234,6 @@ export function MatchPage({
 						fixture={fixture}
 						liveMinute={liveMinute}
 						teams={teams}
-						mode={mode}
 					/>
 				)}
 

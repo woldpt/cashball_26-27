@@ -3,7 +3,7 @@ import { POSITION_FULL_LABELS } from "../matchConstants.js";
 
 /* ── SVG Pitch ─────────────────────────────────────────────────────────── */
 const PITCH_SVG = (
-  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 315 560" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 315 560" preserveAspectRatio="none" aria-hidden="true">
     <rect x="10" y="10" width="295" height="540" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" rx="3" />
     <line x1="10" y1="280" x2="305" y2="280" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
     <circle cx="157" cy="280" r="50" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />

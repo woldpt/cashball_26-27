@@ -1,4 +1,5 @@
 export { PitchFormation, PlayerMarker, PlayerRow } from "./PitchFormation.jsx";
+export { MatchPitch } from "./MatchPitch.jsx";
 export { BenchPlayers, BenchPlayerCard } from "./BenchPlayers.jsx";
 export { PossessionBar } from "./PossessionBar.jsx";
 export { EventCard } from "./EventCard.jsx";
