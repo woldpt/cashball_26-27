@@ -253,12 +253,14 @@ export function useSocketListeners(handlers, refs) {
 						awayTeamId: fx.awayTeam?.id,
 						finalHomeGoals: fx.homeGoals,
 						finalAwayGoals: fx.awayGoals,
-						events: fx.events || [],
-						homeLineup: fx.homeLineup || [],
-						awayLineup: fx.awayLineup || [],
-						attendance: null,
-					})),
-				});
+					events: fx.events || [],
+					homeLineup: fx.homeLineup || [],
+					awayLineup: fx.awayLineup || [],
+					_t1: fx._t1 || null,
+					_t2: fx._t2 || null,
+					attendance: null,
+				})),
+			});
 				handlers.setLiveMinute(45);
 				handlers.setSubsMade(0);
 				handlers.setSubbedOut([]);
@@ -301,12 +303,14 @@ export function useSocketListeners(handlers, refs) {
 						awayTeamId: fx.awayTeam?.id,
 						finalHomeGoals: fx.homeGoals,
 						finalAwayGoals: fx.awayGoals,
-						events: fx.events || [],
-						homeLineup: fx.homeLineup || [],
-						awayLineup: fx.awayLineup || [],
-						attendance: null,
-					})),
-				});
+					events: fx.events || [],
+					homeLineup: fx.homeLineup || [],
+					awayLineup: fx.awayLineup || [],
+					_t1: fx._t1 || null,
+					_t2: fx._t2 || null,
+					attendance: null,
+				})),
+			});
 				handlers.setLiveMinute(90);
 				handlers.setSubsMade(0);
 				handlers.setSubbedOut([]);
@@ -457,6 +461,10 @@ export function useSocketListeners(handlers, refs) {
 					finalAwayGoals: r.finalAwayGoals,
 					events: r.events || [],
 					attendance: null,
+					homeLineup: r.homeLineup || [],
+					awayLineup: r.awayLineup || [],
+					_t1: r._t1 || null,
+					_t2: r._t2 || null,
 				})),
 			});
 			handlers.setShowHalftimePanel(false);
@@ -957,6 +965,8 @@ export function useSocketListeners(handlers, refs) {
 					events: fx.events || [],
 					homeLineup: fx.homeLineup || [],
 					awayLineup: fx.awayLineup || [],
+					_t1: fx._t1 || null,
+					_t2: fx._t2 || null,
 					attendance: fx.attendance || null,
 				})),
 			});

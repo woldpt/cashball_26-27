@@ -1162,13 +1162,16 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             );
             const t1 = (p1?.tactic as object) || fx._t1 || {};
             const t2 = (p2?.tactic as object) || fx._t2 || {};
-            if (!fx.homeLineup && fx._homeSquad)
+            // Cup fixtures start with homeLineup: [] (truthy), so the backup
+            // snapshot must check length, not just truthiness — otherwise the
+            // cup lineups would never be recovered post-first-half.
+            if ((!fx.homeLineup || fx.homeLineup.length === 0) && fx._homeSquad)
               fx.homeLineup = lineupSnapshot2(
                 fx._homeSquad,
                 t1,
                 fx._homeFullRoster,
               );
-            if (!fx.awayLineup && fx._awaySquad)
+            if ((!fx.awayLineup || fx.awayLineup.length === 0) && fx._awaySquad)
               fx.awayLineup = lineupSnapshot2(
                 fx._awaySquad,
                 t2,
@@ -1213,6 +1216,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                   finalHomeGoals: f.finalHomeGoals,
                   finalAwayGoals: f.finalAwayGoals,
                   events: f.events,
+                  homeLineup: f.homeLineup || [],
+                  awayLineup: f.awayLineup || [],
+                  _t1: f._t1 || null,
+                  _t2: f._t2 || null,
                 })),
               });
               segmentRunning[game.roomCode] = true;
@@ -1284,6 +1291,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             finalHomeGoals: f.finalHomeGoals,
             finalAwayGoals: f.finalAwayGoals,
             events: f.events,
+            homeLineup: f.homeLineup || [],
+            awayLineup: f.awayLineup || [],
+            _t1: f._t1 || null,
+            _t2: f._t2 || null,
           })),
         });
       }

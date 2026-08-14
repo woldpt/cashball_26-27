@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { MAX_MATCH_SUBS } from "../../../constants/index.js";
 import {
   getPosStyle,
@@ -19,6 +20,7 @@ import {
   PrimaryButton,
   GhostButton,
 } from "../shared/index.js";
+import { TeamCrest } from "../../live/TeamCrest.jsx";
 
 /* ── IntervencaoView — Substitutions + chronology + opponent ────────── */
 export function IntervencaoView({
@@ -93,7 +95,9 @@ export function IntervencaoView({
     !!effectiveOutId && !!selectedInId && (!isHalftime || subsMade < MAX_MATCH_SUBS);
 
   /* ── Opponent data ────────────────────────────────────────────── */
-  const hasLineups = fixture?.homeLineup && fixture?.awayLineup;
+  // Strict check: arrays vazios ([] são truthy) não contam como escalação.
+  const hasLineups =
+    !!fixture?.homeLineup?.length && !!fixture?.awayLineup?.length;
   const oppLineupRaw = isHome ? fixture?.awayLineup : fixture?.homeLineup;
   const oppLineup = oppLineupRaw || [];
   const oppStarters = sortPlayersByPos(oppLineup.filter((p) => p.is_starter === true).slice(0, 11));
@@ -107,9 +111,20 @@ export function IntervencaoView({
         : oppStyleRaw === "EQUILIBRADO" ? "Equilibrado"
           : null;
   const oppRows = buildPositionRows(oppStarters);
+  const oppInfo = isHome ? aInfo : hInfo;
 
   /* ── Chronology events ────────────────────────────────────────── */
   const evts = fixture?.events || [];
+  const countGoals = (team) =>
+    evts.filter(
+      (e) =>
+        (e.type === "goal" ||
+          e.type === "penalty_goal" ||
+          e.type === "var_goal_pending") &&
+        e.team === team,
+    ).length;
+  const scoreHome = fixture?.finalHomeGoals ?? countGoals("home");
+  const scoreAway = fixture?.finalAwayGoals ?? countGoals("away");
   const weatherEvent = evts.find((e) => e.type === "weather");
   const visibleEvts = filterMatchEvents(evts, liveMinute);
   const ref = fixture.referee;
@@ -145,7 +160,15 @@ export function IntervencaoView({
 
   /* ── Render ────────────────────────────────────────────────────── */
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-[linear-gradient(170deg,#0d0d14_0%,#11111b_45%,#0e1018_100%)]">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="flex flex-col flex-1 min-h-0 overflow-hidden bg-surface-container-low"
+      style={{
+        background: `radial-gradient(ellipse 70% 40% at 50% 0%, ${hInfo?.color_primary || "#333"}12 0%, transparent 70%), var(--color-surface-container-low)`,
+      }}
+    >
       {/* Confirmed subs strip */}
       <ConfirmedSubsStrip subs={confirmedSubs} annotatedSquad={annotatedSquad} />
 
@@ -154,6 +177,17 @@ export function IntervencaoView({
        * bottom bar, easy to miss). Surfacing it here at top-right makes
        * it visible at the moment the user is reviewing their subs. */}
       <div className={`shrink-0 px-5 py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme} flex items-center justify-between gap-4`}>
+        {/* Scoreboard chip — contexto do jogo em todos os modos */}
+        <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface/60 border border-outline-variant/20">
+          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: hInfo?.color_primary || "#6366f1" }} />
+          <span className="text-sm font-black font-headline tabular-nums text-on-surface leading-none">{scoreHome}</span>
+          <span className="text-on-surface-variant/40 text-xs font-black leading-none">:</span>
+          <span className="text-sm font-black font-headline tabular-nums text-on-surface leading-none">{scoreAway}</span>
+          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: aInfo?.color_primary || "#f43f5e" }} />
+          <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70 tabular-nums ml-1.5 leading-none">
+            {(liveMinute ?? 0)}'
+          </span>
+        </div>
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-bold font-headline tracking-tight text-on-surface uppercase text-center truncate">
             {titleText}
@@ -245,34 +279,55 @@ export function IntervencaoView({
             </div>
           </div>
 
-          {centerTab === "subs" ? (
-            <SubsPanel
-              isHalftime={isHalftime}
-              isPenalty={isPenalty}
-              isForcedSwap={isForcedSwap}
-              confirmedSubs={confirmedSubs}
-              annotatedSquad={annotatedSquad}
-              tactic={tactic}
-              onUpdateTactic={onUpdateTactic}
-              onPitchPlayers={onPitchPlayers}
-              benchPlayers={benchPlayers}
-              effectiveOutId={effectiveOutId}
-              selectedInId={selectedInId}
-              handlePickOut={handlePickOut}
-              handlePickIn={handlePickIn}
-              forceOutPlayer={forceOutPlayer}
-              subbedOut={subbedOut}
-              subsMade={subsMade}
-            />
-          ) : (
-            <AdversarioPanel
-              hasLineups={hasLineups}
-              oppFormation={oppFormation}
-              oppStyleLabel={oppStyleLabel}
-              oppRows={oppRows}
-              oppBench={oppBench}
-            />
-          )}
+          <AnimatePresence mode="wait" initial={false}>
+            {centerTab === "subs" ? (
+              <motion.div
+                key="subs"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                className="flex flex-col flex-1 min-h-0 overflow-hidden"
+              >
+                <SubsPanel
+                  isHalftime={isHalftime}
+                  isPenalty={isPenalty}
+                  isForcedSwap={isForcedSwap}
+                  confirmedSubs={confirmedSubs}
+                  annotatedSquad={annotatedSquad}
+                  tactic={tactic}
+                  onUpdateTactic={onUpdateTactic}
+                  onPitchPlayers={onPitchPlayers}
+                  benchPlayers={benchPlayers}
+                  effectiveOutId={effectiveOutId}
+                  selectedInId={selectedInId}
+                  handlePickOut={handlePickOut}
+                  handlePickIn={handlePickIn}
+                  forceOutPlayer={forceOutPlayer}
+                  subbedOut={subbedOut}
+                  subsMade={subsMade}
+                />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="adversario"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                className="flex flex-col flex-1 min-h-0 overflow-hidden"
+              >
+                <AdversarioPanel
+                  hasLineups={hasLineups}
+                  oppInfo={oppInfo}
+                  oppFormation={oppFormation}
+                  oppStyleLabel={oppStyleLabel}
+                  oppRows={oppRows}
+                  oppBench={oppBench}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -289,7 +344,7 @@ export function IntervencaoView({
         onConfirmSub={onConfirmSub}
         onResolveAction={onResolveAction}
       />
-    </div>
+    </motion.div>
   );
 }
 
@@ -320,13 +375,32 @@ function SubsPanel({
 }) {
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      {/* Tactics (halftime only) */}
+      {/* Tactics (halftime only) + contador de substituições */}
       {isHalftime && (
         <div className="flex items-center gap-3 px-4 py-2.5 border-b border-outline-variant/15">
           <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
             Mentalidade
           </span>
           <TacticsButtons className="flex-1" value={tactic.style} onChange={onUpdateTactic} />
+          <div
+            className="shrink-0 flex items-center gap-1.5"
+            title={`${subsMade} de ${MAX_MATCH_SUBS} substituições usadas`}
+          >
+            <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
+              Subs
+            </span>
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                  i < subsMade ? "bg-emerald-400" : "bg-outline-variant/40"
+                }`}
+              />
+            ))}
+            <span className="text-[10px] font-black tabular-nums text-on-surface-variant ml-0.5">
+              {subsMade}/{MAX_MATCH_SUBS}
+            </span>
+          </div>
         </div>
       )}
 
@@ -367,6 +441,7 @@ function SubsPanel({
                   onPick={() => handlePickOut(p)}
                   title={noGrReplacement ? "Não há GR no banco para substituir" : undefined}
                   swapIndicator={isHalftime && !isPenalty}
+                  forcedOut={isForcedSwap && !!forceOutPlayer && p.id === forceOutPlayer.id}
                 />
               );
             })}
@@ -422,9 +497,38 @@ function SubsPanel({
               <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">Escolha</h3>
             </div>
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-center text-on-surface-variant/80 text-xs font-medium px-4">
-                Seleciona o marcador na coluna "Titulares".
-              </p>
+              {(() => {
+                const taker =
+                  onPitchPlayers.find((p) => p.id === effectiveOutId) || null;
+                if (!taker)
+                  return (
+                    <p className="text-center text-on-surface-variant/80 text-xs font-medium px-4">
+                      Seleciona o marcador na coluna "Titulares".
+                    </p>
+                  );
+                return (
+                  <div className="w-full px-5 flex flex-col items-center gap-2">
+                    <span className="text-3xl leading-none">🎯</span>
+                    <span className="text-sm font-black font-headline uppercase tracking-tight text-on-surface text-center truncate max-w-full">
+                      {taker.name}
+                    </span>
+                    <div className="flex flex-wrap justify-center gap-1.5">
+                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-sm bg-surface-bright border-l-2 border-rose-400 text-rose-300">
+                        {taker.position}
+                      </span>
+                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-sm bg-surface-bright text-tertiary">
+                        Qualidade {taker.skill ?? "—"}
+                      </span>
+                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-sm bg-surface-bright text-cyan-400/80">
+                        RES {taker.resistance ?? "—"}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-on-surface-variant/70 font-medium text-center">
+                      Pronto para marcar — confirma no botão abaixo.
+                    </p>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -433,17 +537,25 @@ function SubsPanel({
   );
 }
 
-function AdversarioPanel({ hasLineups, oppFormation, oppStyleLabel, oppRows, oppBench }) {
+function AdversarioPanel({ hasLineups, oppInfo, oppFormation, oppStyleLabel, oppRows, oppBench }) {
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      {/* Formation badge (if known) */}
-      {(oppFormation || oppStyleLabel) && (
-        <div className="shrink-0 px-4 pt-4">
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-md bg-surface-container border border-outline-variant/25 text-on-surface-variant">
-            {[oppFormation, oppStyleLabel].filter(Boolean).join(" · ")}
-          </span>
+      {/* Header do adversário: crest + nome + formação */}
+      <div className="shrink-0 px-4 pt-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <TeamCrest team={oppInfo} />
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate">
+              {oppInfo?.name || "Adversário"}
+            </span>
+            {(oppFormation || oppStyleLabel) && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
+                {[oppFormation, oppStyleLabel].filter(Boolean).join(" · ")}
+              </span>
+            )}
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Normalized padding — old code mixed `px-3 pt-2 pb-3 pt-3`. */}
       <div className="flex-1 flex flex-col md:grid md:grid-cols-2 md:auto-rows-fr min-h-0 overflow-hidden p-4 gap-4">

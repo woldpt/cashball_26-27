@@ -21,6 +21,7 @@ export function MatchPlayerCard({
   onPick,
   title,
   swapIndicator = false,
+  forcedOut = false,
 }) {
   const s = posStyle || getPosStyle(player.position);
 
@@ -40,11 +41,13 @@ export function MatchPlayerCard({
 
   // Single visual signal in the selected state: rose tint. The position
   // bgGrad gradient is suppressed so only one color system dominates.
-  const cardBg = selected
-    ? "border-rose-400/60 bg-rose-500/10"
-    : disabled
-      ? "opacity-40 cursor-not-allowed border-outline-variant/15 bg-surface-container/40"
-      : `cursor-pointer border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 hover:-translate-y-px hover:shadow-lg ${s.glow} shadow-sm shadow-black/30`;
+  const cardBg = forcedOut
+    ? "border-red-500/70 ring-2 ring-red-500/40 bg-red-500/10 shadow-[0_0_16px_rgba(239,68,68,0.25)]"
+    : selected
+      ? "border-rose-400/60 bg-rose-500/10"
+      : disabled
+        ? "opacity-40 cursor-not-allowed border-outline-variant/15 bg-surface-container/40"
+        : `cursor-pointer border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 hover:-translate-y-px hover:shadow-lg ${s.glow} shadow-sm shadow-black/30`;
 
   return (
     <button
@@ -52,6 +55,12 @@ export function MatchPlayerCard({
       title={title}
       className={`relative group flex items-stretch rounded-md overflow-hidden border transition-all duration-200 select-none w-full text-left ${cardBg}`}
     >
+      {/* Forced swap label */}
+      {forcedOut && (
+        <span className="absolute top-0 right-0 px-1.5 py-px bg-red-500/90 text-white text-[8px] font-black uppercase tracking-widest rounded-bl-md">
+          Obrigatório
+        </span>
+      )}
       {/* Position accent bar */}
       <div className={`shrink-0 w-1 bg-gradient-to-b ${selected ? "from-rose-300 via-rose-400 to-rose-600" : s.bar}`} />
 
