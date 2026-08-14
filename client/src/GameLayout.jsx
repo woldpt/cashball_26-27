@@ -339,6 +339,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           <div className="flex items-center gap-1">
             {/* RoomHub button — unified: Coaches + Chat */}
             <button
+              onMouseUp={(e) => e.stopPropagation()}
               onClick={() => setRoomHubOpen((v) => !v)}
               title="Sala e Chat"
               className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-white/10 transition-colors"
