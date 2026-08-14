@@ -1,6 +1,10 @@
 /**
  * @param {{ cupPenaltyPopup: object|null, cupPenaltyKickIdx: number, teams: Array, setCupPenaltyPopup: function, setCupPenaltyKickIdx: function }} props
  */
+import { ModalShell } from "../shared/ModalShell.jsx";
+import { Button } from "../shared/Button.jsx";
+import { MODAL_Z } from "../../constants/index.js";
+
 export function PenaltyShootoutPopup({
   cupPenaltyPopup,
   cupPenaltyKickIdx,
@@ -33,9 +37,8 @@ export function PenaltyShootoutPopup({
   }
 
   return (
-    <div className="fixed inset-0 z-150 bg-zinc-950/92 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-lg border border-outline-variant/20 bg-surface-container shadow-2xl overflow-hidden">
-        <div className="bg-amber-900/20 px-6 py-4 border-b border-amber-800/30 text-center">
+    <ModalShell visible={!!cupPenaltyPopup} z={MODAL_Z.penalty} variant="md">
+      <div className="bg-amber-900/20 px-6 py-4 border-b border-amber-800/30 text-center">
           <p className="text-[10px] text-amber-400 uppercase font-black tracking-widest">
             Taça de Portugal
           </p>
@@ -153,18 +156,19 @@ export function PenaltyShootoutPopup({
 
         {allRevealed && (
           <div className="px-6 pb-6 pt-2">
-            <button
+            <Button
+              variant="primary"
+              size="lg"
+              full
               onClick={() => {
                 setCupPenaltyPopup(null);
                 setCupPenaltyKickIdx(0);
               }}
-              className="w-full rounded-sm bg-primary px-4 py-3 font-black uppercase tracking-widest text-on-primary hover:brightness-110"
             >
               Fechar
-            </button>
+            </Button>
           </div>
         )}
-      </div>
-    </div>
+    </ModalShell>
   );
 }

@@ -1,5 +1,7 @@
 import { SEASON_CALENDAR } from "../constants/index.js";
 import { generateLeagueFixtures } from "../utils/fixtures.js";
+import { TabBar } from "../components/shared/TabBar.jsx";
+import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 
 export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, setCalFilter, handleOpenTeamSquad }) {
   const cal = calendarData;
@@ -261,25 +263,15 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
             </p>
           </div>
           {/* Filter tabs */}
-          <div className="flex items-center gap-1 bg-surface-container-high rounded-lg p-1">
-            {[
-              ["all", "Todos"],
-              ["league", "Liga"],
-              ["cup", "Taça"],
-            ].map(([val, label]) => (
-              <button
-                key={val}
-                onClick={() => setCalFilter(val)}
-                className={`px-3 py-1 rounded text-xs font-black uppercase tracking-wide transition-all ${
-                  calFilter === val
-                    ? "bg-primary text-white shadow"
-                    : "text-on-surface-variant hover:text-on-surface"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <TabBar
+            tabs={[
+              { key: "all", label: "Todos" },
+              { key: "league", label: "Liga" },
+              { key: "cup", label: "Taça" },
+            ]}
+            active={calFilter}
+            onChange={setCalFilter}
+          />
         </div>
       </div>
 
@@ -299,41 +291,28 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
       {cal && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Unbeaten run */}
-          <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-primary">
-            <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-              Invencibilidade
-            </span>
-            <div>
-              <p className="text-3xl font-headline font-black leading-none text-on-surface tabular-nums">
-                {String(unbeatenRun).padStart(2, "0")}
-              </p>
-              <p className="text-[9px] text-on-surface-variant/60 uppercase tracking-wide font-black">
-                {unbeatenRun === 1
-                  ? "1 jogo"
-                  : `${unbeatenRun} jogos`}{" "}
-                sem derrota
-              </p>
-            </div>
-          </div>
+          <SummaryWidget
+            label="Invencibilidade"
+            value={String(unbeatenRun).padStart(2, "0")}
+            sub={`${unbeatenRun === 1 ? "1 jogo" : `${unbeatenRun} jogos`} sem derrota`}
+            subClass="text-on-surface-variant/60 tracking-wide"
+          />
           {/* Next game */}
-          <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-tertiary">
-            <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-              Próximo Jogo
-            </span>
-            <div>
-              <p className="text-base font-headline font-black leading-tight text-on-surface truncate">
-                {nextGameOpponent?.name ?? "—"}
-              </p>
-              <p className="text-[9px] text-on-surface-variant/60 uppercase tracking-wide font-black truncate">
-                {nextGameVenue ??
-                  (nextGameIsHome
-                    ? "Casa"
-                    : nextGameIsHome === false
-                      ? "Deslocação"
-                      : "—")}
-              </p>
-            </div>
-          </div>
+          <SummaryWidget
+            label="Próximo Jogo"
+            value={nextGameOpponent?.name ?? "—"}
+            valueClass="text-base leading-tight truncate"
+            sub={
+              nextGameVenue ??
+              (nextGameIsHome
+                ? "Casa"
+                : nextGameIsHome === false
+                  ? "Deslocação"
+                  : "—")
+            }
+            subClass="text-on-surface-variant/60 tracking-wide"
+            accentClass="border-tertiary"
+          />
         </div>
       )}
 

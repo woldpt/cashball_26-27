@@ -5,6 +5,9 @@
  */
 import { formatCurrency } from "../utils/formatters.js";
 import { AuctionCard } from "../components/auctions/AuctionCard.jsx";
+import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
+import { Panel } from "../components/shared/Panel.jsx";
+import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { getTeamColor } from "../utils/teamHelpers.js";
 
 export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchweekCount = 0, socket }) {
@@ -19,106 +22,71 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* ── Summary widgets ──────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 md:p-4 shrink-0">
-        <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-primary">
-          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Leilões a decorrer
-          </span>
-          <span className="text-3xl font-black font-headline tracking-tighter text-on-surface tabular-nums">
-            {live.length}
-          </span>
-        </div>
-        <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-tertiary">
-          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Leilões recentes
-          </span>
-          <span className="text-3xl font-black font-headline tracking-tighter text-on-surface tabular-nums">
-            {closed.length}
-          </span>
-        </div>
-        <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-emerald-500">
-          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Caixa disponível
-          </span>
-          <span className="text-3xl font-black font-headline tracking-tighter text-on-surface tabular-nums">
-            {formatCurrency(teamInfo?.budget || 0)}
-          </span>
-        </div>
+        <SummaryWidget label="Leilões a decorrer" value={live.length} />
+        <SummaryWidget
+          label="Leilões recentes"
+          value={closed.length}
+          accentClass="border-tertiary"
+        />
+        <SummaryWidget
+          label="Caixa disponível"
+          value={formatCurrency(teamInfo?.budget || 0)}
+          accentClass="border-emerald-500"
+        />
       </div>
 
       {/* ── Active auctions panel ────────────────────────────────────── */}
       {live.length > 0 && (
         <div className="flex-1 overflow-y-auto p-3 md:p-4 pt-0">
-          <div className="bg-surface-container rounded-md overflow-hidden">
-            <div className="px-5 py-4 flex items-center justify-between bg-surface-container-high/50">
-              <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">
-                Em curso
-              </h2>
-              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                {live.length} leilão{live.length !== 1 ? "s" : ""}
-              </span>
+          <Panel title="Em curso" meta={`${live.length} leilão${live.length !== 1 ? "s" : ""}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {live.map((auction) => (
+                <AuctionCard
+                  key={auction.playerId}
+                  auction={auction}
+                  me={me}
+                  teams={teams}
+                  teamInfo={teamInfo}
+                  matchweekCount={matchweekCount}
+                  socket={socket}
+                  teamColorById={teamColorById}
+                />
+              ))}
             </div>
-            <div className="p-3 md:p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {live.map((auction) => (
-                  <AuctionCard
-                    key={auction.playerId}
-                    auction={auction}
-                    me={me}
-                    teams={teams}
-                    teamInfo={teamInfo}
-                    matchweekCount={matchweekCount}
-                    socket={socket}
-                    teamColorById={teamColorById}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
+          </Panel>
         </div>
       )}
 
       {/* ── Closed auctions panel ────────────────────────────────────── */}
       {closed.length > 0 && (
         <div className="flex-1 overflow-y-auto p-3 md:p-4 pt-0">
-          <div className="bg-surface-container rounded-md overflow-hidden">
-            <div className="px-5 py-4 flex items-center justify-between bg-surface-container-high/50">
-              <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">
-                Recentes
-              </h2>
-              <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                {closed.length} leilão{closed.length !== 1 ? "s" : ""}
-              </span>
+          <Panel title="Recentes" meta={`${closed.length} leilão${closed.length !== 1 ? "s" : ""}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {closed.map((auction) => (
+                <AuctionCard
+                  key={auction.playerId}
+                  auction={auction}
+                  me={me}
+                  teams={teams}
+                  teamInfo={teamInfo}
+                  matchweekCount={matchweekCount}
+                  socket={socket}
+                  teamColorById={teamColorById}
+                />
+              ))}
             </div>
-            <div className="p-3 md:p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {closed.map((auction) => (
-                  <AuctionCard
-                    key={auction.playerId}
-                    auction={auction}
-                    me={me}
-                    teams={teams}
-                    teamInfo={teamInfo}
-                    matchweekCount={matchweekCount}
-                    socket={socket}
-                    teamColorById={teamColorById}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
+          </Panel>
         </div>
       )}
 
       {/* ── Empty state ──────────────────────────────────────────────── */}
       {live.length === 0 && closed.length === 0 && (
         <div className="flex-1 flex items-center justify-center p-3 md:p-4">
-          <div className="flex flex-col items-center gap-2 rounded-lg border border-outline-variant/25 bg-surface-container py-12">
-            <span className="text-3xl text-on-surface-variant/40">⚖️</span>
-            <p className="text-on-surface-variant/60 text-xs font-bold">Sem leilões a mostrar</p>
-            <p className="text-on-surface-variant/40 text-[10px] text-center max-w-[260px]">
-              Quando um clube colocar um jogador em leilão, aparece aqui.
-            </p>
-          </div>
+          <EmptyState
+            emoji="⚖️"
+            title="Sem leilões a mostrar"
+            description="Quando um clube colocar um jogador em leilão, aparece aqui."
+          />
         </div>
       )}
     </div>

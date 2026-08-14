@@ -234,19 +234,86 @@ export const POSITION_SHORT_LABELS = {
 // Enable row background color per position
 export const ENABLE_ROW_BG = true;
 
+// ── POSITION VISUAL SYSTEM (única fonte de verdade) ─────────────────────
+// Todas as variações visuais por posição derivam destas constantes.
+// Cor base por posição (STYLE.md §1): GR amber-400, DEF blue-400,
+// MED emerald-400, ATA rose-400.
+
 // Text color classes for each position (soft palette)
 export const POSITION_TEXT_CLASS = {
-	GR: "text-amber-500",
-	DEF: "text-blue-500",
-	MED: "text-emerald-500",
-	ATA: "text-rose-500",
+	GR: "text-amber-400",
+	DEF: "text-blue-400",
+	MED: "text-emerald-400",
+	ATA: "text-rose-400",
 };
 
 export const POSITION_BORDER_CLASS = {
-	GR: "border-yellow-500",
-	DEF: "border-blue-500",
-	MED: "border-emerald-500",
-	ATA: "border-rose-500",
+	GR: "border-amber-400",
+	DEF: "border-blue-400",
+	MED: "border-emerald-400",
+	ATA: "border-rose-400",
+};
+
+// Faixa lateral (w-1 gradient) das linhas de jogador
+export const POSITION_BAR_CLASS = {
+	GR: "from-amber-300 via-amber-400 to-amber-600",
+	DEF: "from-blue-300 via-blue-400 to-blue-600",
+	MED: "from-emerald-300 via-emerald-400 to-emerald-600",
+	ATA: "from-rose-300 via-rose-400 to-rose-600",
+};
+
+// Glow no hover de cards por posição
+export const POSITION_GLOW_CLASS = {
+	GR: "hover:border-amber-400/70 hover:shadow-amber-400/30",
+	DEF: "hover:border-blue-400/70 hover:shadow-blue-400/30",
+	MED: "hover:border-emerald-400/70 hover:shadow-emerald-400/30",
+	ATA: "hover:border-rose-400/70 hover:shadow-rose-400/30",
+};
+
+// Gradiente de fundo dos cards por posição (opacidade baixa)
+export const POSITION_BG_GRADIENT_CLASS = {
+	GR: "from-amber-500/8",
+	DEF: "from-blue-500/8",
+	MED: "from-emerald-500/8",
+	ATA: "from-rose-500/8",
+};
+
+// Ring + borda dos flip cards (mercado/leilões)
+export const POSITION_RING_CLASS = {
+	GR: "ring-amber-400/60 border-amber-400/35",
+	DEF: "ring-blue-400/60 border-blue-400/35",
+	MED: "ring-emerald-400/60 border-emerald-400/35",
+	ATA: "ring-rose-400/60 border-rose-400/35",
+};
+
+// Badges de posição (bg / text / border separados para recombinação)
+export const POSITION_BADGE_BG_CLASS = {
+	GR: "bg-amber-400/20",
+	DEF: "bg-blue-400/20",
+	MED: "bg-emerald-400/20",
+	ATA: "bg-rose-400/20",
+};
+
+export const POSITION_BADGE_TEXT_CLASS = {
+	GR: "text-amber-400",
+	DEF: "text-blue-400",
+	MED: "text-emerald-400",
+	ATA: "text-rose-400",
+};
+
+export const POSITION_BADGE_BORDER_CLASS = {
+	GR: "border-amber-400/30",
+	DEF: "border-blue-400/30",
+	MED: "border-emerald-400/30",
+	ATA: "border-rose-400/30",
+};
+
+// Hex de accent por posição (gráficos, barras, texto inline)
+export const POSITION_ACCENT_HEX = {
+	GR: "#eab308",
+	DEF: "#3b82f6",
+	MED: "#10b981",
+	ATA: "#f43f5e",
 };
 
 export const POSITION_LABEL_MAP = {
@@ -268,6 +335,17 @@ export const MAX_MATCH_SUBS = 3;
 /** Número máximo de jogadores no banco de suplentes (pré-jogo) */
 export const MAX_BENCH_SIZE = 5;
 export const ADMIN_SESSION_KEY = "cashballAdminSession";
+
+// ── MODAL Z-INDEX (camadas centralizadas) ────────────────────────────────
+export const MODAL_Z = {
+	teamSquad: 120,
+	transferProposal: 130,
+	cupDraw: 140,
+	waitingCoaches: 150,
+	penalty: 150,
+	default: 200,
+	dismissal: 9999,
+};
 
 // ── SEASON CALENDAR ───────────────────────────────────────────────────────────
 export const SEASON_CALENDAR = [

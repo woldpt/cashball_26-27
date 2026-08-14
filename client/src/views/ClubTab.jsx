@@ -4,6 +4,9 @@ import estadio30000 from "../assets/estadio30000.jpg";
 import estadio50000 from "../assets/estadio50000.jpg";
 import { DIVISION_NAMES } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
+import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
+import { Panel } from "../components/shared/Panel.jsx";
+import { EmptyState } from "../components/shared/EmptyState.jsx";
 
 /**
  * @param {{
@@ -138,24 +141,19 @@ export function ClubTab({
         </div>
 
         {/* Budget widget */}
-        <div className="bg-surface-container rounded-lg border border-outline-variant/25 p-4 flex flex-col justify-between"
-          style={{
-            borderTop: `2px solid ${teamInfo?.color_primary || "#4ade80"}`,
+        <SummaryWidget
+          label="Saldo Disponível"
+          value={formatCurrency(currentBudget)}
+          valueClass="text-xl"
+          valueColorClass={
+            currentBudget >= 0 ? "text-on-surface" : "text-error"
+          }
+          className="h-auto"
+          accentStyle={{
+            borderLeftColor: teamInfo?.color_primary || "#4ade80",
           }}
         >
-          <div className="flex justify-between items-start mb-3">
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-1">
-                Saldo Disponível
-              </p>
-              <p
-                className={`font-headline text-xl font-black tabular-nums ${
-                  currentBudget >= 0 ? "text-on-surface" : "text-error"
-                }`}
-              >
-                {formatCurrency(currentBudget)}
-              </p>
-            </div>
+          <div className="flex justify-between items-start mb-2">
             <span
               className="material-symbols-outlined text-2xl"
               style={{ color: teamInfo?.color_primary || "#4ade80" }}
@@ -194,7 +192,7 @@ export function ClubTab({
               )}
             </div>
           </div>
-        </div>
+        </SummaryWidget>
       </div>
 
       {/* ── ROW 2: ESTÁDIO + PALMARÉS ─────────────────────────────── */}
@@ -312,21 +310,20 @@ export function ClubTab({
       </div>
 
       {/* ── ROW 3: JORNAL DO CLUBE ────────────────────────────────── */}
-      <div className="bg-surface-container rounded-lg border border-outline-variant/25 overflow-hidden">
-        {/* Header */}
-        <div className="px-4 py-3 flex justify-between items-center border-b border-outline-variant/25 bg-surface-container-high">
-          <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Jornal do Clube
-          </h3>
-          {clubNews?.some(
+      <Panel
+        title="Jornal do Clube"
+        icon="newspaper"
+        meta={
+          clubNews?.some(
             (n) => n.type === "transfer_in" || n.type === "transfer_out",
           ) && (
             <span className="text-[9px] text-amber-400 font-black tracking-[0.2em] uppercase">
               Foco em Transferências
             </span>
-          )}
-        </div>
-
+          )
+        }
+        padded={false}
+      >
         {clubNews && clubNews.length > 0 ? (
           <>
             <div className="divide-y divide-outline-variant/10">
@@ -414,16 +411,9 @@ export function ClubTab({
             )}
           </>
         ) : (
-          <div className="py-12 text-center text-on-surface-variant">
-            <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 block mb-2">
-              newspaper
-            </span>
-            <p className="font-black text-sm">
-              Nenhuma notícia ainda.
-            </p>
-          </div>
+          <EmptyState emoji="📰" title="Nenhuma notícia ainda." />
         )}
-      </div>
+      </Panel>
     </div>
   );
 }

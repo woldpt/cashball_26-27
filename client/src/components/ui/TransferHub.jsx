@@ -6,6 +6,9 @@
 import { useMemo, useState } from "react";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
 import { AggBadge } from "../shared/AggBadge.jsx";
+import { Badge } from "../shared/Badge.jsx";
+import { Panel } from "../shared/Panel.jsx";
+import { EmptyState } from "../shared/EmptyState.jsx";
 
 import { hexToRgba, posRingClass } from "../../utils/colorHelpers.js";
 
@@ -35,18 +38,18 @@ function statusConfig(status) {
   if (status === "auction") {
     return {
       label: "Leilão",
-      cls: "bg-primary/20 text-primary border border-primary/35",
+      variant: "info",
     };
   }
   if (status === "fixed") {
     return {
       label: "À Venda",
-      cls: "bg-rose-500/20 text-rose-300 border border-rose-500/30",
+      variant: "sold",
     };
   }
   return {
     label: "Sem Lista",
-    cls: "bg-zinc-700/20 text-zinc-400 border border-zinc-600/30",
+    variant: "neutral",
   };
 }
 
@@ -80,7 +83,6 @@ function MarketCard({
     "#95d4b3";
   const tintStrong = hexToRgba(teamColor, 0.3);
   const tintSoft = hexToRgba(teamColor, 0.18);
-  const tintEdge = hexToRgba(teamColor, 0.24);
 
   return (
     <div className="[perspective:1200px] hover:scale-[1.02] transition-transform duration-300">
@@ -110,22 +112,17 @@ function MarketCard({
           >
             <div className="relative flex h-full flex-col">
               <div className="flex items-start justify-between gap-2">
-                <span
-                  className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-sm tracking-widest ${status.cls}`}
-                >
+                <Badge variant={status.variant} size="md">
                   {status.label}
-                </span>
+                </Badge>
                 <div className="flex items-center gap-1.5 shrink-0 min-w-0">
                   {(isSuspended || isInjured) && (
-                    <span
-                      className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-sm tracking-widest whitespace-nowrap border ${
-                        isSuspended
-                          ? "bg-error-container/40 text-error border-error/30"
-                          : "bg-error-container/20 text-error border-error/20"
-                      }`}
+                    <Badge
+                      variant={isSuspended ? "suspended" : "injured"}
+                      size="md"
                     >
                       {isSuspended ? "🟥 Susp." : "🩹 Les."}
-                    </span>
+                    </Badge>
                   )}
                   <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-wider">
                     {player.position}
@@ -150,7 +147,7 @@ function MarketCard({
                   {player.name}
                   {!!player.is_star &&
                     (player.position === "MED" || player.position === "ATA") && (
-                      <span className="ml-1 text-amber-400">★</span>
+                      <span className="ml-1 text-amber-400 font-black" title="Craque">★</span>
                     )}
                 </p>
                 <p className="text-[11px] text-on-surface-variant truncate mt-0.5">
@@ -216,11 +213,9 @@ function MarketCard({
                     {player.team_name || "Sem clube"}
                   </p>
                 </div>
-                <span
-                  className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-sm tracking-widest ${status.cls}`}
-                >
+                <Badge variant={status.variant} size="md">
                   {status.label}
-                </span>
+                </Badge>
               </div>
 
               <div className="mt-3 grid grid-cols-3 gap-1.5 text-xs">
@@ -396,16 +391,10 @@ export function TransferHub({
   }, [players, search]);
 
   return (
-    <section className="bg-surface-container rounded-md overflow-hidden">
-      <div className="px-5 py-4 flex items-center justify-between bg-surface-container-high/50">
-        <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">
-          Mercado de Transferências
-        </h2>
-        <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-          {visible.length} jogador{visible.length !== 1 ? "es" : ""}
-        </span>
-      </div>
-
+    <Panel
+      title="Mercado de Transferências"
+      meta={`${visible.length} jogador${visible.length !== 1 ? "es" : ""}`}
+    >
       <div className="p-3 md:p-4">
         {/* ── Search + filters ─────────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
@@ -446,13 +435,11 @@ export function TransferHub({
 
         {/* ── Player grid ──────────────────────────────────────────────── */}
         {visible.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 rounded-lg border border-outline-variant/25 bg-surface-container py-12">
-            <span className="text-3xl text-on-surface-variant/40">🔄</span>
-            <p className="text-on-surface-variant/60 text-xs font-bold">Sem jogadores disponíveis</p>
-            <p className="text-on-surface-variant/40 text-[10px] text-center max-w-[260px]">
-              Os jogadores colocados em transferência aparecem aqui.
-            </p>
-          </div>
+          <EmptyState
+            emoji="🔄"
+            title="Sem jogadores disponíveis"
+            description="Os jogadores colocados em transferência aparecem aqui."
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {visible.map((player) => (
@@ -477,6 +464,6 @@ export function TransferHub({
           </div>
         )}
       </div>
-    </section>
+    </Panel>
   );
 }

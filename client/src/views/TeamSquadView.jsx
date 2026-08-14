@@ -5,7 +5,9 @@ import {
 import { generateLeagueFixtures } from "../utils/fixtures.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { isSameTeamId } from "../utils/teamHelpers.js";
-import { TeamSquadCard } from "../components/shared/TeamSquadCard.jsx";
+import { PlayerRow } from "../components/shared/PlayerRow.jsx";
+import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
+import { TabBar } from "../components/shared/TabBar.jsx";
 import { useState } from "react";
 
 /**
@@ -208,54 +210,30 @@ export function TeamSquadView({
         {/* Budget widget (only for own team) */}
         {isOwnTeam && (
           <div className="relative mt-5">
-            <div
-              className="bg-surface-container-high rounded-lg p-4 flex flex-col justify-between border-t-2"
-              style={{
-                borderColor: selectedTeam.color_primary || "#2d6a4f",
+            <SummaryWidget
+              label="Saldo Disponível"
+              value={formatCurrency(myBudget)}
+              valueClass="text-2xl"
+              valueColorClass={myBudget >= 0 ? "text-on-surface" : "text-error"}
+              className="h-auto"
+              accentStyle={{
+                borderLeftColor: selectedTeam.color_primary || "#2d6a4f",
               }}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-black mb-1.5">
-                    Saldo Disponível
-                  </p>
-                  <p
-                    className={`font-headline text-2xl font-black ${
-                      myBudget >= 0
-                        ? "text-on-surface"
-                        : "text-error"
-                    }`}
-                  >
-                    {formatCurrency(myBudget)}
-                  </p>
-                </div>
-              </div>
-            </div>
+            />
           </div>
         )}
 
         {/* Tab Navigation */}
-        <div className="relative mt-5 flex items-center gap-1 bg-surface-container-high rounded-lg p-2">
-          <button
-            onClick={() => setActiveTab("squad")}
-            className={`px-4 py-2 rounded text-sm font-black uppercase tracking-wide transition-all ${
-              activeTab === "squad"
-                ? "bg-primary text-white shadow"
-                : "text-on-surface-variant hover:text-on-surface"
-            }`}
-          >
-            Plantel
-          </button>
-          <button
-            onClick={() => setActiveTab("calendar")}
-            className={`px-4 py-2 rounded text-sm font-black uppercase tracking-wide transition-all ${
-              activeTab === "calendar"
-                ? "bg-primary text-white shadow"
-                : "text-on-surface-variant hover:text-on-surface"
-            }`}
-          >
-            Calendário
-          </button>
+        <div className="relative mt-5">
+          <TabBar
+            size="md"
+            tabs={[
+              { key: "squad", label: "Plantel" },
+              { key: "calendar", label: "Calendário" },
+            ]}
+            active={activeTab}
+            onChange={setActiveTab}
+          />
         </div>
       </div>
 
@@ -502,7 +480,7 @@ export function TeamSquadView({
                     </span>
                   </div>
                   {group.map((player) => (
-                    <TeamSquadCard
+                    <PlayerRow
                       key={player.id}
                       player={player}
                       matchweekCount={currentMatchweek}

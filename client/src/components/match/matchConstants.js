@@ -1,5 +1,15 @@
 /* ── Match module shared constants ─────────────────────────────────────── */
 
+import {
+  POSITION_ACCENT_HEX,
+  POSITION_BADGE_BG_CLASS,
+  POSITION_BADGE_BORDER_CLASS,
+  POSITION_BADGE_TEXT_CLASS,
+  POSITION_BAR_CLASS,
+  POSITION_BG_GRADIENT_CLASS,
+  POSITION_GLOW_CLASS,
+} from "../../constants/index.js";
+
 /* Position sort order */
 export const POS_ORDER = { GR: 0, DEF: 1, MED: 2, ATA: 3 };
 
@@ -20,12 +30,12 @@ export function sortPlayersByPos(arr = []) {
   );
 }
 
-/* Visual styles per position — card gradients, badges, accents */
+/* Visual styles per position — derivados da fonte única em constants/index.js */
 export const POS_STYLES = {
-  GR: { bar: "from-amber-300 via-amber-400 to-amber-600", glow: "hover:border-amber-400/70 hover:shadow-amber-400/30", bgGrad: "from-amber-500/8", badgeBg: "bg-amber-400/20", badgeText: "text-amber-400", badgeBorder: "border-amber-400/30", accent: "#eab308" },
-  DEF: { bar: "from-blue-300 via-blue-400 to-blue-600", glow: "hover:border-blue-400/70 hover:shadow-blue-400/30", bgGrad: "from-blue-500/8", badgeBg: "bg-blue-400/20", badgeText: "text-blue-400", badgeBorder: "border-blue-400/30", accent: "#3b82f6" },
-  MED: { bar: "from-emerald-300 via-emerald-400 to-emerald-600", glow: "hover:border-emerald-400/70 hover:shadow-emerald-400/30", bgGrad: "from-emerald-500/8", badgeBg: "bg-emerald-400/20", badgeText: "text-emerald-400", badgeBorder: "border-emerald-400/30", accent: "#10b981" },
-  ATA: { bar: "from-rose-300 via-rose-400 to-rose-600", glow: "hover:border-rose-400/70 hover:shadow-rose-400/30", bgGrad: "from-rose-500/8", badgeBg: "bg-rose-400/20", badgeText: "text-rose-400", badgeBorder: "border-rose-400/30", accent: "#f43f5e" },
+  GR: { bar: POSITION_BAR_CLASS.GR, glow: POSITION_GLOW_CLASS.GR, bgGrad: POSITION_BG_GRADIENT_CLASS.GR, badgeBg: POSITION_BADGE_BG_CLASS.GR, badgeText: POSITION_BADGE_TEXT_CLASS.GR, badgeBorder: POSITION_BADGE_BORDER_CLASS.GR, accent: POSITION_ACCENT_HEX.GR },
+  DEF: { bar: POSITION_BAR_CLASS.DEF, glow: POSITION_GLOW_CLASS.DEF, bgGrad: POSITION_BG_GRADIENT_CLASS.DEF, badgeBg: POSITION_BADGE_BG_CLASS.DEF, badgeText: POSITION_BADGE_TEXT_CLASS.DEF, badgeBorder: POSITION_BADGE_BORDER_CLASS.DEF, accent: POSITION_ACCENT_HEX.DEF },
+  MED: { bar: POSITION_BAR_CLASS.MED, glow: POSITION_GLOW_CLASS.MED, bgGrad: POSITION_BG_GRADIENT_CLASS.MED, badgeBg: POSITION_BADGE_BG_CLASS.MED, badgeText: POSITION_BADGE_TEXT_CLASS.MED, badgeBorder: POSITION_BADGE_BORDER_CLASS.MED, accent: POSITION_ACCENT_HEX.MED },
+  ATA: { bar: POSITION_BAR_CLASS.ATA, glow: POSITION_GLOW_CLASS.ATA, bgGrad: POSITION_BG_GRADIENT_CLASS.ATA, badgeBg: POSITION_BADGE_BG_CLASS.ATA, badgeText: POSITION_BADGE_TEXT_CLASS.ATA, badgeBorder: POSITION_BADGE_BORDER_CLASS.ATA, accent: POSITION_ACCENT_HEX.ATA },
 };
 
 /** Get visual style object for a position. Falls back to MED. */

@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { ModalShell } from "../shared/ModalShell.jsx";
+import { MODAL_Z } from "../../constants/index.js";
 
 /**
  * @param {{ penaltySuspense: object|null }} props
@@ -20,12 +22,16 @@ export function PenaltySuspensePopup({ penaltySuspense }) {
   const showResult = revealedFor === penaltySuspense;
 
   return (
-    <div className="fixed inset-0 z-200 flex items-center justify-center pointer-events-none">
-      <div className="bg-zinc-900/95 border-2 border-amber-500/50 rounded-xl px-8 py-6 text-center shadow-2xl animate-bounce">
+    <ModalShell
+      visible={!!penaltySuspense}
+      z={MODAL_Z.penalty}
+      variant="transparent"
+    >
+      <div className="bg-surface-container border-2 border-amber-500/50 rounded-xl px-8 py-6 text-center shadow-2xl animate-bounce">
         <p className="text-xs text-amber-400 uppercase font-black tracking-widest mb-2">
           Penálti
         </p>
-        <p className="text-zinc-400 text-sm font-bold mb-1">
+        <p className="text-on-surface-variant text-sm font-bold mb-1">
           {penaltySuspense.playerName}
         </p>
         {showResult ? (
@@ -44,6 +50,6 @@ export function PenaltySuspensePopup({ penaltySuspense }) {
           </p>
         )}
       </div>
-    </div>
+    </ModalShell>
   );
 }

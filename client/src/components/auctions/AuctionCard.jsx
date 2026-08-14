@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { formatCurrency } from "../../utils/formatters.js";
 import { FLAG_TO_COUNTRY } from "../../constants/index.js";
 import { AggBadge } from "../shared/AggBadge.jsx";
+import { Badge } from "../shared/Badge.jsx";
+import { StarMark } from "../shared/PlayerStatusBadges.jsx";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
 import { StatTile } from "../shared/StatTile.jsx";
 import { hexToRgba, posRingClass } from "../../utils/colorHelpers.js";
@@ -115,27 +117,27 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <span
-                  className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-sm"
-                  style={{ background: `${teamColor}22`, color: teamColor }}
+                <Badge
+                  size="sm"
+                  style={{
+                    background: `${teamColor}22`,
+                    color: teamColor,
+                    borderColor: `${teamColor}55`,
+                  }}
                 >
                   {auction.position}
-                </span>
+                </Badge>
                 {!!auction.is_star && (auction.position === "MED" || auction.position === "ATA") && (
-                  <span className="text-amber-400 font-black text-base" title="Craque">★</span>
+                  <StarMark />
                 )}
                 {(auction.suspension_until_matchweek ?? 0) > matchweekCount && (
-                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-sm bg-error-container/60 text-error border border-error/30 tracking-widest">
-                    Suspenso
-                  </span>
+                  <Badge variant="suspended">Suspenso</Badge>
                 )}
                 {(auction.injury_until_matchweek ?? 0) > matchweekCount && (
-                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-sm bg-error-container/40 text-error border border-error/20 tracking-widest">
-                    Lesionado
-                  </span>
+                  <Badge variant="injured">Lesionado</Badge>
                 )}
               </div>
-              <p className="font-headline font-black text-white text-xl leading-tight truncate">
+              <p className="font-headline font-black text-on-surface text-xl leading-tight truncate">
                 {auction.name}
               </p>
               <p className="text-[10px] text-zinc-500 truncate">

@@ -1,13 +1,14 @@
 import {
   DIVISION_NAMES,
   POSITION_TEXT_CLASS,
+  MODAL_Z,
 } from "../../constants/index.js";
 import { generateLeagueFixtures } from "../../utils/fixtures.js";
 import { isSameTeamId } from "../../utils/teamHelpers.js";
-import { TeamSquadCard } from "../shared/TeamSquadCard.jsx";
+import { PlayerRow } from "../shared/PlayerRow.jsx";
+import { ModalShell } from "../shared/ModalShell.jsx";
+import { TabBar } from "../shared/TabBar.jsx";
 import { useState } from "react";
- 
-import { motion, AnimatePresence } from "framer-motion";
 
 /**
  * @param {{
@@ -130,88 +131,63 @@ export function TeamSquadModal({
   };
 
   return (
-    <AnimatePresence>
-      {selectedTeam && (
-        <motion.div
-          key="teamsquad-backdrop"
-          className="fixed inset-0 z-120 bg-zinc-950/85 backdrop-blur-sm p-4 md:p-8 flex items-center justify-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          onClick={handleCloseTeamSquad}
+    <ModalShell
+      visible={!!selectedTeam}
+      onClose={handleCloseTeamSquad}
+      z={MODAL_Z.teamSquad}
+      variant="xl"
+      dismissable
+    >
+      <div className="flex flex-col" style={{ maxHeight: "90vh" }}>
+        {/* Header + Tabs */}
+        <div
+          className="px-5 py-4 border-b border-outline-variant/15 flex flex-col gap-3"
+          style={{ background: selectedTeam.color_primary || "#18181b" }}
         >
-          <motion.div
-            className="w-full max-w-5xl max-h-[90vh] overflow-hidden bg-surface-container border border-outline-variant/20 rounded-lg shadow-2xl flex flex-col"
-            initial={{ scale: 0.95, y: 28 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.95, y: 28 }}
-            transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header + Tabs */}
-            <div
-              className="px-5 py-4 border-b border-zinc-800 flex flex-col gap-3"
-              style={{ background: selectedTeam.color_primary || "#18181b" }}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p
-                    className="text-xs uppercase tracking-widest font-black"
-                    style={{ color: selectedTeam.color_secondary || "#ffffff" }}
-                  >
-                    {activeTab === "squad" ? "Plantel" : "Calendário"}
-                  </p>
-                  <h3
-                    className="text-2xl md:text-3xl font-black"
-                    style={{ color: selectedTeam.color_secondary || "#ffffff" }}
-                  >
-                    {selectedTeam.name}
-                  </h3>
-                  <p
-                    className="text-sm font-bold"
-                    style={{ color: selectedTeam.color_secondary || "#ffffff" }}
-                  >
-                    {DIVISION_NAMES[selectedTeam.division] ||
-                      `Divisão ${selectedTeam.division}`}
-                  </p>
-                </div>
-                <button
-                  onClick={handleCloseTeamSquad}
-                  className="shrink-0 px-4 py-2 rounded bg-surface-container/40 font-black uppercase text-sm border border-outline-variant/20 hover:bg-surface-container"
-                  style={{
-                    color: selectedTeam.color_secondary || "#ffffff",
-                    borderColor: selectedTeam.color_secondary || "#ffffff",
-                  }}
-                >
-                  Fechar
-                </button>
-              </div>
-
-              {/* Tab Navigation */}
-              <div className="flex items-center gap-1 bg-surface-container-high rounded-lg p-1">
-                <button
-                  onClick={() => setActiveTab("squad")}
-                  className={`px-3 py-1 rounded text-xs font-black uppercase tracking-wide transition-all ${
-                    activeTab === "squad"
-                      ? "bg-primary text-white shadow"
-                      : "text-on-surface-variant hover:text-on-surface"
-                  }`}
-                >
-                  Plantel
-                </button>
-                <button
-                  onClick={() => setActiveTab("calendar")}
-                  className={`px-3 py-1 rounded text-xs font-black uppercase tracking-wide transition-all ${
-                    activeTab === "calendar"
-                      ? "bg-primary text-white shadow"
-                      : "text-on-surface-variant hover:text-on-surface"
-                  }`}
-                >
-                  Calendário
-                </button>
-              </div>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p
+                className="text-xs uppercase tracking-widest font-black"
+                style={{ color: selectedTeam.color_secondary || "#ffffff" }}
+              >
+                {activeTab === "squad" ? "Plantel" : "Calendário"}
+              </p>
+              <h3
+                className="text-2xl md:text-3xl font-black"
+                style={{ color: selectedTeam.color_secondary || "#ffffff" }}
+              >
+                {selectedTeam.name}
+              </h3>
+              <p
+                className="text-sm font-bold"
+                style={{ color: selectedTeam.color_secondary || "#ffffff" }}
+              >
+                {DIVISION_NAMES[selectedTeam.division] ||
+                  `Divisão ${selectedTeam.division}`}
+              </p>
             </div>
+            <button
+              onClick={handleCloseTeamSquad}
+              className="shrink-0 px-4 py-2 rounded-md bg-surface-container/40 font-black uppercase text-sm border border-outline-variant/20 hover:bg-surface-container"
+              style={{
+                color: selectedTeam.color_secondary || "#ffffff",
+                borderColor: selectedTeam.color_secondary || "#ffffff",
+              }}
+            >
+              Fechar
+            </button>
+          </div>
+
+          {/* Tab Navigation */}
+          <TabBar
+            tabs={[
+              { key: "squad", label: "Plantel" },
+              { key: "calendar", label: "Calendário" },
+            ]}
+            active={activeTab}
+            onChange={setActiveTab}
+          />
+        </div>
 
             {/* Palmarés */}
             {activeTab === "squad" &&
@@ -453,7 +429,7 @@ export function TeamSquadModal({
                           </span>
                         </div>
                         {group.map((player) => (
-                          <TeamSquadCard
+                          <PlayerRow
                             key={player.id}
                             player={player}
                             matchweekCount={currentMatchweek}
@@ -470,9 +446,7 @@ export function TeamSquadModal({
                 </div>
               )}
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      </div>
+    </ModalShell>
   );
 }

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
- 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { ModalShell } from "../shared/ModalShell.jsx";
+import { Button } from "../shared/Button.jsx";
+import { MODAL_Z } from "../../constants/index.js";
 
 const DIVISION_NAMES = {
   1: "Primeira Liga",
@@ -73,24 +75,15 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
   };
 
   return (
-    <AnimatePresence>
-      {data && (
-        <motion.div
-          key="season-end-backdrop"
-          className="fixed inset-0 z-200 bg-zinc-950/97 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <motion.div
-            className="w-full max-w-lg my-8"
-            initial={{ scale: 0.92, y: 32 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.92, y: 32 }}
-            transition={{ type: "spring", stiffness: 320, damping: 26 }}
-          >
-            {/* ── Header ─────────────────────────────────────────────────── */}
+    <ModalShell
+      visible={!!data}
+      onClose={onClose}
+      z={MODAL_Z.default}
+      variant="fullscreen"
+      align="start"
+    >
+      <div className="w-full max-w-lg my-8">
+        {/* ── Header ─────────────────────────────────────────────────── */}
             <div className="text-center mb-6">
               <motion.span
                 className="material-symbols-outlined text-amber-400 block mb-3"
@@ -363,16 +356,14 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
             {/* ── Continue button ─────────────────────────────────────────── */}
             <motion.button
               onClick={handleContinue}
-              className="mt-4 w-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black font-black text-sm py-4 rounded-xl transition-colors shadow-lg shadow-amber-500/25 uppercase tracking-widest"
+              className="mt-4 w-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black font-black text-sm py-4 rounded-md transition-colors shadow-lg shadow-amber-500/25 uppercase tracking-widest"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: revealed ? 1 : 0, y: revealed ? 0 : 16 }}
               transition={{ delay: 0.85 }}
             >
               Continuar para a Época {(data?.year ?? 0) + 1}
             </motion.button>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+      </div>
+    </ModalShell>
   );
 }

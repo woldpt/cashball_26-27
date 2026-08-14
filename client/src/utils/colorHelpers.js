@@ -1,3 +1,5 @@
+import { POSITION_RING_CLASS } from "../constants/index.js";
+
 export function normalizeHex(hex) {
   if (typeof hex !== "string") return null;
   const clean = hex.trim().replace("#", "");
@@ -21,12 +23,5 @@ export function hexToRgba(hex, alpha) {
 }
 
 export function posRingClass(pos) {
-  return (
-    {
-      GR: "ring-yellow-400/60 border-yellow-400/35",
-      DEF: "ring-blue-400/60 border-blue-400/35",
-      MED: "ring-emerald-400/60 border-emerald-400/35",
-      ATA: "ring-rose-400/60 border-rose-400/35",
-    }[pos] || "ring-zinc-400/50 border-zinc-500/35"
-  );
+  return POSITION_RING_CLASS[pos] || "ring-zinc-400/50 border-zinc-500/35";
 }

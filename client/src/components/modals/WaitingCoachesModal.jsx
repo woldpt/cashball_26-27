@@ -1,5 +1,8 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useGame } from "../../contexts/GameContext.jsx";
+import { MODAL_Z } from "../../constants/index.js";
+import { ModalShell } from "../shared/ModalShell.jsx";
+import { Badge } from "../shared/Badge.jsx";
 
 /**
  * Modal exibido após o coach confirmar a táctica (multiplayer),
@@ -67,47 +70,42 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
   };
 
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          key="waiting-backdrop"
-          className="fixed inset-0 z-[150] flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.22 }}
-          style={{
-            background:
-              "radial-gradient(ellipse at center, rgba(34,197,94,0.08) 0%, rgba(10,10,10,0.96) 70%)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          {/* Grid overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-20"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 2px 2px, rgba(34,197,94,0.15) 1px, transparent 0)",
-              backgroundSize: "24px 24px",
-            }}
-          />
+    <ModalShell
+      visible={visible && lockedCoaches.length >= 2}
+      z={MODAL_Z.waitingCoaches}
+      variant="card"
+      backdropStyle={{
+        background:
+          "radial-gradient(ellipse at center, rgba(34,197,94,0.08) 0%, rgba(10,10,10,0.96) 70%)",
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      {/* Grid overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-20"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 2px 2px, rgba(34,197,94,0.15) 1px, transparent 0)",
+          backgroundSize: "24px 24px",
+        }}
+      />
 
-          <motion.div
-            className="relative w-full max-w-sm bg-[#111] border border-[#1e1e1e] rounded-2xl shadow-2xl overflow-hidden my-auto"
-            initial={{ scale: 0.93, y: 24 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.93, y: 24 }}
-            transition={{ type: "spring", stiffness: 320, damping: 28 }}
-          >
+      <motion.div
+        className="relative w-full bg-surface-container border border-outline-variant/20 rounded-xl shadow-2xl overflow-hidden"
+        initial={{ scale: 0.93, y: 24 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.93, y: 24 }}
+        transition={{ type: "spring", stiffness: 320, damping: 28 }}
+      >
             {/* Cabeçalho */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#1a1a1a]">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant/15">
               <div className="flex items-center gap-2">
                 <span className="text-lg">⏳</span>
                 <div>
-                  <h2 className="text-sm font-black text-white uppercase tracking-wide">
+                  <h2 className="text-sm font-black text-on-surface uppercase tracking-wide">
                     A Aguardar Coaches
                   </h2>
-                  <p className="text-[10px] text-gray-500 font-bold">
+                  <p className="text-[10px] text-on-surface-variant/60 font-bold">
                     {readyCount}/{totalHuman} prontos
                   </p>
                 </div>
@@ -119,7 +117,7 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                   </span>
-                  <span className="text-[9px] text-gray-600 font-bold uppercase tracking-widest">
+                  <span className="text-[9px] text-on-surface-variant/50 font-bold uppercase tracking-widest">
                     Aguardando
                   </span>
                 </div>
@@ -127,7 +125,7 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
             </div>
 
             {/* Lista de coaches */}
-            <div className="divide-y divide-[#1a1a1a] max-h-80 overflow-y-auto">
+            <div className="divide-y divide-outline-variant/10 max-h-80 overflow-y-auto">
               {coaches.map((coach) => {
                 const st = STATUS_MAP[coach.status] || STATUS_MAP.thinking;
                 return (
@@ -141,7 +139,7 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
                         className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-black text-xs ${
                           coach.teamColor
                             ? ""
-                            : "bg-[#1e1e1e]"
+                            : "bg-surface-container-high"
                         }`}
                         style={
                           coach.teamColor
@@ -155,23 +153,19 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
                         {coach.name.charAt(0).toUpperCase()}
                       </div>
                       <span
-                        className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#111] ${st.dot}`}
+                        className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-surface ${st.dot}`}
                       />
                     </div>
 
                     {/* Nome + equipa */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-bold text-white truncate">
+                        <span className="text-sm font-bold text-on-surface truncate">
                           {coach.name}
                         </span>
-                        {coach.isMe && (
-                          <span className="shrink-0 text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400">
-                            Tu
-                          </span>
-                        )}
+                        {coach.isMe && <Badge variant="sold">Tu</Badge>}
                       </div>
-                      <span className="text-[10px] text-gray-500 font-bold truncate block">
+                      <span className="text-[10px] text-on-surface-variant/60 font-bold truncate block">
                         {coach.teamName}
                       </span>
                     </div>
@@ -188,22 +182,20 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
             </div>
 
             {/* Rodapé */}
-            <div className="px-4 py-2.5 border-t border-[#1a1a1a] space-y-2">
-              <p className="text-[10px] text-gray-600 font-bold text-center">
+            <div className="px-4 py-2.5 border-t border-outline-variant/15 space-y-2">
+              <p className="text-[10px] text-on-surface-variant/60 font-bold text-center">
                 {allReady
                   ? "Todos prontos! O jogo vai começar..."
                   : "O jogo começa quando todos estiverem Ready."}
               </p>
               <button
                 onClick={onCancel}
-                className="w-full py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl bg-[#1a1a1a] text-gray-500 hover:bg-[#222] hover:text-gray-300 active:scale-[0.97] transition-all"
+                className="w-full py-2.5 text-[10px] font-black uppercase tracking-widest rounded-md bg-surface-container-high text-on-surface-variant/70 hover:bg-surface-bright hover:text-on-surface active:scale-[0.97] transition-all"
               >
                 ✕ Cancelar e refazer táctica
               </button>
             </div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </ModalShell>
   );
 }

@@ -1,48 +1,47 @@
+/**
+ * PlayerRow — linha/card de jogador unificada (STYLE.md §4).
+ *
+ * Resultado da fusão de `SquadRow` (PlayersTab) e `TeamSquadCard`
+ * (TeamSquadView/TeamSquadModal). Propriedades opcionais ativam o
+ * comportamento de cada contexto:
+ *  - `onOpenPlayerHistory`: torna a linha clicável (histórico do jogador);
+ *  - `showContractBadges`: mostra "Renovado" / "À venda" (só na própria equipa);
+ *  - `showProposalCol`: coluna de proposta para equipas NPC.
+ */
 import { AggBadge } from "./AggBadge.jsx";
 import { PlayerAvatar } from "./PlayerAvatar.jsx";
 import { PlayerLink } from "./PlayerLink.jsx";
+import { PlayerStatusBadges, StarMark } from "./PlayerStatusBadges.jsx";
 import {
   FLAG_TO_COUNTRY,
   POSITION_TEXT_CLASS,
   POSITION_BORDER_CLASS,
   POSITION_LABEL_MAP,
+  POSITION_BAR_CLASS,
+  POSITION_GLOW_CLASS,
+  POSITION_BG_GRADIENT_CLASS,
 } from "../../constants/index.js";
 import { formatCurrency } from "../../utils/formatters.js";
 import { getPlayerStat } from "../../utils/playerHelpers.js";
-
-const POSITION_GLOW = {
-  GR: "hover:border-amber-400/70 hover:shadow-amber-400/30",
-  DEF: "hover:border-blue-400/70 hover:shadow-blue-400/30",
-  MED: "hover:border-emerald-400/70 hover:shadow-emerald-400/30",
-  ATA: "hover:border-rose-400/70 hover:shadow-rose-400/30",
-};
-
-const POSITION_BAR = {
-  GR: "from-amber-300 via-amber-400 to-amber-600",
-  DEF: "from-blue-300 via-blue-400 to-blue-600",
-  MED: "from-emerald-300 via-emerald-400 to-emerald-600",
-  ATA: "from-rose-300 via-rose-400 to-rose-600",
-};
-
-const POSITION_BG_GRADIENT = {
-  GR: "from-amber-500/8",
-  DEF: "from-blue-500/8",
-  MED: "from-emerald-500/8",
-  ATA: "from-rose-500/8",
-};
 
 /**
  * @param {{
  *   player: object,
  *   matchweekCount: number,
- *   showProposalCol: boolean,
- *   myBudget: number,
- *   onProposal: (data: { player: object, suggestedPrice: number }) => void,
+ *   onOpenPlayerHistory?: (player: object) => void,
+ *   dim?: boolean,
+ *   showContractBadges?: boolean,
+ *   showProposalCol?: boolean,
+ *   myBudget?: number,
+ *   onProposal?: (data: { player: object, suggestedPrice: number }) => void,
  * }} props
  */
-export function TeamSquadCard({
+export function PlayerRow({
   player,
   matchweekCount,
+  onOpenPlayerHistory,
+  dim = false,
+  showContractBadges = false,
   showProposalCol = false,
   myBudget = 0,
   onProposal,
@@ -60,33 +59,32 @@ export function TeamSquadCard({
         ? "text-rose-400"
         : "text-zinc-400";
 
-  const susp = player.suspension_until_matchweek || 0;
-  const inj = player.injury_until_matchweek || 0;
-  const cooldown = player.transfer_cooldown_until_matchweek || 0;
-  const isSuspended = susp > matchweekCount;
-  const isInjured = inj > matchweekCount;
-  const isCooldown =
-    !isSuspended && !isInjured && cooldown > 0 && cooldown > matchweekCount;
-
   const skillDelta =
     player.prev_skill != null && player.prev_skill !== player.skill
       ? player.skill - player.prev_skill
       : 0;
 
-  const bar = POSITION_BAR[player.position] || "from-zinc-500 to-zinc-600";
-  const glow = POSITION_GLOW[player.position] || "";
+  const bar = POSITION_BAR_CLASS[player.position] || "from-zinc-500 to-zinc-600";
+  const glow = POSITION_GLOW_CLASS[player.position] || "";
   const bgGrad =
-    POSITION_BG_GRADIENT[player.position] || "from-zinc-500/4";
+    POSITION_BG_GRADIENT_CLASS[player.position] || "from-zinc-500/4";
   const posText = POSITION_TEXT_CLASS[player.position] || "text-zinc-300";
   const posBorder =
     POSITION_BORDER_CLASS[player.position] || "border-zinc-500";
 
+  const isClickable = !!onOpenPlayerHistory;
+
   return (
     <div
-      className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${glow} shadow-sm shadow-black/30`}
+      onClick={() => isClickable && onOpenPlayerHistory(player)}
+      className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${glow} shadow-sm shadow-black/30 ${
+        dim || player.isUnavailable ? "opacity-65 saturate-50" : ""
+      } ${isClickable ? "cursor-pointer" : ""}`}
     >
+      {/* Faixa lateral da posição */}
       <div className={`shrink-0 w-1 bg-gradient-to-b ${bar}`} />
 
+      {/* Avatar mini com chip de posição */}
       <div className="relative shrink-0 self-center pl-2 py-1.5">
         <PlayerAvatar
           seed={player.id}
@@ -101,6 +99,7 @@ export function TeamSquadCard({
         </span>
       </div>
 
+      {/* Nome + flag + badges (cresce para preencher) */}
       <div className="flex-1 min-w-0 self-center px-3 py-2">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span
@@ -115,47 +114,17 @@ export function TeamSquadCard({
           </span>
           <p className="font-black font-headline text-sm leading-tight uppercase tracking-tight text-on-surface truncate">
             <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
-            {star && (
-              <span
-                className="ml-1 text-amber-400 font-black"
-                title="Craque"
-              >
-                ★
-              </span>
-            )}
+            {star && <StarMark />}
           </p>
-          {player.isJunior && (
-            <span className="text-[9px] font-black uppercase px-1.5 py-px rounded bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 tracking-widest">
-              🎓 Jr
-            </span>
-          )}
-          {isCooldown && (
-            <span
-              className="text-[9px] font-black uppercase px-1.5 py-px rounded bg-sky-500/15 text-sky-300 border border-sky-500/30 tracking-widest"
-              title="Em viagem — disponível na próxima jornada"
-            >
-              ✈️ 1J
-            </span>
-          )}
-          {isSuspended && (
-            <span
-              className="text-[9px] font-black uppercase px-1.5 py-px rounded bg-error-container/60 text-error border border-error/30 tracking-widest whitespace-nowrap"
-              title={`Suspenso até jornada ${susp + 1}`}
-            >
-              🟥 {susp - matchweekCount + 1}J
-            </span>
-          )}
-          {isInjured && (
-            <span
-              className="text-[9px] font-black uppercase px-1.5 py-px rounded bg-amber-900/30 text-amber-400 border border-amber-700/30 tracking-widest whitespace-nowrap"
-              title={`Lesionado até jornada ${inj + 1}`}
-            >
-              🩹 {inj - matchweekCount + 1}J
-            </span>
-          )}
+          <PlayerStatusBadges
+            player={player}
+            matchweekCount={matchweekCount}
+            showContractBadges={showContractBadges}
+          />
         </div>
       </div>
 
+      {/* Qualidade - número grande com delta */}
       <div className="shrink-0 self-center flex items-center justify-center px-2 min-w-14">
         <div className="flex items-baseline gap-0.5">
           {skillDelta !== 0 && (
@@ -174,6 +143,7 @@ export function TeamSquadCard({
         </div>
       </div>
 
+      {/* Atributos primários (Agr / Res / For) */}
       <div className="hidden md:flex items-center gap-2 shrink-0 self-center px-2 border-l border-outline-variant/15 ml-1">
         <div className="flex flex-col items-center justify-center w-10">
           <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
@@ -201,6 +171,7 @@ export function TeamSquadCard({
         </div>
       </div>
 
+      {/* Stats inline (Jogos / Golos / Verm / Lesões - época / carreira) */}
       <div className="hidden xl:flex items-center gap-3 shrink-0 self-center px-2 border-l border-outline-variant/15 ml-1 text-[10px] tabular-nums">
         <span title="Jogos: época / carreira" className="flex flex-col items-center min-w-12">
           <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
@@ -248,7 +219,8 @@ export function TeamSquadCard({
         </span>
       </div>
 
-      <div className="hidden md:flex shrink-0 self-stretch items-center px-3 border-l">
+      {/* Ordenado + Valor (omitido em mobile) */}
+      <div className="hidden md:flex shrink-0 self-stretch flex items-center px-3 border-l">
         <div className="relative flex flex-col items-end justify-center gap-0.5 min-w-22">
           <div className="flex items-baseline gap-1">
             <span className="font-headline font-black text-sm tabular-nums text-on-surface">
@@ -264,6 +236,7 @@ export function TeamSquadCard({
         </div>
       </div>
 
+      {/* Coluna de proposta (equipas NPC) */}
       {showProposalCol && (
         <div className="shrink-0 self-stretch flex items-center px-3 border-l">
           {!player.isJunior &&
@@ -272,9 +245,7 @@ export function TeamSquadCard({
               onClick={() =>
                 onProposal?.({
                   player,
-                  suggestedPrice: Math.round(
-                    (player.value || 0) * 1.35,
-                  ),
+                  suggestedPrice: Math.round((player.value || 0) * 1.35),
                 })
               }
               className="px-3 py-1.5 rounded text-xs font-black uppercase bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-500 transition-colors whitespace-nowrap"

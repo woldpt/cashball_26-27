@@ -1,7 +1,8 @@
  
-import { motion, AnimatePresence } from "framer-motion";
-import { DIVISION_NAMES } from "../../constants/index.js";
+import { motion } from "framer-motion";
+import { DIVISION_NAMES, MODAL_Z } from "../../constants/index.js";
 import { formatCurrency } from "../../utils/formatters.js";
+import { ModalShell } from "../shared/ModalShell.jsx";
 import {
   markWelcomeSeen,
   markWelcomeSeenThisSession,
@@ -12,39 +13,34 @@ import {
  */
 export function WelcomeModal({ welcomeModal, me, setWelcomeModal }) {
   return (
-    <AnimatePresence>
-      {welcomeModal && me?.teamId && (
-        <motion.div
-          key="welcome-backdrop"
-          className="fixed inset-0 z-200 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.22 }}
-          style={{
-            background:
-              "radial-gradient(ellipse at center, rgba(45,106,79,0.18) 0%, rgba(10,10,10,0.97) 70%)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          {/* Technical grid overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-30"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 2px 2px, rgba(45,106,79,0.25) 1px, transparent 0)",
-              backgroundSize: "24px 24px",
-            }}
-          />
+    <ModalShell
+      visible={!!welcomeModal && !!me?.teamId}
+      z={MODAL_Z.default}
+      variant="fullscreen"
+      backdropStyle={{
+        background:
+          "radial-gradient(ellipse at center, rgba(45,106,79,0.18) 0%, rgba(10,10,10,0.97) 70%)",
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      {/* Technical grid overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-30"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 2px 2px, rgba(45,106,79,0.25) 1px, transparent 0)",
+          backgroundSize: "24px 24px",
+        }}
+      />
 
-          {/* Modal card — two-column layout */}
-          <motion.div
-            className="relative w-full max-w-2xl bg-zinc-900/90 border border-emerald-900/40 rounded-xl shadow-2xl overflow-hidden flex flex-col sm:flex-row my-auto"
-            initial={{ scale: 0.93, y: 24 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.93, y: 24 }}
-            transition={{ type: "spring", stiffness: 320, damping: 28 }}
-          >
+      {/* Modal card — two-column layout */}
+      <motion.div
+        className="relative w-full max-w-2xl bg-surface-container border border-primary/20 rounded-xl shadow-2xl overflow-hidden flex flex-col sm:flex-row my-auto"
+        initial={{ scale: 0.93, y: 24 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.93, y: 24 }}
+        transition={{ type: "spring", stiffness: 320, damping: 28 }}
+      >
             {/* ── Left column: team identity ── */}
             <div
               className="sm:w-2/5 flex flex-col items-center justify-center gap-3 p-5 sm:p-8 border-b sm:border-b-0 sm:border-r border-emerald-900/30"
@@ -242,8 +238,6 @@ export function WelcomeModal({ welcomeModal, me, setWelcomeModal }) {
               </button>
             </div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </ModalShell>
   );
 }

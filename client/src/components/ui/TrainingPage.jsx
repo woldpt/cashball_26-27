@@ -1,6 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { socket } from "../../socket";
-import { POSITION_TEXT_CLASS } from "../../constants/index.js";
+import {
+  POSITION_TEXT_CLASS,
+  POSITION_GLOW_CLASS,
+  POSITION_BG_GRADIENT_CLASS,
+} from "../../constants/index.js";
+import { Badge } from "../shared/Badge.jsx";
+import { Panel } from "../shared/Panel.jsx";
+import { SummaryWidget } from "../shared/SummaryWidget.jsx";
+import { EmptyState } from "../shared/EmptyState.jsx";
 
 const TRAINING_FOCUS_STORAGE_KEY = "cashball_training_focus";
 
@@ -80,20 +88,6 @@ const TRAINING_COLOR_MAP = {
   Resistência: "border-purple-500",
 };
 
-const POSITION_GLOW = {
-  GR: "hover:border-amber-400/70 hover:shadow-amber-400/30",
-  DEF: "hover:border-blue-400/70 hover:shadow-blue-400/30",
-  MED: "hover:border-emerald-400/70 hover:shadow-emerald-400/30",
-  ATA: "hover:border-rose-400/70 hover:shadow-rose-400/30",
-};
-
-const POSITION_BG_GRADIENT = {
-  GR: "from-amber-500/8",
-  DEF: "from-blue-500/8",
-  MED: "from-emerald-500/8",
-  ATA: "from-rose-500/8",
-};
-
 const ATTRIBUTE_BADGE_COLORS = {
   skill: { bg: "bg-yellow-500/20", text: "text-yellow-400", border: "border-yellow-500/30" },
   form: { bg: "bg-orange-500/20", text: "text-orange-400", border: "border-orange-500/30" },
@@ -124,7 +118,7 @@ function TrainingOptionCard({ option, selected, isSaved, justSaved, loading }) {
       disabled={loading}
       className={`relative text-left p-4 rounded-lg border-2 transition-all duration-200 group ${
         isSelected
-          ? `border-primary bg-primary/10 text-on-surface shadow-lg ${POSITION_GLOW[key] || ""}`
+          ? `border-primary bg-primary/10 text-on-surface shadow-lg ${POSITION_GLOW_CLASS[key] || ""}`
           : `border-outline-variant/20 bg-surface-container-low ${color} hover:border-outline-variant/40 text-on-surface-variant`
       } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
     >
@@ -306,55 +300,29 @@ export function TrainingPage({ me, matchweek }) {
     <div className="space-y-4">
       {/* ── Summary Widgets ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Foco Atual */}
-        <div
-          className={`bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 ${
+        <SummaryWidget
+          label="Foco Atual"
+          value={savedTraining ? getTrainingLabel(savedTraining) : "Nenhum"}
+          valueClass="text-2xl"
+          accentClass={
             savedTraining
               ? getTrainingBorderClass(savedTraining)
               : "border-outline-variant"
-          }`}
-        >
-          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Foco Atual
-          </span>
-          <span className="text-2xl font-black font-headline tracking-tighter text-on-surface">
-            {savedTraining ? getTrainingLabel(savedTraining) : "Nenhum"}
-          </span>
-        </div>
-
-        {/* Jornada */}
-        <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-primary">
-          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Jornada
-          </span>
-          <span className="text-2xl font-black font-headline tracking-tighter text-on-surface">
-            {matchweek}
-          </span>
-        </div>
-
-        {/* Jogadores Treinados */}
-        <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-tertiary">
-          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Jogadores Treinados
-          </span>
-          <span className="text-2xl font-black font-headline tracking-tighter text-tertiary">
-            {historyCount}
-          </span>
-        </div>
+          }
+        />
+        <SummaryWidget label="Jornada" value={matchweek} valueClass="text-2xl" />
+        <SummaryWidget
+          label="Jogadores Treinados"
+          value={historyCount}
+          valueClass="text-2xl"
+          accentClass="border-tertiary"
+          valueColorClass="text-tertiary"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* ── TRAINING SELECTION PANEL ──────────────────────────────────── */}
-        <div className="bg-surface-container rounded-md overflow-hidden">
-          <div className="px-5 py-4 flex items-center justify-between bg-surface-container-high/50">
-            <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">
-              Foco de Treino
-            </h2>
-            <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-widest">
-              Jornada {matchweek}
-            </span>
-          </div>
-
+        <Panel title="Foco de Treino" meta={`Jornada ${matchweek}`} padded={false}>
           <div className="p-3 md:p-4 space-y-4">
             {error && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-error-container/30 border border-error/40 text-error text-xs font-black uppercase tracking-widest">
@@ -401,53 +369,45 @@ export function TrainingPage({ me, matchweek }) {
               </div>
             </div>
           </div>
-        </div>
+        </Panel>
 
         {/* ── TRAINING HISTORY PANEL ───────────────────────────────────── */}
-        <div className="bg-surface-container rounded-md overflow-hidden">
-          <div className="px-5 py-4 flex items-center justify-between bg-surface-container-high/50">
-            <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">
-              Relatório do Último Treino
-            </h2>
-            {historyCalendarIndex != null && (
-              <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-widest">
-                evento #{historyCalendarIndex + 1}
-              </span>
-            )}
-          </div>
+        <Panel
+          title="Relatório do Último Treino"
+          meta={
+            historyCalendarIndex != null
+              ? `evento #${historyCalendarIndex + 1}`
+              : undefined
+          }
+        >
+          {trainingHistory.length === 0 ? (
+            <EmptyState
+              emoji="📊"
+              title="Ainda não há histórico de treino — escolha um foco e jogue uma jornada."
+            />
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(historyByPosition).map(([position, records]) => {
+                const posGlow = POSITION_GLOW_CLASS[position] || "";
+                const posBgGrad =
+                  POSITION_BG_GRADIENT_CLASS[position] || "from-zinc-500/4";
+                const posText =
+                  POSITION_TEXT_CLASS[position] || "text-on-surface-variant";
+                const posLabel = POSITION_LABELS[position] || position;
 
-          <div className="p-3 md:p-4">
-            {trainingHistory.length === 0 ? (
-              <div className="py-12 text-center text-on-surface-variant">
-                <span className="material-symbols-outlined text-[40px] text-on-surface-variant/50 block mb-2">
-                  bar_chart
-                </span>
-                <p className="font-black text-sm">
-                  Ainda não há histórico de treino — escolha um foco e jogue uma
-                  jornada.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {Object.entries(historyByPosition).map(([position, records]) => {
-                  const posGlow = POSITION_GLOW[position] || "";
-                  const posBgGrad = POSITION_BG_GRADIENT[position] || "from-zinc-500/4";
-                  const posText = POSITION_TEXT_CLASS[position] || "text-on-surface-variant";
-                  const posLabel = POSITION_LABELS[position] || position;
-
-                  return (
-                    <div
-                      key={position}
-                      className={`relative rounded-lg p-4 border border-outline-variant/25 ${posGlow} bg-gradient-to-r ${posBgGrad} via-surface-container/70 to-surface/30 shadow-sm shadow-black/30`}
+                return (
+                  <div
+                    key={position}
+                    className={`relative rounded-lg p-4 border border-outline-variant/25 ${posGlow} bg-gradient-to-r ${posBgGrad} via-surface-container/70 to-surface/30 shadow-sm shadow-black/30`}
+                  >
+                    <h3
+                      className={`font-black mb-3 flex items-center gap-2 ${posText}`}
                     >
-                      <h3
-                        className={`font-black mb-3 flex items-center gap-2 ${posText}`}
-                      >
-                        <span className="material-symbols-outlined text-[18px]">
-                          group
-                        </span>
-                        {posLabel}
-                      </h3>
+                      <span className="material-symbols-outlined text-[18px]">
+                        group
+                      </span>
+                      {posLabel}
+                    </h3>
 
                       <div className="space-y-1">
                         {records.map((record, idx) => (
@@ -459,8 +419,7 @@ export function TrainingPage({ me, matchweek }) {
                 })}
               </div>
             )}
-          </div>
-        </div>
+        </Panel>
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
  
-import { motion, AnimatePresence } from "framer-motion";
-import { DIVISION_NAMES } from "../../constants/index.js";
+import { motion } from "framer-motion";
+import { DIVISION_NAMES, MODAL_Z } from "../../constants/index.js";
 import { formatCurrency } from "../../utils/formatters.js";
+import { ModalShell } from "../shared/ModalShell.jsx";
 
 /**
  * @param {{ dismissalModal: {reason: string, teamName: string, newTeam: object}|null, onContinue: function }} props
@@ -10,28 +11,23 @@ export function DismissalModal({ dismissalModal, onContinue }) {
   const newTeam = dismissalModal?.newTeam;
 
   return (
-    <AnimatePresence>
-      {dismissalModal && (
-        <motion.div
-          key="dismissal-backdrop"
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          style={{
-            background:
-              "radial-gradient(ellipse at center, rgba(127,29,29,0.15) 0%, rgba(10,10,10,0.97) 70%)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          <motion.div
-            className="relative w-full max-w-sm bg-zinc-900/90 border border-zinc-700/40 rounded-xl shadow-2xl overflow-hidden flex flex-col"
-            initial={{ scale: 0.93, y: 24 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.93, y: 24 }}
-            transition={{ type: "spring", stiffness: 320, damping: 28 }}
-          >
+    <ModalShell
+      visible={!!dismissalModal}
+      z={MODAL_Z.dismissal}
+      variant="card"
+      backdropStyle={{
+        background:
+          "radial-gradient(ellipse at center, rgba(127,29,29,0.15) 0%, rgba(10,10,10,0.97) 70%)",
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      <motion.div
+        className="relative w-full bg-surface-container border border-outline-variant/20 rounded-xl shadow-2xl overflow-hidden flex flex-col"
+        initial={{ scale: 0.93, y: 24 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.93, y: 24 }}
+        transition={{ type: "spring", stiffness: 320, damping: 28 }}
+      >
             {/* Dismissal section */}
             <div className="flex flex-col items-center gap-3 px-8 pt-8 pb-6 border-b border-zinc-800">
               <span
@@ -134,8 +130,6 @@ export function DismissalModal({ dismissalModal, onContinue }) {
               </div>
             )}
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </ModalShell>
   );
 }

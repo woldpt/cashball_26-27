@@ -1,4 +1,7 @@
 import { socket } from "../../socket.js";
+import { ModalShell } from "../shared/ModalShell.jsx";
+import { Button } from "../shared/Button.jsx";
+import { MODAL_Z } from "../../constants/index.js";
 
 /**
  * @param {{ cupDraw: object|null, cupDrawRevealIdx: number, me: object, players: object[], showCupDrawPopup: boolean, setShowCupDrawPopup: function, setCupDrawRevealIdx: function }} props
@@ -21,7 +24,11 @@ export function CupDrawPopup({
     players.find((p) => p.teamId === teamId)?.name ?? null;
 
   return (
-    <div className="fixed inset-0 z-140 bg-zinc-950/97 backdrop-blur-sm flex flex-col items-center p-4 overflow-y-auto">
+    <ModalShell
+      visible={showCupDrawPopup}
+      z={MODAL_Z.cupDraw}
+      variant="fullscreen"
+    >
       {/* Header */}
       <div className="w-full text-center mb-6 shrink-0 pt-4 px-2">
         <p className="text-xs text-amber-400 uppercase font-black tracking-widest sm:tracking-[0.3em] mb-2">
@@ -171,17 +178,19 @@ export function CupDrawPopup({
       {/* Continue button */}
       {cupDraw.humanInCup && fullyRevealed && (
         <div className="mt-6 w-full max-w-xl shrink-0 pb-4">
-          <button
+          <Button
+            variant="primary"
+            size="lg"
+            full
             onClick={() => {
               setShowCupDrawPopup(false);
               socket.emit("cupDrawAcknowledged");
             }}
-            className="w-full rounded-sm bg-primary px-4 py-3 font-black uppercase tracking-widest text-on-primary hover:brightness-110 transition-all"
           >
             Continuar →
-          </button>
+          </Button>
         </div>
       )}
-    </div>
+    </ModalShell>
   );
 }

@@ -1,9 +1,17 @@
 import { formatCurrency } from "../../utils/formatters.js";
 import { AggBadge } from "../shared/AggBadge.jsx";
+import { Badge } from "../shared/Badge.jsx";
+import { Button } from "../shared/Button.jsx";
+import { ModalShell } from "../shared/ModalShell.jsx";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
 import { aggLabel } from "../../utils/playerHelpers.js";
 import { SkillLineChart } from "./SkillLineChart.jsx";
 import { POS_BAR } from "./positionConstants.js";
+import {
+  POSITION_TEXT_CLASS,
+  POSITION_BORDER_CLASS,
+  MODAL_Z,
+} from "../../constants/index.js";
 
 // Position config
 const POS_LABEL = { GR: "GR", DEF: "DEF", MED: "MED", ATA: "ATA" };
@@ -12,18 +20,6 @@ const POS_FULL = {
   DEF: "Defesa",
   MED: "Médio",
   ATA: "Avançado",
-};
-const POS_BORDER = {
-  GR: "border-yellow-500",
-  DEF: "border-blue-500",
-  MED: "border-emerald-500",
-  ATA: "border-rose-500",
-};
-const POS_TEXT = {
-  GR: "text-yellow-400",
-  DEF: "text-blue-400",
-  MED: "text-emerald-400",
-  ATA: "text-rose-400",
 };
 
 
@@ -148,29 +144,28 @@ export function PlayerHistoryModal({
   if ((player.suspension_until_matchweek ?? 0) > matchweekCount) {
     const jLeft = player.suspension_until_matchweek - matchweekCount + 1;
     availBadge = (
-      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-sm bg-error-container/50 text-error border border-error/20 tracking-widest">
+      <Badge variant="suspended" size="md">
         🟥 Suspenso · {jLeft}J
-      </span>
+      </Badge>
     );
   } else if ((player.injury_until_matchweek ?? 0) > matchweekCount) {
     const jLeft = player.injury_until_matchweek - matchweekCount + 1;
     availBadge = (
-      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-sm bg-error-container/30 text-error border border-error/20 tracking-widest">
+      <Badge variant="injured" size="md">
         🩹 Lesionado · {jLeft}J
-      </span>
+      </Badge>
     );
   }
 
   return (
-    <div
-      className="fixed inset-0 z-200 flex items-center justify-center bg-black/75 p-3 sm:p-6"
-      onClick={() => setPlayerHistoryModal(null)}
+    <ModalShell
+      visible={!!playerHistoryModal}
+      onClose={() => setPlayerHistoryModal(null)}
+      z={MODAL_Z.default}
+      variant="wide"
+      dismissable
     >
-      <div
-        className="bg-surface-container-low border border-outline-variant/20 rounded-xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col"
-        style={{ maxHeight: "90vh" }}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex flex-col" style={{ maxHeight: "90vh" }}>
         {/* ── IDENTITY HEADER ── */}
         <div className="relative bg-surface-container overflow-hidden">
           <div
@@ -185,7 +180,7 @@ export function PlayerHistoryModal({
             </div>
             <div className="shrink-0 mt-0.5 sm:mt-1">
               <div
-                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-sm bg-surface-bright border-l-2 ${POS_BORDER[pos] || "border-zinc-500"} ${POS_TEXT[pos] || "text-zinc-300"} text-[10px] sm:text-xs font-black uppercase tracking-wider`}
+                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-sm bg-surface-bright border-l-2 ${POSITION_BORDER_CLASS[pos] || "border-zinc-500"} ${POSITION_TEXT_CLASS[pos] || "text-zinc-300"} text-[10px] sm:text-xs font-black uppercase tracking-wider`}
               >
                 {POS_LABEL[pos] || pos}
               </div>
@@ -260,8 +255,7 @@ export function PlayerHistoryModal({
         </div>
 
         {/* ── SCROLLABLE BODY ── */}
-        <div className="overflow-y-auto flex-1">
-          {/* ── 2-COLUMN LAYOUT (md+) ── */}
+        <div className="overflow-y-auto flex-1">          {/* ── 2-COLUMN LAYOUT (md+) ── */}
           <div className="md:grid md:grid-cols-2 md:divide-x md:divide-outline-variant/10">
             {/* LEFT COLUMN: Financial + Contract */}
             <div className="flex flex-col">
@@ -306,25 +300,34 @@ export function PlayerHistoryModal({
                     </span>
                   </div>
                   {player.transfer_status === "auction" ? (
-                    <button
-                      onClick={() => {
-                        openAuctionBid?.(player);
-                        setPlayerHistoryModal(null);
-                      }}
+                    <Button
+                      variant="primary"
+                      full
                       disabled={!canAfford || matchInProgress}
                       title={
                         matchInProgress
                           ? "Disponível após as partidas"
                           : undefined
                       }
-                      className="w-full px-4 py-2.5 bg-primary text-on-primary hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] uppercase font-black rounded-sm transition-all"
+                      onClick={() => {
+                        openAuctionBid?.(player);
+                        setPlayerHistoryModal(null);
+                      }}
                     >
                       {canAfford
                         ? "🔨 Licitar no Leilão"
                         : "Saldo Insuficiente"}
-                    </button>
+                    </Button>
                   ) : (
-                    <button
+                    <Button
+                      variant="primary"
+                      full
+                      disabled={!canAfford || matchInProgress}
+                      title={
+                        matchInProgress
+                          ? "Disponível após as partidas"
+                          : undefined
+                      }
                       onClick={() => {
                         if (!canAfford) return;
                         setGameDialog?.({
@@ -337,16 +340,9 @@ export function PlayerHistoryModal({
                         });
                         setPlayerHistoryModal(null);
                       }}
-                      disabled={!canAfford || matchInProgress}
-                      title={
-                        matchInProgress
-                          ? "Disponível após as partidas"
-                          : undefined
-                      }
-                      className="w-full px-4 py-2.5 bg-primary text-on-primary hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] uppercase font-black rounded-sm transition-all"
                     >
                       {canAfford ? "💰 Comprar Jogador" : "Saldo Insuficiente"}
-                    </button>
+                    </Button>
                   )}
                 </div>
               )}
@@ -359,26 +355,25 @@ export function PlayerHistoryModal({
                   </p>
                   {canAct ? (
                     <div className="flex flex-col gap-2">
-                      <button
-                        onClick={() => {
-                          renewPlayerContract?.(player);
-                          setPlayerHistoryModal(null);
-                        }}
+                      <Button
+                        variant="primary"
+                        full
                         disabled={matchInProgress}
                         title={
                           matchInProgress
                             ? "Disponível após as partidas"
                             : "Renovar Contrato"
                         }
-                        className="w-full px-4 py-2.5 bg-primary text-on-primary hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] uppercase font-black rounded-sm transition-all"
-                      >
-                        📝 Renovar Contrato
-                      </button>
-                      <button
                         onClick={() => {
-                          listPlayerAuction?.(player);
+                          renewPlayerContract?.(player);
                           setPlayerHistoryModal(null);
                         }}
+                      >
+                        📝 Renovar Contrato
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        full
                         disabled={matchInProgress || alreadyAuctionedThisWeek}
                         title={
                           matchInProgress
@@ -387,42 +382,47 @@ export function PlayerHistoryModal({
                               ? "Já foi a leilão nesta jornada"
                               : "Vender em Leilão"
                         }
-                        className="w-full px-4 py-2.5 bg-secondary-container hover:bg-surface-bright disabled:opacity-30 text-on-surface text-[10px] uppercase font-black rounded-sm transition-all"
+                        onClick={() => {
+                          listPlayerAuction?.(player);
+                          setPlayerHistoryModal(null);
+                        }}
                       >
                         🔨 Vender em Leilão
-                      </button>
+                      </Button>
                       {player.transfer_status === "fixed" ? (
-                        <button
-                          onClick={() => {
-                            removeFromTransferList?.(player);
-                            setPlayerHistoryModal(null);
-                          }}
+                        <Button
+                          variant="danger"
+                          full
                           disabled={matchInProgress}
                           title={
                             matchInProgress
                               ? "Disponível após as partidas"
                               : "Retirar da Lista"
                           }
-                          className="w-full px-4 py-2.5 bg-error-container text-on-error-container hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] uppercase font-black rounded-sm transition-all"
-                        >
-                          ✕ Retirar da Lista
-                        </button>
-                      ) : (
-                        <button
                           onClick={() => {
-                            listPlayerFixed?.(player);
+                            removeFromTransferList?.(player);
                             setPlayerHistoryModal(null);
                           }}
+                        >
+                          ✕ Retirar da Lista
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          full
                           disabled={matchInProgress}
                           title={
                             matchInProgress
                               ? "Disponível após as partidas"
                               : "Listar para Transferência"
                           }
-                          className="w-full px-4 py-2.5 bg-secondary-container hover:bg-surface-bright disabled:opacity-30 disabled:cursor-not-allowed text-on-surface text-[10px] uppercase font-black rounded-sm transition-all"
+                          onClick={() => {
+                            listPlayerFixed?.(player);
+                            setPlayerHistoryModal(null);
+                          }}
                         >
                           🏷️ Listar para Transferência
-                        </button>
+                        </Button>
                       )}
                     </div>
                   ) : (
@@ -546,6 +546,6 @@ export function PlayerHistoryModal({
           </div>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 }

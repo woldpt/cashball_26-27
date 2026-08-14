@@ -5,6 +5,9 @@ import estadio50000 from "../assets/estadio50000.jpg";
 import { socket } from "../socket.js";
 import { DIVISION_NAMES } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
+import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
+import { Panel } from "../components/shared/Panel.jsx";
+import { Button } from "../components/shared/Button.jsx";
 
 const EXPANSION_COST = 300000;
 const SEATS_PER_BUILD = 5000;
@@ -101,74 +104,51 @@ export function StadiumTab({
 
       {/* ── ROW: STATS ────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-surface-container-low p-5 rounded-lg flex flex-col justify-between h-28 border-l-4 border-primary">
-          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Capacidade Actual
-          </span>
-          <span className="text-2xl font-black font-headline tracking-tighter text-on-surface tabular-nums">
-            {stadiumCapacity.toLocaleString("pt-PT")}
-          </span>
-          <span className="text-[9px] text-on-surface-variant font-black uppercase tracking-widest">
-            lugares
-          </span>
-        </div>
-
-        <div className="bg-surface-container-low p-5 rounded-lg flex flex-col justify-between h-28 border-l-4 border-tertiary">
-          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Receita máx. / jogo
-          </span>
-          <span className="text-2xl font-black font-headline tracking-tighter text-tertiary tabular-nums">
-            {formatCurrency(capacityRevPerGame)}
-          </span>
-          <span className="text-[9px] text-on-surface-variant font-black uppercase tracking-widest">
-            15€ × lotação
-          </span>
-        </div>
-
-        <div className="bg-surface-container-low p-5 rounded-lg flex flex-col justify-between h-28 border-l-4 border-amber-400">
-          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Assistência Média
-          </span>
-          <span className="text-2xl font-black font-headline tracking-tighter text-on-surface tabular-nums">
-            {avgAttendance != null
+        <SummaryWidget
+          label="Capacidade Actual"
+          value={stadiumCapacity.toLocaleString("pt-PT")}
+          sub="lugares"
+          valueClass="text-2xl"
+        />
+        <SummaryWidget
+          label="Receita máx. / jogo"
+          value={formatCurrency(capacityRevPerGame)}
+          sub="15€ × lotação"
+          valueClass="text-2xl"
+          accentClass="border-tertiary"
+          valueColorClass="text-tertiary"
+        />
+        <SummaryWidget
+          label="Assistência Média"
+          value={
+            avgAttendance != null
               ? avgAttendance.toLocaleString("pt-PT")
-              : "—"}
-          </span>
-          <span className="text-[9px] text-on-surface-variant font-black uppercase tracking-widest">
-            {homeMatches} jogo(s) em casa
-          </span>
-        </div>
-
-        <div className="bg-surface-container-low p-5 rounded-lg flex flex-col justify-between h-28 border-l-4 border-outline-variant">
-          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            Obras Época
-          </span>
-          <span className="text-2xl font-black font-headline tracking-tighter text-on-surface tabular-nums">
-            {buildsCount}
-          </span>
-          <span className="text-[9px] text-on-surface-variant font-black uppercase tracking-widest">
-            {formatCurrency(
-              financeData?.totalStadiumExpenses || 0,
-            )}
-          </span>
-        </div>
+              : "—"
+          }
+          sub={`${homeMatches} jogo(s) em casa`}
+          valueClass="text-2xl"
+          accentClass="border-amber-400"
+        />
+        <SummaryWidget
+          label="Obras Época"
+          value={buildsCount}
+          sub={formatCurrency(financeData?.totalStadiumExpenses || 0)}
+          valueClass="text-2xl"
+          accentClass="border-outline-variant"
+        />
       </div>
 
       {/* ── EXPANSÃO ──────────────────────────────────────────────── */}
-      <div className="bg-surface-container rounded-lg border border-outline-variant/25 overflow-hidden">
-        <div className="px-5 py-4 border-b border-outline-variant/10 flex justify-between items-center">
-          <h3 className="font-headline text-xs uppercase tracking-widest flex items-center gap-2">
-            <span className="material-symbols-outlined text-tertiary text-base">
-              stadium
-            </span>
-            Expansão do Estádio
-          </h3>
-          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-            {atMaxCapacity
-              ? "Capacidade Máxima"
-              : `${((MAX_CAPACITY - stadiumCapacity) / SEATS_PER_BUILD).toFixed(0)} obra(s) possíveis`}
-          </span>
-        </div>
+      <Panel
+        title="Expansão do Estádio"
+        icon="stadium"
+        meta={
+          atMaxCapacity
+            ? "Capacidade Máxima"
+            : `${((MAX_CAPACITY - stadiumCapacity) / SEATS_PER_BUILD).toFixed(0)} obra(s) possíveis`
+        }
+        padded={false}
+      >
         <div className="p-5">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
             <div className="bg-surface rounded-md border border-outline-variant/15 p-4 flex flex-col gap-1">
@@ -250,7 +230,11 @@ export function StadiumTab({
             </div>
           )}
 
-          <button
+          <Button
+            variant="primary"
+            size="lg"
+            full
+            disabled={atMaxCapacity || currentBudget < EXPANSION_COST}
             onClick={() => {
               setGameDialog({
                 mode: "confirm",
@@ -261,11 +245,9 @@ export function StadiumTab({
                 onCancel: () => {},
               });
             }}
-            disabled={atMaxCapacity || currentBudget < EXPANSION_COST}
-            className="w-full bg-primary hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed text-on-primary font-headline font-bold py-3 rounded text-sm transition-all uppercase tracking-wide"
           >
             Expandir Estádio — {formatCurrency(EXPANSION_COST)}
-          </button>
+          </Button>
 
           {atMaxCapacity ? (
             <p className="text-on-surface-variant text-[10px] text-center mt-2 uppercase tracking-wider opacity-60">
@@ -278,7 +260,7 @@ export function StadiumTab({
             </p>
           ) : null}
         </div>
-      </div>
+    </Panel>
     </div>
   );
 }

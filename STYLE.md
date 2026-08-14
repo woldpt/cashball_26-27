@@ -60,6 +60,8 @@ Use **tokens CSS** em vez de cores hardcoded. Os tokens seguem a nomenclatura Ma
 
 ## 🃏 3. Cards e Widgets
 
+> Componentes: `SummaryWidget`, `Panel`, `EmptyState`, `TabBar` (ver §10).
+
 ### Widget de Summary (topo de página)
 
 ```jsx
@@ -101,6 +103,9 @@ Use **tokens CSS** em vez de cores hardcoded. Os tokens seguem a nomenclatura Ma
 
 ## 📋 4. Linhas de Jogador (Card-based Row)
 
+> Componente: `PlayerRow` (ver §10). Resultado da fusão de `SquadRow`
+> (PlayersTab) e `TeamSquadCard` (TeamSquadView/TeamSquadModal).
+
 ### Estrutura do `<SquadRow>`
 
 Cada jogador é renderizado como um **card horizontal** com:
@@ -133,6 +138,8 @@ Cada jogador é renderizado como um **card horizontal** com:
 ---
 
 ## 🏷️ 5. Badges Inline
+
+> Componente: `Badge` + `PlayerStatusBadges` (ver §10).
 
 ### Formato padrão
 
@@ -218,9 +225,44 @@ Cada jogador é renderizado como um **card horizontal** com:
 
 ---
 
+## 🧱 10. Componentes Partilhados (fonte única de verdade)
+
+> Estes componentes unificam padrões que antes eram duplicados inline.
+> **Usá-los sempre**; não re-criar receitas próprias.
+
+| Componente | Uso |
+|-----------|-----|
+| `Badge` | Chip de estado (STYLE.md §5). Variantes: `junior`, `renovado`, `sold`, `cooldown`, `suspended`, `injured`, `error`, `info`, `warning`, `neutral`. Sizes: `sm` (padrão), `md` |
+| `PlayerStatusBadges` | Conjunto de badges de um jogador (Jr/Renovado/À venda/Cooldown/Susp/Lesão) derivado do objeto `player` |
+| `StarMark` | Estrela "Craque" junto ao nome |
+| `PlayerRow` | Linha/card de jogador (fusão de SquadRow + TeamSquadCard). Props: `onOpenPlayerHistory`, `dim`, `showContractBadges`, `showProposalCol`/`myBudget`/`onProposal` |
+| `SummaryWidget` | Widget de resumo de topo (§3). `flat` para células de hero sem accent; `accentClass`/`accentStyle` para cor da borda |
+| `Panel` | Painel com header canónico. `icon`, `meta`, `padded={false}`, `headerClassName`/`titleClassName` |
+| `EmptyState` | Estado vazio token-based (emoji + título + descrição) |
+| `TabBar` | Filtros/tabs de página (`size="sm"|"md"`) |
+| `Button` | Botão unificado. Variants: `primary`, `success`, `secondary`, `danger`, `dangerSoft`, `ghost`, `accent`. Sizes: `sm`/`md`/`lg`; `full`, `uppercase` |
+| `ModalShell` | Moldura de modais: backdrop + z-index + animação. Variants: `card`, `md`, `lg`, `wide`, `xl`, `fullscreen`, `transparent`. z-index via `MODAL_Z` |
+| `GameDialog` | Diálogo confirm/prompt (usa `ModalShell` + `Button`) |
+
+### Paleta de posições
+
+Toda a variação visual por posição vive em `constants/index.js`:
+`POSITION_TEXT_CLASS`, `POSITION_BORDER_CLASS`, `POSITION_BAR_CLASS`,
+`POSITION_GLOW_CLASS`, `POSITION_BG_GRADIENT_CLASS`, `POSITION_RING_CLASS`,
+`POSITION_BADGE_*_CLASS`, `POSITION_ACCENT_HEX`. `matchConstants.POS_STYLES`
+e `colorHelpers.posRingClass` derivam desta fonte — nunca criar maps locais.
+
+### Z-index de modais
+
+Centralizado em `MODAL_Z` (`constants/index.js`): `teamSquad` 120,
+`transferProposal` 130, `cupDraw` 140, `waitingCoaches`/`penalty` 150,
+`default` 200, `dismissal` 9999. Não usar valores mágicos inline.
+
+---
+
 ## 🔗 Referência
 
 - **Exemplo completo:** `client/src/views/PlayersTab.jsx`
-- **Componentes reutilizáveis:** `PlayerAvatar`, `PlayerLink`, `AggBadge`
-- **Constantes:** `POSITION_TEXT_CLASS`, `POSITION_BORDER_CLASS`, `POSITION_LABEL_MAP`, `FLAG_TO_COUNTRY`
+- **Componentes reutilizáveis:** `PlayerAvatar`, `PlayerLink`, `AggBadge`, `PlayerRow`, `Badge`, `Panel`, `SummaryWidget`, `EmptyState`, `TabBar`, `Button`, `ModalShell`
+- **Constantes:** `POSITION_TEXT_CLASS`, `POSITION_BORDER_CLASS`, `POSITION_LABEL_MAP`, `FLAG_TO_COUNTRY`, `MODAL_Z`
 - **Utilitários:** `formatCurrency`, `getPlayerStat`
