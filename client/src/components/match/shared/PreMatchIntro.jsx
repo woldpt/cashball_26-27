@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { OddsBadge } from "../../shared/OddsBadge.jsx";
 
 /* ── Pre-match intro (5s pause) + kickoff moments ────────────────────────
  *
@@ -74,10 +75,11 @@ export function PreMatchIntro({
   const odds = bettingEvt
     ? stripPrefix(bettingEvt.text).match(/\d+\.\d{2}/g) || []
     : [];
-  const oddsLabel = odds.length >= 3 ? `1 ${odds[0]} · X ${odds[1]} · 2 ${odds[2]}` : null;
+  const hasOdds = odds.length >= 3;
+  const oddsLabel = hasOdds ? `1 ${odds[0]} · X ${odds[1]} · 2 ${odds[2]}` : null;
   const narrative =
     phaseEvt?.text ||
-    (bettingEvt && !oddsLabel ? bettingEvt.text : null) ||
+    (bettingEvt && !hasOdds ? bettingEvt.text : null) ||
     null;
 
   return (
@@ -116,11 +118,11 @@ export function PreMatchIntro({
                     accent="text-sky-300/90 border-sky-400/25"
                   />
                 )}
-                {oddsLabel && (
-                  <IntroChip
-                    emoji="📊"
-                    label={oddsLabel}
-                    accent="text-amber-300/90 border-amber-400/25"
+                {hasOdds && (
+                  <OddsBadge
+                    odds={odds}
+                    hColor={hInfo?.color_primary}
+                    aColor={aInfo?.color_primary}
                   />
                 )}
               </motion.div>

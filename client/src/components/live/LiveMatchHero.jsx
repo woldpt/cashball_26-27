@@ -1,5 +1,6 @@
 import { DIVISION_NAMES } from "../../constants/index.js";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
+import { OddsBadge } from "../shared/OddsBadge.jsx";
 import { PreMatchIntro, KickoffBadge } from "../match/shared/index.js";
 import { TeamCrest } from "./TeamCrest.jsx";
 import { FLASH_COLOR, isFlashing, isGoalType, matchEventIcon, parseOdds } from "./liveHelpers.js";
@@ -190,10 +191,11 @@ export function LiveMatchHero({
               </span>
             )}
             {odds && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-300/90">
-                <span>📊</span>
-                1 {odds[0]} · X {odds[1]} · 2 {odds[2]}
-              </span>
+              <OddsBadge
+                odds={odds}
+                hColor={hInfo?.color_primary}
+                aColor={aInfo?.color_primary}
+              />
             )}
           </div>
         )}
