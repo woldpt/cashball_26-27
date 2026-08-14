@@ -23,6 +23,8 @@ export function WelcomeModal({ welcomeModal, me, setWelcomeModal }) {
         backdropFilter: "blur(8px)",
       }}
     >
+      {welcomeModal && me?.teamId && (
+      <>
       {/* Technical grid overlay */}
       <div
         className="absolute inset-0 pointer-events-none opacity-30"
@@ -238,6 +240,8 @@ export function WelcomeModal({ welcomeModal, me, setWelcomeModal }) {
               </button>
             </div>
           </motion.div>
+      </>
+      )}
     </ModalShell>
   );
 }

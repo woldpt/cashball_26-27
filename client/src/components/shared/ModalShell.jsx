@@ -10,6 +10,12 @@
  *  - "transparent": sem fundo/desfoque (suspense de penáltis).
  *
  * z-index centralizado em `MODAL_Z` (constants/index.js).
+ *
+ * ⚠️ IMPORTANTE: a prop `visible` NÃO impede a avaliação dos `children`.
+ * Os children são elementos React já avaliados pelo caller em cada render.
+ * Modais cujos children acedem a props nuláveis (ex.: `data.teamName`) têm
+ * de guardar essas props com early-return ou short-circuit nos children —
+ * caso contrário rebentam com TypeError mesmo com `visible={false}`.
  */
 import { motion, AnimatePresence } from "framer-motion";
 import { MODAL_Z } from "../../constants/index.js";

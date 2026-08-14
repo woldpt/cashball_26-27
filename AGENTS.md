@@ -32,6 +32,8 @@
   - A abertura do modal deve seguir o fluxo: `SquadRow (prop onOpenPlayerHistory)` $\rightarrow$ `socket.emit("requestPlayerHistory")`.
 - **Visual/Avatar:**
   - **PROIBIDO** usar `clipPath` em `PlayerAvatar.jsx`. Use apenas caminhos geométricos puros.
+- **Modais (`ModalShell`):**
+  - A prop `visible` **NÃO** impede a avaliação dos `children`. Modais cujos children acedem a props nuláveis (ex.: `data.teamName`) têm de guardar essas props com early-return ou short-circuit nos children — senão rebentam com `TypeError` mesmo com `visible={false}`.
 - **Estado do Jogo:**
   - A fonte da verdade é `game.calendarIndex`. Nunca use `matchweek` para lógica de progresso.
 - **Contextos do Frontend:**

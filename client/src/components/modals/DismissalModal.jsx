@@ -21,6 +21,7 @@ export function DismissalModal({ dismissalModal, onContinue }) {
         backdropFilter: "blur(8px)",
       }}
     >
+      {dismissalModal && (
       <motion.div
         className="relative w-full bg-surface-container border border-outline-variant/20 rounded-xl shadow-2xl overflow-hidden flex flex-col"
         initial={{ scale: 0.93, y: 24 }}
@@ -130,6 +131,7 @@ export function DismissalModal({ dismissalModal, onContinue }) {
               </div>
             )}
           </motion.div>
+      )}
     </ModalShell>
   );
 }

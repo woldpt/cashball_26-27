@@ -138,6 +138,7 @@ export function TeamSquadModal({
       variant="xl"
       dismissable
     >
+      {selectedTeam && (
       <div className="flex flex-col" style={{ maxHeight: "90vh" }}>
         {/* Header + Tabs */}
         <div
@@ -447,6 +448,7 @@ export function TeamSquadModal({
               )}
             </div>
       </div>
+      )}
     </ModalShell>
   );
 }

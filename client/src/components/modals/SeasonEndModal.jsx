@@ -82,6 +82,7 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
       variant="fullscreen"
       align="start"
     >
+      {data && (
       <div className="w-full max-w-lg my-8">
         {/* ── Header ─────────────────────────────────────────────────── */}
             <div className="text-center mb-6">
@@ -364,6 +365,7 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
               Continuar para a Época {(data?.year ?? 0) + 1}
             </motion.button>
       </div>
+      )}
     </ModalShell>
   );
 }
