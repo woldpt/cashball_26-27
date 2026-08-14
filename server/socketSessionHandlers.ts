@@ -18,12 +18,47 @@ type RunGet = <T extends AnyRow = AnyRow>(
 	params?: any[],
 ) => Promise<T | null>;
 
+// ── Rate limiting para joinGame ────────────────────────────────────────────────
+// O canal socket não tem o rate-limit HTTP. Limites em memória por nome e por IP
+// impedem brute-force de tokens/sessões e spam de criação de salas.
+
+type LimitRec = { count: number; first: number };
+const joinRateStore = new Map<string, LimitRec>();
+const newGameRateStore = new Map<string, LimitRec>();
+
+const JOIN_LIMIT_PER_NAME = { max: 30, windowMs: 10 * 60 * 1000 };
+const JOIN_LIMIT_PER_IP = { max: 150, windowMs: 10 * 60 * 1000 };
+const NEW_GAME_LIMIT_PER_NAME = { max: 3, windowMs: 15 * 60 * 1000 };
+
+function allowLimit(
+	store: Map<string, LimitRec>,
+	key: string,
+	max: number,
+	windowMs: number,
+): boolean {
+	const now = Date.now();
+	const rec = store.get(key);
+	if (!rec || now - rec.first > windowMs) {
+		store.set(key, { count: 1, first: now });
+		return true;
+	}
+	rec.count += 1;
+	return rec.count <= max;
+}
+
+function getSocketIp(socket: any): string {
+	return (
+		socket.handshake?.address ||
+		socket.conn?.remoteAddress ||
+		"unknown"
+	);
+}
+
 interface SessionHandlerDeps {
 	io: any;
-	verifyOrCreateManager: (
-		name: string,
-		password: string,
-	) => Promise<{ ok: boolean; error?: string }>;
+	verifySession: (
+		token: string,
+	) => Promise<{ ok: boolean; name?: string; expiresAt?: number }>;
 	getGame: (
 		roomCode: string,
 		onReady?: (game: ActiveGame | null, error?: Error) => void,
@@ -107,7 +142,7 @@ export function registerSessionSocketHandlers(
 ) {
 	const {
 		io,
-		verifyOrCreateManager,
+		verifySession,
 		getGame,
 		recordRoomAccess,
 		getRoomCoaches,
@@ -370,20 +405,62 @@ export function registerSessionSocketHandlers(
 	}
 
 	socket.on("joinGame", async (data) => {
-		const { name, password, roomCode: rawRoom, roomName, joinMode } = data;
+		const { name, token, roomCode: rawRoom, roomName, joinMode } = data;
 
 		if (!name || typeof name !== "string" || name.trim().length === 0) {
 			return socket.emit("systemMessage", "Nome de treinador inválido.");
 		}
-		if (!password || typeof password !== "string" || password.length === 0) {
-			return socket.emit("joinError", "A palavra-passe é obrigatória.");
+		if (!token || typeof token !== "string" || token.trim().length === 0) {
+			return socket.emit("joinError", "Sessão inválida. Volta a iniciar sessão.");
 		}
 
 		const trimmedName = name.trim();
+		const ip = getSocketIp(socket);
 
-		const authResult = await verifyOrCreateManager(trimmedName, password);
-		if (!authResult.ok) {
-			return socket.emit("joinError", authResult.error);
+		// Rate limit por nome e por IP (anti brute-force / spam)
+		if (
+			!allowLimit(
+				joinRateStore,
+				`name:${trimmedName.toLowerCase()}`,
+				JOIN_LIMIT_PER_NAME.max,
+				JOIN_LIMIT_PER_NAME.windowMs,
+			) ||
+			!allowLimit(
+				joinRateStore,
+				`ip:${ip}`,
+				JOIN_LIMIT_PER_IP.max,
+				JOIN_LIMIT_PER_IP.windowMs,
+			)
+		) {
+			return socket.emit(
+				"joinError",
+				"Demasiadas tentativas. Tenta novamente em breve.",
+			);
+		}
+
+		// Autenticação por token de sessão (nunca por password em claro)
+		const session = await verifySession(token.trim());
+		if (!session.ok) {
+			return socket.emit("joinError", "Sessão expirada. Volta a iniciar sessão.");
+		}
+		if (session.name.toLowerCase() !== trimmedName.toLowerCase()) {
+			return socket.emit("joinError", "Sessão inválida para este treinador.");
+		}
+
+		// Limite de criação de salas novas por treinador
+		if (
+			joinMode === "new-game" &&
+			!allowLimit(
+				newGameRateStore,
+				`name:${trimmedName.toLowerCase()}`,
+				NEW_GAME_LIMIT_PER_NAME.max,
+				NEW_GAME_LIMIT_PER_NAME.windowMs,
+			)
+		) {
+			return socket.emit(
+				"joinError",
+				"Limite de novos jogos atingido. Tenta mais tarde.",
+			);
 		}
 
 		let finalRoomCode = (rawRoom || "").toUpperCase();

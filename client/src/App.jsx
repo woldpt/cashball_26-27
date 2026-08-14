@@ -29,6 +29,7 @@ function App() {
 	// ── Auth & session state ───────────────────────────────────────────────
 	const [savedSession, setSavedSession] = useState(null);
 	const [me, setMe] = useState(null);
+	const [token, setToken] = useState(null);
 	const [name, setName] = useState("");
 	const [password, setPassword] = useState("");
 	const [roomCode, setRoomCode] = useState("");
@@ -51,15 +52,30 @@ function App() {
 		"";
 
 	// ── Socket Listeners for Auth ──────────────────────────────────────────
+	// Erros de autenticação limpam a sessão guardada; erros transitórios
+	// (servidor em baixo, sala cheia, etc.) mantêm-na para re-tentar no reload.
+	const isAuthError = (msg) => {
+		const lowered = (msg || "").toLowerCase();
+		return (
+			lowered.includes("palavra-passe") ||
+			lowered.includes("sess") ||
+			lowered.includes("credenciais") ||
+			lowered.includes("conta") ||
+			lowered.includes("limite de novos jogos")
+		);
+	};
+
 	useEffect(() => {
 		const handleJoinError = (msg) => {
 			setJoinError(msg);
 			setJoining(false);
 			setMe(null);
-			try {
-				window.localStorage.removeItem("cashballSession");
-			} catch {
-				/* ignore */
+			if (isAuthError(msg)) {
+				try {
+					window.localStorage.removeItem("cashballSession");
+				} catch {
+					/* ignore */
+				}
 			}
 			if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
 		};
@@ -75,7 +91,7 @@ function App() {
 						"cashballSession",
 						JSON.stringify({
 							name: updated.name,
-							password: updated.password,
+							token: updated.token,
 							roomCode: updated.roomCode,
 						}),
 					);
@@ -107,11 +123,11 @@ function App() {
 		if (session) {
 			setMe({
 				name: session.name,
-				password: session.password,
+				token: session.token,
 				roomCode: session.roomCode,
 			});
 			setName(session.name);
-			setPassword(session.password);
+			setToken(session.token);
 			setRoomCode(session.roomCode);
 			setJoining(true);
 		}
@@ -129,7 +145,7 @@ function App() {
 			);
 			socket.emit("joinGame", {
 				name: savedSession.name,
-				password: savedSession.password,
+				token: savedSession.token,
 				roomCode: savedSession.roomCode.toUpperCase(),
 			});
 
@@ -139,7 +155,7 @@ function App() {
 				setJoinError(
 					"Sem resposta do servidor. Certifica-te que o servidor está ligado.",
 				);
-			}, 6000);
+			}, 10000);
 		};
 
 		if (socket.connected) {
@@ -161,12 +177,14 @@ function App() {
 
 	// ── Re-fetch saved rooms for this coach ────────────────────────────────
 	useEffect(() => {
-		if (joinMode === "saved-game" && name) {
+		if (joinMode === "saved-game" && name && token) {
 			const timeout = setTimeout(() => {
-				fetch(`${backendUrl}/saves?name=${encodeURIComponent(name)}`)
+				fetch(
+					`${backendUrl}/saves?name=${encodeURIComponent(name)}&token=${encodeURIComponent(token)}`,
+				)
 					.then((r) => r.json())
 					.then((data) => {
-						setAvailableSaves(data);
+						setAvailableSaves(Array.isArray(data) ? data : []);
 						if (data.length > 0 && !roomCode) setRoomCode(data[0].code);
 					})
 					.catch(() => {});
@@ -176,7 +194,7 @@ function App() {
 			startTransition(() => setAvailableSaves([]));
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [name, joinMode]);
+	}, [name, joinMode, token]);
 
 	// ── Keep refs in sync ──────────────────────────────────────────────────
 	useEffect(() => {
@@ -188,13 +206,13 @@ function App() {
 
 	// ── Persist session to localStorage ────────────────────────────────────
 	useEffect(() => {
-		if (!me?.name || !me?.password || !me?.roomCode) return;
+		if (!me?.name || !me?.token || !me?.roomCode) return;
 		try {
 			window.localStorage.setItem(
 				"cashballSession",
 				JSON.stringify({
 					name: me.name,
-					password: me.password,
+					token: me.token,
 					roomCode: me.roomCode,
 				}),
 			);
@@ -204,20 +222,26 @@ function App() {
 	}, [me]);
 
 	// ── Auth handlers ──────────────────────────────────────────────────────
+	const joinCodesRef = React.useRef({});
 	const selectJoinMode = (mode) => {
+		if (joinMode && joinMode !== mode && roomCode) {
+			joinCodesRef.current[joinMode] = roomCode;
+		}
 		setJoinMode(mode);
-		setRoomCode("");
+		setRoomCode(joinCodesRef.current[mode] || "");
 		setJoinError("");
 	};
 
 	const resetAuthFlow = () => {
 		setAuthPhase("login");
+		setToken(null);
 		setJoinMode(null);
 		setRoomCode("");
 		setJoinError("");
 		setAuthError("");
 		setAuthSubmitting(false);
 		setIsNewAccount(false);
+		joinCodesRef.current = {};
 	};
 
 	const handleAuthenticate = async (mode) => {
@@ -231,17 +255,27 @@ function App() {
 				body: JSON.stringify({ name: name.trim(), password }),
 			});
 			const data = await response.json().catch(() => ({}));
-			if (!response.ok) {
+			if (!response.ok || !data.token) {
 				setAuthError(data.error || "Não foi possível autenticar a conta.");
 				return;
 			}
-			setName(name.trim());
+			const trimmedName = name.trim();
+			setName(trimmedName);
+			setToken(data.token);
 			setConfirmPassword("");
 			setJoinMode(null);
 			setRoomCode("");
 			setJoinError("");
 			setIsNewAccount(mode === "register");
 			setAuthPhase("mode");
+			try {
+				window.localStorage.setItem(
+					"cashballSession",
+					JSON.stringify({ name: trimmedName, token: data.token, roomCode: "" }),
+				);
+			} catch {
+				/* ignore */
+			}
 		} catch {
 			setAuthError("Sem ligação ao servidor. Tenta novamente.");
 		} finally {
@@ -251,6 +285,19 @@ function App() {
 
 	const handleLogout = () => {
 		try {
+			if (token) {
+				fetch(`${backendUrl}/auth/logout`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ token }),
+				}).catch(() => {
+					/* ignore */
+				});
+			}
+		} catch {
+			/* ignore */
+		}
+		try {
 			window.localStorage.removeItem("cashballSession");
 		} catch {
 			/* ignore */
@@ -259,25 +306,25 @@ function App() {
 	};
 
 	const handleJoin = () => {
-		if (name && password && roomCode && !joining) {
+		if (name && token && roomCode && !joining) {
 			if (me?.roomCode) socket.emit("leaveRoom");
 			setJoinError("");
 			setJoining(true);
 			socket.emit("joinGame", {
 				name,
-				password,
+				token,
 				roomCode: joinMode === "new-game" ? "" : roomCode.toUpperCase(),
 				roomName: joinMode === "new-game" ? roomCode.toUpperCase() : "",
 				joinMode,
 			});
-			setMe({ name, password, roomCode: "" });
+			setMe({ name, token, roomCode: "" });
 			joinTimerRef.current = setTimeout(() => {
 				setMe((prev) => (prev && !prev.teamId ? null : prev));
 				setJoining(false);
 				setJoinError(
 					"Sem resposta do servidor. Certifica-te que o servidor está ligado.",
 				);
-			}, 6000);
+			}, 10000);
 		}
 	};
 
@@ -325,6 +372,7 @@ function App() {
 				joinMode={joinMode}
 				handleLogout={handleLogout}
 				me={me}
+				token={token}
 				availableSaves={availableSaves}
 				setAvailableSaves={setAvailableSaves}
 				backendUrl={backendUrl}

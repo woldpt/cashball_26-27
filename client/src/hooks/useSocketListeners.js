@@ -1252,11 +1252,11 @@ export function useSocketListeners(handlers, refs) {
 				currentMe?.teamId &&
 				currentMe?.roomCode &&
 				currentMe?.name &&
-				currentMe?.password
+				currentMe?.token
 			) {
 				socket.emit("joinGame", {
 					name: currentMe.name,
-					password: currentMe.password,
+					token: currentMe.token,
 					roomCode: currentMe.roomCode,
 				});
 			}

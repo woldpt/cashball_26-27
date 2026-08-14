@@ -38,7 +38,7 @@ export function loadSavedSession() {
     const raw = window.localStorage.getItem("cashballSession");
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (!parsed?.name || !parsed?.password || !parsed?.roomCode) return null;
+    if (!parsed?.name || !parsed?.token || !parsed?.roomCode) return null;
     return parsed;
   } catch {
     return null;

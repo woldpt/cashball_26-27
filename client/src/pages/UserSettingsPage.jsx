@@ -49,7 +49,7 @@ export function UserSettingsPage({
 		setProfileMsg(null);
 		setProfileSaving(true);
 		try {
-			const body = { name: me.name };
+			const body = { name: me.name, token: me.token };
 			if (email?.trim()) body.email = email.trim();
 			if (birthYear) body.birthYear = parseInt(birthYear, 10);
 			const res = await fetch(`${backendUrl}/auth/update-profile`, {
@@ -116,20 +116,11 @@ export function UserSettingsPage({
 			} else {
 				setPasswordMsg({
 					type: "success",
-					text: "Palavra-passe alterada com sucesso!",
+					text: "Palavra-passe alterada com sucesso! Vais precisar de voltar a iniciar sessão na próxima vez.",
 				});
 				setCurrentPassword("");
 				setNewPassword("");
 				setConfirmPassword("");
-				try {
-					const s = JSON.parse(
-						window.localStorage.getItem("cashballSession") || "{}",
-					);
-					s.password = newPassword;
-					window.localStorage.setItem("cashballSession", JSON.stringify(s));
-				} catch (_a) {
-					_a && undefined; /* ignorar */
-				}
 			}
 		} catch (_b) {
 			_b && undefined; /* ignorar */
@@ -139,20 +130,20 @@ export function UserSettingsPage({
 		}
 	};
 
-	const handleDeleteRoom = (roomCode, password) => {
-		setDeletingRoom({ roomCode, password });
+	const handleDeleteRoom = (roomCode) => {
+		setDeletingRoom({ roomCode });
 	};
 
 	const confirmDeleteRoom = async () => {
 		if (!deletingRoom) return;
-		const { roomCode, password } = deletingRoom;
+		const { roomCode } = deletingRoom;
 		setDeletingRoom(null);
 		setDeletingRoomLoading(true);
 		try {
 			const res = await fetch(`${backendUrl}/saves/${roomCode}`, {
 				method: "DELETE",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ name: me.name, password }),
+				body: JSON.stringify({ name: me.name, token: me.token }),
 			});
 			const data = await res.json();
 			if (data.ok) {
@@ -175,7 +166,7 @@ export function UserSettingsPage({
 						"cashballSession",
 						JSON.stringify({
 							name: me.name,
-							password: me.password,
+							token: me.token,
 							roomCode,
 						}),
 					);
@@ -193,7 +184,7 @@ export function UserSettingsPage({
 			const res = await fetch(`${backendUrl}/auth/delete-account`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ name: me.name }),
+				body: JSON.stringify({ name: me.name, token: me.token }),
 			});
 			const data = await res.json();
 			if (data.ok) {
@@ -251,7 +242,11 @@ export function UserSettingsPage({
 								fetch(`${backendUrl}/auth/avatar-seed`, {
 									method: "POST",
 									headers: { "Content-Type": "application/json" },
-									body: JSON.stringify({ name: me.name, seed: newSeed }),
+									body: JSON.stringify({
+										name: me.name,
+										token: me.token,
+										seed: newSeed,
+									}),
 								}).catch(() => {
 									/* ignorar */
 								});
@@ -502,7 +497,7 @@ export function UserSettingsPage({
 										</Button>
 										{!isActive && (
 											<button
-												onClick={() => handleDeleteRoom(r.roomCode, me.password)}
+												onClick={() => handleDeleteRoom(r.roomCode)}
 												className="text-[9px] font-black uppercase px-2 py-1 rounded border border-red-500/15 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
 												title="Eliminar sala"
 											>

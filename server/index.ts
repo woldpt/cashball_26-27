@@ -37,7 +37,6 @@ const {
 	getTeamSquad,
 } = require("./game/engine") as typeof import("./game/engine");
 const {
-	verifyOrCreateManager,
 	verifyManager,
 	createManager,
 	recordRoomAccess,
@@ -50,6 +49,11 @@ const {
 	setAvatarSeed,
 	updateManagerProfile,
 	deleteManager,
+	// Session tokens
+	createSession,
+	verifySession,
+	destroySession,
+	destroySessionsForManager,
 	// Admin-only functions
 	adminListUsers,
 	adminChangePassword,
@@ -308,6 +312,18 @@ const apiLimiter = rateLimit({
 	message: { error: "Demasiadas tentativas. Tenta novamente em breve." },
 });
 
+// ── Session helper ─────────────────────────────────────────────────────────────
+// Reads the session token from Authorization header, body or query string and
+// resolves it to the owning manager name (or null when invalid/expired).
+async function getSessionNameFromReq(req: any): Promise<string | null> {
+	const auth = req.headers?.authorization || "";
+	const headerToken = auth.startsWith("Bearer ") ? auth.slice(7).trim() : null;
+	const token = req.body?.token || req.query?.token || headerToken || null;
+	if (!token) return null;
+	const session = await verifySession(token);
+	return session.ok ? session.name : null;
+}
+
 app.get("/health", (req, res) => {
 	res.json({ status: "ok", uptime: process.uptime() });
 });
@@ -318,18 +334,18 @@ app.get("/api/cache-version", (_req, res) => {
 
 app.get("/saves", apiLimiter, async (req, res) => {
 	try {
+		// A listagem de salas exige sessão válida (anti-enumeração).
+		const sessionName = await getSessionNameFromReq(req);
+		if (!sessionName) return res.json([]);
+
 		const files = fs.readdirSync(resolveDbDir());
 		const allSaves = files
 			.filter((f) => f.startsWith("game_") && f.endsWith(".db"))
 			.map((f) => f.replace("game_", "").replace(".db", ""));
 
-		const managerName = req.query.name;
-		let roomCodes = allSaves;
-
-		if (managerName) {
-			const mySaves = await getManagerRooms(managerName as string);
-			roomCodes = mySaves.filter((r) => allSaves.includes(r));
-		}
+		const managerName = sessionName;
+		const mySaves = await getManagerRooms(managerName);
+		const roomCodes = mySaves.filter((r) => allSaves.includes(r));
 
 		// Load room info (name, team, year) for each room
 		const saves = await Promise.all(
@@ -358,20 +374,16 @@ app.get("/saves", apiLimiter, async (req, res) => {
 app.delete("/saves/:roomCode", apiLimiter, async (req, res) => {
 	try {
 		const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
-		const password =
-			typeof req.body?.password === "string" ? req.body.password : "";
 		const roomCode = (req.params.roomCode || "").toUpperCase();
 
 		if (!name)
 			return res.status(400).json({ error: "Nome de treinador inválido." });
-		if (!password)
-			return res.status(400).json({ error: "A palavra-passe é obrigatória." });
 		if (!/^[A-Z0-9]{4,8}$/.test(roomCode))
 			return res.status(400).json({ error: "Código de sala inválido." });
 
-		const authResult = await verifyManager(name, password);
-		if (!authResult.ok)
-			return res.status(401).json({ error: authResult.error });
+		const sessionName = await getSessionNameFromReq(req);
+		if (!sessionName || sessionName.toLowerCase() !== name.toLowerCase())
+			return res.status(401).json({ error: "Sessão inválida." });
 
 		const myRooms = await getManagerRooms(name);
 		if (!myRooms.includes(roomCode)) {
@@ -408,14 +420,21 @@ app.post("/auth/login", apiLimiter, async (req, res) => {
 		const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
 		const password =
 			typeof req.body?.password === "string" ? req.body.password : "";
-		if (!name)
-			return res.status(400).json({ error: "Nome de treinador inválido." });
-		if (!password)
-			return res.status(400).json({ error: "A palavra-passe é obrigatória." });
+		if (!name || !password)
+			return res.status(400).json({ error: "Credenciais inválidas." });
 		const authResult = await verifyManager(name, password);
 		if (!authResult.ok)
-			return res.status(401).json({ error: authResult.error });
-		return res.json({ ok: true, name });
+			// Erro genérico para não revelar quais contas existem (anti-enumeração).
+			return res.status(401).json({ error: "Credenciais inválidas." });
+		const session = await createSession(name);
+		if (!session)
+			return res.status(500).json({ error: "Erro interno de autenticação." });
+		return res.json({
+			ok: true,
+			name,
+			token: session.token,
+			expiresAt: session.expiresAt,
+		});
 	} catch (error) {
 		console.error("[/auth/login] Error:", error.message);
 		return res.status(500).json({ error: "Erro interno de autenticação." });
@@ -427,21 +446,42 @@ app.post("/auth/register", apiLimiter, async (req, res) => {
 		const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
 		const password =
 			typeof req.body?.password === "string" ? req.body.password : "";
-		if (!name)
-			return res.status(400).json({ error: "Nome de treinador inválido." });
-		if (!password)
-			return res.status(400).json({ error: "A palavra-passe é obrigatória." });
+		if (!name || !password)
+			return res.status(400).json({ error: "Credenciais inválidas." });
+		if (password.length < 3)
+			return res.status(400).json({
+				error: "A palavra-passe deve ter pelo menos 3 caracteres.",
+			});
 		const authResult = await createManager(name, password);
 		if (!authResult.ok)
 			return res.status(409).json({ error: authResult.error });
-		return res.json({ ok: true, name });
+		const session = await createSession(name);
+		if (!session)
+			return res.status(500).json({ error: "Erro interno de autenticação." });
+		return res.json({
+			ok: true,
+			name,
+			token: session.token,
+			expiresAt: session.expiresAt,
+		});
 	} catch (error) {
 		console.error("[/auth/register] Error:", error.message);
 		return res.status(500).json({ error: "Erro interno de autenticação." });
 	}
 });
 
-app.get("/auth/manager-info", async (req, res) => {
+app.post("/auth/logout", apiLimiter, async (req, res) => {
+	try {
+		const token = typeof req.body?.token === "string" ? req.body.token : "";
+		if (token) await destroySession(token);
+		return res.json({ ok: true });
+	} catch (error) {
+		console.error("[/auth/logout] Error:", error.message);
+		return res.json({ ok: true });
+	}
+});
+
+app.get("/auth/manager-info", apiLimiter, async (req, res) => {
 	try {
 		const name =
 			typeof req.query?.name === "string" ? req.query.name.trim() : "";
@@ -500,6 +540,8 @@ app.post("/auth/change-password", apiLimiter, async (req, res) => {
 				});
 		const result = await changePassword(name, currentPassword, newPassword);
 		if (!result.ok) return res.status(400).json({ error: result.error });
+		// Mudança de palavra-passe revoga todas as sessões (re-login obrigatório).
+		await destroySessionsForManager(name);
 		return res.json({ ok: true });
 	} catch (error) {
 		console.error("[/auth/change-password] Error:", error.message);
@@ -507,7 +549,7 @@ app.post("/auth/change-password", apiLimiter, async (req, res) => {
 	}
 });
 
-app.get("/auth/avatar-seed", async (req, res) => {
+app.get("/auth/avatar-seed", apiLimiter, async (req, res) => {
 	try {
 		const name =
 			typeof req.query?.name === "string" ? req.query.name.trim() : "";
@@ -521,12 +563,15 @@ app.get("/auth/avatar-seed", async (req, res) => {
 	}
 });
 
-app.post("/auth/avatar-seed", async (req, res) => {
+app.post("/auth/avatar-seed", apiLimiter, async (req, res) => {
 	try {
 		const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
 		const seed = typeof req.body?.seed === "string" ? req.body.seed.trim() : "";
 		if (!name)
 			return res.status(400).json({ error: "Nome de treinador inválido." });
+		const sessionName = await getSessionNameFromReq(req);
+		if (!sessionName || sessionName.toLowerCase() !== name.toLowerCase())
+			return res.status(401).json({ error: "Sessão inválida." });
 		const result = await setAvatarSeed(name, seed);
 		if (!result.ok) return res.status(500).json({ error: "Erro ao guardar." });
 		return res.json({ ok: true });
@@ -536,11 +581,14 @@ app.post("/auth/avatar-seed", async (req, res) => {
 	}
 });
 
-app.post("/auth/delete-account", async (req, res) => {
+app.post("/auth/delete-account", apiLimiter, async (req, res) => {
 	try {
 		const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
 		if (!name)
 			return res.status(400).json({ error: "Nome de treinador inválido." });
+		const sessionName = await getSessionNameFromReq(req);
+		if (!sessionName || sessionName.toLowerCase() !== name.toLowerCase())
+			return res.status(401).json({ error: "Sessão inválida." });
 		const result = await deleteManager(name);
 		if (!result.ok) return res.status(500).json({ error: result.error });
 		return res.json({ ok: true });
@@ -550,7 +598,7 @@ app.post("/auth/delete-account", async (req, res) => {
 	}
 });
 
-app.post("/auth/update-profile", async (req, res) => {
+app.post("/auth/update-profile", apiLimiter, async (req, res) => {
 	try {
 		const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
 		// Only include fields that are actually provided (not undefined)
@@ -562,6 +610,9 @@ app.post("/auth/update-profile", async (req, res) => {
 				: undefined;
 		if (!name)
 			return res.status(400).json({ error: "Nome de treinador inválido." });
+		const sessionName = await getSessionNameFromReq(req);
+		if (!sessionName || sessionName.toLowerCase() !== name.toLowerCase())
+			return res.status(401).json({ error: "Sessão inválida." });
 		const result = await updateManagerProfile(name, email, birthYear);
 		if (!result.ok) return res.status(500).json({ error: result.error });
 		return res.json({ ok: true });
@@ -682,6 +733,7 @@ const cupFlowHelpers = createCupFlowHelpers({
 	getPlayerList,
 	emitPresence,
 	applyTrainingBonuses,
+	applyPostMatchQualityEvolution,
 	resumeAllPausedAuctions,
 });
 
@@ -751,7 +803,7 @@ io.on("connection", (socket) => {
 
 	registerSessionSocketHandlers(socket, {
 		io,
-		verifyOrCreateManager,
+		verifySession,
 		getGame,
 		recordRoomAccess,
 		getRoomCoaches,

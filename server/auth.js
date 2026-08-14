@@ -16,6 +16,7 @@ const sqlite3 = require("sqlite3").verbose();
 const bcrypt = require("bcryptjs");
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 
 // ── Cache de sessão em memória ──────────────────────────────────────────────────
 // Evita re-executar bcrypt (72-141ms) em cada reconexão do socket.
@@ -23,6 +24,12 @@ const fs = require("fs");
 // Seguro para um jogo: a memória do servidor não é acessível aos utilizadores.
 const authCache = new Map(); // name_lower → { password, expiry }
 const AUTH_CACHE_TTL = 10 * 60 * 1000; // 10 minutos
+
+// ── Sessões por token ────────────────────────────────────────────────────────────
+// Substituem a persistência de passwords em plain text no localStorage do cliente.
+// Tokens são persistidos em accounts.db (sobrevivem a reinícios do servidor),
+// têm TTL e são revogáveis (logout / mudança de password / apagar conta).
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
 
 function authCacheGet(name, password) {
 	const key = name.toLowerCase();
@@ -123,6 +130,23 @@ db.serialize(() => {
 		(err) => {
 			if (err) {
 				// Column already exists — ignore
+			}
+		},
+	);
+	// Session tokens (persistent across server restarts)
+	db.run(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      token        TEXT PRIMARY KEY,
+      manager_name TEXT NOT NULL COLLATE NOCASE,
+      created_at   INTEGER NOT NULL,
+      expires_at   INTEGER NOT NULL
+    )
+  `);
+	db.run(
+		"CREATE INDEX IF NOT EXISTS idx_sessions_manager ON sessions(manager_name)",
+		(err) => {
+			if (err) {
+				// Index already exists — ignore
 			}
 		},
 	);
@@ -257,6 +281,12 @@ function createManager(name, password) {
 
 	if (!normalizedName || !normalizedPassword) {
 		return Promise.resolve({ ok: false, error: "Credenciais inválidas." });
+	}
+	if (normalizedPassword.length < 3) {
+		return Promise.resolve({
+			ok: false,
+			error: "A palavra-passe deve ter pelo menos 3 caracteres.",
+		});
 	}
 
 	return new Promise((resolve) => {
@@ -600,6 +630,10 @@ function deleteManager(name) {
 				[normalizedName],
 			);
 			db.run(
+				"DELETE FROM sessions WHERE manager_name = ? COLLATE NOCASE",
+				[normalizedName],
+			);
+			db.run(
 				"DELETE FROM managers WHERE name = ? COLLATE NOCASE",
 				[normalizedName],
 				(err) => {
@@ -611,6 +645,96 @@ function deleteManager(name) {
 				},
 			);
 		});
+	});
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Session tokens (replacement for plain-text passwords in localStorage)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Create a new session token for a manager (persisted in accounts.db).
+ *
+ * @param {string} name
+ * @param {number} [ttlMs]
+ * @returns {Promise<{token: string, expiresAt: number} | null>}
+ */
+function createSession(name, ttlMs = SESSION_TTL_MS) {
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName) return Promise.resolve(null);
+	const token = crypto.randomBytes(32).toString("hex");
+	const now = Date.now();
+	const expiresAt = now + ttlMs;
+	return new Promise((resolve) => {
+		db.run(
+			"INSERT INTO sessions (token, manager_name, created_at, expires_at) VALUES (?, ?, ?, ?)",
+			[token, normalizedName, now, expiresAt],
+			(err) => {
+				if (err) {
+					console.error("[auth] createSession error:", err.message);
+					return resolve(null);
+				}
+				resolve({ token, expiresAt });
+			},
+		);
+	});
+}
+
+/**
+ * Validate a session token and return the owning manager name.
+ * Expired tokens are deleted lazily.
+ *
+ * @param {string} token
+ * @returns {Promise<{ok: boolean, name?: string, expiresAt?: number}>}
+ */
+function verifySession(token) {
+	if (!token || typeof token !== "string" || token.length < 16) {
+		return Promise.resolve({ ok: false });
+	}
+	return new Promise((resolve) => {
+		db.get(
+			"SELECT manager_name, expires_at FROM sessions WHERE token = ?",
+			[token],
+			async (err, row) => {
+				if (err || !row) return resolve({ ok: false });
+				if (row.expires_at < Date.now()) {
+					await destroySession(token);
+					return resolve({ ok: false });
+				}
+				resolve({ ok: true, name: row.manager_name, expiresAt: row.expires_at });
+			},
+		);
+	});
+}
+
+/**
+ * Delete a single session token.
+ *
+ * @param {string} token
+ * @returns {Promise<void>}
+ */
+function destroySession(token) {
+	if (!token || typeof token !== "string") return Promise.resolve();
+	return new Promise((resolve) => {
+		db.run("DELETE FROM sessions WHERE token = ?", [token], () => resolve());
+	});
+}
+
+/**
+ * Delete all sessions for a manager (used on password change / account delete).
+ *
+ * @param {string} name
+ * @returns {Promise<void>}
+ */
+function destroySessionsForManager(name) {
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName) return Promise.resolve();
+	return new Promise((resolve) => {
+		db.run(
+			"DELETE FROM sessions WHERE manager_name = ? COLLATE NOCASE",
+			[normalizedName],
+			() => resolve(),
+		);
 	});
 }
 
@@ -1016,6 +1140,11 @@ module.exports = {
 	setAvatarSeed,
 	updateManagerProfile,
 	deleteManager,
+	// Session tokens
+	createSession,
+	verifySession,
+	destroySession,
+	destroySessionsForManager,
 	// Admin functions
 	adminListUsers,
 	adminChangePassword,

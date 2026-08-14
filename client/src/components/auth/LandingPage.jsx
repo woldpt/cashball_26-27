@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * @typedef {Object} LandingPageProps
@@ -28,6 +28,7 @@ import { useEffect, useRef } from "react";
  * @property {string|null} joinMode
  * @property {function} handleLogout
  * @property {Object|null} me - The user object (to show reconnection status)
+ * @property {string|null} token - The session token (used for authenticated API calls)
  * @property {Array} availableSaves - The list of available saves
  * @property {function} setAvailableSaves
  * @property {string} backendUrl
@@ -117,10 +118,15 @@ const LandingPage = ({
 	joinMode,
 	handleLogout,
 	me,
+	token,
 	availableSaves,
 	setAvailableSaves,
 	backendUrl,
 }) => {
+	const [showLoginPassword, setShowLoginPassword] = useState(false);
+	const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
 	// 1. Reconnecting State
 	if (me && !me.teamId) {
 		return (
@@ -153,6 +159,8 @@ const LandingPage = ({
 
 	const registerPasswordMismatch =
 		confirmPassword !== "" && password !== confirmPassword;
+
+	const passwordTooShort = password !== "" && password.length < 3;
 
 	return (
 		<div className="min-h-screen bg-[#060b08] text-white flex flex-col relative overflow-hidden pb-16">
@@ -332,6 +340,7 @@ const LandingPage = ({
 												</label>
 												<input
 													type="text"
+													autoComplete="username"
 													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
 													value={name}
 													placeholder="Ex: Cobra"
@@ -345,19 +354,37 @@ const LandingPage = ({
 												<label className="block text-[10px] uppercase text-white/40 mb-2 font-bold tracking-wider">
 													Palavra-passe
 												</label>
-												<input
-													type="password"
-													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
-													value={password}
-													placeholder="••••••••"
-													onChange={(e) => {
-														setPassword(e.target.value);
-														setAuthError("");
-													}}
-													onKeyDown={(e) => {
-														if (e.key === "Enter") handleAuthenticate("login");
-													}}
-												/>
+												<div className="relative">
+													<input
+														type={showLoginPassword ? "text" : "password"}
+														autoComplete="current-password"
+														className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+														value={password}
+														placeholder="••••••••"
+														onChange={(e) => {
+															setPassword(e.target.value);
+															setAuthError("");
+														}}
+														onKeyDown={(e) => {
+															if (e.key === "Enter") handleAuthenticate("login");
+														}}
+													/>
+													<button
+														type="button"
+														tabIndex={-1}
+														onClick={() => setShowLoginPassword((s) => !s)}
+														className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors p-1"
+														title={
+															showLoginPassword
+																? "Ocultar palavra-passe"
+																: "Mostrar palavra-passe"
+														}
+													>
+														<span className="material-symbols-outlined text-[18px] leading-none">
+															{showLoginPassword ? "visibility_off" : "visibility"}
+														</span>
+													</button>
+												</div>
 											</div>
 										</div>
 										<button
@@ -425,6 +452,7 @@ const LandingPage = ({
 												</label>
 												<input
 													type="text"
+													autoComplete="username"
 													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
 													value={name}
 													placeholder="Ex: Amorim"
@@ -438,40 +466,81 @@ const LandingPage = ({
 												<label className="block text-[10px] uppercase text-white/40 mb-2 font-bold tracking-wider">
 													Palavra-passe
 												</label>
-												<input
-													type="password"
-													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
-													value={password}
-													placeholder="••••••••"
-													onChange={(e) => {
-														setPassword(e.target.value);
-														setAuthError("");
-													}}
-												/>
+												<div className="relative">
+													<input
+														type={showRegisterPassword ? "text" : "password"}
+														autoComplete="new-password"
+														className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+														value={password}
+														placeholder="••••••••"
+														onChange={(e) => {
+															setPassword(e.target.value);
+															setAuthError("");
+														}}
+													/>
+													<button
+														type="button"
+														tabIndex={-1}
+														onClick={() => setShowRegisterPassword((s) => !s)}
+														className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors p-1"
+														title={
+															showRegisterPassword
+																? "Ocultar palavra-passe"
+																: "Mostrar palavra-passe"
+														}
+													>
+														<span className="material-symbols-outlined text-[18px] leading-none">
+															{showRegisterPassword ? "visibility_off" : "visibility"}
+														</span>
+													</button>
+												</div>
+												{passwordTooShort && (
+													<p className="text-amber-400 text-xs mt-1 font-bold">
+														A palavra-passe deve ter pelo menos 3 caracteres.
+													</p>
+												)}
 											</div>
 											<div>
 												<label className="block text-[10px] uppercase text-white/40 mb-2 font-bold tracking-wider">
 													Confirmar Palavra-passe
 												</label>
-												<input
-													type="password"
-													className={`w-full bg-white/[0.04] border p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 ${
-														registerPasswordMismatch
-															? "border-red-500/60 focus:ring-red-500/30 focus:border-red-500/60"
-															: "border-white/[0.08] focus:border-green-500/50 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
-													}`}
-													value={confirmPassword}
-													placeholder="••••••••"
-													onChange={(e) => {
-														setConfirmPassword(e.target.value);
-														setAuthError("");
-													}}
-													onKeyDown={(e) => {
-														if (e.key === "Enter" && !registerPasswordMismatch) {
-															handleAuthenticate("register");
+												<div className="relative">
+													<input
+														type={showConfirmPassword ? "text" : "password"}
+														autoComplete="new-password"
+														className={`w-full bg-white/[0.04] border p-4 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 ${
+															registerPasswordMismatch
+																? "border-red-500/60 focus:ring-red-500/30 focus:border-red-500/60"
+																: "border-white/[0.08] focus:border-green-500/50 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+														}`}
+														value={confirmPassword}
+														placeholder="••••••••"
+														onChange={(e) => {
+															setConfirmPassword(e.target.value);
+															setAuthError("");
+														}}
+														onKeyDown={(e) => {
+															if (e.key === "Enter" && !registerPasswordMismatch) {
+																handleAuthenticate("register");
+															}
+														}}
+													/>
+													<button
+														type="button"
+														tabIndex={-1}
+														onClick={() => setShowConfirmPassword((s) => !s)}
+														className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors p-1"
+														title={
+															showConfirmPassword
+																? "Ocultar palavra-passe"
+																: "Mostrar palavra-passe"
 														}
-													}}
-												/>
+													>
+														<span className="material-symbols-outlined text-[18px] leading-none">
+															{showConfirmPassword ? "visibility_off" : "visibility"}
+														</span>
+													</button>
+												</div>
 												{registerPasswordMismatch && (
 													<p className="text-red-400 text-xs mt-1 font-bold">
 														As palavras-passe não coincidem.
@@ -483,7 +552,7 @@ const LandingPage = ({
 											onClick={() => handleAuthenticate("register")}
 											disabled={
 												!name.trim() ||
-												!password ||
+												password.length < 3 ||
 												authSubmitting ||
 												registerPasswordMismatch
 											}
@@ -639,6 +708,7 @@ const LandingPage = ({
 												</label>
 												<input
 													type="text"
+													autoComplete="off"
 													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-3.5 rounded-xl text-white text-base font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 uppercase"
 													value={roomCode}
 													placeholder="INVERNO"
@@ -727,7 +797,7 @@ const LandingPage = ({
 																				},
 																				body: JSON.stringify({
 																					name,
-																					password,
+																					token,
 																				}),
 																			},
 																		)
@@ -776,6 +846,7 @@ const LandingPage = ({
 												</label>
 												<input
 													type="text"
+													autoComplete="off"
 													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-3.5 rounded-xl text-white text-base font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 uppercase tracking-widest"
 													value={roomCode}
 													placeholder="INVERNO"

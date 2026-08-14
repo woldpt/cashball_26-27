@@ -1336,7 +1336,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                                 "cashballSession",
                                 JSON.stringify({
                                   name: s.name,
-                                  password: s.password,
+                                  token: s.token,
                                   roomCode: "",
                                 }),
                               );
