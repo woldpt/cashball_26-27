@@ -19,7 +19,6 @@ import { formatCurrency } from "../utils/formatters.js";
  *   showTicketBreakdown: boolean,
  *   setShowTicketBreakdown: function,
  *   setGameDialog: function,
- *   teamInfo: object,
  * }} props
  */
 export function FinancesTab({
@@ -39,7 +38,6 @@ export function FinancesTab({
   showTicketBreakdown,
   setShowTicketBreakdown,
   setGameDialog,
-  teamInfo,
 }) {
   const totalSeasonIncome =
     (financeData?.totalTicketRevenue || 0) +
@@ -614,80 +612,6 @@ export function FinancesTab({
               </button>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* ── ESTÁDIO ───────────────────────────────────────────────────── */}
-      <div className="bg-surface-container-low rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-outline-variant/10 flex justify-between items-center">
-          <h3 className="font-headline text-xs uppercase tracking-widest flex items-center gap-2">
-            <span className="material-symbols-outlined text-tertiary text-base">
-              stadium
-            </span>
-            Expansão do Estádio
-          </h3>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-surface rounded-md border border-outline-variant/15 p-4 flex flex-col gap-1">
-              <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
-                Capacidade Actual
-              </span>
-              <span className="text-on-surface font-headline font-bold text-2xl">
-                {(
-                  teamInfo?.stadium_capacity || 10000
-                ).toLocaleString("pt-PT")}
-              </span>
-              <span className="text-on-surface-variant text-[10px]">
-                lugares
-              </span>
-            </div>
-            <div className="bg-surface rounded-md border border-outline-variant/15 p-4 flex flex-col gap-1">
-              <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
-                Receita máx./jogo
-              </span>
-              <span className="text-primary font-headline font-bold text-xl">
-                {formatCurrency(capacityRevPerGame)}
-              </span>
-              <span className="text-on-surface-variant text-[10px]">
-                15€ × lotação
-              </span>
-            </div>
-            <div className="bg-surface rounded-md border border-outline-variant/15 p-4 flex flex-col gap-1 col-span-2 md:col-span-1">
-              <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
-                Custo de Expansão
-              </span>
-              <span className="text-tertiary font-headline font-bold text-xl">
-                300.000€
-              </span>
-              <span className="text-on-surface-variant text-[10px]">
-                +5.000 lugares por obra
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              setGameDialog({
-                mode: "confirm",
-                title: "Expandir Estádio — 300.000€",
-                description: `Aumenta a capacidade em 5.000 lugares. Receita máxima por jogo sobe ${formatCurrency(5000 * 15)}.`,
-                confirmLabel: "Confirmar Expansão",
-                onConfirm: () =>
-                  socket.emit("buildStadium"),
-                onCancel: () => {},
-              });
-            }}
-            disabled={currentBudget < 300000}
-            className="w-full bg-primary hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed text-on-primary font-headline font-bold py-3 rounded text-sm transition-all uppercase tracking-wide"
-          >
-            Expandir Estádio — 300.000€
-          </button>
-          {currentBudget < 300000 && (
-            <p className="text-on-surface-variant text-[10px] text-center mt-2 uppercase tracking-wider opacity-60">
-              Saldo insuficiente · faltam{" "}
-              {formatCurrency(300000 - currentBudget)}
-            </p>
-          )}
         </div>
       </div>
     </div>

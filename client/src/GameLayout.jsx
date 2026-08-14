@@ -30,6 +30,7 @@ import { CupTab } from "./views/CupTab.jsx";
 import { CalendarioTab } from "./views/CalendarioTab.jsx";
 import { ClubTab } from "./views/ClubTab.jsx";
 import { FinancesTab } from "./views/FinancesTab.jsx";
+import { StadiumTab } from "./views/StadiumTab.jsx";
 import { PlayersTab } from "./views/PlayersTab.jsx";
 import { TeamSquadView } from "./views/TeamSquadView.jsx";
 import { TacticsView } from "./views/TacticsView.jsx";
@@ -504,6 +505,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             {[
               { key: "club", label: "Clube", icon: "groups_3" },
               { key: "finances", label: "Finanças", icon: "payments" },
+              { key: "stadium", label: "Estádio", icon: "stadium" },
               { key: "players", label: "Plantel", icon: "group" },
               { key: "training", label: "Treino", icon: "fitness_center" },
               {
@@ -664,6 +666,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         key: "finances",
                         label: "Finanças",
                         icon: "payments",
+                      },
+                      {
+                        key: "stadium",
+                        label: "Estádio",
+                        icon: "stadium",
                       },
                       { key: "players", label: "Plantel", icon: "group" },
                       {
@@ -1210,7 +1217,16 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         showTicketBreakdown={showTicketBreakdown}
                         setShowTicketBreakdown={setShowTicketBreakdown}
                         setGameDialog={setGameDialog}
+                      />
+                    )}
+
+                    {activeTab === "stadium" && (
+                      <StadiumTab
                         teamInfo={teamInfo}
+                        currentBudget={currentBudget}
+                        capacityRevPerGame={capacityRevPerGame}
+                        financeData={financeData}
+                        setGameDialog={setGameDialog}
                       />
                     )}
 
