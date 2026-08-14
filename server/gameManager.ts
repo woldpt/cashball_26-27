@@ -99,6 +99,7 @@ function ensurePlayerSchema(
       ["aggressiveness", "INTEGER DEFAULT 3"],
       ["prev_skill", "INTEGER DEFAULT NULL"],
       ["last_auctioned_matchweek", "INTEGER DEFAULT 0"],
+      ["potential", "INTEGER DEFAULT NULL"],
     ];
 
     const missing = required.filter(([name]) => !existing.has(name));
@@ -169,9 +170,7 @@ function ensurePlayerSchema(
               }
 
               if (
-                missing.some(
-                  ([n]: [string, string]) => n === "joined_matchweek",
-                )
+                missing.some(([n]: [string, string]) => n === "joined_matchweek")
               ) {
                 backfillSteps.push((next) => {
                   // Backfill all players with a team as "joined at matchweek 1"
@@ -182,6 +181,26 @@ function ensurePlayerSchema(
                       if (backfillErr)
                         console.warn(
                           "[gameManager] joined_matchweek backfill failed:",
+                          backfillErr.message,
+                        );
+                      next();
+                    },
+                  );
+                });
+              }
+
+              if (
+                missing.some(([n]: [string, string]) => n === "potential")
+              ) {
+                // Talent ceiling, seeded once. Stars get high headroom (4-8),
+                // the rest a small chance of growth (0-3). Never below current skill.
+                backfillSteps.push((next) => {
+                  db.run(
+                    `UPDATE players SET potential = MIN(50, COALESCE(skill, 30) + CASE WHEN is_star = 1 THEN 4 + (ABS(RANDOM()) % 5) ELSE (ABS(RANDOM()) % 4) END) WHERE potential IS NULL`,
+                    (backfillErr) => {
+                      if (backfillErr)
+                        console.warn(
+                          "[gameManager] potential backfill failed:",
                           backfillErr.message,
                         );
                       next();

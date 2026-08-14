@@ -4,13 +4,13 @@ import type { ActiveGame } from "./types";
  * Training bonuses application.
  *
  * Bonuses:
- *  - Position focus (GR/Defesas/Médios/Avançados): +0.5 skill (accumulator)
+ *  - Position focus (GR/Defesas/Médios/Avançados): +1.0 skill (accumulator)
  *  - Forma:        +10 form (direct, INTEGER column tolerates this)
- *  - Resistência:  +0.2 resistance (accumulator)
+ *  - Resistência:  +0.4 resistance (accumulator)
  *
  * Skill and resistance use accumulator columns (training_skill_progress,
  * training_resistance_progress) because the underlying columns are INTEGER —
- * adding 0.5/0.2 directly would be silently truncated by SQLite.
+ * adding 1.0/0.4 directly would be silently truncated by SQLite.
  *
  * Only players that appeared in at least one fixture lineup receive bonuses.
  * Junior GRs (negative ids) are filtered out.
@@ -63,7 +63,7 @@ export function createTrainingHelpers(_deps: { io: any }) {
 
           const idPlaceholders = Array(playerIds.size).fill("?").join(",");
           game.db.all(
-            `SELECT id, team_id, position, skill, form, resistance,
+            `SELECT id, team_id, position, skill, form, resistance, potential,
                     training_skill_progress AS skill_progress,
                     training_resistance_progress AS resistance_progress
              FROM players
@@ -121,7 +121,7 @@ export function createTrainingHelpers(_deps: { io: any }) {
                 } else if (focus === "Resistência") {
                   const oldRes = player.resistance ?? 3;
                   const oldProg = player.resistance_progress ?? 0;
-                  let newProg = oldProg + 0.2;
+                  let newProg = oldProg + 0.4;
                   let newRes = oldRes;
                   while (newProg >= 1.0 && newRes < 5) {
                     newRes += 1;
@@ -134,7 +134,7 @@ export function createTrainingHelpers(_deps: { io: any }) {
                     attribute: "resistance",
                     oldValue: oldRes,
                     newValue: newRes,
-                    delta: 0.2,
+                    delta: 0.4,
                     focus,
                   });
                 } else {
@@ -146,22 +146,26 @@ export function createTrainingHelpers(_deps: { io: any }) {
                     focus === "Avançados" ? "ATA" : null;
                   if (!targetPos || player.position !== targetPos) continue;
 
+                  const skillCap =
+                    player.potential != null
+                      ? Math.min(50, player.potential)
+                      : 50;
                   const oldSkill = player.skill ?? 0;
                   const oldProg = player.skill_progress ?? 0;
-                  let newProg = oldProg + 0.5;
+                  let newProg = oldProg + 1.0;
                   let newSkill = oldSkill;
-                  while (newProg >= 1.0 && newSkill < 99) {
+                  while (newProg >= 1.0 && newSkill < skillCap) {
                     newSkill += 1;
                     newProg -= 1.0;
                   }
-                  if (newSkill >= 99) newProg = 0;
+                  if (newSkill >= skillCap) newProg = 0;
                   upd.fields.training_skill_progress = Math.round(newProg * 100) / 100;
                   if (newSkill !== oldSkill) upd.fields.skill = newSkill;
                   upd.history.push({
                     attribute: "skill",
                     oldValue: oldSkill,
                     newValue: newSkill,
-                    delta: 0.5,
+                    delta: 1.0,
                     focus,
                   });
                 }

@@ -66,6 +66,9 @@
       "socketTransferHandlers.ts",
       "socketTransferHandlers.ts",
       "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
       "socketTransferHandlers.ts"
     ],
     "receive": []
@@ -302,6 +305,9 @@
   },
   "joinError": {
     "emit": [
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts",
       "socketSessionHandlers.ts",
       "socketSessionHandlers.ts",
       "socketSessionHandlers.ts",

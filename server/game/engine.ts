@@ -1818,9 +1818,41 @@ async function applyPostMatchQualityEvolution(
     }
 
     // ── Player skill evolution ─────────────────────────────────────────────
-    db.all(
-      "SELECT id, team_id, position, skill, injury_until_matchweek, suspension_until_matchweek FROM players WHERE team_id IS NOT NULL ORDER BY team_id, id",
-      (err, players) => {
+    // Load the season's results and the players in one serialized batch so the
+    // losing streak of each team is ready when computing per-player deltas.
+    db.serialize(() => {
+      const teamLossStreak = new Map<number, number>();
+      const lastTeamResult = new Map<number, string>();
+      db.all(
+        "SELECT home_team_id AS home, away_team_id AS away, home_score, away_score FROM matches WHERE season = ? ORDER BY matchweek, id",
+        [season],
+        (streakErr, seasonMatches) => {
+          if (streakErr) {
+            console.error("[engine] evolution: failed to load season matches:", streakErr);
+          }
+          for (const m of seasonMatches || []) {
+            const homeRes = m.home_score > m.away_score ? "W" : m.home_score < m.away_score ? "L" : "D";
+            const awayRes = m.away_score > m.home_score ? "W" : m.away_score < m.home_score ? "L" : "D";
+            for (const [tid, res] of [
+              [m.home, homeRes],
+              [m.away, awayRes],
+            ] as Array<[number, string]>) {
+              if (res === "L") {
+                teamLossStreak.set(
+                  tid,
+                  (lastTeamResult.get(tid) === "L" ? teamLossStreak.get(tid) || 0 : 0) + 1,
+                );
+              } else {
+                teamLossStreak.set(tid, 0);
+              }
+              lastTeamResult.set(tid, res);
+            }
+          }
+        },
+      );
+      db.all(
+        "SELECT id, team_id, position, skill, potential, injury_until_matchweek, suspension_until_matchweek FROM players WHERE team_id IS NOT NULL ORDER BY team_id, id",
+        (err, players) => {
         if (err || !players || players.length === 0) {
           resolve();
           return;
@@ -1883,17 +1915,34 @@ async function applyPostMatchQualityEvolution(
           const diff = avgSkill - (player.skill || 0);
           const teamResult = teamResults.get(player.team_id) || "D";
 
+          const potential =
+            player.potential != null ? Math.min(50, player.potential) : 50;
+          // Cabeçote até ao teto de potencial (talent ceiling)
+          const room = potential - (player.skill || 0);
+
           let delta = 0;
+
+          // Acima do teto de potencial: deriva suave de retorno à média,
+          // compensável por performance forte (golos / clean sheet)
+          if (room < 0 && Math.random() < 0.15) {
+            delta -= 1;
+          }
 
           // Convivência: jogadores abaixo da média do plantel evoluem ao
           // conviver com colegas mais talentosos (spec: "evoluem se
-          // conviverem com jogadores mais talentosos")
-          if (diff >= 1 && Math.random() < Math.min(0.75, 0.20 + diff / 20)) {
+          // conviverem com jogadores mais talentosos").
+          // Só aplica enquanto houver cabeçote até ao potencial.
+          if (
+            room > 0 &&
+            diff >= 1 &&
+            Math.random() < Math.min(0.75, 0.20 + diff / 20)
+          ) {
             delta += 1;
           }
 
           // Vitória reforça evolução para jogadores abaixo da média
           if (
+            room > 0 &&
             teamResult === "W" &&
             diff >= 0 &&
             Math.random() < Math.min(0.45, 0.10 + diff / 50)
@@ -1910,10 +1959,23 @@ async function applyPostMatchQualityEvolution(
               0.04 + Math.max(0, -diff) / 150,
             );
             if (Math.random() < lossPressure) delta -= 1;
+            // Derrotas consecutivas aumentam a pressão de decaimento
+            const streak = teamLossStreak.get(player.team_id) || 0;
+            if (
+              streak >= 2 &&
+              Math.random() < Math.min(0.20, 0.05 + 0.03 * (streak - 1))
+            ) {
+              delta -= 1;
+            }
           }
 
           // Empate contra equipa mais forte — pequena hipótese de evolução
-          if (teamResult === "D" && diff >= 4 && Math.random() < 0.20) {
+          if (
+            room > 0 &&
+            teamResult === "D" &&
+            diff >= 4 &&
+            Math.random() < 0.20
+          ) {
             delta += 1;
           }
 
@@ -1993,7 +2055,8 @@ updates.forEach((update) => {
           });
       });
     },
-  );
+    );
+    });
 });
 }
 

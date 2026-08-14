@@ -44,6 +44,12 @@ interface CupFlowDeps {
 		fixtures: any[],
 		completedCalendarIndex: number,
 	) => Promise<void>;
+	applyPostMatchQualityEvolution: (
+		db: any,
+		fixtures: any[],
+		currentMatchweek: number,
+		season: number,
+	) => Promise<void>;
 	resumeAllPausedAuctions: (game: ActiveGame) => void;
 }
 
@@ -64,8 +70,91 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		getPlayerList,
 		emitPresence,
 		applyTrainingBonuses,
+		applyPostMatchQualityEvolution,
 		resumeAllPausedAuctions,
 	} = deps;
+
+	// ─── OFF-SEASON AGING & IDLENESS ────────────────────────────────────────
+
+	/**
+	 * Aplica decaimento de fim de época (age-free). Os jogadores são eternos e
+	 * a base de dados é fixa, por isso não há envelhecimento nem incremento de
+	 * idade. Este é o freio sazonal que mantém o equilíbrio:
+	 *
+	 * Inatividade:
+	 *  - Jogadores com 0 games_played na época: 30% -1 skill
+	 *
+	 * Retorno à média:
+	 *  - Jogadores acima do teto de potencial: 25% -1 skill
+	 */
+	async function applyOffSeasonDecay(game: ActiveGame): Promise<void> {
+		return new Promise<void>((resolve) => {
+			game.db.all(
+				"SELECT id, team_id, skill, potential, games_played FROM players WHERE team_id IS NOT NULL",
+				(err, players) => {
+					if (err || !players || players.length === 0) {
+						resolve();
+						return;
+					}
+
+					const updates: Array<{ id: number; skill: number }> = [];
+					const season = game.season || 1;
+
+					for (const p of players) {
+						const skill = p.skill ?? 0;
+						const played = p.games_played ?? 0;
+						let delta = 0;
+
+						// ── Inatividade: quem não jogou a época decai ──
+						if (played === 0 && Math.random() < 0.30) {
+							delta -= 1;
+						}
+
+						// ── Acima do teto de potencial: retorno à média ──
+						const potential =
+							p.potential != null ? Math.min(50, p.potential) : 50;
+						if (skill > potential && Math.random() < 0.25) {
+							delta -= 1;
+						}
+
+						if (delta !== 0) {
+							const newSkill = Math.max(0, Math.min(50, skill + delta));
+							if (newSkill !== skill) {
+								updates.push({ id: p.id, skill: newSkill });
+							}
+						}
+					}
+
+					if (updates.length === 0) {
+						resolve();
+						return;
+					}
+
+					let remaining = updates.length;
+					game.db.serialize(() => {
+						game.db.run("UPDATE players SET prev_skill = NULL WHERE team_id IS NOT NULL");
+						for (const upd of updates) {
+							game.db.run(
+								"UPDATE players SET prev_skill = skill, skill = ? WHERE id = ?",
+								[upd.skill, upd.id],
+								() => {
+									// Snapshot after season-end decay
+									game.db.run(
+										"INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) VALUES (?, ?, ?, ?)",
+										[upd.id, game.matchweek, season, upd.skill],
+										() => {
+											remaining -= 1;
+											if (remaining === 0) resolve();
+										},
+									);
+								},
+							);
+						}
+					});
+				},
+			);
+		});
+	}
 
 	// ─── SEASON END ────────────────────────────────────────────────────────────
 
@@ -319,6 +408,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				});
 			}
 		}
+		// ── Off-season decay & idleness (age-free) ─────────────────────
+		// Runs BEFORE stats reset so games_played is still available
+		await applyOffSeasonDecay(game);
+
 		await dbRun("BEGIN");
 		try {
 			await dbRun(
@@ -1069,6 +1162,21 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			console.error(
 				`[${game.roomCode}] training (cup): error applying bonuses:`,
 				trainErr,
+			);
+		}
+
+		// Apply quality evolution for cup matches (same as league matches)
+		try {
+			await applyPostMatchQualityEvolution(
+				game.db,
+				fixtures,
+				game.matchweek,
+				game.season || 1,
+			);
+		} catch (evolveErr) {
+			console.error(
+				`[${game.roomCode}] evolution (cup): error applying quality evolution:`,
+				evolveErr,
 			);
 		}
 
