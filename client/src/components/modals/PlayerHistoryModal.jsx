@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { formatCurrency } from "../../utils/formatters.js";
 import { AggBadge } from "../shared/AggBadge.jsx";
 import { Badge } from "../shared/Badge.jsx";
@@ -92,6 +93,34 @@ export function PlayerHistoryModal({
   myBudget = 0,
   setGameDialog,
 }) {
+  // History API: push an entry when the modal opens so the browser back
+  // button closes it, keeping navigation state consistent.
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    const isOpen = !!playerHistoryModal;
+    if (isOpen && !wasOpen.current) {
+      window.history.pushState({ playerHistoryModal: true }, "");
+    }
+    wasOpen.current = isOpen;
+  }, [playerHistoryModal]);
+
+  useEffect(() => {
+    const onPopState = (e) => {
+      if (!e.state?.playerHistoryModal) {
+        setPlayerHistoryModal(null);
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [setPlayerHistoryModal]);
+
+  const closeModal = () => {
+    if (window.history.state?.playerHistoryModal) {
+      window.history.back();
+    }
+    setPlayerHistoryModal(null);
+  };
+
   if (!playerHistoryModal) return null;
 
   const { player, transfers: rawTransfers } = playerHistoryModal;
@@ -160,7 +189,7 @@ export function PlayerHistoryModal({
   return (
     <ModalShell
       visible={!!playerHistoryModal}
-      onClose={() => setPlayerHistoryModal(null)}
+      onClose={closeModal}
       z={MODAL_Z.default}
       variant="wide"
       dismissable
@@ -244,13 +273,13 @@ export function PlayerHistoryModal({
               </div>
             </div>
 
-            <button
-              type="button"
-              className="shrink-0 text-on-surface-variant hover:text-on-surface text-lg leading-none transition-colors"
-              onClick={() => setPlayerHistoryModal(null)}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={closeModal}
             >
-              ✕
-            </button>
+              ← Voltar
+            </Button>
           </div>
         </div>
 
@@ -311,7 +340,7 @@ export function PlayerHistoryModal({
                       }
                       onClick={() => {
                         openAuctionBid?.(player);
-                        setPlayerHistoryModal(null);
+                        closeModal();
                       }}
                     >
                       {canAfford
@@ -338,7 +367,7 @@ export function PlayerHistoryModal({
                           onConfirm: () => buyPlayer?.(player.id),
                           onCancel: () => {},
                         });
-                        setPlayerHistoryModal(null);
+                        closeModal();
                       }}
                     >
                       {canAfford ? "💰 Comprar Jogador" : "Saldo Insuficiente"}
@@ -366,7 +395,7 @@ export function PlayerHistoryModal({
                         }
                         onClick={() => {
                           renewPlayerContract?.(player);
-                          setPlayerHistoryModal(null);
+                          closeModal();
                         }}
                       >
                         📝 Renovar Contrato
@@ -384,7 +413,7 @@ export function PlayerHistoryModal({
                         }
                         onClick={() => {
                           listPlayerAuction?.(player);
-                          setPlayerHistoryModal(null);
+                          closeModal();
                         }}
                       >
                         🔨 Vender em Leilão
@@ -401,7 +430,7 @@ export function PlayerHistoryModal({
                           }
                           onClick={() => {
                             removeFromTransferList?.(player);
-                            setPlayerHistoryModal(null);
+                            closeModal();
                           }}
                         >
                           ✕ Retirar da Lista
@@ -418,7 +447,7 @@ export function PlayerHistoryModal({
                           }
                           onClick={() => {
                             listPlayerFixed?.(player);
-                            setPlayerHistoryModal(null);
+                            closeModal();
                           }}
                         >
                           🏷️ Listar para Transferência
