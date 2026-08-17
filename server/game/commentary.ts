@@ -717,28 +717,60 @@ function tacticStartPhrase(
 }
 
 // ── Pre-match betting intro ───────────────────────────────────────────────
-// Port of computeOdds from client/src/views/TacticsView.jsx so the betting
-// preview can be generated server-side as an intro event during the 5s pause.
+// Modelo determinístico baseado na força das equipas (divisão + posição).
+// É a fonte única de verdade: o nextMatchSummary e o evento de apostas do
+// minuto 1 usam esta mesma função, garantindo odds idênticas no TacticsView
+// e durante o jogo. Sem seed — o resultado depende apenas das equipas.
+//
+// A força combina a divisão (gap estrutural: uma equipa da 1ª divisão é muito
+// mais forte que uma da 4ª) com a posição dentro da divisão. Em jogos da Taça
+// a posição é desconhecida (null) → usa-se apenas a divisão.
+
+const ODDS_TEAM_COUNT = 8; // equipas por divisão
+const ODDS_DIVISION_BASE = [55, 40, 27, 15, 5]; // div 1..5
+const ODDS_HOME_ADVANTAGE = 3;
+const ODDS_MAX_ODDS = 67;
+const ODDS_MARGIN = 1.05;
+
+interface OddsTeam {
+  division?: number | null;
+  position?: number | null;
+}
+
+function oddsStrength(team: OddsTeam): number {
+  const division = Math.max(1, Math.min(5, Math.round(team?.division ?? 4)));
+  const base = ODDS_DIVISION_BASE[division - 1] ?? 15;
+  const position = team?.position ?? (ODDS_TEAM_COUNT + 1) / 2;
+  return base + ((ODDS_TEAM_COUNT + 1) / 2 - position) * 3;
+}
 
 export function computeMatchOdds(
-  homePos: number,
-  awayPos: number,
-  seed: number,
+  home: OddsTeam,
+  away: OddsTeam,
 ): { home: string; draw: string; away: string } {
-  const numTeams = 10;
-  let pHome = (numTeams + 1 - homePos) / numTeams;
-  let pAway = (numTeams + 1 - awayPos) / numTeams;
-  // Home advantage boost
-  pHome *= 1.18;
-  pAway *= 0.85;
-  let pDraw = 0.28 + ((seed % 7) - 3) * 0.01;
-  const total = pHome + pAway + pDraw;
-  pHome /= total;
-  pAway /= total;
-  pDraw /= total;
-  const margin = 1.05;
+  const sHome = oddsStrength(home);
+  const sAway = oddsStrength(away);
+  const diff = sHome + ODDS_HOME_ADVANTAGE - sAway;
+
+  const expHome = Math.pow(10, diff / 45);
+  const expAway = Math.pow(10, -diff / 45);
+  const winHome = expHome / (expHome + expAway);
+  const winAway = expAway / (expHome + expAway);
+
+  // Empate mais provável quando as equipas estão equilibradas.
+  const closeness = Math.exp(-Math.abs(diff) / 30);
+  const pDraw = 0.22 + 0.08 * closeness;
+
+  let pHome = winHome * (1 - pDraw);
+  let pAway = winAway * (1 - pDraw);
+
+  // Limitar o underdog para evitar odds absurdas (ex.: 4ª divisão vs 1ª).
+  const minP = 1 / (ODDS_MAX_ODDS * ODDS_MARGIN);
+  if (pHome < minP) pHome = minP;
+  if (pAway < minP) pAway = minP;
+
   const toOdds = (p: number) =>
-    p > 0.01 ? (Math.round((1 / (p * margin)) * 100) / 100).toFixed(2) : "—";
+    p > 0.01 ? (Math.round((1 / (p * ODDS_MARGIN)) * 100) / 100).toFixed(2) : "—";
   return { home: toOdds(pHome), draw: toOdds(pDraw), away: toOdds(pAway) };
 }
 

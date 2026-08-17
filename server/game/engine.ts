@@ -717,19 +717,23 @@ export function generateIntroEvents(
     });
   }
 
-  // Previsão de apostas (intro) — gerada do mesmo modo que o TacticsView,
-  // para que chegue ao cliente durante a pausa de 5s antes do minuto 1.
+  // Previsão de apostas (intro) — mesma função usada no nextMatchSummary,
+  // para que o card do TacticsView e o evento do minuto 1 tenham odds iguais.
   if (!fixture._bettingIntroShown) {
     const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
     const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
-    const homePos = (fixture.homeTeam as any)?.position ?? 8;
-    const awayPos = (fixture.awayTeam as any)?.position ?? 8;
-    const seed =
-      (fixture.season ?? 1) * 1000 +
-      (fixture.matchweek ?? 1) * 31 +
-      (fixture.homeTeamId ?? 0) +
-      (fixture.awayTeamId ?? 0);
-    const odds = computeMatchOdds(homePos, awayPos, seed);
+    const homeTeam = fixture.homeTeam as any;
+    const awayTeam = fixture.awayTeam as any;
+    const odds = computeMatchOdds(
+      {
+        division: homeTeam?.division ?? 4,
+        position: homeTeam?.position ?? null,
+      },
+      {
+        division: awayTeam?.division ?? 4,
+        position: awayTeam?.position ?? null,
+      },
+    );
     fixture.events.push({
       minute: 1,
       type: "betting",

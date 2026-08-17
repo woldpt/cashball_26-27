@@ -227,39 +227,9 @@ const WEATHER_LABELS = {
 };
 
 /**
- * Gera odds (1 X 2) a partir dos dados do próximo jogo.
- * @param {{ position: number|null }} team
- * @param {{ position: number|null }} opponent
- * @param {string} venue - "Casa" | "Fora"
- * @param {number} seed
- * @returns {{ home: string, draw: string, away: string }}
- */
-function computeOdds(team, opponent, venue, seed) {
-  const teamPos = team?.position ?? 8;
-  const oppPos = opponent?.position ?? 8;
-  const numTeams = 10;
-  // Base probabilities
-  let pHome = (numTeams + 1 - (venue === "Casa" ? teamPos : oppPos)) / numTeams;
-  let pAway = (numTeams + 1 - (venue === "Casa" ? oppPos : teamPos)) / numTeams;
-  // Home advantage boost
-  pHome *= venue === "Casa" ? 1.18 : 0.85;
-  pAway *= venue === "Fora" ? 1.18 : 0.85;
-  // Draw probability roughly ~0.28, adjusted
-  let pDraw = 0.28 + ((seed % 7) - 3) * 0.01;
-  // Normalize
-  const total = pHome + pAway + pDraw;
-  pHome /= total;
-  pAway /= total;
-  pDraw /= total;
-  // Apply bookmaker margin ~5%
-  const margin = 1.05;
-  const toOdds = (p) =>
-    p > 0.01 ? (Math.round((1 / (p * margin)) * 100) / 100).toFixed(2) : "—";
-  return { home: toOdds(pHome), draw: toOdds(pDraw), away: toOdds(pAway) };
-}
-
-/**
  * Card de análise do próximo confronto — inclui árbitro, tempo e odds.
+ * As odds vêm calculadas pelo servidor (nextMatchSummary.odds) — a mesma fonte
+ * usada no evento de apostas durante o jogo, para garantir valores idênticos.
  * @param {{ nextMatchSummary: Object, teamInfo: Object|null }} props
  * @returns {JSX.Element|null}
  */
@@ -297,9 +267,8 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
       })()
     : null;
 
-  // Odds
-  const seed = (s.matchweek ?? 1) + (s.team?.id ?? 0) + (opp.id ?? 0);
-  const odds = computeOdds(s.team, opp, s.venue, seed);
+  // Odds — calculadas no servidor (mesma função usada durante o jogo)
+  const odds = s.odds ?? { home: "—", draw: "—", away: "—" };
   const homeTeamName = isHome ? (s.team?.name ?? "Casa") : (opp.name ?? "Visitado");
   const awayTeamName = isHome ? (opp.name ?? "Visitante") : (s.team?.name ?? "Visitante");
 

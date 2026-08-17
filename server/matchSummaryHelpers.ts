@@ -4,6 +4,7 @@ import {
   getTacticFamiliarity,
   applyTacticDecay,
 } from "./game/tacticFamiliarity";
+import { computeMatchOdds } from "./game/commentary";
 
 interface MatchSummaryDeps {
   runAll: <T extends Record<string, any> = Record<string, any>>(
@@ -321,12 +322,18 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         opponent.id;
       const weather = generateWeatherForecast(weatherSeedCup);
 
+      const odds = computeMatchOdds(
+        { division: isHome ? team.division : opponent.division, position: null },
+        { division: isHome ? opponent.division : team.division, position: null },
+      );
+
       return {
         matchweek: game.matchweek,
         isCup: true,
         cupRound: currentEntry.round,
         cupRoundName: currentEntry.roundName,
         venue: currentEntry.round === 5 ? "Jamor" : isHome ? "Casa" : "Fora",
+        odds,
         team: {
           id: team.id,
           name: team.name,
@@ -401,10 +408,26 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       opponent.id;
     const weather = generateWeatherForecast(weatherSeedLeague);
 
+    const odds = computeMatchOdds(
+      {
+        division: isHome ? team.division : opponent.division,
+        position: isHome
+          ? standingsIndex.get(team.id) || null
+          : standingsIndex.get(opponent.id) || null,
+      },
+      {
+        division: isHome ? opponent.division : team.division,
+        position: isHome
+          ? standingsIndex.get(opponent.id) || null
+          : standingsIndex.get(team.id) || null,
+      },
+    );
+
     return {
       matchweek: game.matchweek,
       isCup: false,
       venue: isHome ? "Casa" : "Fora",
+      odds,
       team: {
         id: team.id,
         name: team.name,

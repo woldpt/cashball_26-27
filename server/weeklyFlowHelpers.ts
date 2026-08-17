@@ -1,7 +1,11 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import type { CalendarEntry } from "./gameConstants";
 import { SEASON_CALENDAR } from "./gameConstants";
-import { getAllTeamForms, getTeamsWithCoachNames } from "./coreHelpers";
+import {
+  getAllTeamForms,
+  getStandingsRows,
+  getTeamsWithCoachNames,
+} from "./coreHelpers";
 import {
   finalizeAllRunningAuctions,
   pauseAllRunningAuctions,
@@ -414,30 +418,41 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     // _weather/_firstHalfStartComment/_bettingIntroShown.
     if (startMin === 1) {
       // Build a standings-position lookup for every team in every division,
-      // so the betting intro can compute odds from table position (parallel
-      // to TacticsView's computeOdds). One query covers all teams; we rank
-      // within each division.
+      // so the betting intro can compute odds from table position. Uses the
+      // same getStandingsRows ranking as nextMatchSummary → odds iguais no
+      // TacticsView e durante o jogo. Uma query cobre todas as equipas.
       const allTeams = await new Promise<
-        Array<{ id: number; division: number; points: number; gf: number; ga: number }>
+        Array<{
+          id: number;
+          division: number;
+          name: string;
+          points: number;
+          goals_for: number;
+          goals_against: number;
+        }>
       >((resolve) => {
         game.db.all(
-          "SELECT id, division, points, goals_for AS gf, goals_against AS ga FROM teams ORDER BY division ASC, points DESC, goals_for - goals_against DESC, goals_for DESC, id ASC",
-          (err: any, rows: Array<{ id: number; division: number; points: number; gf: number; ga: number }>) => {
+          "SELECT id, division, name, points, goals_for, goals_against FROM teams",
+          (err: any, rows: any[]) => {
             if (err || !rows) return resolve([]);
             resolve(rows);
           },
         );
       });
       const positionByTeamId = new Map<number, number>();
-      let prevDiv: number | null = null;
-      let divRank = 0;
+      const divisionByTeamId = new Map<number, number>();
+      const byDivision = new Map<number, any[]>();
       for (const t of allTeams) {
-        if (t.division !== prevDiv) {
-          prevDiv = t.division;
-          divRank = 0;
-        }
-        divRank++;
-        positionByTeamId.set(t.id, divRank);
+        divisionByTeamId.set(t.id, t.division);
+        const list = byDivision.get(t.division) || [];
+        list.push(t);
+        byDivision.set(t.division, list);
+      }
+      for (const rows of byDivision.values()) {
+        const ranked = getStandingsRows(rows);
+        ranked.forEach((team, index) => {
+          positionByTeamId.set(team.id, index + 1);
+        });
       }
 
       for (let fi = 0; fi < game.currentFixtures.length; fi++) {
@@ -445,14 +460,18 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         // Estampar season/matchweek para a engine gerar o mesmo tempo que a previsão
         fixture.season = game.season;
         fixture.matchweek = game.matchweek;
-        // Stamp standings position onto homeTeam/awayTeam for betting odds
+        // Stamp standings position + division onto homeTeam/awayTeam for odds
         if (fixture.homeTeam) {
+          (fixture.homeTeam as any).division =
+            divisionByTeamId.get(fixture.homeTeamId) ?? 4;
           (fixture.homeTeam as any).position =
-            positionByTeamId.get(fixture.homeTeamId) ?? 8;
+            positionByTeamId.get(fixture.homeTeamId) ?? null;
         }
         if (fixture.awayTeam) {
+          (fixture.awayTeam as any).division =
+            divisionByTeamId.get(fixture.awayTeamId) ?? 4;
           (fixture.awayTeam as any).position =
-            positionByTeamId.get(fixture.awayTeamId) ?? 8;
+            positionByTeamId.get(fixture.awayTeamId) ?? null;
         }
         const { t1, t2 } = fixtureTactics[fi];
         generateIntroEvents(fixture, t1, t2);
