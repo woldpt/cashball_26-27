@@ -13,6 +13,7 @@
     "seed:real": "node db/seed.js --real",
     "audit:gamestate": "tsx scripts/gameStateAudit.ts",
     "audit:socketio": "tsx scripts/socketioContractValidator.ts",
+    "fetch:zerozero": "tsx scripts/fetchZerozeroSquads.ts",
     "repair:joboffer": "tsx scripts/repairDuplicateJobOffer.ts"
   },
   "keywords": [],
