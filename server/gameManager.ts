@@ -587,10 +587,10 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                 }
               }
 
-              // lockedCoaches is intentionally NOT restored from DB.
-              // Coaches re-add themselves to the set as they reconnect (via assignPlayer).
-              // Restoring from DB could include coaches who are offline after a restart,
-              // which would permanently block checkAllReady until they reconnect.
+              // lockedCoaches is NOT restored from this game_state key (transient).
+              // It is re-derived at the end of load from the managers/teams tables
+              // (human coaches with a team), so rooms with 2+ humans stay blocked
+              // until every coach is online — even across server restarts.
 
               // Room creator (persisted so Admin badge survives restarts)
               if (st["roomCreator"]) {
@@ -724,8 +724,28 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                     (err8, cleanedRows) => {
                       if (!err8 && cleanedRows)
                         game.globalMarket = cleanedRows;
-                      game.initialized = true;
-                      if (onReady) onReady(game);
+                      // Deriva o conjunto de coaches humanos (is_human=1) que têm
+                      // equipa: é a fonte de verdade para o bloqueio de presença.
+                      // Salas com 2+ humanos ficam bloqueadas até TODOS estarem online,
+                      // mesmo depois de reinícios do servidor (regenera-se a partir da DB).
+                      db.all(
+                        "SELECT m.name FROM managers m JOIN teams t ON t.manager_id = m.id WHERE m.is_human = 1",
+                        (err9, humanRows) => {
+                          const names = ((humanRows || []) as any[]).map(
+                            (r) => r?.name,
+                          );
+                          game.lockedCoaches = new Set(
+                            names.filter(Boolean) as string[],
+                          );
+                          if (game.lockedCoaches.size > 0) {
+                            console.log(
+                              `[gameManager] Room ${roomCode} requires presence of ${game.lockedCoaches.size} human coach(es): ${[...game.lockedCoaches].join(", ")}`,
+                            );
+                          }
+                          game.initialized = true;
+                          if (onReady) onReady(game);
+                        },
+                      );
                     },
                   );
                 },

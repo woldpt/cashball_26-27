@@ -186,40 +186,46 @@ export function registerGameplaySocketHandlers(
     if (!targetName || targetName === requesterName) return;
 
     const target = game.playersByName[targetName];
-    if (!target) return;
+    if (!target && !game.lockedCoaches.has(targetName)) return;
 
-    // Notificar o coach expulso antes de remover
-    const targetSocketId = target.socketId;
+    // Notificar o coach expulso antes de remover (se estiver online)
+    const targetSocketId = target?.socketId;
     if (targetSocketId) {
       io.to(targetSocketId).emit("kicked", {
         reason: "Foste removido da sala pelo Admin.",
       });
     }
 
-    // Remover coach da sala
-    delete game.playersByName[targetName];
+    // Remover coach da sala (sessão runtime + presença exigida)
+    if (target) {
+      delete game.playersByName[targetName];
+    }
     game.lockedCoaches.delete(targetName);
 
-    // Libertar a equipa no DB
-    if (target.teamId) {
-      game.db.run(
-        "UPDATE teams SET manager_id = NULL WHERE id = ?",
-        [target.teamId],
-        () => {},
-      );
-      game.db.run(
-        "DELETE FROM managers WHERE name = ?",
-        [targetName],
-        () => {},
-      );
-    }
+    // Libertar a equipa no DB e apagar o registo do manager (também cobre
+    // coaches offline/abandonados que já não têm sessão runtime).
+    game.db.run(
+      "UPDATE teams SET manager_id = NULL WHERE manager_id = (SELECT id FROM managers WHERE name = ?)",
+      [targetName],
+      () => {},
+    );
+    game.db.run(
+      "DELETE FROM managers WHERE name = ?",
+      [targetName],
+      () => {},
+    );
 
     saveGameState(game);
     emitPresence(game);
     emitGlobalPlayerUpdate?.();
 
+    // Se o expulso era o único bloqueio (estava offline), a semana pode avançar.
+    if (game.gamePhase === "lobby") {
+      checkAllReady(game);
+    }
+
     console.log(
-      `[${game.roomCode}] 🚫 Admin ${requesterName} expulsou ${targetName}`,
+      `[${game.roomCode}] 🚫 Admin ${requesterName} expulsou ${targetName} (online=${!!targetSocketId})`,
     );
   });
 
@@ -245,8 +251,9 @@ export function registerGameplaySocketHandlers(
         playerState.ready = false;
       }
 
-      // Remove from lockedCoaches so checkAllReady doesn't block on offline coach
-      game.lockedCoaches.delete(playerState.name);
+      // NOTA: o coach NÃO é removido de lockedCoaches ao desconectar.
+      // Salas com 2+ coaches humanos ficam bloqueadas no início da semana
+      // até TODOS estarem online (a remoção só acontece em leaveRoom/kick/despedimento).
 
       // Cancel any pending contract counter-offer timer for this coach's team
       if (game.pendingRenewalCounterOffers) {

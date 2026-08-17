@@ -198,6 +198,12 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     players.length +
     awaitingCoaches.filter((n) => !players.some((p) => p.name === n)).length;
 
+  // Sala com 2+ coaches humanos bloqueada até todos estarem online (semana em espera)
+  const offlineLocked = lockedCoaches.filter(
+    (n) => !players.some((p) => p.name === n),
+  );
+  const roomBlocked = lockedCoaches.length >= 2 && offlineLocked.length > 0;
+
   // ── Tactic-specific from TacticsContext ─────────────────────────────────
   const { tactic, annotatedSquad } = useTactics();
 
@@ -999,6 +1005,22 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           className={`pt-14 pb-16 lg:pb-12 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-14" : "lg:ml-64"}`}
         >
           <div className="p-4 lg:p-6">
+            {roomBlocked && (
+              <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+                <span className="material-symbols-outlined text-amber-400 text-[20px] leading-none mt-0.5">
+                  lock
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-black uppercase tracking-widest text-amber-400">
+                    Sala bloqueada — semana em espera
+                  </p>
+                  <p className="text-[11px] text-on-surface-variant/80 font-semibold mt-0.5 leading-snug">
+                    A semana só avança quando todos os coaches estiverem online.
+                    Aguardando: {offlineLocked.join(", ")}.
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-6">
               <div>
                 <AnimatePresence mode="wait" initial={false}>

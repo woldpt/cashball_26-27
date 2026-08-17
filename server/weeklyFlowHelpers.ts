@@ -939,7 +939,12 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
   async function checkAllReady(game: ActiveGame) {
     // ── Standard readiness check (same for cup and league) ──────────────────
-    if (game.lockedCoaches.size >= 2) {
+    // O gate estrito (todos os coaches humanos online + ready) aplica-se APENAS
+    // no lobby (início de semana). A meio de um jogo (intervalo / porta de
+    // prolongamento) usa-se apenas os coaches conectados — um coach que se
+    // desconecta não deixa o jogo em curso preso; a próxima semana é que fica
+    // bloqueada até todos estarem presentes.
+    if (game.gamePhase === "lobby" && game.lockedCoaches.size >= 2) {
       const readyStatus = [...game.lockedCoaches].map((name) => ({
         name,
         connected: !!game.playersByName[name]?.socketId,
