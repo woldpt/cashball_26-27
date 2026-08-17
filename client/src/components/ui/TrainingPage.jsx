@@ -467,7 +467,7 @@ export function TrainingPage({ me, matchweek }) {
                     </h3>
 
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-[360px]">
+                      <table className="w-full min-w-[320px]">
                         <thead>
                           <tr className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
                             <th className="text-left py-1 pr-2 pl-0 font-black">

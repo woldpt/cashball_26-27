@@ -43,7 +43,13 @@ body {
   font-family: "Inter", system-ui, sans-serif;
   background: #131313;
   color: #e5e2e1;
-  touch-action: pan-y;
+}
+
+/* Tabelas com overflow horizontal: garantem pan-x em toque (não ficam
+ * cortadas sem forma de percorrer). */
+.overflow-x-auto,
+.overflow-x-scroll {
+  touch-action: pan-x pan-y;
 }
 
 * {

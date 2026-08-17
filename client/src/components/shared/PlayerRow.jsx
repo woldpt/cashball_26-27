@@ -84,6 +84,9 @@ export function PlayerRow({
       {/* Faixa lateral da posição */}
       <div className={`shrink-0 w-1 bg-gradient-to-b ${bar}`} />
 
+      {/* Coluna principal: linha superior (avatar→salário) + info extra em mobile */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        <div className="flex items-center min-w-0 flex-1">
       {/* Avatar mini com chip de posição */}
       <div className="relative shrink-0 self-center pl-2 py-1.5">
         <PlayerAvatar
@@ -232,6 +235,53 @@ export function PlayerRow({
           </div>
           <span className="font-headline font-black text-[12px] tabular-nums text-emerald-400/90">
             ≈ {formatCurrency(player.value || 0)}
+          </span>
+        </div>
+      </div>
+
+        </div>
+
+        {/* Linha extra em mobile: atributos + golos + salário (escondidos ≥md) */}
+        <div className="md:hidden flex items-center justify-between gap-3 px-3 py-1.5 border-t border-outline-variant/10">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="flex flex-col items-center">
+              <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
+                Agr
+              </span>
+              <AggBadge value={player.aggressiveness} />
+            </span>
+            <span className="flex flex-col items-center">
+              <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
+                Res
+              </span>
+              <span className="text-cyan-400 font-black text-[12px] leading-none">
+                {player.resistance ?? "—"}
+              </span>
+            </span>
+            <span className="flex flex-col items-center">
+              <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
+                For
+              </span>
+              <span className={`text-[12px] font-black leading-none ${formColor}`}>
+                {formArrow}
+              </span>
+            </span>
+            <span className="flex flex-col items-center">
+              <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
+                Golos
+              </span>
+              <span className="text-emerald-400 font-black text-[12px] leading-none">
+                ⚽{getPlayerStat(player, ["goals"])}
+              </span>
+            </span>
+          </div>
+          <span className="shrink-0 flex flex-col items-end">
+            <span className="font-headline font-black text-xs tabular-nums text-on-surface">
+              {formatCurrency(player.wage || 0)}
+            </span>
+            <span className="text-[8px] text-zinc-500 font-black uppercase tracking-widest">
+              /sem
+            </span>
           </span>
         </div>
       </div>

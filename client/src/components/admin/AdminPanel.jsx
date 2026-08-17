@@ -263,7 +263,8 @@ export function AdminPanel({ open, onClose }) {
                     Nenhum utilizador encontrado.
                   </div>
                 ) : (
-                  <table className="w-full text-sm">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm min-w-[420px]">
                     <thead className="sticky top-0 bg-zinc-900/95 backdrop-blur">
                       <tr className="text-left text-[10px] uppercase tracking-widest text-zinc-500">
                         <th className="px-4 py-2 font-black">Nome</th>
@@ -302,6 +303,7 @@ export function AdminPanel({ open, onClose }) {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 )}
               </div>
             </div>

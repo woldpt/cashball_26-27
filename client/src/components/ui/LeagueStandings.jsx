@@ -149,13 +149,13 @@ function DivisionTable({
 
                   {/* Team */}
                   <td className="px-2 py-2">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <span
                         className="shrink-0 w-2 h-2 rounded-full"
                         style={{ backgroundColor: t.color_primary || "#666" }}
                       />
                       <span
-                        className={`font-bold truncate max-w-22 sm:max-w-32 md:max-w-none ${isRelegate && !isPromo ? "opacity-60" : ""} ${isMe ? "text-primary" : isHuman ? "text-amber-300" : "text-on-surface"}`}
+                        className={`flex-1 min-w-0 truncate ${isMe ? "" : "max-w-22 sm:max-w-32 md:max-w-none"} ${isRelegate && !isPromo ? "opacity-60" : ""} ${isMe ? "text-primary" : isHuman ? "text-amber-300" : "text-on-surface"}`}
                       >
                         {t.name}
                       </span>
@@ -165,7 +165,7 @@ function DivisionTable({
                         </span>
                       )}
                       {!isMe && isHuman && coachNames?.[t.id] && (
-                        <span className="shrink-0 px-1.5 py-px bg-amber-400/15 text-amber-400 text-[8px] font-black rounded-sm border border-amber-400/30 whitespace-nowrap">
+                        <span className="hidden sm:inline-flex shrink-0 px-1.5 py-px bg-amber-400/15 text-amber-400 text-[8px] font-black rounded-sm border border-amber-400/30 whitespace-nowrap">
                           {coachNames[t.id]}
                         </span>
                       )}
