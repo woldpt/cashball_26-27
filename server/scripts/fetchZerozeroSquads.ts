@@ -29,6 +29,7 @@ interface TeamCandidate {
   name: string;
   division: number;
   zerozeroUrl: string;
+  coach: string | null; // treinador principal da época 2026/27
   players: ZerozeroPlayer[];
   coverage: "complete" | "low" | "error";
 }
@@ -143,6 +144,23 @@ function extractPlayers(html: string): ZerozeroPlayer[] {
   return players;
 }
 
+/**
+ * Extrai o treinador principal da secção `#team_staff` ("Treinador").
+ * Pode não existir (clubes amadores sem dados) — nesse caso devolve null.
+ */
+function extractCoach(html: string): string | null {
+  const start = html.indexOf('<div id="team_staff"');
+  if (start === -1) return null;
+  const body = html.slice(start);
+  const secIdx = body.indexOf('<div class="section">Treinador</div>');
+  if (secIdx === -1) return null;
+  const staffIdx = body.indexOf('<div class="staff">', secIdx);
+  if (staffIdx === -1) return null;
+  const seg = body.slice(staffIdx, staffIdx + 2000);
+  const m = seg.match(/\/treinador\/[a-z0-9-]+\/[0-9]+[^"]*"[^>]*>([^<]+)<\/a>/);
+  return m ? m[1].trim() : null;
+}
+
 async function fetchTeam(
   team: { name: string; division: number; url: string },
 ): Promise<TeamCandidate> {
@@ -152,13 +170,14 @@ async function fetchTeam(
     signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) {
-    return { name: team.name, division: team.division, zerozeroUrl: team.url, players: [], coverage: "error" };
+    return { name: team.name, division: team.division, zerozeroUrl: team.url, coach: null, players: [], coverage: "error" };
   }
   const html = await res.text();
   const players = extractPlayers(html);
+  const coach = extractCoach(html);
   const coverage: TeamCandidate["coverage"] =
     players.length >= 16 ? "complete" : players.length > 0 ? "low" : "error";
-  return { name: team.name, division: team.division, zerozeroUrl: team.url, players, coverage };
+  return { name: team.name, division: team.division, zerozeroUrl: team.url, coach, players, coverage };
 }
 
 async function main() {
@@ -176,10 +195,10 @@ async function main() {
       const r = await fetchTeam(t);
       results.push(r);
       process.stdout.write(
-        `${r.coverage} (${r.players.length} jogadores)\n`,
+        `${r.coverage} (${r.players.length} jogadores, treinador: ${r.coach || "-"})\n`,
       );
     } catch (err: any) {
-      results.push({ name: t.name, division: t.division, zerozeroUrl: t.url, players: [], coverage: "error" });
+      results.push({ name: t.name, division: t.division, zerozeroUrl: t.url, coach: null, players: [], coverage: "error" });
       process.stdout.write(`error (${err?.message || err})\n`);
     }
     if (i < TEAMS.length - 1) await new Promise((r) => setTimeout(r, 1200));

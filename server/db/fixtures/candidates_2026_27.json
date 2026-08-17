@@ -1,11 +1,12 @@
 {
   "season": "2026/27",
-  "generatedAt": "2026-08-17T19:04:07.739Z",
+  "generatedAt": "2026-08-17T19:10:35.675Z",
   "teams": [
     {
       "name": "Sporting",
       "division": 1,
       "zerozeroUrl": "/equipa/sporting",
+      "coach": "Rui Borges",
       "players": [
         {
           "name": "Rui Silva",
@@ -231,6 +232,7 @@
       "name": "Porto",
       "division": 1,
       "zerozeroUrl": "/equipa/fc-porto",
+      "coach": "Francesco Farioli",
       "players": [
         {
           "name": "Cláudio Ramos",
@@ -449,6 +451,7 @@
       "name": "Benfica",
       "division": 1,
       "zerozeroUrl": "/equipa/benfica",
+      "coach": "Marco Silva",
       "players": [
         {
           "name": "Anatoliy Trubin",
@@ -688,6 +691,7 @@
       "name": "Sp. Braga",
       "division": 1,
       "zerozeroUrl": "/equipa/sc-braga",
+      "coach": "Carlos Vicens",
       "players": [
         {
           "name": "Tiago Sá",
@@ -892,6 +896,7 @@
       "name": "Famalicão",
       "division": 1,
       "zerozeroUrl": "/equipa/fc-famalicao/2175",
+      "coach": "Carlos Carvalhal",
       "players": [
         {
           "name": "Ivan Zlobin",
@@ -1089,6 +1094,7 @@
       "name": "Gil Vicente",
       "division": 1,
       "zerozeroUrl": "/equipa/gil-vicente",
+      "coach": "Luís Pinto",
       "players": [
         {
           "name": "Nayan Campos",
@@ -1321,6 +1327,7 @@
       "name": "Estoril",
       "division": 1,
       "zerozeroUrl": "/equipa/estoril-praia/1734",
+      "coach": "Vasco Matos",
       "players": [
         {
           "name": "Joel Robles",
@@ -1525,6 +1532,7 @@
       "name": "Moreirense",
       "division": 1,
       "zerozeroUrl": "/equipa/moreirense/6",
+      "coach": "Vasco Botelho da Costa",
       "players": [
         {
           "name": "Aranha",
@@ -1729,6 +1737,7 @@
       "name": "Marítimo",
       "division": 2,
       "zerozeroUrl": "/equipa/maritimo",
+      "coach": "Mitchell van der Gaag",
       "players": [
         {
           "name": "Gonçalo Tabuaço",
@@ -1954,6 +1963,7 @@
       "name": "Ac.Viseu",
       "division": 2,
       "zerozeroUrl": "/equipa/academico/2181",
+      "coach": "Bruno Pinheiro",
       "players": [
         {
           "name": "Marcos Lavín",
@@ -2165,6 +2175,7 @@
       "name": "Torreense",
       "division": 2,
       "zerozeroUrl": "/equipa/torreense/2178",
+      "coach": "Luís Tralhão",
       "players": [
         {
           "name": "Unai Pérez",
@@ -2453,6 +2464,7 @@
       "name": "U. Leiria",
       "division": 2,
       "zerozeroUrl": "/equipa/ud-leiria/17",
+      "coach": "Fábio Pereira",
       "players": [
         {
           "name": "Yago Moreira",
@@ -2692,6 +2704,7 @@
       "name": "Vizela",
       "division": 2,
       "zerozeroUrl": "/equipa/fc-vizela/2197",
+      "coach": "Ronald Molina",
       "players": [
         {
           "name": "Antonio Gomís",
@@ -2917,6 +2930,7 @@
       "name": "Lus. Lourosa",
       "division": 2,
       "zerozeroUrl": "/equipa/lusitania-de-lourosa/3599",
+      "coach": "Ricardo Silva",
       "players": [
         {
           "name": "Gabriel Souza",
@@ -3114,6 +3128,7 @@
       "name": "Feirense",
       "division": 2,
       "zerozeroUrl": "/equipa/feirense/1728",
+      "coach": "Mário Nunes",
       "players": [
         {
           "name": "Francisco Meixedo",
@@ -3311,6 +3326,7 @@
       "name": "Chaves",
       "division": 2,
       "zerozeroUrl": "/equipa/gd-chaves/20",
+      "coach": "Vítor Martins",
       "players": [
         {
           "name": "João Valido",
@@ -3550,6 +3566,7 @@
       "name": "Amarante",
       "division": 3,
       "zerozeroUrl": "/equipa/amarante-fc/4330",
+      "coach": "Jorge Pinto",
       "players": [
         {
           "name": "Rafael Flores",
@@ -3719,6 +3736,7 @@
       "name": "Belenenses",
       "division": 3,
       "zerozeroUrl": "/equipa/belenenses/3",
+      "coach": "Gonçalo Brandão",
       "players": [
         {
           "name": "Bruno Dias",
@@ -3875,13 +3893,6 @@
           "value": null
         },
         {
-          "name": "Lian",
-          "position": "ATA",
-          "flag": "BR",
-          "age": 20,
-          "value": null
-        },
-        {
           "name": "Eduardo Souza",
           "position": "ATA",
           "flag": "BR",
@@ -3945,6 +3956,13 @@
           "value": null
         },
         {
+          "name": "Lian",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 20,
+          "value": null
+        },
+        {
           "name": "Valter Zacarias",
           "position": "ATA",
           "flag": "PT",
@@ -3972,6 +3990,7 @@
       "name": "Académica",
       "division": 3,
       "zerozeroUrl": "/equipa/academica-oaf/19",
+      "coach": "António Barbosa",
       "players": [
         {
           "name": "Victor Braga",
@@ -4162,6 +4181,7 @@
       "name": "Varzim",
       "division": 3,
       "zerozeroUrl": "/equipa/varzim/36",
+      "coach": "Carlos Fernandes",
       "players": [
         {
           "name": "Tiago Cruz",
@@ -4359,6 +4379,7 @@
       "name": "Mafra",
       "division": 3,
       "zerozeroUrl": "/equipa/cd-mafra/3696",
+      "coach": "Tim Sparv",
       "players": [
         {
           "name": "Francisco Lemos",
@@ -4598,6 +4619,7 @@
       "name": "U. Santarém",
       "division": 3,
       "zerozeroUrl": "/equipa/u-santarem/3947",
+      "coach": "Gonçalo Carvalho",
       "players": [
         {
           "name": "Ricardo Ribeiro",
@@ -4767,6 +4789,7 @@
       "name": "Trofense",
       "division": 3,
       "zerozeroUrl": "/equipa/trofense/3664",
+      "coach": "Cristiano Couto Brito",
       "players": [
         {
           "name": "Ricardo Moura",
@@ -4971,6 +4994,7 @@
       "name": "Atlético",
       "division": 3,
       "zerozeroUrl": "/equipa/atletico-cp/2170",
+      "coach": "Pedro D’Oliveira",
       "players": [
         {
           "name": "Nuno Hidalgo",
@@ -5161,6 +5185,7 @@
       "name": "Bragança",
       "division": 4,
       "zerozeroUrl": "/equipa/braganca/3565",
+      "coach": "André Irulegui",
       "players": [
         {
           "name": "André Reis",
@@ -5330,6 +5355,7 @@
       "name": "Vianense",
       "division": 4,
       "zerozeroUrl": "/equipa/vianense/3672",
+      "coach": "Filipe Mesquita",
       "players": [
         {
           "name": "Gonçalo Lopes",
@@ -5506,6 +5532,7 @@
       "name": "Rebordosa",
       "division": 4,
       "zerozeroUrl": "/equipa/rebordosa-ac/3634",
+      "coach": "Eurico Couto",
       "players": [
         {
           "name": "Dinis Costa",
@@ -5689,6 +5716,7 @@
       "name": "Leça",
       "division": 4,
       "zerozeroUrl": "/equipa/leca-fc/24",
+      "coach": "Mika",
       "players": [
         {
           "name": "Miguel Paiva",
@@ -5886,6 +5914,7 @@
       "name": "Vit. Sernache",
       "division": 4,
       "zerozeroUrl": "/equipa/vitoria-sernache/5659",
+      "coach": "Natan Costa",
       "players": [
         {
           "name": "João Lucas",
@@ -6069,6 +6098,7 @@
       "name": "Naval 1893",
       "division": 4,
       "zerozeroUrl": "/equipa/naval-1893/215830",
+      "coach": "Carlos Neves",
       "players": [
         {
           "name": "Vasco Guimarães",
@@ -6092,17 +6122,17 @@
           "value": null
         },
         {
-          "name": "Rodrigo Coutinho",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 26,
-          "value": null
-        },
-        {
           "name": "Pedro Cardoso",
           "position": "DEF",
           "flag": "PT",
           "age": 18,
+          "value": null
+        },
+        {
+          "name": "Rodrigo Coutinho",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 26,
           "value": null
         },
         {
@@ -6294,6 +6324,7 @@
       "name": "Louletano",
       "division": 4,
       "zerozeroUrl": "/equipa/louletano/3596",
+      "coach": "Miguel Valença",
       "players": [
         {
           "name": "Gustavo Daris",
@@ -6373,6 +6404,13 @@
           "value": null
         },
         {
+          "name": "Dedé",
+          "position": "MED",
+          "flag": "BR",
+          "age": 20,
+          "value": null
+        },
+        {
           "name": "Ricardo Leal",
           "position": "MED",
           "flag": "PT",
@@ -6384,13 +6422,6 @@
           "position": "MED",
           "flag": "BR",
           "age": 22,
-          "value": null
-        },
-        {
-          "name": "Dedé",
-          "position": "MED",
-          "flag": "BR",
-          "age": 20,
           "value": null
         },
         {
@@ -6484,6 +6515,7 @@
       "name": "Juventude",
       "division": 4,
       "zerozeroUrl": "/equipa/juventude-sc/3594",
+      "coach": "João Mateus",
       "players": [
         {
           "name": "Filipe Semedo",
@@ -6653,7 +6685,15 @@
       "name": "Portel",
       "division": 5,
       "zerozeroUrl": "/equipa/gd-portel/6803",
+      "coach": "João Trindade",
       "players": [
+        {
+          "name": "Ethan Crump",
+          "position": "GR",
+          "flag": "US",
+          "age": 22,
+          "value": null
+        },
         {
           "name": "Diogo Águas",
           "position": "GR",
@@ -6662,10 +6702,10 @@
           "value": null
         },
         {
-          "name": "Ethan Crump",
-          "position": "GR",
-          "flag": "US",
-          "age": 22,
+          "name": "Tiago Santos",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 21,
           "value": null
         },
         {
@@ -6680,13 +6720,6 @@
           "position": "DEF",
           "flag": "PT",
           "age": 22,
-          "value": null
-        },
-        {
-          "name": "Tiago Santos",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 21,
           "value": null
         },
         {
@@ -6718,6 +6751,20 @@
           "value": null
         },
         {
+          "name": "Valdo Dabó",
+          "position": "MED",
+          "flag": "GW",
+          "age": 25,
+          "value": null
+        },
+        {
+          "name": "João Pereira",
+          "position": "MED",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
           "name": "Domilson Kipanda",
           "position": "MED",
           "flag": "AO",
@@ -6736,20 +6783,6 @@
           "position": "MED",
           "flag": "BR",
           "age": 24,
-          "value": null
-        },
-        {
-          "name": "Valdo Dabó",
-          "position": "MED",
-          "flag": "GW",
-          "age": 25,
-          "value": null
-        },
-        {
-          "name": "João Pereira",
-          "position": "MED",
-          "flag": "PT",
-          "age": 23,
           "value": null
         },
         {
@@ -6815,6 +6848,7 @@
       "name": "U. Montemor",
       "division": 5,
       "zerozeroUrl": "/equipa/grupo-uniao-sport/3712",
+      "coach": "Gonçalo Carapinha",
       "players": [
         {
           "name": "Ruan Gabriel",
@@ -7012,7 +7046,15 @@
       "name": "Monte do Trigo",
       "division": 5,
       "zerozeroUrl": "/equipa/monte-trigo/3613",
+      "coach": "João Paulo Rolo",
       "players": [
+        {
+          "name": "Dinis Pessanha",
+          "position": "GR",
+          "flag": "PT",
+          "age": 26,
+          "value": null
+        },
         {
           "name": "Miguel Guerra",
           "position": "GR",
@@ -7021,10 +7063,10 @@
           "value": null
         },
         {
-          "name": "Dinis Pessanha",
-          "position": "GR",
+          "name": "Pedro Amendoeira",
+          "position": "DEF",
           "flag": "PT",
-          "age": 26,
+          "age": 33,
           "value": null
         },
         {
@@ -7049,13 +7091,6 @@
           "value": null
         },
         {
-          "name": "Pedro Amendoeira",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 33,
-          "value": null
-        },
-        {
           "name": "Dinis Mira",
           "position": "DEF",
           "flag": "PT",
@@ -7070,17 +7105,17 @@
           "value": null
         },
         {
-          "name": "João Nobre",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 31,
-          "value": null
-        },
-        {
           "name": "Luis Fernando",
           "position": "DEF",
           "flag": "BR",
           "age": 26,
+          "value": null
+        },
+        {
+          "name": "João Nobre",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 31,
           "value": null
         },
         {
@@ -7133,20 +7168,6 @@
           "value": null
         },
         {
-          "name": "Miguel Rosado",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 30,
-          "value": null
-        },
-        {
-          "name": "Ivonildo Sá",
-          "position": "ATA",
-          "flag": "GW",
-          "age": 20,
-          "value": null
-        },
-        {
           "name": "Moisés Iabna",
           "position": "ATA",
           "flag": "GW",
@@ -7168,6 +7189,20 @@
           "value": null
         },
         {
+          "name": "Miguel Rosado",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 30,
+          "value": null
+        },
+        {
+          "name": "Ivonildo Sá",
+          "position": "ATA",
+          "flag": "GW",
+          "age": 20,
+          "value": null
+        },
+        {
           "name": "Luiz Felipe",
           "position": "ATA",
           "flag": "PT",
@@ -7181,6 +7216,7 @@
       "name": "Vendas Novas",
       "division": 5,
       "zerozeroUrl": "/equipa/estrela-fc/3581",
+      "coach": "António Calção",
       "players": [
         {
           "name": "Rodrigo Cavalinhos",
@@ -7204,17 +7240,17 @@
           "value": null
         },
         {
-          "name": "Gonçalo Ventura",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 21,
-          "value": null
-        },
-        {
           "name": "Rúben Ribeiro",
           "position": "DEF",
           "flag": "PT",
           "age": 25,
+          "value": null
+        },
+        {
+          "name": "Gonçalo Ventura",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 21,
           "value": null
         },
         {
@@ -7322,6 +7358,7 @@
       "name": "At. Reguengos",
       "division": 5,
       "zerozeroUrl": "/equipa/at-reguengos/6808",
+      "coach": null,
       "players": [
         {
           "name": "Rúben Silva",
@@ -7331,17 +7368,17 @@
           "value": null
         },
         {
-          "name": "Diogo Catronga",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 22,
-          "value": null
-        },
-        {
           "name": "Pedro Balixa",
           "position": "DEF",
           "flag": "PT",
           "age": 28,
+          "value": null
+        },
+        {
+          "name": "Diogo Catronga",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 22,
           "value": null
         },
         {
@@ -7365,19 +7402,20 @@
       "name": "Sp. Viana",
       "division": 5,
       "zerozeroUrl": "/equipa/sp-viana/10574",
+      "coach": "Zé Manel",
       "players": [
-        {
-          "name": "Dheimison Melo",
-          "position": "GR",
-          "flag": "BR",
-          "age": 27,
-          "value": null
-        },
         {
           "name": "Tomás Grilo",
           "position": "GR",
           "flag": "PT",
           "age": 22,
+          "value": null
+        },
+        {
+          "name": "Dheimison Melo",
+          "position": "GR",
+          "flag": "BR",
+          "age": 27,
           "value": null
         },
         {
@@ -7395,13 +7433,6 @@
           "value": null
         },
         {
-          "name": "Daniel Rosa",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 24,
-          "value": null
-        },
-        {
           "name": "Ricardo Bonito",
           "position": "DEF",
           "flag": "PT",
@@ -7413,6 +7444,13 @@
           "position": "DEF",
           "flag": "BR",
           "age": 31,
+          "value": null
+        },
+        {
+          "name": "Daniel Rosa",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 24,
           "value": null
         },
         {
@@ -7493,17 +7531,17 @@
           "value": null
         },
         {
-          "name": "Vanderson Reis",
-          "position": "ATA",
-          "flag": "BR",
-          "age": 22,
-          "value": null
-        },
-        {
           "name": "Danilo",
           "position": "ATA",
           "flag": "BR",
           "age": 19,
+          "value": null
+        },
+        {
+          "name": "Vanderson Reis",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 22,
           "value": null
         }
       ],
@@ -7513,6 +7551,7 @@
       "name": "Arcoense",
       "division": 5,
       "zerozeroUrl": "/equipa/arcoense/6809",
+      "coach": "Hugo Painho",
       "players": [
         {
           "name": "Filipe Garcia",
@@ -7689,6 +7728,7 @@
       "name": "Redondense",
       "division": 5,
       "zerozeroUrl": "/equipa/redondense/6807",
+      "coach": "Luís Coxola",
       "players": [
         {
           "name": "Rui Neves",
