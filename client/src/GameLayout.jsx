@@ -193,6 +193,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
   // ── Derived ───────────────────────────────────────────────────────────
   const myReady = players.find((p) => p.name === me?.name)?.ready;
+  const totalCoaches =
+    players.length +
+    awaitingCoaches.filter((n) => !players.some((p) => p.name === n)).length;
 
   // ── Tactic-specific from TacticsContext ─────────────────────────────────
   const { tactic, annotatedSquad } = useTactics();
@@ -351,11 +354,16 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               >
                 chat
               </span>
-              {(unreadRoom + unreadGlobal > 0 || players.length > 0) && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-black leading-none flex items-center justify-center px-1">
+              {/* Badge: nº total de coaches na sala */}
+              <span className="absolute -bottom-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-black leading-none flex items-center justify-center px-1">
+                {totalCoaches}
+              </span>
+              {/* Badge: mensagens não lidas */}
+              {unreadRoom + unreadGlobal > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black leading-none flex items-center justify-center px-1">
                   {unreadRoom + unreadGlobal > 9
                     ? "9+"
-                    : unreadRoom + unreadGlobal || players.length}
+                    : unreadRoom + unreadGlobal}
                 </span>
               )}
             </button>
