@@ -8,6 +8,10 @@ import type { ActiveGame } from "./types";
  *  - Forma:        +10 form (direct, INTEGER column tolerates this)
  *  - Resistência:  +0.4 resistance (accumulator)
  *
+ * Decay (per calendar event, applies to the WHOLE squad, junior GRs excluded):
+ *  - Not training Forma:       -5 form (floor 50)
+ *  - Not training Resistência: -0.4 resistance progress (level conversion, floor 1)
+ *
  * Skill and resistance use accumulator columns (training_skill_progress,
  * training_resistance_progress) because the underlying columns are INTEGER —
  * adding 1.0/0.4 directly would be silently truncated by SQLite.
@@ -47,28 +51,27 @@ export function createTrainingHelpers(_deps: { io: any }) {
             return;
           }
 
-          // Collect ids of players that played in any fixture (filter out junior GRs with negative ids)
-          const playerIds = new Set<number>();
+          // Collect ids of players that appeared in a fixture (positive ids only,
+          // junior GRs use negative ids) — these receive the training bonus.
+          const playedPlayerIds = new Set<number>();
           for (const fixture of fixtures || []) {
             const home = Array.isArray(fixture.homeLineup) ? fixture.homeLineup : [];
             const away = Array.isArray(fixture.awayLineup) ? fixture.awayLineup : [];
-            for (const p of home) if (typeof p?.id === "number" && p.id > 0) playerIds.add(p.id);
-            for (const p of away) if (typeof p?.id === "number" && p.id > 0) playerIds.add(p.id);
+            for (const p of home) if (typeof p?.id === "number" && p.id > 0) playedPlayerIds.add(p.id);
+            for (const p of away) if (typeof p?.id === "number" && p.id > 0) playedPlayerIds.add(p.id);
           }
 
-          if (playerIds.size === 0) {
-            markApplied(game, teamIds, completedCalendarIndex, resolve);
-            return;
-          }
-
-          const idPlaceholders = Array(playerIds.size).fill("?").join(",");
+          // Load the ENTIRE squad of the teams with a focus: bonuses only reach
+          // players that played, but the decay of untrained attributes (form /
+          // resistance) affects the whole squad.
+          const teamPlaceholders = teamIds.map(() => "?").join(",");
           game.db.all(
             `SELECT id, team_id, position, skill, form, resistance, potential,
                     training_skill_progress AS skill_progress,
                     training_resistance_progress AS resistance_progress
              FROM players
-             WHERE id IN (${idPlaceholders})`,
-            Array.from(playerIds),
+             WHERE team_id IN (${teamPlaceholders})`,
+            teamIds,
             (err2: any, players: any[]) => {
               if (err2) {
                 console.error(`[${game.roomCode}] training: failed to load players:`, err2);
@@ -105,69 +108,115 @@ export function createTrainingHelpers(_deps: { io: any }) {
                   teamId: player.team_id,
                 };
 
-                if (focus === "Forma") {
-                  const oldForm = player.form ?? 100;
-                  const newForm = Math.min(130, oldForm + 10);
-                  if (newForm !== oldForm) {
-                    upd.fields.form = newForm;
+                const played = playedPlayerIds.has(player.id);
+
+                // ── Training bonus (only players that appeared in a fixture) ──
+                if (played) {
+                  if (focus === "Forma") {
+                    const oldForm = player.form ?? 100;
+                    const newForm = Math.min(130, oldForm + 10);
+                    if (newForm !== oldForm) {
+                      upd.fields.form = newForm;
+                      upd.history.push({
+                        attribute: "form",
+                        oldValue: oldForm,
+                        newValue: newForm,
+                        delta: newForm - oldForm,
+                        focus,
+                      });
+                    }
+                  } else if (focus === "Resistência") {
+                    const oldRes = player.resistance ?? 3;
+                    const oldProg = player.resistance_progress ?? 0;
+                    let newProg = oldProg + 0.4;
+                    let newRes = oldRes;
+                    while (newProg >= 1.0 && newRes < 5) {
+                      newRes += 1;
+                      newProg -= 1.0;
+                    }
+                    if (newRes >= 5) newProg = 0; // cap progress at the ceiling
+                    upd.fields.training_resistance_progress = Math.round(newProg * 100) / 100;
+                    if (newRes !== oldRes) upd.fields.resistance = newRes;
                     upd.history.push({
-                      attribute: "form",
-                      oldValue: oldForm,
-                      newValue: newForm,
-                      delta: newForm - oldForm,
+                      attribute: "resistance",
+                      oldValue: oldRes,
+                      newValue: newRes,
+                      delta: 0.4,
+                      focus,
+                    });
+                  } else {
+                    // Position focus
+                    const targetPos =
+                      focus === "GR" ? "GR" :
+                      focus === "Defesas" ? "DEF" :
+                      focus === "Médios" ? "MED" :
+                      focus === "Avançados" ? "ATA" : null;
+                    if (targetPos && player.position === targetPos) {
+                      const skillCap =
+                        player.potential != null
+                          ? Math.min(50, player.potential)
+                          : 50;
+                      const oldSkill = player.skill ?? 0;
+                      const oldProg = player.skill_progress ?? 0;
+                      let newProg = oldProg + 1.0;
+                      let newSkill = oldSkill;
+                      while (newProg >= 1.0 && newSkill < skillCap) {
+                        newSkill += 1;
+                        newProg -= 1.0;
+                      }
+                      if (newSkill >= skillCap) newProg = 0;
+                      upd.fields.training_skill_progress = Math.round(newProg * 100) / 100;
+                      if (newSkill !== oldSkill) upd.fields.skill = newSkill;
+                      upd.history.push({
+                        attribute: "skill",
+                        oldValue: oldSkill,
+                        newValue: newSkill,
+                        delta: 1.0,
+                        focus,
+                      });
+                    }
+                  }
+                }
+
+                // ── Decay: untrained attributes worsen over time (whole squad) ──
+                // Junior GRs (negative ids) are excluded.
+                if (player.id > 0) {
+                  if (focus !== "Forma") {
+                    const oldForm = player.form ?? 100;
+                    const newForm = Math.max(50, oldForm - 5);
+                    if (newForm !== oldForm) {
+                      upd.fields.form = newForm;
+                      upd.history.push({
+                        attribute: "form",
+                        oldValue: oldForm,
+                        newValue: newForm,
+                        delta: newForm - oldForm,
+                        focus,
+                      });
+                    }
+                  }
+
+                  if (focus !== "Resistência") {
+                    const oldRes = player.resistance ?? 3;
+                    const oldProg = player.resistance_progress ?? 0;
+                    let newProg = oldProg - 0.4;
+                    let newRes = oldRes;
+                    while (newProg < 0 && newRes > 1) {
+                      newRes -= 1;
+                      newProg += 1.0;
+                    }
+                    if (newRes <= 1 && newProg < 0) newProg = 0; // clamp at floor
+                    newProg = Math.round(newProg * 100) / 100;
+                    upd.fields.training_resistance_progress = newProg;
+                    if (newRes !== oldRes) upd.fields.resistance = newRes;
+                    upd.history.push({
+                      attribute: "resistance",
+                      oldValue: oldRes,
+                      newValue: newRes,
+                      delta: -0.4,
                       focus,
                     });
                   }
-                } else if (focus === "Resistência") {
-                  const oldRes = player.resistance ?? 3;
-                  const oldProg = player.resistance_progress ?? 0;
-                  let newProg = oldProg + 0.4;
-                  let newRes = oldRes;
-                  while (newProg >= 1.0 && newRes < 5) {
-                    newRes += 1;
-                    newProg -= 1.0;
-                  }
-                  if (newRes >= 5) newProg = 0; // cap progress at the ceiling
-                  upd.fields.training_resistance_progress = Math.round(newProg * 100) / 100;
-                  if (newRes !== oldRes) upd.fields.resistance = newRes;
-                  upd.history.push({
-                    attribute: "resistance",
-                    oldValue: oldRes,
-                    newValue: newRes,
-                    delta: 0.4,
-                    focus,
-                  });
-                } else {
-                  // Position focus
-                  const targetPos =
-                    focus === "GR" ? "GR" :
-                    focus === "Defesas" ? "DEF" :
-                    focus === "Médios" ? "MED" :
-                    focus === "Avançados" ? "ATA" : null;
-                  if (!targetPos || player.position !== targetPos) continue;
-
-                  const skillCap =
-                    player.potential != null
-                      ? Math.min(50, player.potential)
-                      : 50;
-                  const oldSkill = player.skill ?? 0;
-                  const oldProg = player.skill_progress ?? 0;
-                  let newProg = oldProg + 1.0;
-                  let newSkill = oldSkill;
-                  while (newProg >= 1.0 && newSkill < skillCap) {
-                    newSkill += 1;
-                    newProg -= 1.0;
-                  }
-                  if (newSkill >= skillCap) newProg = 0;
-                  upd.fields.training_skill_progress = Math.round(newProg * 100) / 100;
-                  if (newSkill !== oldSkill) upd.fields.skill = newSkill;
-                  upd.history.push({
-                    attribute: "skill",
-                    oldValue: oldSkill,
-                    newValue: newSkill,
-                    delta: 1.0,
-                    focus,
-                  });
                 }
 
                 if (Object.keys(upd.fields).length > 0 || upd.history.length > 0) {

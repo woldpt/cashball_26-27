@@ -148,9 +148,25 @@ function TrainingOptionCard({ option, selected, isSaved, justSaved, loading }) {
 function HistoryRecordRow({ record }) {
   const delta = record.new_value - record.old_value;
   const isPositive = delta > 0;
+  const isNegative = delta < 0;
+  const valueClass = isPositive
+    ? "text-emerald-400"
+    : isNegative
+      ? "text-red-400"
+      : "text-on-surface-variant/50";
+  const deltaClass = isPositive
+    ? "text-emerald-400/70"
+    : isNegative
+      ? "text-red-400/70"
+      : "text-on-surface-variant/40";
 
   const badgeColor = ATTRIBUTE_BADGE_COLORS[record.attribute] || ATTRIBUTE_BADGE_COLORS.skill;
   const badgeLabel = ATTRIBUTE_LABEL[record.attribute] || record.attribute;
+
+  const deltaText =
+    record.new_value === record.old_value
+      ? `${record.delta > 0 ? "+" : ""}${record.delta} prog`
+      : `${delta > 0 ? "+" : ""}${delta}`;
 
   return (
     <div className="flex items-center justify-between text-sm p-2 rounded hover:bg-white/5 transition-colors">
@@ -170,20 +186,14 @@ function HistoryRecordRow({ record }) {
         </span>
         <span className="text-on-surface-variant/50">→</span>
         <span
-          className={`font-black text-xs w-8 text-right tabular-nums ${
-            isPositive ? "text-emerald-400" : "text-on-surface-variant/50"
-          }`}
+          className={`font-black text-xs w-8 text-right tabular-nums ${valueClass}`}
         >
           {record.new_value}
         </span>
         <span
-          className={`text-xs ml-1 w-14 text-right tabular-nums ${
-            isPositive ? "text-emerald-400/70" : "text-on-surface-variant/40"
-          }`}
+          className={`text-xs ml-1 w-14 text-right tabular-nums ${deltaClass}`}
         >
-          {record.new_value === record.old_value
-            ? `+${record.delta} prog`
-            : `+${delta}`}
+          {deltaText}
         </span>
       </div>
     </div>
@@ -363,6 +373,10 @@ export function TrainingPage({ me, matchweek }) {
                     <li className="flex items-start gap-2">
                       <span className="text-blue-400">→</span> Aplicado
                       automaticamente após a jornada
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-400">→</span> Atributos não
+                      treinados (forma/resistência) degradam-se com o tempo
                     </li>
                   </ul>
                 </div>
