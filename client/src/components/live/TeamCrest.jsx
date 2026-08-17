@@ -16,7 +16,9 @@ export function TeamCrest({ team, isMine = false, coach = null, size = "md" }) {
   const dims =
     size === "lg"
       ? "w-14 h-14 sm:w-20 sm:h-20 text-base sm:text-xl rounded-xl"
-      : "w-11 h-11 sm:w-12 sm:h-12 text-sm sm:text-base rounded-lg";
+      : size === "sm"
+        ? "w-9 h-9 sm:w-11 sm:h-11 text-xs sm:text-sm rounded-lg"
+        : "w-11 h-11 sm:w-12 sm:h-12 text-sm sm:text-base rounded-lg";
   return (
     <div className="relative shrink-0">
       <span

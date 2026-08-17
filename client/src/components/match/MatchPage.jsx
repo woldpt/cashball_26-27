@@ -187,7 +187,7 @@ export function MatchPage({
 						<span className="w-2 h-2 rounded-full shrink-0" style={{ background: hColor, boxShadow: `0 0 6px ${hColor}60` }} />
 						{homeTeam?.name || "Casa"}
 					</div>
-					<div className="flex items-center justify-center gap-3 px-6 bg-surface-container-low text-on-surface font-black text-xl tracking-widest">
+					<div className="flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-6 bg-surface-container-low text-on-surface font-black text-xl tracking-widest">
 						<span className="tabular-nums">{fixture.finalHomeGoals ?? 0}</span>
 						<span className="text-on-surface-variant/60 text-base">—</span>
 						<span className="tabular-nums">{fixture.finalAwayGoals ?? 0}</span>

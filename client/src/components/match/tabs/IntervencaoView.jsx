@@ -33,6 +33,7 @@ export function IntervencaoView({
   redCardedHalftimeIds, injuredHalftimeIds, onResolveAction,
 }) {
   const [centerTab, setCenterTab] = useState("subs");
+  const [mobileChronoOpen, setMobileChronoOpen] = useState(false);
 
   /* ── Mode booleans ────────────────────────────────────────────── */
   const isHalftime = mode === "halftime";
@@ -174,7 +175,7 @@ export function IntervencaoView({
        * confirmed subs exist (was: previously buried in a strip BELOW the
        * bottom bar, easy to miss). Surfacing it here at top-right makes
        * it visible at the moment the user is reviewing their subs. */}
-      <div className={`shrink-0 px-5 py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme} flex items-center justify-between gap-4`}>
+      <div className={`shrink-0 px-4 sm:px-5 py-3 sm:py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme} flex items-center justify-between gap-2 sm:gap-4`}>
         {/* Scoreboard chip — contexto do jogo em todos os modos */}
         <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface/60 border border-outline-variant/20">
           <span className="w-2 h-2 rounded-full shrink-0" style={{ background: hInfo?.color_primary || "#6366f1" }} />
@@ -209,18 +210,39 @@ export function IntervencaoView({
 
       {/* ── 2 columns: Chronology | Subs/Adversário ────────────── */}
       <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
-        {/* ═══ Mobile: mini chronology (collapsible strip) ═══ */}
+        {/* ═══ Mobile: mini chronology (collapsible strip — fechada por
+         * defeito para dar altura às listas de jogadores) ═══ */}
         <div className="flex md:hidden flex-col shrink-0 border-b border-outline-variant/20 bg-surface-container/50">
-          <PossessionBar
-            homePossession={fixture.homePossession}
-            awayPossession={fixture.awayPossession}
-            homeColor={hInfo?.color_primary}
-            awayColor={aInfo?.color_primary}
-            compact
-          />
-          <div className="max-h-36 overflow-y-auto px-3 py-2 space-y-1.5">
-            <EventList events={visibleEvts.slice(-4)} />
-          </div>
+          <button
+            onClick={() => setMobileChronoOpen((v) => !v)}
+            className="flex items-center justify-between w-full px-3 py-2 text-left"
+          >
+            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70">
+              <span className="material-symbols-outlined text-[14px] leading-none">
+                schedule
+              </span>
+              Cronologia
+            </span>
+            <span
+              className={`material-symbols-outlined text-[16px] text-on-surface-variant/50 transition-transform ${mobileChronoOpen ? "rotate-180" : ""}`}
+            >
+              expand_more
+            </span>
+          </button>
+          {mobileChronoOpen && (
+            <div className="px-3 pb-2 space-y-2">
+              <PossessionBar
+                homePossession={fixture.homePossession}
+                awayPossession={fixture.awayPossession}
+                homeColor={hInfo?.color_primary}
+                awayColor={aInfo?.color_primary}
+                compact
+              />
+              <div className="max-h-36 overflow-y-auto space-y-1.5">
+                <EventList events={visibleEvts.slice(-4)} />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ═══ LEFT: Chronology (desktop only) ═══ */}
@@ -370,8 +392,43 @@ function SubsPanel({
   effectiveOutId, selectedInId, handlePickOut, handlePickIn,
   forceOutPlayer, subbedOut, subsMade,
 }) {
+  // Mobile: mostra UMA lista de cada vez (Em campo / Banco) para dar a altura
+  // total à lista ativa. No desktop mantém-se o grid de 2 colunas.
+  const [mobileList, setMobileList] = useState("pitch");
+
+  /**
+   * Seleciona o jogador que sai e salta para o banco (mobile) para escolher
+   * quem entra.
+   * @param {object} p
+   */
+  const pickOut = (p) => {
+    handlePickOut(p);
+    setMobileList("bench");
+  };
+
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      {/* Mobile: segmented control Em campo / Banco */}
+      <div className="md:hidden shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-outline-variant/15">
+        <div className="flex-1 flex rounded-md bg-surface-container p-1 gap-1">
+          {[
+            { key: "pitch", label: `Em campo (${onPitchPlayers.length})` },
+            { key: "bench", label: `Banco (${benchPlayers.length})` },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setMobileList(tab.key)}
+              className={`flex-1 min-w-0 py-2 text-[11px] font-bold uppercase tracking-widest rounded-md transition-all ${
+                mobileList === tab.key
+                  ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
+                  : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
       {/* Tactics (halftime only) + contador de substituições */}
       {isHalftime && (
         <div className="flex items-center gap-3 px-4 py-2.5 border-b border-outline-variant/15">
@@ -403,7 +460,7 @@ function SubsPanel({
 
       <div className="flex-1 flex flex-col md:grid md:grid-cols-2 md:auto-rows-fr min-h-0 overflow-hidden">
         {/* On-pitch column */}
-        <div className="flex-1 md:flex-none min-w-0 flex flex-col min-h-0 overflow-hidden">
+        <div className={`${mobileList === "bench" ? "hidden" : "flex"} md:flex flex-1 md:flex-none min-w-0 flex-col min-h-0 overflow-hidden`}>
           <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
             <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
@@ -438,7 +495,7 @@ function SubsPanel({
                   selected={selected}
                   disabled={disabled}
                   selectable={!disabled}
-                  onPick={() => handlePickOut(p)}
+                  onPick={() => pickOut(p)}
                   title={noGrReplacement ? "Não há GR no banco para substituir" : undefined}
                   swapIndicator={isHalftime}
                   forcedOut={isForcedSwap && !!forceOutPlayer && p.id === forceOutPlayer.id}
@@ -454,7 +511,7 @@ function SubsPanel({
         </div>
 
         {/* Bench column */}
-        <div className="flex-1 md:flex-none min-w-0 flex flex-col min-h-0 overflow-hidden border-t md:border-t-0 md:border-l border-outline-variant/15">
+        <div className={`${mobileList === "pitch" ? "hidden" : "flex"} md:flex flex-1 md:flex-none min-w-0 flex-col min-h-0 overflow-hidden border-t md:border-t-0 md:border-l border-outline-variant/15`}>
           <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
             <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />

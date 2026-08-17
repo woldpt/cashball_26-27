@@ -205,18 +205,18 @@ export function LiveMatchHero({
           <div className="flex items-stretch">
             {/* Home side */}
             <div
-              className="flex-1 flex items-center gap-2.5 sm:gap-3 px-3 sm:px-5 py-3 min-w-0"
+              className="flex-1 flex items-center gap-2 sm:gap-3 px-2.5 sm:px-5 py-3 min-w-0"
               style={{
                 background: `linear-gradient(100deg, ${hInfo?.color_primary || "#333"}2e 0%, transparent 90%)`,
               }}
             >
-              <TeamCrest team={hInfo} isMine={homeIsMine} coach={homeCoach} />
+              <TeamCrest team={hInfo} isMine={homeIsMine} coach={homeCoach} size="sm" />
               <div className="flex flex-col min-w-0">
-                <span className="text-xs sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate">
+                <span className="text-[11px] sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate">
                   {hInfo?.name}
                 </span>
                 {homeCoach && (
-                  <span className="text-[9px] font-bold text-amber-400 truncate">
+                  <span className="hidden sm:block text-[9px] font-bold text-amber-400 truncate">
                     {homeCoach.name}
                   </span>
                 )}
@@ -231,14 +231,14 @@ export function LiveMatchHero({
                   ? "Pedir substituição"
                   : "Ver detalhes da partida"
               }
-              className="shrink-0 flex flex-col items-center justify-center px-4 sm:px-6 py-2 bg-surface/80 border-x border-outline-variant/15 cursor-pointer group"
+              className="shrink-0 flex flex-col items-center justify-center px-2.5 sm:px-6 py-2 bg-surface/80 border-x border-outline-variant/15 cursor-pointer group"
             >
-              <div className="font-headline font-black text-4xl sm:text-5xl tracking-tighter tabular-nums flex items-center gap-2">
+              <div className="font-headline font-black text-3xl sm:text-5xl tracking-tighter tabular-nums flex items-center gap-1.5 sm:gap-2">
                 <span style={flashStyle(myHomeFlashing)}>{homeGoals.length}</span>
-                <span className="text-on-surface/20 text-2xl sm:text-3xl">:</span>
+                <span className="text-on-surface/20 text-xl sm:text-3xl">:</span>
                 <span style={flashStyle(myAwayFlashing)}>{awayGoals.length}</span>
               </div>
-              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 mt-1 tabular-nums">
+              <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 mt-1 tabular-nums">
                 {liveMinute > 90 ? "Prol. " : ""}
                 {liveMinute}' · {phaseLabel}
               </span>
@@ -246,22 +246,22 @@ export function LiveMatchHero({
 
             {/* Away side */}
             <div
-              className="flex-1 flex items-center justify-end gap-2.5 sm:gap-3 px-3 sm:px-5 py-3 min-w-0"
+              className="flex-1 flex items-center justify-end gap-2 sm:gap-3 px-2.5 sm:px-5 py-3 min-w-0"
               style={{
                 background: `linear-gradient(260deg, ${aInfo?.color_primary || "#333"}2e 0%, transparent 90%)`,
               }}
             >
               <div className="flex flex-col min-w-0 items-end">
-                <span className="text-xs sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate text-right">
+                <span className="text-[11px] sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate text-right">
                   {aInfo?.name}
                 </span>
                 {awayCoach && (
-                  <span className="text-[9px] font-bold text-amber-400 truncate">
+                  <span className="hidden sm:block text-[9px] font-bold text-amber-400 truncate">
                     {awayCoach.name}
                   </span>
                 )}
               </div>
-              <TeamCrest team={aInfo} isMine={awayIsMine} coach={awayCoach} />
+              <TeamCrest team={aInfo} isMine={awayIsMine} coach={awayCoach} size="sm" />
             </div>
           </div>
         </div>
