@@ -657,10 +657,16 @@ function secondHalfTacticPhrase(
   awayStyle: string,
 ): string {
   const styleLabel = (s: string) => {
-    switch (s) {
-      case "OFENSIVO": return "estilo ofensivo";
-      case "DEFENSIVO": return "estilo defensivo";
-      default: return "equilibrado";
+    const style = String(s || "").trim().toUpperCase();
+    switch (style) {
+      case "OFENSIVO":
+      case "OFFENSIVE":
+        return "estilo ofensivo";
+      case "DEFENSIVO":
+      case "DEFENSIVE":
+        return "estilo defensivo";
+      default:
+        return "equilibrado";
     }
   };
   return pickPhrase([
@@ -684,10 +690,16 @@ function tacticStartPhrase(
   awayStyle: string,
 ): string {
   const styleLabel = (s: string) => {
-    switch (s) {
-      case "OFENSIVO": return "estilo ofensivo";
-      case "DEFENSIVO": return "estilo defensivo";
-      default: return "equilibrado";
+    const style = String(s || "").trim().toUpperCase();
+    switch (style) {
+      case "OFENSIVO":
+      case "OFFENSIVE":
+        return "estilo ofensivo";
+      case "DEFENSIVO":
+      case "DEFENSIVE":
+        return "estilo defensivo";
+      default:
+        return "equilibrado";
     }
   };
   return pickPhrase([

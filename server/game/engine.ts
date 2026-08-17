@@ -746,8 +746,8 @@ export function generateIntroEvents(
     const awayName = fixture.awayTeam?.name || fixture.awayTeamId;
     const homeFormation = homeTactic?.formation || "4-4-2";
     const awayFormation = awayTactic?.formation || "4-4-2";
-    const homeStyle = homeTactic?.style || "EQUILIBRADO";
-    const awayStyle = awayTactic?.style || "EQUILIBRADO";
+    const homeStyle = normaliseStyle(homeTactic?.style);
+    const awayStyle = normaliseStyle(awayTactic?.style);
 
     if (fixture.round === 5) {
       fixture.events.push({
@@ -784,8 +784,8 @@ export function generateSecondHalfIntroEvents(
     const awayName = fixture.awayTeam?.name || fixture.awayTeamId;
     const homeFormation = homeTactic?.formation || "4-4-2";
     const awayFormation = awayTactic?.formation || "4-4-2";
-    const homeStyle = homeTactic?.style || "EQUILIBRADO";
-    const awayStyle = awayTactic?.style || "EQUILIBRADO";
+    const homeStyle = normaliseStyle(homeTactic?.style);
+    const awayStyle = normaliseStyle(awayTactic?.style);
     fixture.events.push({
       minute: 46,
       type: "phase_start",
@@ -1232,8 +1232,8 @@ async function simulateMatchSegment(
       const awayName = fixture.awayTeam?.name || fixture.awayTeamId;
       const homeFormation = homeTactic?.formation || "4-4-2";
       const awayFormation = awayTactic?.formation || "4-4-2";
-      const homeStyle = homeTactic?.style || "EQUILIBRADO";
-      const awayStyle = awayTactic?.style || "EQUILIBRADO";
+      const homeStyle = normaliseStyle(homeTactic?.style);
+      const awayStyle = normaliseStyle(awayTactic?.style);
 
       if (fixture.round === 5) {
         fixture.events.push({
@@ -1260,8 +1260,8 @@ async function simulateMatchSegment(
       const awayName = fixture.awayTeam?.name || fixture.awayTeamId;
       const homeFormation = homeTactic?.formation || "4-4-2";
       const awayFormation = awayTactic?.formation || "4-4-2";
-      const homeStyle = homeTactic?.style || "EQUILIBRADO";
-      const awayStyle = awayTactic?.style || "EQUILIBRADO";
+      const homeStyle = normaliseStyle(homeTactic?.style);
+      const awayStyle = normaliseStyle(awayTactic?.style);
       fixture.events.push({
         minute,
         type: "phase_start",

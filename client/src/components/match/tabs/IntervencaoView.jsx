@@ -109,12 +109,14 @@ export function IntervencaoView({
   const oppBench = sortPlayersByPos(oppLineup.filter((p) => p.is_starter === false));
   const oppTactic = isHome ? fixture?._t2 : fixture?._t1;
   const oppFormation = oppTactic?.formation || null;
-  const oppStyleRaw = oppTactic?.style?.toUpperCase?.() || null;
-  const oppStyleLabel =
-    oppStyleRaw === "OFENSIVO" ? "Ofensivo"
-      : oppStyleRaw === "DEFENSIVO" ? "Defensivo"
-        : oppStyleRaw === "EQUILIBRADO" ? "Equilibrado"
-          : null;
+  const oppStyleRaw = (oppTactic?.style || "").toString().toUpperCase();
+  const oppStyleLabel = !oppStyleRaw
+    ? null
+    : oppStyleRaw === "OFENSIVO" || oppStyleRaw === "OFFENSIVE"
+      ? "Ofensivo"
+      : oppStyleRaw === "DEFENSIVO" || oppStyleRaw === "DEFENSIVE"
+        ? "Defensivo"
+        : "Equilibrado";
   const oppRows = buildPositionRows(oppStarters);
   const oppInfo = isHome ? aInfo : hInfo;
 
