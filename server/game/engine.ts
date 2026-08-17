@@ -62,12 +62,14 @@ async function getTeamSquad(
     db.all("SELECT * FROM players WHERE team_id = ?", [teamId], (err, rows) => {
       if (err) return reject(err);
 
-      // Build available roster and inject junior GRs if fewer than 2 are available
+      // Build available roster and inject juniors: withJuniorGRs guarantees a
+      // GR, ensureFullBench tops up the pool to 2 GR + 14 field players so the
+      // best-XI auto-pick below can never return a lineup shorter than 11.
       const availableReal = (rows || []).filter((p) =>
         isPlayerAvailable(p, currentMatchweek),
       );
-      const availableRows = withJuniorGRs(
-        availableReal,
+      const availableRows = ensureFullBench(
+        withJuniorGRs(availableReal, teamId, currentMatchweek),
         teamId,
         currentMatchweek,
       );
@@ -113,6 +115,59 @@ async function getTeamSquad(
       resolve(lineup);
     });
   });
+}
+
+/**
+ * Defensive guarantee applied whenever a fresh on-pitch squad is built:
+ * the starting XI must contain at least 1 available GR and 10 available field
+ * players. Existing squad members are kept untouched; missing slots are topped
+ * up with junior players from an ensureFullBench pool. Never used to re-add
+ * players mid-match — only when the squad is first built (or restored).
+ */
+function ensureStartingXI(
+  squad: PlayerRow[],
+  teamId: number,
+  matchweek: number,
+): PlayerRow[] {
+  const avail = (squad || []).filter((p) => isPlayerAvailable(p, matchweek));
+  const grCount = avail.filter((p) => p.position === "GR").length;
+  const fieldCount = avail.length - grCount;
+  if (grCount >= 1 && fieldCount >= 10) return squad;
+
+  const pool = ensureFullBench(
+    withJuniorGRs(squad || [], teamId, matchweek),
+    teamId,
+    matchweek,
+  );
+  const inSquad = new Set((squad || []).map((p) => p.id));
+  const result = [...(squad || [])];
+  const quota = { GR: 1, DEF: 4, MED: 4, ATA: 2 };
+  const currentPos = { GR: grCount, DEF: 0, MED: 0, ATA: 0 };
+  for (const p of result) {
+    if (p.position !== "GR" && quota[p.position] != null) {
+      currentPos[p.position]++;
+    }
+  }
+
+  const candidates = [...pool]
+    .filter((p) => !inSquad.has(p.id))
+    .sort((a, b) => b.skill - a.skill);
+
+  for (const p of candidates) {
+    if (result.length >= 11) break;
+    if (currentPos[p.position] < quota[p.position]) {
+      result.push(p);
+      currentPos[p.position]++;
+    }
+  }
+  if (result.length < 11) {
+    const missing = 11 - result.length;
+    const remaining = candidates.filter(
+      (p) => !result.includes(p) && p.position !== "GR",
+    );
+    result.push(...remaining.slice(0, missing));
+  }
+  return result;
 }
 
 // Gera fixtures para uma divisão usando um calendário determinístico com
@@ -739,6 +794,7 @@ async function simulateMatchSegment(
   const game = context.game;
 
   let homeSquad;
+  const isFreshHomeBuild = !fixture._homeSquad;
   if (fixture._homeSquad) {
     homeSquad = fixture._homeSquad;
   } else if (fixture.homeLineup && fixture.homeLineup.length > 0) {
@@ -780,7 +836,17 @@ async function simulateMatchSegment(
     fixture._homeSquad = homeSquad;
   }
 
+  if (isFreshHomeBuild) {
+    homeSquad = ensureStartingXI(
+      homeSquad,
+      fixture.homeTeamId,
+      currentMatchweek,
+    );
+    fixture._homeSquad = homeSquad;
+  }
+
   let awaySquad;
+  const isFreshAwayBuild = !fixture._awaySquad;
   if (fixture._awaySquad) {
     awaySquad = fixture._awaySquad;
   } else if (fixture.awayLineup && fixture.awayLineup.length > 0) {
@@ -816,6 +882,15 @@ async function simulateMatchSegment(
       db,
       fixture.awayTeamId,
       awayTactic,
+      currentMatchweek,
+    );
+    fixture._awaySquad = awaySquad;
+  }
+
+  if (isFreshAwayBuild) {
+    awaySquad = ensureStartingXI(
+      awaySquad,
+      fixture.awayTeamId,
       currentMatchweek,
     );
     fixture._awaySquad = awaySquad;
