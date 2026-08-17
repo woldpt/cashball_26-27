@@ -54,6 +54,10 @@ export function GameProvider({
 	const [matchResults, setMatchResults] = useState(null);
 	const [allMatchResults, setAllMatchResults] = useState({});
 	const [matchweekCount, setMatchweekCount] = useState(0);
+	// Fica true entre o fim de jogo (matchResults) e a chegada dos dados
+	// actualizados (standingsUpdated). Usado para mostrar o indicador
+	// "A atualizar classificação…" sem bloquear o ecrã.
+	const [standingsStale, setStandingsStale] = useState(false);
 	const [seasonYear, setSeasonYear] = useState(2026);
 	const [activeTab, setActiveTab] = useState("club");
 	const [topScorers, setTopScorers] = useState([]);
@@ -350,6 +354,15 @@ export function GameProvider({
 		isLiveSimulation,
 	]);
 
+	// ── Standings staleness safety net ─────────────────────────────────────
+	// Se o servidor nunca emitir standingsUpdated (erro/rede lenta), não
+	// deixar o indicador "A atualizar…" preso para sempre.
+	useEffect(() => {
+		if (!standingsStale) return;
+		const t = setTimeout(() => setStandingsStale(false), 10000);
+		return () => clearTimeout(t);
+	}, [standingsStale]);
+
 	// ── Goal flash per-minute effect ───────────────────────────────────────
 	useLayoutEffect(() => {
 		if (!isPlayingMatch || !matchResults?.results || liveMinute < 1) return;
@@ -598,6 +611,7 @@ export function GameProvider({
 			setSubstitutionPause,
 			setTacticFamiliarity,
 			setAllTacticFamiliarity,
+			setStandingsStale,
 		},
 		{
 			isPlayingMatchRef,
@@ -921,6 +935,7 @@ export function GameProvider({
 		setMatchResults(null);
 		setAllMatchResults({});
 		setMatchweekCount(0);
+		setStandingsStale(false);
 		setActiveTab("club");
 		setTactic(DEFAULT_TACTIC);
 		setLockedCoaches([]);
@@ -1006,6 +1021,7 @@ export function GameProvider({
 		activeTab,
 		setActiveTab,
 		topScorers,
+		standingsStale,
 		marketPairs,
 		marketPositionFilter,
 		setMarketPositionFilter,

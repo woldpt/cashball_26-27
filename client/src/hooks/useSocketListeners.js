@@ -1171,6 +1171,10 @@ export function useSocketListeners(handlers, refs) {
 				}
 			handlers.setMatchResults(data);
 			handlers.setMatchweekCount(data.matchweek);
+			// As classificações do cliente ficam desatualizadas até o servidor
+			// emitir os dados novos (teamsData/teamForms/topScorers) e
+			// "standingsUpdated". Marca para o indicador "A atualizar…".
+			handlers.setStandingsStale(true);
 			handlers.setShowHalftimePanel(false);
 			handlers.setIsCupMatch(false);
 			handlers.setCupExtraTimeBadge(false);
@@ -1204,6 +1208,11 @@ export function useSocketListeners(handlers, refs) {
 				socket.emit("setTactic", next);
 				return next;
 			});
+		});
+
+		socket.on("standingsUpdated", () => {
+			if (!inRoom()) return;
+			handlers.setStandingsStale(false);
 		});
 
 		socket.on("coachDismissed", ({ reason, teamName }) => {
@@ -1333,6 +1342,7 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("matchSegmentStart");
 			socket.off("matchMinuteUpdate");
 			socket.off("matchResults");
+			socket.off("standingsUpdated");
 			socket.off("halfTimeResults");
 			socket.off("matchActionRequired");
 			socket.off("matchActionResolved");

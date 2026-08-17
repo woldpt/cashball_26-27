@@ -730,6 +730,30 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           const seasonDone = game.calendarIndex >= SEASON_CALENDAR.length;
 
           persistMatchResults(game, fixtures, completedMatchweek, () => {
+            // ── Broadcast updated standings ASAP ─────────────────────────────
+            // Teams/forms/topScorers are final right after persistMatchResults
+            // writes the matches. Emit them before the heavy background
+            // processing (quality evolution, training bonuses, transfers…) so
+            // the client's Classification screen shows fresh data immediately
+            // instead of waiting for the whole post-match chain to finish.
+            getTeamsWithCoachNames(game.db)
+              .then((teams: any[]) => {
+                io.to(game.roomCode).emit("teamsData", teams);
+              })
+              .catch(() => {});
+            getAllTeamForms(game.db, game.season)
+              .then((forms) => {
+                io.to(game.roomCode).emit("teamForms", forms);
+              })
+              .catch(() => {});
+            game.db.all(
+              "SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20",
+              (err3: any, scorers: any[]) => {
+                io.to(game.roomCode).emit("topScorers", scorers || []);
+                io.to(game.roomCode).emit("standingsUpdated");
+              },
+            );
+
             applyPostMatchQualityEvolution(game.db, fixtures, completedMatchweek, game.season || 1)
               .then(() =>
                 applyTrainingBonuses(game, fixtures, completedCalendarIndex),
@@ -813,23 +837,12 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                   }
                 }
 
-                // Broadcast updated standings and squad info
-                getTeamsWithCoachNames(game.db)
-                  .then((teams: any[]) => {
-                    io.to(game.roomCode).emit("teamsData", teams);
-                  })
-                  .catch(() => {});
-                getAllTeamForms(game.db, game.season)
-                  .then((forms) => {
-                    io.to(game.roomCode).emit("teamForms", forms);
-                  })
-                  .catch(() => {});
-
+                // Standings (teamsData/teamForms/topScorers) were already
+                // broadcast right after persistMatchResults — only squad info
+                // and presence remain.
                 game.db.all(
                   "SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20",
-                  (err3: any, scorers: any[]) => {
-                    io.to(game.roomCode).emit("topScorers", scorers || []);
-
+                  (_err3: any, _scorers: any[]) => {
                     const connectedPlayers = getPlayerList(game);
                     const activeTeamIds = connectedPlayers
                       .filter((p) => p.socketId && p.teamId != null)

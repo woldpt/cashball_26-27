@@ -11,6 +11,7 @@ export function StandingsTab({
   onTeamClick,
   players,
   allMatchResults,
+  standingsStale,
 }) {
   return (
     <LeagueStandings
@@ -24,6 +25,7 @@ export function StandingsTab({
       onTeamClick={onTeamClick}
       players={players}
       allMatchResults={allMatchResults}
+      standingsStale={standingsStale}
     />
   );
 }

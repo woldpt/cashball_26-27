@@ -493,6 +493,7 @@ function AllTimeChampions({ allChampions }) {
  *   palmares: { allChampions: Array },
  *   onTeamClick: Function,
  *   allMatchResults: Record<number, Array>,
+ *   standingsStale?: boolean,
  * }} props
  */
 export function LeagueStandings({
@@ -506,6 +507,7 @@ export function LeagueStandings({
   onTeamClick,
   players = [],
   allMatchResults = {},
+  standingsStale = false,
 }) {
   const humanTeamIds = new Set(
     players.filter((p) => p.teamId != null).map((p) => String(p.teamId)),
@@ -535,6 +537,12 @@ export function LeagueStandings({
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary text-[10px] font-black uppercase rounded-sm border-l-2 border-primary">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             Época em curso
+          </span>
+        )}
+        {standingsStale && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase rounded-sm border border-amber-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            A atualizar classificação…
           </span>
         )}
       </div>
