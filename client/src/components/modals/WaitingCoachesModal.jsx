@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
+import { useEffect, useRef } from "react";
 import { useGame } from "../../contexts/GameContext.jsx";
+import { socket } from "../../socket.js";
 import { MODAL_Z } from "../../constants/index.js";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { Badge } from "../shared/Badge.jsx";
@@ -15,10 +17,46 @@ import { Badge } from "../shared/Badge.jsx";
  * }} props
  */
 export function WaitingCoachesModal({ players, visible, onCancel }) {
-  const { teams, lockedCoaches, awaitingCoaches, me } = useGame();
+  const {
+    teams,
+    lockedCoaches,
+    awaitingCoaches,
+    me,
+    roomMessages,
+    chatInput,
+    setChatInput,
+  } = useGame();
+  const chatScrollRef = useRef(null);
+
+  // Refrescar histórico da sala ao abrir o modal
+  useEffect(() => {
+    if (!visible) return;
+    socket.emit("getChatHistory", { channel: "room" });
+  }, [visible]);
+
+  // Autoscroll quando chegam novas mensagens
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [roomMessages]);
 
   // Só mostrar se lockedCoaches >= 2 (multiplayer) e visible
   if (!visible || lockedCoaches.length < 2) return null;
+
+  const sendChat = () => {
+    const trimmed = (chatInput || "").trim();
+    if (!trimmed) return;
+    socket.emit("sendChatMessage", { channel: "room", message: trimmed });
+    setChatInput("");
+  };
+
+  const formatChatTime = (ts) => {
+    const d = new Date(ts);
+    return d.toLocaleTimeString("pt-PT", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   /** @param {string} coachName */
   const getCoachData = (coachName) => {
@@ -179,6 +217,79 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
                   </div>
                 );
               })}
+            </div>
+
+            {/* Chat rápido da sala */}
+            <div className="border-t border-outline-variant/15">
+              <div className="flex items-center gap-1.5 px-4 pt-2 pb-1">
+                <span className="text-xs">💬</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
+                  Chat da sala
+                </span>
+              </div>
+              <div className="px-3 pb-1">
+                <div
+                  ref={chatScrollRef}
+                  className="h-28 overflow-y-auto space-y-2 px-1"
+                  style={{ scrollBehavior: "smooth" }}
+                >
+                  {roomMessages.length === 0 ? (
+                    <p className="text-center text-[10px] italic text-on-surface-variant/50 mt-6">
+                      Nenhuma mensagem nesta sala ainda.
+                    </p>
+                  ) : (
+                    roomMessages.map((msg) => {
+                      const isOwn = msg.coachName === me?.name;
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`flex flex-col gap-0.5 ${isOwn ? "items-end" : "items-start"}`}
+                        >
+                          {!isOwn && (
+                            <span className="text-[9px] text-on-surface-variant/70 font-semibold px-1">
+                              {msg.coachName}
+                            </span>
+                          )}
+                          <div
+                            className={`max-w-[85%] px-2.5 py-1 rounded-lg text-xs leading-snug ${
+                              isOwn
+                                ? "bg-primary text-on-primary rounded-br-sm"
+                                : "bg-surface-container text-on-surface rounded-bl-sm"
+                            }`}
+                          >
+                            {msg.message}
+                          </div>
+                          <span className="text-[8px] text-on-surface-variant/50 px-1">
+                            {formatChatTime(msg.timestamp)}
+                          </span>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+                <div className="flex items-center gap-2 py-2">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") sendChat();
+                    }}
+                    placeholder="Conversa rápida…"
+                    maxLength={500}
+                    className="flex-1 bg-surface-container text-on-surface text-xs px-3 py-1.5 rounded-lg outline-none placeholder:text-on-surface-variant/50 border border-outline-variant/30 focus:border-primary/60 transition-colors"
+                  />
+                  <button
+                    onClick={sendChat}
+                    disabled={!(chatInput || "").trim()}
+                    className="shrink-0 p-1.5 rounded-lg bg-primary text-on-primary disabled:opacity-30 hover:opacity-90 transition-opacity"
+                  >
+                    <span className="material-symbols-outlined text-[16px] leading-none">
+                      send
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Rodapé */}
