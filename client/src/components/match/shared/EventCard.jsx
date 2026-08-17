@@ -37,11 +37,20 @@ export function EventCard({ event, accent, showTeamBadge, showIcon = true, teamN
             ) : null}
           </span>
         )}
-        <span className="flex-1 truncate text-xs font-semibold text-on-surface">
+        <span className="flex-1 min-w-0 flex items-center gap-1.5 text-xs font-semibold text-on-surface">
           {name ? (
-            <PlayerLink playerId={event.playerId}>
-              {name}
-            </PlayerLink>
+            <>
+              <span className="truncate min-w-0">
+                <PlayerLink playerId={event.playerId}>
+                  {name}
+                </PlayerLink>
+              </span>
+              {event.type === "penalty_goal" && (
+                <span className="shrink-0 text-[9px] font-black uppercase px-1 py-px rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 tracking-widest">
+                  Pen.
+                </span>
+              )}
+            </>
           ) : (
             narrativeText || ""
           )}

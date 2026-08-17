@@ -400,11 +400,18 @@ function TeamEvents({ events, align }) {
           </span>
         );
         const nameEl = (
-          <span className={nameCls}>
-            {isSub && subOutName ? (
-              <span className="opacity-60 line-through mr-0.5">{subOutName}</span>
-            ) : null}
-            <PlayerLink playerId={e.playerId}>{name}</PlayerLink>
+          <span className={`flex items-center gap-1 min-w-0 ${nameCls}`}>
+            <span className="truncate min-w-0">
+              {isSub && subOutName ? (
+                <span className="opacity-60 line-through mr-0.5">{subOutName}</span>
+              ) : null}
+              <PlayerLink playerId={e.playerId}>{name}</PlayerLink>
+            </span>
+            {e.type === "penalty_goal" && (
+              <span className="shrink-0 text-[8px] font-black uppercase px-1 py-px rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 tracking-widest">
+                Pen.
+              </span>
+            )}
           </span>
         );
         return (
