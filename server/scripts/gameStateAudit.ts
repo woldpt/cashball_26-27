@@ -1,11 +1,11 @@
-import type { ActiveGame } from "../types";
-
 /**
  * Game State Audit — validates game state invariants during play.
  * Checks for budget inconsistencies, invalid squad compositions,
  * duplicate players, broken match phase transitions.
  *
- * Usage: npx tsx server/scripts/gameStateAudit.ts <roomCode>
+ * Usage:
+ *   npx tsx server/scripts/gameStateAudit.ts <roomCode>   # game_<roomCode>.db
+ *   npx tsx server/scripts/gameStateAudit.ts base         # base.db (seeded DB)
  */
 
 const sqlite3 = require("sqlite3").verbose();
@@ -18,6 +18,14 @@ interface AuditIssue {
   message: string;
   details?: Record<string, any>;
 }
+
+/**
+ * Squad composition targets — Confortável plantel (21-22 jogadores).
+ * Each team must be able to field any formation with a full bench (5 subs)
+ * plus at least one spare player per line to absorb injuries/suspensions.
+ */
+const SQUAD_MIN = { GR: 3, DEF: 6, MED: 6, ATA: 5 } as const;
+const SQUAD_MAX = 22;
 
 class GameStateAuditor {
   private issues: AuditIssue[] = [];
@@ -51,20 +59,18 @@ class GameStateAuditor {
   }
 
   private async getTeams() {
-    return this.runQuery<any>(
-      "SELECT id, name, division, budget, coach_name FROM teams",
-    );
+    return this.runQuery<any>("SELECT id, name, division, budget FROM teams");
   }
 
   private async getPlayers() {
     return this.runQuery<any>(
-      "SELECT id, name, team_id, market_value, salary, contract_end_matchweek FROM players",
+      "SELECT id, name, team_id, value, wage, contract_until_matchweek FROM players",
     );
   }
 
   private async getMatches() {
     return this.runQuery<any>(
-      "SELECT id, home_team_id, away_team_id, status, matchweek FROM matches",
+      "SELECT id, home_team_id, away_team_id, played, home_score, away_score FROM matches",
     );
   }
 
@@ -93,7 +99,7 @@ class GameStateAuditor {
 
     for (const team of teams) {
       const players = await this.runQuery<any>(
-        "SELECT SUM(salary) as total_salary FROM players WHERE team_id = ?",
+        "SELECT SUM(wage) as total_salary FROM players WHERE team_id = ?",
         [team.id],
       );
 
@@ -124,7 +130,7 @@ class GameStateAuditor {
 
     for (const team of teams) {
       const players = await this.runQuery<any>(
-        "SELECT position, COUNT(*) as count FROM players WHERE team_id = ? AND active = 1 GROUP BY position",
+        "SELECT position, COUNT(*) as count FROM players WHERE team_id = ? GROUP BY position",
         [team.id],
       );
 
@@ -133,11 +139,10 @@ class GameStateAuditor {
         positions[row.position] = row.count;
       }
 
-      const expectedMin = { GR: 1, DEF: 3, MED: 3, ATA: 1 };
-      for (const [pos, minCount] of Object.entries(expectedMin)) {
+      for (const [pos, minCount] of Object.entries(SQUAD_MIN)) {
         if ((positions[pos] || 0) < minCount) {
           this.addIssue(
-            "warning",
+            "error",
             "squad",
             `Team ${team.name} has insufficient ${pos} players (${positions[pos] || 0} < ${minCount})`,
             { teamId: team.id, position: pos, count: positions[pos] || 0 },
@@ -146,11 +151,11 @@ class GameStateAuditor {
       }
 
       const totalPlayers = Object.values(positions).reduce((a, b) => a + b, 0);
-      if (totalPlayers > 23) {
+      if (totalPlayers > SQUAD_MAX) {
         this.addIssue(
-          "error",
+          "warning",
           "squad",
-          `Team ${team.name} has too many players (${totalPlayers} > 23)`,
+          `Team ${team.name} has too many players (${totalPlayers} > ${SQUAD_MAX})`,
           { teamId: team.id, totalPlayers },
         );
       }
@@ -159,60 +164,79 @@ class GameStateAuditor {
 
   private async auditDuplicatePlayers() {
     const duplicates = await this.runQuery<any>(
-      "SELECT name, COUNT(*) as count FROM players WHERE active = 1 GROUP BY name HAVING count > 1",
+      "SELECT team_id, name, COUNT(*) as count FROM players WHERE team_id IS NOT NULL GROUP BY team_id, name HAVING count > 1",
     );
 
     for (const dup of duplicates) {
       this.addIssue(
         "error",
         "duplicates",
-        `Player '${dup.name}' appears ${dup.count} times in active squads`,
-        { playerName: dup.name, count: dup.count },
+        `Player '${dup.name}' appears ${dup.count} times in the same squad (team ${dup.team_id})`,
+        { teamId: dup.team_id, playerName: dup.name, count: dup.count },
       );
     }
   }
 
   private async auditContractExpiry() {
+    const state = await this.runQuery<any>(
+      "SELECT value FROM game_state WHERE key = 'matchweek'",
+    );
+    const currentMatchweek = parseInt(state[0]?.value ?? "1", 10) || 1;
+
     const expiredContracts = await this.runQuery<any>(
-      "SELECT id, name, team_id, contract_end_matchweek FROM players WHERE contract_end_matchweek IS NOT NULL AND contract_end_matchweek < 1",
+      "SELECT id, name, team_id, contract_until_matchweek FROM players WHERE contract_until_matchweek > 0 AND contract_until_matchweek <= ?",
+      [currentMatchweek],
     );
 
     if (expiredContracts.length > 0) {
       this.addIssue(
         "warning",
         "contracts",
-        `${expiredContracts.length} players have contracts expiring before matchweek 1`,
-        { count: expiredContracts.length },
+        `${expiredContracts.length} players have contracts expiring at or before matchweek ${currentMatchweek}`,
+        { count: expiredContracts.length, currentMatchweek },
       );
     }
   }
 
   private async auditMatchPhases() {
-    const invalidPhases = await this.runQuery<any>(
-      "SELECT id, status FROM matches WHERE status NOT IN ('pending', 'first_half', 'halftime', 'second_half', 'extra_time', 'finished')",
+    const invalidPlayed = await this.runQuery<any>(
+      "SELECT id, played FROM matches WHERE played NOT IN (0, 1)",
     );
 
-    for (const match of invalidPhases) {
+    for (const match of invalidPlayed) {
       this.addIssue(
         "error",
         "match_phase",
-        `Match ${match.id} has invalid status '${match.status}'`,
-        { matchId: match.id, status: match.status },
+        `Match ${match.id} has invalid 'played' value '${match.played}'`,
+        { matchId: match.id, played: match.played },
+      );
+    }
+
+    const playedWithoutScore = await this.runQuery<any>(
+      "SELECT id, home_score, away_score FROM matches WHERE played = 1 AND (home_score IS NULL OR away_score IS NULL)",
+    );
+
+    for (const match of playedWithoutScore) {
+      this.addIssue(
+        "error",
+        "match_phase",
+        `Match ${match.id} is played but missing a score (${match.home_score}-${match.away_score})`,
+        { matchId: match.id, homeScore: match.home_score, awayScore: match.away_score },
       );
     }
   }
 
   private async auditTransfersIntegrity() {
-    const orphanedTransfers = await this.runQuery<any>(
-      "SELECT t.id, t.from_team_id FROM transfers t LEFT JOIN teams tm ON t.from_team_id = tm.id WHERE tm.id IS NULL",
+    const listedWithoutPrice = await this.runQuery<any>(
+      "SELECT id, name, team_id, transfer_status, transfer_price FROM players WHERE transfer_status IS NOT NULL AND transfer_status != 'none' AND (transfer_price IS NULL OR transfer_price <= 0)",
     );
 
-    if (orphanedTransfers.length > 0) {
+    for (const player of listedWithoutPrice) {
       this.addIssue(
-        "error",
+        "warning",
         "transfers",
-        `${orphanedTransfers.length} transfers reference deleted teams`,
-        { count: orphanedTransfers.length },
+        `Player '${player.name}' is on transfer_status '${player.transfer_status}' without a price`,
+        { playerId: player.id, teamId: player.team_id, status: player.transfer_status },
       );
     }
   }
@@ -273,7 +297,10 @@ async function main() {
     process.exit(1);
   }
 
-  const dbPath = path.join(__dirname, "..", "db", `game_${roomCode}.db`);
+  const dbPath =
+    roomCode === "base"
+      ? path.join(__dirname, "..", "db", "base.db")
+      : path.join(__dirname, "..", "db", `game_${roomCode}.db`);
   if (!fs.existsSync(dbPath)) {
     console.error(`❌ Database not found: ${dbPath}`);
     process.exit(1);

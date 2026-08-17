@@ -47,9 +47,7 @@
         { "name": "Nehuén Pérez", "country": "🇦🇷", "position": "DEF" },
         { "name": "Zaidu Sanusi", "country": "🇳🇬", "position": "DEF" },
         { "name": "Alberto Costa", "country": "🇵🇹", "position": "DEF" },
-        { "name": "Dominik Prpić", "country": "🇭🇷", "position": "DEF" },
         { "name": "Martim Fernandes", "country": "🇵🇹", "position": "DEF" },
-        { "name": "Francisco Moura", "country": "🇵🇹", "position": "DEF" },
         { "name": "Alan Varela", "country": "🇦🇷", "position": "MED" },
         { "name": "Seko Fofana", "country": "🇨🇮", "position": "MED" },
         { "name": "Vasco Sousa", "country": "🇵🇹", "position": "MED" },
@@ -80,7 +78,6 @@
         { "name": "Alexander Bah", "country": "🇩🇰", "position": "DEF" },
         { "name": "Samuel Dahl", "country": "🇸🇪", "position": "DEF" },
         { "name": "Amar Dedić", "country": "🇧🇦", "position": "DEF" },
-        { "name": "Sidny Lopes Cabral", "country": "🇨🇻", "position": "DEF" },
         { "name": "Fredrik Aursnes", "country": "🇳🇴", "position": "MED" },
         { "name": "Leandro Barreiro", "country": "🇱🇺", "position": "MED" },
         { "name": "Manu Silva", "country": "🇵🇹", "position": "MED" },
@@ -177,8 +174,7 @@
         { "name": "Weverson", "country": "🇧🇷", "position": "DEF" },
         { "name": "Jonathan Buatu", "country": "🇦🇴", "position": "DEF" },
         { "name": "Antonio Espigares", "country": "🇪🇸", "position": "DEF" },
-        { "name": "Jonathan Mutombo", "country": "🇫🇷", "position": "DEF" },
-        { "name": "Zé Carlos", "country": "🇵🇹", "position": "MED" },
+        { "name": "Énio Ramalho", "country": "🇵🇹", "position": "MED" },
         { "name": "Luís Esteves", "country": "🇵🇹", "position": "MED" },
         { "name": "Gui Beleza", "country": "🇵🇹", "position": "MED" },
         { "name": "Mohamed Bamba", "country": "🇨🇮", "position": "MED" },
@@ -188,7 +184,8 @@
         { "name": "Murilo", "country": "🇧🇷", "position": "ATA" },
         { "name": "Joelson Fernandes", "country": "🇵🇹", "position": "ATA" },
         { "name": "Héctor Hernández", "country": "🇪🇸", "position": "ATA" },
-        { "name": "Agustín Moreira", "country": "🇺🇾", "position": "ATA" }
+        { "name": "Agustín Moreira", "country": "🇺🇾", "position": "ATA" },
+        { "name": "Sandro Marcelino", "country": "🇵🇹", "position": "MED" }
       ]
     },
     {
@@ -243,7 +240,6 @@
         { "name": "Leandro Santos", "country": "🇵🇹", "position": "DEF" },
         { "name": "Álvaro Martínez", "country": "🇪🇸", "position": "DEF" },
         { "name": "Maracás", "country": "🇧🇷", "position": "DEF" },
-        { "name": "Kiko", "country": "🇵🇹", "position": "DEF" },
         { "name": "Miguel Silva", "country": "🇵🇹", "position": "MED" },
         { "name": "Mateja Stjepanović", "country": "🇷🇸", "position": "MED" },
         { "name": "Vasco Sousa", "country": "🇵🇹", "position": "MED" },
@@ -301,23 +297,19 @@
         { "name": "Gril", "country": "🇵🇹", "position": "GR" },
         { "name": "Pedro Trigueira", "country": "🇵🇹", "position": "GR" },
         { "name": "Rafael Furtado", "country": "🇵🇹", "position": "GR" },
-
         { "name": "João Pinto", "country": "🇵🇹", "position": "DEF" },
         { "name": "André Almeida", "country": "🇵🇹", "position": "DEF" },
         { "name": "Arthur Chaves", "country": "🇧🇷", "position": "DEF" },
         { "name": "Robinho", "country": "🇧🇷", "position": "DEF" },
         { "name": "Simão Silva", "country": "🇵🇹", "position": "DEF" },
         { "name": "Gustavo Costa", "country": "🇵🇹", "position": "DEF" },
-        { "name": "Diogo Almeida", "country": "🇵🇹", "position": "DEF" },
         { "name": "Tiago Mesquita", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Álvaro Zamora", "country": "🇨🇷", "position": "MED" },
         { "name": "Cihan Kahraman", "country": "🇹🇷", "position": "MED" },
         { "name": "Rúben Pereira", "country": "🇵🇹", "position": "MED" },
         { "name": "Bruno Silva", "country": "🇵🇹", "position": "MED" },
         { "name": "Sori Mané", "country": "🇬🇼", "position": "MED" },
         { "name": "Andre Carvalhas", "country": "🇵🇹", "position": "MED" },
-
         { "name": "André Clóvis", "country": "🇧🇷", "position": "ATA" },
         { "name": "João Guilherme", "country": "🇧🇷", "position": "ATA" },
         { "name": "Anthony Carter", "country": "🇦🇺", "position": "ATA" },
@@ -334,7 +326,6 @@
       "players": [
         { "name": "Lucas Paes", "country": "🇧🇷", "position": "GR" },
         { "name": "Unai Pérez", "country": "🇪🇸", "position": "GR" },
-
         { "name": "David Bruno", "country": "🇵🇹", "position": "DEF" },
         { "name": "Stopira", "country": "🇨🇻", "position": "DEF" },
         { "name": "Arnau Casas", "country": "🇪🇸", "position": "DEF" },
@@ -342,19 +333,19 @@
         { "name": "Afonso Peixoto", "country": "🇵🇹", "position": "DEF" },
         { "name": "Javi Vázquez", "country": "🇪🇸", "position": "DEF" },
         { "name": "Elie N'Tamon", "country": "🇫🇷", "position": "DEF" },
-
         { "name": "Jack Ipalibo", "country": "🇳🇬", "position": "MED" },
         { "name": "Alex Carbonell", "country": "🇪🇸", "position": "MED" },
         { "name": "Aritz Muguruza", "country": "🇪🇸", "position": "MED" },
         { "name": "Diogo Rodrigues", "country": "🇵🇹", "position": "MED" },
         { "name": "João Afonso", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Mathéo Titalom", "country": "🇫🇷", "position": "ATA" },
         { "name": "Adama Baradji", "country": "🇫🇷", "position": "ATA" },
         { "name": "Marquinhos", "country": "🇧🇷", "position": "ATA" },
         { "name": "Mateusz Kowalski", "country": "🇵🇱", "position": "ATA" },
         { "name": "Luis Quintero", "country": "🇨🇴", "position": "ATA" },
-        { "name": "Arielson", "country": "🇧🇷", "position": "ATA" }
+        { "name": "Arielson", "country": "🇧🇷", "position": "ATA" },
+        { "name": "Hélder Vale", "country": "🇵🇹", "position": "GR" },
+        { "name": "Jorge Vilaça", "country": "🇵🇹", "position": "MED" }
       ]
     },
     {
@@ -367,7 +358,6 @@
         { "name": "João Bravim", "country": "🇧🇷", "position": "GR" },
         { "name": "Jakob Odehnal", "country": "🇦🇹", "position": "GR" },
         { "name": "Salvi Carrasco", "country": "🇪🇸", "position": "GR" },
-
         { "name": "Marc Baró", "country": "🇪🇸", "position": "DEF" },
         { "name": "Víctor Rofino", "country": "🇪🇸", "position": "DEF" },
         { "name": "Habib Sylla", "country": "🇸🇳", "position": "DEF" },
@@ -375,14 +365,12 @@
         { "name": "José Pedro", "country": "🇵🇹", "position": "DEF" },
         { "name": "Rocco Zikovic", "country": "🇭🇷", "position": "DEF" },
         { "name": "Marcelo", "country": "🇧🇷", "position": "DEF" },
-
         { "name": "Miguel Pires", "country": "🇵🇹", "position": "MED" },
         { "name": "Genaro Rodríguez", "country": "🇪🇸", "position": "MED" },
         { "name": "Eboué Kouassi", "country": "🇨🇮", "position": "MED" },
         { "name": "Diogo Amado", "country": "🇵🇹", "position": "MED" },
         { "name": "Albert Lottin", "country": "🇫🇷", "position": "MED" },
         { "name": "Bernardo Gomes", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Junior Mendes", "country": "🇬🇼", "position": "ATA" },
         { "name": "Victor Silva", "country": "🇵🇹", "position": "ATA" },
         { "name": "Dieu Michel", "country": "🇨🇦", "position": "ATA" },
@@ -400,7 +388,6 @@
       "players": [
         { "name": "Antonio Gomís", "country": "🇪🇸", "position": "GR" },
         { "name": "Leandro Ribeiro", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Jójó", "country": "🇵🇹", "position": "DEF" },
         { "name": "Ivan Cvijanovic", "country": "🇷🇸", "position": "DEF" },
         { "name": "Ítalo Henrique", "country": "🇧🇷", "position": "DEF" },
@@ -408,19 +395,18 @@
         { "name": "Luís Rocha", "country": "🇵🇹", "position": "DEF" },
         { "name": "José Sampaio", "country": "🇵🇹", "position": "DEF" },
         { "name": "Jean-Pierre Rhyner", "country": "🇨🇭", "position": "DEF" },
-
         { "name": "Rodrigo Ramos", "country": "🇵🇹", "position": "MED" },
         { "name": "Hristo Ivanov", "country": "🇧🇬", "position": "MED" },
         { "name": "Moustapha Sanogo", "country": "🇨🇮", "position": "MED" },
         { "name": "Leverton Pierre", "country": "🇭🇹", "position": "MED" },
         { "name": "Aleksandar Busnic", "country": "🇷🇸", "position": "MED" },
         { "name": "Moha Moukhliss", "country": "🇪🇸", "position": "MED" },
-
         { "name": "Yassin Fortuné", "country": "🇫🇷", "position": "ATA" },
         { "name": "Miguel Tavares", "country": "🇵🇹", "position": "ATA" },
         { "name": "Matías Lacava", "country": "🇻🇪", "position": "ATA" },
         { "name": "Karamoko Bamba", "country": "🇨🇮", "position": "ATA" },
-        { "name": "Damien Loppy", "country": "🇸🇳", "position": "ATA" }
+        { "name": "Damien Loppy", "country": "🇸🇳", "position": "ATA" },
+        { "name": "Ivo Resendes", "country": "🇵🇹", "position": "GR" }
       ]
     },
     {
@@ -436,15 +422,12 @@
         { "name": "Ricardo Moura", "country": "🇵🇹", "position": "GR" },
         { "name": "Marco Ribeiro", "country": "🇵🇹", "position": "GR" },
         { "name": "Vítor Hugo", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Tiago Mesquita", "country": "🇵🇹", "position": "DEF" },
         { "name": "Gonçalo Braga", "country": "🇵🇹", "position": "DEF" },
         { "name": "Bruno Faria", "country": "🇵🇹", "position": "DEF" },
         { "name": "Josué Sá", "country": "🇵🇹", "position": "DEF" },
         { "name": "Dylan Collard", "country": "🇫🇷", "position": "DEF" },
         { "name": "Silvério Júnior", "country": "🇨🇻", "position": "DEF" },
-        { "name": "Luís Rocha", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Ibrahim Alhassan", "country": "🇬🇭", "position": "MED" },
         { "name": "Tokinho Dória", "country": "🇧🇷", "position": "MED" },
         { "name": "Nicolas Ortiz", "country": "🇦🇷", "position": "MED" },
@@ -452,7 +435,6 @@
         { "name": "Miguel Teixeira", "country": "🇵🇹", "position": "MED" },
         { "name": "Arsénio Nunes", "country": "🇵🇹", "position": "MED" },
         { "name": "Mimito Biai", "country": "🇬🇼", "position": "MED" },
-
         { "name": "Miguel Pereira", "country": "🇵🇹", "position": "ATA" },
         { "name": "João Vasco", "country": "🇵🇹", "position": "ATA" },
         { "name": "Alan Do Marcolino", "country": "🇬🇦", "position": "ATA" },
@@ -488,7 +470,8 @@
         { "name": "Leandro Antunes", "country": "🇵🇹", "position": "ATA" },
         { "name": "Cristian Ponde", "country": "🇵🇹", "position": "ATA" },
         { "name": "Kevin Quejada", "country": "🇨🇴", "position": "ATA" },
-        { "name": "Steven Petkov", "country": "🇧🇬", "position": "ATA" }
+        { "name": "Steven Petkov", "country": "🇧🇬", "position": "ATA" },
+        { "name": "Carlos Brás", "country": "🇵🇹", "position": "GR" }
       ]
     },
     {
@@ -504,7 +487,6 @@
         { "name": "Vozinha", "country": "🇨🇻", "position": "GR" },
         { "name": "Marko Gudzulic", "country": "🇷🇸", "position": "GR" },
         { "name": "Thiago Pereira", "country": "🇧🇷", "position": "GR" },
-
         { "name": "Carraça", "country": "🇵🇹", "position": "DEF" },
         { "name": "Tiago Almeida", "country": "🇵🇹", "position": "DEF" },
         { "name": "Zach Muscat", "country": "🇲🇹", "position": "DEF" },
@@ -512,7 +494,6 @@
         { "name": "Aarón Romero", "country": "🇪🇸", "position": "DEF" },
         { "name": "Kiko Pereira", "country": "🇵🇹", "position": "DEF" },
         { "name": "Ricardo Alves", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "João Teixeira", "country": "🇵🇹", "position": "MED" },
         { "name": "Pedro Pelágio", "country": "🇵🇹", "position": "MED" },
         { "name": "Fede Bikoro", "country": "🇬🇶", "position": "MED" },
@@ -520,7 +501,6 @@
         { "name": "Roan Wilson", "country": "🇨🇷", "position": "MED" },
         { "name": "Ktatau", "country": "🇦🇴", "position": "MED" },
         { "name": "Gabi Rodrigues", "country": "🇵🇹", "position": "MED" },
-
         { "name": "André Rodrigues", "country": "🇵🇹", "position": "ATA" },
         { "name": "Hélder Ferreira", "country": "🇵🇹", "position": "ATA" },
         { "name": "Roberto", "country": "🇧🇷", "position": "ATA" },
@@ -538,7 +518,6 @@
         { "name": "Martim Duarte", "country": "🇵🇹", "position": "GR" },
         { "name": "Rafael Flores", "country": "🇵🇹", "position": "GR" },
         { "name": "Rúben Pinto", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Lawrence Adeniyi", "country": "🇳🇬", "position": "DEF" },
         { "name": "Obama Ribeiro", "country": "🇵🇹", "position": "DEF" },
         { "name": "Samuel Vivas", "country": "🇵🇹", "position": "DEF" },
@@ -546,7 +525,6 @@
         { "name": "Diogo Nascimento", "country": "🇵🇹", "position": "DEF" },
         { "name": "Feliciano Mendes", "country": "🇵🇹", "position": "DEF" },
         { "name": "Eduardo Aguiar", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Gonçalo Sousa", "country": "🇵🇹", "position": "MED" },
         { "name": "Marcelo Cunha", "country": "🇵🇹", "position": "MED" },
         { "name": "Tiago Antunes", "country": "🇵🇹", "position": "MED" },
@@ -554,10 +532,11 @@
         { "name": "Fernando Almeida", "country": "🇵🇹", "position": "MED" },
         { "name": "Daniel Rodrigues", "country": "🇵🇹", "position": "MED" },
         { "name": "Afonso Meireles", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Tiago Ventura", "country": "🇵🇹", "position": "ATA" },
         { "name": "Cardoso", "country": "🇵🇹", "position": "ATA" },
-        { "name": "Roger Almeida", "country": "🇵🇹", "position": "ATA" }
+        { "name": "Roger Almeida", "country": "🇵🇹", "position": "ATA" },
+        { "name": "Hermenegildo Faro", "country": "🇵🇹", "position": "ATA" },
+        { "name": "Simeão Vilar", "country": "🇵🇹", "position": "ATA" }
       ]
     },
     {
@@ -570,7 +549,6 @@
         { "name": "Gonçalo Pinto", "country": "🇵🇹", "position": "GR" },
         { "name": "Bruno Dias", "country": "🇵🇹", "position": "GR" },
         { "name": "Guilherme Oliveira", "country": "🇵🇹", "position": "GR" },
-
         { "name": "João Lucas", "country": "🇵🇹", "position": "DEF" },
         { "name": "João Machado", "country": "🇵🇹", "position": "DEF" },
         { "name": "Afonso Pinto", "country": "🇵🇹", "position": "DEF" },
@@ -578,14 +556,12 @@
         { "name": "Jorge Teixeira", "country": "🇵🇹", "position": "DEF" },
         { "name": "Diogo Varela", "country": "🇵🇹", "position": "DEF" },
         { "name": "Miguel Bandarra", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Cuca", "country": "🇵🇹", "position": "MED" },
         { "name": "Afonso Afonso", "country": "🇵🇹", "position": "MED" },
         { "name": "Diogo Leitão", "country": "🇵🇹", "position": "MED" },
         { "name": "Afonso Valente", "country": "🇵🇹", "position": "MED" },
         { "name": "Diogo Paulo", "country": "🇵🇹", "position": "MED" },
         { "name": "Tiago Morgado", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Midana Sambú", "country": "🇬🇼", "position": "ATA" },
         { "name": "Bruninho", "country": "🇧🇷", "position": "ATA" },
         { "name": "Evandro Barros", "country": "🇦🇴", "position": "ATA" },
@@ -603,8 +579,6 @@
         { "name": "Nuno Macedo", "country": "🇵🇹", "position": "GR" },
         { "name": "Carlos Alves", "country": "🇵🇹", "position": "GR" },
         { "name": "Afonso Silva", "country": "🇵🇹", "position": "GR" },
-
-        { "name": "Edson Farias", "country": "🇧🇷", "position": "DEF" },
         { "name": "Jorge Karseladze", "country": "🇬🇪", "position": "DEF" },
         { "name": "Gabriel Passos", "country": "🇧🇷", "position": "DEF" },
         { "name": "Marco Baixinho", "country": "🇵🇹", "position": "DEF" },
@@ -612,7 +586,6 @@
         { "name": "Guilherme Silva", "country": "🇵🇹", "position": "DEF" },
         { "name": "Kaká", "country": "🇧🇷", "position": "DEF" },
         { "name": "Tiago André", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "António Montez", "country": "🇵🇹", "position": "MED" },
         { "name": "Marcos Paulo", "country": "🇧🇷", "position": "MED" },
         { "name": "Jean Sinisterra", "country": "🇨🇴", "position": "MED" },
@@ -620,12 +593,11 @@
         { "name": "Tiago Augusto", "country": "🇵🇹", "position": "MED" },
         { "name": "Pedro Jesus", "country": "🇵🇹", "position": "MED" },
         { "name": "Beni Souza", "country": "🇧🇷", "position": "MED" },
-        { "name": "Fran Pereira", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Daniel Candeias", "country": "🇵🇹", "position": "ATA" },
         { "name": "Camilo Triana", "country": "🇨🇴", "position": "ATA" },
         { "name": "Cuba", "country": "🇧🇷", "position": "ATA" },
-        { "name": "Rodrigo Cascavel", "country": "🇵🇹", "position": "ATA" }
+        { "name": "Rodrigo Cascavel", "country": "🇵🇹", "position": "ATA" },
+        { "name": "Salvador Tinoco", "country": "🇵🇹", "position": "ATA" }
       ]
     },
     {
@@ -638,7 +610,6 @@
         { "name": "Pedro Vieira", "country": "🇵🇹", "position": "GR" },
         { "name": "Pedro Costa", "country": "🇵🇹", "position": "GR" },
         { "name": "Momo Mbaye", "country": "🇸🇳", "position": "GR" },
-
         { "name": "Stitch", "country": "🇵🇹", "position": "DEF" },
         { "name": "Gonçalo Pimenta", "country": "🇵🇹", "position": "DEF" },
         { "name": "Derick", "country": "🇧🇷", "position": "DEF" },
@@ -646,14 +617,12 @@
         { "name": "Talocha", "country": "🇵🇹", "position": "DEF" },
         { "name": "Rodrigo Rego", "country": "🇵🇹", "position": "DEF" },
         { "name": "Álvaro Milhazes", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Hircane Graça", "country": "🇵🇹", "position": "MED" },
         { "name": "Trent Neumann", "country": "🇩🇪", "position": "MED" },
         { "name": "Miguel Rebelo", "country": "🇵🇹", "position": "MED" },
         { "name": "Rúben Oliveira", "country": "🇵🇹", "position": "MED" },
         { "name": "Francisco França", "country": "🇵🇹", "position": "MED" },
         { "name": "Martim Boloto", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Joãozinho", "country": "🇵🇹", "position": "ATA" },
         { "name": "Diogo Sequeira", "country": "🇵🇹", "position": "ATA" },
         { "name": "Zé Manuel", "country": "🇵🇹", "position": "ATA" },
@@ -671,16 +640,13 @@
         { "name": "Francisco Lemos", "country": "🇵🇹", "position": "GR" },
         { "name": "Pedro Silva", "country": "🇵🇹", "position": "GR" },
         { "name": "Luís Ribeiro", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Rodrigo Freitas", "country": "🇵🇹", "position": "DEF" },
         { "name": "Moussa Camara", "country": "🇲🇱", "position": "DEF" },
         { "name": "Raphael Rossi", "country": "🇧🇷", "position": "DEF" },
         { "name": "Mamadu Queta", "country": "🇬🇼", "position": "DEF" },
         { "name": "Djé Béni", "country": "🇨🇮", "position": "DEF" },
         { "name": "João Ferreira", "country": "🇵🇹", "position": "DEF" },
-        { "name": "Celso Raposo", "country": "🇵🇹", "position": "DEF" },
         { "name": "Rafael Moreira", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Yacouba Maiga", "country": "🇲🇱", "position": "MED" },
         { "name": "Vítor Gonçalves", "country": "🇵🇹", "position": "MED" },
         { "name": "Lénio Neves", "country": "🇵🇹", "position": "MED" },
@@ -688,11 +654,11 @@
         { "name": "Santiago Serra", "country": "🇦🇷", "position": "MED" },
         { "name": "Braíma Sambú", "country": "🇬🇼", "position": "MED" },
         { "name": "Rúben Pinto", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Rodrigo Matos", "country": "🇵🇹", "position": "ATA" },
         { "name": "Mamor Niang", "country": "🇸🇳", "position": "ATA" },
         { "name": "Stanley Iheanacho", "country": "🇳🇬", "position": "ATA" },
-        { "name": "Lucas Gabriel", "country": "🇧🇷", "position": "ATA" }
+        { "name": "Lucas Gabriel", "country": "🇧🇷", "position": "ATA" },
+        { "name": "Evaristo Gonçalves", "country": "🇵🇹", "position": "ATA" }
       ]
     },
     {
@@ -705,7 +671,6 @@
         { "name": "Afonso Teodósio", "country": "🇵🇹", "position": "GR" },
         { "name": "Nuno Hidalgo", "country": "🇵🇹", "position": "GR" },
         { "name": "Pedro Teixeira", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Jaime Simões", "country": "🇵🇹", "position": "DEF" },
         { "name": "João Ricardo", "country": "🇵🇹", "position": "DEF" },
         { "name": "Eduardho Marcante", "country": "🇧🇷", "position": "DEF" },
@@ -713,14 +678,12 @@
         { "name": "Rodrigo Teixeira", "country": "🇵🇹", "position": "DEF" },
         { "name": "David Monteiro", "country": "🇵🇹", "position": "DEF" },
         { "name": "David Vinhas", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Noah Medalli", "country": "🇫🇷", "position": "MED" },
         { "name": "Idrissa Camará", "country": "🇬🇼", "position": "MED" },
         { "name": "Eduardo Souza", "country": "🇧🇷", "position": "MED" },
         { "name": "Bura", "country": "🇲🇿", "position": "MED" },
         { "name": "Marco Grilo", "country": "🇵🇹", "position": "MED" },
         { "name": "Bruno Ventura", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Tiago Madeira", "country": "🇵🇹", "position": "ATA" },
         { "name": "Manu", "country": "🇵🇹", "position": "ATA" },
         { "name": "Gonçalo Águas", "country": "🇵🇹", "position": "ATA" },
@@ -738,7 +701,6 @@
         { "name": "João Teopisto", "country": "🇵🇹", "position": "GR" },
         { "name": "Nuno Silva", "country": "🇵🇹", "position": "GR" },
         { "name": "Rúben Rendeiro", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Miguel Pereira", "country": "🇵🇹", "position": "DEF" },
         { "name": "Diogo Gomes", "country": "🇵🇹", "position": "DEF" },
         { "name": "Joel Ferreira", "country": "🇵🇹", "position": "DEF" },
@@ -746,15 +708,12 @@
         { "name": "André Rosa", "country": "🇵🇹", "position": "DEF" },
         { "name": "Hugo Basto", "country": "🇵🇹", "position": "DEF" },
         { "name": "Francisco Saldanha", "country": "🇵🇹", "position": "DEF" },
-        { "name": "Gonçalo Cunha", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Rafael Assis", "country": "🇧🇷", "position": "MED" },
         { "name": "Fábio Borges", "country": "🇵🇹", "position": "MED" },
         { "name": "Ousmane Diagne", "country": "🇸🇳", "position": "MED" },
         { "name": "Ruca", "country": "🇵🇹", "position": "MED" },
         { "name": "Reko Silva", "country": "🇵🇹", "position": "MED" },
         { "name": "João Daniel", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Vasco Paciência", "country": "🇵🇹", "position": "ATA" },
         { "name": "Gustavo Lobo", "country": "🇵🇹", "position": "ATA" },
         { "name": "Nuninho", "country": "🇵🇹", "position": "ATA" },
@@ -772,7 +731,6 @@
         { "name": "Joel Dias", "country": "🇵🇹", "position": "GR" },
         { "name": "Luís Ribeiro", "country": "🇵🇹", "position": "GR" },
         { "name": "Martim Caldeira", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Bruno Almeida", "country": "🇵🇹", "position": "DEF" },
         { "name": "Duarte Henriques", "country": "🇵🇹", "position": "DEF" },
         { "name": "David Dinamite", "country": "🇵🇹", "position": "DEF" },
@@ -780,14 +738,12 @@
         { "name": "Fran González", "country": "🇪🇸", "position": "DEF" },
         { "name": "Paulinho", "country": "🇵🇹", "position": "DEF" },
         { "name": "Talison Ruan", "country": "🇧🇷", "position": "DEF" },
-
         { "name": "Rúben Marques", "country": "🇵🇹", "position": "MED" },
         { "name": "César Sousa", "country": "🇵🇹", "position": "MED" },
         { "name": "Caleb", "country": "🇧🇷", "position": "MED" },
         { "name": "Pipo Ferreira", "country": "🇵🇹", "position": "MED" },
         { "name": "Hélio Cruz", "country": "🇵🇹", "position": "MED" },
         { "name": "Pedro Pinto", "country": "🇵🇹", "position": "MED" },
-
         { "name": "David Silva", "country": "🇵🇹", "position": "ATA" },
         { "name": "Nicolas Souza", "country": "🇧🇷", "position": "ATA" },
         { "name": "Miguel Barandas", "country": "🇵🇹", "position": "ATA" },
@@ -806,16 +762,13 @@
         { "name": "Zé Pedro", "country": "🇵🇹", "position": "GR" },
         { "name": "André Reis", "country": "🇵🇹", "position": "GR" },
         { "name": "João Júnior", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Nahuel Machado", "country": "🇦🇷", "position": "DEF" },
         { "name": "Jorge Passas", "country": "🇵🇹", "position": "DEF" },
         { "name": "Didier Mosquera", "country": "🇨🇴", "position": "DEF" },
         { "name": "Eddy", "country": "🇵🇹", "position": "DEF" },
         { "name": "Rafael Sá", "country": "🇵🇹", "position": "DEF" },
         { "name": "Pipo Marques", "country": "🇵🇹", "position": "DEF" },
-        { "name": "Macky", "country": "🇵🇹", "position": "DEF" },
         { "name": "Kindio Mendonça", "country": "🇬🇼", "position": "DEF" },
-
         { "name": "Nuno Silvano", "country": "🇵🇹", "position": "MED" },
         { "name": "Fabien Capelo", "country": "🇫🇷", "position": "MED" },
         { "name": "Diogo Dinis", "country": "🇵🇹", "position": "MED" },
@@ -823,7 +776,6 @@
         { "name": "Saloum Colley", "country": "🇬🇲", "position": "MED" },
         { "name": "Diego Parini", "country": "🇦🇷", "position": "MED" },
         { "name": "Jaílson", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Abdoulaye Daffé", "country": "🇸🇳", "position": "ATA" },
         { "name": "Danny Pires", "country": "🇵🇹", "position": "ATA" },
         { "name": "Patchú", "country": "🇵🇹", "position": "ATA" },
@@ -840,7 +792,6 @@
       "players": [
         { "name": "Gonçalo Lopes", "country": "🇵🇹", "position": "GR" },
         { "name": "José Costa", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Gabriel Moura", "country": "🇵🇹", "position": "DEF" },
         { "name": "Laércio", "country": "🇧🇷", "position": "DEF" },
         { "name": "João Pais", "country": "🇵🇹", "position": "DEF" },
@@ -848,7 +799,6 @@
         { "name": "Alessio Duque", "country": "🇫🇷", "position": "DEF" },
         { "name": "Gaby Faria", "country": "🇨🇻", "position": "DEF" },
         { "name": "João Faria", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Ricardo Sousa", "country": "🇵🇹", "position": "MED" },
         { "name": "Mariano Regal", "country": "🇪🇸", "position": "MED" },
         { "name": "Rui Lavarinhas", "country": "🇵🇹", "position": "MED" },
@@ -856,12 +806,12 @@
         { "name": "Bruno Silva", "country": "🇵🇹", "position": "MED" },
         { "name": "Pedro Pinto", "country": "🇵🇹", "position": "MED" },
         { "name": "Bruno Santos", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Gonçalo Santos", "country": "🇵🇹", "position": "ATA" },
         { "name": "Tiago Moninhas", "country": "🇵🇹", "position": "ATA" },
         { "name": "Lowen Nsonga", "country": "🇫🇷", "position": "ATA" },
         { "name": "André Ramalho", "country": "🇵🇹", "position": "ATA" },
-        { "name": "Joel Silva", "country": "🇵🇹", "position": "ATA" }
+        { "name": "Joel Silva", "country": "🇵🇹", "position": "ATA" },
+        { "name": "Rui Pisco", "country": "🇵🇹", "position": "GR" }
       ]
     },
     {
@@ -877,7 +827,6 @@
         { "name": "Pedro Soares", "country": "🇵🇹", "position": "GR" },
         { "name": "Dinis Costa", "country": "🇵🇹", "position": "GR" },
         { "name": "Tomás Brito", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Edgar Teixeira", "country": "🇵🇹", "position": "DEF" },
         { "name": "Miguel Silva", "country": "🇵🇹", "position": "DEF" },
         { "name": "Rui Filipe", "country": "🇵🇹", "position": "DEF" },
@@ -885,14 +834,12 @@
         { "name": "Sandro Fonseca", "country": "🇵🇹", "position": "DEF" },
         { "name": "Ricardo Rocha", "country": "🇵🇹", "position": "DEF" },
         { "name": "Tiago Silva", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Chico Sousa", "country": "🇵🇹", "position": "MED" },
         { "name": "Gonçalo Botelho", "country": "🇵🇹", "position": "MED" },
         { "name": "Luís Gonçalves", "country": "🇵🇹", "position": "MED" },
         { "name": "Igor Santos", "country": "🇵🇹", "position": "MED" },
         { "name": "Aboubakar Njoya", "country": "🇬🇶", "position": "MED" },
         { "name": "Chico Leal", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Dinis Djadjó", "country": "🇬🇼", "position": "ATA" },
         { "name": "Kevin Makinde", "country": "🇬🇧", "position": "ATA" },
         { "name": "Pipo", "country": "🇵🇹", "position": "ATA" },
@@ -909,16 +856,13 @@
       "players": [
         { "name": "Miguel Paiva", "country": "🇵🇹", "position": "GR" },
         { "name": "Santiago Leão", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Gabriel Aglio", "country": "🇵🇹", "position": "DEF" },
-        { "name": "Vasco Coelho", "country": "🇵🇹", "position": "DEF" },
         { "name": "Diogo Ribeiro", "country": "🇵🇹", "position": "DEF" },
         { "name": "David Santos", "country": "🇵🇹", "position": "DEF" },
         { "name": "Duarte Santos", "country": "🇵🇹", "position": "DEF" },
         { "name": "Fábio Baldé", "country": "🇵🇹", "position": "DEF" },
         { "name": "Diogo Nunes", "country": "🇵🇹", "position": "DEF" },
         { "name": "Paulinho", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Bernardo Mesquita", "country": "🇵🇹", "position": "MED" },
         { "name": "Keyns Abdala", "country": "🇨🇴", "position": "MED" },
         { "name": "Guilherme Vasconcelos", "country": "🇵🇹", "position": "MED" },
@@ -926,12 +870,12 @@
         { "name": "Mica", "country": "🇧🇷", "position": "MED" },
         { "name": "Bernardo", "country": "🇵🇹", "position": "MED" },
         { "name": "Tiago Octávio", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Fábio Fortes", "country": "🇵🇹", "position": "ATA" },
         { "name": "Afonso Sousa", "country": "🇵🇹", "position": "ATA" },
         { "name": "David Nzanza", "country": "🇨🇩", "position": "ATA" },
         { "name": "Gonçalo Cardoso", "country": "🇵🇹", "position": "ATA" },
-        { "name": "Zé Domingos", "country": "🇵🇹", "position": "ATA" }
+        { "name": "Zé Domingos", "country": "🇵🇹", "position": "ATA" },
+        { "name": "Pedro Ramilho", "country": "🇵🇹", "position": "GR" }
       ]
     },
     {
@@ -947,7 +891,6 @@
         { "name": "João Lucas", "country": "🇵🇹", "position": "GR" },
         { "name": "Artur Barros", "country": "🇵🇹", "position": "GR" },
         { "name": "Lucas Fachadas", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Leonardo Neves", "country": "🇵🇹", "position": "DEF" },
         { "name": "Juan Muriel", "country": "🇨🇴", "position": "DEF" },
         { "name": "Diego Tavares", "country": "🇵🇹", "position": "DEF" },
@@ -955,7 +898,6 @@
         { "name": "Dénis Martins", "country": "🇵🇹", "position": "DEF" },
         { "name": "Samir Banjai", "country": "🇵🇹", "position": "DEF" },
         { "name": "Miguel Rosário", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Edgar Moura", "country": "🇵🇹", "position": "MED" },
         { "name": "Roberto Embaló", "country": "🇬🇼", "position": "MED" },
         { "name": "Átila Fontinha", "country": "🇵🇹", "position": "MED" },
@@ -963,7 +905,6 @@
         { "name": "André Dias", "country": "🇵🇹", "position": "MED" },
         { "name": "Mauro Santos", "country": "🇵🇹", "position": "MED" },
         { "name": "João Simões", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Coreano", "country": "🇰🇷", "position": "ATA" },
         { "name": "Williams Jr", "country": "🇧🇷", "position": "ATA" },
         { "name": "Henrique", "country": "🇵🇹", "position": "ATA" },
@@ -984,23 +925,19 @@
         { "name": "João Jacinto", "country": "🇵🇹", "position": "GR" },
         { "name": "Vasco Guimarães", "country": "🇵🇹", "position": "GR" },
         { "name": "Leonardo Ferreira", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Rodrigo Coutinho", "country": "🇵🇹", "position": "DEF" },
         { "name": "Bruno Amorim", "country": "🇵🇹", "position": "DEF" },
         { "name": "Gonçalo Lopes", "country": "🇵🇹", "position": "DEF" },
         { "name": "João Nogueira", "country": "🇵🇹", "position": "DEF" },
         { "name": "Pedro Alves", "country": "🇵🇹", "position": "DEF" },
         { "name": "Mateus Constantin", "country": "🇵🇹", "position": "DEF" },
-        { "name": "Gonçalo Maria", "country": "🇵🇹", "position": "DEF" },
         { "name": "Leonardo Nunes", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Nuno André", "country": "🇵🇹", "position": "MED" },
         { "name": "Paulo Grilo", "country": "🇵🇹", "position": "MED" },
         { "name": "Rodrigo Mendes", "country": "🇵🇹", "position": "MED" },
         { "name": "Gui Monteiro", "country": "🇵🇹", "position": "MED" },
         { "name": "Bernardo Sarmento", "country": "🇵🇹", "position": "MED" },
         { "name": "Maurício Júnior", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Pedro Costa", "country": "🇵🇹", "position": "ATA" },
         { "name": "Abdou Diédhiou", "country": "🇸🇳", "position": "ATA" },
         { "name": "Mamadu Sané", "country": "🇸🇳", "position": "ATA" },
@@ -1018,7 +955,6 @@
       "players": [
         { "name": "Diogo Silva", "country": "🇵🇹", "position": "GR" },
         { "name": "Eduardo Almeida", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Hugo Amorim", "country": "🇵🇹", "position": "DEF" },
         { "name": "João Pedro", "country": "🇵🇹", "position": "DEF" },
         { "name": "Fábio Silva", "country": "🇵🇹", "position": "DEF" },
@@ -1026,19 +962,18 @@
         { "name": "Carlos Sousa", "country": "🇵🇹", "position": "DEF" },
         { "name": "Ricardo Alves", "country": "🇵🇹", "position": "DEF" },
         { "name": "Nuno Costa", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Ricardo Marques", "country": "🇵🇹", "position": "MED" },
         { "name": "Gonçalo Costa", "country": "🇵🇹", "position": "MED" },
         { "name": "João Nunes", "country": "🇵🇹", "position": "MED" },
         { "name": "André Silva", "country": "🇵🇹", "position": "MED" },
         { "name": "Tiago Fernandes", "country": "🇵🇹", "position": "MED" },
         { "name": "Paulo Santos", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Bruno Andrade", "country": "🇵🇹", "position": "ATA" },
         { "name": "Lucas Reis", "country": "🇧🇷", "position": "ATA" },
         { "name": "Filipe Lopes", "country": "🇵🇹", "position": "ATA" },
         { "name": "Joel Santos", "country": "🇵🇹", "position": "ATA" },
-        { "name": "Gerson Silva", "country": "🇧🇷", "position": "ATA" }
+        { "name": "Gerson Silva", "country": "🇧🇷", "position": "ATA" },
+        { "name": "Vasco Freitas", "country": "🇵🇹", "position": "GR" }
       ]
     },
     {
@@ -1050,14 +985,12 @@
       "players": [
         { "name": "Filipe Semedo", "country": "🇵🇹", "position": "GR" },
         { "name": "Mário Évora", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Cândido Santos", "country": "🇵🇹", "position": "DEF" },
         { "name": "João Mendes", "country": "🇵🇹", "position": "DEF" },
         { "name": "Gilson Correia", "country": "🇵🇹", "position": "DEF" },
         { "name": "Gustavo Benjumea", "country": "🇵🇹", "position": "DEF" },
         { "name": "Júnior", "country": "🇵🇹", "position": "DEF" },
         { "name": "Léo Dias", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Nicola Bragança", "country": "🇵🇹", "position": "MED" },
         { "name": "Tomás Mansinho", "country": "🇵🇹", "position": "MED" },
         { "name": "Rodrigo Elias", "country": "🇵🇹", "position": "MED" },
@@ -1065,13 +998,13 @@
         { "name": "José Saldanha", "country": "🇵🇹", "position": "MED" },
         { "name": "Diogo Machado", "country": "🇵🇹", "position": "MED" },
         { "name": "Anderson", "country": "🇧🇷", "position": "MED" },
-
         { "name": "Vinícius Brandão", "country": "🇧🇷", "position": "ATA" },
         { "name": "Martim Cameirão", "country": "🇵🇹", "position": "ATA" },
         { "name": "Kayã Caldeira", "country": "🇵🇹", "position": "ATA" },
         { "name": "Rayan Santos", "country": "🇵🇹", "position": "ATA" },
         { "name": "Joel Mendes", "country": "🇵🇹", "position": "ATA" },
-        { "name": "André Farinha", "country": "🇵🇹", "position": "ATA" }
+        { "name": "André Farinha", "country": "🇵🇹", "position": "ATA" },
+        { "name": "César Belo", "country": "🇵🇹", "position": "GR" }
       ]
     },
 
@@ -1087,7 +1020,6 @@
       "players": [
         { "name": "Hércules Tavares", "country": "🇵🇹", "position": "GR" },
         { "name": "Dinis Pessanha", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Wender Gabriel", "country": "🇧🇷", "position": "DEF" },
         { "name": "Leonardo Pereira", "country": "🇵🇹", "position": "DEF" },
         { "name": "Alejandro Medina", "country": "🇪🇸", "position": "DEF" },
@@ -1095,8 +1027,6 @@
         { "name": "Clésio Gomes", "country": "🇬🇼", "position": "DEF" },
         { "name": "Sávio Varela", "country": "🇨🇻", "position": "DEF" },
         { "name": "Diogo Braizinha", "country": "🇵🇹", "position": "DEF" },
-        { "name": "Matheus Tavares", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Ianique Cá", "country": "🇵🇹", "position": "MED" },
         { "name": "Nelson Machado", "country": "🇵🇹", "position": "MED" },
         { "name": "Daniel Maku", "country": "🇨🇲", "position": "MED" },
@@ -1104,13 +1034,12 @@
         { "name": "Zinédine Fonseca", "country": "🇵🇹", "position": "MED" },
         { "name": "Vincent Selbe", "country": "🇨🇦", "position": "MED" },
         { "name": "Danilson Veiga", "country": "🇬🇼", "position": "MED" },
-        { "name": "Edmundo Félix", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Antony Pérez", "country": "🇨🇴", "position": "ATA" },
         { "name": "Thalison Costa", "country": "🇧🇷", "position": "ATA" },
         { "name": "Angelico Dangervil", "country": "🇬🇭", "position": "ATA" },
         { "name": "Jorge Iguarán", "country": "🇨🇴", "position": "ATA" },
-        { "name": "Hélder Quissongo", "country": "🇦🇴", "position": "ATA" }
+        { "name": "Hélder Quissongo", "country": "🇦🇴", "position": "ATA" },
+        { "name": "João Arrais", "country": "🇵🇹", "position": "GR" }
       ]
     },
     {
@@ -1123,7 +1052,6 @@
         { "name": "Willian Paes", "country": "🇵🇹", "position": "GR" },
         { "name": "Raimundo Duarte", "country": "🇵🇹", "position": "GR" },
         { "name": "Nuno Brás", "country": "🇵🇹", "position": "GR" },
-
         { "name": "António Santos", "country": "🇵🇹", "position": "DEF" },
         { "name": "Miguel Mangerico", "country": "🇵🇹", "position": "DEF" },
         { "name": "Roberto Carlos", "country": "🇵🇹", "position": "DEF" },
@@ -1131,7 +1059,6 @@
         { "name": "Pedro Seabra", "country": "🇵🇹", "position": "DEF" },
         { "name": "Bernardo Alcácer", "country": "🇵🇹", "position": "DEF" },
         { "name": "Wilson Costa", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Samuel Cabral", "country": "🇵🇹", "position": "MED" },
         { "name": "Rodrigo Vicente", "country": "🇵🇹", "position": "MED" },
         { "name": "João Bugio", "country": "🇵🇹", "position": "MED" },
@@ -1139,7 +1066,6 @@
         { "name": "Tiago Gualdino", "country": "🇵🇹", "position": "MED" },
         { "name": "Marco Oliveira", "country": "🇵🇹", "position": "MED" },
         { "name": "João Tomaz", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Miguel Fernandes", "country": "🇵🇹", "position": "ATA" },
         { "name": "Luis Vieira", "country": "🇵🇹", "position": "ATA" },
         { "name": "Eduardo Mémé", "country": "🇵🇹", "position": "ATA" },
@@ -1157,16 +1083,13 @@
         { "name": "Matheus Lemes", "country": "🇧🇷", "position": "GR" },
         { "name": "Renato Almeida", "country": "🇵🇹", "position": "GR" },
         { "name": "Dheimison Melo", "country": "🇵🇹", "position": "GR" },
-
         { "name": "João Consolado", "country": "🇵🇹", "position": "DEF" },
         { "name": "Ivanilson Semedo", "country": "🇵🇹", "position": "DEF" },
         { "name": "Pedro Amendoeira", "country": "🇵🇹", "position": "DEF" },
         { "name": "Luis Fernando", "country": "🇵🇹", "position": "DEF" },
         { "name": "Luis Correia", "country": "🇵🇹", "position": "DEF" },
         { "name": "João Nobre", "country": "🇵🇹", "position": "DEF" },
-        { "name": "António Vicente", "country": "🇵🇹", "position": "DEF" },
         { "name": "Tiago Curado", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Fábio Curado", "country": "🇵🇹", "position": "MED" },
         { "name": "Binate Batista", "country": "🇨🇴", "position": "MED" },
         { "name": "Dário Bianchi", "country": "🇵🇹", "position": "MED" },
@@ -1174,11 +1097,11 @@
         { "name": "Afonso Batista", "country": "🇵🇹", "position": "MED" },
         { "name": "Fábio Carapinha", "country": "🇵🇹", "position": "MED" },
         { "name": "Manuel Rosado", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Miguel Serrano", "country": "🇵🇹", "position": "ATA" },
         { "name": "Chinedu Ezugwu", "country": "🇳🇬", "position": "ATA" },
         { "name": "Miguel Rosado", "country": "🇵🇹", "position": "ATA" },
-        { "name": "Bruno Fialho", "country": "🇵🇹", "position": "ATA" }
+        { "name": "Bruno Fialho", "country": "🇵🇹", "position": "ATA" },
+        { "name": "Cândido Resende", "country": "🇵🇹", "position": "ATA" }
       ]
     },
     {
@@ -1194,7 +1117,6 @@
         { "name": "Tiago Ribeiro", "country": "🇵🇹", "position": "GR" },
         { "name": "Gonçalo Varanda", "country": "🇵🇹", "position": "GR" },
         { "name": "André Nunes", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Ricardo Espada", "country": "🇵🇹", "position": "DEF" },
         { "name": "Eric Garcia", "country": "🇪🇸", "position": "DEF" },
         { "name": "Tiago Duarte", "country": "🇵🇹", "position": "DEF" },
@@ -1202,7 +1124,6 @@
         { "name": "Rui Pereira", "country": "🇵🇹", "position": "DEF" },
         { "name": "Gonçalo Ventura", "country": "🇵🇹", "position": "DEF" },
         { "name": "Sousa", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "João Carrasco", "country": "🇵🇹", "position": "MED" },
         { "name": "Ricardo Ferreira", "country": "🇵🇹", "position": "MED" },
         { "name": "Martim Guarda", "country": "🇵🇹", "position": "MED" },
@@ -1210,7 +1131,6 @@
         { "name": "Afonso Mendes", "country": "🇵🇹", "position": "MED" },
         { "name": "Pedro Tavares", "country": "🇵🇹", "position": "MED" },
         { "name": "João Diniz", "country": "🇵🇹", "position": "MED" },
-
         { "name": "André Santos", "country": "🇵🇹", "position": "ATA" },
         { "name": "Diogo Guilherme", "country": "🇵🇹", "position": "ATA" },
         { "name": "Hélio Vaz", "country": "🇵🇹", "position": "ATA" },
@@ -1227,7 +1147,6 @@
       "players": [
         { "name": "Thallis Mota", "country": "🇧🇷", "position": "GR" },
         { "name": "Luís Rosado", "country": "🇵🇹", "position": "GR" },
-
         { "name": "João Cosme", "country": "🇵🇹", "position": "DEF" },
         { "name": "Pedro Balixa", "country": "🇵🇹", "position": "DEF" },
         { "name": "Rodrigo Rodeia", "country": "🇵🇹", "position": "DEF" },
@@ -1235,7 +1154,6 @@
         { "name": "Luís Coelho", "country": "🇵🇹", "position": "DEF" },
         { "name": "Diogo Catronga", "country": "🇵🇹", "position": "DEF" },
         { "name": "Luís Quintas", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Santiago Santinha", "country": "🇵🇹", "position": "MED" },
         { "name": "Bubacar Embaló", "country": "🇬🇼", "position": "MED" },
         { "name": "Miguel Rainha", "country": "🇵🇹", "position": "MED" },
@@ -1243,12 +1161,12 @@
         { "name": "Lucas Sousa", "country": "🇵🇹", "position": "MED" },
         { "name": "Rodrigo Ferreira", "country": "🇵🇹", "position": "MED" },
         { "name": "Dário Canilhas", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Titico", "country": "🇵🇹", "position": "ATA" },
         { "name": "Ivonildo Sá", "country": "🇵🇹", "position": "ATA" },
         { "name": "Anssumane Sanhá", "country": "🇬🇼", "position": "ATA" },
         { "name": "Tomás Ramalho", "country": "🇵🇹", "position": "ATA" },
-        { "name": "Marvin Freira", "country": "🇵🇹", "position": "ATA" }
+        { "name": "Marvin Freira", "country": "🇵🇹", "position": "ATA" },
+        { "name": "Tiago Marmeleiro", "country": "🇵🇹", "position": "GR" }
       ]
     },
     {
@@ -1261,7 +1179,6 @@
         { "name": "Erikson Furtado", "country": "🇧🇷", "position": "GR" },
         { "name": "Lucas Lameirão", "country": "🇵🇹", "position": "GR" },
         { "name": "Dheimison Melo", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Filipe Enfermeiro", "country": "🇵🇹", "position": "DEF" },
         { "name": "Ricardo Bonito", "country": "🇵🇹", "position": "DEF" },
         { "name": "Francisco Coelho", "country": "🇵🇹", "position": "DEF" },
@@ -1269,7 +1186,6 @@
         { "name": "Diego Conceição", "country": "🇵🇹", "position": "DEF" },
         { "name": "Daniel Rosa", "country": "🇵🇹", "position": "DEF" },
         { "name": "Bruny Almeida", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Djerman Évora", "country": "🇵🇹", "position": "MED" },
         { "name": "Pedro Rosado", "country": "🇵🇹", "position": "MED" },
         { "name": "Edy Silva", "country": "🇵🇹", "position": "MED" },
@@ -1277,7 +1193,6 @@
         { "name": "Lobo Levy", "country": "🇵🇹", "position": "MED" },
         { "name": "Leyvison", "country": "🇵🇹", "position": "MED" },
         { "name": "Rui Batista", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Luiz Henrique", "country": "🇵🇹", "position": "ATA" },
         { "name": "Vanderson Reis", "country": "🇵🇹", "position": "ATA" },
         { "name": "Angelico Dangervil", "country": "🇬🇭", "position": "ATA" },
@@ -1294,7 +1209,6 @@
       "players": [
         { "name": "Filipe Garcia", "country": "🇵🇹", "position": "GR" },
         { "name": "Gonçalo Capitão", "country": "🇵🇹", "position": "GR" },
-
         { "name": "Tiago Quadrado", "country": "🇵🇹", "position": "DEF" },
         { "name": "Zé Grego", "country": "🇵🇹", "position": "DEF" },
         { "name": "Gonçalo Araújo", "country": "🇵🇹", "position": "DEF" },
@@ -1302,20 +1216,18 @@
         { "name": "Gonçalo Festas", "country": "🇵🇹", "position": "DEF" },
         { "name": "João Sabido", "country": "🇵🇹", "position": "DEF" },
         { "name": "Henrique Fitas", "country": "🇵🇹", "position": "DEF" },
-        { "name": "Rúben Leão", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Rafael Baptista", "country": "🇵🇹", "position": "MED" },
         { "name": "Henrique Calado", "country": "🇵🇹", "position": "MED" },
         { "name": "Paulo Carvalho", "country": "🇵🇹", "position": "MED" },
         { "name": "Eduardo Sádio", "country": "🇵🇹", "position": "MED" },
         { "name": "Vasile Condrei", "country": "🇷🇴", "position": "MED" },
         { "name": "António Cachapa", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Martim Pardal", "country": "🇵🇹", "position": "ATA" },
         { "name": "Nuno Pardana", "country": "🇵🇹", "position": "ATA" },
         { "name": "Seco Sila", "country": "🇵🇹", "position": "ATA" },
         { "name": "André Pucarinhas", "country": "🇵🇹", "position": "ATA" },
-        { "name": "Gonçalo Ferreira", "country": "🇵🇹", "position": "ATA" }
+        { "name": "Gonçalo Ferreira", "country": "🇵🇹", "position": "ATA" },
+        { "name": "Gonçalo Vaz", "country": "🇵🇹", "position": "GR" }
       ]
     },
     {
@@ -1328,7 +1240,6 @@
         { "name": "Martim Rainho", "country": "🇵🇹", "position": "GR" },
         { "name": "Pedro Roque", "country": "🇵🇹", "position": "GR" },
         { "name": "Rui Neves", "country": "🇵🇹", "position": "GR" },
-
         { "name": "André Simões", "country": "🇵🇹", "position": "DEF" },
         { "name": "Bruno Grenho", "country": "🇵🇹", "position": "DEF" },
         { "name": "Daniel Bibes", "country": "🇵🇹", "position": "DEF" },
@@ -1336,19 +1247,18 @@
         { "name": "André Mataloto", "country": "🇵🇹", "position": "DEF" },
         { "name": "Brendo Santos", "country": "🇵🇹", "position": "DEF" },
         { "name": "João Gonçalves", "country": "🇵🇹", "position": "DEF" },
-
         { "name": "Marcelo Saragoça", "country": "🇵🇹", "position": "MED" },
         { "name": "Daniel Ferreira", "country": "🇵🇹", "position": "MED" },
         { "name": "Filipe Geadas", "country": "🇵🇹", "position": "MED" },
         { "name": "Carlos Castanho", "country": "🇵🇹", "position": "MED" },
         { "name": "Matheus Santos", "country": "🇵🇹", "position": "MED" },
-
         { "name": "Vítor Borrego", "country": "🇵🇹", "position": "ATA" },
         { "name": "Bruno Messias", "country": "🇵🇹", "position": "ATA" },
         { "name": "Fernandes Miguel", "country": "🇵🇹", "position": "ATA" },
         { "name": "Pedrinho", "country": "🇵🇹", "position": "ATA" },
         { "name": "Rodrigo Lopes", "country": "🇵🇹", "position": "ATA" },
-        { "name": "Matheus Novaes", "country": "🇵🇹", "position": "ATA" }
+        { "name": "Matheus Novaes", "country": "🇵🇹", "position": "ATA" },
+        { "name": "Bráulio Sardo", "country": "🇵🇹", "position": "MED" }
       ]
     }
   ]

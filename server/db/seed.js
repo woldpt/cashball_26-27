@@ -64,6 +64,9 @@ db.configure("busyTimeout", 10000);
 // This ensures new columns (e.g. stadium_name) are present even when reseeding
 // an existing database that was created with an older schema.
 const dropSchema = `
+DROP TABLE IF EXISTS training_player_history;
+DROP TABLE IF EXISTS player_skill_snapshots;
+DROP TABLE IF EXISTS team_training;
 DROP TABLE IF EXISTS club_news;
 DROP TABLE IF EXISTS matches;
 DROP TABLE IF EXISTS cup_matches;
