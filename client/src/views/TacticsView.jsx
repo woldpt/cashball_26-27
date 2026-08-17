@@ -38,35 +38,47 @@ const POS_COLORS = {
 };
 
 
-const TIER_COLORS = {
-  Mestre: {
-    bar: "bg-amber-400",
-    text: "text-amber-300",
-    bg: "bg-amber-500/10",
-  },
-  Dominante: {
-    bar: "bg-emerald-400",
-    text: "text-emerald-300",
-    bg: "bg-emerald-500/10",
-  },
-  Consolidada: {
-    bar: "bg-emerald-500",
-    text: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-  },
-  Familiar: { bar: "bg-sky-400", text: "text-sky-300", bg: "bg-sky-500/10" },
-  "Ganhando rotina": {
-    bar: "bg-sky-500",
-    text: "text-sky-400",
-    bg: "bg-sky-500/10",
-  },
-  "A familiarizar": {
-    bar: "bg-slate-500",
-    text: "text-slate-400",
-    bg: "bg-slate-500/10",
-  },
-};
-const MAX_COUNT = 21;
+const STAR_COUNT_THRESHOLDS = [10, 8, 6, 4, 2];
+
+/**
+ * Nº de estrelas (0-5) a partir do nº de jogos com uma táctica.
+ * @param {number} count Jogos com a táctica
+ * @returns {number}
+ */
+function starCountFor(count) {
+  for (const [i, min] of STAR_COUNT_THRESHOLDS.entries()) {
+    if (count >= min) return STAR_COUNT_THRESHOLDS.length - i;
+  }
+  return 0;
+}
+
+/**
+ * Estrelas de familiaridade táctica — 5 slots, preenchidas âmbar / vazias escuras.
+ * @param {Object} props
+ * @param {number} props.count Jogos com a táctica
+ * @returns {JSX.Element}
+ */
+function FamiliarityStars(props) {
+  const count = props.count;
+  const filled = starCountFor(count);
+  return (
+    <div
+      className="flex items-center gap-px leading-none"
+      title={`${count} jogos com esta táctica`}
+    >
+      {[1, 2, 3, 4, 5].map((i) => (
+        <span
+          key={i}
+          className={`text-[10px] leading-none ${
+            i <= filled ? "text-amber-400" : "text-gray-700/60"
+          }`}
+        >
+          ★
+        </span>
+      ))}
+    </div>
+  );
+}
 
 /**
  * Avatar circular com inicial + cor de posicao
@@ -812,6 +824,7 @@ export function TacticsView() {
                     formationAvailabilityByValue[value] === true;
                   const isActive =
                     titulares.length > 0 && tactic.formation === value;
+                  const best = getBestForFormation(value);
                   return (
                     <button
                       key={value}
@@ -833,7 +846,10 @@ export function TacticsView() {
                           : {}
                       }
                     >
-                      {label}
+                      <span className="flex flex-col items-center gap-0.5">
+                        {label}
+                        <FamiliarityStars count={best?.count ?? 0} />
+                      </span>
                     </button>
                   );
                 })}
@@ -905,12 +921,6 @@ export function TacticsView() {
                   const isActive =
                     titulares.length > 0 && tactic.formation === value;
                   const best = getBestForFormation(value);
-                  const colors = best
-                    ? TIER_COLORS[best.label] || TIER_COLORS["A familiarizar"]
-                    : null;
-                  const pct = best
-                    ? Math.min(100, Math.round((best.count / MAX_COUNT) * 100))
-                    : 0;
                   return (
                     <div key={value} className="flex items-center gap-2">
                       <button
@@ -940,27 +950,9 @@ ${
                       >
                         {label}
                       </button>
-                      {best ? (
-                        <div
-                          className={`flex-1 flex items-center gap-1.5 px-2 py-1.5 rounded-xl ${colors.bg}`}
-                        >
-                          <div className="flex-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${colors.bar}`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span
-                            className={`text-[8px] font-black uppercase shrink-0 ${colors.text}`}
-                          >
-                            {best.label}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex-1 px-2 py-1.5 rounded-xl bg-[#161616]/60">
-                          <div className="h-1 bg-[#1a1a1a] rounded-full" />
-                        </div>
-                      )}
+                      <div className="flex-1 flex items-center px-2 py-1.5 rounded-xl bg-[#161616]/60">
+                        <FamiliarityStars count={best?.count ?? 0} />
+                      </div>
                     </div>
                   );
                 })}
