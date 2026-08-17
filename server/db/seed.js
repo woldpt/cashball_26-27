@@ -1,6 +1,7 @@
 require("../logBootstrap");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const db = require("./database");
 
 // Ensure schema exists before seeding
@@ -30,18 +31,9 @@ if (!allTeamsData || allTeamsData.length === 0) {
   process.exit(1);
 }
 
-// Ensure player_skill_snapshots table exists
-db.run(`CREATE TABLE IF NOT EXISTS player_skill_snapshots (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  player_id INTEGER NOT NULL,
-  matchweek INTEGER NOT NULL,
-  season INTEGER NOT NULL,
-  skill INTEGER NOT NULL,
-  created_at TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY(player_id) REFERENCES players(id)
-)`);
-db.run(`CREATE INDEX IF NOT EXISTS idx_skill_snapshots_player ON player_skill_snapshots(player_id, season, matchweek)`);
-db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_skill_snapshots_unique ON player_skill_snapshots(player_id, matchweek, season)`);
+// Nota: player_skill_snapshots (tabela + índices) é criada pelo schema.sql
+// dentro do db.serialize() — não duplicar aqui, ou o CREATE INDEX podia correr
+// antes do CREATE TABLE (sem serialize) e rebentar com erro não-apanhado.
 
 function randomAggressiveness() {
   return 1 + Math.floor(Math.random() * 5);
@@ -269,6 +261,19 @@ db.serialize(() => {
   db.run("INSERT INTO game_state (key, value) VALUES ('season', '1')");
   db.run("INSERT INTO game_state (key, value) VALUES ('cupRound', '0')");
   db.run("INSERT INTO game_state (key, value) VALUES ('cupState', 'idle')");
+  // Marcador de versão das fixtures — usado pelo ensureSeeded.js para
+  // detetar quando o base.db está desatualizado (fixtures ou schema novos).
+  const fixturesHash = crypto
+    .createHash("sha256")
+    .update(fs.readFileSync(path.join(fixturesDir, "all_teams.json")))
+    .digest("hex");
+  db.run(
+    "INSERT OR REPLACE INTO game_state (key, value) VALUES ('fixtures_hash', ?)",
+    [fixturesHash],
+    (err) => {
+      if (err) console.error("[seed] fixtures_hash:", err.message);
+    },
+  );
 
   insertManager.finalize();
   insertTeam.finalize();

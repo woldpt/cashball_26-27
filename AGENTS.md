@@ -18,6 +18,12 @@
 | **Repair Job Offer**     | `cd server && npm run repair:joboffer <ROOM_CODE> [--fix]` |
 | **Full Stack**           | `docker compose up --build`                        |
 
+> **Reseed automático no arranque:** o `entrypoint.sh` corre `db/ensureSeeded.js`,
+> que re-seeda o `base.db` (template de novas salas) automaticamente se estiver
+> ausente, com schema antigo ou com fixtures alteradas (hash em `game_state.fixtures_hash`).
+> Salas existentes (`game_*.db`) nunca são afetadas. Para refrescar fixtures em
+> produção basta `git pull && docker compose up --build`.
+
 ## ⚠️ REGRESSION PREVENTION (Crucial)
 
 **NÃO cometer estes erros que já foram corrigidos em sessões anteriores:**
