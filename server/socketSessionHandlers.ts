@@ -216,7 +216,7 @@ export function registerSessionSocketHandlers(
 
 		getTeamsWithCoachNames(game.db)
 			.then((teams: any[]) => {
-				socket.emit("teamsData", teams);
+				io.to(roomCode).emit("teamsData", teams);
 				getAllTeamForms(game.db, game.season)
 					.then((forms) => {
 						socket.emit("teamForms", forms);
