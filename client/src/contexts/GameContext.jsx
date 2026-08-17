@@ -676,7 +676,9 @@ export function GameProvider({
 			setMatchAction(null);
 			setIsMatchActionPending(false);
 			if (
-				matchAction.type === "user_substitution" &&
+				["user_substitution", "injury", "gk_red_card"].includes(
+					matchAction.type,
+				) &&
 				typeof playerIdOrChoice === "object" &&
 				playerIdOrChoice !== null
 			) {
@@ -684,6 +686,10 @@ export function GameProvider({
 				setTactic((prevTactic) => {
 					const newPositions = { ...prevTactic.positions };
 					delete newPositions[playerOut];
+					if (matchAction.type === "gk_red_card") {
+						const sentOffId = matchAction.sentOffPlayer?.id;
+						if (sentOffId != null) delete newPositions[sentOffId];
+					}
 					newPositions[playerIn] = "Titular";
 					const next = { ...prevTactic, positions: newPositions };
 					socket.emit("setTactic", next);

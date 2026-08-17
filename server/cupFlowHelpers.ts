@@ -834,6 +834,20 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 								status === "Titular" && !currentIds.has(Number(id)),
 						)
 						.map(([id]) => Number(id));
+
+					// Filter out injured and red-carded players from incoming substitutions
+					const injuredIds = new Set(
+						(fx.events || [])
+							.filter(
+								(e: any) =>
+									(e.type === "injury" || e.type === "red") &&
+									e.team === teamSide &&
+									e.playerId,
+							)
+							.map((e: any) => e.playerId),
+					);
+					toAddIds = toAddIds.filter((id) => !injuredIds.has(id));
+
 					if (toRemoveIds.length === 0 && toAddIds.length === 0) return;
 
 					const outPlayers = toRemoveIds

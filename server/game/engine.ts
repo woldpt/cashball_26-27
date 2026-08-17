@@ -505,6 +505,22 @@ async function applyInjuryEvent({
       }
     }
 
+    // Keep tactic positions in sync so applyHalftimeSubs/applyETSubs
+    // don't undo this forced substitution when the next phase starts.
+    // (Mirrors the user_substitution path below.)
+    const tacticRef = teamSide === "home" ? fixture._t1 : fixture._t2;
+    if (tacticRef?.positions) {
+      delete tacticRef.positions[injuredPlayer.id];
+      tacticRef.positions[replacement.id] = "Titular";
+    }
+    const coachState = Object.values(game.playersByName).find(
+      (p: any) => (p as any).teamId === teamId,
+    ) as any;
+    if (coachState?.tactic?.positions) {
+      delete coachState.tactic.positions[injuredPlayer.id];
+      coachState.tactic.positions[replacement.id] = "Titular";
+    }
+
     fixture.events.push({
       minute: fixture._minute,
       type: "substitution",
@@ -1640,6 +1656,24 @@ async function simulateMatchSegment(
                 };
               }
             }
+          }
+
+          // Keep tactic positions in sync so applyHalftimeSubs/applyETSubs
+          // don't undo this forced swap when the next phase starts.
+          const tacticRef =
+            side === "home" ? fixture._t1 : fixture._t2;
+          if (tacticRef?.positions) {
+            delete tacticRef.positions[offender.id];
+            if (sacrificed) delete tacticRef.positions[sacrificed.id];
+            tacticRef.positions[incoming.id] = "Titular";
+          }
+          const coachState = Object.values(game.playersByName).find(
+            (p: any) => (p as any).teamId === teamId,
+          ) as any;
+          if (coachState?.tactic?.positions) {
+            delete coachState.tactic.positions[offender.id];
+            if (sacrificed) delete coachState.tactic.positions[sacrificed.id];
+            coachState.tactic.positions[incoming.id] = "Titular";
           }
 
           fixture.events.push({
