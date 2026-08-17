@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { OddsBadge } from "../../shared/OddsBadge.jsx";
 
 /* ── Pre-match intro (5s pause) + kickoff moments ────────────────────────
  *
  * Durante a pausa de 5s antes do pontapé de saída (liveMinute === 0) o hero
- * mostra as características pre-match — clima, odds, tácticas — como chips
+ * mostra as características pre-match — clima, tácticas — como chips
  * escaneáveis + uma linha narrativa (a frase táctica, que é a mesma que
- * passa a ser o comentário ao vivo no minuto 1).
+ * passa a ser o comentário ao vivo no minuto 1). As odds ficam apenas no
+ * badge por cima do scoreboard (LiveMatchHero).
  *
  * Ao kickoff os cards saem com animação em cascade (colapso de altura, sem
  * salto de layout) e um badge "⚽ 1ª PARTE" pulsa no mesmo slot antes da
@@ -15,7 +15,7 @@ import { OddsBadge } from "../../shared/OddsBadge.jsx";
  * (45') e do prolongamento (90').
  */
 
-const INTRO_TYPES = ["weather", "betting", "phase_start"];
+const INTRO_TYPES = ["weather", "phase_start"];
 
 const WEATHER_LABELS = {
   "☀️": "Sol",
@@ -66,21 +66,12 @@ export function PreMatchIntro({
   if (introEvts.length === 0) return null;
 
   const weatherEvt = introEvts.find((e) => e.type === "weather");
-  const bettingEvt = introEvts.find((e) => e.type === "betting");
   const phaseEvt = introEvts.find((e) => e.type === "phase_start");
 
   const weatherLabel = weatherEvt
     ? WEATHER_LABELS[weatherEvt.emoji] || stripPrefix(weatherEvt.text).slice(0, 24)
     : null;
-  const odds = bettingEvt
-    ? stripPrefix(bettingEvt.text).match(/\d+\.\d{2}/g) || []
-    : [];
-  const hasOdds = odds.length >= 3;
-  const oddsLabel = hasOdds ? `1 ${odds[0]} · X ${odds[1]} · 2 ${odds[2]}` : null;
-  const narrative =
-    phaseEvt?.text ||
-    (bettingEvt && !hasOdds ? bettingEvt.text : null) ||
-    null;
+  const narrative = phaseEvt?.text || null;
 
   return (
     <>
@@ -104,27 +95,18 @@ export function PreMatchIntro({
               </motion.p>
             )}
 
-            {(weatherLabel || oddsLabel) && (
+            {weatherLabel && (
               <motion.div
                 key="prematch-chips"
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.25, ease: "easeIn", delay: 0.12 }}
                 className="flex flex-wrap justify-center gap-2"
               >
-                {weatherLabel && (
-                  <IntroChip
-                    emoji={weatherEvt.emoji}
-                    label={weatherLabel}
-                    accent="text-sky-300/90 border-sky-400/25"
-                  />
-                )}
-                {hasOdds && (
-                  <OddsBadge
-                    odds={odds}
-                    hColor={hInfo?.color_primary}
-                    aColor={aInfo?.color_primary}
-                  />
-                )}
+                <IntroChip
+                  emoji={weatherEvt.emoji}
+                  label={weatherLabel}
+                  accent="text-sky-300/90 border-sky-400/25"
+                />
               </motion.div>
             )}
 
