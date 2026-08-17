@@ -842,13 +842,16 @@ export function GameProvider({
 		[mySquad, tactic.positions, activeTab, subbedOut, matchweekCount],
 	);
 
-	const panelMode = matchAction
-		? "action"
-		: showHalftimePanel
-			? "halftime"
-			: showMatchDetail
-				? "detail"
-				: null;
+	// Penáltis são resolvidos via `PenaltyTakerPopup` (modal sobre o jogo ao
+	// vivo) — não abrir o painel de substituições a ecrã inteiro para eles.
+	const panelMode =
+		matchAction && matchAction.type !== "penalty"
+			? "action"
+			: showHalftimePanel
+				? "halftime"
+				: showMatchDetail
+					? "detail"
+					: null;
 
 	const panelFixture = matchAction
 		? (() => {

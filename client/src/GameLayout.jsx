@@ -13,6 +13,7 @@ import { PlayerHistoryModal } from "./components/modals/PlayerHistoryModal.jsx";
 import { CupDrawPopup } from "./components/modals/CupDrawPopup.jsx";
 import { PenaltySuspensePopup } from "./components/modals/PenaltySuspensePopup.jsx";
 import { PenaltyShootoutPopup } from "./components/modals/PenaltyShootoutPopup.jsx";
+import { PenaltyTakerPopup } from "./components/modals/PenaltyTakerPopup.jsx";
 import { WaitingCoachesModal } from "./components/modals/WaitingCoachesModal.jsx";
 import { MatchPage } from "./components/match/MatchPage.jsx";
 import { LiveMatchHero, LiveFixtureRow } from "./components/live/index.js";
@@ -1388,6 +1389,13 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       <GameDialog dialog={gameDialog} onClose={() => setGameDialog(null)} />
 
       <PenaltySuspensePopup penaltySuspense={penaltySuspense} />
+
+      <PenaltyTakerPopup
+        key={matchAction?.actionId ?? "none"}
+        matchAction={matchAction}
+        teams={teams}
+        onResolveAction={handleResolveMatchAction}
+      />
 
       <CupDrawPopup
         showCupDrawPopup={showCupDrawPopup}
