@@ -246,6 +246,16 @@ function App() {
 
 	const handleAuthenticate = async (mode) => {
 		if (!name || !password || authSubmitting) return;
+		if (mode === "register") {
+			if (!confirmPassword) {
+				setAuthError("Confirma a palavra-passe.");
+				return;
+			}
+			if (password !== confirmPassword) {
+				setAuthError("As palavras-passe não coincidem.");
+				return;
+			}
+		}
 		setAuthSubmitting(true);
 		setAuthError("");
 		try {

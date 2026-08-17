@@ -553,6 +553,7 @@ const LandingPage = ({
 											disabled={
 												!name.trim() ||
 												password.length < 3 ||
+												!confirmPassword ||
 												authSubmitting ||
 												registerPasswordMismatch
 											}
