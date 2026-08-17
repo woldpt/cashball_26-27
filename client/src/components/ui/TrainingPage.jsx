@@ -88,17 +88,11 @@ const TRAINING_COLOR_MAP = {
   Resistência: "border-purple-500",
 };
 
-const ATTRIBUTE_BADGE_COLORS = {
-  skill: { bg: "bg-yellow-500/20", text: "text-yellow-400", border: "border-yellow-500/30" },
-  form: { bg: "bg-orange-500/20", text: "text-orange-400", border: "border-orange-500/30" },
-  resistance: { bg: "bg-purple-500/20", text: "text-purple-400", border: "border-purple-500/30" },
-};
-
-const ATTRIBUTE_LABEL = {
-  skill: "Skill",
-  form: "Forma",
-  resistance: "Resistência",
-};
+const ATTR_COLUMNS = [
+  { key: "skill", label: "Skill", progressClass: "text-amber-400 border-amber-500/40" },
+  { key: "form", label: "Forma", progressClass: null },
+  { key: "resistance", label: "Resist.", progressClass: "text-purple-400 border-purple-500/40" },
+];
 
 function getTrainingBorderClass(trainingKey) {
   return TRAINING_COLOR_MAP[trainingKey] || "border-outline";
@@ -145,58 +139,101 @@ function TrainingOptionCard({ option, selected, isSaved, justSaved, loading }) {
   );
 }
 
-function HistoryRecordRow({ record }) {
+/**
+ * Formata um delta numérico com sinal (+1 / −4 / +0.3).
+ * @param {number} delta
+ * @returns {string}
+ */
+function formatDeltaValue(delta) {
+  const sign = delta > 0 ? "+" : "";
+  const abs = Math.abs(delta);
+  const value = Number.isInteger(abs)
+    ? String(abs)
+    : String(Math.round(abs * 100) / 100);
+  return `${sign}${value}`;
+}
+
+/**
+ * Célula de delta de um atributo. Mostra apenas o delta (+1 / −4) com
+ * tooltip do antes→depois; progresso acumulado (sem mudança de nível)
+ * surge como chip tracejado "+X prog".
+ * @param {{
+ *   record?: object,
+ * }} props
+ */
+function DeltaCell({ record }) {
+  if (!record) {
+    return <span className="text-on-surface-variant/30 tabular-nums">—</span>;
+  }
   const delta = record.new_value - record.old_value;
-  const isPositive = delta > 0;
-  const isNegative = delta < 0;
-  const valueClass = isPositive
-    ? "text-emerald-400"
-    : isNegative
-      ? "text-red-400"
-      : "text-on-surface-variant/50";
-  const deltaClass = isPositive
-    ? "text-emerald-400/70"
-    : isNegative
-      ? "text-red-400/70"
-      : "text-on-surface-variant/40";
-
-  const badgeColor = ATTRIBUTE_BADGE_COLORS[record.attribute] || ATTRIBUTE_BADGE_COLORS.skill;
-  const badgeLabel = ATTRIBUTE_LABEL[record.attribute] || record.attribute;
-
-  const deltaText =
-    record.new_value === record.old_value
-      ? `${record.delta > 0 ? "+" : ""}${record.delta} prog`
-      : `${delta > 0 ? "+" : ""}${delta}`;
-
+  const isLevelChange = record.new_value !== record.old_value;
+  const col = ATTR_COLUMNS.find((c) => c.key === record.attribute);
+  const chipClass = isLevelChange
+    ? delta > 0
+      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+      : "bg-red-500/20 text-red-400 border border-red-500/30"
+    : `border border-dashed ${
+        col?.progressClass || "border-on-surface-variant/40 text-on-surface-variant"
+      }`;
   return (
-    <div className="flex items-center justify-between text-sm p-2 rounded hover:bg-white/5 transition-colors">
-      <div className="flex items-center gap-2 flex-1 min-w-0">
-        <span className="text-on-surface-variant truncate text-xs">
-          {record.player_name}
+    <span
+      title={isLevelChange ? `${record.old_value} → ${record.new_value}` : undefined}
+      className={`inline-block text-[10px] font-black px-1.5 py-px rounded tabular-nums tracking-wide whitespace-nowrap ${chipClass}`}
+    >
+      {isLevelChange
+        ? formatDeltaValue(delta)
+        : `${formatDeltaValue(delta)} prog`}
+    </span>
+  );
+}
+
+/**
+ * Agrupa os registos de histórico por jogador (preservando a ordem por posição).
+ * @param {object[]} records registos do histórico de treino
+ * @returns {Array<{ player_id: number, name: string, changes: object[] }>}
+ */
+function groupByPlayer(records) {
+  const map = new Map();
+  for (const r of records || []) {
+    if (!map.has(r.player_id)) {
+      map.set(r.player_id, {
+        player_id: r.player_id,
+        name: r.player_name,
+        changes: [],
+      });
+    }
+    map.get(r.player_id).changes.push(r);
+  }
+  return Array.from(map.values());
+}
+
+/**
+ * Uma linha de jogador na tabela compacta — uma linha por jogador,
+ * com células de delta alinhadas por atributo (Skill/Forma/Resist.).
+ * @param {{
+ *   player: { player_id: number, name: string, changes: object[] },
+ * }} props
+ */
+function PlayerReportRow({ player }) {
+  const byAttr = {};
+  for (const c of player.changes) byAttr[c.attribute] = c;
+  return (
+    <tr className="border-t border-outline-variant/15 hover:bg-white/5 transition-colors">
+      <td className="py-1.5 pr-2 pl-0 w-full max-w-0">
+        <span className="block truncate text-sm uppercase tracking-tight text-on-surface">
+          {player.name}
         </span>
-        <span
-          className={`text-[9px] font-black uppercase px-1.5 py-px rounded ${badgeColor.bg} ${badgeColor.text} ${badgeColor.border} tracking-widest whitespace-nowrap`}
-        >
-          {badgeLabel}
-        </span>
-      </div>
-      <div className="flex items-center gap-1 shrink-0 ml-2">
-        <span className="text-on-surface-variant text-xs w-8 text-right tabular-nums">
-          {record.old_value}
-        </span>
-        <span className="text-on-surface-variant/50">→</span>
-        <span
-          className={`font-black text-xs w-8 text-right tabular-nums ${valueClass}`}
-        >
-          {record.new_value}
-        </span>
-        <span
-          className={`text-xs ml-1 w-14 text-right tabular-nums ${deltaClass}`}
-        >
-          {deltaText}
-        </span>
-      </div>
-    </div>
+      </td>
+      <td className="py-1.5 px-2 text-right">
+        <DeltaCell record={byAttr.skill} />
+      </td>
+      <td className="py-1.5 px-2 text-right">
+        <DeltaCell record={byAttr.form} />
+      </td>
+      <td className="py-1.5 px-2 text-right">
+        <DeltaCell record={byAttr.resistance} />
+      </td>
+    </tr>
   );
 }
 
@@ -304,7 +341,9 @@ export function TrainingPage({ me, matchweek }) {
     historyByPosition[record.position].push(record);
   });
 
-  const historyCount = trainingHistory.length;
+  const uniquePlayerCount = new Set(
+    trainingHistory.map((r) => r.player_id),
+  ).size;
 
   return (
     <div className="space-y-4">
@@ -323,7 +362,7 @@ export function TrainingPage({ me, matchweek }) {
         <SummaryWidget label="Jornada" value={matchweek} valueClass="text-2xl" />
         <SummaryWidget
           label="Jogadores Treinados"
-          value={historyCount}
+          value={uniquePlayerCount}
           valueClass="text-2xl"
           accentClass="border-tertiary"
           valueColorClass="text-tertiary"
@@ -408,6 +447,7 @@ export function TrainingPage({ me, matchweek }) {
                 const posText =
                   POSITION_TEXT_CLASS[position] || "text-on-surface-variant";
                 const posLabel = POSITION_LABELS[position] || position;
+                const players = groupByPlayer(records);
 
                 return (
                   <div
@@ -421,18 +461,40 @@ export function TrainingPage({ me, matchweek }) {
                         group
                       </span>
                       {posLabel}
+                      <span className="ml-auto text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 tabular-nums">
+                        {players.length} jogadores
+                      </span>
                     </h3>
 
-                      <div className="space-y-1">
-                        {records.map((record, idx) => (
-                          <HistoryRecordRow key={idx} record={record} />
-                        ))}
-                      </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[360px]">
+                        <thead>
+                          <tr className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                            <th className="text-left py-1 pr-2 pl-0 font-black">
+                              Jogador
+                            </th>
+                            {ATTR_COLUMNS.map((col) => (
+                              <th
+                                key={col.key}
+                                className="text-right py-1 px-2 font-black"
+                              >
+                                {col.label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {players.map((p) => (
+                            <PlayerReportRow key={p.player_id} player={p} />
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </Panel>
       </div>
     </div>
