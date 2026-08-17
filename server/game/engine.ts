@@ -327,6 +327,21 @@ function getAvailableBench(teamSquad: PlayerRow[], lineupIds: Set<number>) {
   return teamSquad.filter((p) => !lineupIds.has(p.id));
 }
 
+// Normalizes a forced-swap choice: the client sends { playerOut, playerIn }
+// (object) while legacy/auto paths may send a bare player id. Returns
+// { playerOut, playerIn } with nulls for missing parts.
+function normalizeForcedChoice(
+  choice: any,
+): { playerOut: number | null; playerIn: number | null } {
+  if (choice && typeof choice === "object") {
+    return {
+      playerOut: choice.playerOut ?? null,
+      playerIn: choice.playerIn ?? null,
+    };
+  }
+  return { playerOut: null, playerIn: choice ?? null };
+}
+
 async function applyInjuryEvent({
   db,
   fixture,
@@ -464,8 +479,10 @@ async function applyInjuryEvent({
     },
   });
 
+  const forcedChoice = normalizeForcedChoice(result.choice);
   const replacement =
-    result.choice && availableBench.find((p) => p.id === result.choice);
+    forcedChoice.playerIn != null &&
+    availableBench.find((p) => p.id === forcedChoice.playerIn);
   if (replacement) {
     const idx = squad.findIndex((p) => p.id === injuredPlayer.id);
     if (idx > -1) squad.splice(idx, 1, replacement);
@@ -1491,7 +1508,9 @@ async function simulateMatchSegment(
       const teamId = isHomeCard ? fixture.homeTeamId : fixture.awayTeamId;
 
       if (offender.position === "GR") {
-        // GK sent off — force substitution via intervention screen
+        // GK sent off — the team must play with 10: the reserve GK comes on and
+        // an outfield player is sacrificed. The coach chooses which field player
+        // leaves; on timeout/NPC the weakest on-pitch field player is sacrificed.
         const tacticPositions: Record<number, string> = tactic?.positions || {};
         const benchIds = new Set(
           Object.entries(tacticPositions)
@@ -1502,11 +1521,20 @@ async function simulateMatchSegment(
           (p) => !lineupIds.has(p.id) && (benchIds.size === 0 || benchIds.has(p.id)),
         );
 
-        let substituteCandidates = availableBench;
         const grBench = availableBench.filter((p) => p.position === "GR");
-        substituteCandidates = grBench.length > 0 ? grBench : availableBench;
+        const grCandidates = grBench.length > 0 ? grBench : availableBench;
+        // On-pitch outfield players the coach may sacrifice (the sent-off GK is out)
+        const fieldOnPitch = squad.filter(
+          (p) => p.id !== offender.id && p.position !== "GR",
+        );
 
-        const fallback = () => pickBestPlayer(substituteCandidates)?.id || null;
+        const fallback = () => {
+          const weakest = [...fieldOnPitch].sort(
+            (a, b) => (a.skill || 0) - (b.skill || 0),
+          )[0];
+          const bestGR = pickBestPlayer(grCandidates);
+          return { playerOut: weakest?.id ?? null, playerIn: bestGR?.id ?? null };
+        };
         const result = await waitForMatchAction({
           game,
           io,
@@ -1524,7 +1552,16 @@ async function simulateMatchSegment(
               form: offender.form,
               is_star: offender.is_star,
             },
-            benchPlayers: substituteCandidates.map((p) => ({
+            onPitch: fieldOnPitch.map((p) => ({
+              id: p.id,
+              name: p.name,
+              position: p.position,
+              skill: p.skill,
+              resistance: p.resistance,
+              form: p.form,
+              is_star: p.is_star,
+            })),
+            benchPlayers: grCandidates.map((p) => ({
               id: p.id,
               name: p.name,
               position: p.position,
@@ -1555,26 +1592,49 @@ async function simulateMatchSegment(
           },
         });
 
-        const replacement =
-          result.choice && availableBench.find((p) => p.id === result.choice);
-        if (replacement) {
-          const idx = squad.findIndex((p) => p.id === offender.id);
-          if (idx > -1) squad.splice(idx, 1, replacement);
-          lineupIds.delete(offender.id);
-          lineupIds.add(replacement.id);
+        const forcedChoice = normalizeForcedChoice(result.choice);
+        const incoming =
+          forcedChoice.playerIn != null
+            ? grCandidates.find((p) => p.id === forcedChoice.playerIn)
+            : null;
+
+        // 1) The sent-off GK always leaves.
+        const gkIdx = squad.findIndex((p) => p.id === offender.id);
+        if (gkIdx > -1) squad.splice(gkIdx, 1);
+        lineupIds.delete(offender.id);
+
+        if (incoming) {
+          // 2) Sacrifice the chosen outfield player so the reserve GK can come on.
+          const sacrificed =
+            forcedChoice.playerOut != null
+              ? squad.find((p) => p.id === forcedChoice.playerOut)
+              : null;
+          if (sacrificed) {
+            const si = squad.findIndex((p) => p.id === sacrificed.id);
+            if (si > -1) squad.splice(si, 1);
+            lineupIds.delete(sacrificed.id);
+          }
+
+          // 3) The reserve GK comes on.
+          squad.push(incoming);
+          lineupIds.add(incoming.id);
 
           const lineupRef =
             side === "home" ? fixture.homeLineup : fixture.awayLineup;
           if (lineupRef) {
-            const li = lineupRef.findIndex((p: any) => p.id === offender.id);
-            if (li > -1) {
-              lineupRef[li] = {
-                id: replacement.id,
-                name: replacement.name,
-                position: replacement.position,
-                is_star: replacement.is_star || 0,
-                skill: replacement.skill,
-              };
+            const gi = lineupRef.findIndex((p: any) => p.id === offender.id);
+            if (gi > -1) lineupRef.splice(gi, 1);
+            if (sacrificed) {
+              const li = lineupRef.findIndex((p: any) => p.id === sacrificed.id);
+              if (li > -1) {
+                lineupRef[li] = {
+                  id: incoming.id,
+                  name: incoming.name,
+                  position: incoming.position,
+                  is_star: incoming.is_star || 0,
+                  skill: incoming.skill,
+                };
+              }
             }
           }
 
@@ -1583,14 +1643,10 @@ async function simulateMatchSegment(
             type: "substitution",
             team: side,
             emoji: "🔁",
-            playerId: replacement.id,
-            playerName: replacement.name,
-            text: `[${minute}'] 🔁 ${subPhrase(offender.name, replacement.name)}`,
+            playerId: incoming.id,
+            playerName: incoming.name,
+            text: `[${minute}'] 🔁 ${subPhrase(sacrificed ? sacrificed.name : offender.name, incoming.name)}`,
           });
-        } else {
-          const idx = squad.findIndex((p) => p.id === offender.id);
-          if (idx > -1) squad.splice(idx, 1);
-          lineupIds.delete(offender.id);
         }
       } else {
         // Non-GK red card — just remove the player

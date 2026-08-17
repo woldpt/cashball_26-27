@@ -1069,6 +1069,15 @@ export function useSocketListeners(handlers, refs) {
 						.filter(Boolean);
 				}
 
+				if (normalizedAction.type === "gk_red_card") {
+					normalizedAction.benchPlayers = (normalizedAction.benchPlayers || [])
+						.map(toCandidate)
+						.filter(Boolean);
+					normalizedAction.onPitch = (normalizedAction.onPitch || [])
+						.map(toCandidate)
+						.filter(Boolean);
+				}
+
 				handlers.setMatchAction(normalizedAction);
 				handlers.setActiveTab("live");
 

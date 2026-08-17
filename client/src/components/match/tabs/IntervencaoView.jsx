@@ -40,6 +40,7 @@ export function IntervencaoView({
   const actionType = matchAction?.type || null;
   const isPenalty = actionType === "penalty";
   const isForcedSwap = actionType === "injury" || actionType === "gk_red_card";
+  const isGkRedCard = actionType === "gk_red_card";
   const isActionSub = actionType === "user_substitution";
 
   const selectedOutId =
@@ -69,9 +70,11 @@ export function IntervencaoView({
       ? sortPlayersByPos(matchAction?.takerCandidates || [])
       : isActionSub
         ? sortPlayersByPos(matchAction?.onPitch || [])
-        : forceOutPlayer
-          ? [forceOutPlayer]
-          : [];
+        : isGkRedCard
+          ? sortPlayersByPos(matchAction?.onPitch || [])
+          : forceOutPlayer
+            ? [forceOutPlayer]
+            : [];
 
   const benchPlayers = isHalftime
     ? sortPlayersByPos(
@@ -89,7 +92,9 @@ export function IntervencaoView({
     benchPlayers.find((p) => p.id === id) ||
     null;
 
-  const effectiveOutId = selectedOutId || (isForcedSwap ? forceOutPlayer?.id : null);
+  const effectiveOutId = isGkRedCard
+    ? selectedOutId
+    : selectedOutId || (isForcedSwap ? forceOutPlayer?.id : null);
   const targetPlayer = playerById(selectedInId);
   const canConfirmSwap =
     !!effectiveOutId && !!selectedInId && (!isHalftime || subsMade < MAX_MATCH_SUBS);
@@ -293,6 +298,7 @@ export function IntervencaoView({
                   isHalftime={isHalftime}
                   isPenalty={isPenalty}
                   isForcedSwap={isForcedSwap}
+                  isGkRedCard={isGkRedCard}
                   confirmedSubs={confirmedSubs}
                   annotatedSquad={annotatedSquad}
                   tactic={tactic}
@@ -369,7 +375,7 @@ function EventList({ events }) {
 }
 
 function SubsPanel({
-  isHalftime, isPenalty, isForcedSwap, tactic, onUpdateTactic, onPitchPlayers, benchPlayers,
+  isHalftime, isPenalty, isForcedSwap, isGkRedCard, tactic, onUpdateTactic, onPitchPlayers, benchPlayers,
   effectiveOutId, selectedInId, handlePickOut, handlePickIn,
   forceOutPlayer, subbedOut, subsMade,
 }) {
@@ -422,7 +428,11 @@ function SubsPanel({
                 (bp) => bp.position === "GR" && !subbedOut.includes(bp.id),
               );
               const noGrReplacement = isHalftime && p.position === "GR" && !grAvailableOnBench;
-              const isLockedForced = isForcedSwap && !!forceOutPlayer && p.id !== forceOutPlayer.id;
+              const isLockedForced =
+                isForcedSwap &&
+                !isGkRedCard &&
+                !!forceOutPlayer &&
+                p.id !== forceOutPlayer.id;
               const disabled =
                 noGrReplacement ||
                 isLockedForced ||
