@@ -1,23 +1,33 @@
 import type { ActiveGame } from "./types";
+import { recalcPlayerValue } from "./gameConstants";
 
 /**
  * Training bonuses application.
  *
- * Bonuses:
- *  - Position focus (GR/Defesas/Médios/Avançados): +1.0 skill (accumulator)
+ * Bonuses (only for players that appeared in a fixture lineup):
+ *  - Position focus (GR/Defesas/Médios/Avançados): skill gain with diminishing
+ *    returns — the closer to potential the slower, high form boosts learning,
+ *    and each skill point costs more progress as skill rises (ceil(skill/10)).
  *  - Forma:        +10 form (direct, INTEGER column tolerates this)
  *  - Resistência:  +0.4 resistance (accumulator)
  *
- * Decay (per calendar event, applies to the WHOLE squad, junior GRs excluded):
- *  - Not training Forma:       -5 form (floor 50)
- *  - Not training Resistência: -0.4 resistance progress (level conversion, floor 1)
+ * Physical dynamics (per calendar event, whole squad, junior GRs excluded):
+ *  - Not training Forma:
+ *      · played  → gradient decay (the lower the form, the slower the drop)
+ *      · rested  → +4 recovery (rotation keeps the squad fresh)
+ *  - Not training Resistência:
+ *      · played  → -0.5 resistance progress
+ *      · rested  → -0.3 resistance progress
  *
  * Skill and resistance use accumulator columns (training_skill_progress,
  * training_resistance_progress) because the underlying columns are INTEGER —
  * adding 1.0/0.4 directly would be silently truncated by SQLite.
  *
- * Only players that appeared in at least one fixture lineup receive bonuses.
- * Junior GRs (negative ids) are filtered out.
+ * Market value is recalculated whenever skill changes (skill² × 500). Wages
+ * are NEVER touched here — they only change on a new contract (buy/renewal).
+ *
+ * Rust/age-free decline of unused players is handled in the post-match
+ * evolution (engine.ts applyPostMatchQualityEvolution), not here.
  */
 export function createTrainingHelpers(_deps: { io: any }) {
   async function applyTrainingBonuses(
@@ -158,20 +168,38 @@ export function createTrainingHelpers(_deps: { io: any }) {
                           : 50;
                       const oldSkill = player.skill ?? 0;
                       const oldProg = player.skill_progress ?? 0;
-                      let newProg = oldProg + 1.0;
+
+                      // Retornos decrescentes: perto do teto de potencial a
+                      // evolução abranda; forma baixa penaliza a assimilação.
+                      const room = Math.max(0, skillCap - oldSkill);
+                      const potentialFactor =
+                        0.5 + 0.5 * (room / Math.max(1, skillCap));
+                      const formFactor = Math.min(
+                        1.15,
+                        Math.max(0.5, 0.5 + (player.form ?? 100) / 200),
+                      );
+                      const gain = 2.0 * potentialFactor * formFactor;
+                      // Quanto maior o skill, mais progresso é preciso por ponto.
+                      const progressNeeded = Math.max(1, Math.ceil(oldSkill / 10));
+
+                      let newProg = oldProg + gain;
                       let newSkill = oldSkill;
-                      while (newProg >= 1.0 && newSkill < skillCap) {
+                      while (newProg >= progressNeeded && newSkill < skillCap) {
                         newSkill += 1;
-                        newProg -= 1.0;
+                        newProg -= progressNeeded;
                       }
                       if (newSkill >= skillCap) newProg = 0;
-                      upd.fields.training_skill_progress = Math.round(newProg * 100) / 100;
-                      if (newSkill !== oldSkill) upd.fields.skill = newSkill;
+                      upd.fields.training_skill_progress =
+                        Math.round(newProg * 100) / 100;
+                      if (newSkill !== oldSkill) {
+                        upd.fields.skill = newSkill;
+                        upd.fields.value = recalcPlayerValue(newSkill);
+                      }
                       upd.history.push({
                         attribute: "skill",
                         oldValue: oldSkill,
                         newValue: newSkill,
-                        delta: 1.0,
+                        delta: Math.round(gain * 100) / 100,
                         focus,
                       });
                     }
@@ -183,23 +211,44 @@ export function createTrainingHelpers(_deps: { io: any }) {
                 if (player.id > 0) {
                   if (focus !== "Forma") {
                     const oldForm = player.form ?? 100;
-                    const newForm = Math.max(50, oldForm - 5);
-                    if (newForm !== oldForm) {
-                      upd.fields.form = newForm;
-                      upd.history.push({
-                        attribute: "form",
-                        oldValue: oldForm,
-                        newValue: newForm,
-                        delta: newForm - oldForm,
-                        focus,
-                      });
+                    if (!played) {
+                      // Descanso: quem não jogou e não treina Forma recupera
+                      // suavemente em vez de decair (rotação mantém o plantel fresco)
+                      const newForm = Math.min(130, oldForm + 4);
+                      if (newForm !== oldForm) {
+                        upd.fields.form = newForm;
+                        upd.history.push({
+                          attribute: "form",
+                          oldValue: oldForm,
+                          newValue: newForm,
+                          delta: newForm - oldForm,
+                          focus,
+                        });
+                      }
+                    } else {
+                      // Decaimento com gradiente: quanto mais baixa a forma,
+                      // menos decai (efeito piso nos 50)
+                      const decay = Math.max(1, Math.round((oldForm - 50) * 0.08));
+                      const newForm = Math.max(50, oldForm - decay);
+                      if (newForm !== oldForm) {
+                        upd.fields.form = newForm;
+                        upd.history.push({
+                          attribute: "form",
+                          oldValue: oldForm,
+                          newValue: newForm,
+                          delta: newForm - oldForm,
+                          focus,
+                        });
+                      }
                     }
                   }
 
                   if (focus !== "Resistência") {
                     const oldRes = player.resistance ?? 3;
                     const oldProg = player.resistance_progress ?? 0;
-                    let newProg = oldProg - 0.4;
+                    // Quem jogou desgasta mais; quem descansa perde menos
+                    const resLoss = played ? -0.5 : -0.3;
+                    let newProg = oldProg + resLoss;
                     let newRes = oldRes;
                     while (newProg < 0 && newRes > 1) {
                       newRes -= 1;
@@ -213,7 +262,7 @@ export function createTrainingHelpers(_deps: { io: any }) {
                       attribute: "resistance",
                       oldValue: oldRes,
                       newValue: newRes,
-                      delta: -0.4,
+                      delta: resLoss,
                       focus,
                     });
                   }

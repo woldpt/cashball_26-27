@@ -1,5 +1,6 @@
 import type { ActiveGame } from "./types";
 import { logClubNews, getTeamsWithCoachNames } from "./coreHelpers";
+import { signingWage } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
 
@@ -89,9 +90,10 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
         // This prevents a double-sale when two NPC teams share the same marketPlayers snapshot.
         const changes = await new Promise<number>((resolve) => {
           game.db.run(
-            "UPDATE players SET team_id = ?, transfer_status = 'none', transfer_price = 0, contract_until_matchweek = ?, signed_season = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ? AND transfer_status = 'fixed' AND (signed_season IS NULL OR signed_season != ?)",
+            "UPDATE players SET team_id = ?, wage = ?, transfer_status = 'none', transfer_price = 0, contract_until_matchweek = ?, signed_season = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ? AND transfer_status = 'fixed' AND (signed_season IS NULL OR signed_season != ?)",
             [
               npcTeam.id,
+              signingWage(player),
               getSeasonEndMatchweek(game.matchweek),
               Math.ceil(Math.max(1, game.matchweek) / 14),
               game.matchweek,

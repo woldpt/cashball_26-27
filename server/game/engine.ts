@@ -47,6 +47,7 @@ import {
   average,
   selectPenaltyTaker,
 } from "./matchCalculations";
+import { recalcPlayerValue } from "../gameConstants";
 
 type Db = any;
 type PlayerRow = any;
@@ -827,6 +828,7 @@ async function simulateMatchSegment(
   context: any = {},
 ) {
   const currentMatchweek = context.matchweek || 1;
+  const currentCalendarIndex = context.calendarIndex || 1;
   const io = context.io;
   const game = context.game;
 
@@ -947,8 +949,8 @@ async function simulateMatchSegment(
     if (participantIds.length > 0) {
       const ph = participantIds.map(() => "?").join(",");
       db.run(
-        `UPDATE players SET games_played = games_played + 1 WHERE id IN (${ph})`,
-        participantIds,
+        `UPDATE players SET games_played = games_played + 1, last_appearance_matchweek = MAX(last_appearance_matchweek, ?) WHERE id IN (${ph})`,
+        [currentCalendarIndex, ...participantIds],
       );
     }
 
@@ -1932,6 +1934,7 @@ async function applyPostMatchQualityEvolution(
   fixtures: MatchFixture[],
   currentMatchweek: number,
   season: number,
+  calendarIndex: number = 1,
 ) {
   return new Promise<void>((resolve) => {
     const teamResults = new Map();
@@ -2020,7 +2023,7 @@ async function applyPostMatchQualityEvolution(
         },
       );
       db.all(
-        "SELECT id, team_id, position, skill, potential, injury_until_matchweek, suspension_until_matchweek FROM players WHERE team_id IS NOT NULL ORDER BY team_id, id",
+        "SELECT id, team_id, position, skill, potential, form, games_played, last_appearance_matchweek, joined_matchweek, injury_until_matchweek, suspension_until_matchweek FROM players WHERE team_id IS NOT NULL ORDER BY team_id, id",
         (err, players) => {
         if (err || !players || players.length === 0) {
           resolve();
@@ -2031,6 +2034,10 @@ async function applyPostMatchQualityEvolution(
         const playerGoals = new Map<number, number>();
         const playerRedCards = new Map<number, boolean>();
         const teamCleanSheetWin = new Map<number, boolean>();
+        // Players that appeared in any lineup (starters + bench) and those
+        // who actually started — used to weigh minutes and detect rust.
+        const appearedIds = new Set<number>();
+        const starterIds = new Set<number>();
 
         for (const match of fixtures || []) {
           // Track clean sheet wins: team won and opponent scored 0
@@ -2045,6 +2052,16 @@ async function applyPostMatchQualityEvolution(
             match.finalHomeGoals === 0
           ) {
             teamCleanSheetWin.set(match.awayTeamId, true);
+          }
+
+          // Lineups: starters (is_starter) + bench; subbed-in players are part
+          // of the final squad snapshot, so they count as appeared (not started).
+          for (const lineup of [match.homeLineup, match.awayLineup] as any[]) {
+            for (const p of lineup || []) {
+              if (typeof p?.id !== "number" || p.id <= 0) continue;
+              appearedIds.add(p.id);
+              if (p.is_starter) starterIds.add(p.id);
+            }
           }
 
           // Parse events for goals and red cards
@@ -2089,12 +2106,40 @@ async function applyPostMatchQualityEvolution(
           // Cabeçote até ao teto de potencial (talent ceiling)
           const room = potential - (player.skill || 0);
 
+          const appeared = appearedIds.has(player.id);
+          const started = starterIds.has(player.id);
+          // 90 min ≈ full effect, só banco/entrou ≈ metade, não jogou ≈ 0
+          const minutesFactor = started ? 1 : appeared ? 0.5 : 0;
+          const lastAppearance = player.last_appearance_matchweek || 0;
+          const playedPrev = lastAppearance > 0 && lastAppearance === calendarIndex - 1;
+
           let delta = 0;
 
           // Acima do teto de potencial: deriva suave de retorno à média,
           // compensável por performance forte (golos / clean sheet)
           if (room < 0 && Math.random() < 0.15) {
             delta -= 1;
+          }
+
+          if (!appeared) {
+            // ── Inatividade / "enferrujar" ─────────────────────────────
+            // Quem não joga há 3+ eventos do calendário tem risco crescente
+            // de perder qualidade, mesmo abaixo do potencial. Contratações
+            // recentes têm um período de graça antes de sofrerem rust.
+            const justJoined =
+              (player.joined_matchweek || 0) >= calendarIndex - 3;
+            const idleForAWhile =
+              lastAppearance === 0 ? !justJoined : lastAppearance < calendarIndex - 3;
+            if (idleForAWhile && Math.random() < 0.15) {
+              delta -= 1;
+            }
+            if (delta !== 0) {
+              updates.push({
+                id: player.id,
+                skill: clampSkill((player.skill || 0) + delta),
+              });
+            }
+            continue;
           }
 
           // Convivência: jogadores abaixo da média do plantel evoluem ao
@@ -2104,7 +2149,7 @@ async function applyPostMatchQualityEvolution(
           if (
             room > 0 &&
             diff >= 1 &&
-            Math.random() < Math.min(0.75, 0.20 + diff / 20)
+            Math.random() < Math.min(0.75, 0.20 + diff / 20) * minutesFactor
           ) {
             delta += 1;
           }
@@ -2114,7 +2159,7 @@ async function applyPostMatchQualityEvolution(
             room > 0 &&
             teamResult === "W" &&
             diff >= 0 &&
-            Math.random() < Math.min(0.45, 0.10 + diff / 50)
+            Math.random() < Math.min(0.45, 0.10 + diff / 50) * minutesFactor
           ) {
             delta += 1;
           }
@@ -2143,7 +2188,7 @@ async function applyPostMatchQualityEvolution(
             room > 0 &&
             teamResult === "D" &&
             diff >= 4 &&
-            Math.random() < 0.20
+            Math.random() < 0.20 * minutesFactor
           ) {
             delta += 1;
           }
@@ -2172,6 +2217,23 @@ async function applyPostMatchQualityEvolution(
 
           // Cartão vermelho: 20% de chance de -1 skill
           if (playerRedCards.has(player.id) && Math.random() < 0.20) {
+            delta -= 1;
+          }
+
+          // Momentum: presença consecutiva impulsiona a evolução
+          if (
+            playedPrev &&
+            room > 0 &&
+            Math.random() < 0.10 * minutesFactor
+          ) {
+            delta += 1;
+          }
+          // Estagnação por excesso de jogos sem descanso
+          if (
+            playedPrev &&
+            (player.games_played || 0) >= 6 &&
+            Math.random() < 0.04
+          ) {
             delta -= 1;
           }
 
@@ -2207,8 +2269,8 @@ async function applyPostMatchQualityEvolution(
           );
 updates.forEach((update) => {
             db.run(
-              "UPDATE players SET prev_skill = skill, skill = ? WHERE id = ?",
-              [update.skill, update.id],
+              "UPDATE players SET prev_skill = skill, skill = ?, value = ? WHERE id = ?",
+              [update.skill, recalcPlayerValue(update.skill), update.id],
               () => {
                 remaining -= 1;
                 if (remaining === 0) {

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import type { ActiveGame, PlayerSession } from "./types";
 import type { CalendarEntry } from "./gameConstants";
-import { SEASON_CALENDAR, SPONSOR_REVENUE_BY_DIVISION } from "./gameConstants";
+import { SEASON_CALENDAR, SPONSOR_REVENUE_BY_DIVISION, recalcPlayerValue } from "./gameConstants";
 import { clearPhaseTimer } from "./matchFlowHelpers";
 import { generateAITactic } from "./game/matchCalculations";
 import { getTeamsWithCoachNames } from "./coreHelpers";
@@ -49,6 +49,7 @@ interface CupFlowDeps {
 		fixtures: any[],
 		currentMatchweek: number,
 		season: number,
+		calendarIndex?: number,
 	) => Promise<void>;
 	resumeAllPausedAuctions: (game: ActiveGame) => void;
 }
@@ -90,7 +91,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 	async function applyOffSeasonDecay(game: ActiveGame): Promise<void> {
 		return new Promise<void>((resolve) => {
 			game.db.all(
-				"SELECT id, team_id, skill, potential, games_played FROM players WHERE team_id IS NOT NULL",
+				"SELECT id, team_id, skill, potential, form, games_played FROM players WHERE team_id IS NOT NULL",
 				(err, players) => {
 					if (err || !players || players.length === 0) {
 						resolve();
@@ -98,11 +99,13 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					}
 
 					const updates: Array<{ id: number; skill: number }> = [];
+					const potentialUpdates: Array<{ id: number; potential: number }> = [];
 					const season = game.season || 1;
 
 					for (const p of players) {
 						const skill = p.skill ?? 0;
 						const played = p.games_played ?? 0;
+						const form = p.form ?? 90;
 						let delta = 0;
 
 						// ── Inatividade: quem não jogou a época decai ──
@@ -123,31 +126,61 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 								updates.push({ id: p.id, skill: newSkill });
 							}
 						}
+
+						// ── Dinâmica de potencial (age-free) ────────────────
+						// Jogadores que jogaram quase toda a época com forma alta
+						// "descobrem" talento (+1); os que cumpriram em forma baixa
+						// estagnam (-1). Simula surgimento/declínio de estrelas.
+						if (played >= 12) {
+							if (form >= 110 && Math.random() < 0.20) {
+								const newPotential = Math.min(50, potential + 1);
+								if (newPotential !== potential) {
+									potentialUpdates.push({ id: p.id, potential: newPotential });
+								}
+							} else if (form <= 60 && Math.random() < 0.20) {
+								const newPotential = Math.max(5, potential - 1);
+								if (newPotential !== potential) {
+									potentialUpdates.push({ id: p.id, potential: newPotential });
+								}
+							}
+						}
 					}
 
-					if (updates.length === 0) {
+					const allUpdates = updates.length + potentialUpdates.length;
+					if (allUpdates === 0) {
 						resolve();
 						return;
 					}
 
-					let remaining = updates.length;
+					let remaining = allUpdates;
+					const done = () => {
+						remaining -= 1;
+						if (remaining === 0) resolve();
+					};
+
 					game.db.serialize(() => {
-						game.db.run("UPDATE players SET prev_skill = NULL WHERE team_id IS NOT NULL");
-						for (const upd of updates) {
+						if (updates.length > 0) {
+							game.db.run("UPDATE players SET prev_skill = NULL WHERE team_id IS NOT NULL");
+							for (const upd of updates) {
+								game.db.run(
+									"UPDATE players SET prev_skill = skill, skill = ?, value = ? WHERE id = ?",
+									[upd.skill, recalcPlayerValue(upd.skill), upd.id],
+									() => {
+										// Snapshot after season-end decay
+										game.db.run(
+											"INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) VALUES (?, ?, ?, ?)",
+											[upd.id, game.matchweek, season, upd.skill],
+											done,
+										);
+									},
+								);
+							}
+						}
+						for (const pupd of potentialUpdates) {
 							game.db.run(
-								"UPDATE players SET prev_skill = skill, skill = ? WHERE id = ?",
-								[upd.skill, upd.id],
-								() => {
-									// Snapshot after season-end decay
-									game.db.run(
-										"INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) VALUES (?, ?, ?, ?)",
-										[upd.id, game.matchweek, season, upd.skill],
-										() => {
-											remaining -= 1;
-											if (remaining === 0) resolve();
-										},
-									);
-								},
+								"UPDATE players SET potential = ? WHERE id = ?",
+								[pupd.potential, pupd.id],
+								done,
 							);
 						}
 					});
@@ -733,7 +766,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					fixture,
 					t1,
 					t2,
-					ctx: { game, io, matchweek: game.matchweek },
+					ctx: { game, io, matchweek: game.matchweek, calendarIndex: game.calendarIndex },
 					goals90Home: fixture.finalHomeGoals,
 					goals90Away: fixture.finalAwayGoals,
 				};
@@ -1186,6 +1219,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				fixtures,
 				game.matchweek,
 				game.season || 1,
+				completedCalendarIndex,
 			);
 		} catch (evolveErr) {
 			console.error(

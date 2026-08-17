@@ -256,13 +256,6 @@
     ],
     "receive": []
   },
-  "teamsData": {
-    "emit": [
-      "socketSessionHandlers.ts",
-      "socketSessionHandlers.ts"
-    ],
-    "receive": []
-  },
   "teamForms": {
     "emit": [
       "socketSessionHandlers.ts",
@@ -318,6 +311,12 @@
     "receive": []
   },
   "coachDismissed": {
+    "emit": [
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
+  "teamsData": {
     "emit": [
       "socketSessionHandlers.ts"
     ],

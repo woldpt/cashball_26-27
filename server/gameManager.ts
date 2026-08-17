@@ -100,6 +100,7 @@ function ensurePlayerSchema(
       ["prev_skill", "INTEGER DEFAULT NULL"],
       ["last_auctioned_matchweek", "INTEGER DEFAULT 0"],
       ["potential", "INTEGER DEFAULT NULL"],
+      ["last_appearance_matchweek", "INTEGER DEFAULT 0"],
     ];
 
     const missing = required.filter(([name]) => !existing.has(name));
@@ -397,6 +398,18 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     "CREATE TABLE IF NOT EXISTS game_state (key TEXT PRIMARY KEY, value TEXT)",
     () => {
       ensurePlayerSchema(db, () => {
+        // Valor de mercado base derivado do skill (skill² × 500). Idempotente:
+        // o valor é sempre função direta do skill, por isso sincronizar no load
+        // garante consistência com a fórmula dinâmica mesmo em DBs antigas.
+        db.run(
+          "UPDATE players SET value = CAST(ROUND(skill * skill * 500) AS INTEGER) WHERE skill IS NOT NULL",
+          (valueErr: Error | null) => {
+            if (valueErr)
+              console.warn(
+                `[gameManager] value backfill failed: ${valueErr.message}`,
+              );
+          },
+        );
         const continueAfterMigrations = () => {
           db.run(
             "ALTER TABLE teams ADD COLUMN morale INTEGER DEFAULT 50",

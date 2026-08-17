@@ -14,6 +14,37 @@ export const MAX_ATTENDANCE_BY_DIVISION: Record<number, number> = {
   5: 4800,
 };
 
+/**
+ * Valor de mercado base, derivado do skill (não-linear).
+ * A elite vale desproporcionalmente mais: skill² × 500.
+ * O valor é recalculado sempre que o skill muda (treino, evolução, decaimento).
+ */
+export function recalcPlayerValue(skill: number): number {
+  return Math.round(skill * skill * 500);
+}
+
+/**
+ * Salário de assinatura para um novo contrato (compra / leilão / transferência NPC).
+ * Escala consistente com a seed (skill × 200) com um prémio de mercado de 50%
+ * e fatores de resistência/forma/star. NUNCA é usado para recalcular salários
+ * de jogadores em contrato — o salário só muda na compra ou na renegociação.
+ */
+export function signingWage(player: {
+  skill?: number;
+  resistance?: number;
+  form?: number;
+  is_star?: number;
+  wage?: number;
+}): number {
+  const resFactor = 0.9 + ((player.resistance || 3) / 5) * 0.2;
+  const formFactor = (player.form || 90) / 90;
+  const starFactor = player.is_star ? 1.2 : 1;
+  const adjustedSkillWage = Math.round(
+    (player.skill || 0) * 300 * resFactor * formFactor * starFactor,
+  );
+  return Math.max(player.wage || 0, adjustedSkillWage);
+}
+
 export const CUP_ROUND_NAMES = [
   "",
   "16 avos de final",
