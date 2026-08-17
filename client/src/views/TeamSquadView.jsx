@@ -8,6 +8,8 @@ import { isSameTeamId } from "../utils/teamHelpers.js";
 import { PlayerRow } from "../components/shared/PlayerRow.jsx";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { TabBar } from "../components/shared/TabBar.jsx";
+import { Badge } from "../components/shared/Badge.jsx";
+import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
 import { useState } from "react";
 
 /**
@@ -16,6 +18,7 @@ import { useState } from "react";
  *   selectedTeamSquad: Array,
  *   selectedTeamLoading: boolean,
  *   me: object|null,
+ *   avatarSeed: string,
  *   players: Array,
  *   palmares: object,
  *   palmaresTeamId: number|null,
@@ -31,6 +34,7 @@ export function TeamSquadView({
   selectedTeamSquad,
   selectedTeamLoading,
   me,
+  avatarSeed = "",
   players,
   palmares,
   palmaresTeamId,
@@ -47,6 +51,16 @@ export function TeamSquadView({
     !isOwnTeam &&
     !players.some((p) => isSameTeamId(p.teamId, selectedTeam?.id));
   const showProposalCol = isNpcTeam;
+
+  const isHumanCoached =
+    selectedTeam?.coach_is_human === 1 ||
+    players.some((p) => isSameTeamId(p.teamId, selectedTeam?.id));
+  const coachName = isOwnTeam
+    ? me?.name || "—"
+    : selectedTeam?.coach_name || "—";
+  const coachAvatarSeed = isOwnTeam
+    ? `${me?.name ?? "?"}|${avatarSeed}`
+    : `coach|${selectedTeam?.coach_name ?? selectedTeam?.id ?? "?"}`;
 
   const selectedTeamDivision = selectedTeam?.division;
   const selectedDivTeams = teams
@@ -194,17 +208,33 @@ export function TeamSquadView({
             </p>
           </div>
 
-          {/* Manager */}
-          {isOwnTeam && (
-            <div className="shrink-0 text-right hidden sm:block">
-              <p className="text-[10px] uppercase tracking-widest text-on-surface-variant/80 font-black mb-1">
-                Manager
+          {/* Coach */}
+          <div className="shrink-0 text-right hidden sm:block">
+            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant/80 font-black mb-1 flex items-center justify-end gap-1.5">
+              Treinador
+              {!isOwnTeam && isHumanCoached && (
+                <Badge variant="warning" size="sm">
+                  Humano
+                </Badge>
+              )}
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <p
+                className={`font-headline font-black text-lg tracking-tight ${
+                  !isOwnTeam && isHumanCoached
+                    ? "text-amber-300"
+                    : "text-on-surface"
+                }`}
+              >
+                {coachName}
               </p>
-              <p className="font-headline font-black text-on-surface text-lg tracking-tight">
-                {me?.name || "—" }
-              </p>
+              <PlayerAvatar
+                seed={coachAvatarSeed}
+                teamColor={selectedTeam.color_primary}
+                size="md"
+              />
             </div>
-          )}
+          </div>
         </div>
 
         {/* Budget widget (only for own team) */}

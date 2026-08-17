@@ -116,11 +116,12 @@ export function runExec(
 /**
  * Returns all teams with coach_name from managers table via JOIN.
  * Use this instead of SELECT * FROM teams when you need coach names.
+ * Also exposes coach_is_human (1 = human coach, 0 = NPC, null = no coach).
  */
 export function getTeamsWithCoachNames(db: Db): Promise<AnyRow[]> {
   return runAll(
     db,
-    `SELECT t.*, m.name AS coach_name
+    `SELECT t.*, m.name AS coach_name, m.is_human AS coach_is_human
      FROM teams t
      LEFT JOIN managers m ON t.manager_id = m.id`,
   );

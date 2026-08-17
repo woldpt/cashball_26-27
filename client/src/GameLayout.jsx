@@ -1261,6 +1261,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         selectedTeamSquad={selectedTeamSquad}
                         selectedTeamLoading={selectedTeamLoading}
                         me={me}
+                        avatarSeed={avatarSeed}
                         players={players}
                         palmares={palmares}
                         palmaresTeamId={palmaresTeamId}
