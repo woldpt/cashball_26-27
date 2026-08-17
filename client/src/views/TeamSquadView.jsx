@@ -27,6 +27,8 @@ import { useState } from "react";
  *   currentMatchweek: number,
  *   calendarData,
  *   teams,
+ *   onBack: function,
+ *   onOpenTeamSquad: function,
  * }} props
  */
 export function TeamSquadView({
@@ -43,6 +45,8 @@ export function TeamSquadView({
   currentMatchweek = 1,
   calendarData,
   teams,
+  onBack,
+  onOpenTeamSquad,
 }) {
   const [activeTab, setActiveTab] = useState("squad");
 
@@ -174,6 +178,19 @@ export function TeamSquadView({
               : "linear-gradient(to right, #2d6a4f40, transparent 70%)",
           }}
         />
+
+        {/* Back */}
+        <div className="relative z-10">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/80 hover:text-white transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              arrow_back
+            </span>
+            Voltar
+          </button>
+        </div>
 
         {/* Hero section */}
         <div className="relative flex flex-col sm:flex-row gap-5 items-start sm:items-center">
@@ -441,9 +458,7 @@ export function TeamSquadView({
                         <button
                           className="text-sm font-black text-on-surface text-left truncate hover:text-primary transition-colors"
                           onClick={() =>
-                            opponent &&
-                            teams.find(t => t.id === opponent.id) &&
-                            window.dispatchEvent(new CustomEvent('selectTeam', { detail: opponent }))
+                            opponent && onOpenTeamSquad(opponent)
                           }
                         >
                           {opponent?.name ?? "TBD"}

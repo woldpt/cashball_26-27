@@ -170,6 +170,8 @@ export function GameProvider({
 	const matchReplayActiveRef = useRef(false);
 	const liveMinuteRef = useRef(0);
 	const selectedTeamRef = useRef(null);
+	const activeTabRef = useRef("club");
+	const teamSquadReturnTabRef = useRef("club");
 	const marketPairsRef = useRef([]);
 	const mySquadRef = useRef([]);
 	const tacticRef = useRef({ positions: {} });
@@ -237,6 +239,9 @@ export function GameProvider({
 	useEffect(() => {
 		selectedTeamRef.current = selectedTeam;
 	}, [selectedTeam]);
+	useEffect(() => {
+		activeTabRef.current = activeTab;
+	}, [activeTab]);
 	useEffect(() => {
 		marketPairsRef.current = marketPairs;
 	}, [marketPairs]);
@@ -650,12 +655,47 @@ export function GameProvider({
 
 	const handleOpenTeamSquad = useCallback((team) => {
 		if (!team) return;
+		if (activeTabRef.current !== "squad") {
+			teamSquadReturnTabRef.current = activeTabRef.current;
+			window.history.pushState({ teamSquad: true }, "");
+		} else {
+			window.history.replaceState({ teamSquad: true }, "");
+		}
 		setActiveTab("squad");
 		setSelectedTeam(team);
 		setSelectedTeamSquad([]);
 		setSelectedTeamLoading(true);
 		socket.emit("requestTeamSquad", team.id);
 		socket.emit("requestPalmares", { teamId: team.id });
+	}, []);
+
+	const handleCloseTeamSquad = useCallback(() => {
+		const closeSquad = () => {
+			setSelectedTeam(null);
+			setSelectedTeamSquad([]);
+			setSelectedTeamLoading(false);
+			setActiveTab(teamSquadReturnTabRef.current);
+		};
+		if (window.history.state?.teamSquad) {
+			window.history.back();
+		} else {
+			closeSquad();
+		}
+	}, []);
+
+	useEffect(() => {
+		const onPopState = () => {
+			if (window.history.state?.teamSquad) {
+				if (selectedTeamRef.current) setActiveTab("squad");
+			} else if (selectedTeamRef.current) {
+				setSelectedTeam(null);
+				setSelectedTeamSquad([]);
+				setSelectedTeamLoading(false);
+				setActiveTab(teamSquadReturnTabRef.current);
+			}
+		};
+		window.addEventListener("popstate", onPopState);
+		return () => window.removeEventListener("popstate", onPopState);
 	}, []);
 
 	const closeRefereePopup = useCallback(() => setRefereePopup(null), []);
@@ -1175,6 +1215,7 @@ export function GameProvider({
 		addToast,
 		handleHalftimeReady,
 		handleOpenTeamSquad,
+		handleCloseTeamSquad,
 		closeRefereePopup,
 		handleResolveMatchAction,
 		handleCloseMatch,

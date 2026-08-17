@@ -147,6 +147,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     addToast,
     handleHalftimeReady,
     handleOpenTeamSquad,
+    handleCloseTeamSquad,
     handleResolveMatchAction,
     handleCloseMatch,
     buyPlayer,
@@ -1301,6 +1302,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         currentMatchweek={matchweekCount + 1}
                         calendarData={calendarData}
                         teams={teams}
+                        onBack={handleCloseTeamSquad}
+                        onOpenTeamSquad={handleOpenTeamSquad}
                       />
                     )}
 
