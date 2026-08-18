@@ -17,7 +17,11 @@ import { PenaltyShootoutPopup } from "./components/modals/PenaltyShootoutPopup.j
 import { PenaltyTakerPopup } from "./components/modals/PenaltyTakerPopup.jsx";
 import { WaitingCoachesModal } from "./components/modals/WaitingCoachesModal.jsx";
 import { MatchPage } from "./components/match/MatchPage.jsx";
-import { LiveMatchHero, LiveFixtureRow } from "./components/live/index.js";
+import {
+  LiveMatchHero,
+  LiveFixtureRow,
+  LiveStandingsPanel,
+} from "./components/live/index.js";
 
 import { GameDialog } from "./components/shared/GameDialog.jsx";
 import { TransferProposalModal } from "./components/modals/TransferProposalModal.jsx";
@@ -118,6 +122,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     setCalFilter,
     liveMinute,
     isPlayingMatch,
+    isLiveSimulation,
     showHalftimePanel,
     matchAction,
     injuryCountdown,
@@ -1044,9 +1049,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       <div
                         className={`bg-surface-container text-on-surface font-body p-3 sm:p-6 border border-outline-variant/20 shadow-sm relative overflow-hidden${isMatchInProgress ? " rounded-lg" : " min-h-150 rounded-lg"}`}
                       >
-                        {/* ── ROW 1: MY GAME + MY DIVISION ── */}
+                        {/* ── ROW 1: MY GAME + VIRTUAL CLASSIFICATION ── */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
-                          <div className="lg:col-span-2">
+                          <div className={`${isCupMatch ? "lg:col-span-3" : "lg:col-span-2"}`}>
                             {/* ── HERO: MY MATCH ─────────────────────── */}
                             {matchResults && (
                               <LiveMatchHero
@@ -1074,56 +1079,46 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                               />
                             )}
                           </div>
-                          {/* ── MY DIVISION COLUMN ── */}
-                          {!isCupMatch && matchResults?.results && (() => {
-                            const myDiv = teams.find(t => t.id === me.teamId)?.division;
-                            const divMatches = matchResults.results
-                              .filter(m => teams.find(t => t.id === m.homeTeamId)?.division === myDiv)
-                              .filter(m => m.homeTeamId !== me.teamId && m.awayTeamId !== me.teamId);
-                            return (
-                              <div className="lg:col-span-1 flex flex-col min-h-0 rounded-lg bg-surface-container-low border border-outline-variant/10 overflow-hidden">
-                                <div className="shrink-0 px-2.5 py-1.5 border-b border-outline-variant/10 bg-surface-container-high">
-                                  <h3 className="font-headline font-extrabold text-[10px] sm:text-[11px] tracking-tighter uppercase text-primary">
-                                    {DIVISION_NAMES[myDiv] || `Div ${myDiv}`} · J {matchResults.matchweek}
-                                  </h3>
-                                </div>
-                                <div className="flex-1 overflow-y-auto space-y-1 p-2">
-                                  {divMatches.length === 0 ? (
-                                    <p className="text-on-surface-variant/30 text-[10px] font-bold text-center py-4">Sem jogos</p>
-                                  ) : (
-                                    divMatches.map((match, idx) => (
-                                      <LiveFixtureRow
-                                        key={idx}
-                                        match={match}
-                                        teams={teams}
-                                        players={players}
-                                        liveMinute={liveMinute}
-                                        goalFlashRef={goalFlashRef}
-                                        onOpenDetail={() => { setMatchDetailFixture(match); setShowMatchDetail(true); }}
-                                      />
-                                    ))
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })()}
+                          {/* ── VIRTUAL CLASSIFICATION COLUMN ── */}
+                          {!isCupMatch && matchResults?.results && (
+                            <div className="lg:col-span-1 min-h-0">
+                              <LiveStandingsPanel
+                                teams={teams}
+                                matchResults={matchResults}
+                                liveMinute={liveMinute}
+                                myTeamId={me.teamId}
+                                teamForms={teamForms}
+                                applyLiveResults={standingsStale || isLiveSimulation}
+                              />
+                            </div>
+                          )}
                         </div>
 
-                        {/* ── ROW 2: OTHER DIVISIONS ── */}
+                        {/* ── ROW 2: ALL DIVISIONS ── */}
                         {!isCupMatch && (() => {
                           const myDiv = teams.find(t => t.id === me.teamId)?.division;
-                          const otherDivs = [1, 2, 3, 4].filter(d => d !== myDiv);
+                          const allDivs = [1, 2, 3, 4];
                           return (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-                              {otherDivs.map((div) => {
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4">
+                              {allDivs.map((div) => {
+                                const isMyDiv = div === myDiv;
                                 const divMatches = matchResults.results
                                   .filter(m => teams.find(t => t.id === m.homeTeamId)?.division === div)
                                   .filter(m => m.homeTeamId !== me.teamId && m.awayTeamId !== me.teamId);
                                 return (
                                   <div key={div} className="flex flex-col gap-2">
-                                    <div className="px-3 py-2 rounded-t-md border-b-2 bg-surface-container-high border-outline-variant/20">
-                                      <h3 className="font-headline font-extrabold text-[9px] sm:text-[10px] lg:text-[11px] tracking-tighter uppercase text-on-surface/50">
+                                    <div className={`px-3 py-2 rounded-t-md border-b-2 bg-surface-container-high ${
+                                      isMyDiv ? "border-primary/60" : "border-outline-variant/20"
+                                    }`}>
+                                      <h3 className={`font-headline font-extrabold text-[9px] sm:text-[10px] lg:text-[11px] tracking-tighter uppercase ${
+                                        isMyDiv ? "text-primary" : "text-on-surface/50"
+                                      }`}>
                                         {DIVISION_NAMES[div] || `Div ${div}`}
+                                        {isMyDiv && (
+                                          <span className="ml-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-primary/10 text-primary text-[7px] font-black uppercase tracking-widest border border-primary/30">
+                                            A tua divisão
+                                          </span>
+                                        )}
                                       </h3>
                                     </div>
                                     <div className="flex flex-col gap-1.5">
@@ -1150,9 +1145,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                           );
                         })()}
 
-                        {/* ── CUP MULTIVIEW (single list, no division groups) ── */}
+                        {/* ── CUP MULTIVIEW (all other games in responsive columns) ── */}
                         {isCupMatch && matchResults?.results && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                             {matchResults.results
                               .filter((m) => m.homeTeamId !== me.teamId && m.awayTeamId !== me.teamId)
                               .filter((m) => {

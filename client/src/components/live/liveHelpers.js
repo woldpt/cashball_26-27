@@ -52,3 +52,61 @@ export function isFlashing(flashRef, homeId, awayId, side, now = Date.now()) {
   const ts = flashRef?.[`${homeId}_${awayId}_${side}`];
   return !!ts && now - ts < 1500;
 }
+
+/**
+ * Projeção da classificação ao vivo: tabela persistida (teams) + resultados
+ * da jornada em curso (marcadores derivados dos eventos, até liveMinute).
+ */
+export function computeVirtualStandings({ teams, matchResults, liveMinute = 90 }) {
+  const standings = new Map();
+  teams.forEach((t) => {
+    standings.set(String(t.id), {
+      team: t,
+      played: (t.wins || 0) + (t.draws || 0) + (t.losses || 0),
+      wins: t.wins || 0,
+      draws: t.draws || 0,
+      losses: t.losses || 0,
+      goalsFor: t.goals_for || 0,
+      goalsAgainst: t.goals_against || 0,
+      points: t.points || 0,
+    });
+  });
+
+  (matchResults?.results || []).forEach((r) => {
+    const home = standings.get(String(r.homeTeamId));
+    const away = standings.get(String(r.awayTeamId));
+    if (!home || !away) return;
+    const events = r.events || [];
+    const homeGoals = events.filter(
+      (e) => e.minute <= liveMinute && isGoalType(e.type) && e.team === "home",
+    ).length;
+    const awayGoals = events.filter(
+      (e) => e.minute <= liveMinute && isGoalType(e.type) && e.team === "away",
+    ).length;
+    applyResult(home, homeGoals, awayGoals);
+    applyResult(away, awayGoals, homeGoals);
+  });
+
+  return [...standings.values()].sort(
+    (a, b) =>
+      b.points - a.points ||
+      b.goalsFor - b.goalsAgainst - (a.goalsFor - a.goalsAgainst) ||
+      b.goalsFor - a.goalsFor ||
+      String(a.team.name || "").localeCompare(String(b.team.name || "")),
+  );
+}
+
+function applyResult(row, goalsFor, goalsAgainst) {
+  row.played += 1;
+  row.goalsFor += goalsFor;
+  row.goalsAgainst += goalsAgainst;
+  if (goalsFor > goalsAgainst) {
+    row.wins += 1;
+    row.points += 3;
+  } else if (goalsFor === goalsAgainst) {
+    row.draws += 1;
+    row.points += 1;
+  } else {
+    row.losses += 1;
+  }
+}
