@@ -2,6 +2,7 @@ import type { ActiveGame } from "./types";
 import { SEASON_CALENDAR } from "./gameConstants";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { computeMatchOdds } from "./game/commentary";
+import { calculateMatchAttendance } from "./coreHelpers";
 
 interface MatchSummaryDeps {
   runAll: <T extends Record<string, any> = Record<string, any>>(
@@ -108,6 +109,231 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       emoji = "❄️";
     }
     return { condition, emoji };
+  }
+
+  /**
+   * Deriva a formação (def-med-ata) e os titulares a partir de um lineup gravado.
+   */
+  function deriveFormationFromLineup(lineup: any[]) {
+    const starters = (lineup || []).filter(
+      (p: any) => p.is_starter !== false && p.position && p.name,
+    );
+    if (starters.length === 0) return null;
+    const def = starters.filter((p: any) => p.position === "DEF").length;
+    const med = starters.filter((p: any) => p.position === "MED").length;
+    const ata = starters.filter((p: any) => p.position === "ATA").length;
+    const gr = starters.filter((p: any) => p.position === "GR").length;
+    if (gr < 1) return null;
+    return {
+      formation: `${Math.min(def, 5)}-${Math.min(med, 5)}-${Math.min(ata, 5)}`,
+      players: starters.slice(0, 11).map((p: any) => ({
+        name: p.name,
+        position: p.position,
+        skill: p.skill,
+      })),
+    };
+  }
+
+  /**
+   * Formação provável do adversário — extraída do lineup do seu último jogo de liga.
+   */
+  async function getOpponentProbableFormation(
+    game: ActiveGame,
+    opponentId: number,
+  ) {
+    const row: any = await runGet(
+      game.db,
+      `SELECT home_team_id, away_team_id, home_lineup, away_lineup
+       FROM matches
+       WHERE played = 1 AND (home_team_id = ? OR away_team_id = ?)
+       ORDER BY season DESC, matchweek DESC, id DESC
+       LIMIT 1`,
+      [opponentId, opponentId],
+    );
+    if (!row) return null;
+    const isHome = row.home_team_id === opponentId;
+    let lineup: any[] = [];
+    try {
+      lineup = JSON.parse(
+        isHome ? row.home_lineup : row.away_lineup,
+      ) as any[];
+    } catch {
+      return null;
+    }
+    return deriveFormationFromLineup(lineup);
+  }
+
+  /**
+   * Ameaças do adversário: melhor marcador, melhor qualidade e melhor forma.
+   */
+  async function getOpponentThreats(
+    game: ActiveGame,
+    opponentId: number,
+    topScorer: { name: string; goals: number } | null,
+  ) {
+    const bestSkill: any = await runGet(
+      game.db,
+      "SELECT name, skill, form FROM players WHERE team_id = ? AND id > 0 ORDER BY skill DESC, form DESC LIMIT 1",
+      [opponentId],
+    );
+    const bestForm: any = await runGet(
+      game.db,
+      "SELECT name, skill, form FROM players WHERE team_id = ? AND id > 0 ORDER BY form DESC, skill DESC LIMIT 1",
+      [opponentId],
+    );
+
+    const threats: {
+      role: "goleador" | "qualidade" | "forma";
+      name: string;
+      skill: number | null;
+      form: number | null;
+      goals: number | null;
+    }[] = [];
+
+    if (topScorer) {
+      threats.push({
+        role: "goleador",
+        name: topScorer.name,
+        skill: null,
+        form: null,
+        goals: topScorer.goals,
+      });
+    }
+    if (
+      bestSkill &&
+      bestSkill.name &&
+      !threats.some((t) => t.name === bestSkill.name)
+    ) {
+      threats.push({
+        role: "qualidade",
+        name: bestSkill.name,
+        skill: bestSkill.skill ?? null,
+        form: bestSkill.form ?? null,
+        goals: null,
+      });
+    }
+    if (
+      bestForm &&
+      bestForm.name &&
+      !threats.some((t) => t.name === bestForm.name)
+    ) {
+      threats.push({
+        role: "forma",
+        name: bestForm.name,
+        skill: bestForm.skill ?? null,
+        form: bestForm.form ?? null,
+        goals: null,
+      });
+    }
+    return threats;
+  }
+
+  /**
+   * Contexto competitivo derivado das posições na divisão.
+   */
+  function buildStakes(
+    myPosition: number | null,
+    oppPosition: number | null,
+    isCup: boolean,
+  ) {
+    if (isCup) return "Eliminatórias — cada golo decide o futuro na prova.";
+    const pos = myPosition ?? null;
+    if (pos === null) return "Jogo de campeonato.";
+    if (pos <= 2) return "Duelo no topo — importante para a luta pelo título.";
+    if (pos <= 4) return "Jogo decisivo para a zona de cima da tabela.";
+    return "Jogo de campeonato — somar pontos é o objetivo.";
+  }
+
+  /**
+   * Manchete de imprensa determinística (mesmo estado ⇒ mesmo texto).
+   */
+  function buildHeadline(ctx: {
+    myName: string;
+    oppName: string;
+    myLast5: string;
+    oppLast5: string;
+    h2hWins: number;
+    h2hLosses: number;
+    isCup: boolean;
+    venue: string;
+  }) {
+    const myForm =
+      (ctx.myLast5.match(/V/g) || []).length -
+      (ctx.myLast5.match(/D/g) || []).length;
+    const oppForm =
+      (ctx.oppLast5.match(/V/g) || []).length -
+      (ctx.oppLast5.match(/D/g) || []).length;
+
+    const venue = ctx.isCup ? "o Jamor" : ctx.venue === "Casa" ? "casa" : "fora";
+    const base = `${ctx.myName} recebe ${ctx.oppName} em ${venue}`;
+
+    if (ctx.h2hWins + ctx.h2hLosses >= 2 && Math.abs(ctx.h2hWins - ctx.h2hLosses) >= 2) {
+      const dom = ctx.h2hWins > ctx.h2hLosses;
+      return `${base}. O historial favorece ${dom ? ctx.myName : ctx.oppName}, mas este jogo é novo.`;
+    }
+    if (myForm >= 2 && oppForm < 0) {
+      return `${base}. A boa forma caseira enfrenta um adversário em quebra — momento para pressionar.`;
+    }
+    if (myForm < 0 && oppForm >= 2) {
+      return `${base}. ${ctx.oppName} chega em grande forma e a tua equipa precisa de reagir.`;
+    }
+    if (myForm === oppForm) {
+      return `${base}. Equilíbrio total no momento — tudo pode acontecer.`;
+    }
+    return `${base}. Tudo em aberto nesta jornada.`;
+  }
+
+  /**
+   * Dificuldade estimada a partir das probabilidades implícitas das odds.
+   */
+  function computeDifficulty(odds: Record<string, string>, isCup: boolean) {
+    const parse = (v: string | undefined): number | null => {
+      const n = Number.parseFloat(String(v ?? ""));
+      return Number.isFinite(n) && n > 1 ? n : null;
+    };
+    const home = parse(odds.home);
+    const draw = parse(odds.draw);
+    const away = parse(odds.away);
+    const vals = [home, draw, away].filter((v): v is number => v !== null);
+    if (vals.length === 0) return { score: 50, label: "Equilibrado" };
+    const invSum = vals.reduce((s, v) => s + 1 / v, 0);
+    const myProb = home ? (1 / home / invSum) * 100 : 33;
+    const score = Math.round(Math.max(0, Math.min(100, 100 - myProb)));
+    const label =
+      score <= 40
+        ? "Fácil"
+        : score <= 62
+          ? "Equilibrado"
+          : score <= 80
+            ? "Difícil"
+            : "Muito difícil";
+    return { score, label };
+  }
+
+  /**
+   * Info do estádio para jogos em casa: capacidade, assistência esperada e receita.
+   */
+  async function buildStadiumInfo(
+    game: ActiveGame,
+    homeTeamId: number,
+    awayTeamId: number,
+  ) {
+    const team = await runGet<{ stadium_capacity?: number }>(
+      game.db,
+      "SELECT stadium_capacity FROM teams WHERE id = ?",
+      [homeTeamId],
+    );
+    const capacity = team?.stadium_capacity || 10000;
+    const expectedAttendance = await calculateMatchAttendance(
+      game.db,
+      homeTeamId,
+      awayTeamId,
+    );
+    return {
+      capacity,
+      expectedAttendance,
+      revenue: expectedAttendance * 15,
+    };
   }
 
   async function getLastConfrontation(
@@ -353,6 +579,10 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     position: number | null,
   ) {
     const overview = await getOpponentOverview(game, teamId, opponent.id);
+    const probableFormation = await getOpponentProbableFormation(
+      game,
+      opponent.id,
+    );
     return {
       id: opponent.id,
       name: opponent.name,
@@ -370,6 +600,12 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       avgSkill: overview.avgSkill,
       topScorer: overview.topScorer,
       h2hRecord: overview.h2hRecord,
+      threats: await getOpponentThreats(
+        game,
+        opponent.id,
+        overview.topScorer,
+      ),
+      probableFormation,
       last5: await getTeamRecentResults(game, opponent.id, 5),
       lastConfrontation: await getLastConfrontation(game, teamId, opponent.id),
     };
@@ -429,22 +665,48 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         { division: isHome ? opponent.division : team.division, position: null },
       );
 
+      const venue =
+        currentEntry.round === 5 ? "Jamor" : isHome ? "Casa" : "Fora";
+      const opponentSummary = await buildOpponentSummary(
+        game,
+        team.id,
+        opponent,
+        null,
+      );
+      const last5 = await getTeamRecentResults(game, team.id, 5);
+      const opponentName = opponent.name ?? "Adversário";
+
       return {
         matchweek: game.matchweek,
         isCup: true,
         cupRound: currentEntry.round,
         cupRoundName: currentEntry.roundName,
-        venue: currentEntry.round === 5 ? "Jamor" : isHome ? "Casa" : "Fora",
+        venue,
         odds,
+        difficulty: computeDifficulty(odds, true),
+        headline: buildHeadline({
+          myName: team.name,
+          oppName: opponentName,
+          myLast5: last5,
+          oppLast5: opponentSummary?.last5 ?? "",
+          h2hWins: opponentSummary?.h2hRecord?.wins ?? 0,
+          h2hLosses: opponentSummary?.h2hRecord?.losses ?? 0,
+          isCup: true,
+          venue,
+        }),
+        stakes: buildStakes(null, null, true),
+        stadium: isHome
+          ? await buildStadiumInfo(game, team.id, opponent.id)
+          : null,
         team: {
           id: team.id,
           name: team.name,
           division: team.division,
           position: null,
-          last5: await getTeamRecentResults(game, team.id, 5),
+          last5,
           avgSkill: await getTeamAvgSkill(game, team.id),
         },
-        opponent: await buildOpponentSummary(game, team.id, opponent, null),
+        opponent: opponentSummary,
         referee,
         weatherForecast: weather,
       };
@@ -511,25 +773,46 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       },
     );
 
+    const opponentSummary = await buildOpponentSummary(
+      game,
+      team.id,
+      opponent,
+      standingsIndex.get(opponent.id) || null,
+    );
+    const myPosition = standingsIndex.get(team.id) || null;
+    const oppPosition = standingsIndex.get(opponent.id) || null;
+    const last5 = await getTeamRecentResults(game, team.id, 5);
+    const opponentName = opponent.name ?? "Adversário";
+
     return {
       matchweek: game.matchweek,
       isCup: false,
       venue: isHome ? "Casa" : "Fora",
       odds,
+      difficulty: computeDifficulty(odds, false),
+      headline: buildHeadline({
+        myName: team.name,
+        oppName: opponentName,
+        myLast5: last5,
+        oppLast5: opponentSummary?.last5 ?? "",
+        h2hWins: opponentSummary?.h2hRecord?.wins ?? 0,
+        h2hLosses: opponentSummary?.h2hRecord?.losses ?? 0,
+        isCup: false,
+        venue: isHome ? "Casa" : "Fora",
+      }),
+      stakes: buildStakes(myPosition, oppPosition, false),
+      stadium: isHome
+        ? await buildStadiumInfo(game, team.id, opponent.id)
+        : null,
       team: {
         id: team.id,
         name: team.name,
         division: team.division,
-        position: standingsIndex.get(team.id) || null,
-        last5: await getTeamRecentResults(game, team.id, 5),
+        position: myPosition,
+        last5,
         avgSkill: await getTeamAvgSkill(game, team.id),
       },
-      opponent: await buildOpponentSummary(
-        game,
-        team.id,
-        opponent,
-        standingsIndex.get(opponent.id) || null,
-      ),
+      opponent: opponentSummary,
       referee,
       weatherForecast: weather,
     };

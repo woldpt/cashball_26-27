@@ -52,6 +52,7 @@ export function TacticsProvider({ children }) {
     showHalftimePanel,
     isPlayingMatch,
     annotatedSquad, // computed by GameContext
+    calendarIndex,
   } = useGame();
 
   // ── UI state owned exclusively by this context ──────────────────────────
@@ -60,6 +61,21 @@ export function TacticsProvider({ children }) {
   const [dragPlayerId, setDragPlayerId] = useState(null);
   const [dragOverSection, setDragOverSection] = useState(null);
   const dragPlayerStatusRef = useRef(null);
+
+  // Fase de pré-jogo: "briefing" → "tactics". Estado derivado por calendarIndex:
+  // ao avançar para uma nova jornada (liga ou taça) a fase volta a "briefing".
+  const [prepPhaseState, setPrepPhaseState] = useState({
+    phase: "briefing",
+    calendarIndex,
+  });
+  const prepPhase =
+    prepPhaseState.calendarIndex === calendarIndex
+      ? prepPhaseState.phase
+      : "briefing";
+  const setPrepPhase = useCallback(
+    (phase) => setPrepPhaseState({ phase, calendarIndex }),
+    [calendarIndex],
+  );
 
   // ── Computed values ──────────────────────────────────────────────────────
   const availablePositionCounts = useMemo(
@@ -482,6 +498,8 @@ export function TacticsProvider({ children }) {
     dragOverSection,
     setDragOverSection,
     dragPlayerStatusRef,
+    prepPhase,
+    setPrepPhase,
     // Computed
     annotatedSquad,
     titulares,
