@@ -5,6 +5,7 @@ import {
   getAllTeamForms,
   getStandingsRows,
   getTeamsWithCoachNames,
+  logClubNews,
 } from "./coreHelpers";
 import {
   finalizeAllRunningAuctions,
@@ -710,6 +711,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 revenue,
                 match.homeTeamId,
               ]);
+              logClubNews(game, "ticket_revenue", "Bilheteiras", match.homeTeamId, {
+                amount: revenue,
+                description: `Receita de bilheteiras — J${completedMatchweek}`,
+              });
             }
           }
 
@@ -1098,6 +1103,38 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             segmentRunning[game.roomCode] = false;
             return;
           }
+
+          // Financial journal: log the weekly base income, wages and loan
+          // interest that were just applied, so the balance history chart can
+          // reconstruct the season's budget evolution.
+          game.db.all(
+            `SELECT t.id, t.division, t.loan_amount,
+                    COALESCE((SELECT SUM(wage) FROM players WHERE players.team_id = t.id), 0) AS wage_sum
+             FROM teams t`,
+            (logErr: any, teams: any[]) => {
+              if (logErr) return;
+              for (const team of teams || []) {
+                const income = WEEKLY_BASE_INCOME[team.division] || 0;
+                const wages = team.wage_sum || 0;
+                const interest = Math.floor((team.loan_amount || 0) * 0.015);
+                if (income > 0)
+                  logClubNews(game, "weekly_income", "Rendimento Semanal", team.id, {
+                    amount: income,
+                    description: "Rendimento base semanal",
+                  });
+                if (wages > 0)
+                  logClubNews(game, "wages", "Folha Salarial", team.id, {
+                    amount: wages,
+                    description: "Salários pagos na semana",
+                  });
+                if (interest > 0)
+                  logClubNews(game, "loan_interest", "Juros Bancários", team.id, {
+                    amount: interest,
+                    description: "Juros do empréstimo (1,5%)",
+                  });
+              }
+            },
+          );
 
           try {
             if (entry.type === "cup") {

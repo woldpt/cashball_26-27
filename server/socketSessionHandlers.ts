@@ -1074,11 +1074,49 @@ export function registerSessionSocketHandlers(
 
 				const team = await runGet(
 					game.db,
-					"SELECT division FROM teams WHERE id = ?",
+					"SELECT division, budget FROM teams WHERE id = ?",
 					[teamId],
 				);
 				const sponsorRevenue =
 					SPONSOR_REVENUE_BY_DIVISION[team?.division || 4] || 0;
+
+				// ── Balance history ──────────────────────────────────────────────
+				// Reconstrói a evolução do saldo por jornada a partir do diário
+				// financeiro (club_news). A âncora é o saldo actual: o ponto
+				// inicial é obtido por reconciliação inversa (saldo actual − Σ
+				// eventos da época), garantindo que o último ponto bate sempre com
+				// o currentBudget real.
+				const INCOME_TYPES = new Set([
+					"transfer_out",
+					"weekly_income",
+					"ticket_revenue",
+					"loan_take",
+					"prize",
+				]);
+				const journal = await runAll(
+					game.db,
+					"SELECT type, amount, matchweek FROM club_news WHERE team_id = ? AND year = ? AND amount IS NOT NULL",
+					[teamId, game.year || 0],
+				);
+				const signed = (journal || []).map((e) => ({
+					matchweek: e.matchweek ?? 0,
+					amount: (INCOME_TYPES.has(e.type) ? 1 : -1) * (e.amount || 0),
+				}));
+				const totalDelta = signed.reduce((sum, e) => sum + e.amount, 0);
+				const initialBudget = (team?.budget ?? 0) - totalDelta;
+				const byMw = new Map<number, number>();
+				for (const e of signed) {
+					byMw.set(e.matchweek, (byMw.get(e.matchweek) || 0) + e.amount);
+				}
+				const sortedMw = [...byMw.keys()].sort((a, b) => a - b);
+				let running = initialBudget;
+				const balanceHistory: Array<{ matchweek: number; balance: number }> = [
+					{ matchweek: 0, balance: Math.round(running) },
+				];
+				for (const mw of sortedMw) {
+					running += byMw.get(mw) || 0;
+					balanceHistory.push({ matchweek: mw, balance: Math.round(running) });
+				}
 
 				socket.emit("financeData", {
 					teamId,
@@ -1091,6 +1129,7 @@ export function registerSessionSocketHandlers(
 					ticketBreakdown,
 					transferInList,
 					transferOutList,
+					balanceHistory,
 				});
 			} catch (err) {
 				console.error(`[${game.roomCode}] requestFinanceData error:`, err);
@@ -1105,6 +1144,7 @@ export function registerSessionSocketHandlers(
 					ticketBreakdown: [],
 					transferInList: [],
 					transferOutList: [],
+					balanceHistory: [],
 				});
 			}
 		},

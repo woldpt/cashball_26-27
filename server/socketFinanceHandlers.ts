@@ -1,5 +1,5 @@
 import type { ActiveGame, PlayerSession } from "./types";
-import { runExec, getTeamsWithCoachNames } from "./coreHelpers";
+import { runExec, getTeamsWithCoachNames, logClubNews } from "./coreHelpers";
 
 interface FinanceHandlerDeps {
   io: any;
@@ -99,6 +99,10 @@ export function registerFinanceSocketHandlers(
       );
       return;
     }
+    logClubNews(game, "loan_take", "Empréstimo Bancário", playerState.teamId, {
+      amount: 500000,
+      description: "Empréstimo de 500.000€",
+    });
     getTeamsWithCoachNames(game.db)
       .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
       .catch(() => {});
@@ -120,6 +124,10 @@ export function registerFinanceSocketHandlers(
       socket.emit("systemMessage", "Não deves esse valor, ou não tens 500k disponíveis.");
       return;
     }
+    logClubNews(game, "loan_pay", "Pagamento de Empréstimo", playerState.teamId, {
+      amount: 500000,
+      description: "Pagamento de 500.000€ ao banco",
+    });
     getTeamsWithCoachNames(game.db)
       .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
       .catch(() => {});

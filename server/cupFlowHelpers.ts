@@ -4,7 +4,7 @@ import type { CalendarEntry } from "./gameConstants";
 import { SEASON_CALENDAR, SPONSOR_REVENUE_BY_DIVISION, recalcPlayerValue } from "./gameConstants";
 import { clearPhaseTimer } from "./matchFlowHelpers";
 import { generateAITactic } from "./game/matchCalculations";
-import { getTeamsWithCoachNames } from "./coreHelpers";
+import { getTeamsWithCoachNames, logClubNews } from "./coreHelpers";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 
 interface CupFlowDeps {
@@ -1273,6 +1273,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						[winnerId],
 						resolve,
 					);
+				});
+				logClubNews(game, "prize", "Prémio da Taça", winnerId, {
+					amount: 500000,
+					description: "Vencedor da Taça de Portugal",
 				});
 				const updatedTeams = await getTeamsWithCoachNames(game.db);
 				io.to(game.roomCode).emit("teamsData", updatedTeams);

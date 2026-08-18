@@ -2,6 +2,7 @@ import { socket } from "../socket.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Button } from "../components/shared/Button.jsx";
+import { BalanceLineChart } from "../components/shared/BalanceLineChart.jsx";
 
 /**
  * @param {{
@@ -165,6 +166,24 @@ export function FinancesTab({
             </SummaryWidget>
           );
         })()}
+      </div>
+
+      {/* ── EVOLUÇÃO DO SALDO ─────────────────────────────────────────── */}
+      <div className="bg-surface-container-low rounded-lg p-5">
+        <div className="flex justify-between items-center pb-3 border-b border-outline-variant/15 mb-3">
+          <h3 className="font-headline text-base uppercase tracking-tight flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-base">
+              show_chart
+            </span>
+            Evolução do Saldo
+          </h3>
+          <span
+            className={`font-headline text-sm font-bold ${currentBudget >= 0 ? "text-primary" : "text-error"}`}
+          >
+            {formatCurrency(currentBudget)}
+          </span>
+        </div>
+        <BalanceLineChart data={financeData?.balanceHistory || []} />
       </div>
 
       {/* ── RECEITAS / DESPESAS / CONTROLO ────────────────────────────── */}
