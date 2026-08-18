@@ -47,16 +47,34 @@ export function LiveFixtureRow({
   const lastAwayEvent = getMatchLastEventText(matchEvents, liveMinute, "away");
   const homeCoach = players.find((p) => p.teamId === match.homeTeamId);
   const awayCoach = players.find((p) => p.teamId === match.awayTeamId);
+  const coachStrip =
+    homeHuman && awayHuman
+      ? `${homeCoach?.name || "—"} vs ${awayCoach?.name || "—"}`
+      : homeHuman
+        ? homeCoach?.name
+        : awayCoach?.name;
 
   return (
     <button
       onClick={onOpenDetail}
       className={`group w-full text-left rounded-lg overflow-hidden transition-all border ${
         isHumanMatch
-          ? "bg-primary-container/10 border-l-2 border-primary/60"
+          ? "bg-gradient-to-b from-amber-500/10 via-surface-container to-surface-container border-l-2 border-amber-400/80 shadow-[0_0_16px_rgba(251,191,36,0.08)] hover:shadow-[0_0_20px_rgba(251,191,36,0.16)]"
           : "bg-surface-container hover:bg-surface-bright border-outline-variant/15"
       } hover:-translate-y-px hover:shadow-lg hover:shadow-black/30`}
     >
+      {/* Top strip: human-coach match marker */}
+      {isHumanMatch && (
+        <div className="flex items-center justify-between gap-2 px-3 py-1 bg-amber-500/10 border-b border-amber-400/20">
+          <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-widest text-amber-400 shrink-0">
+            <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+            Treinador humano
+          </span>
+          <span className="text-[8px] font-bold text-amber-300/80 truncate">
+            {coachStrip}
+          </span>
+        </div>
+      )}
       <div className="flex items-center justify-between px-3 py-2 gap-2">
         <span className="flex items-center gap-1.5 flex-1 min-w-0 pr-1">
           <span
@@ -69,7 +87,7 @@ export function LiveFixtureRow({
           <span className="flex flex-col min-w-0">
             <span
               className={`text-[10px] sm:text-[11px] font-black truncate ${
-                homeHuman ? "text-primary" : "text-on-surface/80"
+                homeHuman ? "text-amber-300" : "text-on-surface/80"
               }`}
             >
               {hInfo?.name}
@@ -106,7 +124,7 @@ export function LiveFixtureRow({
           <span className="flex flex-col min-w-0 items-end">
             <span
               className={`text-[10px] sm:text-[11px] font-black truncate ${
-                awayHuman ? "text-primary" : "text-on-surface/80"
+                awayHuman ? "text-amber-300" : "text-on-surface/80"
               }`}
             >
               {aInfo?.name}

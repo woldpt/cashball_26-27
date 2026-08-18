@@ -215,6 +215,14 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   );
   const roomBlocked = lockedCoaches.length >= 2 && offlineLocked.length > 0;
 
+  // Jogo ao vivo que envolve pelo menos um coach humano (sala multiplayer)
+  const isHumanFixture = (m) =>
+    players.some(
+      (p) => p.teamId === m?.homeTeamId || p.teamId === m?.awayTeamId,
+    );
+  const sortHumanFirst = (a, b) =>
+    Number(isHumanFixture(b)) - Number(isHumanFixture(a));
+
   // ── Tactic-specific from TacticsContext ─────────────────────────────────
   const { tactic, annotatedSquad } = useTactics();
 
@@ -1104,7 +1112,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                                 const isMyDiv = div === myDiv;
                                 const divMatches = matchResults.results
                                   .filter(m => teams.find(t => t.id === m.homeTeamId)?.division === div)
-                                  .filter(m => m.homeTeamId !== me.teamId && m.awayTeamId !== me.teamId);
+                                  .filter(m => m.homeTeamId !== me.teamId && m.awayTeamId !== me.teamId)
+                                  .sort(sortHumanFirst);
                                 return (
                                   <div key={div} className="flex flex-col gap-2">
                                     <div className={`px-3 py-2 rounded-t-md border-b-2 bg-surface-container-high ${
@@ -1157,6 +1166,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                                 const goals90Away = (m.events || []).filter((e) => e.minute <= 90 && e.type === "goal" && e.team === "away").length;
                                 return goals90Home === goals90Away;
                               })
+                              .sort(sortHumanFirst)
                               .map((match, idx) => (
                                 <LiveFixtureRow
                                   key={idx}
