@@ -39,28 +39,47 @@ const POS_COLORS = {
 
 
 /**
- * Estrelas de familiaridade táctica — 5 slots, preenchidas âmbar / vazias escuras.
+ * Familiaridade táctica — barra de 5 segmentos que preenche o espaço disponível.
  * @param {Object} props
  * @param {number} props.stars Estrelas (0-5) calculadas no servidor (score 0..100)
+ * @param {boolean} [props.fill=false] Estica a barra até à largura total do contentor
  * @returns {JSX.Element}
  */
-function FamiliarityStars(props) {
-  const stars = Math.max(0, Math.min(5, props.stars || 0));
+function FamiliarityStars({ stars, fill = false }) {
+  const value = Math.max(0, Math.min(5, stars || 0));
+  const full = value === 5;
   return (
     <div
-      className="flex items-center gap-px leading-none"
-      title={`${stars} estrelas de familiaridade táctica`}
+      className={`relative overflow-hidden ${
+        fill ? "w-full" : "w-16 mx-auto"
+      } ${full ? "animate-fam-glow rounded-full" : ""}`}
+      title={
+        full
+          ? "5/5 — táctica dominada!"
+          : `${value}/5 estrelas de familiaridade táctica`
+      }
     >
-      {[1, 2, 3, 4, 5].map((i) => (
-        <span
-          key={i}
-          className={`text-[10px] leading-none ${
-            i <= stars ? "text-amber-400" : "text-gray-700/60"
-          }`}
-        >
-          ★
-        </span>
-      ))}
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className={`h-2 flex-1 rounded-full transition-all duration-300 ${
+              i <= value
+                ? "bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500"
+                : "bg-gray-700/40"
+            }`}
+            style={
+              i <= value
+                ? {
+                    boxShadow:
+                      "inset 0 1px 0 rgba(255,255,255,0.35), 0 0 6px rgba(251,191,36,0.35)",
+                  }
+                : undefined
+            }
+          />
+        ))}
+      </div>
+      {full && <div className="fam-shimmer" />}
     </div>
   );
 }
@@ -935,8 +954,8 @@ ${
                       >
                         {label}
                       </button>
-                      <div className="flex-1 flex items-center px-2 py-1.5 rounded-xl bg-[#161616]/60">
-                        <FamiliarityStars stars={best?.stars ?? 0} />
+                      <div className="flex-1 flex items-center px-2.5 py-2 rounded-xl bg-[#161616]/60">
+                        <FamiliarityStars stars={best?.stars ?? 0} fill />
                       </div>
                     </div>
                   );

@@ -211,3 +211,42 @@ body {
 .animate-heartbeat-border {
   animation: heartbeat-border 1.5s ease-in-out infinite;
 }
+
+/* Familiaridade táctica — brilho pulsante quando a táctica está dominada (5 estrelas) */
+@keyframes familiarity-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 6px 1px rgba(251, 191, 36, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 16px 4px rgba(251, 191, 36, 0.65);
+  }
+}
+.animate-fam-glow {
+  animation: familiarity-glow 1.6s ease-in-out infinite;
+}
+
+/* Familiaridade táctica — varredura de brilho (shimmer) sobre a barra completa */
+@keyframes familiarity-shimmer {
+  0% {
+    transform: skewX(-20deg) translateX(-150%);
+  }
+  55%,
+  100% {
+    transform: skewX(-20deg) translateX(350%);
+  }
+}
+.fam-shimmer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 230, 140, 0.55),
+    transparent
+  );
+  pointer-events: none;
+  animation: familiarity-shimmer 2.4s ease-in-out infinite;
+}
