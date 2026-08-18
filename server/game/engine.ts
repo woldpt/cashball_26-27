@@ -670,6 +670,13 @@ async function applyPenaltyEvent({
   }
 }
 
+// Intervalo de minutos jogados entre cada redução de skill por cansaço.
+// A cada múltiplo deste valor, o jogador em campo rola contra a resistência.
+const FATIGUE_INTERVAL_MINUTES = 15;
+
+// Aplica um golpe de cansaço (-amount skill) aos jogadores no onze, com
+// probabilidade de escape baseada na resistência. Só mexe em memória —
+// nunca persiste na base de dados.
 function applyFatigue(
   squad: PlayerRow[],
   lineupIds: Set<number>,
@@ -681,6 +688,43 @@ function applyFatigue(
       const skipChance = (resistance - 1) * 0.1;
       if (Math.random() >= skipChance) {
         p.skill = Math.max(1, p.skill - amount);
+      }
+    }
+  }
+}
+
+// Cansaço progressivo por minutos jogados. Cada jogador em campo acumula
+// minutos no fixture (fixture._minutesPlayed) e, a cada FATIGUE_INTERVAL_MINUTES,
+// rola contra a resistência para perder 1 skill. Jogadores que entram mais
+// tarde (substituições) começam a contar do zero — pernas frescas valem mais
+// que titulares cansados. O snapshot de lineup é mantido em sincronia para
+// que o ecrã de intervalo e os painéis de substituição mostrem o skill real.
+function trackFatigue(
+  fixture: MatchFixture,
+  side: "home" | "away",
+  squad: PlayerRow[],
+  lineupIds: Set<number>,
+) {
+  if (!fixture._minutesPlayed) {
+    fixture._minutesPlayed = { home: {}, away: {} };
+  }
+  const mps = fixture._minutesPlayed[side];
+  const lineupRef = side === "home" ? fixture.homeLineup : fixture.awayLineup;
+  for (const p of squad) {
+    if (!lineupIds.has(p.id)) continue;
+    const played = (mps[p.id] ?? 0) + 1;
+    mps[p.id] = played;
+    if (played % FATIGUE_INTERVAL_MINUTES !== 0) continue;
+
+    const resistance = p.resistance || 3;
+    const skipChance = (resistance - 1) * 0.1;
+    if (Math.random() < skipChance) continue;
+
+    p.skill = Math.max(1, p.skill - 1);
+    if (lineupRef) {
+      const li = lineupRef.findIndex((q: any) => q.id === p.id);
+      if (li > -1 && lineupRef[li].skill !== p.skill) {
+        lineupRef[li] = { ...lineupRef[li], skill: p.skill };
       }
     }
   }
@@ -1266,17 +1310,12 @@ async function simulateMatchSegment(
       fixture._extraTimeStartComment = true;
     }
 
-    // Cansaço: -1 a partir do minuto 46, -2 total a partir do minuto 70
-    if (minute === 46 && !fixture._fatigue1Applied) {
-      applyFatigue(homeSquad, homeLineupIds, 1);
-      applyFatigue(awaySquad, awayLineupIds, 1);
-      fixture._fatigue1Applied = true;
-    }
-    if (minute === 70 && !fixture._fatigue2Applied) {
-      applyFatigue(homeSquad, homeLineupIds, 1);
-      applyFatigue(awaySquad, awayLineupIds, 1);
-      fixture._fatigue2Applied = true;
-    }
+    // Cansaço progressivo: cada FATIGUE_INTERVAL_MINUTES jogados, -1 skill,
+    // com escape por resistência. Quem entra depois (subs) começa do zero.
+    trackFatigue(fixture, "home", homeSquad, homeLineupIds);
+    trackFatigue(fixture, "away", awaySquad, awayLineupIds);
+
+    // Condições climatéricas adversas aceleram o desgaste ao minuto 60
     if (
       minute === 60 &&
       !fixture._fatigue3Applied &&
