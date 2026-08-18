@@ -9,10 +9,11 @@ import { TeamCrest } from "./TeamCrest.jsx";
  * formação provável. Termina com um CTA "Avançar para a Tática".
  * A fonte de verdade é o nextMatchSummary servido pelo servidor.
  *
- * Desktop (lg+): hero compacto (manchete + dificuldade + CTA na mesma linha)
- * seguido de uma grelha de duas colunas (confronto + scouting), pensada para
- * caber numa viewport desktop sem barras de scroll. Mobile/tablet mantêm um
- * fluxo vertical legível.
+ * Desktop (lg+): hero (manchete + dificuldade + CTA na mesma linha) seguido
+ * de uma grelha de duas colunas (confronto + scouting). Ocupa toda a largura
+ * e a altura útil da viewport (100dvh - header/paddings do GameLayout), com
+ * os cards a esticar e as células centradas, sem barras de scroll no caso
+ * normal. Mobile/tablet mantêm um fluxo vertical legível.
  */
 
 const WEATHER_LABELS = {
@@ -82,11 +83,11 @@ function RecordText({ v, e, d }) {
  */
 function CompareStat({ label, mine, theirs }) {
   return (
-    <div className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-1.5">
-      <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-0.5">
+    <div className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-1.5 lg:py-2.5 flex flex-col items-center justify-center text-center">
+      <span className="text-[7px] uppercase tracking-widest text-gray-600 font-black mb-0.5 lg:mb-1">
         {label}
       </span>
-      <div className="flex items-center justify-between gap-1.5">
+      <div className="flex items-center justify-center gap-1.5 w-full">
         <span className="text-sm font-black tabular-nums text-white leading-none truncate">
           {mine}
         </span>
@@ -106,11 +107,13 @@ function CompareStat({ label, mine, theirs }) {
  */
 function MetaTile({ label, children }) {
   return (
-    <div className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-2">
-      <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-1">
+    <div className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-2 lg:py-3 flex flex-col items-center justify-center text-center">
+      <span className="text-[7px] uppercase tracking-widest text-gray-600 font-black mb-1">
         {label}
       </span>
-      {children}
+      <div className="w-full flex flex-col items-center justify-center text-center">
+        {children}
+      </div>
     </div>
   );
 }
@@ -241,7 +244,7 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
       </div>
 
       {/* Corpo */}
-      <div className="flex-1 px-4 py-3 flex flex-col gap-2.5">
+      <div className="flex-1 px-4 py-3 lg:py-4 flex flex-col gap-2.5 lg:gap-3 lg:justify-evenly">
         {/* Hero VS */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-col items-center gap-1 min-w-0 flex-1">
@@ -278,7 +281,7 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
             </span>
           )}
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 lg:flex-1 lg:content-center">
           <CompareStat
             label="Posição"
             mine={s.team?.position ? `${s.team.position}º` : "—"}
@@ -300,7 +303,7 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
         </div>
 
         {/* Faixa de metadados compacta */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 lg:flex-1 lg:content-center">
           <MetaTile label="Forma recente">
             <div className="flex items-center justify-between gap-1 min-w-0">
               <span className="text-[9px] font-black text-white truncate">
@@ -425,7 +428,7 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
                   <span className="text-[7px] text-gray-600 font-black uppercase truncate max-w-full">
                     {o.label}
                   </span>
-                  <span className={`text-[11px] font-black tabular-nums ${o.color}`}>
+                  <span className={`text-[12px] font-black tabular-nums ${o.color}`}>
                     {o.value}
                   </span>
                   {probs[i] != null && (
@@ -519,7 +522,7 @@ function DifficultyGauge({ score = 50, label = "Equilibrado" }) {
         {[1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+            className={`h-1.5 lg:h-2.5 flex-1 rounded-full transition-all duration-300 ${
               i <= filled ? theme.seg : "bg-gray-700/40"
             }`}
           />
@@ -540,7 +543,7 @@ function StadiumCard({ stadium }) {
   const cap = stadium.capacity ?? 10000;
   const fill = cap > 0 ? Math.round((att / cap) * 100) : 0;
   return (
-    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-4 py-2.5">
+    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-4 py-2.5 lg:flex-1 lg:flex lg:flex-col lg:justify-center">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
           🏟️ Estádio e ambiente
@@ -550,7 +553,7 @@ function StadiumCard({ stadium }) {
         </span>
       </div>
       <div className="flex items-baseline gap-1.5">
-        <span className="text-lg font-black text-white tabular-nums leading-none">
+        <span className="text-lg lg:text-2xl font-black text-white tabular-nums leading-none">
           {att.toLocaleString("pt-PT")}
         </span>
         <span className="text-[8px] text-gray-600 font-bold uppercase">
@@ -560,7 +563,7 @@ function StadiumCard({ stadium }) {
           Cap. {cap.toLocaleString("pt-PT")}
         </span>
       </div>
-      <div className="mt-1.5 h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
+      <div className="mt-1.5 lg:mt-2 h-1 lg:h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
         <div
           className="h-full rounded-full bg-gradient-to-r from-sky-400 to-sky-600"
           style={{ width: `${fill}%` }}
@@ -584,8 +587,8 @@ function OpponentFormation({ formation }) {
   );
   const rowYs = ["10%", "32%", "57%", "78%"];
   return (
-    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[#1a1a1a]">
+    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[#1a1a1a] lg:shrink-0">
         <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
           🔎 Formação provável
         </span>
@@ -594,7 +597,7 @@ function OpponentFormation({ formation }) {
         </span>
       </div>
       <div
-        className="relative w-full h-44 lg:h-36"
+        className="relative w-full h-44 lg:h-auto lg:flex-1 lg:min-h-0"
         style={{
           background:
             "radial-gradient(ellipse at 50% 25%, #1f5c1a 0%, #123a0d 50%, #09200a 100%)",
@@ -664,13 +667,13 @@ function ThreatGrid({ threats }) {
     forma: { icon: "🔥", label: "Em grande forma" },
   };
   return (
-    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-      <div className="px-4 py-2 border-b border-[#1a1a1a]">
+    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
+      <div className="px-4 py-2 border-b border-[#1a1a1a] lg:shrink-0">
         <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
           ⚠️ Ameaças do adversário
         </span>
       </div>
-      <div className="px-3 py-2.5 grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+      <div className="px-3 py-2.5 lg:py-3 grid grid-cols-1 sm:grid-cols-3 gap-1.5 lg:flex-1 lg:content-center">
         {threats.map((t) => {
           const meta = META[t.role] ?? { icon: "❗", label: t.role };
           const value =
@@ -682,12 +685,12 @@ function ThreatGrid({ threats }) {
           return (
             <div
               key={t.role}
-              className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-2"
+              className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-2 lg:py-3 flex flex-col items-center justify-center text-center"
             >
-              <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black truncate">
+              <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black truncate max-w-full">
                 {meta.icon} {meta.label}
               </span>
-              <span className="block text-[11px] font-black text-white truncate mt-0.5">
+              <span className="block text-[11px] font-black text-white truncate mt-0.5 max-w-full">
                 {t.name}
               </span>
               <span className="text-[9px] font-black tabular-nums text-amber-400">
@@ -717,10 +720,10 @@ export function MatchBriefing() {
   const opponent = s.opponent;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 lg:space-y-0 lg:flex lg:flex-col lg:gap-4 lg:h-[calc(100dvh-9.5rem)] lg:min-h-[540px]">
       {/* Header: manchete + contexto + dificuldade + CTA */}
-      <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2 border-b border-[#1a1a1a]">
+      <div className="lg:shrink-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-2 lg:py-3 border-b border-[#1a1a1a]">
           <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
             📋 Briefing da Jornada
           </span>
@@ -730,23 +733,23 @@ export function MatchBriefing() {
               : `Jornada ${s.matchweek}`}
           </span>
         </div>
-        <div className="px-4 py-3 flex flex-col lg:flex-row lg:items-center gap-3">
+        <div className="px-4 py-3 lg:py-5 flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white leading-snug line-clamp-2">
+            <p className="text-sm lg:text-base font-bold text-white leading-snug line-clamp-2">
               {s.headline ?? "Tudo em aberto nesta jornada."}
             </p>
             {s.stakes && (
-              <span className="mt-1.5 inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/5 border border-[#222] text-gray-300">
+              <span className="mt-1.5 lg:mt-2 inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/5 border border-[#222] text-gray-300">
                 🎯 {s.stakes}
               </span>
             )}
           </div>
-          <div className="lg:w-40 shrink-0">
+          <div className="lg:w-44 shrink-0">
             <DifficultyGauge score={s.difficulty?.score} label={s.difficulty?.label} />
           </div>
           <button
             onClick={() => setPrepPhase("tactics")}
-            className={`w-full lg:w-52 shrink-0 py-3 lg:py-2.5 font-black rounded-2xl text-xs lg:text-sm uppercase tracking-widest transition-all active:scale-95 text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110`}
+            className={`w-full lg:w-56 shrink-0 py-3 lg:py-3.5 font-black rounded-2xl text-xs lg:text-sm uppercase tracking-widest transition-all active:scale-95 text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110`}
             style={{
               background: "linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%)",
             }}
@@ -757,17 +760,17 @@ export function MatchBriefing() {
       </div>
 
       {/* Confronto + scouting */}
-      <div className="flex flex-col lg:flex-row gap-3 items-stretch">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:flex-1 lg:min-h-0">
         {opponent && (
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 lg:flex lg:flex-col lg:min-h-0">
             <NextMatchCard nextMatchSummary={nextMatchSummary} teamInfo={teamInfo} />
           </div>
         )}
-        <div className="lg:w-72 shrink-0 flex flex-col gap-3">
+        <div className="lg:w-72 shrink-0 flex flex-col gap-3 lg:h-full lg:min-h-0">
           {s.stadium ? (
             <StadiumCard stadium={s.stadium} />
           ) : opponent ? (
-            <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-4 py-2.5 flex items-center justify-between">
+            <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-4 py-2.5 flex items-center justify-between lg:flex-1">
               <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
                 🏟️ Estádio e ambiente
               </span>
