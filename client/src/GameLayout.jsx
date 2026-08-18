@@ -8,6 +8,7 @@ import { WelcomeModal } from "./components/modals/WelcomeModal.jsx";
 import { DismissalModal } from "./components/modals/DismissalModal.jsx";
 import { SeasonEndModal } from "./components/modals/SeasonEndModal.jsx";
 import { JobOfferModal } from "./components/modals/JobOfferModal.jsx";
+import { CoachMarketModal } from "./components/modals/CoachMarketModal.jsx";
 import { AdminPanel } from "./components/admin/AdminPanel.jsx";
 import { PlayerHistoryModal } from "./components/modals/PlayerHistoryModal.jsx";
 import { CupDrawPopup } from "./components/modals/CupDrawPopup.jsx";
@@ -85,6 +86,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     setJobOfferModal,
     dismissalModal,
     setDismissalModal,
+    coachMarketReport,
+    setCoachMarketReport,
     seasonEndModal,
     isCupMatch,
     cupPreMatch,
@@ -1494,6 +1497,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       <JobOfferModal
         jobOfferModal={jobOfferModal}
         setJobOfferModal={setJobOfferModal}
+      />
+
+      <CoachMarketModal
+        report={coachMarketReport}
+        onClose={() => setCoachMarketReport(null)}
       />
 
       <SeasonEndModal

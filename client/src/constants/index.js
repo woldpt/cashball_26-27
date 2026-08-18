@@ -343,6 +343,7 @@ export const MODAL_Z = {
 	cupDraw: 140,
 	waitingCoaches: 150,
 	penalty: 150,
+	coachMarket: 160,
 	default: 200,
 	dismissal: 9999,
 };

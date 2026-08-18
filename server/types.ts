@@ -23,6 +23,21 @@ export interface PlayerSession {
 }
 
 /**
+ * Evento do mercado de treinadores (despedimento / contratação) recolhido após
+ * cada jornada para o modal semanal "Mercado de Treinadores".
+ */
+export interface CoachMarketEvent {
+  type: "dismissal" | "hiring";
+  coachName: string;
+  teamName: string;
+  division: number;
+  reason?: "results" | "budget";
+  isHuman: boolean;
+  colorPrimary?: string;
+  colorSecondary?: string;
+}
+
+/**
  * Single unified state machine replacing the old matchState + cupState dual machines.
  * Transitions are always linear: no concurrent league+cup activity.
  */
@@ -105,6 +120,9 @@ export interface ActiveGame {
     }
   >; // coachName → info de despedimento
   dismissalsThisSeason: Set<string>; // coaches despedidos na época actual (máx 1 por época)
+
+  // ── Resumo semanal do mercado de treinadores (transiente, limpo após emissão) ──
+  coachMarketEvents: CoachMarketEvent[];
 
   [key: string]: any;
 }

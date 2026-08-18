@@ -394,6 +394,9 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     negativeBudgetStreak: {},
     dismissedCoachSince: {},
     dismissalsThisSeason: new Set<string>(),
+
+    // Resumo semanal do mercado de treinadores (transiente)
+    coachMarketEvents: [],
   };
 
   activeGames[roomCode] = game;

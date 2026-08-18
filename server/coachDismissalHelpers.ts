@@ -1,4 +1,4 @@
-import type { ActiveGame } from "./types";
+import type { ActiveGame, CoachMarketEvent } from "./types";
 import { getAllTeamForms, logClubNews, getTeamsWithCoachNames } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 
@@ -29,6 +29,26 @@ interface CoachDismissalDeps {
 
 export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
   const { io, runAll, runGet, saveGameState, getRoomCoaches } = deps;
+
+  // ── Internal helpers ───────────────────────────────────────────────────────
+
+  /**
+   * Regista um evento do mercado de treinadores para o resumo semanal
+   * (modal "Mercado de Treinadores" emitido após cada jornada).
+   */
+  function recordMarketEvent(game: ActiveGame, event: CoachMarketEvent): void {
+    if (!Array.isArray(game.coachMarketEvents)) game.coachMarketEvents = [];
+    game.coachMarketEvents.push(event);
+  }
+
+  /** Re-emite teamsData (nomes de treinadores) para toda a sala. */
+  function broadcastTeamsData(game: ActiveGame): void {
+    getTeamsWithCoachNames(game.db)
+      .then((allTeamsData) =>
+        io.to(game.roomCode).emit("teamsData", allTeamsData),
+      )
+      .catch(() => {});
+  }
 
   // ── Probability tables ─────────────────────────────────────────────────────
   const DISMISSAL_BY_LOSSES: Record<number, number> = {
@@ -151,14 +171,22 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       );
     }
 
+    recordMarketEvent(game, {
+      type: "hiring",
+      coachName,
+      teamName: team.name,
+      division: team.division,
+      isHuman: true,
+      colorPrimary: team.color_primary ?? undefined,
+      colorSecondary: team.color_secondary ?? undefined,
+    });
+
     io.to(game.roomCode).emit("systemMessage", {
       text: `${coachName} desceu para a ${targetDiv}ª divisão e assumiu o comando de ${team.name}.`,
       broadcast: true,
     });
 
-    getTeamsWithCoachNames(game.db)
-      .then((allTeamsData) => io.to(game.roomCode).emit("teamsData", allTeamsData))
-      .catch(() => {});
+    broadcastTeamsData(game);
   }
 
   async function dismissHumanCoach(
@@ -168,6 +196,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     teamName: string,
     oldTeamId: number,
     division: number,
+    colors?: { colorPrimary?: string; colorSecondary?: string },
   ): Promise<void> {
     const player = game.playersByName[coachName];
     if (!player) return;
@@ -200,6 +229,17 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     // Free the old team in the DB
     game.db.run("UPDATE teams SET manager_id = NULL WHERE id = ?", [oldTeamId]);
 
+    recordMarketEvent(game, {
+      type: "dismissal",
+      coachName,
+      teamName,
+      division,
+      reason,
+      isHuman: true,
+      colorPrimary: colors?.colorPrimary,
+      colorSecondary: colors?.colorSecondary,
+    });
+
     // Notify coach
     if (socketId) {
       io.to(socketId).emit("coachDismissed", { reason, teamName });
@@ -214,10 +254,81 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     await autoAssignDismissedCoach(game, coachName);
   }
 
+  /**
+   * Contrata um treinador NPC desempregado (ou cria um novo) para um clube NPC
+   * cujo treinador acabou de ser despedido. Exclui o treinador recém-despedido
+   * do pool para evitar que seja recontratado pelo mesmo clube na mesma semana.
+   */
+  async function hireNpcManager(
+    game: ActiveGame,
+    team: AnyRow,
+    excludeName?: string,
+  ): Promise<string | null> {
+    const pool = await runAll<AnyRow>(
+      game.db,
+      "SELECT m.id, m.name FROM managers m WHERE (m.is_human IS NULL OR m.is_human = 0) AND m.id NOT IN (SELECT manager_id FROM teams WHERE manager_id IS NOT NULL) AND m.name != ? COLLATE NOCASE",
+      [excludeName || ""],
+    );
+
+    let manager: AnyRow | undefined =
+      pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : undefined;
+
+    if (!manager) {
+      // Pool vazio — criar um novo treinador NPC (nome único garantido)
+      let insertedId: number | null = null;
+      let name = "";
+      for (let attempt = 0; attempt < 5 && insertedId === null; attempt += 1) {
+        name = `Treinador ${Math.floor(10000 + Math.random() * 89999)}`;
+        insertedId = await new Promise<number | null>((resolve) => {
+          game.db.run(
+            "INSERT INTO managers (name, reputation) VALUES (?, 50)",
+            [name],
+            function (this: any, err: any) {
+              resolve(err ? null : this.lastID);
+            },
+          );
+        });
+      }
+      if (insertedId === null) return null;
+      manager = { id: insertedId, name };
+    }
+
+    game.db.run("UPDATE teams SET manager_id = ? WHERE id = ?", [
+      manager.id,
+      team.id,
+    ]);
+
+    recordMarketEvent(game, {
+      type: "hiring",
+      coachName: manager.name,
+      teamName: team.name,
+      division: team.division,
+      isHuman: false,
+      colorPrimary: team.color_primary ?? undefined,
+      colorSecondary: team.color_secondary ?? undefined,
+    });
+
+    io.to(game.roomCode).emit("systemMessage", {
+      text: `${team.name} contratou ${manager.name}.`,
+      broadcast: true,
+    });
+
+    broadcastTeamsData(game);
+    return manager.name;
+  }
+
   async function dismissNpcManager(
     game: ActiveGame,
     team: AnyRow,
   ): Promise<void> {
+    // Obter o nome do treinador antes de anular o vínculo
+    const mgr = await runGet<{ name: string }>(
+      game.db,
+      "SELECT m.name FROM managers m JOIN teams t ON t.manager_id = m.id WHERE t.id = ?",
+      [team.id],
+    );
+    const coachName = mgr?.name ?? "Treinador";
+
     game.db.run("UPDATE teams SET manager_id = NULL WHERE id = ?", [team.id]);
     logClubNews(
       game,
@@ -227,10 +338,24 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       { description: "Despedimento após má série de resultados" },
       io,
     );
+
+    recordMarketEvent(game, {
+      type: "dismissal",
+      coachName,
+      teamName: team.name,
+      division: team.division,
+      isHuman: false,
+      colorPrimary: team.color_primary ?? undefined,
+      colorSecondary: team.color_secondary ?? undefined,
+    });
+
     io.to(game.roomCode).emit("systemMessage", {
       text: `${team.name} despediu o seu treinador.`,
       broadcast: true,
     });
+
+    // Contratar um substituto NPC
+    await hireNpcManager(game, team, coachName);
   }
 
   async function offerJobToCoach(
@@ -402,19 +527,30 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       );
     }
 
+    recordMarketEvent(game, {
+      type: "hiring",
+      coachName,
+      teamName: team.name,
+      division: team.division,
+      isHuman: true,
+      colorPrimary: team.color_primary ?? undefined,
+      colorSecondary: team.color_secondary ?? undefined,
+    });
+
     io.to(game.roomCode).emit("systemMessage", {
       text: `${coachName} foi atribuído a ${team.name}.`,
       broadcast: true,
     });
 
-    getTeamsWithCoachNames(game.db)
-      .then((allTeamsData) => io.to(game.roomCode).emit("teamsData", allTeamsData))
-      .catch(() => {});
+    broadcastTeamsData(game);
   }
 
   // ── MAIN FUNCTION ─────────────────────────────────────────────────────────
 
   const processCoachEvents = async (game: ActiveGame): Promise<void> => {
+    // Resumo semanal do mercado de treinadores (limpo após emissão do report)
+    game.coachMarketEvents = [];
+
     // 1. Carregar equipas e forms
     const allTeams = await runAll<AnyRow>(game.db, "SELECT * FROM teams");
     const forms: Record<number, string> = await getAllTeamForms(
@@ -458,6 +594,10 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
             team.name,
             teamId,
             team.division,
+            {
+              colorPrimary: team.color_primary,
+              colorSecondary: team.color_secondary,
+            },
           );
           continue; // already dismissed
         }
@@ -482,13 +622,24 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
           team.name,
           teamId,
           team.division,
+          {
+            colorPrimary: team.color_primary,
+            colorSecondary: team.color_secondary,
+          },
         );
       }
     }
 
     // 4. Loop equipas NPC — forma (limiar de 5 derrotas sem aleatoriedade)
-    for (const team of allTeams) {
-      if (humanTeamIds.has(team.id)) continue;
+    // Re-consultar equipas com o estado do treinador: um humano que acabou de
+    // ser auto-atribuído a um clube NPC (após despedimento) não pode ser
+    // despedido no mesmo ciclo, e clubes órfãos (sem treinador) são ignorados.
+    const npcTeams = await runAll<AnyRow>(
+      game.db,
+      "SELECT t.*, m.is_human AS coach_is_human FROM teams t LEFT JOIN managers m ON t.manager_id = m.id",
+    );
+    for (const team of npcTeams) {
+      if (team.coach_is_human !== 0) continue; // só treinadores NPC (skip humanos/órfãos)
       if (team.division === 5) continue; // pool interno, invisível
 
       const form = forms[team.id] ?? "";

@@ -846,6 +846,15 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                   );
                 }
 
+                // Emitir o resumo semanal do mercado de treinadores (modal)
+                if (game.coachMarketEvents && game.coachMarketEvents.length > 0) {
+                  io.to(game.roomCode).emit("coachMarketReport", {
+                    matchweek: game.matchweek,
+                    events: game.coachMarketEvents,
+                  });
+                  game.coachMarketEvents = [];
+                }
+
                 // If the next calendar event is a cup round, prepare the draw NOW
                 // so coaches see their opponent and can set tactics in the lobby.
                 if (game.currentEvent?.type === "cup") {
