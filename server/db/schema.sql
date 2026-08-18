@@ -140,6 +140,7 @@ CREATE INDEX IF NOT EXISTS idx_matches_away_team_id ON matches(away_team_id);
 CREATE INDEX IF NOT EXISTS idx_matches_matchweek ON matches(matchweek);
 CREATE INDEX IF NOT EXISTS idx_matches_played ON matches(played);
 CREATE INDEX IF NOT EXISTS idx_cup_matches_season_round ON cup_matches(season, round);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cup_matches_season_round_pair ON cup_matches(season, round, home_team_id, away_team_id);
 CREATE INDEX IF NOT EXISTS idx_palmares_team_id ON palmares(team_id);
 CREATE INDEX IF NOT EXISTS idx_club_news_team_id ON club_news(team_id);
 CREATE INDEX IF NOT EXISTS idx_club_news_player_id ON club_news(player_id);

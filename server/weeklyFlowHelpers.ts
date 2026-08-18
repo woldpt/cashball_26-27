@@ -174,6 +174,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
   const MS_PER_GAME_MINUTE = 1000;
 
+  // Safety timer: if a connected coach stalls at halftime (never sends setReady),
+  // force the second half after this window so the round can never hang forever
+  // at match_halftime — mirrors the ET-gate safety in cupFlowHelpers.
+  const HALFTIME_SAFETY_MS = 120000;
+
   async function runMatchSegment(
     game: ActiveGame,
     startMin: number,
@@ -631,6 +636,22 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       emitPresence(game);
       saveGameState(game);
 
+      // Safety timer: force the second half if coaches stall at the interval.
+      // advanceFromHalftime clears it when a coach readies up normally.
+      clearPhaseTimer(game);
+      game.phaseTimer = setTimeout(() => {
+        if (game.gamePhase !== "match_halftime") return;
+        console.log(
+          `[${game.roomCode}] ⏱ Halftime safety timer fired — forcing second half`,
+        );
+        advanceFromHalftime(game).catch((err) =>
+          console.error(
+            `[${game.roomCode}] ❌ Halftime forced continuation failed:`,
+            err,
+          ),
+        );
+      }, HALFTIME_SAFETY_MS);
+
       return;
     }
 
@@ -645,6 +666,70 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       await finalizeCupRound(game);
     } else {
       await finalizeLeagueEvent(game);
+    }
+  }
+
+  // ─── HALFTIME → SECOND HALF ─────────────────────────────────────────────────
+  // Shared transition used by checkAllReady (all coaches ready), by the halftime
+  // safety timer (coach stalled) and by the cup auto-advance (no human in the
+  // cup fixtures). Guarded by segmentRunning so it can never double-run.
+
+  async function advanceFromHalftime(game: ActiveGame) {
+    if (game.gamePhase !== "match_halftime") return;
+    if (segmentRunning[game.roomCode]) {
+      console.warn(
+        `[${game.roomCode}] ⚠ advanceFromHalftime blocked: segmentRunning is true`,
+      );
+      return;
+    }
+    segmentRunning[game.roomCode] = true;
+
+    // Cancel halftime safety timeout
+    clearPhaseTimer(game);
+
+    const entry = game.currentEvent as any;
+    console.log(
+      `[${game.roomCode}] ▶ Halftime → second half | type=${entry?.type ?? "unknown"}`,
+    );
+
+    pauseAllRunningAuctions(game, io);
+    game.gamePhase = "match_second_half";
+    game.phaseToken = makePhaseToken(game);
+    saveGameState(game);
+
+    // For cup matches, emit animation before second half starts
+    if (entry?.type === "cup") {
+      io.to(game.roomCode).emit("cupSecondHalfStart", {
+        round: entry.round,
+        roundName: entry.roundName,
+        season: game.season,
+        results: game.currentFixtures.map((f) => ({
+          homeTeamId: f.homeTeamId,
+          awayTeamId: f.awayTeamId,
+          finalHomeGoals: f.finalHomeGoals,
+          finalAwayGoals: f.finalAwayGoals,
+          events: f.events,
+          homeLineup: f.homeLineup || [],
+          awayLineup: f.awayLineup || [],
+          _t1: f._t1 || null,
+          _t2: f._t2 || null,
+        })),
+      });
+    }
+
+    try {
+      await runMatchSegment(game, 46, 90);
+    } catch (segmentErr) {
+      console.error(
+        `[${game.roomCode}] ❌ Second half segment failed:`,
+        segmentErr,
+      );
+    } finally {
+      segmentRunning[game.roomCode] = false;
+    }
+    // segmentRunning is now false; safe to auto-advance if all coaches were dismissed.
+    if ((game.gamePhase as string) === "lobby") {
+      checkAllReady(game);
     }
   }
 
@@ -1324,44 +1409,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               console.log(
                 `[${game.roomCode}] 🏆 No human in cup fixtures — auto-advancing to second half`,
               );
-              // Cancel halftime safety timeout
-              clearPhaseTimer(game);
-              pauseAllRunningAuctions(game, io);
-              game.gamePhase = "match_second_half";
-              game.phaseToken = makePhaseToken(game);
-              saveGameState(game);
-              const cupEntry = entry as any;
-              io.to(game.roomCode).emit("cupSecondHalfStart", {
-                round: cupEntry.round,
-                roundName: cupEntry.roundName,
-                season: game.season,
-                results: game.currentFixtures.map((f) => ({
-                  homeTeamId: f.homeTeamId,
-                  awayTeamId: f.awayTeamId,
-                  finalHomeGoals: f.finalHomeGoals,
-                  finalAwayGoals: f.finalAwayGoals,
-                  events: f.events,
-                  homeLineup: f.homeLineup || [],
-                  awayLineup: f.awayLineup || [],
-                  _t1: f._t1 || null,
-                  _t2: f._t2 || null,
-                })),
-              });
-              segmentRunning[game.roomCode] = true;
-              try {
-                await runMatchSegment(game, 46, 90);
-              } catch (segmentErr) {
-                console.error(
-                  `[${game.roomCode}] ❌ Cup auto-advance second half failed:`,
-                  segmentErr,
-                );
-              } finally {
-                segmentRunning[game.roomCode] = false;
-              }
-              // Re-check lobby after cup auto-advance in case all coaches were dismissed.
-              if ((game.gamePhase as string) === "lobby") {
-                checkAllReady(game);
-              }
+              await advanceFromHalftime(game);
             }
           }
         },
@@ -1400,61 +1448,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
     // ── Halftime → second half (league AND cup, identical) ──────────────────
     if (game.gamePhase === "match_halftime") {
-      if (segmentRunning[game.roomCode]) {
-        console.warn(
-          `[${game.roomCode}] ⚠ Halftime→second half blocked: segmentRunning is true`,
-        );
-        return;
-      }
-      segmentRunning[game.roomCode] = true;
-
-      // Cancel halftime safety timeout
-      clearPhaseTimer(game);
-
-      const entry = game.currentEvent as any;
-      console.log(
-        `[${game.roomCode}] ▶ Halftime → second half | type=${entry?.type ?? "unknown"}`,
-      );
-
-      pauseAllRunningAuctions(game, io);
-      game.gamePhase = "match_second_half";
-      game.phaseToken = makePhaseToken(game);
-      saveGameState(game);
-
-      // For cup matches, emit animation before second half starts
-      if (entry?.type === "cup") {
-        io.to(game.roomCode).emit("cupSecondHalfStart", {
-          round: entry.round,
-          roundName: entry.roundName,
-          season: game.season,
-          results: game.currentFixtures.map((f) => ({
-            homeTeamId: f.homeTeamId,
-            awayTeamId: f.awayTeamId,
-            finalHomeGoals: f.finalHomeGoals,
-            finalAwayGoals: f.finalAwayGoals,
-            events: f.events,
-            homeLineup: f.homeLineup || [],
-            awayLineup: f.awayLineup || [],
-            _t1: f._t1 || null,
-            _t2: f._t2 || null,
-          })),
-        });
-      }
-
-      try {
-        await runMatchSegment(game, 46, 90);
-      } catch (segmentErr) {
-        console.error(
-          `[${game.roomCode}] ❌ Second half segment failed:`,
-          segmentErr,
-        );
-      } finally {
-        segmentRunning[game.roomCode] = false;
-      }
-      // segmentRunning is now false; safe to auto-advance if all coaches were dismissed.
-      if ((game.gamePhase as string) === "lobby") {
-        checkAllReady(game);
-      }
+      await advanceFromHalftime(game);
+      return;
     }
   }
 

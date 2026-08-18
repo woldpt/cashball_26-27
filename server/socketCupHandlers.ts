@@ -105,6 +105,7 @@ export function registerCupSocketHandlers(socket: any, deps: CupHandlerDeps) {
   // These events are kept so old clients don't throw errors, but do nothing.
   socket.on("cupKickOff", () => {});
   socket.on("cupHalfTimeReady", () => {});
+  socket.on("cupSecondHalfDone", () => {});
   
   socket.on("leagueAnimDone", () => {});
 }

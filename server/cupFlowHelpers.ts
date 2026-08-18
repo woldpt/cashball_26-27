@@ -603,6 +603,17 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 
 		const fixtures: Array<{ homeTeamId: number; awayTeamId: number }> = [];
+		// Idempotência: se este sorteio já foi gerado numa sessão anterior que
+		// crashou antes do saveGameState, apagar os registos por jogar desta ronda
+		// antes de reinserir. Nunca toca em rondas já jogadas (played = 1) — os
+		// vencedores que alimentam as rondas seguintes ficam intactos.
+		await new Promise((resolve) => {
+			game.db.run(
+				"DELETE FROM cup_matches WHERE season = ? AND round = ? AND played = 0",
+				[season, round],
+				resolve,
+			);
+		});
 		for (let i = 0; i < teamIds.length; i += 2) {
 			const homeId = teamIds[i];
 			const awayId = teamIds[i + 1];
@@ -902,6 +913,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			// not leave the round wedged at match_et_gate (match_extra_time recovers
 			// via the standard transient-phase restart path).
 			game.gamePhase = "match_extra_time";
+			game._etSimCompleted = false;
 
 			// Apply ET substitutions and re-read tactics changed during the pause screen
 			if (humanInAnyDraw) {
@@ -1038,7 +1050,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			);
 
 			// Post-ET: determine winner (or penalties) for each drawn fixture
-			for (const { fixture, t1, t2 } of drawnSetups) {
+			for (const { fixture, t1, t2, goals90Home, goals90Away } of drawnSetups) {
 				console.log(
 					`[${game.roomCode}] 🏆 ET result: ${fixture.finalHomeGoals}-${fixture.finalAwayGoals} | ${fixture.homeTeam?.name ?? fixture.homeTeamId} vs ${fixture.awayTeam?.name ?? fixture.awayTeamId}`,
 				);
@@ -1049,8 +1061,11 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					awayGoals: fixture.finalAwayGoals,
 				});
 
-				const etGoalsHome = fixture.finalHomeGoals;
-				const etGoalsAway = fixture.finalAwayGoals;
+				// Golos marcados APENAS no prolongamento (o score final pós-ET já
+				// inclui os 90'). O bracket soma home_score + home_et_score para
+				// obter o resultado final — guardar o total aqui duplicaria golos.
+				const etGoalsHome = fixture.finalHomeGoals - goals90Home;
+				const etGoalsAway = fixture.finalAwayGoals - goals90Away;
 
 				if (etGoalsHome !== etGoalsAway) {
 					fixture._winnerId =
@@ -1062,18 +1077,28 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					console.log(
 						`[${game.roomCode}] 🏆 Still draw after ET — going to penalties`,
 					);
-					const homeSquad = await getTeamSquad(
-						game.db,
-						fixture.homeTeamId,
-						t1,
-						game.matchweek,
-					);
-					const awaySquad = await getTeamSquad(
-						game.db,
-						fixture.awayTeamId,
-						t2,
-						game.matchweek,
-					);
+					// Usar os squads pós-substituições de ET (em memória) para o
+					// shootout — um fetch fresco da DB ignoraria as trocas feitas
+					// na pausa e poderia incluir lesionados/expulsos que o
+					// applyETSubs filtrou. Fallback para getTeamSquad só se faltar.
+					const homeSquad =
+						(fixture._homeSquad && fixture._homeSquad.length > 0
+							? fixture._homeSquad
+							: await getTeamSquad(
+									game.db,
+									fixture.homeTeamId,
+									t1,
+									game.matchweek,
+								)) as any[];
+					const awaySquad =
+						(fixture._awaySquad && fixture._awaySquad.length > 0
+							? fixture._awaySquad
+							: await getTeamSquad(
+									game.db,
+									fixture.awayTeamId,
+									t2,
+									game.matchweek,
+								)) as any[];
 					const shootout = simulatePenaltyShootout(homeSquad, awaySquad);
 
 					const humanInThisFixture = (
@@ -1294,6 +1319,17 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 
 		// ET animation gate: wait for all connected coaches to ack before advancing
+		// Os resultados já estão construídos — guardá-los permite a um coach que
+		// reconecte durante o gate receber os resultados em vez de um replay
+		// fantasma de um ET que já acabou.
+		game._etSimCompleted = true;
+		game.cupResultsPayload = {
+			round,
+			roundName,
+			results,
+			season,
+			isFinal: round === 5,
+		};
 		if (hasAnyET) {
 			const anyHumanConnected = (
 				Object.values(game.playersByName) as PlayerSession[]
@@ -1304,14 +1340,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 
 		// Emit results
-		io.to(game.roomCode).emit("cupRoundResults", {
-			round,
-			roundName,
-			results,
-			season,
-			isFinal: round === 5,
-		});
-
+		io.to(game.roomCode).emit("cupRoundResults", game.cupResultsPayload);
 		// Apply training bonuses for this completed calendar event (cup round)
 		const completedCalendarIndex = game.calendarIndex;
 		try {
@@ -1364,6 +1393,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		game.currentFixtures = [];
 		game.cupHalftimePayload = null;
 		game.lastHalftimePayload = null;
+		game._etSimCompleted = false;
+		game.cupResultsPayload = null;
 		game.gamePhase = "lobby";
 		Object.values(game.playersByName).forEach((p) => {
 			p.ready = false;
@@ -1402,16 +1433,20 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 			game._cupETAnimHandler = (socketId: string) => {
 				acks.add(socketId);
-				// Only require acks from coaches whose teams are still in a current fixture.
-				// Eliminated coaches are observers: their client may not send cupExtraTimeDone,
-				// which would otherwise block the gate for the full 45s timeout.
+				// Only require acks from coaches whose team is in a fixture that
+				// ACTUALLY went to extra time (drawn at 90'). A coach whose tie
+				// was decided in regulation is an observer for the ET animation —
+				// requiring their ack lets a stuck client hold the gate for the
+				// full 45s timeout every round.
 				const inFixture = (
 					Object.values(game.playersByName) as PlayerSession[]
 				).filter(
 					(p) =>
 						!!p.socketId &&
 						game.currentFixtures.some(
-							(f) => f.homeTeamId === p.teamId || f.awayTeamId === p.teamId,
+							(f) =>
+								(f.homeTeamId === p.teamId || f.awayTeamId === p.teamId) &&
+								f.finalHomeGoals === f.finalAwayGoals,
 						),
 				);
 				// Fallback: if no human coach is in any fixture, use all connected coaches.
@@ -1521,10 +1556,17 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 
 		// Recovery for match_extra_time: tell the reconnecting client that ET is running
-		if (
-			game.gamePhase === "match_extra_time" &&
-			game.currentFixtures?.length > 0
-		) {
+		// Recovery for match_extra_time:
+		//  - Se o ET já terminou (gate de animação / finalização), enviar os
+		//    resultados da ronda em vez de um replay fantasma de um ET que já
+		//    acabou — um reconnect aqui mostrava relógio a correr dos 91'.
+		//  - Caso contrário (ET ainda a simular), replay do estado actual.
+		if (game.gamePhase === "match_extra_time") {
+			if (game._etSimCompleted && game.cupResultsPayload) {
+				socket.emit("cupRoundResults", game.cupResultsPayload);
+				return;
+			}
+			if (!game.currentFixtures?.length) return;
 			const entry = game.currentEvent as any;
 			socket.emit("matchReplay", {
 				// Default to 91 because extra time starts at minute 91
