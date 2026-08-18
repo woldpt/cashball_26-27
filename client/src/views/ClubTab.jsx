@@ -8,6 +8,14 @@ import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 
+const INCOME_TYPES = new Set([
+  "transfer_out",
+  "weekly_income",
+  "ticket_revenue",
+  "loan_take",
+  "prize",
+]);
+
 /**
  * @param {{
  *   teamInfo: object,
@@ -382,12 +390,12 @@ export function ClubTab({
                     <div className="text-right shrink-0">
                       <p
                         className={`font-headline font-black text-xs tabular-nums ${
-                          news.type === "transfer_out"
+                          INCOME_TYPES.has(news.type)
                             ? "text-emerald-400"
                             : "text-error"
                         }`}
                       >
-                        {news.type === "transfer_out" ? "+" : "-"}
+                        {INCOME_TYPES.has(news.type) ? "+" : "-"}
                         {formatCurrency(news.amount)}
                       </p>
                       <p className="text-[9px] text-on-surface-variant font-black uppercase tracking-widest">

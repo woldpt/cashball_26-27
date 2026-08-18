@@ -771,6 +771,7 @@ export function registerSessionSocketHandlers(
 				`SELECT id, team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek, year, created_at
          FROM club_news
          WHERE team_id = ?
+           AND type IN ('transfer_in', 'transfer_out', 'auction_won', 'manager_dismissed', 'manager_hired', 'prize')
          ORDER BY created_at DESC, id DESC
          LIMIT 20`,
 				[teamId],
@@ -804,7 +805,7 @@ export function registerSessionSocketHandlers(
 					        related_team_id, related_team_name, amount, matchweek, year, created_at
 					 FROM club_news
 					 WHERE team_id = ?
-					   AND type IN ('transfer_in', 'transfer_out', 'auction_won', 'manager_dismissed', 'manager_hired')
+					   AND type IN ('transfer_in', 'transfer_out', 'auction_won', 'manager_dismissed', 'manager_hired', 'prize')
 					 ORDER BY year DESC, matchweek DESC, id DESC
 					 LIMIT 100`,
 					[teamId],

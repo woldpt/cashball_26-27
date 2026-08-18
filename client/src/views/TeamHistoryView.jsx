@@ -19,6 +19,12 @@ const EVENT_META = {
     chip: "bg-amber-500/15 text-amber-400",
     label: "Leilão",
   },
+  prize: {
+    icon: "emoji_events",
+    color: "text-amber-400",
+    chip: "bg-amber-500/15 text-amber-400",
+    label: "Prémio",
+  },
   manager_dismissed: {
     icon: "person_remove",
     color: "text-rose-400",
