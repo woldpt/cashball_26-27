@@ -56,8 +56,26 @@ export function isFlashing(flashRef, homeId, awayId, side, now = Date.now()) {
 /**
  * Projeção da classificação ao vivo: tabela persistida (teams) + resultados
  * da jornada em curso (marcadores derivados dos eventos, até liveMinute).
+ *
+ * Quando `applyLiveResults` é false, os dados persistidos já incluem a jornada
+ * (servidor reenviou teamsData/teamForms) — devolve a tabela tal como está,
+ * evitando contar a jornada duas vezes. A `form` combina o histórico anterior
+ * (teamForms) com o resultado da jornada em curso quando projetado.
+ *
+ * @param {Object} props
+ * @param {Array} props.teams
+ * @param {Object|null} props.matchResults
+ * @param {number} props.liveMinute
+ * @param {Object} props.teamForms
+ * @param {boolean} props.applyLiveResults
  */
-export function computeVirtualStandings({ teams, matchResults, liveMinute = 90 }) {
+export function computeVirtualStandings({
+  teams,
+  matchResults,
+  liveMinute = 90,
+  teamForms = {},
+  applyLiveResults = false,
+}) {
   const standings = new Map();
   teams.forEach((t) => {
     standings.set(String(t.id), {
@@ -69,23 +87,28 @@ export function computeVirtualStandings({ teams, matchResults, liveMinute = 90 }
       goalsFor: t.goals_for || 0,
       goalsAgainst: t.goals_against || 0,
       points: t.points || 0,
+      form: teamForms[t.id] || "",
     });
   });
 
-  (matchResults?.results || []).forEach((r) => {
-    const home = standings.get(String(r.homeTeamId));
-    const away = standings.get(String(r.awayTeamId));
-    if (!home || !away) return;
-    const events = r.events || [];
-    const homeGoals = events.filter(
-      (e) => e.minute <= liveMinute && isGoalType(e.type) && e.team === "home",
-    ).length;
-    const awayGoals = events.filter(
-      (e) => e.minute <= liveMinute && isGoalType(e.type) && e.team === "away",
-    ).length;
-    applyResult(home, homeGoals, awayGoals);
-    applyResult(away, awayGoals, homeGoals);
-  });
+  if (applyLiveResults) {
+    (matchResults?.results || []).forEach((r) => {
+      const home = standings.get(String(r.homeTeamId));
+      const away = standings.get(String(r.awayTeamId));
+      if (!home || !away) return;
+      const events = r.events || [];
+      const homeGoals = events.filter(
+        (e) => e.minute <= liveMinute && isGoalType(e.type) && e.team === "home",
+      ).length;
+      const awayGoals = events.filter(
+        (e) => e.minute <= liveMinute && isGoalType(e.type) && e.team === "away",
+      ).length;
+      applyResult(home, homeGoals, awayGoals);
+      applyResult(away, awayGoals, homeGoals);
+      home.form += homeGoals > awayGoals ? "V" : homeGoals === awayGoals ? "E" : "D";
+      away.form += awayGoals > homeGoals ? "V" : awayGoals === homeGoals ? "E" : "D";
+    });
+  }
 
   return [...standings.values()].sort(
     (a, b) =>

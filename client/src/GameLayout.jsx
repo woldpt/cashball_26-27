@@ -1096,7 +1096,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                                 liveMinute={liveMinute}
                                 myTeamId={me.teamId}
                                 teamForms={teamForms}
-                                applyLiveResults={standingsStale || isLiveSimulation}
+                                applyLiveResults={standingsStale || isLiveSimulation || showHalftimePanel}
                               />
                             </div>
                           )}

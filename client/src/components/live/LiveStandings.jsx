@@ -57,7 +57,13 @@ export function LiveStandingsPanel({
   if (myDiv == null) return null;
 
   const divTeams = teams.filter((t) => t.division === myDiv);
-  const rows = computeVirtualStandings({ teams: divTeams, matchResults, liveMinute });
+  const rows = computeVirtualStandings({
+    teams: divTeams,
+    matchResults,
+    liveMinute,
+    teamForms,
+    applyLiveResults,
+  });
   const matchweek = matchResults?.matchweek ?? "—";
   const divLabel = DIVISION_NAMES[myDiv] || `Div ${myDiv}`;
 
@@ -88,6 +94,7 @@ export function LiveStandingsPanel({
               <th className="pl-2.5 pr-1 py-1 w-7">Pos</th>
               <th className="px-1 py-1">Clube</th>
               <th className="px-1 py-1 text-center w-5">J</th>
+              <th className="px-1 py-1 text-center w-8">DG</th>
               <th className="px-1 py-1 text-center w-7 text-tertiary/70">Pts</th>
               <th className="pr-2.5 pl-1 py-1 text-right w-14">Forma</th>
             </tr>
@@ -96,6 +103,7 @@ export function LiveStandingsPanel({
             {rows.map((row, idx) => {
               const t = row.team;
               const isMe = String(t.id) === String(myTeamId);
+              const gd = row.goalsFor - row.goalsAgainst;
               const isPromo = myDiv > 1 && idx < 2;
               const isRelegate = idx >= rows.length - 2;
               const leftBorder = isPromo
@@ -144,18 +152,29 @@ export function LiveStandingsPanel({
                   <td className="px-1 py-1.5 text-center text-[9px] text-on-surface-variant/60 tabular-nums">
                     {row.played}
                   </td>
+                  <td
+                    className={`px-1 py-1.5 text-center text-[9px] font-bold tabular-nums ${
+                      gd > 0
+                        ? "text-emerald-400"
+                        : gd < 0
+                          ? "text-red-400"
+                          : "text-on-surface-variant/40"
+                    }`}
+                  >
+                    {gd > 0 ? `+${gd}` : gd}
+                  </td>
                   <td className="px-1 py-1.5 text-center text-[9px] font-black font-headline text-on-surface tabular-nums">
                     {row.points}
                   </td>
                   <td className="pr-2.5 pl-1 py-1.5">
-                    <FormDots form={teamForms[t.id] || ""} />
+                    <FormDots form={row.form} />
                   </td>
                 </tr>
               );
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-4 text-center text-[10px] text-on-surface-variant/30 font-bold">
+                <td colSpan={6} className="py-4 text-center text-[10px] text-on-surface-variant/30 font-bold">
                   Sem dados
                 </td>
               </tr>
