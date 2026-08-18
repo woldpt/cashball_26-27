@@ -898,6 +898,11 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				),
 			);
 
+			// Mark ET as running BEFORE applying substitutions — a failure here must
+			// not leave the round wedged at match_et_gate (match_extra_time recovers
+			// via the standard transient-phase restart path).
+			game.gamePhase = "match_extra_time";
+
 			// Apply ET substitutions and re-read tactics changed during the pause screen
 			if (humanInAnyDraw) {
 				const lineupSnapshotET = (squad: any[]) =>
@@ -922,7 +927,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					const toRemoveIds = squad
 						.filter((p: any) => positions[p.id] === "Suplente")
 						.map((p: any) => p.id);
-					const toAddIds = Object.entries(positions)
+					let toAddIds = Object.entries(positions)
 						.filter(
 							([id, status]) =>
 								status === "Titular" && !currentIds.has(Number(id)),
@@ -1021,7 +1026,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				awayGoals: primaryDrawn.finalAwayGoals,
 			});
 
-			game.gamePhase = "match_extra_time";
 			console.log(
 				`[${game.roomCode}] 🏆 Simulating ET for ${drawnSetups.length} fixture(s) in parallel...`,
 			);
