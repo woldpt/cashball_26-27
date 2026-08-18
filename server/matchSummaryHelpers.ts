@@ -270,6 +270,111 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     return recent.join("");
   }
 
+  /**
+   * Qualidade média do plantel (skills dos jogadores reais).
+   */
+  async function getTeamAvgSkill(game: ActiveGame, teamId: number) {
+    const row = await runGet<{ avgSkill: number | null }>(
+      game.db,
+      "SELECT ROUND(AVG(COALESCE(skill, 0))) AS avgSkill FROM players WHERE team_id = ? AND team_id IS NOT NULL",
+      [teamId],
+    );
+    return row?.avgSkill ?? null;
+  }
+
+  /**
+   * Enriquecimento do adversário: qualidade média do plantel, melhor marcador
+   * e registo global de confrontos diretos (liga + taça).
+   */
+  async function getOpponentOverview(
+    game: ActiveGame,
+    teamId: number,
+    opponentId: number,
+  ) {
+    const avgSkill = await getTeamAvgSkill(game, opponentId);
+
+    const topScorerRow = await runGet(
+      game.db,
+      `SELECT name, goals FROM players
+       WHERE team_id = ? AND id > 0
+       ORDER BY goals DESC, skill DESC
+       LIMIT 1`,
+      [opponentId],
+    );
+
+    const topScorerName: string | null = topScorerRow?.name ?? null;
+    const topScorerGoals: number = topScorerRow?.goals ?? 0;
+
+    const h2hRow = await runGet(
+      game.db,
+      `SELECT
+         SUM(CASE WHEN r.w = 'V' THEN 1 ELSE 0 END) AS wins,
+         SUM(CASE WHEN r.w = 'E' THEN 1 ELSE 0 END) AS draws,
+         SUM(CASE WHEN r.w = 'D' THEN 1 ELSE 0 END) AS losses,
+         COUNT(*) AS total
+       FROM (
+         SELECT CASE WHEN home_score > away_score THEN 'V' WHEN home_score < away_score THEN 'D' ELSE 'E' END AS w
+         FROM matches WHERE played = 1 AND home_team_id = ? AND away_team_id = ?
+         UNION ALL
+         SELECT CASE WHEN home_score < away_score THEN 'V' WHEN home_score > away_score THEN 'D' ELSE 'E' END AS w
+         FROM matches WHERE played = 1 AND away_team_id = ? AND home_team_id = ?
+         UNION ALL
+         SELECT CASE WHEN home_score > away_score THEN 'V' WHEN home_score < away_score THEN 'D' ELSE 'E' END AS w
+         FROM cup_matches WHERE played = 1 AND home_team_id = ? AND away_team_id = ?
+         UNION ALL
+         SELECT CASE WHEN home_score < away_score THEN 'V' WHEN home_score > away_score THEN 'D' ELSE 'E' END AS w
+         FROM cup_matches WHERE played = 1 AND away_team_id = ? AND home_team_id = ?
+       ) r`,
+      [teamId, opponentId, opponentId, teamId, teamId, opponentId, opponentId, teamId],
+    );
+
+    return {
+      avgSkill,
+      topScorer:
+        topScorerName && topScorerGoals > 0
+          ? { name: topScorerName, goals: topScorerGoals }
+          : null,
+      h2hRecord: {
+        wins: h2hRow?.wins ?? 0,
+        draws: h2hRow?.draws ?? 0,
+        losses: h2hRow?.losses ?? 0,
+        total: h2hRow?.total ?? 0,
+      },
+    };
+  }
+
+  /**
+   * Objeto adversário completo usado em semanas de liga e de taça.
+   */
+  async function buildOpponentSummary(
+    game: ActiveGame,
+    teamId: number,
+    opponent: Record<string, any>,
+    position: number | null,
+  ) {
+    const overview = await getOpponentOverview(game, teamId, opponent.id);
+    return {
+      id: opponent.id,
+      name: opponent.name,
+      division: opponent.division,
+      position,
+      points: opponent.points || 0,
+      goalsFor: opponent.goals_for || 0,
+      goalsAgainst: opponent.goals_against || 0,
+      color_primary: opponent.color_primary || null,
+      color_secondary: opponent.color_secondary || null,
+      morale: opponent.morale ?? 75,
+      wins: opponent.wins || 0,
+      draws: opponent.draws || 0,
+      losses: opponent.losses || 0,
+      avgSkill: overview.avgSkill,
+      topScorer: overview.topScorer,
+      h2hRecord: overview.h2hRecord,
+      last5: await getTeamRecentResults(game, opponent.id, 5),
+      lastConfrontation: await getLastConfrontation(game, teamId, opponent.id),
+    };
+  }
+
   async function buildNextMatchSummary(game: ActiveGame, teamId: number) {
     const team = await runGet(game.db, "SELECT * FROM teams WHERE id = ?", [
       teamId,
@@ -336,24 +441,10 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
           name: team.name,
           division: team.division,
           position: null,
+          last5: await getTeamRecentResults(game, team.id, 5),
+          avgSkill: await getTeamAvgSkill(game, team.id),
         },
-        opponent: {
-          id: opponent.id,
-          name: opponent.name,
-          division: opponent.division,
-          position: null,
-          points: opponent.points || 0,
-          goalsFor: opponent.goals_for || 0,
-          goalsAgainst: opponent.goals_against || 0,
-          color_primary: opponent.color_primary || null,
-          color_secondary: opponent.color_secondary || null,
-          last5: await getTeamRecentResults(game, opponent.id, 5),
-          lastConfrontation: await getLastConfrontation(
-            game,
-            team.id,
-            opponent.id,
-          ),
-        },
+        opponent: await buildOpponentSummary(game, team.id, opponent, null),
         referee,
         weatherForecast: weather,
       };
@@ -430,24 +521,15 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         name: team.name,
         division: team.division,
         position: standingsIndex.get(team.id) || null,
+        last5: await getTeamRecentResults(game, team.id, 5),
+        avgSkill: await getTeamAvgSkill(game, team.id),
       },
-      opponent: {
-        id: opponent.id,
-        name: opponent.name,
-        division: opponent.division,
-        position: standingsIndex.get(opponent.id) || null,
-        points: opponent.points || 0,
-        goalsFor: opponent.goals_for || 0,
-        goalsAgainst: opponent.goals_against || 0,
-        color_primary: opponent.color_primary || null,
-        color_secondary: opponent.color_secondary || null,
-        last5: await getTeamRecentResults(game, opponent.id, 5),
-        lastConfrontation: await getLastConfrontation(
-          game,
-          team.id,
-          opponent.id,
-        ),
-      },
+      opponent: await buildOpponentSummary(
+        game,
+        team.id,
+        opponent,
+        standingsIndex.get(opponent.id) || null,
+      ),
       referee,
       weatherForecast: weather,
     };

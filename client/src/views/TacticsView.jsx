@@ -1,6 +1,7 @@
 ﻿import { useTactics } from "../contexts/TacticsContext.jsx";
 import { useGame } from "../contexts/GameContext.jsx";
 import { PlayerLink } from "../components/shared/PlayerLink.jsx";
+import { TeamCrest } from "../components/live/TeamCrest.jsx";
 import { WaitingCoachesModal } from "../components/modals/WaitingCoachesModal.jsx";
 import { socket } from "../socket.js";
 import { TACTIC_FORMATIONS } from "../constants/index.js";
@@ -243,7 +244,74 @@ const WEATHER_LABELS = {
 };
 
 /**
- * Card de análise do próximo confronto — inclui árbitro, tempo e odds.
+ * Chips de forma recente (V/E/D) de uma equipa.
+ * @param {{ last5?: string }} props
+ * @returns {JSX.Element}
+ */
+function FormChips({ last5 = "" }) {
+  if (!last5) return <span className="text-[9px] text-gray-700 font-bold">—</span>;
+  return (
+    <div className="flex gap-0.5 shrink-0">
+      {last5.split("").map((r, i) => (
+        <span
+          key={i}
+          className={`w-4 h-4 rounded-sm text-[8px] font-black flex items-center justify-center ${
+            r === "V"
+              ? "bg-green-500/20 text-green-400"
+              : r === "D"
+                ? "bg-red-500/20 text-red-400"
+                : "bg-gray-700/40 text-gray-500"
+          }`}
+        >
+          {r}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Registo V/E/D a duas cores (vitórias verdes, derrotas vermelhas).
+ * @param {{ v: number, e: number, d: number }} props
+ * @returns {JSX.Element}
+ */
+function RecordText({ v, e, d }) {
+  return (
+    <span className="flex items-center gap-2 text-[13px] font-black tabular-nums leading-none">
+      <span className="text-green-400">{v}</span>
+      <span className="text-gray-300">{e}</span>
+      <span className="text-red-400">{d}</span>
+    </span>
+  );
+}
+
+/**
+ * Tile comparativo "eu vs adversário" — valor da esquerda (tu) e da direita (adv).
+ * @param {{ label: string, mine: import("react").ReactNode, theirs: import("react").ReactNode }} props
+ * @returns {JSX.Element}
+ */
+function CompareStat({ label, mine, theirs }) {
+  return (
+    <div className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-2">
+      <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-1">
+        {label}
+      </span>
+      <div className="flex items-center justify-between gap-1.5">
+        <span className="text-sm font-black tabular-nums text-white leading-none truncate">
+          {mine}
+        </span>
+        <span className="w-px h-4 bg-[#222] shrink-0" />
+        <span className="text-sm font-black tabular-nums text-gray-400 leading-none truncate">
+          {theirs}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Card de antevisão do próximo confronto — comparação direta das duas equipas,
+ * forma recente, confronto direto, jogador-perigo, odds, árbitro e tempo.
  * As odds vêm calculadas pelo servidor (nextMatchSummary.odds) — a mesma fonte
  * usada no evento de apostas durante o jogo, para garantir valores idênticos.
  * @param {{ nextMatchSummary: Object, teamInfo: Object|null }} props
@@ -253,40 +321,80 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
   if (!nextMatchSummary || !nextMatchSummary.opponent) return null;
   const s = nextMatchSummary;
   const opp = s.opponent;
+  const myTeam = s.team ?? {};
   const isHome = s.venue === "Casa";
-  const myPts = teamInfo?.points ?? 0;
+  const myName = teamInfo?.name ?? s.team?.name ?? "A minha equipa";
+
+  // Pontos + diferença
+  const myPts = teamInfo?.points ?? myTeam.points ?? 0;
   const ptsDiff = myPts - (opp.points ?? 0);
-  const ptsDiffLabel =
-    ptsDiff > 0 ? `+${ptsDiff}` : ptsDiff < 0 ? `${ptsDiff}` : "=";
   const ptsDiffColor =
     ptsDiff > 0
       ? "text-green-400"
       : ptsDiff < 0
         ? "text-red-400"
-        : "text-gray-400";
-  const competition = s.isCup
-    ? (s.cupRoundName ?? "Taça")
-    : `Jornada ${s.matchweek}`;
+        : "text-gray-500";
 
-  // Último confronto
+  // Golos e moral
+  const myGF = teamInfo?.goals_for ?? 0;
+  const myGA = teamInfo?.goals_against ?? 0;
+  const myMorale = teamInfo?.morale ?? 75;
+  const oppMorale = opp.morale ?? 75;
+
+  // Qualidade média (força da equipa) — barra comparativa
+  const myAvg = teamInfo?.avgSkill ?? myTeam.avgSkill ?? null;
+  const oppAvg = opp.avgSkill ?? null;
+  const maxAvg = Math.max(myAvg ?? 0, oppAvg ?? 0, 1);
+
+  // Último confronto — dados normalizados vindos do servidor
   const lc = opp.lastConfrontation;
-  const lcResult = lc
+  const lcView = lc
     ? (() => {
-        const weWereHome =
-          lc.home_team_id === s.team?.id || lc.home_team_id === teamInfo?.id;
-        const ourScore = weWereHome ? lc.home_score : lc.away_score;
-        const theirScore = weWereHome ? lc.away_score : lc.home_score;
-        const venue = weWereHome ? "Casa" : "Fora";
-        const comp = lc.competition === "Cup" ? "Taça" : "Liga";
-        const season = lc.season ? `Época ${lc.season}` : null;
-        return { ourScore, theirScore, venue, comp, season };
+        const label =
+          lc.result === "V"
+            ? "Vitória"
+            : lc.result === "D"
+              ? "Derrota"
+              : "Empate";
+        const labelClass =
+          lc.result === "V"
+            ? "bg-green-500/15 text-green-400"
+            : lc.result === "D"
+              ? "bg-red-500/15 text-red-400"
+              : "bg-gray-700/30 text-gray-500";
+        const comp =
+          lc.competition === "cup"
+            ? (lc.cupRoundName ?? "Taça")
+            : `Liga · J${lc.matchweek}`;
+        let score = `${lc.goalsFor}–${lc.goalsAgainst}`;
+        if (lc.penalties)
+          score += ` (g.p. ${lc.penalties.goalsFor}–${lc.penalties.goalsAgainst})`;
+        else if (lc.extraTime) score += " (pro.)";
+        return { label, labelClass, comp, score, venue: lc.venue, season: lc.season };
       })()
     : null;
 
-  // Odds — calculadas no servidor (mesma função usada durante o jogo)
+  // Odds + probabilidade implícita
   const odds = s.odds ?? { home: "—", draw: "—", away: "—" };
   const homeTeamName = isHome ? (s.team?.name ?? "Casa") : (opp.name ?? "Visitado");
   const awayTeamName = isHome ? (opp.name ?? "Visitante") : (s.team?.name ?? "Visitante");
+  const oddsList = [
+    { key: "home", label: homeTeamName, value: odds.home, color: "text-sky-400", bg: "bg-sky-500/10" },
+    { key: "draw", label: "Empate", value: odds.draw, color: "text-gray-300", bg: "bg-gray-700/20" },
+    { key: "away", label: awayTeamName, value: odds.away, color: "text-amber-400", bg: "bg-amber-500/10" },
+  ];
+  const numOdds = oddsList.map((o) => {
+    const n = Number.parseFloat(o.value);
+    return Number.isFinite(n) && n > 1 ? n : null;
+  });
+  const invSum = numOdds.reduce((acc, n) => acc + (n ? 1 / n : 0), 0);
+  const probs = numOdds.map((n) =>
+    n && invSum ? Math.round((1 / n / invSum) * 100) : null,
+  );
+
+  // Árbitro — balance favorece a equipa do utilizador (favorsTeamA)
+  const ref = s.referee;
+  const refFavoursMe = ref?.favorsTeamA ?? true;
 
   // Tempo
   const wf = s.weatherForecast;
@@ -294,8 +402,11 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
     ? (WEATHER_LABELS[wf.condition] ?? wf.condition)
     : null;
 
-  // Árbitro
-  const ref = s.referee;
+  const h2h = opp.h2hRecord;
+
+  const competition = s.isCup
+    ? (s.cupRoundName ?? "Taça")
+    : `Jornada ${s.matchweek}`;
 
   return (
     <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
@@ -316,186 +427,262 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
           </span>
         </div>
         <span
-          className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${isHome ? "bg-sky-500/15 text-sky-400" : "bg-amber-500/15 text-amber-400"}`}
+          className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${s.venue === "Jamor" ? "bg-amber-500/15 text-amber-400" : isHome ? "bg-sky-500/15 text-sky-400" : "bg-amber-500/15 text-amber-400"}`}
         >
-          {isHome ? "Casa" : "Fora"}
+          {s.venue === "Jamor" ? "🏟️ Jamor" : isHome ? "Casa" : "Fora"}
         </span>
       </div>
 
       {/* Corpo */}
-      <div className="px-4 py-3 flex flex-col sm:flex-row gap-3 sm:gap-0 sm:items-start sm:divide-x sm:divide-[#1e1e1e]">
-        {/* — Secção principal: VS + stats — */}
-        <div className="sm:flex-1 sm:pr-4 flex flex-col gap-2.5">
-          {/* VS row */}
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-[10px] text-gray-600 font-bold uppercase tracking-wide">
+      <div className="px-4 py-3 flex flex-col md:flex-row gap-3">
+        {/* ── Coluna principal: comparação ── */}
+        <div className="flex-1 min-w-0 flex flex-col gap-2.5">
+          {/* Hero VS */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-col items-center gap-1 min-w-0 flex-1">
+              <TeamCrest team={teamInfo ?? { name: myName }} size="md" isMine />
+              <span className="text-xs font-black text-white truncate max-w-full">
+                {myName}
+              </span>
+              <span className="text-[9px] text-gray-600 font-bold">
+                {s.team?.position ? `${s.team.position}º` : "—"}
+              </span>
+            </div>
+            <span className="shrink-0 text-[10px] font-black text-gray-600 px-2 py-1 rounded-full border border-[#222] bg-[#161616]">
               VS
             </span>
-            <span className="text-sm font-black text-white truncate">
-              {opp.name}
+            <div className="flex flex-col items-center gap-1 min-w-0 flex-1">
+              <TeamCrest team={opp} size="md" />
+              <span className="text-xs font-black text-white truncate max-w-full">
+                {opp.name}
+              </span>
+              <span className="text-[9px] text-gray-600 font-bold">
+                {opp.position ? `${opp.position}º` : "—"}
+              </span>
+            </div>
+          </div>
+
+          {/* Grelha de stats comparativos */}
+          <div className="flex items-center justify-between">
+            <span className="text-[8px] uppercase tracking-widest text-gray-600 font-black">
+              Tu vs Adversário
             </span>
-            {opp.position && (
-              <span className="shrink-0 text-[9px] text-gray-600 font-bold">
-                {opp.position}º
+            {ptsDiff !== 0 && (
+              <span className={`text-[9px] font-black tabular-nums ${ptsDiffColor}`}>
+                {ptsDiff > 0 ? "▲" : "▼"} {Math.abs(ptsDiff)} pts
               </span>
             )}
           </div>
-
-          {/* Stats row */}
-          <div className="flex items-center gap-3 flex-wrap">
-            {s.team?.position && (
-              <div className="flex flex-col items-center">
-                <span className="text-[7px] uppercase tracking-wide text-gray-700 font-bold">
-                  Posição
-                </span>
-                <span className="text-[11px] font-black text-white">
-                  {s.team.position}º
-                </span>
-              </div>
-            )}
-            <div className="w-px h-6 bg-[#222]" />
-            <div className="flex flex-col items-center">
-              <span className="text-[7px] uppercase tracking-wide text-gray-700 font-bold">
-                Pts Adv.
-              </span>
-              <span
-                className={`text-[11px] font-black tabular-nums ${ptsDiffColor}`}
-              >
-                {ptsDiffLabel}
-              </span>
-            </div>
-            <div className="w-px h-6 bg-[#222]" />
-            <div className="flex flex-col items-center">
-              <span className="text-[7px] uppercase tracking-wide text-gray-700 font-bold">
-                GM / GS
-              </span>
-              <span className="text-[11px] font-black text-white tabular-nums">
-                {opp.goalsFor ?? 0}/{opp.goalsAgainst ?? 0}
-              </span>
-            </div>
-
-            {/* Últimos 5 do adversário */}
-            {opp.last5 &&
-              typeof opp.last5 === "string" &&
-              opp.last5.length > 0 && (
-                <>
-                  <div className="w-px h-6 bg-[#222]" />
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-[7px] uppercase tracking-wide text-gray-700 font-bold">
-                      Últimos 5
-                    </span>
-                    <div className="flex gap-0.5">
-                      {opp.last5.split("").map((r, i) => (
-                        <span
-                          key={i}
-                          className={`w-3.5 h-3.5 rounded-sm text-[8px] font-black flex items-center justify-center ${r === "V" ? "bg-green-500/20 text-green-400" : r === "D" ? "bg-red-500/20 text-red-400" : "bg-gray-700/40 text-gray-500"}`}
-                        >
-                          {r}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5">
+            <CompareStat
+              label="Posição"
+              mine={s.team?.position ? `${s.team.position}º` : "—"}
+              theirs={opp.position ? `${opp.position}º` : "—"}
+            />
+            <CompareStat label="Pontos" mine={myPts} theirs={opp.points ?? 0} />
+            <CompareStat label="GM" mine={myGF} theirs={opp.goalsFor ?? 0} />
+            <CompareStat label="GS" mine={myGA} theirs={opp.goalsAgainst ?? 0} />
+            <CompareStat
+              label="Moral"
+              mine={myMorale}
+              theirs={oppMorale}
+            />
+            <CompareStat
+              label="Qualidade"
+              mine={myAvg ?? "—"}
+              theirs={oppAvg ?? "—"}
+            />
           </div>
-        </div>
 
-        {/* — Último confronto — */}
-        <div className="sm:flex-1 sm:px-4 flex flex-col gap-1">
-          <span className="text-[7px] uppercase tracking-widest text-gray-700 font-bold">
-            Último confronto
-          </span>
-          {lcResult ? (
-            <>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-black text-white tabular-nums leading-none">
-                  {lcResult.ourScore}–{lcResult.theirScore}
-                </span>
-                <span
-                  className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${lcResult.ourScore > lcResult.theirScore ? "bg-green-500/15 text-green-400" : lcResult.ourScore < lcResult.theirScore ? "bg-red-500/15 text-red-400" : "bg-gray-700/30 text-gray-500"}`}
-                >
-                  {lcResult.ourScore > lcResult.theirScore
-                    ? "Vitória"
-                    : lcResult.ourScore < lcResult.theirScore
-                      ? "Derrota"
-                      : "Empate"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[9px] text-gray-600 uppercase font-bold">
-                  {lcResult.venue}
-                </span>
-                <span className="text-[9px] text-gray-700">·</span>
-                <span className="text-[9px] text-gray-600 font-bold">
-                  {lcResult.comp}
-                </span>
-                {lcResult.season && (
-                  <>
-                    <span className="text-[9px] text-gray-700">·</span>
-                    <span className="text-[9px] text-gray-600">
-                      {lcResult.season}
-                    </span>
-                  </>
-                )}
-              </div>
-            </>
-          ) : (
-            <span className="text-[10px] text-gray-700 font-bold italic">
-              Sem histórico
+          {/* Registo V/E/D */}
+          <div className="bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2">
+            <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-1.5">
+              Registo
             </span>
+            <div className="flex items-center justify-between gap-2">
+              <RecordText
+                v={teamInfo?.wins ?? myTeam.wins ?? 0}
+                e={teamInfo?.draws ?? myTeam.draws ?? 0}
+                d={teamInfo?.losses ?? myTeam.losses ?? 0}
+              />
+              <span className="text-[8px] text-gray-700 font-black uppercase tracking-widest">
+                V · E · D
+              </span>
+              <RecordText
+                v={opp.wins ?? 0}
+                e={opp.draws ?? 0}
+                d={opp.losses ?? 0}
+              />
+            </div>
+          </div>
+
+          {/* Força da equipa (qualidade média) */}
+          {myAvg != null && oppAvg != null && (
+            <div className="bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[7px] uppercase tracking-widest text-gray-600 font-black">
+                  Força da equipa
+                </span>
+                <span className="text-[9px] font-black tabular-nums text-gray-400">
+                  <span className="text-white">{myAvg}</span>
+                  <span className="text-gray-700"> vs </span>
+                  <span>{oppAvg}</span>
+                </span>
+              </div>
+              <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden flex">
+                <div
+                  className="h-full rounded-l-full"
+                  style={{
+                    width: `${(myAvg / maxAvg) * 50}%`,
+                    background: "linear-gradient(90deg,#4ade80,#22c55e)",
+                  }}
+                />
+                <div className="h-full flex-1" style={{ width: `${50 - (myAvg / maxAvg) * 50}%` }} />
+                <div
+                  className="h-full rounded-r-full"
+                  style={{
+                    width: `${(oppAvg / maxAvg) * 50}%`,
+                    background: opp.color_primary || "#f43f5e",
+                    opacity: 0.85,
+                  }}
+                />
+                <div className="h-full flex-1" style={{ width: `${50 - (oppAvg / maxAvg) * 50}%` }} />
+              </div>
+            </div>
           )}
         </div>
 
-        {/* — Odds + Árbitro + Tempo — */}
-        <div className="sm:flex-1 sm:pl-4 flex flex-col gap-2.5">
+        {/* ── Coluna lateral: scouting ── */}
+        <div className="md:w-72 shrink-0 flex flex-col gap-2.5">
+          {/* Forma recente */}
+          <div className="bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2 space-y-1.5">
+            <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black">
+              Forma recente
+            </span>
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <span className="text-[9px] font-black text-white truncate">
+                {myName}
+              </span>
+              <FormChips last5={myTeam.last5} />
+            </div>
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <span className="text-[9px] font-black text-gray-400 truncate">
+                {opp.name}
+              </span>
+              <FormChips last5={opp.last5} />
+            </div>
+          </div>
+
+          {/* Jogador-perigo + confronto direto */}
+          {(opp.topScorer || (h2h && h2h.total > 0)) && (
+            <div className="bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2 space-y-2">
+              {opp.topScorer && (
+                <div>
+                  <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-0.5">
+                    Melhor marcador
+                  </span>
+                  <span className="text-[11px] font-black text-white">
+                    ⚽ {opp.topScorer.name}
+                  </span>
+                  <span className="text-[10px] font-black text-amber-400 ml-1 tabular-nums">
+                    ({opp.topScorer.goals})
+                  </span>
+                </div>
+              )}
+              {h2h && h2h.total > 0 && (
+                <div>
+                  <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-0.5">
+                    Confronto direto
+                  </span>
+                  <span className="text-[11px] font-black tabular-nums">
+                    <span className="text-green-400">{h2h.wins}</span>
+                    <span className="text-gray-700"> / </span>
+                    <span className="text-gray-300">{h2h.draws}</span>
+                    <span className="text-gray-700"> / </span>
+                    <span className="text-red-400">{h2h.losses}</span>
+                    <span className="text-gray-600 text-[9px] ml-1">
+                      ({h2h.total} jogos)
+                    </span>
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Último confronto */}
+          <div className="bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2">
+            <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-1">
+              Último confronto
+            </span>
+            {lcView ? (
+              <>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-xl font-black text-white tabular-nums leading-none">
+                    {lcView.score}
+                  </span>
+                  <span
+                    className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${lcView.labelClass}`}
+                  >
+                    {lcView.label}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                  <span className="text-[9px] text-gray-600 uppercase font-bold">
+                    {lcView.venue}
+                  </span>
+                  <span className="text-[9px] text-gray-700">·</span>
+                  <span className="text-[9px] text-gray-600 font-bold">
+                    {lcView.comp}
+                  </span>
+                  {lcView.season && (
+                    <>
+                      <span className="text-[9px] text-gray-700">·</span>
+                      <span className="text-[9px] text-gray-600">
+                        Época {lcView.season}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </>
+            ) : (
+              <span className="text-[10px] text-gray-700 font-bold italic">
+                Sem histórico
+              </span>
+            )}
+          </div>
+
           {/* Odds */}
-          <div>
-            <span className="text-[7px] uppercase tracking-widest text-gray-700 font-bold block mb-1.5">
+          <div className="bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2">
+            <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-1.5">
               Apostas
             </span>
             <div className="flex gap-1.5">
-              {[
-                {
-                  label: homeTeamName,
-                  value: odds.home,
-                  color: "text-sky-400",
-                  bg: "bg-sky-500/10",
-                },
-                {
-                  label: "Empate",
-                  value: odds.draw,
-                  color: "text-gray-400",
-                  bg: "bg-gray-700/20",
-                },
-                {
-                  label: awayTeamName,
-                  value: odds.away,
-                  color: "text-amber-400",
-                  bg: "bg-amber-500/10",
-                },
-              ].map(({ label, value, color, bg }) => (
+              {oddsList.map((o, i) => (
                 <div
-                  key={label}
-                  className={`flex-1 ${bg} rounded-lg px-1.5 py-1.5 flex flex-col items-center gap-0.5`}
+                  key={o.key}
+                  className={`flex-1 ${o.bg} rounded-lg px-1.5 py-1.5 flex flex-col items-center gap-0.5 min-w-0`}
                 >
-                  <span className="text-[8px] text-gray-600 font-black uppercase">
-                    {label}
+                  <span className="text-[8px] text-gray-600 font-black uppercase truncate max-w-full">
+                    {o.label}
                   </span>
-                  <span
-                    className={`text-[12px] font-black tabular-nums ${color}`}
-                  >
-                    {value}
+                  <span className={`text-[12px] font-black tabular-nums ${o.color}`}>
+                    {o.value}
                   </span>
+                  {probs[i] != null && (
+                    <span className="text-[8px] font-black tabular-nums text-gray-500">
+                      {probs[i]}%
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Árbitro + Tempo em linha */}
-          <div className="flex items-start gap-3">
+          {/* Árbitro + Tempo */}
+          <div className="flex gap-2">
             {ref && (
-              <div className="flex-1 min-w-0">
-                <span className="text-[7px] uppercase tracking-widest text-gray-700 font-bold block mb-0.5">
+              <div className="flex-1 min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2">
+                <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-0.5">
                   Árbitro
                 </span>
                 <span className="text-[10px] font-bold text-gray-400 truncate block">
@@ -519,15 +706,25 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
                     }}
                   />
                 </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[8px] font-black text-gray-500 tabular-nums">
+                    {ref.balance}%
+                  </span>
+                  <span
+                    className={`text-[8px] font-black uppercase ${refFavoursMe ? "text-green-400" : "text-red-400"}`}
+                  >
+                    {refFavoursMe ? "Favorece-te" : "Contra ti"}
+                  </span>
+                </div>
               </div>
             )}
             {wf && (
-              <div className="shrink-0 flex flex-col items-center gap-0.5">
-                <span className="text-[7px] uppercase tracking-widest text-gray-700 font-bold">
+              <div className="shrink-0 flex flex-col items-center justify-center gap-0.5 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2">
+                <span className="text-[7px] uppercase tracking-widest text-gray-600 font-black">
                   Tempo
                 </span>
                 <span className="text-xl leading-none">{wf.emoji}</span>
-                <span className="text-[8px] text-gray-600 font-bold">
+                <span className="text-[8px] text-gray-500 font-bold">
                   {weatherLabel}
                 </span>
               </div>
