@@ -80,10 +80,9 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
       onClose={onClose}
       z={MODAL_Z.default}
       variant="fullscreen"
-      align="start"
     >
       {data && (
-      <div className="w-full max-w-lg my-8">
+      <div className="w-full max-w-lg sm:max-w-xl my-auto">
         {/* ── Header ─────────────────────────────────────────────────── */}
             <div className="text-center mb-6">
               <motion.span

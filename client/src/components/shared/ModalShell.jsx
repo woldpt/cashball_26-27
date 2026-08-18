@@ -62,8 +62,10 @@ export function ModalShell({
     isTransparent
       ? ""
       : "bg-zinc-950/90 backdrop-blur-sm"
-  } ${isFullscreen ? "flex flex-col items-center p-4" : "flex items-center justify-center p-3 sm:p-4"} ${
-    align === "start" ? "items-start" : ""
+  }   ${
+    isFullscreen
+      ? `flex flex-col items-center p-4 ${align === "start" ? "justify-start" : ""}`
+      : `flex items-center justify-center p-3 sm:p-4 ${align === "start" ? "items-start" : ""}`
   } ${backdropClassName}`;
 
   return (
