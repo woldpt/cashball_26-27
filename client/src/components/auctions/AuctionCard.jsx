@@ -214,18 +214,20 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             </div>
           </div>
 
-          {!isClosed && !isPaused && auction.auction_bid_history && auction.auction_bid_history.length > 1 && (
-            <div
-              className="px-4 py-2 border-y"
-              style={{ borderBottom: "1px solid #1e1e2e", borderTop: "1px solid #1e1e2e" }}
-            >
-              <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1.5">
-                Lances ({auction.auction_bid_history.length})
-              </p>
-              <div className="space-y-1 max-h-24 overflow-y-auto">
-                {auction.auction_bid_history
-                  .sort((a, b) => b.amount - a.amount)
-                  .map((bid, i) => {
+          {!isClosed && !isPaused && auction.auction_bid_history && auction.auction_bid_history.length > 1 && (() => {
+            const sortedBids = [...auction.auction_bid_history].sort((a, b) => b.amount - a.amount);
+            const visibleBids = sortedBids.slice(0, 4);
+            const hiddenCount = sortedBids.length - visibleBids.length;
+            return (
+              <div
+                className="px-4 py-2 border-y"
+                style={{ borderBottom: "1px solid #1e1e2e", borderTop: "1px solid #1e1e2e" }}
+              >
+                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1.5">
+                  Lances ({auction.auction_bid_history.length})
+                </p>
+                <div className="space-y-1 overflow-hidden">
+                  {visibleBids.map((bid, i) => {
                     const isLeader = bid.teamId === auction.auction_high_bid_team_id;
                     const teamName = teams.find(t => String(t.id) === String(bid.teamId))?.name || `Equipa ${bid.teamId}`;
                     const timeAgo = bid.timestamp ? getTimeAgo(bid.timestamp) : "";
@@ -248,9 +250,15 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                       </div>
                     );
                   })}
+                </div>
+                {hiddenCount > 0 && (
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600 mt-1.5">
+                    +{hiddenCount} lance{hiddenCount !== 1 ? "s" : ""} mais
+                  </p>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           <div className="px-4 py-3 flex-1 flex flex-col justify-end">
             {isClosed ? (
@@ -380,7 +388,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
               <span className="material-symbols-outlined text-lg">arrow_back</span>
             </button>
           </div>
-          <div className="px-4 py-3 flex-1 overflow-y-auto">
+          <div className="px-4 py-3 flex-1 overflow-hidden">
             <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-2">Historial</p>
             <div className="grid grid-cols-2 gap-2 mb-3">
                <StatTile icon="sports_soccer" label="Jogos">
@@ -404,17 +412,17 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             )}
             <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-2">Financeiro</p>
             <div
-              className="rounded-md grid grid-cols-2 mb-2"
+              className="rounded-md grid grid-cols-2"
               style={{ background: "#111118", border: "1px solid #26263a" }}
             >
-              <div className="p-3 border-r border-zinc-800">
+              <div className="p-2.5 border-r border-zinc-800">
                 <p className="text-[8px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Salário</p>
                 <p className="font-black text-white text-sm font-mono tabular-nums">
                   {formatCurrency(auction.wage || 0)}
                   <span className="text-[9px] text-zinc-500 font-normal"> /sem</span>
                 </p>
               </div>
-              <div className="p-3">
+              <div className="p-2.5">
                 <p className="text-[8px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Preço Base</p>
                 <p className="font-black text-sm font-mono tabular-nums" style={{ color: teamColor }}>
                   {formatCurrency(auction.startingPrice)}

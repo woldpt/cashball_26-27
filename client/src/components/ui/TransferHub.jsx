@@ -131,7 +131,7 @@ function MarketCard({
               </div>
 
               <div className="mt-3 flex items-center justify-between gap-3">
-                <PlayerAvatar seed={player.id} position={player.position} teamColor={teamColor} nationality={player.nationality} />
+                <PlayerAvatar seed={player.id} position={player.position} teamColor={teamColor} nationality={player.nationality} size="md" />
                 <div className="text-right min-w-0">
                   <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-black">
                     Qualidade
@@ -219,27 +219,27 @@ function MarketCard({
               </div>
 
               <div className="mt-3 grid grid-cols-3 gap-1.5 text-xs">
-                <div className="rounded-md bg-surface-container p-1.5 border border-outline-variant/20 text-center">
+                <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center">
                   <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Qual.</p>
                   <p className="font-headline font-black text-base text-primary">{player.skill ?? 0}</p>
                 </div>
-                <div className="rounded-md bg-surface-container p-1.5 border border-outline-variant/20 text-center">
+                <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center">
                   <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Forma</p>
                   <p className={`font-black text-sm ${(player.form ?? 100) >= 115 ? "text-emerald-400" : (player.form ?? 100) <= 85 ? "text-rose-400" : "text-on-surface"}`}>{player.form ?? 100}%</p>
                 </div>
-                <div className="rounded-md bg-surface-container p-1.5 border border-outline-variant/20 text-center">
+                <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center">
                   <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Resist.</p>
                   <p className="font-black text-sm text-cyan-400">{player.resistance ?? 0}</p>
                 </div>
-                <div className="rounded-md bg-surface-container p-1.5 border border-outline-variant/20 text-center">
+                <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center">
                   <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Jogos</p>
                   <p className="font-black text-sm text-on-surface">{player.games_played ?? 0}</p>
                 </div>
-                <div className="rounded-md bg-surface-container p-1.5 border border-outline-variant/20 text-center">
+                <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center">
                   <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Golos</p>
                   <p className="font-black text-sm text-emerald-400">{player.goals ?? 0}</p>
                 </div>
-                <div className="rounded-md bg-surface-container p-1.5 border border-outline-variant/20 text-center">
+                <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center">
                   <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Verm.</p>
                   <p className={`font-black text-sm ${(player.red_cards ?? 0) > 0 ? "text-rose-400" : "text-on-surface"}`}>{player.red_cards ?? 0}</p>
                 </div>
@@ -249,7 +249,7 @@ function MarketCard({
                 <AggBadge value={player.aggressiveness} />
               </div>
 
-              <div className="mt-4 rounded-md bg-surface-container p-3 border border-outline-variant/20">
+              <div className="mt-3 rounded-md bg-surface-container p-2.5 border border-outline-variant/20">
                 <div className="flex justify-between text-[11px]">
                   <span className="text-on-surface-variant">Preço</span>
                   <span
@@ -266,7 +266,7 @@ function MarketCard({
                 </div>
               </div>
 
-              <div className="mt-auto grid grid-cols-1 gap-2 pt-4">
+              <div className="mt-auto grid grid-cols-1 gap-2 pt-3">
                 {isListed ? (
                   isAuction ? (
                     isMyAuction ? (
@@ -281,7 +281,7 @@ function MarketCard({
                           onBid(player);
                         }}
                         disabled={!affordable}
-                        className="w-full py-2.5 bg-primary hover:brightness-110 disabled:opacity-30 text-on-primary font-headline font-black tracking-[0.14em] rounded-md transition-all uppercase text-[10px]"
+                        className="w-full py-2 bg-primary hover:brightness-110 disabled:opacity-30 text-on-primary font-headline font-black tracking-[0.14em] rounded-md transition-all uppercase text-[10px]"
                       >
                         {affordable ? "Licitar" : "Saldo insuficiente"}
                       </button>
@@ -301,7 +301,7 @@ function MarketCard({
                         });
                       }}
                       disabled={!affordable}
-                      className="w-full py-2.5 bg-primary hover:brightness-110 disabled:opacity-30 text-on-primary font-headline font-black tracking-[0.14em] rounded-md transition-all uppercase text-[10px]"
+                      className="w-full py-2 bg-primary hover:brightness-110 disabled:opacity-30 text-on-primary font-headline font-black tracking-[0.14em] rounded-md transition-all uppercase text-[10px]"
                     >
                       {affordable ? "Comprar" : "Saldo insuficiente"}
                     </button>
@@ -318,7 +318,7 @@ function MarketCard({
                     e.stopPropagation();
                     onOpenDetails(player);
                   }}
-                  className="w-full py-2.5 bg-surface-container-high hover:bg-surface-bright text-on-surface font-black tracking-[0.14em] rounded-md transition-all uppercase text-[10px] border border-outline-variant/25"
+                  className="w-full py-2 bg-surface-container-high hover:bg-surface-bright text-on-surface font-black tracking-[0.14em] rounded-md transition-all uppercase text-[10px] border border-outline-variant/25"
                 >
                   Ver detalhes
                 </button>
