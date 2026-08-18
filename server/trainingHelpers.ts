@@ -16,8 +16,8 @@ import { recalcPlayerValue } from "./gameConstants";
  *      · played  → gradient decay (the lower the form, the slower the drop)
  *      · rested  → +4 recovery (rotation keeps the squad fresh)
  *  - Not training Resistência:
- *      · played  → -0.5 resistance progress
- *      · rested  → -0.3 resistance progress
+ *      · played  → -0.2 resistance progress
+ *      · rested  → -0.1 resistance progress
  *
  * Skill and resistance use accumulator columns (training_skill_progress,
  * training_resistance_progress) because the underlying columns are INTEGER —
@@ -247,7 +247,7 @@ export function createTrainingHelpers(_deps: { io: any }) {
                     const oldRes = player.resistance ?? 3;
                     const oldProg = player.resistance_progress ?? 0;
                     // Quem jogou desgasta mais; quem descansa perde menos
-                    const resLoss = played ? -0.5 : -0.3;
+                    const resLoss = played ? -0.2 : -0.1;
                     let newProg = oldProg + resLoss;
                     let newRes = oldRes;
                     while (newProg < 0 && newRes > 1) {
