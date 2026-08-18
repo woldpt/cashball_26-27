@@ -193,7 +193,9 @@ db.serialize(() => {
         const res = Math.floor(Math.random() * 5) + 1;
         const agg = randomAggressiveness();
         const nat = p.nationality || p.country || "🇵🇹";
-        const value = skill * 20000;
+        // Mesma fórmula que recalcPlayerValue (gameConstants.ts) para o valor
+        // de mercado nunca divergir entre a seed e o runtime (treino/evolução).
+        const value = Math.round(skill * skill * 500 + skill * 2000);
         const wageFactor = 0.85 + Math.random() * 0.30; // ±15% de variação
         const wage = Math.round(skill * 200 * wageFactor);
         const isStar =
@@ -262,10 +264,17 @@ db.serialize(() => {
   db.run("INSERT INTO game_state (key, value) VALUES ('cupRound', '0')");
   db.run("INSERT INTO game_state (key, value) VALUES ('cupState', 'idle')");
   // Marcador de versão das fixtures — usado pelo ensureSeeded.js para
-  // detetar quando o base.db está desatualizado (fixtures ou schema novos).
+  // detetar quando o base.db está desatualizado (fixtures, seed ou schema novos).
+  // Tem de coincidir com templateHash() em ensureSeeded.js.
   const fixturesHash = crypto
     .createHash("sha256")
-    .update(fs.readFileSync(path.join(fixturesDir, "all_teams.json")))
+    .update(
+      Buffer.concat([
+        fs.readFileSync(path.join(fixturesDir, "all_teams.json")),
+        fs.readFileSync(path.join(__dirname, "seed.js")),
+        fs.readFileSync(schemaPath),
+      ]),
+    )
     .digest("hex");
   db.run(
     "INSERT OR REPLACE INTO game_state (key, value) VALUES ('fixtures_hash', ?)",

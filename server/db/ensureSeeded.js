@@ -23,6 +23,7 @@ const { execFileSync } = require("child_process");
 const dbPath = process.env.DB_PATH || path.join(process.cwd(), "db", "base.db");
 const fixturesPath = path.join(__dirname, "fixtures", "all_teams.json");
 const seedPath = path.join(__dirname, "seed.js");
+const schemaPath = path.join(__dirname, "schema.sql");
 
 // Tabelas essenciais — se alguma faltar, o base.db está de uma era anterior.
 const REQUIRED_TABLES = [
@@ -33,12 +34,15 @@ const REQUIRED_TABLES = [
   "player_skill_snapshots",
 ];
 
-function fixturesHash() {
-  if (!fs.existsSync(fixturesPath)) return null;
-  return crypto
-    .createHash("sha256")
-    .update(fs.readFileSync(fixturesPath))
-    .digest("hex");
+function templateHash() {
+  // Hash das fixtures + seed.js + schema.sql: qualquer alteração de conteúdo
+  // (valores, regras de seed ou schema) obriga a re-semear o base.db.
+  const parts = [];
+  for (const p of [fixturesPath, seedPath, schemaPath]) {
+    if (!fs.existsSync(p)) return null;
+    parts.push(fs.readFileSync(p));
+  }
+  return crypto.createHash("sha256").update(Buffer.concat(parts)).digest("hex");
 }
 
 function openDb() {
@@ -85,7 +89,7 @@ async function diagnose() {
       return { needsSeed: true, reason: "sem jogadores" };
     }
 
-    const currentHash = fixturesHash();
+    const currentHash = templateHash();
     if (currentHash) {
       const st = await queryOne(
         db,
@@ -94,7 +98,7 @@ async function diagnose() {
       if (!st || st.value !== currentHash) {
         return {
           needsSeed: true,
-          reason: `fixtures alteradas (esperado ${currentHash.slice(0, 12)}, encontrado ${st ? st.value.slice(0, 12) : "—"})`,
+          reason: `fixtures/seed/schema alterados (esperado ${currentHash.slice(0, 12)}, encontrado ${st ? st.value.slice(0, 12) : "—"})`,
         };
       }
     }

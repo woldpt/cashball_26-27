@@ -55,18 +55,26 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
         [npcTeam.id],
       );
       if (squadRows.length >= 24) continue;
-      if (Math.random() > 0.25) continue;
+      if (Math.random() > 0.4) continue;
 
       for (const player of marketPlayers) {
         if (player.team_id === npcTeam.id) continue;
 
-        const price =
+        const listedPrice =
           player.transfer_status === "fixed" && player.transfer_price > 0
             ? player.transfer_price
             : Math.round((player.value || 0) * 1.2);
+        if (listedPrice <= 0) continue;
+        if (listedPrice > npcTeam.budget * 0.55) continue;
+        if (Math.random() > 0.55) continue;
+
+        // Contra-oferta: quando o preço pedido aperta o orçamento (entre 35% e 55%),
+        // o NPC negocia e compra a 85% do preço listado em vez de ignorar a lista.
+        const price =
+          listedPrice > npcTeam.budget * 0.35
+            ? Math.round(listedPrice * 0.85)
+            : listedPrice;
         if (price <= 0) continue;
-        if (price > npcTeam.budget * 0.35) continue;
-        if (Math.random() > 0.4) continue;
 
         await new Promise((resolve) => {
           game.db.run(
@@ -262,7 +270,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
                   (team) =>
                     !humanTeamIds.has(team.id) &&
                     team.id !== auction.sellerTeamId &&
-                    Math.abs((team.division ?? 3) - sellerDivision) <= 1,
+                    Math.abs((team.division ?? 3) - sellerDivision) <= 2,
                 );
                 if (npcTeams.length === 0) return;
 
@@ -303,9 +311,9 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
 
                       // Probabilidade de participação
                       let interestProb = 0.0;
-                      if (hasUrgentNeed) interestProb += 0.55;
-                      else if (hasModerateNeed) interestProb += 0.25;
-                      else interestProb += 0.10; // pode reforçar mesmo sem necessidade urgente
+                      if (hasUrgentNeed) interestProb += 0.7;
+                      else if (hasModerateNeed) interestProb += 0.35;
+                      else interestProb += 0.20; // pode reforçar mesmo sem necessidade urgente
 
                       // NPC de divisão mais forte → mais confiante/agressivo
                       const npcDiv = npcTeam.division ?? 3;
@@ -318,8 +326,8 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
                       if (Math.random() > interestProb) return;
 
                       // Orçamento máximo que este NPC está disposto a pagar
-                      const budgetCap = Math.round(npcTeam.budget * 0.4);
-                      const valueCap = Math.round(playerValue * 1.8);
+                      const budgetCap = Math.round(npcTeam.budget * 0.6);
+                      const valueCap = Math.round(playerValue * 2.5);
                       const maxBid = Math.min(budgetCap, valueCap);
                       if (maxBid < auction.startingPrice) return;
 
@@ -410,7 +418,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
         [npcTeamId],
         (err: any, teamRow: any) => {
           if (err || !teamRow) return;
-          const maxAffordable = Math.round(teamRow.budget * 0.4);
+          const maxAffordable = Math.round(teamRow.budget * 0.6);
           if (counterBid > maxAffordable) return; // demasiado caro, desiste
 
           // Registar relicitação antes de colocar o lance

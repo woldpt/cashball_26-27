@@ -1071,9 +1071,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       const WEEKLY_BASE_INCOME: Record<number, number> = {
         1: 80000,
         2: 50000,
-        3: 30000,
-        4: 15000,
-        5: 5000,
+        3: 35000,
+        4: 25000,
+        5: 12000,
       };
       for (const [div, income] of Object.entries(WEEKLY_BASE_INCOME)) {
         game.db.run("UPDATE teams SET budget = budget + ? WHERE division = ?", [
