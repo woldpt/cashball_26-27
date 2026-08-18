@@ -264,8 +264,14 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       (ctx.oppLast5.match(/V/g) || []).length -
       (ctx.oppLast5.match(/D/g) || []).length;
 
-    const venue = ctx.isCup ? "o Jamor" : ctx.venue === "Casa" ? "casa" : "fora";
-    const base = `${ctx.myName} recebe ${ctx.oppName} em ${venue}`;
+    // Venue real do encontro (o Jamor só na final): "Casa", "Fora" ou "Jamor".
+    const isHome = ctx.venue === "Casa";
+    const base =
+      ctx.venue === "Fora"
+        ? `${ctx.myName} visita ${ctx.oppName}`
+        : `${ctx.myName} recebe ${ctx.oppName} ${
+            ctx.venue === "Jamor" ? "no Jamor" : "em casa"
+          }`;
 
     if (ctx.h2hWins + ctx.h2hLosses >= 2 && Math.abs(ctx.h2hWins - ctx.h2hLosses) >= 2) {
       const dom = ctx.h2hWins > ctx.h2hLosses;
