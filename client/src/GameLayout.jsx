@@ -95,6 +95,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     cupExtraTimeBadge,
     palmares,
     palmaresTeamId,
+    clubHistory,
+    clubHistoryTeamId,
     clubNews,
     playerHistoryModal,
     setPlayerHistoryModal,
@@ -1300,6 +1302,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         players={players}
                         palmares={palmares}
                         palmaresTeamId={palmaresTeamId}
+                        clubHistory={clubHistory}
+                        clubHistoryTeamId={clubHistoryTeamId}
                         setTransferProposalModal={setTransferProposalModal}
                         myBudget={currentBudget}
                         currentMatchweek={matchweekCount + 1}

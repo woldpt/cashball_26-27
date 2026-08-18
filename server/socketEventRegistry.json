@@ -356,6 +356,13 @@
     ],
     "receive": []
   },
+  "clubHistoryData": {
+    "emit": [
+      "socketSessionHandlers.ts",
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
   "playerHistoryData": {
     "emit": [
       "socketSessionHandlers.ts",
@@ -396,6 +403,12 @@
     ]
   },
   "requestClubNews": {
+    "emit": [],
+    "receive": [
+      "socketSessionHandlers.ts"
+    ]
+  },
+  "requestClubHistory": {
     "emit": [],
     "receive": [
       "socketSessionHandlers.ts"

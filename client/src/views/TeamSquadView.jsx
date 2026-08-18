@@ -10,6 +10,7 @@ import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { TabBar } from "../components/shared/TabBar.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
 import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
+import { TeamHistoryView } from "./TeamHistoryView.jsx";
 import { useState } from "react";
 
 /**
@@ -22,6 +23,8 @@ import { useState } from "react";
  *   players: Array,
  *   palmares: object,
  *   palmaresTeamId: number|null,
+ *   clubHistory: object|null,
+ *   clubHistoryTeamId: number|null,
  *   setTransferProposalModal: function,
  *   myBudget: number,
  *   currentMatchweek: number,
@@ -40,6 +43,8 @@ export function TeamSquadView({
   players,
   palmares,
   palmaresTeamId,
+  clubHistory,
+  clubHistoryTeamId,
   setTransferProposalModal,
   myBudget = 0,
   currentMatchweek = 1,
@@ -277,6 +282,7 @@ export function TeamSquadView({
             tabs={[
               { key: "squad", label: "Plantel" },
               { key: "calendar", label: "Calendário" },
+              { key: "history", label: "História" },
             ]}
             active={activeTab}
             onChange={setActiveTab}
@@ -307,7 +313,13 @@ export function TeamSquadView({
 
       {/* Content */}
       <div className="overflow-auto flex-1">
-        {activeTab === "calendar" ? (
+        {activeTab === "history" ? (
+          <TeamHistoryView
+            selectedTeam={selectedTeam}
+            clubHistory={clubHistory}
+            clubHistoryTeamId={clubHistoryTeamId}
+          />
+        ) : activeTab === "calendar" ? (
           <div className="space-y-2 p-6">
             {getTeamFixtures().length === 0 && (
               <div className="bg-surface-container rounded-lg p-8 text-center">

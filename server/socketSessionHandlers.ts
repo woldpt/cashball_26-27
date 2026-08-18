@@ -783,6 +783,118 @@ export function registerSessionSocketHandlers(
 	});
 
 	socket.on(
+		"requestClubHistory",
+		async ({ teamId }: { teamId?: number } = {}) => {
+			const game = getGameBySocket(socket.id);
+			if (!game || !teamId) return;
+			try {
+				const trophies = await runAll(
+					game.db,
+					`SELECT pa.season, pa.achievement, pa.coach_name, pa.is_human_coach, t.name as team_name
+					 FROM palmares pa
+					 JOIN teams t ON t.id = pa.team_id
+					 WHERE pa.team_id = ?
+					 ORDER BY pa.season DESC, pa.id DESC`,
+					[teamId],
+				);
+
+				const events = await runAll(
+					game.db,
+					`SELECT id, team_id, type, title, description, player_id, player_name,
+					        related_team_id, related_team_name, amount, matchweek, year, created_at
+					 FROM club_news
+					 WHERE team_id = ?
+					   AND type IN ('transfer_in', 'transfer_out', 'auction_won', 'manager_dismissed', 'manager_hired')
+					 ORDER BY year DESC, matchweek DESC, id DESC
+					 LIMIT 100`,
+					[teamId],
+				);
+
+				// Resumo por época da liga: registo de todos os teams (para ranking),
+				// mas só expõe o do clube pedido.
+				const seasonRows = await runAll(
+					game.db,
+					`SELECT season,
+					        CASE WHEN home_team_id = ? THEN home_team_id ELSE away_team_id END AS team_id,
+					        SUM(CASE WHEN (home_team_id = ? AND home_score > away_score)
+					                 OR (away_team_id = ? AND away_score > home_score) THEN 1 ELSE 0 END) AS wins,
+					        SUM(CASE WHEN home_score = away_score THEN 1 ELSE 0 END) AS draws,
+					        SUM(CASE WHEN (home_team_id = ? AND home_score < away_score)
+					                 OR (away_team_id = ? AND away_score < home_score) THEN 1 ELSE 0 END) AS losses,
+					        SUM(CASE WHEN home_team_id = ? THEN home_score ELSE away_score END) AS goals_for,
+					        SUM(CASE WHEN home_team_id = ? THEN away_score ELSE home_score END) AS goals_against
+					 FROM matches
+					 WHERE played = 1
+					 GROUP BY season, team_id
+					 ORDER BY season ASC, wins DESC`,
+					[teamId, teamId, teamId, teamId, teamId, teamId, teamId],
+				);
+
+				const baseYear = (game.year ?? 0) - (game.season ?? 0);
+				const bySeason = new Map<number, AnyRow[]>();
+				for (const row of seasonRows || []) {
+					const list = bySeason.get(row.season) || [];
+					list.push(row);
+					bySeason.set(row.season, list);
+				}
+
+				const seasonRecords: Array<{
+					year: number;
+					season: number;
+					position: number;
+					wins: number;
+					draws: number;
+					losses: number;
+					goalsFor: number;
+					goalsAgainst: number;
+					points: number;
+				}> = [];
+				for (const [season, rows] of bySeason) {
+					const sorted = [...rows].sort((a, b) => {
+						const pa = 3 * a.wins + a.draws;
+						const pb = 3 * b.wins + b.draws;
+						if (pb !== pa) return pb - pa;
+						const gda = a.goals_for - a.goals_against;
+						const gdb = b.goals_for - b.goals_against;
+						if (gdb !== gda) return gdb - gda;
+						return b.goals_for - a.goals_for;
+					});
+					const idx = sorted.findIndex((r) => r.team_id === teamId);
+					if (idx === -1) continue;
+					const row = sorted[idx];
+					seasonRecords.push({
+						year: baseYear + season,
+						season,
+						position: idx + 1,
+						wins: row.wins,
+						draws: row.draws,
+						losses: row.losses,
+						goalsFor: row.goals_for,
+						goalsAgainst: row.goals_against,
+						points: 3 * row.wins + row.draws,
+					});
+				}
+				seasonRecords.sort((a, b) => b.season - a.season);
+
+				socket.emit("clubHistoryData", {
+					teamId,
+					trophies: trophies || [],
+					events: events || [],
+					seasonRecords,
+				});
+			} catch (err) {
+				console.error(`[${game.roomCode}] requestClubHistory error:`, err);
+				socket.emit("clubHistoryData", {
+					teamId,
+					trophies: [],
+					events: [],
+					seasonRecords: [],
+				});
+			}
+		},
+	);
+
+	socket.on(
 		"requestPlayerHistory",
 		async ({ playerId }: { playerId?: number } = {}) => {
 			const game = getGameBySocket(socket.id);

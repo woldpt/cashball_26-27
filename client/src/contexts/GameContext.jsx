@@ -102,6 +102,8 @@ export function GameProvider({
 	const [cupActiveTeamIds, setCupActiveTeamIds] = useState([]);
 	const [palmares, setPalmares] = useState({ trophies: [], allChampions: [] });
 	const [palmaresTeamId, setPalmaresTeamId] = useState(null);
+	const [clubHistory, setClubHistory] = useState(null);
+	const [clubHistoryTeamId, setClubHistoryTeamId] = useState(null);
 	const [clubNews, setClubNews] = useState([]);
 	const [playerHistoryModal, setPlayerHistoryModal] = useState(null);
 	const [financeData, setFinanceData] = useState(null);
@@ -597,6 +599,8 @@ export function GameProvider({
 			setCupBracketData,
 			setPalmares,
 			setPalmaresTeamId,
+			setClubHistory,
+			setClubHistoryTeamId,
 			setClubNews,
 			setPlayerHistoryModal,
 			setFinanceData,
@@ -678,6 +682,7 @@ export function GameProvider({
 		setSelectedTeamLoading(true);
 		socket.emit("requestTeamSquad", team.id);
 		socket.emit("requestPalmares", { teamId: team.id });
+		socket.emit("requestClubHistory", { teamId: team.id });
 	}, []);
 
 	const handleCloseTeamSquad = useCallback(() => {
@@ -1029,6 +1034,8 @@ export function GameProvider({
 		setCupActiveTeamIds([]);
 		setPalmares({ trophies: [], allChampions: [] });
 		setPalmaresTeamId(null);
+		setClubHistory(null);
+		setClubHistoryTeamId(null);
 		setSelectedTeam(null);
 		setSelectedTeamSquad([]);
 		setSelectedTeamLoading(false);
@@ -1142,6 +1149,8 @@ export function GameProvider({
 		cupActiveTeamIds,
 		palmares,
 		palmaresTeamId,
+		clubHistory,
+		clubHistoryTeamId,
 		clubNews,
 		playerHistoryModal,
 		setPlayerHistoryModal,

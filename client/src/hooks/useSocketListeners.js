@@ -488,6 +488,10 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setPalmares(data);
 			handlers.setPalmaresTeamId(data.teamId);
 		});
+		socket.on("clubHistoryData", (data) => {
+			handlers.setClubHistory(data);
+			handlers.setClubHistoryTeamId(data.teamId);
+		});
 		socket.on("clubNewsData", (data) => {
 			handlers.setClubNews(data.news || []);
 		});

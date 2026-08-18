@@ -305,6 +305,15 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       team.id,
     ]);
 
+    logClubNews(
+      game,
+      "manager_hired",
+      `${team.name} contratou ${manager.name}`,
+      team.id,
+      { description: "Novo treinador" },
+      io,
+    );
+
     recordMarketEvent(game, {
       type: "hiring",
       coachName: manager.name,
