@@ -497,6 +497,7 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
               }
               if (st["matchweek"])
                 game.matchweek = parseInt(st["matchweek"]) || 1;
+              if (st["lastPlayedAt"]) game.lastPlayedAt = st["lastPlayedAt"];
 
               // Calendar index (new key first; derive from legacy if absent)
               if (st["calendarIndex"]) {
@@ -876,6 +877,7 @@ function saveGameState(game: ActiveGame): void {
   upsert("phaseToken", game.phaseToken || "");
   upsert("season", String(game.season || 1));
   upsert("year", String(game.year || 2026));
+  if (game.lastPlayedAt) upsert("lastPlayedAt", String(game.lastPlayedAt));
   upsert("matchweek", String(game.matchweek || 1));
   upsert(
     "liveMinute",

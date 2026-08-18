@@ -162,6 +162,34 @@ const LandingPage = ({
 
 	const passwordTooShort = password !== "" && password.length < 3;
 
+	// Sala jogada mais recentemente (para destaque na lista de saves)
+	const lastPlayedSave = availableSaves.reduce(
+		(best, s) =>
+			s.lastPlayedAt &&
+			(!best || new Date(s.lastPlayedAt) > new Date(best.lastPlayedAt))
+				? s
+				: best,
+		null,
+	);
+
+	/**
+	 * Formata uma data ISO como dd/mm/aaaa (pt-PT).
+	 * @param {string|null|undefined} iso - Data ISO a formatar.
+	 * @returns {string|null}
+	 */
+	const formatMatchDate = (iso) => {
+		if (!iso) return null;
+		try {
+			return new Date(iso).toLocaleDateString("pt-PT", {
+				day: "2-digit",
+				month: "2-digit",
+				year: "numeric",
+			});
+		} catch {
+			return null;
+		}
+	};
+
 	return (
 		<div className="min-h-screen bg-[#060b08] text-white flex flex-col relative overflow-hidden pb-16">
 			{/* Particle background */}
@@ -751,6 +779,10 @@ const LandingPage = ({
 																	roomCode === save.code
 																		? "border-cyan-500/40 bg-cyan-500/10 text-white"
 																		: "border-white/[0.06] bg-white/[0.02] text-white/50 hover:border-white/[0.12] hover:text-white/80"
+																} ${
+																	save.code === lastPlayedSave?.code
+																		? "shadow-[0_0_18px_rgba(74,222,128,0.14)]"
+																		: ""
 																}`}
 															>
 																<div className="flex flex-col flex-1 min-w-0">
@@ -763,6 +795,11 @@ const LandingPage = ({
 																	{save.coaches && save.coaches.length > 0 && (
 																		<span className="text-[9px] font-black uppercase px-1.5 py-px rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 tracking-widest inline-block mt-1 w-fit">
 																			{save.coaches.join(", ")}
+																		</span>
+																	)}
+																	{save.code === lastPlayedSave?.code && (
+																		<span className="text-[9px] font-black uppercase px-1.5 py-px rounded bg-green-500/20 text-green-400 border border-green-500/30 tracking-widest inline-block mt-1 w-fit">
+																			● Última Jogada
 																		</span>
 																	)}
 																	{(save.teamName || save.year) && (
@@ -779,6 +816,13 @@ const LandingPage = ({
 																			)}
 																		</div>
 																	)}
+																	{save.lastPlayedAt &&
+																		formatMatchDate(save.lastPlayedAt) && (
+																			<span className="text-[10px] text-white/30 mt-0.5 flex items-center gap-1">
+																				⚽ Última partida:{" "}
+																				{formatMatchDate(save.lastPlayedAt)}
+																			</span>
+																		)}
 																</div>
 																<button
 																	onClick={(e) => {

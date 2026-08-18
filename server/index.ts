@@ -154,11 +154,21 @@ function getRoomName(roomCode: string): Promise<string> {
 function getSaveInfo(
 	roomCode: string,
 	managerName: string | null,
-): Promise<{ roomName: string; teamName: string | null; year: number | null }> {
+): Promise<{
+	roomName: string;
+	teamName: string | null;
+	year: number | null;
+	lastPlayedAt: string | null;
+}> {
 	return new Promise((resolve) => {
 		const dbPath = path.join(resolveDbDir(), `game_${roomCode}.db`);
 		if (!fs.existsSync(dbPath)) {
-			resolve({ roomName: roomCode, teamName: null, year: null });
+			resolve({
+				roomName: roomCode,
+				teamName: null,
+				year: null,
+				lastPlayedAt: null,
+			});
 			return;
 		}
 		const db = new sqlite3.Database(
@@ -166,12 +176,17 @@ function getSaveInfo(
 			sqlite3.OPEN_READONLY,
 			(err: any) => {
 				if (err) {
-					resolve({ roomName: roomCode, teamName: null, year: null });
+					resolve({
+						roomName: roomCode,
+						teamName: null,
+						year: null,
+						lastPlayedAt: null,
+					});
 					return;
 				}
 				// Get room name, season year, and team name in one pass
 				const rows: any[] = [];
-				const keys = ["roomName", "year"];
+				const keys = ["roomName", "year", "lastPlayedAt"];
 				let pendingQueries = 0;
 
 				const onRow = (key: string) => (err: any, row: any) => {
@@ -216,17 +231,20 @@ function getSaveInfo(
 						roomName: roomCode,
 						teamName: null,
 						year: null,
+						lastPlayedAt: null,
 					};
 					for (const r of rows) {
 						if (r.key === "roomName") result.roomName = r.value;
 						else if (r.key === "teamName") result.teamName = r.value;
 						else if (r.key === "year") result.year = Number(r.value);
+						else if (r.key === "lastPlayedAt") result.lastPlayedAt = r.value;
 					}
 					resolve(
 						result as {
 							roomName: string;
 							teamName: string | null;
 							year: number | null;
+							lastPlayedAt: string | null;
 						},
 					);
 				}
@@ -359,10 +377,20 @@ app.get("/saves", apiLimiter, async (req, res) => {
 					name: info.roomName,
 					teamName: info.teamName,
 					year: info.year,
+					lastPlayedAt: info.lastPlayedAt,
 					coaches,
 				};
 			}),
 		);
+
+		// Order by last played (most recent first; rooms never played go last)
+		saves.sort((a, b) => {
+			if (a.lastPlayedAt && b.lastPlayedAt)
+				return b.lastPlayedAt.localeCompare(a.lastPlayedAt);
+			if (a.lastPlayedAt) return -1;
+			if (b.lastPlayedAt) return 1;
+			return a.name.localeCompare(b.name);
+		});
 
 		res.json(saves);
 	} catch (e) {

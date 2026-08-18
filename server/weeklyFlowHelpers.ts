@@ -751,6 +751,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           // Advance state
           game.calendarIndex += 1;
           game.matchweek += 1;
+          game.lastPlayedAt = new Date().toISOString();
           game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
           game.currentFixtures = [];
           game.gamePhase = "lobby";

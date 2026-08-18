@@ -1359,6 +1359,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 		// Advance calendar
 		game.calendarIndex += 1;
+		game.lastPlayedAt = new Date().toISOString();
 		game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
 		game.currentFixtures = [];
 		game.cupHalftimePayload = null;
