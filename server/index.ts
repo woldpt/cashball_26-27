@@ -740,6 +740,7 @@ const cupFlowHelpers = createCupFlowHelpers({
 const applySeasonEnd = cupFlowHelpers.applySeasonEnd;
 const startCupRound = cupFlowHelpers.startCupRound;
 const finalizeCupRound = cupFlowHelpers.finalizeCupRound;
+const continueFromEtGate = cupFlowHelpers.continueFromEtGate;
 const emitCurrentPhaseToSocket = cupFlowHelpers.emitCurrentPhaseToSocket;
 const ensurePhaseTimeout = cupFlowHelpers.ensurePhaseTimeout;
 
@@ -773,6 +774,7 @@ const weeklyFlowHelpers = createWeeklyFlowHelpers({
 	applyTrainingBonuses,
 	startCupRound,
 	finalizeCupRound,
+	continueFromEtGate,
 	applySeasonEnd,
 	listPlayerOnMarket,
 	processContractExpiries,

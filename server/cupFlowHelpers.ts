@@ -717,11 +717,115 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		const season = game.season;
 		const fixtures = game.currentFixtures;
 		const roundName = CUP_ROUND_NAMES[round] || `Ronda ${round}`;
-		const results: any[] = [];
 
 		console.log(
 			`[${game.roomCode}] 🏆 finalizeCupRound | round=${round} (${roundName}) | fixtures=${fixtures.length}`,
 		);
+
+		// ── Determine which fixtures are drawn at 90 min ──────────────────────────
+		const drawnFixtures = fixtures.filter(
+			(fx: any) => fx.finalHomeGoals === fx.finalAwayGoals,
+		);
+		const hasAnyET = drawnFixtures.length > 0;
+		const humanInAnyDraw = drawnFixtures.some((fixture: any) =>
+			(Object.values(game.playersByName) as PlayerSession[]).some(
+				(p) =>
+					p.socketId &&
+					(p.teamId === fixture.homeTeamId ||
+						p.teamId === fixture.awayTeamId),
+			),
+		);
+
+		// ── Phase 2 (gate): extra time — all drawn fixtures batched ───────────────
+		// If a human coach is in a drawn fixture, pause for tactics (substitutions)
+		// before ET. The gate is state-machine driven: this function returns here
+		// and checkAllReady advances once the relevant coaches are ready (a 90s
+		// safety timer forces ET otherwise). A transient in-memory promise is NOT
+		// used, so a crash can never strand the round at match_et_gate.
+		if (hasAnyET && humanInAnyDraw) {
+			console.log(
+				`[${game.roomCode}] ⏸ ET gate: waiting for coaches in drawn fixtures to ready up`,
+			);
+			// Reset ready states BEFORE changing phase
+			Object.values(game.playersByName).forEach((p: any) => {
+				p.ready = false;
+			});
+			game.gamePhase = "match_et_gate";
+			const etGatePayload = {
+				round,
+				roundName,
+				season,
+				fixtures: fixtures.map((fx: any) => ({
+					homeTeam: fx.homeTeam || null,
+					awayTeam: fx.awayTeam || null,
+					homeGoals: fx.finalHomeGoals,
+					awayGoals: fx.finalAwayGoals,
+					events: (fx.events || []).slice(),
+					homeLineup: fx.homeLineup || [],
+					awayLineup: fx.awayLineup || [],
+					attendance: fx.attendance || null,
+				})),
+			};
+			game.lastHalftimePayload = etGatePayload;
+			emitPresence(game);
+			io.to(game.roomCode).emit("cupETHalfTime", etGatePayload);
+			saveGameState(game);
+
+			// Safety fallback: if the relevant coaches stall or disconnect, force ET
+			// after 90s instead of leaving the round stuck at match_et_gate.
+			if (game._etGateTimer) clearTimeout(game._etGateTimer);
+			game._etGateTimer = setTimeout(() => {
+				game._etGateTimer = null;
+				continueFromEtGate(game).catch((err) =>
+					console.error(
+						`[${game.roomCode}] ❌ ET gate forced continuation failed:`,
+						err,
+					),
+				);
+			}, 90_000);
+			return;
+		}
+
+		// No gate required (NPC-only ET or no ET) — continue immediately.
+		await continueFromEtGate(game);
+	}
+
+	/**
+	 * Runs the cup round after the extra-time gate (or directly when no gate is
+	 * needed). State-machine driven: called by checkAllReady once all coaches in
+	 * drawn fixtures are ready, by the 90s safety timer, or inline by
+	 * finalizeCupRound — so an orphaned promise can never strand the round.
+	 */
+	async function continueFromEtGate(game: ActiveGame) {
+		if (game._etGateRunning) {
+			console.warn(
+				`[${game.roomCode}] ⚠ continueFromEtGate already running — skipping`,
+			);
+			return;
+		}
+		if (
+			game.gamePhase !== "match_et_gate" &&
+			game.gamePhase !== "match_finalizing"
+		) {
+			console.warn(
+				`[${game.roomCode}] ⚠ continueFromEtGate skipped | phase=${game.gamePhase} (not in ET gate)`,
+			);
+			return;
+		}
+		if (game._etGateTimer) {
+			clearTimeout(game._etGateTimer);
+			game._etGateTimer = null;
+		}
+		game._etGateRunning = true;
+
+		const entry = game.currentEvent as any;
+		const round = entry?.round;
+		const season = game.season;
+		const fixtures = game.currentFixtures;
+		const roundName = CUP_ROUND_NAMES[round] || `Ronda ${round}`;
+		const results: any[] = [];
+
+		try {
 
 		// ── Phase 1: Setup tactics and snapshot 90-min scores ────────────────────
 		type FixtureSetup = {
@@ -783,7 +887,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				`[${game.roomCode}] 🏆 ${drawnSetups.length} fixture(s) drawn at 90 min — ET`,
 			);
 
-			// ET gate: show substitution screen ONCE for all coaches if any human is in a drawn fixture
+			// Only apply ET substitutions when a human coach is in a drawn fixture —
+			// NPC-only draws keep the original (no-sub) behavior.
 			const humanInAnyDraw = drawnSetups.some(({ fixture }) =>
 				(Object.values(game.playersByName) as PlayerSession[]).some(
 					(p) =>
@@ -793,53 +898,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				),
 			);
 
+			// Apply ET substitutions and re-read tactics changed during the pause screen
 			if (humanInAnyDraw) {
-				console.log(
-					`[${game.roomCode}] ⏸ ET gate: waiting for coaches to ready up`,
-				);
-				// Reset ready states BEFORE changing phase
-				Object.values(game.playersByName).forEach((p: any) => {
-					p.ready = false;
-				});
-				game.gamePhase = "match_et_gate";
-				const etGatePayload = {
-					round,
-					roundName,
-					season,
-					fixtures: fixtures.map((fx: any) => ({
-						homeTeam: fx.homeTeam || null,
-						awayTeam: fx.awayTeam || null,
-						homeGoals: fx.finalHomeGoals,
-						awayGoals: fx.finalAwayGoals,
-						events: (fx.events || []).slice(),
-						homeLineup: fx.homeLineup || [],
-						awayLineup: fx.awayLineup || [],
-						attendance: fx.attendance || null,
-					})),
-				};
-				game.lastHalftimePayload = etGatePayload;
-				emitPresence(game);
-				io.to(game.roomCode).emit("cupETHalfTime", etGatePayload);
-
-				await new Promise<void>((resolve) => {
-					game._etGateResolve = resolve;
-					game._etGateTimer = setTimeout(() => {
-						game._etGateResolve = null;
-						game._etGateTimer = null;
-						resolve();
-					}, 90_000);
-				});
-				if (game._etGateTimer) {
-					clearTimeout(game._etGateTimer);
-					game._etGateTimer = null;
-				}
-				game._etGateResolve = null;
-				console.log(
-					`[${game.roomCode}] ⏩ ET gate resolved — starting extra time`,
-				);
-				emitPresence(game);
-
-				// Apply ET substitutions and re-read tactics changed during the pause screen
 				const lineupSnapshotET = (squad: any[]) =>
 					squad.map((p) => ({
 						id: p.id,
@@ -1316,6 +1376,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		} else {
 			emitPresence(game);
 		}
+		} finally {
+			game._etGateRunning = false;
+		}
 	}
 
 	// ─── ET ANIMATION GATE ───────────────────────────────────────────────────────
@@ -1514,6 +1577,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		applySeasonEnd,
 		startCupRound,
 		finalizeCupRound,
+		continueFromEtGate,
 		emitCurrentPhaseToSocket,
 		ensurePhaseTimeout,
 	};

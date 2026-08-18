@@ -66,6 +66,7 @@ interface WeeklyFlowDeps {
   ) => Promise<void>;
   startCupRound: (game: ActiveGame, round: number) => Promise<void>;
   finalizeCupRound: (game: ActiveGame) => Promise<void>;
+  continueFromEtGate: (game: ActiveGame) => Promise<void>;
   applySeasonEnd: (game: ActiveGame) => Promise<void>;
   listPlayerOnMarket: (
     game: ActiveGame,
@@ -99,6 +100,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     applyTrainingBonuses,
     startCupRound,
     finalizeCupRound,
+    continueFromEtGate,
     applySeasonEnd,
     listPlayerOnMarket,
     processContractExpiries,
@@ -962,6 +964,37 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       console.log(
         `[${game.roomCode}] ✅ All locked coaches ready: ${readyStatus.map((s) => `${s.name}(${s.ready ? "R" : "-"})`).join(", ")}`,
       );
+    } else if (game.gamePhase === "match_et_gate") {
+      // ET gate (cup): ONLY coaches whose team is in a DRAWN fixture need to
+      // ready up before extra time. Observers / eliminated coaches must not
+      // block the round — they have no team to prepare for ET.
+      const drawnTeamIds = new Set(
+        game.currentFixtures
+          .filter((f) => f.finalHomeGoals === f.finalAwayGoals)
+          .flatMap((f) => [f.homeTeamId, f.awayTeamId]),
+      );
+      const etRelevantPlayers = getPlayerList(game).filter(
+        (p) => p.teamId !== null && drawnTeamIds.has(p.teamId),
+      );
+      if (etRelevantPlayers.length === 0) {
+        // No connected coach is in a drawn fixture — don't block; the safety
+        // timer / finalize path continues the round anyway.
+        console.warn(
+          `[${game.roomCode}] ⚠ ET gate with no relevant coaches — continuing`,
+        );
+      } else if (!etRelevantPlayers.every((player) => player.ready)) {
+        const notReady = etRelevantPlayers
+          .filter((p) => !p.ready)
+          .map((p) => p.name);
+        console.warn(
+          `[${game.roomCode}] ⏸ ET gate blocked: ${notReady.length} coach(es) in drawn fixtures not ready: ${notReady.join(", ")}`,
+        );
+        return;
+      } else {
+        console.log(
+          `[${game.roomCode}] ✅ All ${etRelevantPlayers.length} coach(es) in drawn fixtures ready`,
+        );
+      }
     } else {
       const connectedPlayers = getPlayerList(game).filter(
         (p) => p.teamId !== null,
@@ -1285,12 +1318,29 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
     // ── ET gate → start extra time (cup only) ────────────────────────────────
     if (game.gamePhase === "match_et_gate") {
+      if (segmentRunning[game.roomCode]) {
+        console.warn(
+          `[${game.roomCode}] ⚠ ET gate→ET blocked: segmentRunning is true`,
+        );
+        return;
+      }
       console.log(
-        `[${game.roomCode}] ⏩ ET gate acknowledged — resolving to start extra time`,
+        `[${game.roomCode}] ⏩ ET gate acknowledged — starting extra time`,
       );
-      if (game._etGateResolve) {
-        game._etGateResolve();
-        game._etGateResolve = null;
+      segmentRunning[game.roomCode] = true;
+      try {
+        await continueFromEtGate(game);
+      } catch (segErr) {
+        console.error(
+          `[${game.roomCode}] ❌ Extra time (from ET gate) failed:`,
+          segErr,
+        );
+      } finally {
+        segmentRunning[game.roomCode] = false;
+      }
+      // segmentRunning is now false; safe to auto-advance if all coaches were dismissed.
+      if ((game.gamePhase as string) === "lobby") {
+        checkAllReady(game);
       }
       return;
     }

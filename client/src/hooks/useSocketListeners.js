@@ -290,7 +290,8 @@ export function useSocketListeners(handlers, refs) {
 			}
 		});
 		socket.on("cupETHalfTime", (data) => {
-			// Gate before extra time — server waits for all coaches to set ready
+			// Gate before extra time — server waits for coaches in drawn fixtures
+			// to ready up; observers auto-ready below.
 			try {
 				handlers.setIsMatchActionPending(false);
 				handlers.setIsLiveSimulation(false);
@@ -324,12 +325,18 @@ export function useSocketListeners(handlers, refs) {
 				handlers.setCupExtraTimeBadge(false);
 
 				const myId = refs.meRef.current?.teamId;
-				const userInMatch =
+				// Only coaches whose team is in a DRAWN fixture must confirm tactics
+				// before extra time. Observers (no team in a drawn fixture) auto-ready
+				// so they never block the gate — including coaches whose team already
+				// won its tie this round.
+				const myDrawnFixture =
 					myId != null &&
 					fixtures.some(
-						(fx) => fx.homeTeam?.id == myId || fx.awayTeam?.id == myId,
+						(fx) =>
+							(fx.homeTeam?.id == myId || fx.awayTeam?.id == myId) &&
+							fx.homeGoals === fx.awayGoals,
 					);
-				if (!userInMatch) {
+				if (!myDrawnFixture) {
 					socket.emit("setReady", true);
 				}
 			} catch (err) {
