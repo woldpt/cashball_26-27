@@ -52,7 +52,6 @@ export function TacticsProvider({ children }) {
     showHalftimePanel,
     isPlayingMatch,
     annotatedSquad, // computed by GameContext
-    calendarIndex,
   } = useGame();
 
   // ── UI state owned exclusively by this context ──────────────────────────
@@ -62,19 +61,28 @@ export function TacticsProvider({ children }) {
   const [dragOverSection, setDragOverSection] = useState(null);
   const dragPlayerStatusRef = useRef(null);
 
-  // Fase de pré-jogo: "briefing" → "tactics". Estado derivado por calendarIndex:
-  // ao avançar para uma nova jornada (liga ou taça) a fase volta a "briefing".
-  const [prepPhaseState, setPrepPhaseState] = useState({
+  // Fase de pré-jogo: "briefing" → "tactics". Estado derivado por jornada:
+  // nextMatchSummary identifica unicamente cada jornada (liga: matchweek,
+  // taça: cupRound) e é sempre refeito ao abrir a tab de tática. Quando a
+  // jornada muda, a fase volta a "briefing". Não usa calendarIndex porque o
+  // cliente só o recebe via gameState (reconexão) — nunca avança pós-jogo.
+  const matchdayKey = nextMatchSummary
+    ? nextMatchSummary.isCup
+      ? `cup:${nextMatchSummary.cupRound ?? "?"}`
+      : `league:${nextMatchSummary.matchweek ?? "?"}`
+    : null;
+
+  const [prepPhaseState, setPrepPhaseState] = useState(() => ({
     phase: "briefing",
-    calendarIndex,
-  });
+    matchdayKey,
+  }));
   const prepPhase =
-    prepPhaseState.calendarIndex === calendarIndex
+    prepPhaseState.matchdayKey === matchdayKey
       ? prepPhaseState.phase
       : "briefing";
   const setPrepPhase = useCallback(
-    (phase) => setPrepPhaseState({ phase, calendarIndex }),
-    [calendarIndex],
+    (phase) => setPrepPhaseState({ phase, matchdayKey }),
+    [matchdayKey],
   );
 
   // ── Computed values ──────────────────────────────────────────────────────
