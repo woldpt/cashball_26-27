@@ -165,6 +165,7 @@ export function GameProvider({
 	const matchActionRef = useRef(null);
 	const isCupDrawRef = useRef(false);
 	const teamsRef = useRef([]);
+	const playersRef = useRef([]);
 	const isLiveSimulationRef = useRef(false);
 	const isCupExtraTimeRef = useRef(false);
 	const pendingDismissalRef = useRef(null);
@@ -231,6 +232,9 @@ export function GameProvider({
 	useEffect(() => {
 		teamsRef.current = teams;
 	}, [teams]);
+	useEffect(() => {
+		playersRef.current = players;
+	}, [players]);
 	useEffect(() => {
 		mySquadRef.current = mySquad;
 	}, [mySquad]);
@@ -388,7 +392,11 @@ export function GameProvider({
 			const isMyMatch =
 				me?.teamId != null &&
 				(match.homeTeamId === me.teamId || match.awayTeamId === me.teamId);
-			if (isMyMatch) {
+			const isHumanMatch = players.some(
+				(p) =>
+					p.teamId === match.homeTeamId || p.teamId === match.awayTeamId,
+			);
+			if (isMyMatch || isHumanMatch) {
 				const hasGoal = events.some((e) =>
 					["goal", "penalty_goal", "var_goal_pending"].includes(e.type),
 				);
@@ -401,7 +409,7 @@ export function GameProvider({
 				else if (hasOtherEvent) playNotification();
 			}
 		});
-	}, [liveMinute, matchResults, me?.teamId]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [liveMinute, matchResults, me?.teamId, players]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── Cup draw reveal animation ───────────────────────────────────────────
 	useEffect(() => {
@@ -645,6 +653,7 @@ export function GameProvider({
 			},
 			joinTimerRef,
 			players,
+			playersRef,
 			chatOpenRef,
 			activeChatTabRef,
 		},

@@ -833,16 +833,20 @@ export function useSocketListeners(handlers, refs) {
 				}
 			}
 			// Penalty suspense para fixtures onde NÃO somos participantes — sem popup,
-			// apenas flash e atualização de score após o mesmo delay de 3s (sem som).
+			// apenas flash e atualização de score após o mesmo delay de 3s.
 			for (const f of data.fixtures || []) {
 				const isMyFixture =
 					myTeamId != null &&
 					(f.homeTeamId === myTeamId || f.awayTeamId === myTeamId);
 				if (isMyFixture) continue;
+				const isHumanFixture = (refs.playersRef.current || []).some(
+					(p) => p.teamId === f.homeTeamId || p.teamId === f.awayTeamId,
+				);
 				for (const e of f.minuteEvents || []) {
 					if (e.penaltySuspense) {
 						setTimeout(() => {
 							if (e.type === "penalty_goal") {
+								if (isHumanFixture) playGoalSound();
 								const flashKey = `${f.homeTeamId}_${f.awayTeamId}_${e.team}`;
 								refs.setGoalFlashRef((prev) => ({
 									...prev,
@@ -927,6 +931,9 @@ export function useSocketListeners(handlers, refs) {
 				const isMyFixtureVar =
 					myTeamId != null &&
 					(f.homeTeamId === myTeamId || f.awayTeamId === myTeamId);
+				const isHumanFixtureVar = (refs.playersRef.current || []).some(
+					(p) => p.teamId === f.homeTeamId || p.teamId === f.awayTeamId,
+				);
 				setTimeout(() => {
 					handlers.setMatchResults((prev) => {
 						if (!prev) return prev;
@@ -951,7 +958,7 @@ export function useSocketListeners(handlers, refs) {
 						});
 						return { ...prev, results: updated };
 					});
-					if (isMyFixtureVar) playVarSound();
+					if (isMyFixtureVar || isHumanFixtureVar) playVarSound();
 				}, 1000);
 			});
 		});
