@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { formatCurrency } from "../../utils/formatters.js";
-import { FLAG_TO_COUNTRY } from "../../constants/index.js";
+import { FLAG_TO_COUNTRY, AUCTION_BID_STEP } from "../../constants/index.js";
 import { AggBadge } from "../shared/AggBadge.jsx";
 import { Badge } from "../shared/Badge.jsx";
 import { StarMark } from "../shared/PlayerStatusBadges.jsx";
@@ -49,8 +49,8 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
     ? teams.find((t) => t.id === auction.currentHighBidTeamId)
     : null;
 
-  const minBid = auction.currentHighBid > 0
-    ? auction.currentHighBid + 50000
+  const minBid = auction.currentHighBidTeamId != null
+    ? auction.currentHighBid + AUCTION_BID_STEP
     : auction.startingPrice;
 
   const [bidInput, setBidInput] = useState(() => String(minBid));
@@ -197,7 +197,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                 </>
               ) : isClosed ? (
                 <p className="font-mono font-black text-sm text-zinc-500">—</p>
-              ) : auction.currentHighBid > 0 ? (
+              ) : auction.currentHighBidTeamId != null ? (
                 <>
                   <p className="font-mono font-black text-sm text-white tabular-nums">
                     {formatCurrency(auction.currentHighBid)}

@@ -5,6 +5,7 @@ import {
   runGet,
   runAll,
   validatePositiveInt,
+  validateNonNegativeInt,
   getTeamsWithCoachNames,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
@@ -243,12 +244,13 @@ export function registerTransferSocketHandlers(
             );
             return;
           }
+          const rawPrice = finalMode === "auction" ? startingPrice : price;
           const finalPrice = Math.max(
             0,
             Math.round(
-              startingPrice ||
-                price ||
-                player.value * (finalMode === "auction" ? 0.75 : 1.0),
+              rawPrice != null && Number.isFinite(Number(rawPrice))
+                ? Number(rawPrice)
+                : player.value * (finalMode === "auction" ? 0.75 : 1.0),
             ),
           );
 
@@ -493,7 +495,7 @@ export function registerTransferSocketHandlers(
     }
 
     const validPlayerId = validatePositiveInt(playerId);
-    const validBidAmount = validatePositiveInt(bidAmount);
+    const validBidAmount = validateNonNegativeInt(bidAmount);
     if (!validPlayerId || !validBidAmount) {
       return ack?.({ ok: false, error: "Lance inválido." });
     }

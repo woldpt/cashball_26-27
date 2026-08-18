@@ -1,6 +1,6 @@
 import type { ActiveGame } from "./types";
 import { logClubNews, getTeamsWithCoachNames } from "./coreHelpers";
-import { signingWage } from "./gameConstants";
+import { signingWage, AUCTION_BID_STEP } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
 
@@ -392,17 +392,17 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
       if (Math.random() > 0.60) return;
 
       // Recalcular o lance mais alto actual
-      let currentHighBid = 0;
+      let currentHighBid = -1;
       for (const amt of Object.values(currentAuction.bids || {})) {
-        const b = Number(amt || 0);
+        const b = Number(
+          typeof amt === "object" && amt !== null ? (amt as any).amount : amt || 0,
+        );
         if (b > currentHighBid) currentHighBid = b;
       }
+      if (currentHighBid < 0) currentHighBid = 0;
 
-      // Superar por uma margem realista
-      const marginMin = 50000;
-      const marginMax = 200000;
-      const margin = marginMin + Math.floor(Math.random() * (marginMax - marginMin));
-      const counterBid = currentHighBid + margin;
+      // Superar por exatamente um incremento de leilão
+      const counterBid = currentHighBid + AUCTION_BID_STEP;
 
       // Verificar se o NPC tem orçamento para este lance
       game.db.get(

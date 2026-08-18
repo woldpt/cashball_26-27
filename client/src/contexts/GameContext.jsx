@@ -780,7 +780,7 @@ export function GameProvider({
 			confirmLabel: "Colocar em Leilão",
 			onConfirm: (val) => {
 				const price = Number(val);
-				if (!Number.isFinite(price) || price <= 0) return;
+				if (!Number.isFinite(price) || price < 0) return;
 				socket.emit("listPlayerForTransfer", {
 					playerId: player.id,
 					mode: "auction",

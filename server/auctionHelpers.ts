@@ -1,7 +1,7 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import { logClubNews, getTeamsWithCoachNames } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
-import { signingWage } from "./gameConstants";
+import { signingWage, AUCTION_BID_STEP } from "./gameConstants";
 
 interface AuctionDeps {
   io: any;
@@ -32,7 +32,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           const decorated = rows.map((row) => {
             const auction = game.auctions?.[row.id] as any;
             if (!auction) return row;
-            let currentHighBid = 0;
+            let currentHighBid = -1;
             let currentHighBidTeamId: number | null = null;
             for (const [tid, val] of Object.entries(auction.bids || {})) {
               const b = Number((typeof val === 'object' ? (val as any).amount : val) || 0);
@@ -106,7 +106,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
       }, remainingMs);
 
       // Recalculate current high bid
-      let currentHighBid = 0;
+      let currentHighBid = -1;
       let currentHighBidTeamId: number | null = null;
       for (const [tid, val] of Object.entries(auction.bids || {})) {
         const b = Number((typeof val === 'object' ? (val as any).amount : val) || 0);
@@ -157,7 +157,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
 
     const bidEntries = Object.entries(auction.bids || {});
     let winnerTeamId: number | null = null;
-    let winnerBid = 0;
+    let winnerBid = -1;
     for (const [teamId, amount] of bidEntries) {
       const bid = Number((typeof amount === 'object' ? (amount as any).amount : amount) || 0);
       // Só substitui se for estritamente superior — em caso de empate, fica quem já liderava
@@ -514,7 +514,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
     }
 
     // Calculate current high bid
-    let currentHighBid = 0;
+    let currentHighBid = -1;
     let currentHighBidTeamId: number | null = null;
     for (const [tid, amount] of Object.entries(auction.bids || {})) {
       const bid = Number((typeof amount === 'object' ? (amount as any).amount : amount) || 0);
@@ -533,8 +533,8 @@ export function createAuctionHelpers(deps: AuctionDeps) {
     }
 
     const amount = Math.round(bidAmount || 0);
-    const minBid = currentHighBid > 0
-      ? currentHighBid + 50000
+    const minBid = currentHighBidTeamId != null
+      ? currentHighBid + AUCTION_BID_STEP
       : auction.startingPrice;
 
     if (amount < minBid) {
@@ -559,7 +559,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           auction.bids[teamId] = { amount, timestamp: Date.now() };
 
           // Recalculate high bid after placing
-          let newHighBid = 0;
+          let newHighBid = -1;
           let newHighBidTeamId: number | null = null;
           for (const [tid, val] of Object.entries(auction.bids || {})) {
             const b = Number((typeof val === 'object' ? (val as any).amount : val) || 0);

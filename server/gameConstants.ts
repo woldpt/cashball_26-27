@@ -71,6 +71,12 @@ export const SPONSOR_REVENUE_BY_DIVISION: Record<number, number> = {
 };
 
 /**
+ * Incremento mínimo entre lances num leilão (servidor e cliente devem usar o mesmo valor).
+ * Aplica-se a qualquer leilão, incluindo os que começam a €0.
+ */
+export const AUCTION_BID_STEP = 10000;
+
+/**
  * Typed calendar entry — either a league matchweek or a cup round.
  * calendarIndex is the position in SEASON_CALENDAR (0-based, 0..18).
  */

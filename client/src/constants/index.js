@@ -416,3 +416,9 @@ export const TICKER_TEAM_COLORS = [
 	"#6ee7b7",
 	"#93c5fd",
 ];
+
+/**
+ * Incremento mínimo entre lances num leilão.
+ * Deve espelhar AUCTION_BID_STEP no servidor (server/gameConstants.ts).
+ */
+export const AUCTION_BID_STEP = 10000;
