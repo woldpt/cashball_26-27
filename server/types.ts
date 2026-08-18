@@ -32,6 +32,7 @@ export interface CoachMarketEvent {
   teamName: string;
   division: number;
   reason?: "results" | "budget";
+  detail?: string;
   isHuman: boolean;
   colorPrimary?: string;
   colorSecondary?: string;
@@ -117,6 +118,7 @@ export interface ActiveGame {
       division: number;
       reason?: "results" | "budget";
       teamName?: string;
+      detail?: string;
     }
   >; // coachName → info de despedimento
   dismissalsThisSeason: Set<string>; // coaches despedidos na época actual (máx 1 por época)

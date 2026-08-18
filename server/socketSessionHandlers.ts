@@ -542,6 +542,7 @@ export function registerSessionSocketHandlers(
 										socket.emit("coachDismissed", {
 											reason: dismissalInfo.reason || "results",
 											teamName: dismissalInfo.teamName || "equipa anterior",
+											detail: dismissalInfo.detail,
 										});
 
 										getTeamsWithCoachNames(game.db)

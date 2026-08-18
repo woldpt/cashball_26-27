@@ -1229,10 +1229,10 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setStandingsStale(false);
 		});
 
-		socket.on("coachDismissed", ({ reason, teamName }) => {
+		socket.on("coachDismissed", ({ reason, teamName, detail }) => {
 			if (!inRoom()) return;
 			handlers.setJobOfferModal(null);
-			refs.pendingDismissalRef.current = { reason, teamName };
+			refs.pendingDismissalRef.current = { reason, teamName, detail };
 		});
 
 		socket.on("coachMarketReport", (report) => {

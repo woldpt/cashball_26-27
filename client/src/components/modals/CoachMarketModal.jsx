@@ -50,9 +50,10 @@ function EventRow({ event }) {
 				</p>
 				{event.type === "dismissal" && reason && (
 					<p className="text-[9px] font-bold uppercase tracking-widest text-red-400/80 mt-0.5 truncate">
-						{reason === "budget"
-							? "Insolvência financeira"
-							: "Má série de resultados"}
+						{event.detail ||
+							(reason === "budget"
+								? "Insolvência financeira"
+								: "Má série de resultados")}
 					</p>
 				)}
 			</div>

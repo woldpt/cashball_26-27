@@ -45,9 +45,10 @@ export function DismissalModal({ dismissalModal, onContinue }) {
                   {dismissalModal.teamName}
                 </p>
                 <p className="text-zinc-500 text-xs mt-1">
-                  {dismissalModal.reason === "budget"
-                    ? "Insolvência financeira"
-                    : "Má série de resultados"}
+                  {dismissalModal.detail ||
+                    (dismissalModal.reason === "budget"
+                      ? "Insolvência financeira"
+                      : "Má série de resultados")}
                 </p>
               </div>
             </div>

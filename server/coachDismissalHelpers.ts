@@ -196,6 +196,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     teamName: string,
     oldTeamId: number,
     division: number,
+    detail: string,
     colors?: { colorPrimary?: string; colorSecondary?: string },
   ): Promise<void> {
     const player = game.playersByName[coachName];
@@ -222,6 +223,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       division,
       reason,
       teamName,
+      detail,
     };
     delete game.pendingJobOffers[coachName];
     game.lockedCoaches.delete(coachName);
@@ -235,6 +237,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       teamName,
       division,
       reason,
+      detail,
       isHuman: true,
       colorPrimary: colors?.colorPrimary,
       colorSecondary: colors?.colorSecondary,
@@ -242,7 +245,11 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
 
     // Notify coach
     if (socketId) {
-      io.to(socketId).emit("coachDismissed", { reason, teamName });
+      io.to(socketId).emit("coachDismissed", { reason, teamName, detail });
+      io.to(socketId).emit("systemMessage", {
+        text: `Foste despedido de ${teamName} ${detail}.`,
+        broadcast: false,
+      });
     }
 
     // Broadcast to room
@@ -594,6 +601,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
             team.name,
             teamId,
             team.division,
+            `após ${streak} semanas consecutivas com orçamento negativo`,
             {
               colorPrimary: team.color_primary,
               colorSecondary: team.color_secondary,
@@ -622,6 +630,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
           team.name,
           teamId,
           team.division,
+          lossCount === 5
+            ? "após 5 derrotas consecutivas"
+            : `após ${lossCount} derrotas nos últimos 5 jogos`,
           {
             colorPrimary: team.color_primary,
             colorSecondary: team.color_secondary,
