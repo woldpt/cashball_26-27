@@ -8,6 +8,11 @@ import { TeamCrest } from "./TeamCrest.jsx";
  * dificuldade estimada, estádio e ambiente, ameaças do adversário e a sua
  * formação provável. Termina com um CTA "Avançar para a Tática".
  * A fonte de verdade é o nextMatchSummary servido pelo servidor.
+ *
+ * Desktop (lg+): hero compacto (manchete + dificuldade + CTA na mesma linha)
+ * seguido de uma grelha de duas colunas (confronto + scouting), pensada para
+ * caber numa viewport desktop sem barras de scroll. Mobile/tablet mantêm um
+ * fluxo vertical legível.
  */
 
 const WEATHER_LABELS = {
@@ -40,7 +45,7 @@ function FormChips({ last5 = "" }) {
       {last5.split("").map((r, i) => (
         <span
           key={i}
-          className={`w-4 h-4 rounded-sm text-[8px] font-black flex items-center justify-center ${
+          className={`w-3.5 h-3.5 rounded-sm text-[7px] font-black flex items-center justify-center ${
             r === "V"
               ? "bg-green-500/20 text-green-400"
               : r === "D"
@@ -62,7 +67,7 @@ function FormChips({ last5 = "" }) {
  */
 function RecordText({ v, e, d }) {
   return (
-    <span className="flex items-center gap-2 text-[13px] font-black tabular-nums leading-none">
+    <span className="flex items-center gap-1.5 text-[11px] font-black tabular-nums leading-none">
       <span className="text-green-400">{v}</span>
       <span className="text-gray-300">{e}</span>
       <span className="text-red-400">{d}</span>
@@ -77,8 +82,8 @@ function RecordText({ v, e, d }) {
  */
 function CompareStat({ label, mine, theirs }) {
   return (
-    <div className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-2">
-      <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-1">
+    <div className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-1.5">
+      <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-0.5">
         {label}
       </span>
       <div className="flex items-center justify-between gap-1.5">
@@ -95,8 +100,25 @@ function CompareStat({ label, mine, theirs }) {
 }
 
 /**
+ * Tile genérico da faixa de metadados (label pequeno + conteúdo compacto).
+ * @param {{ label: string, children: import("react").ReactNode }} props
+ * @returns {JSX.Element}
+ */
+function MetaTile({ label, children }) {
+  return (
+    <div className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-2">
+      <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-1">
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+/**
  * Card de antevisão do próximo confronto — comparação direta das duas equipas,
- * forma recente, confronto direto, jogador-perigo, odds, árbitro e tempo.
+ * forma recente, registo, força, confronto direto, jogador-perigo, odds,
+ * árbitro e tempo, tudo numa faixa de metadados compacta.
  * As odds vêm calculadas pelo servidor (nextMatchSummary.odds) — a mesma fonte
  * usada no evento de apostas durante o jogo, para garantir valores idênticos.
  * @param {{ nextMatchSummary: Object, teamInfo: Object|null }} props
@@ -194,9 +216,9 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
     : `Jornada ${s.matchweek}`;
 
   return (
-    <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+    <div className="h-full flex flex-col bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
       {/* Cabeçalho: competição + venue */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[#1a1a1a]">
         <div className="flex items-center gap-2">
           {s.isCup ? (
             <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400">
@@ -219,99 +241,105 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
       </div>
 
       {/* Corpo */}
-      <div className="px-4 py-3 flex flex-col md:flex-row gap-3">
-        {/* ── Coluna principal: comparação ── */}
-        <div className="flex-1 min-w-0 flex flex-col gap-2.5">
-          {/* Hero VS */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex flex-col items-center gap-1 min-w-0 flex-1">
-              <TeamCrest team={teamInfo ?? { name: myName }} size="md" isMine />
-              <span className="text-xs font-black text-white truncate max-w-full">
+      <div className="flex-1 px-4 py-3 flex flex-col gap-2.5">
+        {/* Hero VS */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col items-center gap-1 min-w-0 flex-1">
+            <TeamCrest team={teamInfo ?? { name: myName }} size="md" isMine />
+            <span className="text-xs font-black text-white truncate max-w-full">
+              {myName}
+            </span>
+            <span className="text-[9px] text-gray-600 font-bold">
+              {s.team?.position ? `${s.team.position}º` : "—"}
+            </span>
+          </div>
+          <span className="shrink-0 text-[10px] font-black text-gray-600 px-2 py-1 rounded-full border border-[#222] bg-[#161616]">
+            VS
+          </span>
+          <div className="flex flex-col items-center gap-1 min-w-0 flex-1">
+            <TeamCrest team={opp} size="md" />
+            <span className="text-xs font-black text-white truncate max-w-full">
+              {opp.name}
+            </span>
+            <span className="text-[9px] text-gray-600 font-bold">
+              {opp.position ? `${opp.position}º` : "—"}
+            </span>
+          </div>
+        </div>
+
+        {/* Grelha de stats comparativos */}
+        <div className="flex items-center justify-between">
+          <span className="text-[8px] uppercase tracking-widest text-gray-600 font-black">
+            Tu vs Adversário
+          </span>
+          {ptsDiff !== 0 && (
+            <span className={`text-[9px] font-black tabular-nums ${ptsDiffColor}`}>
+              {ptsDiff > 0 ? "▲" : "▼"} {Math.abs(ptsDiff)} pts
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+          <CompareStat
+            label="Posição"
+            mine={s.team?.position ? `${s.team.position}º` : "—"}
+            theirs={opp.position ? `${opp.position}º` : "—"}
+          />
+          <CompareStat label="Pontos" mine={myPts} theirs={opp.points ?? 0} />
+          <CompareStat label="GM" mine={myGF} theirs={opp.goalsFor ?? 0} />
+          <CompareStat label="GS" mine={myGA} theirs={opp.goalsAgainst ?? 0} />
+          <CompareStat
+            label="Moral"
+            mine={myMorale}
+            theirs={oppMorale}
+          />
+          <CompareStat
+            label="Qualidade"
+            mine={myAvg ?? "—"}
+            theirs={oppAvg ?? "—"}
+          />
+        </div>
+
+        {/* Faixa de metadados compacta */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+          <MetaTile label="Forma recente">
+            <div className="flex items-center justify-between gap-1 min-w-0">
+              <span className="text-[9px] font-black text-white truncate">
                 {myName}
               </span>
-              <span className="text-[9px] text-gray-600 font-bold">
-                {s.team?.position ? `${s.team.position}º` : "—"}
-              </span>
+              <FormChips last5={myTeam.last5} />
             </div>
-            <span className="shrink-0 text-[10px] font-black text-gray-600 px-2 py-1 rounded-full border border-[#222] bg-[#161616]">
-              VS
-            </span>
-            <div className="flex flex-col items-center gap-1 min-w-0 flex-1">
-              <TeamCrest team={opp} size="md" />
-              <span className="text-xs font-black text-white truncate max-w-full">
+            <div className="flex items-center justify-between gap-1 min-w-0 mt-1">
+              <span className="text-[9px] font-black text-gray-400 truncate">
                 {opp.name}
               </span>
-              <span className="text-[9px] text-gray-600 font-bold">
-                {opp.position ? `${opp.position}º` : "—"}
-              </span>
+              <FormChips last5={opp.last5} />
             </div>
-          </div>
+          </MetaTile>
 
-          {/* Grelha de stats comparativos */}
-          <div className="flex items-center justify-between">
-            <span className="text-[8px] uppercase tracking-widest text-gray-600 font-black">
-              Tu vs Adversário
-            </span>
-            {ptsDiff !== 0 && (
-              <span className={`text-[9px] font-black tabular-nums ${ptsDiffColor}`}>
-                {ptsDiff > 0 ? "▲" : "▼"} {Math.abs(ptsDiff)} pts
-              </span>
-            )}
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5">
-            <CompareStat
-              label="Posição"
-              mine={s.team?.position ? `${s.team.position}º` : "—"}
-              theirs={opp.position ? `${opp.position}º` : "—"}
-            />
-            <CompareStat label="Pontos" mine={myPts} theirs={opp.points ?? 0} />
-            <CompareStat label="GM" mine={myGF} theirs={opp.goalsFor ?? 0} />
-            <CompareStat label="GS" mine={myGA} theirs={opp.goalsAgainst ?? 0} />
-            <CompareStat
-              label="Moral"
-              mine={myMorale}
-              theirs={oppMorale}
-            />
-            <CompareStat
-              label="Qualidade"
-              mine={myAvg ?? "—"}
-              theirs={oppAvg ?? "—"}
-            />
-          </div>
-
-          {/* Registo V/E/D */}
-          <div className="bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2">
-            <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-1.5">
-              Registo
-            </span>
-            <div className="flex items-center justify-between gap-2">
+          <MetaTile label="Registo">
+            <div className="flex items-center justify-between gap-1.5">
               <RecordText
                 v={teamInfo?.wins ?? myTeam.wins ?? 0}
                 e={teamInfo?.draws ?? myTeam.draws ?? 0}
                 d={teamInfo?.losses ?? myTeam.losses ?? 0}
               />
-              <span className="text-[8px] text-gray-700 font-black uppercase tracking-widest">
-                V · E · D
-              </span>
+              <span className="w-px h-4 bg-[#222]" />
               <RecordText
                 v={opp.wins ?? 0}
                 e={opp.draws ?? 0}
                 d={opp.losses ?? 0}
               />
             </div>
-          </div>
+          </MetaTile>
 
-          {/* Força da equipa (qualidade média) */}
           {myAvg != null && oppAvg != null && (
-            <div className="bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[7px] uppercase tracking-widest text-gray-600 font-black">
-                  Força da equipa
+            <MetaTile label="Força da equipa">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-black tabular-nums text-white leading-none">
+                  {myAvg}
                 </span>
-                <span className="text-[9px] font-black tabular-nums text-gray-400">
-                  <span className="text-white">{myAvg}</span>
-                  <span className="text-gray-700"> vs </span>
-                  <span>{oppAvg}</span>
+                <span className="text-[10px] font-black tabular-nums text-gray-400 leading-none">
+                  {oppAvg}
                 </span>
               </div>
               <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden flex">
@@ -333,188 +361,129 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
                 />
                 <div className="h-full flex-1" style={{ width: `${50 - (oppAvg / maxAvg) * 50}%` }} />
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── Coluna lateral: scouting ── */}
-        <div className="md:w-72 shrink-0 flex flex-col gap-2.5">
-          {/* Forma recente */}
-          <div className="bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2 space-y-1.5">
-            <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black">
-              Forma recente
-            </span>
-            <div className="flex items-center justify-between gap-2 min-w-0">
-              <span className="text-[9px] font-black text-white truncate">
-                {myName}
-              </span>
-              <FormChips last5={myTeam.last5} />
-            </div>
-            <div className="flex items-center justify-between gap-2 min-w-0">
-              <span className="text-[9px] font-black text-gray-400 truncate">
-                {opp.name}
-              </span>
-              <FormChips last5={opp.last5} />
-            </div>
-          </div>
-
-          {/* Jogador-perigo + confronto direto */}
-          {(opp.topScorer || (h2h && h2h.total > 0)) && (
-            <div className="bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2 space-y-2">
-              {opp.topScorer && (
-                <div>
-                  <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-0.5">
-                    Melhor marcador
-                  </span>
-                  <span className="text-[11px] font-black text-white">
-                    ⚽ {opp.topScorer.name}
-                  </span>
-                  <span className="text-[10px] font-black text-amber-400 ml-1 tabular-nums">
-                    ({opp.topScorer.goals})
-                  </span>
-                </div>
-              )}
-              {h2h && h2h.total > 0 && (
-                <div>
-                  <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-0.5">
-                    Confronto direto
-                  </span>
-                  <span className="text-[11px] font-black tabular-nums">
-                    <span className="text-green-400">{h2h.wins}</span>
-                    <span className="text-gray-700"> / </span>
-                    <span className="text-gray-300">{h2h.draws}</span>
-                    <span className="text-gray-700"> / </span>
-                    <span className="text-red-400">{h2h.losses}</span>
-                    <span className="text-gray-600 text-[9px] ml-1">
-                      ({h2h.total} jogos)
-                    </span>
-                  </span>
-                </div>
-              )}
-            </div>
+            </MetaTile>
           )}
 
-          {/* Último confronto */}
-          <div className="bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2">
-            <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-1">
-              Último confronto
-            </span>
+          <MetaTile label="Último confronto">
             {lcView ? (
               <>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-xl font-black text-white tabular-nums leading-none">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-base font-black text-white tabular-nums leading-none">
                     {lcView.score}
                   </span>
                   <span
-                    className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${lcView.labelClass}`}
+                    className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${lcView.labelClass}`}
                   >
                     {lcView.label}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                  <span className="text-[9px] text-gray-600 uppercase font-bold">
-                    {lcView.venue}
-                  </span>
-                  <span className="text-[9px] text-gray-700">·</span>
-                  <span className="text-[9px] text-gray-600 font-bold">
-                    {lcView.comp}
-                  </span>
-                  {lcView.season && (
-                    <>
-                      <span className="text-[9px] text-gray-700">·</span>
-                      <span className="text-[9px] text-gray-600">
-                        Época {lcView.season}
-                      </span>
-                    </>
-                  )}
-                </div>
+                <span className="block text-[8px] text-gray-600 uppercase font-bold truncate mt-1">
+                  {lcView.venue} · {lcView.comp}
+                  {lcView.season ? ` · Época ${lcView.season}` : ""}
+                </span>
               </>
             ) : (
               <span className="text-[10px] text-gray-700 font-bold italic">
                 Sem histórico
               </span>
             )}
-          </div>
+          </MetaTile>
 
-          {/* Odds */}
-          <div className="bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2">
-            <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-1.5">
-              Apostas
-            </span>
-            <div className="flex gap-1.5">
+          {(opp.topScorer || (h2h && h2h.total > 0)) && (
+            <MetaTile label="Confrontos">
+              {h2h && h2h.total > 0 ? (
+                <span className="text-[11px] font-black tabular-nums">
+                  <span className="text-green-400">{h2h.wins}</span>
+                  <span className="text-gray-700"> / </span>
+                  <span className="text-gray-300">{h2h.draws}</span>
+                  <span className="text-gray-700"> / </span>
+                  <span className="text-red-400">{h2h.losses}</span>
+                </span>
+              ) : (
+                <span className="text-[10px] text-gray-700 font-bold italic">
+                  Sem histórico
+                </span>
+              )}
+              {opp.topScorer && (
+                <span className="block text-[10px] font-bold text-gray-400 truncate mt-0.5">
+                  ⚽ {opp.topScorer.name}{" "}
+                  <span className="text-amber-400 font-black tabular-nums">
+                    ({opp.topScorer.goals})
+                  </span>
+                </span>
+              )}
+            </MetaTile>
+          )}
+
+          <MetaTile label="Apostas">
+            <div className="flex gap-1">
               {oddsList.map((o, i) => (
                 <div
                   key={o.key}
-                  className={`flex-1 ${o.bg} rounded-lg px-1.5 py-1.5 flex flex-col items-center gap-0.5 min-w-0`}
+                  className={`flex-1 ${o.bg} rounded-md px-1 py-1 flex flex-col items-center gap-0.5 min-w-0`}
                 >
-                  <span className="text-[8px] text-gray-600 font-black uppercase truncate max-w-full">
+                  <span className="text-[7px] text-gray-600 font-black uppercase truncate max-w-full">
                     {o.label}
                   </span>
-                  <span className={`text-[12px] font-black tabular-nums ${o.color}`}>
+                  <span className={`text-[11px] font-black tabular-nums ${o.color}`}>
                     {o.value}
                   </span>
                   {probs[i] != null && (
-                    <span className="text-[8px] font-black tabular-nums text-gray-500">
+                    <span className="text-[7px] font-black tabular-nums text-gray-500">
                       {probs[i]}%
                     </span>
                   )}
                 </div>
               ))}
             </div>
-          </div>
+          </MetaTile>
 
-          {/* Árbitro + Tempo */}
-          <div className="flex gap-2">
-            {ref && (
-              <div className="flex-1 min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2">
-                <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black mb-0.5">
-                  Árbitro
-                </span>
-                <span className="text-[10px] font-bold text-gray-400 truncate block">
-                  {ref.name}
-                </span>
-                <div className="mt-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden relative">
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-l-full"
-                    style={{
-                      width: `${ref.balance}%`,
-                      background: teamInfo?.color_primary || "#16a34a",
-                      opacity: 0.9,
-                    }}
-                  />
-                  <div
-                    className="absolute inset-y-0 right-0 rounded-r-full"
-                    style={{
-                      width: `${100 - ref.balance}%`,
-                      background: opp?.color_primary || "#dc2626",
-                      opacity: 0.9,
-                    }}
-                  />
-                </div>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-[8px] font-black text-gray-500 tabular-nums">
-                    {ref.balance}%
-                  </span>
-                  <span
-                    className={`text-[8px] font-black uppercase ${refFavoursMe ? "text-green-400" : "text-red-400"}`}
-                  >
-                    {refFavoursMe ? "Favorece-te" : "Contra ti"}
-                  </span>
-                </div>
+          {ref && (
+            <MetaTile label="Árbitro">
+              <span className="text-[10px] font-bold text-gray-400 truncate block">
+                {ref.name}
+              </span>
+              <div className="mt-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden relative">
+                <div
+                  className="absolute inset-y-0 left-0 rounded-l-full"
+                  style={{
+                    width: `${ref.balance}%`,
+                    background: teamInfo?.color_primary || "#16a34a",
+                    opacity: 0.9,
+                  }}
+                />
+                <div
+                  className="absolute inset-y-0 right-0 rounded-r-full"
+                  style={{
+                    width: `${100 - ref.balance}%`,
+                    background: opp?.color_primary || "#dc2626",
+                    opacity: 0.9,
+                  }}
+                />
               </div>
-            )}
-            {wf && (
-              <div className="shrink-0 flex flex-col items-center justify-center gap-0.5 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-3 py-2">
-                <span className="text-[7px] uppercase tracking-widest text-gray-600 font-black">
-                  Tempo
+              <div className="flex items-center justify-between mt-0.5">
+                <span className="text-[7px] font-black text-gray-500 tabular-nums">
+                  {ref.balance}%
                 </span>
-                <span className="text-xl leading-none">{wf.emoji}</span>
-                <span className="text-[8px] text-gray-500 font-bold">
-                  {weatherLabel}
+                <span
+                  className={`text-[7px] font-black uppercase ${refFavoursMe ? "text-green-400" : "text-red-400"}`}
+                >
+                  {refFavoursMe ? "Favorece-te" : "Contra ti"}
                 </span>
               </div>
-            )}
-          </div>
+            </MetaTile>
+          )}
+
+          {wf && (
+            <MetaTile label="Tempo">
+              <span className="block text-center text-base leading-none">
+                {wf.emoji}
+              </span>
+              <span className="block text-center text-[8px] text-gray-500 font-bold mt-0.5">
+                {weatherLabel}
+              </span>
+            </MetaTile>
+          )}
         </div>
       </div>
     </div>
@@ -550,7 +519,7 @@ function DifficultyGauge({ score = 50, label = "Equilibrado" }) {
         {[1, 2, 3, 4, 5].map((i) => (
           <div
             key={i}
-            className={`h-2 flex-1 rounded-full transition-all duration-300 ${
+            className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
               i <= filled ? theme.seg : "bg-gray-700/40"
             }`}
           />
@@ -571,36 +540,39 @@ function StadiumCard({ stadium }) {
   const cap = stadium.capacity ?? 10000;
   const fill = cap > 0 ? Math.round((att / cap) * 100) : 0;
   return (
-    <div className="flex-1 min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-4 py-3">
-      <span className="block text-[9px] uppercase tracking-widest text-gray-600 font-black mb-2">
-        🏟️ Estádio e ambiente
-      </span>
-      <div className="flex items-baseline gap-1.5">
-        <span className="text-2xl font-black text-white tabular-nums leading-none">
-          {att.toLocaleString("pt-PT")}
+    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-4 py-2.5">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
+          🏟️ Estádio e ambiente
         </span>
-        <span className="text-[9px] text-gray-600 font-bold uppercase">
-          espectadores esperados
+        <span className="text-[8px] font-black text-green-400 tabular-nums">
+          +{(stadium.revenue ?? 0).toLocaleString("pt-PT")}€
         </span>
       </div>
-      <div className="mt-2 h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-lg font-black text-white tabular-nums leading-none">
+          {att.toLocaleString("pt-PT")}
+        </span>
+        <span className="text-[8px] text-gray-600 font-bold uppercase">
+          espectadores
+        </span>
+        <span className="ml-auto text-[8px] text-gray-600 tabular-nums">
+          Cap. {cap.toLocaleString("pt-PT")}
+        </span>
+      </div>
+      <div className="mt-1.5 h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
         <div
           className="h-full rounded-full bg-gradient-to-r from-sky-400 to-sky-600"
           style={{ width: `${fill}%` }}
         />
-      </div>
-      <div className="flex items-center justify-between mt-2 text-[9px] font-bold">
-        <span className="text-gray-600 tabular-nums">Cap. {cap.toLocaleString("pt-PT")}</span>
-        <span className="text-green-400 tabular-nums">
-          +{(stadium.revenue ?? 0).toLocaleString("pt-PT")}€ receita
-        </span>
       </div>
     </div>
   );
 }
 
 /**
- * Mini-campo com a formação provável do adversário.
+ * Mini-campo com a formação provável do adversário (altura fixa para não
+ * crescer com a largura da viewport).
  * @param {{ formation?: { formation?: string, players?: Array<{ name: string, position: string, skill: number }> } | null }} props
  * @returns {JSX.Element|null}
  */
@@ -612,8 +584,8 @@ function OpponentFormation({ formation }) {
   );
   const rowYs = ["10%", "32%", "57%", "78%"];
   return (
-    <div className="flex-1 min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
+    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[#1a1a1a]">
         <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
           🔎 Formação provável
         </span>
@@ -622,9 +594,8 @@ function OpponentFormation({ formation }) {
         </span>
       </div>
       <div
-        className="relative w-full"
+        className="relative w-full h-44 lg:h-36"
         style={{
-          aspectRatio: "16/10",
           background:
             "radial-gradient(ellipse at 50% 25%, #1f5c1a 0%, #123a0d 50%, #09200a 100%)",
         }}
@@ -693,11 +664,13 @@ function ThreatGrid({ threats }) {
     forma: { icon: "🔥", label: "Em grande forma" },
   };
   return (
-    <div className="flex-1 min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-4 py-3">
-      <span className="block text-[9px] uppercase tracking-widest text-gray-600 font-black mb-2">
-        ⚠️ Ameaças do adversário
-      </span>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+      <div className="px-4 py-2 border-b border-[#1a1a1a]">
+        <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
+          ⚠️ Ameaças do adversário
+        </span>
+      </div>
+      <div className="px-3 py-2.5 grid grid-cols-1 sm:grid-cols-3 gap-1.5">
         {threats.map((t) => {
           const meta = META[t.role] ?? { icon: "❗", label: t.role };
           const value =
@@ -709,9 +682,9 @@ function ThreatGrid({ threats }) {
           return (
             <div
               key={t.role}
-              className="bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-2"
+              className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-2"
             >
-              <span className="text-[7px] uppercase tracking-widest text-gray-600 font-black">
+              <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black truncate">
                 {meta.icon} {meta.label}
               </span>
               <span className="block text-[11px] font-black text-white truncate mt-0.5">
@@ -730,6 +703,10 @@ function ThreatGrid({ threats }) {
 
 /**
  * Fase 1 do pré-jogo — Briefing da jornada.
+ *
+ * Desktop: hero compacto na mesma linha + grelha de duas colunas
+ * (confronto à esquerda, scouting à direita) para caber sem scroll.
+ * Mobile: fluxo vertical.
  * @returns {JSX.Element|null}
  */
 export function MatchBriefing() {
@@ -743,7 +720,7 @@ export function MatchBriefing() {
     <div className="space-y-3">
       {/* Header: manchete + contexto + dificuldade + CTA */}
       <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-[#1a1a1a]">
           <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
             📋 Briefing da Jornada
           </span>
@@ -753,62 +730,62 @@ export function MatchBriefing() {
               : `Jornada ${s.matchweek}`}
           </span>
         </div>
-        <div className="px-4 py-3 flex flex-col gap-3">
-          <p className="text-sm font-bold text-white leading-relaxed">
-            {s.headline ?? "Tudo em aberto nesta jornada."}
-          </p>
-          {s.stakes && (
-            <span className="inline-flex self-start items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-white/5 border border-[#222] text-gray-300">
-              🎯 {s.stakes}
-            </span>
-          )}
-          <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-            <div className="sm:w-52 shrink-0">
-              <DifficultyGauge score={s.difficulty?.score} label={s.difficulty?.label} />
-            </div>
-            <button
-              onClick={() => setPrepPhase("tactics")}
-              className={`flex-1 py-3.5 font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-95 text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110`}
-              style={{
-                background: "linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%)",
-              }}
-            >
-              Avançar para a Tática →
-            </button>
+        <div className="px-4 py-3 flex flex-col lg:flex-row lg:items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-white leading-snug line-clamp-2">
+              {s.headline ?? "Tudo em aberto nesta jornada."}
+            </p>
+            {s.stakes && (
+              <span className="mt-1.5 inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/5 border border-[#222] text-gray-300">
+                🎯 {s.stakes}
+              </span>
+            )}
           </div>
+          <div className="lg:w-40 shrink-0">
+            <DifficultyGauge score={s.difficulty?.score} label={s.difficulty?.label} />
+          </div>
+          <button
+            onClick={() => setPrepPhase("tactics")}
+            className={`w-full lg:w-52 shrink-0 py-3 lg:py-2.5 font-black rounded-2xl text-xs lg:text-sm uppercase tracking-widest transition-all active:scale-95 text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110`}
+            style={{
+              background: "linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%)",
+            }}
+          >
+            Avançar para a Tática →
+          </button>
         </div>
       </div>
 
-      {/* Antevisão completa */}
-      {opponent && (
-        <NextMatchCard nextMatchSummary={nextMatchSummary} teamInfo={teamInfo} />
-      )}
-
-      {/* Estádio + Formação provável */}
-      <div className="flex flex-col md:flex-row gap-3">
-        {s.stadium ? (
-          <StadiumCard stadium={s.stadium} />
-        ) : opponent ? (
-          <div className="flex-1 min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-4 py-3 flex items-center justify-between">
-            <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
-              🏟️ Estádio e ambiente
-            </span>
-            <span className="text-[11px] font-black text-white">
-              {s.venue === "Jamor"
-                ? "Neutro — Jamor"
-                : s.venue === "Casa"
-                  ? "Jogas em casa"
-                  : "Jogas fora"}
-            </span>
+      {/* Confronto + scouting */}
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch">
+        {opponent && (
+          <div className="flex-1 min-w-0">
+            <NextMatchCard nextMatchSummary={nextMatchSummary} teamInfo={teamInfo} />
           </div>
-        ) : null}
-        {opponent?.probableFormation && (
-          <OpponentFormation formation={opponent.probableFormation} />
         )}
+        <div className="lg:w-72 shrink-0 flex flex-col gap-3">
+          {s.stadium ? (
+            <StadiumCard stadium={s.stadium} />
+          ) : opponent ? (
+            <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-4 py-2.5 flex items-center justify-between">
+              <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
+                🏟️ Estádio e ambiente
+              </span>
+              <span className="text-[11px] font-black text-white">
+                {s.venue === "Jamor"
+                  ? "Neutro — Jamor"
+                  : s.venue === "Casa"
+                    ? "Jogas em casa"
+                    : "Jogas fora"}
+              </span>
+            </div>
+          ) : null}
+          {opponent?.probableFormation && (
+            <OpponentFormation formation={opponent.probableFormation} />
+          )}
+          <ThreatGrid threats={opponent?.threats} />
+        </div>
       </div>
-
-      {/* Ameaças */}
-      <ThreatGrid threats={opponent?.threats} />
     </div>
   );
 }
