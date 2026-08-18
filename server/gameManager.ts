@@ -3,6 +3,7 @@ import path from "path";
 import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { SEASON_CALENDAR } from "./gameConstants";
+import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 
 const sqlite = sqlite3.verbose();
 
@@ -382,6 +383,9 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     // Fixture seeds por divisão (aleatórios por época)
     fixtureSeeds: {},
 
+    // Memória táctica por equipa (habituação rápida; persistida em game_state)
+    tacticFamiliarity: {},
+
     // Histórico de resultados de jornadas
     allMatchResults: {},
 
@@ -670,6 +674,50 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                 } catch (_) {}
               }
 
+              // ── Memória táctica: restaurar score ou migrar do histórico antigo ──
+              if (st["tacticFamiliarity"]) {
+                try {
+                  const parsed = JSON.parse(st["tacticFamiliarity"]);
+                  if (parsed && typeof parsed === "object") {
+                    game.tacticFamiliarity = Object.fromEntries(
+                      Object.entries(parsed).map(([k, v]) => {
+                        const fam = v as {
+                          formations?: Record<string, number>;
+                          styles?: Record<string, number>;
+                        };
+                        return [
+                          Number(k),
+                          {
+                            formations: fam?.formations || {},
+                            styles: fam?.styles || {},
+                          },
+                        ];
+                      }),
+                    );
+                  }
+                } catch (_) {}
+              } else {
+                // Migração one-shot: converter contagens da player_tactic_history
+                // em scores do novo modelo (só se a tabela existir e tiver dados).
+                db.all(
+                  "SELECT team_id, formation, style, COUNT(*) AS cnt FROM player_tactic_history GROUP BY team_id, formation, style",
+                  (migrateErr: any, rows: any[] | null) => {
+                    if (migrateErr || !rows || rows.length === 0) return;
+                    try {
+                      migrateTacticFamiliarityFromHistory(game, rows);
+                      console.log(
+                        `[gameManager] 🧠 Memória táctica migrada de ${rows.length} registos de histórico (room ${roomCode})`,
+                      );
+                    } catch (migrateEx) {
+                      console.error(
+                        `[gameManager] Erro ao migrar memória táctica (room ${roomCode}):`,
+                        migrateEx,
+                      );
+                    }
+                  },
+                );
+              }
+
               // Limpar pendingMatchAction persistida na DB — após reinício do servidor
               // o jogo já foi reposto para "lobby", por isso qualquer ação pendente
               // é obsoleta. Criar um stub inerte causaria bloqueios silenciosos.
@@ -861,6 +909,10 @@ function saveGameState(game: ActiveGame): void {
   );
   upsert("fixtureSeeds", JSON.stringify(game.fixtureSeeds || {}));
   upsert("allMatchResults", JSON.stringify(game.allMatchResults || {}));
+  upsert(
+    "tacticFamiliarity",
+    JSON.stringify(game.tacticFamiliarity || {}),
+  );
 
   // Persist pending match action for crash recovery (only serialisable fields)
   if (game.pendingMatchAction) {

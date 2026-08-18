@@ -1,9 +1,6 @@
 import type { ActiveGame } from "./types";
 import { SEASON_CALENDAR } from "./gameConstants";
-import {
-  getTacticFamiliarity,
-  applyTacticDecay,
-} from "./game/tacticFamiliarity";
+import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { computeMatchOdds } from "./game/commentary";
 
 interface MatchSummaryDeps {
@@ -530,6 +527,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                     (p) => p.teamId === teamId && p.socketId,
                   );
                   if (playerState) {
+                    // Linha de auditoria (a fonte de verdade é a memória do jogo)
                     game.db.run(
                       "INSERT INTO player_tactic_history (team_id, player_name, formation, style, matchweek, competition, result) VALUES (?, ?, ?, ?, ?, ?, ?)",
                       [
@@ -542,12 +540,13 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                         result,
                       ],
                     );
-                    // Decaimento: tácticas não usadas há mais de 2 jornadas perdem 1 registo
-                    applyTacticDecay(
-                      game.db,
+                    // Memória táctica: ganho/decay por jogo (liga)
+                    updateTacticFamiliarity(
+                      game,
                       teamId,
-                      playerState.name,
+                      tactic,
                       matchweek,
+                      result,
                     );
                   }
                 };

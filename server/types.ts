@@ -83,6 +83,12 @@ export interface ActiveGame {
   // ── Fixture seeds por divisão (ordem aleatória no início de cada época) ──
   fixtureSeeds: Record<number, number[]>; // div → [teamId, ...] ordenado por seed
 
+  // ── Memória táctica por equipa (habituação rápida; persistida em game_state) ──
+  tacticFamiliarity: Record<
+    number,
+    { formations: Record<string, number>; styles: Record<string, number> }
+  >;
+
   // ── Histórico de resultados de todas as jornadas ──
   allMatchResults: Record<number, any[]>; // matchweek → [{homeTeamId, awayTeamId, homeGoals, awayGoals, ...}, ...]
 

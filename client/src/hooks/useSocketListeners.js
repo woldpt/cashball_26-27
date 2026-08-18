@@ -611,8 +611,8 @@ export function useSocketListeners(handlers, refs) {
 		});
 
 		socket.on("allTacticFamiliarity", (entries) => {
-			// Converter array [{formation, style, count, bonus, label}]
-			// para map { "4-3-3|OFENSIVO": { count, bonus, label }, ... }
+			// Converter array [{formation, style, score, stars, bonus}]
+			// para map { "4-3-3|OFENSIVO": { score, stars, bonus }, ... }
 			// Normalizar estilo para uppercase PT independentemente do valor guardado na DB
 			const styleToUpper = (s) => {
 				const m = {

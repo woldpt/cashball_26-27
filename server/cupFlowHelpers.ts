@@ -5,6 +5,7 @@ import { SEASON_CALENDAR, SPONSOR_REVENUE_BY_DIVISION, recalcPlayerValue } from 
 import { clearPhaseTimer } from "./matchFlowHelpers";
 import { generateAITactic } from "./game/matchCalculations";
 import { getTeamsWithCoachNames } from "./coreHelpers";
+import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 
 interface CupFlowDeps {
 	io: any;
@@ -1078,6 +1079,48 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			const winnerId =
 				fixture._winnerId ??
 				(goals90Home > goals90Away ? fixture.homeTeamId : fixture.awayTeamId);
+
+			// Memória táctica (Taça) — habituação/decay para coaches humanos
+			const updateCupFamiliarity = (
+				teamId: number,
+				tactic: any,
+				won: boolean,
+			) => {
+				const playerState = Object.values(game.playersByName).find(
+					(p: any) => p.teamId === teamId && p.socketId,
+				);
+				if (!playerState || !tactic?.formation || !tactic?.style) return;
+				// Linha de auditoria (a fonte de verdade é a memória do jogo)
+				game.db.run(
+					"INSERT INTO player_tactic_history (team_id, player_name, formation, style, matchweek, competition, result) VALUES (?, ?, ?, ?, ?, ?, ?)",
+					[
+						teamId,
+						playerState.name,
+						tactic.formation,
+						tactic.style,
+						game.matchweek,
+						"cup",
+						won ? "V" : "D",
+					],
+				);
+				updateTacticFamiliarity(
+					game,
+					teamId,
+					tactic,
+					game.matchweek,
+					won ? "V" : "D",
+				);
+			};
+			updateCupFamiliarity(
+				fixture.homeTeamId,
+				fixture._t1,
+				winnerId === fixture.homeTeamId,
+			);
+			updateCupFamiliarity(
+				fixture.awayTeamId,
+				fixture._t2,
+				winnerId === fixture.awayTeamId,
+			);
 
 			await new Promise((resolve) => {
 				game.db.run(

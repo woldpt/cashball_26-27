@@ -61,7 +61,7 @@ export function registerGameplaySocketHandlers(
     }
   });
 
-  socket.on("requestTacticFamiliarity", async (teamId) => {
+  socket.on("requestTacticFamiliarity", (teamId) => {
     const game = getGameBySocket(socket.id);
     if (!game) return;
     const playerState = getPlayerBySocket(game, socket.id);
@@ -69,13 +69,7 @@ export function registerGameplaySocketHandlers(
     const tactic = playerState.tactic;
     if (!tactic?.formation) return;
 
-    const familiarity = await getTacticFamiliarity(
-      game.db,
-      playerState.teamId,
-      playerState.name,
-      tactic.formation,
-      tactic.style,
-    );
+    const familiarity = getTacticFamiliarity(game, playerState.teamId, tactic);
     socket.emit("tacticFamiliarity", {
       ...familiarity,
       teamId,
@@ -83,13 +77,13 @@ export function registerGameplaySocketHandlers(
   });
 
   // Devolve a familiaridade de todas as combinações formação+estilo de uma vez
-  socket.on("requestAllTacticFamiliarity", async () => {
+  socket.on("requestAllTacticFamiliarity", () => {
     const game = getGameBySocket(socket.id);
     if (!game) return;
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState?.teamId) return;
 
-    const entries = await getAllTacticFamiliarity(game.db, playerState.teamId, playerState.name);
+    const entries = getAllTacticFamiliarity(game, playerState.teamId);
     socket.emit("allTacticFamiliarity", entries);
   });
 

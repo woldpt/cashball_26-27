@@ -38,39 +38,24 @@ const POS_COLORS = {
 };
 
 
-const STAR_COUNT_THRESHOLDS = [10, 8, 6, 4, 2];
-
-/**
- * Nº de estrelas (0-5) a partir do nº de jogos com uma táctica.
- * @param {number} count Jogos com a táctica
- * @returns {number}
- */
-function starCountFor(count) {
-  for (const [i, min] of STAR_COUNT_THRESHOLDS.entries()) {
-    if (count >= min) return STAR_COUNT_THRESHOLDS.length - i;
-  }
-  return 0;
-}
-
 /**
  * Estrelas de familiaridade táctica — 5 slots, preenchidas âmbar / vazias escuras.
  * @param {Object} props
- * @param {number} props.count Jogos com a táctica
+ * @param {number} props.stars Estrelas (0-5) calculadas no servidor (score 0..100)
  * @returns {JSX.Element}
  */
 function FamiliarityStars(props) {
-  const count = props.count;
-  const filled = starCountFor(count);
+  const stars = Math.max(0, Math.min(5, props.stars || 0));
   return (
     <div
       className="flex items-center gap-px leading-none"
-      title={`${count} jogos com esta táctica`}
+      title={`${stars} estrelas de familiaridade táctica`}
     >
       {[1, 2, 3, 4, 5].map((i) => (
         <span
           key={i}
           className={`text-[10px] leading-none ${
-            i <= filled ? "text-amber-400" : "text-gray-700/60"
+            i <= stars ? "text-amber-400" : "text-gray-700/60"
           }`}
         >
           ★
@@ -650,7 +635,7 @@ export function TacticsView() {
     let best = null;
     for (const s of styles) {
       const entry = allTacticFamiliarity[`${formation}|${s}`];
-      if (entry && (!best || entry.count > best.count)) best = entry;
+      if (entry && (!best || entry.stars > best.stars)) best = entry;
     }
     return best;
   };
@@ -848,7 +833,7 @@ export function TacticsView() {
                     >
                       <span className="flex flex-col items-center gap-0.5">
                         {label}
-                        <FamiliarityStars count={best?.count ?? 0} />
+                        <FamiliarityStars stars={best?.stars ?? 0} />
                       </span>
                     </button>
                   );
@@ -951,7 +936,7 @@ ${
                         {label}
                       </button>
                       <div className="flex-1 flex items-center px-2 py-1.5 rounded-xl bg-[#161616]/60">
-                        <FamiliarityStars count={best?.count ?? 0} />
+                        <FamiliarityStars stars={best?.stars ?? 0} />
                       </div>
                     </div>
                   );
