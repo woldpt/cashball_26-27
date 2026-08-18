@@ -1690,8 +1690,10 @@ async function simulateMatchSegment(
 
     const homeCardProb = 0.015 * (1 + (homeAggAvg - 3) * 0.1);
     const awayCardProb = 0.015 * (1 + (awayAggAvg - 3) * 0.1);
-    if (Math.random() < homeCardProb) await emitCard(true);
-    if (Math.random() < awayCardProb) await emitCard(false);
+    // No último minuto regulamentar da liga não disparar cartões — um vermelho
+    // ao GR abriria a janela obrigatória de substituição após o apito final
+    if (!isLastLeagueMinute && Math.random() < homeCardProb) await emitCard(true);
+    if (!isLastLeagueMinute && Math.random() < awayCardProb) await emitCard(false);
 
     const injuryChance = Math.random();
     const weatherInjuryMult =
@@ -1733,17 +1735,15 @@ async function simulateMatchSegment(
       }
     }
 
-    // User substitutions (ignorar no último minuto regulamentar da liga)
-    if (
-      !isLastLeagueMinute &&
-      game.pendingSubstitutions &&
-      game.pendingSubstitutions.size > 0
-    ) {
+    // User substitutions (nunca abrir a janela no último minuto regulamentar da liga;
+    // consumir sempre os pedidos pendentes para não vazarem para o jogo seguinte)
+    if (game.pendingSubstitutions && game.pendingSubstitutions.size > 0) {
       const teamsToSub = [fixture.homeTeamId, fixture.awayTeamId].filter((id) =>
         game.pendingSubstitutions.has(id),
       );
       for (const teamId of teamsToSub) {
         game.pendingSubstitutions.delete(teamId);
+        if (isLastLeagueMinute) continue;
 
         const isHome = teamId === fixture.homeTeamId;
         const squad = isHome ? home.squad : away.squad;

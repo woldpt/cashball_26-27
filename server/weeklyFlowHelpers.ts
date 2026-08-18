@@ -205,6 +205,12 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       }
     }
 
+    // Novo jogo: limpar pedidos de substituição pendentes que possam ter sido
+    // engolidos no apito final do jogo anterior (evita janelas fantasma)
+    if (startMin === 1) {
+      game.pendingSubstitutions?.clear();
+    }
+
     // Read tactics for all fixtures once at segment start
     const fixtureTactics: Array<{ t1: any; t2: any }> = await Promise.all(
       game.currentFixtures.map(async (fixture) => {
