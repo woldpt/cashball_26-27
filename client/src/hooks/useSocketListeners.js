@@ -45,6 +45,9 @@ export function useSocketListeners(handlers, refs) {
 		});
 		socket.on("teamsData", (data) => {
 			if (!inRoom()) return;
+			// Snapshot da tabela atual antes do refresh — base para as setinhas
+			// de subida/descida na classificação.
+			handlers.setPrevStandings(refs.teamsRef.current || []);
 			handlers.setTeams(data);
 		});
 		socket.on("teamForms", (data) => {

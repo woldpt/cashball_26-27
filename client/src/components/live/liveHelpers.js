@@ -76,25 +76,37 @@ export function computeVirtualStandings({
   teamForms = {},
   applyLiveResults = false,
 }) {
-  const standings = new Map();
-  teams.forEach((t) => {
-    standings.set(String(t.id), {
-      team: t,
-      played: (t.wins || 0) + (t.draws || 0) + (t.losses || 0),
-      wins: t.wins || 0,
-      draws: t.draws || 0,
-      losses: t.losses || 0,
-      goalsFor: t.goals_for || 0,
-      goalsAgainst: t.goals_against || 0,
-      points: t.points || 0,
-      form: teamForms[t.id] || "",
+  // Comparador idêntico ao servidor (pontos → DG → golos → nome).
+  const cmp = (a, b) =>
+    b.points - a.points ||
+    b.goalsFor - b.goalsAgainst - (a.goalsFor - a.goalsAgainst) ||
+    b.goalsFor - a.goalsFor ||
+    String(a.name || "").localeCompare(String(b.name || ""));
+
+  const rows = teams.map((t) => ({
+    team: t,
+    name: t.name || "",
+    played: (t.wins || 0) + (t.draws || 0) + (t.losses || 0),
+    wins: t.wins || 0,
+    draws: t.draws || 0,
+    losses: t.losses || 0,
+    goalsFor: t.goals_for || 0,
+    goalsAgainst: t.goals_against || 0,
+    points: t.points || 0,
+    form: teamForms[t.id] || "",
+  }));
+
+  // Posição anterior = ranking da tabela persistida (antes desta jornada).
+  [...rows]
+    .sort(cmp)
+    .forEach((r, i) => {
+      r.prevPos = i + 1;
     });
-  });
 
   if (applyLiveResults) {
     (matchResults?.results || []).forEach((r) => {
-      const home = standings.get(String(r.homeTeamId));
-      const away = standings.get(String(r.awayTeamId));
+      const home = rows.find((row) => String(row.team.id) === String(r.homeTeamId));
+      const away = rows.find((row) => String(row.team.id) === String(r.awayTeamId));
       if (!home || !away) return;
       const events = r.events || [];
       const homeGoals = events.filter(
@@ -110,13 +122,13 @@ export function computeVirtualStandings({
     });
   }
 
-  return [...standings.values()].sort(
-    (a, b) =>
-      b.points - a.points ||
-      b.goalsFor - b.goalsAgainst - (a.goalsFor - a.goalsAgainst) ||
-      b.goalsFor - a.goalsFor ||
-      String(a.team.name || "").localeCompare(String(b.team.name || "")),
-  );
+  const ranked = [...rows].sort(cmp);
+  ranked.forEach((r, i) => {
+    r.curPos = i + 1;
+    r.movement = r.prevPos - r.curPos;
+  });
+
+  return ranked;
 }
 
 function applyResult(row, goalsFor, goalsAgainst) {

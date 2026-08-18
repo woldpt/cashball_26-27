@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
+import { TrendArrow } from "../shared/TrendArrow.jsx";
+import { rankStandings } from "../../utils/standingsRank.js";
 
 const DIVISION_NAMES = {
   1: "Primeira Liga",
@@ -39,6 +41,7 @@ function FormDots({ form = "" }) {
 function DivisionTable({
   div,
   teams,
+  prevStandings,
   teamForms,
   myTeamId,
   humanTeamIds,
@@ -56,6 +59,12 @@ function DivisionTable({
         (b.goals_for || 0) - (a.goals_for || 0) ||
         String(a.name || "").localeCompare(String(b.name || "")),
     );
+
+  // Posições da jornada anterior (para as setinhas de subida/descida).
+  const prevRanked = rankStandings(
+    (prevStandings || []).filter((t) => t.division === div),
+  );
+  const prevIndex = new Map(prevRanked.map((t, i) => [String(t.id), i]));
 
   if (!divTeams.length) return null;
 
@@ -84,6 +93,9 @@ function DivisionTable({
             <tr className="text-[8px] sm:text-[9px] uppercase text-on-surface-variant/50 font-bold bg-surface-container-low/60">
               <th className="pl-4 pr-2 py-1.5 w-8">Pos</th>
               <th className="px-2 py-1.5">Clube</th>
+              <th className="px-1 py-1.5 text-center w-6" title="Movimento de posição">
+                Mov
+              </th>
               <th className="px-1 py-1.5 text-center w-6">J</th>
               <th className="px-1 py-1.5 text-center w-6 hidden sm:table-cell">
                 V
@@ -170,6 +182,13 @@ function DivisionTable({
                         </span>
                       )}
                     </div>
+                  </td>
+
+                  {/* Movimento */}
+                  <td className="px-1 py-2 text-center">
+                    <TrendArrow
+                      movement={prevIndex.has(String(t.id)) ? prevIndex.get(String(t.id)) - idx : 0}
+                    />
                   </td>
 
                   {/* J */}
@@ -508,6 +527,7 @@ export function LeagueStandings({
   players = [],
   allMatchResults = {},
   standingsStale = false,
+  prevStandings = [],
 }) {
   const humanTeamIds = new Set(
     players.filter((p) => p.teamId != null).map((p) => String(p.teamId)),
@@ -556,6 +576,7 @@ export function LeagueStandings({
               key={div}
               div={div}
               teams={teams}
+              prevStandings={prevStandings}
               teamForms={teamForms}
               myTeamId={myTeamId}
               humanTeamIds={humanTeamIds}

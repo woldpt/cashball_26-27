@@ -12,6 +12,7 @@ export function StandingsTab({
   players,
   allMatchResults,
   standingsStale,
+  prevStandings,
 }) {
   return (
     <LeagueStandings
@@ -26,6 +27,7 @@ export function StandingsTab({
       players={players}
       allMatchResults={allMatchResults}
       standingsStale={standingsStale}
+      prevStandings={prevStandings}
     />
   );
 }

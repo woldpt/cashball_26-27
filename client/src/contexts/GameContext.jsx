@@ -42,6 +42,7 @@ export function GameProvider({
 }) {
 	// ── Game state ─────────────────────────────────────────────────────────
 	const [teams, setTeams] = useState([]);
+	const [prevStandings, setPrevStandings] = useState([]);
 	const [teamForms, setTeamForms] = useState({});
 	const [players, setPlayers] = useState([]);
 	const [mySquad, setMySquad] = useState([]);
@@ -547,6 +548,7 @@ export function GameProvider({
 		{
 			setCalendarData,
 			setTeams,
+			setPrevStandings,
 			setTeamForms,
 			setPlayers,
 			setMySquad,
@@ -992,6 +994,7 @@ export function GameProvider({
 		}
 		setInjuryCountdown(null);
 		setTeams([]);
+		setPrevStandings([]);
 		setTeamForms({});
 		setPlayers([]);
 		setMySquad([]);
@@ -1067,6 +1070,8 @@ export function GameProvider({
 		// State
 		teams,
 		setTeams,
+		prevStandings,
+		setPrevStandings,
 		teamForms,
 		setTeamForms,
 		players,

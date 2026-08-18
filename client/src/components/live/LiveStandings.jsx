@@ -1,5 +1,6 @@
 import { DIVISION_NAMES } from "../../constants/index.js";
 import { computeVirtualStandings } from "./liveHelpers.js";
+import { TrendArrow } from "../shared/TrendArrow.jsx";
 
 /* ── LiveStandings — Classificação virtual da minha divisão ──────────────
  *
@@ -93,6 +94,9 @@ export function LiveStandingsPanel({
             <tr className="text-[7px] sm:text-[8px] uppercase text-on-surface-variant/50 font-bold">
               <th className="pl-2.5 pr-1 py-1 w-7">Pos</th>
               <th className="px-1 py-1">Clube</th>
+              <th className="px-1 py-1 text-center w-6" title="Movimento de posição">
+                Mov
+              </th>
               <th className="px-1 py-1 text-center w-5">J</th>
               <th className="px-1 py-1 text-center w-8">DG</th>
               <th className="px-1 py-1 text-center w-7 text-tertiary/70">Pts</th>
@@ -149,6 +153,9 @@ export function LiveStandingsPanel({
                       )}
                     </div>
                   </td>
+                  <td className="px-1 py-1.5 text-center">
+                    <TrendArrow movement={row.movement} />
+                  </td>
                   <td className="px-1 py-1.5 text-center text-[9px] text-on-surface-variant/60 tabular-nums">
                     {row.played}
                   </td>
@@ -174,7 +181,7 @@ export function LiveStandingsPanel({
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-4 text-center text-[10px] text-on-surface-variant/30 font-bold">
+                <td colSpan={7} className="py-4 text-center text-[10px] text-on-surface-variant/30 font-bold">
                   Sem dados
                 </td>
               </tr>

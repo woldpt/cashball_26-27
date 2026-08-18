@@ -68,6 +68,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     setActiveTab,
     topScorers,
     standingsStale,
+    prevStandings,
     marketPositionFilter,
     setMarketPositionFilter,
     marketSort,
@@ -1196,6 +1197,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         players={players}
                         allMatchResults={allMatchResults}
                         standingsStale={standingsStale}
+                        prevStandings={prevStandings}
                       />
                     )}
 
