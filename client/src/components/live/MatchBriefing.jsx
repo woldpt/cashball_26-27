@@ -543,17 +543,17 @@ function StadiumCard({ stadium }) {
   const cap = stadium.capacity ?? 10000;
   const fill = cap > 0 ? Math.round((att / cap) * 100) : 0;
   return (
-    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-4 py-2.5 lg:flex-1 lg:flex lg:flex-col lg:justify-center">
-      <div className="flex items-center justify-between mb-1.5">
+    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-3.5 py-2 lg:flex-none lg:flex lg:flex-col lg:justify-center">
+      <div className="flex items-center justify-between mb-1">
         <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
-          🏟️ Estádio e ambiente
+          🏟️ Estádio
         </span>
         <span className="text-[8px] font-black text-green-400 tabular-nums">
           +{(stadium.revenue ?? 0).toLocaleString("pt-PT")}€
         </span>
       </div>
       <div className="flex items-baseline gap-1.5">
-        <span className="text-lg lg:text-2xl font-black text-white tabular-nums leading-none">
+        <span className="text-base lg:text-lg font-black text-white tabular-nums leading-none">
           {att.toLocaleString("pt-PT")}
         </span>
         <span className="text-[8px] text-gray-600 font-bold uppercase">
@@ -563,7 +563,7 @@ function StadiumCard({ stadium }) {
           Cap. {cap.toLocaleString("pt-PT")}
         </span>
       </div>
-      <div className="mt-1.5 lg:mt-2 h-1 lg:h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+      <div className="mt-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
         <div
           className="h-full rounded-full bg-gradient-to-r from-sky-400 to-sky-600"
           style={{ width: `${fill}%` }}
@@ -587,7 +587,7 @@ function OpponentFormation({ formation }) {
   );
   const rowYs = ["10%", "32%", "57%", "78%"];
   return (
-    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
+    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden lg:flex-1 lg:flex lg:flex-col">
       <div className="flex items-center justify-between px-4 py-2 border-b border-[#1a1a1a] lg:shrink-0">
         <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
           🔎 Formação provável
@@ -597,7 +597,7 @@ function OpponentFormation({ formation }) {
         </span>
       </div>
       <div
-        className="relative w-full h-44 lg:h-auto lg:flex-1 lg:min-h-0"
+        className="relative w-full h-44 lg:h-auto lg:flex-1 lg:min-h-[150px]"
         style={{
           background:
             "radial-gradient(ellipse at 50% 25%, #1f5c1a 0%, #123a0d 50%, #09200a 100%)",
@@ -667,13 +667,13 @@ function ThreatGrid({ threats }) {
     forma: { icon: "🔥", label: "Em grande forma" },
   };
   return (
-    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
-      <div className="px-4 py-2 border-b border-[#1a1a1a] lg:shrink-0">
+    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden lg:flex-none lg:flex lg:flex-col">
+      <div className="px-4 py-1.5 border-b border-[#1a1a1a]">
         <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
           ⚠️ Ameaças do adversário
         </span>
       </div>
-      <div className="px-3 py-2.5 lg:py-3 grid grid-cols-1 sm:grid-cols-3 gap-1.5 lg:flex-1 lg:content-center">
+      <div className="px-3 py-2 grid grid-cols-1 sm:grid-cols-3 gap-1.5 lg:content-center">
         {threats.map((t) => {
           const meta = META[t.role] ?? { icon: "❗", label: t.role };
           const value =
@@ -685,7 +685,7 @@ function ThreatGrid({ threats }) {
           return (
             <div
               key={t.role}
-              className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-2 lg:py-3 flex flex-col items-center justify-center text-center"
+              className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-2 flex flex-col items-center justify-center text-center"
             >
               <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black truncate max-w-full">
                 {meta.icon} {meta.label}
@@ -720,7 +720,7 @@ export function MatchBriefing() {
   const opponent = s.opponent;
 
   return (
-    <div className="space-y-3 lg:space-y-0 lg:flex lg:flex-col lg:gap-4 lg:h-[calc(100dvh-9.5rem)] lg:min-h-[540px]">
+    <div className="space-y-3 lg:space-y-0 lg:flex lg:flex-col lg:gap-4 lg:min-h-[max(540px,calc(100dvh-9.5rem))]">
       {/* Header: manchete + contexto + dificuldade + CTA */}
       <div className="lg:shrink-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2 lg:py-3 border-b border-[#1a1a1a]">
@@ -760,17 +760,17 @@ export function MatchBriefing() {
       </div>
 
       {/* Confronto + scouting */}
-      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:flex-1 lg:min-h-0">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:flex-1">
         {opponent && (
-          <div className="flex-1 min-w-0 lg:flex lg:flex-col lg:min-h-0">
+          <div className="flex-1 min-w-0 lg:flex lg:flex-col">
             <NextMatchCard nextMatchSummary={nextMatchSummary} teamInfo={teamInfo} />
           </div>
         )}
-        <div className="lg:w-72 shrink-0 flex flex-col gap-3 lg:h-full lg:min-h-0">
+        <div className="lg:w-72 shrink-0 flex flex-col gap-3 lg:h-full">
           {s.stadium ? (
             <StadiumCard stadium={s.stadium} />
           ) : opponent ? (
-            <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-4 py-2.5 flex items-center justify-between lg:flex-1">
+            <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-4 py-2.5 flex items-center justify-between lg:flex-none">
               <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
                 🏟️ Estádio e ambiente
               </span>
