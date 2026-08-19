@@ -316,20 +316,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           {isMatchInProgress && (
             <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none">
               {isPlayingMatch ? (
-                <span className="flex flex-col items-center gap-0.5 px-3.5 py-1 rounded-full bg-surface/40 border border-white/10 backdrop-blur-sm">
-                  <span
-                    className="text-lg font-headline font-black tabular-nums leading-none"
-                    style={{ color: teamInfo?.color_secondary || "var(--color-on-surface)" }}
-                  >
+                <span className="flex flex-col items-center gap-0.5 px-3.5 py-1 rounded-full bg-surface border border-outline-variant/50">
+                  <span className="text-lg font-headline font-black tabular-nums leading-none text-on-surface">
                     {liveMinute}'
                   </span>
-                  <span
-                    className="text-[7px] font-bold uppercase tracking-widest leading-none"
-                    style={{
-                      color: teamInfo?.color_secondary || "var(--color-on-surface)",
-                      opacity: 0.55,
-                    }}
-                  >
+                  <span className="text-[7px] font-bold uppercase tracking-widest leading-none text-on-surface opacity-70">
                     {liveMinute > 90
                       ? "Prolongamento"
                       : liveMinute > 45
@@ -338,23 +329,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   </span>
                 </span>
               ) : liveMinute === 45 && !isCupMatch ? (
-                <span
-                  className="px-3 py-1 rounded-full bg-surface/40 border border-white/10 backdrop-blur-sm text-[10px] font-black uppercase tracking-widest"
-                  style={{
-                    color: teamInfo?.color_secondary || "var(--color-on-surface)",
-                    opacity: 0.7,
-                  }}
-                >
+                <span className="px-3 py-1 rounded-full bg-surface border border-outline-variant/50 text-[10px] font-black uppercase tracking-widest text-on-surface opacity-90">
                   Intervalo
                 </span>
               ) : isCupMatch ? (
-                <span
-                  className="px-3 py-1 rounded-full bg-surface/40 border border-white/10 backdrop-blur-sm text-[9px] font-black uppercase tracking-widest"
-                  style={{
-                    color: teamInfo?.color_secondary || "var(--color-on-surface)",
-                    opacity: 0.7,
-                  }}
-                >
+                <span className="px-3 py-1 rounded-full bg-surface border border-outline-variant/50 text-[9px] font-black uppercase tracking-widest text-on-surface opacity-90">
                   🏆 {cupMatchRoundName}
                   {cupPreMatch
                     ? " · Pré-Jogo"
