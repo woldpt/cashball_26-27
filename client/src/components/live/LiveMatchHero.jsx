@@ -273,7 +273,7 @@ export function LiveMatchHero({
         </div>
 
         {/* ── Timeline + attendance ── */}
-        <div className="w-full max-w-xs sm:max-w-sm mt-5 space-y-1.5">
+        <div className="w-full max-w-2xl mt-5 space-y-1.5">
           <div className="relative h-1.5 bg-outline-variant/20 rounded-full overflow-hidden">
             <div
               className="h-full bg-primary transition-all duration-1000"
@@ -335,7 +335,7 @@ export function LiveMatchHero({
                 style={{ animation: "commentaryFadeIn 0.6s ease" }}
               >
                 <p
-                  className={`text-[11px] sm:text-[16px] leading-snug italic font-medium tracking-wide ${
+                  className={`text-[11px] sm:text-[16px] leading-snug italic font-medium tracking-wide line-clamp-2 ${
                     isGoal ? "text-primary/90" : "text-on-surface-variant/55"
                   }`}
                   style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
