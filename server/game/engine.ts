@@ -1199,9 +1199,7 @@ async function simulateMatchSegment(
       is_star: p.is_star || 0,
       skill: p.skill,
       ...getMatchFatigueSnapshot(fixture, side, p.id),
-      is_starter: tactic?.positions
-        ? tactic.positions[p.id] === "Titular"
-        : true,
+      is_starter: true,
     }));
     const bench = (fullRoster || [])
       .filter(

@@ -115,9 +115,12 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
    * Deriva a formação (def-med-ata) e os titulares a partir de um lineup gravado.
    */
   function deriveFormationFromLineup(lineup: any[]) {
-    const starters = (lineup || []).filter(
-      (p: any) => p.is_starter !== false && p.position && p.name,
-    );
+    // Titulares vêm sempre primeiro no lineup (snapshot = [...titulares, ...suplentes]).
+    // Não confiar no flag is_starter: jogadores auto-picked fora do tactic.positions
+    // (suspensos/lesionados substituídos, juniores) ficam marcados como false.
+    const starters = (lineup || [])
+      .filter((p: any) => p.position && p.name)
+      .slice(0, 11);
     if (starters.length === 0) return null;
     const def = starters.filter((p: any) => p.position === "DEF").length;
     const med = starters.filter((p: any) => p.position === "MED").length;
@@ -126,7 +129,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     if (gr < 1) return null;
     return {
       formation: `${Math.min(def, 5)}-${Math.min(med, 5)}-${Math.min(ata, 5)}`,
-      players: starters.slice(0, 11).map((p: any) => ({
+      players: starters.map((p: any) => ({
         name: p.name,
         position: p.position,
         skill: p.skill,
