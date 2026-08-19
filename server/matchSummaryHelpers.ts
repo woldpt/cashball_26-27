@@ -3,6 +3,11 @@ import { SEASON_CALENDAR } from "./gameConstants";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { computeMatchOdds } from "./game/commentary";
 import { calculateMatchAttendance } from "./coreHelpers";
+import {
+  isPlayerAvailable,
+  withJuniorGRs,
+  ensureFullBench,
+} from "./game/playerUtils";
 
 interface MatchSummaryDeps {
   runAll: <T extends Record<string, any> = Record<string, any>>(
@@ -138,12 +143,50 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
   }
 
   /**
-   * Formação provável do adversário — extraída do lineup do seu último jogo de liga.
+   * Preenche uma formação (def-med-ata) com os melhores jogadores por skill,
+   * tapando faltas de posição com os restantes jogadores de campo disponíveis.
+   */
+  function pickBestXI(players: any[], formation: string) {
+    const parts = formation.split("-");
+    const counts = {
+      GR: 1,
+      DEF: Math.min(parseInt(parts[0], 10) || 4, 5),
+      MED: Math.min(parseInt(parts[1], 10) || 4, 5),
+      ATA: Math.min(parseInt(parts[2], 10) || 2, 5),
+    };
+    const pickBest = (pool: any[], n: number) =>
+      [...pool].sort((a, b) => (b.skill || 0) - (a.skill || 0)).slice(0, n);
+
+    const starters = [
+      ...pickBest(players.filter((p) => p.position === "GR"), counts.GR),
+      ...pickBest(players.filter((p) => p.position === "DEF"), counts.DEF),
+      ...pickBest(players.filter((p) => p.position === "MED"), counts.MED),
+      ...pickBest(players.filter((p) => p.position === "ATA"), counts.ATA),
+    ];
+
+    if (starters.length < 11) {
+      const inSet = new Set(starters.map((p) => p.id));
+      const remaining = [...players]
+        .filter((p) => !inSet.has(p.id) && p.position !== "GR")
+        .sort((a, b) => (b.skill || 0) - (a.skill || 0));
+      starters.push(...remaining.slice(0, 11 - starters.length));
+    }
+
+    return starters.slice(0, 11);
+  }
+
+  /**
+   * Formação provável do adversário — melhores jogadores disponíveis por skill,
+   * dispostos na formação preferida do último jogo de liga (fallback 4-4-2).
    */
   async function getOpponentProbableFormation(
     game: ActiveGame,
     opponentId: number,
   ) {
+    const mw = game.matchweek || 1;
+
+    // Formação preferida a partir do lineup do último jogo de liga.
+    let preferred = "4-4-2";
     const row: any = await runGet(
       game.db,
       `SELECT home_team_id, away_team_id, home_lineup, away_lineup
@@ -153,17 +196,63 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
        LIMIT 1`,
       [opponentId, opponentId],
     );
-    if (!row) return null;
-    const isHome = row.home_team_id === opponentId;
-    let lineup: any[] = [];
-    try {
-      lineup = JSON.parse(
-        isHome ? row.home_lineup : row.away_lineup,
-      ) as any[];
-    } catch {
-      return null;
+    if (row) {
+      try {
+        const lineup = JSON.parse(
+          row.home_team_id === opponentId
+            ? row.home_lineup
+            : row.away_lineup,
+        ) as any[];
+        const derived = deriveFormationFromLineup(lineup);
+        if (derived?.formation) preferred = derived.formation;
+      } catch {
+        // ignora lineup corrompido — mantém o fallback
+      }
     }
-    return deriveFormationFromLineup(lineup);
+
+    // Melhores jogadores disponíveis (reais + juniores para garantir 11).
+    const rows = await runAll<{
+      id: number;
+      name: string;
+      position: string;
+      skill: number;
+      suspension_until_matchweek: number;
+      injury_until_matchweek: number;
+      transfer_cooldown_until_matchweek: number;
+    }>(
+      game.db,
+      `SELECT id, name, position, skill,
+              suspension_until_matchweek, injury_until_matchweek,
+              transfer_cooldown_until_matchweek
+       FROM players
+       WHERE team_id = ? AND id > 0`,
+      [opponentId],
+    );
+    const available = rows.filter((p) => isPlayerAvailable(p, mw));
+    const pool = ensureFullBench(
+      withJuniorGRs(available, opponentId, mw),
+      opponentId,
+      mw,
+    );
+
+    const xi = pickBestXI(pool, preferred);
+    if (xi.length === 0) return null;
+
+    const def = xi.filter((p) => p.position === "DEF").length;
+    const med = xi.filter((p) => p.position === "MED").length;
+    const ata = xi.filter((p) => p.position === "ATA").length;
+    const gr = xi.filter((p) => p.position === "GR").length;
+    if (gr < 1) return null;
+
+    return {
+      formation: `${Math.min(def, 5)}-${Math.min(med, 5)}-${Math.min(ata, 5)}`,
+      players: xi.map((p) => ({
+        name: p.name,
+        position: p.position,
+        skill: p.skill,
+        isJunior: p.isJunior === true || p.id < 0,
+      })),
+    };
   }
 
   /**

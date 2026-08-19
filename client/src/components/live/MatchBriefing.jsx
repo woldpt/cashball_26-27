@@ -514,7 +514,7 @@ function StadiumCard({ stadium }) {
 /**
  * Mini-campo com a formação provável do adversário (altura fixa para não
  * crescer com a largura da viewport).
- * @param {{ formation?: { formation?: string, players?: Array<{ name: string, position: string, skill: number }> } | null }} props
+ * @param {{ formation?: { formation?: string, players?: Array<{ name: string, position: string, skill: number, isJunior?: boolean }> } | null }} props
  * @returns {JSX.Element|null}
  */
 function OpponentFormation({ formation }) {
@@ -564,22 +564,24 @@ function OpponentFormation({ formation }) {
             >
               {rowPlayers.map((p, i) => {
                 const style = POS_STYLES[p.position] || { hex: "#6b7280" };
+                const isJunior = p.isJunior === true;
                 return (
                   <div key={`${p.name}-${i}`} className="flex flex-col items-center">
                     <div
                       className="w-7 h-7 rounded-full flex items-center justify-center text-white font-black text-[10px]"
+                      title={isJunior ? "Júnior" : p.name}
                       style={{
                         background: `radial-gradient(circle at 35% 28%, rgba(255,255,255,0.28) 0%, transparent 65%), ${style.hex}`,
                         boxShadow: "0 2px 8px rgba(0,0,0,0.5), 0 0 0 1.5px rgba(255,255,255,0.12)",
                       }}
                     >
-                      {p.name?.charAt(0)?.toUpperCase() ?? "?"}
+                      {isJunior ? "JR" : (p.name?.charAt(0)?.toUpperCase() ?? "?")}
                     </div>
                     <span
                       className="mt-0.5 text-[7px] font-bold leading-none text-white/80"
                       style={{ textShadow: "0 1px 3px rgba(0,0,0,0.95)" }}
                     >
-                      {p.skill ?? ""}
+                      {isJunior ? "Júnior" : (p.skill ?? "")}
                     </span>
                   </div>
                 );
