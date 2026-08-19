@@ -247,8 +247,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             game.matchweek || 1,
           );
         }
-        if (p1) fixture._t1 = t1;
-        if (p2) fixture._t2 = t2;
+        fixture._t1 = t1;
+        fixture._t2 = t2;
         return { t1, t2 };
       }),
     );

@@ -384,7 +384,7 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     // Fixture seeds por divisão (aleatórios por época)
     fixtureSeeds: {},
 
-    // Memória táctica por equipa (habituação rápida; persistida em game_state)
+    // Memória táctica por equipa (estrelas por jogo; persistida em game_state)
     tacticFamiliarity: {},
 
     // Histórico de resultados de jornadas
@@ -691,7 +691,7 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                 } catch (_) {}
               }
 
-              // ── Memória táctica: restaurar score ou migrar do histórico antigo ──
+              // ── Memória táctica: restaurar histórico de formações ou migrar ──
               if (st["tacticFamiliarity"]) {
                 try {
                   const parsed = JSON.parse(st["tacticFamiliarity"]);
@@ -699,25 +699,31 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                     game.tacticFamiliarity = Object.fromEntries(
                       Object.entries(parsed).map(([k, v]) => {
                         const fam = v as {
+                          history?: string[];
                           formations?: Record<string, number>;
-                          styles?: Record<string, number>;
                         };
-                        return [
-                          Number(k),
-                          {
-                            formations: fam?.formations || {},
-                            styles: fam?.styles || {},
-                          },
-                        ];
+                        if (Array.isArray(fam?.history)) {
+                          return [Number(k), { history: fam.history.slice(0, 5) }];
+                        }
+                        // Estado antigo (scores por formação): converter a
+                        // melhor esforço em janela das últimas 5 formações.
+                        const formations = fam?.formations || {};
+                        const history = Object.entries(formations)
+                          .sort((a, b) => b[1] - a[1])
+                          .flatMap(([f, score]) =>
+                            Array(Math.min(5, Math.round(score / 20))).fill(f),
+                          )
+                          .slice(0, 5);
+                        return [Number(k), { history }];
                       }),
                     );
                   }
                 } catch (_) {}
               } else {
-                // Migração one-shot: converter contagens da player_tactic_history
-                // em scores do novo modelo (só se a tabela existir e tiver dados).
+                // Migração one-shot: reconstruir a janela das últimas 5 formações
+                // a partir da player_tactic_history (só se existir e tiver dados).
                 db.all(
-                  "SELECT team_id, formation, style, COUNT(*) AS cnt FROM player_tactic_history GROUP BY team_id, formation, style",
+                  "SELECT team_id, formation FROM player_tactic_history ORDER BY id DESC",
                   (migrateErr: any, rows: any[] | null) => {
                     if (migrateErr || !rows || rows.length === 0) return;
                     try {

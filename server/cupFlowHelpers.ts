@@ -875,8 +875,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						game.matchweek,
 					);
 				}
-				if (p1) fixture._t1 = t1;
-				if (p2) fixture._t2 = t2;
+				fixture._t1 = t1;
+				fixture._t2 = t2;
 				console.log(
 					`[${game.roomCode}] 🏆 Cup fixture result: ${fixture.homeTeam?.name ?? fixture.homeTeamId} ${fixture.finalHomeGoals}-${fixture.finalAwayGoals} ${fixture.awayTeam?.name ?? fixture.awayTeamId}`,
 				);
@@ -1171,22 +1171,31 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 
 		// ── Phase 3: DB updates, morale, and results for all fixtures ────────────
-		for (const { fixture, goals90Home, goals90Away } of setups) {
+		for (const { fixture, t1, t2, goals90Home, goals90Away } of setups) {
 			const winnerId =
 				fixture._winnerId ??
 				(goals90Home > goals90Away ? fixture.homeTeamId : fixture.awayTeamId);
 
-			// Memória táctica (Taça) — habituação/decay para coaches humanos
+			// Memória táctica (Taça) — +1 estrela por jogo para todas as equipas
 			const updateCupFamiliarity = (
 				teamId: number,
 				tactic: any,
 				won: boolean,
 			) => {
+				if (!tactic?.formation || !tactic?.style) return;
+				// Memória táctica: fonte de verdade é a memória do jogo
+				updateTacticFamiliarity(
+					game,
+					teamId,
+					tactic,
+					game.matchweek,
+					won ? "V" : "D",
+				);
 				const playerState = Object.values(game.playersByName).find(
 					(p: any) => p.teamId === teamId && p.socketId,
 				);
-				if (!playerState || !tactic?.formation || !tactic?.style) return;
-				// Linha de auditoria (a fonte de verdade é a memória do jogo)
+				if (!playerState) return;
+				// Linha de auditoria (apenas coaches humanos)
 				game.db.run(
 					"INSERT INTO player_tactic_history (team_id, player_name, formation, style, matchweek, competition, result) VALUES (?, ?, ?, ?, ?, ?, ?)",
 					[
@@ -1199,22 +1208,15 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						won ? "V" : "D",
 					],
 				);
-				updateTacticFamiliarity(
-					game,
-					teamId,
-					tactic,
-					game.matchweek,
-					won ? "V" : "D",
-				);
 			};
 			updateCupFamiliarity(
 				fixture.homeTeamId,
-				fixture._t1,
+				t1,
 				winnerId === fixture.homeTeamId,
 			);
 			updateCupFamiliarity(
 				fixture.awayTeamId,
-				fixture._t2,
+				t2,
 				winnerId === fixture.awayTeamId,
 			);
 

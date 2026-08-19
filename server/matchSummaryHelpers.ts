@@ -892,18 +892,20 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                 applyFormDelta(homeLineupIds, homeWon);
                 applyFormDelta(awayLineupIds, awayWon);
 
-                // Registra táctica para cada coach humano com equipa nos fixtures
+                // Registra táctica para cada equipa (humana ou NPC) nos fixtures
                 const recordTacticHistory = (
                   teamId: number,
                   tactic: any,
                   result: string,
                 ) => {
                   if (!tactic?.formation || !tactic?.style) return;
+                  // Memória táctica: +1 estrela por jogo (liga) para todas as equipas
+                  updateTacticFamiliarity(game, teamId, tactic, matchweek, result);
                   const playerState = Object.values(game.playersByName).find(
                     (p) => p.teamId === teamId && p.socketId,
                   );
                   if (playerState) {
-                    // Linha de auditoria (a fonte de verdade é a memória do jogo)
+                    // Linha de auditoria (apenas coaches humanos)
                     game.db.run(
                       "INSERT INTO player_tactic_history (team_id, player_name, formation, style, matchweek, competition, result) VALUES (?, ?, ?, ?, ?, ?, ?)",
                       [
@@ -915,14 +917,6 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                         "league",
                         result,
                       ],
-                    );
-                    // Memória táctica: ganho/decay por jogo (liga)
-                    updateTacticFamiliarity(
-                      game,
-                      teamId,
-                      tactic,
-                      matchweek,
-                      result,
                     );
                   }
                 };
