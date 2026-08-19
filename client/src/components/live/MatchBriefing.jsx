@@ -151,10 +151,9 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
   const myMorale = teamInfo?.morale ?? 75;
   const oppMorale = opp.morale ?? 75;
 
-  // Qualidade média (força da equipa) — barra comparativa
+  // Qualidade média (comparativa de qualidade)
   const myAvg = teamInfo?.avgSkill ?? myTeam.avgSkill ?? null;
   const oppAvg = opp.avgSkill ?? null;
-  const maxAvg = Math.max(myAvg ?? 0, oppAvg ?? 0, 1);
 
   // Último confronto — dados normalizados vindos do servidor
   const lc = opp.lastConfrontation;
@@ -211,9 +210,6 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
   const weatherLabel = wf
     ? (WEATHER_LABELS[wf.condition] ?? wf.condition)
     : null;
-
-  const h2h = opp.h2hRecord;
-
   const competition = s.isCup
     ? (s.cupRoundName ?? "Taça")
     : `Jornada ${s.matchweek}`;
@@ -335,38 +331,6 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
             </div>
           </MetaTile>
 
-          {myAvg != null && oppAvg != null && (
-            <MetaTile label="Força da equipa">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-black tabular-nums text-white leading-none">
-                  {myAvg}
-                </span>
-                <span className="text-[10px] font-black tabular-nums text-gray-400 leading-none">
-                  {oppAvg}
-                </span>
-              </div>
-              <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden flex">
-                <div
-                  className="h-full rounded-l-full"
-                  style={{
-                    width: `${(myAvg / maxAvg) * 50}%`,
-                    background: "linear-gradient(90deg,#4ade80,#22c55e)",
-                  }}
-                />
-                <div className="h-full flex-1" style={{ width: `${50 - (myAvg / maxAvg) * 50}%` }} />
-                <div
-                  className="h-full rounded-r-full"
-                  style={{
-                    width: `${(oppAvg / maxAvg) * 50}%`,
-                    background: opp.color_primary || "#f43f5e",
-                    opacity: 0.85,
-                  }}
-                />
-                <div className="h-full flex-1" style={{ width: `${50 - (oppAvg / maxAvg) * 50}%` }} />
-              </div>
-            </MetaTile>
-          )}
-
           <MetaTile label="Último confronto">
             {lcView ? (
               <>
@@ -391,32 +355,6 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
               </span>
             )}
           </MetaTile>
-
-          {(opp.topScorer || (h2h && h2h.total > 0)) && (
-            <MetaTile label="Confrontos">
-              {h2h && h2h.total > 0 ? (
-                <span className="text-[11px] font-black tabular-nums">
-                  <span className="text-green-400">{h2h.wins}</span>
-                  <span className="text-gray-700"> / </span>
-                  <span className="text-gray-300">{h2h.draws}</span>
-                  <span className="text-gray-700"> / </span>
-                  <span className="text-red-400">{h2h.losses}</span>
-                </span>
-              ) : (
-                <span className="text-[10px] text-gray-700 font-bold italic">
-                  Sem histórico
-                </span>
-              )}
-              {opp.topScorer && (
-                <span className="block text-[10px] font-bold text-gray-400 truncate mt-0.5">
-                  ⚽ {opp.topScorer.name}{" "}
-                  <span className="text-amber-400 font-black tabular-nums">
-                    ({opp.topScorer.goals})
-                  </span>
-                </span>
-              )}
-            </MetaTile>
-          )}
 
           <MetaTile label="Apostas">
             <div className="flex gap-1">
@@ -597,7 +535,7 @@ function OpponentFormation({ formation }) {
         </span>
       </div>
       <div
-        className="relative w-full h-44 lg:h-auto lg:flex-1 lg:min-h-[150px]"
+        className="relative w-full h-56 lg:h-auto lg:flex-1 lg:min-h-[240px]"
         style={{
           background:
             "radial-gradient(ellipse at 50% 25%, #1f5c1a 0%, #123a0d 50%, #09200a 100%)",
@@ -673,7 +611,7 @@ function ThreatGrid({ threats }) {
           ⚠️ Ameaças do adversário
         </span>
       </div>
-      <div className="px-3 py-2 grid grid-cols-1 sm:grid-cols-3 gap-1.5 lg:content-center">
+      <div className="px-3 py-2 flex flex-col gap-1.5">
         {threats.map((t) => {
           const meta = META[t.role] ?? { icon: "❗", label: t.role };
           const value =
@@ -685,15 +623,15 @@ function ThreatGrid({ threats }) {
           return (
             <div
               key={t.role}
-              className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-2 flex flex-col items-center justify-center text-center"
+              className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-2 flex items-center gap-2"
             >
-              <span className="block text-[7px] uppercase tracking-widest text-gray-600 font-black truncate max-w-full">
+              <span className="shrink-0 text-[7px] uppercase tracking-widest text-gray-600 font-black">
                 {meta.icon} {meta.label}
               </span>
-              <span className="block text-[11px] font-black text-white truncate mt-0.5 max-w-full">
+              <span className="flex-1 min-w-0 text-[11px] font-black text-white break-words">
                 {t.name}
               </span>
-              <span className="text-[9px] font-black tabular-nums text-amber-400">
+              <span className="shrink-0 text-[9px] font-black tabular-nums text-amber-400">
                 {value}
               </span>
             </div>
@@ -747,14 +685,17 @@ export function MatchBriefing() {
           <div className="lg:w-44 shrink-0">
             <DifficultyGauge score={s.difficulty?.score} label={s.difficulty?.label} />
           </div>
+          <div className="hidden lg:block w-px self-stretch bg-[#222]" />
           <button
             onClick={() => setPrepPhase("tactics")}
-            className={`w-full lg:w-56 shrink-0 py-3 lg:py-3.5 font-black rounded-2xl text-xs lg:text-sm uppercase tracking-widest transition-all active:scale-95 text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110`}
+            className={`group w-full lg:w-60 shrink-0 inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 lg:py-3.5 font-black text-xs lg:text-sm uppercase tracking-widest text-green-950 transition-all duration-200 active:scale-95 hover:scale-[1.02] border border-emerald-300/40 shadow-[0_10px_30px_-8px_rgba(34,197,94,0.55)] hover:shadow-[0_14px_40px_-8px_rgba(34,197,94,0.75)]`}
             style={{
-              background: "linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%)",
+              background:
+                "linear-gradient(135deg, #86efac 0%, #4ade80 30%, #22c55e 60%, #16a34a 100%)",
             }}
           >
-            Avançar para a Tática →
+            <span>Avançar para a Tática</span>
+            <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
           </button>
         </div>
       </div>

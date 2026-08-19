@@ -341,6 +341,7 @@ export function TacticsView() {
     disconnected,
     isCupMatch,
     prepPhase,
+    setPrepPhase,
   } = useTactics();
 
   const { lockedCoaches, liveMinute, isCupExtraTime } = useGame();
@@ -368,6 +369,11 @@ export function TacticsView() {
     !isPlayingMatch &&
     !!nextMatchSummary;
   const canPlay = isEliminatedCupSpectator || isHalftime || isLineupComplete;
+  const showBackToBriefing =
+    prepPhase === "tactics" &&
+    !isHalftime &&
+    !isEliminatedCupSpectator &&
+    !isPlayingMatch;
   const playLabel = myReady
     ? "⏳ A aguardar..."
     : isEliminatedCupSpectator
@@ -399,6 +405,15 @@ export function TacticsView() {
       )}
 
       {showBriefing && <MatchBriefing />}
+
+      {showBackToBriefing && (
+        <button
+          onClick={() => setPrepPhase("briefing")}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 bg-[#111] border border-[#1e1e1e] hover:text-white hover:border-[#333] transition-colors"
+        >
+          <span className="text-sm leading-none">←</span> Voltar ao Briefing
+        </button>
+      )}
 
       {!showBriefing &&
         (nextMatchSummary?.isCup && !nextMatchOpponent ? (
