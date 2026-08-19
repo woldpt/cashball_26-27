@@ -1039,6 +1039,12 @@ export function useSocketListeners(handlers, refs) {
 						),
 						form: Number(player.form ?? squadPlayer?.form ?? 100),
 						is_star: Boolean(player.is_star ?? squadPlayer?.is_star),
+						matchMinutes: Number(
+							player.matchMinutes ?? squadPlayer?.matchMinutes ?? 0,
+						),
+						fatigueLoss: Number(
+							player.fatigueLoss ?? squadPlayer?.fatigueLoss ?? 0,
+						),
 					};
 				};
 

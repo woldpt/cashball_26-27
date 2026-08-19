@@ -830,6 +830,11 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     matchweek: number,
     onDone?: () => void,
   ) {
+    // Match fatigue is live-only. Keep the historical lineup skill snapshot,
+    // but do not carry minutes/fatigue badges into the next match or history.
+    const historicalLineup = (lineup: any[] = []) =>
+      lineup.map(({ matchMinutes, fatigueLoss, ...player }) => player);
+
     let remaining = fixtures.length;
     if (remaining === 0) {
       if (onDone) onDone();
@@ -855,8 +860,8 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                 match.finalAwayGoals,
                 JSON.stringify(match.events || []),
                 match.attendance || 0,
-                JSON.stringify(match.homeLineup || []),
-                JSON.stringify(match.awayLineup || []),
+                JSON.stringify(historicalLineup(match.homeLineup || [])),
+                JSON.stringify(historicalLineup(match.awayLineup || [])),
               ],
               () => {
                 // Update player form after match

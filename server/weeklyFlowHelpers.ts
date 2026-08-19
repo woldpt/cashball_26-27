@@ -18,8 +18,12 @@ import {
   ensureFullBench,
   generateIntroEvents,
   generateSecondHalfIntroEvents,
+  getMatchFatigueSnapshot,
 } from "./game/engine";
 import { generateAITactic } from "./game/matchCalculations";
+
+const MAX_NPC_HALFTIME_SUBS = 2;
+const NPC_FRESHNESS_SKILL_BUFFER = 2;
 
 interface WeeklyFlowDeps {
   io: any;
@@ -263,7 +267,13 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     // to the cached squads. fixture._homeSquad/_awaySquad were set during the first half and
     // won't reflect tactic position changes made during the interval otherwise.
     // Helper para criar snapshot de lineup (titulares + suplentes do fullRoster)
-    const lineupSnapshot = (squad: any[], tactic: any, fullRoster?: any[]) => {
+    const lineupSnapshot = (
+      fixture: any,
+      squad: any[],
+      tactic: any,
+      fullRoster: any[] | undefined,
+      teamSide: "home" | "away",
+    ) => {
       const starterIds = new Set(squad.map((p: any) => p.id));
       const starters = squad.map((p: any) => ({
         id: p.id,
@@ -271,6 +281,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         position: p.position,
         is_star: p.is_star || 0,
         skill: p.skill,
+        ...getMatchFatigueSnapshot(fixture, teamSide, p.id),
         is_starter: tactic?.positions
           ? tactic.positions[p.id] === "Titular"
           : true,
@@ -287,6 +298,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           position: p.position,
           is_star: p.is_star || 0,
           skill: p.skill,
+          ...getMatchFatigueSnapshot(fixture, teamSide, p.id),
           is_starter: false,
         }));
       return [...starters, ...bench];
@@ -298,6 +310,86 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         for (let fi = 0; fi < game.currentFixtures.length; fi++) {
           const fixture = game.currentFixtures[fi];
           const { t1, t2 } = fixtureTactics[fi];
+
+          const hasCoachForTeam = (teamId: number) =>
+            Object.values(game.playersByName).some(
+              (p: any) => Number(p.teamId) === Number(teamId),
+            );
+
+          // NPCs use the fatigue accumulated by the actual cached XI, rather
+          // than the permanent DB skill used by generateAITactic. They only
+          // replace a tired outfield player when a same-position bench player
+          // is close enough to that player's current match skill for freshness
+          // to make up the difference.
+          const planNpcHalftimeSubs = (
+            squad: any[] | undefined,
+            tactic: any,
+            fullRoster: any[] | undefined,
+            teamSide: "home" | "away",
+          ) => {
+            if (!squad || !tactic?.positions || !fullRoster) return;
+
+            const positions: Record<number, string> = tactic.positions;
+            const currentIds = new Set(squad.map((p: any) => p.id));
+            const unavailableIds = new Set(
+              (fixture.events || [])
+                .filter(
+                  (e: any) =>
+                    (e.type === "injury" || e.type === "red") &&
+                    e.team === teamSide &&
+                    e.playerId,
+                )
+                .map((e: any) => e.playerId),
+            );
+            const bench = fullRoster.filter(
+              (p: any) =>
+                !currentIds.has(p.id) &&
+                positions[p.id] === "Suplente" &&
+                !unavailableIds.has(p.id),
+            );
+
+            const tiredPlayers = squad
+              .filter(
+                (p: any) =>
+                  p.position !== "GR" && positions[p.id] !== "Suplente",
+              )
+              .map((player: any) => ({
+                player,
+                fatigue: getMatchFatigueSnapshot(fixture, teamSide, player.id),
+              }))
+              .filter(
+                ({ fatigue }) =>
+                  fatigue.matchMinutes >= 45 && fatigue.fatigueLoss >= 2,
+              )
+              .sort(
+                (a, b) =>
+                  b.fatigue.fatigueLoss - a.fatigue.fatigueLoss ||
+                  b.fatigue.matchMinutes - a.fatigue.matchMinutes,
+              );
+
+            const usedBenchIds = new Set<number>();
+            let planned = 0;
+            for (const { player: outgoing } of tiredPlayers) {
+              if (planned >= MAX_NPC_HALFTIME_SUBS) break;
+
+              const replacement = bench
+                .filter(
+                  (p: any) =>
+                    !usedBenchIds.has(p.id) &&
+                    p.position === outgoing.position &&
+                    Number(p.skill || 0) + NPC_FRESHNESS_SKILL_BUFFER >=
+                      Number(outgoing.skill || 0),
+                )
+                .sort((a: any, b: any) => (b.skill || 0) - (a.skill || 0))[0];
+
+              if (!replacement) continue;
+
+              positions[outgoing.id] = "Suplente";
+              positions[replacement.id] = "Titular";
+              usedBenchIds.add(replacement.id);
+              planned += 1;
+            }
+          };
 
           const applyHalftimeSubs = (
             squad: any[] | undefined,
@@ -357,15 +449,19 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             // Update the lineup snapshot to reflect the new squad composition
             if (teamSide === "home") {
               fixture.homeLineup = lineupSnapshot(
+                fixture,
                 squad,
                 tactic,
                 fixture._homeFullRoster,
+                "home",
               );
             } else {
               fixture.awayLineup = lineupSnapshot(
+                fixture,
                 squad,
                 tactic,
                 fixture._awayFullRoster,
+                "away",
               );
             }
 
@@ -384,27 +480,55 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               (o: string, i: string) =>
                 `${o} foi substituído no intervalo. ${i} vai tentar mudar o rumo da partida.`,
             ];
-            const pairs = Math.min(outPlayers.length, inPlayers.length);
-            for (let i = 0; i < pairs; i++) {
+            const remainingInPlayers = [...inPlayers];
+            for (const outPlayer of outPlayers) {
+              const matchingIndex = remainingInPlayers.findIndex(
+                (inPlayer: any) => inPlayer.position === outPlayer.position,
+              );
+              const inPlayer =
+                matchingIndex >= 0
+                  ? remainingInPlayers.splice(matchingIndex, 1)[0]
+                  : remainingInPlayers.shift();
+              if (!inPlayer) break;
+
               const phrasePool = htSubPhrases;
               const phrase = phrasePool[
                 Math.floor(Math.random() * phrasePool.length)
-              ](outPlayers[i].name, inPlayers[i].name);
+              ](outPlayer.name, inPlayer.name);
               fixture.events = fixture.events || [];
               fixture.events.push({
                 minute: 45,
                 type: "halftime_sub",
                 team: teamSide,
                 emoji: "🔁",
-                outPlayerId: outPlayers[i].id,
-                outPlayerName: outPlayers[i].name,
-                playerId: inPlayers[i].id,
-                playerName: inPlayers[i].name,
-                position: inPlayers[i].position,
+                outPlayerId: outPlayer.id,
+                outPlayerName: outPlayer.name,
+                playerId: inPlayer.id,
+                playerName: inPlayer.name,
+                position: inPlayer.position,
                 text: `[HT] 🔁 ${phrase}`,
               });
             }
           };
+
+          if (!hasCoachForTeam(fixture.homeTeamId)) {
+            planNpcHalftimeSubs(
+              fixture._homeSquad,
+              t1,
+              fixture._homeFullRoster,
+              "home",
+            );
+            fixture._t1 = t1;
+          }
+          if (!hasCoachForTeam(fixture.awayTeamId)) {
+            planNpcHalftimeSubs(
+              fixture._awaySquad,
+              t2,
+              fixture._awayFullRoster,
+              "away",
+            );
+            fixture._t2 = t2;
+          }
 
           applyHalftimeSubs(
             fixture._homeSquad,
@@ -1331,9 +1455,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           // Liga fixtures não têm homeLineup/awayLineup definidos antes deste ponto.
           // Necessário para applyTrainingBonuses ver todos os jogadores participantes.
           const lineupSnapshot2 = (
+            fixture: any,
             squad: any[],
             tactic: any,
-            fullRoster?: any[],
+            fullRoster: any[] | undefined,
+            teamSide: "home" | "away",
           ) => {
             const starterIds = new Set(squad.map((p: any) => p.id));
             const starters = squad.map((p: any) => ({
@@ -1342,6 +1468,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               position: p.position,
               is_star: p.is_star || 0,
               skill: p.skill,
+              ...getMatchFatigueSnapshot(fixture, teamSide, p.id),
               is_starter: tactic?.positions
                 ? tactic.positions[p.id] === "Titular"
                 : true,
@@ -1358,6 +1485,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 position: p.position,
                 is_star: p.is_star || 0,
                 skill: p.skill,
+                ...getMatchFatigueSnapshot(fixture, teamSide, p.id),
                 is_starter: false,
               }));
             return [...starters, ...bench];
@@ -1377,15 +1505,19 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             // cup lineups would never be recovered post-first-half.
             if ((!fx.homeLineup || fx.homeLineup.length === 0) && fx._homeSquad)
               fx.homeLineup = lineupSnapshot2(
+                fx,
                 fx._homeSquad,
                 t1,
                 fx._homeFullRoster,
+                "home",
               );
             if ((!fx.awayLineup || fx.awayLineup.length === 0) && fx._awaySquad)
               fx.awayLineup = lineupSnapshot2(
+                fx,
                 fx._awaySquad,
                 t2,
                 fx._awayFullRoster,
+                "away",
               );
           }
 

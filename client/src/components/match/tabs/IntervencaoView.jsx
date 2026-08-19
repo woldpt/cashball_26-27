@@ -52,13 +52,40 @@ export function IntervencaoView({
     matchAction?.injuredPlayer || matchAction?.sentOffPlayer || matchAction?.dismissedPlayer || null;
 
   /* ── Team info ────────────────────────────────────────────────── */
-  const isHome = myTeamId && fixture?.homeTeamId === myTeamId;
+  const isHome =
+    myTeamId != null && Number(fixture?.homeTeamId) === Number(myTeamId);
+  const isMyFixture =
+    myTeamId != null &&
+    (Number(fixture?.homeTeamId) === Number(myTeamId) ||
+      Number(fixture?.awayTeamId) === Number(myTeamId));
   const hInfo = teams?.find((t) => t.id === fixture?.homeTeamId);
   const aInfo = teams?.find((t) => t.id === fixture?.awayTeamId);
+
+  // The normal squad comes from the database and intentionally keeps the
+  // permanent skill. During a match, overlay the fixture's transient fatigue
+  // state so the halftime decision compares tired starters with fresh bench
+  // players without persisting match state into the squad.
+  const liveOwnLineup = isHome ? fixture?.homeLineup : fixture?.awayLineup;
+  const liveOwnById = new Map(
+    (liveOwnLineup || []).map((player) => [Number(player.id), player]),
+  );
+  const panelSquad = isHalftime && isMyFixture
+    ? annotatedSquad.map((player) => {
+        const livePlayer = liveOwnById.get(Number(player.id));
+        if (!livePlayer) return player;
+        return {
+          ...player,
+          skill: livePlayer.skill ?? player.skill,
+          matchMinutes: livePlayer.matchMinutes ?? 0,
+          fatigueLoss: livePlayer.fatigueLoss ?? 0,
+        };
+      })
+    : annotatedSquad;
+
   /* ── Our squad ────────────────────────────────────────────────── */
   const onPitchPlayers = isHalftime
     ? sortPlayersByPos(
-        annotatedSquad.filter(
+        panelSquad.filter(
           (p) =>
             tactic?.positions?.[p.id] === "Titular" &&
             !subbedOut.includes(p.id) &&
@@ -76,14 +103,14 @@ export function IntervencaoView({
 
   const benchPlayers = isHalftime
     ? sortPlayersByPos(
-        annotatedSquad
+        panelSquad
           .filter((p) => tactic?.positions?.[p.id] === "Suplente")
           .filter((p) => !injuredHalftimeIds?.has(p.id)),
       )
     : sortPlayersByPos(matchAction?.benchPlayers || []);
 
   const playerById = (id) =>
-    annotatedSquad.find((p) => p.id === id) ||
+    panelSquad.find((p) => p.id === id) ||
     onPitchPlayers.find((p) => p.id === id) ||
     benchPlayers.find((p) => p.id === id) ||
     null;

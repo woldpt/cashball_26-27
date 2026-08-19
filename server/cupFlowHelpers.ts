@@ -4,6 +4,7 @@ import type { CalendarEntry } from "./gameConstants";
 import { SEASON_CALENDAR, SPONSOR_REVENUE_BY_DIVISION, recalcPlayerValue } from "./gameConstants";
 import { clearPhaseTimer } from "./matchFlowHelpers";
 import { generateAITactic } from "./game/matchCalculations";
+import { getMatchFatigueSnapshot } from "./game/engine";
 import { getTeamsWithCoachNames, logClubNews } from "./coreHelpers";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 
@@ -917,13 +918,18 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 			// Apply ET substitutions and re-read tactics changed during the pause screen
 			if (humanInAnyDraw) {
-				const lineupSnapshotET = (squad: any[]) =>
+				const lineupSnapshotET = (
+					squad: any[],
+					fx: any,
+					teamSide: "home" | "away",
+				) =>
 					squad.map((p) => ({
 						id: p.id,
 						name: p.name,
 						position: p.position,
 						is_star: p.is_star || 0,
 						skill: p.skill,
+						...getMatchFatigueSnapshot(fx, teamSide, p.id),
 					}));
 
 				const applyETSubs = (
@@ -977,9 +983,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					}
 
 					if (teamSide === "home") {
-						fx.homeLineup = lineupSnapshotET(squad);
+						fx.homeLineup = lineupSnapshotET(squad, fx, teamSide);
 					} else {
-						fx.awayLineup = lineupSnapshotET(squad);
+						fx.awayLineup = lineupSnapshotET(squad, fx, teamSide);
 					}
 
 					const pairs = Math.min(outPlayers.length, inPlayers.length);

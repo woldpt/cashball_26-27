@@ -1,5 +1,6 @@
 import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS } from "../matchConstants.js";
+import { FatigueIndicator } from "./FatigueIndicator.jsx";
 
 /* ── SVG Pitch ─────────────────────────────────────────────────────────── */
 const PITCH_SVG = (
@@ -47,6 +48,7 @@ export function PlayerMarker({ player, posColors, starColor = "amber-400", count
       <span className={`font-semibold text-amber-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${skillCls}`}>
         {player.skill ?? "-"}
       </span>
+      <FatigueIndicator player={player} compact className="max-w-full truncate text-[7px]" />
     </div>
   );
 }

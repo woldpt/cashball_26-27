@@ -53,6 +53,23 @@ import { getTacticBonus } from "./tacticFamiliarity";
 type Db = any;
 type PlayerRow = any;
 type MatchFixture = any;
+type MatchSide = "home" | "away";
+
+type MatchFatigueSnapshot = {
+  matchMinutes: number;
+  fatigueLoss: number;
+};
+
+export function getMatchFatigueSnapshot(
+  fixture: MatchFixture,
+  side: MatchSide,
+  playerId: number,
+): MatchFatigueSnapshot {
+  return {
+    matchMinutes: Number(fixture._minutesPlayed?.[side]?.[playerId] ?? 0),
+    fatigueLoss: Number(fixture._fatigueLoss?.[side]?.[playerId] ?? 0),
+  };
+}
 
 async function getTeamSquad(
   db: Db,
@@ -449,6 +466,7 @@ async function applyInjuryEvent({
         resistance: injuredPlayer.resistance,
         form: injuredPlayer.form,
         is_star: injuredPlayer.is_star,
+        ...getMatchFatigueSnapshot(fixture, teamSide, injuredPlayer.id),
       },
       benchPlayers: substituteCandidates.map((p) => ({
         id: p.id,
@@ -458,6 +476,7 @@ async function applyInjuryEvent({
         resistance: p.resistance,
         form: p.form,
         is_star: p.is_star,
+        ...getMatchFatigueSnapshot(fixture, teamSide, p.id),
       })),
       currentScore: {
         home: fixture.finalHomeGoals,
@@ -503,6 +522,7 @@ async function applyInjuryEvent({
           position: replacement.position,
           is_star: replacement.is_star || 0,
           skill: replacement.skill,
+          ...getMatchFatigueSnapshot(fixture, teamSide, replacement.id),
         };
       }
     }
@@ -674,21 +694,78 @@ async function applyPenaltyEvent({
 // A cada múltiplo deste valor, o jogador em campo rola contra a resistência.
 const FATIGUE_INTERVAL_MINUTES = 15;
 
+function ensureFatigueLedgers(fixture: MatchFixture) {
+  if (!fixture._minutesPlayed) {
+    fixture._minutesPlayed = { home: {}, away: {} };
+  }
+  if (!fixture._minutesPlayed.home) fixture._minutesPlayed.home = {};
+  if (!fixture._minutesPlayed.away) fixture._minutesPlayed.away = {};
+  if (!fixture._fatigueLoss) {
+    fixture._fatigueLoss = { home: {}, away: {} };
+  }
+  if (!fixture._fatigueLoss.home) fixture._fatigueLoss.home = {};
+  if (!fixture._fatigueLoss.away) fixture._fatigueLoss.away = {};
+}
+
+function syncFatigueSnapshot(
+  fixture: MatchFixture,
+  side: MatchSide,
+  playerId: number,
+  skill?: number,
+) {
+  const lineupRef = side === "home" ? fixture.homeLineup : fixture.awayLineup;
+  if (!lineupRef) return;
+
+  const li = lineupRef.findIndex((q: any) => q.id === playerId);
+  if (li < 0) return;
+
+  const next = {
+    ...lineupRef[li],
+    ...getMatchFatigueSnapshot(fixture, side, playerId),
+  };
+  if (skill !== undefined) next.skill = skill;
+  lineupRef[li] = next;
+}
+
+function applyFatigueToPlayer(
+  fixture: MatchFixture,
+  side: MatchSide,
+  player: PlayerRow,
+  amount: number,
+) {
+  ensureFatigueLedgers(fixture);
+
+  const before = Number(player.skill ?? 0);
+  const after = Math.max(1, before - amount);
+  player.skill = after;
+
+  const effectiveLoss = Math.max(0, before - after);
+  if (effectiveLoss > 0) {
+    fixture._fatigueLoss[side][player.id] =
+      (fixture._fatigueLoss[side][player.id] ?? 0) + effectiveLoss;
+  }
+  syncFatigueSnapshot(fixture, side, player.id, player.skill);
+}
+
 // Aplica um golpe de cansaço (-amount skill) aos jogadores no onze, com
 // probabilidade de escape baseada na resistência. Só mexe em memória —
 // nunca persiste na base de dados.
 function applyFatigue(
+  fixture: MatchFixture,
+  side: MatchSide,
   squad: PlayerRow[],
   lineupIds: Set<number>,
   amount: number,
 ) {
   for (const p of squad) {
-    if (lineupIds.has(p.id)) {
-      const resistance = p.resistance || 3;
-      const skipChance = (resistance - 1) * 0.1;
-      if (Math.random() >= skipChance) {
-        p.skill = Math.max(1, p.skill - amount);
-      }
+    if (!lineupIds.has(p.id)) continue;
+
+    const resistance = p.resistance || 3;
+    const skipChance = (resistance - 1) * 0.1;
+    if (Math.random() >= skipChance) {
+      applyFatigueToPlayer(fixture, side, p, amount);
+    } else {
+      syncFatigueSnapshot(fixture, side, p.id, p.skill);
     }
   }
 }
@@ -701,32 +778,24 @@ function applyFatigue(
 // que o ecrã de intervalo e os painéis de substituição mostrem o skill real.
 function trackFatigue(
   fixture: MatchFixture,
-  side: "home" | "away",
+  side: MatchSide,
   squad: PlayerRow[],
   lineupIds: Set<number>,
 ) {
-  if (!fixture._minutesPlayed) {
-    fixture._minutesPlayed = { home: {}, away: {} };
-  }
+  ensureFatigueLedgers(fixture);
   const mps = fixture._minutesPlayed[side];
-  const lineupRef = side === "home" ? fixture.homeLineup : fixture.awayLineup;
   for (const p of squad) {
     if (!lineupIds.has(p.id)) continue;
     const played = (mps[p.id] ?? 0) + 1;
     mps[p.id] = played;
+    syncFatigueSnapshot(fixture, side, p.id, p.skill);
     if (played % FATIGUE_INTERVAL_MINUTES !== 0) continue;
 
     const resistance = p.resistance || 3;
     const skipChance = (resistance - 1) * 0.1;
     if (Math.random() < skipChance) continue;
 
-    p.skill = Math.max(1, p.skill - 1);
-    if (lineupRef) {
-      const li = lineupRef.findIndex((q: any) => q.id === p.id);
-      if (li > -1 && lineupRef[li].skill !== p.skill) {
-        lineupRef[li] = { ...lineupRef[li], skill: p.skill };
-      }
-    }
+    applyFatigueToPlayer(fixture, side, p, 1);
   }
 }
 
@@ -1116,7 +1185,12 @@ async function simulateMatchSegment(
 
   // Snapshot the lineups for this segment so clients can display "who was on the pitch"
   // Inclui titulares e suplentes (do fullRoster que não estão no squad activo)
-  const lineupSnapshot = (squad: any[], tactic: any, fullRoster?: any[]) => {
+  const lineupSnapshot = (
+    squad: any[],
+    tactic: any,
+    fullRoster: any[] | undefined,
+    side: MatchSide,
+  ) => {
     const starterIds = new Set(squad.map((p: any) => p.id));
     const starters = squad.map((p) => ({
       id: p.id,
@@ -1124,6 +1198,7 @@ async function simulateMatchSegment(
       position: p.position,
       is_star: p.is_star || 0,
       skill: p.skill,
+      ...getMatchFatigueSnapshot(fixture, side, p.id),
       is_starter: tactic?.positions
         ? tactic.positions[p.id] === "Titular"
         : true,
@@ -1140,6 +1215,7 @@ async function simulateMatchSegment(
         position: p.position,
         is_star: p.is_star || 0,
         skill: p.skill,
+        ...getMatchFatigueSnapshot(fixture, side, p.id),
         is_starter: false,
       }));
     return [...starters, ...bench];
@@ -1149,11 +1225,13 @@ async function simulateMatchSegment(
       homeSquad,
       homeTactic,
       fixture._homeFullRoster,
+      "home",
     );
     fixture.awayLineup = lineupSnapshot(
       awaySquad,
       awayTactic,
       fixture._awayFullRoster,
+      "away",
     );
   }
 
@@ -1321,8 +1399,8 @@ async function simulateMatchSegment(
       !fixture._fatigue3Applied &&
       (fixture._weather === "neve" || fixture._weather === "frio")
     ) {
-      applyFatigue(homeSquad, homeLineupIds, 1);
-      applyFatigue(awaySquad, awayLineupIds, 1);
+      applyFatigue(fixture, "home", homeSquad, homeLineupIds, 1);
+      applyFatigue(fixture, "away", awaySquad, awayLineupIds, 1);
       fixture._fatigue3Applied = true;
     }
 
@@ -1573,6 +1651,7 @@ async function simulateMatchSegment(
               resistance: offender.resistance,
               form: offender.form,
               is_star: offender.is_star,
+              ...getMatchFatigueSnapshot(fixture, side, offender.id),
             },
             onPitch: fieldOnPitch.map((p) => ({
               id: p.id,
@@ -1582,6 +1661,7 @@ async function simulateMatchSegment(
               resistance: p.resistance,
               form: p.form,
               is_star: p.is_star,
+              ...getMatchFatigueSnapshot(fixture, side, p.id),
             })),
             benchPlayers: grCandidates.map((p) => ({
               id: p.id,
@@ -1591,6 +1671,7 @@ async function simulateMatchSegment(
               resistance: p.resistance,
               form: p.form,
               is_star: p.is_star,
+              ...getMatchFatigueSnapshot(fixture, side, p.id),
             })),
             currentScore: {
               home: fixture.finalHomeGoals,
@@ -1655,6 +1736,7 @@ async function simulateMatchSegment(
                   position: incoming.position,
                   is_star: incoming.is_star || 0,
                   skill: incoming.skill,
+                  ...getMatchFatigueSnapshot(fixture, side, incoming.id),
                 };
               }
             }
@@ -1817,12 +1899,14 @@ async function simulateMatchSegment(
                 name: p.name,
                 position: p.position,
                 skill: p.skill,
+                ...getMatchFatigueSnapshot(fixture, side, p.id),
               })),
               benchPlayers: availableBench.map((p: any) => ({
                 id: p.id,
                 name: p.name,
                 position: p.position,
                 skill: p.skill,
+                ...getMatchFatigueSnapshot(fixture, side, p.id),
               })),
             },
             timeoutMs: 60000,
@@ -1874,6 +1958,7 @@ async function simulateMatchSegment(
                     position: playerIn.position,
                     is_star: playerIn.is_star || 0,
                     skill: playerIn.skill,
+                    ...getMatchFatigueSnapshot(fixture, side, playerIn.id),
                   };
                 }
               }
@@ -2305,6 +2390,7 @@ module.exports = {
   simulatePenaltyShootout,
   generateIntroEvents,
   generateSecondHalfIntroEvents,
+  getMatchFatigueSnapshot,
 };
 
 // ─── EXTRA TIME ──────────────────────────────────────────────────────────────

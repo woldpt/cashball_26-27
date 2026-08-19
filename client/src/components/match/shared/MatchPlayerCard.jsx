@@ -1,11 +1,12 @@
 import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS, getPosStyle } from "../matchConstants.js";
+import { FatigueIndicator } from "./FatigueIndicator.jsx";
 import { MatchIcon } from "./MatchIcon.jsx";
 
 /**
- * Match player card — always expanded (skill + RES + form).
+ * Match player card — always expanded (skill + fatigue + RES + form).
  *
- * Layout: [bar] [POS] Nome ★  [skill+glow] │ RES [cyan] │ <emoji form> [swap-icon]
+ * Layout: [bar] [POS] Nome ★  [fatigue] [skill+glow] │ RES [cyan] │ <emoji form> [swap-icon]
  *
  * Visual signals (was previously overlapping):
  *  - Default state: position gradient background + position-colored bar.
@@ -76,16 +77,19 @@ export function MatchPlayerCard({
         {POSITION_SHORT_LABELS[player.position] || "?"}
       </span>
 
-      {/* Name */}
-      <span
-        className={`flex-1 truncate text-xs font-semibold ml-2 ${
-          selected ? "text-rose-100" : disabled ? "text-on-surface-variant/60" : "text-on-surface"
-        }`}
-      >
-        {player.name}
-        {hasStar && !disabled && (
-          <span className="ml-0.5 text-amber-400" title="Craque" aria-label="Craque">★</span>
-        )}
+      {/* Name + match-only fatigue */}
+      <span className="flex flex-1 min-w-0 flex-col justify-center ml-2 gap-0.5">
+        <span
+          className={`truncate text-xs font-semibold ${
+            selected ? "text-rose-100" : disabled ? "text-on-surface-variant/60" : "text-on-surface"
+          }`}
+        >
+          {player.name}
+          {hasStar && !disabled && (
+            <span className="ml-0.5 text-amber-400" title="Craque" aria-label="Craque">★</span>
+          )}
+        </span>
+        {!disabled && <FatigueIndicator player={player} compact />}
       </span>
 
       {/* ── Expanded: skill + RES + form (always visible) ── */}

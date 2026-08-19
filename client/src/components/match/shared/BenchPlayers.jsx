@@ -1,5 +1,6 @@
 import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS } from "../matchConstants.js";
+import { FatigueIndicator } from "./FatigueIndicator.jsx";
 
 /* ── Bench player card ──────────────────────────────────────────────────
  * Passive display card (a <div>, not a <button>). No hover elevation so
@@ -18,11 +19,14 @@ export function BenchPlayerCard({ player, posStyle, showSkill = true, showStar =
         >
           {POSITION_SHORT_LABELS[player.position] || "?"}
         </span>
-        <span className="flex-1 truncate text-xs font-semibold text-on-surface">
-          {player.name}
-          {showStar && !!player.is_star && (player.position === "MED" || player.position === "ATA") && (
-            <span className="ml-0.5 text-amber-400" title="Craque" aria-label="Craque">★</span>
-          )}
+        <span className="flex flex-1 min-w-0 flex-col justify-center gap-0.5">
+          <span className="truncate text-xs font-semibold text-on-surface">
+            {player.name}
+            {showStar && !!player.is_star && (player.position === "MED" || player.position === "ATA") && (
+              <span className="ml-0.5 text-amber-400" title="Craque" aria-label="Craque">★</span>
+            )}
+          </span>
+          <FatigueIndicator player={player} compact />
         </span>
         {showSkill && (
           <span className="text-[10px] font-semibold tabular-nums text-on-surface-variant/80 shrink-0">
