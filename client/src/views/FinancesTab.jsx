@@ -2,6 +2,7 @@ import { socket } from "../socket.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Button } from "../components/shared/Button.jsx";
+import { Panel } from "../components/shared/Panel.jsx";
 import { BalanceLineChart } from "../components/shared/BalanceLineChart.jsx";
 
 /**
@@ -169,22 +170,19 @@ export function FinancesTab({
       </div>
 
       {/* ── EVOLUÇÃO DO SALDO ─────────────────────────────────────────── */}
-      <div className="bg-surface-container-low rounded-lg p-5">
-        <div className="flex justify-between items-center pb-3 border-b border-outline-variant/15 mb-3">
-          <h3 className="font-headline text-base uppercase tracking-tight flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-base">
-              show_chart
-            </span>
-            Evolução do Saldo
-          </h3>
+      <Panel
+        title="Evolução do Saldo"
+        icon="show_chart"
+        meta={
           <span
-            className={`font-headline text-sm font-bold ${currentBudget >= 0 ? "text-primary" : "text-error"}`}
+            className={`font-headline font-black ${currentBudget >= 0 ? "text-primary" : "text-error"}`}
           >
             {formatCurrency(currentBudget)}
           </span>
-        </div>
+        }
+      >
         <BalanceLineChart data={financeData?.balanceHistory || []} />
-      </div>
+      </Panel>
 
       {/* ── RECEITAS / DESPESAS / CONTROLO ────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
