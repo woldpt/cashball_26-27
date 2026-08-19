@@ -1,4 +1,5 @@
 import { useTactics } from "../../contexts/TacticsContext.jsx";
+import { useGame } from "../../contexts/GameContext.jsx";
 import { TeamCrest } from "./TeamCrest.jsx";
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -124,10 +125,10 @@ function MetaTile({ label, children }) {
  * árbitro e tempo, tudo numa faixa de metadados compacta.
  * As odds vêm calculadas pelo servidor (nextMatchSummary.odds) — a mesma fonte
  * usada no evento de apostas durante o jogo, para garantir valores idênticos.
- * @param {{ nextMatchSummary: Object, teamInfo: Object|null }} props
+ * @param {{ nextMatchSummary: Object, teamInfo: Object|null, onOpenTeamSquad?: (team: Object) => void }} props
  * @returns {JSX.Element|null}
  */
-function NextMatchCard({ nextMatchSummary, teamInfo }) {
+function NextMatchCard({ nextMatchSummary, teamInfo, onOpenTeamSquad }) {
   if (!nextMatchSummary || !nextMatchSummary.opponent) return null;
   const s = nextMatchSummary;
   const opp = s.opponent;
@@ -245,9 +246,14 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-col items-center gap-1 min-w-0 flex-1">
             <TeamCrest team={teamInfo ?? { name: myName }} size="md" isMine />
-            <span className="text-xs font-black text-white truncate max-w-full">
+            <button
+              type="button"
+              onClick={() => onOpenTeamSquad?.(teamInfo ?? myTeam)}
+              className="text-xs font-black text-white truncate max-w-full hover:text-emerald-400 hover:underline transition-colors"
+              title={`Ver plantel de ${myName}`}
+            >
               {myName}
-            </span>
+            </button>
             <span className="text-[9px] text-gray-600 font-bold">
               {s.team?.position ? `${s.team.position}º` : "—"}
             </span>
@@ -257,9 +263,14 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
           </span>
           <div className="flex flex-col items-center gap-1 min-w-0 flex-1">
             <TeamCrest team={opp} size="md" />
-            <span className="text-xs font-black text-white truncate max-w-full">
+            <button
+              type="button"
+              onClick={() => onOpenTeamSquad?.(opp)}
+              className="text-xs font-black text-white truncate max-w-full hover:text-emerald-400 hover:underline transition-colors"
+              title={`Ver plantel de ${opp.name}`}
+            >
               {opp.name}
-            </span>
+            </button>
             <span className="text-[9px] text-gray-600 font-bold">
               {opp.position ? `${opp.position}º` : "—"}
             </span>
@@ -302,15 +313,23 @@ function NextMatchCard({ nextMatchSummary, teamInfo }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 lg:flex-1 lg:content-center">
           <MetaTile label="Forma recente">
             <div className="flex items-center justify-between gap-1 min-w-0">
-              <span className="text-[9px] font-black text-white truncate">
+              <button
+                type="button"
+                onClick={() => onOpenTeamSquad?.(teamInfo ?? myTeam)}
+                className="text-[9px] font-black text-white truncate hover:text-emerald-400 hover:underline transition-colors"
+              >
                 {myName}
-              </span>
+              </button>
               <FormChips last5={myTeam.last5} />
             </div>
             <div className="flex items-center justify-between gap-1 min-w-0 mt-1">
-              <span className="text-[9px] font-black text-gray-400 truncate">
+              <button
+                type="button"
+                onClick={() => onOpenTeamSquad?.(opp)}
+                className="text-[9px] font-black text-gray-400 truncate hover:text-emerald-400 hover:underline transition-colors"
+              >
                 {opp.name}
-              </span>
+              </button>
               <FormChips last5={opp.last5} />
             </div>
           </MetaTile>
@@ -654,6 +673,7 @@ function ThreatGrid({ threats }) {
  */
 export function MatchBriefing() {
   const { nextMatchSummary, teamInfo, setPrepPhase } = useTactics();
+  const { handleOpenTeamSquad } = useGame();
   if (!nextMatchSummary) return null;
 
   const s = nextMatchSummary;
@@ -706,7 +726,11 @@ export function MatchBriefing() {
       <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:flex-1">
         {opponent && (
           <div className="flex-1 min-w-0 lg:flex lg:flex-col">
-            <NextMatchCard nextMatchSummary={nextMatchSummary} teamInfo={teamInfo} />
+            <NextMatchCard
+              nextMatchSummary={nextMatchSummary}
+              teamInfo={teamInfo}
+              onOpenTeamSquad={handleOpenTeamSquad}
+            />
           </div>
         )}
         <div className="lg:w-72 shrink-0 flex flex-col gap-3 lg:h-full">
