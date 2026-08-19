@@ -393,6 +393,7 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     // Coach dismissal & job offers
     pendingJobOffers: {},
     negativeBudgetStreak: {},
+    coachMatchesManaged: {},
     dismissedCoachSince: {},
     dismissalsThisSeason: new Set<string>(),
 
@@ -641,6 +642,17 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                       typeof v === "object" && v !== null
                         ? (v as { matchweek: number; division: number })
                         : { matchweek: Number(v), division: 4 }, // legacy compat
+                    ]),
+                  );
+                } catch (_) {}
+              }
+              if (st["coachMatchesManaged"]) {
+                try {
+                  const parsed = JSON.parse(st["coachMatchesManaged"]);
+                  game.coachMatchesManaged = Object.fromEntries(
+                    Object.entries(parsed).map(([k, v]) => [
+                      String(k),
+                      Number(v),
                     ]),
                   );
                 } catch (_) {}
@@ -909,6 +921,10 @@ function saveGameState(game: ActiveGame): void {
     JSON.stringify(game.negativeBudgetStreak || {}),
   );
   upsert("dismissedCoachSince", JSON.stringify(game.dismissedCoachSince || {}));
+  upsert(
+    "coachMatchesManaged",
+    JSON.stringify(game.coachMatchesManaged || {}),
+  );
   upsert(
     "dismissalsThisSeason",
     JSON.stringify([...(game.dismissalsThisSeason ?? [])]),

@@ -503,6 +503,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		game.cupHalftimePayload = null;
 		game.lastHalftimePayload = null;
 		game.dismissalsThisSeason = new Set<string>();
+		game.negativeBudgetStreak = {};
 		clearPhaseTimer(game);
 		game.phaseAcks = new Set();
 		game.phaseToken = "";

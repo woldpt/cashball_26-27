@@ -111,6 +111,7 @@ export interface ActiveGame {
   // ── Coach dismissal & job offers ──
   pendingJobOffers: Record<string, { fromTeamId: number; toTeamId: number }>;
   negativeBudgetStreak: Record<number, number>; // teamId → semanas consecutivas com budget < 0
+  coachMatchesManaged: Record<string, number>; // coachName → jogos dirigidos no clube atual (carência antes de despedimento)
   dismissedCoachSince: Record<
     string,
     {
