@@ -195,7 +195,8 @@ db.serialize(() => {
         const nat = p.nationality || p.country || "🇵🇹";
         // Mesma fórmula que recalcPlayerValue (gameConstants.ts) para o valor
         // de mercado nunca divergir entre a seed e o runtime (treino/evolução).
-        const value = Math.round(skill * skill * 500 + skill * 2000);
+        // Piso fixo de €30.000 ajuda a economia das equipas pequenas (divisões 4–5).
+        const value = Math.round(skill * skill * 500 + skill * 2000 + 30000);
         const wageFactor = 0.85 + Math.random() * 0.30; // ±15% de variação
         const wage = Math.round(skill * 200 * wageFactor);
         const isStar =

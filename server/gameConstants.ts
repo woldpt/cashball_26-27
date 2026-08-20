@@ -17,13 +17,14 @@ export const MAX_ATTENDANCE_BY_DIVISION: Record<number, number> = {
 /**
  * Valor de mercado base, derivado do skill (não-linear).
  * A elite vale desproporcionalmente mais: skill² × 500.
- * O termo linear (skill × 2000) dá um piso aos jogadores de divisões baixas
- * (skills 5–15), subindo o teto de venda das equipas pequenas sem inflacionar
- * demasiado os craques da 1ª Liga. Mesma fórmula usada na seed (seed.js).
+ * O termo linear (skill × 2000) e o piso fixo (€30.000) garantem que os
+ * jogadores fracos (skills 5–15, divisões 4–5) rendem dinheiro às equipas
+ * pequenas quando vendidos — sem inflacionar demasiado os craques da 1ª Liga.
+ * Mesma fórmula usada na seed (seed.js) e no backfill do gameManager.
  * O valor é recalculado sempre que o skill muda (treino, evolução, decaimento).
  */
 export function recalcPlayerValue(skill: number): number {
-  return Math.round(skill * skill * 500 + skill * 2000);
+  return Math.round(skill * skill * 500 + skill * 2000 + 30000);
 }
 
 /**
