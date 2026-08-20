@@ -178,6 +178,11 @@ export function LiveStandingsPanel({
                         TU
                       </span>
                     )}
+                    {!isMe && t.coach_is_human === 1 && (
+                      <span className="shrink-0 px-1 py-px bg-amber-400/15 text-amber-400 text-[7px] font-black rounded-sm border border-amber-400/30 leading-tight">
+                        HUM
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="relative px-1 py-1.5 text-center">
