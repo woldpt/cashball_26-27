@@ -38,6 +38,7 @@ import { ClubTab } from "./views/ClubTab.jsx";
 import { FinancesTab } from "./views/FinancesTab.jsx";
 import { StadiumTab } from "./views/StadiumTab.jsx";
 import { PlayersTab } from "./views/PlayersTab.jsx";
+import { PlayerSearchView } from "./views/PlayerSearchView.jsx";
 import { TeamSquadView } from "./views/TeamSquadView.jsx";
 import { TacticsView } from "./views/TacticsView.jsx";
 import { TransferHub } from "./components/ui/TransferHub.jsx";
@@ -118,6 +119,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     selectedTeamLoading,
     transferProposalModal,
     setTransferProposalModal,
+    playerSearchResults,
+    playerSearchLoading,
+    setPlayerSearchLoading,
     cupBracketData,
     calendarData,
     calFilter,
@@ -543,6 +547,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               },
               { key: "market", label: "Mercado", icon: "swap_horiz" },
               { key: "leiloes", label: "Leilões", icon: "gavel" },
+              { key: "scout", label: "Scout", icon: "search" },
             ].map(({ key, label, icon }) => (
               <motion.button
                 key={key}
@@ -725,6 +730,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     {[
                       { key: "market", label: "Mercado", icon: "swap_horiz" },
                       { key: "leiloes", label: "Leilões", icon: "gavel" },
+                      { key: "scout", label: "Scout", icon: "search" },
                     ].map(({ key, label, icon }) => (
                       <button
                         key={key}
@@ -953,7 +959,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
             {/* Transferências (Mercado + Leilões) */}
             {(() => {
-              const isChildActive = ["market", "leiloes"].includes(activeTab);
+              const isChildActive = ["market", "leiloes", "scout"].includes(activeTab);
               const isOpen = mobileSubMenu === "transferencias";
               return (
                 <motion.button
@@ -1340,6 +1346,27 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         teamInfo={teamInfo}
                         matchweekCount={matchweekCount}
                         socket={socket}
+                      />
+                    )}
+
+                    {activeTab === "scout" && (
+                      <PlayerSearchView
+                        me={me}
+                        players={players}
+                        myBudget={currentBudget}
+                        matchweekCount={matchweekCount}
+                        playerSearchResults={playerSearchResults}
+                        playerSearchLoading={playerSearchLoading}
+                        setPlayerSearchLoading={setPlayerSearchLoading}
+                        setTransferProposalModal={setTransferProposalModal}
+                        setGameDialog={setGameDialog}
+                        buyPlayer={buyPlayer}
+                        openAuctionBid={openAuctionBid}
+                        onOpenPlayerHistory={(player) =>
+                          socket.emit("requestPlayerHistory", {
+                            playerId: player.id,
+                          })
+                        }
                       />
                     )}
 

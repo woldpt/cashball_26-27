@@ -256,6 +256,19 @@
       "socketGameplayHandlers.ts"
     ]
   },
+  "playerSearchResults": {
+    "emit": [
+      "socketScoutHandlers.ts",
+      "socketScoutHandlers.ts"
+    ],
+    "receive": []
+  },
+  "requestPlayerSearch": {
+    "emit": [],
+    "receive": [
+      "socketScoutHandlers.ts"
+    ]
+  },
   "matchActionExpired": {
     "emit": [
       "socketSessionHandlers.ts"

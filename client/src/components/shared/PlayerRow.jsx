@@ -35,6 +35,8 @@ import { getPlayerStat } from "../../utils/playerHelpers.js";
  *   showProposalCol?: boolean,
  *   myBudget?: number,
  *   onProposal?: (data: { player: object, suggestedPrice: number }) => void,
+ *   actions?: import("react").ReactNode,
+ *   subtitle?: string,
  * }} props
  */
 export function PlayerRow({
@@ -47,6 +49,8 @@ export function PlayerRow({
   showProposalCol = false,
   myBudget = 0,
   onProposal,
+  actions,
+  subtitle,
 }) {
   const star =
     !!player.is_star &&
@@ -121,6 +125,11 @@ export function PlayerRow({
             <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
             {star && <StarMark />}
           </p>
+          {subtitle && (
+            <p className="text-[10px] text-on-surface-variant/70 truncate mt-0.5">
+              {subtitle}
+            </p>
+          )}
           <PlayerStatusBadges
             player={player}
             matchweekCount={matchweekCount}
@@ -311,6 +320,16 @@ export function PlayerRow({
               Sem saldo
             </span>
           )}
+        </div>
+      )}
+
+      {/* Coluna de ações custom (página Scout) */}
+      {actions != null && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="shrink-0 self-stretch flex items-center px-3 border-l"
+        >
+          {actions}
         </div>
       )}
     </div>

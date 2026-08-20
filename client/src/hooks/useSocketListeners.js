@@ -512,6 +512,10 @@ export function useSocketListeners(handlers, refs) {
 		socket.on("playerHistoryData", (data) =>
 			handlers.setPlayerHistoryModal(data),
 		);
+		socket.on("playerSearchResults", (data) => {
+			handlers.setPlayerSearchLoading(false);
+			handlers.setPlayerSearchResults(data?.results || []);
+		});
 		socket.on("financeData", (data) => handlers.setFinanceData(data));
 		socket.on("stadiumBuilt", ({ teamId }) => {
 				// Re-pedir financeData se somos o clube em questão
@@ -1406,6 +1410,7 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("clubNewsData");
 			socket.off("clubNewsUpdated");
 			socket.off("playerHistoryData");
+			socket.off("playerSearchResults");
 			socket.off("financeData");
 			socket.off("stadiumBuilt");
 			socket.off("matchReplay");

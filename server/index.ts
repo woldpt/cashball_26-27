@@ -97,6 +97,8 @@ const { registerChatHandlers } =
 	require("./socketChatHandlers") as typeof import("./socketChatHandlers");
 const { registerAdminSocketHandlers } =
 	require("./socketAdminHandlers") as typeof import("./socketAdminHandlers");
+const { registerScoutSocketHandlers } =
+	require("./socketScoutHandlers") as typeof import("./socketScoutHandlers");
 const { createTrainingHandlers } =
 	require("./socketTrainingHandlers") as typeof import("./socketTrainingHandlers");
 const { createTrainingHelpers } =
@@ -904,6 +906,11 @@ io.on("connection", (socket) => {
 		io,
 		getGameBySocket,
 		getPlayerBySocket,
+	});
+
+	registerScoutSocketHandlers(socket, {
+		getGameBySocket,
+		runAll,
 	});
 
 	registerAdminSocketHandlers(socket, {
