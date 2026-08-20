@@ -29,7 +29,7 @@ export function IntervencaoView({
   matchAction, injuryCountdown, tactic, onUpdateTactic,
   annotatedSquad, subbedOut, confirmedSubs, subsMade,
   swapSource, swapTarget, onSelectOut, onSelectIn,
-  onConfirmSub, onResetSub, onResetAllSubs,
+  onConfirmSub, onResetSub, onUndoSub, onResetAllSubs,
   redCardedHalftimeIds, injuredHalftimeIds, onResolveAction,
 }) {
   const [centerTab, setCenterTab] = useState("subs");
@@ -222,7 +222,11 @@ export function IntervencaoView({
       }}
     >
       {/* Confirmed subs strip */}
-      <ConfirmedSubsStrip subs={confirmedSubs} annotatedSquad={annotatedSquad} />
+      <ConfirmedSubsStrip
+        subs={confirmedSubs}
+        annotatedSquad={annotatedSquad}
+        onUndoSub={onUndoSub}
+      />
 
       {/* Title bar — also hosts the "Anular todas" ghost button when
        * confirmed subs exist (was: previously buried in a strip BELOW the
@@ -245,11 +249,8 @@ export function IntervencaoView({
           <h2 className="text-base font-bold font-headline tracking-tight text-on-surface uppercase text-center leading-snug">
             {titleText}
           </h2>
-          {isForcedSwap && injuryCountdown !== null && (
-            <p className="text-center text-amber-300 font-bold text-[11px] mt-1 tracking-wide animate-pulse">
-              Auto-substituição em {injuryCountdown}s
-            </p>
-          )}
+          {/* Countdown lives ONLY in the BottomBar next to the confirm
+           * button — a single pulsing element where the urgency matters. */}
         </div>
         {/* Two-tap confirm: destructive action wipes all planned subs. */}
         {isHalftime && confirmedSubs.length > 0 && (
@@ -752,9 +753,20 @@ function BottomBar({ effectiveOutId, selectedInId, sourcePlayer, targetPlayer, i
          * action so urgency is visible where the user must click. */}
         <div className="flex items-center gap-2 shrink-0 md:ml-auto">
           {isForcedSwap && injuryCountdown !== null && (
-            <span className="shrink-0 text-amber-300 font-black text-xs tabular-nums animate-pulse">
-              Auto em {injuryCountdown}s
-            </span>
+            <>
+              {/* One-time screen-reader announcement: the ticking number is
+               * aria-hidden to avoid spamming the live region every second. */}
+              <span role="status" className="sr-only">
+                Substituição automática iminente — escolhe o substituto.
+              </span>
+              {/* motion-reduce: pulsing is a vestibular trigger. */}
+              <span
+                aria-hidden="true"
+                className="shrink-0 text-amber-300 font-black text-xs tabular-nums animate-pulse motion-reduce:animate-none"
+              >
+                Auto em {injuryCountdown}s
+              </span>
+            </>
           )}
           {isHalftime ? (
             <>

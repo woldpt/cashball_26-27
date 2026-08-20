@@ -12,7 +12,7 @@
  */
 
 /**
- * @typedef {"goal"|"own-goal"|"penalty-goal"|"penalty-miss"|"yellow-card"|"red-card"|"injury"|"swap"|"phase-start"|"confirm"|"reset"|"chevron-right"|"form-up"|"form-down"|"form-flat"} MatchIconName
+ * @typedef {"goal"|"own-goal"|"penalty-goal"|"penalty-miss"|"yellow-card"|"red-card"|"injury"|"swap"|"phase-start"|"confirm"|"reset"|"chevron-right"|"close"|"form-up"|"form-down"|"form-flat"} MatchIconName
  */
 
 const ICON_PATHS = {
@@ -81,6 +81,12 @@ const ICON_PATHS = {
     </>
   ),
   "chevron-right": <path d="M9 5 L16 12 L9 19" />,
+  close: (
+    <>
+      <path d="M6 6 L18 18" />
+      <path d="M18 6 L6 18" />
+    </>
+  ),
   "form-up": (
     <>
       <path d="M3 17 L9 11 L13 15 L21 7" />

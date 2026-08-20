@@ -235,6 +235,37 @@ export function TacticsProvider({ children }) {
     setSwapTarget(null);
   }, [setSwapSource, setSwapTarget]);
 
+  // Undo de UMA substituição confirmada — reverte posições, devolve o slot
+  // de sub (subsMade) e limpa o registo. Espelho exato do handleConfirmSub.
+  const handleUndoSub = useCallback(
+    (sub) => {
+      if (!sub?.out || !sub?.in) return;
+      setTactic((prevTactic) => {
+        const newPositions = { ...prevTactic.positions };
+        newPositions[sub.out] = "Titular";
+        newPositions[sub.in] = "Suplente";
+        const next = { ...prevTactic, positions: newPositions };
+        socket.emit("setTactic", next);
+        return next;
+      });
+      setSubbedOut((prev) => prev.filter((id) => id !== sub.out));
+      setConfirmedSubs((prev) =>
+        prev.filter((s) => s.out !== sub.out || s.in !== sub.in),
+      );
+      setSubsMade((n) => Math.max(0, n - 1));
+      setSwapSource((prev) => (prev === sub.in ? null : prev));
+      setSwapTarget((prev) => (prev === sub.in ? null : prev));
+    },
+    [
+      setTactic,
+      setSubbedOut,
+      setConfirmedSubs,
+      setSubsMade,
+      setSwapSource,
+      setSwapTarget,
+    ],
+  );
+
   const handleResetAllSubs = useCallback(() => {
     setTactic((prevTactic) => {
       const newPositions = { ...prevTactic.positions };
@@ -523,6 +554,7 @@ export function TacticsProvider({ children }) {
     handleSelectIn,
     handleConfirmSub,
     handleResetSub,
+    handleUndoSub,
     handleResetAllSubs,
     handleSetPlayerStatus,
     handleSwapPlayerStatuses,
