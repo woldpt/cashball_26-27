@@ -261,7 +261,7 @@ function MarketCard({
                 <div className="flex justify-between text-[11px] mt-1">
                   <span className="text-on-surface-variant">Ordenado</span>
                   <span className="font-mono font-black text-on-surface tabular-nums">
-                    {fmt(player.contract_requested_wage || player.wage || 0)}
+                    {fmt(player.wage || 0)}
                   </span>
                 </div>
               </div>

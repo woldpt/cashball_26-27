@@ -255,6 +255,7 @@ export function registerSessionSocketHandlers(
 			allMatchResults: game.allMatchResults || {},
 			// ── Legacy compat fields (derived from new state machine) ────────────────
 			matchweek: game.matchweek,
+			season: game.season,
 			matchState: legacyMatchState(game.gamePhase),
 			cupState: legacyCupState(game),
 			cupRound:

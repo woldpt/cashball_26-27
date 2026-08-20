@@ -187,6 +187,7 @@ export function useSocketListeners(handlers, refs) {
 			// Show the season-end awards modal
 			handlers.setSeasonEndModal(data);
 			if (data.year) handlers.setSeasonYear(data.year);
+			if (data.newSeason) handlers.setSeason(data.newSeason);
 			handlers.setAllMatchResults({});
 			handlers.setMatchweekCount(0);
 			handlers.setMatchResults(null);
@@ -525,17 +526,50 @@ export function useSocketListeners(handlers, refs) {
 		});
 		socket.on(
 			"renewContractCounterOffer",
-			({ playerId, playerName, demandedWage }) => {
+			({ playerId, playerName, demandedWage, agent }) => {
 				handlers.setGameDialog({
 					mode: "confirm",
 					title: `Contra-proposta — ${playerName}`,
-					description: `${playerName} recusou a tua oferta e exige €${demandedWage.toLocaleString("pt-PT")}/sem. Aceitas ou deixas ir a leilão?`,
+					description: `🤨 ${agent || "O agente"} diz que a tua oferta é "um insulto à profissão". ${playerName} exige €${demandedWage.toLocaleString("pt-PT")}/sem. Aceitas ou vai brilhar no leilão?`,
 					confirmLabel: "Aceitar",
 					cancelLabel: "Leilão",
 					onConfirm: () =>
 						socket.emit("acceptCounterOffer", { playerId, accepted: true }),
 					onCancel: () =>
 						socket.emit("acceptCounterOffer", { playerId, accepted: false }),
+				});
+			},
+		);
+		socket.on(
+			"contractRequest",
+			({
+				playerId,
+				playerName,
+				requestedWage,
+				agent,
+				contractEndMatchweek,
+				contractEndSeason,
+				isRenegotiation,
+			}) => {
+				const endText =
+					contractEndMatchweek && contractEndSeason
+						? ` Contrato até à J${contractEndMatchweek} da época ${contractEndSeason}.`
+						: "";
+				const headline = isRenegotiation
+					? `📈 ${agent} viu o teu plantel no Excel: ${playerName} vale muito mais do que recebe. Exige €${requestedWage.toLocaleString("pt-PT")}/sem ou ameaça "conversas com outros clubes".${endText}`
+					: `📞 ${agent} ligou em pânico: ${playerName} anda a olhar para vitrinas de troféus que não são as tuas! Exige €${requestedWage.toLocaleString("pt-PT")}/sem.${endText}`;
+				handlers.setGameDialog({
+					mode: "confirm",
+					title: `Agente do Jogador — ${playerName}`,
+					description: headline,
+					confirmLabel: "Aceitar",
+					cancelLabel: "Ignorar",
+					onConfirm: () =>
+						socket.emit("renewContract", {
+							playerId,
+							offeredWage: requestedWage,
+						}),
+					onCancel: () => {},
 				});
 			},
 		);
@@ -573,6 +607,7 @@ export function useSocketListeners(handlers, refs) {
 			if (data.allMatchResults)
 				handlers.setAllMatchResults(data.allMatchResults);
 			if (data.matchweek) handlers.setMatchweekCount(data.matchweek - 1);
+			if (data.season) handlers.setSeason(data.season);
 			if (data.year) handlers.setSeasonYear(data.year);
 			if (typeof data.calendarIndex === "number")
 				handlers.setCalendarIndex(data.calendarIndex);
@@ -1005,7 +1040,6 @@ export function useSocketListeners(handlers, refs) {
 		socket.on("matchActionRequired", (data) => {
 			try {
 				console.warn("[MATCH ACTION REQUIRED]", data);
-				handlers.setIsMatchActionPending(true);
 
 				const isTargetCoach = isSameTeamId(
 					data?.teamId,
@@ -1014,6 +1048,7 @@ export function useSocketListeners(handlers, refs) {
 				if (!isTargetCoach) {
 					return;
 				}
+				handlers.setIsMatchActionPending(true);
 
 				const currentSquad = Array.isArray(refs.mySquadRef.current)
 					? refs.mySquadRef.current
@@ -1348,6 +1383,7 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("systemMessage");
 			socket.off("transferProposalResult");
 			socket.off("renewContractCounterOffer");
+			socket.off("contractRequest");
 			socket.off("teamAssigned");
 			socket.off("teamSquadData");
 			socket.off("nextMatchSummary");

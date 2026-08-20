@@ -65,6 +65,7 @@ function StatCard({ label, value, color = "text-on-surface" }) {
  *   setPlayerHistoryModal: function,
  *   myTeamId?: number|string,
  *   matchweekCount?: number,
+ *   season?: number,
  *   isPlayingMatch?: boolean,
  *   showHalftimePanel?: boolean,
  *   renewPlayerContract?: function,
@@ -82,6 +83,7 @@ export function PlayerHistoryModal({
   setPlayerHistoryModal,
   myTeamId,
   matchweekCount = 0,
+  season = 1,
   isPlayingMatch = false,
   showHalftimePanel = false,
   renewPlayerContract,
@@ -152,8 +154,14 @@ export function PlayerHistoryModal({
     myTeamId != null &&
     player.team_id != null &&
     Number(myTeamId) === Number(player.team_id);
-  const currentSeason = Math.ceil((matchweekCount + 1) / 14);
-  const canAct = isMyPlayer && player.signed_season !== currentSeason;
+  const currentEpoch = (Math.max(1, season) - 1) * 14 + Math.min(14, matchweekCount + 1);
+  const contractStart = player.contract_start_epoch || 0;
+  const isLocked = contractStart > 0 && currentEpoch < contractStart + 14;
+  const contractEndEpoch = contractStart > 0 ? contractStart + 14 : 0;
+  const contractEndSeason = contractStart > 0 ? Math.ceil(contractEndEpoch / 14) : 0;
+  const contractEndMatchweek = contractStart > 0
+    ? contractEndEpoch - (contractEndSeason - 1) * 14
+    : 0;
   const matchInProgress = isPlayingMatch || showHalftimePanel;
   // Server uses >= to prevent re-auction in same matchweek (auctionHelpers.ts:459)
   const alreadyAuctionedThisWeek =
@@ -382,84 +390,87 @@ export function PlayerHistoryModal({
                   <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-3">
                     Gestão Contratual
                   </p>
-                  {canAct ? (
-                    <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2">
+                    {isLocked && (
+                      <p className="text-[11px] text-amber-400/90 font-bold">
+                        🔒 Contrato em vigor até à J{contractEndMatchweek} da
+                        época {contractEndSeason} — não pode ser transferido.
+                      </p>
+                    )}
+                    <Button
+                      variant="primary"
+                      full
+                      disabled={matchInProgress}
+                      title={
+                        matchInProgress
+                          ? "Disponível após as partidas"
+                          : "Renovar Contrato"
+                      }
+                      onClick={() => {
+                        renewPlayerContract?.(player);
+                        closeModal();
+                      }}
+                    >
+                      📝 Renovar Contrato
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      full
+                      disabled={matchInProgress || alreadyAuctionedThisWeek || isLocked}
+                      title={
+                        matchInProgress
+                          ? "Disponível após as partidas"
+                          : isLocked
+                            ? `Contrato até à J${contractEndMatchweek} da época ${contractEndSeason}`
+                            : alreadyAuctionedThisWeek
+                              ? "Já foi a leilão nesta jornada"
+                              : "Vender em Leilão"
+                      }
+                      onClick={() => {
+                        listPlayerAuction?.(player);
+                        closeModal();
+                      }}
+                    >
+                      🔨 Vender em Leilão
+                    </Button>
+                    {player.transfer_status === "fixed" ? (
                       <Button
-                        variant="primary"
+                        variant="danger"
                         full
                         disabled={matchInProgress}
                         title={
                           matchInProgress
                             ? "Disponível após as partidas"
-                            : "Renovar Contrato"
+                            : "Retirar da Lista"
                         }
                         onClick={() => {
-                          renewPlayerContract?.(player);
+                          removeFromTransferList?.(player);
                           closeModal();
                         }}
                       >
-                        📝 Renovar Contrato
+                        ✕ Retirar da Lista
                       </Button>
+                    ) : (
                       <Button
                         variant="secondary"
                         full
-                        disabled={matchInProgress || alreadyAuctionedThisWeek}
+                        disabled={matchInProgress || isLocked}
                         title={
                           matchInProgress
                             ? "Disponível após as partidas"
-                            : alreadyAuctionedThisWeek
-                              ? "Já foi a leilão nesta jornada"
-                              : "Vender em Leilão"
+                            : isLocked
+                              ? `Contrato até à J${contractEndMatchweek} da época ${contractEndSeason}`
+                              : "Listar para Transferência"
                         }
                         onClick={() => {
-                          listPlayerAuction?.(player);
+                          listPlayerFixed?.(player);
                           closeModal();
                         }}
                       >
-                        🔨 Vender em Leilão
+                        🏷️ Listar para Transferência
                       </Button>
-                      {player.transfer_status === "fixed" ? (
-                        <Button
-                          variant="danger"
-                          full
-                          disabled={matchInProgress}
-                          title={
-                            matchInProgress
-                              ? "Disponível após as partidas"
-                              : "Retirar da Lista"
-                          }
-                          onClick={() => {
-                            removeFromTransferList?.(player);
-                            closeModal();
-                          }}
-                        >
-                          ✕ Retirar da Lista
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="secondary"
-                          full
-                          disabled={matchInProgress}
-                          title={
-                            matchInProgress
-                              ? "Disponível após as partidas"
-                              : "Listar para Transferência"
-                          }
-                          onClick={() => {
-                            listPlayerFixed?.(player);
-                            closeModal();
-                          }}
-                        >
-                          🏷️ Listar para Transferência
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-on-surface-variant italic">
-                      Gestão contratual indisponível — jogador contratado nesta
-                      época.
-                    </p>
-                  )}
+                    )}
+                  </div>
                 </div>
               )}
             </div>

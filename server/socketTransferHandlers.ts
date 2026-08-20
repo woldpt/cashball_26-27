@@ -7,9 +7,12 @@ import {
   validatePositiveInt,
   validateNonNegativeInt,
   getTeamsWithCoachNames,
+  currentEpoch,
+  isContractLocked,
+  contractEndInfo,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
-import { signingWage } from "./gameConstants";
+import { signingWage, getAgentName } from "./gameConstants";
 
 interface TransferHandlerDeps {
   io: any;
@@ -84,9 +87,12 @@ export function registerTransferSocketHandlers(
       );
       if (!player) return;
 
-      const currentSeason = Math.ceil(Math.max(1, game.matchweek) / 14);
-      if (player.signed_season === currentSeason) {
-        socket.emit("systemMessage", "Este jogador já foi transferido nesta época.");
+      if (isContractLocked(player, game)) {
+        const end = contractEndInfo(player);
+        socket.emit(
+          "systemMessage",
+          `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até à J${end.matchweek} da época ${end.season}. Ninguém mexe no menino dele.`,
+        );
         return;
       }
 
@@ -129,12 +135,12 @@ export function registerTransferSocketHandlers(
         }
         await runExec(
           game.db,
-          "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, signed_season = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+          "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
           [
             playerState.teamId,
             signingWage(player),
             getSeasonEndMatchweek(game.matchweek),
-            Math.ceil(Math.max(1, game.matchweek) / 14),
+            currentEpoch(game),
             game.matchweek,
             game.matchweek,
             validPlayerId,
@@ -236,11 +242,11 @@ export function registerTransferSocketHandlers(
         [playerId, playerState.teamId],
         (err, player) => {
           if (!player) return;
-          const currentSeason = Math.ceil(Math.max(1, game.matchweek) / 14);
-          if (player.signed_season === currentSeason) {
+          if (isContractLocked(player, game)) {
+            const end = contractEndInfo(player);
             socket.emit(
               "systemMessage",
-              "Este jogador já foi transferido nesta época — não pode ser listado.",
+              `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até à J${end.matchweek} da época ${end.season}. Ninguém mexe no menino dele.`,
             );
             return;
           }
@@ -360,20 +366,22 @@ export function registerTransferSocketHandlers(
         const seasonEnd = getSeasonEndMatchweek(game.matchweek);
 
         if (acceptedWage >= demandedWage) {
+          const epoch = currentEpoch(game);
           game.db.run(
-            "UPDATE players SET wage = ?, contract_until_matchweek = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
-            [acceptedWage, seasonEnd, game.matchweek, playerId],
+            "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
+            [acceptedWage, seasonEnd, epoch, game.matchweek, playerId],
             (runErr: Error | null) => {
               if (runErr) {
                 console.error("[renewContract] Error:", runErr);
                 socket.emit("systemMessage", "Erro ao renovar contrato.");
                 return;
               }
+              const end = contractEndInfo({ contract_start_epoch: epoch });
               refreshMarket(game);
               emitSquadForPlayer(game, playerState.teamId);
               socket.emit(
                 "systemMessage",
-                `${player.name} renovou até ao fim da época por €${acceptedWage}/sem.`,
+                `🥂 ${player.name} renovou até à J${end.matchweek} da época ${end.season}. ${getAgentName(player.id)} já celebrou com champanhe… que depois te manda a conta.`,
               );
             },
           );
@@ -394,7 +402,7 @@ export function registerTransferSocketHandlers(
             delete game.pendingRenewalCounterOffers?.[playerId];
             listPlayerOnMarket(game, playerId, "auction", auctionPrice, () => {
               game.db.run(
-                "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+                "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0, contract_start_epoch = 0 WHERE id = ?",
                 [playerId],
                 (runErr: Error | null) => {
                   if (runErr)
@@ -404,7 +412,7 @@ export function registerTransferSocketHandlers(
               );
               socket.emit(
                 "systemMessage",
-                `${player.name} recusou e foi para leilão.`,
+                `💼 ${getAgentName(player.id)} fez as malas: ${player.name} recusou e foi para leilão.`,
               );
             });
           };
@@ -422,6 +430,7 @@ export function registerTransferSocketHandlers(
             playerId,
             playerName: player.name,
             demandedWage,
+            agent: getAgentName(player.id),
           });
         }
       },
@@ -459,20 +468,22 @@ export function registerTransferSocketHandlers(
         [playerId, playerState.teamId],
         (err: Error | null, player: any) => {
           if (err || !player) return;
+          const epoch = currentEpoch(game);
           game.db.run(
-            "UPDATE players SET wage = ?, contract_until_matchweek = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
-            [pending.demandedWage, seasonEnd, game.matchweek, playerId],
+            "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
+            [pending.demandedWage, seasonEnd, epoch, game.matchweek, playerId],
             (runErr: Error | null) => {
               if (runErr) {
                 console.error("[acceptCounterOffer] Error:", runErr);
                 socket.emit("systemMessage", "Erro ao renovar contrato.");
                 return;
               }
+              const end = contractEndInfo({ contract_start_epoch: epoch });
               refreshMarket(game);
               emitSquadForPlayer(game, playerState.teamId);
               socket.emit(
                 "systemMessage",
-                `${player.name} renovou até ao fim da época por €${pending.demandedWage}/sem.`,
+                `🥂 ${player.name} renovou até à J${end.matchweek} da época ${end.season}. ${getAgentName(player.id)} já celebrou com champanhe… que depois te manda a conta.`,
               );
             },
           );
@@ -537,11 +548,11 @@ export function registerTransferSocketHandlers(
           });
           return;
         }
-        const currentSeason = Math.ceil(Math.max(1, game.matchweek) / 14);
-        if (player.signed_season === currentSeason) {
+        if (isContractLocked(player, game)) {
+          const end = contractEndInfo(player);
           socket.emit("transferProposalResult", {
             ok: false,
-            message: "Este jogador já foi transferido nesta época.",
+            message: `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até à J${end.matchweek} da época ${end.season}. Ninguém mexe no menino dele.`,
           });
           return;
         }
@@ -609,12 +620,12 @@ export function registerTransferSocketHandlers(
                   );
                 }
                 game.db.run(
-                  "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, signed_season = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+                  "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
                   [
                     playerState.teamId,
                     signingWage(player),
                     getSeasonEndMatchweek(game.matchweek),
-                    Math.ceil(Math.max(1, game.matchweek) / 14),
+                    currentEpoch(game),
                     game.matchweek,
                     game.matchweek,
                     playerId,

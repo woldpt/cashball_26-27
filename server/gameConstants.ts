@@ -80,6 +80,43 @@ export const SPONSOR_REVENUE_BY_DIVISION: Record<number, number> = {
 export const AUCTION_BID_STEP = 10000;
 
 /**
+ * Duração de um contrato em matchweeks (1 época = 14 jornadas de liga).
+ * Um jogador contratado/renovado na Jornada X só pode ser transferido a
+ * partir da Jornada X da época seguinte.
+ */
+export const CONTRACT_LENGTH_MATCHWEEKS = 14;
+
+/**
+ * Época absoluta (1-based) derivada de (season, matchweek).
+ * O matchweek é season-relative (1..14) e reseta no fim de época; durante a
+ * final da Taça pode transitoriamente valer 15 — clampamos a 14 para manter
+ * o epoch monótono.
+ */
+export function contractEpoch(season: number, matchweek: number): number {
+  return (Math.max(1, season) - 1) * CONTRACT_LENGTH_MATCHWEEKS + Math.min(14, Math.max(1, matchweek));
+}
+
+/**
+ * Nomes fictícios dos "Agentes do Jogador" — humor leve, mas determinísticos
+ * por jogador (o agente é sempre o mesmo para o mesmo id).
+ */
+export const AGENT_NAMES = [
+  "Careca da Cunha",
+  "Primo do Presidente",
+  "Senhor Percentagem",
+  "Dona Gertrudes, a Agente",
+  "Tio dos Relvados",
+  "Bruno Comissão",
+  "Artur Luvas",
+  "Sofia Caneta",
+];
+
+export function getAgentName(playerId: number): string {
+  const idx = Math.abs(Math.floor(playerId ?? 0)) % AGENT_NAMES.length;
+  return AGENT_NAMES[idx];
+}
+
+/**
  * Typed calendar entry — either a league matchweek or a cup round.
  * calendarIndex is the position in SEASON_CALENDAR (0-based, 0..18).
  */

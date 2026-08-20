@@ -55,6 +55,7 @@ export function GameProvider({
 	const [matchResults, setMatchResults] = useState(null);
 	const [allMatchResults, setAllMatchResults] = useState({});
 	const [matchweekCount, setMatchweekCount] = useState(0);
+	const [season, setSeason] = useState(1);
 	// Fica true entre o fim de jogo (matchResults) e a chegada dos dados
 	// actualizados (standingsUpdated). Usado para mostrar o indicador
 	// "A atualizar classificação…" sem bloquear o ecrã.
@@ -563,6 +564,7 @@ export function GameProvider({
 			setSeasonEndModal,
 			setSeasonYear,
 			setMatchweekCount,
+			setSeason,
 			setSelectedTeamSquad,
 			setSelectedTeamLoading,
 			setNextMatchSummary,
@@ -1091,6 +1093,7 @@ export function GameProvider({
 		matchResults,
 		allMatchResults,
 		matchweekCount,
+		season,
 		seasonYear,
 		activeTab,
 		setActiveTab,

@@ -87,6 +87,7 @@ function ensurePlayerSchema(
       ["contract_until_matchweek", "INTEGER DEFAULT 0"],
       ["contract_request_pending", "INTEGER DEFAULT 0"],
       ["contract_requested_wage", "INTEGER DEFAULT 0"],
+      ["contract_start_epoch", "INTEGER DEFAULT 0"],
       ["transfer_status", "TEXT DEFAULT 'none'"],
       ["transfer_price", "INTEGER DEFAULT 0"],
       ["is_star", "INTEGER DEFAULT 0"],

@@ -1,7 +1,13 @@
 import type { ActiveGame, PlayerSession } from "./types";
-import { logClubNews, getTeamsWithCoachNames } from "./coreHelpers";
+import {
+  logClubNews,
+  getTeamsWithCoachNames,
+  currentEpoch,
+  isContractLocked,
+  contractEndInfo,
+} from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
-import { signingWage, AUCTION_BID_STEP } from "./gameConstants";
+import { signingWage, AUCTION_BID_STEP, getAgentName } from "./gameConstants";
 
 interface AuctionDeps {
   io: any;
@@ -225,8 +231,8 @@ export function createAuctionHelpers(deps: AuctionDeps) {
         const buyerTeamId = winnerTeamId;
         const finalBid = winnerBid;
 
-        const currentSeason = Math.ceil(Math.max(1, game.matchweek) / 14);
-        if (player.signed_season === currentSeason) {
+        if (isContractLocked(player, game)) {
+          const end = contractEndInfo(player);
           game.db.run(
             "UPDATE players SET transfer_status = 'none', transfer_price = 0, last_auctioned_matchweek = ? WHERE id = ?",
             [game.matchweek || 0, playerId],
@@ -237,7 +243,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
               if (seller) {
                 io.to(seller.socketId as string).emit(
                   "systemMessage",
-                  `${player.name} não foi vendido em leilão — já transferido nesta época.`,
+                  `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até à J${end.matchweek} da época ${end.season}. Não vai para o leilão.`,
                 );
               }
               delete game.auctions![playerId];
@@ -268,12 +274,12 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                   [finalBid, buyerTeamId],
                   () => {
                     game.db.run(
-                      "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, signed_season = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+                      "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
                       [
                         buyerTeamId,
                         signingWage(player),
                         getSeasonEndMatchweek(game.matchweek),
-                        Math.ceil(Math.max(1, game.matchweek) / 14),
+                        currentEpoch(game),
                         game.matchweek,
                         game.matchweek,
                         playerId,

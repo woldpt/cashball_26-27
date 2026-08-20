@@ -28,6 +28,7 @@ import { getPlayerStat } from "../../utils/playerHelpers.js";
  * @param {{
  *   player: object,
  *   matchweekCount: number,
+ *   season?: number,
  *   onOpenPlayerHistory?: (player: object) => void,
  *   dim?: boolean,
  *   showContractBadges?: boolean,
@@ -39,6 +40,7 @@ import { getPlayerStat } from "../../utils/playerHelpers.js";
 export function PlayerRow({
   player,
   matchweekCount,
+  season = 1,
   onOpenPlayerHistory,
   dim = false,
   showContractBadges = false,
@@ -123,6 +125,7 @@ export function PlayerRow({
             player={player}
             matchweekCount={matchweekCount}
             showContractBadges={showContractBadges}
+            season={season}
           />
         </div>
       </div>

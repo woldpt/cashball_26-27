@@ -1,6 +1,6 @@
 import type { ActiveGame } from "./types";
-import { logClubNews, getTeamsWithCoachNames } from "./coreHelpers";
-import { signingWage, AUCTION_BID_STEP } from "./gameConstants";
+import { logClubNews, getTeamsWithCoachNames, currentEpoch } from "./coreHelpers";
+import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_MATCHWEEKS } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
 
@@ -44,8 +44,8 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
 
     const marketPlayers = await runAll(
       game.db,
-      "SELECT * FROM players WHERE team_id IS NOT NULL AND transfer_status = 'fixed' AND (signed_season IS NULL OR signed_season != ?) ORDER BY skill DESC, value ASC",
-      [Math.ceil(Math.max(1, game.matchweek) / 14)],
+      "SELECT * FROM players WHERE team_id IS NOT NULL AND transfer_status = 'fixed' AND (contract_start_epoch = 0 OR contract_start_epoch + ? <= ?) ORDER BY skill DESC, value ASC",
+      [CONTRACT_LENGTH_MATCHWEEKS, currentEpoch(game)],
     );
 
     for (const npcTeam of npcTeams) {
@@ -98,16 +98,17 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
         // This prevents a double-sale when two NPC teams share the same marketPlayers snapshot.
         const changes = await new Promise<number>((resolve) => {
           game.db.run(
-            "UPDATE players SET team_id = ?, wage = ?, transfer_status = 'none', transfer_price = 0, contract_until_matchweek = ?, signed_season = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ? AND transfer_status = 'fixed' AND (signed_season IS NULL OR signed_season != ?)",
+            "UPDATE players SET team_id = ?, wage = ?, transfer_status = 'none', transfer_price = 0, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ? AND transfer_status = 'fixed' AND (contract_start_epoch = 0 OR contract_start_epoch + ? <= ?)",
             [
               npcTeam.id,
               signingWage(player),
               getSeasonEndMatchweek(game.matchweek),
-              Math.ceil(Math.max(1, game.matchweek) / 14),
+              currentEpoch(game),
               game.matchweek,
               game.matchweek,
               player.id,
-              Math.ceil(Math.max(1, game.matchweek) / 14),
+              CONTRACT_LENGTH_MATCHWEEKS,
+              currentEpoch(game),
             ],
             function (this: any) {
               resolve(this.changes ?? 0);
@@ -180,8 +181,8 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
     for (const npcTeam of allNpcTeams) {
       const squad = await runAll(
         game.db,
-        "SELECT * FROM players WHERE team_id = ? AND transfer_status = 'none' AND contract_request_pending = 0 AND (signed_season IS NULL OR signed_season != ?) ORDER BY skill ASC",
-        [npcTeam.id, Math.ceil(Math.max(1, game.matchweek) / 14)],
+        "SELECT * FROM players WHERE team_id = ? AND transfer_status = 'none' AND contract_request_pending = 0 AND (contract_start_epoch = 0 OR contract_start_epoch + ? <= ?) ORDER BY skill ASC",
+        [npcTeam.id, CONTRACT_LENGTH_MATCHWEEKS, currentEpoch(game)],
       );
 
       const listChance = squad.length > 16 ? 0.4 : squad.length > 12 ? 0.15 : 0;

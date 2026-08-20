@@ -1,5 +1,9 @@
 import type { ActiveGame } from "./types";
-import { MAX_ATTENDANCE_BY_DIVISION } from "./gameConstants";
+import {
+  MAX_ATTENDANCE_BY_DIVISION,
+  CONTRACT_LENGTH_MATCHWEEKS,
+  contractEpoch,
+} from "./gameConstants";
 
 type Db = any;
 type AnyRow = Record<string, any>;
@@ -59,6 +63,42 @@ const refereeNames = [
 
 export function getSeasonEndMatchweek(matchweek: number) {
   return Math.ceil(Math.max(1, matchweek) / 14) * 14;
+}
+
+/**
+ * Época absoluta actual derivada do estado do jogo.
+ */
+export function currentEpoch(game: ActiveGame): number {
+  return contractEpoch(game.season || 1, game.matchweek || 1);
+}
+
+/**
+ * Jogador com contrato em vigor (contract_start_epoch > 0) só é transferível
+ * a partir do aniversário do contrato (start + 14 jornadas). Epoch 0 = sem
+ * contrato (free agent / seed) → transferível de imediato.
+ */
+export function isContractLocked(
+  player: { contract_start_epoch?: number | null },
+  game: ActiveGame,
+): boolean {
+  const start = player.contract_start_epoch || 0;
+  if (start <= 0) return false;
+  return currentEpoch(game) < start + CONTRACT_LENGTH_MATCHWEEKS;
+}
+
+/**
+ * Jornada e época (season-relative) em que um contrato termina, derivadas do
+ * epoch absoluto. Usado em mensagens e badges.
+ */
+export function contractEndInfo(
+  player: { contract_start_epoch?: number | null },
+): { season: number; matchweek: number } {
+  const start = player.contract_start_epoch || 0;
+  if (start <= 0) return { season: 0, matchweek: 0 };
+  const endEpoch = start + CONTRACT_LENGTH_MATCHWEEKS;
+  const season = Math.ceil(endEpoch / CONTRACT_LENGTH_MATCHWEEKS);
+  const mw = endEpoch - (season - 1) * CONTRACT_LENGTH_MATCHWEEKS;
+  return { season, matchweek: mw === 0 ? CONTRACT_LENGTH_MATCHWEEKS : mw };
 }
 
 export function hashString(input = "") {

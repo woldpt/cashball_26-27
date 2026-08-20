@@ -12,6 +12,7 @@ import { formatCurrency } from "../utils/formatters.js";
  *   mySquad: object[],
  *   annotatedSquad: object[],
  *   matchweekCount: number,
+ *   season?: number,
  *   onOpenPlayerHistory: (player: object) => void,
  * }} props
  */
@@ -19,6 +20,7 @@ export function PlayersTab({
   mySquad,
   annotatedSquad,
   matchweekCount,
+  season = 1,
   onOpenPlayerHistory,
 }) {
   const wageByPos = { GR: 0, DEF: 0, MED: 0, ATA: 0 };
@@ -74,6 +76,7 @@ export function PlayersTab({
                       key={player.id}
                       player={player}
                       matchweekCount={matchweekCount}
+                      season={season}
                       showContractBadges
                       onOpenPlayerHistory={onOpenPlayerHistory}
                     />

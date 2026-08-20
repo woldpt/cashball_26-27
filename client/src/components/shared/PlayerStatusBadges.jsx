@@ -13,14 +13,14 @@ import { Badge } from "./Badge.jsx";
  *   player: object,
  *   matchweekCount: number,
  *   showContractBadges?: boolean,
- *   seasonEnd?: number|null,
+ *   season?: number,
  * }} props
  */
 export function PlayerStatusBadges({
   player,
   matchweekCount = 0,
   showContractBadges = false,
-  seasonEnd = null,
+  season = 1,
 }) {
   const susp = player.suspension_until_matchweek || 0;
   const inj = player.injury_until_matchweek || 0;
@@ -30,18 +30,30 @@ export function PlayerStatusBadges({
   const isCooldown =
     !isSuspended && !isInjured && cooldown > 0 && cooldown > matchweekCount;
 
-  const contractSeasonEnd =
-    seasonEnd ?? Math.ceil(Math.max(1, matchweekCount) / 14) * 14;
-  const isContractRenewed = player.contract_until_matchweek === contractSeasonEnd;
+  const contractStart = player.contract_start_epoch || 0;
+  const currentEpoch = (Math.max(1, season) - 1) * 14 + Math.min(14, matchweekCount + 1);
+  const isLocked = contractStart > 0 && currentEpoch < contractStart + 14;
+  const isUnderContract = contractStart > 0;
   const isListed =
     player.transfer_status && player.transfer_status !== "none";
-  const renewedShine = showContractBadges && isContractRenewed && !isListed;
+  const isPendingRenewal = !!player.contract_request_pending;
+  const renewedShine = showContractBadges && isUnderContract && !isListed;
 
   return (
     <>
       {player.isJunior && <Badge variant="junior">🎓 Jr</Badge>}
-      {renewedShine && <Badge variant="renovado">✓ Renovado</Badge>}
-      {showContractBadges && isListed && !isContractRenewed && (
+      {showContractBadges && isPendingRenewal && (
+        <Badge variant="cooldown" title="O agente quer falar contigo">
+          📝 Renovação
+        </Badge>
+      )}
+      {showContractBadges && isLocked && (
+        <Badge variant="cooldown" title="Contrato em vigor — não transferível">
+          🔒 Contrato
+        </Badge>
+      )}
+      {renewedShine && <Badge variant="renovado">✓ Contrato</Badge>}
+      {showContractBadges && isListed && !isUnderContract && (
         <Badge variant="sold">À venda</Badge>
       )}
       {isCooldown && (

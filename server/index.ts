@@ -680,7 +680,6 @@ const startAuction = auctionHelpers.startAuction;
 
 const contractHelpers = createContractHelpers({
 	io,
-	getSeasonEndMatchweek,
 	runAll,
 	runGet,
 	startAuction,

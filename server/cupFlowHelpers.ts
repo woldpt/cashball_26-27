@@ -455,7 +455,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			await dbRun(
 				"UPDATE players SET goals = 0, red_cards = 0, injuries = 0, games_played = 0, suspension_games = 0, suspension_until_matchweek = 0, injury_until_matchweek = 0, transfer_cooldown_until_matchweek = 0",
 			);
-			await dbRun("UPDATE players SET signed_season = 0");
 			await dbRun("COMMIT");
 		} catch (txErr) {
 			await dbRun("ROLLBACK").catch(() => {});
@@ -540,6 +539,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		io.to(game.roomCode).emit("seasonEnd", {
 			season,
 			year,
+			newSeason: game.season,
 			champion: iLigaWinner
 				? { id: iLigaWinner.id, name: iLigaWinner.name }
 				: null,
@@ -1385,8 +1385,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				`UPDATE players
          SET
            injury_until_matchweek             = MAX(0, injury_until_matchweek - 1),
-           suspension_until_matchweek         = MAX(0, suspension_until_matchweek - 1),
-           transfer_cooldown_until_matchweek  = MAX(0, transfer_cooldown_until_matchweek - 1)
+           suspension_until_matchweek         = MAX(0, suspension_until_matchweek - 1)
          WHERE team_id IN (${placeholders})`,
 				game.cupTeamIds,
 			);

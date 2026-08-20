@@ -63,6 +63,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     matchResults,
     allMatchResults,
     matchweekCount,
+    season,
     seasonYear,
     activeTab,
     setActiveTab,
@@ -1261,6 +1262,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         mySquad={mySquad}
                         annotatedSquad={annotatedSquad}
                         matchweekCount={matchweekCount}
+                        season={season}
                         onOpenPlayerHistory={(player) =>
                           socket.emit("requestPlayerHistory", {
                             playerId: player.id,
@@ -1502,6 +1504,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         setPlayerHistoryModal={setPlayerHistoryModal}
         myTeamId={me?.teamId}
         matchweekCount={matchweekCount}
+        season={season}
         isPlayingMatch={isPlayingMatch}
         showHalftimePanel={showHalftimePanel}
         renewPlayerContract={renewPlayerContract}
