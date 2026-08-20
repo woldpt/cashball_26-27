@@ -44,6 +44,22 @@ function FormDots({ form = "" }) {
   );
 }
 
+/* Iniciais do nome do treinador (ex.: "João Silva" → "JS", "Paulo" → "P"). */
+/**
+ * @param {string} name
+ * @returns {string}
+ */
+function coachInitials(name) {
+  const clean = String(name ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+  if (!clean) return "";
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 /* ── LiveStandingsPanel ─────────────────────────────────────────────────── */
 
 /**
@@ -178,9 +194,12 @@ export function LiveStandingsPanel({
                         TU
                       </span>
                     )}
-                    {!isMe && t.coach_is_human === 1 && (
-                      <span className="shrink-0 px-1 py-px bg-amber-400/15 text-amber-400 text-[7px] font-black rounded-sm border border-amber-400/30 leading-tight">
-                        HUM
+                    {!isMe && t.coach_is_human === 1 && t.coach_name && (
+                      <span
+                        title={t.coach_name}
+                        className="shrink-0 px-1 py-px bg-amber-400/15 text-amber-400 text-[7px] font-black rounded-sm border border-amber-400/30 leading-tight"
+                      >
+                        {coachInitials(t.coach_name)}
                       </span>
                     )}
                   </div>
