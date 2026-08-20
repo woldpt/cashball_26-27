@@ -11,41 +11,14 @@ import { formatCurrency } from "../utils/formatters.js";
  * @param {{
  *   mySquad: object[],
  *   annotatedSquad: object[],
- *   totalWeeklyWage: number,
- *   currentBudget: number,
- *   teamInfo: object|null,
  *   matchweekCount: number,
- *   isPlayingMatch: boolean,
- *   showHalftimePanel: boolean,
- *   renewPlayerContract: (player: object) => void,
- *   listPlayerAuction: (player: object) => void,
- *   listPlayerFixed: (player: object) => void,
- *   removeFromTransferList: (player: object) => void,
  *   onOpenPlayerHistory: (player: object) => void,
  * }} props
  */
 export function PlayersTab({
   mySquad,
   annotatedSquad,
-  // eslint-disable-next-line no-unused-vars
-  totalWeeklyWage,
-  // eslint-disable-next-line no-unused-vars
-  currentBudget,
-  // eslint-disable-next-line no-unused-vars
-  teamInfo,
   matchweekCount,
-  // eslint-disable-next-line no-unused-vars
-  isPlayingMatch,
-  // eslint-disable-next-line no-unused-vars
-  showHalftimePanel,
-  // eslint-disable-next-line no-unused-vars
-  renewPlayerContract,
-  // eslint-disable-next-line no-unused-vars
-  listPlayerAuction,
-  // eslint-disable-next-line no-unused-vars
-  listPlayerFixed,
-  // eslint-disable-next-line no-unused-vars
-  removeFromTransferList,
   onOpenPlayerHistory,
 }) {
   const wageByPos = { GR: 0, DEF: 0, MED: 0, ATA: 0 };

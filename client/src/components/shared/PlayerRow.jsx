@@ -292,12 +292,13 @@ export function PlayerRow({
           {!player.isJunior &&
           Math.round((player.value || 0) * 1.35) <= myBudget ? (
             <button
-              onClick={() =>
+              onClick={(e) => {
+                e.stopPropagation();
                 onProposal?.({
                   player,
                   suggestedPrice: Math.round((player.value || 0) * 1.35),
-                })
-              }
+                });
+              }}
               className="px-3 py-1.5 rounded text-xs font-black uppercase bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-500 transition-colors whitespace-nowrap"
             >
               Proposta

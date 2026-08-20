@@ -11,7 +11,7 @@ import { TabBar } from "../components/shared/TabBar.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
 import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
 import { TeamHistoryView } from "./TeamHistoryView.jsx";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 /**
  * @param {{
@@ -32,6 +32,7 @@ import { useState } from "react";
  *   teams,
  *   onBack: function,
  *   onOpenTeamSquad: function,
+ *   onOpenPlayerHistory?: (player: object) => void,
  * }} props
  */
 export function TeamSquadView({
@@ -52,6 +53,7 @@ export function TeamSquadView({
   teams,
   onBack,
   onOpenTeamSquad,
+  onOpenPlayerHistory,
 }) {
   const [activeTab, setActiveTab] = useState("squad");
 
@@ -72,38 +74,41 @@ export function TeamSquadView({
     : `coach|${selectedTeam?.coach_name ?? selectedTeam?.id ?? "?"}`;
 
   const selectedTeamDivision = selectedTeam?.division;
-  const selectedDivTeams = teams
-    .filter((t) => t.division === selectedTeamDivision)
-    .sort((a, b) => a.id - b.id);
 
   const seasonYear = calendarData?.year ?? new Date().getFullYear();
 
-  const getTeamFixtures = () => {
+  const teamFixtures = useMemo(() => {
     const curIdx = calendarData?.calendarIndex ?? 0;
-    const cal = calendarData;
-
-
+    const divTeams = (teams ?? [])
+      .filter((t) => t.division === selectedTeamDivision)
+      .sort((a, b) => a.id - b.id);
 
     const calEntries = (calendarData?.leagueMatches ?? [])
-      .filter((m) =>
-        selectedDivTeams.some((t) => t.id === m.home_team_id) &&
-        selectedDivTeams.some((t) => t.id === m.away_team_id)
+      .filter(
+        (m) =>
+          divTeams.some((t) => t.id === m.home_team_id) &&
+          divTeams.some((t) => t.id === m.away_team_id),
       )
       .map((m) => ({
         homeTeamId: m.home_team_id,
         awayTeamId: m.away_team_id,
         result: m,
       }))
-      .filter((f) => f.homeTeamId === selectedTeam.id || f.awayTeamId === selectedTeam.id);
+      .filter(
+        (f) =>
+          f.homeTeamId === selectedTeam.id || f.awayTeamId === selectedTeam.id,
+      );
 
     const futureFixtures = [];
     for (let mw = curIdx + 1; mw <= 14; mw++) {
       const fixtures = generateLeagueFixtures(
-        cal?.fixtureSeeds?.[selectedTeamDivision] ?? selectedDivTeams.map((t) => t.id),
-        mw
+        calendarData?.fixtureSeeds?.[selectedTeamDivision] ??
+          divTeams.map((t) => t.id),
+        mw,
       ).map((f) => ({ ...f, result: null }));
       const myFixture = fixtures.find(
-        (f) => f.homeTeamId === selectedTeam.id || f.awayTeamId === selectedTeam.id
+        (f) =>
+          f.homeTeamId === selectedTeam.id || f.awayTeamId === selectedTeam.id,
       );
       if (myFixture) {
         futureFixtures.push({
@@ -116,10 +121,10 @@ export function TeamSquadView({
       }
     }
 
-    const processed = [...calEntries, ...futureFixtures].map((fixture) => {
+    return [...calEntries, ...futureFixtures].map((fixture) => {
       const imHome = fixture.homeTeamId === selectedTeam.id;
       const opponent = teams.find(
-        (t) => t.id === (imHome ? fixture.awayTeamId : fixture.homeTeamId)
+        (t) => t.id === (imHome ? fixture.awayTeamId : fixture.homeTeamId),
       );
       const stadiumTeam = imHome ? selectedTeam : opponent;
       const myScore = fixture.result
@@ -151,9 +156,7 @@ export function TeamSquadView({
         drew,
       };
     });
-
-    return processed;
-  };
+  }, [calendarData, selectedTeam, selectedTeamDivision, teams]);
 
   return (
     <div className="min-h-screen w-full bg-surface text-on-surface flex flex-col">
@@ -321,14 +324,14 @@ export function TeamSquadView({
           />
         ) : activeTab === "calendar" ? (
           <div className="space-y-2 p-6">
-            {getTeamFixtures().length === 0 && (
+            {teamFixtures.length === 0 && (
               <div className="bg-surface-container rounded-lg p-8 text-center">
                 <p className="text-on-surface-variant text-sm">
                   Sem jogos para mostrar.
                 </p>
               </div>
             )}
-            {getTeamFixtures().map(
+            {teamFixtures.map(
               ({
                 imHome,
                 opponent,
@@ -543,6 +546,7 @@ export function TeamSquadView({
                       matchweekCount={currentMatchweek}
                       showProposalCol={showProposalCol}
                       myBudget={myBudget}
+                      onOpenPlayerHistory={onOpenPlayerHistory}
                       onProposal={(data) =>
                         setTransferProposalModal(data)
                       }

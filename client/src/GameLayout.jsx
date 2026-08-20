@@ -1260,16 +1260,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       <PlayersTab
                         mySquad={mySquad}
                         annotatedSquad={annotatedSquad}
-                        totalWeeklyWage={totalWeeklyWage}
-                        currentBudget={currentBudget}
-                        teamInfo={teamInfo}
                         matchweekCount={matchweekCount}
-                        isPlayingMatch={isPlayingMatch}
-                        showHalftimePanel={showHalftimePanel}
-                        renewPlayerContract={renewPlayerContract}
-                        listPlayerAuction={listPlayerAuction}
-                        listPlayerFixed={listPlayerFixed}
-                        removeFromTransferList={removeFromTransferList}
                         onOpenPlayerHistory={(player) =>
                           socket.emit("requestPlayerHistory", {
                             playerId: player.id,
@@ -1297,6 +1288,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         teams={teams}
                         onBack={handleCloseTeamSquad}
                         onOpenTeamSquad={handleOpenTeamSquad}
+                        onOpenPlayerHistory={(player) =>
+                          socket.emit("requestPlayerHistory", {
+                            playerId: player.id,
+                          })
+                        }
                       />
                     )}
 

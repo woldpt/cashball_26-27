@@ -674,9 +674,11 @@ export function GameProvider({
 		if (!team) return;
 		if (activeTabRef.current !== "squad") {
 			teamSquadReturnTabRef.current = activeTabRef.current;
-			window.history.pushState({ teamSquad: true }, "");
-		} else {
+		}
+		if (window.history.state?.teamSquad) {
 			window.history.replaceState({ teamSquad: true }, "");
+		} else {
+			window.history.pushState({ teamSquad: true }, "");
 		}
 		setActiveTab("squad");
 		setSelectedTeam(team);
