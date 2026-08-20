@@ -381,10 +381,11 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     player.teamId = team.id;
     delete game.dismissedCoachSince[coachName];
 
-    // Reiniciar carência e streak de orçamento: o treinador herda um clube novo,
-    // não deve ser avaliado pelos resultados/contas do antecessor.
+    // Reiniciar carência, streak de orçamento e aviso da direcção: o treinador
+    // herda um clube novo, não deve ser avaliado pelos resultados/contas do antecessor.
     game.coachMatchesManaged[coachName] = 0;
     game.negativeBudgetStreak[team.id] = 0;
+    game.boardBudgetWarned[team.id] = 0;
 
     // Notify coach
     if (player.socketId) {
@@ -492,6 +493,27 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
         game.negativeBudgetStreak[teamId] =
           (game.negativeBudgetStreak[teamId] ?? 0) + 1;
         const streak = game.negativeBudgetStreak[teamId];
+
+        // Aviso da direcção antes do despedimento por insolvência.
+        const warned = game.boardBudgetWarned[teamId] ?? 0;
+        if (warned < 1 && streak >= 1) {
+          game.boardBudgetWarned[teamId] = 1;
+          if (player.socketId) {
+            io.to(player.socketId).emit("systemMessage", {
+              text: "⚠️ A Direcção alerta: orçamento negativo — risco de bancarrota se a tendência continuar.",
+              broadcast: false,
+            });
+          }
+        } else if (warned < 3 && streak >= 3) {
+          game.boardBudgetWarned[teamId] = 3;
+          if (player.socketId) {
+            io.to(player.socketId).emit("systemMessage", {
+              text: "⚠️ ÚLTIMO AVISO: a Direcção admite despedimento por insolvência se o orçamento continuar negativo.",
+              broadcast: false,
+            });
+          }
+        }
+
         let dismissalChance = 0;
         if (streak >= 5) {
           dismissalChance = DISMISSAL_BY_BUDGET_MAX;
@@ -516,6 +538,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
         }
       } else {
         game.negativeBudgetStreak[teamId] = 0;
+        game.boardBudgetWarned[teamId] = 0;
       }
 
       // Guard: might have been dismissed by budget check above
@@ -669,9 +692,10 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     player.teamId = toTeamId;
     delete game.pendingJobOffers[coachName];
 
-    // Novo clube: reiniciar carência e streak de orçamento.
+    // Novo clube: reiniciar carência, streak de orçamento e aviso da direcção.
     game.coachMatchesManaged[coachName] = 0;
     game.negativeBudgetStreak[toTeamId] = 0;
+    game.boardBudgetWarned[toTeamId] = 0;
 
     // Fetch new team details
     const team = await runGet<AnyRow>(
