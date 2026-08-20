@@ -1479,9 +1479,30 @@ async function simulateMatchSegment(
         return;
       }
 
+      const homeBefore = fixture.finalHomeGoals;
+      const awayBefore = fixture.finalAwayGoals;
       if (isHome) fixture.finalHomeGoals++;
       else fixture.finalAwayGoals++;
       goalScoredThisMinute = true;
+
+      const scoredSideGoals = isHome
+        ? fixture.finalHomeGoals
+        : fixture.finalAwayGoals;
+      const otherSideGoals = isHome
+        ? fixture.finalAwayGoals
+        : fixture.finalHomeGoals;
+      const wasBehind = isHome
+        ? homeBefore < awayBefore
+        : awayBefore < homeBefore;
+      const goalCtx = {
+        opener: homeBefore + awayBefore === 0,
+        equalizer:
+          scoredSideGoals === otherSideGoals && homeBefore + awayBefore > 0,
+        comeback: wasBehind && scoredSideGoals > otherSideGoals,
+        late: minute >= 85,
+        winningBig:
+          Math.abs(fixture.finalHomeGoals - fixture.finalAwayGoals) >= 3,
+      };
 
       const decisiveChance = Math.min(0.6, craquesInXI * 0.2);
       const isDecisive = Math.random() < decisiveChance;
@@ -1489,7 +1510,7 @@ async function simulateMatchSegment(
       const goalText =
         fixture.round === 5
           ? finalGoalPhrase(scorer ? scorer.name : "Jogador")
-          : goalPhrase(scorer ? scorer.name : "Jogador");
+          : goalPhrase(scorer ? scorer.name : "Jogador", goalCtx);
       fixture.events.push({
         minute,
         type: "goal",
