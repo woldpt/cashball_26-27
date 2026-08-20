@@ -15,6 +15,16 @@ const WEATHER_LABELS = {
   "❄️": "Neve",
 };
 
+/* ── Commentary tier styles — efeitos visuais subtis para eventos-chave ── */
+const COMMENTARY_EFFECTS = {
+  goal: { className: "text-emerald-400/90", effect: "pop" },
+  penalty_goal: { className: "text-emerald-400/90", effect: "pop" },
+  var_disallowed: { className: "text-amber-400/90", effect: "shake" },
+  red: { className: "text-red-400/90", effect: "shake" },
+  penalty_miss: { className: "text-amber-400/80", effect: "pulse", pulseColor: "rgba(251, 191, 36, 0.5)" },
+  near_miss: { className: "text-sky-400/80", effect: "pulse", pulseColor: "rgba(56, 189, 248, 0.45)" },
+};
+
 /* ── LiveMatchHero — painel do meu jogo (scoreboard estilo broadcast) ────
  *
  * Hierarquia: meta strip (competição + LIVE) → info strip (estádio ·
@@ -329,7 +339,22 @@ export function LiveMatchHero({
               .replace(/^\[(?:\d+'|HT)\]\s*\S*\s*/, "")
               .trim();
             if (!phrase) return null;
-            const isGoal = latestWithText.type === "goal" || latestWithText.type === "penalty_goal";
+            const tier = COMMENTARY_EFFECTS[latestWithText.type] || null;
+            const effectCls = tier?.effect
+              ? `commentary-effect commentary-effect--${tier.effect}`
+              : "";
+            const phraseStyle = {
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              animationDuration:
+                tier?.effect === "pulse"
+                  ? "1.4s"
+                  : tier?.effect
+                    ? "0.6s"
+                    : undefined,
+            };
+            if (tier?.effect === "pulse" && tier.pulseColor) {
+              phraseStyle["--pulse-color"] = tier.pulseColor;
+            }
             return (
               <div
                 key={`${latestWithText.minute}-${latestWithText.type}`}
@@ -337,10 +362,10 @@ export function LiveMatchHero({
                 style={{ animation: "commentaryFadeIn 0.6s ease" }}
               >
                 <p
-                  className={`text-[11px] sm:text-[16px] leading-snug italic font-medium tracking-wide line-clamp-2 ${
-                    isGoal ? "text-primary/90" : "text-on-surface-variant/55"
+                  className={`text-[11px] sm:text-[16px] leading-snug italic font-medium tracking-wide line-clamp-2 ${effectCls} ${
+                    tier?.className || "text-on-surface-variant/55"
                   }`}
-                  style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+                  style={phraseStyle}
                 >
                   "{phrase}"
                 </p>

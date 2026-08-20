@@ -176,6 +176,66 @@ body {
   }
 }
 
+/* Commentary phrase — goal pop (subtle, once) */
+@keyframes commentary-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Commentary phrase — soft shake for red card / disallowed goal */
+@keyframes commentary-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+}
+
+/* Commentary phrase — gentle glow pulse (subtle, once) */
+@keyframes commentary-pulse {
+  0% {
+    text-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+  50% {
+    text-shadow: 0 0 14px var(--pulse-color, rgba(255, 255, 255, 0.35));
+  }
+  100% {
+    text-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+.commentary-effect {
+  display: inline-block;
+  animation-duration: 0.7s;
+  animation-timing-function: ease-out;
+}
+.commentary-effect--pop {
+  animation-name: commentary-pop;
+}
+.commentary-effect--shake {
+  animation-name: commentary-shake;
+}
+.commentary-effect--pulse {
+  animation-name: commentary-pulse;
+}
+
 /* Heartbeat for JOGAR button */
 @keyframes heartbeat {
   0%,
