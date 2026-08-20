@@ -290,7 +290,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       <header
         className="fixed top-0 left-0 right-0 h-14 z-160 flex items-center border-b border-outline-variant/20"
         style={{
-          background: `linear-gradient(90deg, ${teamInfo?.color_primary || "var(--color-surface-container-low)"} 0%, ${teamInfo?.color_primary || "var(--color-surface-container-low)"}45 55%, transparent 100%), var(--color-surface)`,
+          background:
+            teamInfo?.color_primary || "var(--color-surface-container-low)",
         }}
       >
         <div className="relative flex items-center justify-between w-full px-4 lg:px-6">
