@@ -777,6 +777,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       return {
         matchweek: game.matchweek,
         isCup: true,
+        fixtureKey: `${cupMatch.home_team_id}-${cupMatch.away_team_id}`,
         cupRound: currentEntry.round,
         cupRoundName: currentEntry.roundName,
         venue,
@@ -822,17 +823,32 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       standings.map((standingTeam, index) => [standingTeam.id, index + 1]),
     );
 
-    await ensureFixtureSeeds(game, [team.division]);
-    const fixtures = await generateFixturesForDivision(
-      game.db,
-      team.division,
-      game.matchweek,
-      game.fixtureSeeds?.[team.division] ?? [],
-    );
-    const fixture = fixtures.find(
-      (entry: any) =>
-        entry.homeTeamId === team.id || entry.awayTeamId === team.id,
-    );
+    // Fonte única de verdade: se o lobby já preparou as fixtures (finalizeLeagueEvent),
+    // usa EXATAMENTE essas — o jogo real vai jogá-las. Evita divergência de
+    // casa/fora entre o briefing e a partida. Fallback determinístico se não
+    // houver fixtures preparadas (restore/crash).
+    let fixture: any = null;
+    const prepped = game.currentFixtures ?? [];
+    if (prepped.length > 0 && !(prepped[0] as any)?.round) {
+      fixture =
+        prepped.find(
+          (f: any) => f.homeTeamId === team.id || f.awayTeamId === team.id,
+        ) ?? null;
+    }
+    if (!fixture) {
+      await ensureFixtureSeeds(game, [team.division]);
+      const fixtures = await generateFixturesForDivision(
+        game.db,
+        team.division,
+        game.matchweek,
+        game.fixtureSeeds?.[team.division] ?? [],
+      );
+      fixture =
+        fixtures.find(
+          (entry: any) =>
+            entry.homeTeamId === team.id || entry.awayTeamId === team.id,
+        ) || null;
+    }
     if (!fixture) return null;
 
     const isHome = fixture.homeTeamId === team.id;
@@ -885,6 +901,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     return {
       matchweek: game.matchweek,
       isCup: false,
+      fixtureKey: `${fixture.homeTeamId}-${fixture.awayTeamId}`,
       venue: isHome ? "Casa" : "Fora",
       odds,
       difficulty: computeDifficulty(odds, false),

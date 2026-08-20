@@ -1412,6 +1412,15 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		console.log(
 			`[${game.roomCode}] ↩ Cup round ${round} finalized → lobby | calendarIndex=${game.calendarIndex} | nextEvent=${game.currentEvent?.type ?? "none"}`,
 		);
+		// Estado de época para a sala: a taça não incrementa matchweek, mas o
+		// calendarIndex avança — sem este broadcast o cliente ficava com o
+		// nextMatchSummary stale (refetch nunca disparava após uma ronda).
+		io.to(game.roomCode).emit("seasonState", {
+			matchweek: game.matchweek,
+			calendarIndex: game.calendarIndex,
+			season: game.season,
+			year: game.year,
+		});
 		saveGameState(game);
 		// Retomar leilões pausados durante o jogo de Taça
 		resumeAllPausedAuctions(game);
@@ -1420,6 +1429,13 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		if (game.calendarIndex >= SEASON_CALENDAR.length) {
 			try {
 				await applySeasonEnd(game);
+				// Nova época em curso — re-emite o estado resetado.
+				io.to(game.roomCode).emit("seasonState", {
+					matchweek: game.matchweek,
+					calendarIndex: game.calendarIndex,
+					season: game.season,
+					year: game.year,
+				});
 			} catch (seErr) {
 				console.error(`[${game.roomCode}] Season end error (from cup):`, seErr);
 			}

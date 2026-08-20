@@ -172,6 +172,63 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     }
   }
 
+  // Gera fixtures de liga para uma jornada e guarda em game.currentFixtures,
+  // enriquecidas com os nomes das equipas. Fonte ÚNICA de verdade para o
+  // briefing (nextMatchSummary) e para o jogo real — assim o casa/fora visto
+  // no briefing é sempre exatamente o que vai ser jogado.
+  async function prepareLeagueFixtures(
+    game: ActiveGame,
+    matchweek: number,
+  ): Promise<void> {
+    await ensureFixtureSeeds(game, [1, 2, 3, 4]);
+    const seeds = game.fixtureSeeds;
+    console.log(
+      `[${game.roomCode}] ⚽ Generating league fixtures for mw=${matchweek}`,
+    );
+    const [f1, f2, f3, f4] = await Promise.all([
+      generateFixturesForDivision(game.db, 1, matchweek, seeds[1] ?? []),
+      generateFixturesForDivision(game.db, 2, matchweek, seeds[2] ?? []),
+      generateFixturesForDivision(game.db, 3, matchweek, seeds[3] ?? []),
+      generateFixturesForDivision(game.db, 4, matchweek, seeds[4] ?? []),
+    ]);
+    const fixtures = [...f1, ...f2, ...f3, ...f4];
+    console.log(
+      `[${game.roomCode}] ⚽ Generated ${fixtures.length} league fixtures`,
+    );
+
+    // Enriquecer fixtures com nomes das equipas para narração de táticas
+    const allTeamIds = new Set<number>();
+    for (const f of fixtures) {
+      allTeamIds.add(f.homeTeamId);
+      allTeamIds.add(f.awayTeamId);
+    }
+    const teamRows = await new Promise<Array<{ id: number; name: string }>>(
+      (resolve) => {
+        game.db.all(
+          "SELECT id, name FROM teams WHERE id IN (" +
+            Array.from(allTeamIds)
+              .map(() => "?")
+              .join(",") +
+            ")",
+          [...allTeamIds],
+          (err: any, rows: Array<{ id: number; name: string }>) => {
+            resolve(rows || []);
+          },
+        );
+      },
+    );
+    const teamMap = new Map(
+      teamRows.map((t) => [t.id, t.name] as [number, string]),
+    );
+    for (const f of fixtures) {
+      const homeName = teamMap.get(f.homeTeamId);
+      const awayName = teamMap.get(f.awayTeamId);
+      if (homeName) f.homeTeam = { id: f.homeTeamId, name: homeName };
+      if (awayName) f.awayTeam = { id: f.awayTeamId, name: awayName };
+    }
+    game.currentFixtures = fixtures;
+  }
+
   // ─── UNIFIED MATCH SEGMENT RUNNER ───────────────────────────────────────────
   // Handles both league and cup first/second halves.
   // Uses game.currentFixtures populated by the caller.
@@ -907,7 +964,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           );
         }
 
-        game.db.run("COMMIT", (err: any) => {
+        game.db.run("COMMIT", async (err: any) => {
           if (err) {
             console.error(`[${game.roomCode}] Standings update error:`, err);
             game.db.run("ROLLBACK");
@@ -966,6 +1023,34 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           console.log(
             `[${game.roomCode}] ↩ League match finalized → lobby | calendarIndex=${game.calendarIndex} | mw=${game.matchweek} | nextEvent=${game.currentEvent?.type ?? "none"}`,
           );
+
+          // Preparar fixtures da próxima jornada de liga JÁ no lobby — fonte
+          // única de verdade para o briefing (nextMatchSummary) e o jogo real.
+          // Elimina qualquer divergência de casa/fora entre o que o briefing
+          // mostra e o que é jogado.
+          if (game.currentEvent?.type === "league") {
+            try {
+              await prepareLeagueFixtures(
+                game,
+                (game.currentEvent as any).matchweek,
+              );
+            } catch (prepErr) {
+              console.error(
+                `[${game.roomCode}] ❌ League fixture prep failed (will regenerate at match start):`,
+                prepErr,
+              );
+            }
+          }
+
+          // Estado de época para a sala: mantém matchweekCount/calendarIndex do
+          // cliente em sincronia após CADA jornada (liga) e dispara o refetch
+          // do nextMatchSummary na tab de tática.
+          io.to(game.roomCode).emit("seasonState", {
+            matchweek: game.matchweek,
+            calendarIndex: game.calendarIndex,
+            season: game.season,
+            year: game.year,
+          });
           saveGameState(game);
 
           // Check season end: calendarIndex past end of calendar
@@ -1005,6 +1090,14 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                   try {
                     await applySeasonEnd(game);
                     refreshMarket(game);
+                    // Nova época em curso — re-emite o estado resetado para o
+                    // cliente não ficar com matchweek/calendarIndex da época velha.
+                    io.to(game.roomCode).emit("seasonState", {
+                      matchweek: game.matchweek,
+                      calendarIndex: game.calendarIndex,
+                      season: game.season,
+                      year: game.year,
+                    });
                   } catch (seErr) {
                     console.error(
                       `[${game.roomCode}] Season end error:`,
@@ -1365,53 +1458,18 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 );
               }
             } else {
-              // League: generate fixtures using deterministic seeds per division.
+              // League: reutilizar fixtures já preparadas na entrada do lobby
+              // (mesma fonte que o briefing) ou gerar com seeds determinísticos.
               const mw = (entry as any).matchweek;
-              await ensureFixtureSeeds(game, [1, 2, 3, 4]);
-              const seeds = game.fixtureSeeds;
-              console.log(
-                `[${game.roomCode}] ⚽ Generating league fixtures for mw=${mw}`,
-              );
-              const [f1, f2, f3, f4] = await Promise.all([
-                generateFixturesForDivision(game.db, 1, mw, seeds[1] ?? []),
-                generateFixturesForDivision(game.db, 2, mw, seeds[2] ?? []),
-                generateFixturesForDivision(game.db, 3, mw, seeds[3] ?? []),
-                generateFixturesForDivision(game.db, 4, mw, seeds[4] ?? []),
-              ]);
-              game.currentFixtures = [...f1, ...f2, ...f3, ...f4];
-              console.log(
-                `[${game.roomCode}] ⚽ Generated ${game.currentFixtures.length} league fixtures`,
-              );
-
-              // Enriquecer fixtures com nomes das equipas para narração de táticas
-              const allTeamIds = new Set<number>();
-              for (const f of game.currentFixtures) {
-                allTeamIds.add(f.homeTeamId);
-                allTeamIds.add(f.awayTeamId);
-              }
-              const teamRows = await new Promise<
-                Array<{ id: number; name: string }>
-              >((resolve) => {
-                game.db.all(
-                  "SELECT id, name FROM teams WHERE id IN (" +
-                    Array.from(allTeamIds)
-                      .map(() => "?")
-                      .join(",") +
-                    ")",
-                  [...allTeamIds],
-                  (err: any, rows: Array<{ id: number; name: string }>) => {
-                    resolve(rows || []);
-                  },
+              const prepped = game.currentFixtures ?? [];
+              const hasLeagueFixtures =
+                prepped.length > 0 && !(prepped[0] as any)?.round;
+              if (hasLeagueFixtures) {
+                console.log(
+                  `[${game.roomCode}] ⚽ Reusing lobby-prepared league fixtures for mw=${mw}: ${prepped.length} matches`,
                 );
-              });
-              const teamMap = new Map(
-                teamRows.map((t) => [t.id, t.name] as [number, string]),
-              );
-              for (const f of game.currentFixtures) {
-                const homeName = teamMap.get(f.homeTeamId);
-                const awayName = teamMap.get(f.awayTeamId);
-                if (homeName) f.homeTeam = { id: f.homeTeamId, name: homeName };
-                if (awayName) f.awayTeam = { id: f.awayTeamId, name: awayName };
+              } else {
+                await prepareLeagueFixtures(game, mw);
               }
             }
           } catch (fixtureErr) {

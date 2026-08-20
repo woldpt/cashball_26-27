@@ -659,6 +659,18 @@ export function useSocketListeners(handlers, refs) {
 			}
 		});
 
+		socket.on("seasonState", (data) => {
+			if (!inRoom()) return;
+			// Broadcast pós-jogo (liga E taça): mantém matchweekCount/calendarIndex
+			// em sincronia e força o refetch do nextMatchSummary na tab de tática —
+			// sem isto, após uma ronda de taça o briefing podia ficar stale.
+			if (data.matchweek) handlers.setMatchweekCount(data.matchweek - 1);
+			if (typeof data.calendarIndex === "number")
+				handlers.setCalendarIndex(data.calendarIndex);
+			if (data.season) handlers.setSeason(data.season);
+			if (data.year) handlers.setSeasonYear(data.year);
+		});
+
 		socket.on("tacticFamiliarity", (data) => {
 			handlers.setTacticFamiliarity(data);
 		});
@@ -1391,6 +1403,7 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("teamAssigned");
 			socket.off("teamSquadData");
 			socket.off("nextMatchSummary");
+			socket.off("seasonState");
 			socket.off("calendarData");
 			socket.off("topScorers");
 			socket.off("seasonEnd");
