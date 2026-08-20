@@ -394,6 +394,7 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     pendingJobOffers: {},
     negativeBudgetStreak: {},
     coachMatchesManaged: {},
+    npcMatchesManaged: {},
     dismissedCoachSince: {},
     dismissalsThisSeason: new Set<string>(),
 
@@ -652,6 +653,17 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                   game.coachMatchesManaged = Object.fromEntries(
                     Object.entries(parsed).map(([k, v]) => [
                       String(k),
+                      Number(v),
+                    ]),
+                  );
+                } catch (_) {}
+              }
+              if (st["npcMatchesManaged"]) {
+                try {
+                  const parsed = JSON.parse(st["npcMatchesManaged"]);
+                  game.npcMatchesManaged = Object.fromEntries(
+                    Object.entries(parsed).map(([k, v]) => [
+                      Number(k),
                       Number(v),
                     ]),
                   );
@@ -930,6 +942,10 @@ function saveGameState(game: ActiveGame): void {
   upsert(
     "coachMatchesManaged",
     JSON.stringify(game.coachMatchesManaged || {}),
+  );
+  upsert(
+    "npcMatchesManaged",
+    JSON.stringify(game.npcMatchesManaged || {}),
   );
   upsert(
     "dismissalsThisSeason",

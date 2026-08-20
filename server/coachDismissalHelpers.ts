@@ -183,6 +183,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       team.id,
     ]);
 
+    // Novo treinador NPC: reinicia a carência (não despedir por resultados do antecessor).
+    game.npcMatchesManaged[team.id] = 0;
+
     logClubNews(
       game,
       "manager_hired",
@@ -554,6 +557,11 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     for (const team of npcTeams) {
       if (team.coach_is_human !== 0) continue; // só treinadores NPC (skip humanos/órfãos)
       if (team.division === 5) continue; // pool interno, invisível
+
+      // Carência: só avalia forma após GRACE_MATCHES jogos do treinador atual.
+      game.npcMatchesManaged[team.id] =
+        (game.npcMatchesManaged[team.id] ?? 0) + 1;
+      if ((game.npcMatchesManaged[team.id] ?? 0) < GRACE_MATCHES) continue;
 
       const form = forms[team.id] ?? "";
       const results = form.split("").slice(0, 5);
