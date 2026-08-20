@@ -325,13 +325,14 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			});
 			await new Promise((resolve) => {
 				game.db.run(
-					"INSERT INTO palmares (team_id, season, achievement, coach_name, is_human_coach) VALUES (?, ?, ?, ?, ?)",
+					"INSERT INTO palmares (team_id, season, achievement, coach_name, is_human_coach, player_id) VALUES (?, ?, ?, ?, ?, ?)",
 					[
 						topScorer.team_id,
 						year,
 						`Melhor Marcador (${topScorer.goals} golos)`,
 						topScorer.name,
 						1,
+						topScorer.id,
 					],
 					resolve,
 				);

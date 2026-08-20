@@ -915,17 +915,30 @@ export function registerSessionSocketHandlers(
 					socket.emit("playerHistoryData", null);
 					return;
 				}
-				const transfers = await runAll(
-					game.db,
-					`SELECT cn.year, cn.matchweek, cn.title, cn.amount,
+			const transfers = await runAll(
+				game.db,
+				`SELECT cn.year, cn.matchweek, cn.title, cn.amount,
                 cn.team_id, t.name as team_name,
                 cn.related_team_id, cn.related_team_name, cn.type
          FROM club_news cn
          LEFT JOIN teams t ON t.id = cn.team_id
          WHERE cn.player_id = ?
-           AND cn.type IN ('transfer_in', 'auction_won')
+           AND cn.type IN ('transfer_in', 'transfer_out')
          ORDER BY cn.year ASC, cn.matchweek ASC`,
-					[playerId],
+				[playerId],
+			);
+
+				// Player awards — Melhor Marcador is the only individual award,
+				// stored in palmares with player_id (fallback: coach_name match for
+				// legacy rows written before the player_id column existed).
+				const awards = await runAll(
+					game.db,
+					`SELECT pa.season, pa.achievement
+					 FROM palmares pa
+					 WHERE pa.player_id = ?
+					    OR (pa.player_id IS NULL AND pa.achievement LIKE 'Melhor Marcador%' AND pa.coach_name = ?)
+					 ORDER BY pa.season ASC, pa.id ASC`,
+					[playerId, player.name],
 				);
 
 				// Skill history — from player_skill_snapshots table
@@ -958,6 +971,7 @@ export function registerSessionSocketHandlers(
 					player,
 					transfers: transfers || [],
 					skillHistory,
+					awards: awards || [],
 				});
 			} catch (err) {
 				console.error(`[${game.roomCode}] requestPlayerHistory error:`, err);

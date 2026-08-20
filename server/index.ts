@@ -1028,6 +1028,10 @@ const trainingMigrations: Array<{ sql: string; label: string }> = [
 		sql: `ALTER TABLE players ADD COLUMN transfer_cooldown_until_matchweek INTEGER DEFAULT 0`,
 		label: "players.transfer_cooldown_until_matchweek",
 	},
+	{
+		sql: `ALTER TABLE palmares ADD COLUMN player_id INTEGER`,
+		label: "palmares.player_id",
+	},
 ];
 for (const m of trainingMigrations) {
 	db.run(m.sql, (err: any) => {

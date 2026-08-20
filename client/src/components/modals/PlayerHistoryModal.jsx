@@ -125,8 +125,9 @@ export function PlayerHistoryModal({
 
   if (!playerHistoryModal) return null;
 
-  const { player, transfers: rawTransfers } = playerHistoryModal;
+  const { player, transfers: rawTransfers, awards: rawAwards } = playerHistoryModal;
   const transfers = rawTransfers || [];
+  const awards = rawAwards || [];
   if (!player) return null;
 
   const pos = player.position;
@@ -536,6 +537,39 @@ export function PlayerHistoryModal({
             </div>
           </div>
 
+          {/* ── AWARDS (full width) ── */}
+          <div className="px-6 py-5 border-t border-outline-variant/10">
+            <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
+              Prémios Individuais
+            </p>
+            {awards.length === 0 ? (
+              <p className="text-on-surface-variant text-sm italic">
+                Sem prémios individuais registados.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {awards.map((a, i) => (
+                  <div
+                    key={`${a.season ?? "?"}-${a.achievement ?? "?"}-${i}`}
+                    className="flex items-center gap-2 px-3 py-2 rounded border border-amber-500/20 bg-amber-500/5"
+                  >
+                    <span className="text-amber-400 text-sm" title="Prémio">
+                      🏆
+                    </span>
+                    <div>
+                      <p className="text-amber-400 font-black text-xs">
+                        {a.achievement}
+                      </p>
+                      <p className="text-on-surface-variant text-[10px] font-bold tabular-nums">
+                        {a.season ?? "—"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* ── TRANSFER HISTORY (full width below) ── */}
           <div className="px-6 py-5 border-t border-outline-variant/10">
             <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
@@ -557,28 +591,33 @@ export function PlayerHistoryModal({
                     </tr>
                   </thead>
                   <tbody>
-                    {transfers.map((t, i) => (
-                      <tr
-                        key={`${t.year ?? "?"}-${t.matchweek ?? "?"}-${t.related_team_name ?? "?"}-${t.team_name ?? "?"}-${i}`}
-                        className="border-t border-outline-variant/10 hover:bg-primary-container/10 transition-colors text-sm"
-                      >
-                        <td className="px-3 py-2.5 text-on-surface-variant text-xs tabular-nums">
-                          {t.year ?? "—"}
-                          {t.matchweek ? (
-                            <span className="opacity-50"> J{t.matchweek}</span>
-                          ) : null}
-                        </td>
-                        <td className="px-3 py-2.5 text-on-surface-variant text-xs truncate max-w-22.5">
-                          {t.related_team_name || "—"}
-                        </td>
-                        <td className="px-3 py-2.5 font-bold text-on-surface truncate max-w-22.5">
-                          {t.team_name || "?"}
-                        </td>
-                        <td className="px-3 py-2.5 text-right text-tertiary font-black text-xs tabular-nums">
-                          {t.amount > 0 ? formatCurrency(t.amount) : "—"}
-                        </td>
-                      </tr>
-                    ))}
+                    {transfers.map((t, i) => {
+                      const isOut = t.type === "transfer_out";
+                      const fromTeam = isOut ? t.team_name : t.related_team_name;
+                      const toTeam = isOut ? t.related_team_name : t.team_name;
+                      return (
+                        <tr
+                          key={`${t.year ?? "?"}-${t.matchweek ?? "?"}-${t.related_team_name ?? "?"}-${t.team_name ?? "?"}-${i}`}
+                          className="border-t border-outline-variant/10 hover:bg-primary-container/10 transition-colors text-sm"
+                        >
+                          <td className="px-3 py-2.5 text-on-surface-variant text-xs tabular-nums">
+                            {t.year ?? "—"}
+                            {t.matchweek ? (
+                              <span className="opacity-50"> J{t.matchweek}</span>
+                            ) : null}
+                          </td>
+                          <td className="px-3 py-2.5 text-on-surface-variant text-xs truncate max-w-22.5">
+                            {fromTeam || "—"}
+                          </td>
+                          <td className="px-3 py-2.5 font-bold text-on-surface truncate max-w-22.5">
+                            {toTeam || "?"}
+                          </td>
+                          <td className="px-3 py-2.5 text-right text-tertiary font-black text-xs tabular-nums">
+                            {t.amount > 0 ? formatCurrency(t.amount) : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

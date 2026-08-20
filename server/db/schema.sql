@@ -112,7 +112,9 @@ CREATE TABLE IF NOT EXISTS palmares (
   achievement TEXT NOT NULL,
   coach_name TEXT DEFAULT NULL,
   is_human_coach INTEGER DEFAULT 0,
-  FOREIGN KEY(team_id) REFERENCES teams(id)
+  player_id INTEGER,
+  FOREIGN KEY(team_id) REFERENCES teams(id),
+  FOREIGN KEY(player_id) REFERENCES players(id)
 );
 
 CREATE TABLE IF NOT EXISTS club_news (
@@ -143,6 +145,7 @@ CREATE INDEX IF NOT EXISTS idx_matches_played ON matches(played);
 CREATE INDEX IF NOT EXISTS idx_cup_matches_season_round ON cup_matches(season, round);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_cup_matches_season_round_pair ON cup_matches(season, round, home_team_id, away_team_id);
 CREATE INDEX IF NOT EXISTS idx_palmares_team_id ON palmares(team_id);
+CREATE INDEX IF NOT EXISTS idx_palmares_player_id ON palmares(player_id);
 CREATE INDEX IF NOT EXISTS idx_club_news_team_id ON club_news(team_id);
 CREATE INDEX IF NOT EXISTS idx_club_news_player_id ON club_news(player_id);
 CREATE INDEX IF NOT EXISTS idx_club_news_created_at ON club_news(created_at);
