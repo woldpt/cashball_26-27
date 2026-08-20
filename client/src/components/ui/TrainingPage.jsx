@@ -140,23 +140,8 @@ function TrainingOptionCard({ option, selected, isSaved, justSaved, loading }) {
 }
 
 /**
- * Formata um delta numérico com sinal (+1 / −4 / +0.3).
- * @param {number} delta
- * @returns {string}
- */
-function formatDeltaValue(delta) {
-  const sign = delta > 0 ? "+" : "";
-  const abs = Math.abs(delta);
-  const value = Number.isInteger(abs)
-    ? String(abs)
-    : String(Math.round(abs * 100) / 100);
-  return `${sign}${value}`;
-}
-
-/**
- * Célula de delta de um atributo. Mostra apenas o delta (+1 / −4) com
- * tooltip do antes→depois; progresso acumulado (sem mudança de nível)
- * surge como chip tracejado "+X prog".
+ * Célula de delta de um atributo. Mostra apenas uma seta: verde para cima
+ * (progressão) ou vermelha para baixo (degradação), com tooltip do antes→depois.
  * @param {{
  *   record?: object,
  * }} props
@@ -166,35 +151,34 @@ function DeltaCell({ record }) {
     return <span className="text-on-surface-variant/30 tabular-nums">—</span>;
   }
   const delta = record.new_value - record.old_value;
-  const isLevelChange = record.new_value !== record.old_value;
-  const col = ATTR_COLUMNS.find((c) => c.key === record.attribute);
-  const chipClass = isLevelChange
-    ? delta > 0
-      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-      : "bg-red-500/20 text-red-400 border border-red-500/30"
-    : `border border-dashed ${
-        col?.progressClass || "border-on-surface-variant/40 text-on-surface-variant"
-      }`;
+  const isUp = delta > 0;
   return (
     <span
-      title={isLevelChange ? `${record.old_value} → ${record.new_value}` : undefined}
-      className={`inline-block text-[10px] font-black px-1.5 py-px rounded tabular-nums tracking-wide whitespace-nowrap ${chipClass}`}
+      title={`${record.old_value} → ${record.new_value}`}
+      className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[12px] font-black ${
+        isUp
+          ? "bg-emerald-500/20 text-emerald-400"
+          : "bg-red-500/20 text-red-400"
+      }`}
     >
-      {isLevelChange
-        ? formatDeltaValue(delta)
-        : `${formatDeltaValue(delta)} prog`}
+      <span className="material-symbols-outlined text-[12px]">
+        {isUp ? "arrow_upward" : "arrow_downward"}
+      </span>
     </span>
   );
 }
 
 /**
  * Agrupa os registos de histórico por jogador (preservando a ordem por posição).
+ * Registos sem mudança de nível (progresso acumulado) são ignorados, e jogadores
+ * sem qualquer progressão/degradação são omitidos.
  * @param {object[]} records registos do histórico de treino
  * @returns {Array<{ player_id: number, name: string, changes: object[] }>}
  */
 function groupByPlayer(records) {
   const map = new Map();
   for (const r of records || []) {
+    if (r.new_value === r.old_value) continue;
     if (!map.has(r.player_id)) {
       map.set(r.player_id, {
         player_id: r.player_id,
@@ -220,7 +204,7 @@ function PlayerReportRow({ player }) {
   return (
     <tr className="border-t border-outline-variant/15 hover:bg-white/5 transition-colors">
       <td className="py-1.5 pr-2 pl-0 w-full max-w-0">
-        <span className="block truncate text-sm uppercase tracking-tight text-on-surface">
+        <span className="block truncate text-sm tracking-tight text-on-surface">
           {player.name}
         </span>
       </td>
@@ -448,6 +432,7 @@ export function TrainingPage({ me, matchweek }) {
                   POSITION_TEXT_CLASS[position] || "text-on-surface-variant";
                 const posLabel = POSITION_LABELS[position] || position;
                 const players = groupByPlayer(records);
+                if (players.length === 0) return null;
 
                 return (
                   <div
