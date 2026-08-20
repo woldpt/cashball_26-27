@@ -1,5 +1,5 @@
 import { socket } from "../../socket.js";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const QUICK_MESSAGES = ["👍", "🖕", "Vamos!", "Boa sorte", "⚽", "😂"];
 
@@ -47,6 +47,10 @@ export function RoomHub({
 }) {
   const [chatSubTab, setChatSubTab] = useState("room");
   const [systemMessages, setSystemMessages] = useState([]);
+  const meNameRef = useRef(me?.name);
+  useEffect(() => {
+    meNameRef.current = me?.name;
+  }, [me?.name]);
 
   // Sync RoomHub state → parent refs for unread logic
   useEffect(() => {
@@ -73,6 +77,22 @@ export function RoomHub({
       socket.off("systemMessage", onSystemMessage);
     };
   }, []);
+
+  useEffect(() => {
+    const onChatMessage = (msg) => {
+      if (!msg || msg.coachName === meNameRef.current) return;
+      if (chatOpenRef.current && activeChatTabRef.current === msg.channel) return;
+      const preview =
+        msg.message.length > 80 ? msg.message.slice(0, 80) + "…" : msg.message;
+      addToast(`${msg.coachName}: ${preview}`);
+    };
+
+    socket.on("chatMessage", onChatMessage);
+
+    return () => {
+      socket.off("chatMessage", onChatMessage);
+    };
+  }, [addToast, chatOpenRef, activeChatTabRef]);
 
   const activeMessages = chatSubTab === "room" ? roomMessages : globalMessages;
 
