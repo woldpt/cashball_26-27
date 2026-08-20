@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MAX_MATCH_SUBS } from "../../../constants/index.js";
 import {
@@ -34,6 +34,16 @@ export function IntervencaoView({
 }) {
   const [centerTab, setCenterTab] = useState("subs");
   const [mobileChronoOpen, setMobileChronoOpen] = useState(false);
+  const [chronoOpen, setChronoOpen] = useState(true);
+  const [confirmResetAll, setConfirmResetAll] = useState(false);
+
+  // Two-tap arm for "Anular todas" auto-disarms after 3s so a stale armed
+  // state can't surprise the user later.
+  useEffect(() => {
+    if (!confirmResetAll) return;
+    const timer = setTimeout(() => setConfirmResetAll(false), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmResetAll]);
 
   /* ── Mode booleans ────────────────────────────────────────────── */
   const isHalftime = mode === "halftime";
@@ -121,6 +131,22 @@ export function IntervencaoView({
   const targetPlayer = playerById(selectedInId);
   const canConfirmSwap =
     !!effectiveOutId && !!selectedInId && (!isHalftime || subsMade < MAX_MATCH_SUBS);
+
+  // During a forced swap the opponent tab is noise — lock the view on subs
+  // while the auto-substitution countdown runs.
+  const activeCenterTab = isForcedSwap ? "subs" : centerTab;
+
+  // Reason the confirm button is disabled — surfaced next to the button
+  // instead of leaving the user guessing (was: silent disabled state).
+  const confirmHint = canConfirmSwap
+    ? null
+    : !effectiveOutId
+      ? "Escolhe o jogador que sai."
+      : !selectedInId
+        ? "Escolhe o jogador que entra."
+        : isHalftime && subsMade >= MAX_MATCH_SUBS
+          ? "Limite de substituições atingido."
+          : null;
 
   /* ── Opponent data ────────────────────────────────────────────── */
   // Strict check: arrays vazios ([] são truthy) não contam como escalação.
@@ -215,7 +241,8 @@ export function IntervencaoView({
           </span>
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-base font-bold font-headline tracking-tight text-on-surface uppercase text-center truncate">
+          {/* No truncate: a forced-swap title must never cut the player's name. */}
+          <h2 className="text-base font-bold font-headline tracking-tight text-on-surface uppercase text-center leading-snug">
             {titleText}
           </h2>
           {isForcedSwap && injuryCountdown !== null && (
@@ -224,13 +251,21 @@ export function IntervencaoView({
             </p>
           )}
         </div>
+        {/* Two-tap confirm: destructive action wipes all planned subs. */}
         {isHalftime && confirmedSubs.length > 0 && (
           <GhostButton
-            onClick={onResetAllSubs}
+            onClick={() => {
+              if (confirmResetAll) {
+                onResetAllSubs();
+                setConfirmResetAll(false);
+              } else {
+                setConfirmResetAll(true);
+              }
+            }}
             icon={<MatchIcon name="reset" className="h-3.5 w-3.5 text-rose-400/80" />}
             className="text-rose-400/80 hover:text-rose-300 hover:bg-rose-500/10 shrink-0"
           >
-            Anular todas
+            {confirmResetAll ? "Confirmar?" : "Anular todas"}
           </GhostButton>
         )}
       </div>
@@ -248,7 +283,7 @@ export function IntervencaoView({
               <span className="material-symbols-outlined text-[14px] leading-none">
                 schedule
               </span>
-              Cronologia
+              Cronologia · {visibleEvts.length}
             </span>
             <span
               className={`material-symbols-outlined text-[16px] text-on-surface-variant/50 transition-transform ${mobileChronoOpen ? "rotate-180" : ""}`}
@@ -265,37 +300,58 @@ export function IntervencaoView({
                 awayColor={aInfo?.color_primary}
                 compact
               />
+              {/* Full list — the container scrolls. Was: slice(-4) hid older
+               * events with no indication more existed. */}
               <div className="max-h-36 overflow-y-auto space-y-1.5">
-                <EventList events={visibleEvts.slice(-4)} />
+                <EventList events={visibleEvts} />
               </div>
             </div>
           )}
         </div>
 
         {/* ═══ LEFT: Chronology (desktop only) ═══ */}
-        <div className="hidden md:flex flex-col min-h-0 overflow-hidden border-r border-outline-variant/20 md:w-[280px] lg:w-[320px] shrink-0">
-          <div className="shrink-0 px-5 py-4 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
-            <h2 className="text-base font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
-              Cronologia
-            </h2>
-          </div>
-          <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
-            <PossessionBar
-              homePossession={fixture.homePossession}
-              awayPossession={fixture.awayPossession}
-              homeColor={hInfo?.color_primary}
-              awayColor={aInfo?.color_primary}
-              compact
-            />
-            <RefWeatherBar
-              attendance={fixture?.attendance}
-              referee={ref}
-              weatherEvent={weatherEvent}
-              className="text-[10px]"
-            />
-            <EventList events={visibleEvts} />
-          </div>
+        {/* Collapsible: user can hide chronology to cut cognitive load and
+         * give the subs panel the full width while deciding. */}
+        <div className={`hidden md:flex flex-col min-h-0 overflow-hidden border-r border-outline-variant/20 shrink-0 transition-[width] ${chronoOpen ? "md:w-[280px] lg:w-[320px]" : "md:w-14"}`}>
+          <button
+            onClick={() => setChronoOpen((v) => !v)}
+            aria-label={chronoOpen ? "Recolher cronologia" : "Expandir cronologia"}
+            className="shrink-0 px-5 py-4 flex items-center justify-between gap-2 bg-surface-container-high/50 border-b border-outline-variant/15 hover:bg-surface-container-high"
+          >
+            {chronoOpen ? (
+              <>
+                <h2 className="text-base font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
+                  Cronologia
+                </h2>
+                <span className="material-symbols-outlined text-[16px] text-on-surface-variant/50">
+                  chevron_left
+                </span>
+              </>
+            ) : (
+              <span className="material-symbols-outlined text-[18px] text-on-surface-variant/60 mx-auto">
+                schedule
+              </span>
+            )}
+          </button>
+          {chronoOpen && (
+            <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+              <PossessionBar
+                homePossession={fixture.homePossession}
+                awayPossession={fixture.awayPossession}
+                homeColor={hInfo?.color_primary}
+                awayColor={aInfo?.color_primary}
+                compact
+              />
+              <RefWeatherBar
+                attendance={fixture?.attendance}
+                referee={ref}
+                weatherEvent={weatherEvent}
+                className="text-[10px]"
+              />
+              <EventList events={visibleEvts} />
+            </div>
+          )}
         </div>
 
         {/* ═══ RIGHT: Subs / Adversário ═══ */}
@@ -305,29 +361,33 @@ export function IntervencaoView({
            * Buttons bumped from `text-[11px]` / `py-2` / `font-black` to
            * `text-xs` / `py-2.5` / `font-bold` — they read as captions,
            * not actions, with the old sizing. */}
-          <div className="shrink-0 px-4 py-3 bg-surface-container-high/50 border-b border-outline-variant/15">
-            <div className="flex rounded-md bg-surface-container p-1.5 gap-2">
-              {[
-                { key: "subs", label: "Substituições" },
-                { key: "adversario", label: "Adversário" },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setCenterTab(tab.key)}
-                  className={`flex-1 min-w-0 py-2.5 text-xs font-bold uppercase tracking-widest rounded-md transition-all ${
-                    centerTab === tab.key
-                      ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
-                      : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+          {/* Tab toggle hidden during forced swaps — opponent scouting is
+           * noise while the auto-substitution countdown runs. */}
+          {!isForcedSwap && (
+            <div className="shrink-0 px-4 py-3 bg-surface-container-high/50 border-b border-outline-variant/15">
+              <div className="flex rounded-md bg-surface-container p-1.5 gap-2">
+                {[
+                  { key: "subs", label: "Substituições" },
+                  { key: "adversario", label: "Adversário" },
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setCenterTab(tab.key)}
+                    className={`flex-1 min-w-0 py-2.5 text-xs font-bold uppercase tracking-widest rounded-md transition-all ${
+                      centerTab === tab.key
+                        ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
+                        : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <AnimatePresence mode="wait" initial={false}>
-            {centerTab === "subs" ? (
+            {activeCenterTab === "subs" ? (
               <motion.div
                 key="subs"
                 initial={{ opacity: 0, y: 6 }}
@@ -385,6 +445,9 @@ export function IntervencaoView({
         sourcePlayer={playerById(effectiveOutId)}
         targetPlayer={targetPlayer}
         isHalftime={isHalftime}
+        isForcedSwap={isForcedSwap}
+        injuryCountdown={injuryCountdown}
+        confirmHint={confirmHint}
         canConfirmSwap={canConfirmSwap}
         onResetSub={onResetSub}
         onConfirmSub={onConfirmSub}
@@ -433,6 +496,14 @@ function SubsPanel({
     setMobileList("bench");
   };
 
+  const grAvailableOnBench = benchPlayers.some(
+    (bp) => bp.position === "GR" && !subbedOut.includes(bp.id),
+  );
+  // Visible warning replaces the old `title` tooltip — tooltips are
+  // unreachable on touch, so the lock reason must be on screen.
+  const grLockedNoReplacement =
+    isHalftime && !grAvailableOnBench && onPitchPlayers.some((p) => p.position === "GR");
+
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Mobile: segmented control Em campo / Banco */}
@@ -470,7 +541,7 @@ function SubsPanel({
             <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
               Subs
             </span>
-            {[0, 1, 2].map((i) => (
+            {Array.from({ length: MAX_MATCH_SUBS }, (_, i) => (
               <span
                 key={i}
                 className={`w-1.5 h-1.5 rounded-full transition-colors ${
@@ -497,11 +568,13 @@ function SubsPanel({
               {onPitchPlayers.length}
             </span>
           </div>
+          {grLockedNoReplacement && (
+            <p className="shrink-0 px-4 py-1.5 text-[10px] font-semibold text-amber-300 bg-amber-500/10 border-b border-amber-500/20">
+              Sem GR no banco — o guarda-redes não pode sair
+            </p>
+          )}
           <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2">
             {onPitchPlayers.map((p) => {
-              const grAvailableOnBench = benchPlayers.some(
-                (bp) => bp.position === "GR" && !subbedOut.includes(bp.id),
-              );
               const noGrReplacement = isHalftime && p.position === "GR" && !grAvailableOnBench;
               const isLockedForced =
                 isForcedSwap &&
@@ -523,7 +596,6 @@ function SubsPanel({
                   disabled={disabled}
                   selectable={!disabled}
                   onPick={() => pickOut(p)}
-                  title={noGrReplacement ? "Não há GR no banco para substituir" : undefined}
                   swapIndicator={isHalftime}
                   forcedOut={isForcedSwap && !!forceOutPlayer && p.id === forceOutPlayer.id}
                 />
@@ -653,7 +725,10 @@ function EmptyState({ icon, message }) {
  * vertical divider so the eye can scan "[who's leaving] → [who's coming in]"
  * and "[reset] [confirm]" as two distinct action groups. Was: 6+ siblings
  * flat in one row at gap-2/gap-3, with "Anular todas" buried BELOW the bar. */
-function BottomBar({ effectiveOutId, selectedInId, sourcePlayer, targetPlayer, isHalftime, canConfirmSwap, onResetSub, onConfirmSub, onResolveAction }) {
+function BottomBar({ effectiveOutId, selectedInId, sourcePlayer, targetPlayer, isHalftime, isForcedSwap, injuryCountdown, confirmHint, canConfirmSwap, onResetSub, onConfirmSub, onResolveAction }) {
+  // Local "resolving" state gives immediate feedback on click in action mode
+  // (was: button fired and the user got no signal until the parent reacted).
+  const [resolving, setResolving] = useState(false);
   return (
     <div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high px-4 md:px-5 py-3">
       <div className="flex flex-col md:flex-row md:items-center gap-4 min-w-0">
@@ -673,8 +748,14 @@ function BottomBar({ effectiveOutId, selectedInId, sourcePlayer, targetPlayer, i
         {/* Vertical divider between clusters on desktop. */}
         <div className="hidden md:block w-px h-8 bg-outline-variant/20 shrink-0" />
 
-        {/* Cluster B: Reset + Confirm buttons. */}
+        {/* Cluster B: Reset + Confirm buttons. Countdown sits next to the
+         * action so urgency is visible where the user must click. */}
         <div className="flex items-center gap-2 shrink-0 md:ml-auto">
+          {isForcedSwap && injuryCountdown !== null && (
+            <span className="shrink-0 text-amber-300 font-black text-xs tabular-nums animate-pulse">
+              Auto em {injuryCountdown}s
+            </span>
+          )}
           {isHalftime ? (
             <>
               <GhostButton
@@ -695,16 +776,23 @@ function BottomBar({ effectiveOutId, selectedInId, sourcePlayer, targetPlayer, i
             </>
           ) : (
             <PrimaryButton
-              disabled={!canConfirmSwap}
-              onClick={() => onResolveAction({ playerOut: effectiveOutId, playerIn: selectedInId })}
+              disabled={!canConfirmSwap || resolving}
+              onClick={() => {
+                setResolving(true);
+                onResolveAction({ playerOut: effectiveOutId, playerIn: selectedInId });
+              }}
               tone="indigo"
               icon={<MatchIcon name="confirm" className="h-4 w-4" />}
             >
-              Substituir
+              {resolving ? "A substituir…" : "Substituir"}
             </PrimaryButton>
           )}
         </div>
       </div>
+      {/* Why the confirm button is disabled — never leave it silent. */}
+      {!canConfirmSwap && confirmHint && (
+        <p className="mt-2 text-[11px] font-semibold text-amber-300/90">{confirmHint}</p>
+      )}
     </div>
   );
 }
