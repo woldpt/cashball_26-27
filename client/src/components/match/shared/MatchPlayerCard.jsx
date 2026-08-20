@@ -89,7 +89,7 @@ export function MatchPlayerCard({
             <span className="ml-0.5 text-amber-400" title="Craque" aria-label="Craque">★</span>
           )}
         </span>
-        {!disabled && <FatigueIndicator player={player} compact />}
+        <FatigueIndicator player={player} compact />
       </span>
 
       {/* ── Expanded: skill + RES + form (always visible) ── */}
