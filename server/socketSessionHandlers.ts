@@ -924,9 +924,30 @@ export function registerSessionSocketHandlers(
          LEFT JOIN teams t ON t.id = cn.team_id
          WHERE cn.player_id = ?
            AND cn.type IN ('transfer_in', 'transfer_out')
-         ORDER BY cn.year ASC, cn.matchweek ASC`,
+         ORDER BY cn.year ASC, cn.matchweek ASC, cn.id ASC`,
 				[playerId],
 			);
+
+				// Each transfer logs two club_news rows with the same player_id:
+				// transfer_in (new club) + transfer_out (old club). Treat them as
+				// one event — keep a single row, preferring the transfer_in side.
+				const dedupedTransfers: AnyRow[] = [];
+				const seenTransfer = new Map<string, AnyRow>();
+				for (const t of transfers || []) {
+					const a = t.team_id ?? t.related_team_id;
+					const b = t.related_team_id ?? t.team_id;
+					const [lo, hi] = [a, b].sort();
+					const key = `${t.year ?? ""}|${t.matchweek ?? ""}|${t.amount ?? ""}|${lo ?? ""}|${hi ?? ""}`;
+					const existing = seenTransfer.get(key);
+					if (!existing) {
+						seenTransfer.set(key, t);
+						dedupedTransfers.push(t);
+					} else if (t.type === "transfer_in" && existing.type !== "transfer_in") {
+						seenTransfer.set(key, t);
+						const idx = dedupedTransfers.indexOf(existing);
+						if (idx > -1) dedupedTransfers[idx] = t;
+					}
+				}
 
 				// Player awards — Melhor Marcador is the only individual award,
 				// stored in palmares with player_id (fallback: coach_name match for
@@ -969,7 +990,7 @@ export function registerSessionSocketHandlers(
 
 				socket.emit("playerHistoryData", {
 					player,
-					transfers: transfers || [],
+					transfers: dedupedTransfers,
 					skillHistory,
 					awards: awards || [],
 				});

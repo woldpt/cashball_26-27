@@ -37,7 +37,8 @@ export function PlayerStatusBadges({
   const isListed =
     player.transfer_status && player.transfer_status !== "none";
   const isPendingRenewal = !!player.contract_request_pending;
-  const renewedShine = showContractBadges && isUnderContract && !isListed;
+  const renewedShine =
+    showContractBadges && isUnderContract && !isListed && !isLocked;
 
   return (
     <>
