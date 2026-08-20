@@ -1,4 +1,4 @@
-import { DIVISION_NAMES } from "../../constants/index.js";
+import { DIVISION_NAMES, CUP_FINAL_STADIUM } from "../../constants/index.js";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { OddsBadge } from "../shared/OddsBadge.jsx";
 import { PreMatchIntro, KickoffBadge } from "../match/shared/index.js";
@@ -60,6 +60,8 @@ export function LiveMatchHero({
 
   const hInfo = teams.find((t) => t.id === myMatch.homeTeamId);
   const aInfo = teams.find((t) => t.id === myMatch.awayTeamId);
+  const isCupFinal = isCupMatch && cupMatchRoundName === "Final";
+  const stadiumName = isCupFinal ? CUP_FINAL_STADIUM : hInfo?.stadium_name;
   const matchEvents = myMatch.events || [];
   const weatherEvent = matchEvents.find((e) => e.type === "weather");
   const bettingEvt = matchEvents.find((e) => e.type === "betting");
@@ -180,7 +182,7 @@ export function LiveMatchHero({
                 <span className="material-symbols-outlined text-[13px] leading-none">
                   stadium
                 </span>
-                {hInfo?.stadium_name ? `${hInfo.stadium_name} · ` : ""}
+                {stadiumName ? `${stadiumName} · ` : ""}
                 {myMatch.attendance.toLocaleString("pt-PT")} adeptos
               </span>
             )}

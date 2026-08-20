@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getPosStyle, PITCH_POS_COLORS, buildPositionRows, filterMatchEvents } from "../matchConstants.js";
+import { CUP_FINAL_STADIUM } from "../../../constants/index.js";
 import {
   MatchPitch,
   PossessionBar,
@@ -9,13 +10,15 @@ import {
 } from "../shared/index.js";
 
 /* ── MatchView — Main match view (2 columns: narrative + pitch) ─────── */
-export function MatchView({ fixture, liveMinute, teams }) {
+export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoundName }) {
   const [pitchSide, setPitchSide] = useState("home");
 
   if (!fixture) return null;
 
   const hInfo = teams.find((t) => t.id === fixture.homeTeamId);
   const aInfo = teams.find((t) => t.id === fixture.awayTeamId);
+  const isCupFinal = isCupMatch && cupMatchRoundName === "Final";
+  const stadiumName = isCupFinal ? CUP_FINAL_STADIUM : hInfo?.stadium_name;
   const evts = fixture.events || [];
 
   const visibleEvts = filterMatchEvents(evts, liveMinute);
@@ -90,7 +93,7 @@ export function MatchView({ fixture, liveMinute, teams }) {
               attendance={fixture.attendance}
               referee={ref}
               weatherEvent={weatherEvent}
-              teamStadium={hInfo?.stadium_name}
+              teamStadium={stadiumName}
             />
           </div>
 

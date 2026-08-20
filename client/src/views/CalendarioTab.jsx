@@ -1,4 +1,4 @@
-import { SEASON_CALENDAR } from "../constants/index.js";
+import { SEASON_CALENDAR, CUP_FINAL_STADIUM } from "../constants/index.js";
 import { generateLeagueFixtures } from "../utils/fixtures.js";
 import { TabBar } from "../components/shared/TabBar.jsx";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
@@ -87,7 +87,19 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
             )
           : null;
         const imHome = myMatch?.home_team_id === myTeamId;
-        const stadiumTeam = imHome ? myTeam : opponent;
+        const isFinal = entry.round === 5;
+        const stadiumTeam = isFinal
+          ? { stadium_name: CUP_FINAL_STADIUM }
+          : imHome
+            ? myTeam
+            : opponent;
+        const venueLabel = isFinal
+          ? "Neutro"
+          : opponent
+            ? imHome
+              ? "Casa"
+              : "Fora"
+            : "—";
         const hasPen =
           myMatch &&
           (myMatch.home_penalties > 0 ||
@@ -123,6 +135,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
           opponent,
           imHome,
           stadiumTeam,
+          venueLabel,
           hasPen,
           myScore,
           opScore,
@@ -168,6 +181,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
               : myFixture.homeTeamId),
         );
         const stadiumTeam = imHome ? myTeam : opponent;
+        const venueLabel = imHome ? "Casa" : "Fora";
         const myScore = myFixture.result
           ? imHome
             ? myFixture.result.home_score
@@ -197,6 +211,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
           opponent,
           imHome,
           stadiumTeam,
+          venueLabel,
           myScore,
           opScore,
           won,
@@ -335,6 +350,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
               opponent,
               imHome,
               stadiumTeam,
+              venueLabel,
               myScore,
               opScore,
               won,
@@ -494,12 +510,14 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                     {!(type === "cup" && !opponent) && (
                       <span
                         className={`hidden sm:inline-block text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded self-start ${
-                          imHome
-                            ? "bg-emerald-500/20 text-emerald-400"
-                            : "bg-sky-500/20 text-sky-400"
+                          venueLabel === "Neutro"
+                            ? "bg-amber-500/20 text-amber-400"
+                            : imHome
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : "bg-sky-500/20 text-sky-400"
                         }`}
                       >
-                        {imHome ? "Casa" : "Fora"}
+                        {venueLabel}
                       </span>
                     )}
                     {isCurrent && (
@@ -536,23 +554,21 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                       </button>
                       <span className="hidden sm:block text-[10px] text-on-surface-variant/60 truncate">
                         {stadiumTeam?.stadium_name
-                          ? `${stadiumTeam.stadium_name.toUpperCase()} (${imHome ? "Casa" : "Fora"})`
-                          : imHome
-                            ? "Casa"
-                            : (type === "cup" && !opponent)
-                              ? "—"
-                              : "Fora"}
+                          ? `${stadiumTeam.stadium_name.toUpperCase()} (${venueLabel})`
+                          : venueLabel}
                       </span>
                       {/* Mobile-only home/away indicator */}
                       {!(type === "cup" && !opponent) && (
                         <span
                           className={`sm:hidden text-[8px] font-black uppercase tracking-widest ${
-                            imHome
-                              ? "text-emerald-400"
-                              : "text-sky-400"
+                            venueLabel === "Neutro"
+                              ? "text-amber-400"
+                              : imHome
+                                ? "text-emerald-400"
+                                : "text-sky-400"
                           }`}
                         >
-                          {imHome ? "Casa" : "Fora"}
+                          {venueLabel}
                         </span>
                       )}
                     </div>

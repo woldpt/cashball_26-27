@@ -234,6 +234,8 @@ export function MatchPage({
 						fixture={fixture}
 						liveMinute={liveMinute}
 						teams={teams}
+						isCupMatch={isCupMatch}
+						cupMatchRoundName={cupMatchRoundName}
 					/>
 				)}
 

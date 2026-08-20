@@ -348,6 +348,9 @@ export const MODAL_Z = {
 	dismissal: 9999,
 };
 
+// ── CUP FINAL VENUE ──────────────────────────────────────────────────────────
+export const CUP_FINAL_STADIUM = "Estádio do Jamor";
+
 // ── SEASON CALENDAR ───────────────────────────────────────────────────────────
 export const SEASON_CALENDAR = [
 	{ type: "league", matchweek: 1, calendarIndex: 0 },
