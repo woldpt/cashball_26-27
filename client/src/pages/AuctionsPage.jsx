@@ -9,10 +9,13 @@ import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { getTeamColor } from "../utils/teamHelpers.js";
+import { useState } from "react";
 
 export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchweekCount = 0, socket }) {
-  const live = activeAuctions.filter((a) => !a.closed);
-  const closed = activeAuctions.filter((a) => a.closed);
+  const [positionFilter, setPositionFilter] = useState("all");
+
+  const live = activeAuctions.filter((a) => !a.closed && (positionFilter === "all" || a.position === positionFilter));
+  const closed = activeAuctions.filter((a) => a.closed && (positionFilter === "all" || a.position === positionFilter));
 
   const teamColorById = new Map(
     (teams || []).map((t) => [Number(t.id), t.color_primary ?? getTeamColor(t.id)])
@@ -35,11 +38,28 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
         />
       </div>
 
+      {/* ── Position filter ─────────────────────────────────────────────── */}
+      {activeAuctions.length > 0 && (
+        <div className="px-3 md:px-4 pb-3 shrink-0">
+          <select
+            className="bg-surface border border-outline-variant/30 rounded-sm px-3 py-2 text-[11px] font-bold text-on-surface focus:ring-1 focus:ring-primary focus:outline-none"
+            value={positionFilter}
+            onChange={(e) => setPositionFilter(e.target.value)}
+          >
+            <option value="all">Posição: Todas</option>
+            <option value="GR">Guarda-Redes</option>
+            <option value="DEF">Defesa</option>
+            <option value="MED">Médio</option>
+            <option value="ATA">Avançado</option>
+          </select>
+        </div>
+      )}
+
       {/* ── Active auctions panel ────────────────────────────────────── */}
       {live.length > 0 && (
         <div className="flex-1 overflow-y-auto p-3 md:p-4 pt-0">
           <Panel title="Em curso" meta={`${live.length} leilão${live.length !== 1 ? "s" : ""}`}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {live.map((auction) => (
                 <AuctionCard
                   key={auction.playerId}
@@ -61,7 +81,7 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
       {closed.length > 0 && (
         <div className="flex-1 overflow-y-auto p-3 md:p-4 pt-0">
           <Panel title="Recentes" meta={`${closed.length} leilão${closed.length !== 1 ? "s" : ""}`}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {closed.map((auction) => (
                 <AuctionCard
                   key={auction.playerId}
@@ -84,8 +104,12 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
         <div className="flex-1 flex items-center justify-center p-3 md:p-4">
           <EmptyState
             emoji="⚖️"
-            title="Sem leilões a mostrar"
-            description="Quando um clube colocar um jogador em leilão, aparece aqui."
+            title={activeAuctions.length > 0 ? "Sem leilões para esta posição" : "Sem leilões a mostrar"}
+            description={
+              activeAuctions.length > 0
+                ? "Escolhe outra posição no filtro."
+                : "Quando um clube colocar um jogador em leilão, aparece aqui."
+            }
           />
         </div>
       )}

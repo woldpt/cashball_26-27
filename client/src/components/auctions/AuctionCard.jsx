@@ -89,7 +89,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
           transformStyle: "preserve-3d",
           transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
           position: "relative",
-          minHeight: 380,
+          minHeight: 316,
         }}
       >
         <div
@@ -102,7 +102,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
           }}
         >
           <div
-            className="px-4 pt-4 pb-3 flex items-start gap-3"
+            className="px-3 pt-2.5 pb-2 flex items-start gap-2"
             style={{
               background: `linear-gradient(135deg, ${teamColor}18 0%, transparent 100%)`,
               borderBottom: `1px solid ${teamColor}22`,
@@ -113,10 +113,10 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
               position={auction.position}
               teamColor={teamColor}
               nationality={auction.nationality}
-              size="md"
+              size="sm"
             />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                 <Badge
                   size="sm"
                   style={{
@@ -137,16 +137,16 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                   <Badge variant="injured">Lesionado</Badge>
                 )}
               </div>
-              <p className="font-headline font-black text-on-surface text-xl leading-tight truncate">
+              <p className="font-headline font-black text-on-surface text-base leading-tight truncate">
                 {auction.name}
               </p>
-              <p className="text-[10px] text-zinc-500 truncate">
+              <p className="text-[9px] text-zinc-500 truncate">
                 {auction.team_name || "Sem clube"}
               </p>
             </div>
             <div className="flex flex-col items-end shrink-0 gap-1">
               <span
-                className="font-black text-2xl leading-none tabular-nums"
+                className="font-black text-xl leading-none tabular-nums"
                 style={{ color: teamColor }}
               >
                 {auction.skill}
@@ -165,7 +165,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             </div>
           </div>
 
-          <div className="px-4 py-3 flex items-center gap-3" style={{ borderBottom: "1px solid #1e1e2e" }}>
+          <div className="px-3 py-2 flex items-center gap-3" style={{ borderBottom: "1px solid #1e1e2e" }}>
             {isClosed ? (
               <span className="text-[10px] font-black uppercase text-zinc-500">Leilão encerrado</span>
             ) : isPaused ? (
@@ -176,7 +176,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             ) : (
               <>
                 <span
-                  className="font-mono font-black text-2xl tabular-nums leading-none"
+                  className="font-mono font-black text-xl tabular-nums leading-none"
                   style={{ color: secs != null && secs <= 15 ? "#f87171" : teamColor }}
                 >
                   {secs != null ? `${secs}s` : "—"}
@@ -187,8 +187,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             <div className="ml-auto text-right">
               <p className="text-[9px] text-zinc-600 uppercase font-bold">
                 {isClosed ? (auction.result?.sold ? "Vendido" : "Sem lances") : "Bid mais alto"}
-              </p>
-              {isClosed && auction.result?.sold ? (
+              </p>              {isClosed && auction.result?.sold ? (
                 <>
                   <p className="font-mono font-black text-sm text-emerald-400 tabular-nums">
                     {formatCurrency(auction.result.finalBid)}
@@ -220,13 +219,13 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             const hiddenCount = sortedBids.length - visibleBids.length;
             return (
               <div
-                className="px-4 py-2 border-y"
+                className="px-3 py-2 border-y"
                 style={{ borderBottom: "1px solid #1e1e2e", borderTop: "1px solid #1e1e2e" }}
               >
-                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1.5">
+                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">
                   Lances ({auction.auction_bid_history.length})
                 </p>
-                <div className="space-y-1 overflow-hidden">
+                <div className="space-y-0.5 overflow-hidden">
                   {visibleBids.map((bid, i) => {
                     const isLeader = bid.teamId === auction.auction_high_bid_team_id;
                     const teamName = teams.find(t => String(t.id) === String(bid.teamId))?.name || `Equipa ${bid.teamId}`;
@@ -234,7 +233,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                     return (
                       <div
                         key={i}
-                        className={`flex items-center justify-between text-[10px] py-1 rounded px-1.5 ${isLeader ? "bg-emerald-400/10" : ""}`}
+                        className={`flex items-center justify-between text-[10px] py-0.5 rounded px-1.5 ${isLeader ? "bg-emerald-400/10" : ""}`}
                       >
                         <span className={`font-semibold truncate ${isLeader ? "text-emerald-400" : "text-on-surface-variant"}`}>
                           {teamName}
@@ -252,7 +251,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                   })}
                 </div>
                 {hiddenCount > 0 && (
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600 mt-1.5">
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600 mt-1">
                     +{hiddenCount} lance{hiddenCount !== 1 ? "s" : ""} mais
                   </p>
                 )}
@@ -260,22 +259,22 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             );
           })()}
 
-          <div className="px-4 py-3 flex-1 flex flex-col justify-end">
+          <div className="px-3 py-2 flex-1 flex flex-col justify-end">
             {isClosed ? (
-              <div className="text-center py-2">
+              <div className="text-center py-1.5">
                 {auction.result?.sold ? (
-                  <p className="font-headline font-black text-emerald-400 text-sm uppercase">
+                  <p className="font-headline font-black text-emerald-400 text-xs uppercase">
                     Vendido a {auction.result.buyerTeamName}
                   </p>
                 ) : (
-                  <p className="font-headline font-black text-zinc-500 text-sm uppercase">
+                  <p className="font-headline font-black text-zinc-500 text-xs uppercase">
                     Sem licitações
                   </p>
                 )}
               </div>
             ) : isPaused ? (
               <div
-                className="rounded-lg py-3 text-center"
+                className="rounded-lg py-2 text-center"
                 style={{ background: "#1a1a2333", border: "1px solid #3f3f5533" }}
               >
                 <span className="material-symbols-outlined text-zinc-500 text-xl">pause_circle</span>
@@ -286,30 +285,30 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
               </div>
             ) : isSeller ? (
               <div
-                className="rounded-lg py-3 text-center"
+                className="rounded-lg py-2 text-center"
                 style={{ background: "#1e1b4b33", border: "1px solid #312e8133" }}
               >
                 <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">O teu jogador</p>
-                <p className="font-headline font-black text-white text-sm mt-0.5">Em Leilão</p>
+                <p className="font-headline font-black text-white text-xs mt-0.5">Em Leilão</p>
               </div>
             ) : isLeader ? (
               <div
-                className="rounded-lg py-3 text-center"
+                className="rounded-lg py-2 text-center"
                 style={{ background: "#064e3b33", border: "1px solid #10b98133" }}
               >
                 <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">A liderar</p>
-                <p className="font-mono font-black text-white text-base tabular-nums mt-0.5">
+                <p className="font-mono font-black text-white text-sm tabular-nums mt-0.5">
                   {formatCurrency(auction.currentHighBid)}
                 </p>
               </div>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5">
                 <div
                   className="flex items-center rounded-lg overflow-hidden"
                   style={{ border: `1px solid ${teamColor}50`, background: "#111118" }}
                 >
                   <span
-                    className="material-symbols-outlined text-sm px-3 shrink-0"
+                    className="material-symbols-outlined text-sm px-2.5 shrink-0"
                     style={{ color: teamColor }}
                   >
                     currency_exchange
@@ -324,7 +323,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                     }}
                     onKeyDown={(e) => e.key === "Enter" && handleBid()}
                     onClick={(e) => e.stopPropagation()}
-                    className="flex-1 min-w-0 bg-transparent py-2.5 pr-3 text-white font-mono text-sm outline-none"
+                    className="flex-1 min-w-0 bg-transparent py-2 pr-3 text-white font-mono text-xs outline-none"
                   />
                 </div>
                 {bidError && (
@@ -339,7 +338,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                     e.stopPropagation();
                     handleBid();
                   }}
-                  className="w-full py-2.5 rounded-lg font-headline font-black uppercase text-sm tracking-wide transition-all active:scale-95 hover:brightness-110"
+                  className="w-full py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110"
                   style={{ background: teamColor, color: "#0d0d14" }}
                 >
                   Licitar
@@ -360,7 +359,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
           }}
         >
           <div
-            className="px-4 pt-4 pb-3 flex items-center gap-3"
+            className="px-3 pt-2.5 pb-2 flex items-center gap-2"
             style={{
               background: `linear-gradient(135deg, ${teamColor}18 0%, transparent 100%)`,
               borderBottom: `1px solid ${teamColor}22`,
@@ -374,7 +373,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
               size="sm"
             />
             <div className="min-w-0 flex-1">
-              <p className="font-headline font-black text-white text-base leading-tight truncate">
+              <p className="font-headline font-black text-white text-sm leading-tight truncate">
                 {auction.name}
               </p>
               <p className="text-[9px] text-zinc-500">{countryName}</p>
@@ -388,9 +387,9 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
               <span className="material-symbols-outlined text-lg">arrow_back</span>
             </button>
           </div>
-          <div className="px-4 py-3 flex-1 overflow-hidden">
-            <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-2">Historial</p>
-            <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="px-3 py-2 flex-1 overflow-hidden">
+            <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1.5">Historial</p>
+            <div className="grid grid-cols-2 gap-2 mb-2">
                <StatTile icon="sports_soccer" label="Jogos">
                  {auction.games_played ?? 0}
                </StatTile>
@@ -405,26 +404,26 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                </StatTile>
              </div>
             {auction.aggressiveness != null && (
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-2">
                 <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-wide">Agressividade</span>
                 <AggBadge value={auction.aggressiveness} />
               </div>
             )}
-            <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-2">Financeiro</p>
+            <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1.5">Financeiro</p>
             <div
               className="rounded-md grid grid-cols-2"
               style={{ background: "#111118", border: "1px solid #26263a" }}
             >
-              <div className="p-2.5 border-r border-zinc-800">
+              <div className="p-2 border-r border-zinc-800">
                 <p className="text-[8px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Salário</p>
-                <p className="font-black text-white text-sm font-mono tabular-nums">
+                <p className="font-black text-white text-xs font-mono tabular-nums">
                   {formatCurrency(auction.wage || 0)}
                   <span className="text-[9px] text-zinc-500 font-normal"> /sem</span>
                 </p>
               </div>
-              <div className="p-2.5">
+              <div className="p-2">
                 <p className="text-[8px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Preço Base</p>
-                <p className="font-black text-sm font-mono tabular-nums" style={{ color: teamColor }}>
+                <p className="font-black text-xs font-mono tabular-nums" style={{ color: teamColor }}>
                   {formatCurrency(auction.startingPrice)}
                 </p>
               </div>
