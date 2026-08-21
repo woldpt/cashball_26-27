@@ -54,7 +54,6 @@ export function createContractHelpers(deps: ContractDeps) {
     isRenegotiation = false,
   ) => {
     if (!player || !player.team_id) return;
-    if (player.transfer_status && player.transfer_status !== "none") return;
     if (player.contract_request_pending) return;
 
     const wage = player.wage || 0;
@@ -62,8 +61,6 @@ export function createContractHelpers(deps: ContractDeps) {
     const demandBase = isRenegotiation
       ? Math.max(Math.round(fairWage * 1.15), Math.round(wage * 1.2))
       : Math.max(fairWage, Math.round(wage * 1.05), wage + 100);
-    // Apenas aciona se houver diferença significativa face ao salário actual
-    if (wage >= demandBase * (isRenegotiation ? 0.85 : 0.88)) return;
 
     const cap = isRenegotiation ? Math.round(wage * 1.2) : Math.round(wage * 1.25);
     const requestedWage = Math.min(
@@ -187,10 +184,7 @@ export function createContractHelpers(deps: ContractDeps) {
     );
 
     for (const player of soonExpiring) {
-      // Sempre na última jornada, ~50% nas duas anteriores — mais pedidos.
-      const weeksLeft = player.contract_start_epoch + CONTRACT_LENGTH_MATCHWEEKS - now;
-      const fireChance = weeksLeft <= 1 ? 1 : 0.5;
-      if (Math.random() > fireChance) continue;
+      // Todos pedem renovação — sem aleatoriedade, sem exclusões.
       maybeTriggerContractRequest(game, player, false);
     }
   };
