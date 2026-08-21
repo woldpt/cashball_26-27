@@ -847,12 +847,53 @@ export function registerSessionSocketHandlers(
 					 GROUP BY season, team_id`,
 				);
 
+				const pairRows = await runAll(
+					game.db,
+					`SELECT season, home_team_id AS a, away_team_id AS b
+					 FROM matches
+					 WHERE played = 1`,
+				);
+
+				// Liga é round-robin por divisão: a componente conexa das jogos de uma
+				// época é a própria divisão. Usa union-find para reconstruir a divisão
+				// de cada equipa por época (a divisão atual não vale para o histórico).
+				const find = (
+					parent: Map<number, number>,
+					x: number,
+				): number => {
+					let r = parent.get(x) ?? x;
+					if (parent.get(r) !== undefined) {
+						r = find(parent, r);
+						parent.set(x, r);
+					}
+					return r;
+				};
+				const union = (
+					parent: Map<number, number>,
+					a: number,
+					b: number,
+				) => {
+					const ra = find(parent, a);
+					const rb = find(parent, b);
+					if (ra !== rb) parent.set(ra, rb);
+				};
+
 				const baseYear = (game.year ?? 0) - (game.season ?? 0);
+				const currentSeason = game.season ?? 1;
 				const bySeason = new Map<number, AnyRow[]>();
+				const divBySeason = new Map<number, Map<number, number>>();
 				for (const row of seasonRows || []) {
 					const list = bySeason.get(row.season) || [];
 					list.push(row);
 					bySeason.set(row.season, list);
+				}
+				for (const pair of pairRows || []) {
+					let parent = divBySeason.get(pair.season);
+					if (!parent) {
+						parent = new Map();
+						divBySeason.set(pair.season, parent);
+					}
+					union(parent, pair.a, pair.b);
 				}
 
 				const seasonRecords: Array<{
@@ -867,7 +908,15 @@ export function registerSessionSocketHandlers(
 					points: number;
 				}> = [];
 				for (const [season, rows] of bySeason) {
-					const sorted = [...rows].sort((a, b) => {
+					// Época corrente ainda não acabou — só histórico das concluídas.
+					if (Number(season) === currentSeason) continue;
+
+					const parent = divBySeason.get(season) || new Map<number, number>();
+					const myRoot = find(parent, teamId);
+					const group = rows.filter(
+						(r) => find(parent, r.team_id) === myRoot,
+					);
+					const sorted = [...group].sort((a, b) => {
 						const pa = 3 * a.wins + a.draws;
 						const pb = 3 * b.wins + b.draws;
 						if (pb !== pa) return pb - pa;
