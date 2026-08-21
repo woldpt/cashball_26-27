@@ -17,6 +17,43 @@ interface AuctionDeps {
   scheduleNpcCounterBid: (game: ActiveGame, playerId: number, npcTeamId: number) => void;
 }
 
+export function serializeActiveAuctions(game: ActiveGame): any[] {
+  const out: any[] = [];
+  const marketRows = ((game.globalMarket as any[]) || []) as any[];
+  for (const row of marketRows) {
+    if (!row.auction_active) continue;
+    const auction = (game.auctions as any)?.[row.id];
+    out.push({
+      playerId: row.id,
+      name: row.name,
+      team_name: row.team_name || null,
+      sellerTeamId: row.auction_seller_team_id ?? auction?.sellerTeamId ?? null,
+      position: row.position,
+      skill: row.skill,
+      value: row.value,
+      wage: row.wage,
+      nationality: row.nationality,
+      goals: row.goals || 0,
+      red_cards: row.red_cards || 0,
+      injuries: row.injuries || 0,
+      games_played: row.games_played || 0,
+      aggressiveness: row.aggressiveness ?? 3,
+      is_star: row.is_star || 0,
+      startingPrice: row.auction_starting_price ?? auction?.startingPrice ?? 0,
+      endsAt: row.auction_ends_at ?? auction?.endsAt ?? null,
+      currentHighBid: row.auction_high_bid ?? 0,
+      currentHighBidTeamId: row.auction_high_bid_team_id ?? null,
+      auction_bid_history: row.auction_bid_history || [],
+      paused: auction?.status === "paused",
+      closed: false,
+      team_color_primary: row.color_primary || null,
+      suspension_until_matchweek: row.suspension_until_matchweek,
+      injury_until_matchweek: row.injury_until_matchweek,
+    });
+  }
+  return out;
+}
+
 export function createAuctionHelpers(deps: AuctionDeps) {
   const {
     io,

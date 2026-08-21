@@ -7,6 +7,7 @@ import { generateAITactic } from "./game/matchCalculations";
 import { getMatchFatigueSnapshot } from "./game/engine";
 import { getTeamsWithCoachNames, logClubNews } from "./coreHelpers";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
+import { serializeActiveAuctions } from "./auctionHelpers";
 
 interface CupFlowDeps {
 	io: any;
@@ -1624,6 +1625,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				currentEvent: game.currentEvent,
 				matchweek: game.matchweek,
 				year: game.year,
+				activeAuctions: serializeActiveAuctions(game),
 			});
 			return;
 		}
@@ -1637,6 +1639,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				allMatchResults: game.allMatchResults || {},
 				matchweek: game.matchweek,
 				year: game.year,
+				activeAuctions: serializeActiveAuctions(game),
 			});
 			return;
 		}

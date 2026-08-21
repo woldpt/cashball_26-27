@@ -628,6 +628,11 @@ export function useSocketListeners(handlers, refs) {
 			if (typeof data.roomCreator === "string") {
 				handlers.setRoomCreator(data.roomCreator);
 			}
+			// Hidratar leilões ativos em join/reconnect — o evento one-shot
+			// auctionStarted só chega a quem está ligado no momento do broadcast.
+			if (Array.isArray(data.activeAuctions)) {
+				handlers.setActiveAuctions(data.activeAuctions);
+			}
 			// Restore match-in-progress state on reconnect
 			if (data.matchState === "halftime" && data.lastHalfTimePayload) {
 				handlers.setMatchResults(data.lastHalfTimePayload);

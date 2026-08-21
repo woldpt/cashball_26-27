@@ -3,6 +3,7 @@ import { getAllTeamForms, getTeamsWithCoachNames } from "./coreHelpers";
 import { SPONSOR_REVENUE_BY_DIVISION } from "./gameConstants";
 import { getGlobalMessages } from "./db/globalDatabase";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
+import { serializeActiveAuctions } from "./auctionHelpers";
 
 type AnyRow = Record<string, any>;
 
@@ -277,6 +278,7 @@ export function registerSessionSocketHandlers(
 					? game.lastHalftimePayload || null
 					: null,
 			roomCreator: game.roomCreator || "",
+			activeAuctions: serializeActiveAuctions(game),
 		});
 
 		emitCurrentPhaseToSocket(game, socket);
@@ -572,6 +574,7 @@ export function registerSessionSocketHandlers(
 											lockedCoaches: [...game.lockedCoaches],
 											lastHalfTimePayload: null,
 											roomCreator: game.roomCreator || "",
+											activeAuctions: serializeActiveAuctions(game),
 										});
 
 										emitPresence(game);
