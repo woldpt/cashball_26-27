@@ -69,6 +69,8 @@
       "socketTransferHandlers.ts",
       "socketTransferHandlers.ts",
       "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts",
       "socketTransferHandlers.ts"
     ],
     "receive": []
@@ -496,6 +498,12 @@
     ]
   },
   "renewContract": {
+    "emit": [],
+    "receive": [
+      "socketTransferHandlers.ts"
+    ]
+  },
+  "declineContractRequest": {
     "emit": [],
     "receive": [
       "socketTransferHandlers.ts"

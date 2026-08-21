@@ -628,13 +628,15 @@ export function useSocketListeners(handlers, refs) {
 						contractEndSeason,
 					}),
 					confirmLabel: "Aceitar",
-					cancelLabel: "Ignorar",
+					cancelLabel: "Leilão",
+					cancelDanger: true,
 					onConfirm: () =>
 						socket.emit("renewContract", {
 							playerId,
 							offeredWage: requestedWage,
 						}),
-					onCancel: () => {},
+					onCancel: () =>
+						socket.emit("declineContractRequest", { playerId }),
 				});
 			},
 		);

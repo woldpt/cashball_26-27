@@ -440,6 +440,56 @@ export function registerTransferSocketHandlers(
     );
   });
 
+  socket.on("declineContractRequest", ({ playerId }) => {
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    const playerState = getPlayerBySocket(game, socket.id);
+    if (!playerState) return;
+    if (isMatchInProgress(game)) {
+      socket.emit(
+        "systemMessage",
+        "Não é possível gerir o plantel durante uma partida.",
+      );
+      return;
+    }
+
+    game.db.get(
+      "SELECT * FROM players WHERE id = ? AND team_id = ?",
+      [playerId, playerState.teamId],
+      (err: Error | null, player: any) => {
+        if (err || !player) return;
+        if (!player.contract_request_pending) return;
+
+        const value = player.value || (player.skill || 0) * 20000;
+        const fairWage = Math.round(Math.pow(value, 0.62) / 2.5);
+        const demandedWage = Math.max(
+          fairWage,
+          Math.round((player.wage || 0) * 1.05),
+        );
+        const auctionPrice = Math.max(
+          Math.round(value * 0.65),
+          demandedWage * 12,
+        );
+
+        listPlayerOnMarket(game, playerId, "auction", auctionPrice, () => {
+          game.db.run(
+            "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0, contract_start_epoch = 0 WHERE id = ?",
+            [playerId],
+            (runErr: Error | null) => {
+              if (runErr)
+                console.error("[declineContractRequest] Error:", runErr);
+              else emitSquadForPlayer(game, playerState.teamId);
+            },
+          );
+          socket.emit(
+            "systemMessage",
+            `💼 ${getAgentName(player.id)} fez as malas: ${player.name} recusou esperar e foi para leilão. Se for vendido, a verba vai para o teu clube.`,
+          );
+        });
+      },
+    );
+  });
+
   socket.on("acceptCounterOffer", ({ playerId, accepted }) => {
     const game = getGameBySocket(socket.id);
     if (!game) return;

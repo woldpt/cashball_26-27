@@ -15,6 +15,7 @@ import { Button } from "./Button.jsx";
  *    confirmLabel?: string,
  *    cancelLabel?: string,
  *    danger?: boolean,
+ *    cancelDanger?: boolean,
  *     onConfirm: (value?: string) => void,
  *     onCancel: () => void,
  *   } | null,
@@ -107,7 +108,7 @@ export function GameDialog({ dialog, onClose }) {
         {/* Actions */}
         <div className="flex gap-2 px-5 pb-5">
           <Button
-            variant="secondary"
+            variant={dialog?.cancelDanger ? "dangerSoft" : "secondary"}
             className="flex-1"
             onClick={() => {
               dialog?.onCancel?.();
