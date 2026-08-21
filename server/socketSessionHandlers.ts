@@ -819,20 +819,32 @@ export function registerSessionSocketHandlers(
 				// mas só expõe o do clube pedido.
 				const seasonRows = await runAll(
 					game.db,
-					`SELECT season,
-					        CASE WHEN home_team_id = ? THEN home_team_id ELSE away_team_id END AS team_id,
-					        SUM(CASE WHEN (home_team_id = ? AND home_score > away_score)
-					                 OR (away_team_id = ? AND away_score > home_score) THEN 1 ELSE 0 END) AS wins,
-					        SUM(CASE WHEN home_score = away_score THEN 1 ELSE 0 END) AS draws,
-					        SUM(CASE WHEN (home_team_id = ? AND home_score < away_score)
-					                 OR (away_team_id = ? AND away_score < home_score) THEN 1 ELSE 0 END) AS losses,
-					        SUM(CASE WHEN home_team_id = ? THEN home_score ELSE away_score END) AS goals_for,
-					        SUM(CASE WHEN home_team_id = ? THEN away_score ELSE home_score END) AS goals_against
-					 FROM matches
-					 WHERE played = 1
-					 GROUP BY season, team_id
-					 ORDER BY season ASC, wins DESC`,
-					[teamId, teamId, teamId, teamId, teamId, teamId, teamId],
+					`SELECT season, team_id,
+					        SUM(wins) AS wins,
+					        SUM(draws) AS draws,
+					        SUM(losses) AS losses,
+					        SUM(goals_for) AS goals_for,
+					        SUM(goals_against) AS goals_against
+					 FROM (
+					   SELECT season, home_team_id AS team_id,
+					          CASE WHEN home_score > away_score THEN 1 ELSE 0 END AS wins,
+					          CASE WHEN home_score = away_score THEN 1 ELSE 0 END AS draws,
+					          CASE WHEN home_score < away_score THEN 1 ELSE 0 END AS losses,
+					          home_score AS goals_for,
+					          away_score AS goals_against
+					   FROM matches
+					   WHERE played = 1
+					   UNION ALL
+					   SELECT season, away_team_id AS team_id,
+					          CASE WHEN away_score > home_score THEN 1 ELSE 0 END AS wins,
+					          CASE WHEN home_score = away_score THEN 1 ELSE 0 END AS draws,
+					          CASE WHEN away_score < home_score THEN 1 ELSE 0 END AS losses,
+					          away_score AS goals_for,
+					          home_score AS goals_against
+					   FROM matches
+					   WHERE played = 1
+					 )
+					 GROUP BY season, team_id`,
 				);
 
 				const baseYear = (game.year ?? 0) - (game.season ?? 0);
