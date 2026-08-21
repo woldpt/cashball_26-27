@@ -244,14 +244,15 @@ function NextMatchCard({ nextMatchSummary, teamInfo, onOpenTeamSquad }) {
       <div className="flex-1 px-4 py-3 lg:py-4 flex flex-col gap-2.5 lg:gap-3 lg:justify-evenly">
         {/* Hero VS — equipa do utilizador à esquerda em casa, à direita fora */}
         {(() => {
+          const mySlotTeam = { ...teamInfo, ...myTeam };
           const slots = isHome
             ? [
-                { team: teamInfo ?? myTeam, name: myName, isMine: true },
+                { team: mySlotTeam, name: myName, isMine: true },
                 { team: opp, name: opp.name, isMine: false },
               ]
             : [
                 { team: opp, name: opp.name, isMine: false },
-                { team: teamInfo ?? myTeam, name: myName, isMine: true },
+                { team: mySlotTeam, name: myName, isMine: true },
               ];
           const renderSlot = (slot) => (
             <div key={slot.name} className="flex flex-col items-center gap-1 min-w-0 flex-1">
@@ -294,8 +295,8 @@ function NextMatchCard({ nextMatchSummary, teamInfo, onOpenTeamSquad }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 lg:flex-1 lg:content-center">
           <CompareStat
             label="Posição"
-            mine={isHome ? (s.team?.position ? `${s.team.position}º` : "—") : (opp.position ? `${opp.position}º` : "—")}
-            theirs={isHome ? (opp.position ? `${opp.position}º` : "—") : (s.team?.position ? `${s.team.position}º` : "—")}
+            mine={s.team?.position ? `${s.team.position}º` : "—"}
+            theirs={opp.position ? `${opp.position}º` : "—"}
           />
           <CompareStat
             label="Pontos"
