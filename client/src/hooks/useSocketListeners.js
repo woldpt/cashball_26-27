@@ -318,7 +318,7 @@ export function useSocketListeners(handlers, refs) {
 			});
 				handlers.setLiveMinute(90);
 				handlers.setSubsMade(0);
-				handlers.setSubbedOut([]);
+				// Keep subbedOut across halves into ET: a player who left cannot re-enter.
 				handlers.setConfirmedSubs([]);
 				handlers.setSwapSource(null);
 				handlers.setSwapTarget(null);

@@ -494,6 +494,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             for (const id of toRemoveIds) {
               const idx = squad.findIndex((p: any) => p.id === id);
               if (idx > -1) squad.splice(idx, 1);
+              (fixture._subbedOut ??= new Set<number>()).add(id);
             }
 
             // Add subbed-in players from the full roster

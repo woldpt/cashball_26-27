@@ -439,7 +439,10 @@ async function applyInjuryEvent({
   );
   const roster = fullRoster || squad;
   const availableBench = roster.filter(
-    (p) => !lineupIds.has(p.id) && (benchIds.size === 0 || benchIds.has(p.id)),
+    (p) =>
+      !lineupIds.has(p.id) &&
+      (benchIds.size === 0 || benchIds.has(p.id)) &&
+      !(fixture._subbedOut as Set<number> | undefined)?.has(p.id),
   );
 
   // If the injured player is a goalkeeper, prefer substituting with another goalkeeper
@@ -509,6 +512,7 @@ async function applyInjuryEvent({
     if (idx > -1) squad.splice(idx, 1, replacement);
     lineupIds.delete(injuredPlayer.id);
     lineupIds.add(replacement.id);
+    (fixture._subbedOut ??= new Set<number>()).add(injuredPlayer.id);
 
     // Actualizar snapshot de lineup para que o ecrã de intervalo reflicta a substituição
     const lineupRef =
@@ -558,6 +562,7 @@ async function applyInjuryEvent({
   const idx = squad.findIndex((p) => p.id === injuredPlayer.id);
   if (idx > -1) squad.splice(idx, 1);
   lineupIds.delete(injuredPlayer.id);
+  (fixture._subbedOut ??= new Set<number>()).add(injuredPlayer.id);
 
   // Remover jogador do snapshot de lineup quando sai sem substituto
   const lineupRefNoSub =
@@ -1901,7 +1906,10 @@ async function simulateMatchSegment(
             .map(([id]) => Number(id)),
         );
         const availableBench = fullRoster.filter(
-          (p: any) => !lineupIds.has(p.id) && benchIds.has(p.id),
+          (p: any) =>
+            !lineupIds.has(p.id) &&
+            benchIds.has(p.id) &&
+            !(fixture._subbedOut as Set<number> | undefined)?.has(p.id),
         );
 
         if (onPitch.length > 0 && availableBench.length > 0) {
@@ -1961,6 +1969,7 @@ async function simulateMatchSegment(
               if (idx > -1) squad.splice(idx, 1, playerIn);
               lineupIds.delete(playerOutId);
               lineupIds.add(playerInId);
+              (fixture._subbedOut ??= new Set<number>()).add(playerOutId);
 
               // Actualizar snapshot de lineup para que o ecrã de intervalo reflicta a substituição
               const lineupRef = isHome

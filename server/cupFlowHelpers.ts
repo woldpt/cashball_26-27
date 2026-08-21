@@ -968,6 +968,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 							.map((e: any) => e.playerId),
 					);
 					toAddIds = toAddIds.filter((id) => !injuredIds.has(id));
+					// Players already subbed out earlier (halftime, in-match) cannot re-enter in ET.
+					const subbedOut = fx._subbedOut as Set<number> | undefined;
+					toAddIds = toAddIds.filter((id) => !subbedOut?.has(id));
 
 					if (toRemoveIds.length === 0 && toAddIds.length === 0) return;
 
@@ -981,6 +984,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					for (const id of toRemoveIds) {
 						const idx = squad.findIndex((p: any) => p.id === id);
 						if (idx > -1) squad.splice(idx, 1);
+						(fx._subbedOut ??= new Set<number>()).add(id);
 					}
 					for (const player of inPlayers) {
 						squad.push(player);
