@@ -21,8 +21,6 @@ import { useMemo, useState } from "react";
  *   me: object|null,
  *   avatarSeed: string,
  *   players: Array,
- *   palmares: object,
- *   palmaresTeamId: number|null,
  *   clubHistory: object|null,
  *   clubHistoryTeamId: number|null,
  *   setTransferProposalModal: function,
@@ -42,8 +40,6 @@ export function TeamSquadView({
   me,
   avatarSeed = "",
   players,
-  palmares,
-  palmaresTeamId,
   clubHistory,
   clubHistoryTeamId,
   setTransferProposalModal,
@@ -292,27 +288,6 @@ export function TeamSquadView({
           />
         </div>
       </div>
-
-      {/* Palmarés */}
-      {activeTab === "squad" &&
-        palmaresTeamId === selectedTeam?.id &&
-        palmares.trophies?.length > 0 && (
-          <div className="border-t border-zinc-800 px-6 py-4">
-            <h4 className="text-xs text-amber-400 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-              🏆 Palmarés
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {palmares.trophies.map((trophy, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1 rounded-full bg-amber-900/30 border border-amber-700/40 text-amber-300 text-xs font-black"
-                >
-                  🏆 {trophy.achievement} ({trophy.season})
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
 
       {/* Content */}
       <div className="overflow-auto flex-1">

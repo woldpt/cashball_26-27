@@ -285,9 +285,11 @@ export function ClubTab({
                       <p className="text-amber-400 font-black text-xs">
                         {trophy.achievement}
                       </p>
-                      <p className="text-on-surface-variant text-[10px] font-bold">
-                        {trophy.season}
-                      </p>
+                      {trophy.season ? (
+                        <p className="text-on-surface-variant text-[10px] font-bold">
+                          {trophy.season}
+                        </p>
+                      ) : null}
                       {trophy.coach_name && trophy.is_human_coach && (
                         <p className="text-on-surface-variant/60 text-[9px] mt-0.5">
                           Treinador: {trophy.coach_name}

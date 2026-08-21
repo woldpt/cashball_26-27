@@ -204,7 +204,8 @@ export function TeamSquadModal({
                         key={idx}
                         className="px-3 py-1 rounded-full bg-amber-900/30 border border-amber-700/40 text-amber-300 text-xs font-black"
                       >
-                        🏆 {trophy.achievement} ({trophy.season})
+                        🏆 {trophy.achievement}
+                        {trophy.season ? ` (${trophy.season})` : ""}
                       </span>
                     ))}
                   </div>
