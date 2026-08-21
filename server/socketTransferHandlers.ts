@@ -429,6 +429,9 @@ export function registerTransferSocketHandlers(
           socket.emit("renewContractCounterOffer", {
             playerId,
             playerName: player.name,
+            position: player.position,
+            skill: player.skill,
+            wage: player.wage,
             demandedWage,
             agent: getAgentName(player.id),
           });

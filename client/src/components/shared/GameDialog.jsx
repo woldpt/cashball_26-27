@@ -8,12 +8,13 @@ import { Button } from "./Button.jsx";
  * @param {{
  *   dialog: {
  *     mode: "prompt"|"confirm",
- *     title: string,
- *     description?: string,
- *     defaultValue?: string,
- *     confirmLabel?: string,
- *     cancelLabel?: string,
- *     danger?: boolean,
+ *    title: string,
+ *    description?: string,
+ *    stats?: { label: string, value: string, className?: string }[],
+ *    defaultValue?: string,
+ *    confirmLabel?: string,
+ *    cancelLabel?: string,
+ *    danger?: boolean,
  *     onConfirm: (value?: string) => void,
  *     onCancel: () => void,
  *   } | null,
@@ -77,6 +78,21 @@ export function GameDialog({ dialog, onClose }) {
 
         {/* Body */}
         <div className="px-5 py-4">
+          {dialog?.mode === "confirm" && dialog?.stats?.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {dialog.stats.map((stat, i) => (
+                <span
+                  key={i}
+                  className={`rounded-md border border-outline-variant/20 bg-surface px-2 py-1 text-[11px] font-bold text-on-surface-variant ${stat.className ?? ""}`}
+                >
+                  <span className="mr-1 uppercase tracking-wide opacity-70">
+                    {stat.label}
+                  </span>
+                  {stat.value}
+                </span>
+              ))}
+            </div>
+          )}
           {dialog?.mode === "prompt" && (
             <input
               ref={inputRef}

@@ -2,6 +2,42 @@ import { useEffect } from "react";
 import { socket } from "../socket.js";
 import { isSameTeamId } from "../utils/teamHelpers.js";
 import { playGoalSound, playVarSound } from "../utils/audio.js";
+import { POSITION_SHORT_LABELS, POSITION_TEXT_CLASS } from "../constants/index.js";
+
+function buildPlayerStats({
+	position,
+	skill,
+	wage,
+	requestedWage,
+	contractEndMatchweek,
+	contractEndSeason,
+}) {
+	const stats = [];
+	if (position) {
+		stats.push({
+			label: "Pos",
+			value: POSITION_SHORT_LABELS[position] ?? position,
+			className: POSITION_TEXT_CLASS[position] ?? "",
+		});
+	}
+	if (skill) stats.push({ label: "Skill", value: String(skill) });
+	if (typeof wage === "number" && wage > 0) {
+		stats.push({ label: "Salário", value: `€${wage.toLocaleString("pt-PT")}/sem` });
+	}
+	if (typeof requestedWage === "number" && requestedWage > 0) {
+		stats.push({
+			label: "Pedido",
+			value: `€${requestedWage.toLocaleString("pt-PT")}/sem`,
+		});
+	}
+	if (contractEndMatchweek && contractEndSeason) {
+		stats.push({
+			label: "Contrato",
+			value: `J${contractEndMatchweek} · E${contractEndSeason}`,
+		});
+	}
+	return stats;
+}
 
 function hasSeenWelcome(coachName, roomCode) {
 	try {
@@ -530,11 +566,25 @@ export function useSocketListeners(handlers, refs) {
 		});
 		socket.on(
 			"renewContractCounterOffer",
-			({ playerId, playerName, demandedWage, agent }) => {
+			({
+				playerId,
+				playerName,
+				position,
+				skill,
+				wage,
+				demandedWage,
+				agent,
+			}) => {
 				handlers.setGameDialog({
 					mode: "confirm",
 					title: `Contra-proposta — ${playerName}`,
 					description: `🤨 ${agent || "O agente"} diz que a tua oferta é "um insulto à profissão". ${playerName} exige €${demandedWage.toLocaleString("pt-PT")}/sem. Aceitas ou vai brilhar no leilão?`,
+					stats: buildPlayerStats({
+						position,
+						skill,
+						wage,
+						requestedWage: demandedWage,
+					}),
 					confirmLabel: "Aceitar",
 					cancelLabel: "Leilão",
 					onConfirm: () =>
@@ -549,6 +599,9 @@ export function useSocketListeners(handlers, refs) {
 			({
 				playerId,
 				playerName,
+				position,
+				skill,
+				wage,
 				requestedWage,
 				agent,
 				contractEndMatchweek,
@@ -566,6 +619,14 @@ export function useSocketListeners(handlers, refs) {
 					mode: "confirm",
 					title: `Agente do Jogador — ${playerName}`,
 					description: headline,
+					stats: buildPlayerStats({
+						position,
+						skill,
+						wage,
+						requestedWage,
+						contractEndMatchweek,
+						contractEndSeason,
+					}),
 					confirmLabel: "Aceitar",
 					cancelLabel: "Ignorar",
 					onConfirm: () =>
