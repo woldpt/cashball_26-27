@@ -1424,6 +1424,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       <AuctionNotification
         activeAuctions={activeAuctions}
         currentPage={activeTab}
+        isMatchInProgress={isMatchInProgress}
         onNavigateToAuctions={() => {
           setActiveTab("leiloes");
           window.scrollTo(0, 0);

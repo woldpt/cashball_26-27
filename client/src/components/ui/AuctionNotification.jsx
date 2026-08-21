@@ -18,12 +18,14 @@ const DEFAULT_ACCENT = "#d97706";
  * @param {{
  *   activeAuctions: Array,
  *   currentPage: string,
+ *   isMatchInProgress: boolean,
  *   onNavigateToAuctions: function,
  * }} props
  */
 export function AuctionNotification({
   activeAuctions = [],
   currentPage,
+  isMatchInProgress = false,
   onNavigateToAuctions,
 }) {
   const [currentToast, setCurrentToast] = useState(null);
@@ -47,7 +49,7 @@ export function AuctionNotification({
 
   // Detect new auctions and enqueue
   useEffect(() => {
-    if (currentPage === "leiloes") {
+    if (currentPage === "leiloes" || isMatchInProgress) {
       showingRef.current = false;
       queueRef.current = [];
       return;
@@ -59,7 +61,7 @@ export function AuctionNotification({
     newOnes.forEach((a) => seenRef.current.add(a.playerId));
     queueRef.current.push(...newOnes);
     showNext();
-  }, [activeAuctions, currentPage]);
+  }, [activeAuctions, currentPage, isMatchInProgress]);
 
   if (!currentToast || currentPage === "leiloes") return null;
 
