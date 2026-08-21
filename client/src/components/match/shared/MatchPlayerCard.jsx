@@ -23,6 +23,12 @@ export function MatchPlayerCard({
   title,
   swapIndicator = false,
   forcedOut = false,
+  draggable = false,
+  dragOver = false,
+  onDragStart,
+  onDragOver,
+  onDragDrop,
+  onDragEnd,
 }) {
   const s = posStyle || getPosStyle(player.position);
 
@@ -54,7 +60,16 @@ export function MatchPlayerCard({
     <button
       onClick={() => selectable && !disabled && onPick?.()}
       title={title}
-      className={`relative group flex items-stretch rounded-md overflow-hidden border transition-all duration-200 select-none w-full text-left ${cardBg}`}
+      draggable={draggable && !disabled}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDragDrop}
+      onDragEnd={onDragEnd}
+      className={`relative group flex items-stretch rounded-md overflow-hidden border transition-all duration-200 select-none w-full text-left ${cardBg} ${
+        dragOver
+          ? "ring-2 ring-emerald-400/70 border-emerald-400/70 shadow-[0_0_16px_rgba(52,211,153,0.35)]"
+          : ""
+      }`}
     >
       {/* Forced swap label */}
       {forcedOut && (

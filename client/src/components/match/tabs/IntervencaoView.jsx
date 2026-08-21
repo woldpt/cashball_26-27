@@ -234,12 +234,26 @@ export function IntervencaoView({
        * it visible at the moment the user is reviewing their subs. */}
       <div className={`shrink-0 px-4 sm:px-5 py-3 sm:py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme} flex items-center justify-between gap-2 sm:gap-4`}>
         {/* Scoreboard chip — contexto do jogo em todos os modos */}
+        {/* Mini-crests (replacing colour dots) so the user can tell at a
+         * glance which team each number belongs to. Full name on title. */}
         <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface/60 border border-outline-variant/20">
-          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: hInfo?.color_primary || "#6366f1" }} />
+          <span
+            title={hInfo?.name}
+            className="w-6 h-6 rounded-md flex items-center justify-center font-black text-[9px] tracking-wider leading-none"
+            style={{ background: hInfo?.color_primary || "#6366f1", color: hInfo?.color_secondary || "#fff" }}
+          >
+            {(hInfo?.name || "H").substring(0, 3).toUpperCase()}
+          </span>
           <span className="text-sm font-black font-headline tabular-nums text-on-surface leading-none">{scoreHome}</span>
           <span className="text-on-surface-variant/40 text-xs font-black leading-none">:</span>
           <span className="text-sm font-black font-headline tabular-nums text-on-surface leading-none">{scoreAway}</span>
-          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: aInfo?.color_primary || "#f43f5e" }} />
+          <span
+            title={aInfo?.name}
+            className="w-6 h-6 rounded-md flex items-center justify-center font-black text-[9px] tracking-wider leading-none"
+            style={{ background: aInfo?.color_primary || "#f43f5e", color: aInfo?.color_secondary || "#fff" }}
+          >
+            {(aInfo?.name || "A").substring(0, 3).toUpperCase()}
+          </span>
           <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70 tabular-nums ml-1.5 leading-none">
             {(liveMinute ?? 0)}'
           </span>
@@ -365,7 +379,7 @@ export function IntervencaoView({
           {/* Tab toggle hidden during forced swaps — opponent scouting is
            * noise while the auto-substitution countdown runs. */}
           {!isForcedSwap && (
-            <div className="shrink-0 px-4 py-3 bg-surface-container-high/50 border-b border-outline-variant/15">
+            <div className="shrink-0 px-4 py-2 bg-surface-container-high/50 border-b border-outline-variant/15">
               <div className="flex rounded-md bg-surface-container p-1.5 gap-2">
                 {[
                   { key: "subs", label: "Substituições" },
@@ -487,6 +501,47 @@ function SubsPanel({
   // total à lista ativa. No desktop mantém-se o grid de 2 colunas.
   const [mobileList, setMobileList] = useState("pitch");
 
+  // Drag-and-drop swap (HTML5 DnD, no extra lib). `dragFrom` records the
+  // dragged player + source side; `dragOverSide` highlights the valid target
+  // column. Falling back to tap-pick-out/tap-pick-in stays fully supported
+  // for touch. Drops only resolve across columns (pitch⇄bench).
+  const [dragFrom, setDragFrom] = useState(null);
+  const [dragOverSide, setDragOverSide] = useState(null);
+
+  const handleDragStart = (p, side) => (e) => {
+    setDragFrom({ player: p, side });
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+  };
+  const handleDragEnd = () => {
+    setDragFrom(null);
+    setDragOverSide(null);
+  };
+  const handleDragOver = (side) => (e) => {
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+    setDragOverSide(side);
+  };
+  const resolveDrop = () => {
+    setDragFrom(null);
+    setDragOverSide(null);
+  };
+  const handleDropOnPitch = (target) => (e) => {
+    e.preventDefault();
+    const src = dragFrom;
+    resolveDrop();
+    if (!src || src.side !== "bench") return;
+    handlePickOut(target);
+    handlePickIn(src.player);
+  };
+  const handleDropOnBench = (target) => (e) => {
+    e.preventDefault();
+    const src = dragFrom;
+    resolveDrop();
+    if (!src || src.side !== "pitch") return;
+    handlePickOut(src.player);
+    handlePickIn(target);
+  };
+
   /**
    * Seleciona o jogador que sai e salta para o banco (mobile) para escolher
    * quem entra.
@@ -508,7 +563,7 @@ function SubsPanel({
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Mobile: segmented control Em campo / Banco */}
-      <div className="md:hidden shrink-0 flex items-center gap-2 px-4 py-2.5 border-b border-outline-variant/15">
+      <div className="md:hidden shrink-0 flex items-center gap-2 px-4 py-2 border-b border-outline-variant/15">
         <div className="flex-1 flex rounded-md bg-surface-container p-1 gap-1">
           {[
             { key: "pitch", label: `Em campo (${onPitchPlayers.length})` },
@@ -530,11 +585,11 @@ function SubsPanel({
       </div>
       {/* Tactics (halftime only) + contador de substituições */}
       {isHalftime && (
-        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-outline-variant/15">
+        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 px-4 py-2.5 border-b border-outline-variant/15">
           <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
             Mentalidade
           </span>
-          <TacticsButtons className="flex-1" value={tactic.style} onChange={onUpdateTactic} />
+          <TacticsButtons className="w-full md:flex-1" value={tactic.style} onChange={onUpdateTactic} />
           <div
             className="shrink-0 flex items-center gap-1.5"
             title={`${subsMade} de ${MAX_MATCH_SUBS} substituições usadas`}
@@ -599,6 +654,12 @@ function SubsPanel({
                   onPick={() => pickOut(p)}
                   swapIndicator={isHalftime}
                   forcedOut={isForcedSwap && !!forceOutPlayer && p.id === forceOutPlayer.id}
+                  draggable={!disabled}
+                  onDragStart={handleDragStart(p, "pitch")}
+                  onDragOver={handleDragOver("pitch")}
+                  onDragDrop={handleDropOnPitch(p)}
+                  onDragEnd={handleDragEnd}
+                  dragOver={dragOverSide === "pitch" && dragFrom?.side === "bench"}
                 />
               );
             })}
@@ -637,6 +698,12 @@ function SubsPanel({
                   disabled={disabled}
                   selectable={!disabled}
                   onPick={() => handlePickIn(p)}
+                  draggable={!disabled}
+                  onDragStart={handleDragStart(p, "bench")}
+                  onDragOver={handleDragOver("bench")}
+                  onDragDrop={handleDropOnBench(p)}
+                  onDragEnd={handleDragEnd}
+                  dragOver={dragOverSide === "bench" && dragFrom?.side === "pitch"}
                 />
               );
             })}
@@ -675,13 +742,15 @@ function AdversarioPanel({ hasLineups, oppInfo, oppFormation, oppStyleLabel, opp
       {/* Normalized padding — old code mixed `px-3 pt-2 pb-3 pt-3`. */}
       <div className="flex-1 flex flex-col md:grid md:grid-cols-2 md:auto-rows-fr min-h-0 overflow-hidden p-4 gap-4">
         {/* Opponent pitch */}
+        {/* max-h caps the pitch on mobile so the 9:16 pitch doesn't push the
+         * opponent bench far below the fold. Desktop keeps full height. */}
         <div className="md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center overflow-hidden">
           {!hasLineups ? (
             <EmptyState icon="📋" message="Escalações indisponíveis durante a simulação" />
           ) : oppRows.ATA?.length === 0 && oppRows.MED?.length === 0 ? (
             <EmptyState icon="🤷" message="Sem dados da escalação do adversário" />
           ) : (
-            <MatchPitch rows={oppRows} posColors={PITCH_POS_COLORS} />
+            <MatchPitch rows={oppRows} posColors={PITCH_POS_COLORS} className="max-h-[55vh] md:max-h-none" />
           )}
         </div>
 
@@ -730,6 +799,15 @@ function BottomBar({ effectiveOutId, selectedInId, sourcePlayer, targetPlayer, i
   // Local "resolving" state gives immediate feedback on click in action mode
   // (was: button fired and the user got no signal until the parent reacted).
   const [resolving, setResolving] = useState(false);
+  // Halftime mirror: the confirm button is never unmounted, so feedback is a
+  // brief transient state that auto-disarms instead of getting stuck.
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleConfirmHalftime = () => {
+    setSubmitting(true);
+    onConfirmSub();
+    window.setTimeout(() => setSubmitting(false), 900);
+  };
   return (
     <div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high px-4 md:px-5 py-3">
       <div className="flex flex-col md:flex-row md:items-center gap-4 min-w-0">
@@ -778,12 +856,12 @@ function BottomBar({ effectiveOutId, selectedInId, sourcePlayer, targetPlayer, i
                 Limpar
               </GhostButton>
               <PrimaryButton
-                onClick={onConfirmSub}
-                disabled={!canConfirmSwap}
+                onClick={handleConfirmHalftime}
+                disabled={!canConfirmSwap || submitting}
                 tone="emerald"
                 icon={<MatchIcon name="confirm" className="h-4 w-4" />}
               >
-                Substituir
+                {submitting ? "A substituir…" : "Substituir"}
               </PrimaryButton>
             </>
           ) : (
