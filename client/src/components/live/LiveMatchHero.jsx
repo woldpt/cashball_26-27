@@ -116,11 +116,24 @@ export function LiveMatchHero({
     display: "inline-block",
   });
 
+  // Determina o lado de cada evento pelo jogador real (via lineups) — os eventos
+  // ficam sempre por baixo da equipa a que o jogador pertence, mesmo que o campo
+  // `team` chegue com o lado trocado (defensivo contra dados divergentes).
+  const lineupSideById = new Map();
+  (myMatch.homeLineup || []).forEach((p) => lineupSideById.set(p.id, "home"));
+  (myMatch.awayLineup || []).forEach((p) => lineupSideById.set(p.id, "away"));
+  const resolveSide = (e) => {
+    if (e.playerId != null && lineupSideById.has(e.playerId)) {
+      return lineupSideById.get(e.playerId);
+    }
+    return e.team;
+  };
+
   const homeEvents = matchEvents
     .filter(
       (e) =>
         e.minute <= liveMinute &&
-        e.team === "home" &&
+        resolveSide(e) === "home" &&
         [
           "goal", "penalty_goal", "own_goal", "var_disallowed", "var_goal_pending",
           "yellow", "red", "injury", "substitution", "halftime_sub",
@@ -131,7 +144,7 @@ export function LiveMatchHero({
     .filter(
       (e) =>
         e.minute <= liveMinute &&
-        e.team === "away" &&
+        resolveSide(e) === "away" &&
         [
           "goal", "penalty_goal", "own_goal", "var_disallowed", "var_goal_pending",
           "yellow", "red", "injury", "substitution", "halftime_sub",
