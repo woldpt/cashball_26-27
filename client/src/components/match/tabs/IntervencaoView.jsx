@@ -22,7 +22,13 @@ import {
 } from "../shared/index.js";
 import { TeamCrest } from "../../live/TeamCrest.jsx";
 
-/* ── IntervencaoView — Substitutions + chronology + opponent ────────── */
+/* ── IntervencaoView — substitutions + chronology + opponent ─────────────
+ * Simplified layout:
+ *   [Descrição do ecrã]            [Scoreboard]   [Anular todas]
+ *   [Tab Cronologia] [Tab Substituições] [Tab Adversário]
+ *   (Subs)  Titulares | Suplentes | Mentalidade (táticas + controlos troca)
+ *   [Iniciar/Continuar]  ← full-width button em MatchPage (mantido)
+ * ──────────────────────────────────────────────────────────────────────── */
 export function IntervencaoView({
   mode, fixture, liveMinute, teams, myTeamId,
   isCupMatch, isCupExtraTime,
@@ -33,8 +39,6 @@ export function IntervencaoView({
   redCardedHalftimeIds, injuredHalftimeIds, onResolveAction,
 }) {
   const [centerTab, setCenterTab] = useState("subs");
-  const [mobileChronoOpen, setMobileChronoOpen] = useState(false);
-  const [chronoOpen, setChronoOpen] = useState(true);
   const [confirmResetAll, setConfirmResetAll] = useState(false);
 
   // Two-tap arm for "Anular todas" auto-disarms after 3s so a stale armed
@@ -129,11 +133,12 @@ export function IntervencaoView({
     ? selectedOutId
     : selectedOutId || (isForcedSwap ? forceOutPlayer?.id : null);
   const targetPlayer = playerById(selectedInId);
+  const sourcePlayer = playerById(effectiveOutId);
   const canConfirmSwap =
     !!effectiveOutId && !!selectedInId && (!isHalftime || subsMade < MAX_MATCH_SUBS);
 
-  // During a forced swap the opponent tab is noise — lock the view on subs
-  // while the auto-substitution countdown runs.
+  // During a forced swap the opponent/chronology tabs are noise — lock the
+  // view on subs while the auto-substitution countdown runs.
   const activeCenterTab = isForcedSwap ? "subs" : centerTab;
 
   // Reason the confirm button is disabled — surfaced next to the button
@@ -183,7 +188,7 @@ export function IntervencaoView({
   const scoreAway = fixture?.finalAwayGoals ?? countGoals("away");
   const weatherEvent = evts.find((e) => e.type === "weather");
   const visibleEvts = filterMatchEvents(evts, liveMinute);
-  const ref = fixture.referee;
+  const referee = fixture.referee;
 
   /* ── Action title ─────────────────────────────────────────────── */
   const titleText = isPreExtraTime
@@ -210,6 +215,13 @@ export function IntervencaoView({
     onSelectIn(isHalftime ? player.id : player);
   };
 
+  /* ── Tabs ──────────────────────────────────────────────────────── */
+  const tabs = [
+    { key: "cronologia", label: "Cronologia" },
+    { key: "subs", label: "Substituições" },
+    { key: "adversario", label: "Adversário" },
+  ];
+
   /* ── Render ────────────────────────────────────────────────────── */
   return (
     <motion.div
@@ -228,14 +240,18 @@ export function IntervencaoView({
         onUndoSub={onUndoSub}
       />
 
-      {/* Title bar — also hosts the "Anular todas" ghost button when
-       * confirmed subs exist (was: previously buried in a strip BELOW the
-       * bottom bar, easy to miss). Surfacing it here at top-right makes
-       * it visible at the moment the user is reviewing their subs. */}
+      {/* Title bar — description left, scoreboard right, reset far right. */}
       <div className={`shrink-0 px-4 sm:px-5 py-3 sm:py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme} flex items-center justify-between gap-2 sm:gap-4`}>
-        {/* Scoreboard chip — contexto do jogo em todos os modos */}
-        {/* Mini-crests (replacing colour dots) so the user can tell at a
-         * glance which team each number belongs to. Full name on title. */}
+        <div className="min-w-0 flex-1">
+          {/* No truncate: a forced-swap title must never cut the player's name. */}
+          <h2 className="text-base font-bold font-headline tracking-tight text-on-surface uppercase text-left leading-snug">
+            {titleText}
+          </h2>
+        </div>
+
+        {/* Scoreboard chip — contexto do jogo em todos os modos. Mini-crests
+         * (replacing colour dots) so the user can tell at a glance which team
+         * each number belongs to. */}
         <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface/60 border border-outline-variant/20">
           <span
             title={hInfo?.name}
@@ -258,14 +274,7 @@ export function IntervencaoView({
             {(liveMinute ?? 0)}'
           </span>
         </div>
-        <div className="min-w-0 flex-1">
-          {/* No truncate: a forced-swap title must never cut the player's name. */}
-          <h2 className="text-base font-bold font-headline tracking-tight text-on-surface uppercase text-center leading-snug">
-            {titleText}
-          </h2>
-          {/* Countdown lives ONLY in the BottomBar next to the confirm
-           * button — a single pulsing element where the urgency matters. */}
-        </div>
+
         {/* Two-tap confirm: destructive action wipes all planned subs. */}
         {isHalftime && confirmedSubs.length > 0 && (
           <GhostButton
@@ -285,189 +294,105 @@ export function IntervencaoView({
         )}
       </div>
 
-      {/* ── 2 columns: Chronology | Subs/Adversário ────────────── */}
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
-        {/* ═══ Mobile: mini chronology (collapsible strip — fechada por
-         * defeito para dar altura às listas de jogadores) ═══ */}
-        <div className="flex md:hidden flex-col shrink-0 border-b border-outline-variant/20 bg-surface-container/50">
-          <button
-            onClick={() => setMobileChronoOpen((v) => !v)}
-            className="flex items-center justify-between w-full px-3 py-2 text-left"
-          >
-            <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70">
-              <span className="material-symbols-outlined text-[14px] leading-none">
-                schedule
-              </span>
-              Cronologia · {visibleEvts.length}
-            </span>
-            <span
-              className={`material-symbols-outlined text-[16px] text-on-surface-variant/50 transition-transform ${mobileChronoOpen ? "rotate-180" : ""}`}
-            >
-              expand_more
-            </span>
-          </button>
-          {mobileChronoOpen && (
-            <div className="px-3 pb-2 space-y-2">
-              <PossessionBar
-                homePossession={fixture.homePossession}
-                awayPossession={fixture.awayPossession}
-                homeColor={hInfo?.color_primary}
-                awayColor={aInfo?.color_primary}
-                compact
-              />
-              {/* Full list — the container scrolls. Was: slice(-4) hid older
-               * events with no indication more existed. */}
-              <div className="max-h-36 overflow-y-auto space-y-1.5">
-                <EventList events={visibleEvts} />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ═══ LEFT: Chronology (desktop only) ═══ */}
-        {/* Collapsible: user can hide chronology to cut cognitive load and
-         * give the subs panel the full width while deciding. */}
-        <div className={`hidden md:flex flex-col min-h-0 overflow-hidden border-r border-outline-variant/20 shrink-0 transition-[width] ${chronoOpen ? "md:w-[280px] lg:w-[320px]" : "md:w-14"}`}>
-          <button
-            onClick={() => setChronoOpen((v) => !v)}
-            aria-label={chronoOpen ? "Recolher cronologia" : "Expandir cronologia"}
-            className="shrink-0 px-5 py-4 flex items-center justify-between gap-2 bg-surface-container-high/50 border-b border-outline-variant/15 hover:bg-surface-container-high"
-          >
-            {chronoOpen ? (
-              <>
-                <h2 className="text-base font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0 shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
-                  Cronologia
-                </h2>
-                <span className="material-symbols-outlined text-[16px] text-on-surface-variant/50">
-                  chevron_left
-                </span>
-              </>
-            ) : (
-              <span className="material-symbols-outlined text-[18px] text-on-surface-variant/60 mx-auto">
-                schedule
-              </span>
-            )}
-          </button>
-          {chronoOpen && (
-            <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
-              <PossessionBar
-                homePossession={fixture.homePossession}
-                awayPossession={fixture.awayPossession}
-                homeColor={hInfo?.color_primary}
-                awayColor={aInfo?.color_primary}
-                compact
-              />
-              <RefWeatherBar
-                attendance={fixture?.attendance}
-                referee={ref}
-                weatherEvent={weatherEvent}
-                className="text-[10px]"
-              />
-              <EventList events={visibleEvts} />
-            </div>
-          )}
-        </div>
-
-        {/* ═══ RIGHT: Subs / Adversário ═══ */}
-        <div className="flex flex-col min-h-0 overflow-hidden flex-1">
-          {/* Tab toggle — pill style.
-           * Loosened from `p-1 gap-1` (very cramped) to `p-1.5 gap-2`.
-           * Buttons bumped from `text-[11px]` / `py-2` / `font-black` to
-           * `text-xs` / `py-2.5` / `font-bold` — they read as captions,
-           * not actions, with the old sizing. */}
-          {/* Tab toggle hidden during forced swaps — opponent scouting is
-           * noise while the auto-substitution countdown runs. */}
-          {!isForcedSwap && (
-            <div className="shrink-0 px-4 py-2 bg-surface-container-high/50 border-b border-outline-variant/15">
-              <div className="flex rounded-md bg-surface-container p-1.5 gap-2">
-                {[
-                  { key: "subs", label: "Substituições" },
-                  { key: "adversario", label: "Adversário" },
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setCenterTab(tab.key)}
-                    className={`flex-1 min-w-0 py-2.5 text-xs font-bold uppercase tracking-widest rounded-md transition-all ${
-                      centerTab === tab.key
-                        ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
-                        : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <AnimatePresence mode="wait" initial={false}>
-            {activeCenterTab === "subs" ? (
-              <motion.div
-                key="subs"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-                className="flex flex-col flex-1 min-h-0 overflow-hidden"
+      {/* ── Main tab row: Cronologia | Substituições | Adversário ── */}
+      {/* Hidden during forced swaps — the other tabs are noise while the
+       * auto-substitution countdown runs. */}
+      {!isForcedSwap && (
+        <div className="shrink-0 px-4 py-2 bg-surface-container-high/50 border-b border-outline-variant/15">
+          <div className="flex rounded-md bg-surface-container p-1.5 gap-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setCenterTab(tab.key)}
+                className={`flex-1 min-w-0 py-2.5 text-xs font-bold uppercase tracking-widest rounded-md transition-all ${
+                  activeCenterTab === tab.key
+                    ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
+                    : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
+                }`}
               >
-                <SubsPanel
-                  isHalftime={isHalftime}
-                  isForcedSwap={isForcedSwap}
-                  isGkRedCard={isGkRedCard}
-                  confirmedSubs={confirmedSubs}
-                  annotatedSquad={annotatedSquad}
-                  tactic={tactic}
-                  onUpdateTactic={onUpdateTactic}
-                  onPitchPlayers={onPitchPlayers}
-                  benchPlayers={benchPlayers}
-                  effectiveOutId={effectiveOutId}
-                  selectedInId={selectedInId}
-                  handlePickOut={handlePickOut}
-                  handlePickIn={handlePickIn}
-                  forceOutPlayer={forceOutPlayer}
-                  subbedOut={subbedOut}
-                  subsMade={subsMade}
-                />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="adversario"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-                className="flex flex-col flex-1 min-h-0 overflow-hidden"
-              >
-                <AdversarioPanel
-                  hasLineups={hasLineups}
-                  oppInfo={oppInfo}
-                  oppFormation={oppFormation}
-                  oppStyleLabel={oppStyleLabel}
-                  oppRows={oppRows}
-                  oppBench={oppBench}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Bottom bar */}
-      <BottomBar
-        effectiveOutId={effectiveOutId}
-        selectedInId={selectedInId}
-        sourcePlayer={playerById(effectiveOutId)}
-        targetPlayer={targetPlayer}
-        isHalftime={isHalftime}
-        isForcedSwap={isForcedSwap}
-        injuryCountdown={injuryCountdown}
-        confirmHint={confirmHint}
-        canConfirmSwap={canConfirmSwap}
-        onResetSub={onResetSub}
-        onConfirmSub={onConfirmSub}
-        onResolveAction={onResolveAction}
-      />
+      {/* ── Active panel ─────────────────────────────────────────── */}
+      <AnimatePresence mode="wait" initial={false}>
+        {activeCenterTab === "cronologia" ? (
+          <motion.div
+            key="cronologia"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="flex flex-col flex-1 min-h-0 overflow-hidden"
+          >
+            <CronologiaPanel
+              visibleEvts={visibleEvts}
+              fixture={fixture}
+              hInfo={hInfo}
+              aInfo={aInfo}
+              referee={referee}
+              weatherEvent={weatherEvent}
+            />
+          </motion.div>
+        ) : activeCenterTab === "adversario" ? (
+          <motion.div
+            key="adversario"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="flex flex-col flex-1 min-h-0 overflow-hidden"
+          >
+            <AdversarioPanel
+              hasLineups={hasLineups}
+              oppInfo={oppInfo}
+              oppFormation={oppFormation}
+              oppStyleLabel={oppStyleLabel}
+              oppRows={oppRows}
+              oppBench={oppBench}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="subs"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="flex flex-col flex-1 min-h-0 overflow-hidden"
+          >
+            <SubsPanel
+              isHalftime={isHalftime}
+              isForcedSwap={isForcedSwap}
+              isGkRedCard={isGkRedCard}
+              confirmedSubs={confirmedSubs}
+              annotatedSquad={annotatedSquad}
+              tactic={tactic}
+              onUpdateTactic={onUpdateTactic}
+              onPitchPlayers={onPitchPlayers}
+              benchPlayers={benchPlayers}
+              effectiveOutId={effectiveOutId}
+              selectedInId={selectedInId}
+              sourcePlayer={sourcePlayer}
+              targetPlayer={targetPlayer}
+              handlePickOut={handlePickOut}
+              handlePickIn={handlePickIn}
+              forceOutPlayer={forceOutPlayer}
+              subbedOut={subbedOut}
+              subsMade={subsMade}
+              injuryCountdown={injuryCountdown}
+              confirmHint={confirmHint}
+              canConfirmSwap={canConfirmSwap}
+              onResetSub={onResetSub}
+              onConfirmSub={onConfirmSub}
+              onResolveAction={onResolveAction}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -492,13 +417,41 @@ function EventList({ events }) {
   );
 }
 
+/* ── Cronologia tab ────────────────────────────────────────────────────── */
+function CronologiaPanel({ visibleEvts, fixture, hInfo, aInfo, referee, weatherEvent }) {
+  return (
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <PossessionBar
+          homePossession={fixture.homePossession}
+          awayPossession={fixture.awayPossession}
+          homeColor={hInfo?.color_primary}
+          awayColor={aInfo?.color_primary}
+          compact
+        />
+        <RefWeatherBar
+          attendance={fixture?.attendance}
+          referee={referee}
+          weatherEvent={weatherEvent}
+          className="text-[10px]"
+        />
+        <EventList events={visibleEvts} />
+      </div>
+    </div>
+  );
+}
+
+/* ── SubsPanel — Titulares | Suplentes | Mentalidade ─────────────────────
+ * Desktop (md+): 3-col grid. Mobile: Mentalidade/controlos empilhados por
+ * cima das listas, com controlo segmentado Em campo/Banco a mostrar UMA
+ * lista de cada vez (dá a altura total à lista ativa). */
 function SubsPanel({
   isHalftime, isForcedSwap, isGkRedCard, tactic, onUpdateTactic, onPitchPlayers, benchPlayers,
-  effectiveOutId, selectedInId, handlePickOut, handlePickIn,
-  forceOutPlayer, subbedOut, subsMade,
+  effectiveOutId, selectedInId, sourcePlayer, targetPlayer,
+  handlePickOut, handlePickIn, forceOutPlayer, subbedOut, subsMade,
+  injuryCountdown, confirmHint, canConfirmSwap, onResetSub, onConfirmSub, onResolveAction,
 }) {
-  // Mobile: mostra UMA lista de cada vez (Em campo / Banco) para dar a altura
-  // total à lista ativa. No desktop mantém-se o grid de 2 colunas.
+  // Mobile: mostra UMA lista de cada vez (Em campo / Banco).
   const [mobileList, setMobileList] = useState("pitch");
 
   // Drag-and-drop swap (HTML5 DnD, no extra lib). `dragFrom` records the
@@ -560,161 +513,407 @@ function SubsPanel({
   const grLockedNoReplacement =
     isHalftime && !grAvailableOnBench && onPitchPlayers.some((p) => p.position === "GR");
 
+  const sharedSwapProps = {
+    isHalftime,
+    isForcedSwap,
+    injuryCountdown,
+    effectiveOutId,
+    sourcePlayer,
+    selectedInId,
+    targetPlayer,
+    confirmHint,
+    canConfirmSwap,
+    onResetSub,
+    onConfirmSub,
+    onResolveAction,
+  };
+
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      {/* Mobile: segmented control Em campo / Banco */}
-      <div className="md:hidden shrink-0 flex items-center gap-2 px-4 py-2 border-b border-outline-variant/15">
-        <div className="flex-1 flex rounded-md bg-surface-container p-1 gap-1">
-          {[
-            { key: "pitch", label: `Em campo (${onPitchPlayers.length})` },
-            { key: "bench", label: `Banco (${benchPlayers.length})` },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setMobileList(tab.key)}
-              className={`flex-1 min-w-0 py-2 text-[11px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                mobileList === tab.key
-                  ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
-                  : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {/* ═══ Desktop: 3-column grid ═══ */}
+      <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(260px,1.05fr)] flex-1 min-h-0 overflow-hidden">
+        <TitularesColumn
+          className="border-r border-outline-variant/15"
+          players={onPitchPlayers}
+          isHalftime={isHalftime}
+          isForcedSwap={isForcedSwap}
+          isGkRedCard={isGkRedCard}
+          forceOutPlayer={forceOutPlayer}
+          subsMade={subsMade}
+          grAvailableOnBench={grAvailableOnBench}
+          grLockedNoReplacement={grLockedNoReplacement}
+          effectiveOutId={effectiveOutId}
+          pickOut={pickOut}
+          dragFrom={dragFrom}
+          dragOverSide={dragOverSide}
+          handleDragStart={handleDragStart}
+          handleDragOver={handleDragOver}
+          handleDropOnPitch={handleDropOnPitch}
+          handleDragEnd={handleDragEnd}
+        />
+        <SuplentesColumn
+          className="border-r border-outline-variant/15"
+          players={benchPlayers}
+          isHalftime={isHalftime}
+          forceOutPlayer={forceOutPlayer}
+          subsMade={subsMade}
+          subbedOut={subbedOut}
+          selectedInId={selectedInId}
+          handlePickIn={handlePickIn}
+          dragFrom={dragFrom}
+          dragOverSide={dragOverSide}
+          handleDragStart={handleDragStart}
+          handleDragOver={handleDragOver}
+          handleDropOnBench={handleDropOnBench}
+          handleDragEnd={handleDragEnd}
+        />
+        <MentalidadeColumn
+          isHalftime={isHalftime}
+          subsMade={subsMade}
+          tactic={tactic}
+          onUpdateTactic={onUpdateTactic}
+          swapProps={sharedSwapProps}
+        />
       </div>
-      {/* Tactics (halftime only) + contador de substituições */}
-      {isHalftime && (
-        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 px-4 py-2.5 border-b border-outline-variant/15">
-          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-            Mentalidade
-          </span>
-          <TacticsButtons className="w-full md:flex-1" value={tactic.style} onChange={onUpdateTactic} />
-          <div
-            className="shrink-0 flex items-center gap-1.5"
-            title={`${subsMade} de ${MAX_MATCH_SUBS} substituições usadas`}
-          >
-            <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
-              Subs
-            </span>
-            {Array.from({ length: MAX_MATCH_SUBS }, (_, i) => (
-              <span
-                key={i}
-                className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                  i < subsMade ? "bg-emerald-400" : "bg-outline-variant/40"
+
+      {/* ═══ Mobile: Mentalidade em cima, listas abaixo ═══ */}
+      <div className="flex md:hidden flex-1 min-h-0 overflow-hidden flex-col">
+        {/* Mentalidade / swap block — empilhado, sem height fixo. */}
+        <div className="shrink-0 px-4 py-3 border-b border-outline-variant/15 bg-surface-container-high/30 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">
+              Mentalidade
+            </h3>
+            {isHalftime && <SubsCounter subsMade={subsMade} />}
+          </div>
+          {isHalftime && (
+            <TacticsButtons className="w-full" value={tactic.style} onChange={onUpdateTactic} />
+          )}
+          <SwapControls {...sharedSwapProps} />
+        </div>
+
+        {/* Segmented Em campo / Banco */}
+        <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-outline-variant/15">
+          <div className="flex-1 flex rounded-md bg-surface-container p-1 gap-1">
+            {[
+              { key: "pitch", label: `Em campo (${onPitchPlayers.length})` },
+              { key: "bench", label: `Banco (${benchPlayers.length})` },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setMobileList(tab.key)}
+                className={`flex-1 min-w-0 py-2 text-[11px] font-bold uppercase tracking-widest rounded-md transition-all ${
+                  mobileList === tab.key
+                    ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
+                    : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
                 }`}
-              />
+              >
+                {tab.label}
+              </button>
             ))}
-            <span className="text-[10px] font-black tabular-nums text-on-surface-variant ml-0.5">
-              {subsMade}/{MAX_MATCH_SUBS}
-            </span>
           </div>
         </div>
+
+        {/* Active list */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {mobileList === "pitch" ? (
+            <TitularesColumn
+              className=""
+              players={onPitchPlayers}
+              isHalftime={isHalftime}
+              isForcedSwap={isForcedSwap}
+              isGkRedCard={isGkRedCard}
+              forceOutPlayer={forceOutPlayer}
+              subsMade={subsMade}
+              grAvailableOnBench={grAvailableOnBench}
+              grLockedNoReplacement={grLockedNoReplacement}
+              effectiveOutId={effectiveOutId}
+              pickOut={pickOut}
+              dragFrom={dragFrom}
+              dragOverSide={dragOverSide}
+              handleDragStart={handleDragStart}
+              handleDragOver={handleDragOver}
+              handleDropOnPitch={handleDropOnPitch}
+              handleDragEnd={handleDragEnd}
+            />
+          ) : (
+            <SuplentesColumn
+              className=""
+              players={benchPlayers}
+              isHalftime={isHalftime}
+              forceOutPlayer={forceOutPlayer}
+              subsMade={subsMade}
+              subbedOut={subbedOut}
+              selectedInId={selectedInId}
+              handlePickIn={handlePickIn}
+              dragFrom={dragFrom}
+              dragOverSide={dragOverSide}
+              handleDragStart={handleDragStart}
+              handleDragOver={handleDragOver}
+              handleDropOnBench={handleDropOnBench}
+              handleDragEnd={handleDragEnd}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Subs counter (halftime) ───────────────────────────────────────────── */
+function SubsCounter({ subsMade }) {
+  return (
+    <div className="shrink-0 flex items-center gap-1.5" title={`${subsMade} de ${MAX_MATCH_SUBS} substituições usadas`}>
+      <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">Subs</span>
+      {Array.from({ length: MAX_MATCH_SUBS }, (_, i) => (
+        <span
+          key={i}
+          className={`w-1.5 h-1.5 rounded-full transition-colors ${
+            i < subsMade ? "bg-emerald-400" : "bg-outline-variant/40"
+          }`}
+        />
+      ))}
+      <span className="text-[10px] font-black tabular-nums text-on-surface-variant ml-0.5">
+        {subsMade}/{MAX_MATCH_SUBS}
+      </span>
+    </div>
+  );
+}
+
+/* ── Titulares column ──────────────────────────────────────────────────── */
+function TitularesColumn({
+  className, players, isHalftime, isForcedSwap, isGkRedCard, forceOutPlayer,
+  subsMade, grAvailableOnBench, grLockedNoReplacement, effectiveOutId, pickOut,
+  dragFrom, dragOverSide, handleDragStart, handleDragOver, handleDropOnPitch, handleDragEnd,
+}) {
+  return (
+    <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden ${className}`}>
+      <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
+        <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+          Titulares
+        </h3>
+        <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
+          {players.length}
+        </span>
+      </div>
+      {grLockedNoReplacement && (
+        <p className="shrink-0 px-4 py-1.5 text-[10px] font-semibold text-amber-300 bg-amber-500/10 border-b border-amber-500/20">
+          Sem GR no banco — o guarda-redes não pode sair
+        </p>
+      )}
+      <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2">
+        {players.map((p) => {
+          const noGrReplacement = isHalftime && p.position === "GR" && !grAvailableOnBench;
+          const isLockedForced =
+            isForcedSwap &&
+            !isGkRedCard &&
+            !!forceOutPlayer &&
+            p.id !== forceOutPlayer.id;
+          const disabled =
+            noGrReplacement ||
+            isLockedForced ||
+            (isHalftime && subsMade >= MAX_MATCH_SUBS);
+          const selected = effectiveOutId === p.id;
+
+          return (
+            <MatchPlayerCard
+              key={p.id}
+              player={p}
+              posStyle={getPosStyle(p.position)}
+              selected={selected}
+              disabled={disabled}
+              selectable={!disabled}
+              onPick={() => pickOut(p)}
+              swapIndicator={isHalftime}
+              forcedOut={isForcedSwap && !!forceOutPlayer && p.id === forceOutPlayer.id}
+              draggable={!disabled}
+              onDragStart={handleDragStart(p, "pitch")}
+              onDragOver={handleDragOver("pitch")}
+              onDragDrop={handleDropOnPitch(p)}
+              onDragEnd={handleDragEnd}
+              dragOver={dragOverSide === "pitch" && dragFrom?.side === "bench"}
+            />
+          );
+        })}
+        {players.length === 0 && (
+          <p className="text-center text-on-surface-variant/60 text-xs font-medium py-6">
+            Sem opções em campo
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Suplentes column ──────────────────────────────────────────────────── */
+function SuplentesColumn({
+  className, players, isHalftime, forceOutPlayer, subsMade, subbedOut, selectedInId,
+  handlePickIn, dragFrom, dragOverSide, handleDragStart, handleDragOver, handleDropOnBench, handleDragEnd,
+}) {
+  return (
+    <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden ${className}`}>
+      <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
+        <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+          Suplentes
+        </h3>
+        <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
+          {players.length}
+        </span>
+      </div>
+      <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2">
+        {players.map((p) => {
+          const alreadyUsed = isHalftime && subbedOut.includes(p.id);
+          const positionMismatch = !!forceOutPlayer && (forceOutPlayer.position === "GR") !== (p.position === "GR");
+          const disabled = alreadyUsed || positionMismatch || (isHalftime && subsMade >= MAX_MATCH_SUBS);
+          const selected = selectedInId === p.id;
+
+          return (
+            <MatchPlayerCard
+              key={p.id}
+              player={p}
+              posStyle={getPosStyle(p.position)}
+              selected={selected}
+              disabled={disabled}
+              selectable={!disabled}
+              onPick={() => handlePickIn(p)}
+              draggable={!disabled}
+              onDragStart={handleDragStart(p, "bench")}
+              onDragOver={handleDragOver("bench")}
+              onDragDrop={handleDropOnBench(p)}
+              onDragEnd={handleDragEnd}
+              dragOver={dragOverSide === "bench" && dragFrom?.side === "pitch"}
+            />
+          );
+        })}
+        {players.length === 0 && (
+          <p className="text-center text-on-surface-variant/60 text-xs font-medium py-6">
+            Sem suplentes disponíveis
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Mentalidade column (desktop) ──────────────────────────────────────── */
+function MentalidadeColumn({ isHalftime, subsMade, tactic, onUpdateTactic, swapProps }) {
+  return (
+    <div className="flex flex-col min-h-0 min-w-0 overflow-hidden bg-surface-container-high/30">
+      <div className="shrink-0 px-4 py-3 flex items-center justify-between gap-2 bg-surface-container-high/50 border-b border-outline-variant/15">
+        <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">
+          Mentalidade
+        </h3>
+        {isHalftime && <SubsCounter subsMade={subsMade} />}
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {isHalftime && (
+          <div className="space-y-2">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
+              Estilo de jogo
+            </span>
+            <TacticsButtons className="w-full" value={tactic.style} onChange={onUpdateTactic} />
+          </div>
+        )}
+        <SwapControls {...swapProps} />
+      </div>
+    </div>
+  );
+}
+
+/* ── SwapControls — Sai → Entra + Limpar/Substituir + hint + countdown ───
+ * Shared between the desktop Mentalidade column and the mobile stacked
+ * block. Mirrors the confirm branching: halftime (onConfirmSub) vs action
+ * (onResolveAction). */
+function SwapControls({
+  isHalftime, isForcedSwap, injuryCountdown,
+  effectiveOutId, sourcePlayer, selectedInId, targetPlayer,
+  confirmHint, canConfirmSwap, onResetSub, onConfirmSub, onResolveAction,
+}) {
+  // Local "resolving" state gives immediate feedback on click in action mode
+  // (was: button fired and the user got no signal until the parent reacted).
+  const [resolving, setResolving] = useState(false);
+  // Halftime mirror: the confirm button is never unmounted, so feedback is a
+  // brief transient state that auto-disarms instead of getting stuck.
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleConfirmHalftime = () => {
+    setSubmitting(true);
+    onConfirmSub();
+    window.setTimeout(() => setSubmitting(false), 900);
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Forced-swap countdown — a single pulsing element where urgency matters. */}
+      {isForcedSwap && injuryCountdown !== null && (
+        <>
+          {/* One-time screen-reader announcement: the ticking number is
+           * aria-hidden to avoid spamming the live region every second. */}
+          <span role="status" className="sr-only">
+            Substituição automática iminente — escolhe o substituto.
+          </span>
+          <span
+            aria-hidden="true"
+            className="block text-amber-300 font-black text-xs tabular-nums animate-pulse motion-reduce:animate-none"
+          >
+            Auto em {injuryCountdown}s
+          </span>
+        </>
       )}
 
-      <div className="flex-1 flex flex-col md:grid md:grid-cols-2 md:auto-rows-fr min-h-0 overflow-hidden">
-        {/* On-pitch column */}
-        <div className={`${mobileList === "bench" ? "hidden" : "flex"} md:flex flex-1 md:flex-none min-w-0 flex-col min-h-0 overflow-hidden`}>
-          <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
-            <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-              Titulares
-            </h3>
-            <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
-              {onPitchPlayers.length}
-            </span>
-          </div>
-          {grLockedNoReplacement && (
-            <p className="shrink-0 px-4 py-1.5 text-[10px] font-semibold text-amber-300 bg-amber-500/10 border-b border-amber-500/20">
-              Sem GR no banco — o guarda-redes não pode sair
-            </p>
-          )}
-          <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2">
-            {onPitchPlayers.map((p) => {
-              const noGrReplacement = isHalftime && p.position === "GR" && !grAvailableOnBench;
-              const isLockedForced =
-                isForcedSwap &&
-                !isGkRedCard &&
-                !!forceOutPlayer &&
-                p.id !== forceOutPlayer.id;
-              const disabled =
-                noGrReplacement ||
-                isLockedForced ||
-                (isHalftime && subsMade >= MAX_MATCH_SUBS);
-              const selected = effectiveOutId === p.id;
-
-              return (
-                <MatchPlayerCard
-                  key={p.id}
-                  player={p}
-                  posStyle={getPosStyle(p.position)}
-                  selected={selected}
-                  disabled={disabled}
-                  selectable={!disabled}
-                  onPick={() => pickOut(p)}
-                  swapIndicator={isHalftime}
-                  forcedOut={isForcedSwap && !!forceOutPlayer && p.id === forceOutPlayer.id}
-                  draggable={!disabled}
-                  onDragStart={handleDragStart(p, "pitch")}
-                  onDragOver={handleDragOver("pitch")}
-                  onDragDrop={handleDropOnPitch(p)}
-                  onDragEnd={handleDragEnd}
-                  dragOver={dragOverSide === "pitch" && dragFrom?.side === "bench"}
-                />
-              );
-            })}
-            {onPitchPlayers.length === 0 && (
-              <p className="text-center text-on-surface-variant/60 text-xs font-medium py-6">
-                Sem opções em campo
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Bench column */}
-        <div className={`${mobileList === "pitch" ? "hidden" : "flex"} md:flex flex-1 md:flex-none min-w-0 flex-col min-h-0 overflow-hidden border-t md:border-t-0 md:border-l border-outline-variant/15`}>
-          <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
-            <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
-              Suplentes
-            </h3>
-            <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
-              {benchPlayers.length}
-            </span>
-          </div>
-          <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2">
-            {benchPlayers.map((p) => {
-              const alreadyUsed = isHalftime && subbedOut.includes(p.id);
-              const positionMismatch = !!forceOutPlayer && (forceOutPlayer.position === "GR") !== (p.position === "GR");
-              const disabled = alreadyUsed || positionMismatch || (isHalftime && subsMade >= MAX_MATCH_SUBS);
-              const selected = selectedInId === p.id;
-
-              return (
-                <MatchPlayerCard
-                  key={p.id}
-                  player={p}
-                  posStyle={getPosStyle(p.position)}
-                  selected={selected}
-                  disabled={disabled}
-                  selectable={!disabled}
-                  onPick={() => handlePickIn(p)}
-                  draggable={!disabled}
-                  onDragStart={handleDragStart(p, "bench")}
-                  onDragOver={handleDragOver("bench")}
-                  onDragDrop={handleDropOnBench(p)}
-                  onDragEnd={handleDragEnd}
-                  dragOver={dragOverSide === "bench" && dragFrom?.side === "pitch"}
-                />
-              );
-            })}
-            {benchPlayers.length === 0 && (
-              <p className="text-center text-on-surface-variant/60 text-xs font-medium py-6">
-                Sem suplentes disponíveis
-              </p>
-            )}
-          </div>
-        </div>
+      {/* The Sai/Entra chain — two grouped clusters so the eye can scan
+       * "[who's leaving] → [who's coming in]". */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto_minmax(0,1fr)] items-center gap-2 min-w-0">
+        <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">Sai</span>
+        <span className="bg-rose-950/80 text-rose-200 border border-rose-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0">
+          {effectiveOutId ? sourcePlayer?.name || "?" : "—"}
+        </span>
+        <MatchIcon name="chevron-right" className="h-4 w-4 text-on-surface-variant/60 shrink-0" />
+        <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">Entra</span>
+        <span className="bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0">
+          {selectedInId ? targetPlayer?.name || "?" : "—"}
+        </span>
       </div>
+
+      {/* Why the confirm button is disabled — never leave it silent. */}
+      {!canConfirmSwap && confirmHint && (
+        <p className="text-[11px] font-semibold text-amber-300/90">{confirmHint}</p>
+      )}
+
+      {/* Action buttons */}
+      {isHalftime ? (
+        <div className="flex items-center gap-2">
+          <GhostButton
+            onClick={onResetSub}
+            icon={<MatchIcon name="reset" className="h-3.5 w-3.5" />}
+            aria-label="Limpar seleção"
+          >
+            Limpar
+          </GhostButton>
+          <PrimaryButton
+            onClick={handleConfirmHalftime}
+            disabled={!canConfirmSwap || submitting}
+            tone="emerald"
+            icon={<MatchIcon name="confirm" className="h-4 w-4" />}
+          >
+            {submitting ? "A substituir…" : "Substituir"}
+          </PrimaryButton>
+        </div>
+      ) : (
+        <PrimaryButton
+          disabled={!canConfirmSwap || resolving}
+          onClick={() => {
+            setResolving(true);
+            onResolveAction({ playerOut: effectiveOutId, playerIn: selectedInId });
+          }}
+          tone="indigo"
+          icon={<MatchIcon name="confirm" className="h-4 w-4" />}
+        >
+          {resolving ? "A substituir…" : "Substituir"}
+        </PrimaryButton>
+      )}
     </div>
   );
 }
@@ -787,102 +986,6 @@ function EmptyState({ icon, message }) {
     <div className="rounded-md border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
       <span className="text-3xl text-on-surface-variant/40">{icon}</span>
       <p className="text-on-surface-variant/80 text-xs font-medium text-center px-4">{message}</p>
-    </div>
-  );
-}
-
-/* BottomBar — restructured into two grouped clusters separated by a
- * vertical divider so the eye can scan "[who's leaving] → [who's coming in]"
- * and "[reset] [confirm]" as two distinct action groups. Was: 6+ siblings
- * flat in one row at gap-2/gap-3, with "Anular todas" buried BELOW the bar. */
-function BottomBar({ effectiveOutId, selectedInId, sourcePlayer, targetPlayer, isHalftime, isForcedSwap, injuryCountdown, confirmHint, canConfirmSwap, onResetSub, onConfirmSub, onResolveAction }) {
-  // Local "resolving" state gives immediate feedback on click in action mode
-  // (was: button fired and the user got no signal until the parent reacted).
-  const [resolving, setResolving] = useState(false);
-  // Halftime mirror: the confirm button is never unmounted, so feedback is a
-  // brief transient state that auto-disarms instead of getting stuck.
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleConfirmHalftime = () => {
-    setSubmitting(true);
-    onConfirmSub();
-    window.setTimeout(() => setSubmitting(false), 900);
-  };
-  return (
-    <div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high px-4 md:px-5 py-3">
-      <div className="flex flex-col md:flex-row md:items-center gap-4 min-w-0">
-        {/* Cluster A: the Sai/Entra chain. */}
-        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto_minmax(0,1fr)] items-center gap-2 min-w-0 md:flex-1">
-          <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">Sai</span>
-          <span className="bg-rose-950/80 text-rose-200 border border-rose-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0">
-            {effectiveOutId ? sourcePlayer?.name || "?" : "—"}
-          </span>
-          <MatchIcon name="chevron-right" className="h-4 w-4 text-on-surface-variant/60 shrink-0" />
-          <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">Entra</span>
-          <span className="bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0">
-            {selectedInId ? targetPlayer?.name || "?" : "—"}
-          </span>
-        </div>
-
-        {/* Vertical divider between clusters on desktop. */}
-        <div className="hidden md:block w-px h-8 bg-outline-variant/20 shrink-0" />
-
-        {/* Cluster B: Reset + Confirm buttons. Countdown sits next to the
-         * action so urgency is visible where the user must click. */}
-        <div className="flex items-center gap-2 shrink-0 md:ml-auto">
-          {isForcedSwap && injuryCountdown !== null && (
-            <>
-              {/* One-time screen-reader announcement: the ticking number is
-               * aria-hidden to avoid spamming the live region every second. */}
-              <span role="status" className="sr-only">
-                Substituição automática iminente — escolhe o substituto.
-              </span>
-              {/* motion-reduce: pulsing is a vestibular trigger. */}
-              <span
-                aria-hidden="true"
-                className="shrink-0 text-amber-300 font-black text-xs tabular-nums animate-pulse motion-reduce:animate-none"
-              >
-                Auto em {injuryCountdown}s
-              </span>
-            </>
-          )}
-          {isHalftime ? (
-            <>
-              <GhostButton
-                onClick={onResetSub}
-                icon={<MatchIcon name="reset" className="h-3.5 w-3.5" />}
-                aria-label="Limpar seleção"
-              >
-                Limpar
-              </GhostButton>
-              <PrimaryButton
-                onClick={handleConfirmHalftime}
-                disabled={!canConfirmSwap || submitting}
-                tone="emerald"
-                icon={<MatchIcon name="confirm" className="h-4 w-4" />}
-              >
-                {submitting ? "A substituir…" : "Substituir"}
-              </PrimaryButton>
-            </>
-          ) : (
-            <PrimaryButton
-              disabled={!canConfirmSwap || resolving}
-              onClick={() => {
-                setResolving(true);
-                onResolveAction({ playerOut: effectiveOutId, playerIn: selectedInId });
-              }}
-              tone="indigo"
-              icon={<MatchIcon name="confirm" className="h-4 w-4" />}
-            >
-              {resolving ? "A substituir…" : "Substituir"}
-            </PrimaryButton>
-          )}
-        </div>
-      </div>
-      {/* Why the confirm button is disabled — never leave it silent. */}
-      {!canConfirmSwap && confirmHint && (
-        <p className="mt-2 text-[11px] font-semibold text-amber-300/90">{confirmHint}</p>
-      )}
     </div>
   );
 }
