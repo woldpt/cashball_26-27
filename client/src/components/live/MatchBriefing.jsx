@@ -242,40 +242,43 @@ function NextMatchCard({ nextMatchSummary, teamInfo, onOpenTeamSquad }) {
 
       {/* Corpo */}
       <div className="flex-1 px-4 py-3 lg:py-4 flex flex-col gap-2.5 lg:gap-3 lg:justify-evenly">
-        {/* Hero VS */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex flex-col items-center gap-1 min-w-0 flex-1">
-            <TeamCrest team={teamInfo ?? { name: myName }} size="md" isMine />
-            <button
-              type="button"
-              onClick={() => onOpenTeamSquad?.(teamInfo ?? myTeam)}
-              className="text-xs font-black text-white truncate max-w-full hover:text-emerald-400 hover:underline transition-colors"
-              title={`Ver plantel de ${myName}`}
-            >
-              {myName}
-            </button>
-            <span className="text-[9px] text-gray-600 font-bold">
-              {s.team?.position ? `${s.team.position}º` : "—"}
-            </span>
-          </div>
-          <span className="shrink-0 text-[10px] font-black text-gray-600 px-2 py-1 rounded-full border border-[#222] bg-[#161616]">
-            VS
-          </span>
-          <div className="flex flex-col items-center gap-1 min-w-0 flex-1">
-            <TeamCrest team={opp} size="md" />
-            <button
-              type="button"
-              onClick={() => onOpenTeamSquad?.(opp)}
-              className="text-xs font-black text-white truncate max-w-full hover:text-emerald-400 hover:underline transition-colors"
-              title={`Ver plantel de ${opp.name}`}
-            >
-              {opp.name}
-            </button>
-            <span className="text-[9px] text-gray-600 font-bold">
-              {opp.position ? `${opp.position}º` : "—"}
-            </span>
-          </div>
-        </div>
+        {/* Hero VS — equipa do utilizador à esquerda em casa, à direita fora */}
+        {(() => {
+          const slots = isHome
+            ? [
+                { team: teamInfo ?? myTeam, name: myName, isMine: true },
+                { team: opp, name: opp.name, isMine: false },
+              ]
+            : [
+                { team: opp, name: opp.name, isMine: false },
+                { team: teamInfo ?? myTeam, name: myName, isMine: true },
+              ];
+          const renderSlot = (slot) => (
+            <div key={slot.name} className="flex flex-col items-center gap-1 min-w-0 flex-1">
+              <TeamCrest team={slot.team} size="md" isMine={slot.isMine} />
+              <button
+                type="button"
+                onClick={() => onOpenTeamSquad?.(slot.team)}
+                className="text-xs font-black text-white truncate max-w-full hover:text-emerald-400 hover:underline transition-colors"
+                title={`Ver plantel de ${slot.name}`}
+              >
+                {slot.name}
+              </button>
+              <span className="text-[9px] text-gray-600 font-bold">
+                {slot.team?.position ? `${slot.team.position}º` : "—"}
+              </span>
+            </div>
+          );
+          return (
+            <div className="flex items-center justify-between gap-2">
+              {renderSlot(slots[0])}
+              <span className="shrink-0 text-[10px] font-black text-gray-600 px-2 py-1 rounded-full border border-[#222] bg-[#161616]">
+                VS
+              </span>
+              {renderSlot(slots[1])}
+            </div>
+          );
+        })()}
 
         {/* Grelha de stats comparativos */}
         <div className="flex items-center justify-between">
@@ -291,21 +294,33 @@ function NextMatchCard({ nextMatchSummary, teamInfo, onOpenTeamSquad }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 lg:flex-1 lg:content-center">
           <CompareStat
             label="Posição"
-            mine={s.team?.position ? `${s.team.position}º` : "—"}
-            theirs={opp.position ? `${opp.position}º` : "—"}
+            mine={isHome ? (s.team?.position ? `${s.team.position}º` : "—") : (opp.position ? `${opp.position}º` : "—")}
+            theirs={isHome ? (opp.position ? `${opp.position}º` : "—") : (s.team?.position ? `${s.team.position}º` : "—")}
           />
-          <CompareStat label="Pontos" mine={myPts} theirs={opp.points ?? 0} />
-          <CompareStat label="GM" mine={myGF} theirs={opp.goalsFor ?? 0} />
-          <CompareStat label="GS" mine={myGA} theirs={opp.goalsAgainst ?? 0} />
+          <CompareStat
+            label="Pontos"
+            mine={isHome ? myPts : (opp.points ?? 0)}
+            theirs={isHome ? (opp.points ?? 0) : myPts}
+          />
+          <CompareStat
+            label="GM"
+            mine={isHome ? myGF : (opp.goalsFor ?? 0)}
+            theirs={isHome ? (opp.goalsFor ?? 0) : myGF}
+          />
+          <CompareStat
+            label="GS"
+            mine={isHome ? myGA : (opp.goalsAgainst ?? 0)}
+            theirs={isHome ? (opp.goalsAgainst ?? 0) : myGA}
+          />
           <CompareStat
             label="Moral"
-            mine={myMorale}
-            theirs={oppMorale}
+            mine={isHome ? myMorale : oppMorale}
+            theirs={isHome ? oppMorale : myMorale}
           />
           <CompareStat
             label="Qualidade"
-            mine={myAvg ?? "—"}
-            theirs={oppAvg ?? "—"}
+            mine={isHome ? (myAvg ?? "—") : (oppAvg ?? "—")}
+            theirs={isHome ? (oppAvg ?? "—") : (myAvg ?? "—")}
           />
         </div>
 
@@ -336,17 +351,27 @@ function NextMatchCard({ nextMatchSummary, teamInfo, onOpenTeamSquad }) {
 
           <MetaTile label="Registo">
             <div className="flex items-center justify-between gap-1.5">
-              <RecordText
-                v={teamInfo?.wins ?? myTeam.wins ?? 0}
-                e={teamInfo?.draws ?? myTeam.draws ?? 0}
-                d={teamInfo?.losses ?? myTeam.losses ?? 0}
-              />
-              <span className="w-px h-4 bg-[#222]" />
-              <RecordText
-                v={opp.wins ?? 0}
-                e={opp.draws ?? 0}
-                d={opp.losses ?? 0}
-              />
+              {isHome ? (
+                <>
+                  <RecordText
+                    v={teamInfo?.wins ?? myTeam.wins ?? 0}
+                    e={teamInfo?.draws ?? myTeam.draws ?? 0}
+                    d={teamInfo?.losses ?? myTeam.losses ?? 0}
+                  />
+                  <span className="w-px h-4 bg-[#222]" />
+                  <RecordText v={opp.wins ?? 0} e={opp.draws ?? 0} d={opp.losses ?? 0} />
+                </>
+              ) : (
+                <>
+                  <RecordText v={opp.wins ?? 0} e={opp.draws ?? 0} d={opp.losses ?? 0} />
+                  <span className="w-px h-4 bg-[#222]" />
+                  <RecordText
+                    v={teamInfo?.wins ?? myTeam.wins ?? 0}
+                    e={teamInfo?.draws ?? myTeam.draws ?? 0}
+                    d={teamInfo?.losses ?? myTeam.losses ?? 0}
+                  />
+                </>
+              )}
             </div>
           </MetaTile>
 
