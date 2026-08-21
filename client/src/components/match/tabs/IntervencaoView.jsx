@@ -176,16 +176,6 @@ export function IntervencaoView({
 
   /* ── Chronology events ────────────────────────────────────────── */
   const evts = fixture?.events || [];
-  const countGoals = (team) =>
-    evts.filter(
-      (e) =>
-        (e.type === "goal" ||
-          e.type === "penalty_goal" ||
-          e.type === "var_goal_pending") &&
-        e.team === team,
-    ).length;
-  const scoreHome = fixture?.finalHomeGoals ?? countGoals("home");
-  const scoreAway = fixture?.finalAwayGoals ?? countGoals("away");
   const weatherEvent = evts.find((e) => e.type === "weather");
   const visibleEvts = filterMatchEvents(evts, liveMinute);
   const referee = fixture.referee;
@@ -233,46 +223,13 @@ export function IntervencaoView({
         background: `radial-gradient(ellipse 70% 40% at 50% 0%, ${hInfo?.color_primary || "#333"}12 0%, transparent 70%), var(--color-surface-container-low)`,
       }}
     >
-      {/* Confirmed subs strip */}
-      <ConfirmedSubsStrip
-        subs={confirmedSubs}
-        annotatedSquad={annotatedSquad}
-        onUndoSub={onUndoSub}
-      />
-
-      {/* Title bar — description left, scoreboard right, reset far right. */}
+      {/* Title bar — description on the left, reset far right. */}
       <div className={`shrink-0 px-4 sm:px-5 py-3 sm:py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme} flex items-center justify-between gap-2 sm:gap-4`}>
         <div className="min-w-0 flex-1">
           {/* No truncate: a forced-swap title must never cut the player's name. */}
           <h2 className="text-base font-bold font-headline tracking-tight text-on-surface uppercase text-left leading-snug">
             {titleText}
           </h2>
-        </div>
-
-        {/* Scoreboard chip — contexto do jogo em todos os modos. Mini-crests
-         * (replacing colour dots) so the user can tell at a glance which team
-         * each number belongs to. */}
-        <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-surface/60 border border-outline-variant/20">
-          <span
-            title={hInfo?.name}
-            className="w-6 h-6 rounded-md flex items-center justify-center font-black text-[9px] tracking-wider leading-none"
-            style={{ background: hInfo?.color_primary || "#6366f1", color: hInfo?.color_secondary || "#fff" }}
-          >
-            {(hInfo?.name || "H").substring(0, 3).toUpperCase()}
-          </span>
-          <span className="text-sm font-black font-headline tabular-nums text-on-surface leading-none">{scoreHome}</span>
-          <span className="text-on-surface-variant/40 text-xs font-black leading-none">:</span>
-          <span className="text-sm font-black font-headline tabular-nums text-on-surface leading-none">{scoreAway}</span>
-          <span
-            title={aInfo?.name}
-            className="w-6 h-6 rounded-md flex items-center justify-center font-black text-[9px] tracking-wider leading-none"
-            style={{ background: aInfo?.color_primary || "#f43f5e", color: aInfo?.color_secondary || "#fff" }}
-          >
-            {(aInfo?.name || "A").substring(0, 3).toUpperCase()}
-          </span>
-          <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70 tabular-nums ml-1.5 leading-none">
-            {(liveMinute ?? 0)}'
-          </span>
         </div>
 
         {/* Two-tap confirm: destructive action wipes all planned subs. */}
@@ -389,6 +346,9 @@ export function IntervencaoView({
               onResetSub={onResetSub}
               onConfirmSub={onConfirmSub}
               onResolveAction={onResolveAction}
+              confirmedSubs={confirmedSubs}
+              annotatedSquad={annotatedSquad}
+              onUndoSub={onUndoSub}
             />
           </motion.div>
         )}
@@ -450,6 +410,7 @@ function SubsPanel({
   effectiveOutId, selectedInId, sourcePlayer, targetPlayer,
   handlePickOut, handlePickIn, forceOutPlayer, subbedOut, subsMade,
   injuryCountdown, confirmHint, canConfirmSwap, onResetSub, onConfirmSub, onResolveAction,
+  confirmedSubs, annotatedSquad, onUndoSub,
 }) {
   // Mobile: mostra UMA lista de cada vez (Em campo / Banco).
   const [mobileList, setMobileList] = useState("pitch");
@@ -572,20 +533,30 @@ function SubsPanel({
           subsMade={subsMade}
           tactic={tactic}
           onUpdateTactic={onUpdateTactic}
+          confirmedSubs={confirmedSubs}
+          annotatedSquad={annotatedSquad}
+          onUndoSub={onUndoSub}
           swapProps={sharedSwapProps}
         />
       </div>
 
       {/* ═══ Mobile: Mentalidade em cima, listas abaixo ═══ */}
       <div className="flex md:hidden flex-1 min-h-0 overflow-hidden flex-col">
-        {/* Mentalidade / swap block — empilhado, sem height fixo. */}
+        {/* Substituições e Mentalidade / swap block — empilhado, sem height fixo. */}
         <div className="shrink-0 px-4 py-3 border-b border-outline-variant/15 bg-surface-container-high/30 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">
-              Mentalidade
+              Substituições e Mentalidade
             </h3>
             {isHalftime && <SubsCounter subsMade={subsMade} />}
           </div>
+          {confirmedSubs.length > 0 && (
+            <ConfirmedSubsStrip
+              subs={confirmedSubs}
+              annotatedSquad={annotatedSquad}
+              onUndoSub={onUndoSub}
+            />
+          )}
           {isHalftime && (
             <TacticsButtons className="w-full" value={tactic.style} onChange={onUpdateTactic} />
           )}
@@ -797,17 +768,24 @@ function SuplentesColumn({
   );
 }
 
-/* ── Mentalidade column (desktop) ──────────────────────────────────────── */
-function MentalidadeColumn({ isHalftime, subsMade, tactic, onUpdateTactic, swapProps }) {
+/* ── Substituições e Mentalidade column (desktop) ──────────────────────── */
+function MentalidadeColumn({ isHalftime, subsMade, tactic, onUpdateTactic, swapProps, confirmedSubs, annotatedSquad, onUndoSub }) {
   return (
     <div className="flex flex-col min-h-0 min-w-0 overflow-hidden bg-surface-container-high/30">
       <div className="shrink-0 px-4 py-3 flex items-center justify-between gap-2 bg-surface-container-high/50 border-b border-outline-variant/15">
         <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">
-          Mentalidade
+          Substituições e Mentalidade
         </h3>
         {isHalftime && <SubsCounter subsMade={subsMade} />}
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {confirmedSubs.length > 0 && (
+          <ConfirmedSubsStrip
+            subs={confirmedSubs}
+            annotatedSquad={annotatedSquad}
+            onUndoSub={onUndoSub}
+          />
+        )}
         {isHalftime && (
           <div className="space-y-2">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
