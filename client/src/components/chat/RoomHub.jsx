@@ -260,6 +260,12 @@ export function RoomHub({
                           {coachTeam.name}
                         </p>
                       )}
+                      {/* Estado de readiness: offline / táticas submetidas / a pensar */}
+                      <p
+                        className={`text-[8px] font-bold leading-tight ${status.color}`}
+                      >
+                        {status.label}
+                      </p>
                     </div>
                     {/* Botão kick: só Admin no lobby, não se pode expulsar a si mesmo */}
                     {me.name === roomCreator &&
