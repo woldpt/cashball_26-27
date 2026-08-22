@@ -124,7 +124,7 @@ export function FinancesTab({
         </SummaryWidget>
         {/* Saldo previsto */}
         {(() => {
-          const remainingJornadas = 14 - completedJornada;
+          const remainingJornadas = Math.max(0, 14 - completedJornada);
           const remainingHomeMatches = Math.max(
             0,
             7 - (financeData?.homeMatchesPlayed || 0),
@@ -138,11 +138,14 @@ export function FinancesTab({
             avgTicketRevenue * remainingHomeMatches;
           const projectedSalaries =
             totalWeeklyWage * remainingJornadas;
+          const projectedInterest =
+            loanInterestPerWeek * remainingJornadas;
 
           const projectedEndBudget = Math.round(
             currentBudget +
               projectedTicketRevenue -
-              projectedSalaries,
+              projectedSalaries -
+              projectedInterest,
           );
           return (
             <SummaryWidget
@@ -160,7 +163,7 @@ export function FinancesTab({
               </div>
               <div className="mt-6">
                 <p className="text-[10px] text-on-surface-variant uppercase mb-1">
-                  Bilheteiras previstas - salários (
+                  Bilheteiras previstas - salários - juros (
                   {remainingJornadas} jornadas)
                 </p>
               </div>
@@ -397,7 +400,7 @@ export function FinancesTab({
                     Juros Bancários
                   </p>
                   <p className="text-[10px] opacity-40 uppercase">
-                    2,5% da dívida / jornada
+                    1,5% da dívida / jornada
                   </p>
                 </div>
                 <span className="font-headline text-sm font-bold">
@@ -575,7 +578,7 @@ export function FinancesTab({
               </p>
               {loanAmount > 0 && (
                 <p className="text-[10px] text-error font-medium mt-0.5">
-                  JUROS: 2,5% / JORNADA
+                  JUROS: 1,5% / JORNADA
                 </p>
               )}
               <div className="mt-2 h-1.5 w-full bg-surface-bright rounded-full overflow-hidden">
@@ -602,7 +605,7 @@ export function FinancesTab({
                   setGameDialog({
                     mode: "confirm",
                     title: "Pedir Empréstimo de 500.000€",
-                    description: `Juros semanais: ${formatCurrency(Math.round((loanAmount + 500000) * 0.025))}. Dívida total após: ${formatCurrency(loanAmount + 500000)}.`,
+                    description: `Juros semanais: ${formatCurrency(Math.round((loanAmount + 500000) * 0.015))}. Dívida total após: ${formatCurrency(loanAmount + 500000)}.`,
                     confirmLabel: "Confirmar Empréstimo",
                     danger: true,
                     onConfirm: () => socket.emit("takeLoan"),

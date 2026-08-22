@@ -961,7 +961,7 @@ export function GameProvider({
 	);
 	const capacityRevPerGame = (teamInfo?.stadium_capacity || 10000) * 15;
 	const loanAmount = teamInfo?.loan_amount || 0;
-	const loanInterestPerWeek = Math.round(loanAmount * 0.025);
+	const loanInterestPerWeek = Math.round(loanAmount * 0.015);
 	const currentBudget = teamInfo?.budget || 0;
 
 	const filteredMarketPlayers = useMemo(() => {
