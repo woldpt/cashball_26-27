@@ -78,10 +78,19 @@ export function RoomHub({
     };
   }, []);
 
+  // Carregar histórico ao abrir o hub ou ao trocar de sub-tab.
+  // O WaitingCoachesModal só pede histórico no lobby; sem isto, o RoomHub
+  // fica vazio durante o jogo (só mostra mensagens recebidas ao vivo).
+  useEffect(() => {
+    if (!roomHubOpen) return;
+    socket.emit("getChatHistory", { channel: chatSubTab });
+  }, [roomHubOpen, chatSubTab]);
+
   useEffect(() => {
     const onChatMessage = (msg) => {
       if (!msg || msg.coachName === meNameRef.current) return;
-      if (chatOpenRef.current && activeChatTabRef.current === msg.channel) return;
+      if (chatOpenRef.current && activeChatTabRef.current === msg.channel)
+        return;
       const preview =
         msg.message.length > 80 ? msg.message.slice(0, 80) + "…" : msg.message;
       addToast(`${msg.coachName}: ${preview}`);
@@ -122,9 +131,23 @@ export function RoomHub({
   };
 
   const getCoachStatus = (coach) => {
-    if (!coach.online) return { label: "Offline", color: "text-on-surface-variant/40", dotColor: "bg-surface-bright" };
-    if (coach.submitted) return { label: "Vamos! ⚡", color: "text-emerald-400", dotColor: "bg-emerald-400" };
-    return { label: "Queimando neurónios 🧠", color: "text-amber-400", dotColor: "bg-amber-400" };
+    if (!coach.online)
+      return {
+        label: "Offline",
+        color: "text-on-surface-variant/40",
+        dotColor: "bg-surface-bright",
+      };
+    if (coach.submitted)
+      return {
+        label: "Vamos! ⚡",
+        color: "text-emerald-400",
+        dotColor: "bg-emerald-400",
+      };
+    return {
+      label: "Queimando neurónios 🧠",
+      color: "text-amber-400",
+      dotColor: "bg-amber-400",
+    };
   };
 
   if (!me) return null;
@@ -346,15 +369,20 @@ export function RoomHub({
               className="flex-1 overflow-y-auto px-3 py-3 space-y-2"
               style={{ scrollBehavior: "smooth" }}
             >
-              {chatSubTab === "room" && systemMessages.map((sm) => (
-                <div
-                  key={sm.id}
-                  className="text-center text-[10px] italic text-on-surface-variant/50 py-1"
-                >
-                  {sm.text} — <span className="text-[9px]">{formatChatTime(sm.timestamp)}</span>
-                </div>
-              ))}
-              {activeMessages.length === 0 && (chatSubTab !== "room" || systemMessages.length === 0) ? (
+              {chatSubTab === "room" &&
+                systemMessages.map((sm) => (
+                  <div
+                    key={sm.id}
+                    className="text-center text-[10px] italic text-on-surface-variant/50 py-1"
+                  >
+                    {sm.text} —{" "}
+                    <span className="text-[9px]">
+                      {formatChatTime(sm.timestamp)}
+                    </span>
+                  </div>
+                ))}
+              {activeMessages.length === 0 &&
+              (chatSubTab !== "room" || systemMessages.length === 0) ? (
                 <p className="text-center text-on-surface-variant text-xs italic mt-8">
                   {chatSubTab === "room"
                     ? "Nenhuma mensagem nesta sala ainda."
