@@ -550,7 +550,11 @@ export function useSocketListeners(handlers, refs) {
 		);
 		socket.on("playerSearchResults", (data) => {
 			handlers.setPlayerSearchLoading(false);
-			handlers.setPlayerSearchResults(data?.results || []);
+			handlers.setPlayerSearchData({
+				results: data?.results || [],
+				total: data?.total || 0,
+				truncated: !!data?.truncated,
+			});
 		});
 		socket.on("financeData", (data) => handlers.setFinanceData(data));
 		socket.on("stadiumBuilt", ({ teamId }) => {

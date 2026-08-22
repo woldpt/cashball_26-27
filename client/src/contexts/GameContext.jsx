@@ -116,7 +116,11 @@ export function GameProvider({
 	const [selectedTeamSquad, setSelectedTeamSquad] = useState([]);
 	const [selectedTeamLoading, setSelectedTeamLoading] = useState(false);
 	const [transferProposalModal, setTransferProposalModal] = useState(null);
-	const [playerSearchResults, setPlayerSearchResults] = useState([]);
+	const [playerSearchData, setPlayerSearchData] = useState({
+		results: [],
+		total: 0,
+		truncated: false,
+	});
 	const [playerSearchLoading, setPlayerSearchLoading] = useState(false);
 	const [cupBracketData, setCupBracketData] = useState(null);
 	const [calendarData, setCalendarData] = useState(null);
@@ -621,7 +625,7 @@ export function GameProvider({
 			setCoachMarketReport,
 			setAdminUsers,
 			setTransferProposalModal,
-			setPlayerSearchResults,
+			setPlayerSearchData,
 			setPlayerSearchLoading,
 			setMe,
 			setRoomCode,
@@ -1180,8 +1184,8 @@ export function GameProvider({
 		selectedTeamLoading,
 		transferProposalModal,
 		setTransferProposalModal,
-		playerSearchResults,
-		setPlayerSearchResults,
+		playerSearchData,
+		setPlayerSearchData,
 		playerSearchLoading,
 		setPlayerSearchLoading,
 		cupBracketData,

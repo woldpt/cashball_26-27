@@ -119,7 +119,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     selectedTeamLoading,
     transferProposalModal,
     setTransferProposalModal,
-    playerSearchResults,
+    playerSearchData,
     playerSearchLoading,
     setPlayerSearchLoading,
     cupBracketData,
@@ -1355,7 +1355,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         players={players}
                         myBudget={currentBudget}
                         matchweekCount={matchweekCount}
-                        playerSearchResults={playerSearchResults}
+                        playerSearchData={playerSearchData}
                         playerSearchLoading={playerSearchLoading}
                         setPlayerSearchLoading={setPlayerSearchLoading}
                         setTransferProposalModal={setTransferProposalModal}

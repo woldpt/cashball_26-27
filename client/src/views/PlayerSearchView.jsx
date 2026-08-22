@@ -34,7 +34,7 @@ function inputClass() {
  *   players: Array,
  *   myBudget: number,
  *   matchweekCount: number,
- *   playerSearchResults: Array,
+ *   playerSearchData: { results: Array, total: number, truncated: boolean },
  *   playerSearchLoading: boolean,
  *   setPlayerSearchLoading: function,
  *   setTransferProposalModal: function,
@@ -49,7 +49,7 @@ export function PlayerSearchView({
   players,
   myBudget = 0,
   matchweekCount = 0,
-  playerSearchResults = [],
+  playerSearchData = { results: [], total: 0, truncated: false },
   playerSearchLoading = false,
   setPlayerSearchLoading,
   setTransferProposalModal,
@@ -58,12 +58,20 @@ export function PlayerSearchView({
   openAuctionBid,
   onOpenPlayerHistory,
 }) {
+  const {
+    results: playerSearchResults,
+    total: playerSearchTotal,
+    truncated: playerSearchTruncated,
+  } = playerSearchData;
+
   const [name, setName] = useState("");
   const [position, setPosition] = useState("all");
   const [skillMin, setSkillMin] = useState("");
   const [skillMax, setSkillMax] = useState("");
   const [ageMin, setAgeMin] = useState("");
   const [ageMax, setAgeMax] = useState("");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
   const [division, setDivision] = useState("all");
   const [transferStatus, setTransferStatus] = useState("all");
   const [isStar, setIsStar] = useState(false);
@@ -80,6 +88,8 @@ export function PlayerSearchView({
       skillMax: skillMax === "" ? null : Number(skillMax),
       ageMin: ageMin === "" ? null : Number(ageMin),
       ageMax: ageMax === "" ? null : Number(ageMax),
+      priceMin: priceMin === "" ? null : Number(priceMin),
+      priceMax: priceMax === "" ? null : Number(priceMax),
       division,
       transferStatus,
       isStar,
@@ -262,6 +272,26 @@ export function PlayerSearchView({
                 min="0"
               />
             </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                className={inputClass()}
+                placeholder="Preço mín (€)"
+                value={priceMin}
+                onChange={(e) => setPriceMin(e.target.value)}
+                min="0"
+                title="Preço de aquisição: preço de lista (à venda/leilão) ou cláusula (valor × 1,35) se não listado"
+              />
+              <input
+                type="number"
+                className={inputClass()}
+                placeholder="Preço máx (€)"
+                value={priceMax}
+                onChange={(e) => setPriceMax(e.target.value)}
+                min="0"
+                title="Preço de aquisição: preço de lista (à venda/leilão) ou cláusula (valor × 1,35) se não listado"
+              />
+            </div>
             <select
               className={inputClass()}
               value={transferStatus}
@@ -307,7 +337,7 @@ export function PlayerSearchView({
         title="Resultados"
         meta={
           searched
-            ? `${playerSearchResults.length} jogador${playerSearchResults.length !== 1 ? "es" : ""}`
+            ? `${playerSearchTotal} jogador${playerSearchTotal !== 1 ? "es" : ""}${playerSearchTruncated ? ` (a mostrar ${playerSearchResults.length})` : ""}`
             : "—"
         }
       >

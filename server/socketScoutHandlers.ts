@@ -22,11 +22,22 @@ interface PlayerSearchFilters {
 	skillMax?: number | null;
 	ageMin?: number | null;
 	ageMax?: number | null;
+	priceMin?: number | null;
+	priceMax?: number | null;
 	division?: string;
 	transferStatus?: string;
 	isStar?: boolean;
 	sort?: string;
 }
+
+/**
+ * Effective acquisition price of a player (what the scout page charges):
+ *  - listed (fixed/auction) with a price: transfer_price
+ *  - otherwise: release clause = ROUND(value * 1.35) ("Proposta" price)
+ */
+const ACQUISITION_PRICE_SQL =
+	"CASE WHEN p.transfer_status IN ('fixed', 'auction') AND p.transfer_price > 0 " +
+	"THEN p.transfer_price ELSE CAST(ROUND(p.value * 1.35) AS INTEGER) END";
 
 function toInt(value: unknown): number | null {
 	if (value === null || value === undefined || value === "") return null;
@@ -90,6 +101,18 @@ export function registerScoutSocketHandlers(
 			params.push(ageMax);
 		}
 
+		const priceMin = toInt(f.priceMin);
+		if (priceMin !== null) {
+			where.push(`${ACQUISITION_PRICE_SQL} >= ?`);
+			params.push(priceMin);
+		}
+
+		const priceMax = toInt(f.priceMax);
+		if (priceMax !== null) {
+			where.push(`${ACQUISITION_PRICE_SQL} <= ?`);
+			params.push(priceMax);
+		}
+
 		if (f.division && f.division !== "all") {
 			const div = toInt(f.division);
 			if (div !== null) {
@@ -121,6 +144,17 @@ export function registerScoutSocketHandlers(
 		const whereSql = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
 
 		try {
+			// Total real de correspondências (a LIMIT só aplica-se aos resultados).
+			const [countRow] = await runAll<any>(
+				game.db,
+				`SELECT COUNT(*) AS total
+				 FROM players p
+				 LEFT JOIN teams t ON p.team_id = t.id
+				 ${whereSql}`,
+				params,
+			);
+			const total = Number(countRow?.total ?? 0);
+
 			const rows = await runAll<any>(
 				game.db,
 				`SELECT p.*, t.name AS team_name, t.division, t.color_primary, t.color_secondary
@@ -132,11 +166,12 @@ export function registerScoutSocketHandlers(
 				[...params, SEARCH_LIMIT],
 			);
 
-			const truncated = rows.length >= SEARCH_LIMIT;
+			const results = rows || [];
+			const truncated = total > results.length;
 
 			socket.emit("playerSearchResults", {
-				results: rows || [],
-				total: (rows || []).length,
+				results,
+				total,
 				truncated,
 			});
 		} catch (err) {
