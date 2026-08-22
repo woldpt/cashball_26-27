@@ -161,6 +161,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     backendUrl,
     // Handlers
     addToast,
+    dismissToast,
     handleHalftimeReady,
     handleOpenTeamSquad,
     handleCloseTeamSquad,
@@ -280,17 +281,33 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           </button>
         </div>
       )}
-      {/* Toast notifications */}
-      <div className="fixed top-16 right-4 z-100 flex flex-col gap-2 pointer-events-none">
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            className="bg-surface-container border border-outline-variant/60 text-on-surface text-sm font-bold px-5 py-3 rounded-md shadow-2xl toast-slide-in"
-          >
-            {t.msg}
-          </div>
-        ))}
-      </div>
+        {/* Toast notifications */}
+        <div className="fixed top-16 right-4 z-100 flex flex-col gap-2 pointer-events-none">
+          {toasts.map((t) => (
+            <div
+              key={t.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => dismissToast(t.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") dismissToast(t.id);
+              }}
+              className="bg-surface-container border border-outline-variant/60 text-on-surface text-sm font-bold px-5 py-3 rounded-md shadow-2xl toast-slide-in pointer-events-auto cursor-pointer select-none flex items-center gap-3"
+            >
+              <span className="flex-1">{t.msg}</span>
+              <span
+                className="material-symbols-outlined text-base opacity-50 hover:opacity-100 shrink-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  dismissToast(t.id);
+                }}
+                aria-label="Fechar notificação"
+              >
+                close
+              </span>
+            </div>
+          ))}
+        </div>
       <header
         className="fixed top-0 left-0 right-0 h-14 z-160 flex items-center border-b border-outline-variant/20"
         style={{

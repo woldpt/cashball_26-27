@@ -195,8 +195,12 @@ export function GameProvider({
 		setToasts((prev) => [...prev, { id, msg }]);
 		setTimeout(
 			() => setToasts((prev) => prev.filter((t) => t.id !== id)),
-			4000,
+			6000,
 		);
+	}, []);
+
+	const dismissToast = useCallback((id) => {
+		setToasts((prev) => prev.filter((t) => t.id !== id));
 	}, []);
 
 	// ── Avatar seed fetch ───────────────────────────────────────────────────
@@ -1257,6 +1261,7 @@ export function GameProvider({
 		backendUrl,
 		// Handlers
 		addToast,
+		dismissToast,
 		handleHalftimeReady,
 		handleOpenTeamSquad,
 		handleCloseTeamSquad,
