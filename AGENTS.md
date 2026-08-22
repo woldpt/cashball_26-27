@@ -100,4 +100,5 @@ Nunca instancie helpers diretamente. Use sempre:
 
 ## 🚀 Commit Workflow
 
+- **Commit automático:** após cada alteração de código verificada (checks a passar), criar sempre um commit — ver skill `auto-commit` (`.pi/skills/auto-commit/SKILL.md`). Nunca fazer push sem pedido explícito.
 - Mensagens de commit devem focar no **"porquê"** (ex: `fix: prevent duplicate NPC bids in auctions`) e não apenas no "o quê".
