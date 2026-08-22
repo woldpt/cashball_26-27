@@ -1,6 +1,7 @@
 import {
   DIVISION_NAMES,
   POSITION_TEXT_CLASS,
+  SEASON_CALENDAR,
 } from "../constants/index.js";
 import { generateLeagueFixtures } from "../utils/fixtures.js";
 import { formatCurrency } from "../utils/formatters.js";
@@ -79,79 +80,79 @@ export function TeamSquadView({
       .filter((t) => t.division === selectedTeamDivision)
       .sort((a, b) => a.id - b.id);
 
-    const calEntries = (calendarData?.leagueMatches ?? [])
-      .filter(
-        (m) =>
-          divTeams.some((t) => t.id === m.home_team_id) &&
-          divTeams.some((t) => t.id === m.away_team_id),
-      )
-      .map((m) => ({
-        homeTeamId: m.home_team_id,
-        awayTeamId: m.away_team_id,
-        result: m,
-      }))
-      .filter(
-        (f) =>
-          f.homeTeamId === selectedTeam.id || f.awayTeamId === selectedTeam.id,
-      );
-
-    const futureFixtures = [];
-    for (let mw = curIdx + 1; mw <= 14; mw++) {
-      const fixtures = generateLeagueFixtures(
-        calendarData?.fixtureSeeds?.[selectedTeamDivision] ??
-          divTeams.map((t) => t.id),
-        mw,
-      ).map((f) => ({ ...f, result: null }));
-      const myFixture = fixtures.find(
-        (f) =>
-          f.homeTeamId === selectedTeam.id || f.awayTeamId === selectedTeam.id,
-      );
-      if (myFixture) {
-        futureFixtures.push({
-          homeTeamId: myFixture.homeTeamId,
-          awayTeamId: myFixture.awayTeamId,
-          result: null,
-          matchweek: mw,
-          calendarIndex: mw - 1,
-        });
-      }
-    }
-
-    return [...calEntries, ...futureFixtures].map((fixture) => {
-      const imHome = fixture.homeTeamId === selectedTeam.id;
-      const opponent = teams.find(
-        (t) => t.id === (imHome ? fixture.awayTeamId : fixture.homeTeamId),
-      );
-      const stadiumTeam = imHome ? selectedTeam : opponent;
-      const myScore = fixture.result
-        ? imHome
-          ? fixture.result.home_score
-          : fixture.result.away_score
-        : null;
-      const opScore = fixture.result
-        ? imHome
-          ? fixture.result.away_score
-          : fixture.result.home_score
-        : null;
-      const won = fixture.result
-        ? imHome
-          ? fixture.result.home_score > fixture.result.away_score
-          : fixture.result.away_score > fixture.result.home_score
-        : null;
-      const drew = fixture.result
-        ? fixture.result.home_score === fixture.result.away_score
-        : null;
-      return {
-        fixture,
-        imHome,
-        opponent,
-        stadiumTeam,
-        myScore,
-        opScore,
-        won,
-        drew,
-      };
-    });
+    // calendarIndex é um índice misto (0–18, liga + taça) enquanto matchweek
+    // só avança nas jornadas de liga — o estado tem de vir de
+    // entry.calendarIndex, não de tratar calendarIndex como número de jornada.
+    return SEASON_CALENDAR.filter((entry) => entry.type === "league")
+      .map((entry) => {
+        const status =
+          entry.calendarIndex < curIdx
+            ? "done"
+            : entry.calendarIndex === curIdx
+              ? "current"
+              : "future";
+        const divFixtures =
+          status === "done"
+            ? (calendarData?.leagueMatches ?? [])
+                .filter(
+                  (m) =>
+                    m.matchweek === entry.matchweek &&
+                    divTeams.some((t) => t.id === m.home_team_id) &&
+                    divTeams.some((t) => t.id === m.away_team_id),
+                )
+                .map((m) => ({
+                  homeTeamId: m.home_team_id,
+                  awayTeamId: m.away_team_id,
+                  result: m,
+                }))
+            : generateLeagueFixtures(
+                calendarData?.fixtureSeeds?.[selectedTeamDivision] ??
+                  divTeams.map((t) => t.id),
+                entry.matchweek,
+              ).map((f) => ({ ...f, result: null }));
+        const myFixture = divFixtures.find(
+          (f) =>
+            f.homeTeamId === selectedTeam.id ||
+            f.awayTeamId === selectedTeam.id,
+        );
+        if (!myFixture) return null;
+        const imHome = myFixture.homeTeamId === selectedTeam.id;
+        const opponent = teams.find(
+          (t) =>
+            t.id === (imHome ? myFixture.awayTeamId : myFixture.homeTeamId),
+        );
+        const stadiumTeam = imHome ? selectedTeam : opponent;
+        const myScore = myFixture.result
+          ? imHome
+            ? myFixture.result.home_score
+            : myFixture.result.away_score
+          : null;
+        const opScore = myFixture.result
+          ? imHome
+            ? myFixture.result.away_score
+            : myFixture.result.home_score
+          : null;
+        const won = myFixture.result
+          ? imHome
+            ? myFixture.result.home_score > myFixture.result.away_score
+            : myFixture.result.away_score > myFixture.result.home_score
+          : null;
+        const drew = myFixture.result
+          ? myFixture.result.home_score === myFixture.result.away_score
+          : null;
+        return {
+          fixture: { ...myFixture, matchweek: entry.matchweek },
+          status,
+          imHome,
+          opponent,
+          stadiumTeam,
+          myScore,
+          opScore,
+          won,
+          drew,
+        };
+      })
+      .filter(Boolean);
   }, [calendarData, selectedTeam, selectedTeamDivision, teams]);
 
   return (
@@ -316,10 +317,10 @@ export function TeamSquadView({
                 won,
                 drew,
                 fixture,
+                status,
               }) => {
-                const matchweek = fixture.matchweek ?? fixture.result?.matchweek ?? 0;
-                const status = matchweek <= currentMatchweek ? "done" : "future";
-                const isCurrent = matchweek === currentMatchweek;
+                const matchweek = fixture.matchweek;
+                const isCurrent = status === "current";
                 const isDone = status === "done";
 
                 const outcomeClass =
@@ -368,11 +369,7 @@ export function TeamSquadView({
                               : "bg-red-500/20 text-red-400"
                         }`}
                       >
-                        {won
-                          ? "Vitória"
-                          : drew
-                            ? "Empate"
-                            : "Derrota"}
+                        {won ? "Vitória" : drew ? "Empate" : "Derrota"}
                       </span>
                     </div>
                   ) : isCurrent ? (
@@ -396,10 +393,7 @@ export function TeamSquadView({
                   );
 
                 return (
-                  <div
-                    key={matchweek}
-                    className={cardBase}
-                  >
+                  <div key={matchweek} className={cardBase}>
                     <div className="w-16 sm:w-28 shrink-0 flex flex-col justify-center gap-1 px-2 sm:px-3 py-3 border-r border-outline-variant/10">
                       <span
                         className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded self-start bg-primary/20 text-primary`}
@@ -429,9 +423,7 @@ export function TeamSquadView({
 
                     <div className="flex-1 flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-3 min-w-0">
                       <div
-                        className={`hidden sm:flex shrink-0 w-8 h-8 rounded items-center justify-center text-xs font-black border ${
-                          "border-primary/30 text-primary bg-primary/10"
-                        }`}
+                        className={`hidden sm:flex shrink-0 w-8 h-8 rounded items-center justify-center text-xs font-black border ${"border-primary/30 text-primary bg-primary/10"}`}
                       >
                         ⚽
                       </div>
@@ -447,9 +439,7 @@ export function TeamSquadView({
                       <div className="flex flex-col min-w-0">
                         <button
                           className="text-sm font-black text-on-surface text-left truncate hover:text-primary transition-colors"
-                          onClick={() =>
-                            opponent && onOpenTeamSquad(opponent)
-                          }
+                          onClick={() => opponent && onOpenTeamSquad(opponent)}
                         >
                           {opponent?.name ?? "TBD"}
                         </button>
@@ -463,16 +453,13 @@ export function TeamSquadView({
                         {opponent && (
                           <span
                             className={`sm:hidden text-[8px] font-black uppercase tracking-widest ${
-                              imHome
-                                ? "text-emerald-400"
-                                : "text-sky-400"
+                              imHome ? "text-emerald-400" : "text-sky-400"
                             }`}
                           >
                             {imHome ? "Casa" : "Fora"}
                           </span>
                         )}
                       </div>
-
                     </div>
 
                     <div className="shrink-0 flex items-center justify-end px-2 sm:px-4 py-3">
@@ -480,7 +467,7 @@ export function TeamSquadView({
                     </div>
                   </div>
                 );
-              }
+              },
             )}
           </div>
         ) : selectedTeamLoading ? (
@@ -493,7 +480,7 @@ export function TeamSquadView({
           </div>
         ) : (
           <div className="flex flex-col gap-1.5 p-6">
-            {(["GR", "DEF", "MED", "ATA"]).map((pos) => {
+            {["GR", "DEF", "MED", "ATA"].map((pos) => {
               const group = selectedTeamSquad.filter((p) => p.position === pos);
               if (!group.length) return null;
               const posLabel =
@@ -507,7 +494,9 @@ export function TeamSquadView({
               return (
                 <div key={pos}>
                   <div className="flex items-center gap-2 px-1 py-2 mt-1 first:mt-0">
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${POSITION_TEXT_CLASS[pos] || "text-zinc-400"}`}>
+                    <span
+                      className={`text-[10px] font-black uppercase tracking-widest ${POSITION_TEXT_CLASS[pos] || "text-zinc-400"}`}
+                    >
                       {posLabel}
                     </span>
                     <span className="text-[9px] text-on-surface-variant/30 font-bold">
@@ -522,9 +511,7 @@ export function TeamSquadView({
                       showProposalCol={showProposalCol}
                       myBudget={myBudget}
                       onOpenPlayerHistory={onOpenPlayerHistory}
-                      onProposal={(data) =>
-                        setTransferProposalModal(data)
-                      }
+                      onProposal={(data) => setTransferProposalModal(data)}
                     />
                   ))}
                 </div>
