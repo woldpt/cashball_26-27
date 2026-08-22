@@ -235,11 +235,11 @@ export function PlayerSearchView({
             </select>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
             <div className="flex items-center gap-2">
               <input
                 type="number"
-                className={inputClass()}
+                className={`${inputClass()} flex-1 min-w-0`}
                 placeholder="Skill mín"
                 value={skillMin}
                 onChange={(e) => setSkillMin(e.target.value)}
@@ -247,7 +247,7 @@ export function PlayerSearchView({
               />
               <input
                 type="number"
-                className={inputClass()}
+                className={`${inputClass()} flex-1 min-w-0`}
                 placeholder="Skill máx"
                 value={skillMax}
                 onChange={(e) => setSkillMax(e.target.value)}
@@ -257,7 +257,7 @@ export function PlayerSearchView({
             <div className="flex items-center gap-2">
               <input
                 type="number"
-                className={inputClass()}
+                className={`${inputClass()} flex-1 min-w-0`}
                 placeholder="Idade mín"
                 value={ageMin}
                 onChange={(e) => setAgeMin(e.target.value)}
@@ -265,7 +265,7 @@ export function PlayerSearchView({
               />
               <input
                 type="number"
-                className={inputClass()}
+                className={`${inputClass()} flex-1 min-w-0`}
                 placeholder="Idade máx"
                 value={ageMax}
                 onChange={(e) => setAgeMax(e.target.value)}
@@ -275,7 +275,7 @@ export function PlayerSearchView({
             <div className="flex items-center gap-2">
               <input
                 type="number"
-                className={inputClass()}
+                className={`${inputClass()} flex-1 min-w-0`}
                 placeholder="Preço mín (€)"
                 value={priceMin}
                 onChange={(e) => setPriceMin(e.target.value)}
@@ -284,7 +284,7 @@ export function PlayerSearchView({
               />
               <input
                 type="number"
-                className={inputClass()}
+                className={`${inputClass()} flex-1 min-w-0`}
                 placeholder="Preço máx (€)"
                 value={priceMax}
                 onChange={(e) => setPriceMax(e.target.value)}
@@ -326,7 +326,7 @@ export function PlayerSearchView({
               />
               Só craques (★)
             </label>
-            <Button variant="primary" onClick={search}>
+            <Button variant="primary" className="w-full sm:w-auto" onClick={search}>
               Pesquisar
             </Button>
           </div>
