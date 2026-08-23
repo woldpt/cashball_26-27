@@ -25,16 +25,25 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* ── Summary widgets ──────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 md:p-4 shrink-0">
-        <SummaryWidget label="Leilões a decorrer" value={live.length} />
+        <SummaryWidget
+          label="Leilões a decorrer"
+          value={live.length}
+          compactMobile
+          valueClass="text-xl sm:text-3xl"
+        />
         <SummaryWidget
           label="Leilões recentes"
           value={closed.length}
           accentClass="border-tertiary"
+          compactMobile
+          valueClass="text-xl sm:text-3xl"
         />
         <SummaryWidget
           label="Caixa disponível"
           value={formatCurrency(teamInfo?.budget || 0)}
           accentClass="border-emerald-500"
+          compactMobile
+          valueClass="text-xl sm:text-3xl"
         />
       </div>
 

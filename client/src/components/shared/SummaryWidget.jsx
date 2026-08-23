@@ -16,8 +16,9 @@
  *   valueColorClass?: string,
  *   labelClass?: string,
  *   subClass?: string,
- *   className?: string,
- *   flat?: boolean,
+  *   className?: string,
+  *   flat?: boolean,
+  *   compactMobile?: boolean,
  *   children?: import("react").ReactNode,
  * }} props
  */
@@ -33,6 +34,7 @@ export function SummaryWidget({
   subClass = "",
   className = "",
   flat = false,
+  compactMobile = false,
   children,
 }) {
   return (
@@ -40,7 +42,9 @@ export function SummaryWidget({
       className={`${
         flat
           ? "bg-surface-container p-6 rounded-xl flex flex-col justify-between"
-          : "bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4"
+          : compactMobile
+            ? "bg-surface-container-low p-3 sm:p-5 rounded-md flex flex-col justify-between h-16 sm:h-28 border-l-4"
+            : "bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4"
       } ${flat ? "" : accentClass} ${className}`}
       style={accentStyle}
     >
