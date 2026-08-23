@@ -855,8 +855,15 @@ export function useSocketListeners(handlers, refs) {
 					})),
 				});
 			} else if (data.startMin === 46) {
-				// Second half — dismiss halftime panel, merge intro events from payload
+				// Second half — dismiss halftime panel, merge intro events from payload.
+				// Planned subs are realized now: drop the pending undo list and the
+				// swap selection so a later pause (forced swap, sub request) doesn't
+				// resurface the stale "Confirmadas" strip. subsMade persists — it's
+				// the per-match sub counter, shared across both halves.
 				handlers.setShowHalftimePanel(false);
+				handlers.setConfirmedSubs([]);
+				handlers.setSwapSource(null);
+				handlers.setSwapTarget(null);
 				handlers.setMatchResults((prev) => {
 					if (!prev) return prev;
 					const updatedResults = (prev.results || []).map((r) => {

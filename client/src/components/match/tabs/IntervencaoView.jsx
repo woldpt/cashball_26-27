@@ -633,7 +633,7 @@ function SubsPanel({
             />
           )}
           <SwapControls {...sharedSwapProps} />
-          {confirmedSubs.length > 0 && (
+          {isHalftime && confirmedSubs.length > 0 && (
             <ConfirmedSubsStrip
               subs={confirmedSubs}
               annotatedSquad={annotatedSquad}
@@ -930,7 +930,7 @@ function MentalidadeColumn({
             </div>
           )}
           <SwapControls {...swapProps} />
-          {confirmedSubs.length > 0 && (
+          {isHalftime && confirmedSubs.length > 0 && (
             <div className="space-y-2">
               <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
                 Confirmadas
