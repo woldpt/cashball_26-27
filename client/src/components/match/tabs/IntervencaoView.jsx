@@ -1082,11 +1082,11 @@ function AdversarioPanel({
       </div>
 
       {/* Normalized padding — old code mixed `px-3 pt-2 pb-3 pt-3`. */}
-      <div className="flex-1 flex flex-col md:grid md:grid-cols-2 md:auto-rows-fr min-h-0 overflow-hidden p-4 gap-4">
+      {/* Mobile: single scroll (pitch → bench). Desktop: 2-col grid with
+       * internal scroll per column. */}
+      <div className="flex-1 flex flex-col md:grid md:grid-cols-2 md:auto-rows-fr min-h-0 overflow-y-auto md:overflow-hidden p-4 gap-4">
         {/* Opponent pitch */}
-        {/* max-h caps the pitch on mobile so the 9:16 pitch doesn't push the
-         * opponent bench far below the fold. Desktop keeps full height. */}
-        <div className="md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center overflow-hidden">
+        <div className="shrink-0 md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center overflow-hidden">
           {!hasLineups ? (
             <EmptyState
               icon="📋"
@@ -1098,17 +1098,12 @@ function AdversarioPanel({
               message="Sem dados da escalação do adversário"
             />
           ) : (
-            <MatchPitch
-              rows={oppRows}
-              posColors={PITCH_POS_COLORS}
-              className="max-h-[55vh] md:max-h-none"
-              showFatigue={false}
-            />
+            <MatchPitch rows={oppRows} posColors={PITCH_POS_COLORS} showFatigue={false} />
           )}
         </div>
 
         {/* Opponent bench */}
-        <div className="flex-1 md:flex-none min-w-0 flex flex-col min-h-0 overflow-hidden">
+        <div className="shrink-0 md:flex-none min-w-0 flex flex-col min-h-0 overflow-hidden">
           <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
             <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">
               Banco

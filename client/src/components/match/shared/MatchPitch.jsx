@@ -16,7 +16,7 @@ export function MatchPitch({ rows, posColors, starColor, emptyLabel, className =
 
   return (
     <div
-      className={`relative w-full max-w-[220px] mx-auto md:mx-0 md:w-auto md:h-full md:max-w-full rounded-md overflow-hidden border border-outline-variant/25 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)] ${className}`}
+      className={`relative w-full max-w-[280px] mx-auto md:mx-0 md:w-auto md:h-full md:max-w-full rounded-md overflow-hidden border border-outline-variant/25 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)] ${className}`}
       style={{ aspectRatio: "9/16" }}
     >
       {isEmpty ? (
