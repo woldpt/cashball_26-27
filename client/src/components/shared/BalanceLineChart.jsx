@@ -27,7 +27,7 @@ function compactCurrency(value) {
  * O eixo Y é dinâmico (inclui sempre o zero), a linha muda de cor conforme o
  * saldo é positivo (primary) ou negativo (error) e a área preenche até à
  * baseline zero com gradiente.
- * @param {{ data: Array<{matchweek: number, balance: number}> }} props
+ * @param {{ data: Array<{x?: number, year?: number, matchweek: number, balance: number}> }} props
  */
 export function BalanceLineChart({ data = [] }) {
   const [hoveredIdx, setHoveredIdx] = useState(null);
@@ -40,7 +40,7 @@ export function BalanceLineChart({ data = [] }) {
 
   const clean = (data || [])
     .filter((p) => p.balance != null && Number.isFinite(p.balance))
-    .sort((a, b) => a.matchweek - b.matchweek);
+    .sort((a, b) => (a.x ?? a.matchweek) - (b.x ?? b.matchweek));
 
   if (clean.length === 0) {
     return (
@@ -52,10 +52,18 @@ export function BalanceLineChart({ data = [] }) {
     );
   }
 
+  /**
+   * Posição global no eixo X. Com histórico de 2 épocas o matchweek repete-se
+   * (0..14 em cada época), por isso posicionamos pelo índice global `x`
+   * (fallback para matchweek em dados antigos).
+   * @param {{x?: number, matchweek: number}} p
+   * @returns {number}
+   */
+  const px = (p) => (typeof p.x === "number" ? p.x : p.matchweek);
   const pointCount = clean.length;
-  const firstMW = clean[0].matchweek;
-  const lastMW = clean[pointCount - 1].matchweek;
-  const mwRange = Math.max(lastMW - firstMW, 1);
+  const firstX = px(clean[0]);
+  const lastX = px(clean[pointCount - 1]);
+  const xRange = Math.max(lastX - firstX, 1);
 
   // ── Eixo Y dinâmico — inclui sempre o zero ──
   const rawValues = clean.map((p) => p.balance);
@@ -81,8 +89,8 @@ export function BalanceLineChart({ data = [] }) {
   const graphWidth = chartWidth - padding.left - padding.right;
   const graphHeight = chartHeight - padding.top - padding.bottom;
 
-  const getX = (mw) =>
-    padding.left + ((mw - firstMW) / mwRange) * graphWidth;
+  const getX = (x) =>
+    padding.left + ((x - firstX) / xRange) * graphWidth;
   const getY = (balance) =>
     padding.top +
     graphHeight -
@@ -102,13 +110,13 @@ export function BalanceLineChart({ data = [] }) {
       if (crosses) {
         const t = (0 - prev.balance) / (p.balance - prev.balance);
         extended.push({
-          x: getX(prev.matchweek + (p.matchweek - prev.matchweek) * t),
+          x: getX(px(prev) + (px(p) - px(prev)) * t),
           y: zeroY,
           balance: 0,
         });
       }
     }
-    extended.push({ x: getX(p.matchweek), y: getY(p.balance), balance: p.balance });
+    extended.push({ x: getX(px(p)), y: getY(p.balance), balance: p.balance });
   }
 
   /**
@@ -144,10 +152,19 @@ export function BalanceLineChart({ data = [] }) {
   const negAreaD = buildPath("neg", true);
 
   const hovered = hoveredIdx != null ? clean[hoveredIdx] : null;
-  const hoveredX = hovered ? (getX(hovered.matchweek) / chartWidth) * 100 : 0;
+  const hoveredX = hovered ? (getX(px(hovered)) / chartWidth) * 100 : 0;
   const hoveredY = hovered ? (getY(hovered.balance) / chartHeight) * 100 : 0;
   const tooltipBelow = hovered ? getY(hovered.balance) < 64 : false;
   const lastIdx = pointCount - 1;
+  const hoveredLabel = hovered
+    ? hovered.year != null
+      ? hovered.matchweek === 0
+        ? `Início da época ${hovered.year}`
+        : `Fim da Jornada ${hovered.matchweek} · ${hovered.year}`
+      : hovered.matchweek === 0
+        ? "Início de época"
+        : `Fim da Jornada ${hovered.matchweek}`
+    : "";
 
   // ── Estatísticas de rodapé ──
   const firstBalance = clean[0].balance;
@@ -255,18 +272,21 @@ export function BalanceLineChart({ data = [] }) {
 
         {/* Rótulos X */}
         {clean.map((p, i) => {
+          const isBoundary = i > 0 && clean[i - 1].year !== p.year;
           const every = pointCount > 16 ? Math.ceil(pointCount / 8) : 1;
-          if (i % every !== 0 && i !== lastIdx) return null;
+          if (i % every !== 0 && i !== lastIdx && !isBoundary) return null;
+          const label =
+            i === 0 ? "Início" : isBoundary ? String(p.year) : `J${p.matchweek}`;
           return (
             <text
-              key={`${p.matchweek}-${i}`}
-              x={getX(p.matchweek)}
+              key={`${px(p)}-${i}`}
+              x={getX(px(p))}
               y={chartHeight - 6}
               textAnchor="middle"
               fontSize="9"
               className="fill-on-surface-variant/70"
             >
-              {p.matchweek === 0 ? "Início" : `J${p.matchweek}`}
+              {label}
             </text>
           );
         })}
@@ -304,9 +324,9 @@ export function BalanceLineChart({ data = [] }) {
         {/* Crosshair vertical no hover */}
         {hovered && (
           <line
-            x1={getX(hovered.matchweek)}
+            x1={getX(px(hovered))}
             y1={padding.top}
-            x2={getX(hovered.matchweek)}
+            x2={getX(px(hovered))}
             y2={chartHeight - padding.bottom}
             className="text-outline-variant/50"
             stroke="currentColor"
@@ -318,7 +338,7 @@ export function BalanceLineChart({ data = [] }) {
         {/* Pontos */}
         {clean.map((point, i) => {
           const isLast = i === lastIdx;
-          const cx = getX(point.matchweek);
+          const cx = getX(px(point));
           const cy = getY(point.balance);
           const isHovered = hoveredIdx === i;
           const positive = point.balance >= 0;
@@ -366,9 +386,7 @@ export function BalanceLineChart({ data = [] }) {
           }}
         >
           <div className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant whitespace-nowrap">
-            {hovered.matchweek === 0
-              ? "Início de época"
-              : `Fim da Jornada ${hovered.matchweek}`}
+            {hoveredLabel}
           </div>
           <div
             className={`text-sm font-black font-headline leading-none mt-0.5 tabular-nums ${hovered.balance >= 0 ? "text-primary" : "text-error"}`}

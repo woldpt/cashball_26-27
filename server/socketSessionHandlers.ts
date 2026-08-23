@@ -151,11 +151,9 @@ export function registerSessionSocketHandlers(
 		getPlayerBySocket,
 		bindSocket,
 		unbindSocket,
-		getPlayerList,
 		saveGameState,
 		emitCurrentPhaseToSocket,
 		ensurePhaseTimeout,
-		emitAwaitingCoaches,
 		emitPresence,
 		checkAllReady,
 		runAll,
@@ -228,7 +226,7 @@ export function registerSessionSocketHandlers(
 		game.db.all(
 			"SELECT * FROM players WHERE team_id = ?",
 			[team.id],
-			(err: any, squad: any[]) =>
+			(_err: any, squad: any[]) =>
 				socket.emit(
 					"mySquad",
 					ensureFullBench(
@@ -296,7 +294,7 @@ export function registerSessionSocketHandlers(
 
 		game.db.all(
 			"SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20",
-			(err3: any, scorers: any[]) => {
+			(_err3: any, scorers: any[]) => {
 				socket.emit("topScorers", scorers || []);
 			},
 		);
@@ -509,12 +507,12 @@ export function registerSessionSocketHandlers(
 				game.db.get(
 					"SELECT * FROM managers WHERE name = ?",
 					[trimmedName],
-					(err: any, row: any) => {
+					(_err: any, row: any) => {
 						if (row) {
 							game.db.get(
 								"SELECT id, name FROM teams WHERE manager_id = ?",
 								[row.id],
-								(err2: any, team: any) => {
+								(_err2: any, team: any) => {
 									if (team) {
 										assignPlayer(game, trimmedName, team, finalRoomCode, false);
 									} else if (game.dismissedCoachSince[trimmedName]) {
@@ -631,7 +629,7 @@ export function registerSessionSocketHandlers(
 							game.db.run(
 								"INSERT INTO managers (name, is_human) VALUES (?, 1)",
 								[trimmedName],
-								function (err2: any) {
+								function (_err2: any) {
 									generateRandomTeam(
 										game,
 										trimmedName,
@@ -1093,7 +1091,12 @@ export function registerSessionSocketHandlers(
 				if (pendingAction.timer) clearTimeout(pendingAction.timer);
 				try {
 					pendingAction.finalize(pendingAction.fallback?.(), "auto");
-				} catch (_) {}
+				} catch (err) {
+					console.error(
+						`[${game.roomCode}] leaveRoom: erro ao finalizar pendingMatchAction:`,
+						err,
+					);
+				}
 				game.pendingMatchAction = null;
 			}
 
@@ -1183,10 +1186,12 @@ export function registerSessionSocketHandlers(
 
 				// ── Balance history ──────────────────────────────────────────────
 				// Reconstrói a evolução do saldo por jornada a partir do diário
-				// financeiro (club_news). A âncora é o saldo actual: o ponto
+				// financeiro (club_news), com histórico de até 2 épocas
+				// (época anterior + actual). A âncora é o saldo actual: o ponto
 				// inicial é obtido por reconciliação inversa (saldo actual − Σ
-				// eventos da época), garantindo que o último ponto bate sempre com
-				// o currentBudget real.
+				// eventos do período), garantindo que o último ponto bate sempre
+				// com o currentBudget real. Cada ponto tem um índice global `x`
+				// (contínuo entre épocas) para o eixo X do gráfico.
 				const INCOME_TYPES = new Set([
 					"transfer_out",
 					"weekly_income",
@@ -1194,29 +1199,74 @@ export function registerSessionSocketHandlers(
 					"loan_take",
 					"prize",
 				]);
+				const currentYear = game.year || 0;
 				const journal = await runAll(
 					game.db,
-					"SELECT type, amount, matchweek FROM club_news WHERE team_id = ? AND year = ? AND amount IS NOT NULL",
-					[teamId, game.year || 0],
+					"SELECT type, amount, matchweek, year FROM club_news WHERE team_id = ? AND year IN (?, ?) AND amount IS NOT NULL",
+					[teamId, currentYear - 1, currentYear],
 				);
 				const signed = (journal || []).map((e) => ({
+					year: e.year,
 					matchweek: e.matchweek ?? 0,
 					amount: (INCOME_TYPES.has(e.type) ? 1 : -1) * (e.amount || 0),
 				}));
 				const totalDelta = signed.reduce((sum, e) => sum + e.amount, 0);
 				const initialBudget = (team?.budget ?? 0) - totalDelta;
-				const byMw = new Map<number, number>();
+				const byYearMw = new Map<
+					string,
+					{ year: number; matchweek: number; amount: number }
+				>();
 				for (const e of signed) {
-					byMw.set(e.matchweek, (byMw.get(e.matchweek) || 0) + e.amount);
+					const key = `${e.year}:${e.matchweek}`;
+					const entry = byYearMw.get(key);
+					if (entry) {
+						entry.amount += e.amount;
+					} else {
+						byYearMw.set(key, {
+							year: e.year,
+							matchweek: e.matchweek,
+							amount: e.amount,
+						});
+					}
 				}
-				const sortedMw = [...byMw.keys()].sort((a, b) => a - b);
+				const ordered = [...byYearMw.values()].sort(
+					(a, b) => a.year - b.year || a.matchweek - b.matchweek,
+				);
+				// Posição global no eixo X: cada época ocupa um bloco de
+				// SEASON_SPAN unidades (matchweeks 0..14), preservando os gaps
+				// dentro da época e separando as duas épocas no gráfico.
+				const SEASON_SPAN = 15;
+				const years = [...new Set(ordered.map((e) => e.year))].sort(
+					(a, b) => a - b,
+				);
+				const seasonIndex = new Map(years.map((y, i) => [y, i]));
+				// Época do ponto âncora: a primeira época com eventos (assim uma
+				// equipa na 1ª época não mostra uma fronteira/época fictícia).
+				const anchorYear = years.length > 0 ? years[0] : currentYear - 1;
 				let running = initialBudget;
-				const balanceHistory: Array<{ matchweek: number; balance: number }> = [
-					{ matchweek: 0, balance: Math.round(running) },
+				const balanceHistory: Array<{
+					x: number;
+					year: number;
+					matchweek: number;
+					balance: number;
+				}> = [
+					{
+						x: 0,
+						year: anchorYear,
+						matchweek: 0,
+						balance: Math.round(running),
+					},
 				];
-				for (const mw of sortedMw) {
-					running += byMw.get(mw) || 0;
-					balanceHistory.push({ matchweek: mw, balance: Math.round(running) });
+				for (const entry of ordered) {
+					running += entry.amount;
+					balanceHistory.push({
+						x:
+							(seasonIndex.get(entry.year) ?? 0) * SEASON_SPAN +
+							entry.matchweek,
+						year: entry.year,
+						matchweek: entry.matchweek,
+						balance: Math.round(running),
+					});
 				}
 
 				socket.emit("financeData", {
