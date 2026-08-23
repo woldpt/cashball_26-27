@@ -125,7 +125,8 @@ export function PlayerSearchView({
     }
 
     if (status === "fixed") {
-      const price = player.transfer_price || Math.round((player.value || 0) * 0.8);
+      const price =
+        player.transfer_price || Math.round((player.value || 0) * 0.8);
       const affordable = myBudget >= price;
       return (
         <button
@@ -166,9 +167,7 @@ export function PlayerSearchView({
       <button
         type="button"
         disabled={!affordable}
-        onClick={() =>
-          setTransferProposalModal({ player, suggestedPrice })
-        }
+        onClick={() => setTransferProposalModal({ player, suggestedPrice })}
         className={`px-3 py-1.5 rounded text-xs font-black uppercase transition-colors whitespace-nowrap ${
           affordable
             ? "bg-primary hover:brightness-110 text-on-primary"
@@ -308,9 +307,9 @@ export function PlayerSearchView({
               value={sort}
               onChange={(e) => setSort(e.target.value)}
             >
-              {SORTS.map((o) => (
+              {SORTS.map((o, i) => (
                 <option key={o.value} value={o.value}>
-                  {o.label}
+                  {i === 0 ? `Ordenar por: ${o.label}` : o.label}
                 </option>
               ))}
             </select>
@@ -326,7 +325,11 @@ export function PlayerSearchView({
               />
               Só craques (★)
             </label>
-            <Button variant="primary" className="w-full sm:w-auto" onClick={search}>
+            <Button
+              variant="primary"
+              className="w-full sm:w-auto"
+              onClick={search}
+            >
               Pesquisar
             </Button>
           </div>
