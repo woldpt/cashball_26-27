@@ -449,8 +449,9 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
 
   /**
    * Dificuldade estimada a partir das probabilidades implícitas das odds.
+   * Usa a odd da TUA equipa (casa ou fora) — não a da equipa da casa.
    */
-  function computeDifficulty(odds: Record<string, string>, isCup: boolean) {
+  function computeDifficulty(odds: Record<string, string>, isHome: boolean) {
     const parse = (v: string | undefined): number | null => {
       const n = Number.parseFloat(String(v ?? ""));
       return Number.isFinite(n) && n > 1 ? n : null;
@@ -461,7 +462,8 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     const vals = [home, draw, away].filter((v): v is number => v !== null);
     if (vals.length === 0) return { score: 50, label: "Equilibrado" };
     const invSum = vals.reduce((s, v) => s + 1 / v, 0);
-    const myProb = home ? (1 / home / invSum) * 100 : 33;
+    const myOdds = isHome ? home : away;
+    const myProb = myOdds ? (1 / myOdds / invSum) * 100 : 33;
     const score = Math.round(Math.max(0, Math.min(100, 100 - myProb)));
     const label =
       score <= 40
@@ -848,7 +850,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         cupRoundName: currentEntry.roundName,
         venue,
         odds,
-        difficulty: computeDifficulty(odds, true),
+        difficulty: computeDifficulty(odds, isHome),
         headline: buildHeadline({
           myName: team.name,
           oppName: opponentName,
@@ -973,7 +975,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       fixtureKey: `${fixture.homeTeamId}-${fixture.awayTeamId}`,
       venue: isHome ? "Casa" : "Fora",
       odds,
-      difficulty: computeDifficulty(odds, false),
+      difficulty: computeDifficulty(odds, isHome),
       headline: buildHeadline({
         myName: team.name,
         oppName: opponentName,
