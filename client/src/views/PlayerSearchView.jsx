@@ -34,6 +34,7 @@ function inputClass() {
  *   players: Array,
  *   myBudget: number,
  *   matchweekCount: number,
+ *   season?: number,
  *   playerSearchData: { results: Array, total: number, truncated: boolean },
  *   playerSearchLoading: boolean,
  *   setPlayerSearchLoading: function,
@@ -49,6 +50,7 @@ export function PlayerSearchView({
   players,
   myBudget = 0,
   matchweekCount = 0,
+  season = 1,
   playerSearchData = { results: [], total: 0, truncated: false },
   playerSearchLoading = false,
   setPlayerSearchLoading,
@@ -157,6 +159,18 @@ export function PlayerSearchView({
       return (
         <span className="text-[10px] text-on-surface-variant/50 font-bold uppercase whitespace-nowrap">
           Outro treinador
+        </span>
+      );
+    }
+
+    const contractStart = player.contract_start_epoch || 0;
+    const currentEpoch =
+      (Math.max(1, season) - 1) * 14 + Math.min(14, matchweekCount + 1);
+    const contractLocked = contractStart > 0 && currentEpoch < contractStart + 14;
+    if (contractLocked) {
+      return (
+        <span className="text-[10px] text-on-surface-variant/50 font-bold uppercase whitespace-nowrap">
+          🔒 Contrato
         </span>
       );
     }

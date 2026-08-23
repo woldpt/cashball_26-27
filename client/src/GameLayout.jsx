@@ -1437,6 +1437,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         players={players}
                         myBudget={currentBudget}
                         matchweekCount={matchweekCount}
+                        season={season}
                         playerSearchData={playerSearchData}
                         playerSearchLoading={playerSearchLoading}
                         setPlayerSearchLoading={setPlayerSearchLoading}
