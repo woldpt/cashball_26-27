@@ -622,13 +622,6 @@ function SubsPanel({
             </h3>
             {isHalftime && <SubsCounter subsMade={subsMade} />}
           </div>
-          {confirmedSubs.length > 0 && (
-            <ConfirmedSubsStrip
-              subs={confirmedSubs}
-              annotatedSquad={annotatedSquad}
-              onUndoSub={onUndoSub}
-            />
-          )}
           {isHalftime && (
             <TacticsButtons
               className="w-full"
@@ -637,6 +630,13 @@ function SubsPanel({
             />
           )}
           <SwapControls {...sharedSwapProps} />
+          {confirmedSubs.length > 0 && (
+            <ConfirmedSubsStrip
+              subs={confirmedSubs}
+              annotatedSquad={annotatedSquad}
+              onUndoSub={onUndoSub}
+            />
+          )}
         </div>
 
         {/* Segmented Em campo / Banco */}
@@ -909,13 +909,6 @@ function MentalidadeColumn({
         {isHalftime && <SubsCounter subsMade={subsMade} />}
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {confirmedSubs.length > 0 && (
-          <ConfirmedSubsStrip
-            subs={confirmedSubs}
-            annotatedSquad={annotatedSquad}
-            onUndoSub={onUndoSub}
-          />
-        )}
         {isHalftime && (
           <div className="space-y-2">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
@@ -930,6 +923,13 @@ function MentalidadeColumn({
         )}
         <SwapControls {...swapProps} />
       </div>
+      {confirmedSubs.length > 0 && (
+        <ConfirmedSubsStrip
+          subs={confirmedSubs}
+          annotatedSquad={annotatedSquad}
+          onUndoSub={onUndoSub}
+        />
+      )}
     </div>
   );
 }

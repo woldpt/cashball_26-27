@@ -8,7 +8,7 @@ export function ConfirmedSubsStrip({ subs, annotatedSquad, onUndoSub, className 
   if (!subs || subs.length === 0) return null;
 
   return (
-    <div className={`shrink-0 px-3 py-2 border-b border-cyan-900/40 bg-cyan-950/20 flex flex-wrap gap-2 ${className || ""}`}>
+    <div className={`shrink-0 px-3 py-2 border-t border-cyan-900/40 bg-cyan-950/20 flex flex-wrap gap-2 ${className || ""}`}>
       {subs.map((sub) => {
         const outP = annotatedSquad?.find((p) => p.id === sub.out);
         const inP = annotatedSquad?.find((p) => p.id === sub.in);
