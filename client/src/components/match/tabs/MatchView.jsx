@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   getPosStyle,
   PITCH_POS_COLORS,
@@ -154,7 +154,27 @@ function TeamBadge({ team, active, onClick, label }) {
 
 /* ── EventList ─────────────────────────────────────────────────────────── */
 
+/* Pre-match intro events (minute 1) — revealed one by one, staggered. */
+const INTRO_TYPES = ["weather", "betting", "phase_start"];
+const INTRO_STAGGER_MS = 1500;
+
 function EventList({ events, hInfo, aInfo }) {
+  const [revealed, setRevealed] = useState(0);
+  const startedRef = useRef(false);
+  const introCount = events.filter(
+    (e) => INTRO_TYPES.includes(e.type) && (e.minute ?? 0) <= 1,
+  ).length;
+
+  useEffect(() => {
+    if (introCount === 0 || startedRef.current) return;
+    startedRef.current = true;
+    const timers = [];
+    for (let i = 0; i < introCount; i++) {
+      timers.push(setTimeout(() => setRevealed(i + 1), i * INTRO_STAGGER_MS));
+    }
+    return () => timers.forEach(clearTimeout);
+  }, [introCount]);
+
   if (events.length === 0) {
     return (
       <div className="rounded-md border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
@@ -165,9 +185,19 @@ function EventList({ events, hInfo, aInfo }) {
       </div>
     );
   }
+
+  const introPosOf = events.reduce((acc, e, i) => {
+    if (INTRO_TYPES.includes(e.type) && (e.minute ?? 0) <= 1) {
+      acc.set(i, acc.size);
+    }
+    return acc;
+  }, new Map());
+
   return (
     <div className="space-y-2">
       {events.map((e, i) => {
+        const introPos = introPosOf.get(i);
+        if (introPos !== undefined && introPos >= revealed) return null;
         const isHome = e.team === "home";
         const accent = (isHome ? hInfo : aInfo)?.color_primary;
         const teamName = (isHome ? hInfo : aInfo)?.name;
