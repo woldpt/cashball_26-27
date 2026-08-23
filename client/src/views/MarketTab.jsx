@@ -134,7 +134,11 @@ function PlayerCard({ player, matchweekCount }) {
               </p>
             </div>
             <p className="text-[11px] text-zinc-500 font-bold truncate mt-0.5">
-              {player.team_name || "Sem clube"}
+              {player.team_name
+                ? player.isExClub
+                  ? `ex-${player.team_name}`
+                  : player.team_name
+                : "Sem clube"}
             </p>
 
             <div className="flex flex-wrap gap-1 mt-1.5">

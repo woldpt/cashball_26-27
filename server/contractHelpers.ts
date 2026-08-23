@@ -26,7 +26,7 @@ interface ContractDeps {
   io: any;
   runAll: RunAll;
   runGet: RunGet;
-  startAuction: (game: ActiveGame, player: any, startingPrice: number, callback?: (...args: any[]) => void) => void;
+  startAuction: (game: ActiveGame, player: any, startingPrice: number, callback?: (...args: any[]) => void, isExClub?: boolean) => void;
   getSeasonEndMatchweek: (matchweek: number) => number;
 }
 
@@ -138,10 +138,12 @@ export function createContractHelpers(deps: ContractDeps) {
 
     const expired = await runAll(
       game.db,
-      `SELECT * FROM players
-        WHERE team_id IS NOT NULL
-          AND contract_start_epoch > 0
-          AND contract_start_epoch + ? <= ?`,
+      `SELECT p.*, t.name AS team_name
+        FROM players p
+        LEFT JOIN teams t ON p.team_id = t.id
+        WHERE p.team_id IS NOT NULL
+          AND p.contract_start_epoch > 0
+          AND p.contract_start_epoch + ? <= ?`,
       [CONTRACT_LENGTH_MATCHWEEKS, now],
     );
 
@@ -204,7 +206,7 @@ export function createContractHelpers(deps: ContractDeps) {
                 );
               }
               resolve();
-            });
+            }, true);
           },
         );
       });

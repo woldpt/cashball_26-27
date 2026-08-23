@@ -141,7 +141,11 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                 {auction.name}
               </p>
               <p className="text-[9px] text-zinc-500 truncate">
-                {auction.team_name || "Sem clube"}
+                {auction.team_name
+                  ? auction.isExClub
+                    ? `ex-${auction.team_name}`
+                    : auction.team_name
+                  : "Sem clube"}
               </p>
             </div>
             <div className="flex flex-col items-end shrink-0 gap-1">

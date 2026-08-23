@@ -121,7 +121,11 @@ export function AuctionNotification({
               Força {currentToast.skill}
             </span>
             <span className="text-xs text-zinc-500">
-              {currentToast.team_name || "Sem clube"}
+              {currentToast.team_name
+                ? currentToast.isExClub
+                  ? `ex-${currentToast.team_name}`
+                  : currentToast.team_name
+                : "Sem clube"}
             </span>
             <span className="font-mono text-sm font-black text-zinc-300 ml-auto">
               {formatCurrency(currentToast.startingPrice)}

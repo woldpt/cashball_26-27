@@ -28,6 +28,7 @@ export function serializeActiveAuctions(game: ActiveGame): any[] {
       name: row.name,
       team_name: row.team_name || null,
       sellerTeamId: row.auction_seller_team_id ?? auction?.sellerTeamId ?? null,
+      isExClub: auction?.isExClub ?? row.contract_start_epoch === 0,
       position: row.position,
       skill: row.skill,
       value: row.value,
@@ -98,6 +99,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
               ...row,
               auction_active: true,
               auction_seller_team_id: auction.sellerTeamId,
+              isExClub: auction.isExClub ?? row.contract_start_epoch === 0,
               auction_ends_at: auction.endsAt,
               auction_starting_price: auction.startingPrice,
               auction_high_bid: currentHighBid,
@@ -415,6 +417,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
     player: any,
     startingPrice: number,
     callback?: (...args: any[]) => void,
+    isExClub = false,
   ) => {
     const now = Date.now();
     const actualDurationMs = 120000;
@@ -432,6 +435,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
         game.auctions[player.id] = {
           playerId: player.id,
           sellerTeamId: player.team_id,
+          isExClub,
           startingPrice,
           bids: {},
           npcRelicitationCount: {},
@@ -448,6 +452,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           playerId: player.id,
           name: player.name,
           team_name: player.team_name || null,
+          isExClub,
           sellerTeamId: player.team_id,
           position: player.position,
           skill: player.skill,
@@ -478,6 +483,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
     mode: string,
     price: number,
     callback?: (...args: any[]) => void,
+    exClub = false,
   ) => {
     if (mode === "auction" && isMatchInProgress(game)) {
       if (!game.pendingAuctionQueue) game.pendingAuctionQueue = [];
@@ -518,7 +524,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
         if (mode === "auction") {
           startAuction(game, player, finalPrice, () => {
             if (callback) callback(true, finalPrice, player);
-          });
+          }, exClub);
         } else {
           game.db.run(
             "UPDATE players SET transfer_status = ?, transfer_price = ? WHERE id = ?",

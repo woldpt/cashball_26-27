@@ -155,7 +155,11 @@ function MarketCard({
                   {player.nationality ? ` · ${player.nationality}` : ""}
                 </p>
                 <p className="text-[11px] text-on-surface-variant/60 truncate">
-                  {player.team_name || "Sem clube"}
+                  {player.team_name
+                    ? player.isExClub
+                      ? `ex-${player.team_name}`
+                      : player.team_name
+                    : "Sem clube"}
                 </p>
               </div>
 
@@ -210,7 +214,11 @@ function MarketCard({
                     {player.name}
                   </p>
                   <p className="text-[10px] text-on-surface-variant/60 truncate">
-                    {player.team_name || "Sem clube"}
+                    {player.team_name
+                      ? player.isExClub
+                        ? `ex-${player.team_name}`
+                        : player.team_name
+                      : "Sem clube"}
                   </p>
                 </div>
                 <Badge variant={status.variant} size="md">

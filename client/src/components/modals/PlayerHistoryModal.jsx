@@ -243,7 +243,11 @@ export function PlayerHistoryModal({
               <div className="flex items-center gap-1 sm:gap-2 mt-0.5 sm:mt-1 flex-wrap">
                 <span className="text-on-surface-variant text-xs">Clube:</span>
                 <span className="font-bold text-tertiary text-xs">
-                  {player.team_name || "Sem clube"}
+                  {player.team_name
+                    ? player.isExClub
+                      ? `ex-${player.team_name}`
+                      : player.team_name
+                    : "Sem clube"}
                 </span>
                 {aggKey && (
                   <>

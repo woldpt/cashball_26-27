@@ -31,12 +31,14 @@ interface TransferHandlerDeps {
     mode: string,
     price: number,
     callback?: (...args: any[]) => void,
+    exClub?: boolean,
   ) => void;
   startAuction: (
     game: ActiveGame,
     player: any,
     startingPrice: number,
     callback?: (...args: any[]) => void,
+    isExClub?: boolean,
   ) => void;
   placeAuctionBid: (
     game: ActiveGame,
@@ -414,7 +416,7 @@ export function registerTransferSocketHandlers(
                 "systemMessage",
                 `💼 ${getAgentName(player.id)} fez as malas: ${player.name} recusou e foi para leilão.`,
               );
-            });
+            }, true);
           };
 
           // Store counter-offer state with 90s timeout (if coach doesn't respond, go to auction)
@@ -485,7 +487,7 @@ export function registerTransferSocketHandlers(
             "systemMessage",
             `💼 ${getAgentName(player.id)} fez as malas: ${player.name} recusou esperar e foi para leilão. Se for vendido, a verba vai para o teu clube.`,
           );
-        });
+        }, true);
       },
     );
   });

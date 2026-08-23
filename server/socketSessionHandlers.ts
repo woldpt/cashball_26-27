@@ -939,6 +939,8 @@ export function registerSessionSocketHandlers(
 					socket.emit("playerHistoryData", null);
 					return;
 				}
+				player.isExClub =
+					Number(player.team_id) > 0 && (player.contract_start_epoch || 0) === 0;
 				const transfers = await runAll(
 					game.db,
 					`SELECT cn.year, cn.matchweek, cn.title, cn.amount,
