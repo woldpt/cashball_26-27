@@ -40,10 +40,9 @@ export function MatchPlayerCard({
   // which use POSITION_TEXT_CLASS). Selected state falls back to rose.
   const skillColor = selected ? "text-rose-200" : s.badgeText;
 
-  // Form: keep the 💪/😩/👍 emoji triplet used elsewhere in the app
-  // (TacticsView, PlayersTab, MarketTab, SquadCard, PlayerHistoryModal)
-  // for visual consistency. Color carries the unambiguous signal.
-  const formIcon = form >= 115 ? "💪" : form <= 85 ? "😩" : "👍";
+  // Form: only rendered when it carries signal (💪 ≥115 / 😩 ≤85). The
+  // neutral 👍 repeated on every row was visual noise, not information.
+  const formIcon = form >= 115 ? "💪" : form <= 85 ? "😩" : null;
   const formColor =
     form >= 115 ? "text-emerald-400" : form <= 85 ? "text-rose-400" : "text-on-surface-variant";
 
@@ -108,7 +107,7 @@ export function MatchPlayerCard({
         {showFatigue && <FatigueIndicator player={player} compact />}
       </span>
 
-      {/* ── Expanded: skill + RES + form (always visible) ── */}
+      {/* ── Expanded: skill + RES + form (form only when notable) ── */}
       <div className="shrink-0 flex items-center gap-2 mr-2">
         <span
           className={`text-lg font-black font-headline tabular-nums leading-none ${skillColor}`}
@@ -125,8 +124,12 @@ export function MatchPlayerCard({
             {player.resistance ?? "–"}
           </span>
         </div>
-        <div className="w-px h-5 bg-outline-variant/25" />
-        <span className={`text-sm leading-none ${formColor}`}>{formIcon}</span>
+        {formIcon && (
+          <>
+            <div className="w-px h-5 bg-outline-variant/25" />
+            <span className={`text-sm leading-none ${formColor}`}>{formIcon}</span>
+          </>
+        )}
       </div>
 
       {/* Swap affordance (halftime mode). Moved to the right end but

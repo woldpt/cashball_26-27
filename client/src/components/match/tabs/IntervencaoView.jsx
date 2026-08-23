@@ -390,6 +390,7 @@ export function IntervencaoView({
               confirmedSubs={confirmedSubs}
               annotatedSquad={annotatedSquad}
               onUndoSub={onUndoSub}
+              summary={{ fixture, hInfo, aInfo, liveMinute }}
             />
           </motion.div>
         )}
@@ -481,6 +482,7 @@ function SubsPanel({
   confirmedSubs,
   annotatedSquad,
   onUndoSub,
+  summary,
 }) {
   // Mobile: mostra UMA lista de cada vez (Em campo / Banco).
   const [mobileList, setMobileList] = useState("pitch");
@@ -609,6 +611,7 @@ function SubsPanel({
           annotatedSquad={annotatedSquad}
           onUndoSub={onUndoSub}
           swapProps={sharedSwapProps}
+          summary={summary}
         />
       </div>
 
@@ -899,6 +902,7 @@ function MentalidadeColumn({
   confirmedSubs,
   annotatedSquad,
   onUndoSub,
+  summary,
 }) {
   return (
     <div className="flex flex-col min-h-0 min-w-0 overflow-hidden bg-surface-container-high/30">
@@ -908,28 +912,40 @@ function MentalidadeColumn({
         </h3>
         {isHalftime && <SubsCounter subsMade={subsMade} />}
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {isHalftime && (
-          <div className="space-y-2">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-              Estilo de jogo
-            </span>
-            <TacticsButtons
-              className="w-full"
-              value={tactic.style}
-              onChange={onUpdateTactic}
-            />
-          </div>
-        )}
-        <SwapControls {...swapProps} />
+      {/* min-h-full + mt-auto: the summary anchors to the column bottom,
+       * filling the dead space that used to sit between the swap controls
+       * and the (old, orphaned) bottom-pinned confirmed-subs strip. */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex flex-col min-h-full p-4 space-y-4">
+          {isHalftime && (
+            <div className="space-y-2">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
+                Estilo de jogo
+              </span>
+              <TacticsButtons
+                className="w-full"
+                value={tactic.style}
+                onChange={onUpdateTactic}
+              />
+            </div>
+          )}
+          <SwapControls {...swapProps} />
+          {confirmedSubs.length > 0 && (
+            <div className="space-y-2">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
+                Confirmadas
+              </span>
+              <ConfirmedSubsStrip
+                subs={confirmedSubs}
+                annotatedSquad={annotatedSquad}
+                onUndoSub={onUndoSub}
+                className="rounded-md"
+              />
+            </div>
+          )}
+          {summary && <MatchSummaryBlock {...summary} className="mt-auto" />}
+        </div>
       </div>
-      {confirmedSubs.length > 0 && (
-        <ConfirmedSubsStrip
-          subs={confirmedSubs}
-          annotatedSquad={annotatedSquad}
-          onUndoSub={onUndoSub}
-        />
-      )}
     </div>
   );
 }
@@ -985,14 +1001,17 @@ function SwapControls({
       )}
 
       {/* The Sai/Entra chain — two grouped clusters so the eye can scan
-       * "[who's leaving] → [who's coming in]". */}
+       * "[who's leaving] → [who's coming in]". Empty slots are dashed
+       * placeholders with an actionable hint (was: bare "—"). */}
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1.5 min-w-0 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_minmax(0,1fr)]">
         <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">
           Sai
         </span>
-        <span className="bg-rose-950/80 text-rose-200 border border-rose-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0">
-          {effectiveOutId ? sourcePlayer?.name || "?" : "—"}
-        </span>
+        <SwapSlot
+          tone="rose"
+          player={effectiveOutId ? sourcePlayer : null}
+          placeholder="Escolhe quem sai"
+        />
         <MatchIcon
           name="chevron-right"
           className="hidden h-4 w-4 text-on-surface-variant/60 shrink-0 sm:block"
@@ -1000,9 +1019,11 @@ function SwapControls({
         <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">
           Entra
         </span>
-        <span className="bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0">
-          {selectedInId ? targetPlayer?.name || "?" : "—"}
-        </span>
+        <SwapSlot
+          tone="emerald"
+          player={selectedInId ? targetPlayer : null}
+          placeholder="Escolhe quem entra"
+        />
       </div>
 
       {/* Why the confirm button is disabled — never leave it silent. */}
@@ -1049,6 +1070,112 @@ function SwapControls({
         >
           {resolving ? "A substituir…" : "Substituir"}
         </PrimaryButton>
+      )}
+    </div>
+  );
+}
+
+/**
+ * SAI/ENTRA value box. Filled: pos badge + name chip.
+ * Empty: dashed placeholder with an actionable hint.
+ *
+ * @param {string} tone - Color tone of the filled chip ("rose"|"emerald").
+ * @param {object} player - Player to display; null renders the placeholder.
+ * @param {string} placeholder - Empty-state hint text.
+ */
+function SwapSlot({ tone, player, placeholder }) {
+  if (!player) {
+    return (
+      <span className="border border-dashed border-outline-variant/40 text-on-surface-variant/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0">
+        {placeholder}
+      </span>
+    );
+  }
+  const posStyle = getPosStyle(player.position);
+  const toneClass =
+    tone === "rose"
+      ? "bg-rose-950/80 text-rose-200 border-rose-800/50"
+      : "bg-emerald-950/80 text-emerald-200 border-emerald-800/50";
+  return (
+    <span
+      className={`flex items-center gap-1.5 border ${toneClass} text-xs font-semibold px-2 py-1 rounded-md min-w-0`}
+    >
+      <span
+        className={`shrink-0 px-1 py-px rounded text-[9px] font-bold uppercase tracking-widest border ${posStyle.badgeBg} ${posStyle.badgeText} ${posStyle.badgeBorder}`}
+      >
+        {player.position}
+      </span>
+      <span className="truncate min-w-0">{player.name}</span>
+    </span>
+  );
+}
+
+/**
+ * Scoreline + possession + minute. Fills the Mentalidade column's dead
+ * space with decision-relevant context.
+ *
+ * @param {object} fixture - Fixture data (score, possession).
+ * @param {object} hInfo - Home team info (name, color_primary).
+ * @param {object} aInfo - Away team info (name, color_primary).
+ * @param {number} liveMinute - Current match minute.
+ * @param {string} className - Extra classes (e.g. "mt-auto").
+ */
+function MatchSummaryBlock({ fixture, hInfo, aInfo, liveMinute, className = "" }) {
+  if (!fixture || !hInfo?.name || !aInfo?.name) return null;
+  return (
+    <div
+      className={`rounded-md border border-outline-variant/25 bg-surface-container/60 p-3 space-y-2.5 ${className}`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
+          Resumo da partida
+        </span>
+        {liveMinute != null && (
+          <span className="text-[10px] font-bold tabular-nums text-on-surface-variant">
+            {liveMinute}'
+          </span>
+        )}
+      </div>
+      <div className="flex items-center justify-center gap-2">
+        <span className="flex flex-1 min-w-0 items-center justify-end gap-1.5">
+          <span className="truncate text-xs font-bold text-on-surface">{hInfo.name}</span>
+          <span
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ background: hInfo.color_primary }}
+          />
+        </span>
+        <span className="shrink-0 text-lg font-black font-headline tabular-nums text-on-surface">
+          {fixture.homeScore ?? 0} : {fixture.awayScore ?? 0}
+        </span>
+        <span className="flex flex-1 min-w-0 items-center gap-1.5">
+          <span
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ background: aInfo.color_primary }}
+          />
+          <span className="truncate text-xs font-bold text-on-surface">{aInfo.name}</span>
+        </span>
+      </div>
+      {fixture.homePossession != null && (
+        <>
+          <div className="h-1.5 rounded-full overflow-hidden bg-surface-container-high/80 flex">
+            <div
+              className="h-full"
+              style={{
+                width: `${fixture.homePossession}%`,
+                background: hInfo.color_primary || "#6366f1",
+              }}
+            />
+            <div
+              className="h-full flex-1"
+              style={{ background: aInfo.color_primary || "#f43f5e" }}
+            />
+          </div>
+          <div className="flex justify-between text-[9px] font-bold tabular-nums text-on-surface-variant">
+            <span>{fixture.homePossession}%</span>
+            <span className="uppercase tracking-widest">posse</span>
+            <span>{fixture.awayPossession}%</span>
+          </div>
+        </>
       )}
     </div>
   );
