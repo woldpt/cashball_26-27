@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { getPosStyle, PITCH_POS_COLORS, buildPositionRows, filterMatchEvents } from "../matchConstants.js";
+import {
+  getPosStyle,
+  PITCH_POS_COLORS,
+  buildPositionRows,
+  filterMatchEvents,
+} from "../matchConstants.js";
 import { CUP_FINAL_STADIUM } from "../../../constants/index.js";
 import {
   MatchPitch,
@@ -10,7 +15,14 @@ import {
 } from "../shared/index.js";
 
 /* ── MatchView — Main match view (2 columns: narrative + pitch) ─────── */
-export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoundName, showFatigue = true }) {
+export function MatchView({
+  fixture,
+  liveMinute,
+  teams,
+  isCupMatch,
+  cupMatchRoundName,
+  showFatigue = true,
+}) {
   const [pitchSide, setPitchSide] = useState("home");
 
   if (!fixture) return null;
@@ -68,7 +80,11 @@ export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoun
           <div className="flex flex-col md:flex-row gap-4 p-4 md:flex-1 md:min-h-0">
             {/* Pitch */}
             <div className="md:flex-1 md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center">
-              <MatchPitch rows={rows} posColors={posColors} showFatigue={showFatigue} />
+              <MatchPitch
+                rows={rows}
+                posColors={posColors}
+                showFatigue={showFatigue}
+              />
             </div>
 
             {/* Bench */}
@@ -126,7 +142,10 @@ function TeamBadge({ team, active, onClick, label }) {
     >
       <span
         className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
-        style={{ background: color, boxShadow: active ? `0 0 8px ${color}80` : "none" }}
+        style={{
+          background: color,
+          boxShadow: active ? `0 0 8px ${color}80` : "none",
+        }}
       />
       {team?.name || label}
     </button>
@@ -140,7 +159,9 @@ function EventList({ events, hInfo, aInfo }) {
     return (
       <div className="rounded-md border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
         <span className="text-3xl text-on-surface-variant/40">⚽</span>
-        <p className="text-on-surface-variant/60 text-xs font-medium">Sem eventos a mostrar</p>
+        <p className="text-on-surface-variant/60 text-xs font-medium">
+          Sem eventos a mostrar
+        </p>
       </div>
     );
   }
@@ -150,7 +171,15 @@ function EventList({ events, hInfo, aInfo }) {
         const isHome = e.team === "home";
         const accent = (isHome ? hInfo : aInfo)?.color_primary;
         const teamName = (isHome ? hInfo : aInfo)?.name;
-        return <EventCard key={i} event={e} accent={accent} showTeamBadge teamName={teamName} />;
+        return (
+          <EventCard
+            key={i}
+            event={e}
+            accent={accent}
+            showTeamBadge
+            teamName={teamName}
+          />
+        );
       })}
     </div>
   );

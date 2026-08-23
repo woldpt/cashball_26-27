@@ -81,8 +81,8 @@ export function MatchPage({
 		const fixtures = {};
 		Object.entries(byDiv).forEach(([div, divTeams]) => {
 			const divTeamIds = new Set(divTeams.map((t) => t.id));
-			const realFixtures = matchResults?.results?.filter(
-				(r) => divTeamIds.has(r.homeTeamId),
+			const realFixtures = matchResults?.results?.filter((r) =>
+				divTeamIds.has(r.homeTeamId),
 			);
 			if (realFixtures && realFixtures.length > 0) {
 				fixtures[div] = realFixtures;
@@ -117,25 +117,44 @@ export function MatchPage({
 		const hasResult = fixtureData?.finalHomeGoals != null;
 		return (
 			<div className="flex items-center gap-1.5 px-3 py-2 rounded-md border border-outline-variant/25 bg-surface-container-low/60 hover:bg-surface-container/50 transition-colors">
-				<span className="w-2 h-2 rounded-full shrink-0 shadow-sm" style={{ background: hAccent, boxShadow: `0 0 6px ${hAccent}60` }} />
-				<span className="flex-1 text-[10px] font-bold text-on-surface-variant truncate">{home?.name || "—"}</span>
+				<span
+					className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+					style={{ background: hAccent, boxShadow: `0 0 6px ${hAccent}60` }}
+				/>
+				<span className="flex-1 text-[10px] font-bold text-on-surface-variant truncate">
+					{home?.name || "—"}
+				</span>
 				{hasResult ? (
 					<div className="flex items-center gap-1 shrink-0">
-						<span className="text-[11px] font-black tabular-nums text-on-surface min-w-[1.2em] text-right">{fixtureData.finalHomeGoals}</span>
-						<span className="text-[8px] font-black text-on-surface-variant/60">—</span>
-						<span className="text-[11px] font-black tabular-nums text-on-surface min-w-[1.2em] text-left">{fixtureData.finalAwayGoals}</span>
+						<span className="text-[11px] font-black tabular-nums text-on-surface min-w-[1.2em] text-right">
+							{fixtureData.finalHomeGoals}
+						</span>
+						<span className="text-[8px] font-black text-on-surface-variant/60">
+							—
+						</span>
+						<span className="text-[11px] font-black tabular-nums text-on-surface min-w-[1.2em] text-left">
+							{fixtureData.finalAwayGoals}
+						</span>
 					</div>
 				) : (
-					<span className="text-[8px] font-black text-on-surface-variant/60 shrink-0 mx-1">vs</span>
+					<span className="text-[8px] font-black text-on-surface-variant/60 shrink-0 mx-1">
+						vs
+					</span>
 				)}
-				<span className="flex-1 text-[10px] font-bold text-on-surface-variant truncate text-right">{away?.name || "—"}</span>
-				<span className="w-2 h-2 rounded-full shrink-0 shadow-sm" style={{ background: aAccent, boxShadow: `0 0 6px ${aAccent}60` }} />
+				<span className="flex-1 text-[10px] font-bold text-on-surface-variant truncate text-right">
+					{away?.name || "—"}
+				</span>
+				<span
+					className="w-2 h-2 rounded-full shrink-0 shadow-sm"
+					style={{ background: aAccent, boxShadow: `0 0 6px ${aAccent}60` }}
+				/>
 			</div>
 		);
 	};
 
 	// ── Helpers ──────────────────────────────────────────────────────────
-	const getTeamName = (teamId) => teams.find((t) => t.id === teamId)?.name || "—";
+	const getTeamName = (teamId) =>
+		teams.find((t) => t.id === teamId)?.name || "—";
 	const homeTeam = teams.find((t) => t.id === fixture?.homeTeamId);
 	const awayTeam = teams.find((t) => t.id === fixture?.awayTeamId);
 	const hColor = homeTeam?.color_primary || "#6366f1";
@@ -154,25 +173,42 @@ export function MatchPage({
 
 	if (!fixture && !isIntervencao) {
 		return (
-			<div className={`fixed inset-y-0 left-0 right-0 ${sidebarLeft} z-120 flex flex-col bg-[#0d0d14]`}>
+			<div
+				className={`fixed inset-y-0 left-0 right-0 ${sidebarLeft} z-120 flex flex-col bg-[#0d0d14]`}
+			>
 				<div className="flex-1 flex items-center justify-center">
-					<p className="text-sm font-bold text-on-surface-variant">Sem dados do jogo disponíveis</p>
+					<p className="text-sm font-bold text-on-surface-variant">
+						Sem dados do jogo disponíveis
+					</p>
 				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className={`fixed inset-y-0 left-0 right-0 ${sidebarLeft} z-120 flex flex-col bg-[linear-gradient(180deg,#0d0d14_0%,#11111b_100%)]`}>
+		<div
+			className={`fixed inset-y-0 left-0 right-0 ${sidebarLeft} z-120 flex flex-col bg-[linear-gradient(180deg,#0d0d14_0%,#11111b_100%)]`}
+		>
 			{/* Header */}
 			<div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-outline-variant/25 bg-surface-container-high backdrop-blur-sm">
-				<button onClick={onClose} className="w-8 h-8 rounded-xl bg-surface-container-high/80 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-all border border-outline/40 hover:border-outline">←</button>
+				<button
+					onClick={onClose}
+					className="w-8 h-8 rounded-xl bg-surface-container-high/80 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-all border border-outline/40 hover:border-outline"
+				>
+					←
+				</button>
 				<div className="flex-1 flex items-center gap-2 min-w-0">
-					<span className="w-1.5 h-8 rounded-full shrink-0 shadow-sm" style={{ background: hColor, boxShadow: `0 0 8px ${hColor}60` }} />
+					<span
+						className="w-1.5 h-8 rounded-full shrink-0 shadow-sm"
+						style={{ background: hColor, boxShadow: `0 0 8px ${hColor}60` }}
+					/>
 					<span className="text-sm font-black text-on-surface truncate">
 						{getTeamName(fixture?.homeTeamId)} vs {getTeamName(fixture?.awayTeamId)}
 					</span>
-					<span className="w-1.5 h-8 rounded-full shrink-0 shadow-sm" style={{ background: aColor, boxShadow: `0 0 8px ${aColor}60` }} />
+					<span
+						className="w-1.5 h-8 rounded-full shrink-0 shadow-sm"
+						style={{ background: aColor, boxShadow: `0 0 8px ${aColor}60` }}
+					/>
 					{isCupMatch && (
 						<span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30">
 							{cupMatchRoundName || "Taça"}
@@ -189,8 +225,14 @@ export function MatchPage({
 			{/* ── Halftime score banner ──────────────────────────────────── */}
 			{mode === "halftime" && fixture && (
 				<div className="shrink-0 flex items-stretch border-b border-outline-variant/25 bg-surface-container-high backdrop-blur-sm">
-					<div className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5" style={{ backgroundColor: hColor + "20", color: hColor }}>
-						<span className="w-2 h-2 rounded-full shrink-0" style={{ background: hColor, boxShadow: `0 0 6px ${hColor}60` }} />
+					<div
+						className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5"
+						style={{ backgroundColor: hColor + "20", color: hColor }}
+					>
+						<span
+							className="w-2 h-2 rounded-full shrink-0"
+							style={{ background: hColor, boxShadow: `0 0 6px ${hColor}60` }}
+						/>
 						{homeTeam?.name || "Casa"}
 					</div>
 					<div className="flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-6 bg-surface-container-low text-on-surface font-black text-xl tracking-widest">
@@ -198,9 +240,15 @@ export function MatchPage({
 						<span className="text-on-surface-variant/60 text-base">—</span>
 						<span className="tabular-nums">{fixture.finalAwayGoals ?? 0}</span>
 					</div>
-					<div className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5" style={{ backgroundColor: aColor + "20", color: aColor }}>
+					<div
+						className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5"
+						style={{ backgroundColor: aColor + "20", color: aColor }}
+					>
 						{awayTeam?.name || "Fora"}
-						<span className="w-2 h-2 rounded-full shrink-0" style={{ background: aColor, boxShadow: `0 0 6px ${aColor}60` }} />
+						<span
+							className="w-2 h-2 rounded-full shrink-0"
+							style={{ background: aColor, boxShadow: `0 0 6px ${aColor}60` }}
+						/>
 					</div>
 				</div>
 			)}
@@ -228,10 +276,10 @@ export function MatchPage({
 						swapTarget={swapTarget}
 						onSelectOut={effectiveSelectOut}
 						onSelectIn={effectiveSelectIn}
-					onConfirmSub={handleConfirmSub}
-					onResetSub={handleResetSub}
-					onUndoSub={handleUndoSub}
-					onResetAllSubs={handleResetAllSubs}
+						onConfirmSub={handleConfirmSub}
+						onResetSub={handleResetSub}
+						onUndoSub={handleUndoSub}
+						onResetAllSubs={handleResetAllSubs}
 						redCardedHalftimeIds={redCardedHalftimeIds}
 						injuredHalftimeIds={injuredHalftimeIds}
 						onResolveAction={onResolveAction}
@@ -251,14 +299,30 @@ export function MatchPage({
 				{!isIntervencao && mode !== "detail" && (
 					<div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high/70 px-3 py-2">
 						<h4 className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-1.5">
-							{isCupMatch ? `${cupMatchRoundName || "Taça"} · Outros jogos` : `${DIVISION_NAMES[myDivision] || "Liga"} · J${currentJornada || "—"}`}
+							{isCupMatch
+								? `${cupMatchRoundName || "Taça"} · Outros jogos`
+								: `${DIVISION_NAMES[myDivision] || "Liga"} · J${currentJornada || "—"}`}
 						</h4>
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5">
 							{isCupMatch
-								? cupOtherFixtures.map((r, i) => <FixtureCard key={i} homeTeamId={r.homeTeamId} awayTeamId={r.awayTeamId} fixtureData={r} />)
+								? cupOtherFixtures.map((r, i) => (
+										<FixtureCard
+											key={i}
+											homeTeamId={r.homeTeamId}
+											awayTeamId={r.awayTeamId}
+											fixtureData={r}
+										/>
+									))
 								: (divisionFixtures[myDivision] || [])
 										.filter((f) => f.homeTeamId !== myTeamId && f.awayTeamId !== myTeamId)
-										.map((f, i) => <FixtureCard key={i} homeTeamId={f.homeTeamId} awayTeamId={f.awayTeamId} fixtureData={f} />)}
+										.map((f, i) => (
+											<FixtureCard
+												key={i}
+												homeTeamId={f.homeTeamId}
+												awayTeamId={f.awayTeamId}
+												fixtureData={f}
+											/>
+										))}
 						</div>
 					</div>
 				)}
@@ -293,12 +357,18 @@ export function MatchPage({
 				</button>
 			)}
 			{mode === "action" && matchAction?.type === "user_substitution" && (
-				<button onClick={() => onResolveAction(null)} className="shrink-0 w-full py-3.5 text-sm font-black uppercase tracking-widest bg-primary hover:brightness-110 text-on-primary transition-all border-t border-outline">
+				<button
+					onClick={() => onResolveAction(null)}
+					className="shrink-0 w-full py-3.5 text-sm font-black uppercase tracking-widest bg-primary hover:brightness-110 text-on-primary transition-all border-t border-outline"
+				>
 					▶ CONTINUAR
 				</button>
 			)}
 			{mode === "detail" && (
-				<button onClick={onClose} className="shrink-0 w-full py-3 text-sm font-black uppercase tracking-widest bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-all border-t border-outline">
+				<button
+					onClick={onClose}
+					className="shrink-0 w-full py-3 text-sm font-black uppercase tracking-widest bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-all border-t border-outline"
+				>
 					Fechar
 				</button>
 			)}
