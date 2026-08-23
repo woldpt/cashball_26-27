@@ -1145,7 +1145,7 @@ function MatchSummaryBlock({ fixture, hInfo, aInfo, liveMinute, className = "" }
           />
         </span>
         <span className="shrink-0 text-lg font-black font-headline tabular-nums text-on-surface">
-          {fixture.homeScore ?? 0} : {fixture.awayScore ?? 0}
+          {fixture.finalHomeGoals ?? 0} : {fixture.finalAwayGoals ?? 0}
         </span>
         <span className="flex flex-1 min-w-0 items-center gap-1.5">
           <span
