@@ -159,16 +159,15 @@ export function RoomHub({
     >
       {roomHubOpen && (
         <div
-          className="flex flex-row rounded-xl shadow-2xl overflow-hidden border border-outline-variant/40"
+          className="flex flex-col sm:flex-row rounded-xl shadow-2xl overflow-hidden border border-outline-variant/40 h-[min(480px,calc(100dvh-5rem))] sm:h-[480px]"
           style={{
             width: "min(580px, calc(100vw - 2rem))",
-            height: 480,
             background: "#1a1a1a",
           }}
         >
           {/* ── Coluna Esquerda: Sala + Coaches ── */}
           <div
-            className="w-[200px] shrink-0 flex flex-col border-r border-outline-variant/20"
+            className="w-full sm:w-[200px] shrink-0 flex flex-col border-b sm:border-b-0 sm:border-r border-outline-variant/20"
             style={{ background: "#111" }}
           >
             {/* Room info */}
@@ -201,7 +200,7 @@ export function RoomHub({
             </div>
 
             {/* Players list */}
-            <div className="flex-1 overflow-y-auto divide-y divide-outline-variant/10">
+            <div className="flex-1 max-h-40 sm:max-h-none overflow-y-auto divide-y divide-outline-variant/10">
               {[
                 ...players.map((p) => ({
                   name: p.name,
@@ -300,7 +299,7 @@ export function RoomHub({
           </div>
 
           {/* ── Coluna Direita: Chat ── */}
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-0 min-h-0">
             {/* Room/Global sub-tabs */}
             <div
               className="flex shrink-0 border-b border-outline-variant/20"
