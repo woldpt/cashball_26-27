@@ -12,7 +12,7 @@ import {
   contractEndInfo,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
-import { signingWage, getAgentName } from "./gameConstants";
+import { signingWage, getAgentName, fairWeeklyWage } from "./gameConstants";
 
 interface TransferHandlerDeps {
   io: any;
@@ -358,8 +358,7 @@ export function registerTransferSocketHandlers(
       (err, player) => {
         if (err || !player) return;
 
-        const value = player.value || (player.skill || 0) * 20000;
-        const fairWage = Math.round(Math.pow(value, 0.62) / 2.5);
+        const fairWage = fairWeeklyWage(player.skill);
         const demandedWage = Math.max(
           fairWage,
           Math.round((player.wage || 0) * 1.05),
@@ -463,7 +462,7 @@ export function registerTransferSocketHandlers(
         if (!player.contract_request_pending) return;
 
         const value = player.value || (player.skill || 0) * 20000;
-        const fairWage = Math.round(Math.pow(value, 0.62) / 2.5);
+        const fairWage = fairWeeklyWage(player.skill);
         const demandedWage = Math.max(
           fairWage,
           Math.round((player.wage || 0) * 1.05),

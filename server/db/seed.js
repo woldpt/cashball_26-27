@@ -50,6 +50,14 @@ function randomSkill(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+// Mesma fórmula que fairWeeklyWage (gameConstants.ts) — duplicada aqui porque
+// a seed corre em node puro (sem TS). Sub-linear: jogadores fracos ganham
+// muito menos, mantendo as folhas salariais das divisões baixas viáveis.
+function fairWeeklyWage(skill) {
+  const s = Math.max(1, Math.round(skill || 0));
+  return Math.round(Math.pow(s, 1.292) * 51);
+}
+
 db.configure("busyTimeout", 10000);
 
 // Drop tables in dependency order so that the schema is always recreated fresh.
@@ -198,7 +206,7 @@ db.serialize(() => {
         // Piso fixo de €30.000 ajuda a economia das equipas pequenas (divisões 4–5).
         const value = Math.round(skill * skill * 500 + skill * 2000 + 30000);
         const wageFactor = 0.85 + Math.random() * 0.30; // ±15% de variação
-        const wage = Math.round(skill * 200 * wageFactor);
+        const wage = Math.round(fairWeeklyWage(skill) * wageFactor);
         const isStar =
           (pos === "MED" || pos === "ATA") && Math.random() < 0.1 ? 1 : 0;
         const potential = Math.min(

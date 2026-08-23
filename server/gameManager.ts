@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
-import { SEASON_CALENDAR } from "./gameConstants";
+import { SEASON_CALENDAR, fairWeeklyWage } from "./gameConstants";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 
 const sqlite = sqlite3.verbose();
@@ -432,6 +432,46 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                   console.warn(
                     `[gameManager] value backfill failed: ${valueErr.message}`,
                   );
+              },
+            );
+            // Rebalance salarial (one-shot, flag em game_state): cap salários
+            // acima de fairWeeklyWage(skill) × 1.15 (a variação ±15% da seed).
+            // Só reduz, nunca aumenta. One-shot (não por load) porque salários
+            // são negociáveis em jogo — renewals chegam a wage×1.25, e um cap
+            // por load apagaria contratos legítimos após restart.
+            db.get(
+              "SELECT value FROM game_state WHERE key = 'wage_rebalance_v1'",
+              (flagErr: Error | null, flagRow: any) => {
+                if (flagErr) {
+                  console.warn(
+                    `[gameManager] wage rebalance flag check failed: ${flagErr.message}`,
+                  );
+                  return;
+                }
+                if (flagRow) return; // já executado
+                db.all(
+                  "SELECT id, skill, wage FROM players WHERE team_id IS NOT NULL AND skill IS NOT NULL AND skill > 0",
+                  (rowsErr: Error | null, rows: any[]) => {
+                    if (rowsErr) {
+                      console.warn(
+                        `[gameManager] wage rebalance read failed: ${rowsErr.message}`,
+                      );
+                      return;
+                    }
+                    for (const row of rows || []) {
+                      const cap = Math.round(fairWeeklyWage(row.skill) * 1.15);
+                      if ((row.wage || 0) > cap) {
+                        db.run(
+                          "UPDATE players SET wage = ? WHERE id = ?",
+                          [cap, row.id],
+                        );
+                      }
+                    }
+                    db.run(
+                      "INSERT OR REPLACE INTO game_state (key, value) VALUES ('wage_rebalance_v1', '1')",
+                    );
+                  },
+                );
               },
             );
           },

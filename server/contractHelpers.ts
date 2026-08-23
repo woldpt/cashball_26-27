@@ -2,6 +2,7 @@ import type { ActiveGame, PlayerSession } from "./types";
 import {
   CONTRACT_LENGTH_MATCHWEEKS,
   getAgentName,
+  fairWeeklyWage,
 } from "./gameConstants";
 import {
   currentEpoch,
@@ -42,7 +43,7 @@ export function createContractHelpers(deps: ContractDeps) {
   };
 
   const fairWageOf = (player: any): number => {
-    return Math.round(Math.pow(effectiveValue(player), 0.62) / 2.5);
+    return fairWeeklyWage(player.skill);
   };
 
   /**

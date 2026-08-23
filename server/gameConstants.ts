@@ -28,10 +28,23 @@ export function recalcPlayerValue(skill: number): number {
 }
 
 /**
+ * Salário semanal justo, derivado do skill (sub-linear).
+ * Jogadores fracos (skill 5–15) ganham muito menos que os craques, mantendo
+ * as folhas salariais das divisões baixas viáveis (a receita das equipas
+ * pequenas escala com a divisão, não com o skill).
+ * Âncoras: skill 10 → ~1000€/sem, skill 50 → ~8000€/sem.
+ * Mesma fórmula usada na seed (seed.js) e no backfill do gameManager.
+ */
+export function fairWeeklyWage(skill: number): number {
+  const s = Math.max(1, Math.round(skill || 0));
+  return Math.round(Math.pow(s, 1.292) * 51);
+}
+
+/**
  * Salário de assinatura para um novo contrato (compra / leilão / transferência NPC).
- * Escala consistente com a seed (skill × 200) com um prémio de mercado de 50%
- * e fatores de resistência/forma/star. NUNCA é usado para recalcular salários
- * de jogadores em contrato — o salário só muda na compra ou na renegociação.
+ * Base `fairWeeklyWage(skill)` (mesma curva da seed) com fatores de
+ * resistência/forma/star. NUNCA é usado para recalcular salários de jogadores
+ * em contrato — o salário só muda na compra ou na renegociação.
  */
 export function signingWage(player: {
   skill?: number;
@@ -44,7 +57,7 @@ export function signingWage(player: {
   const formFactor = (player.form || 90) / 90;
   const starFactor = player.is_star ? 1.2 : 1;
   const adjustedSkillWage = Math.round(
-    (player.skill || 0) * 300 * resFactor * formFactor * starFactor,
+    fairWeeklyWage(player.skill) * resFactor * formFactor * starFactor,
   );
   return Math.max(player.wage || 0, adjustedSkillWage);
 }
