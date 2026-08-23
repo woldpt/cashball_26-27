@@ -5,9 +5,19 @@ import { MatchIcon } from "./MatchIcon.jsx";
  * styling (background, border, glow) so the old hardcoded indigo glow bug —
  * where picking "Ofensivo" still produced an indigo halo — is fixed. */
 const TACTIC_OPTIONS = [
-  { value: "Defensive", label: "Defensivo", accent: "#3b82f6", icon: "phase-start" },
-  { value: "Balanced",  label: "Equilibrado", accent: "#6366f1", icon: "form-flat" },
-  { value: "Offensive", label: "Ofensivo",  accent: "#f59e0b", icon: "form-up" },
+  {
+    value: "Defensive",
+    label: "Defensivo",
+    accent: "#3b82f6",
+    icon: "phase-start",
+  },
+  {
+    value: "Balanced",
+    label: "Equilibrado",
+    accent: "#6366f1",
+    icon: "form-flat",
+  },
+  { value: "Offensive", label: "Ofensivo", accent: "#f59e0b", icon: "form-up" },
 ];
 
 export function TacticsButtons({ value, onChange, className }) {
@@ -27,11 +37,15 @@ export function TacticsButtons({ value, onChange, className }) {
             /* Selected state derives ALL color from the accent inline — the
              * old code layered a dead className `shadow-[0_0_20px_rgba(99,102,241,0.15)]`
              * on top, which flickered indigo during the transition. */
-            style={isActive ? {
-              background: `${accent}30`,
-              borderColor: `${accent}80`,
-              boxShadow: `0 0 20px ${accent}25`,
-            } : {}}
+            style={
+              isActive
+                ? {
+                    background: `${accent}30`,
+                    borderColor: `${accent}80`,
+                    boxShadow: `0 0 20px ${accent}25`,
+                  }
+                : {}
+            }
           >
             <MatchIcon
               name={icon}

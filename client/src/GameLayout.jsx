@@ -281,33 +281,33 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           </button>
         </div>
       )}
-        {/* Toast notifications */}
-        <div className="fixed top-16 right-4 z-100 flex flex-col gap-2 pointer-events-none">
-          {toasts.map((t) => (
-            <div
-              key={t.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => dismissToast(t.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") dismissToast(t.id);
+      {/* Toast notifications */}
+      <div className="fixed top-16 right-4 z-100 flex flex-col gap-2 pointer-events-none">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => dismissToast(t.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") dismissToast(t.id);
+            }}
+            className="bg-surface-container border border-outline-variant/60 text-on-surface text-sm font-bold px-5 py-3 rounded-md shadow-2xl toast-slide-in pointer-events-auto cursor-pointer select-none flex items-center gap-3"
+          >
+            <span className="flex-1">{t.msg}</span>
+            <span
+              className="material-symbols-outlined text-base opacity-50 hover:opacity-100 shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                dismissToast(t.id);
               }}
-              className="bg-surface-container border border-outline-variant/60 text-on-surface text-sm font-bold px-5 py-3 rounded-md shadow-2xl toast-slide-in pointer-events-auto cursor-pointer select-none flex items-center gap-3"
+              aria-label="Fechar notificação"
             >
-              <span className="flex-1">{t.msg}</span>
-              <span
-                className="material-symbols-outlined text-base opacity-50 hover:opacity-100 shrink-0"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  dismissToast(t.id);
-                }}
-                aria-label="Fechar notificação"
-              >
-                close
-              </span>
-            </div>
-          ))}
-        </div>
+              close
+            </span>
+          </div>
+        ))}
+      </div>
       <header
         className="fixed top-0 left-0 right-0 h-14 z-160 flex items-center border-b border-outline-variant/20"
         style={{
@@ -320,7 +320,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           <div className="flex items-center gap-3">
             <h1
               className="text-base font-headline font-black tracking-tighter uppercase"
-              style={{ color: teamInfo?.color_secondary || "var(--color-on-surface)" }}
+              style={{
+                color: teamInfo?.color_secondary || "var(--color-on-surface)",
+              }}
             >
               CashBall <span style={{ opacity: 0.55 }}>26/27</span>
             </h1>
@@ -379,7 +381,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             >
               <span
                 className="material-symbols-outlined text-[20px] leading-none"
-                style={{ color: teamInfo?.color_secondary || "var(--color-on-surface)" }}
+                style={{
+                  color: teamInfo?.color_secondary || "var(--color-on-surface)",
+                }}
               >
                 chat
               </span>
@@ -420,20 +424,29 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 <div className="hidden lg:flex flex-col items-start">
                   <span
                     className="text-sm font-bold leading-tight"
-                    style={{ color: teamInfo?.color_secondary || "var(--color-on-surface)" }}
+                    style={{
+                      color:
+                        teamInfo?.color_secondary || "var(--color-on-surface)",
+                    }}
                   >
                     {me.name}
                   </span>
                   <span
                     className="text-xs leading-tight opacity-70"
-                    style={{ color: teamInfo?.color_secondary || "var(--color-on-surface)" }}
+                    style={{
+                      color:
+                        teamInfo?.color_secondary || "var(--color-on-surface)",
+                    }}
                   >
                     {teamInfo?.name}
                   </span>
                 </div>
                 <span
                   className="material-symbols-outlined text-[16px] leading-none opacity-60"
-                  style={{ color: teamInfo?.color_secondary || "var(--color-on-surface)" }}
+                  style={{
+                    color:
+                      teamInfo?.color_secondary || "var(--color-on-surface)",
+                  }}
                 >
                   {userDropdownOpen ? "expand_less" : "expand_more"}
                 </span>
@@ -976,7 +989,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
             {/* Transferências (Mercado + Leilões) */}
             {(() => {
-              const isChildActive = ["market", "leiloes", "scout"].includes(activeTab);
+              const isChildActive = ["market", "leiloes", "scout"].includes(
+                activeTab,
+              );
               const isOpen = mobileSubMenu === "transferencias";
               return (
                 <motion.button
@@ -1064,7 +1079,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       >
                         {/* ── ROW 1: MY GAME + VIRTUAL CLASSIFICATION ── */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
-                          <div className={`${isCupMatch ? "lg:col-span-3" : "lg:col-span-2"}`}>
+                          <div
+                            className={`${isCupMatch ? "lg:col-span-3" : "lg:col-span-2"}`}
+                          >
                             {/* ── HERO: MY MATCH ─────────────────────── */}
                             {matchResults && (
                               <LiveMatchHero
@@ -1101,74 +1118,119 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                                 liveMinute={liveMinute}
                                 myTeamId={me.teamId}
                                 teamForms={teamForms}
-                                applyLiveResults={standingsStale || isLiveSimulation || showHalftimePanel}
+                                applyLiveResults={
+                                  standingsStale ||
+                                  isLiveSimulation ||
+                                  showHalftimePanel
+                                }
                               />
                             </div>
                           )}
                         </div>
 
                         {/* ── ROW 2: ALL DIVISIONS ── */}
-                        {!isCupMatch && (() => {
-                          const myDiv = teams.find(t => t.id === me.teamId)?.division;
-                          const allDivs = [1, 2, 3, 4];
-                          return (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4">
-                              {allDivs.map((div) => {
-                                const isMyDiv = div === myDiv;
-                                const divMatches = matchResults.results
-                                  .filter(m => teams.find(t => t.id === m.homeTeamId)?.division === div)
-                                  .filter(m => m.homeTeamId !== me.teamId && m.awayTeamId !== me.teamId)
-                                  .sort(sortHumanFirst);
-                                return (
-                                  <div key={div} className="flex flex-col gap-2">
-                                    <div className={`px-3 py-2 rounded-t-md border-b-2 bg-surface-container-high ${
-                                      isMyDiv ? "border-primary/60" : "border-outline-variant/20"
-                                    }`}>
-                                      <h3 className={`font-headline font-extrabold text-[9px] sm:text-[10px] lg:text-[11px] tracking-tighter uppercase ${
-                                        isMyDiv ? "text-primary" : "text-on-surface/50"
-                                      }`}>
-                                        {DIVISION_NAMES[div] || `Div ${div}`}
-                                        {isMyDiv && (
-                                          <span className="ml-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-primary/10 text-primary text-[7px] font-black uppercase tracking-widest border border-primary/30">
-                                            A tua divisão
-                                          </span>
+                        {!isCupMatch &&
+                          (() => {
+                            const myDiv = teams.find(
+                              (t) => t.id === me.teamId,
+                            )?.division;
+                            const allDivs = [1, 2, 3, 4];
+                            return (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4">
+                                {allDivs.map((div) => {
+                                  const isMyDiv = div === myDiv;
+                                  const divMatches = matchResults.results
+                                    .filter(
+                                      (m) =>
+                                        teams.find((t) => t.id === m.homeTeamId)
+                                          ?.division === div,
+                                    )
+                                    .filter(
+                                      (m) =>
+                                        m.homeTeamId !== me.teamId &&
+                                        m.awayTeamId !== me.teamId,
+                                    )
+                                    .sort(sortHumanFirst);
+                                  return (
+                                    <div
+                                      key={div}
+                                      className="flex flex-col gap-2"
+                                    >
+                                      <div
+                                        className={`px-3 py-2 rounded-t-md border-b-2 bg-surface-container-high ${
+                                          isMyDiv
+                                            ? "border-primary/60"
+                                            : "border-outline-variant/20"
+                                        }`}
+                                      >
+                                        <h3
+                                          className={`font-headline font-extrabold text-[9px] sm:text-[10px] lg:text-[11px] tracking-tighter uppercase ${
+                                            isMyDiv
+                                              ? "text-primary"
+                                              : "text-on-surface/50"
+                                          }`}
+                                        >
+                                          {DIVISION_NAMES[div] || `Div ${div}`}
+                                          {isMyDiv && (
+                                            <span className="ml-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-primary/10 text-primary text-[7px] font-black uppercase tracking-widest border border-primary/30">
+                                              A tua divisão
+                                            </span>
+                                          )}
+                                        </h3>
+                                      </div>
+                                      <div className="flex flex-col gap-1.5">
+                                        {divMatches.length === 0 ? (
+                                          <div className="text-[10px] text-on-surface-variant/30 px-3 py-2 text-center italic">
+                                            Sem jogos
+                                          </div>
+                                        ) : (
+                                          divMatches.map((match, idx) => (
+                                            <LiveFixtureRow
+                                              key={idx}
+                                              match={match}
+                                              teams={teams}
+                                              players={players}
+                                              liveMinute={liveMinute}
+                                              goalFlashRef={goalFlashRef}
+                                              onOpenDetail={() => {
+                                                setMatchDetailFixture(match);
+                                                setShowMatchDetail(true);
+                                              }}
+                                            />
+                                          ))
                                         )}
-                                      </h3>
+                                      </div>
                                     </div>
-                                    <div className="flex flex-col gap-1.5">
-                                      {divMatches.length === 0 ? (
-                                        <div className="text-[10px] text-on-surface-variant/30 px-3 py-2 text-center italic">Sem jogos</div>
-                                      ) : (
-                                        divMatches.map((match, idx) => (
-                                          <LiveFixtureRow
-                                            key={idx}
-                                            match={match}
-                                            teams={teams}
-                                            players={players}
-                                            liveMinute={liveMinute}
-                                            goalFlashRef={goalFlashRef}
-                                            onOpenDetail={() => { setMatchDetailFixture(match); setShowMatchDetail(true); }}
-                                          />
-                                        ))
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          );
-                        })()}
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
 
                         {/* ── CUP MULTIVIEW (all other games in responsive columns) ── */}
                         {isCupMatch && matchResults?.results && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                             {matchResults.results
-                              .filter((m) => m.homeTeamId !== me.teamId && m.awayTeamId !== me.teamId)
+                              .filter(
+                                (m) =>
+                                  m.homeTeamId !== me.teamId &&
+                                  m.awayTeamId !== me.teamId,
+                              )
                               .filter((m) => {
                                 // After 90', only show games still in extra time (score tied at 90)
                                 if (liveMinute <= 90) return true;
-                                const goals90Home = (m.events || []).filter((e) => e.minute <= 90 && e.type === "goal" && e.team === "home").length;
-                                const goals90Away = (m.events || []).filter((e) => e.minute <= 90 && e.type === "goal" && e.team === "away").length;
+                                const goals90Home = (m.events || []).filter(
+                                  (e) =>
+                                    e.minute <= 90 &&
+                                    e.type === "goal" &&
+                                    e.team === "home",
+                                ).length;
+                                const goals90Away = (m.events || []).filter(
+                                  (e) =>
+                                    e.minute <= 90 &&
+                                    e.type === "goal" &&
+                                    e.team === "away",
+                                ).length;
                                 return goals90Home === goals90Away;
                               })
                               .sort(sortHumanFirst)
@@ -1180,7 +1242,10 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                                   players={players}
                                   liveMinute={liveMinute}
                                   goalFlashRef={goalFlashRef}
-                                  onOpenDetail={() => { setMatchDetailFixture(match); setShowMatchDetail(true); }}
+                                  onOpenDetail={() => {
+                                    setMatchDetailFixture(match);
+                                    setShowMatchDetail(true);
+                                  }}
                                 />
                               ))}
                           </div>

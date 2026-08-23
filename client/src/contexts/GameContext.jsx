@@ -193,10 +193,7 @@ export function GameProvider({
 	const addToast = useCallback((msg) => {
 		const id = Date.now();
 		setToasts((prev) => [...prev, { id, msg }]);
-		setTimeout(
-			() => setToasts((prev) => prev.filter((t) => t.id !== id)),
-			6000,
-		);
+		setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 6000);
 	}, []);
 
 	const dismissToast = useCallback((id) => {
@@ -341,11 +338,7 @@ export function GameProvider({
 					setLiveMinute((m) => m + 1);
 				}, 1000);
 				return () => clearTimeout(timer);
-			} else if (
-				liveMinute === 45 &&
-				!isSecondHalfReplay &&
-				!showHalftimePanel
-			) {
+			} else if (liveMinute === 45 && !isSecondHalfReplay && !showHalftimePanel) {
 				startTransition(() => setIsPlayingMatch(false));
 			} else if (liveMinute >= 120 && isCupExtraTime) {
 				const timer = setTimeout(() => {
@@ -391,9 +384,7 @@ export function GameProvider({
 	useLayoutEffect(() => {
 		if (!isPlayingMatch || !matchResults?.results || liveMinute < 1) return;
 		matchResults.results.forEach((match) => {
-			const events = (match.events || []).filter(
-				(e) => e.minute === liveMinute,
-			);
+			const events = (match.events || []).filter((e) => e.minute === liveMinute);
 			if (!events.length) return;
 			events.forEach((e) => {
 				if (["goal", "penalty_goal", "var_goal_pending"].includes(e.type)) {
@@ -407,8 +398,7 @@ export function GameProvider({
 				me?.teamId != null &&
 				(match.homeTeamId === me.teamId || match.awayTeamId === me.teamId);
 			const isHumanMatch = players.some(
-				(p) =>
-					p.teamId === match.homeTeamId || p.teamId === match.awayTeamId,
+				(p) => p.teamId === match.homeTeamId || p.teamId === match.awayTeamId,
 			);
 			if (isMyMatch || isHumanMatch) {
 				const hasGoal = events.some((e) =>
@@ -534,9 +524,7 @@ export function GameProvider({
 				event.error || event.reason || event.message,
 			);
 			const error =
-				event.error ||
-				event.reason ||
-				new Error(event.message || "Unknown error");
+				event.error || event.reason || new Error(event.message || "Unknown error");
 			setRenderError(error);
 			event.preventDefault();
 		};
@@ -750,9 +738,7 @@ export function GameProvider({
 			setMatchAction(null);
 			setIsMatchActionPending(false);
 			if (
-				["user_substitution", "injury", "gk_red_card"].includes(
-					matchAction.type,
-				) &&
+				["user_substitution", "injury", "gk_red_card"].includes(matchAction.type) &&
 				typeof playerIdOrChoice === "object" &&
 				playerIdOrChoice !== null
 			) {
@@ -948,8 +934,7 @@ export function GameProvider({
 				);
 			})()
 		: showHalftimePanel
-			? myMatch ||
-				(isCupMatch ? matchResults?.results?.[0] || null : null)
+			? myMatch || (isCupMatch ? matchResults?.results?.[0] || null : null)
 			: showMatchDetail
 				? matchDetailFixture
 				: null;
@@ -975,15 +960,13 @@ export function GameProvider({
 	const filteredMarketPlayers = useMemo(() => {
 		const marketTeamId = me?.teamId;
 		const getPlayerPrice = (player) => {
-			const isListed =
-				player.transfer_status && player.transfer_status !== "none";
+			const isListed = player.transfer_status && player.transfer_status !== "none";
 			return isListed
 				? player.transfer_price || player.value * 0.75
 				: player.value * 1.2;
 		};
 		const comparePlayers = (a, b) => {
-			if (marketSort === "price-asc")
-				return getPlayerPrice(a) - getPlayerPrice(b);
+			if (marketSort === "price-asc") return getPlayerPrice(a) - getPlayerPrice(b);
 			if (marketSort === "price-desc")
 				return getPlayerPrice(b) - getPlayerPrice(a);
 			if (marketSort === "quality-asc") return (a.skill || 0) - (b.skill || 0);
