@@ -22,6 +22,7 @@ export function MatchPlayerCard({
   onPick,
   title,
   swapIndicator = false,
+  showFatigue = true,
   forcedOut = false,
   draggable = false,
   dragOver = false,
@@ -104,7 +105,7 @@ export function MatchPlayerCard({
             <span className="ml-0.5 text-amber-400" title="Craque" aria-label="Craque">★</span>
           )}
         </span>
-        <FatigueIndicator player={player} compact />
+        {showFatigue && <FatigueIndicator player={player} compact />}
       </span>
 
       {/* ── Expanded: skill + RES + form (always visible) ── */}

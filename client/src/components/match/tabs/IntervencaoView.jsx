@@ -30,13 +30,32 @@ import { TeamCrest } from "../../live/TeamCrest.jsx";
  *   [Iniciar/Continuar]  ← full-width button em MatchPage (mantido)
  * ──────────────────────────────────────────────────────────────────────── */
 export function IntervencaoView({
-  mode, fixture, liveMinute, teams, myTeamId,
-  isCupMatch, isCupExtraTime,
-  matchAction, injuryCountdown, tactic, onUpdateTactic,
-  annotatedSquad, subbedOut, confirmedSubs, subsMade,
-  swapSource, swapTarget, onSelectOut, onSelectIn,
-  onConfirmSub, onResetSub, onUndoSub, onResetAllSubs,
-  redCardedHalftimeIds, injuredHalftimeIds, onResolveAction,
+  mode,
+  fixture,
+  liveMinute,
+  teams,
+  myTeamId,
+  isCupMatch,
+  isCupExtraTime,
+  matchAction,
+  injuryCountdown,
+  tactic,
+  onUpdateTactic,
+  annotatedSquad,
+  subbedOut,
+  confirmedSubs,
+  subsMade,
+  swapSource,
+  swapTarget,
+  onSelectOut,
+  onSelectIn,
+  onConfirmSub,
+  onResetSub,
+  onUndoSub,
+  onResetAllSubs,
+  redCardedHalftimeIds,
+  injuredHalftimeIds,
+  onResolveAction,
 }) {
   const [centerTab, setCenterTab] = useState("subs");
   const [confirmResetAll, setConfirmResetAll] = useState(false);
@@ -51,19 +70,27 @@ export function IntervencaoView({
 
   /* ── Mode booleans ────────────────────────────────────────────── */
   const isHalftime = mode === "halftime";
-  const isPreExtraTime = isHalftime && isCupMatch && (liveMinute ?? 0) >= 90 && !isCupExtraTime;
+  const isPreExtraTime =
+    isHalftime && isCupMatch && (liveMinute ?? 0) >= 90 && !isCupExtraTime;
   const actionType = matchAction?.type || null;
   const isForcedSwap = actionType === "injury" || actionType === "gk_red_card";
   const isGkRedCard = actionType === "gk_red_card";
   const isActionSub = actionType === "user_substitution";
 
   const selectedOutId =
-    typeof swapSource === "object" && swapSource !== null ? swapSource.id : swapSource;
+    typeof swapSource === "object" && swapSource !== null
+      ? swapSource.id
+      : swapSource;
   const selectedInId =
-    typeof swapTarget === "object" && swapTarget !== null ? swapTarget.id : swapTarget;
+    typeof swapTarget === "object" && swapTarget !== null
+      ? swapTarget.id
+      : swapTarget;
 
   const forceOutPlayer =
-    matchAction?.injuredPlayer || matchAction?.sentOffPlayer || matchAction?.dismissedPlayer || null;
+    matchAction?.injuredPlayer ||
+    matchAction?.sentOffPlayer ||
+    matchAction?.dismissedPlayer ||
+    null;
 
   /* ── Team info ────────────────────────────────────────────────── */
   const isHome =
@@ -83,18 +110,19 @@ export function IntervencaoView({
   const liveOwnById = new Map(
     (liveOwnLineup || []).map((player) => [Number(player.id), player]),
   );
-  const panelSquad = isHalftime && isMyFixture
-    ? annotatedSquad.map((player) => {
-        const livePlayer = liveOwnById.get(Number(player.id));
-        if (!livePlayer) return player;
-        return {
-          ...player,
-          skill: livePlayer.skill ?? player.skill,
-          matchMinutes: livePlayer.matchMinutes ?? 0,
-          fatigueLoss: livePlayer.fatigueLoss ?? 0,
-        };
-      })
-    : annotatedSquad;
+  const panelSquad =
+    isHalftime && isMyFixture
+      ? annotatedSquad.map((player) => {
+          const livePlayer = liveOwnById.get(Number(player.id));
+          if (!livePlayer) return player;
+          return {
+            ...player,
+            skill: livePlayer.skill ?? player.skill,
+            matchMinutes: livePlayer.matchMinutes ?? 0,
+            fatigueLoss: livePlayer.fatigueLoss ?? 0,
+          };
+        })
+      : annotatedSquad;
 
   /* ── Our squad ────────────────────────────────────────────────── */
   const onPitchPlayers = isHalftime
@@ -135,7 +163,9 @@ export function IntervencaoView({
   const targetPlayer = playerById(selectedInId);
   const sourcePlayer = playerById(effectiveOutId);
   const canConfirmSwap =
-    !!effectiveOutId && !!selectedInId && (!isHalftime || subsMade < MAX_MATCH_SUBS);
+    !!effectiveOutId &&
+    !!selectedInId &&
+    (!isHalftime || subsMade < MAX_MATCH_SUBS);
 
   // During a forced swap the opponent/chronology tabs are noise — lock the
   // view on subs while the auto-substitution countdown runs.
@@ -159,8 +189,12 @@ export function IntervencaoView({
     !!fixture?.homeLineup?.length && !!fixture?.awayLineup?.length;
   const oppLineupRaw = isHome ? fixture?.awayLineup : fixture?.homeLineup;
   const oppLineup = oppLineupRaw || [];
-  const oppStarters = sortPlayersByPos(oppLineup.filter((p) => p.is_starter === true).slice(0, 11));
-  const oppBench = sortPlayersByPos(oppLineup.filter((p) => p.is_starter === false));
+  const oppStarters = sortPlayersByPos(
+    oppLineup.filter((p) => p.is_starter === true).slice(0, 11),
+  );
+  const oppBench = sortPlayersByPos(
+    oppLineup.filter((p) => p.is_starter === false),
+  );
   const oppTactic = isHome ? fixture?._t2 : fixture?._t1;
   const oppFormation = oppTactic?.formation || null;
   const oppStyleRaw = (oppTactic?.style || "").toString().toUpperCase();
@@ -224,7 +258,9 @@ export function IntervencaoView({
       }}
     >
       {/* Title bar — description on the left, reset far right. */}
-      <div className={`shrink-0 px-4 sm:px-5 py-3 sm:py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme} flex items-center justify-between gap-2 sm:gap-4`}>
+      <div
+        className={`shrink-0 px-4 sm:px-5 py-3 sm:py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme} flex items-center justify-between gap-2 sm:gap-4`}
+      >
         <div className="min-w-0 flex-1">
           {/* No truncate: a forced-swap title must never cut the player's name. */}
           <h2 className="text-base font-bold font-headline tracking-tight text-on-surface uppercase text-left leading-snug">
@@ -243,7 +279,12 @@ export function IntervencaoView({
                 setConfirmResetAll(true);
               }
             }}
-            icon={<MatchIcon name="reset" className="h-3.5 w-3.5 text-rose-400/80" />}
+            icon={
+              <MatchIcon
+                name="reset"
+                className="h-3.5 w-3.5 text-rose-400/80"
+              />
+            }
             className="text-rose-400/80 hover:text-rose-300 hover:bg-rose-500/10 shrink-0"
           >
             {confirmResetAll ? "Confirmar?" : "Anular todas"}
@@ -364,7 +405,9 @@ function EventList({ events }) {
     return (
       <div className="rounded-md border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
         <span className="text-2xl text-on-surface-variant/40">⚽</span>
-        <p className="text-on-surface-variant/60 text-[11px] font-medium">Sem eventos</p>
+        <p className="text-on-surface-variant/60 text-[11px] font-medium">
+          Sem eventos
+        </p>
       </div>
     );
   }
@@ -378,7 +421,14 @@ function EventList({ events }) {
 }
 
 /* ── Cronologia tab ────────────────────────────────────────────────────── */
-function CronologiaPanel({ visibleEvts, fixture, hInfo, aInfo, referee, weatherEvent }) {
+function CronologiaPanel({
+  visibleEvts,
+  fixture,
+  hInfo,
+  aInfo,
+  referee,
+  weatherEvent,
+}) {
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -406,11 +456,31 @@ function CronologiaPanel({ visibleEvts, fixture, hInfo, aInfo, referee, weatherE
  * cima das listas, com controlo segmentado Em campo/Banco a mostrar UMA
  * lista de cada vez (dá a altura total à lista ativa). */
 function SubsPanel({
-  isHalftime, isForcedSwap, isGkRedCard, tactic, onUpdateTactic, onPitchPlayers, benchPlayers,
-  effectiveOutId, selectedInId, sourcePlayer, targetPlayer,
-  handlePickOut, handlePickIn, forceOutPlayer, subbedOut, subsMade,
-  injuryCountdown, confirmHint, canConfirmSwap, onResetSub, onConfirmSub, onResolveAction,
-  confirmedSubs, annotatedSquad, onUndoSub,
+  isHalftime,
+  isForcedSwap,
+  isGkRedCard,
+  tactic,
+  onUpdateTactic,
+  onPitchPlayers,
+  benchPlayers,
+  effectiveOutId,
+  selectedInId,
+  sourcePlayer,
+  targetPlayer,
+  handlePickOut,
+  handlePickIn,
+  forceOutPlayer,
+  subbedOut,
+  subsMade,
+  injuryCountdown,
+  confirmHint,
+  canConfirmSwap,
+  onResetSub,
+  onConfirmSub,
+  onResolveAction,
+  confirmedSubs,
+  annotatedSquad,
+  onUndoSub,
 }) {
   // Mobile: mostra UMA lista de cada vez (Em campo / Banco).
   const [mobileList, setMobileList] = useState("pitch");
@@ -472,7 +542,9 @@ function SubsPanel({
   // Visible warning replaces the old `title` tooltip — tooltips are
   // unreachable on touch, so the lock reason must be on screen.
   const grLockedNoReplacement =
-    isHalftime && !grAvailableOnBench && onPitchPlayers.some((p) => p.position === "GR");
+    isHalftime &&
+    !grAvailableOnBench &&
+    onPitchPlayers.some((p) => p.position === "GR");
 
   const sharedSwapProps = {
     isHalftime,
@@ -558,7 +630,11 @@ function SubsPanel({
             />
           )}
           {isHalftime && (
-            <TacticsButtons className="w-full" value={tactic.style} onChange={onUpdateTactic} />
+            <TacticsButtons
+              className="w-full"
+              value={tactic.style}
+              onChange={onUpdateTactic}
+            />
           )}
           <SwapControls {...sharedSwapProps} />
         </div>
@@ -634,8 +710,13 @@ function SubsPanel({
 /* ── Subs counter (halftime) ───────────────────────────────────────────── */
 function SubsCounter({ subsMade }) {
   return (
-    <div className="shrink-0 flex items-center gap-1.5" title={`${subsMade} de ${MAX_MATCH_SUBS} substituições usadas`}>
-      <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">Subs</span>
+    <div
+      className="shrink-0 flex items-center gap-1.5"
+      title={`${subsMade} de ${MAX_MATCH_SUBS} substituições usadas`}
+    >
+      <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
+        Subs
+      </span>
       {Array.from({ length: MAX_MATCH_SUBS }, (_, i) => (
         <span
           key={i}
@@ -653,12 +734,28 @@ function SubsCounter({ subsMade }) {
 
 /* ── Titulares column ──────────────────────────────────────────────────── */
 function TitularesColumn({
-  className, players, isHalftime, isForcedSwap, isGkRedCard, forceOutPlayer,
-  subsMade, grAvailableOnBench, grLockedNoReplacement, effectiveOutId, pickOut,
-  dragFrom, dragOverSide, handleDragStart, handleDragOver, handleDropOnPitch, handleDragEnd,
+  className,
+  players,
+  isHalftime,
+  isForcedSwap,
+  isGkRedCard,
+  forceOutPlayer,
+  subsMade,
+  grAvailableOnBench,
+  grLockedNoReplacement,
+  effectiveOutId,
+  pickOut,
+  dragFrom,
+  dragOverSide,
+  handleDragStart,
+  handleDragOver,
+  handleDropOnPitch,
+  handleDragEnd,
 }) {
   return (
-    <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden ${className}`}>
+    <div
+      className={`flex flex-col min-h-0 min-w-0 overflow-hidden ${className}`}
+    >
       <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
         <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
@@ -675,7 +772,8 @@ function TitularesColumn({
       )}
       <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2">
         {players.map((p) => {
-          const noGrReplacement = isHalftime && p.position === "GR" && !grAvailableOnBench;
+          const noGrReplacement =
+            isHalftime && p.position === "GR" && !grAvailableOnBench;
           const isLockedForced =
             isForcedSwap &&
             !isGkRedCard &&
@@ -696,8 +794,11 @@ function TitularesColumn({
               disabled={disabled}
               selectable={!disabled}
               onPick={() => pickOut(p)}
+              showFatigue={false}
               swapIndicator={isHalftime}
-              forcedOut={isForcedSwap && !!forceOutPlayer && p.id === forceOutPlayer.id}
+              forcedOut={
+                isForcedSwap && !!forceOutPlayer && p.id === forceOutPlayer.id
+              }
               draggable={!disabled}
               onDragStart={handleDragStart(p, "pitch")}
               onDragOver={handleDragOver("pitch")}
@@ -719,11 +820,25 @@ function TitularesColumn({
 
 /* ── Suplentes column ──────────────────────────────────────────────────── */
 function SuplentesColumn({
-  className, players, isHalftime, forceOutPlayer, subsMade, subbedOut, selectedInId,
-  handlePickIn, dragFrom, dragOverSide, handleDragStart, handleDragOver, handleDropOnBench, handleDragEnd,
+  className,
+  players,
+  isHalftime,
+  forceOutPlayer,
+  subsMade,
+  subbedOut,
+  selectedInId,
+  handlePickIn,
+  dragFrom,
+  dragOverSide,
+  handleDragStart,
+  handleDragOver,
+  handleDropOnBench,
+  handleDragEnd,
 }) {
   return (
-    <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden ${className}`}>
+    <div
+      className={`flex flex-col min-h-0 min-w-0 overflow-hidden ${className}`}
+    >
       <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
         <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
@@ -736,8 +851,13 @@ function SuplentesColumn({
       <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2">
         {players.map((p) => {
           const alreadyUsed = isHalftime && subbedOut.includes(p.id);
-          const positionMismatch = !!forceOutPlayer && (forceOutPlayer.position === "GR") !== (p.position === "GR");
-          const disabled = alreadyUsed || positionMismatch || (isHalftime && subsMade >= MAX_MATCH_SUBS);
+          const positionMismatch =
+            !!forceOutPlayer &&
+            (forceOutPlayer.position === "GR") !== (p.position === "GR");
+          const disabled =
+            alreadyUsed ||
+            positionMismatch ||
+            (isHalftime && subsMade >= MAX_MATCH_SUBS);
           const selected = selectedInId === p.id;
 
           return (
@@ -749,6 +869,7 @@ function SuplentesColumn({
               disabled={disabled}
               selectable={!disabled}
               onPick={() => handlePickIn(p)}
+              showFatigue={false}
               draggable={!disabled}
               onDragStart={handleDragStart(p, "bench")}
               onDragOver={handleDragOver("bench")}
@@ -769,7 +890,16 @@ function SuplentesColumn({
 }
 
 /* ── Substituições e Mentalidade column (desktop) ──────────────────────── */
-function MentalidadeColumn({ isHalftime, subsMade, tactic, onUpdateTactic, swapProps, confirmedSubs, annotatedSquad, onUndoSub }) {
+function MentalidadeColumn({
+  isHalftime,
+  subsMade,
+  tactic,
+  onUpdateTactic,
+  swapProps,
+  confirmedSubs,
+  annotatedSquad,
+  onUndoSub,
+}) {
   return (
     <div className="flex flex-col min-h-0 min-w-0 overflow-hidden bg-surface-container-high/30">
       <div className="shrink-0 px-4 py-3 flex items-center justify-between gap-2 bg-surface-container-high/50 border-b border-outline-variant/15">
@@ -791,7 +921,11 @@ function MentalidadeColumn({ isHalftime, subsMade, tactic, onUpdateTactic, swapP
             <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
               Estilo de jogo
             </span>
-            <TacticsButtons className="w-full" value={tactic.style} onChange={onUpdateTactic} />
+            <TacticsButtons
+              className="w-full"
+              value={tactic.style}
+              onChange={onUpdateTactic}
+            />
           </div>
         )}
         <SwapControls {...swapProps} />
@@ -805,9 +939,18 @@ function MentalidadeColumn({ isHalftime, subsMade, tactic, onUpdateTactic, swapP
  * block. Mirrors the confirm branching: halftime (onConfirmSub) vs action
  * (onResolveAction). */
 function SwapControls({
-  isHalftime, isForcedSwap, injuryCountdown,
-  effectiveOutId, sourcePlayer, selectedInId, targetPlayer,
-  confirmHint, canConfirmSwap, onResetSub, onConfirmSub, onResolveAction,
+  isHalftime,
+  isForcedSwap,
+  injuryCountdown,
+  effectiveOutId,
+  sourcePlayer,
+  selectedInId,
+  targetPlayer,
+  confirmHint,
+  canConfirmSwap,
+  onResetSub,
+  onConfirmSub,
+  onResolveAction,
 }) {
   // Local "resolving" state gives immediate feedback on click in action mode
   // (was: button fired and the user got no signal until the parent reacted).
@@ -844,12 +987,19 @@ function SwapControls({
       {/* The Sai/Entra chain — two grouped clusters so the eye can scan
        * "[who's leaving] → [who's coming in]". */}
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1.5 min-w-0 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_minmax(0,1fr)]">
-        <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">Sai</span>
+        <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">
+          Sai
+        </span>
         <span className="bg-rose-950/80 text-rose-200 border border-rose-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0">
           {effectiveOutId ? sourcePlayer?.name || "?" : "—"}
         </span>
-        <MatchIcon name="chevron-right" className="hidden h-4 w-4 text-on-surface-variant/60 shrink-0 sm:block" />
-        <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">Entra</span>
+        <MatchIcon
+          name="chevron-right"
+          className="hidden h-4 w-4 text-on-surface-variant/60 shrink-0 sm:block"
+        />
+        <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">
+          Entra
+        </span>
         <span className="bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0">
           {selectedInId ? targetPlayer?.name || "?" : "—"}
         </span>
@@ -857,7 +1007,9 @@ function SwapControls({
 
       {/* Why the confirm button is disabled — never leave it silent. */}
       {!canConfirmSwap && confirmHint && (
-        <p className="text-[11px] font-semibold text-amber-300/90">{confirmHint}</p>
+        <p className="text-[11px] font-semibold text-amber-300/90">
+          {confirmHint}
+        </p>
       )}
 
       {/* Action buttons */}
@@ -886,7 +1038,10 @@ function SwapControls({
           disabled={!canConfirmSwap || resolving}
           onClick={() => {
             setResolving(true);
-            onResolveAction({ playerOut: effectiveOutId, playerIn: selectedInId });
+            onResolveAction({
+              playerOut: effectiveOutId,
+              playerIn: selectedInId,
+            });
           }}
           tone="indigo"
           icon={<MatchIcon name="confirm" className="h-4 w-4" />}
@@ -899,7 +1054,14 @@ function SwapControls({
   );
 }
 
-function AdversarioPanel({ hasLineups, oppInfo, oppFormation, oppStyleLabel, oppRows, oppBench }) {
+function AdversarioPanel({
+  hasLineups,
+  oppInfo,
+  oppFormation,
+  oppStyleLabel,
+  oppRows,
+  oppBench,
+}) {
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Header do adversário: crest + nome + formação */}
@@ -926,18 +1088,31 @@ function AdversarioPanel({ hasLineups, oppInfo, oppFormation, oppStyleLabel, opp
          * opponent bench far below the fold. Desktop keeps full height. */}
         <div className="md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center overflow-hidden">
           {!hasLineups ? (
-            <EmptyState icon="📋" message="Escalações indisponíveis durante a simulação" />
+            <EmptyState
+              icon="📋"
+              message="Escalações indisponíveis durante a simulação"
+            />
           ) : oppRows.ATA?.length === 0 && oppRows.MED?.length === 0 ? (
-            <EmptyState icon="🤷" message="Sem dados da escalação do adversário" />
+            <EmptyState
+              icon="🤷"
+              message="Sem dados da escalação do adversário"
+            />
           ) : (
-            <MatchPitch rows={oppRows} posColors={PITCH_POS_COLORS} className="max-h-[55vh] md:max-h-none" />
+            <MatchPitch
+              rows={oppRows}
+              posColors={PITCH_POS_COLORS}
+              className="max-h-[55vh] md:max-h-none"
+              showFatigue={false}
+            />
           )}
         </div>
 
         {/* Opponent bench */}
         <div className="flex-1 md:flex-none min-w-0 flex flex-col min-h-0 overflow-hidden">
           <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
-            <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">Banco</h3>
+            <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">
+              Banco
+            </h3>
           </div>
           <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2">
             {!hasLineups || oppBench.length === 0 ? (
@@ -952,6 +1127,7 @@ function AdversarioPanel({ hasLineups, oppInfo, oppFormation, oppStyleLabel, opp
                   posStyle={getPosStyle(p.position)}
                   selectable={false}
                   disabled={false}
+                  showFatigue={false}
                 />
               ))
             )}
@@ -966,7 +1142,9 @@ function EmptyState({ icon, message }) {
   return (
     <div className="rounded-md border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
       <span className="text-3xl text-on-surface-variant/40">{icon}</span>
-      <p className="text-on-surface-variant/80 text-xs font-medium text-center px-4">{message}</p>
+      <p className="text-on-surface-variant/80 text-xs font-medium text-center px-4">
+        {message}
+      </p>
     </div>
   );
 }

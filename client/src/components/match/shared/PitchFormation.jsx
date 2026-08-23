@@ -23,7 +23,7 @@ const ROW_POSITIONS = { GR: "8%", DEF: "31%", MED: "56%", ATA: "81%" };
  * Marker internal gap `gap-0.5` → `gap-1` for breathing room between the
  * circle, name, skill sub-elements. Name pill enlarged to allow longer
  * Portuguese surnames to display. */
-export function PlayerMarker({ player, posColors, starColor = "amber-400", count = 1 }) {
+export function PlayerMarker({ player, posColors, starColor = "amber-400", count = 1, showFatigue = true }) {
   const color = posColors?.[player.position] || posColors?.default || "bg-zinc-500 text-white";
   const compact = count >= 4;
   const sizeCls = compact ? "w-7 h-7 text-[10px]" : "w-9 h-9 text-[11px]";
@@ -48,13 +48,15 @@ export function PlayerMarker({ player, posColors, starColor = "amber-400", count
       <span className={`font-semibold text-amber-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${skillCls}`}>
         {player.skill ?? "-"}
       </span>
-      <FatigueIndicator player={player} compact className="max-w-full truncate text-[7px]" />
+      {showFatigue && (
+        <FatigueIndicator player={player} compact className="max-w-full truncate text-[7px]" />
+      )}
     </div>
   );
 }
 
 /* ── Row of players ────────────────────────────────────────────────────── */
-export function PlayerRow({ posKey, players, posColors, starColor }) {
+export function PlayerRow({ posKey, players, posColors, starColor, showFatigue = true }) {
   if (!players || players.length === 0) return null;
   return (
     <div
@@ -68,6 +70,7 @@ export function PlayerRow({ posKey, players, posColors, starColor }) {
           posColors={posColors}
           starColor={starColor}
           count={players.length}
+          showFatigue={showFatigue}
         />
       ))}
     </div>
@@ -80,6 +83,7 @@ export function PitchFormation({
   posColors,
   starColor,
   withOverlay = true,
+  showFatigue = true,
 }) {
   return (
     <div className="relative w-full h-full overflow-hidden">
@@ -91,6 +95,7 @@ export function PitchFormation({
           players={players}
           posColors={posColors}
           starColor={starColor}
+          showFatigue={showFatigue}
         />
       ))}
       {withOverlay && (
