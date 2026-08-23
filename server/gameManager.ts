@@ -410,17 +410,30 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     "CREATE TABLE IF NOT EXISTS game_state (key TEXT PRIMARY KEY, value TEXT)",
     () => {
       ensurePlayerSchema(db, () => {
-        // Valor de mercado base derivado do skill (skill² × 500 + skill × 2000
-        // + piso fixo de €30.000). Idempotente: o valor é sempre função direta do
-        // skill, por isso sincronizar no load garante consistência com a fórmula
-        // dinâmica mesmo em DBs antigas.
+        // Piso mínimo de skill é 1: reparar jogadores de DBs antigas que decaíram
+        // para 0 (lesões / inatividade / off-season antes do clamp).
+        // Idempotente — só toca skill < 1. Roda antes do backfill de valor para
+        // que o valor seja recalculado com o skill corrigido.
         db.run(
-          "UPDATE players SET value = CAST(ROUND(skill * skill * 500 + skill * 2000 + 30000) AS INTEGER) WHERE skill IS NOT NULL",
-          (valueErr: Error | null) => {
-            if (valueErr)
+          "UPDATE players SET skill = 1 WHERE skill IS NOT NULL AND skill < 1",
+          (skillFloorErr: Error | null) => {
+            if (skillFloorErr)
               console.warn(
-                `[gameManager] value backfill failed: ${valueErr.message}`,
+                `[gameManager] skill floor repair failed: ${skillFloorErr.message}`,
               );
+            // Valor de mercado base derivado do skill (skill² × 500 + skill × 2000
+            // + piso fixo de €30.000). Idempotente: o valor é sempre função direta do
+            // skill, por isso sincronizar no load garante consistência com a fórmula
+            // dinâmica mesmo em DBs antigas.
+            db.run(
+              "UPDATE players SET value = CAST(ROUND(skill * skill * 500 + skill * 2000 + 30000) AS INTEGER) WHERE skill IS NOT NULL",
+              (valueErr: Error | null) => {
+                if (valueErr)
+                  console.warn(
+                    `[gameManager] value backfill failed: ${valueErr.message}`,
+                  );
+              },
+            );
           },
         );
         const continueAfterMigrations = () => {

@@ -9,7 +9,7 @@ export function selectPenaltyTaker(squad: PlayerRow[] = []) {
 }
 
 export function clampSkill(value: number) {
-  return Math.max(0, Math.min(50, Math.round(value)));
+  return Math.max(1, Math.min(50, Math.round(value)));
 }
 
 // Per-minute goal probability multiplier based on real football time distribution.

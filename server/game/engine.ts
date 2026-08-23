@@ -402,7 +402,7 @@ async function applyInjuryEvent({
   const qualityLoss =
     injuryLabel === "grave" ? 2 + Math.floor(Math.random() * 4) : 0;
   const oldSkill = injuredPlayer.skill ?? 0;
-  const newSkill = Math.max(0, oldSkill - qualityLoss);
+  const newSkill = Math.max(1, oldSkill - qualityLoss);
   db.run(
     "UPDATE players SET injuries = injuries + 1, career_injuries = career_injuries + 1, prev_skill = skill, skill = ?, injury_until_matchweek = CASE WHEN injury_until_matchweek > ? THEN injury_until_matchweek ELSE ? END WHERE id = ?",
     [newSkill, injuryUntil, injuryUntil, injuredPlayer.id],

@@ -124,7 +124,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						}
 
 						if (delta !== 0) {
-							const newSkill = Math.max(0, Math.min(50, skill + delta));
+							const newSkill = Math.max(1, Math.min(50, skill + delta));
 							if (newSkill !== skill) {
 								updates.push({ id: p.id, skill: newSkill });
 							}
