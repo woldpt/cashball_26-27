@@ -162,8 +162,10 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
               )}
             </div>
 
+            {/* Lista de coaches + Chat (lado a lado no desktop, empilhado no mobile) */}
+            <div className="flex flex-col md:flex-row">
             {/* Lista de coaches */}
-            <div className="divide-y divide-outline-variant/10 max-h-80 overflow-y-auto">
+            <div className="divide-y divide-outline-variant/10 max-h-80 overflow-y-auto md:flex-1">
               {coaches.map((coach) => {
                 const st = STATUS_MAP[coach.status] || STATUS_MAP.thinking;
                 return (
@@ -220,17 +222,17 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
             </div>
 
             {/* Chat rápido da sala */}
-            <div className="border-t border-outline-variant/15">
-              <div className="flex items-center gap-1.5 px-4 pt-2 pb-1">
+            <div className="border-t border-outline-variant/15 md:border-t-0 md:border-l md:w-72 md:shrink-0 md:flex md:flex-col">
+              <div className="flex items-center gap-1.5 px-4 pt-2 pb-1 md:shrink-0">
                 <span className="text-xs">💬</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
                   Chat da sala
                 </span>
               </div>
-              <div className="px-3 pb-1">
+              <div className="px-3 pb-1 md:flex-1 md:flex md:flex-col">
                 <div
                   ref={chatScrollRef}
-                  className="h-28 overflow-y-auto space-y-2 px-1"
+                  className="h-28 md:h-auto md:flex-1 overflow-y-auto space-y-2 px-1"
                   style={{ scrollBehavior: "smooth" }}
                 >
                   {roomMessages.length === 0 ? (
@@ -267,7 +269,7 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
                     })
                   )}
                 </div>
-                <div className="flex items-center gap-2 py-2">
+                <div className="flex items-center gap-2 py-2 md:shrink-0">
                   <input
                     type="text"
                     value={chatInput}
@@ -290,6 +292,7 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
                   </button>
                 </div>
               </div>
+            </div>
             </div>
 
             {/* Rodapé */}
