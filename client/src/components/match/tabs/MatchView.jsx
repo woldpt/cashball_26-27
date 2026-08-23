@@ -10,7 +10,7 @@ import {
 } from "../shared/index.js";
 
 /* ── MatchView — Main match view (2 columns: narrative + pitch) ─────── */
-export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoundName }) {
+export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoundName, showFatigue = true }) {
   const [pitchSide, setPitchSide] = useState("home");
 
   if (!fixture) return null;
@@ -68,7 +68,7 @@ export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoun
           <div className="flex flex-col md:flex-row gap-4 p-4 md:flex-1 md:min-h-0">
             {/* Pitch */}
             <div className="md:flex-1 md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center">
-              <MatchPitch rows={rows} posColors={posColors} />
+              <MatchPitch rows={rows} posColors={posColors} showFatigue={showFatigue} />
             </div>
 
             {/* Bench */}

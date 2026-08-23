@@ -142,6 +142,11 @@ export function MatchPage({
 	const aColor = awayTeam?.color_primary || "#f43f5e";
 	const isCupContext = isCupMatch || cupPreMatch;
 	const canContinue = !isCupContext || myTeamInCup;
+	// Jogos de clubes terceiros (nenhuma equipa é minha) → esconder badges de fadiga no pitch
+	const isThirdPartyMatch =
+		!!fixture &&
+		Number(fixture.homeTeamId) !== Number(myTeamId) &&
+		Number(fixture.awayTeamId) !== Number(myTeamId);
 	const sidebarLeft = sidebarCollapsed ? "lg:left-14" : "lg:left-64";
 
 	// ── Mode-based rendering ──────────────────────────────────────────────
@@ -238,6 +243,7 @@ export function MatchPage({
 						teams={teams}
 						isCupMatch={isCupMatch}
 						cupMatchRoundName={cupMatchRoundName}
+						showFatigue={!isThirdPartyMatch}
 					/>
 				)}
 
