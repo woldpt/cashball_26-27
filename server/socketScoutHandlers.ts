@@ -1,4 +1,8 @@
-import type { ActiveGame } from "./types";
+import type { ActiveGame, PlayerSession } from "./types";
+import {
+	CONTRACT_LENGTH_MATCHWEEKS,
+	contractEpoch,
+} from "./gameConstants";
 
 type AnyRow = Record<string, any>;
 
@@ -10,6 +14,7 @@ type RunAll = <T extends AnyRow = AnyRow>(
 
 interface ScoutHandlerDeps {
 	getGameBySocket: (socketId: string) => ActiveGame | null;
+	getPlayerBySocket: (game: ActiveGame, socketId: string) => PlayerSession | null;
 	runAll: RunAll;
 }
 
@@ -27,6 +32,7 @@ interface PlayerSearchFilters {
 	division?: string;
 	transferStatus?: string;
 	isStar?: boolean;
+	onlyAvailable?: boolean;
 	sort?: string;
 }
 
@@ -55,7 +61,7 @@ export function registerScoutSocketHandlers(
 	socket: any,
 	deps: ScoutHandlerDeps,
 ) {
-	const { getGameBySocket, runAll } = deps;
+	const { getGameBySocket, getPlayerBySocket, runAll } = deps;
 
 	socket.on("requestPlayerSearch", async (filters: PlayerSearchFilters) => {
 		const game = getGameBySocket(socket.id);
@@ -128,6 +134,17 @@ export function registerScoutSocketHandlers(
 
 		if (f.isStar) {
 			where.push("p.is_star = 1");
+		}
+
+		if (f.onlyAvailable) {
+			const playerState = getPlayerBySocket(game, socket.id);
+			if (playerState?.teamId != null) {
+				where.push("(p.team_id IS NULL OR p.team_id != ?)");
+				params.push(playerState.teamId);
+			}
+			const epoch = contractEpoch(game.season || 1, game.matchweek || 1);
+			where.push("(p.contract_start_epoch = 0 OR p.contract_start_epoch + ? <= ?)");
+			params.push(CONTRACT_LENGTH_MATCHWEEKS, epoch);
 		}
 
 		const sort = f.sort || "quality-desc";

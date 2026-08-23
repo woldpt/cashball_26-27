@@ -77,6 +77,7 @@ export function PlayerSearchView({
   const [division, setDivision] = useState("all");
   const [transferStatus, setTransferStatus] = useState("all");
   const [isStar, setIsStar] = useState(false);
+  const [onlyAvailable, setOnlyAvailable] = useState(false);
   const [sort, setSort] = useState("quality-desc");
   const [searched, setSearched] = useState(false);
 
@@ -95,6 +96,7 @@ export function PlayerSearchView({
       division,
       transferStatus,
       isStar,
+      onlyAvailable,
       sort,
     });
   };
@@ -330,15 +332,26 @@ export function PlayerSearchView({
           </div>
 
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <label className="flex items-center gap-2 text-xs font-bold text-on-surface cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={isStar}
-                onChange={(e) => setIsStar(e.target.checked)}
-                className="accent-primary w-4 h-4"
-              />
-              Só craques (★)
-            </label>
+            <div className="flex items-center gap-4 flex-wrap">
+              <label className="flex items-center gap-2 text-xs font-bold text-on-surface cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isStar}
+                  onChange={(e) => setIsStar(e.target.checked)}
+                  className="accent-primary w-4 h-4"
+                />
+                Só craques (★)
+              </label>
+              <label className="flex items-center gap-2 text-xs font-bold text-on-surface cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={onlyAvailable}
+                  onChange={(e) => setOnlyAvailable(e.target.checked)}
+                  className="accent-primary w-4 h-4"
+                />
+                Disponível p/ compra
+              </label>
+            </div>
             <Button
               variant="primary"
               className="w-full sm:w-auto"

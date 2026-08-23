@@ -911,6 +911,7 @@ io.on("connection", (socket) => {
 
 	registerScoutSocketHandlers(socket, {
 		getGameBySocket,
+		getPlayerBySocket,
 		runAll,
 	});
 
