@@ -27,10 +27,11 @@ interface ContractDeps {
   runAll: RunAll;
   runGet: RunGet;
   startAuction: (game: ActiveGame, player: any, startingPrice: number, callback?: (...args: any[]) => void) => void;
+  getSeasonEndMatchweek: (matchweek: number) => number;
 }
 
 export function createContractHelpers(deps: ContractDeps) {
-  const { io, runAll, runGet, startAuction } = deps;
+  const { io, runAll, runGet, startAuction, getSeasonEndMatchweek } = deps;
 
   const effectiveValue = (player: any): number => {
     const base = player.value || (player.skill || 0) * 20000;
@@ -130,16 +131,17 @@ export function createContractHelpers(deps: ContractDeps) {
     }
   };
 
+  const POS_MIN: Record<string, number> = { GR: 2, DEF: 4, MED: 4, ATA: 3 };
+
   const processContractExpiries = async (game: ActiveGame) => {
     const now = currentEpoch(game);
 
-    // Contrato expirado → leilão SEMPRE (agente leva o jogador, sem renovação automática)
     const expired = await runAll(
       game.db,
       `SELECT * FROM players
-       WHERE team_id IS NOT NULL
-         AND contract_start_epoch > 0
-         AND contract_start_epoch + ? <= ?`,
+        WHERE team_id IS NOT NULL
+          AND contract_start_epoch > 0
+          AND contract_start_epoch + ? <= ?`,
       [CONTRACT_LENGTH_MATCHWEEKS, now],
     );
 
@@ -147,6 +149,43 @@ export function createContractHelpers(deps: ContractDeps) {
       const coach = (Object.values(game.playersByName) as PlayerSession[]).find(
         (pl) => pl.teamId === player.team_id && pl.socketId,
       );
+
+      // NPC team: renew if player needed (position below min) and team financially healthy
+      if (!coach) {
+        const team = await runGet(
+          game.db,
+          "SELECT budget FROM teams WHERE id = ?",
+          [player.team_id],
+        );
+        if (team) {
+          const posCounts = await runAll(
+            game.db,
+            "SELECT position, COUNT(*) as cnt FROM players WHERE team_id = ? GROUP BY position",
+            [player.team_id],
+          );
+          const posMap: Record<string, number> = {};
+          for (const row of posCounts) posMap[row.position] = row.cnt;
+          const posCount = posMap[player.position] ?? 0;
+          const posMin = POS_MIN[player.position] ?? 3;
+          const isNeeded = posCount < posMin;
+          const isAffordable = (team as any).budget > 5000;
+
+          if (isNeeded && isAffordable) {
+            const fairWage = fairWageOf(player);
+            const seasonEnd = getSeasonEndMatchweek(game.matchweek);
+            await new Promise<void>((resolve) => {
+              game.db.run(
+                "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
+                [fairWage, seasonEnd, now, game.matchweek, player.id],
+                () => resolve(),
+              );
+            });
+            continue;
+          }
+        }
+      }
+
+      // Auction path: human decline or NPC surplus/unaffordable
       const agent = getAgentName(player.id);
       const auctionPrice = Math.max(
         Math.round(effectiveValue(player) * 0.65),

@@ -685,6 +685,7 @@ const contractHelpers = createContractHelpers({
 	runAll,
 	runGet,
 	startAuction,
+	getSeasonEndMatchweek,
 });
 
 const npcTransferHelpers = createNpcTransferHelpers({

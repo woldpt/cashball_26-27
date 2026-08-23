@@ -175,7 +175,6 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
 
     const npcListings: Array<{
       candidate: any;
-      useAuction: boolean;
       price: number;
     }> = [];
     for (const npcTeam of allNpcTeams) {
@@ -191,35 +190,18 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
       const candidate = squad[0];
       if (!candidate) continue;
 
-      const useAuction = Math.random() < 0.4;
-      const price = Math.round(
-        (candidate.value || 0) * (useAuction ? 0.75 : 1.0),
-      );
+      const price = Math.round((candidate.value || 0) * 1.0);
       if (price <= 0) continue;
 
-      npcListings.push({ candidate, useAuction, price });
+      npcListings.push({ candidate, price });
     }
 
     if (npcListings.length === 0) return;
 
-    const auctionListings = npcListings
-      .filter((listing) => listing.useAuction)
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3);
-    const fixedListings = npcListings.filter((listing) => !listing.useAuction);
-
-    for (const { candidate, price } of fixedListings) {
+    for (const { candidate, price } of npcListings) {
       await new Promise((resolve) => {
         listPlayerOnMarket(game, candidate.id, "fixed", price, resolve);
       });
-    }
-
-    let auctionDelay = 500;
-    for (const { candidate, price } of auctionListings) {
-      setTimeout(() => {
-        listPlayerOnMarket(game, candidate.id, "auction", price, null);
-      }, auctionDelay);
-      auctionDelay = Math.min(auctionDelay + 18000, 120000);
     }
   };
 
