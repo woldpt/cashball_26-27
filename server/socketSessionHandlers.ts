@@ -48,11 +48,7 @@ function allowLimit(
 }
 
 function getSocketIp(socket: any): string {
-	return (
-		socket.handshake?.address ||
-		socket.conn?.remoteAddress ||
-		"unknown"
-	);
+	return socket.handshake?.address || socket.conn?.remoteAddress || "unknown";
 }
 
 interface SessionHandlerDeps {
@@ -65,10 +61,7 @@ interface SessionHandlerDeps {
 		onReady?: (game: ActiveGame | null, error?: Error) => void,
 	) => ActiveGame | null;
 	recordRoomAccess: (name: string, roomCode: string) => void;
-	getRoomCoaches: (
-		roomCode: string,
-		excludeName?: string,
-	) => Promise<string[]>;
+	getRoomCoaches: (roomCode: string, excludeName?: string) => Promise<string[]>;
 	getGameBySocket: (socketId: string) => ActiveGame | null;
 	getPlayerBySocket: (
 		game: ActiveGame,
@@ -258,9 +251,7 @@ export function registerSessionSocketHandlers(
 			matchState: legacyMatchState(game.gamePhase),
 			cupState: legacyCupState(game),
 			cupRound:
-				game.currentEvent?.type === "cup"
-					? (game.currentEvent as any).round
-					: 0,
+				game.currentEvent?.type === "cup" ? (game.currentEvent as any).round : 0,
 			year: game.year,
 			// Em fase de lobby (entre jornadas), enviar posições limpas: a seleção
 			// do 11 inicial nunca deve persistir de uma ronda para a seguinte.
@@ -383,10 +374,7 @@ export function registerSessionSocketHandlers(
 
 				game.db.get(fallbackQuery, fallbackParams, (err2: any, team2: any) => {
 					if (err2 || !team2) {
-						socket.emit(
-							"systemMessage",
-							"Nenhuma equipa disponível na Divisão 4.",
-						);
+						socket.emit("systemMessage", "Nenhuma equipa disponível na Divisão 4.");
 						return;
 					}
 					game.db.run(
@@ -470,10 +458,7 @@ export function registerSessionSocketHandlers(
 			finalRoomCode = generateUniqueRoomCode();
 		} else if (joinMode === "friend-room" || joinMode === "saved-game") {
 			if (!doesGameExist(finalRoomCode)) {
-				return socket.emit(
-					"joinError",
-					"Sala não encontrada. Verifica o código.",
-				);
+				return socket.emit("joinError", "Sala não encontrada. Verifica o código.");
 			}
 		} else {
 			// Reconnect flow
@@ -528,11 +513,7 @@ export function registerSessionSocketHandlers(
 												socketId: socket.id,
 											};
 										}
-										const displacedSocketId = bindSocket(
-											game,
-											trimmedName,
-											socket.id,
-										);
+										const displacedSocketId = bindSocket(game, trimmedName, socket.id);
 										if (displacedSocketId) {
 											io.to(displacedSocketId).emit("sessionDisplaced", {
 												reason: "another_device",
@@ -606,12 +587,7 @@ export function registerSessionSocketHandlers(
 											`[${finalRoomCode}] 🔄 Dismissed coach ${trimmedName} reconnected — preserved dismissed state`,
 										);
 									} else {
-										generateRandomTeam(
-											game,
-											trimmedName,
-											finalRoomCode,
-											row.id,
-										);
+										generateRandomTeam(game, trimmedName, finalRoomCode, row.id);
 									}
 								},
 							);
@@ -630,12 +606,7 @@ export function registerSessionSocketHandlers(
 								"INSERT INTO managers (name, is_human) VALUES (?, 1)",
 								[trimmedName],
 								function (_err2: any) {
-									generateRandomTeam(
-										game,
-										trimmedName,
-										finalRoomCode,
-										this.lastID,
-									);
+									generateRandomTeam(game, trimmedName, finalRoomCode, this.lastID);
 								},
 							);
 						}
@@ -855,10 +826,7 @@ export function registerSessionSocketHandlers(
 				// Liga é round-robin por divisão: a componente conexa das jogos de uma
 				// época é a própria divisão. Usa union-find para reconstruir a divisão
 				// de cada equipa por época (a divisão atual não vale para o histórico).
-				const find = (
-					parent: Map<number, number>,
-					x: number,
-				): number => {
+				const find = (parent: Map<number, number>, x: number): number => {
 					let r = parent.get(x) ?? x;
 					if (parent.get(r) !== undefined) {
 						r = find(parent, r);
@@ -866,11 +834,7 @@ export function registerSessionSocketHandlers(
 					}
 					return r;
 				};
-				const union = (
-					parent: Map<number, number>,
-					a: number,
-					b: number,
-				) => {
+				const union = (parent: Map<number, number>, a: number, b: number) => {
 					const ra = find(parent, a);
 					const rb = find(parent, b);
 					if (ra !== rb) parent.set(ra, rb);
@@ -911,9 +875,7 @@ export function registerSessionSocketHandlers(
 
 					const parent = divBySeason.get(season) || new Map<number, number>();
 					const myRoot = find(parent, teamId);
-					const group = rows.filter(
-						(r) => find(parent, r.team_id) === myRoot,
-					);
+					const group = rows.filter((r) => find(parent, r.team_id) === myRoot);
 					const sorted = [...group].sort((a, b) => {
 						const pa = 3 * a.wins + a.draws;
 						const pb = 3 * b.wins + b.draws;
@@ -977,9 +939,9 @@ export function registerSessionSocketHandlers(
 					socket.emit("playerHistoryData", null);
 					return;
 				}
-			const transfers = await runAll(
-				game.db,
-				`SELECT cn.year, cn.matchweek, cn.title, cn.amount,
+				const transfers = await runAll(
+					game.db,
+					`SELECT cn.year, cn.matchweek, cn.title, cn.amount,
                 cn.team_id, t.name as team_name,
                 cn.related_team_id, cn.related_team_name, cn.type
          FROM club_news cn
@@ -987,8 +949,8 @@ export function registerSessionSocketHandlers(
          WHERE cn.player_id = ?
            AND cn.type IN ('transfer_in', 'transfer_out')
          ORDER BY cn.year ASC, cn.matchweek ASC, cn.id ASC`,
-				[playerId],
-			);
+					[playerId],
+				);
 
 				// Each transfer logs two club_news rows with the same player_id:
 				// transfer_in (new club) + transfer_out (old club). Treat them as
@@ -1033,9 +995,9 @@ export function registerSessionSocketHandlers(
 					[playerId],
 				);
 				const currentMw = game.matchweek || game.calendarIndex || 0;
-				const skillHistory: Array<{ matchweek: number; skill: number }> = (skillRows || []).map(
-					(r) => ({ matchweek: r.matchweek, skill: r.skill }),
-				);
+				const skillHistory: Array<{ matchweek: number; skill: number }> = (
+					skillRows || []
+				).map((r) => ({ matchweek: r.matchweek, skill: r.skill }));
 
 				// Always append current skill to ensure the chart shows latest value
 				const playerRow = await runGet(
@@ -1044,7 +1006,8 @@ export function registerSessionSocketHandlers(
 					[playerId],
 				);
 				if (playerRow && playerRow.skill != null) {
-					const lastSnap = skillHistory.length > 0 ? skillHistory[skillHistory.length - 1] : null;
+					const lastSnap =
+						skillHistory.length > 0 ? skillHistory[skillHistory.length - 1] : null;
 					if (!lastSnap || lastSnap.matchweek !== currentMw) {
 						skillHistory.push({ matchweek: currentMw, skill: playerRow.skill });
 					}
@@ -1260,9 +1223,7 @@ export function registerSessionSocketHandlers(
 				for (const entry of ordered) {
 					running += entry.amount;
 					balanceHistory.push({
-						x:
-							(seasonIndex.get(entry.year) ?? 0) * SEASON_SPAN +
-							entry.matchweek,
+						x: (seasonIndex.get(entry.year) ?? 0) * SEASON_SPAN + entry.matchweek,
 						year: entry.year,
 						matchweek: entry.matchweek,
 						balance: Math.round(running),

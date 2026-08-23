@@ -77,9 +77,8 @@ export function BalanceLineChart({ data = [] }) {
 
   // Linhas de grelha (4 níveis, com valores redondos)
   const GRID_STEPS = 4;
-  const yLevels = Array.from(
-    { length: GRID_STEPS },
-    (_, i) => Math.round(axisMin + (axisSpan / (GRID_STEPS - 1)) * i),
+  const yLevels = Array.from({ length: GRID_STEPS }, (_, i) =>
+    Math.round(axisMin + (axisSpan / (GRID_STEPS - 1)) * i),
   ).filter((v, i, arr) => arr.indexOf(v) === i);
 
   // ── Coordenadas ──
@@ -89,12 +88,9 @@ export function BalanceLineChart({ data = [] }) {
   const graphWidth = chartWidth - padding.left - padding.right;
   const graphHeight = chartHeight - padding.top - padding.bottom;
 
-  const getX = (x) =>
-    padding.left + ((x - firstX) / xRange) * graphWidth;
+  const getX = (x) => padding.left + ((x - firstX) / xRange) * graphWidth;
   const getY = (balance) =>
-    padding.top +
-    graphHeight -
-    ((balance - axisMin) / axisSpan) * graphHeight;
+    padding.top + graphHeight - ((balance - axisMin) / axisSpan) * graphHeight;
 
   const zeroY = getY(0);
 
@@ -259,14 +255,20 @@ export function BalanceLineChart({ data = [] }) {
           <path
             d={posAreaD}
             fill="url(#gradPos)"
-            style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.7s ease 0.35s" }}
+            style={{
+              opacity: mounted ? 1 : 0,
+              transition: "opacity 0.7s ease 0.35s",
+            }}
           />
         )}
         {negAreaD && (
           <path
             d={negAreaD}
             fill="url(#gradNeg)"
-            style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.7s ease 0.35s" }}
+            style={{
+              opacity: mounted ? 1 : 0,
+              transition: "opacity 0.7s ease 0.35s",
+            }}
           />
         )}
 
@@ -276,7 +278,11 @@ export function BalanceLineChart({ data = [] }) {
           const every = pointCount > 16 ? Math.ceil(pointCount / 8) : 1;
           if (i % every !== 0 && i !== lastIdx && !isBoundary) return null;
           const label =
-            i === 0 ? "Início" : isBoundary ? String(p.year) : `J${p.matchweek}`;
+            i === 0
+              ? "Início"
+              : isBoundary
+                ? String(p.year)
+                : `J${p.matchweek}`;
           return (
             <text
               key={`${px(p)}-${i}`}
@@ -401,11 +407,15 @@ export function BalanceLineChart({ data = [] }) {
         <div className="flex items-center gap-4 text-[10px] text-on-surface-variant">
           <div className="flex items-center gap-1.5">
             <span className="inline-block w-4 h-1 rounded-full bg-gradient-to-r from-primary/40 to-primary" />
-            <span className="font-bold uppercase tracking-wider">Saldo positivo</span>
+            <span className="font-bold uppercase tracking-wider">
+              Saldo positivo
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="inline-block w-4 h-1 rounded-full bg-gradient-to-r from-error/40 to-error" />
-            <span className="font-bold uppercase tracking-wider">Saldo negativo</span>
+            <span className="font-bold uppercase tracking-wider">
+              Saldo negativo
+            </span>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-2 mt-3">
