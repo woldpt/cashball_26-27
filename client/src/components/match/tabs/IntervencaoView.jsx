@@ -843,12 +843,12 @@ function SwapControls({
 
       {/* The Sai/Entra chain — two grouped clusters so the eye can scan
        * "[who's leaving] → [who's coming in]". */}
-      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto_minmax(0,1fr)] items-center gap-2 min-w-0">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1.5 min-w-0 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_minmax(0,1fr)]">
         <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">Sai</span>
         <span className="bg-rose-950/80 text-rose-200 border border-rose-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0">
           {effectiveOutId ? sourcePlayer?.name || "?" : "—"}
         </span>
-        <MatchIcon name="chevron-right" className="h-4 w-4 text-on-surface-variant/60 shrink-0" />
+        <MatchIcon name="chevron-right" className="hidden h-4 w-4 text-on-surface-variant/60 shrink-0 sm:block" />
         <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">Entra</span>
         <span className="bg-emerald-950/80 text-emerald-200 border border-emerald-800/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0">
           {selectedInId ? targetPlayer?.name || "?" : "—"}
@@ -862,11 +862,12 @@ function SwapControls({
 
       {/* Action buttons */}
       {isHalftime ? (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
           <GhostButton
             onClick={onResetSub}
             icon={<MatchIcon name="reset" className="h-3.5 w-3.5" />}
             aria-label="Limpar seleção"
+            className="h-11 flex-1 sm:h-10"
           >
             Limpar
           </GhostButton>
@@ -875,6 +876,7 @@ function SwapControls({
             disabled={!canConfirmSwap || submitting}
             tone="emerald"
             icon={<MatchIcon name="confirm" className="h-4 w-4" />}
+            className="h-11 flex-1 sm:h-10"
           >
             {submitting ? "A substituir…" : "Substituir"}
           </PrimaryButton>
@@ -888,6 +890,7 @@ function SwapControls({
           }}
           tone="indigo"
           icon={<MatchIcon name="confirm" className="h-4 w-4" />}
+          className="h-11 w-full sm:h-10"
         >
           {resolving ? "A substituir…" : "Substituir"}
         </PrimaryButton>
