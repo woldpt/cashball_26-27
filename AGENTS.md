@@ -88,13 +88,7 @@ Para garantir que uma equipa tem sempre jogadores disponíveis, siga esta ordem 
 Nunca instancie helpers diretamente. Use sempre:
 `const helpers = createXxxHelpers({ io, db, game });`
 
-## 🎨 DESIGN & STITCH WORKFLOW
-
-**Para novas interfaces, não adivinhe o design. Use o Stitch AI MCP:**
-
-1. **Prototipar:** No projeto Stitch (`projects/2994088005927103850`).
-2. **Extrair:** Forneça o ID da tela ao Claude.
-3. **Implementar:** Claude usa `stitch_get_screen` $\rightarrow$ React/Tailwind.
+## 🎨 DESIGN WORKFLOW
 
 **Estilo visual:** Siga sempre o `STYLE.md` como referência de design system. Todas as páginas e componentes devem usar os tokens, tipografia, cards, badges e convenções definidos lá. Referência de implementação: `client/src/views/PlayersTab.jsx`.
 
