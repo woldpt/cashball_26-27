@@ -321,7 +321,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
   }
 
   /**
-   * Contexto competitivo derivado das posições na divisão.
+   * Contexto competitivo derivado das posições na divisão (ambas as equipas).
    */
   function buildStakes(
     myPosition: number | null,
@@ -331,13 +331,22 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     if (isCup) return "Eliminatórias — cada golo decide o futuro na prova.";
     const pos = myPosition ?? null;
     if (pos === null) return "Jogo de campeonato.";
-    if (pos <= 2) return "Duelo no topo — importante para a luta pelo título.";
-    if (pos <= 4) return "Jogo decisivo para a zona de cima da tabela.";
+    const oppPos = oppPosition ?? null;
+    const minPos = Math.min(pos, oppPos ?? Number.POSITIVE_INFINITY);
+    const gap =
+      oppPos !== null ? Math.abs(pos - oppPos) : Number.POSITIVE_INFINITY;
+    if (gap >= 4) return "Desnível na tabela — somar pontos é o objetivo.";
+    if (minPos <= 2) return "Duelo no topo — importante para a luta pelo título.";
+    if (minPos <= 4) return "Jogo decisivo para a zona de cima da tabela.";
     return "Jogo de campeonato — somar pontos é o objetivo.";
   }
 
   /**
    * Manchete de imprensa determinística (mesmo estado ⇒ mesmo texto).
+   *
+   * A classificação manda: frases de forma só são usadas quando as posições
+   * estão próximas (nunca podem contradizer a tabela mostrada no briefing).
+   * Em semanas de taça (sem posições) usa-se apenas a forma recente.
    */
   function buildHeadline(ctx: {
     myName: string;
@@ -346,8 +355,11 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     oppLast5: string;
     h2hWins: number;
     h2hLosses: number;
-    isCup: boolean;
     venue: string;
+    myPosition: number | null;
+    oppPosition: number | null;
+    myPoints: number | null;
+    oppPoints: number | null;
   }) {
     const myForm =
       (ctx.myLast5.match(/V/g) || []).length -
@@ -357,7 +369,6 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       (ctx.oppLast5.match(/D/g) || []).length;
 
     // Venue real do encontro (o Jamor só na final): "Casa", "Fora" ou "Jamor".
-    const isHome = ctx.venue === "Casa";
     const base =
       ctx.venue === "Fora"
         ? `${ctx.myName} visita ${ctx.oppName}`
@@ -365,20 +376,75 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
             ctx.venue === "Jamor" ? "no Jamor" : "em casa"
           }`;
 
-    if (ctx.h2hWins + ctx.h2hLosses >= 2 && Math.abs(ctx.h2hWins - ctx.h2hLosses) >= 2) {
-      const dom = ctx.h2hWins > ctx.h2hLosses;
-      return `${base}. O historial favorece ${dom ? ctx.myName : ctx.oppName}, mas este jogo é novo.`;
+    // ── Semanas de taça: sem classificação — só forma recente (neutro) ─────
+    if (ctx.myPosition === null || ctx.oppPosition === null) {
+      if (
+        ctx.h2hWins + ctx.h2hLosses >= 2 &&
+        Math.abs(ctx.h2hWins - ctx.h2hLosses) >= 2
+      ) {
+        const dom = ctx.h2hWins > ctx.h2hLosses;
+        return `${base}. O historial favorece ${dom ? ctx.myName : ctx.oppName}, mas este jogo é novo.`;
+      }
+      if (myForm >= 2 && oppForm < 0) {
+        return `${base}. A tua boa forma enfrenta um adversário em quebra — momento para pressionar.`;
+      }
+      if (myForm < 0 && oppForm >= 2) {
+        return `${base}. ${ctx.oppName} chega em grande forma e a tua equipa precisa de reagir.`;
+      }
+      if (myForm === oppForm) {
+        return `${base}. Equilíbrio total no momento — tudo pode acontecer.`;
+      }
+      return `${base}. Tudo em aberto nesta jornada.`;
     }
-    if (myForm >= 2 && oppForm < 0) {
-      return `${base}. A boa forma caseira enfrenta um adversário em quebra — momento para pressionar.`;
+
+    const myPos = ctx.myPosition;
+    const oppPos = ctx.oppPosition;
+    const gap = Math.abs(myPos - oppPos);
+    const minPos = Math.min(myPos, oppPos);
+    const ptsGap =
+      ctx.myPoints != null && ctx.oppPoints != null
+        ? Math.abs(ctx.myPoints - ctx.oppPoints)
+        : null;
+
+    // 1. Grande desnível — a classificação manda, a forma não fala.
+    if (gap >= 4 || (ptsGap !== null && ptsGap >= 9)) {
+      return myPos < oppPos
+        ? `${base}. Claro favorito pela classificação, mas sem espaço para facilitar.`
+        : `${base}. ${ctx.oppName} chega muito acima na tabela — missão complicada.`;
     }
-    if (myForm < 0 && oppForm >= 2) {
-      return `${base}. ${ctx.oppName} chega em grande forma e a tua equipa precisa de reagir.`;
+
+    // 2. Duelo de topo.
+    if (minPos <= 2) {
+      return `${base}. Encontro entre candidatos ao título — jogo de seis pontos.`;
     }
-    if (myForm === oppForm) {
-      return `${base}. Equilíbrio total no momento — tudo pode acontecer.`;
+
+    // 3. Zona de cima da tabela.
+    if (minPos <= 4) {
+      return `${base}. Duelo importante na zona de cima da tabela.`;
     }
-    return `${base}. Tudo em aberto nesta jornada.`;
+
+    // 4. Posições próximas — a forma recente é consistente com a tabela.
+    if (gap <= 2) {
+      if (
+        ctx.h2hWins + ctx.h2hLosses >= 2 &&
+        Math.abs(ctx.h2hWins - ctx.h2hLosses) >= 2
+      ) {
+        const dom = ctx.h2hWins > ctx.h2hLosses;
+        return `${base}. O historial favorece ${dom ? ctx.myName : ctx.oppName}, mas este jogo é novo.`;
+      }
+      if (myForm >= 2 && oppForm < 0) {
+        return `${base}. A tua boa forma enfrenta um adversário em quebra — momento para pressionar.`;
+      }
+      if (myForm < 0 && oppForm >= 2) {
+        return `${base}. ${ctx.oppName} chega em grande forma e a tua equipa precisa de reagir.`;
+      }
+      if (myForm === oppForm) {
+        return `${base}. Equilíbrio total no momento — tudo pode acontecer.`;
+      }
+    }
+
+    // 5. Meio da tabela.
+    return `${base}. Jogo equilibrado entre equipas do meio da tabela.`;
   }
 
   /**
@@ -576,10 +642,10 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
        FROM matches m
        LEFT JOIN teams h ON h.id = m.home_team_id
        LEFT JOIN teams a ON a.id = m.away_team_id
-       WHERE m.played = 1 AND (m.home_team_id = ? OR m.away_team_id = ?)
-       ORDER BY m.matchweek DESC, m.id DESC
+       WHERE m.played = 1 AND m.season = ? AND (m.home_team_id = ? OR m.away_team_id = ?)
+       ORDER BY m.season DESC, m.matchweek DESC, m.id DESC
        LIMIT ?`,
-      [teamId, teamId, limit],
+      [game.season, teamId, teamId, limit],
     );
 
     const recent = rows.map((row: any) => {
@@ -790,8 +856,11 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
           oppLast5: opponentSummary?.last5 ?? "",
           h2hWins: opponentSummary?.h2hRecord?.wins ?? 0,
           h2hLosses: opponentSummary?.h2hRecord?.losses ?? 0,
-          isCup: true,
           venue,
+          myPosition: null,
+          oppPosition: null,
+          myPoints: null,
+          oppPoints: null,
         }),
         stakes: buildStakes(null, null, true),
         stadium: isHome
@@ -912,8 +981,11 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         oppLast5: opponentSummary?.last5 ?? "",
         h2hWins: opponentSummary?.h2hRecord?.wins ?? 0,
         h2hLosses: opponentSummary?.h2hRecord?.losses ?? 0,
-        isCup: false,
         venue: isHome ? "Casa" : "Fora",
+        myPosition,
+        oppPosition,
+        myPoints: team.points ?? null,
+        oppPoints: opponent.points ?? null,
       }),
       stakes: buildStakes(myPosition, oppPosition, false),
       stadium: isHome
