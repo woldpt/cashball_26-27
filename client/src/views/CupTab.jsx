@@ -1,3 +1,5 @@
+import { CUP_FINAL_STADIUM } from "../constants/index.js";
+
 export function CupTab({
   cupRoundResults,
   cupDraw,
@@ -71,6 +73,11 @@ export function CupTab({
                     r.homeTeam || teams.find((t) => t.id === r.homeTeamId);
                   const aInfo =
                     r.awayTeam || teams.find((t) => t.id === r.awayTeamId);
+                  // O estádio é o da equipa da casa, exceto na final (Jamor, campo neutro).
+                  // r.homeTeam só tem id/name/cores — o stadium_name vem do prop `teams`.
+                  const stadiumName = cupRoundResults.isFinal
+                    ? CUP_FINAL_STADIUM
+                    : teams.find((t) => t.id === r.homeTeamId)?.stadium_name;
                   const isWinnerHome = r.winnerId === r.homeTeamId;
                   const isMyMatch =
                     r.homeTeamId === me.teamId ||
@@ -119,6 +126,11 @@ export function CupTab({
                           </div>
 
                           <div className="flex flex-col items-center shrink-0 gap-1">
+                            {stadiumName && (
+                              <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-surface-bright text-on-surface-variant/60">
+                                🏟️ {stadiumName}
+                              </span>
+                            )}
                             <span className="text-3xl font-black text-white tabular-nums tracking-tight">
                               {r.homeGoals}{" "}
                               <span className="text-zinc-600">–</span>{" "}
