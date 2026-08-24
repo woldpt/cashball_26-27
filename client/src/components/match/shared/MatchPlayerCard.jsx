@@ -37,8 +37,9 @@ export function MatchPlayerCard({
   const hasStar = !!player.is_star && (player.position === "MED" || player.position === "ATA");
 
   // Skill color: position-colored (matches PlayersTab/TeamSquadCard/MarketTab
-  // which use POSITION_TEXT_CLASS). Selected state falls back to rose.
-  const skillColor = selected ? "text-rose-200" : s.badgeText;
+  // which use POSITION_TEXT_CLASS). Selected state falls back to white — rose
+  // was confused with ATA (avançado) accent colors.
+  const skillColor = selected ? "text-white" : s.badgeText;
 
   // Form: only rendered when it carries signal (💪 ≥115 / 😩 ≤85). The
   // neutral 👍 repeated on every row was visual noise, not information.
@@ -46,12 +47,12 @@ export function MatchPlayerCard({
   const formColor =
     form >= 115 ? "text-emerald-400" : form <= 85 ? "text-rose-400" : "text-on-surface-variant";
 
-  // Single visual signal in the selected state: rose tint. The position
+  // Single visual signal in the selected state: white tint. The position
   // bgGrad gradient is suppressed so only one color system dominates.
   const cardBg = forcedOut
     ? "border-red-500/70 ring-2 ring-red-500/40 bg-red-500/10 shadow-[0_0_16px_rgba(239,68,68,0.25)]"
     : selected
-      ? "border-rose-400/60 bg-rose-500/10"
+      ? "border-white/60 bg-white/10 shadow-[0_0_12px_rgba(255,255,255,0.15)]"
       : disabled
         ? "opacity-40 cursor-not-allowed border-outline-variant/15 bg-surface-container/40"
         : `cursor-pointer border-outline-variant/25 bg-gradient-to-r ${s.bgGrad} via-surface-container/70 to-surface/30 hover:-translate-y-px hover:shadow-lg ${s.glow} shadow-sm shadow-black/30`;
@@ -78,14 +79,14 @@ export function MatchPlayerCard({
         </span>
       )}
       {/* Position accent bar */}
-      <div className={`shrink-0 w-1 bg-gradient-to-b ${selected ? "from-rose-300 via-rose-400 to-rose-600" : s.bar}`} />
+      <div className={`shrink-0 w-1 bg-gradient-to-b ${selected ? "from-white via-white to-white/60" : s.bar}`} />
 
       {/* Position badge */}
       <span
         title={POSITION_FULL_LABELS[player.position]}
         className={`shrink-0 px-2 py-0.5 self-center ml-2 rounded text-[10px] font-bold uppercase tracking-widest border ${
           selected
-            ? "bg-rose-500/20 text-rose-200 border-rose-400/40"
+            ? "bg-white/20 text-white border-white/40"
             : `${s.badgeBg} ${s.badgeText} ${s.badgeBorder}`
         } ${disabled ? "opacity-40" : ""}`}
       >
@@ -96,7 +97,7 @@ export function MatchPlayerCard({
       <span className="flex flex-1 min-w-0 flex-col justify-center ml-2 gap-0.5">
         <span
           className={`truncate text-xs font-semibold ${
-            selected ? "text-rose-100" : disabled ? "text-on-surface-variant/60" : "text-on-surface"
+            selected ? "text-white" : disabled ? "text-on-surface-variant/60" : "text-on-surface"
           }`}
         >
           {player.name}
@@ -108,28 +109,32 @@ export function MatchPlayerCard({
       </span>
 
       {/* ── Expanded: skill + RES + form (form only when notable) ── */}
-      <div className="shrink-0 flex items-center gap-2 mr-2">
-        <span
-          className={`text-lg font-black font-headline tabular-nums leading-none ${skillColor}`}
-          style={{ textShadow: "0 0 10px currentColor" }}
-        >
-          {player.skill ?? "—"}
-        </span>
-        <div className="w-px h-5 bg-outline-variant/25" />
-        <div className="flex flex-col items-end gap-0.5 leading-tight">
-          <span className="text-[8px] uppercase tracking-widest text-on-surface-variant/40 font-semibold">
-            RES
+      {/* Inner items-end: skill digit and RES value share one baseline
+       * (was: skill centered against the whole RES label+value column). */}
+      <div className="shrink-0 flex items-center mr-2">
+        <div className="flex items-end gap-2">
+          <span
+            className={`text-lg font-black font-headline tabular-nums leading-none ${skillColor}`}
+            style={{ textShadow: "0 0 10px currentColor" }}
+          >
+            {player.skill ?? "—"}
           </span>
-          <span className="text-xs font-black tabular-nums text-cyan-400">
-            {player.resistance ?? "–"}
-          </span>
+          <div className="self-stretch w-px bg-outline-variant/25" />
+          <div className="flex flex-col items-end leading-none">
+            <span className="mb-0.5 text-[8px] uppercase tracking-widest text-on-surface-variant/40 font-semibold">
+              RES
+            </span>
+            <span className="text-xs font-black tabular-nums text-cyan-400 leading-none">
+              {player.resistance ?? "–"}
+            </span>
+          </div>
+          {formIcon && (
+            <>
+              <div className="self-stretch w-px bg-outline-variant/25" />
+              <span className={`text-sm leading-none ${formColor}`}>{formIcon}</span>
+            </>
+          )}
         </div>
-        {formIcon && (
-          <>
-            <div className="w-px h-5 bg-outline-variant/25" />
-            <span className={`text-sm leading-none ${formColor}`}>{formIcon}</span>
-          </>
-        )}
       </div>
 
       {/* Swap affordance (halftime mode). Moved to the right end but
@@ -138,7 +143,7 @@ export function MatchPlayerCard({
       {swapIndicator && !disabled && (
         <span
           className={`shrink-0 mr-2 flex items-center transition-colors ${
-            selected ? "text-rose-400" : "text-on-surface-variant/60 group-hover:text-emerald-400"
+            selected ? "text-white" : "text-on-surface-variant/60 group-hover:text-emerald-400"
           }`}
           aria-label="Disponível para substituição"
         >
