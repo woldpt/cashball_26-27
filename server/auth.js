@@ -34,7 +34,12 @@ const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
 function authCacheGet(name, password) {
 	const key = name.toLowerCase();
 	const cached = authCache.get(key);
-	if (cached && cached.expiry > Date.now() && cached.password === password) {
+	if (
+		cached &&
+		cached.name === name &&
+		cached.expiry > Date.now() &&
+		cached.password === password
+	) {
 		// Renovar TTL a cada uso
 		cached.expiry = Date.now() + AUTH_CACHE_TTL;
 		return true;
@@ -44,6 +49,7 @@ function authCacheGet(name, password) {
 
 function authCacheSet(name, password) {
 	authCache.set(name.toLowerCase(), {
+		name,
 		password,
 		expiry: Date.now() + AUTH_CACHE_TTL,
 	});
@@ -240,7 +246,7 @@ function verifyManager(name, password) {
 
 	return new Promise((resolve) => {
 		db.get(
-			"SELECT id, password_hash FROM managers WHERE name = ? COLLATE NOCASE",
+			"SELECT id, password_hash FROM managers WHERE name = ? COLLATE BINARY",
 			[normalizedName],
 			async (err, row) => {
 				if (err) {
@@ -433,6 +439,7 @@ function changePassword(name, currentPassword, newPassword) {
 								error: "Erro ao alterar palavra-passe.",
 							});
 						}
+						authCacheInvalidate(normalizedName);
 						resolve({ ok: true });
 					},
 				);
@@ -641,6 +648,7 @@ function deleteManager(name) {
 						console.error("[auth] deleteManager error:", err.message);
 						return resolve({ ok: false, error: "Erro ao apagar conta." });
 					}
+					authCacheInvalidate(normalizedName);
 					resolve({ ok: true });
 				},
 			);
