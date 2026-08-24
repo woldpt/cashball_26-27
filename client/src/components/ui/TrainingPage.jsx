@@ -4,6 +4,8 @@ import {
   POSITION_TEXT_CLASS,
   POSITION_GLOW_CLASS,
   POSITION_BG_GRADIENT_CLASS,
+  POSITION_BAR_CLASS,
+  POSITION_BORDER_CLASS,
 } from "../../constants/index.js";
 import { Badge } from "../shared/Badge.jsx";
 import { Panel } from "../shared/Panel.jsx";
@@ -12,56 +14,59 @@ import { EmptyState } from "../shared/EmptyState.jsx";
 
 const TRAINING_FOCUS_STORAGE_KEY = "cashball_training_focus";
 
-const TRAINING_OPTIONS = [
-  {
-    key: "GR",
+/* ═══════════════════════════════════════════════════════════════
+   Maps de estilo por opção de treino.  GR/DEF/MED/ATA puxam
+   tokens canónicos de posição; Forma/Resistência usam cores
+   dedicadas (orange / purple) mas o mesmo padrão visual.
+   ═══════════════════════════════════════════════════════════════ */
+const TRAINING_META = {
+  GR: {
     label: "Guarda-redes",
     description: "Melhorar skill dos GR",
     icon: "sports_soccer",
-    color: "from-amber-500/20 to-amber-600/10",
-    border: "border-amber-500",
+    pos: "GR",
   },
-  {
-    key: "Defesas",
+  Defesas: {
     label: "Defesas",
     description: "Melhorar skill dos defensas",
     icon: "security",
-    color: "from-blue-500/20 to-blue-600/10",
-    border: "border-blue-500",
+    pos: "DEF",
   },
-  {
-    key: "Médios",
+  Médios: {
     label: "Médios",
     description: "Melhorar skill dos médios",
     icon: "pivot_table_chart",
-    color: "from-emerald-500/20 to-emerald-600/10",
-    border: "border-emerald-500",
+    pos: "MED",
   },
-  {
-    key: "Avançados",
+  Avançados: {
     label: "Avançados",
     description: "Melhorar skill dos avançados",
     icon: "target",
-    color: "from-rose-500/20 to-rose-600/10",
-    border: "border-rose-500",
+    pos: "ATA",
   },
-  {
-    key: "Forma",
+  Forma: {
     label: "Forma",
     description: "Melhorar forma geral",
     icon: "favorite",
-    color: "from-orange-500/20 to-orange-600/10",
-    border: "border-orange-500",
+    bar: "from-orange-300 via-orange-400 to-orange-600",
+    glow: "hover:border-orange-400/70 hover:shadow-orange-400/30",
+    bgGrad: "from-orange-500/8",
+    text: "text-orange-400",
+    border: "border-orange-400",
   },
-  {
-    key: "Resistência",
+  Resistência: {
     label: "Resistência",
     description: "Melhorar resistência",
     icon: "bolt",
-    color: "from-purple-500/20 to-purple-600/10",
-    border: "border-purple-500",
+    bar: "from-purple-300 via-purple-400 to-purple-600",
+    glow: "hover:border-purple-400/70 hover:shadow-purple-400/30",
+    bgGrad: "from-purple-500/8",
+    text: "text-purple-400",
+    border: "border-purple-400",
   },
-];
+};
+
+const TRAINING_OPTIONS = Object.keys(TRAINING_META);
 
 const POSITION_LABELS = {
   GR: "Guarda-redes",
@@ -70,82 +75,86 @@ const POSITION_LABELS = {
   ATA: "Avançados",
 };
 
-const TRAINING_LABEL_MAP = {
-  GR: "Guarda-redes",
-  Defesas: "Defesas",
-  Médios: "Médios",
-  Avançados: "Avançados",
-  Forma: "Forma",
-  Resistência: "Resistência",
-};
-
-const TRAINING_COLOR_MAP = {
-  GR: "border-amber-500",
-  Defesas: "border-blue-500",
-  Médios: "border-emerald-500",
-  Avançados: "border-rose-500",
-  Forma: "border-orange-500",
-  Resistência: "border-purple-500",
-};
-
 const ATTR_COLUMNS = [
-  { key: "skill", label: "Skill", progressClass: "text-amber-400 border-amber-500/40" },
-  { key: "form", label: "Forma", progressClass: null },
-  { key: "resistance", label: "Resist.", progressClass: "text-purple-400 border-purple-500/40" },
+  { key: "skill", label: "Skill" },
+  { key: "form", label: "Forma" },
+  { key: "resistance", label: "Resist." },
 ];
 
-function getTrainingBorderClass(trainingKey) {
-  return TRAINING_COLOR_MAP[trainingKey] || "border-outline";
+/* ═══════════════════════════════════════════════════════════════
+   Helpers de estilo — resolve tokens canónicos ou metas dedicadas
+   ═══════════════════════════════════════════════════════════════ */
+function getMeta(key) {
+  const m = TRAINING_META[key];
+  const pos = m.pos;
+  return {
+    bar: pos ? POSITION_BAR_CLASS[pos] : m.bar,
+    glow: pos ? POSITION_GLOW_CLASS[pos] : m.glow,
+    bgGrad: pos ? POSITION_BG_GRADIENT_CLASS[pos] : m.bgGrad,
+    text: pos ? POSITION_TEXT_CLASS[pos] : m.text,
+    border: pos ? POSITION_BORDER_CLASS[pos] : m.border,
+  };
 }
 
 function getTrainingLabel(trainingKey) {
-  return TRAINING_LABEL_MAP[trainingKey] || trainingKey;
+  return TRAINING_META[trainingKey]?.label || trainingKey;
 }
 
-function TrainingOptionCard({ option, selected, isSaved, justSaved, loading }) {
-  const { key, label, description, icon, color } = option;
-  const isSelected = selected === key;
+/* ═══════════════════════════════════════════════════════════════
+   Card de opção de treino — agora com faixa lateral, glow e
+   gradiente de fundo, alinhado com PlayerRow (STYLE.md §4).
+   ═══════════════════════════════════════════════════════════════ */
+function TrainingOptionCard({ optionKey, selected, isSaved, justSaved, loading, onClick }) {
+  const meta = TRAINING_META[optionKey];
+  const style = getMeta(optionKey);
+  const isSelected = selected === optionKey;
 
   return (
     <button
-      onClick={() => option.onClick()}
+      onClick={onClick}
       disabled={loading}
-      className={`relative text-left p-4 rounded-lg border-2 transition-all duration-200 group ${
+      className={`relative group flex items-stretch rounded-lg overflow-hidden border-2 transition-all duration-200 text-left ${
         isSelected
-          ? `border-primary bg-primary/10 text-on-surface shadow-lg ${POSITION_GLOW_CLASS[key] || ""}`
-          : `border-outline-variant/20 bg-surface-container-low ${color} hover:border-outline-variant/40 text-on-surface-variant`
+          ? `${style.border} bg-primary/10 text-on-surface shadow-lg ${style.glow}`
+          : `border-outline-variant/25 bg-gradient-to-r ${style.bgGrad} via-surface-container/70 to-surface/30 ${style.glow} shadow-sm shadow-black/30 hover:border-outline-variant/50`
       } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
     >
-      <div className="flex items-start justify-between mb-2">
-        <div className="font-black text-sm text-on-surface">{label}</div>
-        <span className="material-symbols-outlined text-[20px] shrink-0 text-on-surface-variant group-hover:text-on-surface transition-colors">
-          {icon}
-        </span>
-      </div>
-      <div className="text-xs text-on-surface-variant">{description}</div>
-      {isSaved && (
-        <div
-          className={`text-xs font-black mt-2 flex items-center gap-1 ${
-            justSaved ? "text-emerald-400" : "text-primary"
-          }`}
-        >
-          <span className="material-symbols-outlined text-[14px]">
-            check_circle
+      {/* Faixa lateral colorida */}
+      <div className={`shrink-0 w-1 bg-gradient-to-b ${style.bar}`} />
+
+      <div className="flex-1 p-4">
+        <div className="flex items-start justify-between mb-2">
+          <div className={`font-black text-sm ${isSelected ? "text-on-surface" : style.text}`}>
+            {meta.label}
+          </div>
+          <span
+            className={`material-symbols-outlined text-[20px] shrink-0 transition-colors ${
+              isSelected ? "text-on-surface" : "text-on-surface-variant group-hover:text-on-surface"
+            }`}
+          >
+            {meta.icon}
           </span>
-          {justSaved ? "Guardado!" : "Ativo"}
         </div>
-      )}
+        <div className="text-xs text-on-surface-variant">{meta.description}</div>
+
+        {isSaved && (
+          <div
+            className={`text-xs font-black mt-2 flex items-center gap-1 ${
+              justSaved ? "text-emerald-400" : "text-primary"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[14px]">check_circle</span>
+            {justSaved ? "Guardado!" : "Ativo"}
+          </div>
+        )}
+      </div>
     </button>
   );
 }
 
-/**
- * Célula de delta de um atributo. Mostra apenas uma seta: verde para cima
- * (progressão) ou vermelha para baixo (degradação), com tooltip do antes→depois.
- * @param {{
- *   record?: object,
- * }} props
- */
+/* ═══════════════════════════════════════════════════════════════
+   DeltaCell — agora como Badge estilo §5 do STYLE.md.
+   ═══════════════════════════════════════════════════════════════ */
 function DeltaCell({ record }) {
   if (!record) {
     return <span className="text-on-surface-variant/30 tabular-nums">—</span>;
@@ -153,26 +162,23 @@ function DeltaCell({ record }) {
   const delta = record.new_value - record.old_value;
   const isUp = delta > 0;
   return (
-    <span
+    <Badge
+      variant={isUp ? "sold" : "error"}
       title={`${record.old_value} → ${record.new_value}`}
-      className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[12px] font-black ${
-        isUp
-          ? "bg-emerald-500/20 text-emerald-400"
-          : "bg-red-500/20 text-red-400"
-      }`}
     >
-      <span className="material-symbols-outlined text-[12px]">
+      <span className="material-symbols-outlined text-[10px] leading-none align-middle mr-0.5">
         {isUp ? "arrow_upward" : "arrow_downward"}
       </span>
-    </span>
+      {Math.abs(delta)}
+    </Badge>
   );
 }
 
 /**
- * Agrupa os registos de histórico por jogador (preservando a ordem por posição).
- * Registos sem mudança de nível (progresso acumulado) são ignorados, e jogadores
- * sem qualquer progressão/degradação são omitidos.
- * @param {object[]} records registos do histórico de treino
+ * Agrupa os registos de histórico por jogador (preservando a ordem
+ * por posição).  Registos sem mudança de nível são ignorados, e
+ * jogadores sem qualquer progressão/degradação são omitidos.
+ * @param {object[]} records
  * @returns {Array<{ player_id: number, name: string, changes: object[] }>}
  */
 function groupByPlayer(records) {
@@ -192,32 +198,51 @@ function groupByPlayer(records) {
 }
 
 /**
- * Uma linha de jogador na tabela compacta — uma linha por jogador,
- * com células de delta alinhadas por atributo (Skill/Forma/Resist.).
+ * Card de jogador no relatório — layout horizontal compacto
+ * com colunas de atributo, seguindo o padrão PlayerRow.
  * @param {{
  *   player: { player_id: number, name: string, changes: object[] },
+ *   position: string,
  * }} props
  */
-function PlayerReportRow({ player }) {
+function PlayerReportRow({ player, position }) {
   const byAttr = {};
   for (const c of player.changes) byAttr[c.attribute] = c;
+
+  const bar = POSITION_BAR_CLASS[position] || "from-zinc-500 to-zinc-600";
+  const glow = POSITION_GLOW_CLASS[position] || "";
+  const bgGrad =
+    POSITION_BG_GRADIENT_CLASS[position] || "from-zinc-500/4";
+
   return (
-    <tr className="border-t border-outline-variant/15 hover:bg-white/5 transition-colors">
-      <td className="py-1.5 pr-2 pl-0 w-full max-w-0">
-        <span className="block truncate text-sm tracking-tight text-on-surface">
+    <div
+      className={`relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r ${bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${glow} shadow-sm shadow-black/30`}
+    >
+      {/* Faixa lateral */}
+      <div className={`shrink-0 w-1 bg-gradient-to-b ${bar}`} />
+
+      <div className="flex-1 min-w-0 flex items-center px-3 py-2 gap-3">
+        {/* Nome */}
+        <span className="flex-1 min-w-0 truncate text-sm font-black tracking-tight text-on-surface">
           {player.name}
         </span>
-      </td>
-      <td className="py-1.5 px-2 text-right">
-        <DeltaCell record={byAttr.skill} />
-      </td>
-      <td className="py-1.5 px-2 text-right">
-        <DeltaCell record={byAttr.form} />
-      </td>
-      <td className="py-1.5 px-2 text-right">
-        <DeltaCell record={byAttr.resistance} />
-      </td>
-    </tr>
+
+        {/* Separador + deltas */}
+        <div className="flex items-center gap-2 shrink-0">
+          {ATTR_COLUMNS.map((col) => (
+            <div
+              key={col.key}
+              className="flex flex-col items-center min-w-[48px]"
+            >
+              <span className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70 mb-0.5">
+                {col.label}
+              </span>
+              <DeltaCell record={byAttr[col.key]} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -325,9 +350,10 @@ export function TrainingPage({ me, matchweek }) {
     historyByPosition[record.position].push(record);
   });
 
-  const uniquePlayerCount = new Set(
-    trainingHistory.map((r) => r.player_id),
-  ).size;
+  const uniquePlayerCount = new Set(trainingHistory.map((r) => r.player_id)).size;
+
+  // Resolve border accent do foco atual
+  const focusStyle = savedTraining ? getMeta(savedTraining) : null;
 
   return (
     <div className="space-y-4">
@@ -337,11 +363,7 @@ export function TrainingPage({ me, matchweek }) {
           label="Foco Atual"
           value={savedTraining ? getTrainingLabel(savedTraining) : "Nenhum"}
           valueClass="text-2xl"
-          accentClass={
-            savedTraining
-              ? getTrainingBorderClass(savedTraining)
-              : "border-outline-variant"
-          }
+          accentClass={focusStyle ? focusStyle.border : "border-outline-variant"}
         />
         <SummaryWidget label="Jornada" value={matchweek} valueClass="text-2xl" />
         <SummaryWidget
@@ -365,41 +387,45 @@ export function TrainingPage({ me, matchweek }) {
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {TRAINING_OPTIONS.map((option) => (
+              {TRAINING_OPTIONS.map((key) => (
                 <TrainingOptionCard
-                  key={option.key}
-                  option={{ ...option, onClick: () => handleSetTraining(option.key) }}
+                  key={key}
+                  optionKey={key}
                   selected={selectedTraining}
-                  isSaved={savedTraining === option.key}
+                  isSaved={savedTraining === key}
                   justSaved={saved}
                   loading={loading}
+                  onClick={() => handleSetTraining(key)}
                 />
               ))}
             </div>
 
-            <div className="bg-surface-container-high/50 rounded-lg p-4 border border-outline-variant/25 border-l-4 border-blue-500">
+            {/* Info card — alinhado com design system */}
+            <div className="bg-surface-container-high/50 rounded-lg p-4 border border-outline-variant/25">
               <div className="flex items-start gap-3">
-                <span className="material-symbols-outlined text-blue-400 shrink-0 mt-0.5">
+                <span className="material-symbols-outlined text-on-surface-variant shrink-0 mt-0.5">
                   info
                 </span>
                 <div>
-                  <h3 className="font-black text-on-surface mb-2">Como funciona?</h3>
+                  <h3 className="font-black text-on-surface mb-2 text-sm">
+                    Como funciona?
+                  </h3>
                   <ul className="text-xs text-on-surface-variant space-y-1.5">
                     <li className="flex items-start gap-2">
-                      <span className="text-blue-400">→</span> Escolha um foco no
-                      início da jornada (league ou taça)
+                      <span className="text-primary">→</span>
+                      Escolha um foco no início da jornada (league ou taça)
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-blue-400">→</span> Apenas jogadores
-                      que jogaram beneficiam
+                      <span className="text-primary">→</span>
+                      Apenas jogadores que jogaram beneficiam
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-blue-400">→</span> Aplicado
-                      automaticamente após a jornada
+                      <span className="text-primary">→</span>
+                      Aplicado automaticamente após a jornada
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-blue-400">→</span> Atributos não
-                      treinados (forma/resistência) degradam-se com o tempo
+                      <span className="text-primary">→</span>
+                      Atributos não treinados (forma/resistência) degradam-se com o tempo
                     </li>
                   </ul>
                 </div>
@@ -423,11 +449,8 @@ export function TrainingPage({ me, matchweek }) {
               title="Ainda não há histórico de treino — escolha um foco e jogue uma jornada."
             />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-5">
               {Object.entries(historyByPosition).map(([position, records]) => {
-                const posGlow = POSITION_GLOW_CLASS[position] || "";
-                const posBgGrad =
-                  POSITION_BG_GRADIENT_CLASS[position] || "from-zinc-500/4";
                 const posText =
                   POSITION_TEXT_CLASS[position] || "text-on-surface-variant";
                 const posLabel = POSITION_LABELS[position] || position;
@@ -435,45 +458,29 @@ export function TrainingPage({ me, matchweek }) {
                 if (players.length === 0) return null;
 
                 return (
-                  <div
-                    key={position}
-                    className={`relative rounded-lg p-4 border border-outline-variant/25 ${posGlow} bg-gradient-to-r ${posBgGrad} via-surface-container/70 to-surface/30 shadow-sm shadow-black/30`}
-                  >
+                  <div key={position} className="space-y-2">
+                    {/* Header do grupo */}
                     <h3
-                      className={`font-black mb-3 flex items-center gap-2 ${posText}`}
+                      className={`font-black flex items-center gap-2 text-sm ${posText}`}
                     >
                       <span className="material-symbols-outlined text-[18px]">
                         group
                       </span>
                       {posLabel}
-                      <span className="ml-auto text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 tabular-nums">
+                      <Badge variant="neutral" size="sm">
                         {players.length} jogadores
-                      </span>
+                      </Badge>
                     </h3>
 
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-[320px]">
-                        <thead>
-                          <tr className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-                            <th className="text-left py-1 pr-2 pl-0 font-black">
-                              Jogador
-                            </th>
-                            {ATTR_COLUMNS.map((col) => (
-                              <th
-                                key={col.key}
-                                className="text-right py-1 px-2 font-black"
-                              >
-                                {col.label}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {players.map((p) => (
-                            <PlayerReportRow key={p.player_id} player={p} />
-                          ))}
-                        </tbody>
-                      </table>
+                    {/* Lista de cards */}
+                    <div className="space-y-1.5">
+                      {players.map((p) => (
+                        <PlayerReportRow
+                          key={p.player_id}
+                          player={p}
+                          position={position}
+                        />
+                      ))}
                     </div>
                   </div>
                 );
