@@ -25,6 +25,7 @@ import {
 
 import { GameDialog } from "./components/shared/GameDialog.jsx";
 import { TransferProposalModal } from "./components/modals/TransferProposalModal.jsx";
+import { SigningCelebrationModal } from "./components/modals/SigningCelebrationModal.jsx";
 import { AuctionNotification } from "./components/ui/AuctionNotification.jsx";
 import { AuctionsPage } from "./pages/AuctionsPage.jsx";
 import { UserSettingsPage } from "./pages/UserSettingsPage.jsx";
@@ -119,6 +120,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     selectedTeamLoading,
     transferProposalModal,
     setTransferProposalModal,
+    signingCelebration,
+    setSigningCelebration,
     playerSearchData,
     playerSearchLoading,
     setPlayerSearchLoading,
@@ -1501,6 +1504,13 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       <TransferProposalModal
         transferProposalModal={transferProposalModal}
         setTransferProposalModal={setTransferProposalModal}
+      />
+
+      <SigningCelebrationModal
+        signing={signingCelebration}
+        onClose={() => setSigningCelebration(null)}
+        teams={teams}
+        me={me}
       />
 
       {/* ── Auction toast notification ─────────────────────────────────── */}

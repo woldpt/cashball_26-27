@@ -51,6 +51,36 @@ export const playGoalSound = () => {
   }
 };
 
+// Fanfarra para contratação de jogador — arpejo ascendente festivo
+export const playSigningSound = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const sequence = [
+      { freq: 523, time: 0, dur: 0.14, vol: 0.16 }, // Dó
+      { freq: 659, time: 0.11, dur: 0.14, vol: 0.18 }, // Mi
+      { freq: 784, time: 0.22, dur: 0.14, vol: 0.2 }, // Sol
+      { freq: 1046, time: 0.33, dur: 0.42, vol: 0.24 }, // Dó agudo (celebração)
+    ];
+    sequence.forEach(({ freq, time, dur, vol }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
+      gain.gain.setValueAtTime(vol, ctx.currentTime + time);
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        ctx.currentTime + time + dur,
+      );
+      osc.start(ctx.currentTime + time);
+      osc.stop(ctx.currentTime + time + dur);
+    });
+  } catch {
+    // ignore
+  }
+};
+
 // Som descendente para golo anulado pelo VAR
 export const playVarSound = () => {
   try {

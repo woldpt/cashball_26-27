@@ -212,7 +212,16 @@ export function registerTransferSocketHandlers(
       if (sellerTeamId) {
         emitSquadForPlayer(game, sellerTeamId);
       }
-      socket.emit("systemMessage", `Contrataste ${player.name} por €${price}!`);
+      socket.emit("playerSigned", {
+        playerId: player.id,
+        name: player.name,
+        position: player.position,
+        skill: player.skill,
+        age: player.age,
+        nationality: player.nationality,
+        price,
+        source: "market",
+      });
     } catch (err) {
       console.error("[buyPlayer] Error:", err);
       socket.emit("systemMessage", "Erro ao processar compra.");
@@ -761,6 +770,16 @@ export function registerTransferSocketHandlers(
                     socket.emit("transferProposalResult", {
                       ok: true,
                       message: `Contrataste ${player.name} por €${proposalPrice.toLocaleString("pt-PT")}!`,
+                    });
+                    socket.emit("playerSigned", {
+                      playerId: player.id,
+                      name: player.name,
+                      position: player.position,
+                      skill: player.skill,
+                      age: player.age,
+                      nationality: player.nationality,
+                      price: proposalPrice,
+                      source: "proposal",
                     });
                   },
                 );

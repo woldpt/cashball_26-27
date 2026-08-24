@@ -116,6 +116,7 @@ export function GameProvider({
 	const [selectedTeamSquad, setSelectedTeamSquad] = useState([]);
 	const [selectedTeamLoading, setSelectedTeamLoading] = useState(false);
 	const [transferProposalModal, setTransferProposalModal] = useState(null);
+	const [signingCelebration, setSigningCelebration] = useState(null);
 	const [playerSearchData, setPlayerSearchData] = useState({
 		results: [],
 		total: 0,
@@ -617,6 +618,7 @@ export function GameProvider({
 			setCoachMarketReport,
 			setAdminUsers,
 			setTransferProposalModal,
+			setSigningCelebration,
 			setPlayerSearchData,
 			setPlayerSearchLoading,
 			setMe,
@@ -1171,6 +1173,8 @@ export function GameProvider({
 		selectedTeamLoading,
 		transferProposalModal,
 		setTransferProposalModal,
+		signingCelebration,
+		setSigningCelebration,
 		playerSearchData,
 		setPlayerSearchData,
 		playerSearchLoading,

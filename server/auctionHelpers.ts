@@ -335,8 +335,17 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                         );
                         if (buyerCoach) {
                           io.to(buyerCoach.socketId as string).emit(
-                            "systemMessage",
-                            `Ganhaste o leilão de ${player.name} por €${finalBid}!`,
+                            "playerSigned",
+                            {
+                              playerId: player.id,
+                              name: player.name,
+                              position: player.position,
+                              skill: player.skill,
+                              age: player.age,
+                              nationality: player.nationality,
+                              price: finalBid,
+                              source: "auction",
+                            },
                           );
                         }
                         if (sellerCoach) {

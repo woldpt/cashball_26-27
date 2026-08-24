@@ -645,8 +645,11 @@ export function useSocketListeners(handlers, refs) {
 			},
 		);
 		socket.on("transferProposalResult", ({ ok, message }) => {
-			handlers.addToast(message);
+			if (!ok) handlers.addToast(message);
 			if (ok) handlers.setTransferProposalModal(null);
+		});
+		socket.on("playerSigned", (data) => {
+			handlers.setSigningCelebration(data);
 		});
 		socket.on("teamAssigned", (data) => {
 			const currentMe = refs.meRef.current;
@@ -1477,6 +1480,7 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("auctionResumed");
 			socket.off("systemMessage");
 			socket.off("transferProposalResult");
+			socket.off("playerSigned");
 			socket.off("renewContractCounterOffer");
 			socket.off("contractRequest");
 			socket.off("teamAssigned");

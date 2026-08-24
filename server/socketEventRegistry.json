@@ -70,7 +70,6 @@
       "socketTransferHandlers.ts",
       "socketTransferHandlers.ts",
       "socketTransferHandlers.ts",
-      "socketTransferHandlers.ts",
       "socketTransferHandlers.ts"
     ],
     "receive": []
@@ -452,6 +451,13 @@
     "receive": [
       "socketSessionHandlers.ts"
     ]
+  },
+  "playerSigned": {
+    "emit": [
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts"
+    ],
+    "receive": []
   },
   "renewContractCounterOffer": {
     "emit": [

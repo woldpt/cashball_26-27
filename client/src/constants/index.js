@@ -344,6 +344,7 @@ export const MODAL_Z = {
 	waitingCoaches: 150,
 	penalty: 150,
 	coachMarket: 160,
+	signing: 190,
 	default: 200,
 	dismissal: 9999,
 };
