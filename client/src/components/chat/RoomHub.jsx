@@ -162,7 +162,7 @@ export function RoomHub({
           className="flex flex-col sm:flex-row rounded-xl shadow-2xl overflow-hidden border border-outline-variant/40 h-[min(480px,calc(100dvh-5rem))] sm:h-[480px]"
           style={{
             width: "min(580px, calc(100vw - 2rem))",
-            background: "#1a1a1a",
+            background: "#1e1e1e",
           }}
         >
           {/* ── Coluna Esquerda: Sala + Coaches ── */}
@@ -410,7 +410,7 @@ export function RoomHub({
                         className={`max-w-[80%] px-3 py-1.5 rounded-xl text-sm leading-snug ${
                           isOwn
                             ? "bg-primary text-on-primary rounded-br-sm"
-                            : "bg-surface-container text-on-surface rounded-bl-sm"
+                            : "bg-surface-container-high text-on-surface rounded-bl-sm"
                         }`}
                       >
                         {msg.message}

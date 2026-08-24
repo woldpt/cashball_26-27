@@ -222,7 +222,7 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
             </div>
 
             {/* Chat rápido da sala */}
-            <div className="border-t border-outline-variant/15 md:border-t-0 md:border-l md:w-72 md:shrink-0 md:flex md:flex-col">
+            <div className="bg-surface-container-high border-t border-outline-variant/15 md:border-t-0 md:border-l md:w-72 md:shrink-0 md:flex md:flex-col">
               <div className="flex items-center gap-1.5 px-4 pt-2 pb-1 md:shrink-0">
                 <span className="text-xs">💬</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
@@ -256,7 +256,7 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
                             className={`max-w-[85%] px-2.5 py-1 rounded-lg text-xs leading-snug ${
                               isOwn
                                 ? "bg-primary text-on-primary rounded-br-sm"
-                                : "bg-surface-container text-on-surface rounded-bl-sm"
+                                : "bg-surface-container-highest text-on-surface rounded-bl-sm"
                             }`}
                           >
                             {msg.message}
