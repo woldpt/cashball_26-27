@@ -41,9 +41,10 @@ export function MatchPlayerCard({
   // was confused with ATA (avançado) accent colors.
   const skillColor = selected ? "text-white" : s.badgeText;
 
-  // Form: only rendered when it carries signal (💪 ≥115 / 😩 ≤85). The
-  // neutral 👍 repeated on every row was visual noise, not information.
-  const formIcon = form >= 115 ? "💪" : form <= 85 ? "😩" : null;
+  // Form: always render the full 💪/👍/😩 triplet. Hiding the neutral 👍
+  // (86–114) made rows with/without a form icon have different widths,
+  // shifting the skill/RES columns and misaligning the card list.
+  const formIcon = form >= 115 ? "💪" : form <= 85 ? "😩" : "👍";
   const formColor =
     form >= 115 ? "text-emerald-400" : form <= 85 ? "text-rose-400" : "text-on-surface-variant";
 
@@ -108,7 +109,7 @@ export function MatchPlayerCard({
         {showFatigue && <FatigueIndicator player={player} compact />}
       </span>
 
-      {/* ── Expanded: skill + RES + form (form only when notable) ── */}
+      {/* ── Expanded: skill + RES + form (always rendered) ── */}
       {/* Inner items-end: skill digit and RES value share one baseline
        * (was: skill centered against the whole RES label+value column). */}
       <div className="shrink-0 flex items-center mr-2">
@@ -128,12 +129,8 @@ export function MatchPlayerCard({
               {player.resistance ?? "–"}
             </span>
           </div>
-          {formIcon && (
-            <>
-              <div className="self-stretch w-px bg-outline-variant/25" />
-              <span className={`text-sm leading-none ${formColor}`}>{formIcon}</span>
-            </>
-          )}
+          <div className="self-stretch w-px bg-outline-variant/25" />
+          <span className={`text-sm leading-none ${formColor}`}>{formIcon}</span>
         </div>
       </div>
 
