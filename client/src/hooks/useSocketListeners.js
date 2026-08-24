@@ -298,7 +298,9 @@ export function useSocketListeners(handlers, refs) {
 					awayLineup: fx.awayLineup || [],
 					_t1: fx._t1 || null,
 					_t2: fx._t2 || null,
-					attendance: null,
+					attendance: fx.attendance || null,
+					homePossession: fx.homePossession ?? fx._homePossession ?? 50,
+					awayPossession: fx.awayPossession ?? fx._awayPossession ?? 50,
 				})),
 			});
 				handlers.setLiveMinute(45);
@@ -349,7 +351,9 @@ export function useSocketListeners(handlers, refs) {
 					awayLineup: fx.awayLineup || [],
 					_t1: fx._t1 || null,
 					_t2: fx._t2 || null,
-					attendance: null,
+					attendance: fx.attendance || null,
+					homePossession: fx.homePossession ?? fx._homePossession ?? 50,
+					awayPossession: fx.awayPossession ?? fx._awayPossession ?? 50,
 				})),
 			});
 				handlers.setLiveMinute(90);
@@ -507,7 +511,7 @@ export function useSocketListeners(handlers, refs) {
 					finalHomeGoals: r.finalHomeGoals,
 					finalAwayGoals: r.finalAwayGoals,
 					events: r.events || [],
-					attendance: null,
+					attendance: r.attendance || null,
 					homeLineup: r.homeLineup || [],
 					awayLineup: r.awayLineup || [],
 					_t1: r._t1 || null,
@@ -1122,6 +1126,8 @@ export function useSocketListeners(handlers, refs) {
 					_t1: fx._t1 || null,
 					_t2: fx._t2 || null,
 					attendance: fx.attendance || null,
+					homePossession: fx.homePossession ?? fx._homePossession ?? 50,
+					awayPossession: fx.awayPossession ?? fx._awayPossession ?? 50,
 				})),
 			});
 			handlers.setSubsMade(0);

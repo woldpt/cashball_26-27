@@ -773,6 +773,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             _t1: fixture._t1 || null,
             _t2: fixture._t2 || null,
             attendance: fixture.attendance || null,
+            homePossession: fixture._homePossession ?? 50,
+            awayPossession: fixture._awayPossession ?? 50,
             referee: pickRefereeSummary(
               game.roomCode,
               fixture.homeTeamId,
@@ -874,6 +876,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           finalHomeGoals: f.finalHomeGoals,
           finalAwayGoals: f.finalAwayGoals,
           events: f.events,
+          attendance: f.attendance || null,
           homeLineup: f.homeLineup || [],
           awayLineup: f.awayLineup || [],
           _t1: f._t1 || null,
