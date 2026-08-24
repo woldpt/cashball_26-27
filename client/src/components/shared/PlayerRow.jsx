@@ -301,8 +301,11 @@ export function PlayerRow({
       {/* Coluna de proposta (equipas NPC) */}
       {showProposalCol && (
         <div className="shrink-0 self-stretch flex items-center px-3 border-l">
-          {!player.isJunior &&
-          Math.round((player.value || 0) * 1.35) <= myBudget ? (
+          {player.isJunior || player.contract_start_epoch > 0 ? (
+            <span className="text-[10px] text-zinc-600 font-bold uppercase whitespace-nowrap">
+              🔒 Contrato
+            </span>
+          ) : Math.round((player.value || 0) * 1.35) <= myBudget ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
