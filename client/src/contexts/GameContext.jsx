@@ -447,8 +447,14 @@ export function GameProvider({
 			);
 			if (myMatch) {
 				const isHome = Number(myMatch.homeTeamId) === Number(myId);
-				const myGoals = isHome ? myMatch.homeGoals : myMatch.awayGoals;
-				const oppGoals = isHome ? myMatch.awayGoals : myMatch.homeGoals;
+				// Liga envia fixtures com finalHomeGoals/finalAwayGoals; a Taça usa
+				// homeGoals/awayGoals. Aceitar ambos os formatos (ver LeagueStandings).
+				const myGoals = isHome
+					? (myMatch.homeGoals ?? myMatch.finalHomeGoals ?? 0)
+					: (myMatch.awayGoals ?? myMatch.finalAwayGoals ?? 0);
+				const oppGoals = isHome
+					? (myMatch.awayGoals ?? myMatch.finalAwayGoals ?? 0)
+					: (myMatch.homeGoals ?? myMatch.finalHomeGoals ?? 0);
 				const oppId = isHome ? myMatch.awayTeamId : myMatch.homeTeamId;
 				const outcome =
 					myGoals > oppGoals ? "win" : myGoals < oppGoals ? "loss" : "draw";
