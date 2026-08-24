@@ -127,12 +127,28 @@ export function createTrainingHandlers(deps: TrainingHandlersDeps) {
         return;
       }
 
+      // Prefer the most recent matchweek that still has at least one real
+      // attribute change (new_value != old_value): once the whole squad has
+      // converged on its caps/floors, every row of the latest matchweek is a
+      // no-change row and the frontend report would render blank.
       game.db.get(
-        "SELECT MAX(matchweek) AS mw FROM training_player_history WHERE team_id = ?",
+        "SELECT MAX(matchweek) AS mw FROM training_player_history WHERE team_id = ? AND new_value != old_value",
         [teamId],
         (err: any, row: any) => {
           if (err || !row || row.mw == null) {
-            resolve([]);
+            // Fallback: no matchweek ever had a real change — return the
+            // latest matchweek with any rows (the UI shows an empty state).
+            game.db.get(
+              "SELECT MAX(matchweek) AS mw FROM training_player_history WHERE team_id = ?",
+              [teamId],
+              (err2: any, row2: any) => {
+                if (err2 || !row2 || row2.mw == null) {
+                  resolve([]);
+                  return;
+                }
+                finish(row2.mw);
+              },
+            );
             return;
           }
           finish(row.mw);

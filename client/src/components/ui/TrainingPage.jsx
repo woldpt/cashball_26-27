@@ -352,6 +352,15 @@ export function TrainingPage({ me, matchweek }) {
 
   const uniquePlayerCount = new Set(trainingHistory.map((r) => r.player_id)).size;
 
+  // Players with at least one real attribute change — the only ones the report
+  // can display (groupByPlayer drops no-change rows).  If all rows of the
+  // latest event are no-change, the report must say so instead of going blank.
+  const visiblePlayerCount = new Set(
+    trainingHistory
+      .filter((r) => r.new_value !== r.old_value)
+      .map((r) => r.player_id),
+  ).size;
+
   // Resolve border accent do foco atual
   const focusStyle = savedTraining ? getMeta(savedTraining) : null;
 
@@ -447,6 +456,12 @@ export function TrainingPage({ me, matchweek }) {
             <EmptyState
               emoji="📊"
               title="Ainda não há histórico de treino — escolha um foco e jogue uma jornada."
+            />
+          ) : visiblePlayerCount === 0 ? (
+            <EmptyState
+              emoji="🧘"
+              title="Sem alterações visíveis neste evento"
+              description="Nenhum atributo mudou de nível — os jogadores podem ter atingido o limite de potencial, forma ou resistência."
             />
           ) : (
             <div className="space-y-5">

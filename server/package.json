@@ -14,7 +14,8 @@
     "audit:gamestate": "tsx scripts/gameStateAudit.ts",
     "audit:socketio": "tsx scripts/socketioContractValidator.ts",
     "fetch:zerozero": "tsx scripts/fetchZerozeroSquads.ts",
-    "repair:joboffer": "tsx scripts/repairDuplicateJobOffer.ts"
+    "repair:joboffer": "tsx scripts/repairDuplicateJobOffer.ts",
+    "test:training-report": "tsx scripts/trainingReportRegression.mts"
   },
   "keywords": [],
   "author": "",
