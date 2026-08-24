@@ -164,7 +164,7 @@ export function TeamHistoryView({ selectedTeam, clubHistory, clubHistoryTeamId }
                     className="material-symbols-outlined text-amber-400 text-base"
                     style={{ fontVariationSettings: "'FILL' 1" }}
                   >
-                    {isTopScorer ? "soccer" : "emoji_events"}
+                    {isTopScorer ? "sports_soccer" : "emoji_events"}
                   </span>
                   <div>
                     <p className="text-amber-400 font-black text-xs">
