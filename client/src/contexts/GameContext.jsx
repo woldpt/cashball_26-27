@@ -787,6 +787,12 @@ export function GameProvider({
 		socket.emit("requestTeamSquad", team.id);
 		socket.emit("requestPalmares", { teamId: team.id });
 		socket.emit("requestClubHistory", { teamId: team.id });
+		// O calendário do plantel deriva os estados (done/current/future) de
+		// calendarData.calendarIndex. Esse snapshot só é refrescado quando o
+		// utilizador visita o separador Calendário — sem isto, abrir o plantel
+		// de OUTRA equipa mostra estados de uma semana anterior (jornada já
+		// jogada marcada como "Próximo Jogo" e a atual como "Agendado").
+		socket.emit("requestCalendar");
 	}, []);
 
 	const handleCloseTeamSquad = useCallback(() => {
