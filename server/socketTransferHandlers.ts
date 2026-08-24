@@ -10,6 +10,7 @@ import {
   currentEpoch,
   isContractLocked,
   contractEndInfo,
+  seasonToYear,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { signingWage, getAgentName, fairWeeklyWage } from "./gameConstants";
@@ -93,7 +94,7 @@ export function registerTransferSocketHandlers(
         const end = contractEndInfo(player);
         socket.emit(
           "systemMessage",
-          `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até à J${end.matchweek} da época ${end.season}. Ninguém mexe no menino dele.`,
+          `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até ${seasonToYear(end.season)}, Jornada ${end.matchweek}. Ninguém mexe no menino dele.`,
         );
         return;
       }
@@ -257,7 +258,7 @@ export function registerTransferSocketHandlers(
             const end = contractEndInfo(player);
             socket.emit(
               "systemMessage",
-              `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até à J${end.matchweek} da época ${end.season}. Ninguém mexe no menino dele.`,
+              `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até ${seasonToYear(end.season)}, Jornada ${end.matchweek}. Ninguém mexe no menino dele.`,
             );
             return;
           }
@@ -391,7 +392,7 @@ export function registerTransferSocketHandlers(
               emitSquadForPlayer(game, playerState.teamId);
               socket.emit(
                 "systemMessage",
-                `🥂 ${player.name} renovou até à J${end.matchweek} da época ${end.season}. ${getAgentName(player.id)} já celebrou com champanhe… que depois te manda a conta.`,
+                `🥂 ${player.name} renovou até ${seasonToYear(end.season)}, Jornada ${end.matchweek}. ${getAgentName(player.id)} já celebrou com champanhe… que depois te manda a conta.`,
               );
             },
           );
@@ -546,7 +547,7 @@ export function registerTransferSocketHandlers(
               emitSquadForPlayer(game, playerState.teamId);
               socket.emit(
                 "systemMessage",
-                `🥂 ${player.name} renovou até à J${end.matchweek} da época ${end.season}. ${getAgentName(player.id)} já celebrou com champanhe… que depois te manda a conta.`,
+                `🥂 ${player.name} renovou até ${seasonToYear(end.season)}, Jornada ${end.matchweek}. ${getAgentName(player.id)} já celebrou com champanhe… que depois te manda a conta.`,
               );
             },
           );
@@ -615,7 +616,7 @@ export function registerTransferSocketHandlers(
           const end = contractEndInfo(player);
           socket.emit("transferProposalResult", {
             ok: false,
-            message: `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até à J${end.matchweek} da época ${end.season}. Ninguém mexe no menino dele.`,
+            message: `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até ${seasonToYear(end.season)}, Jornada ${end.matchweek}. Ninguém mexe no menino dele.`,
           });
           return;
         }

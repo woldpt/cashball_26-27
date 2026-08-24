@@ -101,6 +101,14 @@ export function contractEndInfo(
   return { season, matchweek: mw === 0 ? CONTRACT_LENGTH_MATCHWEEKS : mw };
 }
 
+/**
+ * Época (1-based) → ano civil. A época 1 começa em 2026
+ * (invariante do servidor: game.year = 2025 + game.season).
+ */
+export function seasonToYear(season: number): number {
+  return 2025 + season;
+}
+
 export function hashString(input = "") {
   let hash = 0;
   for (let index = 0; index < input.length; index += 1) {

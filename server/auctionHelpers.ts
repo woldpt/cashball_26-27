@@ -5,6 +5,7 @@ import {
   currentEpoch,
   isContractLocked,
   contractEndInfo,
+  seasonToYear,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { signingWage, AUCTION_BID_STEP, getAgentName } from "./gameConstants";
@@ -282,7 +283,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
               if (seller) {
                 io.to(seller.socketId as string).emit(
                   "systemMessage",
-                  `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até à J${end.matchweek} da época ${end.season}. Não vai para o leilão.`,
+                  `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até ${seasonToYear(end.season)}, Jornada ${end.matchweek}. Não vai para o leilão.`,
                 );
               }
               delete game.auctions![playerId];

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { socket } from "../socket.js";
 import { isSameTeamId } from "../utils/teamHelpers.js";
+import { seasonToYear } from "../utils/formatters.js";
 import { playGoalSound, playVarSound } from "../utils/audio.js";
 import { POSITION_SHORT_LABELS, POSITION_TEXT_CLASS } from "../constants/index.js";
 
@@ -33,7 +34,7 @@ function buildPlayerStats({
 	if (contractEndMatchweek && contractEndSeason) {
 		stats.push({
 			label: "Contrato",
-			value: `J${contractEndMatchweek} · E${contractEndSeason}`,
+			value: `${seasonToYear(contractEndSeason)}, Jornada ${contractEndMatchweek}`,
 		});
 	}
 	return stats;
@@ -618,7 +619,7 @@ export function useSocketListeners(handlers, refs) {
 			}) => {
 				const endText =
 					contractEndMatchweek && contractEndSeason
-						? ` Contrato até à J${contractEndMatchweek} da época ${contractEndSeason}.`
+						? ` Contrato até ${seasonToYear(contractEndSeason)}, Jornada ${contractEndMatchweek}.`
 						: "";
 				const headline = isRenegotiation
 					? `📈 ${agent} viu o teu plantel no Excel: ${playerName} vale muito mais do que recebe. Exige €${requestedWage.toLocaleString("pt-PT")}/sem ou ameaça "conversas com outros clubes".${endText}`

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { formatCurrency } from "../../utils/formatters.js";
+import { formatCurrency, seasonToYear } from "../../utils/formatters.js";
 import { AggBadge } from "../shared/AggBadge.jsx";
 import { Badge } from "../shared/Badge.jsx";
 import { Button } from "../shared/Button.jsx";
@@ -163,6 +163,7 @@ export function PlayerHistoryModal({
   const contractEndMatchweek = contractStart > 0
     ? contractEndEpoch - (contractEndSeason - 1) * 14
     : 0;
+  const contractEndYear = contractStart > 0 ? seasonToYear(contractEndSeason) : 0;
   const matchInProgress = isPlayingMatch || showHalftimePanel;
   // Server uses >= to prevent re-auction in same matchweek (auctionHelpers.ts:459)
   const alreadyAuctionedThisWeek =
@@ -398,8 +399,8 @@ export function PlayerHistoryModal({
                   <div className="flex flex-col gap-2">
                     {isLocked && (
                       <p className="text-[11px] text-amber-400/90 font-bold">
-                        🔒 Contrato em vigor até à J{contractEndMatchweek} da
-                        época {contractEndSeason} — não pode ser transferido.
+                        🔒 Contrato em vigor até {contractEndYear}, Jornada
+                        {contractEndMatchweek} — não pode ser transferido.
                       </p>
                     )}
                     <Button
@@ -426,7 +427,7 @@ export function PlayerHistoryModal({
                         matchInProgress
                           ? "Disponível após as partidas"
                           : isLocked
-                            ? `Contrato até à J${contractEndMatchweek} da época ${contractEndSeason}`
+                            ? `Contrato até ${contractEndYear}, Jornada ${contractEndMatchweek}`
                             : alreadyAuctionedThisWeek
                               ? "Já foi a leilão nesta jornada"
                               : "Vender em Leilão"
@@ -464,7 +465,7 @@ export function PlayerHistoryModal({
                           matchInProgress
                             ? "Disponível após as partidas"
                             : isLocked
-                              ? `Contrato até à J${contractEndMatchweek} da época ${contractEndSeason}`
+                              ? `Contrato até ${contractEndYear}, Jornada ${contractEndMatchweek}`
                               : "Listar para Transferência"
                         }
                         onClick={() => {
