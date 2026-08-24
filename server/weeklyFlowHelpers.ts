@@ -1307,12 +1307,13 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         (p) => p.teamId !== null,
       );
       if (connectedPlayers.length === 0) {
-        // All connected players are dismissed — only auto-advance from lobby so NPC matches can run.
-        if (game.gamePhase !== "lobby") return;
+        // No active coaches connected — block the lobby so the game never
+        // auto-advances in single player. The game waits until a coach
+        // reconnects and presses "Pronto" (setReady).
         console.log(
-          `[${game.roomCode}] 🤖 No active coaches connected in lobby — auto-advancing NPC matches`,
+          `[${game.roomCode}] ⏸ No active coaches connected in lobby — waiting (no auto-advance)`,
         );
-        // Fall through to advance the lobby
+        return;
       } else if (!connectedPlayers.every((player) => player.ready)) {
         const notReady = connectedPlayers
           .filter((p) => !p.ready)
