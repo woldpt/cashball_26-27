@@ -26,6 +26,7 @@ import {
 import { GameDialog } from "./components/shared/GameDialog.jsx";
 import { TransferProposalModal } from "./components/modals/TransferProposalModal.jsx";
 import { SigningCelebrationModal } from "./components/modals/SigningCelebrationModal.jsx";
+import { PostMatchMoodModal } from "./components/modals/PostMatchMoodModal.jsx";
 import { AuctionNotification } from "./components/ui/AuctionNotification.jsx";
 import { AuctionsPage } from "./pages/AuctionsPage.jsx";
 import { UserSettingsPage } from "./pages/UserSettingsPage.jsx";
@@ -122,6 +123,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     setTransferProposalModal,
     signingCelebration,
     setSigningCelebration,
+    postMatchMood,
+    setPostMatchMood,
     playerSearchData,
     playerSearchLoading,
     setPlayerSearchLoading,
@@ -1511,6 +1514,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         onClose={() => setSigningCelebration(null)}
         teams={teams}
         me={me}
+      />
+
+      <PostMatchMoodModal
+        mood={postMatchMood}
+        onClose={() => setPostMatchMood(null)}
       />
 
       {/* ── Auction toast notification ─────────────────────────────────── */}

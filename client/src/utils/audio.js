@@ -81,6 +81,35 @@ export const playSigningSound = () => {
   }
 };
 
+// Som de vaia dos adeptos após derrota — drone descendente grave e curto
+export const playBooSound = () => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const sequence = [
+      { freq: 330, time: 0, dur: 0.2, vol: 0.14 },
+      { freq: 262, time: 0.16, dur: 0.24, vol: 0.16 },
+      { freq: 196, time: 0.34, dur: 0.55, vol: 0.18 },
+    ];
+    sequence.forEach(({ freq, time, dur, vol }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
+      gain.gain.setValueAtTime(vol, ctx.currentTime + time);
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        ctx.currentTime + time + dur,
+      );
+      osc.start(ctx.currentTime + time);
+      osc.stop(ctx.currentTime + time + dur);
+    });
+  } catch {
+    // ignore
+  }
+};
+
 // Som descendente para golo anulado pelo VAR
 export const playVarSound = () => {
   try {

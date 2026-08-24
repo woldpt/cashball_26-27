@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
 import { Button } from "../shared/Button.jsx";
+import { CelebrationBurst } from "../shared/CelebrationBurst.jsx";
 import { MODAL_Z, POSITION_ACCENT_HEX } from "../../constants/index.js";
 import { formatCurrency } from "../../utils/formatters.js";
 import { playSigningSound } from "../../utils/audio.js";
@@ -12,8 +13,6 @@ const SOURCE_LABEL = {
   proposal: "Proposta Aceite",
   auction: "Leilão Vencido",
 };
-
-const PARTICLES = ["🍾", "🥂", "✨", "🎉", "💫", "✨"];
 
 /**
  * Modal de festejo exibido quando o jogador contrata um novo jogador
@@ -35,23 +34,6 @@ export function SigningCelebrationModal({ signing, onClose, teams, me }) {
   );
   const teamColor = myTeam?.color_primary || myTeam?.colorPrimary || "#27272a";
   const accent = POSITION_ACCENT_HEX[signing?.position] || "#d97706";
-
-  // Distribuição determinística (apenas função do índice) — mantém o render puro.
-  const particles = useMemo(() => {
-    if (!signing) return [];
-    return PARTICLES.map((emoji, i) => {
-      const jitter = ((i * 137) % 100) / 100;
-      return {
-        id: i,
-        emoji,
-        angle: (Math.PI * 2 * i) / PARTICLES.length + jitter * 0.5,
-        dist: 90 + jitter * 120,
-        size: 16 + jitter * 22,
-        delay: jitter * 0.3,
-        rot: jitter * 120 - 60,
-      };
-    });
-  }, [signing]);
 
   useEffect(() => {
     if (!signing) {
@@ -87,46 +69,7 @@ export function SigningCelebrationModal({ signing, onClose, teams, me }) {
         }}
       >
         {/* ── Champagne particle burst ─────────────────────────────── */}
-        {particles.map((p) => (
-          <motion.span
-            key={`${signing.playerId}-${p.id}`}
-            className="absolute pointer-events-none select-none"
-            style={{ left: "50%", top: "38%", fontSize: p.size }}
-            initial={{ x: 0, y: 0, opacity: 0, scale: 0.4 }}
-            animate={{
-              x: Math.cos(p.angle) * p.dist,
-              y: Math.sin(p.angle) * p.dist - 40,
-              opacity: [0, 1, 0],
-              scale: [0.4, 1.1, 0.7],
-              rotate: p.rot,
-            }}
-            transition={{
-              duration: 1.6,
-              delay: p.delay,
-              ease: "easeOut",
-            }}
-          >
-            {p.emoji}
-          </motion.span>
-        ))}
-
-        {/* ── Champanhe popping ────────────────────────────────────── */}
-        <motion.div
-          className="absolute left-4 top-6 pointer-events-none select-none text-4xl"
-          initial={{ rotate: -30, y: 0, opacity: 0 }}
-          animate={{ rotate: -55, y: [0, -10, 0], opacity: 1 }}
-          transition={{ duration: 1.4, delay: 0.2 }}
-        >
-          🍾
-        </motion.div>
-        <motion.div
-          className="absolute right-4 top-6 pointer-events-none select-none text-4xl"
-          initial={{ rotate: 30, y: 0, opacity: 0 }}
-          animate={{ rotate: 55, y: [0, -10, 0], opacity: 1 }}
-          transition={{ duration: 1.4, delay: 0.2 }}
-        >
-          🍾
-        </motion.div>
+        <CelebrationBurst seed={signing.playerId} />
 
         <span
           className="inline-block text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm mb-4"

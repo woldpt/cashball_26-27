@@ -117,6 +117,7 @@ export function GameProvider({
 	const [selectedTeamLoading, setSelectedTeamLoading] = useState(false);
 	const [transferProposalModal, setTransferProposalModal] = useState(null);
 	const [signingCelebration, setSigningCelebration] = useState(null);
+	const [postMatchMood, setPostMatchMood] = useState(null);
 	const [playerSearchData, setPlayerSearchData] = useState({
 		results: [],
 		total: 0,
@@ -183,6 +184,7 @@ export function GameProvider({
 	const matchReplayActiveRef = useRef(false);
 	const liveMinuteRef = useRef(0);
 	const selectedTeamRef = useRef(null);
+	const ackedPostMatchKeyRef = useRef(null);
 	const activeTabRef = useRef("club");
 	const teamSquadReturnTabRef = useRef("club");
 	const marketPairsRef = useRef([]);
@@ -415,6 +417,94 @@ export function GameProvider({
 			}
 		});
 	}, [liveMinute, matchResults, me?.teamId, players]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// ── Post-match mood modal (Vitória / Adeptos descontentes / Empate) ─────
+	// Liga → aparece ao chegar ao tab Classificação. Taça → tab Taça/Bracket.
+	// Sem timeout: requer clique do coach para avançar. Mostra uma vez por
+	// jornada/ronda (guard `ackedPostMatchKeyRef`).
+	useEffect(() => {
+		const myId = me?.teamId;
+		if (myId == null) return;
+
+		const buildMood = (outcome, oppId, myGoals, oppGoals, source, roundLabel, key) => ({
+			outcome,
+			opponentTeamId: oppId,
+			opponentName:
+				teams.find((t) => Number(t.id) === Number(oppId))?.name || "—",
+			myGoals,
+			oppGoals,
+			source,
+			roundLabel,
+			key,
+		});
+
+		// Liga
+		if (activeTab === "standings" && matchResults?.results) {
+			const myMatch = matchResults.results.find(
+				(r) =>
+					Number(r.homeTeamId) === Number(myId) ||
+					Number(r.awayTeamId) === Number(myId),
+			);
+			if (myMatch) {
+				const isHome = Number(myMatch.homeTeamId) === Number(myId);
+				const myGoals = isHome ? myMatch.homeGoals : myMatch.awayGoals;
+				const oppGoals = isHome ? myMatch.awayGoals : myMatch.homeGoals;
+				const oppId = isHome ? myMatch.awayTeamId : myMatch.homeTeamId;
+				const outcome =
+					myGoals > oppGoals ? "win" : myGoals < oppGoals ? "loss" : "draw";
+				const key = `league:${matchResults.matchweek}`;
+				if (ackedPostMatchKeyRef.current !== key) {
+					ackedPostMatchKeyRef.current = key;
+					setPostMatchMood(
+						buildMood(
+							outcome,
+							oppId,
+							myGoals,
+							oppGoals,
+							"league",
+							`Jornada ${matchResults.matchweek}`,
+							key,
+						),
+					);
+				}
+			}
+		}
+
+		// Taça
+		if (
+			(activeTab === "cup" || activeTab === "bracket") &&
+			cupRoundResults?.results
+		) {
+			const myMatch = cupRoundResults.results.find(
+				(r) =>
+					Number(r.homeTeamId) === Number(myId) ||
+					Number(r.awayTeamId) === Number(myId),
+			);
+			if (myMatch) {
+				const isHome = Number(myMatch.homeTeamId) === Number(myId);
+				const myGoals = isHome ? myMatch.homeGoals : myMatch.awayGoals;
+				const oppGoals = isHome ? myMatch.awayGoals : myMatch.homeGoals;
+				const oppId = isHome ? myMatch.awayTeamId : myMatch.homeTeamId;
+				const outcome =
+					Number(myMatch.winnerId) === Number(myId) ? "win" : "loss";
+				const key = `cup:${cupRoundResults.round}`;
+				if (ackedPostMatchKeyRef.current !== key) {
+					ackedPostMatchKeyRef.current = key;
+					setPostMatchMood(
+						buildMood(
+							outcome,
+							oppId,
+							myGoals,
+							oppGoals,
+							"cup",
+							cupRoundResults.roundName || `Taça R${cupRoundResults.round}`,
+							key,
+						),
+					);
+				}
+			}
+		}
+	}, [activeTab, matchResults, cupRoundResults, me?.teamId, teams]);
 
 	// ── Cup draw reveal animation ───────────────────────────────────────────
 	useEffect(() => {
@@ -1175,6 +1265,8 @@ export function GameProvider({
 		setTransferProposalModal,
 		signingCelebration,
 		setSigningCelebration,
+		postMatchMood,
+		setPostMatchMood,
 		playerSearchData,
 		setPlayerSearchData,
 		playerSearchLoading,
