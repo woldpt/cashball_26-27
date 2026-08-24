@@ -235,11 +235,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
   const MS_PER_GAME_MINUTE = 1000;
 
-  // Safety timer: if a connected coach stalls at halftime (never sends setReady),
-  // force the second half after this window so the round can never hang forever
-  // at match_halftime — mirrors the ET-gate safety in cupFlowHelpers.
-  const HALFTIME_SAFETY_MS = 120000;
-
   async function runMatchSegment(
     game: ActiveGame,
     startMin: number,
@@ -816,21 +811,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       emitPresence(game);
       saveGameState(game);
 
-      // Safety timer: force the second half if coaches stall at the interval.
-      // advanceFromHalftime clears it when a coach readies up normally.
+      // No safety timer: the game waits at halftime until every coach presses
+      // "Pronto" (setReady). The previous 120s safety timer was removed because
+      // it forced the second half without the user's explicit action, which is
+      // not acceptable in single player.
       clearPhaseTimer(game);
-      game.phaseTimer = setTimeout(() => {
-        if (game.gamePhase !== "match_halftime") return;
-        console.log(
-          `[${game.roomCode}] ⏱ Halftime safety timer fired — forcing second half`,
-        );
-        advanceFromHalftime(game).catch((err) =>
-          console.error(
-            `[${game.roomCode}] ❌ Halftime forced continuation failed:`,
-            err,
-          ),
-        );
-      }, HALFTIME_SAFETY_MS);
 
       return;
     }
