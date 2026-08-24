@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useId } from "react";
 import { FLAG_TO_SKIN_REGION, SKIN_REGIONS } from "../../constants";
 
 const POSITION_ACCENT = {
@@ -19,7 +19,6 @@ const SIZE_MAP = {
 const OUTLINE = "#0a0d16";
 const OUTLINE_SOFT = "rgba(10, 13, 22, 0.55)";
 const BACKDROP = "#0f1320";
-const PANEL = "#171c2e";
 const EYE_WHITE = "#fbfdff";
 
 // Variantes de rosto em V agressivo (Tsubasa, Hyuga, Misaki...)
@@ -263,6 +262,7 @@ function mixHex(baseHex, targetHex, amount) {
 function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg", className = "" }) {
   const rng = mulberry32(xmur3(`${seed ?? 0}|${position ?? "X"}`)());
   const profile = POSITION_PROFILE[position] || POSITION_PROFILE.default;
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
 
   const SKIN_TONES = [
     { base: "#f5dcc6", shadow: "#cf9d7c", blush: "#ec9b8c", lip: "#9c5044" },
@@ -1329,7 +1329,7 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
           cy={eyeY}
           rx={irisR}
           ry={irisR * 1.15}
-          fill={eyes.iris}
+          fill={`url(#${uid}-iris)`}
         />
 
         {/* Sombra superior da íris */}
@@ -1638,29 +1638,66 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
         strokeLinecap="round"
         strokeLinejoin="round"
       >
+        <defs>
+          <radialGradient id={`${uid}-bg`} cx="50%" cy="42%" r="65%">
+            <stop offset="0%" stopColor="#1c2338" />
+            <stop offset="70%" stopColor="#141a2b" />
+            <stop offset="100%" stopColor="#0b0e18" />
+          </radialGradient>
+          <radialGradient id={`${uid}-glow`} cx="50%" cy="40%" r="55%">
+            <stop offset="0%" stopColor={accent} stopOpacity="0.22" />
+            <stop offset="55%" stopColor={accent} stopOpacity="0.08" />
+            <stop offset="100%" stopColor={accent} stopOpacity="0" />
+          </radialGradient>
+          <linearGradient id={`${uid}-shirt`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={shirtLight} />
+            <stop offset="45%" stopColor={shirt} />
+            <stop offset="100%" stopColor={shirtDark} />
+          </linearGradient>
+          <radialGradient id={`${uid}-chin`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#000000" stopOpacity="0.30" />
+            <stop offset="70%" stopColor="#000000" stopOpacity="0.14" />
+            <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id={`${uid}-iris`} cx="50%" cy="42%" r="55%">
+            <stop offset="0%" stopColor={mixHex(eyes.iris, "#ffffff", 0.35)} />
+            <stop offset="55%" stopColor={eyes.iris} />
+            <stop offset="100%" stopColor={mixHex(eyes.iris, "#000000", 0.35)} />
+          </radialGradient>
+          <radialGradient id={`${uid}-hairHi`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.5" />
+            <stop offset="60%" stopColor="#ffffff" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
         {/* Fundo */}
-        <circle cx="60" cy="60" r="58" fill={BACKDROP} />
-        <circle cx="60" cy="60" r="56" fill={PANEL} />
+        <circle cx="60" cy="60" r="58" fill={`url(#${uid}-bg)`} />
+        <circle cx="60" cy="60" r="56" fill={`url(#${uid}-glow)`} />
 
 
 
         {/* Linhas de velocidade radiais (efeito shounen sutil) */}
-        <g stroke={hexToRgba(accent, 0.12)} strokeWidth="1" fill="none">
-          <path d="M60 6 L60 14" />
-          <path d="M60 106 L60 114" />
-          <path d="M6 60 L14 60" />
-          <path d="M106 60 L114 60" />
+        <g stroke={hexToRgba(accent, 0.1)} strokeWidth="1" fill="none">
+          {Array.from({ length: 12 }).map((_, i) => {
+            const a = (i / 12) * Math.PI * 2;
+            const x1 = 60 + Math.cos(a) * 48;
+            const y1 = 60 + Math.sin(a) * 48;
+            const x2 = 60 + Math.cos(a) * 55;
+            const y2 = 60 + Math.sin(a) * 55;
+            return <path key={i} d={`M${x1.toFixed(1)} ${y1.toFixed(1)} L${x2.toFixed(1)} ${y2.toFixed(1)}`} />;
+          })}
         </g>
 
         {/* Camisola */}
         <path
           d={`M28 120 C32 ${shirtTop + 2} 45 ${shirtTop - 7} 60 ${shirtTop - 7} C75 ${shirtTop - 7} 88 ${shirtTop + 2} 92 120 Z`}
-          fill={shirt}
+          fill={`url(#${uid}-shirt)`}
           stroke={OUTLINE}
           strokeWidth="1.8"
         />
         {/* Sombra debaixo do queixo */}
-        <ellipse cx={centerX} cy={face.bottom - 1} rx="22" ry="6.5" fill="#00000033" />
+        <ellipse cx={centerX} cy={face.bottom - 1} rx="22" ry="6.5" fill={`url(#${uid}-chin)`} />
 
         {/* Pescoço */}
         <path
@@ -1742,6 +1779,16 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
         {/* Cabelo da frente */}
         {renderFrontHair()}
         {renderHairShine()}
+        {hairStyle !== "bald" && (
+          <ellipse
+            cx={centerX}
+            cy={face.top + 3}
+            rx={headWidth * 0.4}
+            ry="13"
+            fill={`url(#${uid}-hairHi)`}
+            opacity="0.5"
+          />
+        )}
 
         {/* Faixa */}
         {headband && (
