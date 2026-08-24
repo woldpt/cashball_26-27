@@ -26,7 +26,7 @@ import { TeamCrest } from "../../live/TeamCrest.jsx";
  * Simplified layout:
  *   [Descrição do ecrã]            [Scoreboard]   [Anular todas]
  *   [Tab Cronologia] [Tab Substituições] [Tab Adversário]
- *   (Subs)  Titulares | Suplentes | Mentalidade (táticas + controlos troca)
+ *   (Subs)  Titulares | Suplentes | [Mentalidade | Substituições]
  *   [Iniciar/Continuar]  ← full-width button em MatchPage (mantido)
  * ──────────────────────────────────────────────────────────────────────── */
 export function IntervencaoView({
@@ -452,10 +452,12 @@ function CronologiaPanel({
   );
 }
 
-/* ── SubsPanel — Titulares | Suplentes | Mentalidade ─────────────────────
- * Desktop (md+): 3-col grid. Mobile: Mentalidade/controlos empilhados por
- * cima das listas, com controlo segmentado Em campo/Banco a mostrar UMA
- * lista de cada vez (dá a altura total à lista ativa). */
+/* ── SubsPanel — Titulares | Suplentes | Mentalidade | Substituições ─────
+ * Desktop (md+): 3-col grid — a 3ª coluna divide-se em 2 linhas
+ * (Mentalidade por cima, Substituições por baixo). Mobile:
+ * Mentalidade/controlos empilhados por cima das listas, com controlo
+ * segmentado Em campo/Banco a mostrar UMA lista de cada vez (dá a altura
+ * total à lista ativa). */
 function SubsPanel({
   isHalftime,
   isForcedSwap,
@@ -892,7 +894,10 @@ function SuplentesColumn({
   );
 }
 
-/* ── Substituições e Mentalidade column (desktop) ──────────────────────── */
+/* ── Mentalidade | Substituições column (desktop) ────────────────────────
+ * The 3rd column is split into two stacked rows, each with its own header:
+ *   1. "Mentalidade"    → Estilo de jogo (táticas) + Resumo da partida
+ *   2. "Substituições"  → controlos Sai→Entra + botões + Confirmadas */
 function MentalidadeColumn({
   isHalftime,
   subsMade,
@@ -906,29 +911,45 @@ function MentalidadeColumn({
 }) {
   return (
     <div className="flex flex-col min-h-0 min-w-0 overflow-hidden bg-surface-container-high/30">
-      <div className="shrink-0 px-4 py-3 flex items-center justify-between gap-2 bg-surface-container-high/50 border-b border-outline-variant/15">
-        <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">
-          Substituições e Mentalidade
-        </h3>
-        {isHalftime && <SubsCounter subsMade={subsMade} />}
+      {/* ── Row 1: Mentalidade ── */}
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden border-b border-outline-variant/15">
+        <div className="shrink-0 px-4 py-3 flex items-center justify-between gap-2 bg-surface-container-high/50 border-b border-outline-variant/15">
+          <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-violet-400 shrink-0 shadow-[0_0_8px_rgba(167,139,250,0.5)]" />
+            Mentalidade
+          </h3>
+        </div>
+        {/* min-h-full + mt-auto: the summary anchors to the row bottom,
+         * filling the dead space under the tactics controls. */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="flex flex-col min-h-full p-4 space-y-4">
+            {isHalftime && (
+              <div className="space-y-2">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
+                  Estilo de jogo
+                </span>
+                <TacticsButtons
+                  className="w-full"
+                  value={tactic.style}
+                  onChange={onUpdateTactic}
+                />
+              </div>
+            )}
+            {summary && <MatchSummaryBlock {...summary} className="mt-auto" />}
+          </div>
+        </div>
       </div>
-      {/* min-h-full + mt-auto: the summary anchors to the column bottom,
-       * filling the dead space that used to sit between the swap controls
-       * and the (old, orphaned) bottom-pinned confirmed-subs strip. */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="flex flex-col min-h-full p-4 space-y-4">
-          {isHalftime && (
-            <div className="space-y-2">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-                Estilo de jogo
-              </span>
-              <TacticsButtons
-                className="w-full"
-                value={tactic.style}
-                onChange={onUpdateTactic}
-              />
-            </div>
-          )}
+
+      {/* ── Row 2: Substituições ── */}
+      <div className="flex flex-col shrink-0 min-h-0 overflow-hidden">
+        <div className="shrink-0 px-4 py-3 flex items-center justify-between gap-2 bg-surface-container-high/50 border-b border-outline-variant/15">
+          <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0 shadow-[0_0_8px_rgba(251,113,133,0.5)]" />
+            Substituições
+          </h3>
+          {isHalftime && <SubsCounter subsMade={subsMade} />}
+        </div>
+        <div className="p-4 space-y-4">
           <SwapControls {...swapProps} />
           {isHalftime && confirmedSubs.length > 0 && (
             <div className="space-y-2">
@@ -943,7 +964,6 @@ function MentalidadeColumn({
               />
             </div>
           )}
-          {summary && <MatchSummaryBlock {...summary} className="mt-auto" />}
         </div>
       </div>
     </div>
