@@ -111,7 +111,7 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
     <ModalShell
       visible={visible && lockedCoaches.length >= 2}
       z={MODAL_Z.waitingCoaches}
-      variant="card"
+      variant="wide"
       backdropStyle={{
         background:
           "radial-gradient(ellipse at center, rgba(34,197,94,0.08) 0%, rgba(10,10,10,0.96) 70%)",
@@ -165,7 +165,7 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
             {/* Lista de coaches + Chat (lado a lado no desktop, empilhado no mobile) */}
             <div className="flex flex-col md:flex-row">
             {/* Lista de coaches */}
-            <div className="divide-y divide-outline-variant/10 max-h-80 overflow-y-auto md:flex-1">
+            <div className="divide-y divide-outline-variant/10 max-h-[45vh] overflow-y-auto md:max-h-[60vh] md:flex-1">
               {coaches.map((coach) => {
                 const st = STATUS_MAP[coach.status] || STATUS_MAP.thinking;
                 return (
@@ -232,7 +232,7 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
               <div className="px-3 pb-1 md:flex-1 md:flex md:flex-col">
                 <div
                   ref={chatScrollRef}
-                  className="h-28 md:h-auto md:flex-1 overflow-y-auto space-y-2 px-1"
+                  className="h-40 md:h-auto md:flex-1 overflow-y-auto space-y-2 px-1"
                   style={{ scrollBehavior: "smooth" }}
                 >
                   {roomMessages.length === 0 ? (
