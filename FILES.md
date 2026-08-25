@@ -238,7 +238,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `client/src/components/shared/ModalShell.jsx` | Shell de modais (⚠️ `visible` não impede avaliação dos children). |
 | `client/src/components/shared/OddsBadge.jsx` | Badge de odds. |
 | `client/src/components/shared/Panel.jsx` | Card/painel base. |
-| `client/src/components/shared/PlayerAvatar.jsx` | Avatar do jogador (⚠️ proibido `clipPath`). |
+| `client/src/components/shared/PlayerAvatar.jsx` | Avatar do jogador (⚠️ proibido `clipPath`). ✅ Auditado |
 | `client/src/components/shared/PlayerLink.jsx` | Link para jogador (abre histórico). |
 | `client/src/components/shared/PlayerRow.jsx` | Linha de jogador. |
 | `client/src/components/shared/PlayerStatusBadges.jsx` | Badges de estado do jogador. |
