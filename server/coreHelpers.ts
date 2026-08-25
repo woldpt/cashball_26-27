@@ -343,11 +343,14 @@ export async function calculateMatchAttendance(
   // Ocupação do estádio: mínimo 30%, máximo 100%
   const formAttendance = Math.floor(capacity * (0.3 + formPoints * 0.7));
 
-  // Se existe média histórica, blendá-la com a previsão baseada em forma
+  // A média histórica funciona como PISO de reputação — nunca arrasta para
+  // baixo a previsão baseada em forma. Uma equipa em boa forma enche o
+  // estádio; a reputação só garante assistência mínima a equipas em má fase.
   const prevAvg = team?.avg_attendance || 0;
-  let attendance = prevAvg > 0
-    ? Math.min(capacity, Math.round((prevAvg + formAttendance) / 2))
-    : formAttendance;
+  const attendance = Math.max(
+    formAttendance,
+    Math.min(capacity, prevAvg),
+  );
 
   // ── Multiplicador de qualidade do adversário ──────────────────────
   // Equipas mais fortes atraem mais público: 0% a +20% de bonus
@@ -364,7 +367,7 @@ export async function calculateMatchAttendance(
     const OPPONENT_BONUS_MAX = 0.20; // +20% para adversário de skill 50
     const opponentQuality = Math.min(oppSkill / OPPONENT_MAX_SKILL, 1);
     const opponentMultiplier = 1 + opponentQuality * OPPONENT_BONUS_MAX;
-    attendance = Math.min(capacity, Math.round(attendance * opponentMultiplier));
+    return Math.min(capacity, Math.round(attendance * opponentMultiplier));
   }
 
   return attendance;

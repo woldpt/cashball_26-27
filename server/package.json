@@ -18,7 +18,8 @@
     "test:training-report": "tsx scripts/trainingReportRegression.mts",
     "test:contractyear": "tsx scripts/contractYearRegression.mts",
     "test:contractrenewal": "tsx scripts/contractRenewalRegression.mts",
-    "test:skillhistory": "tsx scripts/skillHistoryRegression.mts"
+    "test:skillhistory": "tsx scripts/skillHistoryRegression.mts",
+    "test:attendance": "tsx scripts/attendanceRegression.mts"
   },
   "keywords": [],
   "author": "",
