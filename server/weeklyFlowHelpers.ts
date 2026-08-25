@@ -80,8 +80,15 @@ interface WeeklyFlowDeps {
     price: number,
     callback?: (...args: any[]) => void,
   ) => void;
-  processContractExpiries: (game: ActiveGame) => Promise<void>;
-  processAgentRenegotiations: (game: ActiveGame) => Promise<void>;
+  processContractExpiries: (
+    game: ActiveGame,
+    usedProposals: Set<number>,
+  ) => Promise<void>;
+  processAgentRenegotiations: (
+    game: ActiveGame,
+    usedProposals: Set<number>,
+  ) => Promise<void>;
+  resendPendingContractRequests: (game: ActiveGame) => Promise<void>;
   processNpcTransferActivity: (game: ActiveGame) => Promise<void>;
   refreshMarket: (game: ActiveGame, emitToRoom?: boolean) => void;
   processCoachEvents: (game: ActiveGame) => Promise<void>;
@@ -110,6 +117,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     listPlayerOnMarket,
     processContractExpiries,
     processAgentRenegotiations,
+    resendPendingContractRequests,
     processNpcTransferActivity,
     refreshMarket,
     processCoachEvents,
@@ -1125,11 +1133,18 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                   }
                 }
 
+                // Orçamento de propostas de contrato: 1 nova por treinador por
+                // semana, partilhado entre renovações e renegociações. Re-emissões
+                // de pedidos pendentes não consomem o orçamento.
+                const weeklyProposals = new Set<number>();
                 try {
-                  await processContractExpiries(game);
+                  await resendPendingContractRequests(game);
                 } catch (_) {}
                 try {
-                  await processAgentRenegotiations(game);
+                  await processContractExpiries(game, weeklyProposals);
+                } catch (_) {}
+                try {
+                  await processAgentRenegotiations(game, weeklyProposals);
                 } catch (_) {}
                 try {
                   await processNpcTransferActivity(game);

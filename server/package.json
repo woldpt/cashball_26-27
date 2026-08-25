@@ -16,7 +16,8 @@
     "fetch:zerozero": "tsx scripts/fetchZerozeroSquads.ts",
     "repair:joboffer": "tsx scripts/repairDuplicateJobOffer.ts",
     "test:training-report": "tsx scripts/trainingReportRegression.mts",
-    "test:contractyear": "tsx scripts/contractYearRegression.mts"
+    "test:contractyear": "tsx scripts/contractYearRegression.mts",
+    "test:contractrenewal": "tsx scripts/contractRenewalRegression.mts"
   },
   "keywords": [],
   "author": "",

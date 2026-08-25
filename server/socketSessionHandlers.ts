@@ -87,6 +87,7 @@ interface SessionHandlerDeps {
 	generateUniqueRoomCode: () => string;
 	globalDb?: any;
 	emitGlobalPlayerUpdate?: () => void;
+	resendPendingContractRequests?: (game: ActiveGame) => Promise<void>;
 }
 
 function safeParse<T>(json: string | null | undefined, fallback: T): T {
@@ -155,6 +156,7 @@ export function registerSessionSocketHandlers(
 		doesGameExist,
 		generateUniqueRoomCode,
 		emitGlobalPlayerUpdate,
+		resendPendingContractRequests,
 	} = deps;
 
 	function assignPlayer(
@@ -229,6 +231,13 @@ export function registerSessionSocketHandlers(
 					),
 				),
 		);
+
+		// Re-mostra pedidos de contrato pendentes ao treinador que (re)ligou —
+		// um jogador só pode sair depois da decisão no modal.
+		if (resendPendingContractRequests) {
+			resendPendingContractRequests(game).catch(() => {});
+		}
+
 		socket.emit("marketUpdate", game.globalMarket);
 
 		// Emite o estado actual ao coach que se reconectou (refresh do browser).

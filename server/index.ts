@@ -714,6 +714,8 @@ const resumeAllPausedAuctions = auctionHelpers.resumeAllPausedAuctions;
 
 const processContractExpiries = contractHelpers.processContractExpiries;
 const processAgentRenegotiations = contractHelpers.processAgentRenegotiations;
+const resendPendingContractRequests =
+	contractHelpers.resendPendingContractRequests;
 const processNpcTransferActivity = (game) =>
 	npcTransferHelpers.processNpcTransferActivity(game, listPlayerOnMarket);
 
@@ -809,6 +811,7 @@ const weeklyFlowHelpers = createWeeklyFlowHelpers({
 	listPlayerOnMarket,
 	processContractExpiries,
 	processAgentRenegotiations,
+	resendPendingContractRequests,
 	processNpcTransferActivity,
 	refreshMarket,
 	processCoachEvents,
@@ -856,6 +859,7 @@ io.on("connection", (socket) => {
 		doesGameExist,
 		generateUniqueRoomCode,
 		emitGlobalPlayerUpdate,
+		resendPendingContractRequests,
 	});
 
 	registerCupSocketHandlers(socket, {
