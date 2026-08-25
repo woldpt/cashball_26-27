@@ -44,7 +44,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `client/index.html` | HTML de entrada do Vite. |
 | `client/package.json` | Deps e scripts do frontend (Vite/React). |
 | `client/package-lock.json` | Lockfile do frontend. |
-| `client/vite.config.js` | Configuração do Vite. |
+| `client/vite.config.js` | Configuração do Vite. ✅ Auditado |
 
 ### Testes / Harness (fora da app)
 | Ficheiro | Função principal |
