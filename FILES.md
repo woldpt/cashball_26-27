@@ -62,7 +62,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `client/scripts/cupEtListRegression.mjs` | Teste de regressão: equipas com coach humano na lista de jogos do prolongamento da Taça. ✅ Auditado |
 | `client/scripts/jsDocTypeChecker.cjs` | Verificador de anotações de tipo JSDoc nos componentes React. ✅ Auditado |
 | `client/scripts/skillHistoryRegression.mjs` | Teste de regressão: gráfico de evolução da skill em jogos com várias épocas. ✅ Auditado |
-| `client/scripts/teamSquadCalendarRegression.mjs` | Teste de regressão: calendário das outras equipas na aba Calendário do `TeamSquadView`. |
+| `client/scripts/teamSquadCalendarRegression.mjs` | Teste de regressão: calendário das outras equipas na aba Calendário do `TeamSquadView`. ✅ Auditado |
 
 ### `client/public/`
 | Ficheiro | Função principal |
