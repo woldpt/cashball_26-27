@@ -37,8 +37,8 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 ### Configuração & Build
 | Ficheiro | Função principal |
 | :--- | :--- |
-| `client/Dockerfile` | Imagem do frontend (nginx). |
-| `client/nginx.conf` | Configuração do nginx (servir build + proxy). |
+| `client/Dockerfile` | Imagem do frontend (nginx). ✅ Auditado |
+| `client/nginx.conf` | Configuração do nginx (servir build + proxy). ✅ Auditado |
 | `client/.gitignore` | Ignora artefactos do client. |
 | `client/eslint.config.js` | Configuração do ESLint. ✅ Auditado |
 | `client/index.html` | HTML de entrada do Vite. ✅ Auditado |
