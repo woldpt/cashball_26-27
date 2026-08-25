@@ -322,7 +322,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `server/npcTransferHelpers.ts` | Transferências de NPCs. |
 | `server/presenceHelpers.ts` | Presença de treinadores (awaiting coaches). |
 | `server/trainingHelpers.ts` | Treino (progresso, resultados). |
-| `server/weeklyFlowHelpers.ts` | Fluxo semanal (calendário, jornadas). |
+| `server/weeklyFlowHelpers.ts` | Fluxo semanal (calendário, jornadas, halftime, finalização). ✅ Auditado |
 
 ### Handlers Socket.io
 | Ficheiro | Função principal |
