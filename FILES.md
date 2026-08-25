@@ -49,12 +49,12 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 ### Testes / Harness (fora da app)
 | Ficheiro | Função principal |
 | :--- | :--- |
-| `client/intervencao-test.html` | Harness HTML para screenshots/verificação do `IntervencaoView`. |
-| `client/intervencao-test.jsx` | Renderiza o `IntervencaoView` real com dados mock (modo intervalo). |
-| `client/mobile-resp-test.html` | Harness HTML de responsividade mobile. |
-| `client/mobile-resp-test.jsx` | Renderiza o `PlayersTab` real com fixtures de edge-case; reporta overflow horizontal. |
-| `client/scout-resp-test.html` | Harness HTML de responsividade mobile (Scout). |
-| `client/scout-resp-test.jsx` | Renderiza o `PlayerSearchView` real; reporta overflow horizontal. |
+| `client/intervencao-test.html` | Harness HTML para screenshots/verificação do `IntervencaoView`. ✅ Auditado |
+| `client/intervencao-test.jsx` | Renderiza o `IntervencaoView` real com dados mock (modo intervalo). ✅ Auditado |
+| `client/mobile-resp-test.html` | Harness HTML de responsividade mobile. ✅ Auditado |
+| `client/mobile-resp-test.jsx` | Renderiza o `PlayersTab` real com fixtures de edge-case; reporta overflow horizontal. ✅ Auditado |
+| `client/scout-resp-test.html` | Harness HTML de responsividade mobile (Scout). ✅ Auditado |
+| `client/scout-resp-test.jsx` | Renderiza o `PlayerSearchView` real; reporta overflow horizontal. ✅ Auditado |
 
 ### `client/scripts/`
 | Ficheiro | Função principal |
