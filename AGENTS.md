@@ -29,13 +29,13 @@
 **NÃO cometer estes erros que já foram corrigidos em sessões anteriores:**
 
 - **Mercado/Transferências:**
-  - Use sempre `TransferHub.jsx`. **NUNCA** use `MarketTab.jsx`.
+  - Use sempre `TransferHub.jsx` (o antigo `MarketTab.jsx` foi removido).
   - Garanta que leilões são filtrados em `TransferHub` (`p.transfer_status !== "auction"`).
 - **Leilões (Auctions):**
   - Verifique sempre o guard `bids[npcTeam.id] != null` para evitar lances duplicados de NPCs.
   - Não use o prefixo `p.` em queries de `playerRows[0]` (evita `null` sem JOIN).
 - **Histórico de Jogadores:**
-  - A abertura do modal deve seguir o fluxo: `SquadRow (prop onOpenPlayerHistory)` $\rightarrow$ `socket.emit("requestPlayerHistory")`.
+  - A abertura do modal deve seguir o fluxo: `PlayerRow (prop onOpenPlayerHistory)` $\rightarrow$ `socket.emit("requestPlayerHistory")`.
 - **Visual/Avatar:**
   - **PROIBIDO** usar `clipPath` em `PlayerAvatar.jsx`. Use apenas caminhos geométricos puros.
 - **Modais (`ModalShell`):**

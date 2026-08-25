@@ -17,7 +17,7 @@ Use **tokens CSS** em vez de cores hardcoded. Os tokens seguem a nomenclatura Ma
 | `primary` | Cor de destaque principal |
 | `tertiary` | Cor de destaque secundária (orçamento, valores) |
 | `error` / `error-container` | Erros, estados críticos |
-| `outline` / `outline-variant` | Bordas e divisores |
+| `outline-variant` | Bordas e divisores (nota: `outline` **não** está definido no `@theme` — `border-outline` é um no-op silencioso) |
 
 ### Cores por Posição
 

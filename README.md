@@ -22,8 +22,7 @@ A qualidade do teu plantel define o teu sucesso.
 
 - **Atributos:** Cada jogador possui `skill` (qualidade), `wage` (salário) e `aggressiveness` (agressividade).
 - **Craques (`is_star`):** Apenas jogadores de MED e ATA podem ser craques.
-  - Um craque tem **+20% de chance de marcar um golo decisivo**.
-  - **Cuidado com o Ego:** Ter demasiados craques no onze titular (3+) pode prejudicar a harmonia e reduzir a probabilidade de golo.
+  - Cada craque no onze titular dá **+20% de chance de um golo ser decisivo** (máximo 60%).
 
 ### Simulação de Jogos
 
@@ -52,7 +51,7 @@ O futebol é linear e organizado. O campeonato e a taça intercalam-se para mant
 
 A gestão económica é tão importante quanto a tática de campo.
 
-- **Transferências:** Compra e vende jogadores com preços negociados ou através de **Leilões Rápidos** de 15 segundos.
+- **Transferências:** Compra e vende jogadores com preços negociados ou através de **Leilões Rápidos** de 2 minutos.
 - **Gestão Financeira:** Controla os teus salários, receitas de bilheteira e patrocínios.
 - **Atenção:** O orçamento negativo e os maus resultados podem levar ao teu **despedimento**.
 

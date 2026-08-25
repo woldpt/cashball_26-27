@@ -75,6 +75,7 @@ To maintain type safety without TypeScript, all components and non-trivial funct
 - `src/hooks/useSocketListeners.js`: Centralized socket event handling.
 - `src/GameLayout.jsx`: Main UI container (consumes all contexts, holds the layout structure).
 - `src/views/`: Modularized tab components (Standings, Market, etc.).
+- `src/pages/`: Full pages outside the game tabs (`AuctionsPage.jsx`, `UserSettingsPage.jsx`).
 - `src/components/`: UI hierarchy (`modals/`, `ui/`, `shared/`).
 - `src/utils/`: Helpers (audio, formatters, cache management).
 
