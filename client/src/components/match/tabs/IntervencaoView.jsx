@@ -1078,7 +1078,7 @@ function SwapControls({
           <GhostButton
             onClick={onResetSub}
             icon={<MatchIcon name="reset" className="h-3.5 w-3.5" />}
-            aria-label="Limpar seleção"
+            aria-label="Limpar seleção ou anular última substituição"
             className="h-11 flex-1 sm:h-10"
           >
             Limpar

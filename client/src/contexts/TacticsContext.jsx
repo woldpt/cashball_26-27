@@ -230,11 +230,6 @@ export function TacticsProvider({ children }) {
     setSwapTarget,
   ]);
 
-  const handleResetSub = useCallback(() => {
-    setSwapSource(null);
-    setSwapTarget(null);
-  }, [setSwapSource, setSwapTarget]);
-
   // Undo de UMA substituição confirmada — reverte posições, devolve o slot
   // de sub (subsMade) e limpa o registo. Espelho exato do handleConfirmSub.
   const handleUndoSub = useCallback(
@@ -265,6 +260,27 @@ export function TacticsProvider({ children }) {
       setSwapTarget,
     ],
   );
+
+  // "Limpar" (Limpar seleção): com uma escolha Sai/Entra pendente, apenas
+  // limpa essa seleção. Sem seleção pendente, anula a substituição confirmada
+  // mais recente — evita que o botão fique inerte logo após confirmar.
+  // ("Anular todas" continua a ser o único caminho que apaga tudo de uma vez.)
+  const handleResetSub = useCallback(() => {
+    if (swapSource !== null || swapTarget !== null) {
+      setSwapSource(null);
+      setSwapTarget(null);
+      return;
+    }
+    const last = confirmedSubs[confirmedSubs.length - 1];
+    if (last) handleUndoSub(last);
+  }, [
+    swapSource,
+    swapTarget,
+    confirmedSubs,
+    handleUndoSub,
+    setSwapSource,
+    setSwapTarget,
+  ]);
 
   const handleResetAllSubs = useCallback(() => {
     setTactic((prevTactic) => {
