@@ -28,7 +28,6 @@ import { GameDialog } from "./components/shared/GameDialog.jsx";
 import { TransferProposalModal } from "./components/modals/TransferProposalModal.jsx";
 import { SigningCelebrationModal } from "./components/modals/SigningCelebrationModal.jsx";
 import { PostMatchMoodModal } from "./components/modals/PostMatchMoodModal.jsx";
-import { AuctionNotification } from "./components/ui/AuctionNotification.jsx";
 import { AuctionsPage } from "./pages/AuctionsPage.jsx";
 import { UserSettingsPage } from "./pages/UserSettingsPage.jsx";
 import { RoomHub } from "./components/chat/RoomHub.jsx";
@@ -78,6 +77,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     setMarketPositionFilter,
     marketSort,
     setMarketSort,
+    marketPairs,
     activeAuctions,
     gameDialog,
     setGameDialog,
@@ -219,6 +219,15 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
   // ── Derived ───────────────────────────────────────────────────────────
   const myReady = players.find((p) => p.name === me?.name)?.ready;
+
+  // Badges da barra lateral: nº de leilões a decorrer e nº de jogadores em lista de transferências
+  const liveAuctionCount = activeAuctions.filter(
+    (a) => !a.closed && !a.paused,
+  ).length;
+  const marketListedCount = marketPairs.filter(
+    (p) =>
+      p.transfer_status === "fixed" && !isSameTeamId(p.team_id, me?.teamId),
+  ).length;
   const totalCoaches =
     players.length +
     awaitingCoaches.filter((n) => !players.some((p) => p.name === n)).length;
@@ -585,7 +594,14 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               { key: "market", label: "Mercado", icon: "swap_horiz" },
               { key: "leiloes", label: "Leilões", icon: "gavel" },
               { key: "scout", label: "Scout", icon: "search" },
-            ].map(({ key, label, icon }) => (
+            ].map(({ key, label, icon }) => {
+              const badgeCount =
+                key === "leiloes"
+                  ? liveAuctionCount
+                  : key === "market"
+                    ? marketListedCount
+                    : 0;
+              return (
               <motion.button
                 key={key}
                 variants={{
@@ -603,7 +619,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   window.scrollTo(0, 0);
                 }}
                 title={sidebarCollapsed ? label : undefined}
-                className={`w-full flex items-center gap-3 px-2 py-2.5 text-sm font-bold rounded-lg transition-all text-left ${sidebarCollapsed ? "justify-center" : ""} ${
+                className={`relative w-full flex items-center gap-3 px-2 py-2.5 text-sm font-bold rounded-lg transition-all text-left ${sidebarCollapsed ? "justify-center" : ""} ${
                   isMatchInProgress
                     ? "text-on-surface-variant/25 cursor-not-allowed"
                     : activeTab === key
@@ -615,8 +631,21 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   {icon}
                 </span>
                 {!sidebarCollapsed && <span>{label}</span>}
+                {badgeCount > 0 && (
+                  <span
+                    className={`absolute flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none ${
+                      sidebarCollapsed
+                        ? "-top-1 -right-1 min-w-[18px] h-[18px] px-1 text-[10px]"
+                        : "right-2 top-1/2 -translate-y-1/2 min-w-5 h-5 px-1.5 text-[10px]"
+                    }`}
+                    title={sidebarCollapsed ? label : undefined}
+                  >
+                    {badgeCount > 99 ? "99+" : badgeCount}
+                  </span>
+                )}
               </motion.button>
-            ))}
+              );
+            })}
           </motion.div>
         </div>
 
@@ -1508,17 +1537,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       <PostMatchMoodModal
         mood={postMatchMood}
         onClose={() => setPostMatchMood(null)}
-      />
-
-      {/* ── Auction toast notification ─────────────────────────────────── */}
-      <AuctionNotification
-        activeAuctions={activeAuctions}
-        currentPage={activeTab}
-        isMatchInProgress={isMatchInProgress}
-        onNavigateToAuctions={() => {
-          setActiveTab("leiloes");
-          window.scrollTo(0, 0);
-        }}
       />
 
       <GameDialog dialog={gameDialog} onClose={() => setGameDialog(null)} />

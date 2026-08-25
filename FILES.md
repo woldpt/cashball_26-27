@@ -250,7 +250,6 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 **`ui/`**
 | Ficheiro | Função principal |
 | :--- | :--- |
-| `client/src/components/ui/AuctionNotification.jsx` | Notificação de leilão. |
 | `client/src/components/ui/CupBracketPage.jsx` | Página do bracket da Taça. |
 | `client/src/components/ui/LeagueStandings.jsx` | Tabela de classificação. |
 | `client/src/components/ui/TrainingPage.jsx` | Página de treino. |
