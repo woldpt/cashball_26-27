@@ -775,11 +775,11 @@ export function GameProvider({
 		if (activeTabRef.current !== "squad") {
 			teamSquadReturnTabRef.current = activeTabRef.current;
 		}
-		if (window.history.state?.teamSquad) {
-			window.history.replaceState({ teamSquad: true }, "");
-		} else {
-			window.history.pushState({ teamSquad: true }, "");
-		}
+		// Cada equipa aberta empurra um novo entry no histórico do browser, de
+		// modo que a pilha de navegação espelha a cadeia de equipas (A → B → C).
+		// Assim o "Voltar" (e o back do browser) regressam à equipa anterior,
+		// em vez de fechar o plantel inteiro e saltar níveis.
+		window.history.pushState({ teamSquad: true, teamId: team.id }, "");
 		setActiveTab("squad");
 		setSelectedTeam(team);
 		setSelectedTeamSquad([]);
@@ -811,9 +811,23 @@ export function GameProvider({
 
 	useEffect(() => {
 		const onPopState = () => {
-			if (window.history.state?.teamSquad) {
-				if (selectedTeamRef.current) setActiveTab("squad");
+			const state = window.history.state;
+			if (state?.teamSquad) {
+				// A regressar a uma equipa anterior da cadeia (A → B → C, back → B).
+				const team = (teamsRef.current || []).find(
+					(t) => t.id === state.teamId,
+				);
+				if (team) {
+					setSelectedTeam(team);
+					setSelectedTeamSquad([]);
+					setSelectedTeamLoading(true);
+					socket.emit("requestTeamSquad", team.id);
+					socket.emit("requestPalmares", { teamId: team.id });
+					socket.emit("requestClubHistory", { teamId: team.id });
+					setActiveTab("squad");
+				}
 			} else if (selectedTeamRef.current) {
+				// Sair do plantel por completo.
 				setSelectedTeam(null);
 				setSelectedTeamSquad([]);
 				setSelectedTeamLoading(false);
