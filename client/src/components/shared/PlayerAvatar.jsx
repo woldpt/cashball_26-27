@@ -17,7 +17,6 @@ const SIZE_MAP = {
 
 // Tsubasa = traço a tinta-da-china preta, bem encorpado
 const OUTLINE = "#0a0d16";
-const OUTLINE_SOFT = "rgba(10, 13, 22, 0.55)";
 const BACKDROP = "#0f1320";
 const EYE_WHITE = "#fbfdff";
 
