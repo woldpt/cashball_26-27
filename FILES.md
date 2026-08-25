@@ -73,7 +73,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 ### `client/src/` — Núcleo
 | Ficheiro | Função principal |
 | :--- | :--- |
-| `client/src/main.jsx` | Ponto de entrada React (mount). |
+| `client/src/main.jsx` | Ponto de entrada React (mount). ✅ Auditado |
 | `client/src/App.jsx` | Componente raiz; gere o estado de autenticação (Auth State) e o `GameLayout`. |
 | `client/src/GameLayout.jsx` | Layout principal do jogo (tabs, header, modais, sidebar, mobile nav). ✅ Auditado |
 | `client/src/socket.js` | Cliente Socket.io (instância partilhada). |
