@@ -41,7 +41,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `client/nginx.conf` | Configuração do nginx (servir build + proxy). |
 | `client/.gitignore` | Ignora artefactos do client. |
 | `client/eslint.config.js` | Configuração do ESLint. ✅ Auditado |
-| `client/index.html` | HTML de entrada do Vite. |
+| `client/index.html` | HTML de entrada do Vite. ✅ Auditado |
 | `client/package.json` | Deps e scripts do frontend (Vite/React). |
 | `client/package-lock.json` | Lockfile do frontend. |
 | `client/vite.config.js` | Configuração do Vite. ✅ Auditado |
