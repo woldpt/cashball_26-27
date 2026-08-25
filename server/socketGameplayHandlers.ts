@@ -249,13 +249,12 @@ export function registerGameplaySocketHandlers(
       // Salas com 2+ coaches humanos ficam bloqueadas no início da semana
       // até TODOS estarem online (a remoção só acontece em leaveRoom/kick/despedimento).
 
-      // Cancel any pending contract counter-offer timer for this coach's team
+      // Discard any pending contract counter-offer for this coach's team
       if (game.pendingRenewalCounterOffers) {
         for (const [pid, offer] of Object.entries(
           game.pendingRenewalCounterOffers as Record<string, any>,
         )) {
           if (offer.teamId === playerState.teamId) {
-            clearTimeout(offer.timer);
             delete (game.pendingRenewalCounterOffers as any)[pid];
           }
         }

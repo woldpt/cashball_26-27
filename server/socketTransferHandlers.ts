@@ -405,17 +405,23 @@ export function registerTransferSocketHandlers(
           // Counter-offer: inform manager of demanded wage before going to auction
           if (!game.pendingRenewalCounterOffers)
             game.pendingRenewalCounterOffers = {};
-          // Cancel any existing timeout for this player
-          const existing = game.pendingRenewalCounterOffers[playerId];
-          if (existing?.timer) clearTimeout(existing.timer);
-
           const auctionPrice = Math.max(
             Math.round(player.value * 0.65),
             demandedWage * 12,
           );
 
-          const sendToAuction = () => {
+          const sendToAuction = async () => {
             delete game.pendingRenewalCounterOffers?.[playerId];
+            const current = await runGet(
+              game.db,
+              "SELECT team_id FROM players WHERE id = ?",
+              [playerId],
+            );
+            if (
+              !current ||
+              Number(current.team_id) !== Number(playerState.teamId)
+            )
+              return;
             listPlayerOnMarket(game, playerId, "auction", auctionPrice, () => {
               game.db.run(
                 "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0, contract_start_epoch = 0 WHERE id = ?",
@@ -433,12 +439,10 @@ export function registerTransferSocketHandlers(
             }, true);
           };
 
-          // Store counter-offer state with 90s timeout (if coach doesn't respond, go to auction)
-          const timer = setTimeout(sendToAuction, 90_000);
+          // Store counter-offer state — stays pending until the coach responds
           game.pendingRenewalCounterOffers[playerId] = {
             demandedWage,
             teamId: playerState.teamId,
-            timer,
             sendToAuction,
           };
 
@@ -527,7 +531,6 @@ export function registerTransferSocketHandlers(
       return;
     }
 
-    clearTimeout(pending.timer);
     delete game.pendingRenewalCounterOffers[playerId];
 
     if (accepted) {
