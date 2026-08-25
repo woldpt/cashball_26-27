@@ -12,10 +12,7 @@ import {
 // Re-export so external files can still import from "./game/engine"
 export {
   withJuniorGRs,
-  generateJuniorGR,
-  generateJuniorFieldPlayer,
   ensureFullBench,
-  isPlayerAvailable,
 } from "./playerUtils";
 import {
   goalPhrase,
@@ -340,10 +337,6 @@ function waitForMatchAction({
       ...(fixtureData || {}),
     });
   });
-}
-
-function getAvailableBench(teamSquad: PlayerRow[], lineupIds: Set<number>) {
-  return teamSquad.filter((p) => !lineupIds.has(p.id));
 }
 
 // Normalizes a forced-swap choice: the client sends { playerOut, playerIn }
