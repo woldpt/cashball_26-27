@@ -39,7 +39,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | :--- | :--- |
 | `client/Dockerfile` | Imagem do frontend (nginx). ✅ Auditado |
 | `client/nginx.conf` | Configuração do nginx (servir build + proxy). ✅ Auditado |
-| `client/.gitignore` | Ignora artefactos do client. |
+| `client/.gitignore` | Ignora artefactos do client. ✅ Auditado |
 | `client/eslint.config.js` | Configuração do ESLint. ✅ Auditado |
 | `client/index.html` | HTML de entrada do Vite. ✅ Auditado |
 | `client/package.json` | Deps e scripts do frontend (Vite/React). ✅ Auditado |
