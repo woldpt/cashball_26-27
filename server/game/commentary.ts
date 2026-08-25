@@ -796,35 +796,6 @@ function weatherPhrase(condition: string): string {
   );
 }
 
-function secondHalfStartPhrase(): string {
-  return pickPhrase([
-    `Recomeça a partida! Arranca a segunda parte.`,
-    `As equipas regressam do balneário. Bola a rolar na segunda parte.`,
-    `Tudo pronto para os últimos 45 minutos. Segunda parte em andamento.`,
-    `Apita o árbitro: começa a segunda parte, com tudo em aberto.`,
-    `Volta o futebol. A segunda parte promete emoção até ao fim.`,
-    `Recomeça a partida! Segunda parte em andamento.`,
-    `As equipas regressam dos balneários. Bola a rolar novamente.`,
-    `Tudo pronto para mais 45 minutos. Segunda parte começou.`,
-    `Apito do árbitro e segue jogo: começa a segunda parte.`,
-    `O futebol volta ao relvado. Segunda parte com tudo por decidir.`,
-    `Reinício do jogo! A segunda parte arranca com intensidade.`,
-    `Já se joga outra vez. Segunda parte em andamento no estádio.`,
-    `Regresso das equipas. A luta continua na segunda parte.`,
-    `Apito inicial da segunda parte! Nada está decidido ainda.`,
-    `O jogo recomeça. Segunda parte promete fortes emoções.`,
-    `Equipas de volta ao relvado. Segunda parte começou agora.`,
-    `Bola a rolar de novo! Segunda parte oficialmente em curso.`,
-    `Recomeço do encontro. A segunda parte já está viva.`,
-    `Voltamos ao jogo! Segunda parte arrancada com energia.`,
-    `O árbitro dá o sinal. Segunda parte em ação.`,
-    `Depois do intervalo, o jogo recomeça. As equipas voltaram com planos novos.`,
-    `Segunda parte a arrancar! Os 45 minutos finais vão decidir o destino.`,
-    `Bola ao centro outra vez. O relógio zerou, a história continua.`,
-    `O estádio desperta: começa a segunda parte com tudo por decidir.`,
-  ]);
-}
-
 function extraTimeStartPhrase(): string {
   return pickPhrase([
     `Começa o prolongamento. Mais 30 minutos para decidir tudo.`,
@@ -1077,7 +1048,6 @@ export {
   nearMissPhrase,
   bigSavePhrase,
   weatherPhrase,
-  secondHalfStartPhrase,
   extraTimeStartPhrase,
   finalStartPhrase,
   finalGoalPhrase,
