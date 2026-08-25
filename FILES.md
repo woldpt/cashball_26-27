@@ -15,9 +15,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `SKILLS.md` | Documentação dos 3 skills de auditoria/validação (Game State Audit, Socket.io Contract, Repair Job Offer). |
 | `.skillsrc` | Referência rápida (fonte) dos skills de auditoria/validação. |
 | `STRUCTURE.md` | Visão detalhada da organização de ficheiros e diretórios. |
-| `SUMMARY.md` | Resumo do progresso e estado atual do projeto. |
 | `PLAN.md` | Plano de debug: bug da aba Calendário no `TeamSquadView` (matchweeks a desaparecer). |
-| `progress.md` | Rastreamento de progresso (status, tarefas, ficheiros alterados, notas). |
 | `context.md` | Contexto de código para o fix de responsividade mobile do `IntervencaoView` (campos Sai/Entra). |
 | `research.md` | Pesquisa sobre controlo "swap" responsivo (label→value) em mobile com React + Tailwind. |
 | `block.txt` | Fragmento de código (snippet do `LandingPage` no `App.jsx`). |
@@ -26,11 +24,6 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `package-lock.json` | Lockfile do workspace raiz. |
 | `.gitignore` | Ficheiros ignorados pelo git. |
 
-### `plans/`
-| Ficheiro | Função principal |
-| :--- | :--- |
-| `plans/notificacoes-canto-superior-direito.md` | Plano: notificações no canto superior direito. |
-| `plans/player-search-mobile-filters.md` | Plano: filtros mobile na pesquisa de jogadores (Scout). |
 
 ### `.opencode/` (configuração OpenCode)
 | Ficheiro | Função principal |
@@ -73,6 +66,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | :--- | :--- |
 | `client/scripts/cupEtListRegression.mjs` | Teste de regressão: equipas com coach humano na lista de jogos do prolongamento da Taça. |
 | `client/scripts/jsDocTypeChecker.cjs` | Verificador de anotações de tipo JSDoc nos componentes React. |
+| `client/scripts/skillHistoryRegression.mjs` | Teste de regressão: gráfico de evolução da skill em jogos com várias épocas. |
 | `client/scripts/teamSquadCalendarRegression.mjs` | Teste de regressão: calendário das outras equipas na aba Calendário do `TeamSquadView`. |
 
 ### `client/public/`
@@ -364,8 +358,11 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `server/scripts/repairDuplicateJobOffer.ts` | Reparação de propostas de trabalho duplicadas. |
 | `server/scripts/repairDuplicateJobOfferTUI.ts` | Variante TUI do reparador de propostas duplicadas. |
 | `server/scripts/repair-duplicate-job-offer.sh` | Wrapper shell do reparador. |
+| `server/scripts/attendanceRegression.mts` | Regressão: lotação do estádio reflete a forma da equipa. |
 | `server/scripts/contractRenewalRegression.mts` | Regressão: renovação de contratos (modal obrigatório, 1 proposta/semana). |
 | `server/scripts/contractYearRegression.mts` | Regressão: designação de contratos ("Ano 1, J1" → "2026, Jornada 1"). |
+| `server/scripts/skillHistoryRegression.mts` | Regressão: histórico de skill preserva a época em jogos com várias épocas. |
+| `server/scripts/trainingMultiSeasonRegression.mts` | Regressão: estado do treino corrompe em jogos multi-época. |
 | `server/scripts/trainingReportRegression.mts` | Regressão: resultado do treino deixa de ser exibido. |
 
 ### `server/dist/` (build de produção — gerado)
