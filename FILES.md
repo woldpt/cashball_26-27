@@ -67,8 +67,8 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 ### `client/public/`
 | Ficheiro | Função principal |
 | :--- | :--- |
-| `client/public/favicon.svg` | Favicon da app. |
-| `client/public/icons.svg` | Sprite de ícones. |
+| `client/public/favicon.svg` | Favicon da app. ✅ Auditado |
+| `client/public/icons.svg` | Sprite de ícones. ✅ Auditado |
 
 ### `client/src/` — Núcleo
 | Ficheiro | Função principal |
