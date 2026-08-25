@@ -101,7 +101,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 ### `client/src/hooks/`
 | Ficheiro | Função principal |
 | :--- | :--- |
-| `client/src/hooks/useSocketListeners.js` | Hook com os listeners Socket.io partilhados. |
+| `client/src/hooks/useSocketListeners.js` | Hook com os listeners Socket.io partilhados. ✅ Auditado |
 
 ### `client/src/utils/`
 | Ficheiro | Função principal |
