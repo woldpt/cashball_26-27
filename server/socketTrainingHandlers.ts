@@ -53,32 +53,28 @@ export function createTrainingHandlers(deps: TrainingHandlersDeps) {
             resolve(null);
             return;
           }
-          // If no focus for current matchweek, copy from the most recent previous one
-          if (!row) {
-            game.db.get(
-              "SELECT training_focus FROM team_training WHERE team_id = ? AND matchweek < ? AND applied = 1 ORDER BY matchweek DESC LIMIT 1",
-              [teamId, game.calendarIndex],
-              (err2: any, prevRow: any) => {
-                if (err2 || !prevRow) {
-                  resolve(null);
-                  return;
-                }
-                // Auto-copy to current matchweek
-                game.db.run(
-                  "INSERT OR REPLACE INTO team_training (team_id, matchweek, training_focus, applied) VALUES (?, ?, ?, 0)",
-                  [teamId, game.calendarIndex, prevRow.training_focus],
-                  (err3: any) => {
-                    if (err3) {
-                      console.error(`[${game.roomCode}] training: failed to copy focus:`, err3);
-                    }
-                    resolve(prevRow.training_focus);
-                  },
-                );
-              },
-            );
+          if (row) {
+            resolve(row.training_focus);
             return;
           }
-          resolve(row.training_focus);
+          // No focus set for the upcoming event yet. Return the most recent
+          // focus for display only — do NOT write a row here. Recurrence is
+          // already handled at apply-time by applyTrainingBonuses'
+          // carryForwardMissingFocus. The previous auto-copy (INSERT OR
+          // REPLACE ... applied = 0) raced with setTrainingFocus and with
+          // markApplied, overwriting a freshly-chosen focus with a stale one
+          // (the game got stuck training "Forma" every week).
+          game.db.get(
+            "SELECT training_focus FROM team_training WHERE team_id = ? AND matchweek < ? ORDER BY matchweek DESC LIMIT 1",
+            [teamId, game.calendarIndex],
+            (err2: any, prevRow: any) => {
+              if (err2 || !prevRow) {
+                resolve(null);
+                return;
+              }
+              resolve(prevRow.training_focus);
+            },
+          );
         },
       );
     });
