@@ -336,7 +336,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `server/socketScoutHandlers.ts` | Eventos de scout/pesquisa. |
 | `server/socketSessionHandlers.ts` | Eventos de sessão (auth, join). |
 | `server/socketTrainingHandlers.ts` | Eventos de treino. |
-| `server/socketTransferHandlers.ts` | Eventos de transferências. |
+| `server/socketTransferHandlers.ts` | Eventos de transferências. ✅ Auditado |
 | `server/socketEventRegistry.json` | Mapa de eventos Socket.io (gerado pelo validator). |
 
 ### `server/db/`

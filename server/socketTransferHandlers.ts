@@ -90,6 +90,11 @@ export function registerTransferSocketHandlers(
       );
       if (!player) return;
 
+      if (Number(player.team_id) === Number(playerState.teamId)) {
+        socket.emit("systemMessage", "Este jogador já pertence à tua equipa!");
+        return;
+      }
+
       if (isContractLocked(player, game)) {
         const end = contractEndInfo(player);
         socket.emit(
@@ -251,7 +256,7 @@ export function registerTransferSocketHandlers(
 
       game.db.get(
         "SELECT p.*, t.name as team_name FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.id = ? AND p.team_id = ?",
-        [playerId, playerState.teamId],
+        [validPlayerId, playerState.teamId],
         (err, player) => {
           if (!player) return;
           if (isContractLocked(player, game)) {
@@ -294,7 +299,7 @@ export function registerTransferSocketHandlers(
           } else {
             game.db.run(
               "UPDATE players SET transfer_status = ?, transfer_price = ? WHERE id = ?",
-              [finalMode, finalPrice, playerId],
+              [finalMode, finalPrice, validPlayerId],
               (runErr: Error | null) => {
                 if (runErr) {
                   console.error("[listPlayerForTransfer] Error:", runErr);
