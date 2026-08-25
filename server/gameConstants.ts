@@ -115,14 +115,14 @@ export function contractEpoch(season: number, matchweek: number): number {
  * por jogador (o agente é sempre o mesmo para o mesmo id).
  */
 export const AGENT_NAMES = [
-  "Careca da Cunha",
-  "Primo do Presidente",
-  "Senhor Percentagem",
-  "Dona Gertrudes, a Agente",
-  "Tio dos Relvados",
-  "Bruno Comissão",
-  "Artur Luvas",
-  "Sofia Caneta",
+  "Manel Pica",
+  "Tó Zé Marteleiro",
+  "Quim Roscas",
+  "Nuno do Balde",
+  "Rui Canivete",
+  "Miguel Rabugento",
+  "Pedro Fofinha",
+  "João Prego",
 ];
 
 export function getAgentName(playerId: number): string {
