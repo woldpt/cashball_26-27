@@ -12,12 +12,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `CLAUDE.md` | Documentação técnica e padrões de engenharia (arquitetura). |
 | `README.md` | Descrição geral do produto (jogo de gestão de futebol multiplayer assíncrono). |
 | `STYLE.md` | Design system e diretrizes de estilo visual (tokens, tipografia, cards, badges). |
-| `SKILLS.md` | Documentação dos 3 skills de auditoria/validação (Game State Audit, Socket.io Contract, Repair Job Offer). |
 | `.skillsrc` | Referência rápida (fonte) dos skills de auditoria/validação. |
-| `STRUCTURE.md` | Visão detalhada da organização de ficheiros e diretórios. |
-| `PLAN.md` | Plano de debug: bug da aba Calendário no `TeamSquadView` (matchweeks a desaparecer). |
-| `context.md` | Contexto de código para o fix de responsividade mobile do `IntervencaoView` (campos Sai/Entra). |
-| `research.md` | Pesquisa sobre controlo "swap" responsivo (label→value) em mobile com React + Tailwind. |
 | `block.txt` | Fragmento de código (snippet do `LandingPage` no `App.jsx`). |
 | `docker-compose.yml` | Orquestração de containers (Frontend + Backend + DB). |
 | `package.json` | Workspace raiz (deps: pi-lens, MCP SDK, rpiv-btw). |
