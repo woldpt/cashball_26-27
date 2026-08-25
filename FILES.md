@@ -95,7 +95,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 ### `client/src/contexts/`
 | Ficheiro | Função principal |
 | :--- | :--- |
-| `client/src/contexts/GameContext.jsx` | Fonte de verdade do estado do jogo (players, finances, match phase, etc.). |
+| `client/src/contexts/GameContext.jsx` | Fonte de verdade do estado do jogo (players, finances, match phase, etc.). ✅ Auditado |
 | `client/src/contexts/TacticsContext.jsx` | Estado da UI de táticas (drag-and-drop, seleção); consome o `GameContext`. |
 
 ### `client/src/hooks/`
