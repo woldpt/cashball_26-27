@@ -189,11 +189,26 @@ export function IntervencaoView({
     !!fixture?.homeLineup?.length && !!fixture?.awayLineup?.length;
   const oppLineupRaw = isHome ? fixture?.awayLineup : fixture?.homeLineup;
   const oppLineup = oppLineupRaw || [];
+  // Defensive: expulsos adversários não podem constar da escalação exibida
+  // (o snapshot do servidor pode estar stale em jogos a decorrer).
+  const oppRedCardedIds = new Set(
+    (fixture?.events || [])
+      .filter(
+        (e) =>
+          e.type === "red" &&
+          e.team === (isHome ? "away" : "home") &&
+          e.playerId != null,
+      )
+      .map((e) => Number(e.playerId)),
+  );
+  const oppLineupFiltered = oppLineup.filter(
+    (p) => !oppRedCardedIds.has(Number(p.id)),
+  );
   const oppStarters = sortPlayersByPos(
-    oppLineup.filter((p) => p.is_starter === true).slice(0, 11),
+    oppLineupFiltered.filter((p) => p.is_starter === true).slice(0, 11),
   );
   const oppBench = sortPlayersByPos(
-    oppLineup.filter((p) => p.is_starter === false),
+    oppLineupFiltered.filter((p) => p.is_starter === false),
   );
   const oppTactic = isHome ? fixture?._t2 : fixture?._t1;
   const oppFormation = oppTactic?.formation || null;

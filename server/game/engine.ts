@@ -1801,6 +1801,13 @@ async function simulateMatchSegment(
           squad.splice(idx, 1);
           lineupIds.delete(offender.id);
         }
+        // Remover expulso do snapshot de lineup para que o ecrã de
+        // intervalo/live não o mostre (equipa a jogar com menos um).
+        const lineupRef = side === "home" ? fixture.homeLineup : fixture.awayLineup;
+        if (lineupRef) {
+          const li = lineupRef.findIndex((p: any) => p.id === offender.id);
+          if (li > -1) lineupRef.splice(li, 1);
+        }
       }
     };
 
