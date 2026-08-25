@@ -90,9 +90,10 @@ export function generateJuniorGR(
 }
 
 /**
- * Injects junior GR players into a squad whenever there are fewer than 2 available GRs.
+ * Injects a junior GR player into a squad when there are no available GRs.
+ * Guarantees at least 1 available GR for the starting eleven.
  * Accepts the full squad (including unavailable players) or a pre-filtered available subset;
- * in both cases it correctly counts only available GRs before deciding how many juniors to add.
+ * in both cases it correctly counts only available GRs before deciding whether to add a junior.
  * The original array is never mutated.
  */
 export function withJuniorGRs(
