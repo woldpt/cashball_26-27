@@ -86,11 +86,9 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | :--- | :--- |
 | `client/src/main.jsx` | Ponto de entrada React (mount). |
 | `client/src/App.jsx` | Componente raiz; gere o estado de autenticação (Auth State) e o `GameLayout`. |
-| `client/src/App.css` | Estilos globais do App. |
 | `client/src/GameLayout.jsx` | Layout principal do jogo (tabs, header, modais). |
 | `client/src/socket.js` | Cliente Socket.io (instância partilhada). |
 | `client/src/index.css` | Estilos globais (Tailwind + tokens). |
-| `client/src/framerMotion.js` | Wrapper do framer-motion (força inclusão no bundle; evita "motion is not defined"). |
 | `client/src/countryFlags.js` | Mapeamento de bandeiras por país (emojis). |
 | `client/src/constants/index.js` | Constantes partilhadas (`SEASON_CALENDAR`, cores, tiers, etc.). |
 
@@ -132,7 +130,6 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `client/src/views/ClubTab.jsx` | Aba do clube (estádio, infraestruturas). |
 | `client/src/views/CupTab.jsx` | Aba da Taça (resultados por ronda). |
 | `client/src/views/FinancesTab.jsx` | Aba de finanças (orçamento, salários, receitas). |
-| `client/src/views/MarketTab.jsx` | Aba de mercado (⚠️ NÃO usar — ver `TransferHub`). |
 | `client/src/views/PlayerSearchView.jsx` | Vista de pesquisa de jogadores (Scout). |
 | `client/src/views/PlayersTab.jsx` | Aba de jogadores (referência de implementação do design system). |
 | `client/src/views/StadiumTab.jsx` | Aba do estádio (capacidades, receitas). |
@@ -256,9 +253,8 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `client/src/components/ui/AuctionNotification.jsx` | Notificação de leilão. |
 | `client/src/components/ui/CupBracketPage.jsx` | Página do bracket da Taça. |
 | `client/src/components/ui/LeagueStandings.jsx` | Tabela de classificação. |
-| `client/src/components/ui/PageTransition.jsx` | Transições de página. |
 | `client/src/components/ui/TrainingPage.jsx` | Página de treino. |
-| `client/src/components/ui/TransferHub.jsx` | Hub de transferências (⚠️ usar sempre este, nunca `MarketTab`). |
+| `client/src/components/ui/TransferHub.jsx` | Hub de transferências (mercado, leilões, propostas). |
 
 ### `client/src/assets/`
 | Ficheiro | Função principal |
@@ -267,9 +263,6 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `client/src/assets/estadio15000.jpg` | Imagem do estádio (capacidade 15000). |
 | `client/src/assets/estadio30000.jpg` | Imagem do estádio (capacidade 30000). |
 | `client/src/assets/estadio50000.jpg` | Imagem do estádio (capacidade 50000). |
-| `client/src/assets/hero.png` | Imagem hero. |
-| `client/src/assets/react.svg` | Ícone React. |
-| `client/src/assets/vite.svg` | Ícone Vite. |
 
 ### `client/dist/` (build de produção — gerado)
 | Ficheiro | Função principal |
@@ -354,7 +347,6 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `server/db/init.js` | Inicialização da base de dados. |
 | `server/db/seed.js` | Seed da base de dados (fixtures, equipas, jogadores). |
 | `server/db/ensureSeeded.js` | Decide se o `base.db` precisa de re-seed no arranque (hash de fixtures). |
-| `server/db/playerSkillSnapshots.ts` | Snapshots de skills dos jogadores por jornada. |
 | `server/db/schema.sql` | Schema SQL. |
 | `server/db/accounts.db` | Base de contas (autenticação). |
 | `server/db/base.db` | Template de novas salas. |
