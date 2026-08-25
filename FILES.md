@@ -74,7 +74,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | Ficheiro | Função principal |
 | :--- | :--- |
 | `client/src/main.jsx` | Ponto de entrada React (mount). ✅ Auditado |
-| `client/src/App.jsx` | Componente raiz; gere o estado de autenticação (Auth State) e o `GameLayout`. |
+| `client/src/App.jsx` | Componente raiz; gere o estado de autenticação (Auth State) e o `GameLayout`. ✅ Auditado |
 | `client/src/GameLayout.jsx` | Layout principal do jogo (tabs, header, modais, sidebar, mobile nav). ✅ Auditado |
 | `client/src/socket.js` | Cliente Socket.io (instância partilhada). |
 | `client/src/index.css` | Estilos globais (Tailwind + tokens). |
