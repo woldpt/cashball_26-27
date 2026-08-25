@@ -794,7 +794,6 @@ const weeklyFlowHelpers = createWeeklyFlowHelpers({
 	getPlayerList,
 	emitPresence,
 	generateFixturesForDivision,
-	finalizeAuction,
 	pauseAllRunningAuctions,
 	resumeAllPausedAuctions,
 	simulateMatchSegment,

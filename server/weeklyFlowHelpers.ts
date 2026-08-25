@@ -35,7 +35,6 @@ interface WeeklyFlowDeps {
     matchweek: number,
     seeds: number[],
   ) => Promise<any[]>;
-  finalizeAuction: (game: ActiveGame, playerId: number) => void;
   pauseAllRunningAuctions: (game: ActiveGame, io: any) => void;
   resumeAllPausedAuctions: (game: ActiveGame) => void;
   simulateMatchSegment: (...args: any[]) => Promise<void>;
@@ -100,7 +99,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     getPlayerList,
     emitPresence,
     generateFixturesForDivision,
-    finalizeAuction,
     pauseAllRunningAuctions,
     resumeAllPausedAuctions,
     simulateMatchSegment,
