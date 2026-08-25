@@ -603,6 +603,7 @@ function SubsPanel({
           handleDragOver={handleDragOver}
           handleDropOnBench={handleDropOnBench}
           handleDragEnd={handleDragEnd}
+          summary={summary}
         />
         <MentalidadeColumn
           isHalftime={isHalftime}
@@ -613,7 +614,6 @@ function SubsPanel({
           annotatedSquad={annotatedSquad}
           onUndoSub={onUndoSub}
           swapProps={sharedSwapProps}
-          summary={summary}
         />
       </div>
 
@@ -704,6 +704,7 @@ function SubsPanel({
               handleDragOver={handleDragOver}
               handleDropOnBench={handleDropOnBench}
               handleDragEnd={handleDragEnd}
+              summary={summary}
             />
           )}
         </div>
@@ -839,6 +840,7 @@ function SuplentesColumn({
   handleDragOver,
   handleDropOnBench,
   handleDragEnd,
+  summary,
 }) {
   return (
     <div
@@ -890,6 +892,12 @@ function SuplentesColumn({
           </p>
         )}
       </div>
+      {/* Resumo da partida ancorado ao fundo da coluna dos suplentes. */}
+      {summary && (
+        <div className="shrink-0 p-3 border-t border-outline-variant/15 bg-surface-container-high/30">
+          <MatchSummaryBlock {...summary} />
+        </div>
+      )}
     </div>
   );
 }
@@ -907,7 +915,6 @@ function MentalidadeColumn({
   confirmedSubs,
   annotatedSquad,
   onUndoSub,
-  summary,
 }) {
   return (
     <div className="flex flex-col min-h-0 min-w-0 overflow-hidden bg-surface-container-high/30">
@@ -919,8 +926,6 @@ function MentalidadeColumn({
             Mentalidade
           </h3>
         </div>
-        {/* min-h-full + mt-auto: the summary anchors to the row bottom,
-         * filling the dead space under the tactics controls. */}
         <div className="flex-1 overflow-y-auto">
           <div className="flex flex-col min-h-full p-4 space-y-4">
             {isHalftime && (
@@ -935,7 +940,6 @@ function MentalidadeColumn({
                 />
               </div>
             )}
-            {summary && <MatchSummaryBlock {...summary} className="mt-auto" />}
           </div>
         </div>
       </div>
