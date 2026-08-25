@@ -12,7 +12,8 @@ const DEFAULT_ACCENT = "#d97706";
 
 /**
  * Toast simples que aparece quando um novo leilão é iniciado.
- * Não aparece se o coach já estiver na página Leilões.
+ * Não aparece se o coach já estiver na página Leilões nem durante as partidas.
+ * Ignora leilões já encerrados, pausados ou cujo prazo (endsAt) já expirou.
  * Desaparece automaticamente ao fim de 10s ou ao clicar em "Ver Leilão".
  *
  * @param {{
@@ -33,6 +34,17 @@ export function AuctionNotification({
   const seenRef = useRef(new Set());
   const showingRef = useRef(false);
 
+  // Enquanto decorre uma partida (ou o coach está na página de leilões) não
+  // mostramos toasts. Mantém-se o estado anterior para conseguir limpar o toast
+  // atual no render quando entramos num destes estados (padrão recomendado pelo
+  // React em alternativa a chamar setState dentro de um effect).
+  const suppressed = currentPage === "leiloes" || isMatchInProgress;
+  const [prevSuppressed, setPrevSuppressed] = useState(suppressed);
+  if (suppressed !== prevSuppressed) {
+    setPrevSuppressed(suppressed);
+    if (suppressed) setCurrentToast(null);
+  }
+
   const showNext = () => {
     if (showingRef.current) return;
     if (queueRef.current.length === 0) return;
@@ -49,21 +61,27 @@ export function AuctionNotification({
 
   // Detect new auctions and enqueue
   useEffect(() => {
-    if (currentPage === "leiloes" || isMatchInProgress) {
+    // Nunca enfileirar nem mostrar toasts durante uma partida ou na página de leilões.
+    if (suppressed) {
       showingRef.current = false;
       queueRef.current = [];
       return;
     }
+    const now = Date.now();
     const newOnes = activeAuctions.filter(
-      (a) => !a.closed && !seenRef.current.has(a.playerId)
+      (a) =>
+        !a.closed &&
+        !a.paused &&
+        (typeof a.endsAt !== "number" || a.endsAt > now) &&
+        !seenRef.current.has(a.playerId)
     );
     if (newOnes.length === 0) return;
     newOnes.forEach((a) => seenRef.current.add(a.playerId));
     queueRef.current.push(...newOnes);
     showNext();
-  }, [activeAuctions, currentPage, isMatchInProgress]);
+  }, [activeAuctions, suppressed]);
 
-  if (!currentToast || currentPage === "leiloes") return null;
+  if (!currentToast || suppressed) return null;
 
   const accent = POS_ACCENT[currentToast.position] || DEFAULT_ACCENT;
 
