@@ -47,6 +47,7 @@ interface CupFlowDeps {
 		fixtures: any[],
 		completedCalendarIndex: number,
 	) => Promise<void>;
+	clearSeasonTrainingState: (game: ActiveGame) => Promise<void>;
 	applyPostMatchQualityEvolution: (
 		db: any,
 		fixtures: any[],
@@ -74,6 +75,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		getPlayerList,
 		emitPresence,
 		applyTrainingBonuses,
+		clearSeasonTrainingState,
 		applyPostMatchQualityEvolution,
 		resumeAllPausedAuctions,
 	} = deps;
@@ -490,6 +492,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				.map(([d, ids]) => `div${d}=${ids.length}eq`)
 				.join(", "),
 		);
+
+		// Limpar estado de treino da época concluída antes de reiniciar o
+		// calendarIndex — as tabelas guardam o calendarIndex 0-based por época
+		// e, sem limpeza, as linhas da época anterior colidiam com a nova época
+		// (histórico misturado, foco stale, carry-forward sem referência).
+		await clearSeasonTrainingState(game);
 
 		// Reset to new season — agora com fixtureSeeds já corretos em memória
 		game.season += 1;

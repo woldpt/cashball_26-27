@@ -427,5 +427,35 @@ export function createTrainingHelpers(_deps: { io: any }) {
     );
   }
 
-  return { applyTrainingBonuses };
+  /**
+   * Limpa o estado de treino da época concluída.
+   *
+   * `team_training.matchweek` e `training_player_history.matchweek` guardam o
+   * `game.calendarIndex`, que é 0-based POR ÉPOCA (`applySeasonEnd` faz
+   * `game.calendarIndex = 0`). Sem limpeza, as linhas da época anterior
+   * colidem com a nova época (mesmo `(team_id, matchweek)`): o relatório do
+   * treino misturava épocas, o `getTrainingFocus` podia devolver um foco
+   * velho, e o carry-forward do primeiro evento da época não encontrava
+   * referência. Após a limpeza, a nova época começa igual à época 1.
+   */
+  function clearSeasonTrainingState(game: ActiveGame): Promise<void> {
+    const tables = ["team_training", "training_player_history"];
+    const ops = tables.map(
+      (table) =>
+        new Promise<void>((resolve) => {
+          game.db.run(`DELETE FROM ${table}`, (err: any) => {
+            if (err) {
+              console.error(
+                `[${game.roomCode}] training: cleanup ${table} failed:`,
+                err,
+              );
+            }
+            resolve();
+          });
+        }),
+    );
+    return Promise.all(ops).then(() => undefined);
+  }
+
+  return { applyTrainingBonuses, clearSeasonTrainingState };
 }

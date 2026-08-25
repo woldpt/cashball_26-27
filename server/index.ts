@@ -743,6 +743,7 @@ function scheduleNpcCounterBid(game, playerId, npcTeamId) {
 
 const trainingHelpers = createTrainingHelpers({ io });
 const applyTrainingBonuses = trainingHelpers.applyTrainingBonuses;
+const clearSeasonTrainingState = trainingHelpers.clearSeasonTrainingState;
 
 const trainingHandlers = createTrainingHandlers({ io });
 const setTrainingFocus = trainingHandlers.setTrainingFocus;
@@ -765,6 +766,7 @@ const cupFlowHelpers = createCupFlowHelpers({
 	getPlayerList,
 	emitPresence,
 	applyTrainingBonuses,
+	clearSeasonTrainingState,
 	applyPostMatchQualityEvolution,
 	resumeAllPausedAuctions,
 });
