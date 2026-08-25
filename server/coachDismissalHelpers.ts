@@ -136,7 +136,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       broadcast: true,
     });
 
-    await autoAssignDismissedCoach(game, coachName);
+    await autoAssignDismissedCoach(game, coachName, oldTeamId);
   }
 
   /**
@@ -319,6 +319,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
   async function autoAssignDismissedCoach(
     game: ActiveGame,
     coachName: string,
+    oldTeamId: number,
   ): Promise<void> {
     const player = game.playersByName[coachName];
     if (!player) return;
@@ -347,7 +348,8 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
         query += ` AND id NOT IN (${placeholders})`;
         params.push(...takenTeamIds);
       }
-      query += " ORDER BY RANDOM() LIMIT 1";
+      query += " AND id != ? ORDER BY RANDOM() LIMIT 1";
+      params.push(oldTeamId);
       const candidate = await runGet<AnyRow>(game.db, query, params);
       if (candidate) {
         team = candidate;
