@@ -50,6 +50,12 @@ export function MatchPlayerCard({
   const formIcon = form >= 115 ? "💪" : form <= 85 ? "😩" : "👍";
   const formColor =
     form >= 115 ? "text-emerald-400" : form <= 85 ? "text-rose-400" : "text-on-surface-variant";
+  const matchStatsLabel = [
+    goals > 0 ? `${goals} golo${goals > 1 ? "s" : ""}` : null,
+    yellowCards > 0 ? `${yellowCards} cartão amarelo${yellowCards > 1 ? "s" : ""}` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   // Single visual signal in the selected state: white tint. The position
   // bgGrad gradient is suppressed so only one color system dominates.
@@ -109,16 +115,16 @@ export function MatchPlayerCard({
             <span className="ml-0.5 text-amber-400" title="Craque" aria-label="Craque">★</span>
           )}
         </span>
-        {showMatchStats && (
-          <span className="flex items-center gap-2 text-[10px] font-bold tabular-nums text-on-surface-variant/70">
-            <span className="flex items-center gap-1" title="Golos marcados">
-              <span aria-hidden="true">⚽</span>
-              <span>{goals}</span>
-            </span>
-            <span className="flex items-center gap-1" title="Cartões amarelos">
-              <span aria-hidden="true">🟨</span>
-              <span>{yellowCards}</span>
-            </span>
+        {showMatchStats && (goals > 0 || yellowCards > 0) && (
+          <span
+            className="flex items-center gap-1 text-[11px] leading-none"
+            title={matchStatsLabel}
+            aria-label={matchStatsLabel}
+          >
+            {Array.from({ length: goals }).map((_, i) => (
+              <span key={`goal-${i}`} aria-hidden="true">⚽</span>
+            ))}
+            {yellowCards > 0 && <span aria-hidden="true">🟨</span>}
           </span>
         )}
         {showFatigue && <FatigueIndicator player={player} compact />}
