@@ -36,8 +36,8 @@ export function MatchPlayerCard({
   const form = player.form ?? 100;
   const hasStar = !!player.is_star && (player.position === "MED" || player.position === "ATA");
 
-  // Skill color: position-colored (matches PlayersTab/TeamSquadCard/MarketTab
-  // which use POSITION_TEXT_CLASS). Selected state falls back to white — rose
+  // Skill color: position-colored (matches PlayersTab/TeamSquadCard which use
+  // POSITION_TEXT_CLASS). Selected state falls back to white — rose
   // was confused with ATA (avançado) accent colors.
   const skillColor = selected ? "text-white" : s.badgeText;
 

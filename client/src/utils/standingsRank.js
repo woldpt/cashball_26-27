@@ -24,24 +24,3 @@ export function rankStandings(teams) {
   return [...teams].sort(compareStandingsRows);
 }
 
-/**
- * Mapa de tendência (subida/descida) entre duas tabelas de classificação.
- *
- * @param {Array} currentTeams - tabela atual (objetos "team")
- * @param {Array} prevTeams - tabela da jornada anterior (objetos "team")
- * @returns {Map<string, { cur: number, prev: number|null, movement: number }>}
- */
-export function buildStandingsMovement(currentTeams, prevTeams) {
-  const cur = rankStandings(currentTeams);
-  const prev = rankStandings(prevTeams);
-  const map = new Map();
-  cur.forEach((t, i) => {
-    const prevIdx = prev.findIndex((p) => String(p.id) === String(t.id));
-    map.set(String(t.id), {
-      cur: i + 1,
-      prev: prevIdx >= 0 ? prevIdx + 1 : null,
-      movement: prevIdx >= 0 ? prevIdx - i : 0,
-    });
-  });
-  return map;
-}
