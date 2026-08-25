@@ -306,7 +306,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | :--- | :--- |
 | `server/game/engine.ts` | Motor de simulação (jogadores, banco, juniores, fixtures). |
 | `server/game/matchCalculations.ts` | Cálculos do jogo (táctica AI, multiplicadores de golo/clima, normalização de estilo). ✅ Auditado |
-| `server/game/commentary.ts` | Narração em português + odds. |
+| `server/game/commentary.ts` | Narração em português (frases de golo/cartões/subs) + odds de apostas. ✅ Auditado |
 | `server/game/playerUtils.ts` | Utilitários de jogadores (nomes de juniores, etc.). |
 | `server/game/tacticFamiliarity.ts` | Memória táctica (estrelas por formação, janela rolante). ✅ Auditado |
 
