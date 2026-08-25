@@ -23,6 +23,9 @@ export function MatchPlayerCard({
   title,
   swapIndicator = false,
   showFatigue = true,
+  showMatchStats = false,
+  goals = 0,
+  yellowCards = 0,
   forcedOut = false,
   draggable = false,
   dragOver = false,
@@ -106,6 +109,18 @@ export function MatchPlayerCard({
             <span className="ml-0.5 text-amber-400" title="Craque" aria-label="Craque">★</span>
           )}
         </span>
+        {showMatchStats && (
+          <span className="flex items-center gap-2 text-[10px] font-bold tabular-nums text-on-surface-variant/70">
+            <span className="flex items-center gap-1" title="Golos marcados">
+              <span aria-hidden="true">⚽</span>
+              <span>{goals}</span>
+            </span>
+            <span className="flex items-center gap-1" title="Cartões amarelos">
+              <span aria-hidden="true">🟨</span>
+              <span>{yellowCards}</span>
+            </span>
+          </span>
+        )}
         {showFatigue && <FatigueIndicator player={player} compact />}
       </span>
 

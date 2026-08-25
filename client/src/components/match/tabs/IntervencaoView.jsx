@@ -7,6 +7,7 @@ import {
   sortPlayersByPos,
   buildPositionRows,
   filterMatchEvents,
+  buildPlayerMatchStats,
 } from "../matchConstants.js";
 import {
   PossessionBar,
@@ -227,6 +228,7 @@ export function IntervencaoView({
   const evts = fixture?.events || [];
   const weatherEvent = evts.find((e) => e.type === "weather");
   const visibleEvts = filterMatchEvents(evts, liveMinute);
+  const playerMatchStats = buildPlayerMatchStats(evts, liveMinute);
   const referee = fixture.referee;
 
   /* ── Action title ─────────────────────────────────────────────── */
@@ -385,6 +387,7 @@ export function IntervencaoView({
               annotatedSquad={annotatedSquad}
               tactic={tactic}
               onUpdateTactic={onUpdateTactic}
+              playerMatchStats={playerMatchStats}
               onPitchPlayers={onPitchPlayers}
               benchPlayers={benchPlayers}
               effectiveOutId={effectiveOutId}
@@ -479,6 +482,7 @@ function SubsPanel({
   isGkRedCard,
   tactic,
   onUpdateTactic,
+  playerMatchStats,
   onPitchPlayers,
   benchPlayers,
   effectiveOutId,
@@ -595,6 +599,7 @@ function SubsPanel({
           grAvailableOnBench={grAvailableOnBench}
           grLockedNoReplacement={grLockedNoReplacement}
           effectiveOutId={effectiveOutId}
+          playerMatchStats={playerMatchStats}
           pickOut={pickOut}
           dragFrom={dragFrom}
           dragOverSide={dragOverSide}
@@ -611,6 +616,7 @@ function SubsPanel({
           subsMade={subsMade}
           subbedOut={subbedOut}
           selectedInId={selectedInId}
+          playerMatchStats={playerMatchStats}
           handlePickIn={handlePickIn}
           dragFrom={dragFrom}
           dragOverSide={dragOverSide}
@@ -695,6 +701,7 @@ function SubsPanel({
               grAvailableOnBench={grAvailableOnBench}
               grLockedNoReplacement={grLockedNoReplacement}
               effectiveOutId={effectiveOutId}
+              playerMatchStats={playerMatchStats}
               pickOut={pickOut}
               dragFrom={dragFrom}
               dragOverSide={dragOverSide}
@@ -712,6 +719,7 @@ function SubsPanel({
               subsMade={subsMade}
               subbedOut={subbedOut}
               selectedInId={selectedInId}
+              playerMatchStats={playerMatchStats}
               handlePickIn={handlePickIn}
               dragFrom={dragFrom}
               dragOverSide={dragOverSide}
@@ -765,6 +773,7 @@ function TitularesColumn({
   grAvailableOnBench,
   grLockedNoReplacement,
   effectiveOutId,
+  playerMatchStats,
   pickOut,
   dragFrom,
   dragOverSide,
@@ -805,6 +814,7 @@ function TitularesColumn({
             isLockedForced ||
             (isHalftime && subsMade >= MAX_MATCH_SUBS);
           const selected = effectiveOutId === p.id;
+          const stats = playerMatchStats?.get(p.id);
 
           return (
             <MatchPlayerCard
@@ -816,6 +826,9 @@ function TitularesColumn({
               selectable={!disabled}
               onPick={() => pickOut(p)}
               showFatigue={false}
+              showMatchStats
+              goals={stats?.goals ?? 0}
+              yellowCards={stats?.yellowCards ?? 0}
               swapIndicator={isHalftime}
               forcedOut={
                 isForcedSwap && !!forceOutPlayer && p.id === forceOutPlayer.id
@@ -848,6 +861,7 @@ function SuplentesColumn({
   subsMade,
   subbedOut,
   selectedInId,
+  playerMatchStats,
   handlePickIn,
   dragFrom,
   dragOverSide,
@@ -881,6 +895,7 @@ function SuplentesColumn({
             positionMismatch ||
             (isHalftime && subsMade >= MAX_MATCH_SUBS);
           const selected = selectedInId === p.id;
+          const stats = playerMatchStats?.get(p.id);
 
           return (
             <MatchPlayerCard
@@ -892,6 +907,9 @@ function SuplentesColumn({
               selectable={!disabled}
               onPick={() => handlePickIn(p)}
               showFatigue={false}
+              showMatchStats
+              goals={stats?.goals ?? 0}
+              yellowCards={stats?.yellowCards ?? 0}
               draggable={!disabled}
               onDragStart={handleDragStart(p, "bench")}
               onDragOver={handleDragOver("bench")}

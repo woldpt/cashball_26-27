@@ -103,3 +103,25 @@ export function filterMatchEvents(events, liveMinute) {
     .filter((e) => e.minute <= maxMinute && MATCH_EVENT_TYPES.includes(e.type))
     .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
 }
+
+/**
+ * Build per-player match stats (goals + yellow cards) from match events,
+ * counting only the events visible up to `liveMinute` (same window as the
+ * chronology). Returns a Map keyed by player id.
+ *
+ * @param {Array} events - Match events (fixture.events).
+ * @param {number} [liveMinute] - Current match minute.
+ * @returns {Map<number, {goals: number, yellowCards: number}>}
+ */
+export function buildPlayerMatchStats(events, liveMinute) {
+  const stats = new Map();
+  for (const e of filterMatchEvents(events, liveMinute)) {
+    if (e.playerId == null) continue;
+    const key = Number(e.playerId);
+    if (!stats.has(key)) stats.set(key, { goals: 0, yellowCards: 0 });
+    const s = stats.get(key);
+    if (e.type === "goal" || e.type === "penalty_goal") s.goals += 1;
+    else if (e.type === "yellow") s.yellowCards += 1;
+  }
+  return stats;
+}
