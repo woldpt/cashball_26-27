@@ -762,7 +762,6 @@ const cupFlowHelpers = createCupFlowHelpers({
 	getTeamSquad,
 	simulateExtraTime,
 	simulatePenaltyShootout,
-	pickRefereeSummary,
 	getPlayerList,
 	emitPresence,
 	applyTrainingBonuses,

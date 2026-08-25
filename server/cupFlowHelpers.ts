@@ -34,12 +34,6 @@ interface CupFlowDeps {
 	) => Promise<any[]>;
 	simulateExtraTime: (...args: any[]) => Promise<any>;
 	simulatePenaltyShootout: (...args: any[]) => any;
-	pickRefereeSummary: (
-		roomCode: string,
-		teamId: number,
-		opponentId: number,
-		matchweek: number,
-	) => { name: string; balance: number; favorsTeamA: boolean };
 	getPlayerList: (game: ActiveGame) => PlayerSession[];
 	emitPresence: (game: ActiveGame) => void;
 	applyTrainingBonuses: (
@@ -71,7 +65,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		getTeamSquad,
 		simulateExtraTime,
 		simulatePenaltyShootout,
-		pickRefereeSummary,
 		getPlayerList,
 		emitPresence,
 		applyTrainingBonuses,
