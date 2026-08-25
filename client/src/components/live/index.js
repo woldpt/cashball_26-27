@@ -6,6 +6,7 @@ export {
   FLASH_COLOR,
   matchEventIcon,
   isGoalType,
+  isDrawnAt90,
   parseOdds,
   isFlashing,
   computeVirtualStandings,

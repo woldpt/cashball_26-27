@@ -3,7 +3,7 @@ import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { OddsBadge } from "../shared/OddsBadge.jsx";
 import { PreMatchIntro, KickoffBadge } from "../match/shared/index.js";
 import { TeamCrest } from "./TeamCrest.jsx";
-import { FLASH_COLOR, isFlashing, isGoalType, matchEventIcon, parseOdds } from "./liveHelpers.js";
+import { FLASH_COLOR, isFlashing, isGoalType, isDrawnAt90, matchEventIcon, parseOdds } from "./liveHelpers.js";
 
 const WEATHER_LABELS = {
   "☀️": "Sol",
@@ -78,15 +78,7 @@ export function LiveMatchHero({
   const odds = parseOdds(bettingEvt?.text);
 
   // If ET is running for other fixtures but my match was decided at 90', hide this block
-  if (isCupExtraTime) {
-    const reg90Home = matchEvents.filter(
-      (e) => e.minute <= 90 && e.type === "goal" && e.team === "home",
-    ).length;
-    const reg90Away = matchEvents.filter(
-      (e) => e.minute <= 90 && e.type === "goal" && e.team === "away",
-    ).length;
-    if (reg90Home !== reg90Away) return null;
-  }
+  if (isCupExtraTime && !isDrawnAt90(myMatch)) return null;
 
   const homeGoals = matchEvents.filter(
     (e) => e.minute <= liveMinute && isGoalType(e.type) && e.team === "home",

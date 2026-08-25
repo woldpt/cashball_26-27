@@ -37,6 +37,24 @@ export function isGoalType(type) {
   return type === "goal" || type === "penalty_goal" || type === "var_goal_pending";
 }
 
+/**
+ * True se um jogo estava empatado aos 90' (logo, foi a prolongamento).
+ * Conta golos REGULAMENTARES (minute <= 90) com o MESMO critério do placar
+ * (`isGoalType`), que inclui `penalty_goal` — penáltis também incrementam o
+ * resultado real (finalHomeGoals/finalAwayGoals). Um filtro que contasse só
+ * `type === "goal"` fazia jogos decididos na regulamentação por penáltis
+ * (ex.: 1-0 de penálti) aparecerem na lista de jogos do prolongamento.
+ */
+export function isDrawnAt90(match) {
+  const goals90Home = (match?.events || []).filter(
+    (e) => e.minute <= 90 && isGoalType(e.type) && e.team === "home",
+  ).length;
+  const goals90Away = (match?.events || []).filter(
+    (e) => e.minute <= 90 && isGoalType(e.type) && e.team === "away",
+  ).length;
+  return goals90Home === goals90Away;
+}
+
 /** Extrai [home, draw, away] das odds de um texto de evento de apostas. */
 export function parseOdds(text) {
   if (!text) return null;

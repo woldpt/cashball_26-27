@@ -21,6 +21,7 @@ import {
   LiveMatchHero,
   LiveFixtureRow,
   LiveStandingsPanel,
+  isDrawnAt90,
 } from "./components/live/index.js";
 
 import { GameDialog } from "./components/shared/GameDialog.jsx";
@@ -1225,19 +1226,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                               .filter((m) => {
                                 // After 90', only show games still in extra time (score tied at 90)
                                 if (liveMinute <= 90) return true;
-                                const goals90Home = (m.events || []).filter(
-                                  (e) =>
-                                    e.minute <= 90 &&
-                                    e.type === "goal" &&
-                                    e.team === "home",
-                                ).length;
-                                const goals90Away = (m.events || []).filter(
-                                  (e) =>
-                                    e.minute <= 90 &&
-                                    e.type === "goal" &&
-                                    e.team === "away",
-                                ).length;
-                                return goals90Home === goals90Away;
+                                return isDrawnAt90(m);
                               })
                               .sort(sortHumanFirst)
                               .map((match, idx) => (
