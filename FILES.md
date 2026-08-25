@@ -316,7 +316,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `server/auctionHelpers.ts` | Lógica de leilões (lances, NPCs). |
 | `server/coachDismissalHelpers.ts` | Demissão de treinadores. |
 | `server/contractHelpers.ts` | Contratos (renovação, salários, agentes). |
-| `server/cupFlowHelpers.ts` | Fluxo da Taça (sorteio, rondas, final). |
+| `server/cupFlowHelpers.ts` | Fluxo da Taça (sorteio, rondas, final, ET, penalties, season end). ✅ Auditado |
 | `server/matchFlowHelpers.ts` | Fluxo do jogo (fases, simulação). |
 | `server/matchSummaryHelpers.ts` | Resumo pós-jogo (táctica, lotação, odds). |
 | `server/npcTransferHelpers.ts` | Transferências de NPCs. |
