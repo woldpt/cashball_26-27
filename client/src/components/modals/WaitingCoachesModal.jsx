@@ -25,6 +25,8 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
     roomMessages,
     chatInput,
     setChatInput,
+    isCupMatch,
+    myTeamInCup,
   } = useGame();
   const chatScrollRef = useRef(null);
 
@@ -96,6 +98,13 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
   const readyCount = coaches.filter((c) => c.status === "ready").length;
   const totalHuman = coaches.length;
   const allReady = readyCount === totalHuman;
+
+  // Espectadores da Taça (equipa eliminada / fora do jogo) são auto-ready pelo
+  // cliente para não bloquearem o servidor. Não podem cancelar o ready: não têm
+  // táctica a refazer e o cancelamento ficaria a bloquear o avanço do jogo para
+  // os coaches em jogo. Por isso o botão "Cancelar e refazer táctica" fica
+  // substituído por um indicador de observação.
+  const isCupSpectator = isCupMatch && !myTeamInCup;
 
   const STATUS_MAP = {
     ready: { label: "Ready ✅", dot: "bg-emerald-400", text: "text-emerald-400" },
@@ -302,12 +311,18 @@ export function WaitingCoachesModal({ players, visible, onCancel }) {
                   ? "Todos prontos! O jogo vai começar..."
                   : "O jogo começa quando todos estiverem Ready."}
               </p>
-              <button
-                onClick={onCancel}
-                className="w-full py-2.5 text-[10px] font-black uppercase tracking-widest rounded-md bg-surface-container-high text-on-surface-variant/70 hover:bg-surface-bright hover:text-on-surface active:scale-[0.97] transition-all"
-              >
-                ✕ Cancelar e refazer táctica
-              </button>
+              {isCupSpectator ? (
+                <div className="w-full py-2.5 text-center text-[10px] font-black uppercase tracking-widest text-on-surface-variant/50 bg-surface-container-high/40 border border-outline-variant/10 rounded-md">
+                  👁 A observar o jogo
+                </div>
+              ) : (
+                <button
+                  onClick={onCancel}
+                  className="w-full py-2.5 text-[10px] font-black uppercase tracking-widest rounded-md bg-surface-container-high text-on-surface-variant/70 hover:bg-surface-bright hover:text-on-surface active:scale-[0.97] transition-all"
+                >
+                  ✕ Cancelar e refazer táctica
+                </button>
+              )}
             </div>
           </motion.div>
     </ModalShell>
