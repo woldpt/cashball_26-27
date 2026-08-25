@@ -63,13 +63,6 @@ function bonusForStars(stars: number): number {
 }
 
 /**
- * Inicializa o estado de familiaridade no objecto de jogo.
- */
-export function initTacticFamiliarity(game: ActiveGame): void {
-  game.tacticFamiliarity = game.tacticFamiliarity || {};
-}
-
-/**
  * Regista a formação usada num jogo (liga ou Taça): +1 estrela para essa
  * formação, mantendo a janela das últimas 5 formações.
  * Síncrono; apenas altera o estado em memória do jogo.
@@ -164,6 +157,7 @@ export function migrateTacticFamiliarityFromHistory(
   history: Array<{ team_id: number; formation: string }>,
 ): void {
   if (!history?.length) return;
+  if (!game.tacticFamiliarity) game.tacticFamiliarity = {};
   const byTeam: Record<number, string[]> = {};
   for (const row of history) {
     if (!row?.formation) continue;
