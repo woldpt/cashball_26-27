@@ -1,20 +1,30 @@
 import { useState } from "react";
 import { POS_BAR } from "./positionConstants.js";
+import {
+  buildSkillChartPoints,
+  skillLabel,
+} from "../../utils/skillHistory.js";
 
 /**
  * Gráfico de linhas mostrando a evolução da skill do jogador.
  * O número de pontos no gráfico depende dos dados disponíveis.
  * O eixo Y é dinâmico (mín/máx dos dados) para tornar a evolução legível.
- * @param {{ skillHistory: Array<{matchweek: number, skill: number}>, skill: number, position: string }} props
+ *
+ * `matchweek` é POR ÉPOCA (1..14). Usamos o epoch global
+ * (season-1)*14+matchweek para ordenar e posicionar o eixo X — caso
+ * contrário, em jogos com várias épocas, os pontos da época actual colidem
+ * nos mesmos X da época 1 (linha em zigzag, últimos registos invisíveis).
+ *
+ * @param {{ skillHistory: Array<{matchweek: number, season?: number, skill: number}>, skill: number, position: string }} props
  */
 export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" }) {
   const barColor = POS_BAR[position] || "#eab308";
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
-  // Ordenar e filtrar dados válidos
-  const cleanHistory = skillHistory
-    .filter((p) => p.skill != null)
-    .sort((a, b) => a.matchweek - b.matchweek);
+  // Ordenar cronologicamente por epoch global (preserva a época) e filtrar
+  // dados válidos. Pontos sem `season` são tratados como época 1 (legado).
+  const cleanHistory = buildSkillChartPoints(skillHistory);
+  const multiSeason = cleanHistory.some((p) => p.season > 1);
 
   // Sem dados suficientes — mostrar estado mínimo
   if (cleanHistory.length === 0) {
@@ -43,10 +53,16 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
   }
 
   const pointCount = cleanHistory.length;
-  // Use actual data range for X axis; pad minimally to avoid edge clipping
-  const firstMW = cleanHistory[0].matchweek;
-  const lastMW = cleanHistory[pointCount - 1].matchweek;
-  const mwRange = Math.max(lastMW - firstMW, 1);
+  // Use actual data range for X axis; pad minimally to avoid edge clipping.
+  // O eixo X é baseado no EPOCH global, não no matchweek por época.
+  const firstEpoch = cleanHistory[0].epoch;
+  const lastEpoch = cleanHistory[pointCount - 1].epoch;
+  const epochRange = Math.max(lastEpoch - firstEpoch, 1);
+
+  // Rótulos do eixo X — com muitas épocas, espaçar para não sobreporem
+  // ("2027·J14" é mais largo que "J14"). 1 época ⇒ todos os rótulos (como antes).
+  const maxXLabels = multiSeason ? 8 : pointCount;
+  const xLabelStep = Math.max(1, Math.ceil(pointCount / maxXLabels));
 
   // ── Eixo Y dinâmico (mín/máx dos dados + skill atual) ──
   const rawValues = cleanHistory
@@ -80,7 +96,7 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
   const graphWidth = chartWidth - padding * 2;
   const graphHeight = chartHeight - padding * 2;
 
-  const getX = (mw) => padding + ((mw - firstMW) / mwRange) * graphWidth;
+  const getX = (epoch) => padding + ((epoch - firstEpoch) / epochRange) * graphWidth;
   const getY = (skillValue) =>
     padding + graphHeight - ((skillValue - axisMin) / axisSpan) * graphHeight;
 
@@ -88,7 +104,7 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
   let pathD = "";
 
   cleanHistory.forEach((point, i) => {
-    const x = getX(point.matchweek);
+    const x = getX(point.epoch);
     const y = getY(point.skill);
     if (i === 0) {
       pathD = `M ${x} ${y}`;
@@ -102,7 +118,7 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
   const hovered = hoveredIdx != null ? cleanHistory[hoveredIdx] : null;
 
   // Posição do tooltip em % do viewBox para funcionar com width="100%"
-  const hoveredX = hovered ? (getX(hovered.matchweek) / chartWidth) * 100 : 0;
+  const hoveredX = hovered ? (getX(hovered.epoch) / chartWidth) * 100 : 0;
   const hoveredY = hovered ? (getY(hovered.skill) / chartHeight) * 100 : 0;
   // Se o ponto estiver perto do topo, mostra o tooltip por baixo
   const tooltipBelow = hovered ? getY(hovered.skill) < 34 : false;
@@ -146,19 +162,23 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
               </g>
             ))}
 
-            {/* X-axis labels — show actual matchweek numbers */}
-            {cleanHistory.map((p) => (
-              <text
-                key={p.matchweek}
-                x={getX(p.matchweek)}
-                y={chartHeight - 4}
-                textAnchor="middle"
-                fontSize="6"
-                fill="#888"
-              >
-                J{p.matchweek}
-              </text>
-            ))}
+            {/* X-axis labels — show actual matchweek numbers (epoch key avoids
+                duplicate React keys when matchweeks repeat across seasons) */}
+            {cleanHistory.map((p, i) => {
+              if (i % xLabelStep !== 0 && i !== pointCount - 1) return null;
+              return (
+                <text
+                  key={`xlabel-${p.epoch}`}
+                  x={getX(p.epoch)}
+                  y={chartHeight - 4}
+                  textAnchor="middle"
+                  fontSize="6"
+                  fill="#888"
+                >
+                  {skillLabel(p, multiSeason)}
+                </text>
+              );
+            })}
 
             {/* Skill line */}
             {pathD && (
@@ -175,12 +195,12 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
             {/* Points */}
             {cleanHistory.map((point, i) => {
               const isLast = i === lastIdx;
-              const cx = getX(point.matchweek);
+              const cx = getX(point.epoch);
               const cy = getY(point.skill);
               const isHovered = hoveredIdx === i;
 
               return (
-                <g key={`${point.matchweek}-${i}`}>
+                <g key={`${point.epoch}-${i}`}>
                   <circle
                     cx={cx}
                     cy={cy}
@@ -221,7 +241,7 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
               }}
             >
               <div className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant whitespace-nowrap">
-                J{hovered.matchweek}
+                {skillLabel(hovered, multiSeason)}
               </div>
               <div className="text-xs font-black font-headline leading-none mt-0.5 tabular-nums" style={{ color: barColor }}>
                 {hovered.skill}

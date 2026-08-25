@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "check:types": "node scripts/jsDocTypeChecker.cjs",
     "test:calendarsquad": "node scripts/teamSquadCalendarRegression.mjs",
-    "test:cupetlist": "node scripts/cupEtListRegression.mjs"
+    "test:cupetlist": "node scripts/cupEtListRegression.mjs",
+    "test:skillhistory": "node scripts/skillHistoryRegression.mjs"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "^1.4.0",

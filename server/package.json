@@ -17,7 +17,8 @@
     "repair:joboffer": "tsx scripts/repairDuplicateJobOffer.ts",
     "test:training-report": "tsx scripts/trainingReportRegression.mts",
     "test:contractyear": "tsx scripts/contractYearRegression.mts",
-    "test:contractrenewal": "tsx scripts/contractRenewalRegression.mts"
+    "test:contractrenewal": "tsx scripts/contractRenewalRegression.mts",
+    "test:skillhistory": "tsx scripts/skillHistoryRegression.mts"
   },
   "keywords": [],
   "author": "",

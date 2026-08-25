@@ -87,6 +87,38 @@ export function isContractLocked(
 }
 
 /**
+ * Constrói o histórico de skill a partir dos snapshots (player_skill_snapshots)
+ * e anexa o valor actual, preservando SEMPRE a época.
+ *
+ * O `matchweek` dos snapshots é por época (1..14 em cada época). Descartar a
+ * `season` fazia os pontos da época actual colidirem nos mesmos X da época 1
+ * no gráfico (linha em zigzag / últimos registos invisíveis).
+ */
+export function buildSkillHistory(
+  snapshots: Array<{ matchweek: number; season: number; skill: number }>,
+  current: { matchweek: number; season: number; skill: number },
+): Array<{ matchweek: number; season: number; skill: number }> {
+  const history = snapshots.map((r) => ({
+    matchweek: r.matchweek,
+    season: r.season,
+    skill: r.skill,
+  }));
+  const lastSnap = history.length > 0 ? history[history.length - 1] : null;
+  const isDuplicate =
+    !!lastSnap &&
+    lastSnap.season === current.season &&
+    lastSnap.matchweek === current.matchweek;
+  if (!isDuplicate) {
+    history.push({
+      matchweek: current.matchweek,
+      season: current.season,
+      skill: current.skill,
+    });
+  }
+  return history;
+}
+
+/**
  * Jornada e época (season-relative) em que um contrato termina, derivadas do
  * epoch absoluto. Usado em mensagens e badges.
  */

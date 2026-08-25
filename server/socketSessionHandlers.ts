@@ -1,5 +1,5 @@
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
-import { getAllTeamForms, getTeamsWithCoachNames } from "./coreHelpers";
+import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory } from "./coreHelpers";
 import { SPONSOR_REVENUE_BY_DIVISION } from "./gameConstants";
 import { getGlobalMessages } from "./db/globalDatabase";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
@@ -998,30 +998,40 @@ export function registerSessionSocketHandlers(
 				);
 
 				// Skill history — from player_skill_snapshots table
-				const skillRows = await runAll(
+				const skillRows = await runAll<{ matchweek: number; season: number; skill: number }>(
 					game.db,
 					`SELECT matchweek, season, skill FROM player_skill_snapshots
 					 WHERE player_id = ?
 					 ORDER BY season ASC, matchweek ASC`,
 					[playerId],
 				);
-				const currentMw = game.matchweek || game.calendarIndex || 0;
-				const skillHistory: Array<{ matchweek: number; skill: number }> = (
-					skillRows || []
-				).map((r) => ({ matchweek: r.matchweek, skill: r.skill }));
 
-				// Always append current skill to ensure the chart shows latest value
+				// Always append current skill to ensure the chart shows latest value.
+				// buildSkillHistory preserves `season` (matchweek is per-season 1..14;
+				// without season, multi-season charts collapse all seasons onto the
+				// same X positions — latest records become invisible).
 				const playerRow = await runGet(
 					game.db,
 					`SELECT skill FROM players WHERE id = ?`,
 					[playerId],
 				);
+				let skillHistory: Array<{
+					matchweek: number;
+					season: number;
+					skill: number;
+				}> = [];
 				if (playerRow && playerRow.skill != null) {
-					const lastSnap =
-						skillHistory.length > 0 ? skillHistory[skillHistory.length - 1] : null;
-					if (!lastSnap || lastSnap.matchweek !== currentMw) {
-						skillHistory.push({ matchweek: currentMw, skill: playerRow.skill });
-					}
+					skillHistory = buildSkillHistory(skillRows || [], {
+						matchweek: game.matchweek || 1,
+						season: game.season || 1,
+						skill: playerRow.skill,
+					});
+				} else {
+					skillHistory = (skillRows || []).map((r) => ({
+						matchweek: r.matchweek,
+						season: r.season,
+						skill: r.skill,
+					}));
 				}
 
 				socket.emit("playerHistoryData", {
