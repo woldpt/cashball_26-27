@@ -14,7 +14,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `STYLE.md` | Design system e diretrizes de estilo visual (tokens, tipografia, cards, badges). |
 | `.skillsrc` | Referência rápida (fonte) dos skills de auditoria/validação. |
 | `block.txt` | Fragmento de código (snippet do `LandingPage` no `App.jsx`). |
-| `docker-compose.yml` | Orquestração de containers (Frontend + Backend + DB). |
+| `docker-compose.yml` | Orquestração de containers (Frontend + Backend + DB). ✅ Auditado |
 | `package.json` | Workspace raiz (deps: pi-lens, MCP SDK, rpiv-btw). |
 | `package-lock.json` | Lockfile do workspace raiz. |
 | `.gitignore` | Ficheiros ignorados pelo git. |
