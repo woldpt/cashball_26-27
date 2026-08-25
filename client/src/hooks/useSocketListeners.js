@@ -1325,17 +1325,6 @@ export function useSocketListeners(handlers, refs) {
 			if (!inRoom()) return;
 			handlers.setIsMatchActionPending(false);
 			handlers.setMatchAction(null);
-			const myTeamId = refs.meRef.current?.teamId;
-			const myDivision = refs.teamsRef.current.find(
-				(t) => t.id === myTeamId,
-			)?.division;
-			for (const r of data.results || []) {
-				const homeDiv = refs.teamsRef.current.find(
-					(t) => t.id === r.homeTeamId,
-				)?.division;
-				if (myDivision && homeDiv !== myDivision) continue;
-	
-				}
 			handlers.setMatchResults(data);
 			handlers.setMatchweekCount(data.matchweek);
 			// As classificações do cliente ficam desatualizadas até o servidor
@@ -1510,6 +1499,7 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("cupSecondHalfStart");
 			socket.off("cupPenaltyShootout");
 			socket.off("palmaresData");
+			socket.off("clubHistoryData");
 			socket.off("clubNewsData");
 			socket.off("clubNewsUpdated");
 			socket.off("playerHistoryData");
@@ -1531,6 +1521,8 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("roomLocked");
 			socket.off("awaitingCoaches");
 			socket.off("gameState");
+			socket.off("tacticFamiliarity");
+			socket.off("allTacticFamiliarity");
 			socket.off("coachDismissed");
 			socket.off("coachMarketReport");
 			socket.off("jobOffer");
