@@ -2,7 +2,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { socket } from "./socket.js";
 import { useGame } from "./contexts/GameContext.jsx";
 import { useTactics } from "./contexts/TacticsContext.jsx";
-import { PlayerLink } from "./components/shared/PlayerLink.jsx";
 import { PlayerAvatar } from "./components/shared/PlayerAvatar.jsx";
 import { WelcomeModal } from "./components/modals/WelcomeModal.jsx";
 import { DismissalModal } from "./components/modals/DismissalModal.jsx";
