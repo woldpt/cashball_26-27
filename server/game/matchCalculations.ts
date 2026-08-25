@@ -1,6 +1,6 @@
 // ── Match calculation utilities extracted from engine.ts ──────────────────────
 
-import { pickBestPlayer, withJuniorGRs, ensureFullBench } from "./playerUtils";
+import { pickBestPlayer, withJuniorGRs, ensureFullBench, isPlayerAvailable } from "./playerUtils";
 
 type PlayerRow = any;
 
@@ -137,7 +137,10 @@ export async function generateAITactic(
         // Seleccionar os 11 melhores jogadores por formação e marcar como Titular
         const w = FORMATION_WEIGHTS[bestFormation];
         const pickBest = (pool: PlayerRow[], n: number): PlayerRow[] =>
-          [...pool].sort((a, b) => (b.skill || 0) - (a.skill || 0)).slice(0, n);
+          [...pool]
+            .filter((p) => isPlayerAvailable(p, matchweek))
+            .sort((a, b) => (b.skill || 0) - (a.skill || 0))
+            .slice(0, n);
 
         const grs = pickBest(selfRows.filter((p) => p.position === "GR"), w.GR);
         const defs = pickBest(selfRows.filter((p) => p.position === "DEF"), w.DEF);
@@ -152,7 +155,9 @@ export async function generateAITactic(
         }
 
         // Banco: máx 5 (1 GR suplente + 4 de campo) — igual ao auto-builder humano
-        const nonStarters = selfRows.filter((p) => !starterIds.has(p.id));
+        const nonStarters = selfRows.filter(
+          (p) => !starterIds.has(p.id) && isPlayerAvailable(p, matchweek),
+        );
         const grBench = nonStarters
           .filter((p) => p.position === "GR")
           .sort((a, b) => (b.skill || 0) - (a.skill || 0))
