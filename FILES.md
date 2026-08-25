@@ -15,7 +15,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `.skillsrc` | Referência rápida (fonte) dos skills de auditoria/validação. |
 | `block.txt` | Fragmento de código (snippet do `LandingPage` no `App.jsx`). |
 | `docker-compose.yml` | Orquestração de containers (Frontend + Backend + DB). ✅ Auditado |
-| `package.json` | Workspace raiz (deps: pi-lens, MCP SDK, rpiv-btw). |
+| `package.json` | Workspace raiz (deps: pi-lens, MCP SDK, rpiv-btw). ✅ Auditado |
 | `package-lock.json` | Lockfile do workspace raiz. |
 | `.gitignore` | Ficheiros ignorados pelo git. |
 
@@ -42,7 +42,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `client/.gitignore` | Ignora artefactos do client. |
 | `client/eslint.config.js` | Configuração do ESLint. ✅ Auditado |
 | `client/index.html` | HTML de entrada do Vite. ✅ Auditado |
-| `client/package.json` | Deps e scripts do frontend (Vite/React). |
+| `client/package.json` | Deps e scripts do frontend (Vite/React). ✅ Auditado |
 | `client/package-lock.json` | Lockfile do frontend. |
 | `client/vite.config.js` | Configuração do Vite. ✅ Auditado |
 
@@ -274,7 +274,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `server/entrypoint.sh` | Entrypoint do container (re-seed automático via `ensureSeeded.js`). |
 | `server/.env` | Variáveis de ambiente (local). |
 | `server/.env.example` | Exemplo de variáveis de ambiente. |
-| `server/package.json` | Deps e scripts do backend (dev, build, seed, auditorias). |
+| `server/package.json` | Deps e scripts do backend (dev, build, seed, auditorias). ✅ Auditado |
 | `server/package-lock.json` | Lockfile do backend. |
 | `server/tsconfig.json` | Configuração do TypeScript. |
 
