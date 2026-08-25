@@ -269,7 +269,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 ### Configuração & Build
 | Ficheiro | Função principal |
 | :--- | :--- |
-| `server/Dockerfile` | Imagem do backend. |
+| `server/Dockerfile` | Imagem do backend. ✅ Auditado |
 | `server/.dockerignore` | Ignora artefactos no Docker. |
 | `server/entrypoint.sh` | Entrypoint do container (re-seed automático via `ensureSeeded.js`). |
 | `server/.env` | Variáveis de ambiente (local). |
