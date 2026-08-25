@@ -968,8 +968,6 @@ export function GameProvider({
 	}, []);
 
 	// ── Derived values ──────────────────────────────────────────────────────
-	const isMatchInProgress_ = isMatchInProgress;
-
 	const teamInfo = useMemo(
 		() => teams.find((t) => t.id == me?.teamId),
 		[teams, me?.teamId],
@@ -1180,6 +1178,27 @@ export function GameProvider({
 		setGameDialog(null);
 		setUnreadRoom(0);
 		setUnreadGlobal(0);
+		setSubstitutionPause(null);
+		setTransferProposalModal(null);
+		setSigningCelebration(null);
+		setPostMatchMood(null);
+		setShowTransferSales(false);
+		setShowTransferPurchases(false);
+		setShowTicketBreakdown(false);
+		setCoachMarketReport(null);
+		setPlayerHistoryModal(null);
+		setPlayerSearchData({ results: [], total: 0, truncated: false });
+		setPlayerSearchLoading(false);
+		setPendingCupRoundResults(null);
+		setTacticFamiliarity(null);
+		setAllTacticFamiliarity({});
+		setSeason(1);
+		setCalendarIndex(0);
+		setCupResultsFilter("all");
+		setCupDrawRevealIdx(0);
+		setCupPenaltyKickIdx(0);
+		setChatInput("");
+		setMobileSubMenu(null);
 	}, []);
 
 	// ── Context value ────────────────────────────────────────────────────────
@@ -1381,7 +1400,7 @@ export function GameProvider({
 		openAuctionBid,
 		resetGameState,
 		// Derived
-		isMatchInProgress: isMatchInProgress_,
+		isMatchInProgress,
 		teamInfo,
 		myMatch,
 		mySideInHalftime,
