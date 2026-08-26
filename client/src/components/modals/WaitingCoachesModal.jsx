@@ -232,17 +232,17 @@ export function WaitingCoachesModal({
             </div>
 
             {/* Chat rápido da sala */}
-            <div className="bg-surface-container-high border-t border-outline-variant/15 md:border-t-0 md:border-l md:w-72 md:shrink-0 md:flex md:flex-col">
+            <div className="bg-surface-container-high border-t border-outline-variant/15 md:border-t-0 md:border-l md:w-72 md:shrink-0 md:flex md:flex-col md:max-h-[60vh] md:overflow-hidden">
               <div className="flex items-center gap-1.5 px-4 pt-2 pb-1 md:shrink-0">
                 <span className="text-xs">💬</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
                   Chat da sala
                 </span>
               </div>
-              <div className="px-3 pb-1 md:flex-1 md:flex md:flex-col">
+              <div className="px-3 pb-1 md:flex-1 md:flex md:flex-col md:min-h-0">
                 <div
                   ref={chatScrollRef}
-                  className="h-40 md:h-auto md:flex-1 overflow-y-auto space-y-2 px-1"
+                  className="h-40 md:h-auto md:flex-1 md:min-h-0 overflow-y-auto space-y-2 px-1"
                   style={{ scrollBehavior: "smooth" }}
                 >
                   {roomMessages.length === 0 ? (
