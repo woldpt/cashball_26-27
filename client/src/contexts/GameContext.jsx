@@ -17,6 +17,11 @@ import {
 } from "../constants/index.js";
 import { isPlayerAvailable } from "../utils/playerHelpers.js";
 import {
+	computeNavigateTabAction,
+	computeOpenSquadHistoryAction,
+	computePopStateAction,
+} from "../utils/squadNavigation.js";
+import {
 	playNotification,
 	playGoalSound,
 	playVarSound,
@@ -774,6 +779,12 @@ export function GameProvider({
 		socket.emit("setReady", true);
 	}, []);
 
+	const closeSquadState = useCallback(() => {
+		setSelectedTeam(null);
+		setSelectedTeamSquad([]);
+		setSelectedTeamLoading(false);
+	}, []);
+
 	const handleOpenTeamSquad = useCallback((team) => {
 		if (!team) return;
 		if (activeTabRef.current !== "squad") {
@@ -782,8 +793,20 @@ export function GameProvider({
 		// Cada equipa aberta empurra um novo entry no histórico do browser, de
 		// modo que a pilha de navegação espelha a cadeia de equipas (A → B → C).
 		// Assim o "Voltar" (e o back do browser) regressam à equipa anterior,
-		// em vez de fechar o plantel inteiro e saltar níveis.
-		window.history.pushState({ teamSquad: true, teamId: team.id }, "");
+		// em vez de fechar o plantel inteiro e saltar níveis. Quando se abre a
+		// partir de um separador normal e um entry { teamSquad } obsoleto ficou
+		// no topo (ex.: saiu-se do plantel pela sidebar ou a app mudou de tab a
+		// meio), substitui-se esse entry em vez de empilhar lixo.
+		const historyAction = computeOpenSquadHistoryAction({
+			activeTab: activeTabRef.current,
+			historyState: window.history.state,
+			teamId: team.id,
+		});
+		if (historyAction.useReplace) {
+			window.history.replaceState(historyAction.state, "");
+		} else {
+			window.history.pushState(historyAction.state, "");
+		}
 		setActiveTab("squad");
 		setSelectedTeam(team);
 		setSelectedTeamSquad([]);
@@ -800,26 +823,49 @@ export function GameProvider({
 	}, []);
 
 	const handleCloseTeamSquad = useCallback(() => {
-		const closeSquad = () => {
-			setSelectedTeam(null);
-			setSelectedTeamSquad([]);
-			setSelectedTeamLoading(false);
-			setActiveTab(teamSquadReturnTabRef.current);
-		};
 		if (window.history.state?.teamSquad) {
 			window.history.back();
 		} else {
-			closeSquad();
+			closeSquadState();
+			setActiveTab(teamSquadReturnTabRef.current);
 		}
-	}, []);
+	}, [closeSquadState]);
+
+	/**
+	 * Troca de separador a partir da UI (sidebar, nav móvel, JOGAR, ...). Se o
+	 * utilizador estiver dentro do plantel de OUTRA equipa, sai desse modo e
+	 * anula o entry { teamSquad } no topo do histórico — senão o "Voltar"
+	 * (botão ← do modal de historial de jogador ou back do browser) voltaria
+	 * a abrir a última equipa visualizada, em vez de ficar no separador atual.
+	 */
+	const navigateTab = useCallback(
+		(key) => {
+			const action = computeNavigateTabAction({
+				activeTab: activeTabRef.current,
+				historyState: window.history.state,
+			});
+			if (action.closeSquad) {
+				closeSquadState();
+				if (action.neutralizeHistory) {
+					window.history.replaceState({ tab: key }, "");
+				}
+			}
+			setActiveTab(key);
+		},
+		[closeSquadState],
+	);
 
 	useEffect(() => {
 		const onPopState = () => {
-			const state = window.history.state;
-			if (state?.teamSquad) {
+			const action = computePopStateAction({
+				state: window.history.state,
+				activeTab: activeTabRef.current,
+				selectedTeam: selectedTeamRef.current,
+			});
+			if (action.type === "restore") {
 				// A regressar a uma equipa anterior da cadeia (A → B → C, back → B).
 				const team = (teamsRef.current || []).find(
-					(t) => t.id === state.teamId,
+					(t) => t.id === action.teamId,
 				);
 				if (team) {
 					setSelectedTeam(team);
@@ -830,13 +876,15 @@ export function GameProvider({
 					socket.emit("requestClubHistory", { teamId: team.id });
 					setActiveTab("squad");
 				}
-			} else if (selectedTeamRef.current) {
+			} else if (action.type === "exit") {
 				// Sair do plantel por completo.
 				setSelectedTeam(null);
 				setSelectedTeamSquad([]);
 				setSelectedTeamLoading(false);
 				setActiveTab(teamSquadReturnTabRef.current);
 			}
+			// "ignore": entry obsoleto do histórico — o utilizador já está noutro
+			// separador, o back não repõe uma equipa antiga.
 		};
 		window.addEventListener("popstate", onPopState);
 		return () => window.removeEventListener("popstate", onPopState);
@@ -1235,6 +1283,7 @@ export function GameProvider({
 		seasonYear,
 		activeTab,
 		setActiveTab,
+		navigateTab,
 		topScorers,
 		standingsStale,
 		marketPairs,

@@ -68,7 +68,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     season,
     seasonYear,
     activeTab,
-    setActiveTab,
     topScorers,
     standingsStale,
     prevStandings,
@@ -171,6 +170,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     handleHalftimeReady,
     handleOpenTeamSquad,
     handleCloseTeamSquad,
+    navigateTab,
     handleResolveMatchAction,
     handleCloseMatch,
     buyPlayer,
@@ -486,7 +486,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     <button
                       onClick={() => {
                         setUserDropdownOpen(false);
-                        setActiveTab("user_settings");
+                        navigateTab("user_settings");
                         window.scrollTo(0, 0);
                       }}
                       className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-on-surface hover:bg-surface-bright transition-colors text-left"
@@ -613,7 +613,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 }}
                 onClick={() => {
                   if (isMatchInProgress) return;
-                  setActiveTab(key);
+                  navigateTab(key);
                   if (key === "bracket") socket.emit("requestCupBracket");
                   window.scrollTo(0, 0);
                 }}
@@ -662,7 +662,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           <button
             onClick={() => {
               if (isMatchInProgress) return;
-              setActiveTab("tactic");
+              navigateTab("tactic");
               window.scrollTo(0, 0);
               if (socket && teamInfo?.id && tactic) {
                 socket.emit("requestTacticFamiliarity", teamInfo.id);
@@ -770,7 +770,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       <button
                         key={key}
                         onClick={() => {
-                          setActiveTab(key);
+                          navigateTab(key);
                           setMobileSubMenu(null);
                           window.scrollTo(0, 0);
                         }}
@@ -800,7 +800,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       <button
                         key={key}
                         onClick={() => {
-                          setActiveTab(key);
+                          navigateTab(key);
                           setMobileSubMenu(null);
                           window.scrollTo(0, 0);
                         }}
@@ -842,7 +842,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       <button
                         key={key}
                         onClick={() => {
-                          setActiveTab(key);
+                          navigateTab(key);
                           if (key === "bracket")
                             socket.emit("requestCupBracket");
                           setMobileSubMenu(null);
@@ -877,7 +877,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 <motion.button
                   whileTap={{ scale: 0.88 }}
                   onClick={() => {
-                    setActiveTab("club");
+                    navigateTab("club");
                     setMobileSubMenu(null);
                     window.scrollTo(0, 0);
                   }}
@@ -952,7 +952,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   <motion.button
                     whileTap={{ scale: 0.9 }}
                     onClick={() => {
-                      setActiveTab("tactic");
+                      navigateTab("tactic");
                       setMobileSubMenu(null);
                       window.scrollTo(0, 0);
                       if (socket && teamInfo?.id && tactic) {
@@ -1484,7 +1484,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         backendUrl={backendUrl}
                         avatarSeed={avatarSeed}
                         onAvatarSeedChange={setAvatarSeed}
-                        onBack={() => setActiveTab("club")}
+                        onBack={() => navigateTab("club")}
                         onLogout={handleLogout}
                         onLeaveRoom={() => {
                           if (me?.roomCode) {
