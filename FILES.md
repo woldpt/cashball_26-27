@@ -79,7 +79,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `client/src/socket.js` | Cliente Socket.io (instância partilhada). ✅ Auditado |
 | `client/src/index.css` | Estilos globais (Tailwind + tokens). ✅ Auditado |
 | `client/src/countryFlags.js` | Mapeamento de bandeiras por país (emojis). ✅ Auditado |
-| `client/src/constants/index.js` | Constantes partilhadas (`SEASON_CALENDAR`, cores, tiers, etc.). |
+| `client/src/constants/index.js` | Constantes partilhadas (`SEASON_CALENDAR`, cores, tiers, etc.). ✅ Auditado |
 
 ### `client/src/contexts/`
 | Ficheiro | Função principal |
