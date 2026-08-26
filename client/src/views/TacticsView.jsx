@@ -1276,6 +1276,8 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
       })()}
 
       {/* Modal de espera multiplayer — aparece após confirmar táctica */}
+      {/* Espectador eliminado da Taça: só precisa de ficar ready para avançar;
+          cancelar bloquearia o lobby (todos os humanos têm de estar ready). */}
       <WaitingCoachesModal
         players={players}
         visible={
@@ -1285,6 +1287,7 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
           lockedCoaches.length >= 2
         }
         onCancel={handleReady}
+        canCancel={!isEliminatedCupSpectator}
       />
     </div>
   );

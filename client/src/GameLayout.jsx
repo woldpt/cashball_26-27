@@ -1596,6 +1596,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       )}
 
       {/* Modal de espera multiplayer no intervalo */}
+      {/* Espectadores da Taça (sem fixture nesta ronda → !myMatch) são auto-ready
+          ao intervalo; permitir cancelar bloquearia o jogo sem razão. */}
       <WaitingCoachesModal
         players={players}
         visible={
@@ -1605,6 +1607,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           lockedCoaches.length >= 2
         }
         onCancel={() => socket.emit("setReady", false)}
+        canCancel={!(isCupMatch && !myMatch)}
       />
 
       <DismissalModal
