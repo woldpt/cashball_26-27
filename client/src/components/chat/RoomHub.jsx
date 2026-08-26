@@ -130,6 +130,25 @@ export function RoomHub({
     });
   };
 
+  const startOfDay = (d) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+
+  const isSameDay = (aTs, bTs) => startOfDay(new Date(aTs)) === startOfDay(new Date(bTs));
+
+  const formatDay = (ts) => {
+    const d = new Date(ts);
+    const today = startOfDay(new Date());
+    const day = startOfDay(d);
+    const oneDay = 24 * 60 * 60 * 1000;
+    if (day === today) return "Hoje";
+    if (day === today - oneDay) return "Ontem";
+    // Mostrar o ano apenas se não for do ano corrente
+    const sameYear = d.getFullYear() === new Date().getFullYear();
+    return d.toLocaleDateString("pt-PT",
+      sameYear ? { day: "2-digit", month: "2-digit" } : { day: "2-digit", month: "2-digit", year: "numeric" }
+    );
+  };
+
   const getCoachStatus = (coach) => {
     if (!coach.online)
       return {
@@ -394,30 +413,41 @@ export function RoomHub({
                     : "Nenhuma mensagem global ainda."}
                 </p>
               ) : (
-                activeMessages.map((msg) => {
+                activeMessages.map((msg, i) => {
                   const isOwn = msg.coachName === me.name;
+                  const prev = activeMessages[i - 1];
+                  const isNewDay =
+                    !prev || !isSameDay(prev.timestamp, msg.timestamp);
                   return (
-                    <div
-                      key={msg.id}
-                      className={`flex flex-col gap-0.5 ${isOwn ? "items-end" : "items-start"}`}
-                    >
-                      {!isOwn && (
-                        <span className="text-[10px] text-on-surface-variant font-semibold px-1">
-                          {msg.coachName}
-                        </span>
+                    <div key={msg.id} className="flex flex-col gap-0.5">
+                      {isNewDay && (
+                        <div className="flex justify-center py-2">
+                          <span className="px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-surface-container text-on-surface-variant truncate max-w-full">
+                            {formatDay(msg.timestamp)}
+                          </span>
+                        </div>
                       )}
                       <div
-                        className={`max-w-[80%] px-3 py-1.5 rounded-xl text-sm leading-snug ${
-                          isOwn
-                            ? "bg-primary text-on-primary rounded-br-sm"
-                            : "bg-surface-container-high text-on-surface rounded-bl-sm"
-                        }`}
+                        className={`flex flex-col gap-0.5 ${isOwn ? "items-end" : "items-start"}`}
                       >
-                        {msg.message}
+                        {!isOwn && (
+                          <span className="text-[10px] text-on-surface-variant font-semibold px-1">
+                            {msg.coachName}
+                          </span>
+                        )}
+                        <div
+                          className={`max-w-[80%] px-3 py-1.5 rounded-xl text-sm leading-snug ${
+                            isOwn
+                              ? "bg-primary text-on-primary rounded-br-sm"
+                              : "bg-surface-container-high text-on-surface rounded-bl-sm"
+                          }`}
+                        >
+                          {msg.message}
+                        </div>
+                        <span className="text-[9px] text-on-surface-variant px-1">
+                          {formatChatTime(msg.timestamp)}
+                        </span>
                       </div>
-                      <span className="text-[9px] text-on-surface-variant px-1">
-                        {formatChatTime(msg.timestamp)}
-                      </span>
                     </div>
                   );
                 })
