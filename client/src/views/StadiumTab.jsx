@@ -3,13 +3,12 @@ import estadio15000 from "../assets/estadio15000.jpg";
 import estadio30000 from "../assets/estadio30000.jpg";
 import estadio50000 from "../assets/estadio50000.jpg";
 import { socket } from "../socket.js";
-import { DIVISION_NAMES } from "../constants/index.js";
+import { DIVISION_NAMES, STADIUM_EXPANSION_COST as EXPANSION_COST } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { Button } from "../components/shared/Button.jsx";
 
-const EXPANSION_COST = 300000;
 const SEATS_PER_BUILD = 5000;
 const MAX_CAPACITY = 120000;
 

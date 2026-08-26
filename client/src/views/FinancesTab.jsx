@@ -1,9 +1,19 @@
+import { useMemo } from "react";
 import { socket } from "../socket.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Button } from "../components/shared/Button.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { BalanceLineChart } from "../components/shared/BalanceLineChart.jsx";
+import {
+  LOAN_MAX,
+  LOAN_STEP,
+  LOAN_INTEREST_RATE,
+  STADIUM_EXPANSION_COST,
+  SEASON_JORNADAS,
+  SEASON_HOME_MATCHES,
+  TICKET_ESTIMATE_FACTOR,
+} from "../constants/index.js";
 
 /**
  * @param {{
@@ -43,32 +53,76 @@ export function FinancesTab({
   setShowTicketBreakdown,
   setGameDialog,
 }) {
-  const totalSeasonIncome =
-    (financeData?.totalTicketRevenue || 0) +
-    (financeData?.sponsorRevenue || 0) +
-    (financeData?.totalTransferIncome || 0);
-  const totalSeasonExpenses =
-    totalWeeklyWage * completedJornada +
-    loanInterestPerWeek * completedJornada +
-    (financeData?.totalTransferExpenses || 0) +
-    (financeData?.totalStadiumExpenses || 0);
-  const seasonResult =
-    totalSeasonIncome - totalSeasonExpenses;
-  const loanPct = Math.min(
-    100,
-    (loanAmount / 2500000) * 100,
-  );
-  const wageSharePct =
-    totalSeasonIncome > 0
-      ? Math.min(
-          100,
-          Math.round(
-            ((totalWeeklyWage * completedJornada) /
-              totalSeasonIncome) *
-              100,
-          ),
-        )
-      : 0;
+  const {
+    totalSeasonIncome,
+    totalSeasonExpenses,
+    seasonResult,
+    loanPct,
+    wageSharePct,
+  } = useMemo(() => {
+    const totalSeasonIncome =
+      (financeData?.totalTicketRevenue || 0) +
+      (financeData?.sponsorRevenue || 0) +
+      (financeData?.totalTransferIncome || 0);
+    const totalSeasonExpenses =
+      totalWeeklyWage * completedJornada +
+      loanInterestPerWeek * completedJornada +
+      (financeData?.totalTransferExpenses || 0) +
+      (financeData?.totalStadiumExpenses || 0);
+    const seasonResult = totalSeasonIncome - totalSeasonExpenses;
+    const loanPct = Math.min(100, (loanAmount / LOAN_MAX) * 100);
+    const wageSharePct =
+      totalSeasonIncome > 0
+        ? Math.min(
+            100,
+            Math.round(
+              ((totalWeeklyWage * completedJornada) / totalSeasonIncome) * 100,
+            ),
+          )
+        : 0;
+    return {
+      totalSeasonIncome,
+      totalSeasonExpenses,
+      seasonResult,
+      loanPct,
+      wageSharePct,
+    };
+  }, [
+    financeData,
+    totalWeeklyWage,
+    completedJornada,
+    loanInterestPerWeek,
+    loanAmount,
+  ]);
+
+  const projection = useMemo(() => {
+    const remainingJornadas = Math.max(0, SEASON_JORNADAS - completedJornada);
+    const remainingHomeMatches = Math.max(
+      0,
+      SEASON_HOME_MATCHES - (financeData?.homeMatchesPlayed || 0),
+    );
+    const avgTicketRevenue =
+      (financeData?.homeMatchesPlayed || 0) > 0
+        ? (financeData?.totalTicketRevenue || 0) / financeData.homeMatchesPlayed
+        : capacityRevPerGame * TICKET_ESTIMATE_FACTOR;
+    const projectedTicketRevenue = avgTicketRevenue * remainingHomeMatches;
+    const projectedSalaries = totalWeeklyWage * remainingJornadas;
+    const projectedInterest = loanInterestPerWeek * remainingJornadas;
+    const projectedEndBudget = Math.round(
+      currentBudget +
+        projectedTicketRevenue -
+        projectedSalaries -
+        projectedInterest,
+    );
+    return { remainingJornadas, projectedEndBudget };
+  }, [
+    completedJornada,
+    financeData,
+    capacityRevPerGame,
+    totalWeeklyWage,
+    loanInterestPerWeek,
+    currentBudget,
+  ]);
 
   return (
     <div className="space-y-4">
@@ -123,53 +177,26 @@ export function FinancesTab({
           </div>
         </SummaryWidget>
         {/* Saldo previsto */}
-        {(() => {
-          const remainingJornadas = Math.max(0, 14 - completedJornada);
-          const remainingHomeMatches = Math.max(
-            0,
-            7 - (financeData?.homeMatchesPlayed || 0),
-          );
-          const avgTicketRevenue =
-            (financeData?.homeMatchesPlayed || 0) > 0
-              ? (financeData?.totalTicketRevenue || 0) /
-                financeData.homeMatchesPlayed
-              : capacityRevPerGame * 0.8;
-          const projectedTicketRevenue =
-            avgTicketRevenue * remainingHomeMatches;
-          const projectedSalaries =
-            totalWeeklyWage * remainingJornadas;
-          const projectedInterest =
-            loanInterestPerWeek * remainingJornadas;
-
-          const projectedEndBudget = Math.round(
-            currentBudget +
-              projectedTicketRevenue -
-              projectedSalaries -
-              projectedInterest,
-          );
-          return (
-            <SummaryWidget
-              flat
-              label="Saldo previsto fim de época"
-              value={`${projectedEndBudget >= 0 ? "+" : ""}${formatCurrency(projectedEndBudget)}`}
-              valueClass="text-3xl font-bold"
-              valueColorClass={projectedEndBudget >= 0 ? "text-tertiary" : "text-error"}
-              className="relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none">
-                <span className="material-symbols-outlined text-8xl">
-                  savings
-                </span>
-              </div>
-              <div className="mt-6">
-                <p className="text-[10px] text-on-surface-variant uppercase mb-1">
-                  Bilheteiras previstas - salários - juros (
-                  {remainingJornadas} jornadas)
-                </p>
-              </div>
-            </SummaryWidget>
-          );
-        })()}
+        <SummaryWidget
+          flat
+          label="Saldo previsto fim de época"
+          value={`${projection.projectedEndBudget >= 0 ? "+" : ""}${formatCurrency(projection.projectedEndBudget)}`}
+          valueClass="text-3xl font-bold"
+          valueColorClass={projection.projectedEndBudget >= 0 ? "text-tertiary" : "text-error"}
+          className="relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none">
+            <span className="material-symbols-outlined text-8xl">
+              savings
+            </span>
+          </div>
+          <div className="mt-6">
+            <p className="text-[10px] text-on-surface-variant uppercase mb-1">
+              Bilheteiras previstas - salários - juros (
+              {projection.remainingJornadas} jornadas)
+            </p>
+          </div>
+        </SummaryWidget>
       </div>
 
       {/* ── EVOLUÇÃO DO SALDO ─────────────────────────────────────────── */}
@@ -238,9 +265,9 @@ export function FinancesTab({
                   (financeData.ticketBreakdown?.length || 0) > 0 && (
                     <ul className="pl-3 space-y-1 border-l-2 border-primary/20 ml-1 mt-1">
                       {financeData.ticketBreakdown.map(
-                        (t, i) => (
+                        (t) => (
                           <li
-                            key={i}
+                            key={t.matchweek}
                             className="flex justify-between items-center"
                           >
                             <div>
@@ -485,10 +512,10 @@ export function FinancesTab({
                     Obras no Estádio
                   </p>
                   <p className="text-[10px] opacity-40 uppercase">
-                    300.000€ ×{" "}
+                    {formatCurrency(STADIUM_EXPANSION_COST)} ×{" "}
                     {Math.round(
                       (financeData.totalStadiumExpenses ||
-                        0) / 300000,
+                        0) / STADIUM_EXPANSION_COST,
                     )}{" "}
                     obra(s)
                   </p>
@@ -595,7 +622,7 @@ export function FinancesTab({
               <Button
                 variant="secondary"
                 onClick={() => socket.emit("payLoan")}
-                disabled={loanAmount < 500000 || currentBudget < 500000}
+                disabled={loanAmount < LOAN_STEP || currentBudget < LOAN_STEP}
               >
                 Pagar -500K
               </Button>
@@ -605,14 +632,14 @@ export function FinancesTab({
                   setGameDialog({
                     mode: "confirm",
                     title: "Pedir Empréstimo de 500.000€",
-                    description: `Juros semanais: ${formatCurrency(Math.round((loanAmount + 500000) * 0.015))}. Dívida total após: ${formatCurrency(loanAmount + 500000)}.`,
+                    description: `Juros semanais: ${formatCurrency(Math.round((loanAmount + LOAN_STEP) * LOAN_INTEREST_RATE))}. Dívida total após: ${formatCurrency(loanAmount + LOAN_STEP)}.`,
                     confirmLabel: "Confirmar Empréstimo",
                     danger: true,
                     onConfirm: () => socket.emit("takeLoan"),
                     onCancel: () => {},
                   });
                 }}
-                disabled={loanAmount >= 2500000}
+                disabled={loanAmount >= LOAN_MAX}
                 className="bg-surface-bright hover:brightness-110 border border-outline-variant/30"
               >
                 Pedir +500K

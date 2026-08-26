@@ -428,3 +428,19 @@ export const TICKER_TEAM_COLORS = [
  * Deve espelhar AUCTION_BID_STEP no servidor (server/gameConstants.ts).
  */
 export const AUCTION_BID_STEP = 10000;
+
+// ── FINANCE / EMPRÉSTIMOS / ESTÁDIO ───────────────────────────────────────────
+/** Dívida máxima de empréstimo bancário. */
+export const LOAN_MAX = 2500000;
+/** Incremento de cada operação de empréstimo/pagamento. */
+export const LOAN_STEP = 500000;
+/** Taxa de juros semanal (por jornada) sobre a dívida. */
+export const LOAN_INTEREST_RATE = 0.015;
+/** Custo de cada obra de expansão do estádio. */
+export const STADIUM_EXPANSION_COST = 300000;
+/** Total de jornadas de liga por época. */
+export const SEASON_JORNADAS = 14;
+/** Jogos em casa por época (metade das jornadas). */
+export const SEASON_HOME_MATCHES = 7;
+/** Factor de ocupação estimado para projetar bilheteiras sem histórico. */
+export const TICKET_ESTIMATE_FACTOR = 0.8;

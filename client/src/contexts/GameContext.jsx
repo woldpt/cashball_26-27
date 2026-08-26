@@ -10,7 +10,7 @@ import {
 	startTransition,
 } from "react";
 import { socket } from "../socket";
-import { DEFAULT_TACTIC } from "../constants/index.js";
+import { DEFAULT_TACTIC, LOAN_INTEREST_RATE } from "../constants/index.js";
 import { isPlayerAvailable } from "../utils/playerHelpers.js";
 import {
 	playNotification,
@@ -1070,7 +1070,7 @@ export function GameProvider({
 	);
 	const capacityRevPerGame = (teamInfo?.stadium_capacity || 10000) * 15;
 	const loanAmount = teamInfo?.loan_amount || 0;
-	const loanInterestPerWeek = Math.round(loanAmount * 0.015);
+	const loanInterestPerWeek = Math.round(loanAmount * LOAN_INTEREST_RATE);
 	const currentBudget = teamInfo?.budget || 0;
 
 	const filteredMarketPlayers = useMemo(() => {
