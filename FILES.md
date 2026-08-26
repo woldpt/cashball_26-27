@@ -108,7 +108,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 ### `client/src/pages/`
 | Ficheiro | Função principal |
 | :--- | :--- |
-| `client/src/pages/AuctionsPage.jsx` | Página de leilões ativos e recentes. |
+| `client/src/pages/AuctionsPage.jsx` | Página de leilões ativos e recentes. ✅ Auditado |
 | `client/src/pages/UserSettingsPage.jsx` | Página de definições do utilizador. |
 
 ### `client/src/views/` (abas do jogo)
