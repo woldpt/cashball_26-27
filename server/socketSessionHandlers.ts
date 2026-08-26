@@ -610,15 +610,8 @@ export function registerSessionSocketHandlers(
 							);
 						} else {
 							// New player (no record in this room's DB).
-							// Block entry if the game has already started — prevents strangers
-							// from entering a live room just by knowing the room code.
-							if ((game.calendarIndex || 0) > 0) {
-								socket.emit(
-									"joinError",
-									"Esta sala já iniciou. Apenas os treinadores originais podem entrar.",
-								);
-								return;
-							}
+							// New human coaches can be invited (via room code) at any time,
+							// even after the game has already started.
 							game.db.run(
 								"INSERT INTO managers (name, is_human) VALUES (?, 1)",
 								[trimmedName],
