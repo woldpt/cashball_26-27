@@ -117,7 +117,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `client/src/views/BracketTab.jsx` | Aba do bracket da Taça (usa `CupBracketPage`). ✅ Auditado |
 | `client/src/views/CalendarioTab.jsx` | Aba do calendário da época (liga + taça). ✅ Auditado |
 | `client/src/views/ClubTab.jsx` | Aba do clube (estádio, infraestruturas). ✅ Auditado |
-| `client/src/views/CupTab.jsx` | Aba da Taça (resultados por ronda). |
+| `client/src/views/CupTab.jsx` | Aba da Taça (resultados por ronda). ✅ Auditado |
 | `client/src/views/FinancesTab.jsx` | Aba de finanças (orçamento, salários, receitas). |
 | `client/src/views/PlayerSearchView.jsx` | Vista de pesquisa de jogadores (Scout). |
 | `client/src/views/PlayersTab.jsx` | Aba de jogadores (referência de implementação do design system). |
