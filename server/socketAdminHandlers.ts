@@ -21,6 +21,19 @@ interface AdminHandlerDeps {
   adminRenameManager: (oldName: string, newName: string, activeGames?: Record<string, ActiveGame>) => Promise<{ ok: boolean; error?: string; warnings?: string[] }>;
   adminAddRoomAccess: (managerName: string, roomCode: string) => Promise<{ ok: boolean; error?: string }>;
   adminRemoveRoomAccess: (managerName: string, roomCode: string) => Promise<{ ok: boolean; error?: string }>;
+  adminGetRoomCoaches: (roomCode: string) => Promise<{
+    ok: boolean;
+    coaches?: Array<{ name: string; teamId: number | null; teamName: string | null; division: number | null }>;
+    teams?: Array<{ id: number; name: string; division: number }>;
+    roomCode?: string;
+    error?: string;
+  }>;
+  adminSetCoachTeam: (
+    roomCode: string,
+    coachName: string,
+    teamId: number,
+    activeGames?: Record<string, ActiveGame>,
+  ) => Promise<{ ok: boolean; error?: string; teamName?: string }>;
   deleteManager: (name: string) => Promise<{ ok: boolean; error?: string }>;
   saveGameState?: (game: ActiveGame) => void;
   emitPresence?: (game: ActiveGame) => void;
@@ -52,6 +65,8 @@ export function registerAdminSocketHandlers(
     adminRenameManager,
     adminAddRoomAccess,
     adminRemoveRoomAccess,
+    adminGetRoomCoaches,
+    adminSetCoachTeam,
     deleteManager,
     saveGameState,
     emitPresence,
@@ -234,6 +249,68 @@ export function registerAdminSocketHandlers(
 
       // Bug 6 fix: only notify admin if operation actually succeeded
       if (result.ok) socket.emit("adminUsersUpdated");
+      if (callback) callback(result);
+    },
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // adminGetRoomCoaches  { roomCode }
+  // ═══════════════════════════════════════════════════════════════════════════
+  socket.on(
+    "adminGetRoomCoaches",
+    async (
+      data: { roomCode: string },
+      callback?: (response: any) => void,
+    ) => {
+      if (!guardAdmin(callback)) return;
+      if (!data || !data.roomCode) {
+        if (callback) callback({ ok: false, error: "Código de sala inválido." });
+        return;
+      }
+      const result = await adminGetRoomCoaches(data.roomCode);
+      if (callback) callback(result);
+    },
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // adminSetCoachTeam  { roomCode, name, teamId }
+  // ═══════════════════════════════════════════════════════════════════════════
+  socket.on(
+    "adminSetCoachTeam",
+    async (
+      data: { roomCode: string; name: string; teamId: number },
+      callback?: (response: any) => void,
+    ) => {
+      if (!guardAdmin(callback)) return;
+      if (!data || !data.roomCode || !data.name || data.teamId == null) {
+        if (callback) callback({ ok: false, error: "Dados inválidos." });
+        return;
+      }
+
+      const result = await adminSetCoachTeam(
+        data.roomCode,
+        data.name,
+        data.teamId,
+        activeGames,
+      );
+
+      if (result.ok) {
+        // If the room is live, persist the change and notify the affected coach
+        const game = activeGames[data.roomCode.toUpperCase()];
+        if (game) {
+          const coach = game.playersByName?.[data.name];
+          if (coach?.socketId) {
+            io.to(coach.socketId).emit(
+              "systemMessage",
+              "O Admin atribuiu-te uma nova equipa. Atualiza a tua equipa.",
+            );
+          }
+          saveGameState?.(game);
+          emitPresence?.(game);
+        }
+        socket.emit("adminUsersUpdated");
+      }
+
       if (callback) callback(result);
     },
   );

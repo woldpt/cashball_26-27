@@ -1134,6 +1134,187 @@ function adminRemoveRoomAccess(managerName, roomCode) {
 	});
 }
 
+/**
+ * Admin — list the human coaches in a room and which teams are assignable.
+ *
+ * Coaches: every is_human=1 manager with their current team (if any).
+ * Teams: every team WITHOUT a human manager (free / NPC-managed) — those are
+ * the only valid reassignment targets, so no other coach's team is overwritten.
+ *
+ * @param {string} roomCode
+ * @returns {Promise<{ok: boolean, coaches?: Array<{name: string, teamId: number|null, teamName: string|null, division: number|null}>, teams?: Array<{id: number, name: string, division: number}>, roomCode?: string, error?: string}>}
+ */
+function adminGetRoomCoaches(roomCode) {
+	const normalizedRoom = typeof roomCode === "string" ? roomCode.trim().toUpperCase() : "";
+	if (!normalizedRoom) {
+		return Promise.resolve({ ok: false, error: "Código de sala inválido." });
+	}
+
+	const gameDbPath = path.join(path.dirname(DB_PATH), `game_${normalizedRoom}.db`);
+	if (!fs.existsSync(gameDbPath)) {
+		return Promise.resolve({ ok: false, error: `A sala "${normalizedRoom}" não existe.` });
+	}
+
+	return new Promise((resolve) => {
+		const gameDb = new sqlite3.Database(gameDbPath, sqlite3.OPEN_READONLY, (err) => {
+			if (err) {
+				console.error("[auth] adminGetRoomCoaches open error:", err.message);
+				return resolve({ ok: false, error: "Erro ao abrir a sala." });
+			}
+
+			const coachesQuery = `
+				SELECT m.name AS name, t.id AS teamId, t.name AS teamName, t.division AS division
+				FROM managers m
+				LEFT JOIN teams t ON t.manager_id = m.id
+				WHERE m.is_human = 1
+				ORDER BY m.name COLLATE NOCASE
+			`;
+			const teamsQuery = `
+				SELECT t.id AS id, t.name AS name, t.division AS division
+				FROM teams t
+				WHERE t.manager_id IS NULL
+				ORDER BY t.division, t.name COLLATE NOCASE
+			`;
+
+			gameDb.all(coachesQuery, [], (cErr, coaches) => {
+				if (cErr) {
+					console.error("[auth] adminGetRoomCoaches coaches error:", cErr.message);
+					gameDb.close();
+					return resolve({ ok: false, error: "Erro ao listar treinadores." });
+				}
+				gameDb.all(teamsQuery, [], (tErr, teams) => {
+					gameDb.close();
+					if (tErr) {
+						console.error("[auth] adminGetRoomCoaches teams error:", tErr.message);
+						return resolve({ ok: false, error: "Erro ao listar equipas." });
+					}
+					resolve({
+						ok: true,
+						coaches: coaches || [],
+						teams: teams || [],
+						roomCode: normalizedRoom,
+					});
+				});
+			});
+		});
+	});
+}
+
+/**
+ * Admin — reassign a human coach to a different, FREE team within a room.
+ *
+ * The coach takes over the target team's whole squad/finances (they now manage
+ * that team). The old team's manager_id is cleared, and if the room is live in
+ * memory the affected coach's runtime session (playersByName) is synced too.
+ *
+ * @param {string} roomCode
+ * @param {string} coachName
+ * @param {number} teamId
+ * @param {object} [activeGames] - Optional in-memory game state map for live sync
+ * @returns {Promise<{ok: boolean, error?: string, teamName?: string}>}
+ */
+function adminSetCoachTeam(roomCode, coachName, teamId, activeGames) {
+	const normalizedRoom = typeof roomCode === "string" ? roomCode.trim().toUpperCase() : "";
+	const normalizedCoach = typeof coachName === "string" ? coachName.trim() : "";
+	const targetTeamId = parseInt(teamId, 10);
+
+	if (!normalizedRoom || !normalizedCoach || !Number.isInteger(targetTeamId)) {
+		return Promise.resolve({ ok: false, error: "Dados inválidos." });
+	}
+
+	const gameDbPath = path.join(path.dirname(DB_PATH), `game_${normalizedRoom}.db`);
+	if (!fs.existsSync(gameDbPath)) {
+		return Promise.resolve({ ok: false, error: `A sala "${normalizedRoom}" não existe.` });
+	}
+
+	return new Promise((resolve) => {
+		const gameDb = new sqlite3.Database(gameDbPath, (err) => {
+			if (err) {
+				console.error("[auth] adminSetCoachTeam open error:", err.message);
+				return resolve({ ok: false, error: "Erro ao abrir a sala." });
+			}
+
+			// 1. Find the human coach (must exist in this room)
+			gameDb.get(
+				"SELECT id FROM managers WHERE name = ? COLLATE NOCASE AND is_human = 1",
+				[normalizedCoach],
+				(mErr, managerRow) => {
+					if (mErr) {
+						gameDb.close();
+						console.error("[auth] adminSetCoachTeam manager select error:", mErr.message);
+						return resolve({ ok: false, error: "Erro interno." });
+					}
+					if (!managerRow) {
+						gameDb.close();
+						return resolve({ ok: false, error: `Treinador "${normalizedCoach}" não encontrado nesta sala.` });
+					}
+					const managerId = managerRow.id;
+
+					// 2. Find the target team and ensure it is FREE (safety constraint (a))
+					gameDb.get(
+						"SELECT id, name, manager_id FROM teams WHERE id = ?",
+						[targetTeamId],
+						(tErr, teamRow) => {
+							if (tErr) {
+								gameDb.close();
+								console.error("[auth] adminSetCoachTeam team select error:", tErr.message);
+								return resolve({ ok: false, error: "Erro interno." });
+							}
+							if (!teamRow) {
+								gameDb.close();
+								return resolve({ ok: false, error: "Equipa de destino não encontrada." });
+							}
+							if (teamRow.manager_id != null) {
+								gameDb.close();
+								return resolve({ ok: false, error: `A equipa "${teamRow.name}" já tem treinador.` });
+							}
+
+							// 3. Free the coach's current team, then assign the new one
+							gameDb.run(
+								"UPDATE teams SET manager_id = NULL WHERE manager_id = ?",
+								[managerId],
+								(fErr) => {
+									if (fErr) {
+										gameDb.close();
+										console.error("[auth] adminSetCoachTeam free error:", fErr.message);
+										return resolve({ ok: false, error: "Erro ao libertar a equipa anterior." });
+									}
+									gameDb.run(
+										"UPDATE teams SET manager_id = ? WHERE id = ?",
+										[managerId, targetTeamId],
+										(aErr) => {
+											gameDb.close();
+											if (aErr) {
+												console.error("[auth] adminSetCoachTeam assign error:", aErr.message);
+												return resolve({ ok: false, error: "Erro ao atribuir a nova equipa." });
+											}
+
+											// Sync in-memory session if the room is live
+											if (activeGames && activeGames[normalizedRoom]) {
+												const game = activeGames[normalizedRoom];
+												const session = game.playersByName && game.playersByName[normalizedCoach];
+												if (session) {
+													session.teamId = targetTeamId;
+													if (teamRow.name != null) session.teamName = teamRow.name;
+												}
+											}
+
+											console.log(
+												`[auth] Admin moveu ${normalizedCoach} para a equipa "${teamRow.name}" (${normalizedRoom})`,
+											);
+											resolve({ ok: true, teamName: teamRow.name });
+										},
+									);
+								},
+							);
+						},
+					);
+				},
+			);
+		});
+	});
+}
+
 module.exports = {
 	verifyOrCreateManager,
 	verifyManager,
@@ -1159,4 +1340,6 @@ module.exports = {
 	adminRenameManager,
 	adminAddRoomAccess,
 	adminRemoveRoomAccess,
+	adminGetRoomCoaches,
+	adminSetCoachTeam,
 };

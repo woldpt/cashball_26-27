@@ -23,6 +23,18 @@
       "socketAdminHandlers.ts"
     ]
   },
+  "adminGetRoomCoaches": {
+    "emit": [],
+    "receive": [
+      "socketAdminHandlers.ts"
+    ]
+  },
+  "adminSetCoachTeam": {
+    "emit": [],
+    "receive": [
+      "socketAdminHandlers.ts"
+    ]
+  },
   "adminDeleteUser": {
     "emit": [],
     "receive": [

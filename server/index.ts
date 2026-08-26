@@ -60,6 +60,8 @@ const {
 	adminRenameManager,
 	adminAddRoomAccess,
 	adminRemoveRoomAccess,
+	adminGetRoomCoaches,
+	adminSetCoachTeam,
 } = require("./auth");
 const {
 	getSeasonEndMatchweek,
@@ -934,6 +936,8 @@ io.on("connection", (socket) => {
 		adminRenameManager,
 		adminAddRoomAccess,
 		adminRemoveRoomAccess,
+		adminGetRoomCoaches,
+		adminSetCoachTeam,
 		deleteManager,
 		saveGameState,
 		emitPresence,

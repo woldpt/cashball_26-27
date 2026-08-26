@@ -6,10 +6,11 @@ import { useGame } from "../../contexts/GameContext.jsx";
 /**
  * AdminPanel — User management for the admin coach (fabio).
  *
- * Three sections:
+ * Sections:
  *   1. User List — table of all users with rooms and actions
  *   2. Edit User — change name or password for selected user
  *   3. Room Assignment — add/remove rooms for selected user
+ *   4. Team Assignment — reassign a coach to a free team within a selected room
  *
  * Only accessible by the admin coach (ADMIN_COACH_NAME env var, default "fabio").
  *
@@ -28,6 +29,13 @@ export function AdminPanel({ open, onClose }) {
   const [editPassword, setEditPassword] = useState("");
   const [newRoomCode, setNewRoomCode] = useState("");
   const [editLoading, setEditLoading] = useState(false);
+
+  // Room team-management state
+  const [selectedRoom, setSelectedRoom] = useState("");
+  const [roomData, setRoomData] = useState(null); // { coaches: [], teams: [] }
+  const [targetCoach, setTargetCoach] = useState("");
+  const [targetTeamId, setTargetTeamId] = useState("");
+  const [roomLoading, setRoomLoading] = useState(false);
 
   // Is the current user the admin?
   const isAdmin = me?.name?.toLowerCase() === "fabio";
@@ -64,6 +72,10 @@ export function AdminPanel({ open, onClose }) {
     setEditName(user.name);
     setEditPassword("");
     setNewRoomCode("");
+    setSelectedRoom("");
+    setRoomData(null);
+    setTargetCoach("");
+    setTargetTeamId("");
     setError("");
     setSuccess("");
   }
@@ -177,6 +189,63 @@ export function AdminPanel({ open, onClose }) {
           fetchUsers();
         } else {
           setError(result?.error || "Erro ao remover sala.");
+        }
+      },
+    );
+  }
+
+  // ── Rate room coaches/teams for the selected room ────────────────────────
+  function handleLoadRoom(roomCode) {
+    const refresh = selectedRoom === roomCode;
+    setSelectedRoom(roomCode || "");
+    setRoomData(null);
+    setTargetCoach("");
+    setTargetTeamId("");
+    if (!refresh) {
+      setError("");
+      setSuccess("");
+    }
+    if (!roomCode) return;
+
+    setRoomLoading(true);
+    socket.emit("adminGetRoomCoaches", { roomCode }, (result) => {
+      setRoomLoading(false);
+      if (result?.ok) {
+        setRoomData({ coaches: result.coaches || [], teams: result.teams || [] });
+      } else {
+        setError(result?.error || "Erro ao carregar as equipas da sala.");
+      }
+    });
+  }
+
+  // ── Reassign the selected coach to a free team in the room ───────────────
+  function handleAssignTeam() {
+    if (!selectedRoom || !targetCoach || !targetTeamId) {
+      setError("Seleciona um treinador e uma equipa de destino.");
+      return;
+    }
+    const team = roomData?.teams?.find((t) => t.id === Number(targetTeamId));
+    if (
+      !window.confirm(
+        `Mover "${targetCoach}" para a equipa "${team?.name ?? ""}"${team?.division ? ` (${team.division}ª divisão)` : ""}? Or vai assumir todo o plantel e finanças dessa equipa.`,
+      )
+    ) {
+      return;
+    }
+
+    setEditLoading(true);
+    socket.emit(
+      "adminSetCoachTeam",
+      { roomCode: selectedRoom, name: targetCoach, teamId: Number(targetTeamId) },
+      (result) => {
+        setEditLoading(false);
+        if (result?.ok) {
+          setSuccess(`"${targetCoach}" agora gere a equipa "${result.teamName || team?.name || ""}".`);
+          setTargetCoach("");
+          setTargetTeamId("");
+          handleLoadRoom(selectedRoom);
+        } else {
+          setError(result?.error || "Erro ao mover treinador.");
         }
       },
     );
@@ -424,6 +493,118 @@ export function AdminPanel({ open, onClose }) {
                         Adicionar
                       </button>
                     </div>
+                  </div>
+
+                  {/* ── Divider ── */}
+                  <div className="border-t border-zinc-800" />
+
+                  {/* ── Section: Team Assignment ── */}
+                  <div>
+                    <h3 className="text-xs uppercase tracking-widest text-zinc-500 font-black mb-3">
+                      Atribuir Equipa (na sala)
+                    </h3>
+
+                    {userRooms.length === 0 ? (
+                      <p className="text-zinc-600 text-xs py-1">Este utilizador não tem salas.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {/* Room selector */}
+                        <select
+                          value={selectedRoom}
+                          onChange={(e) => handleLoadRoom(e.target.value)}
+                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition-colors"
+                        >
+                          <option value="">Seleciona uma sala...</option>
+                          {userRooms.map((room) => (
+                            <option key={room} value={room}>
+                              {room}
+                            </option>
+                          ))}
+                        </select>
+
+                        {roomLoading ? (
+                          <div className="flex items-center justify-center py-6 text-zinc-500">
+                            <span className="material-symbols-outlined animate-spin mr-2">sync</span>
+                            A carregar equipas...
+                          </div>
+                        ) : roomData ? (
+                          <>
+                            {/* Current coach -> team mapping */}
+                            <div className="max-h-32 overflow-y-auto space-y-1">
+                              {roomData.coaches.length === 0 ? (
+                                <p className="text-zinc-600 text-xs py-1">Nenhum treinador humano nesta sala.</p>
+                              ) : (
+                                roomData.coaches.map((coach) => (
+                                  <div
+                                    key={coach.name}
+                                    className="flex items-center justify-between bg-zinc-800/50 rounded-lg px-3 py-1.5 text-xs"
+                                  >
+                                    <span className="text-white font-bold">{coach.name}</span>
+                                    <span className="text-zinc-500">
+                                      {coach.teamName ? (
+                                        <>
+                                          <span className="text-zinc-300 font-semibold">{coach.teamName}</span>
+                                          <span className="ml-1">({coach.division}ª)</span>
+                                        </>
+                                      ) : (
+                                        "— sem equipa —"
+                                      )}
+                                    </span>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+
+                            {roomData.teams.length === 0 ? (
+                              <p className="text-zinc-600 text-xs py-1">Não há equipas livres nesta sala.</p>
+                            ) : (
+                              <div className="grid grid-cols-1 gap-2">
+                                <select
+                                  value={targetCoach}
+                                  onChange={(e) => setTargetCoach(e.target.value)}
+                                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition-colors"
+                                >
+                                  <option value="">Treinador a mover...</option>
+                                  {roomData.coaches
+                                    .filter((c) => c.name !== "fabio")
+                                    .map((c) => (
+                                      <option key={c.name} value={c.name}>
+                                        {c.name} {c.teamName ? `→ ${c.teamName}` : "(sem equipa)"}
+                                      </option>
+                                    ))}
+                                </select>
+
+                                <select
+                                  value={targetTeamId}
+                                  onChange={(e) => setTargetTeamId(e.target.value)}
+                                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition-colors"
+                                >
+                                  <option value="">Equipa de destino...</option>
+                                  {roomData.teams.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                      {t.name} ({t.division}ª divisão)
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+
+                            <button
+                              onClick={handleAssignTeam}
+                              disabled={
+                                editLoading ||
+                                roomData.teams.length === 0 ||
+                                !targetCoach ||
+                                !targetTeamId
+                              }
+                              className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold px-4 py-2 rounded-lg text-sm transition-colors"
+                            >
+                              {editLoading ? "A atribuir..." : "Atribuir equipa"}
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
 
                   {/* ── Section: User Info ── */}
