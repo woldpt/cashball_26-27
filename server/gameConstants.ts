@@ -98,9 +98,9 @@ export const AUCTION_BID_STEP = 10000;
  * A cada semana de jogo (liga e taça), este valor é debitado do orçamento e
  * abatido ao principal (loan_amount), independentemente dos juros. Assim a
  * dívida visível diminui semana a semana até a zero.
- * 50K/sem → um empréstimo de 500K (1 LOAN_STEP) é liquidado em 10 semanas.
+ * 35K/sem → um empréstimo de 500K (1 LOAN_STEP) é liquidado em ~14 semanas.
  */
-export const LOAN_WEEKLY_INSTALLMENT = 50000;
+export const LOAN_WEEKLY_INSTALLMENT = 35000;
 
 /**
  * Duração de um contrato em matchweeks (1 época = 14 jornadas de liga).
