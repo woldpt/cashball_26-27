@@ -98,7 +98,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `client/src/utils/audio.js` | Tons de notificação (Web Audio API). ✅ Auditado |
 | `client/src/utils/cacheVersion.js` | Gestão de versão de cache/localStorage (limpeza com preservação de sessões). ✅ Auditado |
 | `client/src/utils/colorHelpers.js` | Helpers de cor (normalização hex, anéis por posição). ✅ Auditado |
-| `client/src/utils/fixtures.js` | Gerador de fixtures round-robin (espelha o `engine.ts` do servidor). |
+| `client/src/utils/fixtures.js` | Gerador de fixtures round-robin (espelha o `engine.ts` do servidor). ✅ Auditado |
 | `client/src/utils/formatters.js` | Formatação de moeda/datas (pt-PT). |
 | `client/src/utils/localStorage.js` | Leitura/escrita de sessões (admin) em localStorage. |
 | `client/src/utils/playerHelpers.js` | Helpers de jogadores (stats, tiers AGG). |
