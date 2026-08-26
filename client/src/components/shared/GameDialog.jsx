@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { MODAL_Z } from "../../constants/index.js";
 import { ModalShell } from "./ModalShell.jsx";
 import { Button } from "./Button.jsx";
 
@@ -19,10 +20,11 @@ import { Button } from "./Button.jsx";
  *     onConfirm: (value?: string) => void,
  *     onCancel: () => void,
  *   } | null,
+ *   z?: number,
  *   onClose: () => void,
  * }} props
  */
-export function GameDialog({ dialog, onClose }) {
+export function GameDialog({ dialog, onClose, z = MODAL_Z.default }) {
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export function GameDialog({ dialog, onClose }) {
     <ModalShell
       visible={!!dialog}
       onClose={onClose}
-      z={200}
+      z={z}
       variant="card"
       dismissable
     >

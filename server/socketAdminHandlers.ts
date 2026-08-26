@@ -97,6 +97,20 @@ export function registerAdminSocketHandlers(
   socket.on("adminListUsers", async (callback?: (response: any) => void) => {
     if (!guardAdmin(callback)) return;
     const result = await adminListUsers();
+    // Enriquecer com o estado online (socketId presente nos playersByName em memória).
+    if (result.ok && Array.isArray(result.users)) {
+      const onlineNames = new Set<string>();
+      for (const game of Object.values(activeGames)) {
+        const byName = game?.playersByName;
+        if (!byName) continue;
+        for (const [name, player] of Object.entries(byName)) {
+          if ((player as { socketId?: string } | undefined)?.socketId) onlineNames.add(name.toLowerCase());
+        }
+      }
+      for (const u of result.users as Array<{ name: string; online?: boolean }>) {
+        u.online = onlineNames.has(String(u.name).toLowerCase());
+      }
+    }
     if (callback) callback(result);
   });
 

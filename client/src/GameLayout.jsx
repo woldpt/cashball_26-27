@@ -9,6 +9,7 @@ import { SeasonEndModal } from "./components/modals/SeasonEndModal.jsx";
 import { JobOfferModal } from "./components/modals/JobOfferModal.jsx";
 import { CoachMarketModal } from "./components/modals/CoachMarketModal.jsx";
 import { AdminPanel } from "./components/admin/AdminPanel.jsx";
+import { isAdminCoach } from "./components/admin/adminApi.js";
 import { PlayerHistoryModal } from "./components/modals/PlayerHistoryModal.jsx";
 import { CupDrawPopup } from "./components/modals/CupDrawPopup.jsx";
 import { PenaltySuspensePopup } from "./components/modals/PenaltySuspensePopup.jsx";
@@ -500,8 +501,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       A minha conta
                     </button>
 
-                    {/* Admin (only for fabio) */}
-                    {me?.name?.toLowerCase() === "fabio" && (
+                    {/* Admin (apenas o coach admin — ver ADMIN_COACH_NAME) */}
+                    {isAdminCoach(me?.name) && (
                       <button
                         onClick={() => {
                           setUserDropdownOpen(false);

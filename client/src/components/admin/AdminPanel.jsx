@@ -1,647 +1,115 @@
-import { useState, useEffect, useCallback } from "react";
-import { socket } from "../../socket.js";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
 import { useGame } from "../../contexts/GameContext.jsx";
+import { ModalShell } from "../shared/ModalShell.jsx";
+import { EmptyState } from "../shared/EmptyState.jsx";
+import { Button } from "../shared/Button.jsx";
+import { MODAL_Z } from "../../constants/index.js";
+import { isAdminCoach } from "./adminApi.js";
+import { useAdminUsers } from "./useAdminUsers.js";
+import { UserList } from "./UserList.jsx";
+import { UserProfileSection } from "./UserProfileSection.jsx";
+import { UserRoomsSection } from "./UserRoomsSection.jsx";
+import { UserTeamsSection } from "./UserTeamsSection.jsx";
 
 /**
- * AdminPanel — User management for the admin coach (fabio).
+ * AdminPanel — Gestão de utilizadores para o coach de administração.
  *
- * Sections:
- *   1. User List — table of all users with rooms and actions
- *   2. Edit User — change name or password for selected user
- *   3. Room Assignment — add/remove rooms for selected user
- *   4. Team Assignment — reassign a coach to a free team within a selected room
+ * Componente shell: só layout (2 painéis) + estado da seleção. Todo o resto
+ * está em subcomponentes dedicadas:
+ *   - adminApi.js          → contratos socket (fonte única)
+ *   - useAdminUsers        → lista + subscrição `adminUsersUpdated`
+ *   - UserList             → pesquisa/ordenação/online (esquerda)
+ *   - UserProfileSection   → perfil + palavra-passe + apagar
+ *   - UserRoomsSection     → salas + diálogo de remoção (BAN explícito)
+ *   - UserTeamsSection     → roster da sala + mover treinador (useRoomRoster)
  *
  * Only accessible by the admin coach (ADMIN_COACH_NAME env var, default "fabio").
  *
  * @param {{ open: boolean, onClose: () => void }} props
  */
 export function AdminPanel({ open, onClose }) {
-  const { me, adminUsers, setAdminUsers } = useGame();
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-
-  // Selected user state
+  const { me, adminUsers } = useGame();
   const [selectedUser, setSelectedUser] = useState(null);
-  const [editName, setEditName] = useState("");
-  const [editPassword, setEditPassword] = useState("");
-  const [newRoomCode, setNewRoomCode] = useState("");
-  const [editLoading, setEditLoading] = useState(false);
 
-  // Room team-management state
-  const [selectedRoom, setSelectedRoom] = useState("");
-  const [roomData, setRoomData] = useState(null); // { coaches: [], teams: [] }
-  const [targetCoach, setTargetCoach] = useState("");
-  const [targetTeamId, setTargetTeamId] = useState("");
-  const [roomLoading, setRoomLoading] = useState(false);
+  const isAdmin = isAdminCoach(me?.name);
+  const { loading, error: usersError, fetchUsers } = useAdminUsers({ open: open && isAdmin });
 
-  // Is the current user the admin?
-  const isAdmin = me?.name?.toLowerCase() === "fabio";
+  if (!isAdmin) return null;
 
-  // ── Fetch users list ──────────────────────────────────────────────────────
-  const fetchUsers = useCallback(() => {
-    setLoading(true);
-    setError("");
-    socket.emit("adminListUsers", (result) => {
-      setLoading(false);
-      if (result?.ok) {
-        setAdminUsers(result.users || []);
-      } else {
-        setError(result?.error || "Erro ao carregar utilizadores.");
-      }
-    });
-  }, [setAdminUsers]);
+  // Salas sempre "frescas" vindas do contexto (renomeias/remoções refletem-se).
+  const selectedRooms = adminUsers.find((u) => u.name === selectedUser?.name)?.rooms ?? [];
 
-  useEffect(() => {
-    if (!open) return;
-    // Defer via microtask to avoid calling setState synchronously in effect
-    const t = setTimeout(() => fetchUsers(), 0);
-    socket.on("adminUsersUpdated", fetchUsers);
-    return () => {
-      clearTimeout(t);
-      socket.off("adminUsersUpdated", fetchUsers);
-    };
-  }, [open, fetchUsers]);
-
-  // ── Handlers ──────────────────────────────────────────────────────────────
-
-  function selectUser(user) {
-    setSelectedUser(user);
-    setEditName(user.name);
-    setEditPassword("");
-    setNewRoomCode("");
-    setSelectedRoom("");
-    setRoomData(null);
-    setTargetCoach("");
-    setTargetTeamId("");
-    setError("");
-    setSuccess("");
+  /** @param {string} newName Nome novo do utilizador após rename. */
+  function handleRenamed(newName) {
+    setSelectedUser((u) => (u ? { ...u, name: newName } : u));
   }
 
-  function clearSuccess() {
-    setSuccess("");
-    setError("");
-  }
-
-  // Bug 2 fix: run rename THEN password change sequentially, never in parallel.
-  // Running both in parallel caused password change to fail because it used the
-  // new name before the rename had completed on the server.
-  async function handleSaveProfile() {
-    if (!selectedUser) return;
-
-    const doRename = editName.trim() !== "" && editName.trim() !== selectedUser.name;
-    const doPassword = editPassword.trim() !== "";
-
-    if (!doRename && !doPassword) {
-      setError("Nenhuma alteração para guardar.");
-      return;
-    }
-
-    setEditLoading(true);
-    setError("");
-    setSuccess("");
-
-    const changes = [];
-    let currentName = selectedUser.name;
-
-    // Step 1: rename first (if needed)
-    if (doRename) {
-      const result = await new Promise((resolve) =>
-        socket.emit("adminRenameUser", { oldName: currentName, newName: editName.trim() }, resolve),
-      );
-      if (!result?.ok) {
-        setEditLoading(false);
-        setError(result?.error || "Erro ao renomear.");
-        return;
-      }
-      changes.push(`nome → "${editName.trim()}"`);
-      currentName = editName.trim();
-    }
-
-    // Step 2: change password AFTER rename is confirmed complete
-    if (doPassword) {
-      const result = await new Promise((resolve) =>
-        socket.emit("adminChangePassword", { name: currentName, newPassword: editPassword.trim() }, resolve),
-      );
-      if (!result?.ok) {
-        setEditLoading(false);
-        setError(result?.error || "Erro ao alterar palavra-passe.");
-        return;
-      }
-      changes.push("palavra-passe alterada");
-    }
-
-    setEditLoading(false);
-    setSuccess(changes.join("; ") + " com sucesso!");
-    setEditPassword("");
-    fetchUsers();
-    if (doRename) setSelectedUser({ ...selectedUser, name: editName.trim() });
-  }
-
-  function handleDeleteUser() {
-    if (!selectedUser) return;
-    if (!window.confirm(`Tens a certeza que queres apagar a conta de "${selectedUser.name}"? Esta ação é irreversível.`)) return;
-
-    setEditLoading(true);
-    socket.emit("adminDeleteUser", { name: selectedUser.name }, (result) => {
-      setEditLoading(false);
-      if (result?.ok) {
-        setSuccess(`Utilizador "${selectedUser.name}" apagado.`);
-        setSelectedUser(null);
-        fetchUsers();
-      } else {
-        setError(result?.error || "Erro ao apagar utilizador.");
-      }
-    });
-  }
-
-  function handleAddRoom() {
-    if (!selectedUser || !newRoomCode.trim()) return;
-    setEditLoading(true);
-    socket.emit(
-      "adminUpdateRoomAccess",
-      { name: selectedUser.name, roomCode: newRoomCode.trim().toUpperCase(), action: "add" },
-      (result) => {
-        setEditLoading(false);
-        if (result?.ok) {
-          setSuccess(`Sala "${newRoomCode.trim().toUpperCase()}" adicionada.`);
-          setNewRoomCode("");
-          fetchUsers();
-        } else {
-          setError(result?.error || "Erro ao adicionar sala.");
-        }
-      },
-    );
-  }
-
-  function handleRemoveRoom(roomCode) {
-    if (!selectedUser) return;
-    setEditLoading(true);
-    socket.emit(
-      "adminUpdateRoomAccess",
-      { name: selectedUser.name, roomCode, action: "remove" },
-      (result) => {
-        setEditLoading(false);
-        if (result?.ok) {
-          setSuccess(`Sala "${roomCode}" removida.`);
-          fetchUsers();
-        } else {
-          setError(result?.error || "Erro ao remover sala.");
-        }
-      },
-    );
-  }
-
-  // ── Rate room coaches/teams for the selected room ────────────────────────
-  function handleLoadRoom(roomCode) {
-    const refresh = selectedRoom === roomCode;
-    setSelectedRoom(roomCode || "");
-    setRoomData(null);
-    setTargetCoach("");
-    setTargetTeamId("");
-    if (!refresh) {
-      setError("");
-      setSuccess("");
-    }
-    if (!roomCode) return;
-
-    setRoomLoading(true);
-    socket.emit("adminGetRoomCoaches", { roomCode }, (result) => {
-      setRoomLoading(false);
-      if (result?.ok) {
-        setRoomData({ coaches: result.coaches || [], teams: result.teams || [] });
-      } else {
-        setError(result?.error || "Erro ao carregar as equipas da sala.");
-      }
-    });
-  }
-
-  // ── Reassign the selected coach to a free team in the room ───────────────
-  function handleAssignTeam() {
-    if (!selectedRoom || !targetCoach || !targetTeamId) {
-      setError("Seleciona um treinador e uma equipa de destino.");
-      return;
-    }
-    const team = roomData?.teams?.find((t) => t.id === Number(targetTeamId));
-    if (
-      !window.confirm(
-        `Mover "${targetCoach}" para a equipa "${team?.name ?? ""}"${team?.division ? ` (${team.division}ª divisão)` : ""}? Or vai assumir todo o plantel e finanças dessa equipa.`,
-      )
-    ) {
-      return;
-    }
-
-    setEditLoading(true);
-    socket.emit(
-      "adminSetCoachTeam",
-      { roomCode: selectedRoom, name: targetCoach, teamId: Number(targetTeamId) },
-      (result) => {
-        setEditLoading(false);
-        if (result?.ok) {
-          setSuccess(`"${targetCoach}" agora gere a equipa "${result.teamName || team?.name || ""}".`);
-          setTargetCoach("");
-          setTargetTeamId("");
-          handleLoadRoom(selectedRoom);
-        } else {
-          setError(result?.error || "Erro ao mover treinador.");
-        }
-      },
-    );
-  }
-
-  // ── Guard: only admin can see this ────────────────────────────────────────
-  if (!isAdmin || !open) return null;
-
-  // Bug 7 fix: second branch was dead code (selectedUser is always falsy there)
-  const userRooms = selectedUser
-    ? (adminUsers.find((u) => u.name === selectedUser.name)?.rooms || [])
-    : [];
-
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <AnimatePresence>
-      <motion.div
-        key="admin-backdrop"
-        className="fixed inset-0 z-[300] bg-zinc-950/90 backdrop-blur-sm flex items-center justify-center p-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15 }}
-      >
-        <motion.div
-          className="w-full max-w-4xl max-h-[85vh] bg-zinc-900 border border-amber-500/40 rounded-xl shadow-2xl overflow-hidden flex flex-col"
-          initial={{ scale: 0.9, y: 32 }}
-          animate={{ scale: 1, y: 0 }}
-          exit={{ scale: 0.9, y: 32 }}
-          transition={{ type: "spring", stiffness: 380, damping: 26 }}
-        >
-          {/* ── Header ── */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-700/50 shrink-0">
-            <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-amber-400 text-2xl">
-                admin_panel_settings
-              </span>
-              <div>
-                <h2 className="text-lg font-black text-white">Gestão de Utilizadores</h2>
-                <p className="text-zinc-500 text-xs">
-                  {adminUsers.length} utilizador{adminUsers.length !== 1 ? "es" : ""} registado{adminUsers.length !== 1 ? "s" : ""}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-zinc-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-zinc-800"
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
+    <ModalShell visible={open} onClose={onClose} z={MODAL_Z.admin} variant="xl" cardClassName="max-h-[85vh] flex flex-col">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-outline-variant/15 flex items-center justify-between shrink-0 bg-surface-container-high/50">
+        <div className="flex items-center gap-3">
+          <span className="material-symbols-outlined text-amber-400 text-2xl">admin_panel_settings</span>
+          <div>
+            <h2 className="text-base font-black font-headline tracking-tight text-on-surface uppercase">Gestão de Utilizadores</h2>
+            <p className="text-[10px] text-on-surface-variant uppercase tracking-widest">{adminUsers.length} utilizadores registados</p>
           </div>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onClose} title="Fechar">
+          <span className="material-symbols-outlined">close</span>
+        </Button>
+      </div>
 
-          {/* ── Feedback ── */}
-          {(error || success) && (
-            <div
-              className={`px-6 py-2 text-sm font-bold shrink-0 ${
-                error ? "bg-red-500/10 text-red-400 border-b border-red-500/20" : "bg-green-500/10 text-green-400 border-b border-green-500/20"
-              }`}
-            >
-              {error || success}
-              <button onClick={clearSuccess} className="ml-3 underline text-xs opacity-70 hover:opacity-100">
-                Fechar
-              </button>
-            </div>
+      {/* Erro de carregamento da lista (não é feedback de ações — cada secção tem o seu próprio) */}
+      {usersError && (
+        <div className="px-6 py-2 border-b border-error/20 bg-error/10 text-error font-bold text-xs shrink-0">{usersError}</div>
+      )}
+
+      {/* Body 2-colunas */}
+      <div className="flex flex-1 min-h-0">
+        <div className="w-1/2 border-r border-outline-variant/15 bg-surface-container-high/30 min-h-0 flex flex-col">
+          <UserList
+            users={adminUsers}
+            loading={loading}
+            selectedName={selectedUser?.name ?? null}
+            onSelect={(u) => setSelectedUser(u)}
+          />
+        </div>
+
+        <div className="w-1/2 min-h-0 overflow-y-auto p-5 space-y-6">
+          {!selectedUser ? (
+            <EmptyState
+              emoji="👤"
+              title="Seleciona um utilizador"
+              description="Escolhe um utilizador na lista para editar perfil, salas e equipas."
+            />
+          ) : (
+            <>
+              {/* key=nome: remonta limpo ao trocar de utilizador / após rename */}
+              <UserProfileSection
+                key={`profile-${selectedUser.name}`}
+                user={selectedUser}
+                onRenamed={handleRenamed}
+                onDeleted={() => setSelectedUser(null)}
+              />
+              <div className="border-t border-outline-variant/15" />
+              <UserRoomsSection user={selectedUser} rooms={selectedRooms} onChanged={fetchUsers} />
+              <div className="border-t border-outline-variant/15" />
+              {/* key=join das salas: remonta limpo quando uma sala é adicionada/removida */}
+              <UserTeamsSection key={`teams-${selectedRooms.join("|") || "none"}`} rooms={selectedRooms} />
+            </>
           )}
+        </div>
+      </div>
 
-          {/* ── Body ── */}
-          <div className="flex flex-1 min-h-0 overflow-hidden">
-            {/* LEFT: User List */}
-            <div className="w-1/2 border-r border-zinc-700/50 flex flex-col min-h-0">
-              <div className="px-4 py-2 border-b border-zinc-700/30 shrink-0">
-                <h3 className="text-xs uppercase tracking-widest text-zinc-500 font-black">
-                  Utilizadores
-                </h3>
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                {loading ? (
-                  <div className="flex items-center justify-center py-16 text-zinc-500">
-                    <span className="material-symbols-outlined animate-spin mr-2">sync</span>
-                    A carregar...
-                  </div>
-                ) : adminUsers.length === 0 ? (
-                  <div className="flex items-center justify-center py-16 text-zinc-500 text-sm">
-                    Nenhum utilizador encontrado.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm min-w-[420px]">
-                    <thead className="sticky top-0 bg-zinc-900/95 backdrop-blur">
-                      <tr className="text-left text-[10px] uppercase tracking-widest text-zinc-500">
-                        <th className="px-4 py-2 font-black">Nome</th>
-                        <th className="px-4 py-2 font-black">Salas</th>
-                        <th className="px-4 py-2 font-black text-right">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {adminUsers.map((user) => (
-                        <tr
-                          key={user.name}
-                          onClick={() => selectUser(user)}
-                          className={`border-b border-zinc-800 cursor-pointer transition-colors ${
-                            selectedUser?.name === user.name
-                              ? "bg-amber-500/10 border-l-2 border-l-amber-500"
-                              : "hover:bg-zinc-800/50 border-l-2 border-l-transparent"
-                          }`}
-                        >
-                          <td className="px-4 py-2.5">
-                            <span className="text-white font-bold">{user.name}</span>
-                            {user.name.toLowerCase() === "fabio" && (
-                              <span className="ml-1.5 text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded font-black uppercase">
-                                Admin
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-2.5 text-zinc-400 text-xs">
-                            {user.rooms?.length || 0} sala{(user.rooms?.length || 0) !== 1 ? "s" : ""}
-                          </td>
-                          <td className="px-4 py-2.5 text-right">
-                            <span className="text-[10px] text-zinc-600 uppercase font-black tracking-wider">
-                              Editar →
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* RIGHT: Edit Panel */}
-            <div className="w-1/2 flex flex-col min-h-0">
-              {!selectedUser ? (
-                <div className="flex-1 flex items-center justify-center text-zinc-600 text-sm">
-                  Seleciona um utilizador à esquerda para editar.
-                </div>
-              ) : (
-                <div className="flex-1 overflow-y-auto p-5 space-y-5">
-                  {/* ── Section: Edit Profile ── */}
-                  <div>
-                    <h3 className="text-xs uppercase tracking-widest text-zinc-500 font-black mb-3">
-                      Editar Perfil
-                    </h3>
-
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1">
-                          Nome
-                        </label>
-                        <input
-                          type="text"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition-colors"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1">
-                          Nova Palavra-passe
-                        </label>
-                        <input
-                          type="password"
-                          value={editPassword}
-                          onChange={(e) => setEditPassword(e.target.value)}
-                          placeholder="Deixar em branco para não alterar"
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500/50 transition-colors"
-                        />
-                      </div>
-
-                      <div className="flex gap-2">
-                        <button
-                          onClick={handleSaveProfile}
-                          disabled={editLoading || (!editName.trim() && !editPassword.trim())}
-                          className="bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold px-4 py-1.5 rounded-lg text-sm transition-colors"
-                        >
-                          {editLoading ? "A guardar..." : "Guardar"}
-                        </button>
-
-                        <button
-                          onClick={handleDeleteUser}
-                          disabled={editLoading}
-                          className="bg-red-500/15 hover:bg-red-500/25 disabled:opacity-40 disabled:cursor-not-allowed text-red-400 font-bold px-4 py-1.5 rounded-lg text-sm transition-colors"
-                        >
-                          Apagar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ── Divider ── */}
-                  <div className="border-t border-zinc-800" />
-
-                  {/* ── Section: Room Assignment ── */}
-                  <div>
-                    <h3 className="text-xs uppercase tracking-widest text-zinc-500 font-black mb-3">
-                      Salas ({userRooms.length})
-                    </h3>
-
-                    {/* Current rooms */}
-                    <div className="space-y-1 mb-3">
-                      {userRooms.length === 0 ? (
-                        <p className="text-zinc-600 text-xs py-1">Nenhuma sala atribuída.</p>
-                      ) : (
-                        userRooms.map((room) => (
-                          <div
-                            key={room}
-                            className="flex items-center justify-between bg-zinc-800/50 rounded-lg px-3 py-2"
-                          >
-                            <span className="text-sm text-white font-mono font-bold tracking-wider">
-                              {room}
-                            </span>
-                            <button
-                              onClick={() => handleRemoveRoom(room)}
-                              disabled={editLoading}
-                              className="text-zinc-500 hover:text-red-400 disabled:opacity-30 transition-colors p-0.5"
-                              title={`Remover sala ${room}`}
-                            >
-                              <span className="material-symbols-outlined text-lg">close</span>
-                            </button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    {/* Add room */}
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newRoomCode}
-                        onChange={(e) => setNewRoomCode(e.target.value.toUpperCase())}
-                        placeholder="Código da sala (ex: A1B2C3)"
-                        maxLength={6}
-                        className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500/50 transition-colors font-mono tracking-wider"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleAddRoom();
-                        }}
-                      />
-                      <button
-                        onClick={handleAddRoom}
-                        disabled={editLoading || !newRoomCode.trim()}
-                        className="bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-3 py-2 rounded-lg text-sm transition-colors shrink-0"
-                      >
-                        Adicionar
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* ── Divider ── */}
-                  <div className="border-t border-zinc-800" />
-
-                  {/* ── Section: Team Assignment ── */}
-                  <div>
-                    <h3 className="text-xs uppercase tracking-widest text-zinc-500 font-black mb-3">
-                      Atribuir Equipa (na sala)
-                    </h3>
-
-                    {userRooms.length === 0 ? (
-                      <p className="text-zinc-600 text-xs py-1">Este utilizador não tem salas.</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {/* Room selector */}
-                        <select
-                          value={selectedRoom}
-                          onChange={(e) => handleLoadRoom(e.target.value)}
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition-colors"
-                        >
-                          <option value="">Seleciona uma sala...</option>
-                          {userRooms.map((room) => (
-                            <option key={room} value={room}>
-                              {room}
-                            </option>
-                          ))}
-                        </select>
-
-                        {roomLoading ? (
-                          <div className="flex items-center justify-center py-6 text-zinc-500">
-                            <span className="material-symbols-outlined animate-spin mr-2">sync</span>
-                            A carregar equipas...
-                          </div>
-                        ) : roomData ? (
-                          <>
-                            {/* Current coach -> team mapping */}
-                            <div className="max-h-32 overflow-y-auto space-y-1">
-                              {roomData.coaches.length === 0 ? (
-                                <p className="text-zinc-600 text-xs py-1">Nenhum treinador humano nesta sala.</p>
-                              ) : (
-                                roomData.coaches.map((coach) => (
-                                  <div
-                                    key={coach.name}
-                                    className="flex items-center justify-between bg-zinc-800/50 rounded-lg px-3 py-1.5 text-xs"
-                                  >
-                                    <span className="text-white font-bold">{coach.name}</span>
-                                    <span className="text-zinc-500">
-                                      {coach.teamName ? (
-                                        <>
-                                          <span className="text-zinc-300 font-semibold">{coach.teamName}</span>
-                                          <span className="ml-1">({coach.division}ª)</span>
-                                        </>
-                                      ) : (
-                                        "— sem equipa —"
-                                      )}
-                                    </span>
-                                  </div>
-                                ))
-                              )}
-                            </div>
-
-                            {roomData.teams.length === 0 ? (
-                              <p className="text-zinc-600 text-xs py-1">Não há equipas livres nesta sala.</p>
-                            ) : (
-                              <div className="grid grid-cols-1 gap-2">
-                                <select
-                                  value={targetCoach}
-                                  onChange={(e) => setTargetCoach(e.target.value)}
-                                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition-colors"
-                                >
-                                  <option value="">Treinador a mover...</option>
-                                  {roomData.coaches
-                                    .filter((c) => c.name !== "fabio")
-                                    .map((c) => (
-                                      <option key={c.name} value={c.name}>
-                                        {c.name} {c.teamName ? `→ ${c.teamName}` : "(sem equipa)"}
-                                      </option>
-                                    ))}
-                                </select>
-
-                                <select
-                                  value={targetTeamId}
-                                  onChange={(e) => setTargetTeamId(e.target.value)}
-                                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50 transition-colors"
-                                >
-                                  <option value="">Equipa de destino...</option>
-                                  {roomData.teams.map((t) => (
-                                    <option key={t.id} value={t.id}>
-                                      {t.name} ({t.division}ª divisão)
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            )}
-
-                            <button
-                              onClick={handleAssignTeam}
-                              disabled={
-                                editLoading ||
-                                roomData.teams.length === 0 ||
-                                !targetCoach ||
-                                !targetTeamId
-                              }
-                              className="w-full bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold px-4 py-2 rounded-lg text-sm transition-colors"
-                            >
-                              {editLoading ? "A atribuir..." : "Atribuir equipa"}
-                            </button>
-                          </>
-                        ) : null}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* ── Section: User Info ── */}
-                  <div className="border-t border-zinc-800 pt-4">
-                    <h3 className="text-xs uppercase tracking-widest text-zinc-500 font-black mb-2">
-                      Informação
-                    </h3>
-                    <div className="text-xs text-zinc-500 space-y-1">
-                      {selectedUser.email && (
-                        <p>Email: {selectedUser.email}</p>
-                      )}
-                      {selectedUser.birthYear && (
-                        <p>Ano nascimento: {selectedUser.birthYear}</p>
-                      )}
-                      <p className="text-[11px] text-zinc-600 mt-1">
-                        ID interno: {selectedUser.name?.toLowerCase()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* ── Footer ── */}
-          <div className="px-6 py-3 border-t border-zinc-700/50 flex items-center justify-between text-[10px] text-zinc-600 shrink-0">
-            <span>Admin Panel v1 — Apenas {me?.name} tem acesso</span>
-            <button
-              onClick={fetchUsers}
-              className="text-zinc-500 hover:text-white transition-colors flex items-center gap-1"
-            >
-              <span className="material-symbols-outlined text-sm">refresh</span>
-              Actualizar
-            </button>
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+      {/* Footer */}
+      <div className="px-6 py-3 border-t border-outline-variant/15 flex items-center justify-between text-[10px] text-on-surface-variant shrink-0">
+        <span>Apenas {me?.name} tem acesso a este painel.</span>
+        <Button variant="ghost" size="sm" onClick={fetchUsers}>
+          <span className="material-symbols-outlined text-sm">refresh</span>
+          Actualizar
+        </Button>
+      </div>
+    </ModalShell>
   );
 }

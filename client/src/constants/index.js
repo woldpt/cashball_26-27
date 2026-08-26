@@ -347,6 +347,8 @@ export const MODAL_Z = {
 	signing: 190,
 	postMatch: 210,
 	default: 200,
+	admin: 300,
+	adminDialog: 310,
 	dismissal: 9999,
 };
 
