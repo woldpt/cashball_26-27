@@ -14,6 +14,7 @@ import type { Server, Socket } from "socket.io";
 interface AdminHandlerDeps {
   io: Server;
   getGameBySocket: (socketId: string) => ActiveGame | null;
+  getGame: (roomCode: string) => ActiveGame | null;
   activeGames: Record<string, ActiveGame>;
   adminListUsers: () => Promise<{ ok: boolean; users?: any[]; error?: string }>;
   adminChangePassword: (name: string, newPassword: string) => Promise<{ ok: boolean; error?: string }>;
@@ -22,6 +23,7 @@ interface AdminHandlerDeps {
   adminRemoveRoomAccess: (managerName: string, roomCode: string) => Promise<{ ok: boolean; error?: string }>;
   deleteManager: (name: string) => Promise<{ ok: boolean; error?: string }>;
   saveGameState?: (game: ActiveGame) => void;
+  emitPresence?: (game: ActiveGame) => void;
 }
 
 // ── Admin Guard ───────────────────────────────────────────────────────────────
@@ -43,6 +45,7 @@ export function registerAdminSocketHandlers(
   const {
     io,
     getGameBySocket,
+    getGame,
     activeGames,
     adminListUsers,
     adminChangePassword,
@@ -51,6 +54,7 @@ export function registerAdminSocketHandlers(
     adminRemoveRoomAccess,
     deleteManager,
     saveGameState,
+    emitPresence,
   } = deps;
 
   // Helper to get the coach name from the socket
@@ -179,6 +183,53 @@ export function registerAdminSocketHandlers(
         result = await adminAddRoomAccess(data.name, data.roomCode);
       } else {
         result = await adminRemoveRoomAccess(data.name, data.roomCode);
+
+        // Remoção definitiva: ao remover a sala de um jogador, também o expulsar
+        // definitivamente da sala (mesma correção do kickCoach) — apagar o registo
+        // do manager no DB da sala e adicionar ao ban permanente (kickedCoaches).
+        if (result.ok) {
+          const game = getGame(data.roomCode.toUpperCase());
+          if (game) {
+            const coachName = data.name.trim();
+            const target = game.playersByName[coachName];
+
+            // Notificar o coach expulso (se estiver online)
+            const targetSocketId = target?.socketId;
+            if (targetSocketId) {
+              io.to(targetSocketId).emit("kicked", {
+                reason: "Foste removido da sala pelo Admin.",
+              });
+            }
+
+            // Remover coach da sala (sessão runtime + presença exigida)
+            if (target) {
+              delete game.playersByName[coachName];
+            }
+            game.lockedCoaches.delete(coachName);
+
+            // Ban permanente: o coach expulso não pode reentrar na sala
+            game.kickedCoaches.add(coachName);
+
+            // Libertar a equipa no DB e apagar o registo do manager
+            game.db.run(
+              "UPDATE teams SET manager_id = NULL WHERE manager_id = (SELECT id FROM managers WHERE name = ?)",
+              [coachName],
+              () => {},
+            );
+            game.db.run(
+              "DELETE FROM managers WHERE name = ?",
+              [coachName],
+              () => {},
+            );
+
+            saveGameState?.(game);
+            emitPresence?.(game);
+
+            console.log(
+              `[${game.roomCode}] 🚫 Admin removeu a sala de ${coachName} (online=${!!targetSocketId})`,
+            );
+          }
+        }
       }
 
       // Bug 6 fix: only notify admin if operation actually succeeded

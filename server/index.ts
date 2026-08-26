@@ -927,6 +927,7 @@ io.on("connection", (socket) => {
 	registerAdminSocketHandlers(socket, {
 		io,
 		getGameBySocket,
+		getGame,
 		activeGames: activeGames as Record<string, any>,
 		adminListUsers,
 		adminChangePassword,
@@ -935,6 +936,7 @@ io.on("connection", (socket) => {
 		adminRemoveRoomAccess,
 		deleteManager,
 		saveGameState,
+		emitPresence,
 	});
 
 	// Training handlers
