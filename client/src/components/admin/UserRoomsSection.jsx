@@ -98,7 +98,7 @@ export function UserRoomsSection({ user, rooms, onChanged }) {
           onChange={(e) => setNewRoomCode(e.target.value)}
           placeholder="CÓDIGO DA SALA"
           aria-label="Adicionar sala por código"
-          className="flex-1 rounded-md border border-outline-variant/30 bg-surface px-3 py-2 text-sm text-on-surface uppercase tracking-wider font-bold placeholder:text-xs placeholder:font-medium focus:outline-none focus:border-primary transition-colors"
+          className="flex-1 min-w-0 rounded-md border border-outline-variant/30 bg-surface px-3 py-2 text-sm text-on-surface uppercase tracking-wider font-bold placeholder:text-xs placeholder:font-medium focus:outline-none focus:border-primary transition-colors"
         />
         <Button variant="accent" disabled={busy || !newRoomCode.trim()}>
           <span className="material-symbols-outlined">add</span>
