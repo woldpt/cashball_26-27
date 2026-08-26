@@ -444,3 +444,7 @@ export const SEASON_JORNADAS = 14;
 export const SEASON_HOME_MATCHES = 7;
 /** Factor de ocupação estimado para projetar bilheteiras sem histórico. */
 export const TICKET_ESTIMATE_FACTOR = 0.8;
+/** Multiplicador do valor do jogador para a cláusula (preço de proposta a jogadores não listados). */
+export const TRANSFER_CLAUSE_MULT = 1.35;
+/** Multiplicador do valor do jogador para o preço de lista por omissão (leilão/venda). */
+export const TRANSFER_LISTED_PRICE_MULT = 0.8;

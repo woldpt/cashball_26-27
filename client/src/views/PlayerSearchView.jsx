@@ -1,12 +1,30 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { socket } from "../socket.js";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Button } from "../components/shared/Button.jsx";
 import { PlayerRow } from "../components/shared/PlayerRow.jsx";
-import { DIVISION_NAMES } from "../constants/index.js";
+import {
+  DIVISION_NAMES,
+  SEASON_JORNADAS,
+  TRANSFER_CLAUSE_MULT,
+  TRANSFER_LISTED_PRICE_MULT,
+} from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
-import { isSameTeamId } from "../utils/teamHelpers.js";
+import { isSameTeamId, normalizeTeamId } from "../utils/teamHelpers.js";
+
+/**
+ * Converte um campo numérico de texto em número ou `null` (vazio/inválido).
+ * @param {string} value - valor do input numérico.
+ * @returns {number|null}
+ */
+function toNumOrNull(value) {
+  if (value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+const PRICE_INPUT_TITLE = `Preço de aquisição: preço de lista (à venda/leilão) ou cláusula (valor × ${TRANSFER_CLAUSE_MULT}) se não listado`;
 
 const SORTS = [
   { value: "quality-desc", label: "Qualidade ↓" },
@@ -81,18 +99,23 @@ export function PlayerSearchView({
   const [sort, setSort] = useState("quality-desc");
   const [searched, setSearched] = useState(false);
 
+  const humanTeamIds = useMemo(
+    () => new Set(players.map((p) => normalizeTeamId(p.teamId))),
+    [players],
+  );
+
   const search = () => {
     setSearched(true);
     setPlayerSearchLoading(true);
     socket.emit("requestPlayerSearch", {
       name,
       position,
-      skillMin: skillMin === "" ? null : Number(skillMin),
-      skillMax: skillMax === "" ? null : Number(skillMax),
-      ageMin: ageMin === "" ? null : Number(ageMin),
-      ageMax: ageMax === "" ? null : Number(ageMax),
-      priceMin: priceMin === "" ? null : Number(priceMin),
-      priceMax: priceMax === "" ? null : Number(priceMax),
+      skillMin: toNumOrNull(skillMin),
+      skillMax: toNumOrNull(skillMax),
+      ageMin: toNumOrNull(ageMin),
+      ageMax: toNumOrNull(ageMax),
+      priceMin: toNumOrNull(priceMin),
+      priceMax: toNumOrNull(priceMax),
       division,
       transferStatus,
       isStar,
@@ -103,9 +126,7 @@ export function PlayerSearchView({
 
   const renderActions = (player) => {
     const isOwnTeam = isSameTeamId(player.team_id, me?.teamId);
-    const isHumanTeam = players.some((p) =>
-      isSameTeamId(p.teamId, player.team_id),
-    );
+    const isHumanTeam = humanTeamIds.has(normalizeTeamId(player.team_id));
     const status = player.transfer_status;
 
     if (isOwnTeam) {
@@ -130,7 +151,8 @@ export function PlayerSearchView({
 
     if (status === "fixed") {
       const price =
-        player.transfer_price || Math.round((player.value || 0) * 0.8);
+        player.transfer_price ||
+        Math.round((player.value || 0) * TRANSFER_LISTED_PRICE_MULT);
       const affordable = myBudget >= price;
       return (
         <button
@@ -167,8 +189,10 @@ export function PlayerSearchView({
 
     const contractStart = player.contract_start_epoch || 0;
     const currentEpoch =
-      (Math.max(1, season) - 1) * 14 + Math.min(14, matchweekCount + 1);
-    const contractLocked = contractStart > 0 && currentEpoch < contractStart + 14;
+      (Math.max(1, season) - 1) * SEASON_JORNADAS +
+      Math.min(SEASON_JORNADAS, matchweekCount + 1);
+    const contractLocked =
+      contractStart > 0 && currentEpoch < contractStart + SEASON_JORNADAS;
     if (contractLocked) {
       return (
         <span className="text-[10px] text-on-surface-variant/50 font-bold uppercase whitespace-nowrap">
@@ -177,7 +201,7 @@ export function PlayerSearchView({
       );
     }
 
-    const suggestedPrice = Math.round((player.value || 0) * 1.35);
+    const suggestedPrice = Math.round((player.value || 0) * TRANSFER_CLAUSE_MULT);
     const affordable = myBudget >= suggestedPrice;
     return (
       <button
@@ -295,7 +319,7 @@ export function PlayerSearchView({
                 value={priceMin}
                 onChange={(e) => setPriceMin(e.target.value)}
                 min="0"
-                title="Preço de aquisição: preço de lista (à venda/leilão) ou cláusula (valor × 1,35) se não listado"
+                title={PRICE_INPUT_TITLE}
               />
               <input
                 type="number"
@@ -304,7 +328,7 @@ export function PlayerSearchView({
                 value={priceMax}
                 onChange={(e) => setPriceMax(e.target.value)}
                 min="0"
-                title="Preço de aquisição: preço de lista (à venda/leilão) ou cláusula (valor × 1,35) se não listado"
+                title={PRICE_INPUT_TITLE}
               />
             </div>
             <select

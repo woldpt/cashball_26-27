@@ -20,6 +20,7 @@ import {
   POSITION_BAR_CLASS,
   POSITION_GLOW_CLASS,
   POSITION_BG_GRADIENT_CLASS,
+  TRANSFER_CLAUSE_MULT,
 } from "../../constants/index.js";
 import { formatCurrency } from "../../utils/formatters.js";
 import { getPlayerStat } from "../../utils/playerHelpers.js";
@@ -305,13 +306,16 @@ export function PlayerRow({
             <span className="text-[10px] text-zinc-600 font-bold uppercase whitespace-nowrap">
               🔒 Contrato
             </span>
-          ) : Math.round((player.value || 0) * 1.35) <= myBudget ? (
+          ) : Math.round((player.value || 0) * TRANSFER_CLAUSE_MULT) <=
+            myBudget ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onProposal?.({
                   player,
-                  suggestedPrice: Math.round((player.value || 0) * 1.35),
+                  suggestedPrice: Math.round(
+                    (player.value || 0) * TRANSFER_CLAUSE_MULT,
+                  ),
                 });
               }}
               className="px-3 py-1.5 rounded text-xs font-black uppercase bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-500 transition-colors whitespace-nowrap"

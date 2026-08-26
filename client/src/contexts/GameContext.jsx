@@ -10,7 +10,11 @@ import {
 	startTransition,
 } from "react";
 import { socket } from "../socket";
-import { DEFAULT_TACTIC, LOAN_INTEREST_RATE } from "../constants/index.js";
+import {
+  DEFAULT_TACTIC,
+  LOAN_INTEREST_RATE,
+  TRANSFER_LISTED_PRICE_MULT,
+} from "../constants/index.js";
 import { isPlayerAvailable } from "../utils/playerHelpers.js";
 import {
 	playNotification,
@@ -909,7 +913,9 @@ export function GameProvider({
 	}, []);
 
 	const listPlayerAuction = useCallback((player) => {
-		const defaultPrice = Math.round((player.value || 0) * 0.8);
+		const defaultPrice = Math.round(
+			(player.value || 0) * TRANSFER_LISTED_PRICE_MULT,
+		);
 		setGameDialog({
 			mode: "prompt",
 			title: `Leilão — ${player.name}`,
