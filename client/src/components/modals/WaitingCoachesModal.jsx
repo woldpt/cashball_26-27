@@ -5,6 +5,7 @@ import { socket } from "../../socket.js";
 import { MODAL_Z } from "../../constants/index.js";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { Badge } from "../shared/Badge.jsx";
+import { isSameDay, formatChatDay } from "../../utils/formatters.js";
 
 /**
  * Modal exibido após o coach confirmar a táctica (multiplayer),
@@ -249,30 +250,41 @@ export function WaitingCoachesModal({
                       Nenhuma mensagem nesta sala ainda.
                     </p>
                   ) : (
-                    roomMessages.map((msg) => {
+                    roomMessages.map((msg, i) => {
                       const isOwn = msg.coachName === me?.name;
+                      const prev = roomMessages[i - 1];
+                      const isNewDay =
+                        !prev || !isSameDay(prev.timestamp, msg.timestamp);
                       return (
-                        <div
-                          key={msg.id}
-                          className={`flex flex-col gap-0.5 ${isOwn ? "items-end" : "items-start"}`}
-                        >
-                          {!isOwn && (
-                            <span className="text-[9px] text-on-surface-variant/70 font-semibold px-1">
-                              {msg.coachName}
-                            </span>
+                        <div key={msg.id} className="flex flex-col gap-0.5">
+                          {isNewDay && (
+                            <div className="flex justify-center py-1.5">
+                              <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-surface-container text-on-surface-variant truncate max-w-full">
+                                {formatChatDay(msg.timestamp)}
+                              </span>
+                            </div>
                           )}
                           <div
-                            className={`max-w-[85%] px-2.5 py-1 rounded-lg text-xs leading-snug ${
-                              isOwn
-                                ? "bg-primary text-on-primary rounded-br-sm"
-                                : "bg-surface-container-highest text-on-surface rounded-bl-sm"
-                            }`}
+                            className={`flex flex-col gap-0.5 ${isOwn ? "items-end" : "items-start"}`}
                           >
-                            {msg.message}
+                            {!isOwn && (
+                              <span className="text-[9px] text-on-surface-variant/70 font-semibold px-1">
+                                {msg.coachName}
+                              </span>
+                            )}
+                            <div
+                              className={`max-w-[85%] px-2.5 py-1 rounded-lg text-xs leading-snug ${
+                                isOwn
+                                  ? "bg-primary text-on-primary rounded-br-sm"
+                                  : "bg-surface-container-highest text-on-surface rounded-bl-sm"
+                              }`}
+                            >
+                              {msg.message}
+                            </div>
+                            <span className="text-[8px] text-on-surface-variant/50 px-1">
+                              {formatChatTime(msg.timestamp)}
+                            </span>
                           </div>
-                          <span className="text-[8px] text-on-surface-variant/50 px-1">
-                            {formatChatTime(msg.timestamp)}
-                          </span>
                         </div>
                       );
                     })

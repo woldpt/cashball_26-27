@@ -1,5 +1,6 @@
 import { socket } from "../../socket.js";
 import { useState, useEffect, useRef } from "react";
+import { isSameDay, formatChatDay } from "../../utils/formatters.js";
 
 const QUICK_MESSAGES = ["👍", "🖕", "Vamos!", "Boa sorte", "⚽", "😂"];
 
@@ -128,25 +129,6 @@ export function RoomHub({
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
-
-  const startOfDay = (d) =>
-    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-
-  const isSameDay = (aTs, bTs) => startOfDay(new Date(aTs)) === startOfDay(new Date(bTs));
-
-  const formatDay = (ts) => {
-    const d = new Date(ts);
-    const today = startOfDay(new Date());
-    const day = startOfDay(d);
-    const oneDay = 24 * 60 * 60 * 1000;
-    if (day === today) return "Hoje";
-    if (day === today - oneDay) return "Ontem";
-    // Mostrar o ano apenas se não for do ano corrente
-    const sameYear = d.getFullYear() === new Date().getFullYear();
-    return d.toLocaleDateString("pt-PT",
-      sameYear ? { day: "2-digit", month: "2-digit" } : { day: "2-digit", month: "2-digit", year: "numeric" }
-    );
   };
 
   const getCoachStatus = (coach) => {
@@ -423,7 +405,7 @@ export function RoomHub({
                       {isNewDay && (
                         <div className="flex justify-center py-2">
                           <span className="px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-surface-container text-on-surface-variant truncate max-w-full">
-                            {formatDay(msg.timestamp)}
+                            {formatChatDay(msg.timestamp)}
                           </span>
                         </div>
                       )}
