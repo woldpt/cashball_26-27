@@ -101,7 +101,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `client/src/utils/fixtures.js` | Gerador de fixtures round-robin (espelha o `engine.ts` do servidor). ✅ Auditado |
 | `client/src/utils/formatters.js` | Formatação de moeda/datas (pt-PT). ✅ Auditado |
 | `client/src/utils/localStorage.js` | Leitura/escrita de sessões (admin) em localStorage. ✅ Auditado |
-| `client/src/utils/playerHelpers.js` | Helpers de jogadores (stats, tiers AGG). |
+| `client/src/utils/playerHelpers.js` | Helpers de jogadores (stats, tiers AGG). ✅ Auditado |
 | `client/src/utils/standingsRank.js` | Comparador de classificação (idêntico ao servidor) + tendência de posições. |
 | `client/src/utils/teamHelpers.js` | Helpers de equipas (normalização de IDs, cores do ticker). |
 
