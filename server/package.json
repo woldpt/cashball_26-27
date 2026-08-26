@@ -20,7 +20,8 @@
     "test:contractrenewal": "tsx scripts/contractRenewalRegression.mts",
     "test:skillhistory": "tsx scripts/skillHistoryRegression.mts",
     "test:attendance": "tsx scripts/attendanceRegression.mts",
-    "test:training-multiseason": "tsx scripts/trainingMultiSeasonRegression.mts"
+    "test:training-multiseason": "tsx scripts/trainingMultiSeasonRegression.mts",
+    "test:relegation-coach": "tsx scripts/relegationCoachRegression.mts"
   },
   "keywords": [],
   "author": "",

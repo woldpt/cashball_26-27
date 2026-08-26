@@ -31,7 +31,7 @@ export interface CoachMarketEvent {
   coachName: string;
   teamName: string;
   division: number;
-  reason?: "results" | "budget";
+  reason?: "results" | "budget" | "relegation";
   detail?: string;
   isHuman: boolean;
   colorPrimary?: string;
@@ -116,7 +116,7 @@ export interface ActiveGame {
     {
       matchweek: number;
       division: number;
-      reason?: "results" | "budget";
+      reason?: "results" | "budget" | "relegation";
       teamName?: string;
       detail?: string;
     }

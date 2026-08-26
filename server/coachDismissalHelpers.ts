@@ -76,24 +76,28 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
   async function dismissHumanCoach(
     game: ActiveGame,
     coachName: string,
-    reason: "results" | "budget",
+    reason: "results" | "budget" | "relegation",
     teamName: string,
     oldTeamId: number,
     division: number,
     detail: string,
     colors?: { colorPrimary?: string; colorSecondary?: string },
+    opts?: { force?: boolean },
   ): Promise<void> {
     const player = game.playersByName[coachName];
     if (!player) return;
 
     // Máximo 1 despedimento por época: se já foi despedido esta época, ignora
-    // qualquer novo gatilho (evita despedimentos em cascata).
-    if (game.dismissalsThisSeason.has(coachName)) return;
+    // qualquer novo gatilho (evita despedimentos em cascata). O despedimento
+    // por despromoção (force) é obrigatório e ignora este limite.
+    if (!opts?.force && game.dismissalsThisSeason.has(coachName)) return;
 
     const socketId = player.socketId;
 
-    // Registar despedimento na época corrente
-    game.dismissalsThisSeason.add(coachName);
+    // Registar despedimento na época corrente. O force de despromoção não
+    // consome o limite da nova época: é um evento estrutural de fim de época,
+    // não um despedimento por desempenho.
+    if (!opts?.force) game.dismissalsThisSeason.add(coachName);
     player.teamId = null;
     player.ready = false;
     game.dismissedCoachSince[coachName] = {
@@ -131,8 +135,14 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     }
 
     // Broadcast to room
+    const reasonText =
+      reason === "budget"
+        ? " por insolvência financeira."
+        : reason === "relegation"
+          ? " por despromoção do Campeonato de Portugal."
+          : " após má série de resultados.";
     io.to(game.roomCode).emit("systemMessage", {
-      text: `${coachName} foi despedido de ${teamName}${reason === "budget" ? " por insolvência financeira." : " após má série de resultados."}`,
+      text: `${coachName} foi despedido de ${teamName}${reasonText}`,
       broadcast: true,
     });
 
@@ -449,6 +459,70 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
 
     broadcastTeamsData(game);
   }
+
+  // ── RELEGATION (fim de época) ─────────────────────────────────────────────
+
+  /**
+   * Despedimento obrigatório de treinadores humanos cujos clubes acabaram nos
+   * dois últimos lugares do Campeonato de Portugal (divisão 4) e foram
+   * despromovidos para os Distritais (divisão 5, pool interno invisível).
+   *
+   * Diferenças face ao despedimento por forma/orçamento:
+   *  - 100% garantido (sem rolagem de probabilidade);
+   *  - ignora a carência (GRACE_MATCHES) e o limite de 1 despedimento/época;
+   *  - não consome o limite de despedimentos da NOVA época (evento de fim de
+   *    época, não um despedimento por desempenho).
+   *
+   * O coach é realocado automaticamente para outro clube NPC do Campeonato
+   * de Portugal: a divisão de origem passada a `dismissHumanCoach` é sempre 4
+   * (a equipa de origem já está na div 5 na DB quando isto é chamado).
+   *
+   * Chamado no fim de época com os IDs das equipas despromovidas da div 4.
+   */
+  const processRelegatedHumanCoaches = async (
+    game: ActiveGame,
+    relegatedTeamIds: number[],
+  ): Promise<void> => {
+    for (const teamId of relegatedTeamIds) {
+      const team = await runGet<AnyRow>(
+        game.db,
+        `SELECT t.id, t.name, t.division, t.color_primary, t.color_secondary,
+                m.name AS coach_name, m.is_human AS coach_is_human
+         FROM teams t
+         LEFT JOIN managers m ON t.manager_id = m.id
+         WHERE t.id = ?`,
+        [teamId],
+      );
+      if (!team || !team.coach_name) continue;
+      if (!team.coach_is_human) continue; // só treinadores humanos
+
+      await dismissHumanCoach(
+        game,
+        team.coach_name,
+        "relegation",
+        team.name,
+        teamId,
+        4, // divisão de origem (a equipa já está na div 5 na DB)
+        "por despromoção do Campeonato de Portugal",
+        {
+          colorPrimary: team.color_primary,
+          colorSecondary: team.color_secondary,
+        },
+        { force: true },
+      );
+    }
+
+    // O caminho de fim de época não passa por processCoachEvents (que
+    // normalmente emite e limpa o resumo) — emitir aqui para o modal "Mercado
+    // de Treinadores" mostrar os despedimentos/contratações da despromoção.
+    if (game.coachMarketEvents && game.coachMarketEvents.length > 0) {
+      io.to(game.roomCode).emit("coachMarketReport", {
+        matchweek: game.matchweek,
+        events: game.coachMarketEvents,
+      });
+      game.coachMarketEvents = [];
+    }
+  };
 
   // ── MAIN FUNCTION ─────────────────────────────────────────────────────────
 
@@ -768,5 +842,10 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     delete game.pendingJobOffers[coachName];
   };
 
-  return { processCoachEvents, handleAcceptJobOffer, handleDeclineJobOffer };
+  return {
+    processCoachEvents,
+    processRelegatedHumanCoaches,
+    handleAcceptJobOffer,
+    handleDeclineJobOffer,
+  };
 }

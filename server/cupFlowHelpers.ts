@@ -50,6 +50,10 @@ interface CupFlowDeps {
 		calendarIndex?: number,
 	) => Promise<void>;
 	resumeAllPausedAuctions: (game: ActiveGame) => void;
+	processRelegatedHumanCoaches: (
+		game: ActiveGame,
+		relegatedTeamIds: number[],
+	) => Promise<void>;
 }
 
 export function createCupFlowHelpers(deps: CupFlowDeps) {
@@ -71,6 +75,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		clearSeasonTrainingState,
 		applyPostMatchQualityEvolution,
 		resumeAllPausedAuctions,
+		processRelegatedHumanCoaches,
 	} = deps;
 
 	// ─── OFF-SEASON AGING & IDLENESS ────────────────────────────────────────
@@ -351,6 +356,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			teamName: string;
 		}> = [];
 
+		// Equipas despromovidas do CP (div 4) — usadas no fim da função para o
+		// despedimento obrigatório de treinadores humanos.
+		const relegatedFromDiv4: number[] = [];
+
 		function pickRandomTeamIds(teams: any[], count: number): number[] {
 			const pool = [...teams];
 			for (let i = pool.length - 1; i > 0; i--) {
@@ -370,6 +379,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			const lower = byDiv[lowerDiv] || [];
 			if (!upper.length || !lower.length) continue;
 			const relegated = upper.slice(-2).map((team) => team.id);
+			if (upperDiv === 4 && lowerDiv === 5)
+				relegatedFromDiv4.push(...relegated);
 			const promoted =
 				upperDiv === 4 && lowerDiv === 5
 					? pickRandomTeamIds(lower, 2)
@@ -566,6 +577,18 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					}
 				: null,
 		});
+
+		// Despedimento obrigatório de treinadores humanos despromovidos do
+		// Campeonato de Portugal: a sua equipa caiu para o pool invisível da
+		// div 5 — sem realocação, o coach ficaria numa equipa que não joga.
+		try {
+			await processRelegatedHumanCoaches(game, relegatedFromDiv4);
+		} catch (relegationErr) {
+			console.error(
+				`[${game.roomCode}] Relegation coach dismissal error:`,
+				relegationErr,
+			);
+		}
 	}
 
 	// ─── CUP DRAW ──────────────────────────────────────────────────────────────

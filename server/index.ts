@@ -750,6 +750,20 @@ const setTrainingFocus = trainingHandlers.setTrainingFocus;
 const getTrainingFocus = trainingHandlers.getTrainingFocus;
 const getTrainingHistory = trainingHandlers.getTrainingHistory;
 
+// ── COACH DISMISSALS (antes do cupFlow: applySeasonEnd chama
+// processRelegatedHumanCoaches para despedir coaches despromovidos do CP) ──
+
+const coachDismissalHelpers = createCoachDismissalHelpers({
+	io,
+	runAll,
+	runGet,
+	saveGameState,
+	getRoomCoaches,
+});
+const processCoachEvents = coachDismissalHelpers.processCoachEvents;
+const handleAcceptJobOffer = coachDismissalHelpers.handleAcceptJobOffer;
+const handleDeclineJobOffer = coachDismissalHelpers.handleDeclineJobOffer;
+
 const cupFlowHelpers = createCupFlowHelpers({
 	io,
 	runAll,
@@ -768,6 +782,8 @@ const cupFlowHelpers = createCupFlowHelpers({
 	clearSeasonTrainingState,
 	applyPostMatchQualityEvolution,
 	resumeAllPausedAuctions,
+	processRelegatedHumanCoaches:
+		coachDismissalHelpers.processRelegatedHumanCoaches,
 });
 
 const applySeasonEnd = cupFlowHelpers.applySeasonEnd;
@@ -778,17 +794,6 @@ const emitCurrentPhaseToSocket = cupFlowHelpers.emitCurrentPhaseToSocket;
 const ensurePhaseTimeout = cupFlowHelpers.ensurePhaseTimeout;
 
 // ── WEEKLY FLOW ────────────────────────────────────────────────────────────────
-
-const coachDismissalHelpers = createCoachDismissalHelpers({
-	io,
-	runAll,
-	runGet,
-	saveGameState,
-	getRoomCoaches,
-});
-const processCoachEvents = coachDismissalHelpers.processCoachEvents;
-const handleAcceptJobOffer = coachDismissalHelpers.handleAcceptJobOffer;
-const handleDeclineJobOffer = coachDismissalHelpers.handleDeclineJobOffer;
 
 const weeklyFlowHelpers = createWeeklyFlowHelpers({
 	io,
