@@ -196,6 +196,9 @@ export function registerGameplaySocketHandlers(
     }
     game.lockedCoaches.delete(targetName);
 
+    // Ban permanente: o coach expulso não pode reentrar na sala
+    game.kickedCoaches.add(targetName);
+
     // Libertar a equipa no DB e apagar o registo do manager (também cobre
     // coaches offline/abandonados que já não têm sessão runtime).
     game.db.run(

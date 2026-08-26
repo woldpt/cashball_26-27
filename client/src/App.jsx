@@ -82,6 +82,11 @@ function App() {
 
 		const handleJoinSuccess = (data) => {
 			const { roomCode, roomName } = data;
+			// Atualiza o ref SINCRONICAMENTE (antes do re-render) para que a
+			// guarda inRoom() já passe nos eventos gameState/playerListUpdate
+			// iniciais — caso contrário roomCreator (e o botão Kick do admin)
+			// são descartados e nunca chegam ao client.
+			roomCodeRef.current = roomCode;
 			setRoomCode(roomCode);
 			setMe((prev) => {
 				if (!prev) return null;

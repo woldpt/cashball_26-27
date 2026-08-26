@@ -490,6 +490,14 @@ export function registerSessionSocketHandlers(
 			}
 
 			const doJoinContinue = () => {
+				// Bloquear coaches expulso definitivamente pelo Admin
+				if (game.kickedCoaches?.has(trimmedName)) {
+					return socket.emit(
+						"joinError",
+						"Foste expulso desta sala pelo Admin.",
+					);
+				}
+
 				// Definir o criador da sala quando é criada de raiz
 				if (joinMode === "new-game" && !game.roomCreator) {
 					game.roomCreator = trimmedName;

@@ -123,6 +123,9 @@ export interface ActiveGame {
   >; // coachName → info de despedimento
   dismissalsThisSeason: Set<string>; // coaches despedidos na época actual (máx 1 por época)
 
+  // ── Coaches expulso da sala pelo Admin (ban permanente, persistido) ──
+  kickedCoaches: Set<string>; // coachName → expulso definitivamente da sala
+
   // ── Resumo semanal do mercado de treinadores (transiente, limpo após emissão) ──
   coachMarketEvents: CoachMarketEvent[];
 

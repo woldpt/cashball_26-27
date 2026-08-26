@@ -399,6 +399,7 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     npcMatchesManaged: {},
     dismissedCoachSince: {},
     dismissalsThisSeason: new Set<string>(),
+    kickedCoaches: new Set<string>(),
 
     // Resumo semanal do mercado de treinadores (transiente)
     coachMarketEvents: [],
@@ -744,6 +745,13 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                     game.dismissalsThisSeason = new Set<string>(names);
                 } catch (_) {}
               }
+              if (st["kickedCoaches"]) {
+                try {
+                  const names = JSON.parse(st["kickedCoaches"]);
+                  if (Array.isArray(names))
+                    game.kickedCoaches = new Set<string>(names);
+                } catch (_) {}
+              }
               if (st["fixtureSeeds"]) {
                 try {
                   const parsed = JSON.parse(st["fixtureSeeds"]);
@@ -1022,6 +1030,10 @@ function saveGameState(game: ActiveGame): void {
   upsert(
     "dismissalsThisSeason",
     JSON.stringify([...(game.dismissalsThisSeason ?? [])]),
+  );
+  upsert(
+    "kickedCoaches",
+    JSON.stringify([...(game.kickedCoaches ?? [])]),
   );
   upsert("fixtureSeeds", JSON.stringify(game.fixtureSeeds || {}));
   upsert("allMatchResults", JSON.stringify(game.allMatchResults || {}));
