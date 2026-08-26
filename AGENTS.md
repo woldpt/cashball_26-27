@@ -13,6 +13,7 @@
 | **Frontend Dev**         | `cd client && npm run dev`                         |
 | **Frontend Lint**        | `cd client && npm run lint`                        |
 | **Frontend JSDoc Check** | `cd client && npm run check:types`                 |
+| **Mobile Resp Check**    | `cd client && npm run test:mobile`                 |
 | **Socket Audit**         | `cd server && npm run audit:socketio`              |
 | **Game-State Audit**     | `cd server && npm run audit:gamestate <ROOM_CODE>` |
 | **Repair Job Offer**     | `cd server && npm run repair:joboffer <ROOM_CODE> [--fix]` |
