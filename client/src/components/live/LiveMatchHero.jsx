@@ -402,7 +402,9 @@ export function LiveMatchHero({
 /* ── Sub-components ─────────────────────────────────────────────────────── */
 
 function TeamEvents({ events, align }) {
-  if (events.length === 0) return null;
+  // Nota: nunca devolver `null` aqui — o pai é uma `grid grid-cols-2` e um child
+  // vazio tem de ocupar a sua coluna, senão o grid desloca a coluna seguinte
+  // para a esquerda (eventos de fora apareciam sob a equipa da casa).
   const isRight = align === "right";
   return (
     <div className={`flex flex-col gap-0.5 ${isRight ? "items-end" : "items-start"}`}>
