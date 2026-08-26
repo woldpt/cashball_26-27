@@ -95,7 +95,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 ### `client/src/utils/`
 | Ficheiro | Função principal |
 | :--- | :--- |
-| `client/src/utils/audio.js` | Tons de notificação (Web Audio API). |
+| `client/src/utils/audio.js` | Tons de notificação (Web Audio API). ✅ Auditado |
 | `client/src/utils/cacheVersion.js` | Gestão de versão de cache/localStorage (limpeza com preservação de sessões). |
 | `client/src/utils/colorHelpers.js` | Helpers de cor (normalização hex, anéis por posição). |
 | `client/src/utils/fixtures.js` | Gerador de fixtures round-robin (espelha o `engine.ts` do servidor). |
