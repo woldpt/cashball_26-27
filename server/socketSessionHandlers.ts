@@ -506,6 +506,18 @@ export function registerSessionSocketHandlers(
 
 				recordRoomAccess(trimmedName, finalRoomCode);
 
+				// Carregar a membresia persistente (room_managers) antes do
+				// primeiro emitPresence do join — garante que a lista de offline
+				// está correcta mesmo após restart / load fresco do jogo.
+				getRoomCoaches(finalRoomCode)
+					.then((members: string[]) => {
+						game.roomMembers = new Set(members);
+					})
+					.catch(() => {})
+					.then(() => proceedWithManagerLookup());
+			};
+
+			const proceedWithManagerLookup = () => {
 				game.db.get(
 					"SELECT * FROM managers WHERE name = ?",
 					[trimmedName],
@@ -622,7 +634,7 @@ export function registerSessionSocketHandlers(
 						}
 					},
 				);
-			}; // end doJoinContinue
+			}; // end proceedWithManagerLookup
 
 			const doJoin = () => {
 				socket.join(finalRoomCode);

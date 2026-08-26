@@ -4,6 +4,7 @@ import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { SEASON_CALENDAR, fairWeeklyWage } from "./gameConstants";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
+import { getOfflineCoaches } from "./presenceHelpers";
 
 const sqlite = sqlite3.verbose();
 
@@ -346,6 +347,7 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     db,
     playersByName: {} as Record<string, PlayerSession>,
     socketToName: {} as Record<string, string>,
+    roomMembers: new Set<string>(),
 
     // New unified state machine
     calendarIndex: 0,
@@ -1194,10 +1196,7 @@ function emitPresence(game: ActiveGame, io: any): void {
     players: getPlayerList(game),
     roomCreator: game.roomCreator || "",
   });
-  const offline = Object.entries(game.playersByName)
-    .filter(([, session]) => !session.socketId)
-    .map(([name]) => name);
-  io.to(game.roomCode).emit("awaitingCoaches", offline);
+  io.to(game.roomCode).emit("awaitingCoaches", getOfflineCoaches(game));
 }
 
 function closeAllDatabases(): Promise<void> {

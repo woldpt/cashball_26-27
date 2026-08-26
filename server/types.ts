@@ -57,6 +57,10 @@ export interface ActiveGame {
   db: any;
   playersByName: Record<string, PlayerSession>;
   socketToName: Record<string, string>;
+  // Membros persistentes da sala (espelho de room_managers). Fonte da verdade
+  // para a lista de offline — playersByName é apenas in-memory e só contém
+  // coaches que já ligaram desde o último load do jogo.
+  roomMembers: Set<string>;
 
   // ── Single calendar cursor (replaces matchweek + cupRound as progress trackers) ──
   calendarIndex: number; // 0..18 within the season (index into SEASON_CALENDAR)
