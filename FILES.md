@@ -119,7 +119,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `client/src/views/ClubTab.jsx` | Aba do clube (estádio, infraestruturas). ✅ Auditado |
 | `client/src/views/CupTab.jsx` | Aba da Taça (resultados por ronda). ✅ Auditado |
 | `client/src/views/FinancesTab.jsx` | Aba de finanças (orçamento, salários, receitas). ✅ Auditado |
-| `client/src/views/PlayerSearchView.jsx` | Vista de pesquisa de jogadores (Scout). |
+| `client/src/views/PlayerSearchView.jsx` | Vista de pesquisa de jogadores (Scout). ✅ Auditado |
 | `client/src/views/PlayersTab.jsx` | Aba de jogadores (referência de implementação do design system). |
 | `client/src/views/StadiumTab.jsx` | Aba do estádio (capacidades, receitas). |
 | `client/src/views/StandingsTab.jsx` | Aba da classificação (usa `LeagueStandings`). |
