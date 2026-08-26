@@ -1,6 +1,6 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import type { CalendarEntry } from "./gameConstants";
-import { SEASON_CALENDAR } from "./gameConstants";
+import { SEASON_CALENDAR, LOAN_WEEKLY_INSTALLMENT } from "./gameConstants";
 import {
   getAllTeamForms,
   getStandingsRows,
@@ -1397,11 +1397,30 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         ]);
       }
 
-      // Deduct weekly wages + loan interest (same for cup and league weeks)
+      // Deduct weekly wages + loan interest + principal installment (same for
+      // cup and league weeks). The installment abates the loan principal so the
+      // visible debt shrinks week over week.
+      //
+      // We read the pre-update loan amounts first. node-sqlite3 queues
+      // statements in order, so this SELECT completes (and populates preLoan)
+      // before the UPDATE below runs — the journal then logs interest on the
+      // opening balance and the exact principal installment applied.
+      const preLoan: Record<number, number> = {};
+      game.db.all(
+        `SELECT id, loan_amount FROM teams`,
+        (preErr: any, preRows: any[]) => {
+          if (preErr) return;
+          for (const r of preRows || []) preLoan[r.id] = r.loan_amount || 0;
+        },
+      );
       game.db.run(
-        `UPDATE teams SET budget = budget
-          - CAST((loan_amount * 0.015) AS INTEGER)
-          - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)`,
+        `UPDATE teams SET
+          loan_amount = MAX(0, loan_amount - ?),
+          budget = budget
+            - CAST((loan_amount * 0.015) AS INTEGER)
+            - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
+            - MIN(?, loan_amount)`,
+        [LOAN_WEEKLY_INSTALLMENT, LOAN_WEEKLY_INSTALLMENT],
         async (err: any) => {
           if (err) {
             console.error(
@@ -1414,19 +1433,21 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             return;
           }
 
-          // Financial journal: log the weekly base income, wages and loan
-          // interest that were just applied, so the balance history chart can
-          // reconstruct the season's budget evolution.
+          // Financial journal: log the weekly base income, wages, loan interest
+          // and principal installment that were just applied, so the balance
+          // history chart can reconstruct the season's budget evolution.
           game.db.all(
-            `SELECT t.id, t.division, t.loan_amount,
+            `SELECT t.id, t.division,
                     COALESCE((SELECT SUM(wage) FROM players WHERE players.team_id = t.id), 0) AS wage_sum
              FROM teams t`,
             (logErr: any, teams: any[]) => {
               if (logErr) return;
               for (const team of teams || []) {
+                const oldLoan = preLoan[team.id] || 0;
                 const income = WEEKLY_BASE_INCOME[team.division] || 0;
                 const wages = team.wage_sum || 0;
-                const interest = Math.floor((team.loan_amount || 0) * 0.015);
+                const interest = Math.floor(oldLoan * 0.015);
+                const installment = Math.min(LOAN_WEEKLY_INSTALLMENT, oldLoan);
                 if (income > 0)
                   logClubNews(game, "weekly_income", "Rendimento Semanal", team.id, {
                     amount: income,
@@ -1441,6 +1462,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                   logClubNews(game, "loan_interest", "Juros Bancários", team.id, {
                     amount: interest,
                     description: "Juros do empréstimo (1,5%)",
+                  });
+                if (installment > 0)
+                  logClubNews(game, "loan_principal", "Amortização do Empréstimo", team.id, {
+                    amount: installment,
+                    description: "Pagamento de capital do empréstimo",
                   });
               }
             },

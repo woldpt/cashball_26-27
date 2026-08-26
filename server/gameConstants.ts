@@ -94,6 +94,15 @@ export const SPONSOR_REVENUE_BY_DIVISION: Record<number, number> = {
 export const AUCTION_BID_STEP = 10000;
 
 /**
+ * Amortização semanal do empréstimo bancário (pagamento de capital).
+ * A cada semana de jogo (liga e taça), este valor é debitado do orçamento e
+ * abatido ao principal (loan_amount), independentemente dos juros. Assim a
+ * dívida visível diminui semana a semana até a zero.
+ * 50K/sem → um empréstimo de 500K (1 LOAN_STEP) é liquidado em 10 semanas.
+ */
+export const LOAN_WEEKLY_INSTALLMENT = 50000;
+
+/**
  * Duração de um contrato em matchweeks (1 época = 14 jornadas de liga).
  * Um jogador contratado/renovado na Jornada X só pode ser transferido a
  * partir da Jornada X da época seguinte.
