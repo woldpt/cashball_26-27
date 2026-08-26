@@ -1138,8 +1138,9 @@ function adminRemoveRoomAccess(managerName, roomCode) {
  * Admin — list the human coaches in a room and which teams are assignable.
  *
  * Coaches: every is_human=1 manager with their current team (if any).
- * Teams: every team WITHOUT a human manager (free / NPC-managed) — those are
- * the only valid reassignment targets, so no other coach's team is overwritten.
+ * Teams: every team NOT managed by a human coach (unowned OR NPC-managed).
+ * NPC teams are free to take over, so only a team owned by another human
+ * coach is excluded from the assignment targets.
  *
  * @param {string} roomCode
  * @returns {Promise<{ok: boolean, coaches?: Array<{name: string, teamId: number|null, teamName: string|null, division: number|null}>, teams?: Array<{id: number, name: string, division: number}>, roomCode?: string, error?: string}>}
@@ -1172,7 +1173,8 @@ function adminGetRoomCoaches(roomCode) {
 			const teamsQuery = `
 				SELECT t.id AS id, t.name AS name, t.division AS division
 				FROM teams t
-				WHERE t.manager_id IS NULL
+				LEFT JOIN managers m ON t.manager_id = m.id
+				WHERE t.manager_id IS NULL OR COALESCE(m.is_human, 0) = 0
 				ORDER BY t.division, t.name COLLATE NOCASE
 			`;
 
@@ -1250,24 +1252,25 @@ function adminSetCoachTeam(roomCode, coachName, teamId, activeGames) {
 					}
 					const managerId = managerRow.id;
 
-					// 2. Find the target team and ensure it is FREE (safety constraint (a))
-					gameDb.get(
-						"SELECT id, name, manager_id FROM teams WHERE id = ?",
-						[targetTeamId],
-						(tErr, teamRow) => {
-							if (tErr) {
-								gameDb.close();
-								console.error("[auth] adminSetCoachTeam team select error:", tErr.message);
-								return resolve({ ok: false, error: "Erro interno." });
-							}
-							if (!teamRow) {
-								gameDb.close();
-								return resolve({ ok: false, error: "Equipa de destino não encontrada." });
-							}
-							if (teamRow.manager_id != null) {
-								gameDb.close();
-								return resolve({ ok: false, error: `A equipa "${teamRow.name}" já tem treinador.` });
-							}
+						// 2. Find the target team and reject only human-managed teams (NPC
+						//    teams are free to take over — safety constraint (a)).
+						gameDb.get(
+							"SELECT t.id, t.name, t.manager_id, m.is_human AS manager_is_human FROM teams t LEFT JOIN managers m ON t.manager_id = m.id WHERE t.id = ?",
+							[targetTeamId],
+							(tErr, teamRow) => {
+								if (tErr) {
+									gameDb.close();
+									console.error("[auth] adminSetCoachTeam team select error:", tErr.message);
+									return resolve({ ok: false, error: "Erro interno." });
+								}
+								if (!teamRow) {
+									gameDb.close();
+									return resolve({ ok: false, error: "Equipa de destino não encontrada." });
+								}
+								if (teamRow.manager_id != null && teamRow.manager_is_human === 1) {
+									gameDb.close();
+									return resolve({ ok: false, error: `A equipa "${teamRow.name}" já tem treinador humano.` });
+								}
 
 							// 3. Free the coach's current team, then assign the new one
 							gameDb.run(
