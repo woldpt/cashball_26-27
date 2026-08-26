@@ -227,6 +227,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     (p) =>
       p.transfer_status === "fixed" && !isSameTeamId(p.team_id, me?.teamId),
   ).length;
+  // Soma de negócios activos (leilões a decorrer + mercado) para o badge do
+  // botão "Transferências" na navegação mobile (onde Mercado e Leilões se unem).
+  const transferBadgeCount = liveAuctionCount + marketListedCount;
   const totalCoaches =
     players.length +
     awaitingCoaches.filter((n) => !players.some((p) => p.name === n)).length;
@@ -1051,8 +1054,18 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       }}
                     />
                   )}
-                  <span className="material-symbols-outlined text-[22px] leading-none">
-                    swap_horiz
+                  <span className="relative">
+                    <span className="material-symbols-outlined text-[22px] leading-none">
+                      swap_horiz
+                    </span>
+                    {transferBadgeCount > 0 && (
+                      <span
+                        className="absolute -top-1 -right-2 flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none min-w-[18px] h-[18px] px-1 text-[10px]"
+                        title={`${transferBadgeCount} negócio(s) activo(s)`}
+                      >
+                        {transferBadgeCount > 99 ? "99+" : transferBadgeCount}
+                      </span>
+                    )}
                   </span>
                   <span>Transfer.</span>
                 </motion.button>
