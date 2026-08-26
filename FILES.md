@@ -114,7 +114,7 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 ### `client/src/views/` (abas do jogo)
 | Ficheiro | Função principal |
 | :--- | :--- |
-| `client/src/views/BracketTab.jsx` | Aba do bracket da Taça (usa `CupBracketPage`). |
+| `client/src/views/BracketTab.jsx` | Aba do bracket da Taça (usa `CupBracketPage`). ✅ Auditado |
 | `client/src/views/CalendarioTab.jsx` | Aba do calendário da época (liga + taça). |
 | `client/src/views/ClubTab.jsx` | Aba do clube (estádio, infraestruturas). |
 | `client/src/views/CupTab.jsx` | Aba da Taça (resultados por ronda). |
