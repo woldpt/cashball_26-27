@@ -149,8 +149,8 @@ function NextMatchCard({ nextMatchSummary, teamInfo, onOpenTeamSquad }) {
   // Golos e moral
   const myGF = teamInfo?.goals_for ?? 0;
   const myGA = teamInfo?.goals_against ?? 0;
-  const myMorale = teamInfo?.morale ?? 75;
-  const oppMorale = opp.morale ?? 75;
+  const myMorale = teamInfo?.morale ?? 50;
+  const oppMorale = opp.morale ?? 50;
 
   // Qualidade média (comparativa de qualidade)
   const myAvg = teamInfo?.avgSkill ?? myTeam.avgSkill ?? null;

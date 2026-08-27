@@ -1314,6 +1314,7 @@ async function simulateMatchSegment(
     const formationAttack = formationOffensiveFactors[formation] ?? 1.0;
     const formationDefense = formationDefensiveFactors[formation] ?? 1.0;
 
+    // Morale (0-100) swings attack by ±25% and defense by ±12.5% around 50.
     const moraleAttackFactor = 1 + (morale - 50) * 0.005;
     const moraleDefenseFactor = 1 + (morale - 50) * 0.0025;
 
@@ -1330,14 +1331,14 @@ async function simulateMatchSegment(
       attack:
         attackBase *
         formationAttack *
-        Math.max(0.5, Math.min(1.5, moraleAttackFactor)) *
+        moraleAttackFactor *
         styleOffensiveFactor[style] *
         formFactor *
         familiarityAttackFactor,
       defense:
         defenseBase *
         formationDefense *
-        Math.max(0.75, Math.min(1.25, moraleDefenseFactor)) *
+        moraleDefenseFactor *
         formFactor *
         familiarityDefenseFactor,
       style,
@@ -2111,11 +2112,17 @@ async function applyPostMatchQualityEvolution(
     }
 
     // ── Morale update per team ─────────────────────────────────────────────
+    // Weekly decay toward neutral 50 (once per calendar event) so morale
+    // reflects recent form instead of accumulated cross-season history.
+    db.run(
+      "UPDATE teams SET morale = MAX(0, MIN(100, CAST(morale + (50 - morale) * 0.1 AS INTEGER)))",
+    );
+
     const moraleUpdates = [];
     for (const [teamId, result] of teamResults.entries()) {
       let delta;
-      if (result === "W") delta = 20;
-      else if (result === "L") delta = -15;
+      if (result === "W") delta = 25;
+      else if (result === "L") delta = -20;
       else delta = 5;
       moraleUpdates.push({ teamId, delta });
     }

@@ -22,7 +22,8 @@
     "test:attendance": "tsx scripts/attendanceRegression.mts",
     "test:training-multiseason": "tsx scripts/trainingMultiSeasonRegression.mts",
     "test:relegation-coach": "tsx scripts/relegationCoachRegression.mts",
-    "test:substitutions": "tsx scripts/substitutionsRegression.mts"
+    "test:substitutions": "tsx scripts/substitutionsRegression.mts",
+    "test:morale": "tsx scripts/moraleRegression.mts"
   },
   "keywords": [],
   "author": "",

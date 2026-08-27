@@ -446,7 +446,7 @@ export function TacticsView() {
               {nextMatchSummary && (
                 <div className="flex-1 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
                   {(() => {
-                    const morale = teamInfo?.morale ?? 75;
+                    const morale = teamInfo?.morale ?? 50;
                     const fillColor =
                       morale > 75
                         ? "bg-green-500"
@@ -578,7 +578,7 @@ export function TacticsView() {
             {nextMatchSummary && (
               <div className="hidden lg:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
                 {(() => {
-                  const morale = teamInfo?.morale ?? 75;
+                  const morale = teamInfo?.morale ?? 50;
                   const fillColor =
                     morale > 75
                       ? "bg-green-500"

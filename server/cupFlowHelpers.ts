@@ -1230,6 +1230,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 
 		// ── Phase 3: DB updates, morale, and results for all fixtures ────────────
+		const upsets: Array<{
+			winnerName: string;
+			winnerDiv: number;
+			loserName: string;
+			loserDiv: number;
+		}> = [];
 		for (const { fixture, t1, t2, goals90Home, goals90Away } of setups) {
 			const winnerId =
 				fixture._winnerId ??
@@ -1295,7 +1301,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				);
 			});
 
-			// Cup upset morale boost: winner beat a team from a higher division
+			// Cup upset drama by division gap: the lower-division team that
+			// advances gets an extra morale spike and the higher-division team
+			// it eliminates takes a matching extra hit.
 			const [homeDiv, awayDiv] = await Promise.all([
 				runGet(game.db, "SELECT division FROM teams WHERE id = ?", [
 					fixture.homeTeamId,
@@ -1313,14 +1321,30 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				: (homeDiv?.division ?? 5);
 			if (loserDiv < winnerDiv) {
 				const divDiff = winnerDiv - loserDiv;
-				const extraMorale = Math.min(25, divDiff * 10);
+				const upsetMorale = Math.min(30, divDiff * 10);
 				await new Promise((resolve) => {
 					game.db.run(
 						"UPDATE teams SET morale = MIN(100, morale + ?) WHERE id = ?",
-						[extraMorale, winnerId],
+						[upsetMorale, winnerId],
 						resolve,
 					);
 				});
+				const loserId = winnerIsHome
+					? fixture.awayTeamId
+					: fixture.homeTeamId;
+				await new Promise((resolve) => {
+					game.db.run(
+						"UPDATE teams SET morale = MAX(0, morale - ?) WHERE id = ?",
+						[upsetMorale, loserId],
+						resolve,
+					);
+				});
+				const winnerName =
+					(winnerIsHome ? fixture.homeTeam : fixture.awayTeam)?.name ?? "Desconhecido";
+				const loserName =
+					(winnerIsHome ? fixture.awayTeam : fixture.homeTeam)?.name ??
+					"Desconhecido";
+				upsets.push({ winnerName, winnerDiv, loserName, loserDiv });
 			}
 
 			results.push({
@@ -1409,6 +1433,14 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 		// Emit results
 		io.to(game.roomCode).emit("cupRoundResults", game.cupResultsPayload);
+
+		// Hype das surpresas de escalão (moral já aplicada na Phase 3)
+		for (const u of upsets) {
+			io.to(game.roomCode).emit("systemMessage", {
+				text: `⚡ SURPRESA NA TAÇA! ${u.winnerName} (${DIVISION_NAMES[u.winnerDiv]}) eliminou ${u.loserName} (${DIVISION_NAMES[u.loserDiv]})!`,
+				broadcast: true,
+			});
+		}
 		// Apply training bonuses for this completed calendar event (cup round)
 		const completedCalendarIndex = game.calendarIndex;
 		try {

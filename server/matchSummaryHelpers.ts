@@ -759,7 +759,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       goalsAgainst: opponent.goals_against || 0,
       color_primary: opponent.color_primary || null,
       color_secondary: opponent.color_secondary || null,
-      morale: opponent.morale ?? 75,
+      morale: opponent.morale ?? 50,
       wins: opponent.wins || 0,
       draws: opponent.draws || 0,
       losses: opponent.losses || 0,

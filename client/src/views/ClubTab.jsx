@@ -40,7 +40,7 @@ export function ClubTab({
   palmares,
   clubNews,
 }) {
-  const morale = teamInfo?.morale ?? 75;
+  const morale = teamInfo?.morale ?? 50;
   const moraleLabel =
     morale >= 70 ? "ELEVADO" : morale >= 40 ? "ESTÁVEL" : "BAIXO";
   const moraleTextColor =
