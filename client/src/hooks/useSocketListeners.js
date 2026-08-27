@@ -1301,6 +1301,16 @@ export function useSocketListeners(handlers, refs) {
 			);
 		});
 
+		// Treinador esgotou as 3 substituições permitidas na partida (4ª tentativa
+		// ou lesão sem reposição): avisa só o treinador da equipa envolvida.
+		socket.on("substitutionCapReached", ({ teamId }) => {
+			const myTeamId = refs.meRef.current?.teamId;
+			if (!myTeamId || myTeamId !== teamId) return;
+			handlers.addToast(
+				"Esgotaste as 3 substituições permitidas na partida.",
+			);
+		});
+
 		socket.on("coachDisconnected", () => {
 			if (!inRoom()) return;
 		});

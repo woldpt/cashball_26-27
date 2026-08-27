@@ -428,6 +428,8 @@ async function applyInjuryEvent({
   // Sem substituições restantes: a equipa fica obrigatoriamente a jogar com
   // menos um jogador (o lesado sai sem reposição — regra oficial).
   if (!canMakeSubstitution(fixture, teamId)) {
+    // Notifica o treinador que a equipa passa a jogar com menos um jogador.
+    io.to(game.roomCode).emit("substitutionCapReached", { teamId });
     const idx = squad.findIndex((p) => p.id === injuredPlayer.id);
     if (idx > -1) squad.splice(idx, 1);
     lineupIds.delete(injuredPlayer.id);
@@ -1915,8 +1917,12 @@ async function simulateMatchSegment(
       for (const teamId of teamsToSub) {
         game.pendingSubstitutions.delete(teamId);
         if (isLastLeagueMinute) continue;
-        // Sem substituições restantes: consome o pedido sem abrir a janela.
-        if (!canMakeSubstitution(fixture, teamId)) continue;
+        // Sem substituições restantes: consome o pedido sem abrir a janela e
+        // notifica o treinador de que esgotou as substituições da partida.
+        if (!canMakeSubstitution(fixture, teamId)) {
+          io.to(game.roomCode).emit("substitutionCapReached", { teamId });
+          continue;
+        }
 
         const isHome = teamId === fixture.homeTeamId;
         const squad = isHome ? home.squad : away.squad;

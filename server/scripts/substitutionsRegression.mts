@@ -103,8 +103,12 @@ assert(
 );
 
 // Substituição de utilizador: consome o pedido sem abrir a janela no limite.
+// O `emit` vem seguido de `continue` (10 espaços), distinto da lesão, que
+// vem seguida de `const idx`. A única via que descarta o pedido pendente.
 assert(
-  engine.includes("if (!canMakeSubstitution(fixture, teamId)) continue;"),
+  engine.includes(
+    "{\n          io.to(game.roomCode).emit(\"substitutionCapReached\", { teamId });\n          continue;",
+  ),
   "user_substitution: consome o pedido ao atingir o limite",
 );
 
@@ -139,6 +143,26 @@ assert(
   handlers.includes("MAX_BENCH_SIZE") &&
     /subIds\.slice\(\s*MAX_BENCH_SIZE\s*\)/.test(handlers),
   "setTactic: aplica o limite de banco (MAX_BENCH_SIZE)",
+);
+
+// ── 6. Toast quando o limite é atingido ao vivo ─────────────────────────────
+// O servidor avisa (uma vez por equipa) sempre que a equipa esgota as 3
+// substituições — seja na 4ª tentativa de mudança, seja numa lesão sem reposição.
+assert(
+  engine.match(/io\.to\(game\.roomCode\)\.emit\("substitutionCapReached"/g)
+    ?.length === 2,
+  "engine: emite substitutionCapReached (mudança + lesão)",
+);
+
+const listeners = readFileSync(
+  path.join(__dirname, "../../client/src/hooks/useSocketListeners.js"),
+  "utf8",
+);
+assert(
+  listeners.includes("\"substitutionCapReached\"") &&
+    listeners.includes("addToast") &&
+    listeners.includes("myTeamId !== teamId"),
+  "frontend: ouve substitutionCapReached e faz toast só da própria equipa",
 );
 
 console.log("\n✅ substitutionsRegression: all checks passed");
