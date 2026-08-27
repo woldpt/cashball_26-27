@@ -32,11 +32,23 @@ interface ContractDeps {
 }
 
 /**
+ * Probabilidade/jornada de o agente ligar por um jogador cujo contrato
+ * terminou (lock fim) e ainda não tem pedido pendente. Não é usada na 1.ª
+ * semana após o fim do lock (nunca "logo após o unlock"), apenas nas
+ * seguintes — atraso aleatório em vez de chamada imediata.
+ * Só equipas humanas; NPCs processam no posto, sem este atraso.
+ */
+const AGENT_CALL_CHANCE_WEEKLY = 0.25;
+
+/**
  * Regra do jogo: um treinador recebe no máximo 1 proposta de contrato nova
- * por semana (renovações de contratos a expirar + renegociações de agente
- * partilham o mesmo orçamento). O conjunto `usedProposals` (teamIds) é criado
- * uma vez por processamento semanal e passado a todos os processos de
- * contratos. Re-emissões de pedidos já pendentes NÃO contam.
+ * por semana (renovações + renegociações partilham o mesmo orçamento).
+ * O agente NUNCA liga durante o lock do contrato vigente — pedidos só
+ * começam após `contract_start_epoch + CONTRACT_LENGTH_MATCHWEEKS` (jogador
+ * desbloqueado para transferência) e nunca na própria semana do fim do lock;
+ * nas semanas seguintes, com a probabilidade acima. O conjunto `usedProposals`
+ * (teamIds) é criado uma vez por processamento semanal e passado a todos os
+ * processos de contratos. Re-emissões de pedidos já pendentes NÃO contam.
  */
 export function createContractHelpers(deps: ContractDeps) {
   const { io, runAll, runGet, startAuction, getSeasonEndMatchweek } = deps;
@@ -84,8 +96,8 @@ export function createContractHelpers(deps: ContractDeps) {
 
     return new Promise<void>((resolve) => {
       game.db.run(
-        "UPDATE players SET contract_request_pending = 1, contract_requested_wage = ? WHERE id = ?",
-        [requestedWage, player.id],
+        "UPDATE players SET contract_request_pending = 1, contract_requested_wage = ?, contract_request_is_renegotiation = ? WHERE id = ?",
+        [requestedWage, isRenegotiation ? 1 : 0, player.id],
         () => {
           const coach = (
             Object.values(game.playersByName) as PlayerSession[]
@@ -115,24 +127,12 @@ export function createContractHelpers(deps: ContractDeps) {
   };
 
   /**
-   * True se o contrato expira dentro das próximas 3 jornadas (ou já expirou).
-   * Usado para inferir se um pedido pendente é renovação (true) ou
-   * renegociação de agente (false) ao re-emitir.
-   */
-  const contractExpiringSoon = (player: any, now: number): boolean => {
-    const start = player.contract_start_epoch || 0;
-    if (start <= 0) return false;
-    return start + CONTRACT_LENGTH_MATCHWEEKS - now <= 3;
-  };
-
-  /**
    * Re-emite pedidos de contrato pendentes (`contract_request_pending = 1`)
    * para treinadores online. Cobre: treinador offline na emissão original,
    * modal descartado sem resposta e reconexões. NÃO consome o orçamento
    * semanal de propostas — são as mesmas propostas, não novas.
    */
   const resendPendingContractRequests = async (game: ActiveGame) => {
-    const now = currentEpoch(game);
     const pending = await runAll(
       game.db,
       `SELECT * FROM players
@@ -158,29 +158,38 @@ export function createContractHelpers(deps: ContractDeps) {
         agent: getAgentName(player.id),
         contractEndSeason: end.season,
         contractEndMatchweek: end.matchweek,
-        isRenegotiation: !contractExpiringSoon(player, now),
+        isRenegotiation: !!player.contract_request_is_renegotiation,
       });
     }
   };
 
   /**
    * Renegociação de agente para jogadores subvalorizados (salário muito abaixo
-   * do valor de mercado). Substitui a antiga query morta dos 28 matchweeks.
+   * do valor de mercado). Só depois do lock do contrato terminar — durante o
+   * contrato em vigor o agente não pede renegociação, independentemente. Como
+   * nas renovações, também não liga na própria semana do fim do lock.
    */
   const processAgentRenegotiations = async (
     game: ActiveGame,
     usedProposals: Set<number>,
   ) => {
+    const now = currentEpoch(game);
     const candidates = await runAll(
       game.db,
       `SELECT * FROM players
        WHERE team_id IS NOT NULL
          AND transfer_status = 'none'
          AND contract_request_pending = 0
-         AND contract_start_epoch > 0`,
+         AND contract_start_epoch > 0
+         AND contract_start_epoch + ? <= ?`,
+      [CONTRACT_LENGTH_MATCHWEEKS, now],
     );
 
     for (const player of candidates) {
+      // Mesmo "nunca logo após o unlock" das renovações: a 1.ª semana após o
+      // fim do lock não conta.
+      if (now - player.contract_start_epoch - CONTRACT_LENGTH_MATCHWEEKS < 1)
+        continue;
       // 1 proposta/treinador/semana — se a renovação já ocupou o slot, espera.
       if (usedProposals.has(player.team_id)) continue;
 
@@ -211,7 +220,7 @@ export function createContractHelpers(deps: ContractDeps) {
   ) => {
     const now = currentEpoch(game);
 
-    const expired = await runAll(
+    const expiredRaw = await runAll(
       game.db,
       `SELECT p.*, t.name AS team_name
         FROM players p
@@ -221,6 +230,13 @@ export function createContractHelpers(deps: ContractDeps) {
           AND p.contract_start_epoch + ? <= ?`,
       [CONTRACT_LENGTH_MATCHWEEKS, now],
     );
+    // Ordem aleatória: se vários jogadores da mesma equipa estiverem sem
+    // contrato, ninguém fica privilegiado pela ordem da base de dados.
+    const expired = [...expiredRaw];
+    for (let i = expired.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [expired[i], expired[j]] = [expired[j], expired[i]];
+    }
 
     for (const player of expired) {
       // Um treinador que já entrou na sala fica em playersByName mesmo offline
@@ -238,6 +254,13 @@ export function createContractHelpers(deps: ContractDeps) {
       if (humanSession) {
         if (player.contract_request_pending) continue;
         if (!usedProposals.has(player.team_id)) {
+          // Nunca "logo após o unlock": a 1.ª semana após o fim do lock não
+          // conta. Sem estado extra: semanas que "falham" são retomadas no
+          // processamento seguinte (probabilidade/jornada).
+          const weeksSinceEnd =
+            now - player.contract_start_epoch - CONTRACT_LENGTH_MATCHWEEKS;
+          if (weeksSinceEnd < 1) continue;
+          if (Math.random() > AGENT_CALL_CHANCE_WEEKLY) continue;
           await maybeTriggerContractRequest(game, player, false);
           usedProposals.add(player.team_id);
         }
@@ -294,25 +317,6 @@ export function createContractHelpers(deps: ContractDeps) {
       });
     }
 
-    // Prestes a expirar (últimas 3 jornadas) → pedido do agente
-    const soonExpiring = await runAll(
-      game.db,
-      `SELECT * FROM players
-       WHERE team_id IS NOT NULL
-         AND contract_start_epoch > 0
-         AND contract_request_pending = 0
-         AND contract_start_epoch + ? <= ?
-         AND contract_start_epoch + ? > ?`,
-      [CONTRACT_LENGTH_MATCHWEEKS - 3, now, CONTRACT_LENGTH_MATCHWEEKS, now],
-    );
-
-    for (const player of soonExpiring) {
-      // 1 proposta/treinador/semana — partilha o orçamento com as renegociações.
-      if (usedProposals.has(player.team_id)) continue;
-      // Todos pedem renovação — sem aleatoriedade, sem exclusões.
-      await maybeTriggerContractRequest(game, player, false);
-      usedProposals.add(player.team_id);
-    }
   };
 
   return {
