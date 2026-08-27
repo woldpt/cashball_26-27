@@ -17,6 +17,7 @@ import {
   ConfirmedSubsStrip,
   MatchPitch,
   MatchPlayerCard,
+  CompactPlayerCard,
   MatchIcon,
   PrimaryButton,
   GhostButton,
@@ -692,6 +693,7 @@ function SubsPanel({
           {mobileList === "pitch" ? (
             <TitularesColumn
               className=""
+              compact
               players={onPitchPlayers}
               isHalftime={isHalftime}
               isForcedSwap={isForcedSwap}
@@ -713,6 +715,7 @@ function SubsPanel({
           ) : (
             <SuplentesColumn
               className=""
+              compact
               players={benchPlayers}
               isHalftime={isHalftime}
               forceOutPlayer={forceOutPlayer}
@@ -781,7 +784,11 @@ function TitularesColumn({
   handleDragOver,
   handleDropOnPitch,
   handleDragEnd,
+  compact = false,
 }) {
+  // Mobile (`compact`): cartão de uma linha que preserva skill/RES/forma/golos/
+  // amarelos sem cortar o nome. Desktop: cartão expandido.
+  const Card = compact ? CompactPlayerCard : MatchPlayerCard;
   return (
     <div
       className={`flex flex-col min-h-0 min-w-0 overflow-hidden ${className}`}
@@ -817,7 +824,7 @@ function TitularesColumn({
           const stats = playerMatchStats?.get(p.id);
 
           return (
-            <MatchPlayerCard
+            <Card
               key={p.id}
               player={p}
               posStyle={getPosStyle(p.position)}
@@ -870,7 +877,10 @@ function SuplentesColumn({
   handleDropOnBench,
   handleDragEnd,
   summary,
+  compact = false,
 }) {
+  // Mobile (`compact`): cartão de uma linha; desktop: cartão expandido.
+  const Card = compact ? CompactPlayerCard : MatchPlayerCard;
   return (
     <div
       className={`flex flex-col min-h-0 min-w-0 overflow-hidden ${className}`}
@@ -898,7 +908,7 @@ function SuplentesColumn({
           const stats = playerMatchStats?.get(p.id);
 
           return (
-            <MatchPlayerCard
+            <Card
               key={p.id}
               player={p}
               posStyle={getPosStyle(p.position)}
