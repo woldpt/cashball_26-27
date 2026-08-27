@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useGame } from "../../contexts/GameContext.jsx";
+import { useIsMobile } from "../../hooks/useIsMobile.js";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { EmptyState } from "../shared/EmptyState.jsx";
 import { Button } from "../shared/Button.jsx";
@@ -30,6 +31,7 @@ import { UserTeamsSection } from "./UserTeamsSection.jsx";
 export function AdminPanel({ open, onClose }) {
   const { me, adminUsers } = useGame();
   const [selectedUser, setSelectedUser] = useState(null);
+  const isMobile = useIsMobile();
 
   const isAdmin = isAdminCoach(me?.name);
   const { loading, error: usersError, fetchUsers } = useAdminUsers({ open: open && isAdmin });
@@ -38,6 +40,31 @@ export function AdminPanel({ open, onClose }) {
 
   // Salas sempre "frescas" vindas do contexto (renomeias/remoções refletem-se).
   const selectedRooms = adminUsers.find((u) => u.name === selectedUser?.name)?.rooms ?? [];
+
+  // Conteúdo do painel de detalhe: reutilizado na layout de 2 colunas (desktop)
+  // e na coluna única de mobile (ao ver um utilizador).
+  const detailContent = !selectedUser ? (
+    <EmptyState
+      emoji="👤"
+      title="Seleciona um utilizador"
+      description="Escolhe um utilizador na lista para editar perfil, salas e equipas."
+    />
+  ) : (
+    <>
+      {/* key=nome: remonta limpo ao trocar de utilizador / após rename */}
+      <UserProfileSection
+        key={`profile-${selectedUser.name}`}
+        user={selectedUser}
+        onRenamed={handleRenamed}
+        onDeleted={() => setSelectedUser(null)}
+      />
+      <div className="border-t border-outline-variant/15" />
+      <UserRoomsSection user={selectedUser} rooms={selectedRooms} onChanged={fetchUsers} />
+      <div className="border-t border-outline-variant/15" />
+      {/* key=join das salas: remonta limpo quando uma sala é adicionada/removida */}
+      <UserTeamsSection key={`teams-${selectedRooms.join("|") || "none"}`} rooms={selectedRooms} />
+    </>
+  );
 
   /** @param {string} newName Nome novo do utilizador após rename. */
   function handleRenamed(newName) {
@@ -65,9 +92,11 @@ export function AdminPanel({ open, onClose }) {
         <div className="px-6 py-2 border-b border-error/20 bg-error/10 text-error font-bold text-xs shrink-0">{usersError}</div>
       )}
 
-      {/* Body 2-colunas */}
+      {/* Body — o `detailContent` é renderizado dentro da coluna de detalhe, abaixo */}
+      {/* Desktop (>= md): 2 colunas lado-a-ludo. Mobile (< md): coluna única — lista ou detalhe, nunca ambos. */}
       <div className="flex flex-1 min-h-0">
-        <div className="w-1/2 border-r border-outline-variant/15 bg-surface-container-high/30 min-h-0 flex flex-col">
+        {/* Lista */}
+        <div className={`min-h-0 flex flex-col ${isMobile ? "w-full" : "w-1/2 border-r border-outline-variant/15 bg-surface-container-high/30"}`}>
           <UserList
             users={adminUsers}
             loading={loading}
@@ -76,34 +105,31 @@ export function AdminPanel({ open, onClose }) {
           />
         </div>
 
-        <div className="w-1/2 min-h-0 overflow-y-auto p-5 space-y-6">
-          {!selectedUser ? (
-            <EmptyState
-              emoji="👤"
-              title="Seleciona um utilizador"
-              description="Escolhe um utilizador na lista para editar perfil, salas e equipas."
-            />
-          ) : (
-            <>
-              {/* key=nome: remonta limpo ao trocar de utilizador / após rename */}
-              <UserProfileSection
-                key={`profile-${selectedUser.name}`}
-                user={selectedUser}
-                onRenamed={handleRenamed}
-                onDeleted={() => setSelectedUser(null)}
-              />
-              <div className="border-t border-outline-variant/15" />
-              <UserRoomsSection user={selectedUser} rooms={selectedRooms} onChanged={fetchUsers} />
-              <div className="border-t border-outline-variant/15" />
-              {/* key=join das salas: remonta limpo quando uma sala é adicionada/removida */}
-              <UserTeamsSection key={`teams-${selectedRooms.join("|") || "none"}`} rooms={selectedRooms} />
-            </>
-          )}
+        {/* Detalhe */}
+        <div className={`min-h-0 flex flex-col ${isMobile ? "w-full" : "w-1/2"}`}>
+          {isMobile && selectedUser ? (
+            <div className="flex flex-1 min-h-0 flex-col">
+              {/* Botão «Voltar» — só aparece em mobile, ao ver o detalhe */}
+              <div className="px-5 pt-4 pb-2 shrink-0 md:hidden">
+                <Button variant="ghost" size="sm" onClick={() => setSelectedUser(null)}>
+                  <span className="material-symbols-outlined">arrow_back</span>
+                  Voltar
+                </Button>
+              </div>
+              <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-6">
+                {detailContent}
+              </div>
+            </div>
+          ) : !isMobile ? (
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-6">
+              {detailContent}
+            </div>
+          ) : null}
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="px-6 py-3 border-t border-outline-variant/15 flex items-center justify-between text-[10px] text-on-surface-variant shrink-0">
+      {/* Footer — empilha em mobile, linha no desktop */}
+      <div className="px-6 py-3 border-t border-outline-variant/15 flex flex-col sm:flex-row sm:items-center sm:justify-between text-[10px] text-on-surface-variant shrink-0 gap-2">
         <span>Apenas {me?.name} tem acesso a este painel.</span>
         <Button variant="ghost" size="sm" onClick={fetchUsers}>
           <span className="material-symbols-outlined text-sm">refresh</span>
