@@ -1,7 +1,13 @@
 // @ts-nocheck
 import type { ActiveGame, PlayerSession } from "./types";
 import type { CalendarEntry } from "./gameConstants";
-import { SEASON_CALENDAR, SPONSOR_REVENUE_BY_DIVISION, recalcPlayerValue } from "./gameConstants";
+import {
+  SEASON_CALENDAR,
+  SPONSOR_REVENUE_BY_DIVISION,
+  recalcPlayerValue,
+  remainingSubstitutions,
+  incrementSubCount,
+} from "./gameConstants";
 import { clearPhaseTimer } from "./matchFlowHelpers";
 import { generateAITactic } from "./game/matchCalculations";
 import { getMatchFatigueSnapshot } from "./game/engine";
@@ -993,27 +999,47 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 							)
 							.map((e: any) => e.playerId),
 					);
-					toAddIds = toAddIds.filter((id) => !injuredIds.has(id));
+									toAddIds = toAddIds.filter((id) => !injuredIds.has(id));
 					// Players already subbed out earlier (halftime, in-match) cannot re-enter in ET.
 					const subbedOut = fx._subbedOut as Set<number> | undefined;
 					toAddIds = toAddIds.filter((id) => !subbedOut?.has(id));
 
 					if (toRemoveIds.length === 0 && toAddIds.length === 0) return;
 
-					const outPlayers = toRemoveIds
+					// Limitado ao número de substituições ainda possíveis na partida.
+					// Substituições de alongamento também esgotam o limite por equipa.
+					const teamId =
+						teamSide === "home" ? fx.homeTeamId : fx.awayTeamId;
+					const maxPairs = Math.min(
+						toRemoveIds.length,
+						toAddIds.length,
+						remainingSubstitutions(fx, teamId),
+					);
+					if (maxPairs <= 0) return;
+
+					// Limitar às substituições ainda permitidas (ordem de declaração).
+					const limitedOutIds = toRemoveIds.slice(0, maxPairs);
+					const limitedInIds = toAddIds.slice(0, maxPairs);
+
+					const outPlayers = limitedOutIds
 						.map((id: number) => squad.find((p: any) => p.id === id))
 						.filter(Boolean);
-					const inPlayers = toAddIds
+					const inPlayers = limitedInIds
 						.map((id: number) => fullRoster.find((p: any) => p.id === id))
 						.filter(Boolean);
 
-					for (const id of toRemoveIds) {
+					for (const id of limitedOutIds) {
 						const idx = squad.findIndex((p: any) => p.id === id);
 						if (idx > -1) squad.splice(idx, 1);
 						(fx._subbedOut ??= new Set<number>()).add(id);
 					}
 					for (const player of inPlayers) {
 						squad.push(player);
+					}
+
+					// Cada substituição feita conta para o limite de substituições da partida.
+					for (let i = 0; i < maxPairs; i++) {
+						incrementSubCount(fx, teamId);
 					}
 
 					if (teamSide === "home") {

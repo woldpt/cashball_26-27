@@ -8,6 +8,10 @@ import {
   weightedPickScorer,
   isPlayerAvailable,
 } from "./playerUtils";
+import {
+  canMakeSubstitution,
+  incrementSubCount,
+} from "../gameConstants";
 
 // Re-export so external files can still import from "./game/engine"
 export {
@@ -421,6 +425,27 @@ async function applyInjuryEvent({
 
   const teamId = teamSide === "home" ? fixture.homeTeamId : fixture.awayTeamId;
 
+  // Sem substituições restantes: a equipa fica obrigatoriamente a jogar com
+  // menos um jogador (o lesado sai sem reposição — regra oficial).
+  if (!canMakeSubstitution(fixture, teamId)) {
+    const idx = squad.findIndex((p) => p.id === injuredPlayer.id);
+    if (idx > -1) squad.splice(idx, 1);
+    lineupIds.delete(injuredPlayer.id);
+    (fixture._subbedOut ??= new Set<number>()).add(injuredPlayer.id);
+
+    // Remover jogador do snapshot de lineup quando sai sem substituto
+    const lineupRefNoSub =
+      teamSide === "home" ? fixture.homeLineup : fixture.awayLineup;
+    if (lineupRefNoSub) {
+      const li = lineupRefNoSub.findIndex(
+        (p: any) => p.id === injuredPlayer.id,
+      );
+      if (li > -1) lineupRefNoSub.splice(li, 1);
+    }
+
+    return { replaced: false, injuredPlayer, replacement: null };
+  }
+
   // Only show players who were explicitly chosen as "Suplente" in the pre-match tactic.
   // This prevents listing the full squad and showing players that weren't on the bench.
   const tactic = teamSide === "home" ? fixture._t1 : fixture._t2;
@@ -506,6 +531,7 @@ async function applyInjuryEvent({
     lineupIds.delete(injuredPlayer.id);
     lineupIds.add(replacement.id);
     (fixture._subbedOut ??= new Set<number>()).add(injuredPlayer.id);
+    incrementSubCount(fixture, teamId);
 
     // Actualizar snapshot de lineup para que o ecrã de intervalo reflicta a substituição
     const lineupRef =
@@ -1889,6 +1915,8 @@ async function simulateMatchSegment(
       for (const teamId of teamsToSub) {
         game.pendingSubstitutions.delete(teamId);
         if (isLastLeagueMinute) continue;
+        // Sem substituições restantes: consome o pedido sem abrir a janela.
+        if (!canMakeSubstitution(fixture, teamId)) continue;
 
         const isHome = teamId === fixture.homeTeamId;
         const squad = isHome ? home.squad : away.squad;
@@ -1970,6 +1998,7 @@ async function simulateMatchSegment(
               lineupIds.delete(playerOutId);
               lineupIds.add(playerInId);
               (fixture._subbedOut ??= new Set<number>()).add(playerOutId);
+              incrementSubCount(fixture, teamId);
 
               // Actualizar snapshot de lineup para que o ecrã de intervalo reflicta a substituição
               const lineupRef = isHome

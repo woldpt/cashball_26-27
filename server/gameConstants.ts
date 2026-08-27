@@ -174,3 +174,41 @@ export const SEASON_CALENDAR: CalendarEntry[] = [
   { type: "league", matchweek: 14, calendarIndex: 17 },
   { type: "cup",    round: 5, roundName: "Final",            teamsIn: 2,  calendarIndex: 18 },
 ];
+
+// ---------------------------------------------------------------------------
+// Regras de substituições (aplica-se a todas as fases da partida: jogo normal,
+// intervalo, taça e prolongamento).
+//
+// O contador é por equipa e vive dentro do fixture (`_subCountByTeam`), por isso
+// persiste entre fases sem nunca ser resetado. Cartões vermelhos NÃO contam
+// (expulsão tira um jogador de campo sem repor ninguém — regra oficial).
+// ---------------------------------------------------------------------------
+export const MAX_SUBSTITUTIONS = 3; // máximo de substituições por equipa/partida
+export const MAX_BENCH_SIZE = 5; // máximo de suplentes no banco
+
+/**
+ * Número de substituições já feitas por uma equipa numa partida.
+ * Conta substituições normais e lesões com reposição (mas NÃO expulsões).
+ */
+export function getSubCount(fixture: any, teamId: number): number {
+  return fixture._subCountByTeam?.[teamId] ?? 0;
+}
+
+/** Incrementa o contador de substituições de uma equipa numa partida. */
+export function incrementSubCount(fixture: any, teamId: number): void {
+  fixture._subCountByTeam ??= {};
+  fixture._subCountByTeam[teamId] = (fixture._subCountByTeam[teamId] ?? 0) + 1;
+}
+
+/** Verdadeiro enquanto a equipa tiver substituições por fazer. */
+export function canMakeSubstitution(fixture: any, teamId: number): boolean {
+  return getSubCount(fixture, teamId) < MAX_SUBSTITUTIONS;
+}
+
+/**
+ * Quantas substituições ainda são possíveis para uma equipa (0 se esgotou).
+ * Usado nos intervalos/alongamentos onde várias podem ser feitas de uma vez.
+ */
+export function remainingSubstitutions(fixture: any, teamId: number): number {
+  return Math.max(0, MAX_SUBSTITUTIONS - getSubCount(fixture, teamId));
+}

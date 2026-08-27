@@ -1,5 +1,6 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
+import { MAX_BENCH_SIZE } from "./gameConstants";
 import { getTacticFamiliarity, getAllTacticFamiliarity } from "./game/tacticFamiliarity";
 
 interface GameplayHandlerDeps {
@@ -54,6 +55,21 @@ export function registerGameplaySocketHandlers(
       !VALID_STYLES.has(tactic.style)
     )
       return;
+
+    // Enforce the bench limit (max 5 substitutes). Tactics that name more than
+    // MAX_BENCH_SIZE "Suplente" players are sanitized by demoting the extra
+    // subs back to "Titular", keeping the starting XI full at 11.
+    if (tactic.positions && typeof tactic.positions === "object") {
+      const subIds = Object.keys(tactic.positions).filter(
+        (id) => tactic.positions[id] === "Suplente",
+      );
+      if (subIds.length > MAX_BENCH_SIZE) {
+        for (const id of subIds.slice(MAX_BENCH_SIZE)) {
+          tactic.positions[id] = "Titular";
+        }
+      }
+    }
+
     const game = getGameBySocket(socket.id);
     const playerState = getPlayerBySocket(game, socket.id);
     if (game && playerState) {

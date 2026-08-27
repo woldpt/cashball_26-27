@@ -1,6 +1,11 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import type { CalendarEntry } from "./gameConstants";
-import { SEASON_CALENDAR, LOAN_WEEKLY_INSTALLMENT } from "./gameConstants";
+import {
+  SEASON_CALENDAR,
+  LOAN_WEEKLY_INSTALLMENT,
+  remainingSubstitutions,
+  incrementSubCount,
+} from "./gameConstants";
 import {
   getAllTeamForms,
   getStandingsRows,
@@ -483,16 +488,32 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
             if (toRemoveIds.length === 0 && toAddIds.length === 0) return;
 
+            // Limitado ao número de substituições ainda possíveis na partida.
+            // Cada "saída + entrada" conta como uma substituição e esgota o limite
+            // por equipa (MAX_SUBSTITUTIONS), que inclui intervalos e alongamentos.
+            const teamId =
+              teamSide === "home" ? fixture.homeTeamId : fixture.awayTeamId;
+            const maxPairs = Math.min(
+              toRemoveIds.length,
+              toAddIds.length,
+              remainingSubstitutions(fixture, teamId),
+            );
+            if (maxPairs <= 0) return;
+
+            // Limitar às substituições ainda permitidas (ordem de declaração).
+            const limitedOutIds = toRemoveIds.slice(0, maxPairs);
+            const limitedInIds = toAddIds.slice(0, maxPairs);
+
             // Snapshot outgoing/incoming players BEFORE modifying the squad
-            const outPlayers = toRemoveIds
+            const outPlayers = limitedOutIds
               .map((id: number) => squad.find((p: any) => p.id === id))
               .filter(Boolean);
-            const inPlayers = toAddIds
+            const inPlayers = limitedInIds
               .map((id: number) => fullRoster.find((p: any) => p.id === id))
               .filter(Boolean);
 
             // Remove subbed-out players
-            for (const id of toRemoveIds) {
+            for (const id of limitedOutIds) {
               const idx = squad.findIndex((p: any) => p.id === id);
               if (idx > -1) squad.splice(idx, 1);
               (fixture._subbedOut ??= new Set<number>()).add(id);
@@ -501,6 +522,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             // Add subbed-in players from the full roster
             for (const player of inPlayers) {
               squad.push(player);
+            }
+
+            // Cada substituição feita conta para o limite de substituições da partida.
+            for (let i = 0; i < maxPairs; i++) {
+              incrementSubCount(fixture, teamId);
             }
 
             // Update the lineup snapshot to reflect the new squad composition

@@ -21,7 +21,8 @@
     "test:skillhistory": "tsx scripts/skillHistoryRegression.mts",
     "test:attendance": "tsx scripts/attendanceRegression.mts",
     "test:training-multiseason": "tsx scripts/trainingMultiSeasonRegression.mts",
-    "test:relegation-coach": "tsx scripts/relegationCoachRegression.mts"
+    "test:relegation-coach": "tsx scripts/relegationCoachRegression.mts",
+    "test:substitutions": "tsx scripts/substitutionsRegression.mts"
   },
   "keywords": [],
   "author": "",
