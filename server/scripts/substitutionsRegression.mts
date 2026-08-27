@@ -102,14 +102,24 @@ assert(
   "lesão/reposição incrementa o contador de substituições",
 );
 
-// Substituição de utilizador: consome o pedido sem abrir a janela no limite.
-// O `emit` vem seguido de `continue` (10 espaços), distinto da lesão, que
-// vem seguida de `const idx`. A única via que descarta o pedido pendente.
+// Substituição de utilizador no último minuto regulamentar: o pedido é
+// consumido sem abrir a janela — e o banner de pausa dos outros treinadores
+// termina (senão ficaria à mostra até à próxima substituição).
 assert(
   engine.includes(
-    "{\n          io.to(game.roomCode).emit(\"substitutionCapReached\", { teamId });\n          continue;",
+    "if (isLastLeagueMinute) {\n          // Pedido consumido sem janela: termina o banner de pausa dos outros\n          // treinadores (senão ficava à mostra até à próxima substituição).\n          io.to(game.roomCode).emit(\"substitutionPauseEnded\", { teamId });\n          continue;\n        }",
   ),
-  "user_substitution: consome o pedido ao atingir o limite",
+  "user_substitution: último minuto consome o pedido e termina a pausa",
+);
+
+// Substituição de utilizador no limite: consome o pedido sem abrir a janela,
+// avisa o treinador (substitutionCapReached) e termina o banner de pausa.
+// Distinto da lesão (emit → `const idx`): aqui vem `emit` → `continue`.
+assert(
+  engine.includes(
+    "{\n          io.to(game.roomCode).emit(\"substitutionCapReached\", { teamId });\n          // O pedido foi consumido sem abrir a janela: termina o banner de pausa.\n          io.to(game.roomCode).emit(\"substitutionPauseEnded\", { teamId });\n          continue;",
+  ),
+  "user_substitution: esgotou subs — consome pedido e termina a pausa",
 );
 
 // Intervalo: limita e conta substituições de segunda parte.

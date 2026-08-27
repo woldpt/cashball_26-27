@@ -1916,11 +1916,18 @@ async function simulateMatchSegment(
       );
       for (const teamId of teamsToSub) {
         game.pendingSubstitutions.delete(teamId);
-        if (isLastLeagueMinute) continue;
+        if (isLastLeagueMinute) {
+          // Pedido consumido sem janela: termina o banner de pausa dos outros
+          // treinadores (senão ficava à mostra até à próxima substituição).
+          io.to(game.roomCode).emit("substitutionPauseEnded", { teamId });
+          continue;
+        }
         // Sem substituições restantes: consome o pedido sem abrir a janela e
         // notifica o treinador de que esgotou as substituições da partida.
         if (!canMakeSubstitution(fixture, teamId)) {
           io.to(game.roomCode).emit("substitutionCapReached", { teamId });
+          // O pedido foi consumido sem abrir a janela: termina o banner de pausa.
+          io.to(game.roomCode).emit("substitutionPauseEnded", { teamId });
           continue;
         }
 

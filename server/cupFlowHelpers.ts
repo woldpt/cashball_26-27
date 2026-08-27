@@ -999,7 +999,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 							)
 							.map((e: any) => e.playerId),
 					);
-									toAddIds = toAddIds.filter((id) => !injuredIds.has(id));
+					toAddIds = toAddIds.filter((id) => !injuredIds.has(id));
 					// Players already subbed out earlier (halftime, in-match) cannot re-enter in ET.
 					const subbedOut = fx._subbedOut as Set<number> | undefined;
 					toAddIds = toAddIds.filter((id) => !subbedOut?.has(id));
