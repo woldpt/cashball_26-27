@@ -1,5 +1,10 @@
 import type { ActiveGame, CoachMarketEvent } from "./types";
-import { getAllTeamForms, logClubNews, getTeamsWithCoachNames } from "./coreHelpers";
+import {
+  getAllTeamForms,
+  getStandingsRows,
+  logClubNews,
+  getTeamsWithCoachNames,
+} from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 
 type Db = any;
@@ -70,6 +75,11 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
   // Jogos mínimos à frente do clube antes de o treinador poder ser despedido
   // por forma/orçamento (evita despedir por resultados herdados do antecessor).
   const GRACE_MATCHES = 5;
+
+  // Alvo da realocação: apenas os últimos N classificados de cada divisão em
+  // consideração (mesma divisão ou inferior, nunca Distritais). Um treinador
+  // despedido assume um clube em dificuldade, não o topo da tabela.
+  const REASSIGN_BOTTOM_PLACES = 4;
 
   // ── Internal helpers ───────────────────────────────────────────────────────
 
@@ -341,31 +351,56 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     const takenTeamIds = Object.values(game.playersByName)
       .map((p) => p.teamId)
       .filter((id): id is number => id !== null && id !== undefined);
+    const takenSet = new Set(takenTeamIds);
 
-    const placeholders =
-      takenTeamIds.length > 0 ? takenTeamIds.map(() => "?").join(",") : null;
+    // Alvo: mesma divisão do despedimento, depois progressivamente inferiores
+    // (número maior) até div 4 — nunca Distritais. Dentro de cada divisão,
+    // apenas os últimos REASSIGN_BOTTOM_PLACES classificados (mesma ordenação
+    // da tabela classificativa visível aos jogadores).
+    const allCandidates: AnyRow[] =
+      fromDivision <= 4
+        ? await runAll<AnyRow>(
+            game.db,
+            "SELECT id, name, division, budget, color_primary, color_secondary, " +
+              "points, wins, draws, losses, goals_for, goals_against, " +
+              "stadium_capacity, stadium_name FROM teams WHERE division BETWEEN ? AND 4",
+            [fromDivision],
+          )
+        : [];
 
-    // Try to place coach in the same division they were dismissed from,
-    // then progressively lower (higher number) until div 4.
     let team: AnyRow | undefined;
-    for (let div = fromDivision; div <= 4; div++) {
-      let query =
-        "SELECT id, name, division, budget, color_primary, color_secondary, " +
-        "points, wins, draws, losses, goals_for, goals_against, " +
-        "stadium_capacity, stadium_name FROM teams WHERE division = ?";
-      const params: any[] = [div];
-      if (placeholders) {
-        query += ` AND id NOT IN (${placeholders})`;
-        params.push(...takenTeamIds);
-      }
-      query += " AND id != ? ORDER BY RANDOM() LIMIT 1";
-      params.push(oldTeamId);
-      const candidate = await runGet<AnyRow>(game.db, query, params);
-      if (candidate) {
-        team = candidate;
+    for (let div = fromDivision; div <= 4 && !team; div++) {
+      const divisionTeams = allCandidates.filter((t) => t.division === div);
+      if (divisionTeams.length === 0) continue;
+      const bottomPlaces = getStandingsRows(divisionTeams).slice(
+        -REASSIGN_BOTTOM_PLACES,
+      );
+      const candidates = bottomPlaces.filter(
+        (t) => t.id !== oldTeamId && !takenSet.has(t.id),
+      );
+      if (candidates.length > 0) {
+        team = candidates[Math.floor(Math.random() * candidates.length)];
         break;
       }
     }
+
+    // Fallback: os últimos N lugares de TODAS as divisões elegíveis estão
+    // ocupados por outros humanos — relaxar para qualquer clube disponível na
+    // mesma ordem de divisões, para nunca ficar o treinador sem clube.
+    if (!team) {
+      for (let div = fromDivision; div <= 4 && !team; div++) {
+        const pool = allCandidates.filter(
+          (t) => t.division === div && t.id !== oldTeamId && !takenSet.has(t.id),
+        );
+        if (pool.length > 0) {
+          console.warn(
+            `[${game.roomCode}] autoAssignDismissedCoach: bottom-${REASSIGN_BOTTOM_PLACES} places unavailable for ${coachName}; assigning any available club in div ${div}`,
+          );
+          team = pool[Math.floor(Math.random() * pool.length)];
+        }
+      }
+    }
+
     if (!team) {
       console.warn(
         `[${game.roomCode}] autoAssignDismissedCoach: no available NPC team found for ${coachName} (dismissed from div ${fromDivision})`,
