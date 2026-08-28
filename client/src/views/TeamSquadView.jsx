@@ -196,7 +196,7 @@ export function TeamSquadView({
             <p className="text-[11px] uppercase tracking-widest font-bold text-on-surface-variant truncate">
               {DIVISION_NAMES[selectedTeam.division] ||
                 `Divisão ${selectedTeam.division}`}
-              � Época {seasonYear}
+              · Época {seasonYear}
             </p>
           </div>
           {/* Saldo (só equipa própria) */}
