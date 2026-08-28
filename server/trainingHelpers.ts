@@ -15,9 +15,10 @@ import { recalcPlayerValue } from "./gameConstants";
  *  - Not training Forma:
  *      · played  → gradient decay (the lower the form, the slower the drop)
  *      · rested  → +4 recovery (rotation keeps the squad fresh)
- *  - Not training Resistência:
- *      · played  → -0.2 resistance progress
- *      · rested  → -0.1 resistance progress
+ *  - Not training Resistência (deliberately slower than the training gain so
+ *    neglect takes longer to noticeably harm stamina):
+ *      · played  → -0.15 resistance progress
+ *      · rested  → -0.05 resistance progress
  *
  * Skill and resistance use accumulator columns (training_skill_progress,
  * training_resistance_progress) because the underlying columns are INTEGER —
@@ -178,7 +179,7 @@ export function createTrainingHelpers(_deps: { io: any }) {
                         1.15,
                         Math.max(0.5, 0.5 + (player.form ?? 100) / 200),
                       );
-                      const gain = 2.0 * potentialFactor * formFactor;
+                      const gain = 2.5 * potentialFactor * formFactor;
                       // Quanto maior o skill, mais progresso é preciso por ponto.
                       const progressNeeded = Math.max(1, Math.ceil(oldSkill / 10));
 
@@ -246,8 +247,10 @@ export function createTrainingHelpers(_deps: { io: any }) {
                   if (focus !== "Resistência") {
                     const oldRes = player.resistance ?? 3;
                     const oldProg = player.resistance_progress ?? 0;
-                    // Quem jogou desgasta mais; quem descansa perde menos
-                    const resLoss = played ? -0.2 : -0.1;
+                    // Quem jogou desgasta mais; quem descansa perde menos.
+                    // Decaimento propositadamente lento para a resistência não
+                    // minguar depressa sem treino.
+                    const resLoss = played ? -0.15 : -0.05;
                     let newProg = oldProg + resLoss;
                     let newRes = oldRes;
                     while (newProg < 0 && newRes > 1) {
