@@ -143,7 +143,7 @@ export function registerTransferSocketHandlers(
         }
         await runExec(
           game.db,
-          "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+          "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ?",
           [
             playerState.teamId,
             signingWage(player),
@@ -384,7 +384,7 @@ export function registerTransferSocketHandlers(
         if (acceptedWage >= demandedWage) {
           const epoch = currentEpoch(game);
           game.db.run(
-            "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
+            "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
             [acceptedWage, seasonEnd, epoch, game.matchweek, playerId],
             (runErr: Error | null) => {
               if (runErr) {
@@ -424,7 +424,7 @@ export function registerTransferSocketHandlers(
               return;
             listPlayerOnMarket(game, playerId, "auction", auctionPrice, () => {
               game.db.run(
-                "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0, contract_start_epoch = 0 WHERE id = ?",
+                "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0, contract_start_epoch = 0 WHERE id = ?",
                 [playerId],
                 (runErr: Error | null) => {
                   if (runErr)
@@ -493,7 +493,7 @@ export function registerTransferSocketHandlers(
 
         listPlayerOnMarket(game, playerId, "auction", auctionPrice, () => {
           game.db.run(
-            "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0, contract_start_epoch = 0 WHERE id = ?",
+            "UPDATE players SET contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0, contract_start_epoch = 0 WHERE id = ?",
             [playerId],
             (runErr: Error | null) => {
               if (runErr)
@@ -542,7 +542,7 @@ export function registerTransferSocketHandlers(
           if (err || !player) return;
           const epoch = currentEpoch(game);
           game.db.run(
-            "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
+            "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
             [pending.demandedWage, seasonEnd, epoch, game.matchweek, playerId],
             (runErr: Error | null) => {
               if (runErr) {
@@ -692,7 +692,7 @@ export function registerTransferSocketHandlers(
                   );
                 }
                 game.db.run(
-                  "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+                  "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ?",
                   [
                     playerState.teamId,
                     signingWage(player),

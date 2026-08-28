@@ -36,6 +36,9 @@ interface ContractDeps {
  * terminou (lock fim) e ainda não tem pedido pendente. Não é usada na 1.ª
  * semana após o fim do lock (nunca "logo após o unlock"), apenas nas
  * seguintes — atraso aleatório em vez de chamada imediata.
+ * O rolamento é por candidato expirado (não por equipa): com k candidatos,
+ * a probabilidade de pelo menos uma chamada na semana ≈ 1 − 0.75^k;
+ * o orçamento semanal limita de qualquer forma a 1 proposta/equipa.
  * Só equipas humanas; NPCs processam no posto, sem este atraso.
  */
 const AGENT_CALL_CHANCE_WEEKLY = 0.25;
@@ -291,7 +294,7 @@ export function createContractHelpers(deps: ContractDeps) {
           const seasonEnd = getSeasonEndMatchweek(game.matchweek);
           await new Promise<void>((resolve) => {
             game.db.run(
-              "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
+              "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
               [fairWage, seasonEnd, now, game.matchweek, player.id],
               () => resolve(),
             );
@@ -308,7 +311,7 @@ export function createContractHelpers(deps: ContractDeps) {
       );
       await new Promise<void>((resolve) => {
         game.db.run(
-          "UPDATE players SET contract_start_epoch = 0, contract_request_pending = 0, contract_requested_wage = 0 WHERE id = ?",
+          "UPDATE players SET contract_start_epoch = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ?",
           [player.id],
           () => {
             startAuction(game, player, auctionPrice, resolve, true);

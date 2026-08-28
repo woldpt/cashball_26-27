@@ -400,17 +400,20 @@ const pinRandom = (value: number) => {
   try {
     const h = makeHarness({}); // sem sessões → team_id=2 é NPC
     await h.insertPlayer({ id: 9, team_id: 2, contract_start_epoch: 1 });
+    // Segundo jogador expirado na mesma equipa NPC: o shuffle dos candidatos
+    // fica exercitado e ambos devem ser processados de forma determinística.
+    await h.insertPlayer({ id: 10, team_id: 2, contract_start_epoch: 1 });
 
     await h.helpers.processContractExpiries(h.game, new Set<number>());
 
     assert(
-      h.auctioned.length === 1 && h.auctioned[0] === 9,
-      "T8: NPC expirado vai a leilão no posto",
+      [...h.auctioned].sort((a, b) => a - b).join(",") === "9,10",
+      "T8: NPCs expirados vão a leilão no posto (ambos, sem depender do RNG)",
     );
     const row = await h.runGet(
-      "SELECT contract_request_pending AS p FROM players WHERE id = 9",
+      "SELECT COUNT(*) AS c FROM players WHERE id IN (9, 10) AND contract_request_pending != 0",
     );
-    assert(row.p === 0, "T8: estado de pedido limpo");
+    assert(row.c === 0, "T8: estado de pedido limpo nos dois jogadores");
   } finally {
     restore();
   }
