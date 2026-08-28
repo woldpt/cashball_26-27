@@ -641,28 +641,39 @@ function SubsPanel({
 
       {/* ═══ Mobile: Mentalidade em cima, listas abaixo ═══ */}
       <div className="flex md:hidden flex-1 min-h-0 overflow-hidden flex-col">
-        {/* Substituições e Mentalidade / swap block — empilhado, sem height fixo. */}
-        <div className="shrink-0 px-4 py-3 border-b border-outline-variant/15 bg-surface-container-high/30 space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">
-              Substituições e Mentalidade
-            </h3>
-            {isHalftime && <SubsCounter subsMade={subsMade} />}
-          </div>
-          {isHalftime && (
+        {/* Cabeçalho do bloco */}
+        <div className="shrink-0 px-4 py-3 flex items-center justify-between gap-2 border-b border-outline-variant/15 bg-surface-container-high/30">
+          <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">
+            Substituições e Mentalidade
+          </h3>
+          {isHalftime && <SubsCounter subsMade={subsMade} />}
+        </div>
+
+        {/* Secção Mentalidade — separada visualmente das substituições */}
+        {isHalftime && (
+          <div className="shrink-0 px-4 py-3 space-y-2 border-b border-outline-variant/15 bg-surface-container-high/20">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
+              Mentalidade / Estilo de jogo
+            </span>
             <TacticsButtons
               className="w-full"
               value={tactic.style}
               onChange={onUpdateTactic}
             />
-          )}
+          </div>
+        )}
+
+        {/* Secção Substituições: Sai→Entra + confirmar + confirmadas rolável (não empilha sem limite) */}
+        <div className="shrink-0 px-4 py-3 space-y-3 border-b border-outline-variant/15">
           <SwapControls {...sharedSwapProps} />
           {isHalftime && confirmedSubs.length > 0 && (
-            <ConfirmedSubsStrip
-              subs={confirmedSubs}
-              annotatedSquad={annotatedSquad}
-              onUndoSub={onUndoSub}
-            />
+            <div className="overflow-x-auto -mx-4 px-4 hide-scrollbar">
+              <ConfirmedSubsStrip
+                subs={confirmedSubs}
+                annotatedSquad={annotatedSquad}
+                onUndoSub={onUndoSub}
+              />
+            </div>
           )}
         </div>
 
@@ -676,7 +687,7 @@ function SubsPanel({
               <button
                 key={tab.key}
                 onClick={() => setMobileList(tab.key)}
-                className={`flex-1 min-w-0 py-2 text-[11px] font-bold uppercase tracking-widest rounded-md transition-all ${
+                className={`flex-1 min-w-0 py-2.5 text-[11px] font-bold uppercase tracking-widest rounded-md transition-all ${
                   mobileList === tab.key
                     ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
                     : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
@@ -688,8 +699,8 @@ function SubsPanel({
           </div>
         </div>
 
-        {/* Active list */}
-        <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Active list — key remounts on switch so the list scroll resets to the top. */}
+        <div key={mobileList} className="flex flex-1 min-h-0 overflow-hidden">
           {mobileList === "pitch" ? (
             <TitularesColumn
               className=""
@@ -1070,7 +1081,9 @@ function SwapControls({
       {/* The Sai/Entra chain — two grouped clusters so the eye can scan
        * "[who's leaving] → [who's coming in]". Empty slots are dashed
        * placeholders with an actionable hint (was: bare "—"). */}
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1.5 min-w-0 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto_minmax(0,1fr)]">
+      {/* Mobile: vertical stack (Sai ↓ Entra) with a flow arrow between the
+       * slots; desktop: single horizontal row (Sai → Entra). */}
+      <div className="grid min-w-0 items-center gap-y-2 sm:gap-x-2 grid-cols-[auto_1fr] sm:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
         <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">
           Sai
         </span>
@@ -1079,9 +1092,11 @@ function SwapControls({
           player={effectiveOutId ? sourcePlayer : null}
           placeholder="Escolhe quem sai"
         />
+        {/* Flow indicator: chevron-down (rotated) stacked on mobile, chevron-right on desktop. */}
         <MatchIcon
           name="chevron-right"
-          className="hidden h-4 w-4 text-on-surface-variant/60 shrink-0 sm:block"
+          title="Substituição"
+          className="h-4 w-4 shrink-0 col-span-2 justify-self-center rotate-90 sm:col-auto sm:justify-self-start sm:rotate-0 text-on-surface-variant/60"
         />
         <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">
           Entra
@@ -1276,11 +1291,12 @@ function AdversarioPanel({
       </div>
 
       {/* Normalized padding — old code mixed `px-3 pt-2 pb-3 pt-3`. */}
-      {/* Mobile: single scroll (pitch → bench). Desktop: 2-col grid with
-       * internal scroll per column. */}
+      {/* Mobile: pitch stays pinned at the top of the scroll and only the
+       * bench scrolls below it (no nested scroll). Desktop: 2-col grid, each
+       * cell scrolls independently. */}
       <div className="flex-1 flex flex-col md:grid md:grid-cols-2 md:auto-rows-fr min-h-0 overflow-y-auto md:overflow-hidden p-4 gap-4">
-        {/* Opponent pitch */}
-        <div className="shrink-0 md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center overflow-hidden">
+        {/* Opponent pitch — sticky on mobile so the formation is never lost while scrolling the bench. */}
+        <div className="shrink-0 sticky top-0 z-10 py-2 sm:static md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center overflow-hidden">
           {!hasLineups ? (
             <EmptyState
               icon="📋"
@@ -1297,13 +1313,14 @@ function AdversarioPanel({
         </div>
 
         {/* Opponent bench */}
-        <div className="shrink-0 md:flex-none min-w-0 flex flex-col min-h-0 overflow-hidden">
+        <div className="shrink-0 min-w-0 flex flex-col md:flex-none md:min-h-0 md:overflow-hidden">
           <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
             <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">
               Banco
             </h3>
           </div>
-          <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2">
+          {/* Mobile: no inner scroll (outer container scrolls). Desktop: independent scroll. */}
+          <div className="min-w-0 px-3 py-2.5 space-y-2 md:flex-1 md:min-h-0 md:overflow-y-auto">
             {!hasLineups || oppBench.length === 0 ? (
               <p className="text-center text-on-surface-variant/60 text-xs font-medium py-6">
                 Sem dados do banco adversário
