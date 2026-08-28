@@ -1,7 +1,7 @@
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory } from "./coreHelpers";
 import { SPONSOR_REVENUE_BY_DIVISION } from "./gameConstants";
-import { getGlobalMessages } from "./db/globalDatabase";
+import { getGlobalMessages, CHAT_RETENTION_MS } from "./db/globalDatabase";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { serializeActiveAuctions } from "./auctionHelpers";
 
@@ -337,13 +337,14 @@ export function registerSessionSocketHandlers(
 
 		// Emit chat history for both channels
 		game.db.all(
-			"SELECT id, coach_name AS coachName, message, timestamp FROM chat_messages ORDER BY id DESC LIMIT 50",
+			"SELECT id, coach_name AS coachName, message, timestamp FROM chat_messages WHERE timestamp >= ? ORDER BY id DESC LIMIT 50",
+			[Date.now() - CHAT_RETENTION_MS],
 			(err: any, rows: any[]) => {
 				const messages = err ? [] : (rows || []).reverse();
 				socket.emit("chatHistory", { channel: "room", messages });
 			},
 		);
-		getGlobalMessages(50)
+		getGlobalMessages(50, Date.now() - CHAT_RETENTION_MS)
 			.then((messages) =>
 				socket.emit("chatHistory", { channel: "global", messages }),
 			)
@@ -589,7 +590,8 @@ export function registerSessionSocketHandlers(
 										emitGlobalPlayerUpdate?.();
 
 										game.db.all(
-											"SELECT id, coach_name AS coachName, message, timestamp FROM chat_messages ORDER BY id DESC LIMIT 50",
+											"SELECT id, coach_name AS coachName, message, timestamp FROM chat_messages WHERE timestamp >= ? ORDER BY id DESC LIMIT 50",
+											[Date.now() - CHAT_RETENTION_MS],
 											(errC: any, rows: any[]) => {
 												const messages = errC ? [] : (rows || []).reverse();
 												socket.emit("chatHistory", {
@@ -598,7 +600,7 @@ export function registerSessionSocketHandlers(
 												});
 											},
 										);
-										getGlobalMessages(50)
+										getGlobalMessages(50, Date.now() - CHAT_RETENTION_MS)
 											.then((messages) =>
 												socket.emit("chatHistory", {
 													channel: "global",

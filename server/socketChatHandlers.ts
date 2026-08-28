@@ -2,6 +2,7 @@ import type { ActiveGame, PlayerSession } from "./types";
 import {
   saveGlobalMessage,
   getGlobalMessages,
+  CHAT_RETENTION_MS,
 } from "./db/globalDatabase";
 
 const MAX_MESSAGE_LENGTH = 500;
@@ -61,6 +62,10 @@ export function registerChatHandlers(
       const timestamp = now;
 
       if (channel === "room") {
+        // Keep the table bounded: drop messages outside the 2-day window
+        game.db.run("DELETE FROM chat_messages WHERE timestamp < ?", [
+          now - CHAT_RETENTION_MS,
+        ]);
         game.db.run(
           "INSERT INTO chat_messages (coach_name, message, timestamp) VALUES (?, ?, ?)",
           [coachName, trimmed, timestamp],
@@ -113,7 +118,8 @@ export function registerChatHandlers(
 
       if (channel === "room") {
         game.db.all(
-          "SELECT id, coach_name AS coachName, message, timestamp FROM chat_messages ORDER BY id DESC LIMIT 50",
+          "SELECT id, coach_name AS coachName, message, timestamp FROM chat_messages WHERE timestamp >= ? ORDER BY id DESC LIMIT 50",
+          [Date.now() - CHAT_RETENTION_MS],
           (err: Error | null, rows: any[]) => {
             const messages = err ? [] : (rows || []).reverse();
             socket.emit("chatHistory", { channel: "room", messages });
@@ -121,7 +127,10 @@ export function registerChatHandlers(
         );
       } else if (channel === "global") {
         try {
-          const messages = await getGlobalMessages(50);
+          const messages = await getGlobalMessages(
+            50,
+            Date.now() - CHAT_RETENTION_MS,
+          );
           socket.emit("chatHistory", { channel: "global", messages });
         } catch (_) {
           socket.emit("chatHistory", { channel: "global", messages: [] });

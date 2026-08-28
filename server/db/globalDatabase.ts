@@ -4,6 +4,9 @@ import sqlite3 from "sqlite3";
 
 const sqlite = sqlite3.verbose();
 
+// Chat messages older than this (2 days) are neither shown nor kept.
+export const CHAT_RETENTION_MS = 2 * 24 * 60 * 60 * 1000;
+
 let globalDb: any = null;
 
 function getDbDir(): string {
@@ -36,6 +39,10 @@ export function openGlobalDb(): any {
     message TEXT NOT NULL,
     timestamp INTEGER NOT NULL
   )`);
+  // Prune history older than the retention window (one-shot on startup)
+  globalDb.run("DELETE FROM global_chat_messages WHERE timestamp < ?", [
+    Date.now() - CHAT_RETENTION_MS,
+  ]);
   return globalDb;
 }
 
@@ -47,6 +54,10 @@ export function saveGlobalMessage(
 ): Promise<number> {
   return new Promise((resolve, reject) => {
     const db = openGlobalDb();
+    // Keep the table bounded: drop messages outside the retention window
+    db.run("DELETE FROM global_chat_messages WHERE timestamp < ?", [
+      Date.now() - CHAT_RETENTION_MS,
+    ]);
     db.run(
       "INSERT INTO global_chat_messages (coach_name, room_code, message, timestamp) VALUES (?, ?, ?, ?)",
       [coachName, roomCode, message, timestamp],
@@ -58,12 +69,15 @@ export function saveGlobalMessage(
   });
 }
 
-export function getGlobalMessages(limit = 50): Promise<any[]> {
+export function getGlobalMessages(
+  limit = 50,
+  sinceMs: number = Date.now() - CHAT_RETENTION_MS,
+): Promise<any[]> {
   return new Promise((resolve, reject) => {
     const db = openGlobalDb();
     db.all(
-      "SELECT id, coach_name AS coachName, room_code AS roomCode, message, timestamp FROM global_chat_messages ORDER BY id DESC LIMIT ?",
-      [limit],
+      "SELECT id, coach_name AS coachName, room_code AS roomCode, message, timestamp FROM global_chat_messages WHERE timestamp >= ? ORDER BY id DESC LIMIT ?",
+      [sinceMs, limit],
       (err: Error | null, rows: any[]) => {
         if (err) reject(err);
         else resolve((rows || []).reverse());
