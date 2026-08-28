@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { POS_BAR } from "./positionConstants.js";
 import {
+  MATCHWEEKS_PER_SEASON,
   buildSkillChartPoints,
   skillLabel,
 } from "../../utils/skillHistory.js";
@@ -15,6 +16,9 @@ import {
  * contrário, em jogos com várias épocas, os pontos da época actual colidem
  * nos mesmos X da época 1 (linha em zigzag, últimos registos invisíveis).
  *
+ * O gráfico mostra apenas as últimas 14 semanas (1 temporada): os pontos
+ * mais antigos do histórico ficam sempre ocultos.
+ *
  * @param {{ skillHistory: Array<{matchweek: number, season?: number, skill: number}>, skill: number, position: string }} props
  */
 export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" }) {
@@ -23,7 +27,15 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
 
   // Ordenar cronologicamente por epoch global (preserva a época) e filtrar
   // dados válidos. Pontos sem `season` são tratados como época 1 (legado).
-  const cleanHistory = buildSkillChartPoints(skillHistory);
+  const allPoints = buildSkillChartPoints(skillHistory);
+  // Limitar às últimas 14 semanas (1 temporada): janela de MATCHWEEKS_PER_SEASON
+  // epochs terminando no ponto mais recente — os pontos mais antigos são sempre ocultos.
+  const cleanHistory =
+    allPoints.length > MATCHWEEKS_PER_SEASON
+      ? allPoints.filter(
+          (p) => p.epoch > allPoints[allPoints.length - 1].epoch - MATCHWEEKS_PER_SEASON,
+        )
+      : allPoints;
   const multiSeason = cleanHistory.some((p) => p.season > 1);
 
   // Sem dados suficientes — mostrar estado mínimo
