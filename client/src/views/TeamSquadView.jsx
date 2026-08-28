@@ -159,7 +159,7 @@ export function TeamSquadView({
     <div className="min-h-screen w-full bg-surface text-on-surface flex flex-col">
       {/* Header */}
       <div
-        className="relative px-6 py-8 border-b border-zinc-800 overflow-hidden"
+        className="relative px-6 py-4 sm:py-8 border-b border-zinc-800 overflow-hidden"
         style={{
           background: selectedTeam.color_primary || "#18181b",
         }}
@@ -198,10 +198,10 @@ export function TeamSquadView({
         </div>
 
         {/* Hero section */}
-        <div className="relative flex flex-col sm:flex-row gap-5 items-start sm:items-center">
+        <div className="relative flex flex-col sm:flex-row gap-3 sm:gap-5 items-start sm:items-center">
           {/* Team badge */}
           <div
-            className="w-20 h-20 rounded-xl flex items-center justify-center text-4xl font-black shrink-0 shadow-lg border border-white/10"
+            className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center text-xl sm:text-4xl font-black shrink-0 shadow-lg border border-white/10"
             style={{
               background: selectedTeam.color_primary || "#201f1f",
               color: selectedTeam.color_secondary || "#fff",
@@ -220,7 +220,7 @@ export function TeamSquadView({
                 `Divisão ${selectedTeam.division}`}
             </p>
             <h1
-              className="font-headline text-3xl md:text-4xl font-black tracking-tighter leading-none mb-1 truncate"
+              className="font-headline text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter leading-none mb-1 truncate"
               style={{ color: selectedTeam.color_secondary || "#ffffff" }}
             >
               {selectedTeam.name}
@@ -261,11 +261,12 @@ export function TeamSquadView({
 
         {/* Budget widget (only for own team) */}
         {isOwnTeam && (
-          <div className="relative mt-5">
+          <div className="relative mt-3 sm:mt-5">
             <SummaryWidget
+              compactMobile
               label="Saldo Disponível"
               value={formatCurrency(myBudget)}
-              valueClass="text-2xl"
+              valueClass="text-lg sm:text-2xl"
               valueColorClass={myBudget >= 0 ? "text-on-surface" : "text-error"}
               className="h-auto"
               accentStyle={{
@@ -276,9 +277,10 @@ export function TeamSquadView({
         )}
 
         {/* Tab Navigation */}
-        <div className="relative mt-5">
+        <div className="relative mt-3 sm:mt-5">
           <TabBar
             size="md"
+            className="overflow-x-auto"
             tabs={[
               { key: "squad", label: "Plantel" },
               { key: "calendar", label: "Calendário" },

@@ -1,5 +1,6 @@
 // Topo mobile responsiveness harness — renderiza os blocos de topo (SummaryWidgets /
-// heróis) das páginas TrainingPage, ClubTab, FinancesTab, StadiumTab e CalendarioTab
+// heróis) das páginas TrainingPage, ClubTab, FinancesTab, StadiumTab, CalendarioTab
+// e TeamSquadView
 // com fixture data de edge cases, e auto-reporta overflow/clipping em #report.
 // NOT part of o app; usado apenas para verificação.
 //
@@ -14,11 +15,14 @@ import { ClubTab } from "./src/views/ClubTab.jsx";
 import { FinancesTab } from "./src/views/FinancesTab.jsx";
 import { StadiumTab } from "./src/views/StadiumTab.jsx";
 import { CalendarioTab } from "./src/views/CalendarioTab.jsx";
+import { TeamSquadView } from "./src/views/TeamSquadView.jsx";
 
 // Foco de treino pré-definido (TrainingPage lê do localStorage no init)
 try {
   localStorage.setItem("cashball_training_focus", "Defesas");
-} catch {}
+} catch {
+  /* ignore */
+}
 
 const noop = () => {};
 
@@ -102,25 +106,54 @@ const clubNews = [
   { id: 3, type: "weekly_income", title: "Rendimentos semanais de bilheteira e patrocinadores processados com sucesso", related_team_name: null, amount: 0, matchweek: 2, year: seasonYear },
 ];
 
-const Section = ({ label, children }) => (
-  <div className="border-b border-outline-variant/30">
-    <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/50 mb-2">
-      {label}
-    </p>
-    {children}
-  </div>
-);
+// Squad fixture: jogadores em todas as posições com nomes longos
+const mkPlayer = (id, position, name) => ({
+  id,
+  name,
+  position,
+  teamId: 1,
+  nationality: "PT",
+  skill: 70 + (id % 25),
+  form: 85,
+  wage: 12000,
+  value: 400000,
+  aggressiveness: 60,
+  is_star: id === 3,
+});
+
+const squad = [
+  mkPlayer(1, "GR", "José Manuel Ferreira Pinto"),
+  mkPlayer(2, "GR", "António Sousa"),
+  mkPlayer(3, "DEF", "João Alexandre Fernandes Costa"),
+  mkPlayer(4, "DEF", "Kévin Dubois"),
+  mkPlayer(5, "DEF", "Mateus Henrique da Silva"),
+  mkPlayer(6, "MED", "Aleksandar Petrović"),
+  mkPlayer(7, "MED", "Ricardo Almeida Machado"),
+  mkPlayer(8, "ATA", "Fernando Luís Vasquez Romero"),
+  mkPlayer(9, "ATA", "Tiago Baptista"),
+];
+
+// Helper de layout (não é componente React — evita react-refresh no lint)
+function section(label, children) {
+  return (
+    <div className="border-b border-outline-variant/30">
+      <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/50 mb-2">
+        {label}
+      </p>
+      {children}
+    </div>
+  );
+}
 
 const root = createRoot(document.getElementById("root"));
 root.render(
   // Mimica o container mobile do GameLayout: <main> > div.p-4 > conteúdo do tab
   <div className="min-h-screen bg-surface">
     <div className="p-4 lg:p-6 space-y-8">
-      <Section label="TrainingPage (topo)">
-        <TrainingPage me={me} matchweek={5} />
-      </Section>
+      {section("TrainingPage (topo)", <TrainingPage me={me} matchweek={5} />)}
 
-      <Section label="ClubTab (topo)">
+      {section(
+        "ClubTab (topo)",
         <ClubTab
           teamInfo={teamInfo}
           seasonYear={seasonYear}
@@ -136,10 +169,11 @@ root.render(
             ],
           }}
           clubNews={clubNews}
-        />
-      </Section>
+        />,
+      )}
 
-      <Section label="FinancesTab (topo)">
+      {section(
+        "FinancesTab (topo)",
         <FinancesTab
           financeData={financeData}
           totalWeeklyWage={480000}
@@ -157,20 +191,22 @@ root.render(
           showTicketBreakdown={false}
           setShowTicketBreakdown={noop}
           setGameDialog={noop}
-        />
-      </Section>
+        />,
+      )}
 
-      <Section label="StadiumTab (topo)">
+      {section(
+        "StadiumTab (topo)",
         <StadiumTab
           teamInfo={teamInfo}
           currentBudget={-120000}
           capacityRevPerGame={450000}
           financeData={{ homeMatchesPlayed: 3, ticketBreakdown, totalStadiumExpenses: 900000 }}
           setGameDialog={noop}
-        />
-      </Section>
+        />,
+      )}
 
-      <Section label="CalendarioTab (topo)">
+      {section(
+        "CalendarioTab (topo)",
         <CalendarioTab
           calendarData={calendarData}
           me={me}
@@ -179,8 +215,29 @@ root.render(
           calFilter="all"
           setCalFilter={noop}
           handleOpenTeamSquad={noop}
-        />
-      </Section>
+        />,
+      )}
+
+      {section(
+        "TeamSquadView (topo, equipa própria)",
+        <TeamSquadView
+          selectedTeam={teams[0]}
+          selectedTeamSquad={squad}
+          selectedTeamLoading={false}
+          me={me}
+          avatarSeed="harness"
+          players={squad}
+          clubHistory={null}
+          clubHistoryTeamId={null}
+          setTransferProposalModal={noop}
+          myBudget={-120000}
+          currentMatchweek={5}
+          calendarData={calendarData}
+          teams={teams}
+          onBack={noop}
+          onOpenTeamSquad={noop}
+        />,
+      )}
     </div>
   </div>,
 );
