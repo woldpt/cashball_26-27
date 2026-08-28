@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
+import RoomSelectScreen from "./RoomSelectScreen.jsx";
+
 /**
  * @typedef {Object} LandingPageProps
  * @property {string} authPhase - "login" | "register" | "mode"
@@ -162,36 +164,14 @@ const LandingPage = ({
 
 	const passwordTooShort = password !== "" && password.length < 3;
 
-	// Sala jogada mais recentemente (para destaque na lista de saves)
-	const lastPlayedSave = availableSaves.reduce(
-		(best, s) =>
-			s.lastPlayedAt &&
-			(!best || new Date(s.lastPlayedAt) > new Date(best.lastPlayedAt))
-				? s
-				: best,
-		null,
-	);
-
-	/**
-	 * Formata uma data ISO como dd/mm/aaaa (pt-PT).
-	 * @param {string|null|undefined} iso - Data ISO a formatar.
-	 * @returns {string|null}
-	 */
-	const formatMatchDate = (iso) => {
-		if (!iso) return null;
-		try {
-			return new Date(iso).toLocaleDateString("pt-PT", {
-				day: "2-digit",
-				month: "2-digit",
-				year: "numeric",
-			});
-		} catch {
-			return null;
-		}
-	};
+	const isMode = authPhase === "mode";
 
 	return (
-		<div className="min-h-screen bg-[#060b08] text-white flex flex-col relative overflow-hidden pb-16">
+		<div
+			className={`min-h-screen bg-[#060b08] text-white flex flex-col relative overflow-hidden ${
+				isMode ? "" : "pb-16"
+			}`}
+		>
 			{/* Particle background */}
 			<ParticleCanvas />
 
@@ -239,6 +219,38 @@ const LandingPage = ({
 				</div>
 			</header>
 
+			<AnimatePresence mode="wait">
+				{isMode ? (
+					<RoomSelectScreen
+						key="room-select"
+						name={name}
+						availableSaves={availableSaves}
+						setAvailableSaves={setAvailableSaves}
+						roomCode={roomCode}
+						setRoomCode={setRoomCode}
+						joining={joining}
+						joinError={joinError}
+						disconnected={disconnected}
+						resetAuthFlow={resetAuthFlow}
+						joinMode={joinMode}
+						selectJoinMode={selectJoinMode}
+						handleLogout={handleLogout}
+						token={token}
+						isNewAccount={isNewAccount}
+						handleJoin={handleJoin}
+						backendUrl={backendUrl}
+					/>
+				) : (
+				<motion.div
+					key="landing"
+					initial={false}
+					exit={{
+						opacity: 0,
+						y: -12,
+						transition: { duration: 0.35, ease: "easeIn" },
+					}}
+					className="flex flex-1 flex-col min-h-0"
+				>
 			{/* Hero + Auth card */}
 			<div className="relative z-10 flex-1 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16 px-6 sm:px-10 lg:px-16 py-14 max-w-7xl mx-auto w-full">
 				{/* Left: Hero copy */}
@@ -604,345 +616,6 @@ const LandingPage = ({
 										)}
 									</motion.div>
 								)}
-
-								{/* ─── MODE PHASE ────────────────────────── */}
-								{authPhase === "mode" && (
-									<motion.div
-										key="mode"
-										initial={{ opacity: 0, scale: 0.97 }}
-										animate={{ opacity: 1, scale: 1 }}
-										exit={{ opacity: 0, scale: 1.03 }}
-										transition={{ duration: 0.25 }}
-										className="p-6 space-y-5"
-									>
-										{isNewAccount && (
-											<div className="flex items-start gap-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2.5">
-												<span className="material-symbols-outlined text-green-400 text-base leading-tight mt-0.5">
-													check_circle
-												</span>
-												<p className="text-green-300 text-xs font-bold">
-													Conta criada com sucesso! Bem-vindo,{" "}
-													<span className="text-green-200">{name}</span>.
-												</p>
-											</div>
-										)}
-										<div className="space-y-3 text-center">
-											<div className="space-y-1">
-												<p className="text-[10px] text-green-400/60 uppercase font-black tracking-[0.4em]">
-													Sessão autenticada
-												</p>
-												<h2 className="text-xl font-headline font-black text-white tracking-tight">
-													Olá,{" "}
-													<span className="text-green-400 drop-shadow-[0_0_12px_rgba(74,222,128,0.5)]">
-														{name}
-													</span>
-												</h2>
-												<p className="text-xs text-white/40">
-													Como queres jogar hoje?
-												</p>
-											</div>
-											<div className="flex items-center justify-center gap-3">
-												<button
-													onClick={resetAuthFlow}
-													className="flex items-center gap-1 text-[10px] text-white/40 hover:text-white/70 font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-white/[0.08] hover:border-white/20 transition-colors"
-												>
-													<span className="material-symbols-outlined text-[13px] leading-none">
-														swap_horiz
-													</span>
-													Trocar conta
-												</button>
-												<button
-													onClick={handleLogout}
-													className="flex items-center gap-1 text-[10px] text-red-400/50 hover:text-red-400 font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-red-500/10 hover:border-red-500/30 transition-colors"
-													title="Terminar sessão completamente"
-												>
-													<span className="material-symbols-outlined text-[13px] leading-none">
-														logout
-													</span>
-													Sair
-												</button>
-											</div>
-										</div>
-
-										<div className="flex flex-col sm:flex-row gap-2">
-											{[
-												{
-													mode: "new-game",
-													icon: "add_circle",
-													label: "Novo Jogo",
-													sub: "Começa do zero",
-												},
-												{
-													mode: "saved-game",
-													icon: "history",
-													label: "Continuar",
-													sub: "Época guardada",
-												},
-												{
-													mode: "friend-room",
-													icon: "group_add",
-													label: "Amigos",
-													sub: "Código de sala",
-												},
-											].map(({ mode, icon, label, sub }) => (
-												<button
-													key={mode}
-													onClick={() => selectJoinMode(mode)}
-													className={`flex-1 flex items-center sm:flex-col sm:items-start gap-3 sm:gap-1 rounded-xl border px-4 py-3 sm:p-4 text-left transition-all duration-200 ${
-														joinMode === mode
-															? "border-green-500/40 bg-green-500/10 shadow-[0_0_20px_rgba(74,222,128,0.08)]"
-															: "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
-													}`}
-												>
-													<span
-														className={`material-symbols-outlined text-[22px] shrink-0 leading-none ${
-															joinMode === mode
-																? "text-green-400"
-																: "text-white/30"
-														}`}
-													>
-														{icon}
-													</span>
-													<div className="min-w-0">
-														<p
-															className={`text-sm font-black leading-tight ${
-																joinMode === mode
-																	? "text-green-400"
-																	: "text-white/70"
-															}`}
-														>
-															{label}
-														</p>
-														<p className="text-[10px] text-white/30 leading-tight mt-0.5 hidden sm:block">
-															{sub}
-														</p>
-													</div>
-													{joinMode === mode && (
-														<span className="ml-auto sm:hidden material-symbols-outlined text-green-400 text-[18px] leading-none">
-															check_circle
-														</span>
-													)}
-												</button>
-											))}
-										</div>
-
-										{joinMode === "new-game" && (
-											<motion.div
-												initial={{ opacity: 0, y: 8 }}
-												animate={{ opacity: 1, y: 0 }}
-												className="space-y-3 rounded-xl border border-green-500/20 bg-green-500/[0.04] p-4"
-											>
-												<label className="block text-[10px] uppercase text-green-400/70 font-bold tracking-[0.3em]">
-													Nome do novo jogo
-												</label>
-												<input
-													type="text"
-													autoComplete="off"
-													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-3.5 rounded-xl text-white text-base font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 uppercase"
-													value={roomCode}
-													placeholder="INVERNO"
-													onChange={(e) =>
-														setRoomCode(e.target.value.toUpperCase())
-													}
-													onKeyDown={(e) => {
-														if (e.key === "Enter") handleJoin();
-													}}
-												/>
-												<p className="text-xs text-white/30">
-													Recebes um clube aleatório da 4ª Divisão.
-												</p>
-											</motion.div>
-										)}
-
-										{joinMode === "saved-game" && (
-											<motion.div
-												initial={{ opacity: 0, y: 8 }}
-												animate={{ opacity: 1, y: 0 }}
-												className="space-y-3 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4"
-											>
-												<label className="block text-[10px] uppercase text-cyan-400/70 font-bold tracking-[0.3em]">
-													As tuas Salas Gravadas
-												</label>
-												{availableSaves.length === 0 ? (
-													<p className="text-white/30 text-sm py-2">
-														{name
-															? "Nenhum save encontrado para este treinador."
-															: "Introduz o teu nome para ver as tuas salas."}
-													</p>
-												) : (
-													<div className="space-y-2 max-h-48 overflow-y-auto">
-														{availableSaves.map((save) => (
-															<div
-																key={save.code}
-																onClick={() => setRoomCode(save.code)}
-																className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all ${
-																	roomCode === save.code
-																		? "border-cyan-500/40 bg-cyan-500/10 text-white"
-																		: "border-white/[0.06] bg-white/[0.02] text-white/50 hover:border-white/[0.12] hover:text-white/80"
-																} ${
-																	save.code === lastPlayedSave?.code
-																		? "shadow-[0_0_18px_rgba(74,222,128,0.14)]"
-																		: ""
-																}`}
-															>
-																<div className="flex flex-col flex-1 min-w-0">
-																	<span className="font-black text-sm uppercase tracking-widest truncate">
-																		{save.name}
-																	</span>
-																	<span className="text-[10px] font-mono text-white/30">
-																		{save.code}
-																	</span>
-																	{save.coaches && save.coaches.length > 0 && (
-																		<span className="text-[9px] font-black uppercase px-1.5 py-px rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 tracking-widest inline-block mt-1 w-fit">
-																			{save.coaches.join(", ")}
-																		</span>
-																	)}
-																	{save.code === lastPlayedSave?.code && (
-																		<span className="text-[9px] font-black uppercase px-1.5 py-px rounded bg-green-500/20 text-green-400 border border-green-500/30 tracking-widest inline-block mt-1 w-fit">
-																			● Última Jogada
-																		</span>
-																	)}
-																	{(save.teamName || save.year) && (
-																		<div className="flex items-center gap-2 mt-0.5">
-																			{save.teamName && (
-																				<span className="text-[10px] text-white/30 truncate">
-																					🏟️ {save.teamName}
-																				</span>
-																			)}
-																			{save.year && (
-																				<span className="text-[10px] text-white/30">
-																					📅 {save.year}
-																				</span>
-																			)}
-																		</div>
-																	)}
-																	{save.lastPlayedAt &&
-																		formatMatchDate(save.lastPlayedAt) && (
-																			<span className="text-[10px] text-white/30 mt-0.5 flex items-center gap-1">
-																				⚽ Última partida:{" "}
-																				{formatMatchDate(save.lastPlayedAt)}
-																			</span>
-																		)}
-																</div>
-																<button
-																	onClick={(e) => {
-																		e.stopPropagation();
-																		if (
-																			!window.confirm(
-																				`Apagar a sala "${save.name}" permanentemente?`,
-																			)
-																		)
-																			return;
-																		fetch(
-																			`${backendUrl}/saves/${encodeURIComponent(save.code)}`,
-																			{
-																				method: "DELETE",
-																				headers: {
-																					"Content-Type": "application/json",
-																				},
-																				body: JSON.stringify({
-																					name,
-																					token,
-																				}),
-																			},
-																		)
-																			.then((r) => r.json())
-																			.then((data) => {
-																				if (data.ok) {
-																					setAvailableSaves((prev) =>
-																						prev.filter(
-																							(s) => s.code !== save.code,
-																						),
-																					);
-																					if (roomCode === save.code)
-																						setRoomCode("");
-																				} else {
-																					alert(
-																						data.error || "Erro ao apagar sala.",
-																					);
-																				}
-																			})
-																			.catch(() =>
-																				alert("Erro de ligação ao servidor."),
-																			);
-																	}}
-																	className="shrink-0 text-white/20 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-500/10"
-																	title="Apagar sala"
-																>
-																	<span className="material-symbols-outlined text-[16px] leading-none">
-																		delete
-																	</span>
-																</button>
-															</div>
-														))}
-													</div>
-												)}
-											</motion.div>
-										)}
-
-										{joinMode === "friend-room" && (
-											<motion.div
-												initial={{ opacity: 0, y: 8 }}
-												animate={{ opacity: 1, y: 0 }}
-												className="space-y-3 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4"
-											>
-												<label className="block text-[10px] uppercase text-emerald-400/70 font-bold tracking-[0.3em]">
-													Código da Sala
-												</label>
-												<input
-													type="text"
-													autoComplete="off"
-													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-3.5 rounded-xl text-white text-base font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 uppercase tracking-widest"
-													value={roomCode}
-													placeholder="INVERNO"
-													onChange={(e) =>
-														setRoomCode(e.target.value.toUpperCase())
-													}
-													onKeyDown={(e) => {
-														if (e.key === "Enter") handleJoin();
-													}}
-												/>
-												<p className="text-xs text-white/30">
-													Pede o código ao teu amigo que criou a sala.
-												</p>
-											</motion.div>
-										)}
-
-										{joinMode && (
-											<button
-												onClick={handleJoin}
-												disabled={!roomCode || joining}
-												className={`w-full relative overflow-hidden disabled:bg-white/[0.06] disabled:text-white/30 py-4 rounded-xl font-black text-sm uppercase tracking-[0.2em] transition-all active:scale-[0.98] group ${
-													joinMode === "saved-game"
-														? "bg-cyan-500 hover:bg-cyan-400 text-black shadow-[0_4px_20px_rgba(6,182,212,0.25)] hover:shadow-[0_4px_30px_rgba(6,182,212,0.4)]"
-														: "bg-green-500 hover:bg-green-400 text-black shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)]"
-												}`}
-											>
-												<span className="relative z-10">
-													{joining
-														? "A GERAR CONTRATO..."
-														: joinMode === "new-game"
-															? "CRIAR JOGO"
-															: joinMode === "saved-game"
-																? "CONTINUAR JOGO"
-																: "JUNTAR A AMIGOS"}
-												</span>
-												<div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-											</button>
-										)}
-
-										{joinError && (
-											<p className="text-red-400 text-sm text-center font-bold">
-												⚠️ {joinError}
-											</p>
-										)}
-										{!joinError && disconnected && (
-											<p className="text-red-400 text-sm text-center font-bold">
-												⚠️ Sem ligação ao servidor. Tenta novamente.
-											</p>
-										)}
-									</motion.div>
-								)}
 							</AnimatePresence>
 						</div>
 					</div>
@@ -1003,6 +676,9 @@ const LandingPage = ({
 					</span>
 				</div>
 			</footer>
+			</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 };
