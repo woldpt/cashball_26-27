@@ -159,6 +159,42 @@ export function PlayerRow({
         </div>
       </div>
 
+      {/* CTA de proposta compacto — mobile only, equipas NPC.
+          Em md+ a ação vive na coluna dedicada à direita. */}
+      {showProposalCol && (
+        <div className="md:hidden shrink-0 self-center flex items-center px-1.5">
+          {player.isJunior || player.contract_start_epoch > 0 ? (
+            <span title="Contrato ativo" className="text-[13px] leading-none opacity-70">
+              🔒
+            </span>
+          ) : Math.round((player.value || 0) * TRANSFER_CLAUSE_MULT) <= myBudget ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onProposal?.({
+                  player,
+                  suggestedPrice: Math.round(
+                    (player.value || 0) * TRANSFER_CLAUSE_MULT,
+                  ),
+                });
+              }}
+              title="Fazer proposta"
+              aria-label={`Fazer proposta a ${player.name}`}
+              className="w-8 h-8 rounded-md flex items-center justify-center bg-emerald-700/90 hover:bg-emerald-600 text-white border border-emerald-500 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">send</span>
+            </button>
+          ) : (
+            <span
+              title="Sem saldo para a cláusula"
+              className="text-zinc-600 flex items-center justify-center w-8 h-8"
+            >
+              <span className="material-symbols-outlined text-[16px]">block</span>
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Atributos primários (Agr / Res / For) */}
       <div className="hidden md:flex items-center gap-2 shrink-0 self-center px-2 border-l border-outline-variant/15 ml-1">
         <div className="flex flex-col items-center justify-center w-10">
@@ -255,8 +291,8 @@ export function PlayerRow({
         </div>
 
         {/* Linha extra em mobile: atributos + golos + salário (escondidos ≥md) */}
-        <div className="md:hidden flex items-center justify-between gap-3 px-3 py-1.5 border-t border-outline-variant/10">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="md:hidden flex items-center justify-between gap-2 px-2 py-1.5 border-t border-outline-variant/10">
+          <div className="flex items-center gap-1.5 min-w-0">
             <span className="flex flex-col items-center">
               <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
                 Agr
@@ -284,7 +320,7 @@ export function PlayerRow({
                 Golos
               </span>
               <span className="text-emerald-400 font-black text-[12px] leading-none">
-                ⚽{getPlayerStat(player, ["goals"])}
+                {getPlayerStat(player, ["goals"])}
               </span>
             </span>
           </div>
@@ -299,9 +335,10 @@ export function PlayerRow({
         </div>
       </div>
 
-      {/* Coluna de proposta (equipas NPC) */}
+      {/* Coluna de proposta (equipas NPC; em mobile o CTA vive na linha extra,
+          à direita — ver bloco md:hidden abaixo) */}
       {showProposalCol && (
-        <div className="shrink-0 self-stretch flex items-center px-3 border-l">
+        <div className="hidden md:flex shrink-0 self-stretch items-center px-3 border-l">
           {player.isJunior || player.contract_start_epoch > 0 ? (
             <span className="text-[10px] text-zinc-600 font-bold uppercase whitespace-nowrap">
               🔒 Contrato

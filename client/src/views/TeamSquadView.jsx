@@ -221,9 +221,10 @@ export function TeamSquadView({
           )}
         </div>
         <div className="px-4 pb-3">
+          {/* Segmented control: partilha a largura, sem scroll horizontal */}
           <TabBar
-            size="md"
-            className="overflow-x-auto"
+            size="sm"
+            expand
             tabs={[
               { key: "squad", label: "Plantel" },
               { key: "calendar", label: "Calendário" },

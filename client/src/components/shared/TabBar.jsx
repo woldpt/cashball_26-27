@@ -13,14 +13,26 @@
  *   active: string,
  *   onChange: (key: string) => void,
  *   size?: "sm"|"md",
+ *   expand?: boolean,
  *   className?: string,
  * }} props
  */
-export function TabBar({ tabs, active, onChange, size = "sm", className = "" }) {
+export function TabBar({ tabs, active, onChange, size = "sm", expand = false, className = "" }) {
+  // `expand` = segmented control: items partilham a largura (sem scroll);
+  // tracking/padding reduzidos para caber labels longos em telas pequenas.
   const itemClass =
     size === "md"
-      ? "px-4 py-2 text-sm"
-      : "px-3 py-1 text-xs";
+      ? expand
+        ? "px-0 py-2 text-sm"
+        : "px-4 py-2 text-sm tracking-wide"
+      : expand
+        ? "px-0 py-1 text-xs"
+        : "px-3 py-1 text-xs tracking-wide";
+  // normal-case: uppercase é ~15% mais largo — em telas pequenas os labels
+  // cabem melhor em mixed case (o expand existe exatamente para isso).
+  const expandClass = expand
+    ? "flex-1 min-w-0 justify-center whitespace-nowrap overflow-hidden tracking-tight normal-case"
+    : "";
   return (
     <div
       className={`flex items-center gap-1 bg-surface-container-high rounded-lg p-1 ${className}`}
@@ -29,7 +41,7 @@ export function TabBar({ tabs, active, onChange, size = "sm", className = "" }) 
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
-          className={`${itemClass} rounded font-black uppercase tracking-wide transition-all ${
+          className={`${itemClass} ${expandClass}rounded font-black uppercase transition-all ${
             active === tab.key
               ? "bg-primary text-white shadow"
               : "text-on-surface-variant hover:text-on-surface"

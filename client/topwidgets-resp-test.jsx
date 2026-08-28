@@ -107,7 +107,7 @@ const clubNews = [
 ];
 
 // Squad fixture: jogadores em todas as posições com nomes longos
-const mkPlayer = (id, position, name) => ({
+const mkPlayer = (id, position, name, extra = {}) => ({
   id,
   name,
   position,
@@ -119,6 +119,7 @@ const mkPlayer = (id, position, name) => ({
   value: 400000,
   aggressiveness: 60,
   is_star: id === 3,
+  ...extra,
 });
 
 const squad = [
@@ -130,7 +131,8 @@ const squad = [
   mkPlayer(6, "MED", "Aleksandar Petrović"),
   mkPlayer(7, "MED", "Ricardo Almeida Machado"),
   mkPlayer(8, "ATA", "Fernando Luís Vasquez Romero"),
-  mkPlayer(9, "ATA", "Tiago Baptista"),
+  // contrato ativo → estado 🔒 no CTA mobile
+  mkPlayer(9, "ATA", "Tiago Baptista", { contract_start_epoch: 3 }),
 ];
 
 // Helper de layout (não é componente React — evita react-refresh no lint)
@@ -231,6 +233,27 @@ root.render(
           clubHistoryTeamId={null}
           setTransferProposalModal={noop}
           myBudget={-120000}
+          currentMatchweek={5}
+          calendarData={calendarData}
+          teams={teams}
+          onBack={noop}
+          onOpenTeamSquad={noop}
+        />,
+      )}
+
+      {section(
+        "TeamSquadView (NPC — linhas com CTA de proposta)",
+        <TeamSquadView
+          selectedTeam={teams[1]}
+          selectedTeamSquad={squad}
+          selectedTeamLoading={false}
+          me={me}
+          avatarSeed="harness"
+          players={squad}
+          clubHistory={null}
+          clubHistoryTeamId={null}
+          setTransferProposalModal={noop}
+          myBudget={5000000}
           currentMatchweek={5}
           calendarData={calendarData}
           teams={teams}
