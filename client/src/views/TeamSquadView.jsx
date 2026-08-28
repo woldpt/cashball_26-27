@@ -560,7 +560,7 @@ export function TeamSquadView({
             Sem jogadores encontrados.
           </div>
         ) : (
-          <div className="flex flex-col gap-1.5 p-6">
+          <div className="flex flex-col gap-1.5 px-3 py-4 sm:p-6">
             {["GR", "DEF", "MED", "ATA"].map((pos) => {
               const group = selectedTeamSquad.filter((p) => p.position === pos);
               if (!group.length) return null;

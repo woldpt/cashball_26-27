@@ -100,7 +100,7 @@ export function PlayerRow({
           seed={player.id}
           position={player.position}
           nationality={player.nationality}
-          size="md"
+          size="mdR"
         />
         <span
           className={`absolute bottom-0.5 -right-1 px-1 py-px bg-surface-container border-l-2 ${posBorder} ${posText} text-[8px] font-black rounded-sm shadow-md shadow-black/50 tracking-wider`}
@@ -110,7 +110,7 @@ export function PlayerRow({
       </div>
 
       {/* Nome + flag + badges (cresce para preencher) */}
-      <div className="flex-1 min-w-0 self-center px-3 py-2">
+      <div className="flex-1 min-w-0 self-center px-2 sm:px-3 py-2">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span
             className="text-base shrink-0 leading-none"
@@ -141,7 +141,7 @@ export function PlayerRow({
       </div>
 
       {/* Qualidade - número grande com delta */}
-      <div className="shrink-0 self-center flex items-center justify-center px-2 min-w-14">
+      <div className="shrink-0 self-center flex items-center justify-center px-1.5 sm:px-2 min-w-[48px] sm:min-w-14">
         <div className="flex items-baseline gap-0.5">
           {skillDelta !== 0 && (
             <span
