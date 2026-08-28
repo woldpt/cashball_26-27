@@ -1314,9 +1314,12 @@ async function simulateMatchSegment(
     const formationAttack = formationOffensiveFactors[formation] ?? 1.0;
     const formationDefense = formationDefensiveFactors[formation] ?? 1.0;
 
-    // Morale (0-100) swings attack by ±25% and defense by ±12.5% around 50.
-    const moraleAttackFactor = 1 + (morale - 50) * 0.005;
-    const moraleDefenseFactor = 1 + (morale - 50) * 0.0025;
+    // Morale (0-100) swings attack by ±10% and defense by ±5% around 50.
+    // Kept deliberately small: form should nudge outcomes, not override the
+    // quality gap between squads (winning streaks used to pile up morale and
+    // make even weaker teams nearly unbeatable).
+    const moraleAttackFactor = 1 + (morale - 50) * 0.002;
+    const moraleDefenseFactor = 1 + (morale - 50) * 0.001;
 
     const avgForm = average(squad.map((p) => p.form || 100));
     const formFactor = Math.max(0.85, Math.min(1.15, avgForm / 100));

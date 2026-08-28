@@ -91,10 +91,12 @@ no ataque mas prejudicam a defesa, e vice-versa:
 | DEFENSIVO | 0.85 | 1.15 |
 
 ### d) Moral da equipa (0–100, começa em 50)
-- O moral faz oscilar o **ataque ±25%** e a **defesa ±12.5%** em torno de 50.
-  A cada 10 pontos acima de 50, o ataque cresce ~5%. Vitória sobe o moral (+25),
-  derrota desce (−20), empate sobe pouco (+5). Semanalmente o moral "dói" 90
-  da distância para 50, para refletir a forma recente e não o histórico antigo.
+- O moral faz oscilar o **ataque ±10%** e a **defesa ±5%** em torno de 50.
+  A cada 10 pontos acima de 50, o ataque cresce ~2% — pouco, de propósito:
+  a forma deve pesar na decisão, mas nunca sobrepor-se à diferença real de
+  qualidade entre os plantéis. Vitória sobe o moral (+25), derrota desce (−20),
+  empate sobe pouco (+5). Semanalmente o moral "desgasta", aproximando-se de
+  50 em 10% da distância, para refletir a forma recente e não o histórico antigo.
 
 ### e) Forma dos jogadores (form)
 Usa-se a média da forma de toda a equipa, limitada entre 0.85 e 1.15
