@@ -950,24 +950,24 @@ export function useSocketListeners(handlers, refs) {
 										r.awayTeamId !== f.awayTeamId
 									)
 										return r;
-									// Add the held-back penalty event now
-									const suspenseEvents = (f.minuteEvents || []).filter(
-										(ne) => ne.penaltySuspense,
-									);
+									// Revelacao atomica: adicionar tudo o que ficou retido deste minuto -
+									// o evento de penalti E os restantes eventos do mesmo minuto (ex.: um golo
+									// aberto do adversario). Sem isto, o golo do adversario aparecia no painel
+									// ANTES da revelacao do penalty (sensacao de ter sido marcado antes).
 									const existingEvents = r.events || [];
-									const toAdd = suspenseEvents.filter(
+									const toAdd = (f.minuteEvents || []).filter(
 										(ne) =>
 											!existingEvents.some(
 												(ee) =>
 													ee.minute === ne.minute &&
 													ee.type === ne.type &&
 													ee.playerId === ne.playerId,
-											),
-									);
+												),
+										);
 									return {
 										...r,
-										finalHomeGoals: f.homeGoals,
-										finalAwayGoals: f.awayGoals,
+										finalHomeGoals: Math.max(r.finalHomeGoals || 0, f.homeGoals),
+										finalAwayGoals: Math.max(r.finalAwayGoals || 0, f.awayGoals),
 										events: [...existingEvents, ...toAdd],
 									};
 								});
@@ -1027,23 +1027,26 @@ export function useSocketListeners(handlers, refs) {
 					);
 					if (!update) return r;
 					const existingEvents = r.events || [];
-					// If my fixture has penalty suspense active, hold back the score AND
-					// the penalty_goal/penalty_miss events so the scoreboard only updates
-					// after the modal reveals the outcome.
+					// If my fixture has penalty suspense active, hold back the score AND ALL of
+					// this minute's events for that fixture (penalty + any same-minute event,
+					// e.g. an opponent open-play goal) so the scoreboard only updates when the
+					// modal reveals the outcome - atomically.
 					const hasSuspense =
 						myFixtureWithSuspense != null &&
 						r.homeTeamId === myFixtureWithSuspense.homeTeamId &&
 						r.awayTeamId === myFixtureWithSuspense.awayTeamId;
-					const newEvents = (update.minuteEvents || [])
-						.filter(
-							(ne) =>
-								!existingEvents.some(
-									(ee) =>
-										ee.minute === ne.minute &&
-										ee.type === ne.type &&
-										ee.playerId === ne.playerId,
-								) && !(hasSuspense && ne.penaltySuspense),
-						)
+					const newEvents = hasSuspense
+						? [] // revelacao atomica no timeout de suspense (3s)
+						: (update.minuteEvents || [])
+							.filter(
+								(ne) =>
+									!existingEvents.some(
+										(ee) =>
+											ee.minute === ne.minute &&
+											ee.type === ne.type &&
+											ee.playerId === ne.playerId,
+									),
+							)
 						.map((ne) => {
 							if (ne.type === "var_disallowed" && ne.wasGoal) {
 								return { ...ne, type: "var_goal_pending" };
