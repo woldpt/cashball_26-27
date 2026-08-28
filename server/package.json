@@ -22,6 +22,7 @@
     "test:attendance": "tsx scripts/attendanceRegression.mts",
     "test:training-multiseason": "tsx scripts/trainingMultiSeasonRegression.mts",
     "test:relegation-coach": "tsx scripts/relegationCoachRegression.mts",
+    "test:coach-dismissal-league": "tsx scripts/coachDismissalLeagueRegression.mts",
     "test:substitutions": "tsx scripts/substitutionsRegression.mts",
     "test:morale": "tsx scripts/moraleRegression.mts"
   },
