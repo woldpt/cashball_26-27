@@ -157,9 +157,87 @@ export function TeamSquadView({
 
   return (
     <div className="min-h-screen w-full bg-surface text-on-surface flex flex-col">
-      {/* Header */}
+      {/* Header mobile — barra compacta + monograma (cor da equipa como acento) */}
+      <div className="sm:hidden border-b border-outline-variant/60 bg-surface-container-low">
+        {/* Hairline nas cores da equipa */}
+        <div
+          className="h-0.5 w-full"
+          style={{
+            background: `linear-gradient(90deg, ${selectedTeam.color_primary || "#2d6a4f"}, ${
+              selectedTeam.color_secondary || "#e9c349"
+            })`,
+          }}
+        />
+        <div className="flex items-center gap-3 px-4 pt-2.5 pb-2">
+          <button
+            onClick={onBack}
+            aria-label="Voltar"
+            className="-ml-1 shrink-0 p-1.5 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-colors"
+          >
+            <span className="material-symbols-outlined text-[22px]">
+              arrow_back
+            </span>
+          </button>
+          {/* Monograma */}
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-black shrink-0 border border-white/10"
+            style={{
+              background: selectedTeam.color_primary || "#2d6a4f",
+              color: selectedTeam.color_secondary || "#fff",
+            }}
+          >
+            {selectedTeam.name?.[0] || "?"}
+          </div>
+          {/* Nome + meta */}
+          <div className="flex-1 min-w-0">
+            <h1 className="font-headline text-lg font-black tracking-tight leading-tight truncate text-on-surface">
+              {selectedTeam.name}
+            </h1>
+            <p className="text-[11px] uppercase tracking-widest font-bold text-on-surface-variant truncate">
+              {DIVISION_NAMES[selectedTeam.division] ||
+                `Divisão ${selectedTeam.division}`}
+              � Época {seasonYear}
+            </p>
+          </div>
+          {/* Saldo (só equipa própria) */}
+          {isOwnTeam && (
+            <div
+              className="shrink-0 rounded-md bg-surface px-2.5 py-1 border-l-4"
+              style={{
+                borderLeftColor: selectedTeam.color_primary || "#2d6a4f",
+              }}
+            >
+              <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant">
+                Saldo
+              </p>
+              <p
+                className={`font-headline text-sm font-black tabular-nums leading-tight ${
+                  myBudget >= 0 ? "text-on-surface" : "text-error"
+                }`}
+              >
+                {formatCurrency(myBudget)}
+              </p>
+            </div>
+          )}
+        </div>
+        <div className="px-4 pb-3">
+          <TabBar
+            size="md"
+            className="overflow-x-auto"
+            tabs={[
+              { key: "squad", label: "Plantel" },
+              { key: "calendar", label: "Calendário" },
+              { key: "history", label: "História" },
+            ]}
+            active={activeTab}
+            onChange={setActiveTab}
+          />
+        </div>
+      </div>
+
+      {/* Header desktop — banner colorido (inalterado) */}
       <div
-        className="relative px-6 py-4 sm:py-8 border-b border-zinc-800 overflow-hidden"
+        className="hidden sm:block relative px-6 py-4 sm:py-8 border-b border-zinc-800 overflow-hidden"
         style={{
           background: selectedTeam.color_primary || "#18181b",
         }}
