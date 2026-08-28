@@ -180,16 +180,30 @@ export function PlayerRow({
               }}
               title="Fazer proposta"
               aria-label={`Fazer proposta a ${player.name}`}
-              className="w-8 h-8 rounded-md flex items-center justify-center bg-emerald-700/90 hover:bg-emerald-600 text-white border border-emerald-500 transition-colors"
+              className="w-8 h-8 rounded-md flex items-center justify-center overflow-hidden bg-emerald-700/90 hover:bg-emerald-600 text-white border border-emerald-500 transition-colors"
             >
-              <span className="material-symbols-outlined text-[16px]">send</span>
+              <span
+                className="material-symbols-outlined text-[16px]"
+                style={{
+                  fontVariationSettings: '"FILL" 0, "wght" 400, "GRAD" 0, "opsz" 15',
+                }}
+              >
+                money
+              </span>
             </button>
           ) : (
             <span
               title="Sem saldo para a cláusula"
-              className="text-zinc-600 flex items-center justify-center w-8 h-8"
+              className="text-zinc-600 flex items-center justify-center w-8 h-8 overflow-hidden"
             >
-              <span className="material-symbols-outlined text-[16px]">block</span>
+              <span
+                className="material-symbols-outlined text-[16px]"
+                style={{
+                  fontVariationSettings: '"FILL" 0, "wght" 400, "GRAD" 0, "opsz" 15',
+                }}
+              >
+                block
+              </span>
             </span>
           )}
         </div>
