@@ -29,14 +29,14 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
           label="Leilões a decorrer"
           value={live.length}
           compactMobile
-          valueClass="text-xl sm:text-3xl"
+          valueClass="text-lg sm:text-3xl"
         />
         <SummaryWidget
           label="Leilões recentes"
           value={closed.length}
           accentClass="border-tertiary"
           compactMobile
-          valueClass="text-xl sm:text-3xl"
+          valueClass="text-lg sm:text-3xl"
         />
         <SummaryWidget
           label="Caixa disponível"
@@ -49,9 +49,9 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
 
       {/* ── Position filter ─────────────────────────────────────────────── */}
       {activeAuctions.length > 0 && (
-        <div className="px-3 md:px-4 pb-3 shrink-0">
+        <div className="px-3 md:px-4 pb-2 shrink-0">
           <select
-            className="bg-surface border border-outline-variant/30 rounded-sm px-3 py-2 text-[11px] font-bold text-on-surface focus:ring-1 focus:ring-primary focus:outline-none"
+            className="bg-surface border border-outline-variant/30 rounded-sm px-3 py-1.5 text-[10px] font-bold text-on-surface focus:ring-1 focus:ring-primary focus:outline-none"
             value={positionFilter}
             onChange={(e) => setPositionFilter(e.target.value)}
           >

@@ -43,7 +43,7 @@ export function SummaryWidget({
         flat
           ? "bg-surface-container p-6 rounded-xl flex flex-col justify-between"
           : compactMobile
-            ? "bg-surface-container-low p-3 sm:p-5 rounded-md flex flex-col justify-between h-16 sm:h-28 border-l-4"
+            ? "bg-surface-container-low p-3 sm:p-5 rounded-md flex flex-col justify-between h-14 sm:h-28 border-l-4"
             : "bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4"
       } ${flat ? "" : accentClass} ${className}`}
       style={accentStyle}
