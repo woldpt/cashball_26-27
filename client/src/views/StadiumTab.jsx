@@ -62,7 +62,7 @@ export function StadiumTab({
       {/* ── HERO: ESTÁDIO ─────────────────────────────────────────── */}
       <div className="rounded-lg border border-outline-variant/25 overflow-hidden relative bg-surface-container">
         <div
-          className="h-44 sm:h-56 relative flex items-end"
+          className="h-32 sm:h-56 relative flex items-end"
           style={{
             backgroundImage: `url(${stadiumImg})`,
             backgroundSize: "cover",
@@ -77,7 +77,7 @@ export function StadiumTab({
             >
               Recinto Principal
             </p>
-            <h2 className="font-headline text-2xl font-black text-white leading-tight drop-shadow">
+            <h2 className="font-headline text-lg sm:text-2xl font-black text-white leading-tight drop-shadow">
               {teamInfo?.stadium_name || "Estádio Municipal"}
             </h2>
             <p className="text-[11px] text-white/70 font-bold mt-1 drop-shadow">
@@ -94,13 +94,15 @@ export function StadiumTab({
           label="Capacidade Actual"
           value={stadiumCapacity.toLocaleString("pt-PT")}
           sub="lugares"
-          valueClass="text-2xl"
+          compactMobile
+          valueClass="text-lg sm:text-2xl"
         />
         <SummaryWidget
           label="Receita máx. / jogo"
           value={formatCurrency(capacityRevPerGame)}
           sub="15€ × lotação"
-          valueClass="text-2xl"
+          compactMobile
+          valueClass="text-lg sm:text-2xl"
           accentClass="border-tertiary"
           valueColorClass="text-tertiary"
         />
@@ -112,14 +114,16 @@ export function StadiumTab({
               : "—"
           }
           sub={`${homeMatches} jogo(s) em casa`}
-          valueClass="text-2xl"
+          compactMobile
+          valueClass="text-lg sm:text-2xl"
           accentClass="border-amber-400"
         />
         <SummaryWidget
           label="Obras Época"
           value={buildsCount}
           sub={formatCurrency(financeData?.totalStadiumExpenses || 0)}
-          valueClass="text-2xl"
+          compactMobile
+          valueClass="text-lg sm:text-2xl"
           accentClass="border-outline-variant"
         />
       </div>

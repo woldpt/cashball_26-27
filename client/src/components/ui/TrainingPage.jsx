@@ -371,14 +371,16 @@ export function TrainingPage({ me, matchweek }) {
         <SummaryWidget
           label="Foco Atual"
           value={savedTraining ? getTrainingLabel(savedTraining) : "Nenhum"}
-          valueClass="text-2xl"
+          compactMobile
+          valueClass="text-lg sm:text-2xl"
           accentClass={focusStyle ? focusStyle.border : "border-outline-variant"}
         />
-        <SummaryWidget label="Jornada" value={matchweek} valueClass="text-2xl" />
+        <SummaryWidget label="Jornada" value={matchweek} compactMobile valueClass="text-lg sm:text-2xl" />
         <SummaryWidget
           label="Jogadores Treinados"
           value={uniquePlayerCount}
-          valueClass="text-2xl"
+          compactMobile
+          valueClass="text-lg sm:text-2xl"
           accentClass="border-tertiary"
           valueColorClass="text-tertiary"
         />

@@ -133,7 +133,7 @@ export function FinancesTab({
           flat
           label="Saldo Actual"
           value={formatCurrency(currentBudget)}
-          valueClass="text-4xl font-bold"
+          valueClass="text-2xl sm:text-4xl font-bold"
           valueColorClass={currentBudget >= 0 ? "text-primary" : "text-error"}
           className="relative overflow-hidden"
         >
@@ -142,7 +142,7 @@ export function FinancesTab({
               payments
             </span>
           </div>
-          <div className="mt-6 flex items-end gap-2">
+          <div className="mt-3 sm:mt-6 flex items-end gap-2">
             <div className="flex gap-1 h-8 items-end">
               <div className="w-1 bg-primary/20 h-2 rounded-t-sm" />
               <div className="w-1 bg-primary/40 h-4 rounded-t-sm" />
@@ -160,10 +160,10 @@ export function FinancesTab({
           flat
           label="Resultado da Época"
           value={`${seasonResult >= 0 ? "+" : ""}${formatCurrency(seasonResult)}`}
-          valueClass="text-4xl font-bold"
+          valueClass="text-2xl sm:text-4xl font-bold"
           valueColorClass={seasonResult >= 0 ? "text-tertiary" : "text-error"}
         >
-          <div className="mt-6 flex items-center gap-2">
+          <div className="mt-3 sm:mt-6 flex items-center gap-2">
             <span
               className={`material-symbols-outlined text-sm ${seasonResult >= 0 ? "text-tertiary" : "text-error"}`}
             >
@@ -181,7 +181,7 @@ export function FinancesTab({
           flat
           label="Saldo previsto fim de época"
           value={`${projection.projectedEndBudget >= 0 ? "+" : ""}${formatCurrency(projection.projectedEndBudget)}`}
-          valueClass="text-3xl font-bold"
+          valueClass="text-xl sm:text-3xl font-bold"
           valueColorClass={projection.projectedEndBudget >= 0 ? "text-tertiary" : "text-error"}
           className="relative overflow-hidden"
         >
@@ -190,7 +190,7 @@ export function FinancesTab({
               savings
             </span>
           </div>
-          <div className="mt-6">
+          <div className="mt-3 sm:mt-6">
             <p className="text-[10px] text-on-surface-variant uppercase mb-1">
               Bilheteiras previstas - salários - juros (
               {projection.remainingJornadas} jornadas)

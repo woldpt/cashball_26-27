@@ -309,6 +309,8 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
           <SummaryWidget
             label="Invencibilidade"
             value={String(unbeatenRun).padStart(2, "0")}
+            compactMobile
+            valueClass="text-xl sm:text-3xl"
             sub={`${unbeatenRun === 1 ? "1 jogo" : `${unbeatenRun} jogos`} sem derrota`}
             subClass="text-on-surface-variant/60 tracking-wide"
           />
@@ -316,6 +318,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
           <SummaryWidget
             label="Próximo Jogo"
             value={nextGameOpponent?.name ?? "—"}
+            compactMobile
             valueClass="text-base leading-tight truncate"
             sub={
               nextGameVenue ??

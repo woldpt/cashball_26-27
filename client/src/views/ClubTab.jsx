@@ -85,7 +85,7 @@ export function ClubTab({
           <div className="relative p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             {/* Badge */}
             <div
-              className="w-16 h-16 rounded-lg flex items-center justify-center text-2xl font-black shrink-0 border border-white/10"
+              className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 border border-white/10"
               style={{
                 background: teamInfo?.color_primary || "#2a2a2a",
                 color: teamInfo?.color_secondary || "#fff",
@@ -97,7 +97,7 @@ export function ClubTab({
             {/* Info */}
             <div className="flex-1 min-w-0">
               <h1
-                className="font-headline text-2xl font-black tracking-tight leading-none mb-1 truncate text-on-surface"
+                className="font-headline text-lg sm:text-2xl font-black tracking-tight leading-none mb-1 truncate text-on-surface"
               >
                 {teamInfo?.name || "—"}
               </h1>
