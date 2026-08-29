@@ -1,4 +1,4 @@
-import { AGG_TIERS } from "../constants/index.js";
+import { AGG_TIERS, MAX_BENCH_SIZE } from "../constants/index.js";
 
 export function getPlayerStat(player, keys, fallback = 0) {
   for (const key of keys) {
@@ -87,12 +87,13 @@ export function buildAutoPositions(
   );
 
   // Pick suplentes: garantir 1 suplente por posição (GR, DEF, MED, ATA) se disponível,
-  // depois preencher os restantes slots (máx 5) com os melhores restantes.
+  // depois preencher os restantes slots (máx MAX_BENCH_SIZE) com os melhores restantes.
+  // GRs extra podem entrar no banco até ao teto — o coach pode levar 2+ GRs.
   const remaining = sortedPlayers.filter((p) => !lineup.includes(p));
   const subs = [];
   const usedInSubs = new Set();
   for (const pos of ["GR", "DEF", "MED", "ATA"]) {
-    if (subs.length >= 5) break;
+    if (subs.length >= MAX_BENCH_SIZE) break;
     const candidate = remaining.find(
       (p) => p.position === pos && !usedInSubs.has(p.id),
     );
@@ -102,13 +103,9 @@ export function buildAutoPositions(
     }
   }
   // preencher slots restantes com os melhores ainda não escolhidos
-  // Não adicionar um 2º GR suplente
-  const grSubsCount = subs.filter((p) => p.position === "GR").length;
   for (const p of remaining) {
-    if (subs.length >= 5) break;
+    if (subs.length >= MAX_BENCH_SIZE) break;
     if (!usedInSubs.has(p.id)) {
-      // Skip GR if already have 1 GR substitute
-      if (p.position === "GR" && grSubsCount >= 1) continue;
       subs.push(p);
       usedInSubs.add(p.id);
     }

@@ -1,6 +1,7 @@
 // ── Match calculation utilities extracted from engine.ts ──────────────────────
 
 import { pickBestPlayer, withJuniorGRs, ensureFullBench, isPlayerAvailable } from "./playerUtils";
+import { MAX_BENCH_SIZE } from "../gameConstants";
 
 type PlayerRow = any;
 
@@ -154,7 +155,7 @@ export async function generateAITactic(
           positions[p.id] = "Titular";
         }
 
-        // Banco: máx 5 (1 GR suplente + 4 de campo) — igual ao auto-builder humano
+        // Banco: máx MAX_BENCH_SIZE (1 GR suplente + restantes de campo)
         const nonStarters = selfRows.filter(
           (p) => !starterIds.has(p.id) && isPlayerAvailable(p, matchweek),
         );
@@ -165,7 +166,7 @@ export async function generateAITactic(
         const fieldBench = nonStarters
           .filter((p) => p.position !== "GR")
           .sort((a, b) => (b.skill || 0) - (a.skill || 0))
-          .slice(0, 5 - grBench.length);
+          .slice(0, MAX_BENCH_SIZE - grBench.length);
         for (const p of [...grBench, ...fieldBench]) {
           positions[p.id] = "Suplente";
         }

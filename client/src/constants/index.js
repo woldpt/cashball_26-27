@@ -333,7 +333,7 @@ export const POSITION_BG_CLASS = {
 
 export const MAX_MATCH_SUBS = 3;
 /** Número máximo de jogadores no banco de suplentes (pré-jogo) */
-export const MAX_BENCH_SIZE = 5;
+export const MAX_BENCH_SIZE = 7;
 export const ADMIN_SESSION_KEY = "cashballAdminSession";
 
 // ── MODAL Z-INDEX (camadas centralizadas) ────────────────────────────────

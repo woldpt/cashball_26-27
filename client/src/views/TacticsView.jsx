@@ -4,7 +4,7 @@ import { PlayerLink } from "../components/shared/PlayerLink.jsx";
 import { MatchBriefing } from "../components/live/MatchBriefing.jsx";
 import { WaitingCoachesModal } from "../components/modals/WaitingCoachesModal.jsx";
 import { socket } from "../socket.js";
-import { TACTIC_FORMATIONS } from "../constants/index.js";
+import { TACTIC_FORMATIONS, MAX_BENCH_SIZE } from "../constants/index.js";
 
 /** Cores por posição */
 const POS_COLORS = {
@@ -258,7 +258,7 @@ function StatusPicker({
   const titCount = Object.entries(tacticPositions).filter(
     ([id, s]) => s === "Titular" && Number(id) !== player.id,
   ).length;
-  const subsFull = subCount >= 5;
+  const subsFull = subCount >= MAX_BENCH_SIZE;
   const titularesFull = titCount >= 11;
   const posCount =
     player.position !== "GR"
@@ -858,7 +858,7 @@ ${
                   </span>
                   <span className="text-[10px] font-black">
                     <span className="text-yellow-400">{subCount}</span>
-                    <span className="text-gray-700">/5</span>
+                    <span className="text-gray-700">/{MAX_BENCH_SIZE}</span>
                   </span>
                 </div>
                 <div className="px-2 py-1 space-y-0.5">

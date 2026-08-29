@@ -184,7 +184,7 @@ export const SEASON_CALENDAR: CalendarEntry[] = [
 // (expulsão tira um jogador de campo sem repor ninguém — regra oficial).
 // ---------------------------------------------------------------------------
 export const MAX_SUBSTITUTIONS = 3; // máximo de substituições por equipa/partida
-export const MAX_BENCH_SIZE = 5; // máximo de suplentes no banco
+export const MAX_BENCH_SIZE = 7; // máximo de suplentes no banco
 
 /**
  * Número de substituições já feitas por uma equipa numa partida.

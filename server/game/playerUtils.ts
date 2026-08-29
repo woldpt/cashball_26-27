@@ -170,11 +170,11 @@ export function generateJuniorFieldPlayer(
 
 /**
  * Ensures the squad has enough available players to fill both the starting
- * eleven (11) and a full bench (1 GR + 4 field = 5 substitutes).
+ * eleven (11) and a full bench (1 GR + 6 field = 7 substitutes).
  *
  * Minimum requirements:
  *   - 2 GR  (1 starter + 1 bench)
- *   - 14 field players (10 starters + 4 bench)
+ *   - 16 field players (10 starters + 6 bench)
  *
  * Temporary junior players are generated for any missing slots.
  * This function is designed to be called AFTER withJuniorGRs() so the
@@ -200,9 +200,9 @@ export function ensureFullBench(
     result.push(generateJuniorGR(teamId, matchweek, 1));
   }
 
-  // Ensure at least 14 field players (10 starters + 4 bench)
-  if (availableFieldCount < 14) {
-    const needed = 14 - availableFieldCount;
+  // Ensure at least 16 field players (10 starters + 6 bench)
+  if (availableFieldCount < 16) {
+    const needed = 16 - availableFieldCount;
 
     // Count available players per position to fill the most deficient one first
     const availableByPos: Record<"DEF" | "MED" | "ATA", number> = {

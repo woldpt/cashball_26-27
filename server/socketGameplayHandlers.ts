@@ -56,7 +56,7 @@ export function registerGameplaySocketHandlers(
     )
       return;
 
-    // Enforce the bench limit (max 5 substitutes). Tactics that name more than
+    // Enforce the bench limit (MAX_BENCH_SIZE substitutes). Tactics that name more than
     // MAX_BENCH_SIZE "Suplente" players are sanitized by demoting the extra
     // subs back to "Titular", keeping the starting XI full at 11.
     if (tactic.positions && typeof tactic.positions === "object") {

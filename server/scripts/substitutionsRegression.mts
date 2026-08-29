@@ -4,7 +4,7 @@
  * Invariantes implementados (ver gameConstants.ts):
  *   1. `MAX_SUBSTITUTIONS === 3` — máximo de substituições por equipa/partida,
  *      incluindo lesões com reposição e substituições de intervalo/alongamento.
- *   2. `MAX_BENCH_SIZE === 5` — máximo de suplentes no banco.
+ *   2. `MAX_BENCH_SIZE === 7` — máximo de suplentes no banco.
  *   3. Cartões vermelhos NÃO contam como substituição (expulsão retira um
  *      jogador sem repor ninguém).
  *   4. Ao atingir o limite, uma lesão obriga a jogar com menos um jogador.
@@ -49,7 +49,7 @@ function assert(cond: boolean, msg: string) {
 
 // ── 1. Constantes ──────────────────────────────────────────────────────────
 assert(MAX_SUBSTITUTIONS === 3, "MAX_SUBSTITUTIONS === 3");
-assert(MAX_BENCH_SIZE === 5, "MAX_BENCH_SIZE === 5");
+assert(MAX_BENCH_SIZE === 7, "MAX_BENCH_SIZE === 7");
 
 // ── 2. Contador por equipa/partida ─────────────────────────────────────────
 const fixture: any = {};
@@ -153,6 +153,12 @@ assert(
   handlers.includes("MAX_BENCH_SIZE") &&
     /subIds\.slice\(\s*MAX_BENCH_SIZE\s*\)/.test(handlers),
   "setTactic: aplica o limite de banco (MAX_BENCH_SIZE)",
+);
+
+// O sanitizador não restringe GRs suplentes — só demote quem passar do teto.
+assert(
+  !/position\s*===\s*"GR"/.test(handlers),
+  "setTactic: não impede múltiplos GRs no banco (só aplica o teto)",
 );
 
 // ── 6. Toast quando o limite é atingido ao vivo ─────────────────────────────

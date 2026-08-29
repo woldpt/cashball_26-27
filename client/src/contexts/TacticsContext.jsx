@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 import { socket } from "../socket";
-import { TACTIC_FORMATIONS } from "../constants/index.js";
+import { TACTIC_FORMATIONS, MAX_BENCH_SIZE } from "../constants/index.js";
 import {
   buildAutoPositions,
   getAvailablePositionCounts,
@@ -355,7 +355,8 @@ export function TacticsProvider({ children }) {
                 const currentSubs = Object.entries(newPositions).filter(
                   ([id, s]) => s === "Suplente" && Number(id) !== p.id,
                 ).length;
-                newPositions[p.id] = currentSubs < 5 ? "Suplente" : "Excluído";
+                newPositions[p.id] =
+                  currentSubs < MAX_BENCH_SIZE ? "Suplente" : "Excluído";
               }
             });
           }
@@ -484,7 +485,8 @@ export function TacticsProvider({ children }) {
                 const currentSubs = Object.entries(newPositions).filter(
                   ([sid, ss]) => ss === "Suplente" && Number(sid) !== p.id,
                 ).length;
-                newPositions[id] = currentSubs < 5 ? "Suplente" : "Excluído";
+                newPositions[id] =
+                  currentSubs < MAX_BENCH_SIZE ? "Suplente" : "Excluído";
               }
             });
           }

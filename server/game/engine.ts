@@ -83,7 +83,7 @@ async function getTeamSquad(
       if (err) return reject(err);
 
       // Build available roster and inject juniors: withJuniorGRs guarantees a
-      // GR, ensureFullBench tops up the pool to 2 GR + 14 field players so the
+      // GR, ensureFullBench tops up the pool to 2 GR + 16 field players so the
       // best-XI auto-pick below can never return a lineup shorter than 11.
       const availableReal = (rows || []).filter((p) =>
         isPlayerAvailable(p, currentMatchweek),
