@@ -98,7 +98,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
           transformStyle: "preserve-3d",
           transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
           position: "relative",
-          minHeight: 280,
+          minHeight: window.matchMedia("(min-width: 640px)").matches ? 316 : 250,
         }}
       >
         <div
@@ -315,11 +315,11 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
               </div>
             ) : isSeller ? (
               <div
-                className="rounded-lg py-2 text-center"
+                className="rounded-lg py-1.5 sm:py-2 text-center"
                 style={{ background: "#1e1b4b33", border: "1px solid #312e8133" }}
               >
-                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">O teu jogador</p>
-                <p className="font-headline font-black text-white text-xs mt-0.5">Em Leilão</p>
+                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-indigo-400">O teu jogador</p>
+                <p className="font-headline font-black text-white text-xs mt-0.5 truncate">Em Leilão</p>
               </div>
             ) : isLeader ? (
               <div

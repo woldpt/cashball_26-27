@@ -107,7 +107,7 @@ function MarketCard({
         aria-expanded={isFlipped}
       >
         <div
-          className={`relative h-[320px] sm:h-[360px] w-full transition-transform duration-300 [transform-style:preserve-3d] ${isFlipped ? "[transform:rotateY(180deg)]" : ""}`}
+          className={`relative h-[250px] sm:h-[360px] w-full transition-transform duration-300 [transform-style:preserve-3d] ${isFlipped ? "[transform:rotateY(180deg)]" : ""}`}
         >
           <article
             className={`absolute inset-0 rounded-xl border-2 bg-surface-container-low/95 p-4 shadow-xl ring-2 ${posRingClass(player.position)} [backface-visibility:hidden] overflow-hidden`}
@@ -139,16 +139,16 @@ function MarketCard({
               <div className="mt-3 flex items-center justify-between gap-3">
                 <PlayerAvatar seed={player.id} position={player.position} teamColor={teamColor} nationality={player.nationality} size="md" />
                 <div className="text-right min-w-0">
-                  <p className="text-[10px] uppercase tracking-widest text-on-surface-variant font-black">
+                  <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-on-surface-variant font-black">
                     Qualidade
                   </p>
-                  <p className="font-headline font-black text-4xl leading-none text-primary tabular-nums">
+                  <p className="font-headline font-black text-3xl sm:text-4xl leading-none text-primary tabular-nums">
                     {player.skill ?? 0}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-4 min-w-0">
+              <div className="mt-3 sm:mt-4 min-w-0">
                 <p className="font-headline font-black uppercase text-base leading-tight text-on-surface truncate">
                   {player.name}
                   {!!player.is_star &&
@@ -156,11 +156,11 @@ function MarketCard({
                       <span className="ml-1 text-amber-400 font-black" title="Craque">★</span>
                     )}
                 </p>
-                <p className="text-[11px] text-on-surface-variant truncate mt-0.5">
+                <p className="hidden sm:block text-[11px] text-on-surface-variant truncate mt-0.5">
                   {posLabel(player.position)}
                   {player.nationality ? ` · ${player.nationality}` : ""}
                 </p>
-                <p className="text-[11px] text-on-surface-variant/60 truncate">
+                <p className="hidden sm:block text-[11px] text-on-surface-variant/60 truncate">
                   {player.team_name
                     ? player.isExClub
                       ? `ex-${player.team_name}`
@@ -169,7 +169,7 @@ function MarketCard({
                 </p>
               </div>
 
-              <div className="mt-3 sm:mt-4 grid grid-cols-2 gap-2">
+              <div className="mt-3 sm:mt-4 hidden sm:grid grid-cols-2 gap-2">
                 <div className="rounded-md border border-outline-variant/20 bg-surface-container p-2">
                   <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-black">
                     Agr
@@ -455,7 +455,7 @@ export function TransferHub({
             description="Os jogadores colocados em transferência aparecem aqui."
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
             {visible.map((player) => (
               <MarketCard
                 key={player.id}
