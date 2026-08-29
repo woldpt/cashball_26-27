@@ -68,7 +68,7 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
       {live.length > 0 && (
         <div className="flex-1 overflow-y-auto p-3 md:p-4 pt-0">
           <Panel title="Em curso" meta={`${live.length} leilão${live.length !== 1 ? "s" : ""}`}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
               {live.map((auction) => (
                 <AuctionCard
                   key={auction.playerId}
@@ -91,7 +91,7 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
       {closed.length > 0 && (
         <div className="flex-1 overflow-y-auto p-3 md:p-4 pt-0">
           <Panel title="Recentes" meta={`${closed.length} leilão${closed.length !== 1 ? "s" : ""}`}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
               {closed.map((auction) => (
                 <AuctionCard
                   key={auction.playerId}

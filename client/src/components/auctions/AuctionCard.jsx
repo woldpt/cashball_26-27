@@ -46,6 +46,9 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
     else onOpenDetails?.(auction);
   };
 
+  // Frente mínima em mobile: só o essencial, sem secção de lances.
+  const isDesktop = () => window.matchMedia("(min-width: 640px)").matches;
+
   const isSeller = auction.sellerTeamId === me?.teamId;
   const isLeader = auction.currentHighBidTeamId === me?.teamId;
   const isClosed = !!auction.closed;
@@ -122,7 +125,24 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
               size="sm"
             />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+              {/* Mobile: só o essencial (nome + posição) */}
+              <div className="flex items-center gap-1 mb-0.5 sm:hidden">
+                <Badge
+                  size="sm"
+                  style={{
+                    background: `${teamColor}22`,
+                    color: teamColor,
+                    borderColor: `${teamColor}55`,
+                  }}
+                >
+                  {auction.position}
+                </Badge>
+                {!!auction.is_star && (auction.position === "MED" || auction.position === "ATA") && (
+                  <StarMark />
+                )}
+              </div>
+              {/* Desktop: posição + craque + estado */}
+              <div className="hidden sm:flex items-center gap-1.5 mb-0.5 flex-wrap">
                 <Badge
                   size="sm"
                   style={{
@@ -156,7 +176,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             </div>
             <div className="flex flex-col items-end shrink-0 gap-1">
               <span
-                className="font-black text-xl leading-none tabular-nums"
+                className="font-black text-lg sm:text-xl leading-none tabular-nums"
                 style={{ color: teamColor }}
               >
                 {auction.skill}
@@ -223,7 +243,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             </div>
           </div>
 
-          {!isClosed && !isPaused && auction.auction_bid_history && auction.auction_bid_history.length > 1 && (() => {
+          {!isClosed && !isPaused && isDesktop() && auction.auction_bid_history && auction.auction_bid_history.length > 1 && (() => {
             const sortedBids = [...auction.auction_bid_history].sort((a, b) => b.amount - a.amount);
             const visibleBids = sortedBids.slice(0, 3);
             const hiddenCount = sortedBids.length - visibleBids.length;
@@ -334,7 +354,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                     }}
                     onKeyDown={(e) => e.key === "Enter" && handleBid()}
                     onClick={(e) => e.stopPropagation()}
-                    className="flex-1 min-w-0 bg-transparent py-1.5 sm:py-2 pr-3 text-white font-mono text-xs outline-none"
+                    className="flex-1 min-w-0 bg-transparent py-1 sm:py-2 pr-2 text-white font-mono text-[11px] sm:text-xs outline-none"
                   />
                 </div>
                 {bidError && (
@@ -349,7 +369,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                     e.stopPropagation();
                     handleBid();
                   }}
-                  className="w-full py-1.5 sm:py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110"
+                  className="w-full py-1 sm:py-2 rounded-lg font-headline font-black uppercase text-[11px] sm:text-xs tracking-wide transition-all active:scale-95 hover:brightness-110"
                   style={{ background: teamColor, color: "#0d0d14" }}
                 >
                   Licitar
