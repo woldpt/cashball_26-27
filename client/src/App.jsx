@@ -11,6 +11,7 @@ import { TacticsProvider } from "./contexts/TacticsContext.jsx";
 import { GameLayout } from "./GameLayout.jsx";
 import { loadSavedSession } from "./utils/localStorage.js";
 import { checkCacheVersion } from "./utils/cacheVersion.js";
+import { initPushNotifications } from "./services/pushNotifications.js";
 
 if (window.location.search) {
 	window.history.replaceState({}, "", window.location.pathname);
@@ -24,6 +25,8 @@ function App() {
 			if (needsReload) window.location.reload();
 			else setCacheReady(true);
 		});
+		// Inicializar push notifications em plataforma nativa (Capacitor)
+		initPushNotifications();
 	}, []);
 
 	// ── Auth & session state ───────────────────────────────────────────────

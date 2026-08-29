@@ -46,6 +46,7 @@ import { TacticsView } from "./views/TacticsView.jsx";
 import { TransferHub } from "./components/ui/TransferHub.jsx";
 import { DIVISION_NAMES } from "./constants/index.js";
 import { isSameTeamId } from "./utils/teamHelpers.js";
+import { OfflineBanner } from "./components/shared/OfflineBanner.jsx";
 
 /**
  * Renders the entire game UI. All state comes from useGame() and useTactics().
@@ -254,6 +255,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
   return (
     <div className="min-h-dvh bg-surface text-on-surface font-body tracking-tight">
+      <OfflineBanner />
       {renderError && (
         <div
           style={{ position: "fixed", inset: 0, zIndex: 99999 }}

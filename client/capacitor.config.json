@@ -1,0 +1,8 @@
+{
+  "appId": "com.cashball.app",
+  "appName": "Cashball",
+  "webDir": "dist",
+  "server": {
+    "cleartext": true
+  }
+}

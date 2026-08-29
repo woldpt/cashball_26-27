@@ -9,3 +9,7 @@ server/server.log
 server/db/base.db
 .pi-lens/
 Screenshots/
+
+# Capacitor
+client/android/
+client/ios/

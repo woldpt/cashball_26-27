@@ -16,6 +16,12 @@
     "test:mobile": "node scripts/mobileRespCheck.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
+    "@capacitor/push-notifications": "^8.1.2",
     "@emotion/is-prop-valid": "^1.4.0",
     "@tailwindcss/vite": "^4.2.2",
     "framer-motion": "^12.38.0",
