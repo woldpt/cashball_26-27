@@ -98,7 +98,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
           transformStyle: "preserve-3d",
           transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
           position: "relative",
-          minHeight: window.matchMedia("(min-width: 640px)").matches ? 316 : 250,
+          minHeight: window.matchMedia("(min-width: 640px)").matches ? 316 : 300,
         }}
       >
         <div
@@ -166,7 +166,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
               <p className="font-headline font-black text-on-surface text-base leading-tight truncate">
                 {auction.name}
               </p>
-              <p className="hidden sm:block text-[9px] text-zinc-500 truncate">
+              <p className="text-[9px] text-zinc-500 truncate">
                 {auction.team_name
                   ? auction.isExClub
                     ? `ex-${auction.team_name}`
@@ -195,7 +195,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             </div>
           </div>
 
-          <div className="px-3 py-2 sm:py-2.5 flex items-center gap-3" style={{ borderBottom: "1px solid #1e1e2e" }}>
+          <div className="px-3 py-2 flex items-center gap-3" style={{ borderBottom: "1px solid #1e1e2e" }}>
             {isClosed ? (
               <span className="text-[10px] font-black uppercase text-zinc-500">Leilão encerrado</span>
             ) : isPaused ? (
@@ -206,7 +206,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             ) : (
               <>
                 <span
-                  className="font-mono font-black text-lg sm:text-xl tabular-nums leading-none"
+                  className="font-mono font-black text-xl tabular-nums leading-none"
                   style={{ color: secs != null && secs <= 15 ? "#f87171" : teamColor }}
                 >
                   {secs != null ? `${secs}s` : "—"}
@@ -219,16 +219,16 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                 {isClosed ? (auction.result?.sold ? "Vendido" : "Sem lances") : "Bid mais alto"}
               </p>              {isClosed && auction.result?.sold ? (
                 <>
-                  <p className="font-mono font-black text-xs sm:text-sm text-emerald-400 tabular-nums">
+                  <p className="font-mono font-black text-sm text-emerald-400 tabular-nums">
                     {formatCurrency(auction.result.finalBid)}
                   </p>
                   <p className="text-[9px] text-zinc-500">{auction.result.buyerTeamName}</p>
                 </>
               ) : isClosed ? (
-                <p className="font-mono font-black text-xs sm:text-sm text-zinc-500">—</p>
+                <p className="font-mono font-black text-sm text-zinc-500">—</p>
               ) : auction.currentHighBidTeamId != null ? (
                 <>
-                  <p className="font-mono font-black text-xs sm:text-sm text-white tabular-nums">
+                  <p className="font-mono font-black text-sm text-white tabular-nums">
                     {formatCurrency(auction.currentHighBid)}
                   </p>
                   <p className="text-[9px] text-zinc-500 truncate max-w-[100px]">
@@ -236,7 +236,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                   </p>
                 </>
               ) : (
-                <p className="font-mono font-black text-xs sm:text-sm text-zinc-500">
+                <p className="font-mono font-black text-sm text-zinc-500">
                   {formatCurrency(auction.startingPrice)} <span className="text-[9px] text-zinc-600">base</span>
                 </p>
               )}
@@ -263,7 +263,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                     return (
                       <div
                         key={i}
-                        className={`flex items-center justify-between text-[9px] sm:text-[10px] py-0.5 rounded px-1.5 ${isLeader ? "bg-emerald-400/10" : ""}`}
+                        className={`flex items-center justify-between text-[10px] py-0.5 rounded px-1.5 ${isLeader ? "bg-emerald-400/10" : ""}`}
                       >
                         <span className={`font-semibold truncate ${isLeader ? "text-emerald-400" : "text-on-surface-variant"}`}>
                           {teamName}
@@ -289,7 +289,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             );
           })()}
 
-          <div className="px-3 py-2 sm:py-2.5 flex-1 flex flex-col justify-end">
+          <div className="px-3 py-2.5 flex-1 flex flex-col justify-end">
             {isClosed ? (
               <div className="text-center py-1.5">
                 {auction.result?.sold ? (
@@ -318,7 +318,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                 className="rounded-lg py-1.5 sm:py-2 text-center"
                 style={{ background: "#1e1b4b33", border: "1px solid #312e8133" }}
               >
-                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-indigo-400">O teu jogador</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">O teu jogador</p>
                 <p className="font-headline font-black text-white text-xs mt-0.5 truncate">Em Leilão</p>
               </div>
             ) : isLeader ? (
@@ -354,7 +354,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                     }}
                     onKeyDown={(e) => e.key === "Enter" && handleBid()}
                     onClick={(e) => e.stopPropagation()}
-                    className="flex-1 min-w-0 bg-transparent py-1 sm:py-2 pr-2 text-white font-mono text-[11px] sm:text-xs outline-none"
+                    className="flex-1 min-w-0 bg-transparent py-2 pr-3 text-white font-mono text-xs outline-none"
                   />
                 </div>
                 {bidError && (
@@ -369,7 +369,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                     e.stopPropagation();
                     handleBid();
                   }}
-                  className="w-full py-1 sm:py-2 rounded-lg font-headline font-black uppercase text-[11px] sm:text-xs tracking-wide transition-all active:scale-95 hover:brightness-110"
+                  className="w-full py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110"
                   style={{ background: teamColor, color: "#0d0d14" }}
                 >
                   Licitar

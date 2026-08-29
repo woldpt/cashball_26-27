@@ -139,7 +139,7 @@ function MarketCard({
               <div className="mt-3 flex items-center justify-between gap-3">
                 <PlayerAvatar seed={player.id} position={player.position} teamColor={teamColor} nationality={player.nationality} size="md" />
                 <div className="text-right min-w-0">
-                  <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-on-surface-variant font-black">
+                  <p className="hidden sm:block text-[10px] uppercase tracking-widest text-on-surface-variant font-black">
                     Qualidade
                   </p>
                   <p className="font-headline font-black text-3xl sm:text-4xl leading-none text-primary tabular-nums">
@@ -199,7 +199,7 @@ function MarketCard({
                     {fmt(price)}
                   </p>
                 </div>
-                <span className="text-[10px] text-on-surface-variant/50 font-bold uppercase tracking-wider">
+                <span className="hidden sm:block text-[10px] text-on-surface-variant/50 font-bold uppercase tracking-wider">
                   tocar para virar
                 </span>
               </div>
