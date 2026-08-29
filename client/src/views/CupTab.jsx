@@ -105,11 +105,11 @@ export function CupTab({
                         )}
                       </div>
 
-                      <div className="px-4 py-5">
-                        <div className="flex items-center gap-3">
+                      <div className="px-3 sm:px-4 py-2.5 sm:py-5">
+                        <div className="flex items-center gap-2 sm:gap-3">
                           <div className="flex-1 flex flex-col items-end gap-1.5">
                             <div
-                              className="w-12 h-12 rounded-full flex items-center justify-center font-black text-lg border border-white/10"
+                              className="w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-xs sm:text-lg border border-white/10"
                               style={{
                                 background: hInfo?.color_primary || "#333",
                                 color: hInfo?.color_secondary || "#fff",
@@ -131,7 +131,7 @@ export function CupTab({
                                 🏟️ {stadiumName}
                               </span>
                             )}
-                            <span className="text-3xl font-black text-white tabular-nums tracking-tight">
+                            <span className="text-2xl sm:text-3xl font-black text-white tabular-nums tracking-tight">
                               {r.homeGoals}{" "}
                               <span className="text-zinc-600">–</span>{" "}
                               {r.awayGoals}
@@ -154,7 +154,7 @@ export function CupTab({
 
                           <div className="flex-1 flex flex-col items-start gap-1.5">
                             <div
-                              className="w-12 h-12 rounded-full flex items-center justify-center font-black text-lg border border-white/10"
+                              className="w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-xs sm:text-lg border border-white/10"
                               style={{
                                 background: aInfo?.color_primary || "#333",
                                 color: aInfo?.color_secondary || "#fff",
