@@ -257,7 +257,7 @@ export function LiveMatchHero({
               </div>
               <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 mt-1 tabular-nums">
                 {liveMinute > 90 ? "Prol. " : ""}
-                {liveMinute}' · {phaseLabel}
+                {liveMinute < 1 ? "A começar…" : `${liveMinute}' · ${phaseLabel}`}
               </span>
             </button>
 

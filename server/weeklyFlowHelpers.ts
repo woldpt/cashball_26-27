@@ -735,7 +735,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     // Pausa de introdução: dá tempo ao cliente para mostrar o relógio em repouso
     // antes de os eventos do minuto 1/46/91 chegarem. Só quando há humanos na partida.
     if (humanInFixtures) {
-      await new Promise((r) => setTimeout(r, 5000));
+      await new Promise((r) => setTimeout(r, 2000));
     }
 
     // ── Simulate minute by minute, all fixtures in parallel ──────────────

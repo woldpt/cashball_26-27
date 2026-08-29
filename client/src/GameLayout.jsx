@@ -364,14 +364,16 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               {isPlayingMatch ? (
                 <span className="flex flex-col items-center gap-0.5 px-3.5 py-1 rounded-full bg-surface border border-outline-variant/50">
                   <span className="text-lg font-headline font-black tabular-nums leading-none text-on-surface">
-                    {liveMinute}'
+                    {liveMinute < 1 ? "⚽" : `${liveMinute}'`}
                   </span>
                   <span className="text-[7px] font-bold uppercase tracking-widest leading-none text-on-surface opacity-70">
-                    {liveMinute > 90
-                      ? "Prolongamento"
-                      : liveMinute > 45
-                        ? "2ª Parte"
-                        : "1ª Parte"}
+                    {liveMinute < 1
+                      ? "A começar"
+                      : liveMinute > 90
+                        ? "Prolongamento"
+                        : liveMinute > 45
+                          ? "2ª Parte"
+                          : "1ª Parte"}
                   </span>
                 </span>
               ) : liveMinute === 45 && !isCupMatch ? (
