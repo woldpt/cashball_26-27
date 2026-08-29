@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MAX_MATCH_SUBS } from "../../../constants/index.js";
 import {
@@ -23,6 +23,13 @@ import {
   GhostButton,
 } from "../shared/index.js";
 import { TeamCrest } from "../../live/TeamCrest.jsx";
+
+// Halftime style values → labels (TacticsButtons uses the English values).
+const STYLE_LABELS = {
+  Defensive: "Defensivo",
+  Balanced: "Equilibrado",
+  Offensive: "Ofensivo",
+};
 
 /* ── IntervencaoView — substitutions + chronology + opponent ─────────────
  * Simplified layout:
@@ -474,9 +481,10 @@ function CronologiaPanel({
 /* ── SubsPanel — Titulares | Suplentes | Mentalidade | Substituições ─────
  * Desktop (md+): 3-col grid — a 3ª coluna divide-se em 2 linhas
  * (Mentalidade por cima, Substituições por baixo). Mobile:
- * Mentalidade/controlos empilhados por cima das listas, com controlo
- * segmentado Em campo/Banco a mostrar UMA lista de cada vez (dá a altura
- * total à lista ativa). */
+ * página de scroll ÚNICO — top cluster sticky (mentalidade recolhível +
+ * segmentado Em campo/Banco), lista ativa em altura natural e barra de ação
+ * sticky em baixo (Sai→Entra + Substituir sempre na zona do polegar).
+ * Sem scroll aninhado: as cards nunca são esmagadas por secções fixas. */
 function SubsPanel({
   isHalftime,
   isForcedSwap,
@@ -508,6 +516,18 @@ function SubsPanel({
 }) {
   // Mobile: mostra UMA lista de cada vez (Em campo / Banco).
   const [mobileList, setMobileList] = useState("pitch");
+  // Mentalidade recolhível (mobile) — fechada por omissão para não roubar
+  // altura à lista; fecha-se sozinha após escolher estilo.
+  const [mentalidadeOpen, setMentalidadeOpen] = useState(false);
+  // Container de scroll da página mobile (ver layout em baixo).
+  const mobileScrollRef = useRef(null);
+
+  // Ao trocar Em campo/Banco a lista remounta; volta sempre ao topo para o
+  // usuário começar no primeiro cartão da nova lista.
+  useEffect(() => {
+    const el = mobileScrollRef.current;
+    if (el) el.scrollTop = 0;
+  }, [mobileList]);
 
   // Drag-and-drop swap (HTML5 DnD, no extra lib). `dragFrom` records the
   // dragged player + source side; `dragOverSide` highlights the valid target
@@ -639,72 +659,99 @@ function SubsPanel({
         />
       </div>
 
-      {/* ═══ Mobile: Mentalidade em cima, listas abaixo ═══ */}
-      <div className="flex md:hidden flex-1 min-h-0 overflow-hidden flex-col">
-        {/* Cabeçalho do bloco */}
-        <div className="shrink-0 px-4 py-3 flex items-center justify-between gap-2 border-b border-outline-variant/15 bg-surface-container-high/30">
-          <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">
-            Substituições e Mentalidade
-          </h3>
-          {isHalftime && <SubsCounter subsMade={subsMade} />}
+      {/* ═══ Mobile: página de scroll único ═══
+       * Um único contexto de scroll (sem scroll aninhado/esmagado):
+       *  - top cluster sticky: mentalidade recolhível + Em campo/Banco
+       *  - lista ativa em altura natural (todas as cards alcançáveis)
+       *  - barra de ação sticky em baixo: Sai→Entra + Substituir sempre
+       *    visíveis, sem ter de descer para agir */}
+      <div
+        ref={mobileScrollRef}
+        className="md:hidden flex-1 min-h-0 overflow-y-auto overscroll-contain"
+      >
+        {/* ── Top cluster sticky ── */}
+        <div className="sticky top-0 z-20 border-b border-outline-variant/15 bg-surface-container-low/95 backdrop-blur-sm">
+          {isHalftime && (
+            <>
+              <button
+                type="button"
+                onClick={() => setMentalidadeOpen((o) => !o)}
+                aria-expanded={mentalidadeOpen}
+                className="flex min-h-9 w-full items-center justify-between gap-2 px-4 pt-1.5 pb-1"
+              >
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.5)]" />
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
+                    Mentalidade
+                  </span>
+                  <span className="truncate text-xs font-bold text-on-surface">
+                    {STYLE_LABELS[tactic.style] || tactic.style}
+                  </span>
+                </span>
+                <MatchIcon
+                  name="chevron-right"
+                  className={`h-4 w-4 shrink-0 text-on-surface-variant/60 transition-transform ${
+                    mentalidadeOpen ? "rotate-[270deg]" : "rotate-90"
+                  }`}
+                />
+              </button>
+              {mentalidadeOpen && (
+                <div className="px-4 pb-2">
+                  <TacticsButtons
+                    className="w-full"
+                    value={tactic.style}
+                    onChange={(next) => {
+                      onUpdateTactic(next);
+                      setMentalidadeOpen(false);
+                    }}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Segmented Em campo / Banco + contador de subs */}
+          <div className="flex items-center gap-2 px-4 pt-1 pb-2">
+            <div className="flex flex-1 rounded-md bg-surface-container p-1 gap-1">
+              {[
+                { key: "pitch", label: `Em campo (${onPitchPlayers.length})` },
+                { key: "bench", label: `Banco (${benchPlayers.length})` },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setMobileList(tab.key)}
+                  className={`flex-1 min-w-0 py-2 text-[11px] font-bold uppercase tracking-widest rounded-md transition-all ${
+                    mobileList === tab.key
+                      ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
+                      : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            {isHalftime && <SubsCounter subsMade={subsMade} />}
+          </div>
         </div>
 
-        {/* Secção Mentalidade — separada visualmente das substituições */}
-        {isHalftime && (
-          <div className="shrink-0 px-4 py-3 space-y-2 border-b border-outline-variant/15 bg-surface-container-high/20">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-              Mentalidade / Estilo de jogo
-            </span>
-            <TacticsButtons
-              className="w-full"
-              value={tactic.style}
-              onChange={onUpdateTactic}
+        {/* Substituições confirmadas — no fluxo (largura total, faz wrap),
+         * nunca rouba altura à lista nem à barra de ação. */}
+        {isHalftime && confirmedSubs.length > 0 && (
+          <div className="border-b border-outline-variant/15 bg-cyan-950/10">
+            <ConfirmedSubsStrip
+              subs={confirmedSubs}
+              annotatedSquad={annotatedSquad}
+              onUndoSub={onUndoSub}
             />
           </div>
         )}
 
-        {/* Secção Substituições: Sai→Entra + confirmar + confirmadas rolável (não empilha sem limite) */}
-        <div className="shrink-0 px-4 py-3 space-y-3 border-b border-outline-variant/15">
-          <SwapControls {...sharedSwapProps} />
-          {isHalftime && confirmedSubs.length > 0 && (
-            <div className="overflow-x-auto -mx-4 px-4 hide-scrollbar">
-              <ConfirmedSubsStrip
-                subs={confirmedSubs}
-                annotatedSquad={annotatedSquad}
-                onUndoSub={onUndoSub}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Segmented Em campo / Banco */}
-        <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-outline-variant/15">
-          <div className="flex-1 flex rounded-md bg-surface-container p-1 gap-1">
-            {[
-              { key: "pitch", label: `Em campo (${onPitchPlayers.length})` },
-              { key: "bench", label: `Banco (${benchPlayers.length})` },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setMobileList(tab.key)}
-                className={`flex-1 min-w-0 py-2.5 text-[11px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                  mobileList === tab.key
-                    ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
-                    : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Active list — key remounts on switch so the list scroll resets to the top. */}
-        <div key={mobileList} className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Lista ativa — altura natural; a página é que faz scroll.
+         * key remounta na troca de lista (o efeito acima volta ao topo). */}
+        <div key={mobileList}>
           {mobileList === "pitch" ? (
             <TitularesColumn
-              className=""
-              compact
+              flat
               players={onPitchPlayers}
               isHalftime={isHalftime}
               isForcedSwap={isForcedSwap}
@@ -725,8 +772,7 @@ function SubsPanel({
             />
           ) : (
             <SuplentesColumn
-              className=""
-              compact
+              flat
               players={benchPlayers}
               isHalftime={isHalftime}
               forceOutPlayer={forceOutPlayer}
@@ -744,6 +790,11 @@ function SubsPanel({
               summary={summary}
             />
           )}
+        </div>
+
+        {/* ── Barra de ação sticky — sempre na zona do polegar ── */}
+        <div className="sticky bottom-0 z-20 border-t border-outline-variant/25 bg-surface-container-high/95 backdrop-blur-sm">
+          <SwapControls {...sharedSwapProps} compact />
         </div>
       </div>
     </div>
@@ -795,30 +846,33 @@ function TitularesColumn({
   handleDragOver,
   handleDropOnPitch,
   handleDragEnd,
-  compact = false,
+  flat = false,
 }) {
-  // Mobile (`compact`): cartão de uma linha que preserva skill/RES/forma/golos/
-  // amarelos sem cortar o nome. Desktop: cartão expandido.
-  const Card = compact ? CompactPlayerCard : MatchPlayerCard;
+  // `flat` (mobile): lista em altura natural dentro do scroll único da página —
+  // sem cabeçalho de coluna e sem scroll interno; cartão compacto de uma
+  // linha. Desktop: cabeçalho + scroll próprio + cartão expandido.
+  const Card = flat ? CompactPlayerCard : MatchPlayerCard;
   return (
     <div
       className={`flex flex-col min-h-0 min-w-0 overflow-hidden ${className}`}
     >
-      <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
-        <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
-          Titulares
-        </h3>
-        <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
-          {players.length}
-        </span>
-      </div>
+      {!flat && (
+        <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
+          <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+            Titulares
+          </h3>
+          <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
+            {players.length}
+          </span>
+        </div>
+      )}
       {grLockedNoReplacement && (
-        <p className="shrink-0 px-4 py-1.5 text-[10px] font-semibold text-amber-300 bg-amber-500/10 border-b border-amber-500/20">
+        <p className={`px-4 py-1.5 text-[10px] font-semibold text-amber-300 bg-amber-500/10 border-b border-amber-500/20 ${flat ? "" : "shrink-0"}`}>
           Sem GR no banco — o guarda-redes não pode sair
         </p>
       )}
-      <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2">
+      <div className={flat ? "space-y-2 px-3 pt-2 pb-3" : "flex-1 overflow-y-auto px-3 py-2.5 space-y-2"}>
         {players.map((p) => {
           const noGrReplacement =
             isHalftime && p.position === "GR" && !grAvailableOnBench;
@@ -888,24 +942,26 @@ function SuplentesColumn({
   handleDropOnBench,
   handleDragEnd,
   summary,
-  compact = false,
+  flat = false,
 }) {
-  // Mobile (`compact`): cartão de uma linha; desktop: cartão expandido.
-  const Card = compact ? CompactPlayerCard : MatchPlayerCard;
+  // `flat` (mobile): lista em altura natural dentro do scroll único da página.
+  const Card = flat ? CompactPlayerCard : MatchPlayerCard;
   return (
     <div
       className={`flex flex-col min-h-0 min-w-0 overflow-hidden ${className}`}
     >
-      <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
-        <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
-          Suplentes
-        </h3>
-        <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
-          {players.length}
-        </span>
-      </div>
-      <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2">
+      {!flat && (
+        <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
+          <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+            Suplentes
+          </h3>
+          <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
+            {players.length}
+          </span>
+        </div>
+      )}
+      <div className={flat ? "space-y-2 px-3 pt-2 pb-3" : "flex-1 overflow-y-auto px-3 py-2.5 space-y-2"}>
         {players.map((p) => {
           const alreadyUsed = isHalftime && subbedOut.includes(p.id);
           const positionMismatch =
@@ -946,12 +1002,17 @@ function SuplentesColumn({
           </p>
         )}
       </div>
-      {/* Resumo da partida ancorado ao fundo da coluna dos suplentes. */}
-      {summary && (
-        <div className="shrink-0 p-3 border-t border-outline-variant/15 bg-surface-container-high/30">
-          <MatchSummaryBlock {...summary} />
-        </div>
-      )}
+      {/* Resumo da partida — fim da lista (mobile flat) / fundo da coluna (desktop). */}
+      {summary &&
+        (flat ? (
+          <div className="px-3 pt-1 pb-4">
+            <MatchSummaryBlock {...summary} />
+          </div>
+        ) : (
+          <div className="shrink-0 p-3 border-t border-outline-variant/15 bg-surface-container-high/30">
+            <MatchSummaryBlock {...summary} />
+          </div>
+        ))}
     </div>
   );
 }
@@ -1045,6 +1106,7 @@ function SwapControls({
   onResetSub,
   onConfirmSub,
   onResolveAction,
+  compact = false,
 }) {
   // Local "resolving" state gives immediate feedback on click in action mode
   // (was: button fired and the user got no signal until the parent reacted).
@@ -1060,7 +1122,7 @@ function SwapControls({
   };
 
   return (
-    <div className="space-y-3">
+    <div className={`space-y-3 ${compact ? "px-4 py-3" : ""}`}>
       {/* Forced-swap countdown — a single pulsing element where urgency matters. */}
       {isForcedSwap && injuryCountdown !== null && (
         <>
@@ -1083,30 +1145,52 @@ function SwapControls({
        * placeholders with an actionable hint (was: bare "—"). */}
       {/* Mobile: vertical stack (Sai ↓ Entra) with a flow arrow between the
        * slots; desktop: single horizontal row (Sai → Entra). */}
-      <div className="grid min-w-0 items-center gap-y-2 sm:gap-x-2 grid-cols-[auto_1fr] sm:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
-        <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">
-          Sai
-        </span>
-        <SwapSlot
-          tone="rose"
-          player={effectiveOutId ? sourcePlayer : null}
-          placeholder="Escolhe quem sai"
-        />
-        {/* Flow indicator: chevron-down (rotated) stacked on mobile, chevron-right on desktop. */}
-        <MatchIcon
-          name="chevron-right"
-          title="Substituição"
-          className="h-4 w-4 shrink-0 col-span-2 justify-self-center rotate-90 sm:col-auto sm:justify-self-start sm:rotate-0 text-on-surface-variant/60"
-        />
-        <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">
-          Entra
-        </span>
-        <SwapSlot
-          tone="emerald"
-          player={selectedInId ? targetPlayer : null}
-          placeholder="Escolhe quem entra"
-        />
-      </div>
+      {compact ? (
+        // Mobile: 2 colunas — legenda (9px) + chip de uma linha, altura mínima.
+        <div className="grid min-w-0 grid-cols-2 items-end gap-x-3 gap-y-1">
+          <span className="text-[9px] font-semibold uppercase tracking-widest text-on-surface-variant/60">
+            Sai
+          </span>
+          <span className="text-right text-[9px] font-semibold uppercase tracking-widest text-on-surface-variant/60">
+            Entra
+          </span>
+          <SwapSlot
+            tone="rose"
+            player={effectiveOutId ? sourcePlayer : null}
+            placeholder="Quem sai"
+          />
+          <SwapSlot
+            tone="emerald"
+            player={selectedInId ? targetPlayer : null}
+            placeholder="Quem entra"
+          />
+        </div>
+      ) : (
+        <div className="grid min-w-0 items-center gap-y-2 sm:gap-x-2 grid-cols-[auto_1fr] sm:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
+          <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">
+            Sai
+          </span>
+          <SwapSlot
+            tone="rose"
+            player={effectiveOutId ? sourcePlayer : null}
+            placeholder="Escolhe quem sai"
+          />
+          {/* Flow indicator: chevron-down (rotated) stacked on mobile, chevron-right on desktop. */}
+          <MatchIcon
+            name="chevron-right"
+            title="Substituição"
+            className="h-4 w-4 shrink-0 col-span-2 justify-self-center rotate-90 sm:col-auto sm:justify-self-start sm:rotate-0 text-on-surface-variant/60"
+          />
+          <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">
+            Entra
+          </span>
+          <SwapSlot
+            tone="emerald"
+            player={selectedInId ? targetPlayer : null}
+            placeholder="Escolhe quem entra"
+          />
+        </div>
+      )}
 
       {/* Why the confirm button is disabled — never leave it silent. */}
       {!canConfirmSwap && confirmHint && (
