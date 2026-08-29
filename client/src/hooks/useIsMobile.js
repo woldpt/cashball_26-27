@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 /**
  * useIsMobile — devolve `true` quando a largura da janela está abaixo do
@@ -11,17 +11,17 @@ import { useEffect, useState } from "react";
  * @returns {boolean} `true` se estiver abaixo do threshold (layout mobile).
  */
 export function useIsMobile(threshold = 768) {
-  const isMobile = () => window.matchMedia(`(max-width: ${threshold - 1}px)`).matches;
+  const query = `max-width: ${threshold - 1}px`;
+  let mql = null;
+  const getMql = () => (mql ??= window.matchMedia(query));
 
-  const [mobile, setMobile] = useState(isMobile);
-
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${threshold - 1}px)`);
-    const onChange = () => setMobile(mql.matches);
-    mql.addEventListener("change", onChange);
-    setMobile(mql.matches);
-    return () => mql.removeEventListener("change", onChange);
-  }, [threshold]);
-
-  return mobile;
+  return useSyncExternalStore(
+    (onChange) => {
+      const q = getMql();
+      q.addEventListener("change", onChange);
+      return () => q.removeEventListener("change", onChange);
+    },
+    () => getMql().matches,
+    () => false
+  );
 }
