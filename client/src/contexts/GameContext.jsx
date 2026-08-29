@@ -70,7 +70,17 @@ export function GameProvider({
 	// "A atualizar classificação…" sem bloquear o ecrã.
 	const [standingsStale, setStandingsStale] = useState(false);
 	const [seasonYear, setSeasonYear] = useState(2026);
-	const [activeTab, setActiveTab] = useState("club");
+	// Persiste a tab activa em sessionStorage para sobreviver a refresh/reconexão
+	// mobile sem poluir o history do browser (o plantel tem o seu próprio back-stack).
+	const [activeTab, setActiveTab] = useState(() => {
+		try {
+			const saved = sessionStorage.getItem("cashball_tab");
+			if (saved && !["club", "standings", "players", "finances", "tactic", "live", "calendar", "market", "cup", "bracket", "user_settings", "squad"].includes(saved)) return "club";
+			return saved || "club";
+		} catch {
+			return "club";
+		}
+	});
 	const [topScorers, setTopScorers] = useState([]);
 	const [marketPairs, setMarketPairs] = useState([]);
 	const [marketPositionFilter, setMarketPositionFilter] = useState("all");
@@ -269,6 +279,7 @@ export function GameProvider({
 	}, [selectedTeam]);
 	useEffect(() => {
 		activeTabRef.current = activeTab;
+		try { sessionStorage.setItem("cashball_tab", activeTab); } catch {}
 	}, [activeTab]);
 	useEffect(() => {
 		marketPairsRef.current = marketPairs;
