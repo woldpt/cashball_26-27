@@ -1,6 +1,7 @@
 // @ts-nocheck
 require("./logBootstrap");
 require("dotenv").config();
+require("./sentry"); // Initializes Sentry if SENTRY_DSN is set (no-op otherwise)
 
 import type { ActiveGame } from "./types";
 
