@@ -78,8 +78,9 @@ export function MatchView({
 
           {/* Pitch + Bench: side by side on desktop, stacked on mobile */}
           <div className="flex flex-col md:flex-row gap-4 p-4 md:flex-1 md:min-h-0">
-            {/* Pitch */}
-            <div className="md:flex-1 md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center">
+            {/* Pitch — width-capped on mobile so the 9:16 ratio holds and
+             * the bench below is reachable (was: w-full → ~637px tall). */}
+            <div className="md:flex-1 md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center overflow-hidden [&>div]:max-w-[210px] md:[&>div]:max-w-full">
               <MatchPitch
                 rows={rows}
                 posColors={posColors}
