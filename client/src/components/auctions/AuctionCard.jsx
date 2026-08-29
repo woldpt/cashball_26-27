@@ -20,13 +20,6 @@ function useCountdown(endsAt) {
   return secs;
 }
 
-function getTimeAgo(ts) {
-  const diff = Date.now() - ts;
-  if (diff < 60000) return `${Math.floor(diff / 1000)}s`;
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m`;
-  return `${Math.floor(diff / 3600000)}h`;
-}
-
 export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket, teamColorById, onOpenDetails }) {
   const [flipped, setFlipped] = useState(false);
   const [bidError, setBidError] = useState("");
@@ -46,8 +39,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
     else onOpenDetails?.(auction);
   };
 
-  // Frente mínima em mobile: só o essencial, sem secção de lances.
-  const isDesktop = () => window.matchMedia("(min-width: 640px)").matches;
+
 
   const isSeller = auction.sellerTeamId === me?.teamId;
   const isLeader = auction.currentHighBidTeamId === me?.teamId;
@@ -98,7 +90,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
           transformStyle: "preserve-3d",
           transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
           position: "relative",
-          minHeight: window.matchMedia("(min-width: 640px)").matches ? 316 : 300,
+          minHeight: window.matchMedia("(min-width: 640px)").matches ? 316 : 250,
         }}
       >
         <div
@@ -243,51 +235,6 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             </div>
           </div>
 
-          {!isClosed && !isPaused && isDesktop() && auction.auction_bid_history && auction.auction_bid_history.length > 1 && (() => {
-            const sortedBids = [...auction.auction_bid_history].sort((a, b) => b.amount - a.amount);
-            const visibleBids = sortedBids.slice(0, 3);
-            const hiddenCount = sortedBids.length - visibleBids.length;
-            return (
-              <div
-                className="px-3 py-2 border-y"
-                style={{ borderBottom: "1px solid #1e1e2e", borderTop: "1px solid #1e1e2e" }}
-              >
-                <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1">
-                  Lances ({auction.auction_bid_history.length})
-                </p>
-                <div className="space-y-0.5 overflow-hidden">
-                  {visibleBids.map((bid, i) => {
-                    const isLeader = bid.teamId === auction.auction_high_bid_team_id;
-                    const teamName = teams.find(t => String(t.id) === String(bid.teamId))?.name || `Equipa ${bid.teamId}`;
-                    const timeAgo = bid.timestamp ? getTimeAgo(bid.timestamp) : "";
-                    return (
-                      <div
-                        key={i}
-                        className={`flex items-center justify-between text-[10px] py-0.5 rounded px-1.5 ${isLeader ? "bg-emerald-400/10" : ""}`}
-                      >
-                        <span className={`font-semibold truncate ${isLeader ? "text-emerald-400" : "text-on-surface-variant"}`}>
-                          {teamName}
-                        </span>
-                        <span className="font-mono font-black text-white tabular-nums ml-2">
-                          {formatCurrency(bid.amount)}
-                        </span>
-                        {timeAgo && (
-                          <span className="text-[8px] text-zinc-600 ml-1.5 shrink-0">
-                            {timeAgo}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                {hiddenCount > 0 && (
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600 mt-1">
-                    +{hiddenCount} lance{hiddenCount !== 1 ? "s" : ""} mais
-                  </p>
-                )}
-              </div>
-            );
-          })()}
 
           <div className="px-3 py-2.5 flex-1 flex flex-col justify-end">
             {isClosed ? (
