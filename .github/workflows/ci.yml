@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    name: Server (typecheck + build + regression)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      # Regression scripts — cada um é self-contained (exit 0/1).
+      # Rodamos todos; o workflow falha se qualquer um falhar.
+      - name: Regression tests
+        run: |
+          set -e
+          for test in \
+            training-report \
+            contractyear \
+            contractrenewal \
+            skillhistory \
+            attendance \
+            training-multiseason \
+            relegation-coach \
+            coach-dismissal-league \
+            substitutions \
+            morale \
+            penalty-ordering; do
+            echo "=== Running test:$test ==="
+            npm run "test:$test" || exit 1
+          done
+
+      - name: Socket.io contract audit
+        run: npm run audit:socketio
+
+  client:
+    name: Client (lint + typecheck + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: JSDoc typecheck
+        run: npm run check:types
+
+      - name: Build
+        run: npm run build
