@@ -1379,8 +1379,9 @@ function AdversarioPanel({
        * bench scrolls below it (no nested scroll). Desktop: 2-col grid, each
        * cell scrolls independently. */}
       <div className="flex-1 flex flex-col md:grid md:grid-cols-2 md:auto-rows-fr min-h-0 overflow-y-auto md:overflow-hidden p-4 gap-4">
-        {/* Opponent pitch — sticky on mobile so the formation is never lost while scrolling the bench. */}
-        <div className="shrink-0 sticky top-0 z-10 py-2 sm:static md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center overflow-hidden">
+        {/* Opponent pitch — width-capped on mobile so the 9:16 ratio holds
+         * and the bench is reachable (was: w-full → ~637px tall). */}
+        <div className="shrink-0 py-2 sm:static md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center overflow-hidden [&>div]:max-w-[210px] md:[&>div]:max-w-full">
           {!hasLineups ? (
             <EmptyState
               icon="📋"
