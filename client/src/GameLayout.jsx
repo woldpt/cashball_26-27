@@ -1501,6 +1501,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         teamInfo={teamInfo}
                         matchweekCount={matchweekCount}
                         socket={socket}
+                        onOpenPlayerHistory={(player) =>
+                          socket.emit("requestPlayerHistory", {
+                            playerId: player.playerId,
+                          })
+                        }
                       />
                     )}
 

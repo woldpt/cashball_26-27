@@ -84,15 +84,21 @@ function MarketCard({
   const tintStrong = hexToRgba(teamColor, 0.3);
   const tintSoft = hexToRgba(teamColor, 0.18);
 
+  // Em mobile o card não vira: um toque abre o histórico completo do jogador.
+  const handleTap = () => {
+    if (window.matchMedia("(min-width: 640px)").matches) onFlip();
+    else onOpenDetails(player);
+  };
+
   return (
     <div className="[perspective:1200px] hover:scale-[1.02] transition-transform duration-300">
       <div
         className="block w-full text-left"
-        onClick={onFlip}
+        onClick={handleTap}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            onFlip();
+            handleTap();
           }
         }}
         role="button"
@@ -101,7 +107,7 @@ function MarketCard({
         aria-expanded={isFlipped}
       >
         <div
-          className={`relative h-[360px] w-full transition-transform duration-300 [transform-style:preserve-3d] ${isFlipped ? "[transform:rotateY(180deg)]" : ""}`}
+          className={`relative h-[320px] sm:h-[360px] w-full transition-transform duration-300 [transform-style:preserve-3d] ${isFlipped ? "[transform:rotateY(180deg)]" : ""}`}
         >
           <article
             className={`absolute inset-0 rounded-xl border-2 bg-surface-container-low/95 p-4 shadow-xl ring-2 ${posRingClass(player.position)} [backface-visibility:hidden] overflow-hidden`}
@@ -163,7 +169,7 @@ function MarketCard({
                 </p>
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="mt-3 sm:mt-4 grid grid-cols-2 gap-2">
                 <div className="rounded-md border border-outline-variant/20 bg-surface-container p-2">
                   <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-black">
                     Agr
@@ -182,7 +188,7 @@ function MarketCard({
                 </div>
               </div>
 
-              <div className="mt-auto pt-4 flex items-end justify-between gap-2">
+              <div className="mt-auto pt-3 sm:pt-4 flex items-end justify-between gap-2">
                 <div>
                   <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-black">
                     Preço
@@ -201,7 +207,7 @@ function MarketCard({
           </article>
 
           <article
-            className="absolute inset-0 rounded-xl border-2 border-outline-variant/35 bg-surface-container-low p-4 shadow-xl [transform:rotateY(180deg)] [backface-visibility:hidden] overflow-hidden"
+            className="absolute inset-0 hidden sm:block rounded-xl border-2 border-outline-variant/35 bg-surface-container-low p-4 shadow-xl [transform:rotateY(180deg)] [backface-visibility:hidden] overflow-hidden"
             style={{
               background: `linear-gradient(15deg, ${tintSoft} 0%, rgba(36,40,58,0.95) 52%, ${hexToRgba(teamColor, 0.2)} 100%)`,
               boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",

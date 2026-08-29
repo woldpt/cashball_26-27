@@ -11,7 +11,7 @@ import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { getTeamColor } from "../utils/teamHelpers.js";
 import { useState } from "react";
 
-export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchweekCount = 0, socket }) {
+export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchweekCount = 0, socket, onOpenPlayerHistory }) {
   const [positionFilter, setPositionFilter] = useState("all");
 
   const live = activeAuctions.filter((a) => !a.closed && (positionFilter === "all" || a.position === positionFilter));
@@ -79,6 +79,7 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
                   matchweekCount={matchweekCount}
                   socket={socket}
                   teamColorById={teamColorById}
+                  onOpenDetails={onOpenPlayerHistory}
                 />
               ))}
             </div>
@@ -101,6 +102,7 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
                   matchweekCount={matchweekCount}
                   socket={socket}
                   teamColorById={teamColorById}
+                  onOpenDetails={onOpenPlayerHistory}
                 />
               ))}
             </div>
