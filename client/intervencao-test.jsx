@@ -188,8 +188,14 @@ function measure() {
 }
 
 setTimeout(() => {
-  const report = measure();
-  const el = document.getElementById("report");
-  el.setAttribute("data-status", "done");
-  el.textContent = "REPORT:" + JSON.stringify(report, null, 2);
+  // Click the Adversário tab before measuring
+  const buttons = document.querySelectorAll("button");
+  const adversarioTab = [...buttons].find((b) => b.textContent?.trim() === "Adversário");
+  if (adversarioTab) adversarioTab.click();
+  setTimeout(() => {
+    const report = measure();
+    const el = document.getElementById("report");
+    el.setAttribute("data-status", "done");
+    el.textContent = "REPORT:" + JSON.stringify(report, null, 2);
+  }, 500);
 }, 2500);

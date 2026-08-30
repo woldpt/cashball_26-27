@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { MAX_MATCH_SUBS } from "../../../constants/index.js";
+import { MAX_MATCH_SUBS, POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import {
   getPosStyle,
-  PITCH_POS_COLORS,
   sortPlayersByPos,
   buildPositionRows,
   filterMatchEvents,
@@ -15,12 +14,12 @@ import {
   RefWeatherBar,
   TacticsButtons,
   ConfirmedSubsStrip,
-  MatchPitch,
   MatchPlayerCard,
   CompactPlayerCard,
   MatchIcon,
   PrimaryButton,
   GhostButton,
+  OpponentGridCard,
 } from "../shared/index.js";
 import { TeamCrest } from "../../live/TeamCrest.jsx";
 
@@ -219,16 +218,6 @@ export function IntervencaoView({
   const oppBench = sortPlayersByPos(
     oppLineupFiltered.filter((p) => p.is_starter === false),
   );
-  const oppTactic = isHome ? fixture?._t2 : fixture?._t1;
-  const oppFormation = oppTactic?.formation || null;
-  const oppStyleRaw = (oppTactic?.style || "").toString().toUpperCase();
-  const oppStyleLabel = !oppStyleRaw
-    ? null
-    : oppStyleRaw === "OFENSIVO" || oppStyleRaw === "OFFENSIVE"
-      ? "Ofensivo"
-      : oppStyleRaw === "DEFENSIVO" || oppStyleRaw === "DEFENSIVE"
-        ? "Defensivo"
-        : "Equilibrado";
   const oppRows = buildPositionRows(oppStarters);
   const oppInfo = isHome ? aInfo : hInfo;
 
@@ -372,8 +361,6 @@ export function IntervencaoView({
             <AdversarioPanel
               hasLineups={hasLineups}
               oppInfo={oppInfo}
-              oppFormation={oppFormation}
-              oppStyleLabel={oppStyleLabel}
               oppRows={oppRows}
               oppBench={oppBench}
             />
@@ -1342,82 +1329,166 @@ function MatchSummaryBlock({ fixture, hInfo, aInfo, liveMinute, className = "" }
 function AdversarioPanel({
   hasLineups,
   oppInfo,
-  oppFormation,
-  oppStyleLabel,
   oppRows,
   oppBench,
 }) {
+  // Sort each position row by skill descending
+  const sortDesc = (arr) => [...arr].sort((a, b) => (b.skill ?? 0) - (a.skill ?? 0));
+  const gr = sortDesc(oppRows.GR);
+  const def = sortDesc(oppRows.DEF);
+  const med = sortDesc(oppRows.MED);
+  const ata = sortDesc(oppRows.ATA);
+
+  const hasAny = gr.length + def.length + med.length + ata.length > 0;
+
+  // Count craques (★) in the starting XI
+  const craqueCount = [
+    ...gr,
+    ...def,
+    ...med,
+    ...ata,
+  ].filter((p) => p.is_star).length;
+
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      {/* Header do adversário: crest + nome + formação */}
-      <div className="shrink-0 px-4 pt-4 flex items-center justify-between gap-3">
+      {/* Header: crest + nome + formação */}
+      <div className="shrink-0 px-4 pt-4 pb-3 flex items-center justify-between gap-3 border-b border-outline-variant/15 bg-surface-container-high/30">
         <div className="flex items-center gap-2.5 min-w-0">
           <TeamCrest team={oppInfo} />
-          <div className="flex flex-col min-w-0">
-            <span className="text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate">
-              {oppInfo?.name || "Adversário"}
-            </span>
-            {(oppFormation || oppStyleLabel) && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-                {[oppFormation, oppStyleLabel].filter(Boolean).join(" · ")}
-              </span>
-            )}
-          </div>
+          <span className="text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate">
+            {oppInfo?.name || "Adversário"}
+          </span>
         </div>
+        {craqueCount > 0 && (
+          <span className="shrink-0 flex items-center gap-1 px-2 py-1 rounded border border-amber-400/25 bg-amber-500/10 text-[10px] font-bold text-amber-300">
+            <span className="text-amber-400">★</span>
+            <span className="tabular-nums">{craqueCount} Craque{craqueCount > 1 ? "s" : ""}</span>
+          </span>
+        )}
       </div>
 
-      {/* Normalized padding — old code mixed `px-3 pt-2 pb-3 pt-3`. */}
-      {/* Mobile: pitch stays pinned at the top of the scroll and only the
-       * bench scrolls below it (no nested scroll). Desktop: 2-col grid, each
-       * cell scrolls independently. */}
-      <div className="flex-1 flex flex-col md:grid md:grid-cols-2 md:auto-rows-fr min-h-0 overflow-y-auto md:overflow-hidden p-4 gap-4">
-        {/* Opponent pitch — width-capped on mobile so the 9:16 ratio holds
-         * and the bench is reachable (was: w-full → ~637px tall). */}
-        <div className="shrink-0 py-2 sm:static md:min-h-0 md:min-w-0 md:flex md:items-center md:justify-center overflow-hidden [&>div]:max-w-[210px] md:[&>div]:max-w-full">
-          {!hasLineups ? (
-            <EmptyState
-              icon="📋"
-              message="Escalações indisponíveis durante a simulação"
-            />
-          ) : oppRows.ATA?.length === 0 && oppRows.MED?.length === 0 ? (
-            <EmptyState
-              icon="🤷"
-              message="Sem dados da escalação do adversário"
-            />
-          ) : (
-            <MatchPitch rows={oppRows} posColors={PITCH_POS_COLORS} showFatigue={false} />
-          )}
-        </div>
+      {/* Scroll container */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-3 md:p-4">
+        {!hasLineups ? (
+          <EmptyState
+            icon="📋"
+            message="Escalações indisponíveis durante a simulação"
+          />
+        ) : !hasAny ? (
+          <EmptyState
+            icon="🤷"
+            message="Sem dados da escalação do adversário"
+          />
+        ) : (
+          <div className="space-y-3">
+            {/* Grid 4 colunas: GR | DEF | MED | ATA */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+              <PositionColumn
+                posStyle={getPosStyle("GR")}
+                players={gr}
+                label="Guarda-redes"
+              />
+              <PositionColumn
+                posStyle={getPosStyle("DEF")}
+                players={def}
+                label="Defesa"
+              />
+              <PositionColumn
+                posStyle={getPosStyle("MED")}
+                players={med}
+                label="Médio"
+              />
+              <PositionColumn
+                posStyle={getPosStyle("ATA")}
+                players={ata}
+                label="Avançado"
+              />
+            </div>
 
-        {/* Opponent bench */}
-        <div className="shrink-0 min-w-0 flex flex-col md:flex-none md:min-h-0 md:overflow-hidden">
-          <div className="shrink-0 px-4 py-3 flex items-center justify-between bg-surface-container-high/50 border-b border-outline-variant/15">
-            <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase">
-              Banco
-            </h3>
-          </div>
-          {/* Mobile: no inner scroll (outer container scrolls). Desktop: independent scroll. */}
-          <div className="min-w-0 px-3 py-2.5 space-y-2 md:flex-1 md:min-h-0 md:overflow-y-auto">
-            {!hasLineups || oppBench.length === 0 ? (
-              <p className="text-center text-on-surface-variant/60 text-xs font-medium py-6">
-                Sem dados do banco adversário
-              </p>
-            ) : (
-              oppBench.map((p) => (
-                <MatchPlayerCard
-                  key={p.id ?? p.name}
-                  player={p}
-                  posStyle={getPosStyle(p.position)}
-                  selectable={false}
-                  disabled={false}
-                  showFatigue={false}
-                  hideResForm
-                />
-              ))
+            {/* Suplentes — faixa horizontal */}
+            {oppBench.length > 0 && (
+              <div className="rounded-md border border-outline-variant/15 bg-surface-container-high/20">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-outline-variant/10">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                    Suplentes
+                  </span>
+                  <span className="text-[10px] text-on-surface-variant/60 tabular-nums">
+                    {oppBench.length}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 px-3 py-2.5">
+                  {oppBench.map((p) => (
+                    <BenchChip
+                      key={p.id ?? p.name}
+                      player={p}
+                      posStyle={getPosStyle(p.position)}
+                    />
+                  ))}
+                </div>
+              </div>
             )}
           </div>
-        </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+/* ── Coluna de posição: header + lista de jogadores ─────────────────── */
+function PositionColumn({ posStyle, players, label }) {
+  return (
+    <div className="rounded-md border border-outline-variant/15 overflow-hidden">
+      {/* Header com cor da posição */}
+      <div
+        className={`shrink-0 flex items-center justify-between px-2.5 py-1.5 border-b ${posStyle.badgeBorder} bg-gradient-to-r ${posStyle.bgGrad} to-transparent`}
+      >
+        <span
+          className={`text-[9px] font-black uppercase tracking-widest ${posStyle.badgeText}`}
+        >
+          {label}
+        </span>
+        <span className="text-[9px] text-on-surface-variant/60 tabular-nums">
+          {players.length}
+        </span>
+      </div>
+      {/* Lista de jogadores */}
+      <div className="p-1.5 space-y-1 min-h-[2rem]">
+        {players.map((p) => (
+          <OpponentGridCard
+            key={p.id ?? p.name}
+            player={p}
+            posStyle={posStyle}
+            hideResForm
+          />
+        ))}
+        {players.length === 0 && (
+          <p className="text-center text-on-surface-variant/40 text-[10px] py-2 font-medium">
+            —
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Chip de suplente (compacto, inline) ─────────────────────────────── */
+function BenchChip({ player, posStyle }) {
+  const s = posStyle;
+  return (
+    <div
+      className={`flex items-center gap-1.5 rounded border border-outline-variant/15 ${s.bgGrad} via-surface-container/40 to-transparent bg-gradient-to-r px-2 py-1`}
+    >
+      <span
+        className={`shrink-0 w-4 text-center text-[8px] font-bold uppercase tracking-widest rounded px-1 border ${s.badgeBg} ${s.badgeText} ${s.badgeBorder}`}
+      >
+        {POSITION_SHORT_LABELS[player.position] || "?"}
+      </span>
+      <span className="truncate text-[11px] font-semibold text-on-surface max-w-[100px]">
+        {player.name}
+        {!!player.is_star && (player.position === "MED" || player.position === "ATA") && (
+          <span className="ml-0.5 text-amber-400" aria-label="Craque">★</span>
+        )}
+      </span>
     </div>
   );
 }

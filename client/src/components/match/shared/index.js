@@ -11,4 +11,5 @@ export { MatchPlayerCard } from "./MatchPlayerCard.jsx";
 export { CompactPlayerCard } from "./CompactPlayerCard.jsx";
 export { MatchIcon } from "./MatchIcon.jsx";
 export { FatigueIndicator } from "./FatigueIndicator.jsx";
+export { OpponentGridCard } from "./OpponentGridCard.jsx";
 export { PrimaryButton, GhostButton } from "./Button.jsx";
