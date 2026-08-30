@@ -228,8 +228,8 @@ export function LiveMatchHero({
               }}
             >
               <TeamCrest team={hInfo} isMine={homeIsMine} coach={homeCoach} size="sm" />
-              <div className="flex flex-col min-w-0">
-                <span className="text-[11px] sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate">
+              <div className="flex flex-col sm:flex-row min-w-0 gap-1 items-center">
+                <span className="text-[11px] font-black font-headline uppercase tracking-tight text-on-surface truncate">
                   {hInfo?.name}
                 </span>
                 {homeCoach && (
@@ -268,8 +268,8 @@ export function LiveMatchHero({
                 background: `linear-gradient(260deg, ${aInfo?.color_primary || "#333"}2e 0%, transparent 90%)`,
               }}
             >
-              <div className="flex flex-col min-w-0 items-end">
-                <span className="text-[11px] sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate text-right">
+              <div className="flex flex-col-reverse sm:flex-row min-w-0 gap-1 items-end sm:items-center">
+                <span className="text-[11px] font-black font-headline uppercase tracking-tight text-on-surface truncate text-right">
                   {aInfo?.name}
                 </span>
                 {awayCoach && (
