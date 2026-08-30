@@ -1341,14 +1341,6 @@ function AdversarioPanel({
 
   const hasAny = gr.length + def.length + med.length + ata.length > 0;
 
-  // Count craques (★) in the starting XI
-  const craqueCount = [
-    ...gr,
-    ...def,
-    ...med,
-    ...ata,
-  ].filter((p) => p.is_star).length;
-
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Header: crest + nome + formação */}
@@ -1359,12 +1351,6 @@ function AdversarioPanel({
             {oppInfo?.name || "Adversário"}
           </span>
         </div>
-        {craqueCount > 0 && (
-          <span className="shrink-0 flex items-center gap-1 px-2 py-1 rounded border border-amber-400/25 bg-amber-500/10 text-[10px] font-bold text-amber-300">
-            <span className="text-amber-400">★</span>
-            <span className="tabular-nums">{craqueCount} Craque{craqueCount > 1 ? "s" : ""}</span>
-          </span>
-        )}
       </div>
 
       {/* Scroll container */}

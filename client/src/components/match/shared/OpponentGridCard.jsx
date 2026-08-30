@@ -24,14 +24,8 @@ export function OpponentGridCard({ player, posStyle, hideResForm = false }) {
       {/* Faixa lateral por posição */}
       <div className={`shrink-0 w-0.5 self-stretch rounded-full bg-gradient-to-b ${s.bar}`} />
 
-      {/* Skill + posição + nome */}
+      {/* Posição + nome */}
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
-        <span
-          className={`shrink-0 text-xs font-black font-headline tabular-nums leading-none ${s.badgeText}`}
-          style={{ textShadow: "0 0 6px currentColor" }}
-        >
-          {player.skill ?? "—"}
-        </span>
         <span
           className={`shrink-0 w-5 text-center text-[9px] font-bold uppercase tracking-widest rounded px-1 border ${s.badgeBg} ${s.badgeText} ${s.badgeBorder}`}
           title={POSITION_FULL_LABELS[player.position]}
@@ -57,6 +51,14 @@ export function OpponentGridCard({ player, posStyle, hideResForm = false }) {
           </span>
         </div>
       )}
+
+      {/* Skill à direita */}
+      <span
+        className={`shrink-0 text-xs font-black font-headline tabular-nums leading-none ${s.badgeText}`}
+        style={{ textShadow: "0 0 6px currentColor" }}
+      >
+        {player.skill ?? "—"}
+      </span>
     </div>
   );
 }
