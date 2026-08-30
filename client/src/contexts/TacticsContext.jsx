@@ -42,6 +42,7 @@ export function TacticsProvider({ children }) {
     subsMade,
     setSubsMade,
     mySquad,
+    activeTab,
     matchweekCount,
     nextMatchSummary,
     players,
@@ -582,6 +583,7 @@ export function TacticsProvider({ children }) {
     handleHalftimeReady,
     // Read-only game props (for TacticsView)
     mySquad,
+    activeTab,
     matchweekCount,
     teamInfo,
     nextMatchSummary,

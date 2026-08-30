@@ -336,6 +336,7 @@ export function TacticsView() {
     nextMatchSummary,
     players,
     me,
+    activeTab,
     showHalftimePanel,
     isPlayingMatch,
     disconnected,
@@ -1250,6 +1251,7 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
         const fabCupSpec = nextMatchSummary?.isCup && !nextMatchOpponent;
         if (showBriefing) return null;
         if (myReady) return null;
+        if (activeTab !== "tactic") return null;
         if (!fabHalftime && !fabCupSpec && !isLineupComplete) return null;
         const fabIcon = fabHalftime
           ? "skip_next"
