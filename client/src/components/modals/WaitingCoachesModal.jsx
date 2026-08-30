@@ -4,7 +4,9 @@ import { useGame } from "../../contexts/GameContext.jsx";
 import { socket } from "../../socket.js";
 import { MODAL_Z } from "../../constants/index.js";
 import { ModalShell } from "../shared/ModalShell.jsx";
+import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
 import { Badge } from "../shared/Badge.jsx";
+import { coachAvatarSeed } from "../../utils/coachAvatar.js";
 import { isSameDay, formatChatDay } from "../../utils/formatters.js";
 
 /**
@@ -35,6 +37,7 @@ export function WaitingCoachesModal({
     roomMessages,
     chatInput,
     setChatInput,
+    avatarSeed,
   } = useGame();
   const chatScrollRef = useRef(null);
 
@@ -185,23 +188,15 @@ export function WaitingCoachesModal({
                   >
                     {/* Dot + avatar area */}
                     <div className="relative shrink-0">
-                      <div
-                        className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-black text-xs ${
-                          coach.teamColor
-                            ? ""
-                            : "bg-surface-container-high"
-                        }`}
-                        style={
-                          coach.teamColor
-                            ? {
-                                background: `radial-gradient(circle at 35% 28%, rgba(255,255,255,0.18) 0%, transparent 65%), ${coach.teamColor}`,
-                                boxShadow: `0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)`,
-                              }
-                            : {}
-                        }
-                      >
-                        {coach.name.charAt(0).toUpperCase()}
-                      </div>
+                      <PlayerAvatar
+                        seed={coachAvatarSeed(
+                          coach.name,
+                          me?.name,
+                          avatarSeed,
+                        )}
+                        teamColor={coach.teamColor}
+                        size="w-9 h-9"
+                      />
                       <span
                         className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-surface ${st.dot}`}
                       />
@@ -272,14 +267,26 @@ export function WaitingCoachesModal({
                                 {msg.coachName}
                               </span>
                             )}
-                            <div
-                              className={`max-w-[85%] px-2.5 py-1 rounded-lg text-xs leading-snug ${
-                                isOwn
-                                  ? "bg-primary text-on-primary rounded-br-sm"
-                                  : "bg-surface-container-highest text-on-surface rounded-bl-sm"
-                              }`}
-                            >
-                              {msg.message}
+                            <div className={`flex items-start gap-1.5 ${isOwn ? "justify-end" : ""}`}>
+                              {!isOwn && (
+                                <PlayerAvatar
+                                  seed={coachAvatarSeed(
+                                    msg.coachName,
+                                    me?.name,
+                                    avatarSeed,
+                                  )}
+                                  size="w-6 h-6"
+                                />
+                              )}
+                              <div
+                                className={`max-w-[85%] px-2.5 py-1 rounded-lg text-xs leading-snug ${
+                                  isOwn
+                                    ? "bg-primary text-on-primary rounded-br-sm"
+                                    : "bg-surface-container-highest text-on-surface rounded-bl-sm"
+                                }`}
+                              >
+                                {msg.message}
+                              </div>
                             </div>
                             <span className="text-[8px] text-on-surface-variant/50 px-1">
                               {formatChatTime(msg.timestamp)}

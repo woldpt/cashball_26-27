@@ -1747,6 +1747,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         unreadGlobal={unreadGlobal}
         chatInput={chatInput}
         setChatInput={setChatInput}
+        avatarSeed={avatarSeed}
         chatMessagesRef={chatMessagesRef}
         addToast={addToast}
         awaitingCoaches={awaitingCoaches}

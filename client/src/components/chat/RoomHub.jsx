@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { panelRight } from "../../motion.js";
 import { isSameDay, formatChatDay } from "../../utils/formatters.js";
+import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
+import { coachAvatarSeed } from "../../utils/coachAvatar.js";
 
 const QUICK_MESSAGES = ["👍", "🖕", "Vamos!", "Boa sorte", "⚽", "😂"];
 
@@ -21,6 +23,7 @@ const QUICK_MESSAGES = ["👍", "🖕", "Vamos!", "Boa sorte", "⚽", "😂"];
  *   matchweekCount: number,
  *   chatInput: string,
  *   setChatInput: function,
+ *   avatarSeed: string,
  *   chatMessagesRef: object,
  *   addToast: function,
  *   awaitingCoaches: Array,
@@ -42,6 +45,7 @@ export function RoomHub({
   matchweekCount,
   chatInput,
   setChatInput,
+  avatarSeed,
   chatMessagesRef,
   addToast,
   awaitingCoaches,
@@ -235,9 +239,21 @@ export function RoomHub({
                     key={coach.name || i}
                     className="flex items-center gap-2 px-3 py-2"
                   >
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${status.dotColor}`}
-                    />
+                    {/* Avatar mini do coach + dot de estado sobreposto */}
+                    <div className="relative shrink-0">
+                      <PlayerAvatar
+                        seed={coachAvatarSeed(
+                          coach.name,
+                          me.name,
+                          avatarSeed,
+                        )}
+                        teamColor={coachTeam?.color_primary}
+                        size="w-8 h-8"
+                      />
+                      <span
+                        className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#111] ${status.dotColor}`}
+                      />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p
                         className={`text-[10px] font-black truncate ${
@@ -425,14 +441,26 @@ export function RoomHub({
                             {msg.coachName}
                           </span>
                         )}
-                        <div
-                          className={`max-w-[80%] px-3 py-1.5 rounded-xl text-sm leading-snug ${
-                            isOwn
-                              ? "bg-primary text-on-primary rounded-br-sm"
-                              : "bg-surface-container-high text-on-surface rounded-bl-sm"
-                          }`}
-                        >
-                          {msg.message}
+                        <div className={`flex items-start gap-1.5 ${isOwn ? "justify-end" : ""}`}>
+                          {!isOwn && (
+                            <PlayerAvatar
+                              seed={coachAvatarSeed(
+                                msg.coachName,
+                                me.name,
+                                avatarSeed,
+                              )}
+                              size="w-6 h-6"
+                            />
+                          )}
+                          <div
+                            className={`max-w-[80%] px-3 py-1.5 rounded-xl text-sm leading-snug ${
+                              isOwn
+                                ? "bg-primary text-on-primary rounded-br-sm"
+                                : "bg-surface-container-high text-on-surface rounded-bl-sm"
+                            }`}
+                          >
+                            {msg.message}
+                          </div>
                         </div>
                         <span className="text-[9px] text-on-surface-variant px-1">
                           {formatChatTime(msg.timestamp)}
@@ -458,7 +486,7 @@ export function RoomHub({
                 }}
                 placeholder="Escreve uma mensagem…"
                 maxLength={500}
-                className="flex-1 bg-surface-container text-on-surface text-sm px-3 py-1.5 rounded-lg outline-none placeholder:text-on-surface-variant/50 border border-outline-variant/30 focus:border-primary/60 transition-colors"
+                className="min-w-0 flex-1 bg-surface-container text-on-surface text-sm px-3 py-1.5 rounded-lg outline-none placeholder:text-on-surface-variant/50 border border-outline-variant/30 focus:border-primary/60 transition-colors"
               />
               <button
                 onClick={sendChat}
