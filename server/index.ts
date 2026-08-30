@@ -52,7 +52,6 @@ const {
 	setAvatarImage,
 	clearAvatarImage,
 	getAvatarBlob,
-	getCoachAvatars,
 	updateManagerProfile,
 	deleteManager,
 	// Session tokens
