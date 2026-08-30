@@ -302,6 +302,7 @@ export function MatchPage({
 						isCupMatch={isCupMatch}
 						cupMatchRoundName={cupMatchRoundName}
 						showFatigue={!isThirdPartyMatch}
+						spectate={isThirdPartyMatch}
 					/>
 				)}
 

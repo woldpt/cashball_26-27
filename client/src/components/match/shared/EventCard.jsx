@@ -24,7 +24,7 @@ export function EventCard({ event, accent, showTeamBadge, showIcon = true, teamN
       {accent && (
         <div className="shrink-0 w-1" style={{ background: `linear-gradient(to bottom, ${accent}99, ${accent})` }} />
       )}
-      <div className="flex items-center gap-2.5 flex-1 px-3 py-2">
+      <div className="flex items-center gap-2.5 flex-1 min-w-0 px-3 py-2">
         <span className="text-on-surface-variant/80 font-bold min-w-[2ch] shrink-0 text-right tabular-nums text-xs">
           {event.minute != null ? `${event.minute}'` : "—"}
         </span>
@@ -57,7 +57,7 @@ export function EventCard({ event, accent, showTeamBadge, showIcon = true, teamN
         </span>
         {showTeamBadge && accent && (
           <span
-            className="text-[10px] font-bold uppercase tracking-widest shrink-0 px-2 py-0.5 rounded"
+            className="text-[10px] font-bold uppercase tracking-widest shrink-0 max-w-[45%] truncate px-2 py-0.5 rounded"
             style={{
               color: accent,
               borderColor: `${accent}30`,
