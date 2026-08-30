@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { PlayerRow } from "../components/shared/PlayerRow.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
@@ -6,6 +7,7 @@ import {
   FLAG_TO_COUNTRY,
 } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
+import { staggerItemProps } from "../motion.js";
 
 /**
  * @param {{
@@ -28,6 +30,17 @@ export function PlayersTab({
     if (wageByPos[p.position] !== undefined)
       wageByPos[p.position] += p.wage || 0;
   });
+  // Índice de stagger contínuo através dos grupos de posição (com teto em
+  // staggerItemProps — jogadores além do cap aparecem sem delay extra).
+  const staggerIndex = new Map();
+  {
+    let i = 0;
+    for (const pos of ["GR", "DEF", "MED", "ATA"]) {
+      for (const p of annotatedSquad) {
+        if (p.position === pos) staggerIndex.set(p.id, i++);
+      }
+    }
+  }
   const maxPosWage = Math.max(...Object.values(wageByPos), 1);
   const posColorHex = {
     GR: "#eab308",
@@ -72,14 +85,18 @@ export function PlayersTab({
                     </span>
                   </div>
                   {group.map((player) => (
-                    <PlayerRow
+                    <motion.div
                       key={player.id}
-                      player={player}
-                      matchweekCount={matchweekCount}
-                      season={season}
-                      showContractBadges
-                      onOpenPlayerHistory={onOpenPlayerHistory}
-                    />
+                      {...staggerItemProps(staggerIndex.get(player.id) || 0)}
+                    >
+                      <PlayerRow
+                        player={player}
+                        matchweekCount={matchweekCount}
+                        season={season}
+                        showContractBadges
+                        onOpenPlayerHistory={onOpenPlayerHistory}
+                      />
+                    </motion.div>
                   ))}
                 </div>
               );

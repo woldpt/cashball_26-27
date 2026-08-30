@@ -5,7 +5,14 @@
  * rounded-lg p-1` com item ativo `bg-primary text-white shadow`.
  * Substitui as variações em CalendarioTab, TeamSquadView, TeamSquadModal
  * e MatchView (tamanhos sm/md).
+ *
+ * O fundo do item ativo é um indicador deslizante (layoutId) — o mesmo
+ * padrão do bottom-nav mobile — em vez de trocar bg instantaneamente.
  */
+
+import { useId } from "react";
+import { motion } from "framer-motion";
+import { SPRING } from "../../motion.js";
 
 /**
  * @param {{
@@ -20,6 +27,9 @@
 export function TabBar({ tabs, active, onChange, size = "sm", expand = false, className = "" }) {
   // `expand` = segmented control: items partilham a largura (sem scroll);
   // tracking/padding reduzidos para caber labels longos em telas pequenas.
+  // useId por instância: cada TabBar tem o seu próprio layoutId, evitando
+  // que indicadores de TabBars diferentes "viajem" entre si.
+  const id = useId().replace(/:/g, "");
   const itemClass =
     size === "md"
       ? expand
@@ -37,19 +47,29 @@ export function TabBar({ tabs, active, onChange, size = "sm", expand = false, cl
     <div
       className={`flex items-center gap-1 bg-surface-container-high rounded-lg p-1 ${className}`}
     >
-      {tabs.map((tab) => (
-        <button
-          key={tab.key}
-          onClick={() => onChange(tab.key)}
-          className={`${itemClass} ${expandClass}rounded font-black uppercase transition-all ${
-            active === tab.key
-              ? "bg-primary text-white shadow"
-              : "text-on-surface-variant hover:text-on-surface"
-          }`}
-        >
-          {tab.label}
-        </button>
-      ))}
+      {tabs.map((tab) => {
+        const isActive = active === tab.key;
+        return (
+          <button
+            key={tab.key}
+            onClick={() => onChange(tab.key)}
+            className={`relative ${itemClass} ${expandClass}rounded font-black uppercase transition-colors ${
+              isActive
+                ? "text-white"
+                : "text-on-surface-variant hover:text-on-surface"
+            }`}
+          >
+            {isActive && (
+              <motion.span
+                layoutId={`tab-ind-${id}`}
+                className="absolute inset-0 rounded bg-primary shadow"
+                transition={SPRING.indicator}
+              />
+            )}
+            <span className="relative">{tab.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

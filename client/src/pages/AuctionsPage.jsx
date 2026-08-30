@@ -10,6 +10,8 @@ import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { getTeamColor } from "../utils/teamHelpers.js";
 import { useState } from "react";
+import { motion } from "framer-motion";
+import { staggerItemProps } from "../motion.js";
 
 export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchweekCount = 0, socket, onOpenPlayerHistory }) {
   const [positionFilter, setPositionFilter] = useState("all");
@@ -69,18 +71,19 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
         <div className="flex-1 overflow-y-auto p-3 md:p-4 pt-0">
           <Panel title="Em curso" meta={`${live.length} leilão${live.length !== 1 ? "s" : ""}`}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {live.map((auction) => (
-                <AuctionCard
-                  key={auction.playerId}
-                  auction={auction}
-                  me={me}
-                  teams={teams}
-                  teamInfo={teamInfo}
-                  matchweekCount={matchweekCount}
-                  socket={socket}
-                  teamColorById={teamColorById}
-                  onOpenDetails={onOpenPlayerHistory}
-                />
+              {live.map((auction, i) => (
+                <motion.div key={auction.playerId} {...staggerItemProps(i)}>
+                  <AuctionCard
+                    auction={auction}
+                    me={me}
+                    teams={teams}
+                    teamInfo={teamInfo}
+                    matchweekCount={matchweekCount}
+                    socket={socket}
+                    teamColorById={teamColorById}
+                    onOpenDetails={onOpenPlayerHistory}
+                  />
+                </motion.div>
               ))}
             </div>
           </Panel>
@@ -92,18 +95,19 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
         <div className="flex-1 overflow-y-auto p-3 md:p-4 pt-0">
           <Panel title="Recentes" meta={`${closed.length} leilão${closed.length !== 1 ? "s" : ""}`}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {closed.map((auction) => (
-                <AuctionCard
-                  key={auction.playerId}
-                  auction={auction}
-                  me={me}
-                  teams={teams}
-                  teamInfo={teamInfo}
-                  matchweekCount={matchweekCount}
-                  socket={socket}
-                  teamColorById={teamColorById}
-                  onOpenDetails={onOpenPlayerHistory}
-                />
+              {closed.map((auction, i) => (
+                <motion.div key={auction.playerId} {...staggerItemProps(i)}>
+                  <AuctionCard
+                    auction={auction}
+                    me={me}
+                    teams={teams}
+                    teamInfo={teamInfo}
+                    matchweekCount={matchweekCount}
+                    socket={socket}
+                    teamColorById={teamColorById}
+                    onOpenDetails={onOpenPlayerHistory}
+                  />
+                </motion.div>
               ))}
             </div>
           </Panel>

@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { TrendArrow } from "../shared/TrendArrow.jsx";
 import { rankStandings } from "../../utils/standingsRank.js";
+import { staggerFadeProps } from "../../motion.js";
 
 const DIVISION_NAMES = {
   1: "Primeira Liga",
@@ -137,8 +139,9 @@ function DivisionTable({
                   : "bg-surface-container-lowest hover:bg-surface-container-high/60";
 
               return (
-                <tr
+                <motion.tr
                   key={t.id}
+                  {...staggerFadeProps(idx)}
                   onClick={() => onTeamClick(t)}
                   className={`cursor-pointer transition-colors ${rowBg} ${leftBorder}`}
                 >
@@ -221,7 +224,7 @@ function DivisionTable({
                   <td className="pr-4 pl-2 py-2">
                     <FormDots form={teamForms[t.id] || ""} />
                   </td>
-                </tr>
+                </motion.tr>
               );
             })}
           </tbody>
