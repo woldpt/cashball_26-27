@@ -14,6 +14,7 @@ import {
   DEFAULT_TACTIC,
   LOAN_INTEREST_RATE,
   TRANSFER_LISTED_PRICE_MULT,
+  SEASON_CALENDAR,
 } from "../constants/index.js";
 import { isPlayerAvailable } from "../utils/playerHelpers.js";
 import {
@@ -117,7 +118,14 @@ export function GameProvider({
 	const [isCupMatch, setIsCupMatch] = useState(false);
 	const [calendarIndex, setCalendarIndex] = useState(0);
 	const [cupPreMatch, setCupPreMatch] = useState(false);
-	const [cupMatchRoundName, setCupMatchRoundName] = useState("");
+	// Ronda da Taça em curso (1..5) — fonte: payload do servidor
+	// (cupPreMatch / cupHalfTimeResults / matchSegmentStart / cupRoundResults /
+	// matchReplay). O nome ("Oitavos de final", "Final", ...) é derivado no
+	// client via SEASON_CALENDAR, evitando duplicar a lista no backend.
+	const [currentCupRound, setCurrentCupRound] = useState(null);
+	const cupMatchRoundName =
+		SEASON_CALENDAR.find((e) => e.type === "cup" && e.round === currentCupRound)
+			?.roundName || null;
 	const [cupExtraTimeBadge, setCupExtraTimeBadge] = useState(false);
 	const [isCupExtraTime, setIsCupExtraTime] = useState(false);
 	const [cupActiveTeamIds, setCupActiveTeamIds] = useState([]);
@@ -279,7 +287,11 @@ export function GameProvider({
 	}, [selectedTeam]);
 	useEffect(() => {
 		activeTabRef.current = activeTab;
-		try { sessionStorage.setItem("cashball_tab", activeTab); } catch {}
+		try {
+			sessionStorage.setItem("cashball_tab", activeTab);
+		} catch {
+			// sessionStorage indisponível (modo privado/limite) — ignora
+		}
 	}, [activeTab]);
 	useEffect(() => {
 		marketPairsRef.current = marketPairs;
@@ -700,7 +712,7 @@ export function GameProvider({
 			setIsCupMatch,
 			setCalendarIndex,
 			setCupPreMatch,
-			setCupMatchRoundName,
+			setCurrentCupRound,
 			setCupExtraTimeBadge,
 			setCupActiveTeamIds,
 			setActiveTab,
@@ -1211,7 +1223,7 @@ export function GameProvider({
 		setDismissalModal(null);
 		setIsCupMatch(false);
 		setCupPreMatch(false);
-		setCupMatchRoundName("");
+		setCurrentCupRound(null);
 		setCupExtraTimeBadge(false);
 		setIsCupExtraTime(false);
 		setCupActiveTeamIds([]);
@@ -1352,6 +1364,7 @@ export function GameProvider({
 		calendarIndex,
 		cupPreMatch,
 		cupMatchRoundName,
+		currentCupRound,
 		cupExtraTimeBadge,
 		isCupExtraTime,
 		cupActiveTeamIds,

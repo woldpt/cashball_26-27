@@ -248,14 +248,14 @@ export function LiveMatchHero({
                   ? "Pedir substituição"
                   : "Ver detalhes da partida"
               }
-              className="shrink-0 flex flex-col items-center justify-center px-2.5 sm:px-6 py-2 bg-surface/80 border-x border-outline-variant/15 cursor-pointer group"
+              className="shrink-0 flex flex-col items-center justify-center px-1.5 min-[430px]:px-2.5 sm:px-6 py-2 bg-surface/80 border-x border-outline-variant/15 cursor-pointer group"
             >
-              <div className="font-headline font-black text-3xl sm:text-5xl tracking-tighter tabular-nums flex items-center gap-1.5 sm:gap-2">
+              <div className="font-headline font-black text-2xl min-[430px]:text-3xl sm:text-5xl tracking-tighter tabular-nums flex items-center gap-1 min-[430px]:gap-1.5 sm:gap-2 whitespace-nowrap">
                 <span style={flashStyle(myHomeFlashing)}>{homeGoals.length}</span>
                 <span className="text-on-surface/20 text-xl sm:text-3xl">:</span>
                 <span style={flashStyle(myAwayFlashing)}>{awayGoals.length}</span>
               </div>
-              <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 mt-1 tabular-nums">
+              <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-on-surface-variant/60 mt-1 tabular-nums truncate max-w-full">
                 {liveMinute > 90 ? "Prol. " : ""}
                 {liveMinute < 1 ? "A começar…" : `${liveMinute}' · ${phaseLabel}`}
               </span>

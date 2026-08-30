@@ -273,7 +273,7 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setSwapTarget(null);
 			handlers.setIsCupMatch(true);
 			handlers.setCupPreMatch(true);
-			handlers.setCupMatchRoundName(data.roundName);
+			handlers.setCurrentCupRound(data.round ?? null);
 			handlers.setCupExtraTimeBadge(false);
 			handlers.setCupActiveTeamIds(data.cupTeamIds || []);
 			handlers.setActiveTab("live");
@@ -314,7 +314,7 @@ export function useSocketListeners(handlers, refs) {
 				handlers.setIsPlayingMatch(true);
 				handlers.setIsCupMatch(true);
 				handlers.setCupPreMatch(false);
-				handlers.setCupMatchRoundName(data.roundName);
+				handlers.setCurrentCupRound(data.round ?? null);
 				handlers.setCupExtraTimeBadge(false);
 
 				// Se o utilizador não está em nenhuma fixture desta ronda (eliminado),
@@ -366,7 +366,7 @@ export function useSocketListeners(handlers, refs) {
 				handlers.setShowHalftimePanel(true);
 				handlers.setIsCupMatch(true);
 				handlers.setCupPreMatch(false);
-				handlers.setCupMatchRoundName(data.roundName);
+				handlers.setCurrentCupRound(data.round ?? null);
 				handlers.setCupExtraTimeBadge(false);
 
 				const myId = refs.meRef.current?.teamId;
@@ -492,6 +492,7 @@ export function useSocketListeners(handlers, refs) {
 		socket.on("cupBracketData", (data) => handlers.setCupBracketData(data));
 		socket.on("cupRoundResults", (data) => {
 			refs.isCupDrawRef.current = false;
+			handlers.setCurrentCupRound(data.round ?? null);
 			socket.emit("requestCupBracket");
 	
 			handlers.setCupRoundResults(data);
@@ -523,7 +524,7 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setLiveMinute(45);
 			handlers.setIsPlayingMatch(true);
 			handlers.setIsCupMatch(true);
-			handlers.setCupMatchRoundName(data.roundName);
+			handlers.setCurrentCupRound(data.round ?? null);
 		});
 		socket.on("cupPenaltyShootout", (data) => {
 			handlers.setCupPenaltyPopup(data);
@@ -800,10 +801,10 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setActiveTab("live");
 			if (data.isCup) {
 				handlers.setIsCupMatch(true);
-				if (data.cupRoundName) handlers.setCupMatchRoundName(data.cupRoundName);
 			} else {
 				handlers.setIsCupMatch(false);
 			}
+			handlers.setCurrentCupRound(data.cupRound ?? null);
 			handlers.setMatchResults({
 				matchweek: data.matchweek,
 				results: (data.fixtures || []).map((f) => ({
@@ -835,10 +836,10 @@ export function useSocketListeners(handlers, refs) {
 			// Always sync cup state from the server payload (handles reconnect mid-match)
 			if (data.isCup) {
 				handlers.setIsCupMatch(true);
-				if (data.cupRoundName) handlers.setCupMatchRoundName(data.cupRoundName);
 			} else {
 				handlers.setIsCupMatch(false);
 			}
+			handlers.setCurrentCupRound(data.cupRound ?? null);
 			if (data.startMin === 1) {
 				// First half — set up match UI from scratch
 				handlers.setShowHalftimePanel(false);
