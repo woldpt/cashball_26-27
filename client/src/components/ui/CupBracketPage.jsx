@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, startTransition } from "react";
+import { readableColor } from "../../utils/colorHelpers.js";
 
 const ROUND_NAMES = [
   "",
@@ -81,7 +82,7 @@ function BracketTeamRow({ team, isWinner, played, score }) {
       </div>
       <span
         className="flex-1 truncate text-[10px] font-bold leading-none text-on-surface-variant"
-        style={{ color: team?.color_primary }}
+        style={{ color: readableColor(team?.color_primary) }}
       >
         {team?.name || (played ? "?" : "···")}
       </span>
@@ -318,7 +319,7 @@ function BracketTree({ rounds, myTeamId }) {
               <div>
                 <div
                   className="text-[10px] font-black"
-                  style={{ color: winner.color_primary }}
+                  style={{ color: readableColor(winner.color_primary) }}
                 >
                   {winner.name}
                 </div>
@@ -400,7 +401,7 @@ function MatchRow({ match, myTeamId, players }) {
         <div className="text-right min-w-0">
           <span
             className="block font-black text-xs truncate text-on-surface"
-            style={{ color: homeTeam?.color_primary }}
+            style={{ color: readableColor(homeTeam?.color_primary) }}
           >
             {homeTeam?.name || "?"}
           </span>
@@ -478,7 +479,7 @@ function MatchRow({ match, myTeamId, players }) {
         <div className="min-w-0">
           <span
             className="block font-black text-xs truncate text-on-surface"
-            style={{ color: awayTeam?.color_primary }}
+            style={{ color: readableColor(awayTeam?.color_primary) }}
           >
             {awayTeam?.name || "?"}
           </span>
@@ -608,7 +609,7 @@ export function CupBracketPage({ bracketData, me, players, onRequestRefresh }) {
                 </div>
                 <span
                   className="text-[9px] font-black uppercase tracking-wider"
-                  style={{ color: champion.color_primary }}
+                  style={{ color: readableColor(champion.color_primary) }}
                 >
                   {champion.name}
                 </span>
