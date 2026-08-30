@@ -4,7 +4,7 @@ import { useGame } from "../../contexts/GameContext.jsx";
 import { socket } from "../../socket.js";
 import { MODAL_Z } from "../../constants/index.js";
 import { ModalShell } from "../shared/ModalShell.jsx";
-import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
+import { CoachAvatar } from "../shared/CoachAvatar.jsx";
 import { Badge } from "../shared/Badge.jsx";
 import { coachAvatarSeed } from "../../utils/coachAvatar.js";
 import { isSameDay, formatChatDay } from "../../utils/formatters.js";
@@ -38,6 +38,8 @@ export function WaitingCoachesModal({
     chatInput,
     setChatInput,
     avatarSeed,
+    coachAvatars,
+    backendUrl,
   } = useGame();
   const chatScrollRef = useRef(null);
 
@@ -188,7 +190,8 @@ export function WaitingCoachesModal({
                   >
                     {/* Dot + avatar area */}
                     <div className="relative shrink-0">
-                      <PlayerAvatar
+                      <CoachAvatar
+                        name={coach.name}
                         seed={coachAvatarSeed(
                           coach.name,
                           me?.name,
@@ -196,6 +199,8 @@ export function WaitingCoachesModal({
                         )}
                         teamColor={coach.teamColor}
                         size="w-9 h-9"
+                        coachAvatars={coachAvatars}
+                        backendUrl={backendUrl}
                       />
                       <span
                         className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-surface ${st.dot}`}
@@ -269,13 +274,16 @@ export function WaitingCoachesModal({
                             )}
                             <div className={`flex items-start gap-1.5 ${isOwn ? "justify-end" : ""}`}>
                               {!isOwn && (
-                                <PlayerAvatar
+                                <CoachAvatar
+                                  name={msg.coachName}
                                   seed={coachAvatarSeed(
                                     msg.coachName,
                                     me?.name,
                                     avatarSeed,
                                   )}
                                   size="w-6 h-6"
+                                  coachAvatars={coachAvatars}
+                                  backendUrl={backendUrl}
                                 />
                               )}
                               <div

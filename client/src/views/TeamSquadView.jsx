@@ -10,7 +10,7 @@ import { PlayerRow } from "../components/shared/PlayerRow.jsx";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { TabBar } from "../components/shared/TabBar.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
-import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
+import { CoachAvatar } from "../components/shared/CoachAvatar.jsx";
 import { TeamHistoryView } from "./TeamHistoryView.jsx";
 import { useMemo, useState } from "react";
 
@@ -21,6 +21,8 @@ import { useMemo, useState } from "react";
  *   selectedTeamLoading: boolean,
  *   me: object|null,
  *   avatarSeed: string,
+ *   coachAvatars: object, {nome do coach: versão da imagem carregada}
+ *   backendUrl: string,
  *   players: Array,
  *   clubHistory: object|null,
  *   clubHistoryTeamId: number|null,
@@ -40,6 +42,8 @@ export function TeamSquadView({
   selectedTeamLoading,
   me,
   avatarSeed = "",
+  coachAvatars = {},
+  backendUrl = "",
   players,
   clubHistory,
   clubHistoryTeamId,
@@ -329,10 +333,13 @@ export function TeamSquadView({
               >
                 {coachName}
               </p>
-              <PlayerAvatar
+              <CoachAvatar
+                name={coachName}
                 seed={coachAvatarSeed}
                 teamColor={selectedTeam.color_primary}
                 size="md"
+                coachAvatars={coachAvatars}
+                backendUrl={backendUrl}
               />
             </div>
           </div>

@@ -43,11 +43,16 @@ const {
 	recordRoomAccess,
 	getManagerRooms,
 	getRoomCoaches,
+	getCoachAvatars,
 	deleteRoomAccess,
 	changePassword,
 	getManagerInfo,
 	getAvatarSeed,
 	setAvatarSeed,
+	setAvatarImage,
+	clearAvatarImage,
+	getAvatarBlob,
+	getCoachAvatars,
 	updateManagerProfile,
 	deleteManager,
 	// Session tokens
@@ -588,8 +593,11 @@ app.get("/auth/avatar-seed", apiLimiter, async (req, res) => {
 			typeof req.query?.name === "string" ? req.query.name.trim() : "";
 		if (!name)
 			return res.status(400).json({ error: "Nome de treinador inválido." });
-		const seed = await getAvatarSeed(name);
-		return res.json({ seed });
+		const [seed, avatarVersion] = await Promise.all([
+			getAvatarSeed(name),
+			getCoachAvatars([name]).then((m) => Object.values(m)[0] ?? null),
+		]);
+		return res.json({ seed, avatarVersion });
 	} catch (error) {
 		console.error("[/auth/avatar-seed] Error:", error.message);
 		return res.status(500).json({ error: "Erro interno." });
@@ -610,6 +618,77 @@ app.post("/auth/avatar-seed", apiLimiter, async (req, res) => {
 		return res.json({ ok: true });
 	} catch (error) {
 		console.error("[/auth/avatar-seed] Error:", error.message);
+		return res.status(500).json({ error: "Erro interno." });
+	}
+});
+
+// ── Coach-uploaded avatar image ────────────────────────────────────────────────
+const AVATAR_MIME_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+const MAX_AVATAR_UPLOAD_BYTES = 1_000_000;
+
+app.post("/auth/avatar", apiLimiter, async (req, res) => {
+	try {
+		const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+		const dataBase64 =
+			typeof req.body?.dataBase64 === "string"
+				? req.body.dataBase64
+				: "";
+		const mime = typeof req.body?.mime === "string" ? req.body.mime : "";
+		if (!name) return res.status(400).json({ error: "Nome inválido." });
+		const sessionName = await getSessionNameFromReq(req);
+		if (!sessionName || sessionName.toLowerCase() !== name.toLowerCase())
+			return res.status(401).json({ error: "Sessão inválida." });
+		if (!AVATAR_MIME_TYPES.has(mime))
+			return res
+				.status(400)
+				.json({ error: "Formato não suportado. Usa PNG, JPEG ou WebP." });
+		const buffer = Buffer.from(dataBase64, "base64");
+		if (buffer.length === 0 || buffer.length > MAX_AVATAR_UPLOAD_BYTES)
+			return res
+				.status(400)
+				.json({ error: "Imagem demasiado grande. Escolhe uma imagem menor." });
+		const version = await setAvatarImage(name, buffer, mime);
+		if (version == null)
+			return res.status(500).json({ error: "Erro ao guardar o avatar." });
+		return res.json({ ok: true, version });
+	} catch (error) {
+		console.error("[/auth/avatar] Error:", error.message);
+		return res.status(500).json({ error: "Erro interno." });
+	}
+});
+
+app.post("/auth/avatar/delete", apiLimiter, async (req, res) => {
+	try {
+		const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+		if (!name) return res.status(400).json({ error: "Nome inválido." });
+		const sessionName = await getSessionNameFromReq(req);
+		if (!sessionName || sessionName.toLowerCase() !== name.toLowerCase())
+			return res.status(401).json({ error: "Sessão inválida." });
+		const version = await clearAvatarImage(name);
+		if (version == null)
+			return res
+				.status(500)
+				.json({ error: "Erro ao remover o avatar." });
+		return res.json({ ok: true, version });
+	} catch (error) {
+		console.error("[/auth/avatar/delete] Error:", error.message);
+		return res.status(500).json({ error: "Erro interno." });
+	}
+});
+
+app.get("/auth/avatar", apiLimiter, async (req, res) => {
+	try {
+		const name =
+			typeof req.query?.name === "string" ? req.query.name.trim() : "";
+		if (!name)
+			return res.status(400).json({ error: "Nome de treinador inválido." });
+		const avatar = await getAvatarBlob(name);
+		if (!avatar) return res.status(404).json({ error: "Sem avatar." });
+		res.setHeader("Content-Type", avatar.mime);
+		res.setHeader("Cache-Control", "no-store");
+		return res.send(avatar.buffer);
+	} catch (error) {
+		console.error("[/auth/avatar] Error:", error.message);
 		return res.status(500).json({ error: "Erro interno." });
 	}
 });
@@ -762,6 +841,7 @@ const coachDismissalHelpers = createCoachDismissalHelpers({
 	runGet,
 	saveGameState,
 	getRoomCoaches,
+	getCoachAvatars,
 });
 const processCoachEvents = coachDismissalHelpers.processCoachEvents;
 const handleAcceptJobOffer = coachDismissalHelpers.handleAcceptJobOffer;
@@ -850,6 +930,7 @@ io.on("connection", (socket) => {
 		getGame,
 		recordRoomAccess,
 		getRoomCoaches,
+		getCoachAvatars,
 		getGameBySocket,
 		getPlayerBySocket,
 		bindSocket,

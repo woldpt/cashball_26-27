@@ -62,6 +62,7 @@ interface SessionHandlerDeps {
 	) => ActiveGame | null;
 	recordRoomAccess: (name: string, roomCode: string) => void;
 	getRoomCoaches: (roomCode: string, excludeName?: string) => Promise<string[]>;
+	getCoachAvatars: (names: string[]) => Promise<Record<string, number>>;
 	getGameBySocket: (socketId: string) => ActiveGame | null;
 	getPlayerBySocket: (
 		game: ActiveGame,
@@ -141,6 +142,7 @@ export function registerSessionSocketHandlers(
 		getGame,
 		recordRoomAccess,
 		getRoomCoaches,
+		getCoachAvatars,
 		getGameBySocket,
 		getPlayerBySocket,
 		bindSocket,
@@ -312,7 +314,10 @@ export function registerSessionSocketHandlers(
 				const d = details || team;
 				getRoomCoaches(roomCode, name)
 					.catch((): string[] => [])
-					.then((coaches) => {
+					.then(async (coaches) => {
+						const coachAvatars = await getCoachAvatars(coaches).catch(
+							() => ({}),
+						);
 						socket.emit("teamAssigned", {
 							teamName: d.name,
 							teamId: d.id,
@@ -329,6 +334,7 @@ export function registerSessionSocketHandlers(
 							stadiumCapacity: d.stadium_capacity ?? 0,
 							stadiumName: d.stadium_name ?? "",
 							coaches,
+							coachAvatars,
 							isNew,
 						});
 					});

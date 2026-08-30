@@ -3,7 +3,7 @@ import { fadeSlide, sheetUp, SPRING } from "./motion.js";
 import { socket } from "./socket.js";
 import { useGame } from "./contexts/GameContext.jsx";
 import { useTactics } from "./contexts/TacticsContext.jsx";
-import { PlayerAvatar } from "./components/shared/PlayerAvatar.jsx";
+import { CoachAvatar } from "./components/shared/CoachAvatar.jsx";
 import { WelcomeModal } from "./components/modals/WelcomeModal.jsx";
 import { DismissalModal } from "./components/modals/DismissalModal.jsx";
 import { SeasonEndModal } from "./components/modals/SeasonEndModal.jsx";
@@ -158,6 +158,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     setSidebarCollapsed,
     avatarSeed,
     setAvatarSeed,
+    coachAvatars,
+    setCoachAvatars,
     // Refs
     chatMessagesRef,
     roomHubRef,
@@ -451,7 +453,13 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     : "hover:bg-white/10"
                 }`}
               >
-                <PlayerAvatar seed={`${me.name}|${avatarSeed}`} size="sm" />
+                <CoachAvatar
+                  name={me.name}
+                  seed={`${me.name}|${avatarSeed}`}
+                  size="sm"
+                  coachAvatars={coachAvatars}
+                  backendUrl={backendUrl}
+                />
                 <div className="hidden lg:flex flex-col items-start">
                   <span
                     className="text-sm font-bold leading-tight"
@@ -1456,6 +1464,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         selectedTeamLoading={selectedTeamLoading}
                         me={me}
                         avatarSeed={avatarSeed}
+                        coachAvatars={coachAvatars}
+                        backendUrl={backendUrl}
                         players={players}
                         palmares={palmares}
                         palmaresTeamId={palmaresTeamId}
@@ -1554,6 +1564,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         palmares={palmares}
                         backendUrl={backendUrl}
                         avatarSeed={avatarSeed}
+                        coachAvatars={coachAvatars}
+                        setCoachAvatars={setCoachAvatars}
                         onAvatarSeedChange={setAvatarSeed}
                         onBack={() => navigateTab("club")}
                         onLogout={handleLogout}
@@ -1748,6 +1760,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         chatInput={chatInput}
         setChatInput={setChatInput}
         avatarSeed={avatarSeed}
+        coachAvatars={coachAvatars}
+        backendUrl={backendUrl}
         chatMessagesRef={chatMessagesRef}
         addToast={addToast}
         awaitingCoaches={awaitingCoaches}

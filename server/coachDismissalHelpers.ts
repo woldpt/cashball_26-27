@@ -30,10 +30,12 @@ interface CoachDismissalDeps {
     roomCode: string,
     excludeName?: string,
   ) => Promise<string[]>;
+  getCoachAvatars: (names: string[]) => Promise<Record<string, number>>;
 }
 
 export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
-  const { io, runAll, runGet, saveGameState, getRoomCoaches } = deps;
+  const { io, runAll, runGet, saveGameState, getRoomCoaches, getCoachAvatars } =
+    deps;
 
   // ── Internal helpers ───────────────────────────────────────────────────────
 
@@ -438,7 +440,8 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     if (player.socketId) {
       getRoomCoaches(game.roomCode, coachName)
         .catch((): string[] => [])
-        .then((coaches) => {
+        .then(async (coaches) => {
+          const coachAvatars = await getCoachAvatars(coaches).catch(() => ({}));
           io.to(player.socketId as string).emit("teamAssigned", {
             teamName: team.name,
             teamId: team.id,
@@ -455,6 +458,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
             stadiumCapacity: team.stadium_capacity ?? 0,
             stadiumName: team.stadium_name ?? "",
             coaches,
+            coachAvatars,
             isNew: true,
           });
         });
@@ -821,7 +825,8 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     if (player.socketId) {
       getRoomCoaches(game.roomCode, coachName)
         .catch((): string[] => [])
-        .then((coaches) => {
+        .then(async (coaches) => {
+          const coachAvatars = await getCoachAvatars(coaches).catch(() => ({}));
           io.to(player.socketId as string).emit("teamAssigned", {
             teamName: team.name,
             teamId: team.id,
@@ -838,6 +843,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
             stadiumCapacity: team.stadium_capacity ?? 0,
             stadiumName: team.stadium_name ?? "",
             coaches,
+            coachAvatars,
             isNew: false,
           });
         });

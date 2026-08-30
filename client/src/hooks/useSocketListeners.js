@@ -666,6 +666,13 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setMe((prev) =>
 				prev ? { ...prev, teamId: data.teamId } : prev,
 			);
+			// Merge das versões de avatar dos coaches da sala (exibição em listas/chat)
+			if (data.coachAvatars && typeof data.coachAvatars === "object") {
+				handlers.setCoachAvatars((prev) => ({
+					...prev,
+					...data.coachAvatars,
+				}));
+			}
 			const pendingDismissal = refs.pendingDismissalRef.current;
 			if (pendingDismissal) {
 				refs.pendingDismissalRef.current = null;

@@ -1,20 +1,12 @@
 import { memo, useId } from "react";
 import { FLAG_TO_SKIN_REGION, SKIN_REGIONS } from "../../constants";
+import { AVATAR_SIZE_MAP } from "./avatarSizes.js";
 
 const POSITION_ACCENT = {
   GR: "#eab308",
   DEF: "#3b82f6",
   MED: "#10b981",
   ATA: "#f43f5e",
-};
-
-const SIZE_MAP = {
-  sm: "w-10 h-10",
-  // "md" responsivo para linhas compactas: 48px em mobile, 64px ≥sm
-  mdR: "w-12 h-12 sm:w-16 sm:h-16",
-  md: "w-16 h-16",
-  lg: "w-24 h-24",
-  xl: "w-32 h-32",
 };
 
 // Tsubasa = traço a tinta-da-china preta, bem encorpado
@@ -1633,7 +1625,7 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
     <div className="relative shrink-0">
       <svg
         viewBox="0 0 120 120"
-        className={`${SIZE_MAP[size] ?? size} rounded-full shadow-lg ${className}`}
+        className={`${AVATAR_SIZE_MAP[size] ?? size} rounded-full shadow-lg ${className}`}
         style={{ backgroundColor: BACKDROP }}
         shapeRendering="geometricPrecision"
         strokeLinecap="round"

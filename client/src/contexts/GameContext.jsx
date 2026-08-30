@@ -191,6 +191,9 @@ export function GameProvider({
 		}
 	});
 	const [avatarSeed, setAvatarSeed] = useState("");
+	// Versões das imagens de avatar carregadas pelos coaches: {nome: timestamp}
+	// (atualizado por teamAssigned + fetch inicial do próprio coach)
+	const [coachAvatars, setCoachAvatars] = useState({});
 
 	// ── Refs ────────────────────────────────────────────────────────────────
 	const injuryCountdownRef = useRef(null);
@@ -237,6 +240,12 @@ export function GameProvider({
 			.then((r) => r.json())
 			.then((data) => {
 				if (data?.seed) setAvatarSeed(data.seed);
+				if (data?.avatarVersion != null) {
+					setCoachAvatars((prev) => ({
+						...prev,
+						[me.name]: data.avatarVersion,
+					}));
+				}
 			})
 			.catch(() => {});
 	}, [me?.name, backendUrl]);
@@ -750,6 +759,7 @@ export function GameProvider({
 			setPlayerSearchData,
 			setPlayerSearchLoading,
 			setMe,
+			setCoachAvatars,
 			setRoomCode,
 			setJoinError,
 			setJoining,
@@ -1448,6 +1458,8 @@ export function GameProvider({
 		setSidebarCollapsed,
 		avatarSeed,
 		setAvatarSeed,
+		coachAvatars,
+		setCoachAvatars,
 		// Refs
 		injuryCountdownRef,
 		chatMessagesRef,

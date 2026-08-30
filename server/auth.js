@@ -126,6 +126,31 @@ db.serialize(() => {
 			}
 		},
 	);
+	// Migrations: coach-uploaded avatar image (safe to re-run)
+	db.run(
+		`ALTER TABLE managers ADD COLUMN avatar_blob BLOB`,
+		(err) => {
+			if (err) {
+				// Column already exists — ignore
+			}
+		},
+	);
+	db.run(
+		`ALTER TABLE managers ADD COLUMN avatar_mime TEXT DEFAULT ''`,
+		(err) => {
+			if (err) {
+				// Column already exists — ignore
+			}
+		},
+	);
+	db.run(
+		`ALTER TABLE managers ADD COLUMN avatar_updated_at INTEGER DEFAULT NULL`,
+		(err) => {
+			if (err) {
+				// Column already exists — ignore
+			}
+		},
+	);
 	db.run(`ALTER TABLE managers ADD COLUMN email TEXT DEFAULT ''`, (err) => {
 		if (err) {
 			// Column already exists — ignore
@@ -558,6 +583,115 @@ function setAvatarSeed(name, seed) {
 					return resolve({ ok: false });
 				}
 				resolve({ ok: true });
+			},
+		);
+	});
+}
+
+/**
+ * Set the coach-uploaded avatar image for a manager.
+ *
+ * @param {string} name
+ * @param {Buffer} buffer - Encoded image bytes (already resized client-side)
+ * @param {string} mime - e.g. "image/png", "image/jpeg", "image/webp"
+ * @returns {Promise<number|null>} New version (avatar_updated_at) or null on failure
+ */
+function setAvatarImage(name, buffer, mime) {
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName || !Buffer.isBuffer(buffer) || buffer.length === 0) {
+		return Promise.resolve(null);
+	}
+
+	return new Promise((resolve) => {
+		db.run(
+			"UPDATE managers SET avatar_blob = ?, avatar_mime = ?, avatar_updated_at = ? WHERE name = ? COLLATE NOCASE",
+			[buffer, mime || "", Date.now(), normalizedName],
+			(err) => {
+				if (err) {
+					console.error("[auth] setAvatarImage error:", err.message);
+					return resolve(null);
+				}
+				resolve(Date.now());
+			},
+		);
+	});
+}
+
+/**
+ * Remove the coach-uploaded avatar image (falls back to procedural seed).
+ *
+ * @param {string} name
+ * @returns {Promise<number|null>} New version (so clients re-fetch) or null on failure
+ */
+function clearAvatarImage(name) {
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName) return Promise.resolve(null);
+
+	return new Promise((resolve) => {
+		db.run(
+			"UPDATE managers SET avatar_blob = NULL, avatar_mime = '', avatar_updated_at = ? WHERE name = ? COLLATE NOCASE",
+			[Date.now(), normalizedName],
+			(err) => {
+				if (err) {
+					console.error("[auth] clearAvatarImage error:", err.message);
+					return resolve(null);
+				}
+				resolve(Date.now());
+			},
+		);
+	});
+}
+
+/**
+ * Fetch the stored avatar image for a manager.
+ *
+ * @param {string} name
+ * @returns {Promise<{buffer: Buffer, mime: string}|null>}
+ */
+function getAvatarBlob(name) {
+	const normalizedName = typeof name === "string" ? name.trim() : "";
+	if (!normalizedName) return Promise.resolve(null);
+
+	return new Promise((resolve) => {
+		db.get(
+			"SELECT avatar_blob, avatar_mime FROM managers WHERE name = ? COLLATE NOCASE AND avatar_blob IS NOT NULL",
+			[normalizedName],
+			(err, row) => {
+				if (err || !row || !row.avatar_blob) return resolve(null);
+				resolve({ buffer: row.avatar_blob, mime: row.avatar_mime || "image/png" });
+			},
+		);
+	});
+}
+
+/**
+ * Version map for a list of coaches: { name: avatar_updated_at } — only
+ * coaches that actually have an uploaded image.
+ *
+ * @param {string[]} names
+ * @returns {Promise<Record<string, number>>}
+ */
+function getCoachAvatars(names) {
+	const safeNames = (Array.isArray(names) ? names : [])
+		.map((n) => (typeof n === "string" ? n.trim() : ""))
+		.filter(Boolean);
+	if (safeNames.length === 0) return Promise.resolve({});
+
+	const placeholders = safeNames.map(() => "?").join(",");
+	return new Promise((resolve) => {
+		db.all(
+			`SELECT name, avatar_updated_at FROM managers WHERE name IN (${placeholders}) COLLATE NOCASE AND avatar_blob IS NOT NULL`,
+			safeNames,
+			(err, rows) => {
+				if (err) {
+					console.error("[auth] getCoachAvatars error:", err.message);
+					return resolve({});
+				}
+				const map = {};
+				for (const row of rows || []) {
+					map[row.name] = row.avatar_updated_at;
+				}
+				resolve(map);
 			},
 		);
 	});
@@ -1332,6 +1466,11 @@ module.exports = {
 	setAvatarSeed,
 	updateManagerProfile,
 	deleteManager,
+	// Coach-uploaded avatar image
+	setAvatarImage,
+	clearAvatarImage,
+	getAvatarBlob,
+	getCoachAvatars,
 	// Session tokens
 	createSession,
 	verifySession,

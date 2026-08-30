@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { panelRight } from "../../motion.js";
 import { isSameDay, formatChatDay } from "../../utils/formatters.js";
-import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
+import { CoachAvatar } from "../shared/CoachAvatar.jsx";
 import { coachAvatarSeed } from "../../utils/coachAvatar.js";
 
 const QUICK_MESSAGES = ["👍", "🖕", "Vamos!", "Boa sorte", "⚽", "😂"];
@@ -24,6 +24,8 @@ const QUICK_MESSAGES = ["👍", "🖕", "Vamos!", "Boa sorte", "⚽", "😂"];
  *   chatInput: string,
  *   setChatInput: function,
  *   avatarSeed: string,
+ *   coachAvatars: object, {nome do coach: versão da imagem carregada}
+ *   backendUrl: string,
  *   chatMessagesRef: object,
  *   addToast: function,
  *   awaitingCoaches: Array,
@@ -46,6 +48,8 @@ export function RoomHub({
   chatInput,
   setChatInput,
   avatarSeed,
+  coachAvatars = {},
+  backendUrl = "",
   chatMessagesRef,
   addToast,
   awaitingCoaches,
@@ -241,7 +245,8 @@ export function RoomHub({
                   >
                     {/* Avatar mini do coach + dot de estado sobreposto */}
                     <div className="relative shrink-0">
-                      <PlayerAvatar
+                      <CoachAvatar
+                        name={coach.name}
                         seed={coachAvatarSeed(
                           coach.name,
                           me.name,
@@ -249,6 +254,8 @@ export function RoomHub({
                         )}
                         teamColor={coachTeam?.color_primary}
                         size="w-8 h-8"
+                        coachAvatars={coachAvatars}
+                        backendUrl={backendUrl}
                       />
                       <span
                         className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#111] ${status.dotColor}`}
@@ -443,13 +450,16 @@ export function RoomHub({
                         )}
                         <div className={`flex items-start gap-1.5 ${isOwn ? "justify-end" : ""}`}>
                           {!isOwn && (
-                            <PlayerAvatar
+                            <CoachAvatar
+                              name={msg.coachName}
                               seed={coachAvatarSeed(
                                 msg.coachName,
                                 me.name,
                                 avatarSeed,
                               )}
                               size="w-6 h-6"
+                              coachAvatars={coachAvatars}
+                              backendUrl={backendUrl}
                             />
                           )}
                           <div

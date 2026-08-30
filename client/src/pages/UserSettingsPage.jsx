@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
+import { useState, useEffect, useRef } from "react";
+import { CoachAvatar } from "../components/shared/CoachAvatar.jsx";
+import { processAvatarFile } from "../utils/avatarUpload.js";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
@@ -11,6 +12,8 @@ export function UserSettingsPage({
 	palmares,
 	backendUrl,
 	avatarSeed,
+	coachAvatars = {},
+	setCoachAvatars,
 	onAvatarSeedChange,
 	onBack,
 	onLeaveRoom,
@@ -27,6 +30,68 @@ export function UserSettingsPage({
 	const [birthYear, setBirthYear] = useState("");
 	const [profileSaving, setProfileSaving] = useState(false);
 	const [profileMsg, setProfileMsg] = useState(null);
+	const [avatarBusy, setAvatarBusy] = useState(false);
+	const [avatarImgMsg, setAvatarImgMsg] = useState(null);
+	const fileInputRef = useRef(null);
+
+	// ── Foto de avatar (upload/remoção, processada no cliente p/ 256px) ─────
+	const hasAvatarImage = me?.name ? coachAvatars?.[me.name] != null : false;
+
+	async function handleAvatarFilePicked(e) {
+		const file = e.target.files?.[0];
+		e.target.value = "";
+		if (!file || !me?.name) return;
+		setAvatarBusy(true);
+		setAvatarImgMsg(null);
+		try {
+			const { dataBase64, mime } = await processAvatarFile(file);
+			const res = await fetch(`${backendUrl}/auth/avatar`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					name: me.name,
+					token: me.token,
+					dataBase64,
+					mime,
+				}),
+			});
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok) throw new Error(data?.error || "Erro ao carregar a foto.");
+			setCoachAvatars((prev) => ({ ...prev, [me.name]: data.version }));
+			setAvatarImgMsg({ type: "success", text: "Foto carregada." });
+		} catch (err) {
+			setAvatarImgMsg({
+				type: "error",
+				text: err?.message || "Erro ao carregar a foto.",
+			});
+		} finally {
+			setAvatarBusy(false);
+		}
+	}
+
+	async function handleRemoveAvatar() {
+		if (!me?.name) return;
+		try {
+			const res = await fetch(`${backendUrl}/auth/avatar/delete`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ name: me.name, token: me.token }),
+			});
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok) throw new Error(data?.error || "Erro ao remover a foto.");
+			setCoachAvatars((prev) => {
+				const next = { ...prev };
+				delete next[me.name];
+				return next;
+			});
+			setAvatarImgMsg({ type: "success", text: "Foto removida." });
+		} catch (err) {
+			setAvatarImgMsg({
+				type: "error",
+				text: err?.message || "Erro ao remover a foto.",
+			});
+		}
+	}
 	const [deletingRoom, setDeletingRoom] = useState(null); // null | { roomCode, password }
 	const [deletingRoomLoading, setDeletingRoomLoading] = useState(false);
 
@@ -233,32 +298,82 @@ export function UserSettingsPage({
 			className="bg-surface-container-low border border-outline-variant/25"
 		>
 			<div className="flex flex-col sm:flex-row items-center gap-5">
+					<div className="flex flex-col items-center gap-2">
 					<div className="relative group shrink-0">
-						<PlayerAvatar seed={`${me?.name || "?"}|${avatarSeed}`} size="xl" />
-						<button
-							onClick={() => {
-								const newSeed = Math.random().toString(36).slice(2, 10);
-								onAvatarSeedChange(newSeed);
-								fetch(`${backendUrl}/auth/avatar-seed`, {
-									method: "POST",
-									headers: { "Content-Type": "application/json" },
-									body: JSON.stringify({
-										name: me.name,
-										token: me.token,
-										seed: newSeed,
-									}),
-								}).catch(() => {
-									/* ignorar */
-								});
-							}}
-							title="Gerar novo avatar"
-							className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/40 text-on-surface flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-surface-bright"
-						>
-							<span className="material-symbols-outlined text-[16px] leading-none">
-								refresh
-							</span>
-						</button>
+						<CoachAvatar
+							name={me?.name ?? "?"}
+							seed={`${me?.name || "?"}|${avatarSeed}`}
+							size="xl"
+							coachAvatars={coachAvatars}
+							backendUrl={backendUrl}
+						/>
+						<div className="absolute -bottom-1 -right-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+							<button
+								onClick={() => fileInputRef.current?.click()}
+								title={hasAvatarImage ? "Trocar foto" : "Carregar foto"}
+								disabled={avatarBusy}
+								className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/40 text-on-surface flex items-center justify-center shadow-lg hover:bg-surface-bright disabled:opacity-50"
+							>
+								<span className="material-symbols-outlined text-[16px] leading-none">
+									{avatarBusy ? "hourglass_top" : "photo_camera"}
+								</span>
+							</button>
+							{hasAvatarImage ? (
+								<button
+									onClick={handleRemoveAvatar}
+									title="Remover foto"
+									className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/40 text-error flex items-center justify-center shadow-lg hover:bg-surface-bright"
+								>
+									<span className="material-symbols-outlined text-[16px] leading-none">
+										delete
+									</span>
+								</button>
+							) : (
+								<button
+									onClick={() => {
+										const newSeed = Math.random().toString(36).slice(2, 10);
+										onAvatarSeedChange(newSeed);
+										fetch(`${backendUrl}/auth/avatar-seed`, {
+											method: "POST",
+											headers: { "Content-Type": "application/json" },
+											body: JSON.stringify({
+												name: me.name,
+												token: me.token,
+												seed: newSeed,
+											}),
+										}).catch(() => {
+											/* ignorar */
+										});
+									}}
+									title="Gerar novo avatar"
+									className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/40 text-on-surface flex items-center justify-center shadow-lg hover:bg-surface-bright"
+								>
+									<span className="material-symbols-outlined text-[16px] leading-none">
+										refresh
+									</span>
+								</button>
+							)}
+						</div>
 					</div>
+					<input
+						ref={fileInputRef}
+						type="file"
+						accept="image/png,image/jpeg,image/webp"
+						className="hidden"
+						onChange={handleAvatarFilePicked}
+					/>
+					{avatarImgMsg && (
+						<span
+							className={`text-[9px] font-black uppercase px-1.5 py-px rounded tracking-widest ${
+								avatarImgMsg.type === "success"
+									? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+									: "bg-error/20 text-error border border-error/30"
+							}`}
+						>
+							{avatarImgMsg.text}
+						</span>
+					)}
+				</div>
 					<div className="text-center sm:text-left flex-1">
 						<p className="text-sm text-on-surface-variant font-bold">
 							{teamInfo?.name || "Sem equipa"}
