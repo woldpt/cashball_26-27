@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { motion } from "framer-motion";
+import { takeover } from "../../motion.js";
 import { MatchView, IntervencaoView } from "./MatchTabs.jsx";
 import { useTactics } from "../../contexts/TacticsContext.jsx";
 import { generateLeagueFixtures } from "../../utils/fixtures.js";
@@ -173,22 +175,30 @@ export function MatchPage({
 
 	if (!fixture && !isIntervencao) {
 		return (
-			<div
+			<motion.div
 				className={`fixed inset-y-0 left-0 right-0 ${sidebarLeft} z-120 flex flex-col bg-[#0d0d14]`}
+				initial={takeover.initial}
+				animate={takeover.animate}
+				exit={takeover.exit}
+				transition={takeover.transition}
 			>
 				<div className="flex-1 flex items-center justify-center">
 					<p className="text-sm font-bold text-on-surface-variant">
 						Sem dados do jogo disponíveis
 					</p>
 				</div>
-			</div>
+			</motion.div>
 		);
 	}
 
 	return (
-		<div
+		<motion.div
 			className={`fixed inset-y-0 left-0 right-0 ${sidebarLeft} z-120 flex flex-col bg-[linear-gradient(180deg,#0d0d14_0%,#11111b_100%)]`}
-		>
+			initial={takeover.initial}
+			animate={takeover.animate}
+			exit={takeover.exit}
+			transition={takeover.transition}
+			>
 			{/* Header */}
 			<div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-outline-variant/25 bg-surface-container-high backdrop-blur-sm">
 				<button
@@ -372,6 +382,6 @@ export function MatchPage({
 					Fechar
 				</button>
 			)}
-		</div>
+		</motion.div>
 	);
 }

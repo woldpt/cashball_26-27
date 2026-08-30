@@ -1,5 +1,7 @@
 import { socket } from "../../socket.js";
 import { useState, useEffect, useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { panelRight } from "../../motion.js";
 import { isSameDay, formatChatDay } from "../../utils/formatters.js";
 
 const QUICK_MESSAGES = ["👍", "🖕", "Vamos!", "Boa sorte", "⚽", "😂"];
@@ -158,14 +160,20 @@ export function RoomHub({
       ref={roomHubRef}
       className="fixed top-14 right-4 z-[160] flex flex-col items-end gap-2"
     >
-      {roomHubOpen && (
-        <div
-          className="flex flex-col sm:flex-row rounded-xl shadow-2xl overflow-hidden border border-outline-variant/40 h-[min(480px,calc(100dvh-5rem))] sm:h-[480px]"
-          style={{
-            width: "min(580px, calc(100vw - 2rem))",
-            background: "#1e1e1e",
-          }}
-        >
+      <AnimatePresence initial={false}>
+        {roomHubOpen && (
+          <motion.div
+            key="room-hub-panel"
+            initial={panelRight.initial}
+            animate={panelRight.animate}
+            exit={panelRight.exit}
+            transition={panelRight.transition}
+            className="flex flex-col sm:flex-row rounded-xl shadow-2xl overflow-hidden border border-outline-variant/40 h-[min(480px,calc(100dvh-5rem))] sm:h-[480px]"
+            style={{
+              width: "min(580px, calc(100vw - 2rem))",
+              background: "#1e1e1e",
+            }}
+          >
           {/* ── Coluna Esquerda: Sala + Coaches ── */}
           <div
             className="w-full sm:w-[200px] shrink-0 flex flex-col border-b sm:border-b-0 sm:border-r border-outline-variant/20"
@@ -463,8 +471,9 @@ export function RoomHub({
               </button>
             </div>
           </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

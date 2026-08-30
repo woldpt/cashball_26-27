@@ -12,6 +12,8 @@ import { GameLayout } from "./GameLayout.jsx";
 import { loadSavedSession } from "./utils/localStorage.js";
 import { checkCacheVersion } from "./utils/cacheVersion.js";
 import { initPushNotifications } from "./services/pushNotifications.js";
+import { AnimatePresence, motion } from "framer-motion";
+import { fade } from "./motion.js";
 
 if (window.location.search) {
 	window.history.replaceState({}, "", window.location.pathname);
@@ -362,72 +364,106 @@ function App() {
 		);
 	}
 
-	// ── Landing page (no me at all) ────────────────────────────────────────
-	if (!me) {
-		return (
-			<LandingPage
-				authPhase={authPhase}
-				setAuthPhase={setAuthPhase}
-				name={name}
-				setName={setName}
-				password={password}
-				setPassword={setPassword}
-				confirmPassword={confirmPassword}
-				setConfirmPassword={setConfirmPassword}
-				roomCode={roomCode}
-				setRoomCode={setRoomCode}
-				authSubmitting={authSubmitting}
-				authError={authError}
-				setAuthError={setAuthError}
-				isNewAccount={isNewAccount}
-				joining={joining}
-				joinError={joinError}
-				setJoinError={setJoinError}
-				handleAuthenticate={handleAuthenticate}
-				handleJoin={handleJoin}
-				resetAuthFlow={resetAuthFlow}
-				selectJoinMode={selectJoinMode}
-				joinMode={joinMode}
-				handleLogout={handleLogout}
-				me={me}
-				token={token}
-				availableSaves={availableSaves}
-				setAvailableSaves={setAvailableSaves}
-				backendUrl={backendUrl}
-			/>
-		);
-	}
-
-	// ── Game (always mounted once me is set — catches teamAssigned early) ──
+	// ── Landing ↔ Game (crossfade num único AnimatePresence) ──────────────────
+	// O GameProvider vive dentro do ramo "game": nunca remonta entre
+	// "joining" e o jogo, pelo que o estado do contexto sobrevive.
 	return (
-		<GameProvider
-			me={me}
-			setMe={setMe}
-			setRoomCode={setRoomCode}
-			setJoining={setJoining}
-			setJoinError={setJoinError}
-			meRef={meRef}
-			roomCodeRef={roomCodeRef}
-			joinTimerRef={joinTimerRef}
-			backendUrl={backendUrl}
-		>
-			{!me?.teamId ? (
-				<div className="min-h-screen bg-surface text-on-surface flex items-center justify-center">
-					<div className="text-center space-y-3">
-						<p className="text-3xl font-headline font-black text-primary tracking-tight">
-							CashBall <span className="text-on-surface">26/27</span>
-						</p>
-						<p className="text-xs text-on-surface-variant uppercase tracking-[0.3em] font-bold animate-pulse">
-							A entrar na sala...
-						</p>
-					</div>
-				</div>
+		<AnimatePresence mode="wait">
+			{!me ? (
+				<motion.div
+					key="landing"
+					initial={fade.initial}
+					animate={fade.animate}
+					exit={fade.exit}
+					transition={fade.transition}
+				>
+					<LandingPage
+						authPhase={authPhase}
+						setAuthPhase={setAuthPhase}
+						name={name}
+						setName={setName}
+						password={password}
+						setPassword={setPassword}
+						confirmPassword={confirmPassword}
+						setConfirmPassword={setConfirmPassword}
+						roomCode={roomCode}
+						setRoomCode={setRoomCode}
+						authSubmitting={authSubmitting}
+						authError={authError}
+						setAuthError={setAuthError}
+						isNewAccount={isNewAccount}
+						joining={joining}
+						joinError={joinError}
+						setJoinError={setJoinError}
+						handleAuthenticate={handleAuthenticate}
+						handleJoin={handleJoin}
+						resetAuthFlow={resetAuthFlow}
+						selectJoinMode={selectJoinMode}
+						joinMode={joinMode}
+						handleLogout={handleLogout}
+						me={me}
+						token={token}
+						availableSaves={availableSaves}
+						setAvailableSaves={setAvailableSaves}
+						backendUrl={backendUrl}
+					/>
+				</motion.div>
 			) : (
-				<TacticsProvider>
-					<GameLayout handleLogout={handleLogout} setAuthPhase={setAuthPhase} />
-				</TacticsProvider>
+				<motion.div
+					key="game"
+					initial={fade.initial}
+					animate={fade.animate}
+					exit={fade.exit}
+					transition={fade.transition}
+				>
+					<GameProvider
+						me={me}
+						setMe={setMe}
+						setRoomCode={setRoomCode}
+						setJoining={setJoining}
+						setJoinError={setJoinError}
+						meRef={meRef}
+						roomCodeRef={roomCodeRef}
+						joinTimerRef={joinTimerRef}
+						backendUrl={backendUrl}
+					>
+						<AnimatePresence mode="wait">
+							{!me?.teamId ? (
+								<motion.div
+									key="joining"
+									className="min-h-screen bg-surface text-on-surface flex items-center justify-center"
+									initial={fade.initial}
+									animate={fade.animate}
+									exit={fade.exit}
+									transition={fade.transition}
+								>
+									<div className="text-center space-y-3">
+										<p className="text-3xl font-headline font-black text-primary tracking-tight">
+											CashBall <span className="text-on-surface">26/27</span>
+										</p>
+										<p className="text-xs text-on-surface-variant uppercase tracking-[0.3em] font-bold animate-pulse">
+											A entrar na sala...
+										</p>
+									</div>
+								</motion.div>
+							) : (
+								<motion.div
+									key="game-ui"
+									initial={fade.initial}
+									animate={fade.animate}
+									exit={fade.exit}
+									transition={fade.transition}
+								>
+									<TacticsProvider>
+										<GameLayout handleLogout={handleLogout} setAuthPhase={setAuthPhase} />
+									</TacticsProvider>
+								</motion.div>
+							)}
+						</AnimatePresence>
+					</GameProvider>
+				</motion.div>
 			)}
-		</GameProvider>
+		</AnimatePresence>
 	);
 }
 

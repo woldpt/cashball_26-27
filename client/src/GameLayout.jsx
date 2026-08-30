@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { fadeSlide, sheetUp, SPRING } from "./motion.js";
 import { socket } from "./socket.js";
 import { useGame } from "./contexts/GameContext.jsx";
 import { useTactics } from "./contexts/TacticsContext.jsx";
@@ -302,10 +303,12 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           </button>
         </div>
       )}
-      {/* Toast notifications */}
+      {/* Toast notifications — AnimatePresence para o exit; o container fica
+          sempre montado (pointer-events-none) para os toasts poderem sair. */}
       <div className="fixed top-16 right-4 z-100 flex flex-col gap-2 pointer-events-none">
-        {toasts.map((t) => (
-          <div
+        <AnimatePresence initial={false}>
+          {toasts.map((t) => (
+          <motion.div
             key={t.id}
             role="button"
             tabIndex={0}
@@ -313,7 +316,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") dismissToast(t.id);
             }}
-            className="bg-surface-container border border-outline-variant/60 text-on-surface text-sm font-bold px-5 py-3 rounded-md shadow-2xl toast-slide-in pointer-events-auto cursor-pointer select-none flex items-center gap-3"
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 16 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="bg-surface-container border border-outline-variant/60 text-on-surface text-sm font-bold px-5 py-3 rounded-md shadow-2xl pointer-events-auto cursor-pointer select-none flex items-center gap-3"
           >
             <span className="flex-1">{t.msg}</span>
             <span
@@ -326,8 +333,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             >
               close
             </span>
-          </div>
-        ))}
+          </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
       <header
         className="fixed top-0 left-0 right-0 h-14 z-160 flex items-center border-b border-outline-variant/20"
@@ -666,14 +674,23 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   isMatchInProgress
                     ? "text-on-surface-variant/25 cursor-not-allowed"
                     : activeTab === key
-                      ? "bg-primary-container/25 text-primary"
+                      ? "text-primary"
                       : "text-on-surface-variant hover:bg-surface-bright hover:text-on-surface"
                 }`}
               >
-                <span className="material-symbols-outlined text-[20px] shrink-0 leading-none">
+                {activeTab === key && (
+                  <motion.span
+                    layoutId="sidebarTabIndicator"
+                    className="absolute inset-0 rounded-lg bg-primary-container/25"
+                    transition={SPRING.indicator}
+                  />
+                )}
+                <span className="relative material-symbols-outlined text-[20px] shrink-0 leading-none">
                   {icon}
                 </span>
-                {!sidebarCollapsed && <span>{label}</span>}
+                {!sidebarCollapsed && (
+                  <span className="relative">{label}</span>
+                )}
                 {badgeCount > 0 && (
                   <span
                     className={`absolute flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none ${
@@ -779,17 +796,30 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       {/* ── Mobile bottom nav (< lg) ─────────────────────────────── */}
       {!isMatchInProgress && (
         <>
-          {/* Overlay to close flyup when tapping outside */}
-          {mobileSubMenu && (
-            <div
-              className="lg:hidden fixed inset-0 z-38"
-              onClick={() => setMobileSubMenu(null)}
-            />
-          )}
+          {/* Overlay + flyup num único AnimatePresence (fade / sheet-up) */}
+          <AnimatePresence initial={false}>
+            {mobileSubMenu && (
+              <motion.div
+                key="flyup-overlay"
+                className="lg:hidden fixed inset-0 z-38"
+                onClick={() => setMobileSubMenu(null)}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+              />
+            )}
 
-          {/* Flyup sub-menu panel */}
-          {mobileSubMenu && (
-            <div className="lg:hidden fixed bottom-16 left-0 right-0 z-39 px-3">
+            {/* Flyup sub-menu panel */}
+            {mobileSubMenu && (
+              <motion.div
+                key="flyup-panel"
+                className="lg:hidden fixed bottom-16 left-0 right-0 z-39 px-3"
+                initial={sheetUp.initial}
+                animate={sheetUp.animate}
+                exit={sheetUp.exit}
+                transition={sheetUp.transition}
+              >
               <div className="bg-surface-container-high border border-outline-variant/30 rounded-xl shadow-2xl overflow-hidden">
                 {mobileSubMenu === "gestao" && (
                   <div className="flex">
@@ -909,8 +939,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   </div>
                 )}
               </div>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Main nav bar — 5 buttons, JOGAR no centro */}
           <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex items-stretch pb-[env(safe-area-inset-bottom)]">
@@ -933,11 +964,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     <motion.span
                       layoutId="mobileTabIndicator"
                       className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-b-full"
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 35,
-                      }}
+                      transition={SPRING.indicator}
                     />
                   )}
                   <span className="material-symbols-outlined text-[22px] leading-none">
@@ -966,11 +993,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     <motion.span
                       layoutId="mobileTabIndicator"
                       className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-b-full"
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 35,
-                      }}
+                      transition={SPRING.indicator}
                     />
                   )}
                   <span className="material-symbols-outlined text-[22px] leading-none">
@@ -1051,11 +1074,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     <motion.span
                       layoutId="mobileTabIndicator"
                       className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-b-full"
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 35,
-                      }}
+                      transition={SPRING.indicator}
                     />
                   )}
                   <span className="material-symbols-outlined text-[22px] leading-none">
@@ -1088,11 +1107,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     <motion.span
                       layoutId="mobileTabIndicator"
                       className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-b-full"
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 35,
-                      }}
+                      transition={SPRING.indicator}
                     />
                   )}
                   <span className="relative">
@@ -1154,13 +1169,10 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
                     key={activeTab}
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{
-                      duration: 0.22,
-                      ease: [0.25, 0.46, 0.45, 0.94],
-                    }}
+                    initial={fadeSlide.initial}
+                    animate={fadeSlide.animate}
+                    exit={fadeSlide.exit}
+                    transition={fadeSlide.transition}
                   >
                     {activeTab === "live" && (matchResults || matchAction) && (
                       <div
@@ -1626,33 +1638,37 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         setCupPenaltyKickIdx={setCupPenaltyKickIdx}
       />
 
-      {panelMode !== null && (
-        <MatchPage
-          key={panelMode}
-          mode={panelMode}
-          onClose={handleCloseMatch}
-          fixture={panelFixture}
-          liveMinute={liveMinute}
-          teams={teams}
-          isCupMatch={isCupMatch}
-          cupMatchRoundName={cupMatchRoundName}
-          currentJornada={currentJornada}
-          isPlayingMatch={isPlayingMatch}
-          sidebarCollapsed={sidebarCollapsed}
-          onReady={handleHalftimeReady}
-          isReady={panelIsReady}
-          cupPreMatch={cupPreMatch}
-          myTeamInCup={myTeamInCup}
-          myTeamId={me?.teamId}
-          redCardedHalftimeIds={redCardedHalftimeIds}
-          injuredHalftimeIds={injuredHalftimeIds}
-          matchAction={matchAction}
-          injuryCountdown={injuryCountdown}
-          onResolveAction={handleResolveMatchAction}
-          matchResults={matchResults}
-          isCupExtraTime={isCupExtraTime}
-        />
-      )}
+      {/* MatchPage — AnimatePresence mode="wait": abrir/fechar/trocar modo
+          (prematch → halftime) faz exit+entrance suave. */}
+      <AnimatePresence mode="wait">
+        {panelMode !== null && (
+          <MatchPage
+            key={panelMode}
+            mode={panelMode}
+            onClose={handleCloseMatch}
+            fixture={panelFixture}
+            liveMinute={liveMinute}
+            teams={teams}
+            isCupMatch={isCupMatch}
+            cupMatchRoundName={cupMatchRoundName}
+            currentJornada={currentJornada}
+            isPlayingMatch={isPlayingMatch}
+            sidebarCollapsed={sidebarCollapsed}
+            onReady={handleHalftimeReady}
+            isReady={panelIsReady}
+            cupPreMatch={cupPreMatch}
+            myTeamInCup={myTeamInCup}
+            myTeamId={me?.teamId}
+            redCardedHalftimeIds={redCardedHalftimeIds}
+            injuredHalftimeIds={injuredHalftimeIds}
+            matchAction={matchAction}
+            injuryCountdown={injuryCountdown}
+            onResolveAction={handleResolveMatchAction}
+            matchResults={matchResults}
+            isCupExtraTime={isCupExtraTime}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Modal de espera multiplayer no intervalo */}
       {/* Espectadores da Taça (sem fixture nesta ronda → !myMatch) são auto-ready
