@@ -49,7 +49,17 @@ export async function processAvatarFile(file) {
   canvas.width = AVATAR_TARGET_SIZE;
   canvas.height = AVATAR_TARGET_SIZE;
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(img, sx, sy, srcSize, 0, 0, AVATAR_TARGET_SIZE, AVATAR_TARGET_SIZE);
+  ctx.drawImage(
+    img,
+    sx,
+    sy,
+    srcSize,
+    srcSize,
+    0,
+    0,
+    AVATAR_TARGET_SIZE,
+    AVATAR_TARGET_SIZE,
+  );
 
   // Mantém a família do original: PNG→PNG (transparência), resto→JPEG q0.9
   const mime = file.type === "image/png" ? "image/png" : "image/jpeg";
