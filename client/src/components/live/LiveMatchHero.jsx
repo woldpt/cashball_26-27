@@ -229,7 +229,7 @@ export function LiveMatchHero({
             >
               <TeamCrest team={hInfo} isMine={homeIsMine} coach={homeCoach} size="sm" />
               <div className="flex flex-col sm:flex-row min-w-0 gap-1 items-center">
-                <span className="text-[11px] font-black font-headline uppercase tracking-tight text-on-surface truncate">
+                <span className="text-[11px] sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate">
                   {hInfo?.name}
                 </span>
                 {homeCoach && (
@@ -269,7 +269,7 @@ export function LiveMatchHero({
               }}
             >
               <div className="flex flex-col-reverse sm:flex-row min-w-0 gap-1 items-end sm:items-center">
-                <span className="text-[11px] font-black font-headline uppercase tracking-tight text-on-surface truncate text-right">
+                <span className="text-[11px] sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate text-right">
                   {aInfo?.name}
                 </span>
                 {awayCoach && (
