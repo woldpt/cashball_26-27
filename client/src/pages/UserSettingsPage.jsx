@@ -299,42 +299,46 @@ export function UserSettingsPage({
 		>
 			<div className="flex flex-col sm:flex-row items-center gap-5">
 					<div className="flex flex-col items-center gap-2">
-					<div className="relative group shrink-0">
-						<CoachAvatar
-							name={me?.name ?? "?"}
-							seed={`${me?.name || "?"}|${avatarSeed}`}
-							size="xl"
-							coachAvatars={coachAvatars}
-							backendUrl={backendUrl}
-						/>
-						<div className="absolute -bottom-1 -right-0 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-							<button
-								onClick={() => fileInputRef.current?.click()}
-								title={hasAvatarImage ? "Trocar foto" : "Carregar foto"}
-								disabled={avatarBusy}
-								className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/40 text-on-surface flex items-center justify-center shadow-lg hover:bg-surface-bright disabled:opacity-50"
-							>
-								<span className="material-symbols-outlined text-[16px] leading-none">
-									{avatarBusy ? "hourglass_top" : "photo_camera"}
+					<CoachAvatar
+						name={me?.name ?? "?"}
+						seed={`${me?.name || "?"}|${avatarSeed}`}
+						size="xl"
+						coachAvatars={coachAvatars}
+						backendUrl={backendUrl}
+					/>
+					<div className="flex flex-wrap justify-center gap-1.5">
+						<button
+							onClick={() => fileInputRef.current?.click()}
+							disabled={avatarBusy}
+							className="flex items-center gap-1 min-w-[44px] text-[9px] font-black uppercase px-1.5 py-1 rounded bg-primary/20 text-primary border border-primary/30 tracking-widest hover:bg-primary/30 transition-colors disabled:opacity-50"
+						>
+							<span className="material-symbols-outlined text-[12px] leading-none">
+								{avatarBusy ? "hourglass_top" : "photo_camera"}
 								</span>
+							{avatarBusy
+								? "A carregar..."
+								: hasAvatarImage
+									? "Trocar foto"
+									: "Carregar foto"}
+						</button>
+						{hasAvatarImage ? (
+							<button
+								onClick={handleRemoveAvatar}
+								disabled={avatarBusy}
+								className="flex items-center gap-1 min-w-[44px] text-[9px] font-black uppercase px-1.5 py-1 rounded bg-error/20 text-error border border-error/30 tracking-widest hover:bg-error/30 transition-colors disabled:opacity-50"
+							>
+								<span className="material-symbols-outlined text-[12px] leading-none">
+									delete
+								</span>
+								Remover
 							</button>
-							{hasAvatarImage ? (
-								<button
-									onClick={handleRemoveAvatar}
-									title="Remover foto"
-									className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/40 text-error flex items-center justify-center shadow-lg hover:bg-surface-bright"
-								>
-									<span className="material-symbols-outlined text-[16px] leading-none">
-										delete
-									</span>
-								</button>
-							) : (
-								<button
-									onClick={() => {
-										const newSeed = Math.random().toString(36).slice(2, 10);
-										onAvatarSeedChange(newSeed);
-										fetch(`${backendUrl}/auth/avatar-seed`, {
-											method: "POST",
+						) : (
+							<button
+								onClick={() => {
+									const newSeed = Math.random().toString(36).slice(2, 10);
+									onAvatarSeedChange(newSeed);
+									fetch(`${backendUrl}/auth/avatar-seed`, {
+										method: "POST",
 											headers: { "Content-Type": "application/json" },
 											body: JSON.stringify({
 												name: me.name,
@@ -345,15 +349,14 @@ export function UserSettingsPage({
 											/* ignorar */
 										});
 									}}
-									title="Gerar novo avatar"
-									className="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/40 text-on-surface flex items-center justify-center shadow-lg hover:bg-surface-bright"
-								>
-									<span className="material-symbols-outlined text-[16px] leading-none">
-										refresh
-									</span>
-								</button>
-							)}
-						</div>
+								className="flex items-center gap-1 min-w-[44px] text-[9px] font-black uppercase px-1.5 py-1 rounded bg-primary/20 text-primary border border-primary/30 tracking-widest hover:bg-primary/30 transition-colors"
+							>
+								<span className="material-symbols-outlined text-[12px] leading-none">
+									refresh
+								</span>
+								Gerar avatar
+							</button>
+						)}
 					</div>
 					<input
 						ref={fileInputRef}
