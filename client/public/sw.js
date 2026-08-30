@@ -1,5 +1,8 @@
 // CashBall service worker — offline fallback para a SPA.
-const CACHE = 'cashball-static-v1';
+// Bump VERSION on any client change so activate() clears the stale cache
+// and the user picks up new hashed bundles.
+const VERSION = 'v2';
+const CACHE = `cashball-${VERSION}`;
 const CORE_URLS = ['/', '/index.html'];
 
 // Navegação (HTML): network primeiro, fallback para o cache.
@@ -14,7 +17,19 @@ self.addEventListener('fetch', (event) => {
             caches.open(CACHE).then((c) => c.put('/', copy));
             return res;
           })
-          .catch(() => caches.match('/').then((c) => c || self.caches.match('/index.html')))
+          .catch(async () => {
+            // Offline: serve cached root or index.html, else a minimal fallback.
+            const cache = await self.caches.open(CACHE);
+            return (
+              (await cache.match('/')) ||
+              (await cache.match('/index.html')) ||
+              new Response(
+                '<!doctype html><meta charset=utf-8><title>Offline</title>' +
+                  '<p style="font-family:system-ui;padding:2rem">Sem ligação. Verifica a rede.</p>',
+                { status: 503, statusText: 'Offline', headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+              )
+            );
+          })
       );
       return;
     }
