@@ -1002,7 +1002,7 @@ function SuplentesColumn({
           </p>
         )}
       </div>
-      {/* Resumo da partida — fim da lista (mobile flat) / fundo da coluna (desktop). */}
+      {/* Posse de Bola — fim da lista (mobile flat) / fundo da coluna (desktop). */}
       {summary &&
         (flat ? (
           <div className="px-3 pt-1 pb-4">
@@ -1019,7 +1019,7 @@ function SuplentesColumn({
 
 /* ── Mentalidade | Substituições column (desktop) ────────────────────────
  * The 3rd column is split into two stacked rows, each with its own header:
- *   1. "Mentalidade"    → Estilo de jogo (táticas) + Resumo da partida
+ *   1. "Mentalidade"    → Estilo de jogo (táticas) + Posse de Bola
  *   2. "Substituições"  → controlos Sai→Entra + botões + Confirmadas */
 function MentalidadeColumn({
   isHalftime,
@@ -1294,7 +1294,7 @@ function MatchSummaryBlock({ fixture, hInfo, aInfo, liveMinute, className = "" }
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-          Resumo da partida
+          Posse de Bola
         </span>
         {liveMinute != null && (
           <span className="text-[10px] font-bold tabular-nums text-on-surface-variant">
@@ -1305,19 +1305,11 @@ function MatchSummaryBlock({ fixture, hInfo, aInfo, liveMinute, className = "" }
       <div className="flex items-center justify-center gap-2">
         <span className="flex flex-1 min-w-0 items-center justify-end gap-1.5">
           <span className="truncate text-xs font-bold text-on-surface">{hInfo.name}</span>
-          <span
-            className="h-2 w-2 shrink-0 rounded-full"
-            style={{ background: hInfo.color_primary }}
-          />
         </span>
         <span className="shrink-0 text-lg font-black font-headline tabular-nums text-on-surface">
-          {fixture.finalHomeGoals ?? 0} : {fixture.finalAwayGoals ?? 0}
+          {fixture.homePossession ?? 0}%
         </span>
         <span className="flex flex-1 min-w-0 items-center gap-1.5">
-          <span
-            className="h-2 w-2 shrink-0 rounded-full"
-            style={{ background: aInfo.color_primary }}
-          />
           <span className="truncate text-xs font-bold text-on-surface">{aInfo.name}</span>
         </span>
       </div>
