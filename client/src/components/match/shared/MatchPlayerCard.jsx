@@ -4,9 +4,9 @@ import { FatigueIndicator } from "./FatigueIndicator.jsx";
 import { MatchIcon } from "./MatchIcon.jsx";
 
 /**
- * Match player card — always expanded (skill + fatigue + RES + form).
- *
+ * Match player card — always expanded (skill + fatigue).
  * Layout: [bar] [POS] Nome ★  [fatigue] [skill+glow] │ RES [cyan] │ <emoji form> [swap-icon]
+ * RES and form are hidden when `hideResForm` is set (opponent players).
  *
  * Visual signals (was previously overlapping):
  *  - Default state: position gradient background + position-colored bar.
@@ -23,6 +23,7 @@ export function MatchPlayerCard({
   title,
   swapIndicator = false,
   showFatigue = true,
+  hideResForm = false,
   showMatchStats = false,
   goals = 0,
   yellowCards = 0,
@@ -130,29 +131,29 @@ export function MatchPlayerCard({
         {showFatigue && <FatigueIndicator player={player} compact />}
       </span>
 
-      {/* ── Expanded: skill + RES + form (always rendered) ── */}
-      {/* Inner items-end: skill digit and RES value share one baseline
-       * (was: skill centered against the whole RES label+value column). */}
+      {/* ── Expanded: skill (+ RES + form when shown) ── */}
       <div className="shrink-0 flex items-center mr-2">
-        <div className="flex items-end gap-2">
-          <span
-            className={`text-lg font-black font-headline tabular-nums leading-none ${skillColor}`}
-            style={{ textShadow: "0 0 10px currentColor" }}
-          >
-            {player.skill ?? "—"}
-          </span>
-          <div className="self-stretch w-px bg-outline-variant/25" />
-          <div className="flex flex-col items-end leading-none">
-            <span className="mb-0.5 text-[8px] uppercase tracking-widest text-on-surface-variant/40 font-semibold">
-              RES
+        {!hideResForm && (
+          <div className="flex items-end gap-2">
+            <span
+              className={`text-lg font-black font-headline tabular-nums leading-none ${skillColor}`}
+              style={{ textShadow: "0 0 10px currentColor" }}
+            >
+              {player.skill ?? "—"}
             </span>
-            <span className="text-xs font-black tabular-nums text-cyan-400 leading-none">
-              {player.resistance ?? "–"}
-            </span>
+            <div className="self-stretch w-px bg-outline-variant/25" />
+            <div className="flex flex-col items-end leading-none">
+              <span className="mb-0.5 text-[8px] uppercase tracking-widest text-on-surface-variant/40 font-semibold">
+                RES
+              </span>
+              <span className="text-xs font-black tabular-nums text-cyan-400 leading-none">
+                {player.resistance ?? "–"}
+              </span>
+            </div>
+            <div className="self-stretch w-px bg-outline-variant/25" />
+            <span className={`text-sm leading-none ${formColor}`}>{formIcon}</span>
           </div>
-          <div className="self-stretch w-px bg-outline-variant/25" />
-          <span className={`text-sm leading-none ${formColor}`}>{formIcon}</span>
-        </div>
+        )}
       </div>
 
       {/* Swap affordance (halftime mode). Moved to the right end but

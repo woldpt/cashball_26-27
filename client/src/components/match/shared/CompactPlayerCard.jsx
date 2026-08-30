@@ -24,6 +24,7 @@ import { MatchIcon } from "./MatchIcon.jsx";
  * @param {Function} [props.onPick] - Callback de seleção.
  * @param {boolean} [props.swapIndicator] - Mostra ícone de swap (modo intervalo).
  * @param {boolean} [props.showFatigue] - Mostrar indicador de fadiga inline.
+ * @param {boolean} [props.hideResForm] - Ocultar RES e forma (jogadores adversários).
  * @param {boolean} [props.forcedOut] - Substitução obrigatória (destaque vermelho).
  * @param {boolean} [props.draggable] - Arrastável (DnD desktop).
  */
@@ -36,6 +37,7 @@ export function CompactPlayerCard({
   onPick,
   swapIndicator = false,
   showFatigue = true,
+  hideResForm = false,
   goals = 0,
   yellowCards = 0,
   forcedOut = false,
@@ -136,22 +138,26 @@ export function CompactPlayerCard({
         {showFatigue && <FatigueIndicator player={player} compact />}
       </span>
 
-      {/* Métricas à direita: skill · RES · forma [+ swap] */}
+      {/* Métricas à direita: skill (+ RES + forma quando visível) [+ swap] */}
       <div className="shrink-0 flex items-center gap-1.5 mr-2">
-        <span
-          className={`text-base font-black font-headline tabular-nums leading-none ${skillColor}`}
-          style={{ textShadow: "0 0 8px currentColor" }}
-          title="Skill"
-        >
-          {player.skill ?? "—"}
-        </span>
-        <div className="self-stretch w-px bg-outline-variant/25" />
-        <span className="text-[9px] font-bold tabular-nums text-cyan-400 leading-none" title="Resistência">
-          {player.resistance ?? "–"}
-        </span>
-        <span className={`text-sm leading-none ${formColor}`} title={`Forma: ${form}`}>
-          {formIcon}
-        </span>
+        {!hideResForm && (
+          <>
+            <span
+              className={`text-base font-black font-headline tabular-nums leading-none ${skillColor}`}
+              style={{ textShadow: "0 0 8px currentColor" }}
+              title="Skill"
+            >
+              {player.skill ?? "—"}
+            </span>
+            <div className="self-stretch w-px bg-outline-variant/25" />
+            <span className="text-[9px] font-bold tabular-nums text-cyan-400 leading-none" title="Resistência">
+              {player.resistance ?? "–"}
+            </span>
+            <span className={`text-sm leading-none ${formColor}`} title={`Forma: ${form}`}>
+              {formIcon}
+            </span>
+          </>
+        )}
         {swapIndicator && !disabled && (
           <span
             className={`shrink-0 flex items-center transition-colors ${

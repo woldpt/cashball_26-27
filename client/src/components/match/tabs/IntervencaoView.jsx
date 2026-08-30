@@ -1411,6 +1411,7 @@ function AdversarioPanel({
                   selectable={false}
                   disabled={false}
                   showFatigue={false}
+                  hideResForm
                 />
               ))
             )}
