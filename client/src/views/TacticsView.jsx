@@ -345,7 +345,7 @@ export function TacticsView() {
     setPrepPhase,
   } = useTactics();
 
-  const { lockedCoaches, liveMinute, isCupExtraTime } = useGame();
+  const { lockedCoaches, liveMinute, isCupExtraTime, mobileSubMenu } = useGame();
 
   const getBestForFormation = (formation) => {
     const styles = ["OFENSIVO", "DEFENSIVO", "EQUILIBRADO"];
@@ -1252,6 +1252,7 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
         if (showBriefing) return null;
         if (myReady) return null;
         if (activeTab !== "tactic") return null;
+        if (mobileSubMenu) return null; // não sobrepor o fly-up do menu mobile
         if (!fabHalftime && !fabCupSpec && !isLineupComplete) return null;
         const fabIcon = fabHalftime
           ? "skip_next"
