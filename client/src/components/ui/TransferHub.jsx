@@ -149,7 +149,7 @@ function MarketCard({
               </div>
 
               <div className="mt-3 sm:mt-4 min-w-0">
-                <p className="font-headline font-black uppercase text-base leading-tight text-on-surface truncate">
+                <p className="font-headline font-black uppercase text-base leading-tight text-on-surface line-clamp-2 sm:truncate">
                   {player.name}
                   {!!player.is_star &&
                     (player.position === "MED" || player.position === "ATA") && (
