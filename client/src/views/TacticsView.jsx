@@ -549,7 +549,7 @@ export function TacticsView() {
                   Limpar
                 </button>
               </div>
-              <div className="px-3 py-2 flex flex-wrap gap-1.5">
+              <div className="p-2 grid grid-cols-4 gap-1.5">
                 {TACTIC_FORMATIONS.map(({ value, label }) => {
                   const isAvailable =
                     formationAvailabilityByValue[value] === true;
@@ -561,7 +561,7 @@ export function TacticsView() {
                       key={value}
                       disabled={!isAvailable}
                       onClick={() => isAvailable && handleAutoPick(value)}
-                      className={`px-3 py-1.5 text-[11px] font-black rounded-xl transition-all active:scale-95 ${
+                      className={`w-full px-1 py-1.5 text-[11px] font-black rounded-xl transition-all active:scale-95 ${
                         !isAvailable
                           ? "bg-[#161616] text-gray-700 cursor-not-allowed"
                           : isActive
@@ -579,7 +579,7 @@ export function TacticsView() {
                     >
                       <span className="flex flex-col items-center gap-0.5">
                         {label}
-                        <FamiliarityStars stars={best?.stars ?? 0} />
+                        <FamiliarityStars stars={best?.stars ?? 0} fill />
                       </span>
                     </button>
                   );
