@@ -143,9 +143,10 @@ export function TeamSquadModal({
     >
       {selectedTeam && (
         <div className="flex flex-col" style={{ maxHeight: "90vh" }}>
-          {/* Header + Tabs */}
+          {/* Header + Tabs (shrink-0: ver nota em PlayerHistoryModal — o flex-shrink
+              do container max-height encolhe o header abaixo do conteúdo) */}
           <div
-            className="px-5 py-4 border-b border-outline-variant/15 flex flex-col gap-3"
+            className="shrink-0 px-5 py-4 border-b border-outline-variant/15 flex flex-col gap-3"
             style={{ background: selectedTeam.color_primary || "#18181b" }}
           >
             <div className="flex items-start justify-between gap-4">

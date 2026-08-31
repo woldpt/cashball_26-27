@@ -141,8 +141,9 @@ export function CoachMarketModal({ report, onClose }) {
 					exit={{ scale: 0.94, y: 20 }}
 					transition={{ type: "spring", stiffness: 320, damping: 28 }}
 				>
-					{/* Header */}
-					<div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-outline-variant/20">
+					{/* Header (shrink-0: ver nota em PlayerHistoryModal — o flex-shrink
+					    do container max-height encolhe o header abaixo do conteúdo) */}
+					<div className="shrink-0 flex items-center gap-3 px-5 pt-5 pb-4 border-b border-outline-variant/20">
 						<span
 							className="material-symbols-outlined text-2xl"
 							style={{ color: "#fbbf24" }}

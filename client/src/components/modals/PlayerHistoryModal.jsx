@@ -205,8 +205,13 @@ export function PlayerHistoryModal({
       dismissable
     >
       <div className="flex flex-col" style={{ maxHeight: "90vh" }}>
-        {/* ── IDENTITY HEADER ── */}
-        <div className="relative bg-surface-container overflow-hidden">
+        {/* ── IDENTITY HEADER ──
+            shrink-0: o container pai tem altura indefinida (max-height: 90vh),
+            pelo que o flex-basis 0% do body (flex-1) é tratado como auto e o
+            flex-shrink distribui o excesso pelo header — sem shrink-0 o header
+            encolhe abaixo do conteúdo e o overflow-hidden corta as linhas
+            envoltas (ex.: 🛡️ resistência / 👍 forma). */}
+        <div className="relative shrink-0 bg-surface-container overflow-hidden">
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
