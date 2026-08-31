@@ -1,6 +1,7 @@
 ﻿import { useTactics } from "../contexts/TacticsContext.jsx";
 import { useGame } from "../contexts/GameContext.jsx";
 import { PlayerLink } from "../components/shared/PlayerLink.jsx";
+import { MatchIcon } from "../components/match/shared/MatchIcon.jsx";
 import { MatchBriefing } from "../components/live/MatchBriefing.jsx";
 import { WaitingCoachesModal } from "../components/modals/WaitingCoachesModal.jsx";
 import { socket } from "../socket.js";
@@ -485,42 +486,53 @@ export function TacticsView() {
                   })()}
                 </div>
               )}
-              <div className="flex-1 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-                <div className="px-3 py-2">
-                  {(() => {
-                    const STYLES = ["Defensive", "Balanced", "Offensive"];
-                    const LABELS = {
-                      Defensive: "DEF",
-                      Balanced: "NEU",
-                      Offensive: "ATK",
-                    };
-                    const idx = STYLES.indexOf(tactic.style ?? "Balanced");
-                    const safeIdx = idx < 0 ? 1 : idx;
-                    return (
-                      <div className="relative flex bg-[#161616] rounded-full p-0.5">
-                        <div
-                          className="absolute inset-y-0.5 rounded-full transition-all duration-200 pointer-events-none"
-                          style={{
-                            left: `calc(${safeIdx * 33.333}% + 2px)`,
-                            width: "calc(33.333% - 4px)",
-                            background:
-                              "linear-gradient(135deg, rgba(74,222,128,0.22), rgba(74,222,128,0.08))",
-                            border: "1px solid rgba(74,222,128,0.35)",
-                          }}
-                        />
-                        {STYLES.map((val) => (
+              <div className="flex-1 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden flex flex-col">
+                <div className="shrink-0 px-3 py-2 border-b border-[#1a1a1a]">
+                  <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+                    Mentalidade
+                  </span>
+                </div>
+                {(() => {
+                  const STYLES = ["Defensive", "Balanced", "Offensive"];
+                  const LABELS = {
+                    Defensive: "DEF",
+                    Balanced: "NEU",
+                    Offensive: "ATC",
+                  };
+                  const ICONS = {
+                    Defensive: "phase-start",
+                    Balanced: "form-flat",
+                    Offensive: "form-up",
+                  };
+                  const ACTIVE_STYLES = {
+                    Defensive: "bg-blue-500/15 border-blue-500/40 text-blue-400",
+                    Balanced:
+                      "bg-[#4ade80]/15 border-[#4ade80]/35 text-[#4ade80]",
+                    Offensive: "bg-rose-500/15 border-rose-500/40 text-rose-400",
+                  };
+                  return (
+                    <div className="flex flex-1 items-stretch gap-1 p-1.5">
+                      {STYLES.map((val) => {
+                        const isActive = tactic.style === val;
+                        return (
                           <button
                             key={val}
                             onClick={() => updateTactic({ style: val })}
-                            className={`relative z-10 flex-1 py-1.5 text-[9px] font-black uppercase tracking-wide rounded-full transition-colors ${tactic.style === val ? "text-[#4ade80]" : "text-gray-500 hover:text-gray-300"}`}
+                            className={`flex flex-1 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border px-0.5 py-1.5 transition-all active:scale-95 ${isActive ? ACTIVE_STYLES[val] : "border-transparent bg-[#161616] text-gray-500 hover:text-gray-300"}`}
                           >
-                            {LABELS[val]}
+                            <MatchIcon
+                              name={ICONS[val]}
+                              className={`h-3.5 w-3.5 shrink-0 ${isActive ? "" : "opacity-70"}`}
+                            />
+                            <span className="text-[9px] font-black uppercase tracking-wide">
+                              {LABELS[val]}
+                            </span>
                           </button>
-                        ))}
-                      </div>
-                    );
-                  })()}
-                </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
