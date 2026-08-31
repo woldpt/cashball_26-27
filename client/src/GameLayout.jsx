@@ -48,6 +48,7 @@ import { TacticsView } from "./views/TacticsView.jsx";
 import { TransferHub } from "./components/ui/TransferHub.jsx";
 import { DIVISION_NAMES } from "./constants/index.js";
 import { isSameTeamId } from "./utils/teamHelpers.js";
+import { useMobileLandscape } from "./hooks/useIsMobile.js";
 import { OfflineBanner } from "./components/shared/OfflineBanner.jsx";
 
 /**
@@ -316,6 +317,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // ── Tactic-specific from TacticsContext ─────────────────────────────────
   const { tactic, annotatedSquad } = useTactics();
 
+  // Telemóvel em landscape (abaixo de lg): header compacto + rail vertical à esquerda.
+  const isMobileLandscape = useMobileLandscape();
+
   return (
     <div className="min-h-dvh bg-surface text-on-surface font-body tracking-tight">
       <OfflineBanner />
@@ -400,17 +404,17 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         </AnimatePresence>
       </div>
       <header
-        className="fixed top-0 left-0 right-0 h-14 z-160 flex items-center border-b border-outline-variant/20"
+        className={`fixed top-0 left-0 right-0 z-160 flex items-center border-b border-outline-variant/20 ${isMobileLandscape ? "h-10" : "h-14"}`}
         style={{
           background:
             teamInfo?.color_primary || "var(--color-surface-container-low)",
         }}
       >
-        <div className="relative flex items-center justify-between w-full px-4 lg:px-6">
+        <div className={`relative flex items-center justify-between w-full ${isMobileLandscape ? "px-3" : "px-4 lg:px-6"}`}>
           {/* Left: brand + session info */}
           <div className="flex items-center gap-3">
             <h1
-              className="text-base font-headline font-black tracking-tighter uppercase"
+              className={`${isMobileLandscape ? "text-sm" : "text-base"} font-headline font-black tracking-tighter uppercase`}
               style={{
                 color: teamInfo?.color_secondary || "var(--color-on-surface)",
               }}
@@ -432,8 +436,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           {isMatchInProgress && (
             <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none">
               {isPlayingMatch ? (
-                <span className="flex flex-col items-center gap-0.5 px-3.5 py-1 rounded-full bg-surface border border-outline-variant/50">
-                  <span className="text-lg font-headline font-black tabular-nums leading-none text-on-surface">
+                <span className={`flex items-center rounded-full bg-surface border border-outline-variant/50 ${isMobileLandscape ? "gap-1.5 px-3 py-0.5" : "flex-col gap-0.5 px-3.5 py-1"}`}>
+                  <span className={`${isMobileLandscape ? "text-sm" : "text-lg"} font-headline font-black tabular-nums leading-none text-on-surface`}>
                     {liveMinute < 1 ? "⚽" : `${liveMinute}'`}
                   </span>
                   <span className="text-[7px] font-bold uppercase tracking-widest leading-none text-on-surface opacity-70">
@@ -882,7 +886,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             {mobileSubMenu && (
               <motion.div
                 key="flyup-panel"
-                className="lg:hidden fixed bottom-16 left-0 right-0 z-39 px-3"
+                className={
+                  isMobileLandscape
+                    ? "lg:hidden fixed bottom-4 left-[72px] w-[min(480px,calc(100vw-88px))] z-39"
+                    : "lg:hidden fixed bottom-16 left-0 right-0 z-39 px-3"
+                }
                 initial={sheetUp.initial}
                 animate={sheetUp.animate}
                 exit={sheetUp.exit}
@@ -1032,7 +1040,13 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           </AnimatePresence>
 
           {/* Main nav bar — 5 buttons, JOGAR no centro */}
-          <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex items-stretch pb-[env(safe-area-inset-bottom)]">
+          <nav
+            className={
+              isMobileLandscape
+                ? "lg:hidden fixed left-0 top-10 bottom-0 w-16 z-40 flex flex-col bg-surface-container-low/95 backdrop-blur-sm border-r border-outline-variant/30 py-2 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
+                : "lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex items-stretch pb-[env(safe-area-inset-bottom)]"
+            }
+          >
             {/* Clube */}
             {(() => {
               const isActive = activeTab === "club";
@@ -1051,7 +1065,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   {isActive && (
                     <motion.span
                       layoutId="mobileTabIndicator"
-                      className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-b-full"
+                      className={`absolute bg-primary ${isMobileLandscape ? "left-0 top-1/2 -translate-y-1/2 h-8 w-0.5 rounded-r-full" : "top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full"}`}
                       transition={SPRING.indicator}
                     />
                   )}
@@ -1080,7 +1094,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   {(isChildActive || isOpen) && (
                     <motion.span
                       layoutId="mobileTabIndicator"
-                      className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-b-full"
+                      className={`absolute bg-primary ${isMobileLandscape ? "left-0 top-1/2 -translate-y-1/2 h-8 w-0.5 rounded-r-full" : "top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full"}`}
                       transition={SPRING.indicator}
                     />
                   )}
@@ -1096,7 +1110,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             {(() => {
               const isActive = activeTab === "tactic";
               return (
-                <div className="flex-1 flex items-end justify-center pb-1 relative">
+                <div className={isMobileLandscape ? "flex-1 flex items-center justify-center relative" : "flex-1 flex items-end justify-center pb-1 relative"}>
                   {/* glow halo */}
                   {!isActive && !myReady && (
                     <span
@@ -1120,7 +1134,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         ? "bg-primary text-on-primary shadow-primary/40"
                         : "bg-primary text-on-primary shadow-primary/30"
                     }`}
-                    style={{ marginBottom: "10px" }}
+                    style={isMobileLandscape ? undefined : { marginBottom: "10px" }}
                   >
                     {/* shimmer sweep (idle) */}
                     {!isActive && !myReady && (
@@ -1161,7 +1175,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   {(isChildActive || isOpen) && (
                     <motion.span
                       layoutId="mobileTabIndicator"
-                      className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-b-full"
+                      className={`absolute bg-primary ${isMobileLandscape ? "left-0 top-1/2 -translate-y-1/2 h-8 w-0.5 rounded-r-full" : "top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full"}`}
                       transition={SPRING.indicator}
                     />
                   )}
@@ -1194,7 +1208,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   {(isChildActive || isOpen) && (
                     <motion.span
                       layoutId="mobileTabIndicator"
-                      className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-b-full"
+                      className={`absolute bg-primary ${isMobileLandscape ? "left-0 top-1/2 -translate-y-1/2 h-8 w-0.5 rounded-r-full" : "top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-full"}`}
                       transition={SPRING.indicator}
                     />
                   )}
@@ -1256,7 +1270,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
       {panelMode === null && (
         <main
-          className={`pt-14 pb-16 lg:pb-12 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-14" : "lg:ml-64"}`}
+          className={
+            isMobileLandscape
+              ? "transition-all duration-200 pt-10 pb-3 ml-16"
+              : `pt-14 pb-16 lg:pb-12 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-14" : "lg:ml-64"}`
+          }
         >
           <div className="p-4 lg:p-6">
             {roomBlocked && (
