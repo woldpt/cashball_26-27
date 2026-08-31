@@ -25,3 +25,27 @@ export function useIsMobile(threshold = 768) {
     () => false
   );
 }
+
+/**
+ * useMobileLandscape — devolve `true` quando o ecrã está em orientação
+ * horizontal E abaixo do breakpoint `lg` (1024px) do Tailwind.
+ * Cobre a banda "telemóvel landscape" — tablets/desktop em landscape
+ * continuam a usar a sidebar desktop (`lg:flex`) sem efeito.
+ *
+ * @returns {boolean} `true` se orientation for landscape e width < 1024px.
+ */
+export function useMobileLandscape() {
+  const query = "(orientation: landscape) and (max-width: 1023px)";
+  let mql = null;
+  const getMql = () => (mql ??= window.matchMedia(query));
+
+  return useSyncExternalStore(
+    (onChange) => {
+      const q = getMql();
+      q.addEventListener("change", onChange);
+      return () => q.removeEventListener("change", onChange);
+    },
+    () => getMql().matches,
+    () => false
+  );
+}
