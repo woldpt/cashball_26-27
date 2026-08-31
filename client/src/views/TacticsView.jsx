@@ -446,7 +446,7 @@ export function TacticsView() {
             {/* Proximo jogo — mobile: moral + mentality side by side */}
             <div className="flex gap-2 lg:hidden">
               {nextMatchSummary && (
-                <div className="flex-1 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+                <div className="flex-1 min-w-0 flex flex-col bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
                   {(() => {
                     const morale = teamInfo?.morale ?? 50;
                     const fillColor =
@@ -464,9 +464,9 @@ export function TacticsView() {
                     const label =
                       morale > 75 ? "Alta" : morale >= 50 ? "Média" : "Baixa";
                     return (
-                      <div className="px-3 py-2">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[9px] uppercase tracking-widest text-gray-600 font-bold">
+                      <>
+                        <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-[#1a1a1a]">
+                          <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
                             Moral
                           </span>
                           <span
@@ -475,13 +475,20 @@ export function TacticsView() {
                             {label}
                           </span>
                         </div>
-                        <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
-                            style={{ width: `${morale}%` }}
-                          />
+                        <div className="flex flex-1 flex-col items-center justify-center gap-2.5 px-4 pb-3">
+                          <span
+                            className={`text-[38px] leading-none font-black tabular-nums ${textColor}`}
+                          >
+                            {morale}
+                          </span>
+                          <div className="h-2 w-full bg-[#1a1a1a] rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
+                              style={{ width: `${morale}%` }}
+                            />
+                          </div>
                         </div>
-                      </div>
+                      </>
                     );
                   })()}
                 </div>

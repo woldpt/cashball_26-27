@@ -89,9 +89,9 @@ setTimeout(() => {
   if (card && row) {
     const morale = document.createElement("div");
     morale.className =
-      "flex-1 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden";
+      "flex-1 min-w-0 flex flex-col bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden";
     morale.innerHTML =
-      '<div class="px-3 py-2"><div class="flex items-center justify-between mb-1"><span class="text-[9px] uppercase tracking-widest text-gray-600 font-bold">Moral</span><span class="text-[9px] font-black uppercase text-red-400">Baixa</span></div><div class="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden"><div class="h-full w-[32%] bg-red-500 rounded-full"></div></div></div>';
+      '<div class="shrink-0 flex items-center justify-between px-3 py-2 border-b border-[#1a1a1a]"><span class="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Moral</span><span class="text-[9px] font-black uppercase text-red-400">Baixa</span></div><div class="flex flex-1 flex-col items-center justify-center gap-2.5 px-4 pb-3"><span class="text-[38px] leading-none font-black tabular-nums text-red-400">32</span><div class="h-2 w-full bg-[#1a1a1a] rounded-full overflow-hidden"><div class="h-full w-[32%] bg-red-500 rounded-full"></div></div></div>';
     row.insertBefore(morale, card);
   }
 
