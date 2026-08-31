@@ -222,13 +222,13 @@ export function LiveMatchHero({
           <div className="flex items-stretch">
             {/* Home side */}
             <div
-              className="flex-1 flex items-center gap-2 sm:gap-3 px-2.5 sm:px-5 py-3 min-w-0"
+              className="flex-1 flex flex-col sm:flex-row items-center gap-3 px-2.5 sm:px-5 py-3 min-w-0"
               style={{
                 background: `linear-gradient(100deg, ${hInfo?.color_primary || "#333"}2e 0%, transparent 90%)`,
               }}
             >
               <TeamCrest team={hInfo} isMine={homeIsMine} coach={homeCoach} size="sm" />
-              <div className="flex flex-col sm:flex-row min-w-0 gap-1 items-center">
+              <div className="flex flex-col min-w-0 w-full sm:w-auto">
                 <span className="text-[11px] sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate">
                   {hInfo?.name}
                 </span>
@@ -263,17 +263,17 @@ export function LiveMatchHero({
 
             {/* Away side */}
             <div
-              className="flex-1 flex items-center justify-end gap-2 sm:gap-3 px-2.5 sm:px-5 py-3 min-w-0"
+              className="flex-1 flex flex-col-reverse sm:flex-row items-center justify-center sm:justify-end gap-3 px-2.5 sm:px-5 py-3 min-w-0"
               style={{
                 background: `linear-gradient(260deg, ${aInfo?.color_primary || "#333"}2e 0%, transparent 90%)`,
               }}
             >
-              <div className="flex flex-col-reverse sm:flex-row min-w-0 gap-1 items-end sm:items-center">
+              <div className="flex flex-col min-w-0 w-full sm:w-auto">
                 <span className="text-[11px] sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate text-right">
                   {aInfo?.name}
                 </span>
                 {awayCoach && (
-                  <span className="hidden sm:block text-[9px] font-bold text-amber-400 truncate">
+                  <span className="hidden sm:block text-[9px] font-bold text-amber-400 truncate text-right">
                     {awayCoach.name}
                   </span>
                 )}
