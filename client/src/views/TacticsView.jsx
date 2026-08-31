@@ -399,7 +399,7 @@ export function TacticsView() {
   ).length;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 pb-20 lg:pb-0">
       {disconnected && (
         <div className="px-4 py-2 text-red-400 text-[10px] font-bold text-center bg-red-500/10 border border-red-500/20 rounded-2xl">
           ⚠️ Desligado — a reconectar...
