@@ -232,6 +232,7 @@ app.render(
         me={ME}
         players={PLAYERS}
         onRequestRefresh={() => {}}
+        onOpenTeamSquad={() => {}}
       />
     </div>
   </div>,

@@ -1475,6 +1475,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         bracketData={cupBracketData}
                         me={me}
                         players={players}
+                        onOpenTeamSquad={handleOpenTeamSquad}
                       />
                     )}
 

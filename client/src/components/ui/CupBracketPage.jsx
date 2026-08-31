@@ -62,8 +62,30 @@ function connOpacity(match) {
   return match?.played ? 0.65 : 0.25;
 }
 
+// ── Team name as link to the team page (internal helper, not a component) ──
+function TeamName({ team, onOpenTeam, fallback = "?", className = "", style }) {
+  if (!team?.id || !onOpenTeam) {
+    return (
+      <span className={className} style={style}>
+        {fallback}
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenTeam(team)}
+      title={`Ver plantel — ${team.name}`}
+      className={`${className} hover:underline`}
+      style={style}
+    >
+      {team.name}
+    </button>
+  );
+}
+
 // ── Compact bracket team row (internal helper, not a component) ──────────────
-function BracketTeamRow({ team, isWinner, played, score }) {
+function BracketTeamRow({ team, isWinner, played, score, onOpenTeam }) {
   return (
     <div
       className={`flex items-center gap-1.5 px-2 transition-opacity ${
@@ -80,12 +102,13 @@ function BracketTeamRow({ team, isWinner, played, score }) {
       >
         {team ? team.name?.[0] || "?" : ""}
       </div>
-      <span
-        className="flex-1 truncate text-[10px] font-bold leading-none text-on-surface-variant"
+      <TeamName
+        team={team}
+        onOpenTeam={onOpenTeam}
+        fallback={played ? "?" : "···"}
+        className="flex-1 min-w-0 truncate text-left text-[10px] font-bold leading-none text-on-surface-variant"
         style={{ color: readableColor(team?.color_primary) }}
-      >
-        {team?.name || (played ? "?" : "···")}
-      </span>
+      />
       {played && (
         <span
           className={`text-[11px] font-black tabular-nums shrink-0 ${isWinner ? "text-on-surface" : "text-on-surface-variant/40"}`}
@@ -98,7 +121,7 @@ function BracketTeamRow({ team, isWinner, played, score }) {
 }
 
 // ── Compact bracket card ─────────────────────────────────────────────────────
-function BracketCard({ match, myTeamId }) {
+function BracketCard({ match, myTeamId, onOpenTeam }) {
   const {
     homeTeam,
     awayTeam,
@@ -134,6 +157,7 @@ function BracketCard({ match, myTeamId }) {
         isWinner={homeWins}
         played={played}
         score={finalHome}
+        onOpenTeam={onOpenTeam}
       />
       <div className="h-px bg-outline-variant/15 mx-2" />
       <BracketTeamRow
@@ -142,6 +166,7 @@ function BracketCard({ match, myTeamId }) {
         isWinner={awayWins}
         played={played}
         score={finalAway}
+        onOpenTeam={onOpenTeam}
       />
       {hasPens && (
         <div className="absolute top-0.5 right-1.5 text-[7px] text-amber-400/60 font-black uppercase tracking-wide">
@@ -153,7 +178,7 @@ function BracketCard({ match, myTeamId }) {
 }
 
 // ── Desktop bracket tree (rounds 3-5) ────────────────────────────────────────
-function BracketTree({ rounds, myTeamId }) {
+function BracketTree({ rounds, myTeamId, onOpenTeam }) {
   const qf = useMemo(
     () => rounds.find((r) => r.round === 3)?.matches || [],
     [rounds],
@@ -264,7 +289,7 @@ function BracketTree({ rounds, myTeamId }) {
             className="absolute"
             style={{ left: QF_X, top: 20 + QF_TOPS[i] }}
           >
-            <BracketCard match={m} myTeamId={myTeamId} />
+            <BracketCard match={m} myTeamId={myTeamId} onOpenTeam={onOpenTeam} />
           </div>
         ))}
 
@@ -275,14 +300,14 @@ function BracketTree({ rounds, myTeamId }) {
             className="absolute"
             style={{ left: SF_X, top: 20 + SF_TOPS[i] }}
           >
-            <BracketCard match={m} myTeamId={myTeamId} />
+            <BracketCard match={m} myTeamId={myTeamId} onOpenTeam={onOpenTeam} />
           </div>
         ))}
 
         {/* Final card */}
         {fn.length > 0 && (
           <div className="absolute" style={{ left: FN_X, top: 20 + FN_TOP }}>
-            <BracketCard match={fn[0]} myTeamId={myTeamId} />
+            <BracketCard match={fn[0]} myTeamId={myTeamId} onOpenTeam={onOpenTeam} />
           </div>
         )}
 
@@ -317,12 +342,12 @@ function BracketTree({ rounds, myTeamId }) {
                 {winner.name?.[0]}
               </div>
               <div>
-                <div
-                  className="text-[10px] font-black"
+                <TeamName
+                  team={winner}
+                  onOpenTeam={onOpenTeam}
+                  className="text-left text-[10px] font-black"
                   style={{ color: readableColor(winner.color_primary) }}
-                >
-                  {winner.name}
-                </div>
+                />
                 <div className="text-[8px] text-amber-400/70 font-black uppercase tracking-wider">
                   Campeão
                 </div>
@@ -355,7 +380,7 @@ function BracketTree({ rounds, myTeamId }) {
 }
 
 // ── Full match row (list view) ────────────────────────────────────────────────
-function MatchRow({ match, myTeamId, players }) {
+function MatchRow({ match, myTeamId, players, onOpenTeam }) {
   if (!match) return null;
   const {
     homeTeam,
@@ -399,12 +424,12 @@ function MatchRow({ match, myTeamId, players }) {
         className={`flex-1 flex items-center justify-end gap-2 min-w-0 ${played && !homeWins ? "opacity-40" : ""}`}
       >
         <div className="text-right min-w-0">
-          <span
-            className="block font-black text-xs truncate text-on-surface"
+          <TeamName
+            team={homeTeam}
+            onOpenTeam={onOpenTeam}
+            className="block w-full text-right font-black text-xs truncate text-on-surface"
             style={{ color: readableColor(homeTeam?.color_primary) }}
-          >
-            {homeTeam?.name || "?"}
-          </span>
+          />
           {homeCoach && (
             <span className="block text-[9px] text-on-surface-variant/60 font-bold truncate">
               {homeCoach}
@@ -477,12 +502,12 @@ function MatchRow({ match, myTeamId, players }) {
           {awayTeam?.name?.[0] || "?"}
         </div>
         <div className="min-w-0">
-          <span
-            className="block font-black text-xs truncate text-on-surface"
+          <TeamName
+            team={awayTeam}
+            onOpenTeam={onOpenTeam}
+            className="block w-full text-left font-black text-xs truncate text-on-surface"
             style={{ color: readableColor(awayTeam?.color_primary) }}
-          >
-            {awayTeam?.name || "?"}
-          </span>
+          />
           {awayCoach && (
             <span className="block text-[9px] text-on-surface-variant/60 font-bold truncate">
               {awayCoach}
@@ -495,7 +520,13 @@ function MatchRow({ match, myTeamId, players }) {
 }
 
 // ── Main page component ───────────────────────────────────────────────────────
-export function CupBracketPage({ bracketData, me, players, onRequestRefresh }) {
+export function CupBracketPage({
+  bracketData,
+  me,
+  players,
+  onRequestRefresh,
+  onOpenTeamSquad,
+}) {
   const rounds = useMemo(() => bracketData?.rounds || [], [bracketData]);
 
   // Most advanced round with match data
@@ -607,12 +638,12 @@ export function CupBracketPage({ bracketData, me, players, onRequestRefresh }) {
                 >
                   {champion.name?.[0]}
                 </div>
-                <span
-                  className="text-[9px] font-black uppercase tracking-wider"
+                <TeamName
+                  team={champion}
+                  onOpenTeam={onOpenTeamSquad}
+                  className="text-left text-[9px] font-black uppercase tracking-wider"
                   style={{ color: readableColor(champion.color_primary) }}
-                >
-                  {champion.name}
-                </span>
+                />
                 <span className="text-[8px] text-amber-400/60 font-bold">
                   Campeão
                 </span>
@@ -677,7 +708,11 @@ export function CupBracketPage({ bracketData, me, players, onRequestRefresh }) {
       {currentRound >= 3 && (
         <div className="hidden lg:block">
           <div className="bg-surface-container rounded-md border border-outline-variant/15 px-6 pt-3 pb-6">
-            <BracketTree rounds={rounds} myTeamId={me?.teamId} />
+            <BracketTree
+              rounds={rounds}
+              myTeamId={me?.teamId}
+              onOpenTeam={onOpenTeamSquad}
+            />
           </div>
         </div>
       )}
@@ -703,6 +738,7 @@ export function CupBracketPage({ bracketData, me, players, onRequestRefresh }) {
             match={match}
             myTeamId={me?.teamId}
             players={players}
+            onOpenTeam={onOpenTeamSquad}
           />
         ))}
 
