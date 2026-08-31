@@ -1,5 +1,6 @@
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { fadeSlide, sheetUp, SPRING } from "./motion.js";
+import { DUR, EASE, SPRING, fadeSlide, sheetUp } from "./motion.js";
 import { socket } from "./socket.js";
 import { useGame } from "./contexts/GameContext.jsx";
 import { useTactics } from "./contexts/TacticsContext.jsx";
@@ -235,6 +236,65 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // Soma de negócios activos (leilões a decorrer + mercado) para o badge do
   // botão "Transferências" na navegação mobile (onde Mercado e Leilões se unem).
   const transferBadgeCount = liveAuctionCount + marketListedCount;
+
+  // ── Voo do badge (mobile): ao abrir o fly-up, a soma vira badges individuais ──
+  const transfIconRef = useRef(null); // âncora de origem no nav (wrapper do ícone TRANSF)
+  const subIconRefs = useRef({}); // { market, leiloes } → wrappers dos ícones no fly-up
+  const [transferFlyers, setTransferFlyers] = useState([]);
+  const transferFlyTimerRef = useRef(0);
+  const prevTransferMenuOpenRef = useRef(false);
+
+  useLayoutEffect(() => {
+    const open = mobileSubMenu === "transferencias";
+    if (open === prevTransferMenuOpenRef.current) return;
+    prevTransferMenuOpenRef.current = open;
+
+    // Centro aproximado do badge vermelho ancorado a um ícone (-top-1 -right-2).
+    const iconBadgeCenter = (el) => {
+      const r = el?.getBoundingClientRect();
+      return r ? { x: r.right - 3, y: r.top + 4 } : null;
+    };
+
+    const targets = [
+      ["market", marketListedCount],
+      ["leiloes", liveAuctionCount],
+    ];
+    const items = [];
+    if (open) {
+      // O fly-up monta com y positivo (sheetUp) — o destino final fica acima.
+      const from = iconBadgeCenter(transfIconRef.current);
+      const liftY = sheetUp.initial.y || 0;
+      for (const [key, count] of targets) {
+        if (count <= 0 || !from) continue;
+        const dest = iconBadgeCenter(subIconRefs.current[key]);
+        if (!dest) continue;
+        items.push({ id: key, from, to: { x: dest.x, y: dest.y - liftY }, count });
+      }
+    } else {
+      // Regresso: dos botões do fly-up para o TRANSF (ainda montados no exit).
+      const to = iconBadgeCenter(transfIconRef.current);
+      for (const [key, count] of targets) {
+        if (count <= 0 || !to) continue;
+        const from = iconBadgeCenter(subIconRefs.current[key]);
+        if (!from) continue;
+        items.push({ id: key, from, to, count });
+      }
+    }
+    setTransferFlyers(items);
+    window.clearTimeout(transferFlyTimerRef.current);
+    transferFlyTimerRef.current = window.setTimeout(
+      () => setTransferFlyers([]),
+      420,
+    );
+  }, [mobileSubMenu, marketListedCount, liveAuctionCount]);
+
+  useEffect(() => () => window.clearTimeout(transferFlyTimerRef.current), []);
+
+  const transferMenuOpen = mobileSubMenu === "transferencias";
+  // A soma some do TRANSF enquanto o fly-up está aberto (ou durante o voo de regresso).
+  const transfSumHidden = transferMenuOpen || transferFlyers.length > 0;
+  // Os badges individuais só repousam nos botões fora das janelas de voo.
+  const subBadgesResting = transferMenuOpen && transferFlyers.length === 0;
   const totalCoaches =
     players.length +
     awaitingCoaches.filter((n) => !players.some((p) => p.name === n)).length;
@@ -875,10 +935,10 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 {mobileSubMenu === "transferencias" && (
                   <div className="flex">
                     {[
-                      { key: "market", label: "Mercado", icon: "swap_horiz" },
-                      { key: "leiloes", label: "Leilões", icon: "gavel" },
-                      { key: "scout", label: "Scout", icon: "search" },
-                    ].map(({ key, label, icon }) => (
+                      { key: "market", label: "Mercado", icon: "swap_horiz", badge: marketListedCount },
+                      { key: "leiloes", label: "Leilões", icon: "gavel", badge: liveAuctionCount },
+                      { key: "scout", label: "Scout", icon: "search", badge: 0 },
+                    ].map(({ key, label, icon, badge }) => (
                       <button
                         key={key}
                         onClick={() => {
@@ -892,8 +952,28 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                             : "text-on-surface-variant hover:bg-surface-bright"
                         }`}
                       >
-                        <span className="material-symbols-outlined text-[24px] leading-none">
-                          {icon}
+                        <span
+                          ref={(el) => {
+                            if (el) subIconRefs.current[key] = el;
+                            else delete subIconRefs.current[key];
+                          }}
+                          className="relative inline-block"
+                        >
+                          <span className="material-symbols-outlined text-[24px] leading-none">
+                            {icon}
+                          </span>
+                          {badge > 0 && (
+                            <span
+                              className={`absolute -top-1.5 -right-2 flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none min-w-[18px] h-[18px] px-1 text-[10px] shadow-md transition-all duration-150 ${
+                                subBadgesResting
+                                  ? "opacity-100 scale-100"
+                                  : "opacity-0 scale-50"
+                              }`}
+                              title={`${badge} negócio(s)`}
+                            >
+                              {badge > 99 ? "99+" : badge}
+                            </span>
+                          )}
                         </span>
                         <span className="text-[10px] font-black uppercase tracking-wider">
                           {label}
@@ -1118,17 +1198,23 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       transition={SPRING.indicator}
                     />
                   )}
-                  <span className="relative">
+                  <span ref={transfIconRef} className="relative inline-block">
                     <span className="material-symbols-outlined text-[22px] leading-none">
                       swap_horiz
                     </span>
                     {transferBadgeCount > 0 && (
-                      <span
+                      <motion.span
+                        initial={false}
+                        animate={{
+                          scale: transfSumHidden ? 0 : 1,
+                          opacity: transfSumHidden ? 0 : 1,
+                        }}
+                        transition={{ duration: DUR.fast, ease: "easeOut" }}
                         className="absolute -top-1 -right-2 flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none min-w-[18px] h-[18px] px-1 text-[10px]"
                         title={`${transferBadgeCount} negócio(s) activo(s)`}
                       >
                         {transferBadgeCount > 99 ? "99+" : transferBadgeCount}
-                      </span>
+                      </motion.span>
                     )}
                   </span>
                   <span>Transfer.</span>
@@ -1136,6 +1222,23 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               );
             })()}
           </nav>
+
+          {/* Badges em voo: TRANSF ↔ fly-up (só durante a transição) */}
+          <div className="lg:hidden pointer-events-none fixed inset-0 z-[45]">
+            {transferFlyers.map((f) => (
+              <motion.span
+                key={`${transferMenuOpen ? "open" : "back"}-${f.id}`}
+                className="absolute left-0 top-0"
+                initial={{ x: f.from.x, y: f.from.y, scale: 0.85 }}
+                animate={{ x: f.to.x, y: f.to.y, scale: 1 }}
+                transition={{ duration: DUR.slow, ease: EASE }}
+              >
+                <span className="flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-red-500 text-white font-black leading-none min-w-[18px] h-[18px] px-1 text-[10px] shadow-lg shadow-black/40">
+                  {f.count > 99 ? "99+" : f.count}
+                </span>
+              </motion.span>
+            ))}
+          </div>
         </>
       )}
 
