@@ -43,9 +43,6 @@ export function StadiumTab({
         )
       : null;
 
-  const buildsCount = Math.round(
-    (financeData?.totalStadiumExpenses || 0) / EXPANSION_COST,
-  );
   const atMaxCapacity = stadiumCapacity >= MAX_CAPACITY;
 
   const stadiumImg =
@@ -89,7 +86,7 @@ export function StadiumTab({
       </div>
 
       {/* ── ROW: STATS ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <SummaryWidget
           label="Capacidade Actual"
           value={stadiumCapacity.toLocaleString("pt-PT")}
@@ -117,14 +114,6 @@ export function StadiumTab({
           compactMobile
           valueClass="text-lg sm:text-2xl"
           accentClass="border-amber-400"
-        />
-        <SummaryWidget
-          label="Obras Época"
-          value={buildsCount}
-          sub={formatCurrency(financeData?.totalStadiumExpenses || 0)}
-          compactMobile
-          valueClass="text-lg sm:text-2xl"
-          accentClass="border-outline-variant"
         />
       </div>
 
