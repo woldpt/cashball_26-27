@@ -1,6 +1,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@700;900&display=swap");
 @import "tailwindcss";
 
+/* Viewports baixos (telemóvel landscape): compactação vertical de modais/cards.
+   Ex.: `short:p-4` aplica apenas quando height <= 560px. */
+@custom-variant short (@media (max-height: 560px));
+
 @theme {
   /* ── Stitch: Pitch Master 98 — color tokens ─────────────────── */
   --color-surface: #131313;
