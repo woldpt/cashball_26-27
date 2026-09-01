@@ -27,6 +27,7 @@ const {
 	doesGameExist,
 	generateUniqueRoomCode,
 	closeAllDatabases,
+	flushAllGameStates,
 	activeGames,
 } = require("./gameManager") as typeof import("./gameManager");
 const {
@@ -1195,10 +1196,12 @@ server.on("error", (err) => {
 
 process.on("uncaughtException", (err) => {
 	console.error("[server] Uncaught exception:", err.message, err.stack);
+	fatalShutdown();
 });
 
 process.on("unhandledRejection", (reason) => {
 	console.error("[server] Unhandled promise rejection:", reason);
+	fatalShutdown();
 });
 
 let shuttingDown = false;
@@ -1213,12 +1216,36 @@ function gracefulShutdown(signal: string) {
 	}
 	io.close();
 	server.close(() => {
+		// Persist in-flight state (current week/phase/fixtures of every room)
+		// before closing connections — db.close() waits for the queued
+		// statements, so this survives restarts/redeploys cleanly.
+		try {
+			flushAllGameStates();
+		} catch (err) {
+			console.error("[server] Shutdown state flush failed:", err);
+		}
 		closeAllDatabases().finally(() => process.exit(0));
 	});
 	setTimeout(() => {
 		console.error("[server] Forced shutdown after timeout");
 		process.exit(1);
 	}, 10000).unref();
+}
+let fatalShutdownStarted = false;
+function fatalShutdown() {
+	// Fail fast: persist in-flight state, close the DBs cleanly and exit(1)
+	// so the container manager restarts us. The applied_weeks recovery
+	// markers make that restart replay-safe — safer than continuing with a
+	// process whose state is now unknown.
+	if (shuttingDown || fatalShutdownStarted) return;
+	fatalShutdownStarted = true;
+	setTimeout(() => process.exit(1), 8000).unref();
+	try {
+		flushAllGameStates();
+	} catch (err) {
+		console.error("[server] Fatal state flush failed:", err);
+	}
+	closeAllDatabases().finally(() => process.exit(1));
 }
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));

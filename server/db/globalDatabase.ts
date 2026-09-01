@@ -32,6 +32,9 @@ export function openGlobalDb(): any {
 
   const dbPath = path.join(dbDir, "global_chat.db");
   globalDb = new sqlite.Database(dbPath);
+  // WAL + busy_timeout: consistência a crash e acesso concorrente seguro.
+  globalDb.run("PRAGMA journal_mode = WAL");
+  globalDb.run("PRAGMA busy_timeout = 5000");
   globalDb.run(`CREATE TABLE IF NOT EXISTS global_chat_messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     coach_name TEXT NOT NULL,

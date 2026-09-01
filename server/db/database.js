@@ -8,4 +8,10 @@ const db = new sqlite3.Database(dbPath);
 db.run("PRAGMA foreign_keys = ON", (err) => {
   if (err) console.error("[db] Failed to enable foreign keys:", err.message);
 });
+// busy_timeout: evita "database is locked" quando múltiplos processos/reads
+// acedem à base em simultâneo (ex.: audits durante o runtime).
+db.run("PRAGMA busy_timeout = 5000");
+// Nota: a base permanece em journal_mode padrão (DELETE) de propósito —
+// é copiada via fs.copyFileSync ao criar salas; WAL criaria ficheiros -wal
+// separados que ficariam por copiar.
 module.exports = db;

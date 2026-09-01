@@ -307,6 +307,11 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
   const db = new sqlite.Database(dbPath);
   // Aumentar cache de páginas SQLite para 8 MB — reduz I/O repetido em DB frias.
   db.run("PRAGMA cache_size=-8000");
+  // WAL: melhor consistência a crash + leituras concorrentes sem bloquear
+  // (audits/repair podem ler enquanto o server escreve). busy_timeout evita
+  // "database is locked" quando outra conexão segura o arquivo.
+  db.run("PRAGMA journal_mode = WAL");
+  db.run("PRAGMA busy_timeout = 5000");
   db.run("PRAGMA foreign_keys = ON", (err: Error | null) => {
     if (err)
       console.error(
@@ -1213,6 +1218,22 @@ function emitPresence(game: ActiveGame, io: any): void {
   io.to(game.roomCode).emit("awaitingCoaches", getOfflineCoaches(game));
 }
 
+// Persiste o estado in-flight de todas as salas ativas (jogo, fase,
+// fixtures, minute, etc.) na base de dados. Usado no graceful shutdown e em
+// erros fatais para que um restart do processo nunca perca progresso.
+function flushAllGameStates(): void {
+  for (const game of Object.values(activeGames)) {
+    try {
+      saveGameState(game);
+    } catch (err: any) {
+      console.error(
+        `[gameManager] flush ${game.roomCode} failed:`,
+        err?.message,
+      );
+    }
+  }
+}
+
 function closeAllDatabases(): Promise<void> {
   const closes = Object.values(activeGames).map(
     (game) =>
@@ -1245,4 +1266,5 @@ module.exports = {
   doesGameExist,
   generateUniqueRoomCode,
   closeAllDatabases,
+  flushAllGameStates,
 };
