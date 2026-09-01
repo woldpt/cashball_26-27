@@ -176,7 +176,7 @@ export function RoomHub({
             animate={panelRight.animate}
             exit={panelRight.exit}
             transition={panelRight.transition}
-            className="flex flex-col sm:flex-row rounded-xl shadow-2xl overflow-hidden border border-outline-variant/40 h-[min(480px,calc(100dvh-5rem))] sm:h-[480px]"
+            className="flex flex-col sm:flex-row rounded-xl shadow-2xl overflow-hidden border border-outline-variant/40 h-[min(480px,calc(100dvh-5rem))]"
             style={{
               width: "min(580px, calc(100vw - 2rem))",
               background: "#1e1e1e",
@@ -188,7 +188,7 @@ export function RoomHub({
             style={{ background: "#111" }}
           >
             {/* Room info */}
-            <div className="px-3 py-2.5 flex flex-col gap-1 border-b border-outline-variant/20">
+            <div className="px-3 py-2.5 flex flex-col gap-1 shrink-0 border-b border-outline-variant/20">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-widest font-black text-on-surface-variant truncate">
                   {me.roomName || me.roomCode}
@@ -320,7 +320,7 @@ export function RoomHub({
             </div>
 
             {/* Close button */}
-            <div className="px-3 py-2 border-t border-outline-variant/20">
+            <div className="px-3 py-2 shrink-0 border-t border-outline-variant/20">
               <button
                 onClick={() => setRoomHubOpen(false)}
                 className="w-full py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"

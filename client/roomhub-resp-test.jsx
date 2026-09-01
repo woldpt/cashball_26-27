@@ -112,7 +112,34 @@ function measure() {
     .sort((a, b) => b.excess - a.excess)
     .slice(0, 10);
 
-  return { pageOverflowPx: pageOverflow, clippedRows, clippingElements };
+  // Vertical fit: the panel is fixed at top-14, so it must fit below the
+  // viewport bottom (landscape phones) — otherwise the chat input / close
+  // button are unreachable (no page scroll to recover them).
+  const input = document.querySelector("input[type=text]");
+  const panel = input ? input.closest("div.fixed") : null;
+  let vertical = null;
+  if (panel) {
+    const pr = panel.getBoundingClientRect();
+    const ir = input.getBoundingClientRect();
+    const close = [...document.querySelectorAll("button")].find(
+      (b) => b.textContent.trim().endsWith("Fechar"),
+    );
+    const cr = close ? close.getBoundingClientRect() : null;
+    vertical = {
+      panelBottom: Math.round(pr.bottom),
+      viewportH: window.innerHeight,
+      cutOffPx: Math.max(0, Math.round(pr.bottom - window.innerHeight)),
+      inputReachable: ir.bottom <= window.innerHeight + 1,
+      closeReachable: !cr || cr.bottom <= window.innerHeight + 1,
+    };
+  }
+
+  return {
+    pageOverflowPx: pageOverflow,
+    clippedRows,
+    clippingElements,
+    vertical,
+  };
 }
 
 let roomTab = null;
@@ -143,11 +170,26 @@ setTimeout(() => {
     clippingElements: finalTab.clippingElements,
     roomTab, // overflow state before tab switch (Sala)
     globalTabClicked,
+    verticalCutOffPx: Math.max(
+      0,
+      (roomTab && roomTab.vertical?.cutOffPx) || 0,
+      finalTab.vertical?.cutOffPx || 0,
+    ),
+    inputReachable:
+      (roomTab && roomTab.vertical?.inputReachable !== false) &&
+      finalTab.vertical?.inputReachable !== false,
+    closeReachable:
+      (roomTab && roomTab.vertical?.closeReachable !== false) &&
+      finalTab.vertical?.closeReachable !== false,
     verdict:
       roomTab &&
       roomTab.pageOverflowPx <= 0 &&
       finalTab.pageOverflowPx <= 0 &&
-      finalTab.clippedRows.length === 0
+      finalTab.clippedRows.length === 0 &&
+      (roomTab.vertical?.cutOffPx ?? 0) === 0 &&
+      (finalTab.vertical?.cutOffPx ?? 0) === 0 &&
+      finalTab.vertical?.inputReachable !== false &&
+      finalTab.vertical?.closeReachable !== false
         ? "PASS"
         : "FAIL",
   };
