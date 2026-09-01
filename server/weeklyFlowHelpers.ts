@@ -1872,5 +1872,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
   return {
     checkAllReady,
     runMatchSegment,
+    // Superfície de teste (crashRecoveryRegression.mts): acesso direto às ações
+    // críticas de idempotência — aplicação das finanças semanais e recovery de
+    // slot já finalizado. Não usadas pelo fluxo normal (index.ts).
+    applyWeeklyFinancesOnce,
+    recoverFinalizedSlot,
   };
 }

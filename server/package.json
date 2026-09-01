@@ -25,7 +25,8 @@
     "test:coach-dismissal-league": "tsx scripts/coachDismissalLeagueRegression.mts",
     "test:substitutions": "tsx scripts/substitutionsRegression.mts",
     "test:morale": "tsx scripts/moraleRegression.mts",
-    "test:penalty-ordering": "tsx scripts/penaltyOrderingRegression.mts"
+    "test:penalty-ordering": "tsx scripts/penaltyOrderingRegression.mts",
+    "test:crash-recovery": "tsx scripts/crashRecoveryRegression.mts"
   },
   "keywords": [],
   "author": "",

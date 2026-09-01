@@ -82,6 +82,8 @@ Valida se os eventos de comunicação respeitam os contratos:
 - DBs de sala e global correm em **WAL** + `busy_timeout=5000` (a base.db mantém journal DELETE para poder ser copiada via `fs.copyFileSync`).
 - SIGTERM/SIGINT e erros fatais fazem flush do estado in-flight (`flushAllGameStates`) antes de fechar as DBs; o Docker reinicia limpo (`restart: unless-stopped`) e a recuperação acima torna o restart replay-safe.
 
+**Teste E2E de crash-restart:** `cd server && npm run test:crash-recovery` — clona uma sala real para `game_CRASHT.db` (descartável, limpa ao final) e valida os 4 cenários: cobrança única do `weekly_finance` com reaplicação pós-restart, e `recoverFinalizedSlot`/`checkAllReady` avançando sem re-simular/re-cobrar em slots de liga e Taça já finalizados. Opção: `CRASHTEST_ROOM=XXXX` para escolher a sala de origem.
+
 **Backups** (proteção contra perda de disco — complementam o WAL):
 - Automático em produção: serviço `backups` do docker-compose (diário por omissão; intervalos/retenção via `BACKUP_INTERVAL_HOURS`/`RETENTION_COUNT`; snapshots em `./backups/YYYYMMDD_HHMMSS/`).
 - Manual: `cd server && node scripts/backupDatabases.js` (Online Backup API — seguro com o server ativo).
