@@ -21,6 +21,24 @@ services:
       retries: 5
       start_period: 10s
 
+  backups:
+    # Snapshots periódicos de todas as bases (Online Backup API — seguro com o
+    # server ativo). Intervalo via BACKUP_INTERVAL_HOURS; retenção via
+    # RETENTION_COUNT. Snapshots em ./backups/YYYYMMDD_HHMMSS/.
+    build: ./server
+    restart: unless-stopped
+    environment:
+      BACKUP_DIR: /app/backups
+      RETENTION_COUNT: "7"
+      BACKUP_INTERVAL_HOURS: "24"
+    volumes:
+      - ./server/db:/app/db
+      - ./backups:/app/backups
+    networks:
+      - cashball-net
+    command: >-
+      sh -c 'while true; do node scripts/backupDatabases.js || echo "[backups] cycle failed — retrying next interval"; sleep $${BACKUP_INTERVAL_HOURS:-24}h; done'
+
   frontend:
     build: ./client
     restart: unless-stopped

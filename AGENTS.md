@@ -72,6 +72,23 @@ Valida se os eventos de comunicação respeitam os contratos:
 
 ---
 
+## 🧯 Crash Recovery & Backups
+
+**Replay após crash/restart é seguro graças a `applied_weeks`** (em cada `game_*.db`):
+- `weekly_finance` — rendimentos/salários/empréstimo aplicados no máximo 1× por `(season, slot)`.
+- `finalized` — slot da liga/Taça já liquidado: o restart **avança o calendário** em vez de re-simular/re-cobrar (`recoverFinalizedSlot`). Uma quebra numa janela estreita entre COMMITs pode deixar só as linhas do jogo/evolução pós-jogo dessa semana por persistir — `audit:gamestate` surfaceia isso.
+
+**Outras garantias:**
+- DBs de sala e global correm em **WAL** + `busy_timeout=5000` (a base.db mantém journal DELETE para poder ser copiada via `fs.copyFileSync`).
+- SIGTERM/SIGINT e erros fatais fazem flush do estado in-flight (`flushAllGameStates`) antes de fechar as DBs; o Docker reinicia limpo (`restart: unless-stopped`) e a recuperação acima torna o restart replay-safe.
+
+**Backups** (proteção contra perda de disco — complementam o WAL):
+- Automático em produção: serviço `backups` do docker-compose (diário por omissão; intervalos/retenção via `BACKUP_INTERVAL_HOURS`/`RETENTION_COUNT`; snapshots em `./backups/YYYYMMDD_HHMMSS/`).
+- Manual: `cd server && node scripts/backupDatabases.js` (Online Backup API — seguro com o server ativo).
+- Alternativa no host sem Docker: cron + `server/scripts/backupDatabases.sh` (requer CLI sqlite3).
+
+---
+
 ## 🛠️ COMPLEX LOGIC PATTERNS
 
 **Siga estes padrões para garantir a integridade do sistema:**
