@@ -410,6 +410,19 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
 
   activeGames[roomCode] = game;
 
+  // Idempotência de eventos semanais: marca semanas já finalizadas/faturadas
+  // para recuperar de crash/restart sem re-aplicar finanças ou classificações.
+  db.run(
+    "CREATE TABLE IF NOT EXISTS applied_weeks (\n      season INTEGER NOT NULL,\n      slot INTEGER NOT NULL,\n      kind TEXT NOT NULL,\n      PRIMARY KEY (season, slot, kind)\n    )",
+    (awErr: Error | null) => {
+      if (awErr)
+        console.error(
+          `[gameManager] Failed to create applied_weeks table for ${roomCode}:`,
+          awErr.message,
+        );
+    },
+  );
+
   db.run(
     "CREATE TABLE IF NOT EXISTS game_state (key TEXT PRIMARY KEY, value TEXT)",
     () => {

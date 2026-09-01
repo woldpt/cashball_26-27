@@ -985,6 +985,33 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           );
         }
 
+        // ── BILHETERIA — moved inside the transaction so ticket revenue commits
+        // atomically with the standings updates (previously ran after COMMIT,
+        // outside any transaction, which left a crash window). Same per-week value:
+        // attendance × 15 for the home team of each fixture.
+        for (const match of fixtures) {
+          const revenue = (match.attendance || 0) * 15;
+          if (revenue > 0) {
+            game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [
+              revenue,
+              match.homeTeamId,
+            ]);
+            logClubNews(game, "ticket_revenue", "Bilheteiras", match.homeTeamId, {
+              amount: revenue,
+              description: `Receita de bilheteiras — J${completedMatchweek}`,
+            });
+          }
+        }
+
+        // Recovery marker for crash recovery: committed atomically with standings +
+        // ticket revenue. If a process dies after this COMMIT but before the
+        // calendar advances, restart sees the row and advances state instead of
+        // replaying the week (see recoverFinalizedSlot in checkAllReady's lobby).
+        game.db.run(
+          "INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
+          [game.season, completedCalendarIndex],
+        );
+
         game.db.run("COMMIT", async (err: any) => {
           if (err) {
             console.error(`[${game.roomCode}] Standings update error:`, err);
@@ -992,21 +1019,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             game.gamePhase = "lobby";
             resolveOuter();
             return;
-          }
-
-          // Attendance revenue
-          for (const match of fixtures) {
-            const revenue = (match.attendance || 0) * 15;
-            if (revenue > 0) {
-              game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [
-                revenue,
-                match.homeTeamId,
-              ]);
-              logClubNews(game, "ticket_revenue", "Bilheteiras", match.homeTeamId, {
-                amount: revenue,
-                description: `Receita de bilheteiras — J${completedMatchweek}`,
-              });
-            }
           }
 
           // Emit match results
@@ -1290,6 +1302,408 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
   // Cup and league use the IDENTICAL flow: lobby → match_first_half → halftime
   // → match_second_half → finalize → lobby. No special cup phases.
 
+  // Weekly finance (base income by division, wages, loan interest + installment)
+  // applied at most once per calendar slot. A crash mid-week resets the phase to
+  // lobby and startWeekOnce re-runs; the applied_weeks marker guarantees the money
+  // is never charged twice for the same (season, slot).
+  async function applyWeeklyFinancesOnce(game: ActiveGame): Promise<boolean> {
+    const slot = game.calendarIndex;
+    return new Promise<boolean>((resolve) => {
+      game.db.get(
+        "SELECT 1 AS done FROM applied_weeks WHERE season = ? AND slot = ? AND kind = 'weekly_finance'",
+        [game.season, slot],
+        (chkErr: any, row: any) => {
+          if (chkErr) {
+            console.error(
+              `[${game.roomCode}] ⚠ applied_weeks('weekly_finance') read error — applying without marker protection:`,
+              chkErr.message,
+            );
+          } else if (row) {
+            // Already charged in a previous attempt for this slot.
+            return resolve(true);
+          }
+
+          const WEEKLY_BASE_INCOME: Record<number, number> = {
+            1: 80000,
+            2: 50000,
+            3: 35000,
+            4: 25000,
+            5: 12000,
+          };
+
+          game.db.run("BEGIN TRANSACTION", (begErr: any) => {
+            if (begErr) {
+              console.error(
+                `[${game.roomCode}] ❌ Weekly finance BEGIN failed:`,
+                begErr,
+              );
+              return resolve(false);
+            }
+
+            // Weekly base income by division (keeps lower-division teams viable)
+            for (const [div, income] of Object.entries(WEEKLY_BASE_INCOME)) {
+              game.db.run(
+                "UPDATE teams SET budget = budget + ? WHERE division = ?",
+                [income, Number(div)],
+              );
+            }
+
+            // We read the pre-update loan amounts first. Each statement below is queued
+            // only after the previous step's callback ran, so ordering is guaranteed:
+            // this SELECT fills preLoan before the UPDATE executes, and the journal
+            // (and marker+COMMIT) run strictly after it.
+            const preLoan: Record<number, number> = {};
+            game.db.all(
+              `SELECT id, loan_amount FROM teams`,
+              (preErr: any, preRows: any[]) => {
+                if (!preErr)
+                  for (const r of preRows || []) preLoan[r.id] = r.loan_amount || 0;
+
+                // Deduct weekly wages + loan interest + principal installment (same for
+                // cup and league weeks). The installment abates the loan principal so the
+                // visible debt shrinks week over week.
+                game.db.run(
+                  `UPDATE teams SET
+                    loan_amount = MAX(0, loan_amount - ?),
+                    budget = budget
+                      - CAST((loan_amount * 0.015) AS INTEGER)
+                      - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
+                      - MIN(?, loan_amount)`,
+                  [LOAN_WEEKLY_INSTALLMENT, LOAN_WEEKLY_INSTALLMENT],
+                  (expErr: any) => {
+                    if (expErr) {
+                      console.error(
+                        `[${game.roomCode}] ❌ Weekly expense DB error:`,
+                        expErr,
+                      );
+                      game.db.run("ROLLBACK", () => resolve(false));
+                      return;
+                    }
+
+                    // Financial journal: log the weekly base income, wages, loan interest
+                    // and principal installment that were just applied, so the balance
+                    // history chart can reconstruct the season's budget evolution.
+                    game.db.all(
+                      `SELECT t.id, t.division,
+                              COALESCE((SELECT SUM(wage) FROM players WHERE players.team_id = t.id), 0) AS wage_sum
+                       FROM teams t`,
+                      (logErr: any, teams: any[]) => {
+                        if (logErr) {
+                          console.error(
+                            `[${game.roomCode}] ❌ Weekly finance journal SELECT failed:`,
+                            logErr,
+                            );
+                          game.db.run("ROLLBACK", () => resolve(false));
+                          return;
+                        }
+                        for (const team of teams || []) {
+                          const oldLoan = preLoan[team.id] || 0;
+                          const income = WEEKLY_BASE_INCOME[team.division] || 0;
+                          const wages = team.wage_sum || 0;
+                          const interest = Math.floor(oldLoan * 0.015);
+                          const installment = Math.min(LOAN_WEEKLY_INSTALLMENT, oldLoan);
+                          if (income > 0)
+                            logClubNews(game, "weekly_income", "Rendimento Semanal", team.id, {
+                              amount: income,
+                              description: "Rendimento base semanal",
+                            });
+                          if (wages > 0)
+                            logClubNews(game, "wages", "Folha Salarial", team.id, {
+                              amount: wages,
+                              description: "Salários pagos na semana",
+                            });
+                          if (interest > 0)
+                            logClubNews(game, "loan_interest", "Juros Bancários", team.id, {
+                              amount: interest,
+                              description: "Juros do empréstimo (1,5%)",
+                            });
+                          if (installment > 0)
+                            logClubNews(game, "loan_principal", "Amortização do Empréstimo", team.id, {
+                              amount: installment,
+                              description: "Pagamento de capital do empréstimo",
+                            });
+                        }
+
+                        // Marker + COMMIT: reached only after the full financial chain above
+                        // queued successfully. Money moves and the journal commit atomically;
+                        // a crash at any point before this leaves no marker, so replay is safe.
+                        game.db.run(
+                          "INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'weekly_finance')",
+                          [game.season, slot],
+                          () => {
+                            game.db.run("COMMIT", (commitErr: any) => {
+                              if (commitErr) {
+                                console.error(
+                                  `[${game.roomCode}] ❌ Weekly finance COMMIT failed:`,
+                                  commitErr,
+                                );
+                                game.db.run("ROLLBACK", () => resolve(false));
+                                return;
+                              }
+                              resolve(true);
+                            });
+                          },
+                        );
+                          },
+                        );
+                      },
+                    );
+                  },
+                );
+              });
+            },
+          );
+        });
+      }
+
+  // Lobby → start of the current week (league or cup): clear auction queue timers,
+  // pause auctions, set phase, apply weekly finance (idempotent), prepare
+  // fixtures and run the first half. Extracted from checkAllReady so it can run
+  // behind the applied_weeks recovery marker — a slot already finalized in a
+  // previous process is never replayed.
+  async function startWeekOnce(game: ActiveGame, entry: CalendarEntry): Promise<void> {
+    if (game.pendingAuctionQueueTimers?.length) {
+      for (const tid of game.pendingAuctionQueueTimers) clearTimeout(tid);
+      game.pendingAuctionQueueTimers = [];
+    }
+    pauseAllRunningAuctions(game, io);
+
+    segmentRunning[game.roomCode] = true;
+    game.gamePhase = "match_first_half";
+    game.currentEvent = entry;
+    game.phaseToken = makePhaseToken(game);
+    game._lastCompletedSegment = null;
+
+    console.log(
+      `[${game.roomCode}] 🏟 Starting match | type=${entry.type} | calendarIndex=${game.calendarIndex} | ${entry.type === "cup" ? `round=${(entry as any).round}` : `mw=${(entry as any).matchweek}`}`,
+    );
+
+    const financed = await applyWeeklyFinancesOnce(game);
+    if (!financed) {
+      console.error(
+        `[${game.roomCode}] ❌ Weekly finance not applied — reverting to lobby`,
+      );
+      game.gamePhase = "lobby";
+      game.currentEvent = entry;
+      segmentRunning[game.roomCode] = false;
+      return;
+    }
+
+    try {
+      if (entry.type === "cup") {
+        // Cup fixtures were prepared when we entered the lobby (see finalizeLeagueEvent).
+        // Fallback: prepare now if missing (e.g. crash recovery).
+        if (!game.currentFixtures || game.currentFixtures.length === 0) {
+          console.log(
+            `[${game.roomCode}] 🏆 Cup fixtures missing, generating draw for round ${(entry as any).round}`,
+          );
+          await startCupRound(game, (entry as any).round);
+        } else {
+          console.log(
+            `[${game.roomCode}] 🏆 Cup fixtures already prepared: ${game.currentFixtures.length} matches`,
+          );
+        }
+      } else {
+        // League: reutilizar fixtures já preparadas na entrada do lobby
+        // (mesma fonte que o briefing) ou gerar com seeds determinísticos.
+        const mw = (entry as any).matchweek;
+        const prepped = game.currentFixtures ?? [];
+        const hasLeagueFixtures =
+          prepped.length > 0 && !(prepped[0] as any)?.round;
+        if (hasLeagueFixtures) {
+          console.log(
+            `[${game.roomCode}] ⚽ Reusing lobby-prepared league fixtures for mw=${mw}: ${prepped.length} matches`,
+          );
+        } else {
+          await prepareLeagueFixtures(game, mw);
+        }
+      }
+    } catch (fixtureErr) {
+      console.error(
+        `[${game.roomCode}] ❌ Fixture generation failed — reverting to lobby:`,
+        fixtureErr,
+      );
+      game.gamePhase = "lobby";
+      game.currentEvent = entry;
+      game.currentFixtures = [];
+      segmentRunning[game.roomCode] = false;
+      saveGameState(game);
+      // Reset ready states so coaches can retry
+      Object.values(game.playersByName).forEach((p) => {
+        p.ready = false;
+      });
+      emitPresence(game);
+      io.to(game.roomCode).emit("systemMessage", {
+        text: "⚠ Erro ao gerar jogos. Tenta novamente.",
+        broadcast: true,
+      });
+      return;
+    }
+
+    saveGameState(game);
+
+    try {
+      await runMatchSegment(game, 1, 45);
+    } catch (segmentErr) {
+      console.error(
+        `[${game.roomCode}] ❌ First half segment failed:`,
+        segmentErr,
+      );
+    } finally {
+      segmentRunning[game.roomCode] = false;
+    }
+
+    // Captura lineups da primeira parte a partir dos squads que realmente jogaram.
+    // Liga fixtures não têm homeLineup/awayLineup definidos antes deste ponto.
+    // Necessário para applyTrainingBonuses ver todos os jogadores participantes.
+    const lineupSnapshot2 = (
+      fixture: any,
+      squad: any[],
+      tactic: any,
+      fullRoster: any[] | undefined,
+      teamSide: "home" | "away",
+    ) => {
+      const starterIds = new Set(squad.map((p: any) => p.id));
+      const starters = squad.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        position: p.position,
+        is_star: p.is_star || 0,
+        skill: p.skill,
+        ...getMatchFatigueSnapshot(fixture, teamSide, p.id),
+        is_starter: true,
+      }));
+      const bench = (fullRoster || [])
+        .filter(
+          (p: any) =>
+            !starterIds.has(p.id) &&
+            (!tactic?.positions || tactic.positions[p.id] === "Suplente"),
+        )
+        .map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          position: p.position,
+          is_star: p.is_star || 0,
+          skill: p.skill,
+          ...getMatchFatigueSnapshot(fixture, teamSide, p.id),
+          is_starter: false,
+        }));
+      return [...starters, ...bench];
+    };
+    for (let fi = 0; fi < game.currentFixtures.length; fi++) {
+      const fx = game.currentFixtures[fi];
+      const p1 = Object.values(game.playersByName).find(
+        (p) => p.teamId === fx.homeTeamId,
+      );
+      const p2 = Object.values(game.playersByName).find(
+        (p) => p.teamId === fx.awayTeamId,
+      );
+      const t1 = (p1?.tactic as object) || fx._t1 || {};
+      const t2 = (p2?.tactic as object) || fx._t2 || {};
+      // Cup fixtures start with homeLineup: [] (truthy), so the backup
+      // snapshot must check length, not just truthiness — otherwise the
+      // cup lineups would never be recovered post-first-half.
+      if ((!fx.homeLineup || fx.homeLineup.length === 0) && fx._homeSquad)
+        fx.homeLineup = lineupSnapshot2(
+          fx,
+          fx._homeSquad,
+          t1,
+          fx._homeFullRoster,
+          "home",
+        );
+      if ((!fx.awayLineup || fx.awayLineup.length === 0) && fx._awaySquad)
+        fx.awayLineup = lineupSnapshot2(
+          fx,
+          fx._awaySquad,
+          t2,
+          fx._awayFullRoster,
+          "away",
+        );
+    }
+
+    // segmentRunning is now false; safe to auto-advance if all coaches were dismissed.
+    // (runMatchSegment may have moved the phase — read it through a string-typed alias
+    // so the literal narrowing from the assignment above does not hide those values.)
+    const phaseNow: string = game.gamePhase;
+    if (phaseNow === "lobby") {
+      checkAllReady(game);
+      return;
+    }
+
+    // Auto-advance cup halftime when no human coach is in any fixture.
+    // (All eliminated — no substitutions screen needed, continue immediately.)
+    if (phaseNow === "match_halftime" && entry?.type === "cup") {
+      const humanInAnyFixture = game.currentFixtures.some((f) =>
+        (Object.values(game.playersByName) as PlayerSession[]).some(
+          (p) =>
+            p.socketId &&
+            (p.teamId === f.homeTeamId || p.teamId === f.awayTeamId),
+        ),
+      );
+      if (!humanInAnyFixture) {
+        console.log(
+          `[${game.roomCode}] 🏆 No human in cup fixtures — auto-advancing to second half`,
+        );
+        await advanceFromHalftime(game);
+      }
+    }
+  }
+
+  // Crash recovery: the current slot was already finalized by a previous process run
+  // (its 'finalized' marker committed atomically with standings + ticket revenue in
+  // finalizeLeagueEvent). Replaying the event would double-apply results and money, so
+  // advance state exactly like the normal finalize tail. If the crash landed in the
+  // narrow window after that COMMIT, only match-row persistence / post-match evolution
+  // for this one week may be missing (npm run audit:gamestate surfaces it).
+  function recoverFinalizedSlot(game: ActiveGame, entry: CalendarEntry): void {
+    console.warn(
+      `[${game.roomCode} ⚠ Crash recovery: slot ${game.calendarIndex} already finalized — advancing calendar without replaying the week`,
+    );
+    game.calendarIndex += 1;
+    if (entry.type === "league") game.matchweek += 1;
+    game.lastPlayedAt = new Date().toISOString();
+    game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
+    game.currentFixtures = [];
+    game.phaseToken = makePhaseToken(game);
+    game.gamePhase = "lobby";
+    game.lastHalftimePayload = null;
+    Object.values(game.playersByName).forEach((p) => {
+      p.ready = false;
+    });
+
+    if (game.currentEvent?.type === "league") {
+      prepareLeagueFixtures(game, (game.currentEvent as any).matchweek).catch(
+        (prepErr: any) =>
+          console.error(`[${game.roomCode} ❌ Recovery fixture prep failed:`, prepErr),
+      );
+    }
+
+    io.to(game.roomCode).emit("seasonState", {
+      matchweek: game.matchweek,
+      calendarIndex: game.calendarIndex,
+      season: game.season,
+      year: game.year,
+    });
+    saveGameState(game);
+    resumeAllPausedAuctions(game);
+
+    if (game.calendarIndex >= SEASON_CALENDAR.length) {
+      applySeasonEnd(game)
+        .then(() => {
+          refreshMarket(game);
+          io.to(game.roomCode).emit("seasonState", {
+            matchweek: game.matchweek,
+            calendarIndex: game.calendarIndex,
+            season: game.season,
+            year: game.year,
+          });
+        })
+        .catch((seErr: any) =>
+          console.error(`[${game.roomCode} Season end error (recovery):`, seErr),
+        );
+    }
+  }
+
   async function checkAllReady(game: ActiveGame) {
     // ── Standard readiness check (same for cup and league) ──────────────────
     // O gate estrito (todos os coaches humanos online + ready) aplica-se APENAS
@@ -1392,267 +1806,28 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         return;
       }
 
-      if (game.pendingAuctionQueueTimers?.length) {
-        for (const tid of game.pendingAuctionQueueTimers) clearTimeout(tid);
-        game.pendingAuctionQueueTimers = [];
-      }
-      pauseAllRunningAuctions(game, io);
-
-      segmentRunning[game.roomCode] = true;
-      game.gamePhase = "match_first_half";
-      game.currentEvent = entry;
-      game.phaseToken = makePhaseToken(game);
-      game._lastCompletedSegment = null;
-
-      console.log(
-        `[${game.roomCode}] 🏟 Starting match | type=${entry.type} | calendarIndex=${game.calendarIndex} | ${entry.type === "cup" ? `round=${(entry as any).round}` : `mw=${(entry as any).matchweek}`}`,
-      );
-
-      // Weekly base income by division (keeps lower-division teams viable)
-      const WEEKLY_BASE_INCOME: Record<number, number> = {
-        1: 80000,
-        2: 50000,
-        3: 35000,
-        4: 25000,
-        5: 12000,
-      };
-      for (const [div, income] of Object.entries(WEEKLY_BASE_INCOME)) {
-        game.db.run("UPDATE teams SET budget = budget + ? WHERE division = ?", [
-          income,
-          Number(div),
-        ]);
-      }
-
-      // Deduct weekly wages + loan interest + principal installment (same for
-      // cup and league weeks). The installment abates the loan principal so the
-      // visible debt shrinks week over week.
-      //
-      // We read the pre-update loan amounts first. node-sqlite3 queues
-      // statements in order, so this SELECT completes (and populates preLoan)
-      // before the UPDATE below runs — the journal then logs interest on the
-      // opening balance and the exact principal installment applied.
-      const preLoan: Record<number, number> = {};
-      game.db.all(
-        `SELECT id, loan_amount FROM teams`,
-        (preErr: any, preRows: any[]) => {
-          if (preErr) return;
-          for (const r of preRows || []) preLoan[r.id] = r.loan_amount || 0;
-        },
-      );
-      game.db.run(
-        `UPDATE teams SET
-          loan_amount = MAX(0, loan_amount - ?),
-          budget = budget
-            - CAST((loan_amount * 0.015) AS INTEGER)
-            - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
-            - MIN(?, loan_amount)`,
-        [LOAN_WEEKLY_INSTALLMENT, LOAN_WEEKLY_INSTALLMENT],
-        async (err: any) => {
-          if (err) {
+      // ── Crash recovery + idempotent week start (applied_weeks) ───────────────
+      // 'finalized' marker committed atomically with standings means this slot
+      // already ran in a previous process — advance it instead of replaying.
+      game.db.get(
+        "SELECT 1 AS done FROM applied_weeks WHERE season = ? AND slot = ? AND kind = 'finalized'",
+        [game.season, game.calendarIndex],
+        (finErr: any, finRow: any) => {
+          if (finErr) {
             console.error(
-              `[${game.roomCode}] ❌ Weekly expense DB error:`,
-              err,
+              `[${game.roomCode}] ⚠ applied_weeks('finalized') read error — continuing without recovery:`,
+              finErr.message,
             );
-            game.gamePhase = "lobby";
-            game.currentEvent = entry;
-            segmentRunning[game.roomCode] = false;
+          } else if (finRow) {
+            recoverFinalizedSlot(game, entry);
             return;
           }
-
-          // Financial journal: log the weekly base income, wages, loan interest
-          // and principal installment that were just applied, so the balance
-          // history chart can reconstruct the season's budget evolution.
-          game.db.all(
-            `SELECT t.id, t.division,
-                    COALESCE((SELECT SUM(wage) FROM players WHERE players.team_id = t.id), 0) AS wage_sum
-             FROM teams t`,
-            (logErr: any, teams: any[]) => {
-              if (logErr) return;
-              for (const team of teams || []) {
-                const oldLoan = preLoan[team.id] || 0;
-                const income = WEEKLY_BASE_INCOME[team.division] || 0;
-                const wages = team.wage_sum || 0;
-                const interest = Math.floor(oldLoan * 0.015);
-                const installment = Math.min(LOAN_WEEKLY_INSTALLMENT, oldLoan);
-                if (income > 0)
-                  logClubNews(game, "weekly_income", "Rendimento Semanal", team.id, {
-                    amount: income,
-                    description: "Rendimento base semanal",
-                  });
-                if (wages > 0)
-                  logClubNews(game, "wages", "Folha Salarial", team.id, {
-                    amount: wages,
-                    description: "Salários pagos na semana",
-                  });
-                if (interest > 0)
-                  logClubNews(game, "loan_interest", "Juros Bancários", team.id, {
-                    amount: interest,
-                    description: "Juros do empréstimo (1,5%)",
-                  });
-                if (installment > 0)
-                  logClubNews(game, "loan_principal", "Amortização do Empréstimo", team.id, {
-                    amount: installment,
-                    description: "Pagamento de capital do empréstimo",
-                  });
-              }
-            },
-          );
-
-          try {
-            if (entry.type === "cup") {
-              // Cup fixtures were prepared when we entered the lobby (see finalizeLeagueEvent).
-              // Fallback: prepare now if missing (e.g. crash recovery).
-              if (!game.currentFixtures || game.currentFixtures.length === 0) {
-                console.log(
-                  `[${game.roomCode}] 🏆 Cup fixtures missing, generating draw for round ${(entry as any).round}`,
-                );
-                await startCupRound(game, (entry as any).round);
-              } else {
-                console.log(
-                  `[${game.roomCode}] 🏆 Cup fixtures already prepared: ${game.currentFixtures.length} matches`,
-                );
-              }
-            } else {
-              // League: reutilizar fixtures já preparadas na entrada do lobby
-              // (mesma fonte que o briefing) ou gerar com seeds determinísticos.
-              const mw = (entry as any).matchweek;
-              const prepped = game.currentFixtures ?? [];
-              const hasLeagueFixtures =
-                prepped.length > 0 && !(prepped[0] as any)?.round;
-              if (hasLeagueFixtures) {
-                console.log(
-                  `[${game.roomCode}] ⚽ Reusing lobby-prepared league fixtures for mw=${mw}: ${prepped.length} matches`,
-                );
-              } else {
-                await prepareLeagueFixtures(game, mw);
-              }
-            }
-          } catch (fixtureErr) {
+          startWeekOnce(game, entry).catch((startErr: any) => {
             console.error(
-              `[${game.roomCode}] ❌ Fixture generation failed — reverting to lobby:`,
-              fixtureErr,
+              `[${game.roomCode}] ❌ Week start failed:`,
+              startErr,
             );
-            game.gamePhase = "lobby";
-            game.currentEvent = entry;
-            game.currentFixtures = [];
-            segmentRunning[game.roomCode] = false;
-            saveGameState(game);
-            // Reset ready states so coaches can retry
-            Object.values(game.playersByName).forEach((p) => {
-              p.ready = false;
-            });
-            emitPresence(game);
-            io.to(game.roomCode).emit("systemMessage", {
-              text: "⚠ Erro ao gerar jogos. Tenta novamente.",
-              broadcast: true,
-            });
-            return;
-          }
-
-          saveGameState(game);
-
-          try {
-            await runMatchSegment(game, 1, 45);
-          } catch (segmentErr) {
-            console.error(
-              `[${game.roomCode}] ❌ First half segment failed:`,
-              segmentErr,
-            );
-          } finally {
-            segmentRunning[game.roomCode] = false;
-          }
-
-          // Captura lineups da primeira parte a partir dos squads que realmente jogaram.
-          // Liga fixtures não têm homeLineup/awayLineup definidos antes deste ponto.
-          // Necessário para applyTrainingBonuses ver todos os jogadores participantes.
-          const lineupSnapshot2 = (
-            fixture: any,
-            squad: any[],
-            tactic: any,
-            fullRoster: any[] | undefined,
-            teamSide: "home" | "away",
-          ) => {
-            const starterIds = new Set(squad.map((p: any) => p.id));
-            const starters = squad.map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              position: p.position,
-              is_star: p.is_star || 0,
-              skill: p.skill,
-              ...getMatchFatigueSnapshot(fixture, teamSide, p.id),
-              is_starter: true,
-            }));
-            const bench = (fullRoster || [])
-              .filter(
-                (p: any) =>
-                  !starterIds.has(p.id) &&
-                  (!tactic?.positions || tactic.positions[p.id] === "Suplente"),
-              )
-              .map((p: any) => ({
-                id: p.id,
-                name: p.name,
-                position: p.position,
-                is_star: p.is_star || 0,
-                skill: p.skill,
-                ...getMatchFatigueSnapshot(fixture, teamSide, p.id),
-                is_starter: false,
-              }));
-            return [...starters, ...bench];
-          };
-          for (let fi = 0; fi < game.currentFixtures.length; fi++) {
-            const fx = game.currentFixtures[fi];
-            const p1 = Object.values(game.playersByName).find(
-              (p) => p.teamId === fx.homeTeamId,
-            );
-            const p2 = Object.values(game.playersByName).find(
-              (p) => p.teamId === fx.awayTeamId,
-            );
-            const t1 = (p1?.tactic as object) || fx._t1 || {};
-            const t2 = (p2?.tactic as object) || fx._t2 || {};
-            // Cup fixtures start with homeLineup: [] (truthy), so the backup
-            // snapshot must check length, not just truthiness — otherwise the
-            // cup lineups would never be recovered post-first-half.
-            if ((!fx.homeLineup || fx.homeLineup.length === 0) && fx._homeSquad)
-              fx.homeLineup = lineupSnapshot2(
-                fx,
-                fx._homeSquad,
-                t1,
-                fx._homeFullRoster,
-                "home",
-              );
-            if ((!fx.awayLineup || fx.awayLineup.length === 0) && fx._awaySquad)
-              fx.awayLineup = lineupSnapshot2(
-                fx,
-                fx._awaySquad,
-                t2,
-                fx._awayFullRoster,
-                "away",
-              );
-          }
-
-          // segmentRunning is now false; safe to auto-advance if all coaches were dismissed.
-          if (game.gamePhase === "lobby") {
-            checkAllReady(game);
-            return;
-          }
-
-          // Auto-advance cup halftime when no human coach is in any fixture.
-          // (All eliminated — no substitutions screen needed, continue immediately.)
-          if (game.gamePhase === "match_halftime" && entry?.type === "cup") {
-            const humanInAnyFixture = game.currentFixtures.some((f) =>
-              (Object.values(game.playersByName) as PlayerSession[]).some(
-                (p) =>
-                  p.socketId &&
-                  (p.teamId === f.homeTeamId || p.teamId === f.awayTeamId),
-              ),
-            );
-            if (!humanInAnyFixture) {
-              console.log(
-                `[${game.roomCode}] 🏆 No human in cup fixtures — auto-advancing to second half`,
-              );
-              await advanceFromHalftime(game);
-            }
-          }
+          });
         },
       );
       return;
