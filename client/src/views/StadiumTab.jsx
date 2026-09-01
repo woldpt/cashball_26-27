@@ -121,11 +121,7 @@ export function StadiumTab({
       <Panel
         title="Expansão do Estádio"
         icon="stadium"
-        meta={
-          atMaxCapacity
-            ? "Capacidade Máxima"
-            : `${((MAX_CAPACITY - stadiumCapacity) / SEATS_PER_BUILD).toFixed(0)} obra(s) possíveis`
-        }
+        meta={atMaxCapacity ? "Capacidade Máxima" : undefined}
         padded={false}
       >
         <div className="p-5">
