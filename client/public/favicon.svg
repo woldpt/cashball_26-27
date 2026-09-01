@@ -1,14 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <title>CashBall</title>
-  <rect width="128" height="128" rx="29" fill="#131313"/>
-  <circle cx="64" cy="64" r="42" fill="#F2F8F0"/>
-  <g stroke="#003824" stroke-width="4">
-    <line x1="64.00" y1="45.00" x2="64.00" y2="22.00"/>
-    <line x1="45.93" y1="58.13" x2="24.06" y2="51.02"/>
-    <line x1="52.83" y1="79.37" x2="39.31" y2="97.98"/>
-    <line x1="75.17" y1="79.37" x2="88.69" y2="97.98"/>
-    <line x1="82.07" y1="58.13" x2="103.94" y2="51.02"/>
-</g>
-  <polygon points="64.00,45.00 45.93,58.13 52.83,79.37 75.17,79.37 82.07,58.13" fill="#003824" stroke="#003824" stroke-width="2" stroke-linejoin="round"/>
-  <path transform="translate(66.1,64.5)" fill="#95d4b3" d="M 6.36 -7.06 A 9.5 9.5 0 1 0 6.36 7.06 L 2.88 3.20 A 4.3 4.3 0 1 1 2.88 -3.20 Z M -10.6 -7.2 H 5 V -2 H -10.6 Z M -10.6 7.2 H 5 V 2 H -10.6 Z"/>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#003824"/>
+  <circle cx="64" cy="64" r="40" fill="#F2F8F0"/>
+  <g stroke="#003824" stroke-width="6" stroke-linecap="round">
+    <line x1="64" y1="43" x2="64" y2="27.5"/>
+    <line x1="84" y1="57.5" x2="98.7" y2="52.7"/>
+    <line x1="76.3" y1="81" x2="85.5" y2="93.5"/>
+    <line x1="51.7" y1="81" x2="42.5" y2="93.5"/>
+    <line x1="44" y1="57.5" x2="29.3" y2="52.7"/>
+  </g>
+  <path transform="translate(64.9,64) scale(1.6)" fill="#95d4b3" d="M 6.36 -7.06 A 9.5 9.5 0 1 0 6.36 7.06 L 2.88 3.20 A 4.3 4.3 0 1 1 2.88 -3.20 Z M -10.6 -7.2 H 5 V -2 H -10.6 Z M -10.6 7.2 H 5 V 2 H -10.6 Z"/>
 </svg>
