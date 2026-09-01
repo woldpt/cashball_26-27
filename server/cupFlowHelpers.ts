@@ -1488,6 +1488,17 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			);
 		}
 
+		// Idempotency marker — mirrors the league 'finalized' marker.
+		// Every cumulative write for this cup round (cup_matches results,
+		// training bonuses, quality evolution, injury/suspension timers) was
+		// queued before this statement, so once it persists the round is fully
+		// applied. A restart finding this row advances via recoverFinalizedSlot
+		// instead of replaying the round.
+		game.db.run(
+			"INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
+			[game.season, completedCalendarIndex],
+		);
+
 		// Advance calendar
 		game.calendarIndex += 1;
 		game.lastPlayedAt = new Date().toISOString();
