@@ -48,6 +48,7 @@ import { TacticsView } from "./views/TacticsView.jsx";
 import { TransferHub } from "./components/ui/TransferHub.jsx";
 import { DIVISION_NAMES } from "./constants/index.js";
 import { isSameTeamId } from "./utils/teamHelpers.js";
+import { readableColor } from "./utils/colorHelpers.js";
 import { useMobileLandscape } from "./hooks/useIsMobile.js";
 import { OfflineBanner } from "./components/shared/OfflineBanner.jsx";
 
@@ -317,6 +318,17 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // ── Tactic-specific from TacticsContext ─────────────────────────────────
   const { tactic, annotatedSquad } = useTactics();
 
+  // Barra principal: fundo carvão elevado + faixa de 2px na cor primária da
+  // equipa (readableColor evita que primárias quase-preto desapareçam no carvão).
+  const headerAccent = teamInfo?.color_primary
+    ? readableColor(teamInfo.color_primary)
+    : "var(--color-primary)";
+  // Cor de texto legível sobre o carvão (a cor secundária da equipa pode ser
+  // preta — ex. U. Leiria, Varzim — por isso passa pelo readableColor).
+  const headerTextColor = teamInfo?.color_secondary
+    ? readableColor(teamInfo.color_secondary)
+    : "var(--color-on-surface)";
+
   // Telemóvel em landscape (abaixo de lg): header compacto + rail vertical à esquerda.
   const isMobileLandscape = useMobileLandscape();
 
@@ -404,10 +416,10 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         </AnimatePresence>
       </div>
       <header
-        className={`fixed top-0 left-0 right-0 z-160 flex items-center border-b border-outline-variant/20 ${isMobileLandscape ? "h-10" : "h-14"}`}
+        className={`fixed top-0 left-0 right-0 z-160 flex items-center ${isMobileLandscape ? "h-10" : "h-14"}`}
         style={{
-          background:
-            teamInfo?.color_primary || "var(--color-surface-container-low)",
+          background: "var(--color-surface-container-high)",
+          boxShadow: `inset 0 -2px 0 ${headerAccent}`,
         }}
       >
         <div className={`relative flex items-center justify-between w-full ${isMobileLandscape ? "px-3" : "px-4 lg:px-6"}`}>
@@ -415,18 +427,13 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           <div className="flex items-center gap-3">
             <h1
               className={`${isMobileLandscape ? "text-sm" : "text-base"} font-headline font-black tracking-tighter uppercase`}
-              style={{
-                color: teamInfo?.color_secondary || "var(--color-on-surface)",
-              }}
+              style={{ color: headerTextColor }}
             >
               CashBall <span style={{ opacity: 0.55 }}>26/27</span>
             </h1>
             <span
               className="hidden md:block text-[10px] font-bold uppercase tracking-[0.2em]"
-              style={{
-                color: teamInfo?.color_secondary || "var(--color-on-surface)",
-                opacity: 0.7,
-              }}
+              style={{ color: headerTextColor, opacity: 0.7 }}
             >
               {seasonYear} · J{currentJornada} · {me.roomName || me.roomCode}
             </span>
@@ -478,9 +485,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             >
               <span
                 className="material-symbols-outlined text-[20px] leading-none"
-                style={{
-                  color: teamInfo?.color_secondary || "var(--color-on-surface)",
-                }}
+                style={{ color: headerTextColor }}
               >
                 chat
               </span>
@@ -527,29 +532,20 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 <div className="hidden lg:flex flex-col items-start">
                   <span
                     className="text-sm font-bold leading-tight"
-                    style={{
-                      color:
-                        teamInfo?.color_secondary || "var(--color-on-surface)",
-                    }}
+                    style={{ color: headerTextColor }}
                   >
                     {me.name}
                   </span>
                   <span
                     className="text-xs leading-tight opacity-70"
-                    style={{
-                      color:
-                        teamInfo?.color_secondary || "var(--color-on-surface)",
-                    }}
+                    style={{ color: headerTextColor }}
                   >
                     {teamInfo?.name}
                   </span>
                 </div>
                 <span
                   className="material-symbols-outlined text-[16px] leading-none opacity-60"
-                  style={{
-                    color:
-                      teamInfo?.color_secondary || "var(--color-on-surface)",
-                  }}
+                  style={{ color: headerTextColor }}
                 >
                   {userDropdownOpen ? "expand_less" : "expand_more"}
                 </span>
