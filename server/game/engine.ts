@@ -968,7 +968,12 @@ async function simulateMatchSegment(
   context: any = {},
 ) {
   const currentMatchweek = context.matchweek || 1;
-  const currentCalendarIndex = context.calendarIndex || 1;
+  // Slot-based: calendarIndex is 0-based (slot 0 is a real first slot). The old
+  // `|| 1` corrupted slot 0 into 1, breaking the per-slot replay guard below.
+  const currentCalendarIndex =
+    typeof context.calendarIndex === "number" && Number.isFinite(context.calendarIndex)
+      ? context.calendarIndex
+      : 1;
   const io = context.io;
   const game = context.game;
 
@@ -1089,8 +1094,12 @@ async function simulateMatchSegment(
     if (participantIds.length > 0) {
       const ph = participantIds.map(() => "?").join(",");
       db.run(
-        `UPDATE players SET games_played = games_played + 1, last_appearance_matchweek = MAX(last_appearance_matchweek, ?) WHERE id IN (${ph})`,
-        [currentCalendarIndex, ...participantIds],
+        // Crash-safe guard: a replay of an already-appeared calendar slot must not
+        // double-increment games_played. last_appearance_matchweek stores the most
+        // recent calendar slot in which the player appeared (see season reset in
+        // applySeasonEnd, which zeroes it so a new season's slot 0 is not blocked).
+        `UPDATE players SET games_played = games_played + 1, last_appearance_matchweek = MAX(last_appearance_matchweek, ?) WHERE id IN (${ph}) AND COALESCE(last_appearance_matchweek, 0) < ?`,
+        [currentCalendarIndex, currentCalendarIndex, ...participantIds],
       );
     }
 
