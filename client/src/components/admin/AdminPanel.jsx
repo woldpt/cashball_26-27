@@ -66,6 +66,16 @@ export function AdminPanel({ open, onClose }) {
     </>
   );
 
+  // Lista de utilizadores — reutilizada na coluna desktop e no mobile (largura total).
+  const listPane = (
+    <UserList
+      users={adminUsers}
+      loading={loading}
+      selectedName={selectedUser?.name ?? null}
+      onSelect={(u) => setSelectedUser(u)}
+    />
+  );
+
   /** @param {string} newName Nome novo do utilizador após rename. */
   function handleRenamed(newName) {
     setSelectedUser((u) => (u ? { ...u, name: newName } : u));
@@ -92,40 +102,44 @@ export function AdminPanel({ open, onClose }) {
         <div className="px-6 py-2 border-b border-error/20 bg-error/10 text-error font-bold text-xs shrink-0">{usersError}</div>
       )}
 
-      {/* Body — o `detailContent` é renderizado dentro da coluna de detalhe, abaixo */}
-      {/* Desktop (>= md): 2 colunas lado-a-ludo. Mobile (< md): coluna única — lista ou detalhe, nunca ambos. */}
+      {/* Body — o `detailContent` é renderizado dentro da coluna de detalhe, abaixo.
+          Desktop (>= md): 2 colunas lado-a-lado. Mobile (< md): coluna única — lista OU
+          detalhe, nunca ambos (com row-flex e duas colunas `w-full`, o mobile vertical
+          ficava partido a 50/50 com os dois painéis visíveis). */}
       <div className="flex flex-1 min-h-0">
-        {/* Lista */}
-        <div className={`min-h-0 flex flex-col ${isMobile ? "w-full" : "w-1/2 border-r border-outline-variant/15 bg-surface-container-high/30"}`}>
-          <UserList
-            users={adminUsers}
-            loading={loading}
-            selectedName={selectedUser?.name ?? null}
-            onSelect={(u) => setSelectedUser(u)}
-          />
-        </div>
-
-        {/* Detalhe */}
-        <div className={`min-h-0 flex flex-col ${isMobile ? "w-full" : "w-1/2"}`}>
-          {isMobile && selectedUser ? (
-            <div className="flex flex-1 min-h-0 flex-col">
-              {/* Botão «Voltar» — só aparece em mobile, ao ver o detalhe */}
-              <div className="px-5 pt-4 pb-2 shrink-0 md:hidden">
+        {isMobile ? (
+          /* Detalhe — largura total em mobile, com «Voltar» para regressar à lista. */
+          selectedUser ? (
+            <div className="w-full min-h-0 flex flex-col">
+              <div className="px-5 pt-4 pb-2 shrink-0">
                 <Button variant="ghost" size="sm" onClick={() => setSelectedUser(null)}>
                   <span className="material-symbols-outlined">arrow_back</span>
                   Voltar
                 </Button>
               </div>
+              <div className="flex-1 min-h-0 overflow-y-auto p-5 pt-3 space-y-6">
+                {detailContent}
+              </div>
+            </div>
+          ) : (
+            /* Lista — largura total em mobile */
+            <div className="w-full min-h-0 flex flex-col">{listPane}</div>
+          )
+        ) : (
+          <>
+            {/* Lista */}
+            <div className="w-1/2 min-h-0 flex flex-col border-r border-outline-variant/15 bg-surface-container-high/30">
+              {listPane}
+            </div>
+
+            {/* Detalhe */}
+            <div className="w-1/2 min-h-0 flex flex-col">
               <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-6">
                 {detailContent}
               </div>
             </div>
-          ) : !isMobile ? (
-            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-6">
-              {detailContent}
-            </div>
-          ) : null}
-        </div>
+          </>
+        )}
       </div>
 
       {/* Footer — empilha em mobile, linha no desktop */}
