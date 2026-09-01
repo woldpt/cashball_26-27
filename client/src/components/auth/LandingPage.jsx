@@ -168,7 +168,7 @@ const LandingPage = ({
 
 	return (
 		<div
-			className={`min-h-screen bg-[#060b08] text-white flex flex-col relative overflow-hidden ${
+			className={`min-h-screen bg-[#060b08] text-white flex flex-col relative ${
 				isMode ? "" : "pb-16"
 			}`}
 		>
@@ -176,7 +176,7 @@ const LandingPage = ({
 			<ParticleCanvas />
 
 			{/* Background layers */}
-			<div className="pointer-events-none fixed inset-0 z-0">
+			<div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
 				{/* Pitch grid lines */}
 				<div
 					className="absolute inset-0 opacity-[0.04]"
@@ -188,12 +188,17 @@ const LandingPage = ({
 						backgroundSize: "80px 80px",
 					}}
 				/>
-				{/* Center circle glow */}
-				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-green-500/[0.04] blur-3xl" />
-				{/* Top-right accent glow */}
-				<div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-emerald-400/[0.06] blur-3xl" />
-				{/* Bottom-left accent */}
-				<div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-green-600/[0.05] blur-3xl" />
+				{/* Glow halos as background gradients: clipped to this layer, no scroll overflow */}
+				<div
+					className="absolute inset-0"
+					style={{
+						background: `
+							radial-gradient(circle 350px at 50% 50%, rgba(74,222,128,0.04), transparent 70%),
+							radial-gradient(circle 250px at calc(100% - 90px) 90px, rgba(52,211,153,0.06), transparent 70%),
+							radial-gradient(circle 200px at 40px calc(100% - 40px), rgba(22,163,74,0.05), transparent 70%)
+						`
+					}}
+				/>
 				{/* Vignette */}
 				<div className="absolute inset-0 bg-gradient-to-b from-[#060b08]/60 via-transparent to-[#060b08]/80" />
 			</div>
@@ -252,7 +257,7 @@ const LandingPage = ({
 					className="flex flex-1 flex-col min-h-0"
 				>
 			{/* Hero + Auth card */}
-			<div className="relative z-10 flex-1 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16 px-6 sm:px-10 lg:px-16 py-14 max-w-7xl mx-auto w-full">
+			<div className="relative z-10 flex-1 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16 px-6 sm:px-10 lg:px-16 py-14 short:gap-4 short:py-6 max-w-7xl mx-auto w-full">
 				{/* Left: Hero copy */}
 				<motion.div
 					initial={{ opacity: 0, x: -30 }}
@@ -260,19 +265,22 @@ const LandingPage = ({
 					transition={{ duration: 0.6, ease: "easeOut" }}
 					className="w-full lg:w-1/2 flex flex-col items-start text-left"
 				>
-					<div className="inline-flex items-center gap-2 border border-green-500/20 bg-green-500/5 px-3 py-1 rounded-full mb-8">
+					<div className="inline-flex items-center gap-2 border border-green-500/20 bg-green-500/5 px-3 py-1 rounded-full mb-8 short:mb-2">
 						<span className="w-1 h-1 rounded-full bg-green-400" />
 						<span className="text-[10px] uppercase tracking-[0.35em] text-green-400/80 font-bold">
 							Gestão de Futebol Multiplayer
 						</span>
 					</div>
 
-					<h1 className="font-headline font-black leading-none tracking-tighter mb-8">
+					{/* Hero title: base size clamps to the viewport so "PROSPERA."
+					    never overflows 320px screens (60px text-6xl = 307px wide).
+					    At >=360px the clamp resolves to exactly 3.75rem (text-6xl). */}
+					<h1 className="font-headline font-black leading-none tracking-tighter mb-8 short:mb-2">
 						<motion.span
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.1, duration: 0.5 }}
-							className="block text-6xl sm:text-7xl lg:text-[5.5rem] text-white"
+							className="block text-[min(3.75rem,calc((100vw-3rem)/5.2))] sm:text-7xl lg:text-[5.5rem] short:text-4xl text-white"
 						>
 							TREINA.
 						</motion.span>
@@ -280,7 +288,7 @@ const LandingPage = ({
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.2, duration: 0.5 }}
-							className="block text-6xl sm:text-7xl lg:text-[5.5rem] text-green-400 drop-shadow-[0_0_40px_rgba(74,222,128,0.35)]"
+							className="block text-[min(3.75rem,calc((100vw-3rem)/5.2))] sm:text-7xl lg:text-[5.5rem] short:text-4xl text-green-400 drop-shadow-[0_0_40px_rgba(74,222,128,0.35)]"
 						>
 							PROSPERA.
 						</motion.span>
@@ -288,7 +296,7 @@ const LandingPage = ({
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.3, duration: 0.5 }}
-							className="block text-6xl sm:text-7xl lg:text-[5.5rem] text-white"
+							className="block text-[min(3.75rem,calc((100vw-3rem)/5.2))] sm:text-7xl lg:text-[5.5rem] short:text-4xl text-white"
 						>
 							REPETE.
 						</motion.span>
@@ -298,7 +306,7 @@ const LandingPage = ({
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						transition={{ delay: 0.45, duration: 0.5 }}
-						className="text-base text-white/50 leading-relaxed mb-10 max-w-md"
+						className="text-base text-white/50 leading-relaxed mb-10 max-w-md short:mb-3"
 					>
 						A evolução moderna da gestão de futebol clássica. Controla as
 						tácticas, as finanças e o destino do teu clube em ligas multiplayer
@@ -309,7 +317,7 @@ const LandingPage = ({
 						initial={{ opacity: 0, y: 10 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ delay: 0.55, duration: 0.5 }}
-						className="flex flex-wrap gap-3"
+						className="flex flex-wrap gap-3 short:gap-2"
 					>
 						{[
 							{ icon: "🏆", label: "Divisões", value: "4 Ligas" },
@@ -318,7 +326,7 @@ const LandingPage = ({
 						].map(({ icon, label, value }) => (
 							<div
 								key={label}
-								className="flex items-center gap-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-green-500/30 hover:bg-green-500/5 px-4 py-2.5 rounded-xl transition-all duration-300"
+								className="flex items-center gap-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-green-500/30 hover:bg-green-500/5 px-4 py-2.5 rounded-xl transition-all duration-300 short:py-1.5"
 							>
 								<span className="text-lg">{icon}</span>
 								<div>
@@ -360,13 +368,13 @@ const LandingPage = ({
 										animate={{ opacity: 1, x: 0 }}
 										exit={{ opacity: 0, x: 20 }}
 										transition={{ duration: 0.25 }}
-										className="p-8 space-y-5"
+										className="p-8 space-y-5 short:p-5 short:space-y-4"
 									>
 										<div className="space-y-1 text-center mb-4">
 											<p className="text-[10px] text-green-400/60 uppercase font-black tracking-[0.4em]">
 												Painel do Treinador
 											</p>
-											<h2 className="text-2xl font-headline font-black text-white tracking-tight">
+											<h2 className="text-2xl font-headline font-black text-white tracking-tight short:text-xl">
 												Acede à tua conta
 											</h2>
 											<p className="text-xs text-white/40">
@@ -381,7 +389,7 @@ const LandingPage = ({
 												<input
 													type="text"
 													autoComplete="username"
-													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-3 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
 													value={name}
 													placeholder="Ex: Cobra"
 													onChange={(e) => {
@@ -398,7 +406,7 @@ const LandingPage = ({
 													<input
 														type={showLoginPassword ? "text" : "password"}
 														autoComplete="current-password"
-														className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+														className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-3 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
 														value={password}
 														placeholder="••••••••"
 														onChange={(e) => {
@@ -430,7 +438,7 @@ const LandingPage = ({
 										<button
 											onClick={() => handleAuthenticate("login")}
 											disabled={!name.trim() || !password || authSubmitting}
-											className="w-full relative overflow-hidden bg-green-500 hover:bg-green-400 disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)] group"
+											className="w-full relative overflow-hidden bg-green-500 hover:bg-green-400 disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-3 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)] group"
 										>
 											<span className="relative z-10">
 												{authSubmitting ? "A VALIDAR..." : "ENTRAR"}
@@ -444,7 +452,7 @@ const LandingPage = ({
 												setJoinError("");
 												setAuthPhase("register");
 											}}
-											className="w-full border border-white/[0.08] bg-white/[0.02] hover:border-green-500/30 hover:bg-green-500/[0.04] text-white/70 hover:text-white py-3 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all"
+											className="w-full border border-white/[0.08] bg-white/[0.02] hover:border-green-500/30 hover:bg-green-500/[0.04] text-white/70 hover:text-white py-3 short:py-2.5 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all"
 										>
 											Criar conta
 										</button>
@@ -469,7 +477,7 @@ const LandingPage = ({
 										animate={{ opacity: 1, x: 0 }}
 										exit={{ opacity: 0, x: -20 }}
 										transition={{ duration: 0.25 }}
-										className="p-8 space-y-5"
+										className="p-8 space-y-5 short:p-5 short:space-y-4"
 									>
 										<button
 											onClick={resetAuthFlow}
@@ -481,7 +489,7 @@ const LandingPage = ({
 											<p className="text-[10px] text-green-400/60 uppercase font-black tracking-[0.4em]">
 												Nova conta
 											</p>
-											<h2 className="text-2xl font-headline font-black text-white tracking-tight">
+											<h2 className="text-2xl font-headline font-black text-white tracking-tight short:text-xl">
 												Cria a tua conta de treinador
 											</h2>
 										</div>
@@ -493,7 +501,7 @@ const LandingPage = ({
 												<input
 													type="text"
 													autoComplete="username"
-													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-3 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
 													value={name}
 													placeholder="Ex: Amorim"
 													onChange={(e) => {
@@ -510,7 +518,7 @@ const LandingPage = ({
 													<input
 														type={showRegisterPassword ? "text" : "password"}
 														autoComplete="new-password"
-														className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+														className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-3 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
 														value={password}
 														placeholder="••••••••"
 														onChange={(e) => {
@@ -548,7 +556,7 @@ const LandingPage = ({
 													<input
 														type={showConfirmPassword ? "text" : "password"}
 														autoComplete="new-password"
-														className={`w-full bg-white/[0.04] border p-4 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 ${
+														className={`w-full bg-white/[0.04] border p-4 short:py-3 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 ${
 															registerPasswordMismatch
 																? "border-red-500/60 focus:ring-red-500/30 focus:border-red-500/60"
 																: "border-white/[0.08] focus:border-green-500/50 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
@@ -597,7 +605,7 @@ const LandingPage = ({
 												authSubmitting ||
 												registerPasswordMismatch
 											}
-											className="w-full relative overflow-hidden bg-green-500 hover:bg-green-400 disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)] group"
+											className="w-full relative overflow-hidden bg-green-500 hover:bg-green-400 disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-3 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)] group"
 										>
 											<span className="relative z-10">
 												{authSubmitting ? "A CRIAR CONTA..." : "CRIAR CONTA"}
@@ -624,7 +632,7 @@ const LandingPage = ({
 
 			{/* Features strip */}
 			<div className="relative z-10 w-full border-t border-white/[0.06] bg-[#080d0a]/60 backdrop-blur-sm">
-				<div className="max-w-7xl mx-auto px-6 lg:px-10 py-10">
+				<div className="max-w-7xl mx-auto px-6 lg:px-10 py-10 short:py-6">
 					<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 						{[
 							{
@@ -650,9 +658,9 @@ const LandingPage = ({
 						].map(({ icon, label, desc }) => (
 							<div
 								key={label}
-								className="bg-white/[0.02] border border-white/[0.06] hover:border-green-500/25 hover:bg-green-500/[0.03] rounded-xl p-5 transition-all duration-300 group"
+								className="bg-white/[0.02] border border-white/[0.06] hover:border-green-500/25 hover:bg-green-500/[0.03] rounded-xl p-5 short:p-3 transition-all duration-300 group"
 							>
-								<div className="w-10 h-10 flex items-center justify-center text-xl bg-white/[0.04] rounded-xl mb-4 group-hover:bg-green-500/10 transition-colors duration-300">
+								<div className="w-10 h-10 flex items-center justify-center text-xl bg-white/[0.04] rounded-xl mb-4 short:mb-2 group-hover:bg-green-500/10 transition-colors duration-300">
 									{icon}
 								</div>
 								<p className="font-headline font-black text-sm text-white mb-1.5 tracking-tight">
@@ -666,7 +674,7 @@ const LandingPage = ({
 			</div>
 
 			{/* Footer */}
-			<footer className="relative z-10 border-t border-white/[0.06] bg-[#060b08] py-5">
+			<footer className="relative z-10 border-t border-white/[0.06] bg-[#060b08] py-5 short:py-3">
 				<div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between">
 					<span className="text-xs text-white/30 font-bold">
 						⚽ CashBall 26/27

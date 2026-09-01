@@ -35,11 +35,18 @@
   color-scheme: dark;
 }
 
-html,
+html {
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+/* body/#root must NOT set overflow: a non-visible overflow makes them a scroll
+ * container, which becomes the sticky scrollport and breaks position:sticky
+ * (the header pins to #root's never-scrolling box instead of the viewport).
+ * Horizontal clipping stays on html (the root scroller). */
 body,
 #root {
   min-height: 100%;
-  overflow-x: hidden;
 }
 
 body {

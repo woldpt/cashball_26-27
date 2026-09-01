@@ -38,9 +38,9 @@ const saves = [
 
 const noop = () => {};
 
-function screen(props) {
+function screen(inst, props) {
 	return (
-		<div>
+		<div data-inst={inst}>
 			{/* Mimics the sticky h-16 landing header the screen sits below */}
 			<div className="h-16" />
 			<RoomSelectScreen
@@ -69,26 +69,27 @@ const root = createRoot(document.getElementById("root"));
 root.render(
 	<div className="min-h-screen bg-[#060b08] text-white">
 		{/* 1 — saved-game: full grid, first card selected */}
-		{screen({
+		{screen("saved-game", {
 			joinMode: "saved-game",
 			roomCode: saves[0].code,
 		})}
 		{/* 2 — new-game: long typed code, join error visible */}
-		{screen({
+		{screen("new-game", {
 			joinMode: "new-game",
 			roomCode: "NOMEDADOJOGOMUITOLONGO123",
 			joinError:
 				"Não foi possível juntar à sala. Verifica o código e tenta novamente.",
 		})}
 		{/* 3 — friend-room: empty code + disconnected warning */}
-		{screen({ joinMode: "friend-room", disconnected: true })}
+		{screen("friend-room", { joinMode: "friend-room", disconnected: true })}
 		{/* 4 — no mode selected yet (hint state) */}
-		{screen({ joinMode: null, isNewAccount: true })}
+		{screen("no-mode", { joinMode: null, isNewAccount: true })}
 	</div>
 );
 
 function measure() {
 	const vw = window.innerWidth;
+	const vh = window.innerHeight;
 	const doc = document.documentElement;
 	const pageOverflow = doc.scrollWidth - vw;
 
@@ -121,16 +122,64 @@ function measure() {
 		.sort((a, b) => b.excess - a.excess)
 		.slice(0, 10);
 
+	// Vertical fit per instance: the screen is a fixed-height flex column
+	// (h-[calc(100dvh-4rem)]); in low-landscape viewports chrome can crush
+	// the scrollable body (0px) and push the action bar off the window.
+	const insts = ["saved-game", "new-game", "friend-room", "no-mode"].map(
+		(name) => {
+			const wrap = document.querySelector(`[data-inst="${name}"]`);
+			if (!wrap) return { inst: name, missing: true };
+			const root = wrap.querySelector('[class*="100dvh-4rem"]');
+			const body = root
+				? root.querySelector('[class*="overflow-y-auto"]')
+				: null;
+			const bar = root ? root.lastElementChild : null;
+			const r = root ? root.getBoundingClientRect() : null;
+			return {
+				inst: name,
+				rootPx: r ? Math.round(r.height) : null,
+				bodyPx: body ? Math.round(body.getBoundingClientRect().height) : null,
+				barOverflow:
+					r && bar
+						? Math.round(bar.getBoundingClientRect().bottom - r.bottom)
+						: null,
+			};
+		}
+	);
+
+	const failReasons = [];
+	if (pageOverflow > 0) failReasons.push(`page horizontal overflow ${pageOverflow}px`);
+	if (clippedRows.length > 0)
+		failReasons.push(`${clippedRows.length} clipped row(s)`);
+	for (const m of insts) {
+		if (m.missing) {
+			failReasons.push(`${m.inst}: instance missing`);
+			continue;
+		}
+		if (m.bodyPx == null || m.bodyPx < 100)
+			failReasons.push(`${m.inst}: body height ${m.bodyPx}px < 100px`);
+		if (m.barOverflow == null || m.barOverflow > 1)
+			failReasons.push(
+				`${m.inst}: action bar overflows window by ${m.barOverflow}px`
+			);
+	}
+
 	return {
-		viewport: vw,
+		viewport: { vw, vh },
 		pageOverflowPx: pageOverflow,
 		clippedRows,
 		clippingElements,
-		verdict: pageOverflow <= 0 && clippedRows.length === 0 ? "PASS" : "FAIL",
+		instances: insts,
+		failReasons,
+		verdict: failReasons.length === 0 ? "PASS" : "FAIL",
 	};
 }
 
-setTimeout(() => {
+setTimeout(async () => {
+	// Wait for the Material Symbols font (same Google Fonts link as the app's
+	// index.html): tab icons are 24px glyph boxes; without the font they render
+	// as literal text and skew the measured layout.
+	if (document.fonts && document.fonts.ready) await document.fonts.ready;
 	const report = measure();
 	const el = document.getElementById("report");
 	el.setAttribute("data-status", "done");
