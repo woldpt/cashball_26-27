@@ -163,6 +163,15 @@ export function RoomHub({
 
   if (!me) return null;
 
+  const closeBtn = (
+    <button
+      onClick={() => setRoomHubOpen(false)}
+      className="w-full py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
+    >
+      ✕ Fechar
+    </button>
+  );
+
   return (
     <div
       ref={roomHubRef}
@@ -319,14 +328,9 @@ export function RoomHub({
               })}
             </div>
 
-            {/* Close button */}
-            <div className="px-3 py-2 shrink-0 border-t border-outline-variant/20">
-              <button
-                onClick={() => setRoomHubOpen(false)}
-                className="w-full py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
-              >
-                ✕ Fechar
-              </button>
+            {/* Close button — desktop: fundo da coluna esquerda (no mobile vai para o fundo do painel) */}
+            <div className="hidden sm:block px-3 py-2 shrink-0 border-t border-outline-variant/20">
+              {closeBtn}
             </div>
           </div>
 
@@ -507,6 +511,14 @@ export function RoomHub({
                   send
                 </span>
               </button>
+            </div>
+
+            {/* Close button — mobile: fundo do painel, abaixo do input */}
+            <div
+              className="sm:hidden px-3 py-2.5 shrink-0 border-t border-outline-variant/20"
+              style={{ background: "#111" }}
+            >
+              {closeBtn}
             </div>
           </div>
           </motion.div>
