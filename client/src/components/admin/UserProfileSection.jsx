@@ -155,7 +155,7 @@ export function UserProfileSection({ user, onRenamed, onDeleted }) {
       </form>
 
       {(user.email || user.birthYear) && (
-        <div className="mt-4 pt-3 border-t border-outline-variant/15 text-xs text-on-surface-variant space-y-0.5">
+        <div className="mt-4 pt-3 border-t border-outline-variant/15 text-xs text-on-surface-variant space-y-0.5 break-words">
           {user.email && <p>Email: {user.email}</p>}
           {user.birthYear && <p>Ano de nascimento: {user.birthYear}</p>}
         </div>

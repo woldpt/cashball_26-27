@@ -75,9 +75,9 @@ export function UserRoomsSection({ user, rooms, onChanged }) {
       ) : (
         <div className="space-y-1.5">
           {rooms.map((room) => (
-            <div key={room} className="flex items-center justify-between bg-surface-container-high/50 rounded-md px-3 py-2">
-              <span className="text-sm text-on-surface font-mono font-bold tracking-wider">{room}</span>
-              <Button variant="ghost" size="sm" disabled={busy} onClick={() => setPendingRemoval(room)}>
+            <div key={room} className="flex items-center justify-between gap-2 bg-surface-container-high/50 rounded-md px-3 py-2 min-w-0">
+              <span className="text-sm text-on-surface font-mono font-bold tracking-wider min-w-0 break-all">{room}</span>
+              <Button variant="ghost" size="sm" disabled={busy} onClick={() => setPendingRemoval(room)} className="shrink-0">
                 Remover
               </Button>
             </div>

@@ -111,14 +111,14 @@ export function UserTeamsSection({ rooms }) {
                   <p className="text-on-surface-variant/60 text-xs py-2">Nenhum treinador humano nesta sala.</p>
                 ) : (
                   data.coaches.map((coach) => (
-                    <div key={coach.name} className="flex items-center justify-between bg-surface-container-high/50 rounded-md px-3 py-1.5 text-xs">
-                      <span className="text-on-surface font-bold">{coach.name}</span>
+                    <div key={coach.name} className="flex items-center justify-between gap-2 bg-surface-container-high/50 rounded-md px-3 py-1.5 text-xs min-w-0">
+                      <span className="text-on-surface font-bold min-w-0 break-words">{coach.name}</span>
                       {coach.teamName ? (
-                        <span className="text-on-surface-variant">
-                          <span className="text-on-surface/80 font-semibold">{coach.teamName}</span> ({coach.division}ª)
+                        <span className="text-on-surface-variant min-w-0 text-right">
+                          <span className="text-on-surface/80 font-semibold break-words">{coach.teamName}</span> ({coach.division}ª)
                         </span>
                       ) : (
-                        <span className="text-on-surface-variant/60 italic">sem equipa</span>
+                        <span className="text-on-surface-variant/60 italic shrink-0">sem equipa</span>
                       )}
                     </div>
                   ))

@@ -1,12 +1,22 @@
-// AdminPanel mobile responsiveness harness — renders the REAL admin section
-// components (UserList, UserProfileSection, UserRoomsSection, UserTeamsSection)
-// inside the panel's actual grid container, with edge-case fixture data, and
-// self-reports horizontal overflow measurements into #report.
+// AdminPanel mobile responsiveness harness — renders the REAL admin components
+// (UserList em modo cartões, UserProfileSection, UserRoomsSection,
+// UserTeamsSection) dentro de um container que replica o sheet mobile do
+// painel (barra superior + corpo com scroll vertical), com edge-case fixture
+// data, e auto-reporta medições de overflow horizontal em #report.
 // NOT part of the app; used only for verification.
 //
-// Nota: o AdminPanel em si é um shell (ModalShell + grid); a parte densa é
-// nas secções, que é o que este harness testa. O fetch de socket não resolve
-// sem backend, por isso as secções recebem fixtures diretamente.
+// Nota: o AdminPanel em si é um shell (ModalShell); a parte densa está nas
+// secções + lista. O fetch de socket não resolve sem backend, por isso as
+// secções recebem fixtures diretamente — idêntico ao painel real, onde os
+// dados vêm do GameContext.
+//
+// Contract (read by client/scripts/mobileRespCheck.mjs):
+//   - render into #root
+//   - after ~2500 ms write "REPORT:<json>" into <pre id="report"> and set
+//     data-status="done"
+//   - json must include: viewport, pageOverflowPx, clippedRows,
+//     clippingElements, verdict ("PASS" | "FAIL")
+/* eslint-disable react-refresh/only-export-components -- harness de teste sem exports */
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
 import { GameProvider } from "./src/contexts/GameContext.jsx";
@@ -16,24 +26,63 @@ import { UserRoomsSection } from "./src/components/admin/UserRoomsSection.jsx";
 import { UserTeamsSection } from "./src/components/admin/UserTeamsSection.jsx";
 
 // ── Fixture data: edge cases ─────────────────────────────────────────────────
+const LONG_UNBREAKABLE = "x".repeat(40); // nome sem espaços — o caso mais hostil
 const users = [
   {
-    name: "Alexandros Konstantinopoulos",
+    name: LONG_UNBREAKABLE,
     online: true,
-    rooms: ["ABC123", "XYZ789", "QWE456", "RTY111", "UIO222", "PLM333"],
+    rooms: [
+      "ABCDEFGH1234567890ABCDEF", // código longo (mono + tracking-wider)
+      "QWE456",
+      "RTY111",
+      "UIO222",
+      "PLM333",
+      "MNO789",
+      "IJK012",
+      "ABC789",
+      "DEF321",
+      "GHI654",
+      "JKL987",
+      "ZXC321", // 12 salas — plural do chip
+    ],
   },
-  { name: "fabio", online: true, rooms: ["ABC123", "XYZ789"] },
-  { name: "João", online: false, rooms: [] },
-  { name: "Maria Fernanda dos Santos", online: false, rooms: ["ABC123"] },
-  { name: "Nuno", online: true, rooms: ["XYZ789", "QWE456", "RTY111"] },
-  { name: "Sofia", online: false, rooms: ["UIO222"] },
-  { name: "Pedro", online: true, rooms: [] },
-  { name: "Inês", online: false, rooms: ["PLM333", "ABC123"] },
+  { name: "Alexandros Konstantinopoulos", online: true, rooms: ["ABC123", "XYZ789"] },
+  { name: "fabio", online: true, rooms: ["ABC123"] }, // badge ADMIN na lista
+  { name: "João", online: false, rooms: [] }, // 0 salas — singular do chip
+  { name: "Maria Fernanda dos Santos", online: false, rooms: ["XYZ789", "QWE456", "RTY111"] },
+  { name: "Nuno", online: true, rooms: ["UIO222"] }, // 1 sala — singular
 ];
 
 const selectedUser = users[0];
-
 const noop = () => {};
+
+// Barra superior do sheet (modos lista e detalhe) — réplica exata das classes
+// de AdminPanel.jsx (mobile). Se divergir, o harness deixa de ser fiel.
+function TopBar({ mode, name, count }) {
+  return (
+    <header className="shrink-0 px-4 py-3 border-b border-outline-variant/15 bg-surface-container-high/50 flex items-center gap-2 min-w-0">
+      {mode === "detail" && (
+        <button type="button" className="shrink-0 -ml-1 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+          <span className="material-symbols-outlined text-base">arrow_back</span>
+        </button>
+      )}
+      {mode === "list" && (
+        <span className="material-symbols-outlined text-amber-400 text-2xl shrink-0">admin_panel_settings</span>
+      )}
+      <div className="min-w-0 flex-1">
+        <h2 className="text-sm font-black font-headline tracking-tight text-on-surface uppercase truncate" title={name}>
+          {mode === "detail" ? name : "Gestão de Utilizadores"}
+        </h2>
+        <p className="text-[10px] text-on-surface-variant uppercase tracking-widest">
+          {mode === "detail" ? "Gestão de utilizador" : `${count} utilizadores registados`}
+        </p>
+      </div>
+      <button type="button" className="shrink-0 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+        <span className="material-symbols-outlined text-base">close</span>
+      </button>
+    </header>
+  );
+}
 
 const root = createRoot(document.getElementById("root"));
 root.render(
@@ -48,30 +97,23 @@ root.render(
     joinTimerRef={{ current: null }}
     backendUrl=""
   >
-    {/* Mimica o container do AdminPanel: grid 1 col mobile / 2 col md+ */}
-    <div className="min-h-screen bg-surface">
-      <div className="p-4 lg:p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="min-w-0">
-            <UserList
-              users={users}
-              loading={false}
-              selectedName={selectedUser.name}
-              onSelect={noop}
-            />
-          </div>
-          <div className="min-w-0 space-y-6">
-            <UserProfileSection
-              user={selectedUser}
-              onRenamed={noop}
-              onDeleted={noop}
-            />
+    <div className="min-h-screen bg-zinc-950 p-3">
+      {/* ── Sheet 1: estado LISTA (UserList isMobile) ── */}
+      <div className="w-full max-w-5xl h-[calc(100dvh-24px)] rounded-xl border border-outline-variant/20 bg-surface-container overflow-hidden flex flex-col">
+        <TopBar mode="list" count={users.length} />
+        <div data-ov-check className="flex-1 min-h-0 overflow-y-auto">
+          <UserList users={users} loading={false} selectedName={null} onSelect={noop} isMobile />
+        </div>
+      </div>
+
+      {/* ── Sheet 2: estado DETALHE (secções empilhadas) ── */}
+      <div className="w-full max-w-5xl h-[calc(100dvh-24px)] rounded-xl border border-outline-variant/20 bg-surface-container overflow-hidden flex flex-col mt-3">
+        <TopBar mode="detail" name={selectedUser.name} />
+        <div data-ov-check className="flex-1 min-h-0 overflow-y-auto">
+          <div className="p-4 space-y-6">
+            <UserProfileSection user={{ ...selectedUser, email: "um.endereco.de.email.extremamente.longo.comprimento@exemplo-de-dominio.muito-longo.tld" }} onRenamed={noop} onDeleted={noop} />
             <div className="border-t border-outline-variant/15" />
-            <UserRoomsSection
-              user={selectedUser}
-              rooms={selectedUser.rooms}
-              onChanged={noop}
-            />
+            <UserRoomsSection user={selectedUser} rooms={selectedUser.rooms} onChanged={noop} />
             <div className="border-t border-outline-variant/15" />
             <UserTeamsSection rooms={selectedUser.rooms} />
           </div>
@@ -115,12 +157,25 @@ function measure() {
     .sort((a, b) => b.excess - a.excess)
     .slice(0, 10);
 
+  // Check estrito (regra do painel: NUNCA scroll horizontal): os containers
+  // marcados com data-ov-check devem ter fit exato em qualquer viewport.
+  const ovChecks = [...document.querySelectorAll("[data-ov-check]")].map((el) => ({
+    cls: (el.className && el.className.toString().slice(0, 80)) || el.tagName,
+    excess: Math.max(0, el.scrollWidth - el.clientWidth),
+  }));
+
   return {
     viewport: vw,
     pageOverflowPx: pageOverflow,
     clippedRows,
     clippingElements,
-    verdict: pageOverflow <= 0 && clippedRows.length === 0 ? "PASS" : "FAIL",
+    ovChecks,
+    verdict:
+      pageOverflow <= 0 &&
+      clippedRows.length === 0 &&
+      ovChecks.every((c) => c.excess === 0)
+        ? "PASS"
+        : "FAIL",
   };
 }
 
