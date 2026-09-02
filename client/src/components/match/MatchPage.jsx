@@ -8,7 +8,7 @@ import { DIVISION_NAMES } from "../../constants/index.js";
 import {
 	useCompactViewport,
 	useLandscapePhone,
-} from "../hooks/useIsMobile.js";
+} from "../../hooks/useIsMobile.js";
 
 /**
  * Painel flutuante de jogo (ao vivo, intervalo, acção, detalhe).
