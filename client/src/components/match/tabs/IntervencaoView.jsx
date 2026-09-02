@@ -98,6 +98,9 @@ export function IntervencaoView({
     return () => clearTimeout(timer);
   }, [confirmResetAll]);
 
+  // Declarada cedo (antes do hook abaixo) para evitar TDZ no array de deps.
+  const isHalftime = mode === "halftime";
+
   // Mobile halftime: the top zone alternates between the score and the phase
   // title, fading over every 5 seconds.
   const [phaseIsScore, setPhaseIsScore] = useState(true);
@@ -110,7 +113,6 @@ export function IntervencaoView({
   const reducedMotion = usePrefersReducedMotion();
 
   /* ── Mode booleans ────────────────────────────────────────────── */
-  const isHalftime = mode === "halftime";
   const isPreExtraTime =
     isHalftime && isCupMatch && (liveMinute ?? 0) >= 90 && !isCupExtraTime;
   const actionType = matchAction?.type || null;
