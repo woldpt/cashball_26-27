@@ -1233,13 +1233,42 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 
 		// ── Phase 3: DB updates, morale, and results for all fixtures ────────────
+		// Bilheteira da Taça: credita attendance × 15 € à equipa da casa de cada
+		// eliminatória (mesma tarifa da liga) e persiste attendance em cup_matches.
+		// Executado antes dos resultados para garantir que receita e attendance fazem
+		// parte do bloco idempotente marcado por applied_weeks('finalized').
 		const upsets: Array<{
 			winnerName: string;
 			winnerDiv: number;
 			loserName: string;
 			loserDiv: number;
 		}> = [];
+		// Transacção atómica para receita + resultados + marker (recuperação de crash)
+		await new Promise<void>((resolve) => game.db.run("BEGIN TRANSACTION", () => resolve()));
+		let cupTxFailed = false;
+		try {
 		for (const { fixture, t1, t2, goals90Home, goals90Away } of setups) {
+			// ── Bilheteira da Taça (mesma tarifa da liga: 15 € por espectador)
+			const cupRevenue = (fixture.attendance || 0) * 15;
+			if (cupRevenue > 0) {
+				await new Promise<void>((resolve) => {
+					game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [cupRevenue, fixture.homeTeamId], () => resolve());
+				});
+				logClubNews(game, "ticket_revenue", "Bilheteiras", fixture.homeTeamId, {
+					amount: cupRevenue,
+					description: `Receita de bilheteiras — Taça ${roundName}`,
+					related_team_id: fixture.awayTeamId,
+					related_team_name: (fixture.awayTeam as any)?.name || null,
+				});
+			}
+			// Persiste attendance mesmo quando 0 (para auditoria e finances)
+			await new Promise<void>((resolve) => {
+				game.db.run(
+					"UPDATE cup_matches SET attendance = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
+					[fixture.attendance || 0, season, round, fixture.homeTeamId, fixture.awayTeamId],
+					() => resolve(),
+				);
+			});
 			const winnerId =
 				fixture._winnerId ??
 				(goals90Home > goals90Away ? fixture.homeTeamId : fixture.awayTeamId);
@@ -1412,6 +1441,23 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				}
 			}
 		}
+			// Fecha transacção atómica da Taça (receita + resultados + attendance)
+			await new Promise<void>((resolve) => {
+				game.db.run(
+					"INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
+					[game.season, game.calendarIndex],
+					() => resolve(),
+				);
+			});
+			await new Promise<void>((resolve) => {
+				game.db.run("COMMIT", () => resolve());
+			});
+		} catch (cupTxErr) {
+			cupTxFailed = true;
+			console.error(`[${game.roomCode}] ❌ Cup transaction failed:`, cupTxErr);
+			await new Promise<void>((resolve) => game.db.run("ROLLBACK", () => resolve()));
+		}
+		if (cupTxFailed) return;
 
 		// ET animation gate: wait for all connected coaches to ack before advancing
 		// Os resultados já estão construídos — guardá-los permite a um coach que
@@ -1488,16 +1534,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			);
 		}
 
-		// Idempotency marker — mirrors the league 'finalized' marker.
-		// Every cumulative write for this cup round (cup_matches results,
-		// training bonuses, quality evolution, injury/suspension timers) was
-		// queued before this statement, so once it persists the round is fully
-		// applied. A restart finding this row advances via recoverFinalizedSlot
-		// instead of replaying the round.
-		game.db.run(
-			"INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
-			[game.season, completedCalendarIndex],
-		);
+		// Marker 'finalized' já foi comitado atomically com receita + resultados
+		// (ver transacção acima) — não reinserir aqui. Training/timers correm pós-marker
+		// como na liga, idempotentes por época/slot.
 
 		// Advance calendar
 		game.calendarIndex += 1;

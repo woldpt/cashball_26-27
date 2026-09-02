@@ -1,6 +1,6 @@
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory } from "./coreHelpers";
-import { SPONSOR_REVENUE_BY_DIVISION } from "./gameConstants";
+import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES } from "./gameConstants";
 import { getGlobalMessages, CHAT_RETENTION_MS } from "./db/globalDatabase";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { serializeActiveAuctions } from "./auctionHelpers";
@@ -1142,16 +1142,51 @@ export function registerSessionSocketHandlers(
            ORDER BY m.matchweek ASC`,
 					[teamId, game.season],
 				);
-				const totalTicketRevenue = homeMatches.reduce(
+				// Taça: jogos em casa com receita de bilheteira (attendance já persistido em cup_matches)
+				let cupHomeMatches: any[] = [];
+				try {
+					cupHomeMatches = await runAll(
+						game.db,
+						`SELECT cm.attendance, cm.round, cm.away_team_id, COALESCE(t.name, '?') as away_team_name
+               FROM cup_matches cm
+               LEFT JOIN teams t ON t.id = cm.away_team_id
+               WHERE cm.home_team_id = ? AND cm.played = 1 AND cm.season = ?
+               ORDER BY cm.round ASC`,
+						[teamId, game.season],
+					);
+				} catch (cupErr: any) {
+					// DBs antigas sem coluna attendance em cup_matches — fallback sem receita
+					if (!String(cupErr?.message || "").includes("no such column")) throw cupErr;
+					cupHomeMatches = [];
+				}
+				const leagueTicketRevenue = homeMatches.reduce(
 					(sum, m) => sum + (m.attendance || 0) * 15,
 					0,
 				);
-				const ticketBreakdown = homeMatches.map((m) => ({
+				const cupTicketRevenue = cupHomeMatches.reduce(
+					(sum, m) => sum + (m.attendance || 0) * 15,
+					0,
+				);
+				const totalTicketRevenue = leagueTicketRevenue + cupTicketRevenue;
+				const leagueBreakdown = homeMatches.map((m) => ({
+					competition: "league" as const,
 					matchweek: m.matchweek,
+					round: null as number | null,
+					roundName: null as string | null,
 					attendance: m.attendance || 0,
 					revenue: (m.attendance || 0) * 15,
 					away_team_name: m.away_team_name || "—",
 				}));
+				const cupBreakdown = cupHomeMatches.map((m) => ({
+					competition: "cup" as const,
+					matchweek: null as number | null,
+					round: m.round as number,
+					roundName: (CUP_ROUND_NAMES[m.round] || `Ronda ${m.round}`) as string,
+					attendance: m.attendance || 0,
+					revenue: (m.attendance || 0) * 15,
+					away_team_name: m.away_team_name || "—",
+				}));
+				const ticketBreakdown = [...leagueBreakdown, ...cupBreakdown];
 
 				const transferInList = await runAll(
 					game.db,
@@ -1275,11 +1310,15 @@ export function registerSessionSocketHandlers(
 				socket.emit("financeData", {
 					teamId,
 					totalTicketRevenue,
+					leagueTicketRevenue,
+					cupTicketRevenue,
 					totalTransferIncome,
 					totalTransferExpenses,
 					totalStadiumExpenses,
 					sponsorRevenue,
 					homeMatchesPlayed: homeMatches.length,
+					cupHomeMatchesPlayed: cupHomeMatches.length,
+					totalHomeMatchesPlayed: homeMatches.length + cupHomeMatches.length,
 					ticketBreakdown,
 					transferInList,
 					transferOutList,

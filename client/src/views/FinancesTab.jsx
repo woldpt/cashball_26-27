@@ -101,9 +101,14 @@ export function FinancesTab({
       0,
       SEASON_HOME_MATCHES - (financeData?.homeMatchesPlayed || 0),
     );
+    // Média apenas da Liga — Taça não conta para SEASON_HOME_MATCHES e não deve
+    // inflacionar a projecção de bilheteiras restantes da Liga.
+    const leagueHomeMatches = financeData?.homeMatchesPlayed || 0;
+    const leagueRevenue =
+      financeData?.leagueTicketRevenue ?? financeData?.totalTicketRevenue ?? 0;
     const avgTicketRevenue =
-      (financeData?.homeMatchesPlayed || 0) > 0
-        ? (financeData?.totalTicketRevenue || 0) / financeData.homeMatchesPlayed
+      leagueHomeMatches > 0
+        ? leagueRevenue / leagueHomeMatches
         : capacityRevPerGame * TICKET_ESTIMATE_FACTOR;
     const projectedTicketRevenue = avgTicketRevenue * remainingHomeMatches;
     const projectedSalaries = totalWeeklyWage * remainingJornadas;
@@ -251,8 +256,11 @@ export function FinancesTab({
                           ? "expand_less"
                           : "expand_more"}
                       </span>
-                      {financeData.homeMatchesPlayed || 0}{" "}
+                      {(financeData.totalHomeMatchesPlayed ?? financeData.homeMatchesPlayed ?? 0)}{" "}
                       jogos em casa
+                      {(financeData.cupHomeMatchesPlayed || 0) > 0 && (
+                        <span className="opacity-60"> · {financeData.homeMatchesPlayed || 0} Liga + {financeData.cupHomeMatchesPlayed} Taça</span>
+                      )}
                     </p>
                   </div>
                   <span className="font-headline text-sm font-bold">
@@ -264,15 +272,17 @@ export function FinancesTab({
                 {showTicketBreakdown &&
                   (financeData.ticketBreakdown?.length || 0) > 0 && (
                     <ul className="pl-3 space-y-1 border-l-2 border-primary/20 ml-1 mt-1">
-                      {financeData.ticketBreakdown.map(
-                        (t) => (
+                      {financeData.ticketBreakdown.map((t) => {
+                        const isCup = t.competition === "cup";
+                        const key = isCup ? `cup-${t.round}` : `league-${t.matchweek}`;
+                        return (
                           <li
-                            key={t.matchweek}
+                            key={key}
                             className="flex justify-between items-center"
                           >
                             <div>
                               <p className="text-xs text-on-surface-variant/80">
-                                J{t.matchweek}
+                                {isCup ? `Taça · ${t.roundName}` : `J${t.matchweek}`}
                               </p>
                               <p className="text-[10px] opacity-30 uppercase">
                                 vs {t.away_team_name || "—"} · {t.attendance.toLocaleString("pt-PT")} esp.
@@ -282,8 +292,8 @@ export function FinancesTab({
                               {formatCurrency(t.revenue)}
                             </span>
                           </li>
-                        ),
-                      )}
+                        );
+                      })}
                     </ul>
                   )}
               </li>
@@ -294,8 +304,11 @@ export function FinancesTab({
                     Bilheteiras
                   </p>
                   <p className="text-[10px] opacity-40 uppercase">
-                    {financeData?.homeMatchesPlayed || 0}{" "}
+                    {(financeData?.totalHomeMatchesPlayed ?? financeData?.homeMatchesPlayed ?? 0)}{" "}
                     jogos em casa
+                    {(financeData?.cupHomeMatchesPlayed || 0) > 0 && (
+                      <span className="opacity-60"> · {financeData.homeMatchesPlayed || 0} Liga + {financeData.cupHomeMatchesPlayed} Taça</span>
+                    )}
                   </p>
                 </div>
                 <span className="font-headline text-sm font-bold">

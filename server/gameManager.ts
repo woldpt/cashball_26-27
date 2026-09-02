@@ -533,9 +533,14 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
             away_et_score INTEGER DEFAULT 0,
             home_penalties INTEGER DEFAULT 0,
             away_penalties INTEGER DEFAULT 0,
+            attendance INTEGER DEFAULT 0,
             winner_team_id INTEGER,
             played BOOLEAN DEFAULT 0
           )`);
+          db.run(
+            "ALTER TABLE cup_matches ADD COLUMN attendance INTEGER DEFAULT 0",
+            () => {},
+          );
           db.run(`CREATE TABLE IF NOT EXISTS palmares (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             team_id INTEGER NOT NULL,
