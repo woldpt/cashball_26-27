@@ -299,7 +299,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // fecho: o flyer de regresso aterra sobre a badge que reaparece, sem piscar.
   const transfSumHidden = transferMenuOpen;
   // Os badges individuais só repousam nos botões fora das janelas de voo.
-  const subBadgesResting = transferMenuOpen && transferFlyers.length === 0;
+  // Exige prev === true para não piscar no primeiro frame da abertura: no
+  // commit em que `transferMenuOpen` fica true os flyers ainda são [] e sem
+  // este guard o badge aparecia um frame antes de o flyer partir.
+  const subBadgesResting =
+    transferMenuOpen && transferFlyers.length === 0 && prevTransferMenuOpenRef.current;
   const totalCoaches =
     players.length +
     awaitingCoaches.filter((n) => !players.some((p) => p.name === n)).length;
@@ -950,6 +954,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       { key: "market", label: "Mercado", icon: "swap_horiz", badge: marketListedCount },
                       { key: "leiloes", label: "Leilões", icon: "gavel", badge: liveAuctionCount },
                       { key: "scout", label: "Scout", icon: "search", badge: 0 },
+                      // eslint-disable-next-line react-hooks/refs -- map instala callbacks de ref para medir badges
                     ].map(({ key, label, icon, badge }) => (
                       <button
                         key={key}
@@ -975,16 +980,18 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                             {icon}
                           </span>
                           {badge > 0 && (
-                            <span
-                              className={`absolute -top-1.5 -right-2 flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none min-w-[18px] h-[18px] px-1 text-[10px] shadow-md transition-all duration-150 ${
-                                subBadgesResting
-                                  ? "opacity-100 scale-100"
-                                  : "opacity-0 scale-50"
-                              }`}
+                            <motion.span
+                              initial={false}
+                              animate={{
+                                opacity: subBadgesResting ? 1 : 0,
+                                scale: subBadgesResting ? 1 : 0.5,
+                              }}
+                              transition={{ duration: DUR.fast, ease: "easeOut" }}
+                              className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none min-w-[18px] h-[18px] px-1 text-[10px] shadow-md"
                               title={`${badge} negócio(s)`}
                             >
                               {badge > 99 ? "99+" : badge}
-                            </span>
+                            </motion.span>
                           )}
                         </span>
                         <span className="text-[10px] font-black uppercase tracking-wider">
@@ -1243,19 +1250,22 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
           {/* Badges em voo: TRANSF ↔ fly-up (só durante a transição) */}
           <div className="lg:hidden pointer-events-none fixed inset-0 z-[45]">
-            {transferFlyers.map((f) => (
-              <motion.span
-                key={`${transferMenuOpen ? "open" : "back"}-${f.id}`}
-                className="absolute left-0 top-0"
-                initial={{ x: f.from.x, y: f.from.y, scale: 0.85 }}
-                animate={{ x: f.to.x, y: f.to.y, scale: 1 }}
-                transition={{ duration: DUR.slow, ease: EASE }}
-              >
-                <span className="flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-red-500 text-white font-black leading-none min-w-[18px] h-[18px] px-1 text-[10px] shadow-lg shadow-black/40">
-                  {f.count > 99 ? "99+" : f.count}
-                </span>
-              </motion.span>
-            ))}
+            <AnimatePresence>
+              {transferFlyers.map((f) => (
+                <motion.span
+                  key={`${transferMenuOpen ? "open" : "back"}-${f.id}`}
+                  className="absolute left-0 top-0"
+                  initial={{ x: f.from.x, y: f.from.y, scale: 0.85, opacity: 1 }}
+                  animate={{ x: f.to.x, y: f.to.y, scale: 1, opacity: 1 }}
+                  exit={{ opacity: 0, scale: 0.5, transition: { duration: DUR.fast, ease: "easeOut" } }}
+                  transition={{ duration: DUR.slow, ease: EASE }}
+                >
+                  <span className="flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-red-500 text-white font-black leading-none min-w-[18px] h-[18px] px-1 text-[10px] shadow-lg shadow-black/40">
+                    {f.count > 99 ? "99+" : f.count}
+                  </span>
+                </motion.span>
+              ))}
+            </AnimatePresence>
           </div>
         </>
       )}
