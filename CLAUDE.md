@@ -109,7 +109,7 @@ All pages and components must follow the design system documented in **`STYLE.md
 ## 📜 Engineering Rules (Non-Negotiables)
 
 1. **Frontend:** **STRICTLY JAVASCRIPT**. No TypeScript in `/client`.
-2. **Language:** All UI, messages, and code comments must be in **Portuguese (PT)**.
+2. **Language:** Always **European Portuguese (pt-PT)** — all UI text, user-facing messages, narration phrases and code comments. "Auto-golo" (never "golo de contra" / "contra", which is pt-BR); "marcador"/"resultado" (never "placar"). Never mix in Brazilian expressions.
 3. **Narration:** All game commentary phrases must live in `server/game/commentary.ts`.
 4. **Database:** SQLite only. Avoid `SERIAL` or `JSONB`.
 5. **Documentation:** Use JSDoc for all complex functions and component props.

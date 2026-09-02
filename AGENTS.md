@@ -29,6 +29,7 @@
 
 **NÃO cometer estes erros que já foram corrigidos em sessões anteriores:**
 
+- **Idioma (pt-PT):** todo o UI, mensagens, narração e comentários são SEMPRE em português europeu. "Auto-golo" — nunca "golo de contra"/"contra" (expressão pt-BR); "marcador"/"resultado", nunca "placar".
 - **Mercado/Transferências:**
   - Use sempre `TransferHub.jsx` (o antigo `MarketTab.jsx` foi removido).
   - Garanta que leilões são filtrados em `TransferHub` (`p.transfer_status !== "auction"`).
