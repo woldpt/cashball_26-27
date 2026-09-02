@@ -120,6 +120,18 @@ export function createAuctionHelpers(deps: AuctionDeps) {
     const playerIds = Object.keys(game.auctions);
     if (playerIds.length === 0) return;
 
+    // Garantir que leilões "open" órfãos (ex: restaurados após restart sem timer) voltam a ter timer
+    for (const playerIdStr of playerIds) {
+      const pid = Number(playerIdStr);
+      const a = (game.auctions as any)[pid];
+      if (!a || a.status !== "open") continue;
+      if (game.auctionTimers?.[pid]) continue;
+      const now = Date.now();
+      const remainingMs = Math.max(1000, (a.endsAt ?? now) - now);
+      if (!game.auctionTimers) game.auctionTimers = {};
+      game.auctionTimers[pid] = setTimeout(() => finalizeAuction(game, pid), remainingMs);
+    }
+
     for (const playerIdStr of playerIds) {
       const playerId = Number(playerIdStr);
       const auction = game.auctions[playerId] as any;
@@ -225,10 +237,9 @@ export function createAuctionHelpers(deps: AuctionDeps) {
         }
 
         if (!winnerTeamId) {
-          const currentMw = game.matchweek || 0;
           game.db.run(
-            "UPDATE players SET transfer_status = 'none', transfer_price = 0, last_auctioned_matchweek = ? WHERE id = ?",
-            [currentMw, playerId],
+            "UPDATE players SET transfer_status = 'none', transfer_price = 0 WHERE id = ?",
+            [playerId],
             () => {
               const seller = (
                 Object.values(game.playersByName) as PlayerSession[]
@@ -274,8 +285,8 @@ export function createAuctionHelpers(deps: AuctionDeps) {
         if (isContractLocked(player, game)) {
           const end = contractEndInfo(player);
           game.db.run(
-            "UPDATE players SET transfer_status = 'none', transfer_price = 0, last_auctioned_matchweek = ? WHERE id = ?",
-            [game.matchweek || 0, playerId],
+            "UPDATE players SET transfer_status = 'none', transfer_price = 0 WHERE id = ?",
+            [playerId],
             () => {
               const seller = (
                 Object.values(game.playersByName) as PlayerSession[]

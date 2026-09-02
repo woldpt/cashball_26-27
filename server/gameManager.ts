@@ -2,7 +2,8 @@ import fs from "fs";
 import path from "path";
 import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
-import { SEASON_CALENDAR, fairWeeklyWage } from "./gameConstants";
+import { SEASON_CALENDAR, fairWeeklyWage, signingWage } from "./gameConstants";
+import { currentEpoch } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { getOfflineCoaches } from "./presenceHelpers";
 
@@ -880,42 +881,115 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
               // Set currentEvent from calendarIndex
               game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
 
-              // ── Restaurar leilões pausados (puro JS, sem query extra) ───────────
-              let pausedPlayerIds: number[] = [];
-              if (st["pausedAuctions"]) {
+              // ── Restaurar leilões ativos (open + paused) ─────────────────────────
+              let restoredAuctionIds: number[] = [];
+              // Novo formato: activeAuctions (open+paused). Fallback legado: pausedAuctions
+              const rawAuctions = st["activeAuctions"] ?? st["pausedAuctions"];
+              if (rawAuctions) {
                 try {
-                  const parsedPaused = JSON.parse(st["pausedAuctions"]);
-                  if (Array.isArray(parsedPaused) && parsedPaused.length > 0) {
-                    for (const a of parsedPaused) {
+                  const parsed = JSON.parse(rawAuctions);
+                  if (Array.isArray(parsed) && parsed.length > 0) {
+                    const now = Date.now();
+                    for (const a of parsed) {
                       if (!a.playerId) continue;
-                      game.auctions[String(a.playerId)] = {
-                        playerId: a.playerId,
-                        sellerTeamId: a.sellerTeamId ?? null,
-                        startingPrice: a.startingPrice ?? 0,
-                        status: "paused",
-                        bids: (a.bids && !Array.isArray(a.bids)) ? a.bids : {},
-                        timer: null,
-                        endsAt: null,
-                        pausedRemainingMs: a.pausedRemainingMs,
-                      };
-                      pausedPlayerIds.push(Number(a.playerId));
+                      const pid = Number(a.playerId);
+                      const isPaused = a.status === "paused" || a.pausedRemainingMs != null && a.endsAt == null;
+                      if (isPaused) {
+                        game.auctions[String(pid)] = {
+                          playerId: pid,
+                          sellerTeamId: a.sellerTeamId ?? null,
+                          startingPrice: a.startingPrice ?? 0,
+                          status: "paused",
+                          bids: (a.bids && !Array.isArray(a.bids)) ? a.bids : {},
+                          timer: null,
+                          endsAt: null,
+                          pausedRemainingMs: a.pausedRemainingMs,
+                          npcRelicitationCount: a.npcRelicitationCount || {},
+                          isExClub: !!a.isExClub,
+                        };
+                      } else {
+                        // open — recalcular tempo restante; se já expirou, agenda finalização curta
+                        let remainingMs: number;
+                        if (a.endsAt) remainingMs = Math.max(0, Number(a.endsAt) - now);
+                        else if (a.pausedRemainingMs != null) remainingMs = Math.max(0, Number(a.pausedRemainingMs));
+                        else remainingMs = 120000;
+                        // floor 1s para já expirados, senão garante 10s mínimo para evitar race
+                        const timerMs = remainingMs <= 0 ? 1000 : Math.max(10000, remainingMs);
+                        const endsAt = now + timerMs;
+                        game.auctions[String(pid)] = {
+                          playerId: pid,
+                          sellerTeamId: a.sellerTeamId ?? null,
+                          startingPrice: a.startingPrice ?? 0,
+                          status: "open",
+                          bids: (a.bids && !Array.isArray(a.bids)) ? a.bids : {},
+                          timer: null,
+                          endsAt,
+                          pausedRemainingMs: undefined,
+                          npcRelicitationCount: a.npcRelicitationCount || {},
+                          isExClub: !!a.isExClub,
+                        };
+                        if (!game.auctionTimers) game.auctionTimers = {} as any;
+                        // Agenda finalização delayed — usa lógica inline para não depender de auctionHelpers no load
+                        const tid = setTimeout(() => {
+                          const auc = (game.auctions as any)?.[pid];
+                          if (!auc || auc.status !== "open") return;
+                          const hasBids = auc.bids && Object.keys(auc.bids).length > 0;
+                          if (!hasBids) {
+                            db.run("UPDATE players SET transfer_status='none', transfer_price=0 WHERE id=?", [pid]);
+                            delete (game.auctions as any)[pid];
+                            delete (game.auctionTimers as any)[pid];
+                            return;
+                          }
+                          // Com lances: finaliza inline (merge mínimo de auctionHelpers.finalizeAuction) para não deixar órfão
+                          let winnerTeamId: number | null = null;
+                          let winnerBid = -1;
+                          for (const [tid2, val] of Object.entries(auc.bids || {})) {
+                            const b = Number((typeof val === 'object' ? (val as any).amount : val) || 0);
+                            if (b > winnerBid) { winnerBid = b; winnerTeamId = parseInt(tid2, 10); }
+                          }
+                          if (!winnerTeamId) {
+                            db.run("UPDATE players SET transfer_status='none', transfer_price=0 WHERE id=?", [pid]);
+                            delete (game.auctions as any)[pid];
+                            delete (game.auctionTimers as any)[pid];
+                            return;
+                          }
+                          db.get("SELECT * FROM players WHERE id=?", [pid], (_e: any, player: any) => {
+                            if (!player) { delete (game.auctions as any)[pid]; delete (game.auctionTimers as any)[pid]; return; }
+                            const buyerTeamId = winnerTeamId as number;
+                            const finalBid = winnerBid;
+                            db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [finalBid, auc.sellerTeamId], () => {
+                              db.run("UPDATE teams SET budget = budget - ? WHERE id = ?", [finalBid, buyerTeamId], () => {
+                                const seasonEndMw = Math.ceil(Math.max(1, (game.matchweek || 1)) / 14) * 14;
+                                const wage = signingWage(player);
+                                const epoch = currentEpoch(game as any);
+                                db.run("UPDATE players SET team_id=?, wage=?, contract_until_matchweek=?, contract_start_epoch=?, joined_matchweek=?, transfer_cooldown_until_matchweek=?, transfer_status='none', transfer_price=0, contract_request_pending=0, contract_requested_wage=0, contract_request_is_renegotiation=0 WHERE id=?", [buyerTeamId, wage, seasonEndMw, epoch, game.matchweek, game.matchweek, pid], () => {
+                                  delete (game.auctions as any)[pid];
+                                  delete (game.auctionTimers as any)[pid];
+                                });
+                              });
+                            });
+                          });
+                        }, timerMs) as unknown as any;
+                        // unref para não bloquear shutdown
+                        if (tid && typeof (tid as any).unref === "function") (tid as any).unref();
+                        (game.auctionTimers as any)[pid] = tid;
+                      }
+                      restoredAuctionIds.push(pid);
                     }
                     console.log(
-                      `[gameManager] ${parsedPaused.length} leilão(ões) pausado(s) restaurado(s) (room ${roomCode})`,
+                      `[gameManager] ${parsed.length} leilão(ões) restaurado(s) (room ${roomCode}) — ${restoredAuctionIds.length} ids`,
                     );
                   }
                 } catch (_) {}
               }
 
               // ── Limpar leilões órfãos + carregar mercado numa única query ─────────
-              // ORDER BY RANDOM() foi removido: causava varredura total da tabela (~430ms
-              // com DB fria). A ordem aleatória é feita pelo refreshMarket em runtime.
-              const placeholders = pausedPlayerIds.length > 0
-                ? `AND id NOT IN (${pausedPlayerIds.map(() => "?").join(",")})`
+              const placeholders = restoredAuctionIds.length > 0
+                ? `AND id NOT IN (${restoredAuctionIds.map(() => "?").join(",")})`
                 : "";
               db.run(
                 `UPDATE players SET transfer_status = 'none', transfer_price = 0 WHERE transfer_status = 'auction' ${placeholders}`,
-                pausedPlayerIds,
+                restoredAuctionIds,
                 () => {
                   db.all(
                     "SELECT p.*, COALESCE(t.name, 'Sem clube') as team_name FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.team_id IS NOT NULL AND p.transfer_status != 'none'",
@@ -1105,17 +1179,25 @@ function saveGameState(game: ActiveGame): void {
     upsert("currentFixtures", "[]");
   }
 
-  // Persistir leilões pausados para recuperação após reinício
-  const pausedAuctions = Object.values(game.auctions || {})
-    .filter((a: any) => a.status === "paused")
+  // Persistir leilões ativos (open + paused) para recuperação após reinício — corrige 3.
+  // open: precisa de endsAt para retomar o countdown; paused: precisa de pausedRemainingMs
+  const activeAuctions = Object.values(game.auctions || {})
+    .filter((a: any) => a.status === "paused" || a.status === "open")
     .map((a: any) => ({
       playerId: a.playerId,
       sellerTeamId: a.sellerTeamId,
       startingPrice: a.startingPrice,
       bids: a.bids || {},
-      pausedRemainingMs: a.pausedRemainingMs,
+      status: a.status,
+      endsAt: a.endsAt ?? null,
+      pausedRemainingMs: a.pausedRemainingMs ?? (a.endsAt ? Math.max(0, a.endsAt - Date.now()) : undefined),
+      npcRelicitationCount: a.npcRelicitationCount || {},
+      isExClub: !!a.isExClub,
     }));
-  upsert("pausedAuctions", JSON.stringify(pausedAuctions));
+  // compat: antigos restores liam só pausedAuctions
+  const legacyPaused = activeAuctions.filter((a: any) => a.status === "paused");
+  upsert("pausedAuctions", JSON.stringify(legacyPaused));
+  upsert("activeAuctions", JSON.stringify(activeAuctions));
 
   // ── Legacy keys (backward compat — kept so old clients/DBs still work) ──
   // Derive legacy values from new state
