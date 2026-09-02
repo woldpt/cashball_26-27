@@ -202,9 +202,8 @@ function NextMatchCard({ nextMatchSummary, teamInfo, onOpenTeamSquad }) {
     n && invSum ? Math.round((1 / n / invSum) * 100) : null,
   );
 
-  // Árbitro — balance favorece a equipa do utilizador (favorsTeamA)
+  // Árbitro — apenas o nome (o factor de preferência foi removido)
   const ref = s.referee;
-  const refFavoursMe = ref?.favorsTeamA ?? true;
 
   // Tempo
   const wf = s.weatherForecast;
@@ -429,34 +428,6 @@ function NextMatchCard({ nextMatchSummary, teamInfo, onOpenTeamSquad }) {
               <span className="text-[10px] font-bold text-gray-400 truncate block">
                 {ref.name}
               </span>
-              <div className="mt-1 h-1 bg-[#1a1a1a] rounded-full overflow-hidden relative">
-                <div
-                  className="absolute inset-y-0 left-0 rounded-l-full"
-                  style={{
-                    width: `${ref.balance}%`,
-                    background: teamInfo?.color_primary || "#16a34a",
-                    opacity: 0.9,
-                  }}
-                />
-                <div
-                  className="absolute inset-y-0 right-0 rounded-r-full"
-                  style={{
-                    width: `${100 - ref.balance}%`,
-                    background: opp?.color_primary || "#dc2626",
-                    opacity: 0.9,
-                  }}
-                />
-              </div>
-              <div className="flex items-center justify-between mt-0.5">
-                <span className="text-[7px] font-black text-gray-500 tabular-nums">
-                  {ref.balance}%
-                </span>
-                <span
-                  className={`text-[7px] font-black uppercase ${refFavoursMe ? "text-green-400" : "text-red-400"}`}
-                >
-                  {refFavoursMe ? "Favorece-te" : "Contra ti"}
-                </span>
-              </div>
             </MetaTile>
           )}
 

@@ -17,12 +17,6 @@ export const WEATHER_LABELS = {
 export function RefWeatherBar({ attendance, referee, weatherEvent, teamStadium, className }) {
   if (!attendance && !referee?.refereeName && !weatherEvent) return null;
 
-  const refBalance = referee?.balance ?? 50;
-  const refBalanceColor =
-    refBalance >= 60 ? "text-emerald-400"
-      : refBalance <= 40 ? "text-red-400"
-        : "text-on-surface-variant";
-
   return (
     <div className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3 rounded-md border border-outline/40 bg-surface-container text-[10px] font-semibold ${className || ""}`}>
       {attendance && (
@@ -45,12 +39,6 @@ export function RefWeatherBar({ attendance, referee, weatherEvent, teamStadium, 
         <span className="text-on-surface-variant flex items-center gap-1.5">
           <span className="text-[11px]">👤</span>
           <span className="text-on-surface">{referee.refereeName}</span>
-          <span
-            className={`font-bold tabular-nums ${refBalanceColor}`}
-            title="Equilíbrio do árbitro"
-          >
-            {refBalance}
-          </span>
         </span>
       )}
 

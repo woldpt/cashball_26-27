@@ -32,7 +32,7 @@ interface MatchSummaryDeps {
     teamId: number,
     opponentId: number,
     matchweek: number,
-  ) => { name: string; balance: number; favorsTeamA: boolean };
+  ) => { name: string };
 }
 
 export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {

@@ -53,7 +53,7 @@ interface WeeklyFlowDeps {
     teamId: number,
     opponentId: number,
     matchweek: number,
-  ) => { name: string; balance: number; favorsTeamA: boolean };
+  ) => { name: string };
   saveGameState: (game: ActiveGame) => void;
   persistMatchResults: (
     game: ActiveGame,

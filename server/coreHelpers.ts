@@ -282,15 +282,7 @@ export function pickRefereeSummary(
 ) {
   const seed = hashString(`${roomCode}:${matchweek}:${teamId}:${opponentId}`);
   const refereeName = refereeNames[seed % refereeNames.length];
-  const biasSeed = hashString(
-    `${refereeName}:${teamId}:${opponentId}:${roomCode}`,
-  );
-  const balance = 20 + (biasSeed % 61);
-  return {
-    name: refereeName,
-    balance,
-    favorsTeamA: balance >= 50,
-  };
+  return { name: refereeName };
 }
 
 export async function calculateMatchAttendance(
