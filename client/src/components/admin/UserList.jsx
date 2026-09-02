@@ -17,9 +17,10 @@ import { isAdminCoach } from "./adminApi.js";
  *   selectedName?: string|null,
  *   onSelect?: (user: any) => void,
  *   isMobile?: boolean,
+ *   disableInternalScroll?: boolean,
  * }} props
  */
-export function UserList({ users, loading = false, selectedName = null, onSelect, isMobile = false }) {
+export function UserList({ users, loading = false, selectedName = null, onSelect, isMobile = false, disableInternalScroll = false }) {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState("name");
   const [sortDir, setSortDir] = useState(1);
@@ -89,6 +90,69 @@ export function UserList({ users, loading = false, selectedName = null, onSelect
         {sortIndicator(key)}
       </button>
     );
+
+    // Quando embutido em scroll único (disableInternalScroll), não cria
+    // contentor com overflow próprio — a lista expande na vertical e o
+    // scroll é gerido pelo ancestral (AdminPanel). Evita scroll dentro de scroll.
+    if (disableInternalScroll) {
+      return (
+        <div className="flex flex-col">
+          <div className="px-4 pt-3 pb-2 border-b border-outline-variant/15 shrink-0">
+            {searchInput}
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className="text-[9px] uppercase tracking-widest text-on-surface-variant/50 font-bold mr-0.5">Ordenar</span>
+              {sortChip("name", "Nome")}
+              {sortChip("rooms", "Salas")}
+            </div>
+          </div>
+
+          {loading ? (
+            loadingBlock
+          ) : visibleUsers.length === 0 ? (
+            emptyBlock
+          ) : (
+            <div>
+            {visibleUsers.map((user) => {
+              const n = user.rooms?.length || 0;
+              return (
+                <div
+                  key={user.name}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onSelect?.(user)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") onSelect?.(user);
+                  }}
+                  className={`flex items-center gap-2.5 px-4 py-3 border-b border-outline-variant/10 cursor-pointer transition-colors min-w-0 overflow-hidden ${
+                    selectedName === user.name ? "bg-primary/10" : "hover:bg-surface-container-high/50"
+                  }`}
+                >
+                  <span
+                    className={`shrink-0 w-1.5 h-1.5 rounded-full ${
+                      user.online ? "bg-emerald-400" : "bg-on-surface-variant/30"
+                    }`}
+                    title={user.online ? "Online" : "Offline"}
+                  />
+                  <span className="min-w-0 flex-1 truncate text-sm font-bold text-on-surface" title={user.name}>
+                    {user.name}
+                  </span>
+                  {isAdminCoach(user.name) && (
+                    <span className="shrink-0 text-[9px] font-black uppercase px-1.5 py-px rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 tracking-widest">
+                      Admin
+                    </span>
+                  )}
+                  <span className="shrink-0 text-[10px] tabular-nums font-bold px-2 py-0.5 rounded bg-surface-container-high/60 border border-outline-variant/20 text-on-surface-variant">
+                    {n} {n === 1 ? "sala" : "salas"}
+                  </span>
+                  <span className="material-symbols-outlined shrink-0 text-[16px] text-on-surface-variant/40 select-none">chevron_right</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+    }
 
     return (
       <div className="flex flex-col h-full min-h-0">

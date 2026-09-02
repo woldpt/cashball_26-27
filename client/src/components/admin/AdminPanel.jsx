@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { useIsMobile } from "../../hooks/useIsMobile.js";
 import { ModalShell } from "../shared/ModalShell.jsx";
@@ -27,7 +27,9 @@ import { UserTeamsSection } from "./UserTeamsSection.jsx";
  * Layouts:
  *  - Desktop (>= 768px): card `xl` com 2 colunas lado-a-lado (lista | detalhe).
  *  - Mobile (< 768px):   "ecrã inteiro" — o card ocupa ~100dvh, fluxo vertical
- *    lista ↔ detalhe e barra superior que dá contexto (título ou «Voltar»).
+ *    com lista SEMPRE por cima das configurações (scroll único, sem scroll dentro
+ *    de scroll). Ao selecionar, auto-scroll suave até ao detalhe; Voltar limpa
+ *    seleção e volta ao topo. Sem utilizador selecionado mostra só a lista.
  *    Tudo com `min-w-0` + truncate/break para NUNCA haver scroll horizontal.
  *
  * Only accessible by the admin coach (ADMIN_COACH_NAME env var, default "fabio").
@@ -38,9 +40,21 @@ export function AdminPanel({ open, onClose }) {
   const { me, adminUsers } = useGame();
   const [selectedUser, setSelectedUser] = useState(null);
   const isMobile = useIsMobile();
+  const scrollContainerRef = useRef(null);
+  const detailRef = useRef(null);
 
   const isAdmin = isAdminCoach(me?.name);
   const { loading, error: usersError, fetchUsers } = useAdminUsers({ open: open && isAdmin });
+
+  // Auto-scroll para o detalhe ao selecionar um utilizador em mobile
+  // com lista por cima (scroll único). Dá feedback imediato sem procura manual.
+  useEffect(() => {
+    if (!isMobile || !selectedUser || !detailRef.current) return;
+    const id = requestAnimationFrame(() => {
+      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [selectedUser, isMobile]);
 
   if (!isAdmin) return null;
 
@@ -77,11 +91,19 @@ export function AdminPanel({ open, onClose }) {
     setSelectedUser((u) => (u ? { ...u, name: newName } : u));
   }
 
-  // ── Mobile (< 768px): ecrã inteiro ────────────────────────────────────────
+  function handleClearSelection() {
+    setSelectedUser(null);
+    // Em mobile com scroll único, voltar ao topo da lista.
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // ── Mobile (< 768px): ecrã inteiro — lista por cima do detalhe ────────────
   // O card "xl" é convertido num sheet vertical quase cheio (h = 100dvh menos o
-  // padding do backdrop). A barra superior dá contexto: título na lista,
-  // «Voltar» + nome do utilizador no detalhe. Corpo com scroll vertical próprio;
-  // larguras nunca forçadas → sem scroll horizontal por construção.
+  // padding do backdrop). Corpo com SCROLL ÚNICO: lista expande na vertical
+  // e configurações surgem por baixo (sem contentor com overflow próprio).
+  // Barra superior dinâmica: título/lista ↔ «Voltar» + nome. Auto-scroll ao
+  // selecionar; sem seleção mostra só a lista (nada por baixo). Sem scroll
+  // horizontal por construção (min-w-0 + truncate).
   if (isMobile) {
     return (
       <ModalShell
@@ -91,14 +113,14 @@ export function AdminPanel({ open, onClose }) {
         variant="xl"
         cardClassName="h-[calc(100dvh-24px)] flex flex-col"
       >
-        {/* Barra superior — contexto do estado atual */}
+        {/* Barra superior — dinâmica quando há seleção (lista sempre visível por baixo) */}
         <header className="shrink-0 px-4 py-3 border-b border-outline-variant/15 bg-surface-container-high/50 flex items-center gap-2 min-w-0">
           {selectedUser ? (
             <>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setSelectedUser(null)}
+                onClick={handleClearSelection}
                 title="Voltar à lista"
                 className="shrink-0 -ml-1"
               >
@@ -139,17 +161,30 @@ export function AdminPanel({ open, onClose }) {
           </div>
         )}
 
-        {/* Corpo — lista OU detalhe, com scroll vertical próprio */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        {/* Corpo — scroll ÚNICO: lista por cima, configurações por baixo (sem scroll dentro de scroll) */}
+        <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
           <UserList
-              isMobile
-              users={adminUsers}
-              loading={loading}
-              selectedName={selectedUser?.name ?? null}
-              onSelect={(u) => setSelectedUser(u)}
-            />
+            isMobile
+            disableInternalScroll
+            users={adminUsers}
+            loading={loading}
+            selectedName={selectedUser?.name ?? null}
+            onSelect={(u) => setSelectedUser(u)}
+          />
           {selectedUser && (
-            <div className="p-4 space-y-6">{detailContent}</div>
+            <div
+              ref={detailRef}
+              className="border-t border-outline-variant/15 bg-surface p-4 space-y-6 scroll-mt-3"
+            >
+              {/* Âncora visual: nome do utilizador selecionado acima das configurações */}
+              <div className="flex items-center gap-2 pb-2 border-b border-outline-variant/10 -mx-4 px-4 -mt-4 pt-4 bg-surface-container-high/30">
+                <span className="material-symbols-outlined text-primary text-xl">settings</span>
+                <span className="text-xs font-black uppercase tracking-widest text-on-surface">
+                  Configurações — {selectedUser.name}
+                </span>
+              </div>
+              {detailContent}
+            </div>
           )}
         </div>
 
