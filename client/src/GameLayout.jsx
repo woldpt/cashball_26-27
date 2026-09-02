@@ -950,11 +950,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 )}
                 {mobileSubMenu === "transferencias" && (
                   <div className="flex">
+                    {/* eslint-disable react-hooks/refs -- callbacks de ref intencionais para medir posição dos badges */}
                     {[
                       { key: "market", label: "Mercado", icon: "swap_horiz", badge: marketListedCount },
                       { key: "leiloes", label: "Leilões", icon: "gavel", badge: liveAuctionCount },
                       { key: "scout", label: "Scout", icon: "search", badge: 0 },
-                      // eslint-disable-next-line react-hooks/refs -- map instala callbacks de ref para medir badges
                     ].map(({ key, label, icon, badge }) => (
                       <button
                         key={key}
@@ -999,6 +999,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         </span>
                       </button>
                     ))}
+                    {/* eslint-enable react-hooks/refs */}
                   </div>
                 )}
                 {mobileSubMenu === "competicao" && (

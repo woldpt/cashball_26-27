@@ -76,8 +76,10 @@ class JSDocTypeChecker {
     while ((match = functionPattern.exec(content)) !== null) {
       const lineNum =
         content.substring(0, match.index).split("\n").length - 1;
-      const declaredParams = this.parseFunctionDeclaration(lines[lineNum]);
       const jsDocBlock = this.extractJSDocBlock(content, lineNum);
+      // Silenciado: só valida se já existe bloco JSDoc. Funções sem /** não geram ruído.
+      if (!jsDocBlock) continue;
+      const declaredParams = this.parseFunctionDeclaration(lines[lineNum]);
       const documentedParams = this.parseJSDocParams(jsDocBlock);
 
       const documentedNames = documentedParams.map((p) => p.name);
@@ -109,7 +111,8 @@ class JSDocTypeChecker {
   }
 
   validateReactComponent(filePath, content) {
-    // Look for React functional components
+    // Silenciado: suggestions de componentes sem JSDoc geravam 56 ruídos.
+    // Só valida componentes que já optaram por documentar com /**.
     const compPattern = /(?:function|const)\s+(\w+)\s*\(\s*\{([^}]*)\}\s*\)/g;
     let match;
 
@@ -122,9 +125,10 @@ class JSDocTypeChecker {
 
       const lineNum = content.substring(0, match.index).split("\n").length - 1;
       const jsDocBlock = this.extractJSDocBlock(content, lineNum);
+      if (!jsDocBlock) continue;
 
       // Check if component has @param documentation for props
-      if (destructuredProps.length > 0 && !jsDocBlock?.includes("@param")) {
+      if (destructuredProps.length > 0 && !jsDocBlock.includes("@param")) {
         this.addIssue(
           "info",
           filePath,
@@ -212,7 +216,7 @@ class JSDocTypeChecker {
     return files;
   }
 
-  report() {
+  report({ verbose = false } = {}) {
     const errors = this.issues.filter((i) => i.severity === "error");
     const warnings = this.issues.filter((i) => i.severity === "warning");
     const infos = this.issues.filter((i) => i.severity === "info");
@@ -227,26 +231,36 @@ class JSDocTypeChecker {
       }
     }
 
-    if (warnings.length > 0) {
-      console.log("\n⚠️  WARNINGS:\n");
-      for (const issue of warnings) {
-        console.log(`   ${issue.file}:${issue.line}`);
-        console.log(`   ${issue.message}\n`);
+    // Silenciado por omissão: warnings/suggestions só com --verbose
+    if (verbose) {
+      if (warnings.length > 0) {
+        console.log("\n⚠️  WARNINGS:\n");
+        for (const issue of warnings) {
+          console.log(`   ${issue.file}:${issue.line}`);
+          console.log(`   ${issue.message}\n`);
+        }
+      }
+
+      if (infos.length > 0) {
+        console.log("\nℹ️  SUGGESTIONS:\n");
+        for (const issue of infos) {
+          console.log(`   ${issue.file}:${issue.line}`);
+          console.log(`   ${issue.message}\n`);
+        }
+      }
+      console.log("─".repeat(70));
+      console.log(
+        `\n📊 Summary: ${errors.length} errors, ${warnings.length} warnings, ${infos.length} suggestions\n`,
+      );
+    } else {
+      // Modo silencioso: não mostra warnings/suggestions nem os conta no summary
+      console.log("─".repeat(70));
+      if (errors.length === 0) {
+        console.log("\n✅ JSDoc OK — 0 errors (warnings silenciados, usa --verbose para ver)\n");
+      } else {
+        console.log(`\n📊 Summary: ${errors.length} errors\n`);
       }
     }
-
-    if (infos.length > 0) {
-      console.log("\nℹ️  SUGGESTIONS:\n");
-      for (const issue of infos) {
-        console.log(`   ${issue.file}:${issue.line}`);
-        console.log(`   ${issue.message}\n`);
-      }
-    }
-
-    console.log("─".repeat(70));
-    console.log(
-      `\n📊 Summary: ${errors.length} errors, ${warnings.length} warnings, ${infos.length} suggestions\n`,
-    );
 
     return errors.length === 0;
   }
@@ -262,9 +276,10 @@ async function main() {
     process.exit(1);
   }
 
+  const verbose = process.argv.includes("--verbose") || process.argv.includes("-v");
   const checker = new JSDocTypeChecker(srcDir);
   await checker.scanDirectory();
-  const success = checker.report();
+  const success = checker.report({ verbose });
 
   process.exit(success ? 0 : 1);
 }
