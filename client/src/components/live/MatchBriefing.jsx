@@ -692,7 +692,7 @@ export function MatchBriefing() {
         </div>
         <div className="px-4 py-3 lg:py-5 flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6">
           <div className="flex-1 min-w-0">
-            <p className="text-sm lg:text-base font-bold text-white leading-snug line-clamp-2">
+            <p className="text-sm lg:text-base font-bold text-white leading-snug line-clamp-4 lg:line-clamp-2">
               {s.headline ?? "Tudo em aberto nesta jornada."}
             </p>
             {s.stakes && (
