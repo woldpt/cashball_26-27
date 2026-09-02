@@ -811,66 +811,200 @@ function SubsPanel({
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      {/* ═══ Desktop: 3-column grid ═══ */}
-      <div className={`${compact ? "hidden" : "grid"} grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(260px,1.05fr)] flex-1 min-h-0 overflow-hidden`}>
-        <TitularesColumn
-          className="border-r border-outline-variant/15"
-          players={onPitchPlayers}
-          isHalftime={isHalftime}
-          isForcedSwap={isForcedSwap}
-          isGkRedCard={isGkRedCard}
-          forceOutPlayer={forceOutPlayer}
-          subsMade={subsMade}
-          grAvailableOnBench={grAvailableOnBench}
-          grLockedNoReplacement={grLockedNoReplacement}
-          effectiveOutId={effectiveOutId}
-          playerMatchStats={playerMatchStats}
-          pickOut={pickOut}
-          dragFrom={dragFrom}
-          dragOverSide={dragOverSide}
-          handleDragStart={handleDragStart}
-          handleDragOver={handleDragOver}
-          handleDropOnPitch={handleDropOnPitch}
-          handleDragEnd={handleDragEnd}
-        />
-        <SuplentesColumn
-          className="border-r border-outline-variant/15"
-          players={benchPlayers}
-          isHalftime={isHalftime}
-          forceOutPlayer={forceOutPlayer}
-          subsMade={subsMade}
-          subbedOut={subbedOut}
-          selectedInId={selectedInId}
-          playerMatchStats={playerMatchStats}
-          handlePickIn={handlePickIn}
-          dragFrom={dragFrom}
-          dragOverSide={dragOverSide}
-          handleDragStart={handleDragStart}
-          handleDragOver={handleDragOver}
-          handleDropOnBench={handleDropOnBench}
-          handleDragEnd={handleDragEnd}
-          summary={summary}
-        />
-        <MentalidadeColumn
-          isHalftime={isHalftime}
-          subsMade={subsMade}
-          tactic={tactic}
-          onUpdateTactic={onUpdateTactic}
-          confirmedSubs={confirmedSubs}
-          annotatedSquad={annotatedSquad}
-          onUndoSub={onUndoSub}
-          swapProps={sharedSwapProps}
-        />
-      </div>
-
-      {/* ═══ Mobile: stack de páginas Titulares/Suplentes ═══
-       * Duas folhas sobrepostas em largura: a folha de trás estaciona com o
-       * bordo direito alinhado ao do container, ficando minimamente destapada
-       * na zona das skills (skill │ RES forma). A troca é um deslizamento
-       * horizontal curto entre slots — swipe/tap na faixa lateral ou chip 'Sai'.
-       * Cada folha é o próprio scroller vertical → posições de scroll são
-       * preservadas entre trocas (sem remount). */}
-      <div className={`${compact ? "flex" : "hidden"} flex-col flex-1 min-h-0`}>
+      {!compact ? (
+        /* ═══ Desktop: 3-column grid ═══ */
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(260px,1.05fr)] flex-1 min-h-0 overflow-hidden">
+          <TitularesColumn
+            className="border-r border-outline-variant/15"
+            players={onPitchPlayers}
+            isHalftime={isHalftime}
+            isForcedSwap={isForcedSwap}
+            isGkRedCard={isGkRedCard}
+            forceOutPlayer={forceOutPlayer}
+            subsMade={subsMade}
+            grAvailableOnBench={grAvailableOnBench}
+            grLockedNoReplacement={grLockedNoReplacement}
+            effectiveOutId={effectiveOutId}
+            playerMatchStats={playerMatchStats}
+            pickOut={pickOut}
+            dragFrom={dragFrom}
+            dragOverSide={dragOverSide}
+            handleDragStart={handleDragStart}
+            handleDragOver={handleDragOver}
+            handleDropOnPitch={handleDropOnPitch}
+            handleDragEnd={handleDragEnd}
+          />
+          <SuplentesColumn
+            className="border-r border-outline-variant/15"
+            players={benchPlayers}
+            isHalftime={isHalftime}
+            forceOutPlayer={forceOutPlayer}
+            subsMade={subsMade}
+            subbedOut={subbedOut}
+            selectedInId={selectedInId}
+            playerMatchStats={playerMatchStats}
+            handlePickIn={handlePickIn}
+            dragFrom={dragFrom}
+            dragOverSide={dragOverSide}
+            handleDragStart={handleDragStart}
+            handleDragOver={handleDragOver}
+            handleDropOnBench={handleDropOnBench}
+            handleDragEnd={handleDragEnd}
+            summary={summary}
+          />
+          <MentalidadeColumn
+            isHalftime={isHalftime}
+            subsMade={subsMade}
+            tactic={tactic}
+            onUpdateTactic={onUpdateTactic}
+            confirmedSubs={confirmedSubs}
+            annotatedSquad={annotatedSquad}
+            onUndoSub={onUndoSub}
+            swapProps={sharedSwapProps}
+          />
+        </div>
+      ) : shortLandscape ? (
+        /* ═══ Landscape phone: duas colunas lado-a-lado ═══
+         * Aproveita a largura (812px) para mostrar Titulares e
+         * Suplentes em simultâneo — sem folhas sobrepostas, sem
+         * peek, sem swipe. Cada coluna tem scroll próprio; a
+         * lista passa de ~80px (1 cartão) para ~220px (6 cartões).
+         * Mentalidade fica oculta nesta densidade (disponível em
+         * vertical/desktop). */
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Barra minimalista — só contador + anular todas */}
+          <div className="shrink-0 flex items-center justify-end gap-2 px-3 py-1.5 border-b border-outline-variant/15 bg-surface-container-low/95">
+            <SubsCounter subsMade={subsMade} />
+            {confirmedSubs.length > 0 && (
+              <button
+                type="button"
+                onClick={onArmResetAll}
+                aria-label="Anular todas as substituições planeadas"
+                className={`flex shrink-0 items-center justify-center rounded-md border transition-colors ${
+                  confirmResetAll
+                    ? "h-6 border-rose-500/50 bg-rose-500/15 px-2 text-[9px] font-black uppercase tracking-wider text-rose-300"
+                    : "h-6 w-6 border-outline-variant/40 text-on-surface-variant/70 hover:border-rose-500/40 hover:text-rose-300"
+                }`}
+              >
+                {confirmResetAll ? (
+                  <span>Confirmar?</span>
+                ) : (
+                  <MatchIcon name="reset" className="h-3.5 w-3.5 text-rose-400/80" />
+                )}
+              </button>
+            )}
+          </div>
+          {isHalftime && confirmedSubs.length > 0 && (
+            <div className="shrink-0 border-b border-outline-variant/15 bg-cyan-950/10">
+              <ConfirmedSubsStrip
+                subs={confirmedSubs}
+                annotatedSquad={annotatedSquad}
+                onUndoSub={onUndoSub}
+              />
+            </div>
+          )}
+          <div className="flex flex-1 min-h-0 overflow-hidden">
+            {/* Titulares */}
+            <div className="flex flex-col flex-1 min-w-0 border-r border-outline-variant/15 overflow-hidden">
+              <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-high/50 border-b border-outline-variant/15">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Titulares</span>
+                <span className="ml-auto text-[10px] font-bold tabular-nums text-on-surface-variant">{onPitchPlayers.length}</span>
+              </div>
+              {grLockedNoReplacement && (
+                <p className="px-3 py-1 text-[9px] font-semibold text-amber-300 bg-amber-500/10 border-b border-amber-500/20">Sem GR no banco — o guarda-redes não pode sair</p>
+              )}
+              <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1.5">
+                {onPitchPlayers.map((p) => {
+                  const noGrReplacement = isHalftime && p.position === "GR" && !grAvailableOnBench;
+                  const isLockedForced = isForcedSwap && !isGkRedCard && !!forceOutPlayer && p.id !== forceOutPlayer.id;
+                  const disabled = noGrReplacement || isLockedForced || (isHalftime && subsMade >= MAX_MATCH_SUBS);
+                  const selected = effectiveOutId === p.id;
+                  const stats = playerMatchStats?.get(p.id);
+                  return (
+                    <CompactPlayerCard
+                      key={p.id}
+                      player={p}
+                      posStyle={getPosStyle(p.position)}
+                      selected={selected}
+                      disabled={disabled}
+                      selectable={!disabled}
+                      onPick={() => pickOut(p)}
+                      showFatigue={false}
+                      showMatchStats
+                      goals={stats?.goals ?? 0}
+                      yellowCards={stats?.yellowCards ?? 0}
+                      swapIndicator={isHalftime}
+                      forcedOut={isForcedSwap && !!forceOutPlayer && p.id === forceOutPlayer.id}
+                      draggable={!disabled}
+                      onDragStart={handleDragStart(p, "pitch")}
+                      onDragOver={handleDragOver("pitch")}
+                      onDragDrop={handleDropOnPitch(p)}
+                      onDragEnd={handleDragEnd}
+                      dragOver={dragOverSide === "pitch" && dragFrom?.side === "bench"}
+                    />
+                  );
+                })}
+                {onPitchPlayers.length === 0 && (
+                  <p className="text-center text-on-surface-variant/60 text-xs font-medium py-6">Sem opções em campo</p>
+                )}
+              </div>
+            </div>
+            {/* Suplentes */}
+            <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+              <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-high/50 border-b border-outline-variant/15">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400">Banco</span>
+                <span className="ml-auto text-[10px] font-bold tabular-nums text-on-surface-variant">{benchPlayers.length}</span>
+              </div>
+              <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1.5">
+                {benchPlayers.map((p) => {
+                  const alreadyUsed = isHalftime && subbedOut.includes(p.id);
+                  const positionMismatch = !!forceOutPlayer && (forceOutPlayer.position === "GR") !== (p.position === "GR");
+                  const disabled = alreadyUsed || positionMismatch || (isHalftime && subsMade >= MAX_MATCH_SUBS);
+                  const selected = selectedInId === p.id;
+                  const stats = playerMatchStats?.get(p.id);
+                  return (
+                    <CompactPlayerCard
+                      key={p.id}
+                      player={p}
+                      posStyle={getPosStyle(p.position)}
+                      selected={selected}
+                      disabled={disabled}
+                      selectable={!disabled}
+                      onPick={() => handlePickIn(p)}
+                      showFatigue={false}
+                      showMatchStats
+                      goals={stats?.goals ?? 0}
+                      yellowCards={stats?.yellowCards ?? 0}
+                      draggable={!disabled}
+                      onDragStart={handleDragStart(p, "bench")}
+                      onDragOver={handleDragOver("bench")}
+                      onDragDrop={handleDropOnBench(p)}
+                      onDragEnd={handleDragEnd}
+                      dragOver={dragOverSide === "bench" && dragFrom?.side === "pitch"}
+                    />
+                  );
+                })}
+                {benchPlayers.length === 0 && (
+                  <p className="text-center text-on-surface-variant/60 text-xs font-medium py-6">Sem suplentes disponíveis</p>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high/95 px-3 py-2">
+            <SwapControls {...sharedSwapProps} />
+          </div>
+        </div>
+      ) : (
+        /* ═══ Mobile vertical: stack de páginas Titulares/Suplentes ═══
+         * Duas folhas sobrepostas em largura: a folha de trás estaciona com o
+         * bordo direito alinhado ao do container, ficando minimamente destapada
+         * na zona das skills (skill │ RES forma). A troca é um deslizamento
+         * horizontal curto entre slots — swipe/tap na faixa lateral ou chip 'Sai'.
+         * Cada folha é o próprio scroller vertical → posições de scroll são
+         * preservadas entre trocas (sem remount). */
+        <div className="flex flex-col flex-1 min-h-0">
         {/* ── Top cluster: mentalidade (halftime) + indicador de página ── */}
         <div className="shrink-0 border-b border-outline-variant/15 bg-surface-container-low/95">
           {isHalftime && !shortLandscape && (
@@ -1052,6 +1186,7 @@ function SubsPanel({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
