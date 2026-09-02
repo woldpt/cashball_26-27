@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MAX_MATCH_SUBS, POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import {
@@ -414,65 +414,48 @@ export function IntervencaoView({
 
 /* ── Sub-components ─────────────────────────────────────────────────────── */
 
-/* Altura da faixa (peek) em que a página de trás fica visível no mobile. */
-const PEEK_H = 56;
+/* Largura da faixa lateral (peek) em que a zona das skills da página de trás
+ * permanece minimamente destapada no mobile. */
+const PEEK_W = 72;
 
 /**
  * Folha da stack de páginas mobile (Titulares/Suplentes). A folha à frente
- * ocupa quase toda a zona — menos a faixa do peek; a de trás desloca-se para
- * baixo (só o seu topo é visível) e fica escurecida. Ao perder a frente, a
- * folha vira para cima em torno do bordo superior (eixo X, como um cartão de
- * calendário) antes de assentar no slot de trás.
+ * ocupa quase toda a largura; a de trás estaciona deslocada PEEK_W px para a
+ * direita — o seu bordo direito fica alinhado ao do container e só a zona das
+ * métricas dos cartões (skill │ RES forma) permanece visível na faixa lateral,
+ * escurecida.
+ *
+ * A troca é um deslizamento horizontal curto entre os dois slots: sem 3D, sem
+ * elasticidade e sem drag livre sobre o scroller → as folhas assentam estáveis
+ * (sem "boiar") mesmo com re-renders do jogo em curso.
  *
  * @param {boolean} props.isFront - Esta folha é a da frente?
- * @param {number} props.stackY - Offset Y do slot de trás (altura do container menos PEEK_H).
  * @param {boolean} props.reducedMotion - Prefere movimento reduzido (troca instantânea).
- * @param {Function} [props.onDragEnd] - Fim do swipe horizontal ((e, info) => void);
- *   ligada apenas à folha da frente.
  */
-function StackSheet({ isFront, stackY, reducedMotion, onDragEnd, children }) {
+function StackSheet({ isFront, reducedMotion, children }) {
   return (
     <motion.div
       initial={false}
-      drag={isFront && !reducedMotion ? "x" : false}
-      dragElastic={0.12}
-      onDragEnd={onDragEnd}
       animate={
         isFront
-          ? { y: 0, rotateX: 0, scale: 1, filter: "brightness(1) saturate(1)" }
-          : {
-              y: stackY,
-              // Vira para cima e volta a assentar plana no slot de trás.
-              rotateX: reducedMotion ? 0 : [0, -102, 0],
-              scale: 0.985,
-              filter: "brightness(0.55) saturate(0.8)",
-            }
+          ? { x: 0, filter: "brightness(1)" }
+          : { x: PEEK_W, filter: "brightness(0.55) saturate(0.85)" }
       }
       transition={
         reducedMotion
           ? { duration: 0 }
-          : isFront
-            ? {
-                y: { duration: 0.42, ease: [0.3, 0.8, 0.3, 1] },
-                rotateX: { duration: 0.3 },
-                scale: { duration: 0.42 },
-                filter: { duration: 0.42 },
-              }
-            : {
-                y: { delay: 0.26, duration: 0.34, ease: "easeIn" },
-                rotateX: { duration: 0.58, times: [0, 0.42, 1] },
-                scale: { duration: 0.42, delay: 0.2 },
-                filter: { duration: 0.42, delay: 0.2 },
-              }
+          : {
+              x: { duration: 0.34, ease: [0.32, 0.72, 0.24, 1] },
+              filter: { duration: 0.34 },
+            }
       }
       style={{
-        zIndex: isFront ? 3 : 1,
-        transformOrigin: "top center",
+        zIndex: isFront ? 2 : 1,
         pointerEvents: isFront ? "auto" : "none",
-        height: `calc(100% - ${PEEK_H}px)`,
+        width: `calc(100% - ${PEEK_W}px)`,
       }}
       aria-hidden={!isFront}
-      className={`absolute inset-x-0 top-0 overflow-hidden rounded-b-lg ${isFront ? "shadow-[0_12px_20px_-8px_rgba(0,0,0,0.6)]" : ""}`}
+      className={`absolute left-0 top-0 h-full overflow-hidden rounded-lg ${isFront ? "shadow-[10px_0_24px_-12px_rgba(0,0,0,0.9)]" : ""}`}
     >
       <div className="h-full overflow-y-auto overscroll-contain">{children}</div>
     </motion.div>
@@ -577,18 +560,6 @@ function SubsPanel({
   // Mentalidade recolhível (mobile) — fechada por omissão para não roubar
   // altura à lista; fecha-se sozinha após escolher estilo.
   const [mentalidadeOpen, setMentalidadeOpen] = useState(false);
-  // Altura da zona da stack (para o offset px do slot de trás).
-  const stackRef = useRef(null);
-  const [stackH, setStackH] = useState(0);
-  useLayoutEffect(() => {
-    const el = stackRef.current;
-    if (!el) return;
-    const measure = () => setStackH(el.clientHeight);
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
   // Movimento reduzido → troca instantânea de folhas, sem flip.
   const [reducedMotion, setReducedMotion] = useState(() => {
     if (typeof window === "undefined" || !window.matchMedia) return false;
@@ -700,13 +671,35 @@ function SubsPanel({
     onResolveAction,
   };
 
-  // Swipe horizontal na folha da frente (vertical continua a pertencer ao
-  // scroll nativo da lista; touch-action pan-y é posto pelo framer).
-  const handleSheetDragEnd = (e, info) => {
-    const dx = info.offset.x;
-    const vx = info.velocity.x;
-    if (dx <= -60 || vx <= -500) setUserPage("bench");
-    else if (dx >= 60 || vx >= 500) setUserPage("pitch");
+  // Swipe/tap na faixa lateral do peek. A faixa não é scrollável, por isso o
+  // gesto horizontal nunca conflita com o scroll vertical nativo das listas.
+  // Sem elasticidade: atinge o limiar → troca de página; senão → nada.
+  const stripGesture = useRef(null);
+  const stripSwipeGuard = useRef(false);
+  const handleStripPointerDown = (e) => {
+    stripGesture.current = { x0: e.clientX };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* sem pointer capture — o tap continua a funcionar */
+    }
+  };
+  const handleStripPointerUp = (e) => {
+    const g = stripGesture.current;
+    stripGesture.current = null;
+    if (!g) return;
+    if (Math.abs(e.clientX - g.x0) >= 32) {
+      // Era um swipe — ignora o click que se segue ao pointerup.
+      stripSwipeGuard.current = true;
+      setUserPage(frontPage === "pitch" ? "bench" : "pitch");
+    }
+  };
+  const handleStripTap = () => {
+    if (stripSwipeGuard.current) {
+      stripSwipeGuard.current = false;
+      return;
+    }
+    setUserPage(frontPage === "pitch" ? "bench" : "pitch");
   };
 
   return (
@@ -763,13 +756,11 @@ function SubsPanel({
         />
       </div>
 
-      {/* ═══ Mobile: stack de páginas Titulares/Suplentes (flip 3D) ═══
-       * Duas folhas sobrepostas como cartões empilhados:
-       *  - a folha de trás está deslocada PEEK_H px para baixo — o seu topo
-       *    (1º cartão, com skill) é sempre visível na faixa inferior;
-       *  - tocar no jogador que sai faz a folha virar para cima (eixo X) e
-       *    os suplentes assentam à frente; swipe horizontal, chip 'Sai' ou o
-       *    tap na faixa do peek trocam a ordem em sentido inverso.
+      {/* ═══ Mobile: stack de páginas Titulares/Suplentes ═══
+       * Duas folhas sobrepostas em largura: a folha de trás estaciona com o
+       * bordo direito alinhado ao do container, ficando minimamente destapada
+       * na zona das skills (skill │ RES forma). A troca é um deslizamento
+       * horizontal curto entre slots — swipe/tap na faixa lateral ou chip 'Sai'.
        * Cada folha é o próprio scroller vertical → posições de scroll são
        * preservadas entre trocas (sem remount). */}
       <div className="md:hidden flex flex-col flex-1 min-h-0">
@@ -850,18 +841,9 @@ function SubsPanel({
         )}
 
         {/* ── Stack de páginas ── */}
-        <div
-          ref={stackRef}
-          className="relative flex-1 min-h-0 overflow-hidden"
-          style={{ perspective: "1200px" }}
-        >
+        <div className="relative flex-1 min-h-0 overflow-hidden">
           {/* Folha TITULARES (frente por omissão) */}
-          <StackSheet
-            isFront={frontPage === "pitch"}
-            stackY={Math.max(stackH - PEEK_H, 0)}
-            reducedMotion={reducedMotion}
-            onDragEnd={handleSheetDragEnd}
-          >
+          <StackSheet isFront={frontPage === "pitch"} reducedMotion={reducedMotion}>
             <TitularesColumn
               flat
               players={onPitchPlayers}
@@ -884,13 +866,8 @@ function SubsPanel({
             />
           </StackSheet>
 
-          {/* Folha SUPLENTES (peek com o 1º cartão atrás do topo) */}
-          <StackSheet
-            isFront={frontPage === "bench"}
-            stackY={Math.max(stackH - PEEK_H, 0)}
-            reducedMotion={reducedMotion}
-            onDragEnd={handleSheetDragEnd}
-          >
+          {/* Folha SUPLENTES (zona das skills destapada à direita quando atrás) */}
+          <StackSheet isFront={frontPage === "bench"} reducedMotion={reducedMotion}>
             <SuplentesColumn
               flat
               players={benchPlayers}
@@ -911,27 +888,25 @@ function SubsPanel({
             />
           </StackSheet>
 
-          {/* Tap na faixa do peek traz a página de trás para a frente. */}
+          {/* Faixa lateral do peek — tap ou swipe horizontal troca a página. */}
           <button
             type="button"
-            onClick={() =>
-              setUserPage(frontPage === "pitch" ? "bench" : "pitch")
-            }
+            onPointerDown={handleStripPointerDown}
+            onPointerUp={handleStripPointerUp}
+            onClick={handleStripTap}
             aria-label={
               frontPage === "pitch"
                 ? "Traz o banco de suplentes para a frente"
                 : "Traz os titulares para a frente"
             }
-            className="absolute inset-x-0 bottom-0 z-[4] flex cursor-pointer items-center justify-end pr-2 outline-none focus-visible:bg-white/5"
-            style={{ height: PEEK_H }}
+            className="absolute right-0 top-0 z-[4] flex h-full cursor-pointer items-center justify-center outline-none focus-visible:bg-white/5"
+            style={{ width: PEEK_W }}
           >
             <span
               aria-hidden="true"
-              className={`flex h-7 w-7 items-center justify-center rounded-full bg-surface-container-high/90 border border-outline-variant/30 text-on-surface-variant/80 shadow-sm transition-transform ${
-                frontPage === "pitch" ? "-rotate-90" : "rotate-90"
-              }`}
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-container-high/90 border border-outline-variant/30 text-on-surface-variant/80 shadow-sm"
             >
-              <MatchIcon name="chevron-right" className="h-4 w-4" />
+              <MatchIcon name="chevron-right" className="h-4 w-4 rotate-180" />
             </span>
           </button>
         </div>
