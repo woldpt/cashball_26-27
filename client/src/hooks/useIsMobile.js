@@ -49,3 +49,54 @@ export function useMobileLandscape() {
     () => false
   );
 }
+
+/**
+ * useCompactViewport — devolve `true` quando o viewport NÃO tem espaço para o
+ * layout desktop do jogo: exige largura ≥ breakpoint `md` (768px) E altura ≥
+ * 520px.
+ *
+ * Cobre a banda "telemóvel em horizontal": tem largura de desktop mas só
+ * ~375–400px de altura, onde a grid de 3 colunas ficaria cortada — esses
+ * ecrãs devem usar o layout compacto (stack mobile) em vez da grid.
+ *
+ * @returns {boolean} `true` quando deve ser usado o layout compacto.
+ */
+export function useCompactViewport() {
+  const query = "(min-width: 768px) and (min-height: 520px)";
+  let mql = null;
+  const getMql = () => (mql ??= window.matchMedia(query));
+
+  return !useSyncExternalStore(
+    (onChange) => {
+      const q = getMql();
+      q.addEventListener("change", onChange);
+      return () => q.removeEventListener("change", onChange);
+    },
+    () => getMql().matches,
+    () => false
+  );
+}
+
+/**
+ * useLandscapePhone — devolve `true` apenas na banda "telemóvel em
+ * horizontal": largura de desktop (≥768px) mas altura do viewport abaixo de
+ * 520px. É aqui que se aplica a compressão vertical extra do layout compacto;
+ * o telemóvel em vertical mantém o layout mobile normal (já aprovado).
+ *
+ * @returns {boolean} `true` se width ≥ 768px E height < 520px.
+ */
+export function useLandscapePhone() {
+  const query = "(min-width: 768px) and (max-height: 519px)";
+  let mql = null;
+  const getMql = () => (mql ??= window.matchMedia(query));
+
+  return useSyncExternalStore(
+    (onChange) => {
+      const q = getMql();
+      q.addEventListener("change", onChange);
+      return () => q.removeEventListener("change", onChange);
+    },
+    () => getMql().matches,
+    () => false
+  );
+}

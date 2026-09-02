@@ -22,6 +22,10 @@ import {
   OpponentGridCard,
 } from "../shared/index.js";
 import { TeamCrest } from "../../live/TeamCrest.jsx";
+import {
+  useCompactViewport,
+  useLandscapePhone,
+} from "../../../hooks/useIsMobile.js";
 
 // Halftime style values → labels (TacticsButtons uses the English values).
 const STYLE_LABELS = {
@@ -100,6 +104,12 @@ export function IntervencaoView({
 
   // Declarada cedo (antes do hook abaixo) para evitar TDZ no array de deps.
   const isHalftime = mode === "halftime";
+
+  // Compacto = mobile vertical OU ecrã baixo: telemóvel em horizontal tem
+  // largura de desktop mas só ~375px de altura (a grid desktop cortaria).
+  const compact = useCompactViewport();
+  // Banda landscape phone → compressão extra; o vertical não muda.
+  const shortLandscape = useLandscapePhone();
 
   // Mobile halftime: the top zone alternates between the score and the phase
   // title, fading over every 5 seconds.
@@ -321,7 +331,7 @@ export function IntervencaoView({
        * Substitui (só no mobile) a barra de score do MatchPage e o bloco de
        * posse de bola; desvanecimento de 5s entre os dois estados. */}
       {isHalftime && hInfo?.name && aInfo?.name && (
-        <div className="shrink-0 border-b border-outline-variant/25 bg-surface-container-high md:hidden">
+        <div className={`${compact ? "" : "hidden"} shrink-0 border-b border-outline-variant/25 bg-surface-container-high`}>
           <div className="relative h-10 overflow-hidden">
             {/* Score — versão compacta do banner de intervalo do MatchPage. */}
             <motion.div
@@ -383,7 +393,7 @@ export function IntervencaoView({
       {/* Title bar — description on the left, reset far right. No mobile de
        * intervalo fica oculta (o banner intermitente acima ocupa o lugar). */}
       <div
-        className={`${isHalftime ? "hidden md:flex" : "flex"} shrink-0 px-4 sm:px-5 py-3 sm:py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme} items-center justify-between gap-2 sm:gap-4`}
+        className={`${isHalftime && compact ? "hidden" : "flex"} shrink-0 px-4 sm:px-5 py-3 sm:py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme} items-center justify-between gap-2 sm:gap-4`}
       >
         <div className="min-w-0 flex-1">
           {/* No truncate: a forced-swap title must never cut the player's name. */}
@@ -413,13 +423,13 @@ export function IntervencaoView({
       {/* Hidden during forced swaps — the other tabs are noise while the
        * auto-substitution countdown runs. */}
       {!isForcedSwap && (
-        <div className="shrink-0 px-4 py-2 bg-surface-container-high/50 border-b border-outline-variant/15">
+        <div className={`shrink-0 ${shortLandscape ? "px-4 py-1" : "px-4 py-2"} bg-surface-container-high/50 border-b border-outline-variant/15`}>
           <div className="flex rounded-md bg-surface-container p-1.5 gap-2">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setCenterTab(tab.key)}
-                className={`flex-1 min-w-0 py-2.5 text-xs font-bold uppercase tracking-widest rounded-md transition-all ${
+                className={`flex-1 min-w-0 ${shortLandscape ? "py-1.5" : "py-2.5"} text-xs font-bold uppercase tracking-widest rounded-md transition-all ${
                   activeCenterTab === tab.key
                     ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
                     : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
@@ -669,6 +679,10 @@ function SubsPanel({
   const [mentalidadeOpen, setMentalidadeOpen] = useState(false);
   // Movimento reduzido → troca instantânea de folhas, sem flip.
   const reducedMotion = usePrefersReducedMotion();
+  // Landscape phone: stack em vez da grid de 3 colunas (altura insuficiente).
+  const compact = useCompactViewport();
+  // Compressão extra só na banda landscape phone.
+  const shortLandscape = useLandscapePhone();
 
   // Drag-and-drop swap (HTML5 DnD, no extra lib). `dragFrom` records the
   // dragged player + source side; `dragOverSide` highlights the valid target
@@ -798,7 +812,7 @@ function SubsPanel({
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* ═══ Desktop: 3-column grid ═══ */}
-      <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(260px,1.05fr)] flex-1 min-h-0 overflow-hidden">
+      <div className={`${compact ? "hidden" : "grid"} grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(260px,1.05fr)] flex-1 min-h-0 overflow-hidden`}>
         <TitularesColumn
           className="border-r border-outline-variant/15"
           players={onPitchPlayers}
@@ -856,10 +870,10 @@ function SubsPanel({
        * horizontal curto entre slots — swipe/tap na faixa lateral ou chip 'Sai'.
        * Cada folha é o próprio scroller vertical → posições de scroll são
        * preservadas entre trocas (sem remount). */}
-      <div className="md:hidden flex flex-col flex-1 min-h-0">
+      <div className={`${compact ? "flex" : "hidden"} flex-col flex-1 min-h-0`}>
         {/* ── Top cluster: mentalidade (halftime) + indicador de página ── */}
         <div className="shrink-0 border-b border-outline-variant/15 bg-surface-container-low/95">
-          {isHalftime && (
+          {isHalftime && !shortLandscape && (
             <>
               <button
                 type="button"
@@ -899,7 +913,7 @@ function SubsPanel({
           )}
 
           {/* Indicador de página (informação; a navegação é swipe / tap) + contador de subs */}
-          <div className="flex items-center gap-2 px-4 pt-1 pb-2">
+          <div className={`flex items-center gap-2 ${shortLandscape ? "px-4 pt-0.5 pb-1" : "px-4 pt-1 pb-2"}`}>
             <div className="flex flex-1 min-w-0 items-center gap-1.5">
               {[
                 { key: "pitch", label: "Em campo", n: onPitchPlayers.length },

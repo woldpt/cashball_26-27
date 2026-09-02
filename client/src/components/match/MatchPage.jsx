@@ -5,6 +5,10 @@ import { MatchView, IntervencaoView } from "./MatchTabs.jsx";
 import { useTactics } from "../../contexts/TacticsContext.jsx";
 import { generateLeagueFixtures } from "../../utils/fixtures.js";
 import { DIVISION_NAMES } from "../../constants/index.js";
+import {
+	useCompactViewport,
+	useLandscapePhone,
+} from "../hooks/useIsMobile.js";
 
 /**
  * Painel flutuante de jogo (ao vivo, intervalo, acção, detalhe).
@@ -56,6 +60,11 @@ export function MatchPage({
 		handleUndoSub,
 		handleResetAllSubs,
 	} = useTactics();
+
+	// Telemóvel em horizontal: largura de desktop, altura de telemóvel → layout compacto.
+	const compact = useCompactViewport();
+	// Banda landscape phone → header menos alto para dar espaço ao conteúdo.
+	const shortLandscape = useLandscapePhone();
 
 	// When a server-driven match action is active, selections go straight to
 	// setSwapSource/setSwapTarget (the server resolves the swap).
@@ -200,7 +209,7 @@ export function MatchPage({
 			transition={takeover.transition}
 			>
 			{/* Header */}
-			<div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-outline-variant/25 bg-surface-container-high backdrop-blur-sm">
+			<div className={`shrink-0 flex items-center gap-3 ${shortLandscape ? "px-4 py-1.5" : "px-4 py-3"} border-b border-outline-variant/25 bg-surface-container-high backdrop-blur-sm`}>
 				<button
 					onClick={onClose}
 					className="w-8 h-8 rounded-xl bg-surface-container-high/80 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center transition-all border border-outline/40 hover:border-outline"
@@ -234,7 +243,7 @@ export function MatchPage({
 
 			{/* ── Halftime score banner ──────────────────────────────────── */}
 			{mode === "halftime" && fixture && (
-				<div className="hidden md:flex shrink-0 items-stretch border-b border-outline-variant/25 bg-surface-container-high backdrop-blur-sm">
+				<div className={`${compact ? "hidden" : "flex"} shrink-0 items-stretch border-b border-outline-variant/25 bg-surface-container-high backdrop-blur-sm`}>
 					<div
 						className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5"
 						style={{ backgroundColor: hColor + "20", color: hColor }}
