@@ -1289,38 +1289,20 @@ function MatchSummaryBlock({ fixture, hInfo, aInfo, liveMinute, className = "" }
           </span>
         )}
       </div>
-      <div className="flex items-center justify-center gap-2">
-        <span className="flex flex-1 min-w-0 items-center justify-end gap-1.5">
-          <span className="truncate text-xs font-bold text-on-surface">{hInfo.name}</span>
-        </span>
-        <span className="shrink-0 text-lg font-black font-headline tabular-nums text-on-surface">
-          {fixture.homePossession ?? 0}%
-        </span>
-        <span className="flex flex-1 min-w-0 items-center gap-1.5">
-          <span className="truncate text-xs font-bold text-on-surface">{aInfo.name}</span>
-        </span>
-      </div>
       {fixture.homePossession != null && (
-        <>
-          <div className="h-1.5 rounded-full overflow-hidden bg-surface-container-high/80 flex">
-            <div
-              className="h-full"
-              style={{
-                width: `${fixture.homePossession}%`,
-                background: hInfo.color_primary || "#6366f1",
-              }}
-            />
-            <div
-              className="h-full flex-1"
-              style={{ background: aInfo.color_primary || "#f43f5e" }}
-            />
-          </div>
-          <div className="flex justify-between text-[9px] font-bold tabular-nums text-on-surface-variant">
-            <span>{fixture.homePossession}%</span>
-            <span className="uppercase tracking-widest">posse</span>
-            <span>{fixture.awayPossession}%</span>
-          </div>
-        </>
+        <div className="h-1.5 rounded-full overflow-hidden bg-surface-container-high/80 flex">
+          <div
+            className="h-full"
+            style={{
+              width: `${fixture.homePossession}%`,
+              background: hInfo.color_primary || "#6366f1",
+            }}
+          />
+          <div
+            className="h-full flex-1"
+            style={{ background: aInfo.color_primary || "#f43f5e" }}
+          />
+        </div>
       )}
     </div>
   );
