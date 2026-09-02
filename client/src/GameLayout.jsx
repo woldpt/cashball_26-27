@@ -294,16 +294,18 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   useEffect(() => () => window.clearTimeout(transferFlyTimerRef.current), []);
 
   const transferMenuOpen = mobileSubMenu === "transferencias";
-  // A soma some do TRANSF só enquanto o fly-up está aberto. Derivar APENAS de
-  // `transferMenuOpen` (e não de `transferFlyers`) evita o pop-in intercalado no
-  // fecho: o flyer de regresso aterra sobre a badge que reaparece, sem piscar.
-  const transfSumHidden = transferMenuOpen;
-  // Os badges individuais só repousam nos botões fora das janelas de voo.
-  // Exige prev === true para não piscar no primeiro frame da abertura: no
-  // commit em que `transferMenuOpen` fica true os flyers ainda são [] e sem
-  // este guard o badge aparecia um frame antes de o flyer partir.
-  const subBadgesResting =
-    transferMenuOpen && transferFlyers.length === 0 && prevTransferMenuOpenRef.current;
+  // Durante o voo o badge de origem e o de destino ficam escondidos para não
+  // haver dupla contagem no ponto de aterragem. O `transferFlyers` só é
+  // preenchido no useLayoutEffect (1 commit de atraso), por isso usamos o
+  // prev para já considerar "a voar" no primeiro frame da abertura/fecho.
+  /* eslint-disable react-hooks/refs -- guard do 1º frame lê prev ref intencionalmente; derivado propaga para badges */
+  const transferIsOpening = transferMenuOpen && !prevTransferMenuOpenRef.current;
+  const transferIsClosing = !transferMenuOpen && prevTransferMenuOpenRef.current;
+  const transferFlyingNow =
+    transferFlyers.length > 0 || transferIsOpening || transferIsClosing;
+  const transfSumHidden = transferMenuOpen || transferFlyingNow;
+  const subBadgesResting = transferMenuOpen && !transferFlyingNow;
+  /* eslint-enable react-hooks/refs */
   const totalCoaches =
     players.length +
     awaitingCoaches.filter((n) => !players.some((p) => p.name === n)).length;
@@ -1200,6 +1202,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             })()}
 
             {/* Transferências (Mercado + Leilões) */}
+            {/* eslint-disable react-hooks/refs */}
             {(() => {
               const isChildActive = ["market", "leiloes", "scout"].includes(
                 activeTab,
@@ -1247,6 +1250,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 </motion.button>
               );
             })()}
+            {/* eslint-enable react-hooks/refs */}
           </nav>
 
           {/* Badges em voo: TRANSF ↔ fly-up (só durante a transição) */}
