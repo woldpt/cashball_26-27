@@ -283,17 +283,21 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     }
     setTransferFlyers(items);
     window.clearTimeout(transferFlyTimerRef.current);
+    // Limpa logo após o voo (DUR.slow ≈ 280 ms) para o flyer de regresso não
+    // ficar a sobrepor a badge que reaparece no TRANSF (pulso duplo no fecho).
     transferFlyTimerRef.current = window.setTimeout(
       () => setTransferFlyers([]),
-      420,
+      DUR.slow * 1000 + 60,
     );
   }, [mobileSubMenu, marketListedCount, liveAuctionCount]);
 
   useEffect(() => () => window.clearTimeout(transferFlyTimerRef.current), []);
 
   const transferMenuOpen = mobileSubMenu === "transferencias";
-  // A soma some do TRANSF enquanto o fly-up está aberto (ou durante o voo de regresso).
-  const transfSumHidden = transferMenuOpen || transferFlyers.length > 0;
+  // A soma some do TRANSF só enquanto o fly-up está aberto. Derivar APENAS de
+  // `transferMenuOpen` (e não de `transferFlyers`) evita o pop-in intercalado no
+  // fecho: o flyer de regresso aterra sobre a badge que reaparece, sem piscar.
+  const transfSumHidden = transferMenuOpen;
   // Os badges individuais só repousam nos botões fora das janelas de voo.
   const subBadgesResting = transferMenuOpen && transferFlyers.length === 0;
   const totalCoaches =
