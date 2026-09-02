@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MAX_MATCH_SUBS, POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import {
@@ -414,6 +414,71 @@ export function IntervencaoView({
 
 /* ── Sub-components ─────────────────────────────────────────────────────── */
 
+/* Altura da faixa (peek) em que a página de trás fica visível no mobile. */
+const PEEK_H = 56;
+
+/**
+ * Folha da stack de páginas mobile (Titulares/Suplentes). A folha à frente
+ * ocupa quase toda a zona — menos a faixa do peek; a de trás desloca-se para
+ * baixo (só o seu topo é visível) e fica escurecida. Ao perder a frente, a
+ * folha vira para cima em torno do bordo superior (eixo X, como um cartão de
+ * calendário) antes de assentar no slot de trás.
+ *
+ * @param {boolean} props.isFront - Esta folha é a da frente?
+ * @param {number} props.stackY - Offset Y do slot de trás (altura do container menos PEEK_H).
+ * @param {boolean} props.reducedMotion - Prefere movimento reduzido (troca instantânea).
+ * @param {Function} [props.onDragEnd] - Fim do swipe horizontal ((e, info) => void);
+ *   ligada apenas à folha da frente.
+ */
+function StackSheet({ isFront, stackY, reducedMotion, onDragEnd, children }) {
+  return (
+    <motion.div
+      initial={false}
+      drag={isFront && !reducedMotion ? "x" : false}
+      dragElastic={0.12}
+      onDragEnd={onDragEnd}
+      animate={
+        isFront
+          ? { y: 0, rotateX: 0, scale: 1, filter: "brightness(1) saturate(1)" }
+          : {
+              y: stackY,
+              // Vira para cima e volta a assentar plana no slot de trás.
+              rotateX: reducedMotion ? 0 : [0, -102, 0],
+              scale: 0.985,
+              filter: "brightness(0.55) saturate(0.8)",
+            }
+      }
+      transition={
+        reducedMotion
+          ? { duration: 0 }
+          : isFront
+            ? {
+                y: { duration: 0.42, ease: [0.3, 0.8, 0.3, 1] },
+                rotateX: { duration: 0.3 },
+                scale: { duration: 0.42 },
+                filter: { duration: 0.42 },
+              }
+            : {
+                y: { delay: 0.26, duration: 0.34, ease: "easeIn" },
+                rotateX: { duration: 0.58, times: [0, 0.42, 1] },
+                scale: { duration: 0.42, delay: 0.2 },
+                filter: { duration: 0.42, delay: 0.2 },
+              }
+      }
+      style={{
+        zIndex: isFront ? 3 : 1,
+        transformOrigin: "top center",
+        pointerEvents: isFront ? "auto" : "none",
+        height: `calc(100% - ${PEEK_H}px)`,
+      }}
+      aria-hidden={!isFront}
+      className={`absolute inset-x-0 top-0 overflow-hidden rounded-b-lg ${isFront ? "shadow-[0_12px_20px_-8px_rgba(0,0,0,0.6)]" : ""}`}
+    >
+      <div className="h-full overflow-y-auto overscroll-contain">{children}</div>
+    </motion.div>
+  );
+}
+
 function EventList({ events }) {
   if (events.length === 0) {
     return (
@@ -468,10 +533,11 @@ function CronologiaPanel({
 /* ── SubsPanel — Titulares | Suplentes | Mentalidade | Substituições ─────
  * Desktop (md+): 3-col grid — a 3ª coluna divide-se em 2 linhas
  * (Mentalidade por cima, Substituições por baixo). Mobile:
- * página de scroll ÚNICO — top cluster sticky (mentalidade recolhível +
- * segmentado Em campo/Banco), lista ativa em altura natural e barra de ação
- * sticky em baixo (Sai→Entra + Substituir sempre na zona do polegar).
- * Sem scroll aninhado: as cards nunca são esmagadas por secções fixas. */
+ * stack de duas páginas sobrepostas (Titulares/Suplentes) com flip 3D —
+ * top cluster (mentalidade recolhível + indicador de página), folha ativa
+ * como scroller próprio, peek da outra página em baixo e barra de ação
+ * contextual na zona do polegar. Navegação: seleção, swipe horizontal,
+ * chip 'Sai' ou tap no peek. */
 function SubsPanel({
   isHalftime,
   isForcedSwap,
@@ -501,20 +567,40 @@ function SubsPanel({
   onUndoSub,
   summary,
 }) {
-  // Mobile: mostra UMA lista de cada vez (Em campo / Banco).
-  const [mobileList, setMobileList] = useState("pitch");
+  // Mobile: navegação explícita do utilizador na stack de páginas (swipe,
+  // tap no peek ou chip 'Sai'). `null` = seguir a regra implícita:
+  // há troca pendente → banco; senão → titulares. Substituições
+  // obrigatórias já têm "quem sai" fixo, logo derivam para o banco.
+  const [userPage, setUserPage] = useState(null);
+  const hasPendingSwap = Boolean(effectiveOutId) || Boolean(selectedInId);
+  const frontPage = userPage ?? (hasPendingSwap ? "bench" : "pitch");
   // Mentalidade recolhível (mobile) — fechada por omissão para não roubar
   // altura à lista; fecha-se sozinha após escolher estilo.
   const [mentalidadeOpen, setMentalidadeOpen] = useState(false);
-  // Container de scroll da página mobile (ver layout em baixo).
-  const mobileScrollRef = useRef(null);
-
-  // Ao trocar Em campo/Banco a lista remounta; volta sempre ao topo para o
-  // usuário começar no primeiro cartão da nova lista.
+  // Altura da zona da stack (para o offset px do slot de trás).
+  const stackRef = useRef(null);
+  const [stackH, setStackH] = useState(0);
+  useLayoutEffect(() => {
+    const el = stackRef.current;
+    if (!el) return;
+    const measure = () => setStackH(el.clientHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  // Movimento reduzido → troca instantânea de folhas, sem flip.
+  const [reducedMotion, setReducedMotion] = useState(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
   useEffect(() => {
-    const el = mobileScrollRef.current;
-    if (el) el.scrollTop = 0;
-  }, [mobileList]);
+    const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    if (!mq) return;
+    const cb = (e) => setReducedMotion(e.matches);
+    mq.addEventListener("change", cb);
+    return () => mq.removeEventListener("change", cb);
+  }, []);
 
   // Drag-and-drop swap (HTML5 DnD, no extra lib). `dragFrom` records the
   // dragged player + source side; `dragOverSide` highlights the valid target
@@ -558,13 +644,13 @@ function SubsPanel({
   };
 
   /**
-   * Seleciona o jogador que sai e salta para o banco (mobile) para escolher
-   * quem entra.
+   * Seleciona o jogador que sai e traz a folha dos suplentes para a frente
+   * (mobile) para escolher quem entra.
    * @param {object} p
    */
   const pickOut = (p) => {
     handlePickOut(p);
-    setMobileList("bench");
+    setUserPage("bench");
   };
 
   const grAvailableOnBench = benchPlayers.some(
@@ -576,6 +662,28 @@ function SubsPanel({
     isHalftime &&
     !grAvailableOnBench &&
     onPitchPlayers.some((p) => p.position === "GR");
+
+  // No banco, sem escolha de quem sai: a dica remete para o chip 'Sai', que
+  // devolve aos titulares (a confirmHint genérica aponta para um cartão que
+  // o utilizador não vê).
+  const benchConfirmHint =
+    !effectiveOutId && !isForcedSwap
+      ? "Toca em 'Sai' para escolher quem sai."
+      : confirmHint;
+
+  const pitchBarHint = isForcedSwap
+    ? `Substituição obrigatória — ${forceOutPlayer?.name || "jogador"} sai`
+    : "Toca no jogador que sai";
+
+  // Mobile: confirmar/limpar devolve a folha de partida aos titulares.
+  const mobileOnResetSub = () => {
+    onResetSub();
+    setUserPage("pitch");
+  };
+  const mobileOnConfirmSub = () => {
+    onConfirmSub();
+    setUserPage("pitch");
+  };
 
   const sharedSwapProps = {
     isHalftime,
@@ -590,6 +698,15 @@ function SubsPanel({
     onResetSub,
     onConfirmSub,
     onResolveAction,
+  };
+
+  // Swipe horizontal na folha da frente (vertical continua a pertencer ao
+  // scroll nativo da lista; touch-action pan-y é posto pelo framer).
+  const handleSheetDragEnd = (e, info) => {
+    const dx = info.offset.x;
+    const vx = info.velocity.x;
+    if (dx <= -60 || vx <= -500) setUserPage("bench");
+    else if (dx >= 60 || vx >= 500) setUserPage("pitch");
   };
 
   return (
@@ -646,18 +763,18 @@ function SubsPanel({
         />
       </div>
 
-      {/* ═══ Mobile: página de scroll único ═══
-       * Um único contexto de scroll (sem scroll aninhado/esmagado):
-       *  - top cluster sticky: mentalidade recolhível + Em campo/Banco
-       *  - lista ativa em altura natural (todas as cards alcançáveis)
-       *  - barra de ação sticky em baixo: Sai→Entra + Substituir sempre
-       *    visíveis, sem ter de descer para agir */}
-      <div
-        ref={mobileScrollRef}
-        className="md:hidden flex-1 min-h-0 overflow-y-auto overscroll-contain"
-      >
-        {/* ── Top cluster sticky ── */}
-        <div className="sticky top-0 z-20 border-b border-outline-variant/15 bg-surface-container-low/95 backdrop-blur-sm">
+      {/* ═══ Mobile: stack de páginas Titulares/Suplentes (flip 3D) ═══
+       * Duas folhas sobrepostas como cartões empilhados:
+       *  - a folha de trás está deslocada PEEK_H px para baixo — o seu topo
+       *    (1º cartão, com skill) é sempre visível na faixa inferior;
+       *  - tocar no jogador que sai faz a folha virar para cima (eixo X) e
+       *    os suplentes assentam à frente; swipe horizontal, chip 'Sai' ou o
+       *    tap na faixa do peek trocam a ordem em sentido inverso.
+       * Cada folha é o próprio scroller vertical → posições de scroll são
+       * preservadas entre trocas (sem remount). */}
+      <div className="md:hidden flex flex-col flex-1 min-h-0">
+        {/* ── Top cluster: mentalidade (halftime) + indicador de página ── */}
+        <div className="shrink-0 border-b border-outline-variant/15 bg-surface-container-low/95">
           {isHalftime && (
             <>
               <button
@@ -697,34 +814,33 @@ function SubsPanel({
             </>
           )}
 
-          {/* Segmented Em campo / Banco + contador de subs */}
+          {/* Indicador de página (informação; a navegação é swipe / tap) + contador de subs */}
           <div className="flex items-center gap-2 px-4 pt-1 pb-2">
-            <div className="flex flex-1 rounded-md bg-surface-container p-1 gap-1">
+            <div className="flex flex-1 min-w-0 items-center gap-1.5">
               {[
-                { key: "pitch", label: `Em campo (${onPitchPlayers.length})` },
-                { key: "bench", label: `Banco (${benchPlayers.length})` },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setMobileList(tab.key)}
-                  className={`flex-1 min-w-0 py-2 text-[11px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                    mobileList === tab.key
+                { key: "pitch", label: "Em campo", n: onPitchPlayers.length },
+                { key: "bench", label: "Banco", n: benchPlayers.length },
+              ].map((pg) => (
+                <span
+                  key={pg.key}
+                  className={`flex items-center rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-widest transition-colors ${
+                    frontPage === pg.key
                       ? "bg-surface-container-high text-on-surface shadow-sm shadow-black/20"
-                      : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
+                      : "text-on-surface-variant/50"
                   }`}
                 >
-                  {tab.label}
-                </button>
+                  <span className="truncate">{pg.label}</span>
+                  <span className="ml-1 tabular-nums opacity-70">({pg.n})</span>
+                </span>
               ))}
             </div>
             {isHalftime && <SubsCounter subsMade={subsMade} />}
           </div>
         </div>
 
-        {/* Substituições confirmadas — no fluxo (largura total, faz wrap),
-         * nunca rouba altura à lista nem à barra de ação. */}
+        {/* Substituições confirmadas (halftime) — acima da stack, no fluxo. */}
         {isHalftime && confirmedSubs.length > 0 && (
-          <div className="border-b border-outline-variant/15 bg-cyan-950/10">
+          <div className="shrink-0 border-b border-outline-variant/15 bg-cyan-950/10">
             <ConfirmedSubsStrip
               subs={confirmedSubs}
               annotatedSquad={annotatedSquad}
@@ -733,10 +849,19 @@ function SubsPanel({
           </div>
         )}
 
-        {/* Lista ativa — altura natural; a página é que faz scroll.
-         * key remounta na troca de lista (o efeito acima volta ao topo). */}
-        <div key={mobileList}>
-          {mobileList === "pitch" ? (
+        {/* ── Stack de páginas ── */}
+        <div
+          ref={stackRef}
+          className="relative flex-1 min-h-0 overflow-hidden"
+          style={{ perspective: "1200px" }}
+        >
+          {/* Folha TITULARES (frente por omissão) */}
+          <StackSheet
+            isFront={frontPage === "pitch"}
+            stackY={Math.max(stackH - PEEK_H, 0)}
+            reducedMotion={reducedMotion}
+            onDragEnd={handleSheetDragEnd}
+          >
             <TitularesColumn
               flat
               players={onPitchPlayers}
@@ -757,7 +882,15 @@ function SubsPanel({
               handleDropOnPitch={handleDropOnPitch}
               handleDragEnd={handleDragEnd}
             />
-          ) : (
+          </StackSheet>
+
+          {/* Folha SUPLENTES (peek com o 1º cartão atrás do topo) */}
+          <StackSheet
+            isFront={frontPage === "bench"}
+            stackY={Math.max(stackH - PEEK_H, 0)}
+            reducedMotion={reducedMotion}
+            onDragEnd={handleSheetDragEnd}
+          >
             <SuplentesColumn
               flat
               players={benchPlayers}
@@ -776,12 +909,56 @@ function SubsPanel({
               handleDragEnd={handleDragEnd}
               summary={summary}
             />
-          )}
+          </StackSheet>
+
+          {/* Tap na faixa do peek traz a página de trás para a frente. */}
+          <button
+            type="button"
+            onClick={() =>
+              setUserPage(frontPage === "pitch" ? "bench" : "pitch")
+            }
+            aria-label={
+              frontPage === "pitch"
+                ? "Traz o banco de suplentes para a frente"
+                : "Traz os titulares para a frente"
+            }
+            className="absolute inset-x-0 bottom-0 z-[4] flex cursor-pointer items-center justify-end pr-2 outline-none focus-visible:bg-white/5"
+            style={{ height: PEEK_H }}
+          >
+            <span
+              aria-hidden="true"
+              className={`flex h-7 w-7 items-center justify-center rounded-full bg-surface-container-high/90 border border-outline-variant/30 text-on-surface-variant/80 shadow-sm transition-transform ${
+                frontPage === "pitch" ? "-rotate-90" : "rotate-90"
+              }`}
+            >
+              <MatchIcon name="chevron-right" className="h-4 w-4" />
+            </span>
+          </button>
         </div>
 
-        {/* ── Barra de ação sticky — sempre na zona do polegar ── */}
-        <div className="sticky bottom-0 z-20 border-t border-outline-variant/25 bg-surface-container-high/95 backdrop-blur-sm">
-          <SwapControls {...sharedSwapProps} compact />
+        {/* ── Barra de ação contextual — sempre na zona do polegar ── */}
+        <div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high/95">
+          {frontPage === "bench" ? (
+            <SwapControls
+              {...sharedSwapProps}
+              compact
+              confirmHint={benchConfirmHint}
+              onResetSub={mobileOnResetSub}
+              onConfirmSub={mobileOnConfirmSub}
+              outSlotAction={() => setUserPage("pitch")}
+            />
+          ) : (
+            <div className="flex items-center justify-between gap-2 px-4 py-3">
+              <span className="min-w-0 truncate text-[11px] font-semibold text-on-surface-variant/80">
+                {pitchBarHint}
+              </span>
+              {!isHalftime && (
+                <span className="shrink-0 text-[9px] font-bold uppercase tracking-widest text-on-surface-variant/50">
+                  Subs {subsMade}/{MAX_MATCH_SUBS}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1094,6 +1271,7 @@ function SwapControls({
   onConfirmSub,
   onResolveAction,
   compact = false,
+  outSlotAction = null,
 }) {
   // Local "resolving" state gives immediate feedback on click in action mode
   // (was: button fired and the user got no signal until the parent reacted).
@@ -1145,6 +1323,12 @@ function SwapControls({
             tone="rose"
             player={effectiveOutId ? sourcePlayer : null}
             placeholder="Quem sai"
+            onClick={outSlotAction}
+            ariaLabel={
+              effectiveOutId
+                ? "Trocador por quem sai — voltar aos titulares"
+                : "Escolher quem sai — ver os titulares"
+            }
           />
           <SwapSlot
             tone="emerald"
@@ -1231,17 +1415,30 @@ function SwapControls({
 /**
  * SAI/ENTRA value box. Filled: pos badge + name chip.
  * Empty: dashed placeholder with an actionable hint.
+ * Com `onClick` torna-se um botão (mobile: devolve à folha de titulares).
  *
  * @param {string} tone - Color tone of the filled chip ("rose"|"emerald").
  * @param {object} player - Player to display; null renders the placeholder.
  * @param {string} placeholder - Empty-state hint text.
+ * @param {Function} [props.onClick] - Handler que torna o slot um botão.
+ * @param {string} [props.ariaLabel] - Rótulo acessível quando é botão.
  */
-function SwapSlot({ tone, player, placeholder }) {
+function SwapSlot({ tone, player, placeholder, onClick = null, ariaLabel }) {
+  const interactive = !!onClick;
+  const Tag = interactive ? "button" : "span";
+  const tagProps = interactive
+    ? { type: "button", onClick, "aria-label": ariaLabel }
+    : {};
   if (!player) {
     return (
-      <span className="border border-dashed border-outline-variant/40 text-on-surface-variant/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0">
+      <Tag
+        {...tagProps}
+        className={`border border-dashed border-outline-variant/40 text-on-surface-variant/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0 ${
+          interactive ? "cursor-pointer active:scale-[0.98] transition-transform" : ""
+        }`}
+      >
         {placeholder}
-      </span>
+      </Tag>
     );
   }
   const posStyle = getPosStyle(player.position);
@@ -1250,8 +1447,11 @@ function SwapSlot({ tone, player, placeholder }) {
       ? "bg-rose-950/80 text-rose-200 border-rose-800/50"
       : "bg-emerald-950/80 text-emerald-200 border-emerald-800/50";
   return (
-    <span
-      className={`flex items-center gap-1.5 border ${toneClass} text-xs font-semibold px-2 py-1 rounded-md min-w-0`}
+    <Tag
+      {...tagProps}
+      className={`flex items-center gap-1.5 border ${toneClass} text-xs font-semibold px-2 py-1 rounded-md min-w-0 ${
+        interactive ? "cursor-pointer active:scale-[0.98] transition-transform" : ""
+      }`}
     >
       <span
         className={`shrink-0 px-1 py-px rounded text-[9px] font-bold uppercase tracking-widest border ${posStyle.badgeBg} ${posStyle.badgeText} ${posStyle.badgeBorder}`}
@@ -1259,7 +1459,7 @@ function SwapSlot({ tone, player, placeholder }) {
         {player.position}
       </span>
       <span className="truncate min-w-0">{player.name}</span>
-    </span>
+    </Tag>
   );
 }
 

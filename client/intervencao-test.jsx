@@ -1,6 +1,8 @@
 // IntervencaoView harness — renders the REAL IntervencaoView (halftime mode,
 // 1 sub already confirmed) with mock data. NOT part of the app; used only
 // for design screenshots/verification.
+// Measure the Substituições tab: its mobile layout is a stack of two
+// overlapping pages (Titulares/Suplentes) with a flip-3D transition.
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
 import { IntervencaoView } from "./src/components/match/tabs/IntervencaoView.jsx";
@@ -188,14 +190,21 @@ function measure() {
 }
 
 setTimeout(() => {
-  // Click the Adversário tab before measuring
+  // Click the Substituições tab, then pick an out-player so the bench page
+  // comes to the front (stack flip) — measuring the richer state.
   const buttons = document.querySelectorAll("button");
-  const adversarioTab = [...buttons].find((b) => b.textContent?.trim() === "Adversário");
-  if (adversarioTab) adversarioTab.click();
+  const subsTab = [...buttons].find((b) => b.textContent?.trim() === "Substituições");
+  if (subsTab) subsTab.click();
   setTimeout(() => {
-    const report = measure();
-    const el = document.getElementById("report");
-    el.setAttribute("data-status", "done");
-    el.textContent = "REPORT:" + JSON.stringify(report, null, 2);
-  }, 500);
+    const card = [...document.querySelectorAll("button")].find((b) =>
+      b.textContent?.includes("Bruno Costa"),
+    );
+    if (card) card.click();
+    setTimeout(() => {
+      const report = measure();
+      const el = document.getElementById("report");
+      el.setAttribute("data-status", "done");
+      el.textContent = "REPORT:" + JSON.stringify(report, null, 2);
+    }, 900);
+  }, 600);
 }, 2500);
