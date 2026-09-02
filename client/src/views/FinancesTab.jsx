@@ -219,13 +219,13 @@ export function FinancesTab({
         {/* Receitas */}
         <div className="bg-surface-container-low rounded-lg p-5 flex flex-col space-y-3">
           <div className="flex justify-between items-center pb-2 border-b border-outline-variant/15">
-            <h3 className="font-headline text-base uppercase tracking-tight flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-base">
+            <h3 className="font-headline text-base uppercase tracking-tight flex items-center gap-2 min-w-0 truncate">
+              <span className="material-symbols-outlined text-primary text-base shrink-0">
                 arrow_downward
               </span>
               Receitas
             </h3>
-            <span className="font-headline text-primary font-bold text-sm">
+            <span className="font-headline text-primary font-bold text-sm shrink-0">
               {formatCurrency(totalSeasonIncome)}
             </span>
           </div>
@@ -393,13 +393,13 @@ export function FinancesTab({
         {/* Despesas */}
         <div className="bg-surface-container-low rounded-lg p-5 flex flex-col space-y-3">
           <div className="flex justify-between items-center pb-2 border-b border-outline-variant/15">
-            <h3 className="font-headline text-base uppercase tracking-tight flex items-center gap-2">
-              <span className="material-symbols-outlined text-error text-base">
+            <h3 className="font-headline text-base uppercase tracking-tight flex items-center gap-2 min-w-0 truncate">
+              <span className="material-symbols-outlined text-error text-base shrink-0">
                 arrow_upward
               </span>
               Despesas
             </h3>
-            <span className="font-headline text-error font-bold text-sm">
+            <span className="font-headline text-error font-bold text-sm shrink-0">
               {formatCurrency(totalSeasonExpenses)}
             </span>
           </div>

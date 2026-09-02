@@ -35,7 +35,7 @@ export function CupTab({
               : allResults;
           return (
             <div>
-              <div className="flex items-start justify-between mb-5">
+              <div className="flex flex-wrap gap-x-3 items-start justify-between mb-5">
                 <div>
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="px-2 py-0.5 bg-primary/20 border border-primary/30 rounded text-primary text-[10px] font-black uppercase tracking-widest">
@@ -208,9 +208,9 @@ export function CupTab({
                           O seu jogo
                         </span>
                       )}
-                      <div className="flex-1 flex items-center justify-end gap-3">
+                      <div className="flex-1 min-w-0 flex items-center justify-end gap-3">
                         <span
-                          className="font-black text-sm text-right truncate"
+                          className="font-black text-sm text-right truncate min-w-0"
                           style={{
                             color:
                               readableColor(hInfo?.color_primary) || "#fff",
@@ -231,7 +231,7 @@ export function CupTab({
                       <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center">
                         <span className="text-zinc-500 text-[10px] font-black uppercase">vs</span>
                       </div>
-                      <div className="flex-1 flex items-center gap-3">
+                      <div className="flex-1 min-w-0 flex items-center gap-3">
                         <div
                           className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm shrink-0 border border-white/10"
                           style={{
@@ -242,7 +242,7 @@ export function CupTab({
                           {aInfo?.name?.[0] || "?"}
                         </div>
                         <span
-                          className="font-black text-sm text-left truncate"
+                          className="font-black text-sm text-left truncate min-w-0"
                           style={{
                             color:
                               readableColor(aInfo?.color_primary) || "#fff",
