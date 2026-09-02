@@ -88,30 +88,30 @@ const RoomSelectScreen = ({
 			animate={{ opacity: 1, scale: 1 }}
 			exit={{ opacity: 0, y: -16, transition: { duration: 0.3, ease: "easeIn" } }}
 			transition={{ duration: 0.45, ease: "easeOut" }}
-			className="relative z-10 mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-7xl flex-col px-6 pb-4 pt-8 short:pb-2 short:pt-4 sm:px-10 lg:px-16"
+			className="relative z-10 mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-7xl flex-col px-4 sm:px-10 lg:px-16 pb-3 pt-4 sm:pb-4 sm:pt-8 short:pb-2 short:pt-4"
 		>
 			{/* ─── Topo: saudação + acções ─────────────────────── */}
 			<motion.div
 				initial={{ opacity: 0, y: 14 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.4, ease: "easeOut", delay: 0.05 }}
-				className="flex flex-wrap items-center justify-between gap-4"
+				className="flex flex-wrap items-center justify-between gap-2 sm:gap-4"
 			>
 				<div>
 					<p className="mb-1 text-[10px] font-black uppercase tracking-[0.4em] text-green-400/60 short:hidden">
 						Sessão autenticada
 					</p>
-					<h2 className="font-headline text-3xl font-black leading-none tracking-tight text-white sm:text-4xl short:text-2xl">
+					<h2 className="font-headline text-2xl font-black leading-none tracking-tight text-white sm:text-3xl lg:text-4xl short:text-2xl">
 						Olá,{" "}
 						<span className="text-green-400 drop-shadow-[0_0_12px_rgba(74,222,128,0.5)]">
 							{name}
 						</span>
 					</h2>
 				</div>
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-2 sm:gap-3">
 					<button
 						onClick={resetAuthFlow}
-						className="flex items-center gap-1 rounded-full border border-white/[0.08] px-4 py-2 short:py-1.5 text-[10px] font-black uppercase tracking-widest text-white/40 transition-colors hover:border-white/20 hover:text-white/70"
+						className="flex items-center gap-1 rounded-full border border-white/[0.08] px-3 py-1.5 sm:px-4 sm:py-2 short:py-1.5 text-[10px] font-black uppercase tracking-widest text-white/40 transition-colors hover:border-white/20 hover:text-white/70"
 					>
 						<span className="material-symbols-outlined text-[13px] leading-none">
 							swap_horiz
@@ -120,7 +120,7 @@ const RoomSelectScreen = ({
 					</button>
 					<button
 						onClick={handleLogout}
-						className="flex items-center gap-1 rounded-full border border-red-500/10 px-4 py-2 short:py-1.5 text-[10px] font-black uppercase tracking-widest text-red-400/50 transition-colors hover:border-red-500/30 hover:text-red-400"
+						className="flex items-center gap-1 rounded-full border border-red-500/10 px-3 py-1.5 sm:px-4 sm:py-2 short:py-1.5 text-[10px] font-black uppercase tracking-widest text-red-400/50 transition-colors hover:border-red-500/30 hover:text-red-400"
 						title="Terminar sessão completamente"
 					>
 						<span className="material-symbols-outlined text-[13px] leading-none">
@@ -154,20 +154,20 @@ const RoomSelectScreen = ({
 				initial={{ opacity: 0, y: 14 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.4, ease: "easeOut", delay: 0.15 }}
-				className="mt-6 grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-3 short:mt-3"
+				className="mt-4 sm:mt-6 grid shrink-0 grid-cols-3 gap-2 sm:gap-3 short:mt-3"
 			>
 				{MODES.map(({ mode, icon, label, sub }) => (
 					<button
 						key={mode}
 						onClick={() => selectJoinMode(mode)}
-						className={`flex items-center gap-3 rounded-xl border px-5 py-4 short:py-2 text-left transition-all duration-200 ${
+						className={`flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3 rounded-xl border px-2 py-3 sm:px-5 sm:py-4 short:py-2 text-left transition-all duration-200 ${
 							joinMode === mode
 								? "border-green-500/40 bg-green-500/10 shadow-[0_0_20px_rgba(74,222,128,0.08)]"
 								: "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
 						}`}
 					>
 						<span
-							className={`material-symbols-outlined shrink-0 text-[24px] leading-none ${
+							className={`material-symbols-outlined shrink-0 text-[20px] sm:text-[24px] leading-none ${
 								joinMode === mode ? "text-green-400" : "text-white/30"
 							}`}
 						>
@@ -175,13 +175,13 @@ const RoomSelectScreen = ({
 						</span>
 						<div className="min-w-0 flex-1">
 							<p
-								className={`text-sm font-black leading-tight ${
+								className={`text-xs sm:text-sm font-black leading-tight text-center sm:text-left ${
 									joinMode === mode ? "text-green-400" : "text-white/70"
 								}`}
 							>
 								{label}
 							</p>
-							<p className="mt-0.5 text-[10px] leading-tight text-white/30">
+							<p className="mt-0.5 hidden sm:block text-[10px] leading-tight text-white/30">
 								{sub}
 							</p>
 						</div>
@@ -195,7 +195,7 @@ const RoomSelectScreen = ({
 			</motion.div>
 
 			{/* ─── Corpo: grelha de salas / formulário ─────────── */}
-			<div className="mt-6 min-h-0 flex-1 overflow-y-auto short:mt-3">
+			<div className="mt-4 sm:mt-6 min-h-[140px] sm:min-h-0 short:min-h-[90px] flex-1 overflow-y-auto short:mt-2">
 				{joinMode === "saved-game" && (
 					<>
 						{availableSaves.length === 0 ? (
@@ -224,7 +224,7 @@ const RoomSelectScreen = ({
 								</button>
 							</motion.div>
 						) : (
-							<div className="grid grid-cols-1 gap-4 pb-6 sm:grid-cols-2 xl:grid-cols-3 short:gap-3 short:pb-3">
+							<div className="grid grid-cols-1 gap-4 pb-4 sm:pb-6 sm:grid-cols-2 xl:grid-cols-3 short:gap-3 short:pb-3">
 								{availableSaves.map((save, i) => {
 									const selected = roomCode === save.code;
 									const isLastPlayed =
@@ -431,9 +431,9 @@ const RoomSelectScreen = ({
 				initial={{ opacity: 0, y: 16 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.4, ease: "easeOut", delay: 0.25 }}
-				className="mt-4 shrink-0 short:mt-2"
+				className="mt-3 sm:mt-4 shrink-0 short:mt-2"
 			>
-				<div className="flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-[#0a1410]/85 p-4 backdrop-blur-xl shadow-[0_-8px_40px_rgba(0,0,0,0.35)] sm:flex-row sm:items-center sm:justify-between short:p-2.5">
+				<div className="flex flex-col gap-2 sm:gap-3 rounded-2xl border border-white/[0.08] bg-[#0a1410]/85 p-3 sm:p-4 backdrop-blur-xl shadow-[0_-8px_40px_rgba(0,0,0,0.35)] sm:flex-row sm:items-center sm:justify-between short:p-2.5">
 					<div className="min-w-0 flex-1">
 						{roomCode ? (
 							<div className="flex items-center gap-2.5">
@@ -457,12 +457,12 @@ const RoomSelectScreen = ({
 							</p>
 						)}
 						{joinError && (
-							<p className="mt-1.5 text-sm font-bold text-red-400">
+							<p className="mt-1 text-xs sm:text-sm font-bold leading-tight text-red-400">
 								⚠️ {joinError}
 							</p>
 						)}
 						{!joinError && disconnected && (
-							<p className="mt-1.5 text-sm font-bold text-red-400">
+							<p className="mt-1 text-xs sm:text-sm font-bold leading-tight text-red-400">
 								⚠️ Sem ligação ao servidor. Tenta novamente.
 							</p>
 						)}
@@ -471,7 +471,7 @@ const RoomSelectScreen = ({
 						<button
 							onClick={handleJoin}
 							disabled={!roomCode || joining}
-							className={`relative overflow-hidden disabled:bg-white/[0.06] disabled:text-white/30 py-4 short:py-3 px-8 rounded-xl font-black text-sm uppercase tracking-[0.2em] transition-all active:scale-[0.98] group sm:w-auto w-full ${
+							className={`relative overflow-hidden disabled:bg-white/[0.06] disabled:text-white/30 py-3 sm:py-4 short:py-3 px-6 sm:px-8 rounded-xl font-black text-sm uppercase tracking-[0.2em] transition-all active:scale-[0.98] group sm:w-auto w-full ${
 								joinMode === "saved-game"
 									? "bg-cyan-500 hover:bg-cyan-400 text-black shadow-[0_4px_20px_rgba(6,182,212,0.25)] hover:shadow-[0_4px_30px_rgba(6,182,212,0.4)]"
 									: "bg-green-500 hover:bg-green-400 text-black shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)]"
