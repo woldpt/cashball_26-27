@@ -141,16 +141,15 @@ export function AdminPanel({ open, onClose }) {
 
         {/* Corpo — lista OU detalhe, com scroll vertical próprio */}
         <div className="flex-1 min-h-0 overflow-y-auto">
-          {selectedUser ? (
-            <div className="p-4 space-y-6">{detailContent}</div>
-          ) : (
-            <UserList
+          <UserList
               isMobile
               users={adminUsers}
               loading={loading}
               selectedName={selectedUser?.name ?? null}
               onSelect={(u) => setSelectedUser(u)}
             />
+          {selectedUser && (
+            <div className="p-4 space-y-6">{detailContent}</div>
           )}
         </div>
 
