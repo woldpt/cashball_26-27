@@ -234,7 +234,7 @@ export function MatchPage({
 
 			{/* ── Halftime score banner ──────────────────────────────────── */}
 			{mode === "halftime" && fixture && (
-				<div className="shrink-0 flex items-stretch border-b border-outline-variant/25 bg-surface-container-high backdrop-blur-sm">
+				<div className="hidden md:flex shrink-0 items-stretch border-b border-outline-variant/25 bg-surface-container-high backdrop-blur-sm">
 					<div
 						className="flex-1 text-center py-2 px-3 font-black text-[11px] uppercase truncate flex items-center justify-center gap-1.5"
 						style={{ backgroundColor: hColor + "20", color: hColor }}

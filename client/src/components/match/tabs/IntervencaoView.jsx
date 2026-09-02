@@ -30,6 +30,28 @@ const STYLE_LABELS = {
   Offensive: "Ofensivo",
 };
 
+/**
+ * `prefers-reduced-motion` reativo — crossfades e transições passam a
+ * instantâneas em vez de animadas.
+ *
+ * @returns {boolean} true quando o sistema pede movimento reduzido.
+ */
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onChange = (e) => setReduced(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return reduced;
+}
+
 /* ── IntervencaoView — substitutions + chronology + opponent ─────────────
  * Simplified layout:
  *   [Descrição do ecrã]            [Scoreboard]   [Anular todas]
@@ -75,6 +97,17 @@ export function IntervencaoView({
     const timer = setTimeout(() => setConfirmResetAll(false), 3000);
     return () => clearTimeout(timer);
   }, [confirmResetAll]);
+
+  // Mobile halftime: the top zone alternates between the score and the phase
+  // title, fading over every 5 seconds.
+  const [phaseIsScore, setPhaseIsScore] = useState(true);
+  useEffect(() => {
+    if (!isHalftime) return;
+    const timer = setInterval(() => setPhaseIsScore((v) => !v), 5000);
+    return () => clearInterval(timer);
+  }, [isHalftime]);
+
+  const reducedMotion = usePrefersReducedMotion();
 
   /* ── Mode booleans ────────────────────────────────────────────── */
   const isHalftime = mode === "halftime";
@@ -253,6 +286,17 @@ export function IntervencaoView({
     onSelectIn(isHalftime ? player.id : player);
   };
 
+  // "Anular todas" is two-tap: first tap arms, second confirms. Shared by the
+  // desktop ghost button and the compact mobile icon next to the SUBS counter.
+  const handleArmResetAll = () => {
+    if (confirmResetAll) {
+      onResetAllSubs();
+      setConfirmResetAll(false);
+    } else {
+      setConfirmResetAll(true);
+    }
+  };
+
   /* ── Tabs ──────────────────────────────────────────────────────── */
   const tabs = [
     { key: "cronologia", label: "Cronologia" },
@@ -271,9 +315,73 @@ export function IntervencaoView({
         background: `radial-gradient(ellipse 70% 40% at 50% 0%, ${hInfo?.color_primary || "#333"}12 0%, transparent 70%), var(--color-surface-container-low)`,
       }}
     >
-      {/* Title bar — description on the left, reset far right. */}
+      {/* ── Halftime mobile: intermitência score ↔ título da fase + posse 2px ──
+       * Substitui (só no mobile) a barra de score do MatchPage e o bloco de
+       * posse de bola; desvanecimento de 5s entre os dois estados. */}
+      {isHalftime && hInfo?.name && aInfo?.name && (
+        <div className="shrink-0 border-b border-outline-variant/25 bg-surface-container-high md:hidden">
+          <div className="relative h-10 overflow-hidden">
+            {/* Score — versão compacta do banner de intervalo do MatchPage. */}
+            <motion.div
+              initial={false}
+              animate={{ opacity: phaseIsScore ? 1 : 0 }}
+              transition={{ duration: reducedMotion ? 0 : 0.6, ease: "easeInOut" }}
+              className="absolute inset-0 flex items-stretch"
+              aria-hidden={!phaseIsScore}
+            >
+              <div
+                className="flex min-w-0 flex-1 items-center justify-end gap-1.5 px-3 text-[10px] font-black uppercase tracking-wide"
+                style={{ backgroundColor: `${hInfo.color_primary || "#6366f1"}20`, color: hInfo.color_primary || "#6366f1" }}
+              >
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: hInfo.color_primary || "#6366f1", boxShadow: `0 0 6px ${hInfo.color_primary || "#6366f1"}60` }} />
+                <span className="truncate">{hInfo.name}</span>
+              </div>
+              <div className="flex items-center gap-2 bg-surface-container-low px-3 font-black text-base tracking-widest text-on-surface">
+                <span className="tabular-nums">{fixture?.finalHomeGoals ?? 0}</span>
+                <span className="text-sm text-on-surface-variant/60">–</span>
+                <span className="tabular-nums">{fixture?.finalAwayGoals ?? 0}</span>
+              </div>
+              <div
+                className="flex min-w-0 flex-1 items-center justify-start gap-1.5 px-3 text-[10px] font-black uppercase tracking-wide"
+                style={{ backgroundColor: `${aInfo.color_primary || "#f43f5e"}20`, color: aInfo.color_primary || "#f43f5e" }}
+              >
+                <span className="truncate">{aInfo.name}</span>
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: aInfo.color_primary || "#f43f5e", boxShadow: `0 0 6px ${aInfo.color_primary || "#f43f5e"}60` }} />
+              </div>
+            </motion.div>
+            {/* Título da fase — alterna com o score. */}
+            <motion.div
+              initial={false}
+              animate={{ opacity: phaseIsScore ? 0 : 1 }}
+              transition={{ duration: reducedMotion ? 0 : 0.6, ease: "easeInOut" }}
+              className="absolute inset-0 flex items-center justify-center"
+              aria-hidden={phaseIsScore}
+            >
+              <span className="text-sm font-black uppercase tracking-[0.25em] text-on-surface">
+                {isPreExtraTime ? "Prolongamento" : "Intervalo"}
+              </span>
+            </motion.div>
+          </div>
+          {/* Posse de bola em linha de 2px (substitui o bloco no mobile). */}
+          {fixture?.homePossession != null && (
+            <div className="flex h-0.5 w-full" aria-hidden="true">
+              <div
+                style={{
+                  width: `${fixture.homePossession}%`,
+                  background: hInfo.color_primary || "#6366f1",
+                  borderRight: "1px solid rgba(255,255,255,0.5)",
+                }}
+              />
+              <div className="flex-1" style={{ background: aInfo.color_primary || "#f43f5e" }} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Title bar — description on the left, reset far right. No mobile de
+       * intervalo fica oculta (o banner intermitente acima ocupa o lugar). */}
       <div
-        className={`shrink-0 px-4 sm:px-5 py-3 sm:py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme} flex items-center justify-between gap-2 sm:gap-4`}
+        className={`${isHalftime ? "hidden md:flex" : "flex"} shrink-0 px-4 sm:px-5 py-3 sm:py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme} items-center justify-between gap-2 sm:gap-4`}
       >
         <div className="min-w-0 flex-1">
           {/* No truncate: a forced-swap title must never cut the player's name. */}
@@ -285,14 +393,7 @@ export function IntervencaoView({
         {/* Two-tap confirm: destructive action wipes all planned subs. */}
         {isHalftime && confirmedSubs.length > 0 && (
           <GhostButton
-            onClick={() => {
-              if (confirmResetAll) {
-                onResetAllSubs();
-                setConfirmResetAll(false);
-              } else {
-                setConfirmResetAll(true);
-              }
-            }}
+            onClick={handleArmResetAll}
             icon={
               <MatchIcon
                 name="reset"
@@ -403,6 +504,8 @@ export function IntervencaoView({
               confirmedSubs={confirmedSubs}
               annotatedSquad={annotatedSquad}
               onUndoSub={onUndoSub}
+              confirmResetAll={confirmResetAll}
+              onArmResetAll={handleArmResetAll}
               summary={{ fixture, hInfo, aInfo, liveMinute }}
             />
           </motion.div>
@@ -416,7 +519,7 @@ export function IntervencaoView({
 
 /* Largura da faixa lateral (peek) em que a zona das skills da página de trás
  * permanece minimamente destapada no mobile. */
-const PEEK_W = 72;
+const PEEK_W = 96;
 
 /**
  * Folha da stack de páginas mobile (Titulares/Suplentes). A folha à frente
@@ -455,7 +558,7 @@ function StackSheet({ isFront, reducedMotion, children }) {
         width: `calc(100% - ${PEEK_W}px)`,
       }}
       aria-hidden={!isFront}
-      className={`absolute left-0 top-0 h-full overflow-hidden rounded-lg ${isFront ? "shadow-[10px_0_24px_-12px_rgba(0,0,0,0.9)]" : ""}`}
+      className={`absolute left-0 top-0 h-full overflow-hidden rounded-lg bg-surface-container ${isFront ? "shadow-[10px_0_24px_-12px_rgba(0,0,0,0.9)]" : ""}`}
     >
       <div className="h-full overflow-y-auto overscroll-contain">{children}</div>
     </motion.div>
@@ -548,6 +651,8 @@ function SubsPanel({
   confirmedSubs,
   annotatedSquad,
   onUndoSub,
+  confirmResetAll,
+  onArmResetAll,
   summary,
 }) {
   // Mobile: navegação explícita do utilizador na stack de páginas (swipe,
@@ -561,17 +666,7 @@ function SubsPanel({
   // altura à lista; fecha-se sozinha após escolher estilo.
   const [mentalidadeOpen, setMentalidadeOpen] = useState(false);
   // Movimento reduzido → troca instantânea de folhas, sem flip.
-  const [reducedMotion, setReducedMotion] = useState(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return false;
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  });
-  useEffect(() => {
-    const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    if (!mq) return;
-    const cb = (e) => setReducedMotion(e.matches);
-    mq.addEventListener("change", cb);
-    return () => mq.removeEventListener("change", cb);
-  }, []);
+  const reducedMotion = usePrefersReducedMotion();
 
   // Drag-and-drop swap (HTML5 DnD, no extra lib). `dragFrom` records the
   // dragged player + source side; `dragOverSide` highlights the valid target
@@ -641,10 +736,6 @@ function SubsPanel({
     !effectiveOutId && !isForcedSwap
       ? "Toca em 'Sai' para escolher quem sai."
       : confirmHint;
-
-  const pitchBarHint = isForcedSwap
-    ? `Substituição obrigatória — ${forceOutPlayer?.name || "jogador"} sai`
-    : "Toca no jogador que sai";
 
   // Mobile: confirmar/limpar devolve a folha de partida aos titulares.
   const mobileOnResetSub = () => {
@@ -825,7 +916,26 @@ function SubsPanel({
                 </span>
               ))}
             </div>
-            {isHalftime && <SubsCounter subsMade={subsMade} />}
+            <SubsCounter subsMade={subsMade} />
+            {/* 'Anular todas' compacto (mobile) — dois toques para confirmar. */}
+            {confirmedSubs.length > 0 && (
+              <button
+                type="button"
+                onClick={onArmResetAll}
+                aria-label="Anular todas as substituições planeadas"
+                className={`flex shrink-0 items-center justify-center rounded-md border transition-colors ${
+                  confirmResetAll
+                    ? "h-6 border-rose-500/50 bg-rose-500/15 px-2 text-[9px] font-black uppercase tracking-wider text-rose-300"
+                    : "h-6 w-6 border-outline-variant/40 text-on-surface-variant/70 hover:border-rose-500/40 hover:text-rose-300"
+                }`}
+              >
+                {confirmResetAll ? (
+                  <span>Confirmar?</span>
+                ) : (
+                  <MatchIcon name="reset" className="h-3.5 w-3.5 text-rose-400/80" />
+                )}
+              </button>
+            )}
           </div>
         </div>
 
@@ -911,9 +1021,10 @@ function SubsPanel({
           </button>
         </div>
 
-        {/* ── Barra de ação contextual — sempre na zona do polegar ── */}
-        <div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high/95">
-          {frontPage === "bench" ? (
+        {/* ── Barra de ação contextual — zona do polegar; só existe na folha
+       *  do banco (a folha de titulares não precisa de rodapé). */}
+        {frontPage === "bench" && (
+          <div className="shrink-0 border-t border-outline-variant/25 bg-surface-container-high/95">
             <SwapControls
               {...sharedSwapProps}
               compact
@@ -922,19 +1033,8 @@ function SubsPanel({
               onConfirmSub={mobileOnConfirmSub}
               outSlotAction={() => setUserPage("pitch")}
             />
-          ) : (
-            <div className="flex items-center justify-between gap-2 px-4 py-3">
-              <span className="min-w-0 truncate text-[11px] font-semibold text-on-surface-variant/80">
-                {pitchBarHint}
-              </span>
-              {!isHalftime && (
-                <span className="shrink-0 text-[9px] font-bold uppercase tracking-widest text-on-surface-variant/50">
-                  Subs {subsMade}/{MAX_MATCH_SUBS}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1141,17 +1241,14 @@ function SuplentesColumn({
           </p>
         )}
       </div>
-      {/* Posse de Bola — fim da lista (mobile flat) / fundo da coluna (desktop). */}
-      {summary &&
-        (flat ? (
-          <div className="px-3 pt-1 pb-4">
-            <MatchSummaryBlock {...summary} />
-          </div>
-        ) : (
+      {/* Posse de Bola — só desktop; no mobile mudou para a linha de 2px do
+       * banner intermitente no topo do ecrã. */}
+      {!flat &&
+        summary && (
           <div className="shrink-0 p-3 border-t border-outline-variant/15 bg-surface-container-high/30">
             <MatchSummaryBlock {...summary} />
           </div>
-        ))}
+        )}
     </div>
   );
 }
@@ -1434,6 +1531,9 @@ function SwapSlot({ tone, player, placeholder, onClick = null, ariaLabel }) {
         {player.position}
       </span>
       <span className="truncate min-w-0">{player.name}</span>
+      <span className="shrink-0 text-[10px] font-black tabular-nums text-on-surface/60">
+        {player.skill}
+      </span>
     </Tag>
   );
 }
