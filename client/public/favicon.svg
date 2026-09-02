@@ -1,12 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <rect x="4" y="4" width="120" height="120" rx="28" fill="#003824"/>
-  <circle cx="64" cy="64" r="40" fill="#F2F8F0"/>
-  <g stroke="#003824" stroke-width="6" stroke-linecap="round">
-    <line x1="64" y1="43" x2="64" y2="27.5"/>
-    <line x1="84" y1="57.5" x2="98.7" y2="52.7"/>
-    <line x1="76.3" y1="81" x2="85.5" y2="93.5"/>
-    <line x1="51.7" y1="81" x2="42.5" y2="93.5"/>
-    <line x1="44" y1="57.5" x2="29.3" y2="52.7"/>
+  <defs>
+    <linearGradient id="cb-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b3d24"/>
+      <stop offset="100%" stop-color="#04140d"/>
+    </linearGradient>
+    <radialGradient id="cb-hl" cx="28%" cy="20%" r="72%">
+      <stop offset="0%" stop-color="#95d4b3" stop-opacity="0.22"/>
+      <stop offset="54%" stop-color="#95d4b3" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cb-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f9e8a0"/>
+      <stop offset="48%" stop-color="#e9c349"/>
+      <stop offset="100%" stop-color="#c9a52a"/>
+    </linearGradient>
+    <linearGradient id="cb-gold-hi" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.38"/>
+      <stop offset="44%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="cb-sh" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="2.8" stdDeviation="3.0" flood-color="#000" flood-opacity="0.42"/>
+    </filter>
+  </defs>
+  <!-- Fundo squircle premium -->
+  <rect x="0" y="0" width="128" height="128" rx="30" fill="url(#cb-bg)"/>
+  <rect x="0" y="0" width="128" height="128" rx="30" fill="url(#cb-hl)"/>
+  <!-- Rebordo duplo subtil (ouro + branco) -->
+  <rect x="0.8" y="0.8" width="126.4" height="126.4" rx="29.2" fill="none" stroke="#e9c349" stroke-opacity="0.16" stroke-width="1.05"/>
+  <rect x="0.8" y="0.8" width="126.4" height="126.4" rx="29.2" fill="none" stroke="white" stroke-opacity="0.09" stroke-width="0.8"/>
+  <!-- Bola off-white com sombra -->
+  <circle cx="64" cy="64.4" r="40.2" fill="#f7fffa" filter="url(#cb-sh)"/>
+  <circle cx="64" cy="64.4" r="40.2" fill="none" stroke="#0a1e14" stroke-opacity="0.07" stroke-width="1"/>
+  <!-- Costuras -->
+  <g stroke="#0a2e1a" stroke-width="5.2" stroke-linecap="round">
+    <line x1="64" y1="38.8" x2="64" y2="23.8"/>
+    <line x1="86.05" y1="55.55" x2="100.8" y2="50.2"/>
+    <line x1="78.15" y1="80.05" x2="87.9" y2="94.6"/>
+    <line x1="49.85" y1="80.05" x2="40.1" y2="94.6"/>
+    <line x1="41.95" y1="55.55" x2="27.2" y2="50.2"/>
   </g>
-  <path transform="translate(64.9,64) scale(1.6)" fill="#95d4b3" d="M 6.36 -7.06 A 9.5 9.5 0 1 0 6.36 7.06 L 2.88 3.20 A 4.3 4.3 0 1 1 2.88 -3.20 Z M -10.6 -7.2 H 5 V -2 H -10.6 Z M -10.6 7.2 H 5 V 2 H -10.6 Z"/>
+  <!-- Pentágono dourado -->
+  <polygon points="64,38.8 41.6,55.1 50.2,80.2 77.8,80.2 86.4,55.1" fill="url(#cb-gold)" stroke="#8a7518" stroke-opacity="0.42" stroke-width="0.9" stroke-linejoin="round"/>
+  <polygon points="64,38.8 41.6,55.1 50.2,80.2 77.8,80.2 86.4,55.1" fill="url(#cb-gold-hi)"/>
+  <polygon points="64,38.8 41.6,55.1 50.2,80.2 77.8,80.2 86.4,55.1" fill="none" stroke="#0a2e1a" stroke-opacity="0.16" stroke-width="0.7" stroke-linejoin="round"/>
+  <!-- € em verde escuro -->
+  <g transform="translate(64.7, 62.4) scale(1.86)">
+    <path fill="#0a2e1a" d="M 6.36 -7.06 A 9.5 9.5 0 1 0 6.36 7.06 L 2.88 3.20 A 4.3 4.3 0 1 1 2.88 -3.20 Z M -10.6 -7.2 H 5 V -2 H -10.6 Z M -10.6 7.2 H 5 V 2 H -10.6 Z"/>
+  </g>
 </svg>
