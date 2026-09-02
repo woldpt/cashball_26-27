@@ -28,6 +28,9 @@ export function PossessionBar({ homePossession, awayPossession, homeColor, awayC
               width: `${homePossession}%`,
               background: `linear-gradient(90deg, ${homeColor || "#6366f1"}, ${homeColor || "#6366f1"}cc)`,
               boxShadow: `0 0 12px ${homeColor || "#6366f1"}44`,
+              // Separador fino: quando as duas equipas têm a mesma cor,
+              // a divisão da posse continuava visível.
+              borderRight: "2px solid rgba(255,255,255,0.7)",
             }}
           />
           <div

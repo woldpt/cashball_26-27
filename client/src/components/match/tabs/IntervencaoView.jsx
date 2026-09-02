@@ -1296,6 +1296,9 @@ function MatchSummaryBlock({ fixture, hInfo, aInfo, liveMinute, className = "" }
             style={{
               width: `${fixture.homePossession}%`,
               background: hInfo.color_primary || "#6366f1",
+              // Separador fino: quando as duas equipas têm a mesma cor,
+              // a divisão da posse continuava visível.
+              borderRight: "2px solid rgba(255,255,255,0.7)",
             }}
           />
           <div
