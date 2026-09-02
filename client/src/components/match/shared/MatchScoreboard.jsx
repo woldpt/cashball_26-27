@@ -94,6 +94,9 @@ export function MatchScoreboard({ fixture, teams, liveMinute }) {
                 width: `${fixture.homePossession}%`,
                 background: `linear-gradient(90deg, ${hColor}, ${hColor}cc)`,
                 boxShadow: `0 0 8px ${hColor}66`,
+                // Separador fino: quando as duas equipas têm a mesma cor,
+                // a divisão da posse continuava visível.
+                borderRight: "2px solid rgba(255,255,255,0.7)",
               }}
             />
             <div
