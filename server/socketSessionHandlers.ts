@@ -775,8 +775,8 @@ export function registerSessionSocketHandlers(
          FROM club_news
          WHERE team_id = ?
            AND type IN ('transfer_in', 'transfer_out', 'auction_won', 'manager_dismissed', 'manager_hired', 'prize')
-         ORDER BY created_at DESC, id DESC
-         LIMIT 20`,
+         ORDER BY year DESC, created_at DESC, id DESC
+         LIMIT 100`,
 				[teamId],
 			);
 			socket.emit("clubNewsData", { teamId, news: news || [] });

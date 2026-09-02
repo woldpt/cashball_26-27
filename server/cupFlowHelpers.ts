@@ -350,10 +350,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			});
 		}
 
-		// Clear financial club news (revenues and expenses list)
-		await new Promise((resolve) => {
-			game.db.run("DELETE FROM club_news WHERE amount IS NOT NULL", resolve);
-		});
+		// Jornal do Clube persiste entre épocas — não apagar club_news.
+		// As notícias são agregadas por ano no frontend (ClubTab.jsx) para evitar lista infinita.
 
 		const promotions: Array<{
 			teamId: number;

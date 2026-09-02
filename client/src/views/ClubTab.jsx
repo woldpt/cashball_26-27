@@ -1,3 +1,4 @@
+import { useState, useMemo, useEffect } from "react";
 import estadio5000 from "../assets/estadio5000.jpg";
 import estadio15000 from "../assets/estadio15000.jpg";
 import estadio30000 from "../assets/estadio30000.jpg";
@@ -15,6 +16,73 @@ const INCOME_TYPES = new Set([
   "loan_take",
   "prize",
 ]);
+
+function NewsRow({ news }) {
+  return (
+    <div className="px-4 py-3 flex items-center gap-3 hover:bg-white/[0.03] transition-colors">
+      {/* Icon */}
+      <div
+        className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${
+          news.type === "transfer_in"
+            ? "bg-emerald-500/15"
+            : news.type === "transfer_out"
+              ? "bg-error/15"
+              : "bg-surface-container-high"
+        }`}
+      >
+        <span
+          className={`material-symbols-outlined text-sm ${
+            news.type === "transfer_in"
+              ? "text-emerald-400"
+              : news.type === "transfer_out"
+                ? "text-error"
+                : "text-on-surface-variant"
+          }`}
+        >
+          {news.type === "transfer_in"
+            ? "trending_up"
+            : news.type === "transfer_out"
+              ? "trending_down"
+              : "info"}
+        </span>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-black text-on-surface truncate">
+          {news.title}
+        </p>
+        <p className="text-[10px] text-on-surface-variant truncate">
+          {news.related_team_name &&
+          (news.type === "transfer_in" || news.type === "transfer_out")
+            ? `${news.type === "transfer_in" ? "de" : "para"} ${news.related_team_name}`
+            : `Jornada ${news.matchweek || "?"}${news.year ? ` · ${news.year}` : ""}`}
+        </p>
+      </div>
+
+      {/* Amount */}
+      {news.amount > 0 && (
+        <div className="text-right shrink-0">
+          <p
+            className={`font-headline font-black text-xs tabular-nums ${
+              INCOME_TYPES.has(news.type) ? "text-emerald-400" : "text-error"
+            }`}
+          >
+            {INCOME_TYPES.has(news.type) ? "+" : "-"}
+            {formatCurrency(news.amount)}
+          </p>
+          <p className="text-[9px] text-on-surface-variant font-black uppercase tracking-widest">
+            {news.type === "transfer_out"
+              ? "Venda"
+              : news.type === "transfer_in"
+                ? "Compra"
+                : ""}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * @param {{
@@ -64,6 +132,66 @@ export function ClubTab({
         : (teamInfo?.stadium_capacity || 0) >= 15000
           ? estadio15000
           : estadio5000;
+
+  // ── Agrupamento do jornal por ano ──────────────────────────────────
+  const groupedNews = useMemo(() => {
+    const map = new Map();
+    for (const n of clubNews || []) {
+      // year 0 / null vem de DBs antigas — agrupa no seasonYear para não perder
+      const raw = Number(n.year);
+      const yearKey = raw > 0 ? String(raw) : String(seasonYear);
+      if (!map.has(yearKey)) map.set(yearKey, []);
+      map.get(yearKey).push(n);
+    }
+    // Ordena anos descendente (mais recente primeiro)
+    return [...map.entries()].sort((a, b) => Number(b[0]) - Number(a[0]));
+  }, [clubNews, seasonYear]);
+
+  // Ano(s) expandido(s) — por defeito só o mais recente fica aberto
+  const [expandedYears, setExpandedYears] = useState(() => new Set([String(seasonYear)]));
+  const [showAllYears, setShowAllYears] = useState(false);
+
+  // Quando o jornal ganha um novo ano (virada de época), expande-o automaticamente
+  useEffect(() => {
+    if (groupedNews.length === 0) return;
+    const mostRecent = groupedNews[0][0];
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- virada de época deve expandir o novo ano
+    setExpandedYears((prev) => {
+      if (prev.has(mostRecent)) return prev;
+      // Se só havia o ano anterior expandido, troca para o novo ano
+      // mas mantém os restantes colapsados para não poluir a vista
+      if (prev.size === 1) return new Set([mostRecent]);
+      const next = new Set(prev);
+      next.add(mostRecent);
+      return next;
+    });
+  }, [groupedNews]);
+
+  const toggleYear = (year) => {
+    setExpandedYears((prev) => {
+      const next = new Set(prev);
+      if (next.has(year)) next.delete(year);
+      else next.add(year);
+      // Garante que pelo menos um ano fica visível
+      if (next.size === 0) next.add(year);
+      return next;
+    });
+  };
+
+  const expandAll = () => {
+    setExpandedYears(new Set(groupedNews.map(([y]) => y)));
+    setShowAllYears(true);
+  };
+  const collapseAll = () => {
+    const mostRecent = groupedNews[0]?.[0] || String(seasonYear);
+    setExpandedYears(new Set([mostRecent]));
+    setShowAllYears(false);
+  };
+
+  // Detecta se há transferências para o badge "Foco em Transferências"
+  const hasTransfers = clubNews?.some(
+    (n) => n.type === "transfer_in" || n.type === "transfer_out",
+  );
 
   return (
     <div className="space-y-4">
@@ -319,106 +447,99 @@ export function ClubTab({
         </div>
       </div>
 
-      {/* ── ROW 3: JORNAL DO CLUBE ────────────────────────────────── */}
+      {/* ── ROW 3: JORNAL DO CLUBE (agregado por ano) ──────────────── */}
       <Panel
         title="Jornal do Clube"
         icon="newspaper"
         meta={
-          clubNews?.some(
-            (n) => n.type === "transfer_in" || n.type === "transfer_out",
-          ) && (
-            <span className="text-[9px] text-amber-400 font-black tracking-[0.2em] uppercase">
-              Foco em Transferências
-            </span>
-          )
+          <div className="flex items-center gap-2">
+            {hasTransfers && (
+              <span className="text-[9px] text-amber-400 font-black tracking-[0.2em] uppercase hidden sm:inline">
+                Foco em Transferências
+              </span>
+            )}
+            {clubNews?.length > 0 && (
+              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-surface-container-high border border-outline-variant/20 text-on-surface-variant tabular-nums">
+                {clubNews.length} · {groupedNews.length} época{groupedNews.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
         }
         padded={false}
       >
         {clubNews && clubNews.length > 0 ? (
           <>
-            <div className="divide-y divide-outline-variant/10">
-              {clubNews.slice(0, 8).map((news, idx) => (
-                <div
-                  key={news.id || idx}
-                  className="px-4 py-3 flex items-center gap-3 hover:bg-white/[0.03] transition-colors"
+            {/* Barra de controlo quando há mais do que um ano */}
+            {groupedNews.length > 1 && (
+              <div className="flex justify-end px-3 py-2 border-b border-outline-variant/10 bg-surface-container-high/30">
+                <button
+                  type="button"
+                  onClick={showAllYears ? collapseAll : expandAll}
+                  className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1"
                 >
-                  {/* Icon */}
-                  <div
-                    className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${
-                      news.type === "transfer_in"
-                        ? "bg-emerald-500/15"
-                        : news.type === "transfer_out"
-                          ? "bg-error/15"
-                          : "bg-surface-container-high"
-                    }`}
-                  >
-                    <span
-                      className={`material-symbols-outlined text-sm ${
-                        news.type === "transfer_in"
-                          ? "text-emerald-400"
-                          : news.type === "transfer_out"
-                            ? "text-error"
-                            : "text-on-surface-variant"
-                      }`}
-                    >
-                      {news.type === "transfer_in"
-                        ? "trending_up"
-                        : news.type === "transfer_out"
-                          ? "trending_down"
-                          : "info"}
-                    </span>
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black text-on-surface truncate">
-                      {news.title}
-                    </p>
-                    <p className="text-[10px] text-on-surface-variant truncate">
-                      {news.related_team_name &&
-                      (news.type === "transfer_in" ||
-                        news.type === "transfer_out")
-                        ? `${
-                            news.type === "transfer_in" ? "de" : "para"
-                          } ${news.related_team_name}`
-                        : `Jornada ${news.matchweek || "?"}${
-                            news.year ? ` · ${news.year}` : ""
-                          }`}
-                    </p>
-                  </div>
-
-                  {/* Amount */}
-                  {news.amount > 0 && (
-                    <div className="text-right shrink-0">
-                      <p
-                        className={`font-headline font-black text-xs tabular-nums ${
-                          INCOME_TYPES.has(news.type)
-                            ? "text-emerald-400"
-                            : "text-error"
-                        }`}
-                      >
-                        {INCOME_TYPES.has(news.type) ? "+" : "-"}
-                        {formatCurrency(news.amount)}
-                      </p>
-                      <p className="text-[9px] text-on-surface-variant font-black uppercase tracking-widest">
-                        {news.type === "transfer_out"
-                          ? "Venda"
-                          : news.type === "transfer_in"
-                            ? "Compra"
-                            : ""}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            {clubNews.length > 8 && (
-              <div className="p-3 text-center border-t border-outline-variant/25 bg-surface-container-high">
-                <p className="text-[9px] font-black tracking-widest text-on-surface-variant uppercase">
-                  + {clubNews.length - 8} entradas no arquivo
-                </p>
+                  <span className="material-symbols-outlined text-xs">
+                    {showAllYears ? "unfold_less" : "unfold_more"}
+                  </span>
+                  {showAllYears ? "Recolher anos" : "Expandir tudo"}
+                </button>
               </div>
             )}
+
+            <div className="divide-y divide-outline-variant/10">
+              {groupedNews.map(([year, items]) => {
+                const isExpanded = expandedYears.has(year);
+                const isCurrentYear = String(year) === String(seasonYear);
+                return (
+                  <div key={year} className="group/year">
+                    {/* Cabeçalho do ano */}
+                    <button
+                      type="button"
+                      onClick={() => toggleYear(year)}
+                      className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${
+                        isExpanded
+                          ? "bg-surface-container-high/60"
+                          : "bg-surface-container-high/20 hover:bg-surface-container-high/40"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className={`text-xs font-black tabular-nums ${isCurrentYear ? "text-primary" : "text-on-surface"}`}
+                        >
+                          {year}
+                        </span>
+                        {isCurrentYear && (
+                          <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/20">
+                            Época actual
+                          </span>
+                        )}
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-container-high border border-outline-variant/20 text-on-surface-variant font-black tabular-nums">
+                          {items.length}
+                        </span>
+                      </div>
+                      <span className="flex items-center gap-1 shrink-0 ml-2">
+                        {!isExpanded && items[0] && (
+                          <span className="text-[10px] text-on-surface-variant/60 truncate max-w-[140px] sm:max-w-[220px] hidden sm:inline">
+                            {items[0].title}
+                          </span>
+                        )}
+                        <span className="material-symbols-outlined text-sm text-on-surface-variant">
+                          {isExpanded ? "expand_less" : "expand_more"}
+                        </span>
+                      </span>
+                    </button>
+
+                    {/* Notícias do ano */}
+                    {isExpanded && (
+                      <div className="divide-y divide-outline-variant/10">
+                        {items.map((news, idx) => (
+                          <NewsRow key={news.id || `${year}-${idx}`} news={news} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </>
         ) : (
           <EmptyState emoji="📰" title="Nenhuma notícia ainda." />
