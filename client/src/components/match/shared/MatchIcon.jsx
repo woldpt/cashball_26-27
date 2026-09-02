@@ -16,33 +16,37 @@
  */
 
 const ICON_PATHS = {
-  /* Football — a goal (or penalty goal with dot for the latter). */
+  /* Classic football (soccer ball): central pentagon + 5 radial seams.
+   * Variants overlay a marker on the same ball: slash (own goal),
+   * filled spot (penalty goal), cross (penalty miss). */
   goal: (
     <>
       <circle cx="12" cy="12" r="9" />
-      <path d="M12 3 L17 7 L15 13 L9 13 L7 7 Z" />
-      <path d="M12 21 L9 13 M12 21 L15 13 M3 12 L7 7 M21 12 L17 7" />
+      <path d="M12 8.6 L15.23 10.95 L14 14.75 L10 14.75 L8.77 10.95 Z" />
+      <path d="M12 8.6 L12 3 M15.23 10.95 L20.56 9.22 M14 14.75 L17.29 19.28 M10 14.75 L6.71 19.28 M8.77 10.95 L3.44 9.22" />
     </>
   ),
   "own-goal": (
     <>
       <circle cx="12" cy="12" r="9" />
-      <path d="M12 3 L17 7 L15 13 L9 13 L7 7 Z" />
+      <path d="M12 8.6 L15.23 10.95 L14 14.75 L10 14.75 L8.77 10.95 Z" />
+      <path d="M12 8.6 L12 3 M15.23 10.95 L20.56 9.22 M14 14.75 L17.29 19.28 M10 14.75 L6.71 19.28 M8.77 10.95 L3.44 9.22" />
       <path d="M4 4 L20 20" />
     </>
   ),
   "penalty-goal": (
     <>
       <circle cx="12" cy="12" r="9" />
+      <path d="M12 8.6 L15.23 10.95 L14 14.75 L10 14.75 L8.77 10.95 Z" />
+      <path d="M12 8.6 L12 3 M15.23 10.95 L20.56 9.22 M14 14.75 L17.29 19.28 M10 14.75 L6.71 19.28 M8.77 10.95 L3.44 9.22" />
       <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
-      <path d="M12 3 L17 7 L15 13 L9 13 L7 7 Z" />
-      <path d="M3 12 L7 7 M21 12 L17 7 M12 21 L9 13 M12 21 L15 13" />
     </>
   ),
   "penalty-miss": (
     <>
       <circle cx="12" cy="12" r="9" />
-      <path d="M12 3 L17 7 L15 13 L9 13 L7 7 Z" />
+      <path d="M12 8.6 L15.23 10.95 L14 14.75 L10 14.75 L8.77 10.95 Z" />
+      <path d="M12 8.6 L12 3 M15.23 10.95 L20.56 9.22 M14 14.75 L17.29 19.28 M10 14.75 L6.71 19.28 M8.77 10.95 L3.44 9.22" />
       <path d="M9 9 L15 15 M15 9 L9 15" />
     </>
   ),
