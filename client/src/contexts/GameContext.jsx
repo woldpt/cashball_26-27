@@ -431,7 +431,7 @@ export function GameProvider({
 			const events = (match.events || []).filter((e) => e.minute === liveMinute);
 			if (!events.length) return;
 			events.forEach((e) => {
-				if (["goal", "penalty_goal", "var_goal_pending"].includes(e.type)) {
+				if (["goal", "penalty_goal", "own_goal", "var_goal_pending"].includes(e.type)) {
 					setGoalFlashRef((prev) => {
 						const key2 = `${match.homeTeamId}_${match.awayTeamId}_${e.team}`;
 						return { ...prev, [key2]: Date.now() };
@@ -446,7 +446,7 @@ export function GameProvider({
 			);
 			if (isMyMatch || isHumanMatch) {
 				const hasGoal = events.some((e) =>
-					["goal", "penalty_goal", "var_goal_pending"].includes(e.type),
+					["goal", "penalty_goal", "own_goal", "var_goal_pending"].includes(e.type),
 				);
 				const hasVar = events.some((e) => e.type === "var_disallowed");
 				const hasOtherEvent = events.some((e) =>

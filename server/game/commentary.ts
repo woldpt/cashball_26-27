@@ -31,6 +31,26 @@ function goalPhrase(name: string, ctx?: GoalContext): string {
   return pickPhrase(defaultGoalPhrases(name));
 }
 
+// Contra — o defensor da equipa contrária empurra a bola para a própria baliza.
+// Conta como golo da equipa atacante no marcador, mas não credita nenhum
+// jogador (sem update em players.goals).
+function ownGoalPhrase(name: string): string {
+  return pickPhrase([
+    `GOLAAA CONTRA DE ${name.toUpperCase()}! A defesa abriu e a bola encontrou caminho...`,
+    `${name} tenta afastar e manda para a própria baliza. Que desastrão!`,
+    `Contra! ${name} não quis isto, mas as redes confirmam.`,
+    `Golo contra de ${name}! O defesa está com o rosto nas mãos.`,
+    `${name} cruza... e entra na baliza da própria equipa. Sorte nenhuma, azar muito.`,
+    `A bola quica em ${name} e vai para dentro. Contra claro, golo aceito.`,
+    `Que desvio trágico de ${name}! O guarda-redes nem se mexeu. Golo contra.`,
+    `${name} quis ser herói no despeje e saiu vilão. Contra!`,
+    `Golo de contra! ${name} olha para os céus como quem pede explicação.`,
+    `Defesa perdida, bola a subir na direção errada... GOLAAA DE CONTRA de ${name}!`,
+    `${name} encosta sem querer e faz o golo da equipa contrária.`,
+    `Isto não pode estar a acontecer: contra de ${name}, direto para a baliza.`,
+  ]);
+}
+
 function defaultGoalPhrases(name: string): string[] {
   return [
     `GOLOOO! ${name} não perdoa!`,
@@ -1038,6 +1058,7 @@ export function bettingPhrase(
 export {
   pickPhrase,
   goalPhrase,
+  ownGoalPhrase,
   penaltyGoalPhrase,
   penaltyMissPhrase,
   varPhrase,

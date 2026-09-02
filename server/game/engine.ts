@@ -20,6 +20,7 @@ export {
 } from "./playerUtils";
 import {
   goalPhrase,
+  ownGoalPhrase,
   penaltyGoalPhrase,
   penaltyMissPhrase,
   varPhrase,
@@ -1496,6 +1497,39 @@ async function simulateMatchSegment(
       }
 
       if (Math.random() >= probGoal) return;
+
+      // Contra (~8% dos golos): a bola entra na baliza da equipa que defende,
+      // creditado a um defensor desse lado. Conta no marcador da equipa
+      // atacante (beneficiada), mas NÃO credita o jogador — sem update em
+      // players.goals e sem interação com o VAR.
+      if (Math.random() < 0.08) {
+        const defendingSquad = isHome ? away.squad : home.squad;
+        const defCulprits = defendingSquad.filter(
+          (p) => p.position === "DEF",
+        );
+        const culpritPool =
+          defCulprits.length > 0
+            ? defCulprits
+            : defendingSquad.filter((p) => p.position !== "GR");
+        const culprit = weightedPickScorer(culpritPool) || null;
+
+        if (isHome) fixture.finalHomeGoals++;
+        else fixture.finalAwayGoals++;
+        goalScoredThisMinute = true;
+
+        fixture.events.push({
+          minute,
+          type: "own_goal",
+          team: attackingSide, // equipa beneficiada — o cliente conta por e.team
+          emoji: "⚽",
+          playerId: culprit ? culprit.id : null,
+          playerName: culprit ? culprit.name : "Jogador",
+          text: `[${minute}'] ⚽ ${ownGoalPhrase(
+            culprit ? culprit.name : "Jogador",
+          )}`,
+        });
+        return;
+      }
 
       const scorers = scoringSquad.filter(
         (p) => p.position === "ATA" || p.position === "MED",

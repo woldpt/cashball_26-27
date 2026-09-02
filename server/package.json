@@ -26,6 +26,7 @@
     "test:substitutions": "tsx scripts/substitutionsRegression.mts",
     "test:morale": "tsx scripts/moraleRegression.mts",
     "test:penalty-ordering": "tsx scripts/penaltyOrderingRegression.mts",
+    "test:own-goal": "tsx scripts/ownGoalRegression.mts",
     "test:crash-recovery": "tsx scripts/crashRecoveryRegression.mts"
   },
   "keywords": [],

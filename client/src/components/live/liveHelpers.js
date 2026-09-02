@@ -32,9 +32,18 @@ export function matchEventIcon(type) {
   }
 }
 
-/** True para tipos de evento que contam como golo no placar. */
+/** True para tipos de evento que contam como golo no placar.
+ *
+ * `own_goal` também incrementa o resultado (evento com `team` da equipa
+ * beneficiada, igual ao engine) — contar aqui mantém o placar, a projeção da
+ * classificação e o empate-aos-90 sincronizados com finalHomeGoals/finalAwayGoals. */
 export function isGoalType(type) {
-  return type === "goal" || type === "penalty_goal" || type === "var_goal_pending";
+  return (
+    type === "goal" ||
+    type === "penalty_goal" ||
+    type === "own_goal" ||
+    type === "var_goal_pending"
+  );
 }
 
 /**

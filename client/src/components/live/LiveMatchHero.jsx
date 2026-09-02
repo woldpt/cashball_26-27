@@ -19,6 +19,7 @@ const WEATHER_LABELS = {
 const COMMENTARY_EFFECTS = {
   goal: { className: "text-emerald-400/90", effect: "pop" },
   penalty_goal: { className: "text-emerald-400/90", effect: "pop" },
+  own_goal: { className: "text-orange-400/90", effect: "pop" },
   var_disallowed: { className: "text-amber-400/90", effect: "shake" },
   red: { className: "text-red-400/90", effect: "shake" },
   penalty_miss: { className: "text-amber-400/80", effect: "pulse", pulseColor: "rgba(251, 191, 36, 0.5)" },
