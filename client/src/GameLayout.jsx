@@ -663,7 +663,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
       <nav
-        className={`hidden lg:flex fixed left-0 top-14 bottom-0 flex-col z-10 transition-all duration-200 bg-surface-container-low border-r border-outline-variant/15 ${sidebarCollapsed ? "w-14" : "w-64"}`}
+        className={`hidden lg:flex fixed left-0 top-14 bottom-0 flex-col z-10 transition-all duration-200 bg-surface-container-high border-r border-outline-variant/15 ${sidebarCollapsed ? "w-14" : "w-64"}`}
       >
         {/* Toggle button */}
         <button
@@ -1043,8 +1043,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           <nav
             className={
               isMobileLandscape
-                ? "lg:hidden fixed left-0 top-10 bottom-0 w-16 z-40 flex flex-col bg-surface-container-low/95 backdrop-blur-sm border-r border-outline-variant/30 py-2 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
-                : "lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-low/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex items-stretch pb-[env(safe-area-inset-bottom)]"
+                ? "lg:hidden fixed left-0 top-10 bottom-0 w-16 z-40 flex flex-col bg-surface-container-high/95 backdrop-blur-sm border-r border-outline-variant/30 py-2 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
+                : "lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-high/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex items-stretch pb-[env(safe-area-inset-bottom)]"
             }
           >
             {/* Clube */}
