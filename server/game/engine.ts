@@ -1498,10 +1498,10 @@ async function simulateMatchSegment(
 
       if (Math.random() >= probGoal) return;
 
-      // Contra (~8% dos golos): a bola entra na baliza da equipa que defende,
-      // creditado a um defensor desse lado. Conta no marcador da equipa
-      // atacante (beneficiada), mas NÃO credita o jogador — sem update em
-      // players.goals e sem interação com o VAR.
+      // Auto-golo (~8% das oportunidades de golo): a bola entra na baliza da
+      // equipa que defende, "creditado" a um defensor desse lado. Conta no
+      // marcador da equipa atacante (beneficiada), mas NÃO credita o jogador —
+      // sem update em players.goals e sem interação com o VAR.
       if (Math.random() < 0.08) {
         const defendingSquad = isHome ? away.squad : home.squad;
         const defCulprits = defendingSquad.filter(

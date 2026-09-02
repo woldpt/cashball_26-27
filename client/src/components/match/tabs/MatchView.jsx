@@ -15,7 +15,7 @@ import {
 /* ── MatchView — vista principal do jogo ──────────────────────────────
  * Dois modos:
  *  - legacy (jogo próprio): separadores por equipa + pitch único + banco;
- *  - spectate (jogo alheio, prop `spectate`): placar broadcast + dois
+ *  - spectate (jogo alheio, prop `spectate`): marcador broadcast + dois
  *    pitches em simultâneo (empilhados < lg, lado a lado >= lg), sem
  *    separadores nem bancos.
  */
@@ -41,7 +41,7 @@ export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoun
   if (spectate) {
     return (
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-        {/* Placar broadcast fixo no topo do painel */}
+        {/* Marcador broadcast fixo no topo do painel */}
         <MatchScoreboard fixture={fixture} teams={teams} liveMinute={liveMinute} />
 
         <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">

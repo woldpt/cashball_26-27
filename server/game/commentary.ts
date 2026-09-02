@@ -31,23 +31,23 @@ function goalPhrase(name: string, ctx?: GoalContext): string {
   return pickPhrase(defaultGoalPhrases(name));
 }
 
-// Contra — o defensor da equipa contrária empurra a bola para a própria baliza.
-// Conta como golo da equipa atacante no marcador, mas não credita nenhum
-// jogador (sem update em players.goals).
+// Auto-golo — um defensor da equipa contrária empurra a bola para a própria
+// baliza. Conta como golo da equipa atacante no marcador, mas não credita
+// nenhum jogador (sem update em players.goals).
 function ownGoalPhrase(name: string): string {
   return pickPhrase([
-    `GOLAAA CONTRA DE ${name.toUpperCase()}! A defesa abriu e a bola encontrou caminho...`,
-    `${name} tenta afastar e manda para a própria baliza. Que desastrão!`,
-    `Contra! ${name} não quis isto, mas as redes confirmam.`,
-    `Golo contra de ${name}! O defesa está com o rosto nas mãos.`,
+    `AUTO-GOLOOO DE ${name.toUpperCase()}! A defesa tentou afastar e a bola acabou na própria baliza.`,
+    `${name} tenta desviar e manda para a própria baliza. Que desastrão!`,
+    `Auto-golo! ${name} não quis isto, mas as redes confirmam.`,
+    `Auto-golo de ${name}! O defesa está com o rosto nas mãos.`,
     `${name} cruza... e entra na baliza da própria equipa. Sorte nenhuma, azar muito.`,
-    `A bola quica em ${name} e vai para dentro. Contra claro, golo aceito.`,
-    `Que desvio trágico de ${name}! O guarda-redes nem se mexeu. Golo contra.`,
-    `${name} quis ser herói no despeje e saiu vilão. Contra!`,
-    `Golo de contra! ${name} olha para os céus como quem pede explicação.`,
-    `Defesa perdida, bola a subir na direção errada... GOLAAA DE CONTRA de ${name}!`,
-    `${name} encosta sem querer e faz o golo da equipa contrária.`,
-    `Isto não pode estar a acontecer: contra de ${name}, direto para a baliza.`,
+    `A bola quica em ${name} e vai para dentro. Auto-golo incontestável.`,
+    `Que desvio trágico de ${name}! O guarda-redes nem se mexeu. Auto-golo.`,
+    `${name} quis ser herói no despeje e saiu vilão. Auto-golo!`,
+    `Auto-golo! ${name} olha para os céus como quem pede explicação.`,
+    `Defesa perdida, bola a subir na direção errada... AUTO-GOLOOO DE ${name}!`,
+    `${name} encosta sem querer e faz o auto-golo da equipa contrária.`,
+    `Isto não pode estar a acontecer: auto-golo de ${name}, direto para a baliza.`,
   ]);
 }
 

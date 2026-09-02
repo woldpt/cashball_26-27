@@ -32,10 +32,10 @@ export function matchEventIcon(type) {
   }
 }
 
-/** True para tipos de evento que contam como golo no placar.
+/** True para tipos de evento que contam como golo no marcador.
  *
  * `own_goal` também incrementa o resultado (evento com `team` da equipa
- * beneficiada, igual ao engine) — contar aqui mantém o placar, a projeção da
+ * beneficiada, igual ao engine) — contar aqui mantém o marcador, a projeção da
  * classificação e o empate-aos-90 sincronizados com finalHomeGoals/finalAwayGoals. */
 export function isGoalType(type) {
   return (
@@ -48,7 +48,7 @@ export function isGoalType(type) {
 
 /**
  * True se um jogo estava empatado aos 90' (logo, foi a prolongamento).
- * Conta golos REGULAMENTARES (minute <= 90) com o MESMO critério do placar
+ * Conta golos REGULAMENTARES (minute <= 90) com o MESMO critério do marcador
  * (`isGoalType`), que inclui `penalty_goal` — penáltis também incrementam o
  * resultado real (finalHomeGoals/finalAwayGoals). Um filtro que contasse só
  * `type === "goal"` fazia jogos decididos na regulamentação por penáltis

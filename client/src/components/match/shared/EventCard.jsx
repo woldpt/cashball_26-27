@@ -52,7 +52,7 @@ export function EventCard({ event, accent, showTeamBadge, showIcon = true, teamN
               )}
               {event.type === "own_goal" && (
                 <span className="shrink-0 text-[9px] font-black uppercase px-1 py-px rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 tracking-widest">
-                  Contra
+                  Auto-golo
                 </span>
               )}
             </>

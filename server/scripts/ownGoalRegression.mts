@@ -1,5 +1,5 @@
 /**
- * Regression — own-goals (golos contra).
+ * Regression — own-goals (auto-golos).
  *
  * Corre a engine REAL (`simulateMatchSegment`) em centenas de jogos seedados e
  * valida:
@@ -8,7 +8,7 @@
  *        (a feature não pode "sumir" silenciosamente)
  *   O2 — score ↔ eventos: finalHomeGoals/finalAwayGoals == nº de eventos-golo
  *        da equipa em cada minuto (own_goal conta, tal como `goal`/`penalty_goal`)
- *   O3 — lado correto: o autor do contra pertence ao squad da equipa que
+ *   O3 — lado correto: o autor do auto-golo pertence ao squad da equipa que
  *        SOFREU o golo (oposta ao `event.team`, que é a beneficiada)
  *   O4 — sem crédito estatístico: players.goals do autor NÃO incrementa
  *   O5 — higiene do evento: minuto correto, team válido, playerName presente
@@ -217,7 +217,7 @@ async function runMatch(
     const culpritSide = e.team === "home" ? awaySquadIds : homeSquadIds;
     check(
       culpritSide.has(e.playerId),
-      `O3 seed=${seed}: autor do contra (id=${e.playerId}) não pertence ao squad da equipa que sofreu (${fixture[`${e.team}Team`]})`,
+      `O3 seed=${seed}: autor do auto-golo (id=${e.playerId}) não pertence ao squad da equipa que sofreu (${fixture[`${e.team}Team`]})`,
     );
     if (typeof e.playerId === "number" && e.playerId > 0) {
       check(

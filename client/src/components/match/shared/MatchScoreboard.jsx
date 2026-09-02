@@ -1,9 +1,9 @@
 import { isGoalType } from "../../live/liveHelpers.js";
 
-/* ── MatchScoreboard — placar estilo transmissão (layout spectate) ──────
+/* ── MatchScoreboard — marcador estilo transmissão (layout spectate) ──────
  *
  * Faixa full-width sobre os pitches:
- *   linha 1: [● nome casa]  [placar grande + minuto/FT]  [nome fora ●]
+ *   linha 1: [● nome casa]  [marcador grande + minuto/FT]  [nome fora ●]
  *   linha 2: posse slim com % em cada extremo (só com dados).
  *
  * O resultado é derivado dos eventos até `liveMinute` (mesmo critério de
@@ -39,14 +39,14 @@ export function MatchScoreboard({ fixture, teams, liveMinute }) {
 
   return (
     <div className="shrink-0 border-b border-outline-variant/25 bg-surface-container-high/60">
-      {/* ── Linha 1: equipas + placar ─────────────────────────────── */}
+      {/* ── Linha 1: equipas + marcador ─────────────────────────────── */}
       <div
         className="flex items-center gap-3 sm:gap-4 px-3 sm:px-6 py-2.5"
         style={{
           background: `linear-gradient(90deg, ${hColor}1f 0%, transparent 38%, transparent 62%, ${aColor}1f 100%)`,
         }}
       >
-        {/* Casa (nome volta-se para o placar) */}
+        {/* Casa (nome volta-se para o marcador) */}
         <div className="flex flex-1 items-center justify-end gap-2 min-w-0">
           <span className="text-[11px] sm:text-sm font-black uppercase tracking-wide text-on-surface truncate">
             {hInfo?.name || "Casa"}
@@ -57,7 +57,7 @@ export function MatchScoreboard({ fixture, teams, liveMinute }) {
           />
         </div>
 
-        {/* Placar */}
+        {/* Marcador */}
         <div className="shrink-0 flex flex-col items-center px-3 py-1 sm:px-5 sm:py-1.5 rounded-lg border border-outline-variant/25 bg-surface-container-low/80">
           <span className="flex items-center gap-2 sm:gap-3 font-headline font-black text-xl sm:text-3xl tabular-nums leading-none text-on-surface">
             <span className="min-w-[1ch] text-right">{homeGoals}</span>
