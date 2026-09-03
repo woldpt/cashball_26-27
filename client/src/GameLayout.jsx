@@ -988,7 +988,15 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                                 opacity: subBadgesResting ? 1 : 0,
                                 scale: subBadgesResting ? 1 : 0.5,
                               }}
-                              transition={{ duration: DUR.fast, ease: "easeOut" }}
+                              // Esconde INSTANTANEO no descolagem do flyer de
+                              // regresso (badge + flyer no mesmo ponto =
+                              // double-count); fade-in de DUR.fast apenas na
+                              // aterragem, apos o flyer ser removido.
+                              transition={
+                                subBadgesResting
+                                  ? { duration: DUR.fast, ease: "easeOut" }
+                                  : { duration: 0 }
+                              }
                               className="absolute -top-1.5 -right-2 flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none min-w-[18px] h-[18px] px-1 text-[10px] shadow-md"
                               title={`${badge} negócio(s)`}
                             >
@@ -1238,7 +1246,16 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                           scale: transfSumHidden ? 0 : 1,
                           opacity: transfSumHidden ? 0 : 1,
                         }}
-                        transition={{ duration: DUR.fast, ease: "easeOut" }}
+                        // Esconde INSTANTANEO quando parte (o flyer herda a
+                        // contagem no ponto de descolagem — um fade de 150ms
+                        // deixava badge + flyer no mesmo ponto = double-count).
+                        // Fade-in de DUR.fast apenas na aterragem, quando o
+                        // flyer ja foi removido (exit instantaneo).
+                        transition={
+                          transfSumHidden
+                            ? { duration: 0 }
+                            : { duration: DUR.fast, ease: "easeOut" }
+                        }
                         className="absolute -top-1 -right-2 flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none min-w-[18px] h-[18px] px-1 text-[10px]"
                         title={`${transferBadgeCount} negócio(s) activo(s)`}
                       >
@@ -1262,7 +1279,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   className="absolute left-0 top-0"
                   initial={{ x: f.from.x, y: f.from.y, scale: 0.85, opacity: 1 }}
                   animate={{ x: f.to.x, y: f.to.y, scale: 1, opacity: 1 }}
-                  exit={{ opacity: 0, scale: 0.5, transition: { duration: DUR.fast, ease: "easeOut" } }}
+                  // Exit instantaneo: o flyer ja esta ancorado ao centro da
+                // badge de destino quando e removido, por isso a remocao e
+                // invisivel e o fade-in da badge (DUR.fast) nao sobrepoe o
+                // flyer — sem double-count no ponto de aterragem.
+                exit={{ opacity: 0, scale: 0.5, transition: { duration: 0 } }}
                   transition={{ duration: DUR.slow, ease: EASE }}
                 >
                   <span className="flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-red-500 text-white font-black leading-none min-w-[18px] h-[18px] px-1 text-[10px] shadow-lg shadow-black/40">
