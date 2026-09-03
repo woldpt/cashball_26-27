@@ -124,8 +124,6 @@ function PlayerRow({
   isDragging,
   children,
 }) {
-  const f = player.form ?? 32;
-  const formIcon = f >= 41 ? "💪" : f <= 22 ? "😩" : "👍";
   return (
     <div
       draggable={draggable}
@@ -200,7 +198,17 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
           <span className="text-[7px] uppercase tracking-widest text-gray-500 font-bold leading-none">
             FORMA
           </span>
-          <span className="text-[13px] leading-none">{formIcon}</span>
+          <span
+            className={`text-[13px] font-black tabular-nums leading-none ${
+              (player.form ?? 0) >= 38
+                ? "text-green-400"
+                : (player.form ?? 0) >= 26
+                  ? "text-yellow-400"
+                  : "text-red-400"
+            }`}
+          >
+            {player.form ?? "–"}
+          </span>
         </div>
         <div className="w-px h-5 bg-gray-700/60" />
 

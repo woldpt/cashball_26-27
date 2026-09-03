@@ -57,14 +57,19 @@ export function PlayerRow({
     !!player.is_star &&
     (player.position === "MED" || player.position === "ATA");
 
-  const form = player.form || 32;
-  const formArrow = form >= 41 ? "💪" : form <= 22 ? "😩" : "👍";
+  const form = player.form ?? 32;
   const formColor =
-    form >= 41
-      ? "text-emerald-400"
-      : form <= 22
-        ? "text-rose-400"
-        : "text-zinc-400";
+    form >= 38
+      ? "text-green-400"
+      : form >= 26
+        ? "text-yellow-400"
+        : "text-red-400";
+  const resColor =
+    (player.resistance ?? 0) >= 38
+      ? "text-green-400"
+      : (player.resistance ?? 0) >= 26
+        ? "text-yellow-400"
+        : "text-red-400";
 
   const skillDelta =
     player.prev_skill != null && player.prev_skill !== player.skill
@@ -222,7 +227,7 @@ export function PlayerRow({
             Res
           </div>
           {player.resistance != null ? (
-            <span className="text-cyan-400 font-black text-[12px]">
+            <span className={`font-black text-[12px] ${resColor}`}>
               {player.resistance}
             </span>
           ) : (
@@ -233,7 +238,7 @@ export function PlayerRow({
           <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
             For
           </div>
-          <span className={`font-black text-[12px] ${formColor}`}>{formArrow}</span>
+          <span className={`font-black text-[12px] ${formColor}`}>{player.form ?? "—"}</span>
         </div>
       </div>
 
@@ -317,7 +322,7 @@ export function PlayerRow({
               <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
                 Res
               </span>
-              <span className="text-cyan-400 font-black text-[12px] leading-none">
+              <span className={`font-black text-[12px] leading-none ${resColor}`}>
                 {player.resistance ?? "—"}
               </span>
             </span>
@@ -326,7 +331,7 @@ export function PlayerRow({
                 For
               </span>
               <span className={`text-[12px] font-black leading-none ${formColor}`}>
-                {formArrow}
+                {player.form ?? "—"}
               </span>
             </span>
             <span className="flex flex-col items-center">
