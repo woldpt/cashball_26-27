@@ -172,3 +172,28 @@ function applyResult(row, goalsFor, goalsAgainst) {
     row.losses += 1;
   }
 }
+
+/**
+ * Resolve a coluna de equipa onde um evento deve ser apresentado em listas
+ * por equipa (ex.: colunas de eventos do LiveMatchHero).
+ *
+ * Por omissão, o lado vem da equipa real do JOGADOR (via lineups) — defesa
+ * contra flags `team` divergentes chegadas do servidor. Os auto-golos são o
+ * caso especial: o `playerId` é o AUTOR (um defensor da equipa que SOFREU),
+ * enquanto `e.team` é a equipa BENEFICIADA — o mesmo lado que o marcador
+ * conta em todo o lado (`isGoalType` + `e.team`). Logo, auto-golos seguem
+ * SEMPRE `e.team`, nunca o lado do autor.
+ *
+ * @param {Object} event - Evento de partida (fixture.events).
+ * @param {Map|Object|null} lineupSideById - Mapa playerId → "home"|"away"
+ *   construído a partir das lineups (podem faltar suplentes/autores fora do
+ *   snapshot).
+ * @returns {string} "home" | "away"
+ */
+export function resolveEventSide(event, lineupSideById) {
+  if (event?.type === "own_goal") return event.team;
+  if (event?.playerId != null && lineupSideById?.has?.(event.playerId)) {
+    return lineupSideById.get(event.playerId);
+  }
+  return event?.team;
+}

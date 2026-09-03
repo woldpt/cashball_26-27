@@ -3,7 +3,7 @@ import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { OddsBadge } from "../shared/OddsBadge.jsx";
 import { PreMatchIntro, KickoffBadge } from "../match/shared/index.js";
 import { TeamCrest } from "./TeamCrest.jsx";
-import { FLASH_COLOR, isFlashing, isGoalType, isDrawnAt90, matchEventIcon, parseOdds } from "./liveHelpers.js";
+import { FLASH_COLOR, isFlashing, isGoalType, isDrawnAt90, matchEventIcon, parseOdds, resolveEventSide } from "./liveHelpers.js";
 
 const WEATHER_LABELS = {
   "☀️": "Sol",
@@ -109,18 +109,12 @@ export function LiveMatchHero({
     display: "inline-block",
   });
 
-  // Determina o lado de cada evento pelo jogador real (via lineups) — os eventos
-  // ficam sempre por baixo da equipa a que o jogador pertence, mesmo que o campo
-  // `team` chegue com o lado trocado (defensivo contra dados divergentes).
+  // Determina o lado de cada evento: por defeito a equipa real do jogador
+  // (via lineups), exceto auto-golos que seguem SEMPRE `e.team` (beneficiada).
   const lineupSideById = new Map();
   (myMatch.homeLineup || []).forEach((p) => lineupSideById.set(p.id, "home"));
   (myMatch.awayLineup || []).forEach((p) => lineupSideById.set(p.id, "away"));
-  const resolveSide = (e) => {
-    if (e.playerId != null && lineupSideById.has(e.playerId)) {
-      return lineupSideById.get(e.playerId);
-    }
-    return e.team;
-  };
+  const resolveSide = (e) => resolveEventSide(e, lineupSideById);
 
   const homeEvents = matchEvents
     .filter(
