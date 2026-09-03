@@ -3,9 +3,17 @@
  * Checks for budget inconsistencies, invalid squad compositions,
  * duplicate players, broken match phase transitions.
  *
+ * Pool 60→40:
+ *   - base.db é o template completo com 60 equipas (12/divisão, 5 divisões).
+ *   - cada sala game_<ROOM>.db é filtrada para 40 equipas (8/divisão) via
+ *     sorteio que preserva fixos (D1: Sporting/Porto/Benfica, D4: Juventudes).
+ *   - o audit distingue os dois casos: base espera 12/divisão, sala espera 8/divisão.
+ *     Para retrocompatibilidade aceita 8 ou 12 em sala com warning (salas antigas
+ *     sem pool_sampling). Valida também pool_sampling JSON (kept:40, dropped:20).
+ *
  * Usage:
  *   npx tsx server/scripts/gameStateAudit.ts <roomCode>   # game_<roomCode>.db
- *   npx tsx server/scripts/gameStateAudit.ts base         # base.db (seeded DB)
+ *   npx tsx server/scripts/gameStateAudit.ts base         # base.db (60 equipas)
  */
 
 const sqlite3 = require("sqlite3").verbose();
@@ -82,6 +90,8 @@ class GameStateAuditor {
     try {
       await this.auditTeamBudgets();
       await this.auditSquadComposition();
+      await this.auditDivisionCounts();
+      await this.auditPoolSampling();
       await this.auditDuplicatePlayers();
       await this.auditContractExpiry();
       await this.auditMatchPhases();
@@ -222,6 +232,113 @@ class GameStateAuditor {
         "match_phase",
         `Match ${match.id} is played but missing a score (${match.home_score}-${match.away_score})`,
         { matchId: match.id, homeScore: match.home_score, awayScore: match.away_score },
+      );
+    }
+  }
+
+  private async auditDivisionCounts() {
+    const counts = await this.runQuery<any>(
+      "SELECT division, COUNT(*) c FROM teams GROUP BY division ORDER BY division",
+    );
+    const expectedPerDivision = this.roomCode === "base" ? 12 : 8;
+    for (const r of counts) {
+      if (r.c !== expectedPerDivision) {
+        if ([8, 12].includes(r.c)) {
+          this.addIssue(
+            "warning",
+            "division",
+            `D${r.division} tem ${r.c} equipas, esperado ${expectedPerDivision} (aceite por retrocompatibilidade)`,
+            { division: r.division, count: r.c, expected: expectedPerDivision },
+          );
+        } else {
+          this.addIssue(
+            "error",
+            "division",
+            `D${r.division} tem ${r.c} equipas, esperado ${expectedPerDivision}`,
+            { division: r.division, count: r.c, expected: expectedPerDivision },
+          );
+        }
+      }
+    }
+    if (counts.length !== 5) {
+      this.addIssue(
+        "error",
+        "division",
+        `Número de divisões inesperado: ${counts.length} (esperado 5)`,
+        { count: counts.length },
+      );
+    }
+    const total = counts.reduce((a: number, b: any) => a + (b.c || 0), 0);
+    const expectedTotal = expectedPerDivision * 5;
+    // Só reporta total se não houver já erro/warning por divisão (evita duplicar)
+    const hasDivIssue = this.issues.some((i) => i.category === "division");
+    if (!hasDivIssue && total !== expectedTotal) {
+      this.addIssue(
+        "error",
+        "division",
+        `Total de equipas ${total} != esperado ${expectedTotal}`,
+        { total, expected: expectedTotal },
+      );
+    }
+  }
+
+  private async auditPoolSampling() {
+    const rows = await this.runQuery<any>(
+      "SELECT value FROM game_state WHERE key='pool_sampling'",
+    );
+    const hasPool = rows.length > 0;
+    if (this.roomCode === "base") {
+      if (hasPool) {
+        this.addIssue(
+          "warning",
+          "pool_sampling",
+          "base.db não deve ter pool_sampling (só salas filtradas 60→40)",
+          { value: String(rows[0]?.value || "").slice(0, 120) },
+        );
+      }
+      return;
+    }
+    // Sala game_*.db
+    if (!hasPool) {
+      const cnt = await this.runQuery<any>("SELECT COUNT(*) c FROM teams");
+      const total = cnt[0]?.c ?? 0;
+      if (total === 60) {
+        this.addIssue(
+          "warning",
+          "pool_sampling",
+          "Sala com 60 equipas mas sem pool_sampling (sala antiga, anterior ao sorteio 60→40)",
+          { total },
+        );
+      }
+      return;
+    }
+    const raw = rows[0]?.value;
+    try {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.kept !== "number" || typeof parsed.dropped !== "number") {
+        this.addIssue("error", "pool_sampling", "pool_sampling com tipos inválidos", parsed);
+      } else if (parsed.kept !== 40 || parsed.dropped !== 20) {
+        this.addIssue(
+          "error",
+          "pool_sampling",
+          `pool_sampling inválido: kept=${parsed.kept}, dropped=${parsed.dropped} (esperado 40/20)`,
+          parsed,
+        );
+      }
+      if (parsed.kept + parsed.dropped !== 60) {
+        this.addIssue(
+          "warning",
+          "pool_sampling",
+          `pool_sampling kept+dropped=${parsed.kept + parsed.dropped} != 60`,
+          parsed,
+        );
+      }
+    } catch (e: any) {
+      this.addIssue(
+        "error",
+        "pool_sampling",
+        `pool_sampling JSON inválido: ${e.message}`,
+        { value: String(raw || "").slice(0, 120) },
       );
     }
   }
