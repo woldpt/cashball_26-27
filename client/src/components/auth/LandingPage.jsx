@@ -129,6 +129,17 @@ const LandingPage = ({
 	const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+	// Barra de título: esconde-se logo após o início do scroll vertical
+	// (mostra-se de novo ao voltar ao topo). Aplica-se em desktop e mobile.
+	const [scrolled, setScrolled] = useState(false);
+
+	useEffect(() => {
+		const onScroll = () => setScrolled(window.scrollY > 4);
+		onScroll();
+		window.addEventListener("scroll", onScroll, { passive: true });
+		return () => window.removeEventListener("scroll", onScroll);
+	}, []);
+
 	// 1. Reconnecting State
 	if (me && !me.teamId) {
 		return (
@@ -207,9 +218,10 @@ const LandingPage = ({
 			    fase de escolha de sala: são 64px de marca sem valor funcional que
 			    esmagam a grelha de salas (RoomSelectScreen recupera com short:h-dvh). */}
 			<header
-				className={`z-10 w-full border-b border-white/[0.06] bg-[#060b08]/70 backdrop-blur-xl sticky top-0 ${
+				aria-hidden={scrolled}
+				className={`z-10 w-full border-b border-white/[0.06] bg-[#060b08]/70 backdrop-blur-xl sticky top-0 transition-transform duration-300 ease-out ${
 					isMode ? "short:hidden" : ""
-				}`}
+				} ${scrolled ? "-translate-y-full pointer-events-none" : "translate-y-0"}`}
 			>
 				<div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
 					<div className="flex items-center gap-3">
