@@ -397,11 +397,11 @@ export const DEFAULT_TACTIC = {
 
 // ── AGGRESSIVENESS TIERS ──────────────────────────────────────────────────────
 export const AGG_TIERS = {
-	Cordeirinho: { color: "text-emerald-400" },
-	Cavalheiro: { color: "text-sky-400" },
-	"Fair Play": { color: "text-zinc-400" },
-	Caneleiro: { color: "text-orange-400" },
-	Caceteiro: { color: "text-red-400" },
+	Santinho: { color: "text-emerald-400" },
+	Escuteiro: { color: "text-sky-400" },
+	Zen: { color: "text-zinc-400" },
+	Lenhador: { color: "text-orange-400" },
+	Triturador: { color: "text-red-400" },
 };
 
 export const TICKER_TEAM_COLORS = [

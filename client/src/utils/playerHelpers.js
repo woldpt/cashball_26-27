@@ -172,15 +172,18 @@ export function getAvailablePositionCounts(squad = [], currentMatchweek = 1) {
 
 export function aggLabel(value) {
   if (typeof value === "number") {
-    const tiers = [
-      "Cordeirinho",
-      "Cavalheiro",
-      "Fair Play",
-      "Caneleiro",
-      "Caceteiro",
-    ];
+    const tiers = ["Santinho", "Escuteiro", "Zen", "Lenhador", "Triturador"];
     const idx = Math.max(0, Math.min(4, Math.round(value) - 1));
     return tiers[idx];
   }
-  return AGG_TIERS[value] ? value : "Fair Play";
+  if (AGG_TIERS[value]) return value;
+  // Aliases legados (nomes anteriores) → nomes novos
+  const legacy = {
+    Cordeirinho: "Santinho",
+    Cavalheiro: "Escuteiro",
+    "Fair Play": "Zen",
+    Caneleiro: "Lenhador",
+    Caceteiro: "Triturador",
+  };
+  return legacy[value] || "Zen";
 }

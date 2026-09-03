@@ -64,6 +64,12 @@ export function getAggressivenessValue(player: PlayerRow) {
   }
 
   const AGG_TIER_VALUES = {
+    Santinho: 1,
+    Escuteiro: 2,
+    Zen: 3,
+    Lenhador: 4,
+    Triturador: 5,
+    // Aliases legados (nomes anteriores) — salas antigas podem ter strings
     Cordeirinho: 1,
     Cavalheiro: 2,
     "Fair Play": 3,

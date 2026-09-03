@@ -3,6 +3,6 @@ import { aggLabel } from "../../utils/playerHelpers.js";
 
 export function AggBadge({ value }) {
   const key = aggLabel(value);
-  const cfg = AGG_TIERS[key] || AGG_TIERS["Fair Play"];
+  const cfg = AGG_TIERS[key] || AGG_TIERS["Zen"];
   return <span className={`text-[10px] font-bold ${cfg.color}`}>{key}</span>;
 }
