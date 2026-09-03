@@ -27,7 +27,8 @@
     "test:morale": "tsx scripts/moraleRegression.mts",
     "test:penalty-ordering": "tsx scripts/penaltyOrderingRegression.mts",
     "test:own-goal": "tsx scripts/ownGoalRegression.mts",
-    "test:crash-recovery": "tsx scripts/crashRecoveryRegression.mts"
+    "test:crash-recovery": "tsx scripts/crashRecoveryRegression.mts",
+    "test:emergency-gk": "tsx scripts/emergencyGkRegression.mts"
   },
   "keywords": [],
   "author": "",

@@ -564,6 +564,26 @@ function injuryPhrase(name: string, severity: string): string {
   ]);
 }
 
+function emergencyGkPhrase(name: string): string {
+  return pickPhrase([
+    `${name} calça as luvas e vai para a baliza! Coragem de quem não recusa.`,
+    `${name} troca o relvado pela baliza. A equipa fica de pé — e com guarda-redes.`,
+    `${name} aceita a missão impossível: vai para a baliza até ao fim.`,
+    `${name} veste as luvas de improviso. O espírito de equipa em estado puro.`,
+    `${name} atira-se para a baliza. Não é o seu lugar, mas a equipa precisa.`,
+    `${name} faz das tripas coração: vai para a baliza sem pestanejar.`,
+    `Sem GR no banco, ${name} assume a baliza. A bravura não se mede em skills.`,
+    `${name} pede as luvas emprestadas e toma conta da baliza.`,
+    `Inesperado: ${name} vai para a baliza. O banco aplaude a coragem.`,
+    `${name} troca a chuteira pelas luvas. Missão de emergência, missão cumprida.`,
+    `${name} posiciona-se à baliza. Não é perfeito, mas é alguém a defender.`,
+    `A baliza ganha dono de emergência: ${name} assume as luvas.`,
+    `${name} calça as luvas e trava os remates como pode. Nunca sozinho.`,
+    `Último recurso: ${name} vai para a baliza. O futebol também é isto.`,
+    `${name} recua para a baliza. Os colegas confiam, a equipa continua.`,
+  ]);
+}
+
 function subPhrase(outName: string, inName: string): string {
   return pickPhrase([
     `Substituição: ${outName} cede o lugar a ${inName}. Rotatividade ao poder.`,
@@ -1066,6 +1086,7 @@ export {
   redPhrase,
   injuryPhrase,
   subPhrase,
+  emergencyGkPhrase,
   nearMissPhrase,
   bigSavePhrase,
   weatherPhrase,

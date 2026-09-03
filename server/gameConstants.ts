@@ -206,6 +206,14 @@ export const SEASON_CALENDAR: CalendarEntry[] = [
 export const MAX_SUBSTITUTIONS = 3; // máximo de substituições por equipa/partida
 export const MAX_BENCH_SIZE = 7; // máximo de suplentes no banco
 
+// ---------------------------------------------------------------------------
+// GR improvisado (jogador de campo na baliza) — futebol profissional.
+// Quando o GR em campo sai (expulsão/lesão) sem outro GR disponível, um jogador
+// de campo calça as luvas até ao fim do jogo com o piso de skill júnior.
+// Tudo em memória: a posição real na DB nunca muda.
+// ---------------------------------------------------------------------------
+export const EMERGENCY_GK_SKILL = 5; // piso júnior (skill mínima na baliza)
+
 /**
  * Número de substituições já feitas por uma equipa numa partida.
  * Conta substituições normais e lesões com reposição (mas NÃO expulsões).

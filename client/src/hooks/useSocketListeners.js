@@ -1256,6 +1256,17 @@ export function useSocketListeners(handlers, refs) {
 						.filter(Boolean);
 				}
 
+				if (normalizedAction.type === "emergency_gk") {
+					// GR improvisado — o treinador escolhe EM CAMPO quem vai para a
+					// baliza (o banco fica apenas informativo, sem GR disponível).
+					normalizedAction.onPitch = (normalizedAction.onPitch || [])
+						.map(toCandidate)
+						.filter(Boolean);
+					normalizedAction.benchPlayers = (normalizedAction.benchPlayers || [])
+						.map(toCandidate)
+						.filter(Boolean);
+				}
+
 				handlers.setMatchAction(normalizedAction);
 				handlers.setActiveTab("live");
 
@@ -1266,7 +1277,8 @@ export function useSocketListeners(handlers, refs) {
 				if (
 					normalizedAction.type === "injury" ||
 					normalizedAction.type === "user_substitution" ||
-					normalizedAction.type === "gk_red_card"
+					normalizedAction.type === "gk_red_card" ||
+					normalizedAction.type === "emergency_gk"
 				) {
 					handlers.setInjuryCountdown(60);
 					refs.injuryCountdownRef.current = setInterval(() => {

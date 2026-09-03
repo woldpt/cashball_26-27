@@ -7,12 +7,14 @@ import {
   pickBestPlayer,
   weightedPickScorer,
   isPlayerAvailable,
+  convertToEmergencyGK,
 } from "./playerUtils";
 import {
   canMakeSubstitution,
   incrementSubCount,
   FORM_NEUTRAL,
   RES_NEUTRAL,
+  EMERGENCY_GK_SKILL,
 } from "../gameConstants";
 
 // Re-export so external files can still import from "./game/engine"
@@ -30,6 +32,7 @@ import {
   redPhrase,
   injuryPhrase,
   subPhrase,
+  emergencyGkPhrase,
   nearMissPhrase,
   bigSavePhrase,
   weatherPhrase,
@@ -361,6 +364,154 @@ function normalizeForcedChoice(
   return { playerOut: null, playerIn: choice ?? null };
 }
 
+/**
+ * GR improvisado — regra do futebol profissional: quando o GR em campo sai
+ * (expulsão ou lesão) e não há outro GR disponível, um jogador de campo
+ * calça as luvas até ao fim do jogo (skill no piso de emergência).
+ *
+ * Abre a ação `emergency_gk` para o treinador escolher quem vai para a
+ * baliza (fallback: o mais fraco em campo). O escolhido é CONVERTIDO na
+ * `squad` (clone com position GR + skill piso) — sem gastar substituição,
+ * sem alterar a posição real na DB. O resultado: a equipa joga com menos
+ * um jogador, mas SEMPRE com alguém na baliza.
+ *
+ * Espera que o jogador que saiu já tenha sido removido de `squad`/
+ * lineup pelo caller (o `outPlayer` serve para o payload da UI).
+ */
+async function openEmergencyGKAction({
+  fixture,
+  squad,
+  side,
+  teamId,
+  io,
+  game,
+  minute,
+  emergencyCandidates,
+  outPlayer,
+  benchPlayers = [],
+}: {
+  fixture: any;
+  squad: any[];
+  side: MatchSide;
+  teamId: number;
+  io: any;
+  game: ActiveGame;
+  minute: number;
+  emergencyCandidates: any[];
+  outPlayer: any;
+  benchPlayers?: any[];
+}) {
+  const weakest = () =>
+    [...emergencyCandidates].sort(
+      (a, b) => (a.skill || 0) - (b.skill || 0),
+    )[0];
+  const fallback = () => weakest()?.id ?? null;
+
+  const result = await waitForMatchAction({
+    game,
+    io,
+    type: "emergency_gk",
+    teamId,
+    payload: {
+      minute,
+      teamId,
+      injuredPlayer: outPlayer,
+      onPitch: emergencyCandidates.map((p) => ({
+        id: p.id,
+        name: p.name,
+        position: p.position,
+        skill: p.skill,
+        resistance: p.resistance,
+        form: p.form,
+        is_star: p.is_star,
+        ...getMatchFatigueSnapshot(fixture, side, p.id),
+      })),
+      benchPlayers: benchPlayers.map((p) => ({
+        id: p.id,
+        name: p.name,
+        position: p.position,
+        skill: p.skill,
+        resistance: p.resistance,
+        form: p.form,
+        is_star: p.is_star,
+        ...getMatchFatigueSnapshot(fixture, side, p.id),
+      })),
+      currentScore: {
+        home: fixture.finalHomeGoals,
+        away: fixture.finalAwayGoals,
+      },
+    },
+    timeoutMs: 60000,
+    fallback,
+    fixtureData: {
+      homeTeamId: fixture.homeTeamId,
+      awayTeamId: fixture.awayTeamId,
+      homeTeam: fixture.homeTeam,
+      awayTeam: fixture.awayTeam,
+      attendance: fixture.attendance,
+      referee: fixture.referee,
+      homePossession: fixture.homePossession,
+      awayPossession: fixture.awayPossession,
+      homeGoals: fixture.finalHomeGoals,
+      awayGoals: fixture.finalAwayGoals,
+      events: fixture.events || [],
+    },
+  });
+
+  const raw = result.choice;
+  const choiceId =
+    raw && typeof raw === "object" && raw !== null
+      ? raw.playerId ?? null
+      : raw ?? null;
+  const chosen =
+    emergencyCandidates.find((p) => p.id === choiceId) ?? weakest() ?? null;
+  if (!chosen) return null;
+
+  // Converte o escolhido na squad (clone — a referência original fica intacta;
+  // o jogador mantém o mesmo id em campo, por isso lineupIds não muda).
+  const ci = squad.findIndex((p: any) => p.id === chosen.id);
+  const converted = convertToEmergencyGK(chosen);
+  if (ci > -1) squad[ci] = converted;
+
+  // Snapshot de lineup: o escolhido passa a constar como GR (skill piso).
+  const lineupRef = side === "home" ? fixture.homeLineup : fixture.awayLineup;
+  if (lineupRef) {
+    const li = lineupRef.findIndex((p: any) => p.id === chosen.id);
+    if (li > -1) {
+      lineupRef[li] = {
+        ...lineupRef[li],
+        position: "GR",
+        skill: EMERGENCY_GK_SKILL,
+      };
+    }
+  }
+
+  // Táticas sincronizadas: o escolhido mantém-se titular (as fases seguintes
+  // não podem desfazer isto).
+  const tacticRef = side === "home" ? fixture._t1 : fixture._t2;
+  if (tacticRef?.positions) {
+    tacticRef.positions[chosen.id] = "Titular";
+  }
+  const coachState = Object.values(game.playersByName).find(
+    (p: any) => (p as any).teamId === teamId,
+  ) as any;
+  if (coachState?.tactic?.positions) {
+    coachState.tactic.positions[chosen.id] = "Titular";
+  }
+
+  fixture.events.push({
+    minute,
+    type: "emergency_gk",
+    team: side,
+    emoji: "🧤",
+    playerId: chosen.id,
+    playerName: chosen.name,
+    text: `[${minute}'] 🧤 ${emergencyGkPhrase(chosen.name)}`,
+  });
+
+  return converted;
+}
+
 async function applyInjuryEvent({
   db,
   fixture,
@@ -448,6 +599,53 @@ async function applyInjuryEvent({
       if (li > -1) lineupRefNoSub.splice(li, 1);
     }
 
+    // Último GR sai sem reposição → jogador de campo calça as luvas
+    // (GR improvisado, skill piso). A equipa fica a jogar com menos um,
+    // mas SEMPRE com alguém na baliza.
+    if (injuredPlayer.position === "GR") {
+      const emergencyCandidates = squad.filter(
+        (p: any) => p.position !== "GR",
+      );
+      const benchList = (fullRoster || squad).filter(
+        (p: any) => !lineupIds.has(p.id),
+      );
+
+      // O GR lesado deixa de contar na tática (a fase seguinte não o convoca).
+      const tacticRef =
+        teamSide === "home" ? fixture._t1 : fixture._t2;
+      if (tacticRef?.positions) {
+        delete tacticRef.positions[injuredPlayer.id];
+      }
+      const coachState = Object.values(game.playersByName).find(
+        (p: any) => (p as any).teamId === teamId,
+      ) as any;
+      if (coachState?.tactic?.positions) {
+        delete coachState.tactic.positions[injuredPlayer.id];
+      }
+
+      await openEmergencyGKAction({
+        fixture,
+        squad,
+        side: teamSide,
+        teamId,
+        io,
+        game,
+        minute: fixture._minute,
+        emergencyCandidates,
+        outPlayer: {
+          id: injuredPlayer.id,
+          name: injuredPlayer.name,
+          position: injuredPlayer.position,
+          skill: injuredPlayer.skill,
+          resistance: injuredPlayer.resistance,
+          form: injuredPlayer.form,
+          is_star: injuredPlayer.is_star,
+          ...getMatchFatigueSnapshot(fixture, teamSide, injuredPlayer.id),
+        },
+        benchPlayers: benchList,
+      });
+    }
+
     return { replaced: false, injuredPlayer, replacement: null };
   }
 
@@ -470,8 +668,8 @@ async function applyInjuryEvent({
 
   // If the injured player is a goalkeeper, prefer substituting with another goalkeeper
   let substituteCandidates = availableBench;
+  const grBench = availableBench.filter((p) => p.position === "GR");
   if (injuredPlayer.position === "GR") {
-    const grBench = availableBench.filter((p) => p.position === "GR");
     substituteCandidates = grBench.length > 0 ? grBench : availableBench;
   }
 
@@ -508,6 +706,11 @@ async function applyInjuryEvent({
         home: fixture.finalHomeGoals,
         away: fixture.finalAwayGoals,
       },
+      // Último GR sai com reposição mas sem GR no banco: o substituto que
+      // entra calça as luvas — a UI avisa com o badge de GR improvisado.
+      ...(injuredPlayer.position === "GR" && grBench.length === 0
+        ? { incomingBecomesGK: true }
+        : {}),
     },
     timeoutMs: 60000,
     fallback,
@@ -531,10 +734,18 @@ async function applyInjuryEvent({
     forcedChoice.playerIn != null &&
     availableBench.find((p) => p.id === forcedChoice.playerIn);
   if (replacement) {
+    // Último GR sai e não há GR no banco → o substituto que entra calça as
+    // luvas (GR improvisado, clone com skill piso — a posição real fica
+    // intacta na DB).
+    const emergencyConversion =
+      injuredPlayer.position === "GR" && grBench.length === 0;
+    const incoming = emergencyConversion
+      ? convertToEmergencyGK(replacement)
+      : replacement;
     const idx = squad.findIndex((p) => p.id === injuredPlayer.id);
-    if (idx > -1) squad.splice(idx, 1, replacement);
+    if (idx > -1) squad.splice(idx, 1, incoming);
     lineupIds.delete(injuredPlayer.id);
-    lineupIds.add(replacement.id);
+    lineupIds.add(incoming.id);
     (fixture._subbedOut ??= new Set<number>()).add(injuredPlayer.id);
     incrementSubCount(fixture, teamId);
 
@@ -545,12 +756,12 @@ async function applyInjuryEvent({
       const li = lineupRef.findIndex((p: any) => p.id === injuredPlayer.id);
       if (li > -1) {
         lineupRef[li] = {
-          id: replacement.id,
-          name: replacement.name,
-          position: replacement.position,
-          is_star: replacement.is_star || 0,
-          skill: replacement.skill,
-          ...getMatchFatigueSnapshot(fixture, teamSide, replacement.id),
+          id: incoming.id,
+          name: incoming.name,
+          position: incoming.position,
+          is_star: incoming.is_star || 0,
+          skill: incoming.skill,
+          ...getMatchFatigueSnapshot(fixture, teamSide, incoming.id),
         };
       }
     }
@@ -561,14 +772,14 @@ async function applyInjuryEvent({
     const tacticRef = teamSide === "home" ? fixture._t1 : fixture._t2;
     if (tacticRef?.positions) {
       delete tacticRef.positions[injuredPlayer.id];
-      tacticRef.positions[replacement.id] = "Titular";
+      tacticRef.positions[incoming.id] = "Titular";
     }
     const coachState = Object.values(game.playersByName).find(
       (p: any) => (p as any).teamId === teamId,
     ) as any;
     if (coachState?.tactic?.positions) {
       delete coachState.tactic.positions[injuredPlayer.id];
-      coachState.tactic.positions[replacement.id] = "Titular";
+      coachState.tactic.positions[incoming.id] = "Titular";
     }
 
     fixture.events.push({
@@ -576,11 +787,25 @@ async function applyInjuryEvent({
       type: "substitution",
       team: teamSide,
       emoji: "🔁",
-      playerId: replacement.id,
-      playerName: replacement.name,
-      text: `[${fixture._minute}'] 🔁 ${subPhrase(injuredPlayer.name, replacement.name)}`,
+      playerId: incoming.id,
+      playerName: incoming.name,
+      text: `[${fixture._minute}'] 🔁 ${subPhrase(injuredPlayer.name, incoming.name)}`,
     });
-    return { replaced: true, injuredPlayer, replacement };
+
+    // Comentário dedicado: o substituto é agora o GR improvisado.
+    if (emergencyConversion) {
+      fixture.events.push({
+        minute: fixture._minute,
+        type: "emergency_gk",
+        team: teamSide,
+        emoji: "🧤",
+        playerId: incoming.id,
+        playerName: incoming.name,
+        text: `[${fixture._minute}'] 🧤 ${emergencyGkPhrase(incoming.name)}`,
+      });
+    }
+
+    return { replaced: true, injuredPlayer, replacement: incoming };
   }
 
   const idx = squad.findIndex((p) => p.id === injuredPlayer.id);
@@ -1721,6 +1946,58 @@ async function simulateMatchSegment(
         const fieldOnPitch = squad.filter(
           (p) => p.id !== offender.id && p.position !== "GR",
         );
+
+        if (grBench.length === 0) {
+          // Último GR expulso e sem GR no banco → GR improvisado: o treinador
+          // escolhe em campo quem vai para a baliza (fallback: o mais fraco).
+          // O expulso sai, a equipa fica com 10 — SEM gastar substituição.
+          const gkIdx = squad.findIndex((p) => p.id === offender.id);
+          if (gkIdx > -1) squad.splice(gkIdx, 1);
+          lineupIds.delete(offender.id);
+
+          // Snapshot de lineup: o expulso sai.
+          const lineupRef =
+            side === "home" ? fixture.homeLineup : fixture.awayLineup;
+          if (lineupRef) {
+            const gi = lineupRef.findIndex((p: any) => p.id === offender.id);
+            if (gi > -1) lineupRef.splice(gi, 1);
+          }
+
+          // Táticas sincronizadas: o expulso deixa de contar.
+          const tacticRef = side === "home" ? fixture._t1 : fixture._t2;
+          if (tacticRef?.positions) {
+            delete tacticRef.positions[offender.id];
+          }
+          const coachState = Object.values(game.playersByName).find(
+            (p: any) => (p as any).teamId === teamId,
+          ) as any;
+          if (coachState?.tactic?.positions) {
+            delete coachState.tactic.positions[offender.id];
+          }
+
+          await openEmergencyGKAction({
+            fixture,
+            squad,
+            side,
+            teamId,
+            io,
+            game,
+            minute,
+            emergencyCandidates: fieldOnPitch,
+            outPlayer: {
+              id: offender.id,
+              name: offender.name,
+              position: offender.position,
+              skill: offender.skill,
+              resistance: offender.resistance,
+              form: offender.form,
+              is_star: offender.is_star,
+              ...getMatchFatigueSnapshot(fixture, side, offender.id),
+            },
+            benchPlayers: availableBench,
+          });
+          return;
+        }
 
         const fallback = () => {
           const weakest = [...fieldOnPitch].sort(

@@ -126,7 +126,9 @@ export function IntervencaoView({
   const isPreExtraTime =
     isHalftime && isCupMatch && (liveMinute ?? 0) >= 90 && !isCupExtraTime;
   const actionType = matchAction?.type || null;
-  const isForcedSwap = actionType === "injury" || actionType === "gk_red_card";
+  const isEmergencyGk = actionType === "emergency_gk";
+  const isForcedSwap =
+    isEmergencyGk || actionType === "injury" || actionType === "gk_red_card";
   const isGkRedCard = actionType === "gk_red_card";
   const isActionSub = actionType === "user_substitution";
 
@@ -192,9 +194,11 @@ export function IntervencaoView({
       ? sortPlayersByPos(matchAction?.onPitch || [])
       : isGkRedCard
         ? sortPlayersByPos(matchAction?.onPitch || [])
-        : forceOutPlayer
-          ? [forceOutPlayer]
-          : [];
+        : isEmergencyGk
+          ? sortPlayersByPos(matchAction?.onPitch || [])
+          : forceOutPlayer
+            ? [forceOutPlayer]
+            : [];
 
   const benchPlayers = isHalftime
     ? sortPlayersByPos(
@@ -212,13 +216,16 @@ export function IntervencaoView({
 
   const effectiveOutId = isGkRedCard
     ? selectedOutId
-    : selectedOutId || (isForcedSwap ? forceOutPlayer?.id : null);
+    : selectedOutId ||
+      (isForcedSwap && !isEmergencyGk ? forceOutPlayer?.id : null);
   const targetPlayer = playerById(selectedInId);
   const sourcePlayer = playerById(effectiveOutId);
-  const canConfirmSwap =
-    !!effectiveOutId &&
-    !!selectedInId &&
-    (!isHalftime || subsMade < MAX_MATCH_SUBS);
+  // GR improvisado: escolha única (quem vai para a baliza) — sem par Sai/Entra.
+  const canConfirmSwap = isEmergencyGk
+    ? !!selectedInId && !isHalftime
+    : !!effectiveOutId &&
+      !!selectedInId &&
+      (!isHalftime || subsMade < MAX_MATCH_SUBS);
 
   // During a forced swap the opponent/chronology tabs are noise — lock the
   // view on subs while the auto-substitution countdown runs.
@@ -228,13 +235,15 @@ export function IntervencaoView({
   // instead of leaving the user guessing (was: silent disabled state).
   const confirmHint = canConfirmSwap
     ? null
-    : !effectiveOutId
-      ? "Escolhe o jogador que sai."
-      : !selectedInId
-        ? "Escolhe o jogador que entra."
-        : isHalftime && subsMade >= MAX_MATCH_SUBS
-          ? "Limite de substituições atingido."
-          : null;
+    : isEmergencyGk
+      ? "Escolhe quem vai para a baliza."
+      : !effectiveOutId
+        ? "Escolhe o jogador que sai."
+        : !selectedInId
+          ? "Escolhe o jogador que entra."
+          : isHalftime && subsMade >= MAX_MATCH_SUBS
+            ? "Limite de substituições atingido."
+            : null;
 
   /* ── Opponent data ────────────────────────────────────────────── */
   // Strict check: arrays vazios ([] são truthy) não contam como escalação.
@@ -278,9 +287,11 @@ export function IntervencaoView({
     ? "Pausa antes do prolongamento"
     : isHalftime
       ? "Gestão da Equipa"
-      : isForcedSwap
-        ? `Substituição obrigatória · ${forceOutPlayer?.name || "jogador"}`
-        : "Pausa para substituição";
+      : isEmergencyGk
+        ? "Sem GR — quem vai para a baliza?"
+        : isForcedSwap
+          ? `Substituição obrigatória · ${forceOutPlayer?.name || "jogador"}`
+          : "Pausa para substituição";
 
   const actionTheme = isForcedSwap
     ? "from-red-700/20 via-orange-500/10 to-transparent"
@@ -400,6 +411,14 @@ export function IntervencaoView({
           <h2 className="text-base font-bold font-headline tracking-tight text-on-surface uppercase text-left leading-snug">
             {titleText}
           </h2>
+          {/* Lesão do último GR com reposição sem GR no banco: o substituto que
+           * entra calça as luvas — aviso em destaque antes de confirmar. */}
+          {matchAction?.incomingBecomesGK && !isEmergencyGk && (
+            <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-amber-300/90">
+              <span aria-hidden="true">🧤</span>
+              O substituto vai para a baliza — GR improvisado
+            </p>
+          )}
         </div>
 
         {/* Two-tap confirm: destructive action wipes all planned subs. */}
@@ -491,6 +510,7 @@ export function IntervencaoView({
               isHalftime={isHalftime}
               isForcedSwap={isForcedSwap}
               isGkRedCard={isGkRedCard}
+              isEmergencyGk={isEmergencyGk}
               confirmedSubs={confirmedSubs}
               annotatedSquad={annotatedSquad}
               tactic={tactic}
@@ -640,6 +660,7 @@ function SubsPanel({
   isHalftime,
   isForcedSwap,
   isGkRedCard,
+  isEmergencyGk = false,
   tactic,
   onUpdateTactic,
   playerMatchStats,
@@ -766,6 +787,7 @@ function SubsPanel({
   const sharedSwapProps = {
     isHalftime,
     isForcedSwap,
+    isEmergencyGk,
     injuryCountdown,
     effectiveOutId,
     sourcePlayer,
@@ -820,6 +842,9 @@ function SubsPanel({
             isHalftime={isHalftime}
             isForcedSwap={isForcedSwap}
             isGkRedCard={isGkRedCard}
+            isEmergencyGk={isEmergencyGk}
+            selectedInId={selectedInId}
+            handlePickIn={handlePickIn}
             forceOutPlayer={forceOutPlayer}
             subsMade={subsMade}
             grAvailableOnBench={grAvailableOnBench}
@@ -838,6 +863,7 @@ function SubsPanel({
             className="border-r border-outline-variant/15"
             players={benchPlayers}
             isHalftime={isHalftime}
+            isEmergencyGk={isEmergencyGk}
             forceOutPlayer={forceOutPlayer}
             subsMade={subsMade}
             subbedOut={subbedOut}
@@ -914,12 +940,15 @@ function SubsPanel({
               {grLockedNoReplacement && (
                 <p className="px-3 py-1 text-[9px] font-semibold text-amber-300 bg-amber-500/10 border-b border-amber-500/20">Sem GR no banco — o guarda-redes não pode sair</p>
               )}
+              {isEmergencyGk && (
+                <p className="px-3 py-1 text-[9px] font-semibold text-amber-300 bg-amber-500/10 border-b border-amber-500/20">Escolhe um jogador para a baliza 🧤</p>
+              )}
               <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1.5">
                 {onPitchPlayers.map((p) => {
                   const noGrReplacement = isHalftime && p.position === "GR" && !grAvailableOnBench;
-                  const isLockedForced = isForcedSwap && !isGkRedCard && !!forceOutPlayer && p.id !== forceOutPlayer.id;
+                  const isLockedForced = isForcedSwap && !isGkRedCard && !isEmergencyGk && !!forceOutPlayer && p.id !== forceOutPlayer.id;
                   const disabled = noGrReplacement || isLockedForced || (isHalftime && subsMade >= MAX_MATCH_SUBS);
-                  const selected = effectiveOutId === p.id;
+                  const selected = isEmergencyGk ? selectedInId === p.id : effectiveOutId === p.id;
                   const stats = playerMatchStats?.get(p.id);
                   return (
                     <CompactPlayerCard
@@ -929,13 +958,13 @@ function SubsPanel({
                       selected={selected}
                       disabled={disabled}
                       selectable={!disabled}
-                      onPick={() => pickOut(p)}
+                      onPick={() => (isEmergencyGk ? handlePickIn(p) : pickOut(p))}
                       showFatigue={false}
                       showMatchStats
                       goals={stats?.goals ?? 0}
                       yellowCards={stats?.yellowCards ?? 0}
                       swapIndicator={isHalftime}
-                      forcedOut={isForcedSwap && !!forceOutPlayer && p.id === forceOutPlayer.id}
+                      forcedOut={isForcedSwap && !isEmergencyGk && !!forceOutPlayer && p.id === forceOutPlayer.id}
                       draggable={!disabled}
                       onDragStart={handleDragStart(p, "pitch")}
                       onDragOver={handleDragOver("pitch")}
@@ -961,7 +990,7 @@ function SubsPanel({
                 {benchPlayers.map((p) => {
                   const alreadyUsed = isHalftime && subbedOut.includes(p.id);
                   const positionMismatch = !!forceOutPlayer && (forceOutPlayer.position === "GR") !== (p.position === "GR");
-                  const disabled = alreadyUsed || positionMismatch || (isHalftime && subsMade >= MAX_MATCH_SUBS);
+                  const disabled = isEmergencyGk || alreadyUsed || positionMismatch || (isHalftime && subsMade >= MAX_MATCH_SUBS);
                   const selected = selectedInId === p.id;
                   const stats = playerMatchStats?.get(p.id);
                   return (
@@ -1110,6 +1139,9 @@ function SubsPanel({
               isHalftime={isHalftime}
               isForcedSwap={isForcedSwap}
               isGkRedCard={isGkRedCard}
+              isEmergencyGk={isEmergencyGk}
+              selectedInId={selectedInId}
+              handlePickIn={handlePickIn}
               forceOutPlayer={forceOutPlayer}
               subsMade={subsMade}
               grAvailableOnBench={grAvailableOnBench}
@@ -1132,6 +1164,7 @@ function SubsPanel({
               flat
               players={benchPlayers}
               isHalftime={isHalftime}
+              isEmergencyGk={isEmergencyGk}
               forceOutPlayer={forceOutPlayer}
               subsMade={subsMade}
               subbedOut={subbedOut}
@@ -1223,6 +1256,9 @@ function TitularesColumn({
   isHalftime,
   isForcedSwap,
   isGkRedCard,
+  isEmergencyGk = false,
+  selectedInId,
+  handlePickIn,
   forceOutPlayer,
   subsMade,
   grAvailableOnBench,
@@ -1257,6 +1293,11 @@ function TitularesColumn({
           </span>
         </div>
       )}
+      {isEmergencyGk && (
+        <p className={`px-4 py-1.5 text-[10px] font-semibold text-amber-300 bg-amber-500/10 border-b border-amber-500/20 ${flat ? "" : "shrink-0"}`}>
+          Sem GR disponível — escolhe um jogador em campo para a baliza 🧤
+        </p>
+      )}
       {grLockedNoReplacement && (
         <p className={`px-4 py-1.5 text-[10px] font-semibold text-amber-300 bg-amber-500/10 border-b border-amber-500/20 ${flat ? "" : "shrink-0"}`}>
           Sem GR no banco — o guarda-redes não pode sair
@@ -1269,13 +1310,16 @@ function TitularesColumn({
           const isLockedForced =
             isForcedSwap &&
             !isGkRedCard &&
+            !isEmergencyGk &&
             !!forceOutPlayer &&
             p.id !== forceOutPlayer.id;
           const disabled =
             noGrReplacement ||
             isLockedForced ||
             (isHalftime && subsMade >= MAX_MATCH_SUBS);
-          const selected = effectiveOutId === p.id;
+          const selected = isEmergencyGk
+            ? selectedInId === p.id
+            : effectiveOutId === p.id;
           const stats = playerMatchStats?.get(p.id);
 
           return (
@@ -1286,14 +1330,17 @@ function TitularesColumn({
               selected={selected}
               disabled={disabled}
               selectable={!disabled}
-              onPick={() => pickOut(p)}
+              onPick={() => (isEmergencyGk ? handlePickIn(p) : pickOut(p))}
               showFatigue={false}
               showMatchStats
               goals={stats?.goals ?? 0}
               yellowCards={stats?.yellowCards ?? 0}
               swapIndicator={isHalftime}
               forcedOut={
-                isForcedSwap && !!forceOutPlayer && p.id === forceOutPlayer.id
+                isForcedSwap &&
+                !isEmergencyGk &&
+                !!forceOutPlayer &&
+                p.id === forceOutPlayer.id
               }
               draggable={!disabled}
               onDragStart={handleDragStart(p, "pitch")}
@@ -1319,6 +1366,7 @@ function SuplentesColumn({
   className,
   players,
   isHalftime,
+  isEmergencyGk = false,
   forceOutPlayer,
   subsMade,
   subbedOut,
@@ -1351,6 +1399,11 @@ function SuplentesColumn({
           </span>
         </div>
       )}
+      {isEmergencyGk && (
+        <p className={`px-4 py-1.5 text-[10px] font-semibold text-amber-300 bg-amber-500/10 border-b border-amber-500/20 ${flat ? "" : "shrink-0"}`}>
+          Sem GR no banco — a escolha é em campo
+        </p>
+      )}
       <div className={flat ? "space-y-2 px-3 pt-2 pb-3" : "flex-1 overflow-y-auto px-3 py-2.5 space-y-2"}>
         {players.map((p) => {
           const alreadyUsed = isHalftime && subbedOut.includes(p.id);
@@ -1358,6 +1411,7 @@ function SuplentesColumn({
             !!forceOutPlayer &&
             (forceOutPlayer.position === "GR") !== (p.position === "GR");
           const disabled =
+            isEmergencyGk ||
             alreadyUsed ||
             positionMismatch ||
             (isHalftime && subsMade >= MAX_MATCH_SUBS);
@@ -1483,6 +1537,7 @@ function MentalidadeColumn({
 function SwapControls({
   isHalftime,
   isForcedSwap,
+  isEmergencyGk = false,
   injuryCountdown,
   effectiveOutId,
   sourcePlayer,
@@ -1517,7 +1572,9 @@ function SwapControls({
           {/* One-time screen-reader announcement: the ticking number is
            * aria-hidden to avoid spamming the live region every second. */}
           <span role="status" className="sr-only">
-            Substituição automática iminente — escolhe o substituto.
+            {isEmergencyGk
+              ? "Escolha automática iminente — quem vai para a baliza?"
+              : "Substituição automática iminente — escolhe o substituto."}
           </span>
           <span
             aria-hidden="true"
@@ -1531,9 +1588,26 @@ function SwapControls({
       {/* The Sai/Entra chain — two grouped clusters so the eye can scan
        * "[who's leaving] → [who's coming in]". Empty slots are dashed
        * placeholders with an actionable hint (was: bare "—"). */}
-      {/* Mobile: vertical stack (Sai ↓ Entra) with a flow arrow between the
-       * slots; desktop: single horizontal row (Sai → Entra). */}
-      {compact ? (
+      {/* GR improvisado: sem par Sai/Entra — escolha única de quem calça as
+       * luvas (não é substituição; ninguém sai para dar lugar). */}
+      {isEmergencyGk ? (
+        <div className="grid min-w-0 grid-cols-1 items-end gap-y-1">
+          <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">
+            Para a baliza
+          </span>
+          <SwapSlot
+            tone="emerald"
+            player={selectedInId ? targetPlayer : null}
+            placeholder="Quem vai para a baliza"
+            onClick={outSlotAction}
+            ariaLabel={
+              selectedInId
+                ? "Jogador escolhido para a baliza — tocar para voltar aos titulares"
+                : "Escolher quem vai para a baliza — ver os titulares"
+            }
+          />
+        </div>
+      ) : compact ? (
         // Mobile: 2 colunas — legenda (9px) + chip de uma linha, altura mínima.
         <div className="grid min-w-0 grid-cols-2 items-end gap-x-3 gap-y-1">
           <span className="text-[9px] font-semibold uppercase tracking-widest text-on-surface-variant/60">
@@ -1614,6 +1688,19 @@ function SwapControls({
             {submitting ? "A substituir…" : "Substituir"}
           </PrimaryButton>
         </div>
+      ) : isEmergencyGk ? (
+        <PrimaryButton
+          disabled={!canConfirmSwap || resolving}
+          onClick={() => {
+            setResolving(true);
+            onResolveAction(selectedInId);
+          }}
+          tone="indigo"
+          icon={<span aria-hidden="true" className="text-sm leading-none">🧤</span>}
+          className="h-11 w-full sm:h-10"
+        >
+          {resolving ? "A confirmar…" : "Vai para a baliza"}
+        </PrimaryButton>
       ) : (
         <PrimaryButton
           disabled={!canConfirmSwap || resolving}

@@ -3,7 +3,9 @@
 // for design screenshots/verification.
 // Measure the Substituições tab: its mobile layout is a stack of two
 // overlapping pages (Titulares/Suplentes) with a flip-3D transition.
+/* eslint-disable react-refresh/only-export-components -- harness de teste sem exports */
 import { createRoot } from "react-dom/client";
+import { useState } from "react";
 import "./src/index.css";
 import { IntervencaoView } from "./src/components/match/tabs/IntervencaoView.jsx";
 
@@ -113,38 +115,112 @@ const teams = [
   { id: 2, name: "SC Foz do Douro", color_primary: "#2563eb" },
 ];
 
-createRoot(document.getElementById("root")).render(
-  <div className="h-screen w-screen flex flex-col overflow-hidden bg-surface-container-low">
-    <IntervencaoView
-      mode="halftime"
-      fixture={fixture}
-      liveMinute={45}
-      teams={teams}
-      myTeamId={1}
-      isCupMatch={false}
-      isCupExtraTime={false}
-      matchAction={null}
-      injuryCountdown={null}
-      tactic={tactic}
-      onUpdateTactic={noop}
-      annotatedSquad={squad}
-      subbedOut={[8]}
-      confirmedSubs={[{ out: 8, in: 16 }]}
-      subsMade={1}
-      swapSource={null}
-      swapTarget={null}
-      onSelectOut={noop}
-      onSelectIn={noop}
-      onConfirmSub={noop}
-      onResetSub={noop}
-      onUndoSub={noop}
-      onResetAllSubs={noop}
-      redCardedHalftimeIds={new Set()}
-      injuredHalftimeIds={new Set()}
-      onResolveAction={noop}
-    />
-  </div>,
+/* ── GR improvisado (emergency_gk) — último GR sai sem GR no banco ───── */
+// O GR titular (1) é expulso; sem GR no banco: escolhe-se em campo quem vai
+// para a baliza (onPitch = 10 jogadores de campo; banco informativo, sem GR).
+const emergencyOnPitch = squad.filter(
+  (p) => starterIds.includes(p.id) && p.id !== 1,
 );
+const emergencyBench = squad.filter(
+  (p) => !starterIds.includes(p.id) && p.id !== 14,
+);
+const emergencyAction = {
+  type: "emergency_gk",
+  actionId: "emg-1",
+  teamId: 1,
+  injuredPlayer: mk(1, "GR", "Rui Costa", 38),
+  onPitch: emergencyOnPitch,
+  benchPlayers: emergencyBench,
+};
+
+/* ── Lesão do último GR com reposição (incomingBecomesGK) ─────────────── */
+// O GR titular lesionado sai e o substituto escolhido calça as luvas — a UI
+// avisa com o badge de GR improvisado.
+const injuryBecomesGKAction = {
+  type: "injury",
+  actionId: "inj-1",
+  teamId: 1,
+  injuredPlayer: mk(1, "GR", "Rui Costa", 38),
+  incomingBecomesGK: true,
+  benchPlayers: emergencyBench,
+};
+
+const SCENARIOS = {
+  halftime: {
+    label: "Intervalo",
+    mode: "halftime",
+    matchAction: null,
+    injuryCountdown: null,
+  },
+  emergency: {
+    label: "GR improvisado",
+    mode: "live",
+    matchAction: emergencyAction,
+    injuryCountdown: 37,
+  },
+  injuryBecomesGK: {
+    label: "Lesão → GR",
+    mode: "live",
+    matchAction: injuryBecomesGKAction,
+    injuryCountdown: 24,
+  },
+};
+
+function Harness() {
+  const [scenario, setScenario] = useState("halftime");
+  const s = SCENARIOS[scenario];
+  return (
+    <div className="h-screen w-screen flex flex-col overflow-hidden bg-surface-container-low">
+      {/* Seletor de cenários (só para o harness) — não faz parte da app. */}
+      <div className="shrink-0 flex gap-1 px-2 py-1 bg-surface-container-high border-b border-outline-variant/20">
+        {Object.entries(SCENARIOS).map(([key, { label }]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setScenario(key)}
+            className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-colors ${
+              scenario === key
+                ? "bg-emerald-500/20 text-emerald-300"
+                : "text-on-surface-variant/60 hover:text-on-surface-variant"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <IntervencaoView
+        mode={s.mode}
+        fixture={fixture}
+        liveMinute={s.mode === "halftime" ? 45 : 63}
+        teams={teams}
+        myTeamId={1}
+        isCupMatch={false}
+        isCupExtraTime={false}
+        matchAction={s.matchAction}
+        injuryCountdown={s.injuryCountdown}
+        tactic={tactic}
+        onUpdateTactic={noop}
+        annotatedSquad={squad}
+        subbedOut={[8]}
+        confirmedSubs={[{ out: 8, in: 16 }]}
+        subsMade={1}
+        swapSource={null}
+        swapTarget={null}
+        onSelectOut={noop}
+        onSelectIn={noop}
+        onConfirmSub={noop}
+        onResetSub={noop}
+        onUndoSub={noop}
+        onResetAllSubs={noop}
+        redCardedHalftimeIds={new Set()}
+        injuredHalftimeIds={new Set()}
+        onResolveAction={noop}
+      />
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")).render(<Harness />);
 
 function measure() {
   const vw = window.innerWidth;

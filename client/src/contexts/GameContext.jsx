@@ -959,6 +959,25 @@ export function GameProvider({
 					return next;
 				});
 			}
+
+			// GR improvisado: escolha única (playerId) — só sincroniza a tática
+			// local (quem saiu deixa de contar; o escolhido fica titular). O
+			// servidor converte o escolhido em GR a partir daqui.
+			if (
+				matchAction.type === "emergency_gk" &&
+				typeof playerIdOrChoice !== "object"
+			) {
+				setTactic((prevTactic) => {
+					const newPositions = { ...prevTactic.positions };
+					const outId =
+						matchAction.sentOffPlayer?.id ?? matchAction.injuredPlayer?.id;
+					if (outId != null) delete newPositions[Number(outId)];
+					newPositions[playerIdOrChoice] = "Titular";
+					const next = { ...prevTactic, positions: newPositions };
+					socket.emit("setTactic", next);
+					return next;
+				});
+			}
 		},
 		[matchAction],
 	);

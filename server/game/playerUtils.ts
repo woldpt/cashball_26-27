@@ -1,6 +1,6 @@
 // ── Player utilities extracted from engine.ts ────────────────────────────────
 
-import { FORM_NEUTRAL } from "../gameConstants";
+import { FORM_NEUTRAL, EMERGENCY_GK_SKILL } from "../gameConstants";
 
 type PlayerRow = any;
 
@@ -38,6 +38,25 @@ const JUNIOR_LAST_NAMES = [
   "Lopes",
   "Marques",
 ];
+
+/**
+ * Converte um jogador de campo em GR improvisado (regra do futebol
+ * profissional: quando o GR sai e não há outro disponível, um jogador
+ * calça as luvas até ao fim do jogo).
+ *
+ * Devolve um CLONE — a referência original (e a posição real na DB) nunca
+ * é tocada; apenas a entrada do array em jogo (`squad`/lineup) aponta para
+ * o clone. `originalPosition` preserva a posição real para a UI/debug.
+ */
+export function convertToEmergencyGK(player: PlayerRow): PlayerRow {
+  return {
+    ...player,
+    position: "GR",
+    skill: EMERGENCY_GK_SKILL,
+    originalPosition: player.position,
+    isEmergencyGK: true,
+  } as PlayerRow;
+}
 
 /**
  * Generates a deterministic ephemeral junior GR player for a team.

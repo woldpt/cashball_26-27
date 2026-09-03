@@ -65,7 +65,7 @@ export function buildPositionRows(starters) {
 /* Event types to display in the match chronology */
 export const MATCH_EVENT_TYPES = [
   "goal", "penalty_goal", "own_goal", "penalty_miss",
-  "yellow", "red", "injury", "substitution", "phase_start",
+  "yellow", "red", "injury", "substitution", "emergency_gk", "phase_start",
   "weather", "betting",
 ];
 
