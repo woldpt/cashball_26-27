@@ -247,7 +247,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
   useLayoutEffect(() => {
     const open = mobileSubMenu === "transferencias";
-    if (open === prevTransferMenuOpenRef.current) return;
+    if (open === prevTransferMenuOpenRef.current) return; // já está aberto ou já fechou
     prevTransferMenuOpenRef.current = open;
 
     // Centro aproximado do badge vermelho ancorado a um ícone (-top-1 -right-2).
