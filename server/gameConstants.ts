@@ -66,8 +66,13 @@ export function signingWage(player: {
   is_star?: number;
   wage?: number;
 }): number {
-  const resFactor = 0.9 + ((player.resistance || 3) / 5) * 0.2;
-  const formFactor = (player.form || 90) / 90;
+  // Preserva exatamente a função antiga 0.9+(res/5)*0.2 (res 1–5 → fator
+  // 0.94–1.10) composta com o mapeamento linear 1–5 → 1–50.
+  const resFactor =
+    0.94 +
+    (((player.resistance ?? RES_NEUTRAL) - RES_MIN) / (RES_MAX - RES_MIN)) *
+      0.16;
+  const formFactor = ((player.form ?? FORM_NEUTRAL) / FORM_NEUTRAL) * ECON_FORM_REF;
   const starFactor = player.is_star ? 1.2 : 1;
   const adjustedSkillWage = Math.round(
     fairWeeklyWage(player.skill) * resFactor * formFactor * starFactor,

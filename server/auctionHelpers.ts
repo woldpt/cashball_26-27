@@ -8,7 +8,7 @@ import {
   seasonToYear,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
-import { signingWage, AUCTION_BID_STEP, getAgentName } from "./gameConstants";
+import { signingWage, AUCTION_BID_STEP, getAgentName, FORM_NEUTRAL, RES_NEUTRAL } from "./gameConstants";
 
 interface AuctionDeps {
   io: any;
@@ -32,8 +32,8 @@ export function serializeActiveAuctions(game: ActiveGame): any[] {
       isExClub: auction?.isExClub ?? row.contract_start_epoch === 0,
       position: row.position,
       skill: row.skill,
-      form: row.form ?? 100,
-      resistance: row.resistance ?? 3,
+      form: row.form ?? FORM_NEUTRAL,
+      resistance: row.resistance ?? RES_NEUTRAL,
       value: row.value,
       wage: row.wage,
       nationality: row.nationality,
@@ -479,8 +479,8 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           sellerTeamId: player.team_id,
           position: player.position,
           skill: player.skill,
-          form: player.form ?? 100,
-          resistance: player.resistance ?? 3,
+          form: player.form ?? FORM_NEUTRAL,
+          resistance: player.resistance ?? RES_NEUTRAL,
           value: player.value,
           wage: player.wage,
           nationality: player.nationality,
