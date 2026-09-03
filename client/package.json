@@ -16,6 +16,9 @@
     "test:owngoalside": "node scripts/ownGoalSideRegression.mjs",
     "test:mobile": "node scripts/mobileRespCheck.mjs"
   },
+  "overrides": {
+    "uuid": "^11.0.0"
+  },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
     "@capacitor/app": "^8.1.1",
