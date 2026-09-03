@@ -969,8 +969,10 @@ export function registerSessionSocketHandlers(
 					socket.emit("playerHistoryData", null);
 					return;
 				}
+				// ex-Clube só para jogadores que rescindiram e estão em leilão (isExClub === true no leilão ativo)
 				player.isExClub =
-					Number(player.team_id) > 0 && (player.contract_start_epoch || 0) === 0;
+					player.transfer_status === "auction" &&
+					!!(game.auctions as any)?.[player.id]?.isExClub;
 				const transfers = await runAll(
 					game.db,
 					`SELECT cn.year, cn.matchweek, cn.title, cn.amount,

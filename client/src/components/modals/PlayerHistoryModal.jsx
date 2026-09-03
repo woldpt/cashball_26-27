@@ -250,7 +250,7 @@ export function PlayerHistoryModal({
                 <span className="text-on-surface-variant text-xs">Clube:</span>
                 <span className="font-bold text-tertiary text-xs">
                   {player.team_name
-                    ? player.isExClub
+                    ? player.transfer_status === "auction" && player.isExClub
                       ? `ex-${player.team_name}`
                       : player.team_name
                     : "Sem clube"}

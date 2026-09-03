@@ -162,7 +162,7 @@ function MarketCard({
                 </p>
                 <p className="hidden sm:block text-[11px] text-on-surface-variant/60 truncate">
                   {player.team_name
-                    ? player.isExClub
+                    ? player.transfer_status === "auction" && player.isExClub
                       ? `ex-${player.team_name}`
                       : player.team_name
                     : "Sem clube"}
@@ -221,7 +221,7 @@ function MarketCard({
                   </p>
                   <p className="text-[10px] text-on-surface-variant/60 truncate">
                     {player.team_name
-                      ? player.isExClub
+                      ? player.transfer_status === "auction" && player.isExClub
                         ? `ex-${player.team_name}`
                         : player.team_name
                       : "Sem clube"}
