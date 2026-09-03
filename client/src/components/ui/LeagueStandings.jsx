@@ -20,6 +20,16 @@ function padPos(n) {
   return String(n).padStart(2, "0");
 }
 
+// Returns up to 2 initials ("José Maria Silva" -> "JM")
+function getInitials(name = "") {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => (w[0] || "").toUpperCase())
+    .join("");
+}
+
 // Renders 5 colored dots for form (most recent last = rightmost)
 function FormDots({ form = "" }) {
   // form is a string like "VVDEL" (V=win, D=draw, others=loss)
@@ -180,8 +190,12 @@ function DivisionTable({
                         </span>
                       )}
                       {!isMe && isHuman && coachNames?.[t.id] && (
-                        <span className="hidden sm:inline-flex shrink-0 px-1.5 py-px bg-amber-400/15 text-amber-400 text-[8px] font-black rounded-sm border border-amber-400/30 whitespace-nowrap">
-                          {coachNames[t.id]}
+                        <span
+                          title={coachNames[t.id]}
+                          className="shrink-0 px-1 sm:px-1.5 py-px bg-amber-400/15 text-amber-400 text-[8px] font-black rounded-sm border border-amber-400/30 whitespace-nowrap"
+                        >
+                          <span className="sm:hidden">{getInitials(coachNames[t.id])}</span>
+                          <span className="hidden sm:inline">{coachNames[t.id]}</span>
                         </span>
                       )}
                     </div>
