@@ -127,6 +127,7 @@ export function WaitingCoachesModal({
       visible={visible && lockedCoaches.length >= 2}
       z={MODAL_Z.waitingCoaches}
       variant="wide"
+      cardClassName="flex flex-col max-h-full min-h-0"
       backdropStyle={{
         background:
           "radial-gradient(ellipse at center, rgba(34,197,94,0.08) 0%, rgba(10,10,10,0.96) 70%)",
@@ -144,14 +145,14 @@ export function WaitingCoachesModal({
       />
 
       <motion.div
-        className="relative w-full bg-surface-container border border-outline-variant/20 rounded-xl shadow-2xl overflow-hidden"
+        className="relative flex flex-col min-h-0 w-full bg-surface-container border border-outline-variant/20 rounded-xl shadow-2xl overflow-hidden"
         initial={{ scale: 0.93, y: 24 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.93, y: 24 }}
         transition={{ type: "spring", stiffness: 320, damping: 28 }}
       >
             {/* Cabeçalho */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant/15">
+            <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/15">
               <div className="flex items-center gap-2">
                 <span className="text-lg">⏳</span>
                 <div>
@@ -177,10 +178,13 @@ export function WaitingCoachesModal({
               )}
             </div>
 
-            {/* Lista de coaches + Chat (lado a lado no desktop, empilhado no mobile) */}
-            <div className="flex flex-col md:flex-row">
+            {/* Lista de coaches + Chat: lado a lado em landscape (telemóvel
+                horizontal incluído) e desktop; empilhado em mobile vertical.
+                A altura total é limitada à viewport (max-h-full no card) e
+                cada coluna faz scroll interno (flex-1 + min-h-0). */}
+            <div className="flex-1 min-h-0 flex flex-col min-[560px]:flex-row">
             {/* Lista de coaches */}
-            <div className="divide-y divide-outline-variant/10 max-h-[45vh] overflow-y-auto md:max-h-[60vh] md:flex-1">
+            <div className="divide-y divide-outline-variant/10 flex-1 min-h-0 overflow-y-auto max-h-[45vh] min-[560px]:max-h-none min-[560px]:flex-1">
               {coaches.map((coach) => {
                 const st = STATUS_MAP[coach.status] || STATUS_MAP.thinking;
                 return (
@@ -232,17 +236,17 @@ export function WaitingCoachesModal({
             </div>
 
             {/* Chat rápido da sala */}
-            <div className="bg-surface-container-high border-t border-outline-variant/15 md:border-t-0 md:border-l md:w-72 md:shrink-0 md:flex md:flex-col md:max-h-[60vh] md:overflow-hidden">
-              <div className="flex items-center gap-1.5 px-4 pt-2 pb-1 md:shrink-0">
+            <div className="flex-1 min-h-0 min-h-40 max-h-[45vh] min-[560px]:max-h-none min-[560px]:flex-none min-[560px]:w-72 min-[560px]:shrink-0 flex flex-col bg-surface-container-high border-t border-outline-variant/15 min-[560px]:border-t-0 min-[560px]:border-l">
+              <div className="shrink-0 flex items-center gap-1.5 px-4 pt-2 pb-1">
                 <span className="text-xs">💬</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
                   Chat da sala
                 </span>
               </div>
-              <div className="px-3 pb-1 md:flex-1 md:flex md:flex-col md:min-h-0">
+              <div className="px-3 pb-1 flex-1 flex flex-col min-h-0">
                 <div
                   ref={chatScrollRef}
-                  className="h-40 md:h-auto md:flex-1 md:min-h-0 overflow-y-auto space-y-2 px-1"
+                  className="flex-1 min-h-0 overflow-y-auto space-y-2 px-1"
                   style={{ scrollBehavior: "smooth" }}
                 >
                   {roomMessages.length === 0 ? (
@@ -305,7 +309,7 @@ export function WaitingCoachesModal({
                     })
                   )}
                 </div>
-                <div className="flex items-center gap-2 py-2 md:shrink-0">
+                <div className="shrink-0 flex items-center gap-2 py-2">
                   <input
                     type="text"
                     value={chatInput}
@@ -332,7 +336,7 @@ export function WaitingCoachesModal({
             </div>
 
             {/* Rodapé */}
-            <div className="px-4 py-2.5 border-t border-outline-variant/15 space-y-2">
+            <div className="shrink-0 px-4 py-2.5 border-t border-outline-variant/15 space-y-2">
               <p className="text-[10px] text-on-surface-variant/60 font-bold text-center">
                 {allReady
                   ? "Todos prontos! O jogo vai começar..."

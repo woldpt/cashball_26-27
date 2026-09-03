@@ -1546,3 +1546,10 @@ export function useGame() {
 	if (!ctx) throw new Error("useGame must be used within a <GameProvider>");
 	return ctx;
 }
+
+/**
+ * Context object — co-exportado para os harnesses de teste (client/*-test.jsx)
+ * conseguirem injetar um valor fabricado sem depender do GameProvider real.
+ * Não faz parte da API pública da app.
+ */
+export { GameContext };
