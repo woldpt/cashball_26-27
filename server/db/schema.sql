@@ -61,6 +61,8 @@ CREATE TABLE IF NOT EXISTS players (
   potential INTEGER DEFAULT NULL,
   last_auctioned_matchweek INTEGER DEFAULT 0,
   transfer_cooldown_until_matchweek INTEGER DEFAULT 0,
+  training_skill_progress REAL DEFAULT 0,
+  training_resistance_progress REAL DEFAULT 0,
   team_id INTEGER,
   FOREIGN KEY(team_id) REFERENCES teams(id)
 );

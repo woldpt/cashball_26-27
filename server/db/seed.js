@@ -292,6 +292,10 @@ db.serialize(() => {
       if (err) console.error("[seed] fixtures_hash:", err.message);
     },
   );
+  // Marcador de escala 1–50 — evita que gameManager re-migre salas novas já na escala nova.
+  db.run("INSERT OR REPLACE INTO game_state (key, value) VALUES ('scale_v2', '1')", (e) => {
+    if (e) console.error("[seed] scale_v2:", e.message);
+  });
 
   insertManager.finalize();
   insertTeam.finalize();

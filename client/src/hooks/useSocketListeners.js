@@ -1186,7 +1186,7 @@ export function useSocketListeners(handlers, refs) {
 						position: player.position || squadPlayer?.position || "MED",
 						skill: Number(player.skill ?? squadPlayer?.skill ?? 0),
 						resistance: Number(
-							player.resistance ?? squadPlayer?.resistance ?? 0,
+							player.resistance ?? squadPlayer?.resistance ?? 26,
 						),
 						form: Number(player.form ?? squadPlayer?.form ?? 32),
 						is_star: Boolean(player.is_star ?? squadPlayer?.is_star),

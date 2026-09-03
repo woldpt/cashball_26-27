@@ -1099,7 +1099,7 @@ validateEnvVars();
 // Migration: ensure resistance column exists for all players
 const db = require("./db/database.js");
 db.run(
-	`ALTER TABLE players ADD COLUMN resistance INTEGER DEFAULT 3`,
+	`ALTER TABLE players ADD COLUMN resistance INTEGER DEFAULT 26`,
 	(err: any) => {
 		if (err && err.message && !err.message.includes("duplicate column name")) {
 			console.warn("[migration] resistance column:", err.message);

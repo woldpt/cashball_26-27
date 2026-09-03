@@ -4,6 +4,7 @@ import type { CalendarEntry } from "./gameConstants";
 import {
   SEASON_CALENDAR,
   SPONSOR_REVENUE_BY_DIVISION,
+  FORM_NEUTRAL,
   recalcPlayerValue,
   remainingSubstitutions,
   incrementSubCount,
@@ -114,7 +115,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					for (const p of players) {
 						const skill = p.skill ?? 0;
 						const played = p.games_played ?? 0;
-						const form = p.form ?? 90;
+						const form = p.form ?? FORM_NEUTRAL;
 						let delta = 0;
 
 						// ── Inatividade: quem não jogou a época decai ──

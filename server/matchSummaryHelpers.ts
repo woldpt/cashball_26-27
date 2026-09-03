@@ -1,5 +1,5 @@
 import type { ActiveGame } from "./types";
-import { SEASON_CALENDAR } from "./gameConstants";
+import { FORM_MATCH_MIN, FORM_MAX, SEASON_CALENDAR } from "./gameConstants";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { computeMatchOdds } from "./game/commentary";
 import { calculateMatchAttendance } from "./coreHelpers";
@@ -1067,7 +1067,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                       : -(3 + Math.floor(Math.random() * 4)); // -3 a -6
                   const ph = ids.map(() => "?").join(",");
                   game.db.run(
-                    `UPDATE players SET form = MIN(50, MAX(13, form + ?)) WHERE id IN (${ph})`,
+                    `UPDATE players SET form = MIN(${FORM_MAX}, MAX(${FORM_MATCH_MIN}, form + ?)) WHERE id IN (${ph})`,
                     [delta, ...ids],
                   );
                 };

@@ -5,6 +5,8 @@
 export const FORM_NEUTRAL = 32;
 export const FORM_MIN = 1;
 export const FORM_MAX = 50;
+/** Piso pós-jogo: 70 antigo → 13 (distinto do piso de treino FORM_MIN=1). */
+export const FORM_MATCH_MIN = 13;
 export const RES_NEUTRAL = 26;
 export const RES_MIN = 1;
 export const RES_MAX = 50;

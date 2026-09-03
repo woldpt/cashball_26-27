@@ -106,11 +106,104 @@ function ensurePlayerSchema(
       ["last_auctioned_matchweek", "INTEGER DEFAULT 0"],
       ["potential", "INTEGER DEFAULT NULL"],
       ["last_appearance_matchweek", "INTEGER DEFAULT 0"],
+      ["training_skill_progress", "REAL DEFAULT 0"],
+      ["training_resistance_progress", "REAL DEFAULT 0"],
     ];
 
     const missing = required.filter(([name]) => !existing.has(name));
+
+    // Migração v2 helper — escala 50–130→1–50 e 1–5→1–50 com normalização de progresso.
+    // Extraído para correr TANTO em salas novas (missing>0) como em salas antigas
+    // já com schema completo (missing===0), onde o early-return anterior a saltava (bug C1).
+    // Lê valores ANTIGOS antes de qualquer UPDATE para calcular o combined correctamente (M1).
+    const runScaleV2 = (next: () => void) => {
+      db.get(
+        `SELECT value FROM game_state WHERE key = 'scale_v2'`,
+        (mErr: any, row: any) => {
+          if (mErr || row) return next();
+          // Ler valores antigos (form 50–130, res 1–5) + progresso fracionário antes de mutar
+          db.all(
+            `SELECT id, form, resistance, COALESCE(training_resistance_progress, 0) AS prog FROM players`,
+            (aErr: any, rows: any[]) => {
+              if (aErr) {
+                console.warn("[gameManager] scale v2 read failed:", aErr.message);
+                return next();
+              }
+              if (!rows || rows.length === 0) {
+                db.run(
+                  `INSERT OR IGNORE INTO game_state (key, value) VALUES ('scale_v2', '1')`,
+                  (iErr: any) => {
+                    if (iErr)
+                      console.warn("[gameManager] scale v2 marker failed:", iErr.message);
+                    else console.log("[gameManager] form/resistance rescaled to 1–50");
+                    next();
+                  },
+                );
+                return;
+              }
+              // Guard: base.db e salas novas já nascem em 1–50 mas sem marker (seed antigo).
+              // Se MAX(form) <=50, está já na escala nova — apenas carimbar e sair sem transformar.
+              const maxForm = Math.max(...rows.map((r: any) => r.form ?? 32));
+              const hasOldScale = maxForm > 50;
+              if (!hasOldScale) {
+                console.log("[gameManager] scale v2 already on 1–50 (maxForm=" + maxForm + "), just marking");
+                db.run(
+                  `INSERT OR IGNORE INTO game_state (key, value) VALUES ('scale_v2', '1')`,
+                  (iErr: any) => {
+                    if (iErr)
+                      console.warn("[gameManager] scale v2 marker failed:", iErr.message);
+                    next();
+                  },
+                );
+                return;
+              }
+              let pending = rows.length;
+              let hadError = false;
+              const doneOne = () => {
+                pending -= 1;
+                if (pending === 0) {
+                  db.run(
+                    `INSERT OR IGNORE INTO game_state (key, value) VALUES ('scale_v2', '1')`,
+                    (iErr: any) => {
+                      if (iErr)
+                        console.warn("[gameManager] scale v2 marker failed:", iErr.message);
+                      else console.log("[gameManager] form/resistance rescaled to 1–50");
+                      next();
+                    },
+                  );
+                }
+              };
+              for (const r of rows) {
+                const newForm = Math.min(50, Math.max(1, Math.round(1 + ((r.form ?? 50) - 50) * 49.0 / 80)));
+                // Preservar mapeamento discreto da spec (ROUND) e adicionar progresso linearmente (12.25×).
+                // Evita o drift de 0.5 do método combined puro e mantém res 1→1,2→13,3→26,4→38,5→50 para prog=0.
+                const baseRes = Math.min(50, Math.max(1, Math.round(1 + ((r.resistance ?? 1) - 1) * 49.0 / 4)));
+                const rawCombined = baseRes + (r.prog ?? 0) * 12.25;
+                const clampedCombined = Math.min(50, Math.max(1, rawCombined));
+                const newRes = Math.min(50, Math.max(1, Math.floor(clampedCombined)));
+                const newProg = Math.max(0, clampedCombined - newRes);
+                db.run(
+                  `UPDATE players SET form = ?, resistance = ?, training_resistance_progress = ? WHERE id = ?`,
+                  [newForm, newRes, Math.round(newProg * 100) / 100, r.id],
+                  (upErr: any) => {
+                    if (upErr && !hadError) {
+                      hadError = true;
+                      console.warn("[gameManager] scale v2 update failed:", upErr.message);
+                    }
+                    doneOne();
+                  },
+                );
+              }
+            },
+          );
+        },
+      );
+    };
+
     if (missing.length === 0) {
-      if (onDone) onDone(null);
+      runScaleV2(() => {
+        if (onDone) onDone(null);
+      });
       return;
     }
 
@@ -217,51 +310,7 @@ function ensurePlayerSchema(
 
               // Migração v2: forma 50–130 → 1–50, resistência 1–5 → 1–50. Idempotente
               // via marcador scale_v2 em game_state (salas novas já nascem convertidas).
-              backfillSteps.push((next) => {
-                db.get(
-                  `SELECT value FROM game_state WHERE key = 'scale_v2'`,
-                  (mErr, row) => {
-                    if (mErr || row) return next();
-                    db.run(
-                      `UPDATE players SET form = CAST(ROUND(1 + (form - 50) * 49.0 / 80) AS INTEGER), resistance = CAST(ROUND(1 + (resistance - 1) * 49.0 / 4) AS INTEGER)`,
-                      (uErr) => {
-                        if (uErr) {
-                          console.warn(
-                            "[gameManager] scale v2 values failed:",
-                            uErr.message,
-                          );
-                          return next();
-                        }
-                        db.run(
-                          `UPDATE players SET form = MIN(50, MAX(1, form)), resistance = MIN(50, MAX(1, resistance))`,
-                          () => {
-                            db.run(
-                              `UPDATE players SET training_resistance_progress = COALESCE(training_resistance_progress, 0) * 12.25`,
-                              () => {
-                                db.run(
-                                  `INSERT OR IGNORE INTO game_state (key, value) VALUES ('scale_v2', '1')`,
-                                  (iErr) => {
-                                    if (iErr)
-                                      console.warn(
-                                        "[gameManager] scale v2 marker failed:",
-                                        iErr.message,
-                                      );
-                                    else
-                                      console.log(
-                                        "[gameManager] form/resistance rescaled to 1–50",
-                                      );
-                                    next();
-                                  },
-                                );
-                              },
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
-                );
-              });
+              backfillSteps.push((next) => runScaleV2(next));
 
               const runBackfills = (idx: number) => {
                 if (idx >= backfillSteps.length) {
