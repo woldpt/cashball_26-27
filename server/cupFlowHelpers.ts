@@ -141,12 +141,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						// "descobrem" talento (+1); os que cumpriram em forma baixa
 						// estagnam (-1). Simula surgimento/declínio de estrelas.
 						if (played >= 12) {
-							if (form >= 110 && Math.random() < 0.20) {
+							if (form >= 38 && Math.random() < 0.20) {
 								const newPotential = Math.min(50, potential + 1);
 								if (newPotential !== potential) {
 									potentialUpdates.push({ id: p.id, potential: newPotential });
 								}
-							} else if (form <= 60 && Math.random() < 0.20) {
+							} else if (form <= 7 && Math.random() < 0.20) {
 								const newPotential = Math.max(5, potential - 1);
 								if (newPotential !== potential) {
 									potentialUpdates.push({ id: p.id, potential: newPotential });

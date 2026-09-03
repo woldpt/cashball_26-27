@@ -1061,13 +1061,13 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                 const applyFormDelta = (ids: number[], won: boolean) => {
                   if (ids.length === 0) return;
                   const delta = drew
-                    ? Math.floor(Math.random() * 5) - 2 // -2 a +2
+                    ? Math.floor(Math.random() * 3) - 1 // -1 a +1
                     : won
-                      ? 5 + Math.floor(Math.random() * 6) // +5 a +10
-                      : -(5 + Math.floor(Math.random() * 6)); // -5 a -10
+                      ? 3 + Math.floor(Math.random() * 4) // +3 a +6
+                      : -(3 + Math.floor(Math.random() * 4)); // -3 a -6
                   const ph = ids.map(() => "?").join(",");
                   game.db.run(
-                    `UPDATE players SET form = MIN(130, MAX(70, form + ?)) WHERE id IN (${ph})`,
+                    `UPDATE players SET form = MIN(50, MAX(13, form + ?)) WHERE id IN (${ph})`,
                     [delta, ...ids],
                   );
                 };
