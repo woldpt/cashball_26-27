@@ -387,6 +387,17 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                 <AggBadge value={auction.aggressiveness} />
               </div>
             )}
+            {auction.form != null && (
+              <div
+                className="flex items-center justify-between gap-2 mb-2"
+                title="Forma 70–130 (100 = normal; ≥115 em grande; ≤85 em baixo)"
+              >
+                <span className="text-[9px] text-zinc-600 uppercase font-bold tracking-wide">Forma</span>
+                <span className={`text-xs font-black tabular-nums ${(auction.form ?? 100) >= 115 ? "text-emerald-400" : (auction.form ?? 100) <= 85 ? "text-rose-400" : "text-zinc-200"}`}>
+                  {(auction.form ?? 100) >= 115 ? "💪 " : (auction.form ?? 100) <= 85 ? "😩 " : "👍 "}{auction.form ?? 100}%
+                </span>
+              </div>
+            )}
             <p className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-1.5">Financeiro</p>
             <div
               className="rounded-md grid grid-cols-2"
