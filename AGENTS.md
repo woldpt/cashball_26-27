@@ -73,6 +73,16 @@ Valida se os eventos de comunicação respeitam os contratos:
 
 ---
 
+## 🔬 Verificação & Debugging
+
+- **Antes de declarar "feito" (e antes de commit):** checks verdes aplicáveis —
+  `npm run typecheck` (server), `npm run lint` + `npm run check:types` (client) e
+  `npm run test:mobile` quando há impacto em layout/estilo. Nunca reportar
+  sucesso sem saída verificada.
+- **Debugging por evidência:** reproduzir o erro → isolar a causa → só então
+  propor fix. Nunca corrigir "à hipótese" (ex.: adicionar `min-w-0` porque
+  "costuma resolver").
+
 ## 🧯 Crash Recovery & Backups
 
 **Replay após crash/restart é seguro graças a `applied_weeks`** (em cada `game_*.db`):
