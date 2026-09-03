@@ -228,7 +228,7 @@ const LandingPage = ({
 						<img
 							src="/icon-512.png"
 							alt="Logotipo CashBall"
-							className="w-8 h-8 rounded-lg"
+							className="w-8 h-8"
 						/>
 						<span className="font-headline font-black text-xl tracking-tighter text-white">
 							Cash<span className="text-green-400">Ball</span>
@@ -697,7 +697,7 @@ const LandingPage = ({
 			<footer className="relative z-10 border-t border-white/[0.06] bg-[#060b08] py-5 short:py-3">
 				<div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between">
 					<span className="flex items-center gap-1.5 text-xs text-white/30 font-bold">
-						<img src="/icon-512.png" alt="Logotipo CashBall" className="w-4 h-4 rounded-full" />
+						<img src="/icon-512.png" alt="Logotipo CashBall" className="w-4 h-4" />
 						CashBall 26/27
 					</span>
 					<span className="text-xs text-white/15">

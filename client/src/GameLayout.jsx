@@ -426,7 +426,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             <img
               src="/icon-512.png"
               alt="Logotipo CashBall"
-              className={`${isMobileLandscape ? "w-6 h-6" : "w-7 h-7"} rounded-full shrink-0`}
+              className={`${isMobileLandscape ? "w-6 h-6" : "w-7 h-7"} shrink-0`}
             />
             <h1
               className={`${isMobileLandscape ? "text-sm" : "text-base"} font-headline font-black tracking-tighter uppercase`}
