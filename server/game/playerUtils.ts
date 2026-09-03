@@ -1,5 +1,7 @@
 // ── Player utilities extracted from engine.ts ────────────────────────────────
 
+import { FORM_NEUTRAL } from "../gameConstants";
+
 type PlayerRow = any;
 
 const JUNIOR_FIRST_NAMES = [
@@ -249,7 +251,7 @@ export function weightedPickScorer(players: PlayerRow[] = []) {
     const starMultiplier = p.is_star ? 3 : 1;
     const formMultiplier = Math.max(
       0.7,
-      Math.min(1.3, (p.form || 100) / 100),
+      Math.min(1.3, (p.form ?? FORM_NEUTRAL) / FORM_NEUTRAL),
     );
     return positionWeight * starMultiplier * formMultiplier;
   });

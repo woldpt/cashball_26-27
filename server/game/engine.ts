@@ -11,6 +11,8 @@ import {
 import {
   canMakeSubstitution,
   incrementSubCount,
+  FORM_NEUTRAL,
+  RES_NEUTRAL,
 } from "../gameConstants";
 
 // Re-export so external files can still import from "./game/engine"
@@ -787,8 +789,8 @@ function applyFatigue(
   for (const p of squad) {
     if (!lineupIds.has(p.id)) continue;
 
-    const resistance = p.resistance || 3;
-    const skipChance = (resistance - 1) * 0.1;
+    const resistance = p.resistance ?? RES_NEUTRAL;
+    const skipChance = (resistance - 1) * 0.00816;
     if (Math.random() >= skipChance) {
       applyFatigueToPlayer(fixture, side, p, amount);
     } else {
@@ -818,8 +820,8 @@ function trackFatigue(
     syncFatigueSnapshot(fixture, side, p.id, p.skill);
     if (played % FATIGUE_INTERVAL_MINUTES !== 0) continue;
 
-    const resistance = p.resistance || 3;
-    const skipChance = (resistance - 1) * 0.1;
+    const resistance = p.resistance ?? RES_NEUTRAL;
+    const skipChance = (resistance - 1) * 0.00816;
     if (Math.random() < skipChance) continue;
 
     applyFatigueToPlayer(fixture, side, p, 1);
@@ -1331,8 +1333,8 @@ async function simulateMatchSegment(
     const moraleAttackFactor = 1 + (morale - 50) * 0.002;
     const moraleDefenseFactor = 1 + (morale - 50) * 0.001;
 
-    const avgForm = average(squad.map((p) => p.form || 100));
-    const formFactor = Math.max(0.85, Math.min(1.15, avgForm / 100));
+    const avgForm = average(squad.map((p) => p.form ?? FORM_NEUTRAL));
+    const formFactor = Math.max(0.85, Math.min(1.15, avgForm / FORM_NEUTRAL));
 
     const attackBase = avgMidfielderQuality * 0.4 + avgForwardQuality * 0.6;
     const defenseBase = avgDefenderQuality * 0.6 + avgKeeperQuality * 0.4;
@@ -1934,7 +1936,7 @@ async function simulateMatchSegment(
       const fullRoster = isHomeInjury ? homeFullRoster : awayFullRoster;
       if (squad.length > 0) {
         const injuredPlayer = squad[Math.floor(Math.random() * squad.length)];
-        const resistanceSkip = ((injuredPlayer?.resistance || 3) - 1) * 0.08;
+        const resistanceSkip = ((injuredPlayer?.resistance ?? RES_NEUTRAL) - 1) * 0.00653;
         if (Math.random() < resistanceSkip) {
           // jogador resistiu — ignorar lesão
         } else {
