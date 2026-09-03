@@ -88,7 +88,7 @@ const RoomSelectScreen = ({
 			animate={{ opacity: 1, scale: 1 }}
 			exit={{ opacity: 0, y: -16, transition: { duration: 0.3, ease: "easeIn" } }}
 			transition={{ duration: 0.45, ease: "easeOut" }}
-			className="relative z-10 mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-7xl flex-col px-4 sm:px-10 lg:px-16 pb-3 pt-4 sm:pb-4 sm:pt-8 short:pb-2 short:pt-4"
+			className="relative z-10 mx-auto flex h-[calc(100dvh-4rem)] short:h-dvh w-full max-w-7xl flex-col px-4 sm:px-10 lg:px-16 pb-3 pt-4 sm:pb-4 sm:pt-8 short:pb-2 short:pt-2"
 		>
 			{/* ─── Topo: saudação + acções ─────────────────────── */}
 			<motion.div
@@ -195,7 +195,7 @@ const RoomSelectScreen = ({
 			</motion.div>
 
 			{/* ─── Corpo: grelha de salas / formulário ─────────── */}
-			<div className="mt-4 sm:mt-6 min-h-[140px] sm:min-h-0 short:min-h-[90px] flex-1 overflow-y-auto short:mt-2">
+			<div className="mt-4 sm:mt-6 min-h-[140px] sm:min-h-0 short:min-h-[90px] flex-1 overflow-y-auto short:mt-1">
 				{joinMode === "saved-game" && (
 					<>
 						{availableSaves.length === 0 ? (
@@ -433,16 +433,16 @@ const RoomSelectScreen = ({
 				transition={{ duration: 0.4, ease: "easeOut", delay: 0.25 }}
 				className="mt-3 sm:mt-4 shrink-0 short:mt-2"
 			>
-				<div className="flex flex-col gap-2 sm:gap-3 rounded-2xl border border-white/[0.08] bg-[#0a1410]/85 p-3 sm:p-4 backdrop-blur-xl shadow-[0_-8px_40px_rgba(0,0,0,0.35)] sm:flex-row sm:items-center sm:justify-between short:p-2.5">
+				<div className="flex flex-col gap-2 sm:gap-3 rounded-2xl border border-white/[0.08] bg-[#0a1410]/85 p-3 sm:p-4 backdrop-blur-xl shadow-[0_-8px_40px_rgba(0,0,0,0.35)] sm:flex-row sm:items-center sm:justify-between short:gap-1.5 short:px-2 short:py-1.5">
 					<div className="min-w-0 flex-1">
 						{roomCode ? (
 							<div className="flex items-center gap-2.5">
 								<span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.9)]" />
-								<div className="min-w-0">
-									<p className="text-[9px] font-black uppercase tracking-widest text-white/35 leading-none">
+								<div className="min-w-0 short:flex short:items-baseline short:gap-x-2">
+									<p className="shrink-0 text-[9px] font-black uppercase tracking-widest text-white/35 leading-none">
 										Sala selecionada
 									</p>
-									<p className="font-headline truncate text-lg font-black uppercase tracking-tight text-white leading-tight">
+									<p className="font-headline truncate text-lg font-black uppercase tracking-tight text-white leading-tight short:min-w-0">
 										{roomCode}
 									</p>
 								</div>
@@ -471,7 +471,7 @@ const RoomSelectScreen = ({
 						<button
 							onClick={handleJoin}
 							disabled={!roomCode || joining}
-							className={`relative overflow-hidden disabled:bg-white/[0.06] disabled:text-white/30 py-3 sm:py-4 short:py-3 px-6 sm:px-8 rounded-xl font-black text-sm uppercase tracking-[0.2em] transition-all active:scale-[0.98] group sm:w-auto w-full ${
+							className={`relative overflow-hidden disabled:bg-white/[0.06] disabled:text-white/30 py-3 sm:py-4 short:py-2 px-6 sm:px-8 rounded-xl font-black text-sm uppercase tracking-[0.2em] transition-all active:scale-[0.98] group sm:w-auto w-full ${
 								joinMode === "saved-game"
 									? "bg-cyan-500 hover:bg-cyan-400 text-black shadow-[0_4px_20px_rgba(6,182,212,0.25)] hover:shadow-[0_4px_30px_rgba(6,182,212,0.4)]"
 									: "bg-green-500 hover:bg-green-400 text-black shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)]"

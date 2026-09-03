@@ -41,8 +41,10 @@ const noop = () => {};
 function screen(inst, props) {
 	return (
 		<div data-inst={inst}>
-			{/* Mimics the sticky h-16 landing header the screen sits below */}
-			<div className="h-16" />
+			{/* Mimics the sticky h-16 landing header the screen sits below.
+			    As in LandingPage, it is hidden in short viewports (mobile
+			    landscape) and the screen reclaims it via short:h-dvh. */}
+			<div className="h-16 short:hidden" />
 			<RoomSelectScreen
 				name="Treinador Teste Muito Longo"
 				availableSaves={saves}

@@ -203,8 +203,14 @@ const LandingPage = ({
 				<div className="absolute inset-0 bg-gradient-to-b from-[#060b08]/60 via-transparent to-[#060b08]/80" />
 			</div>
 
-			{/* Sticky header */}
-			<header className="z-10 w-full border-b border-white/[0.06] bg-[#060b08]/70 backdrop-blur-xl sticky top-0">
+			{/* Sticky header — escondido em ecrãs curtos (mobile landscape) durante a
+			    fase de escolha de sala: são 64px de marca sem valor funcional que
+			    esmagam a grelha de salas (RoomSelectScreen recupera com short:h-dvh). */}
+			<header
+				className={`z-10 w-full border-b border-white/[0.06] bg-[#060b08]/70 backdrop-blur-xl sticky top-0 ${
+					isMode ? "short:hidden" : ""
+				}`}
+			>
 				<div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<div className="w-8 h-8 rounded-lg bg-green-500/15 border border-green-500/30 flex items-center justify-center text-base">
