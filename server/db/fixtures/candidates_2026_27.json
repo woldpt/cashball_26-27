@@ -1,6 +1,6 @@
 {
   "season": "2026/27",
-  "generatedAt": "2026-08-17T19:10:35.675Z",
+  "generatedAt": "2026-09-03T17:27:23.773358Z",
   "teams": [
     {
       "name": "Sporting",
@@ -6095,232 +6095,6 @@
       "coverage": "complete"
     },
     {
-      "name": "Naval 1893",
-      "division": 4,
-      "zerozeroUrl": "/equipa/naval-1893/215830",
-      "coach": "Carlos Neves",
-      "players": [
-        {
-          "name": "Vasco Guimarães",
-          "position": "GR",
-          "flag": "PT",
-          "age": 30,
-          "value": null
-        },
-        {
-          "name": "Yvan Tiwa",
-          "position": "GR",
-          "flag": "CM",
-          "age": 21,
-          "value": null
-        },
-        {
-          "name": "Lukass Zuravlovs",
-          "position": "GR",
-          "flag": "LV",
-          "age": 20,
-          "value": null
-        },
-        {
-          "name": "Pedro Cardoso",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 18,
-          "value": null
-        },
-        {
-          "name": "Rodrigo Coutinho",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 26,
-          "value": null
-        },
-        {
-          "name": "Francisco Sancho",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 20,
-          "value": null
-        },
-        {
-          "name": "Pedro Alves",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 24,
-          "value": null
-        },
-        {
-          "name": "Sadia Traoré",
-          "position": "DEF",
-          "flag": "FR",
-          "age": null,
-          "value": null
-        },
-        {
-          "name": "Luis Medina",
-          "position": "DEF",
-          "flag": "PR",
-          "age": 20,
-          "value": null
-        },
-        {
-          "name": "Romário Carvalho",
-          "position": "DEF",
-          "flag": "CV",
-          "age": 32,
-          "value": null
-        },
-        {
-          "name": "Mame Bara",
-          "position": "DEF",
-          "flag": "CM",
-          "age": 20,
-          "value": null
-        },
-        {
-          "name": "Bruno Amorim",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 27,
-          "value": null
-        },
-        {
-          "name": "Thomas Chesnel",
-          "position": "DEF",
-          "flag": "FR",
-          "age": 26,
-          "value": null
-        },
-        {
-          "name": "Tomás Correia",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 19,
-          "value": null
-        },
-        {
-          "name": "Leonardo Nunes",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 22,
-          "value": null
-        },
-        {
-          "name": "Rodrigo Fajardo",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 23,
-          "value": 20000
-        },
-        {
-          "name": "Paulo Grilo",
-          "position": "MED",
-          "flag": "PT",
-          "age": 34,
-          "value": 100000
-        },
-        {
-          "name": "Nuno André",
-          "position": "MED",
-          "flag": "PT",
-          "age": 26,
-          "value": null
-        },
-        {
-          "name": "Afonso Loureiro",
-          "position": "MED",
-          "flag": "PT",
-          "age": 18,
-          "value": null
-        },
-        {
-          "name": "Imad Moutaouakil",
-          "position": "MED",
-          "flag": "ES",
-          "age": 22,
-          "value": null
-        },
-        {
-          "name": "Rodrigo Mendes",
-          "position": "MED",
-          "flag": "PT",
-          "age": 19,
-          "value": null
-        },
-        {
-          "name": "Renato Valente",
-          "position": "MED",
-          "flag": "PT",
-          "age": 20,
-          "value": null
-        },
-        {
-          "name": "Gui Monteiro",
-          "position": "MED",
-          "flag": "PT",
-          "age": 20,
-          "value": null
-        },
-        {
-          "name": "Paulo Bessa",
-          "position": "ATA",
-          "flag": "BR",
-          "age": 27,
-          "value": null
-        },
-        {
-          "name": "Nico",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 26,
-          "value": null
-        },
-        {
-          "name": "Pedro Costa",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 23,
-          "value": 40000
-        },
-        {
-          "name": "Zuka",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 19,
-          "value": null
-        },
-        {
-          "name": "Samba Só",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 25,
-          "value": null
-        },
-        {
-          "name": "João Cortesão",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 20,
-          "value": null
-        },
-        {
-          "name": "Carlos Martínez",
-          "position": "ATA",
-          "flag": "ES",
-          "age": 22,
-          "value": null
-        },
-        {
-          "name": "Quim Rodrigues",
-          "position": "ATA",
-          "flag": "AO",
-          "age": 21,
-          "value": null
-        }
-      ],
-      "coverage": "complete"
-    },
-    {
       "name": "Louletano",
       "division": 4,
       "zerozeroUrl": "/equipa/louletano/3596",
@@ -7886,6 +7660,174 @@
         }
       ],
       "coverage": "complete"
+    },
+    {
+      "name": "Arouca",
+      "division": 1,
+      "zerozeroUrl": "/equipa/fc-arouca/3291",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Vitória SC",
+      "division": 1,
+      "zerozeroUrl": "/equipa/vitoria-sc",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Alverca",
+      "division": 1,
+      "zerozeroUrl": "/equipa/alverca/2317",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Rio Ave",
+      "division": 1,
+      "zerozeroUrl": "/equipa/rio-ave",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Leixões",
+      "division": 2,
+      "zerozeroUrl": "/equipa/leixoes/15",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Felgueiras",
+      "division": 2,
+      "zerozeroUrl": "/equipa/felgueiras-1932/3682",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Penafiel",
+      "division": 2,
+      "zerozeroUrl": "/equipa/penafiel/14",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Portimonense",
+      "division": 2,
+      "zerozeroUrl": "/equipa/portimonense/13",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Vit. Setúbal",
+      "division": 3,
+      "zerozeroUrl": "/equipa/vitoria-setubal",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "São João Ver",
+      "division": 3,
+      "zerozeroUrl": "/equipa/s-joao-de-ver/4287",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Fafe",
+      "division": 3,
+      "zerozeroUrl": "/equipa/ad-fafe/3570",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Lusitano Évora",
+      "division": 3,
+      "zerozeroUrl": "/equipa/lusitano-evora/4270",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Oliv. Hospital",
+      "division": 4,
+      "zerozeroUrl": "/equipa/oliveira-hospital/3598",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Malveira",
+      "division": 4,
+      "zerozeroUrl": "/equipa/malveira/6805",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Alcochetense",
+      "division": 4,
+      "zerozeroUrl": "/equipa/alcochetense/3592",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "O Elvas",
+      "division": 4,
+      "zerozeroUrl": "/equipa/o-elvas/3604",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Sintrense",
+      "division": 4,
+      "zerozeroUrl": "/equipa/sintrense/3590",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Cabrela",
+      "division": 5,
+      "zerozeroUrl": "",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Escouralense",
+      "division": 5,
+      "zerozeroUrl": "",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Aljustrelense",
+      "division": 5,
+      "zerozeroUrl": "",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
+    },
+    {
+      "name": "Castrense",
+      "division": 5,
+      "zerozeroUrl": "",
+      "coach": null,
+      "players": [],
+      "coverage": "low"
     }
   ]
 }
