@@ -1474,34 +1474,34 @@ function MentalidadeColumn({
 }) {
   return (
     <div className="flex flex-col min-h-0 min-w-0 overflow-hidden bg-surface-container-high/30">
-      {/* ── Row 1: Mentalidade ── */}
-      <div className="flex flex-col flex-1 min-h-0 overflow-hidden border-b border-outline-variant/15">
-        <div className="shrink-0 px-4 py-3 flex items-center justify-between gap-2 bg-surface-container-high/50 border-b border-outline-variant/15">
+      {/* ── Row 1: Mentalidade — altura natural, SEM scroll: os botões nunca
+       * podem ficar cortados; o overflow absorve-se na linha de baixo. */}
+      <div className="shrink-0 border-b border-outline-variant/15">
+        <div className="px-4 py-3 flex items-center justify-between gap-2 bg-surface-container-high/50 border-b border-outline-variant/15">
           <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-violet-400 shrink-0 shadow-[0_0_8px_rgba(167,139,250,0.5)]" />
             Mentalidade
           </h3>
         </div>
-        <div className="flex-1 overflow-y-auto">
-          <div className="flex flex-col min-h-full p-4 space-y-4">
-            {isHalftime && (
-              <div className="space-y-2">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-                  Estilo de jogo
-                </span>
-                <TacticsButtons
-                  className="w-full"
-                  value={tactic.style}
-                  onChange={onUpdateTactic}
-                />
-              </div>
-            )}
+        {isHalftime && (
+          <div className="p-4">
+            <div className="space-y-2">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
+                Estilo de jogo
+              </span>
+              <TacticsButtons
+                className="w-full"
+                value={tactic.style}
+                onChange={onUpdateTactic}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* ── Row 2: Substituições ── */}
-      <div className="flex flex-col shrink-0 min-h-0 overflow-hidden">
+      {/* ── Row 2: Substituições — flex-1: a faixa de confirmadas cresce aqui
+       * e faz scroll dentro desta linha, em vez de esmagar a Mentalidade. */}
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
         <div className="shrink-0 px-4 py-3 flex items-center justify-between gap-2 bg-surface-container-high/50 border-b border-outline-variant/15">
           <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0 shadow-[0_0_8px_rgba(251,113,133,0.5)]" />
@@ -1509,21 +1509,23 @@ function MentalidadeColumn({
           </h3>
           {isHalftime && <SubsCounter subsMade={subsMade} />}
         </div>
-        <div className="p-4 space-y-4">
-          <SwapControls {...swapProps} />
-          {isHalftime && confirmedSubs.length > 0 && (
-            <div className="space-y-2">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-                Confirmadas
-              </span>
-              <ConfirmedSubsStrip
-                subs={confirmedSubs}
-                annotatedSquad={annotatedSquad}
-                onUndoSub={onUndoSub}
-                className="rounded-md"
-              />
-            </div>
-          )}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 space-y-4">
+            <SwapControls {...swapProps} />
+            {isHalftime && confirmedSubs.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
+                  Confirmadas
+                </span>
+                <ConfirmedSubsStrip
+                  subs={confirmedSubs}
+                  annotatedSquad={annotatedSquad}
+                  onUndoSub={onUndoSub}
+                  className="rounded-md"
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
