@@ -1,3 +1,16 @@
+/**
+ * Escala unificada 1–50 para forma e resistência (migração v2).
+ * Neutros são a imagem linear dos antigos: forma 100→32, resistência 3→26.
+ */
+export const FORM_NEUTRAL = 32;
+export const FORM_MIN = 1;
+export const FORM_MAX = 50;
+export const RES_NEUTRAL = 26;
+export const RES_MIN = 1;
+export const RES_MAX = 50;
+/** Referência económica: preserva o fator médio antigo form/90 (100→1,11). */
+export const ECON_FORM_REF = 100 / 90;
+
 export const DIVISION_NAMES: Record<number, string> = {
   1: "Primeira Liga",
   2: "Segunda Liga",
