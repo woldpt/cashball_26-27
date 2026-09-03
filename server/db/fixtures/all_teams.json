@@ -3,6 +3,7 @@
     {
       "name": "Sporting",
       "division": 1,
+      "skillRange": [39, 54],
       "colors": {
         "primary": "#1ba84a",
         "secondary": "#ffffff"
@@ -152,6 +153,7 @@
     {
       "name": "Porto",
       "division": 1,
+      "skillRange": [39, 54],
       "colors": {
         "primary": "#00428C",
         "secondary": "#FFFFFF"
@@ -301,6 +303,7 @@
     {
       "name": "Benfica",
       "division": 1,
+      "skillRange": [39, 54],
       "colors": {
         "primary": "#EF2D2D",
         "secondary": "#FFFFFF"

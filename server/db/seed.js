@@ -184,6 +184,13 @@ db.serialize(() => {
     };
 
     const division = teamData.division || 4;
+    // Intervalo de skill da equipa: por omissão o da divisão (skillRanges),
+    // mas clubes com skillRange próprio no fixture (ex.: Sporting, Benfica e
+    // Porto começam mais fortes que o resto da Primeira Liga) usam o seu.
+    const teamSkillRange =
+      Array.isArray(teamData.skillRange) && teamData.skillRange.length === 2
+        ? teamData.skillRange
+        : skillRanges[division] || [5, 20];
 
     // Build full player list before inserting so we can guarantee ≥1 craque per team
     const playersToInsert = providedPlayers
@@ -192,10 +199,7 @@ db.serialize(() => {
         const pos = POSITION_MAP[p.position] || p.position || "MED";
         const skill =
           p.skill ||
-          randomSkill(
-            (skillRanges[division] || [5, 20])[0],
-            (skillRanges[division] || [5, 20])[1],
-          );
+          randomSkill(teamSkillRange[0], teamSkillRange[1]);
         const age = p.age || Math.floor(Math.random() * 16) + 18;
         const form = p.form || Math.floor(Math.random() * 14) + 19;
         const res = [1, 13, 26, 38, 50][Math.floor(Math.random() * 5)];
