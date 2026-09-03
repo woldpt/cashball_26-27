@@ -1312,7 +1312,10 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         <main
           className={
             isMobileLandscape
-              ? "transition-all duration-200 pt-10 pb-3 ml-16"
+              // A rail vertical (w-16) só está montada quando !isMatchInProgress —
+              // fora disso a ml-16 ficava órfã e deixava uma faixa vazia à
+              // esquerda do ecrã de jogo ao vivo.
+              ? `transition-all duration-200 pt-10 pb-3 ${isMatchInProgress ? "ml-0" : "ml-16"}`
               : `pt-14 pb-16 lg:pb-12 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-14" : "lg:ml-64"}`
           }
         >
