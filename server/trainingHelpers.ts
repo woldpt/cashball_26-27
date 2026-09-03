@@ -1,5 +1,13 @@
 import type { ActiveGame } from "./types";
-import { recalcPlayerValue } from "./gameConstants";
+import {
+  recalcPlayerValue,
+  FORM_NEUTRAL,
+  FORM_MIN,
+  FORM_MAX,
+  RES_NEUTRAL,
+  RES_MIN,
+  RES_MAX,
+} from "./gameConstants";
 
 /**
  * Training bonuses application.
@@ -8,21 +16,21 @@ import { recalcPlayerValue } from "./gameConstants";
  *  - Position focus (GR/Defesas/Médios/Avançados): skill gain with diminishing
  *    returns — the closer to potential the slower, high form boosts learning,
  *    and each skill point costs more progress as skill rises (ceil(skill/10)).
- *  - Forma:        +10 form (direct, INTEGER column tolerates this)
- *  - Resistência:  +0.4 resistance (accumulator)
+ *  - Forma:        +6 form (direct, INTEGER column tolerates this)
+ *  - Resistência:  +4.9 resistance (accumulator, 1.0 = 1 ponto)
  *
  * Physical dynamics (per calendar event, whole squad, junior GRs excluded):
  *  - Not training Forma:
  *      · played  → gradient decay (the lower the form, the slower the drop)
- *      · rested  → +4 recovery (rotation keeps the squad fresh)
+ *      · rested  → +2 recovery (rotation keeps the squad fresh)
  *  - Not training Resistência (deliberately slower than the training gain so
  *    neglect takes longer to noticeably harm stamina):
- *      · played  → -0.15 resistance progress
- *      · rested  → -0.05 resistance progress
+ *      · played  → -1.84 resistance progress
+ *      · rested  → -0.61 resistance progress
  *
  * Skill and resistance use accumulator columns (training_skill_progress,
  * training_resistance_progress) because the underlying columns are INTEGER —
- * adding 1.0/0.4 directly would be silently truncated by SQLite.
+ * adding 1.0/4.9 directly would be silently truncated by SQLite.
  *
  * Market value is recalculated whenever skill changes (skill² × 500). Wages
  * are NEVER touched here — they only change on a new contract (buy/renewal).
@@ -124,8 +132,8 @@ export function createTrainingHelpers(_deps: { io: any }) {
                 // ── Training bonus (only players that appeared in a fixture) ──
                 if (played) {
                   if (focus === "Forma") {
-                    const oldForm = player.form ?? 100;
-                    const newForm = Math.min(130, oldForm + 10);
+                    const oldForm = player.form ?? FORM_NEUTRAL;
+                    const newForm = Math.min(FORM_MAX, oldForm + 6);
                     if (newForm !== oldForm) {
                       upd.fields.form = newForm;
                       upd.history.push({
@@ -137,22 +145,22 @@ export function createTrainingHelpers(_deps: { io: any }) {
                       });
                     }
                   } else if (focus === "Resistência") {
-                    const oldRes = player.resistance ?? 3;
+                    const oldRes = player.resistance ?? RES_NEUTRAL;
                     const oldProg = player.resistance_progress ?? 0;
-                    let newProg = oldProg + 0.4;
+                    let newProg = oldProg + 4.9;
                     let newRes = oldRes;
-                    while (newProg >= 1.0 && newRes < 5) {
+                    while (newProg >= 1.0 && newRes < RES_MAX) {
                       newRes += 1;
                       newProg -= 1.0;
                     }
-                    if (newRes >= 5) newProg = 0; // cap progress at the ceiling
+                    if (newRes >= RES_MAX) newProg = 0; // cap progress at the ceiling
                     upd.fields.training_resistance_progress = Math.round(newProg * 100) / 100;
                     if (newRes !== oldRes) upd.fields.resistance = newRes;
                     upd.history.push({
                       attribute: "resistance",
                       oldValue: oldRes,
                       newValue: newRes,
-                      delta: 0.4,
+                      delta: 4.9,
                       focus,
                     });
                   } else {
@@ -177,7 +185,7 @@ export function createTrainingHelpers(_deps: { io: any }) {
                         0.5 + 0.5 * (room / Math.max(1, skillCap));
                       const formFactor = Math.min(
                         1.15,
-                        Math.max(0.5, 0.5 + (player.form ?? 100) / 200),
+                        Math.max(0.5, 0.5 + 0.5 * ((player.form ?? FORM_NEUTRAL) / FORM_NEUTRAL)),
                       );
                       const gain = 2.5 * potentialFactor * formFactor;
                       // Quanto maior o skill, mais progresso é preciso por ponto.
@@ -211,11 +219,11 @@ export function createTrainingHelpers(_deps: { io: any }) {
                 // Junior GRs (negative ids) are excluded.
                 if (player.id > 0) {
                   if (focus !== "Forma") {
-                    const oldForm = player.form ?? 100;
+                    const oldForm = player.form ?? FORM_NEUTRAL;
                     if (!played) {
                       // Descanso: quem não jogou e não treina Forma recupera
                       // suavemente em vez de decair (rotação mantém o plantel fresco)
-                      const newForm = Math.min(130, oldForm + 4);
+                      const newForm = Math.min(FORM_MAX, oldForm + 2);
                       if (newForm !== oldForm) {
                         upd.fields.form = newForm;
                         upd.history.push({
@@ -228,9 +236,9 @@ export function createTrainingHelpers(_deps: { io: any }) {
                       }
                     } else {
                       // Decaimento com gradiente: quanto mais baixa a forma,
-                      // menos decai (efeito piso nos 50)
-                      const decay = Math.max(1, Math.round((oldForm - 50) * 0.08));
-                      const newForm = Math.max(50, oldForm - decay);
+                      // menos decai (efeito piso no 1)
+                      const decay = Math.max(1, Math.round((oldForm - FORM_MIN) * 0.08));
+                      const newForm = Math.max(FORM_MIN, oldForm - decay);
                       if (newForm !== oldForm) {
                         upd.fields.form = newForm;
                         upd.history.push({
@@ -245,19 +253,19 @@ export function createTrainingHelpers(_deps: { io: any }) {
                   }
 
                   if (focus !== "Resistência") {
-                    const oldRes = player.resistance ?? 3;
+                    const oldRes = player.resistance ?? RES_NEUTRAL;
                     const oldProg = player.resistance_progress ?? 0;
                     // Quem jogou desgasta mais; quem descansa perde menos.
                     // Decaimento propositadamente lento para a resistência não
                     // minguar depressa sem treino.
-                    const resLoss = played ? -0.15 : -0.05;
+                    const resLoss = played ? -1.84 : -0.61;
                     let newProg = oldProg + resLoss;
                     let newRes = oldRes;
-                    while (newProg < 0 && newRes > 1) {
+                    while (newProg < 0 && newRes > RES_MIN) {
                       newRes -= 1;
                       newProg += 1.0;
                     }
-                    if (newRes <= 1 && newProg < 0) newProg = 0; // clamp at floor
+                    if (newRes <= RES_MIN && newProg < 0) newProg = 0; // clamp at floor
                     newProg = Math.round(newProg * 100) / 100;
                     upd.fields.training_resistance_progress = newProg;
                     if (newRes !== oldRes) upd.fields.resistance = newRes;
