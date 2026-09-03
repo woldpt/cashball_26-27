@@ -66,6 +66,7 @@ nav bar (`h-16`) does not cover content (content has `pb-16`), text is legible.
 | `mobile-resp-test.html`    | `views/PlayersTab.jsx` |
 | `scout-resp-test.html`     | `views/PlayerSearchView.jsx` |
 | `intervencao-test.html`    | `components/match/tabs/IntervencaoView.jsx` |
+| `game-landscape-test.html` | `GameLayout.jsx` — skeleton do ramo mobile-landscape (banda vazia à esquerda + pill "AO VIVO" a cobrir o fim do conteúdo). Correr em viewport landscape: `npm run test:mobile -- game-landscape-test --widths 568,667,736,844,926,1023 --height 375` |
 
 - Changed file maps to a harness → run that harness.
 - Changed file is shared (`GameLayout.jsx`, `src/components/**`, `index.css`,

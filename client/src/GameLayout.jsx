@@ -1315,7 +1315,10 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               // A rail vertical (w-16) só está montada quando !isMatchInProgress —
               // fora disso a ml-16 ficava órfã e deixava uma faixa vazia à
               // esquerda do ecrã de jogo ao vivo.
-              ? `transition-all duration-200 pt-10 pb-3 ${isMatchInProgress ? "ml-0" : "ml-16"}`
+              // Em jogo, o pill "AO VIVO" (fixed bottom-3) flutua sobre o
+              // conteúdo; reservamos pb-16 (igual ao retrato) para o conteúdo
+              // não ser coberto, em vez de pb-3.
+              ? `transition-all duration-200 pt-10 ${isMatchInProgress ? "pb-16 ml-0" : "pb-3 ml-16"}`
               : `pt-14 pb-16 lg:pb-12 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-14" : "lg:ml-64"}`
           }
         >

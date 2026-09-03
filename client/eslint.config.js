@@ -6,7 +6,7 @@ import reactPlugin from "eslint-plugin-react";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
-	globalIgnores(["dist", "android", "ios", "transfer-resp-test.jsx", "playerhistory-resp-test.jsx"]),
+	globalIgnores(["dist", "android", "ios", "transfer-resp-test.jsx", "playerhistory-resp-test.jsx", "intervencao-test.jsx", "game-landscape-test.jsx"]),
 	{
 		files: ["scripts/**/*.js"],
 		languageOptions: {
