@@ -215,6 +215,54 @@ function ensurePlayerSchema(
                 });
               }
 
+              // Migração v2: forma 50–130 → 1–50, resistência 1–5 → 1–50. Idempotente
+              // via marcador scale_v2 em game_state (salas novas já nascem convertidas).
+              backfillSteps.push((next) => {
+                db.get(
+                  `SELECT value FROM game_state WHERE key = 'scale_v2'`,
+                  (mErr, row) => {
+                    if (mErr || row) return next();
+                    db.run(
+                      `UPDATE players SET form = CAST(ROUND(1 + (form - 50) * 49.0 / 80) AS INTEGER), resistance = CAST(ROUND(1 + (resistance - 1) * 49.0 / 4) AS INTEGER)`,
+                      (uErr) => {
+                        if (uErr) {
+                          console.warn(
+                            "[gameManager] scale v2 values failed:",
+                            uErr.message,
+                          );
+                          return next();
+                        }
+                        db.run(
+                          `UPDATE players SET form = MIN(50, MAX(1, form)), resistance = MIN(50, MAX(1, resistance))`,
+                          () => {
+                            db.run(
+                              `UPDATE players SET training_resistance_progress = COALESCE(training_resistance_progress, 0) * 12.25`,
+                              () => {
+                                db.run(
+                                  `INSERT OR IGNORE INTO game_state (key, value) VALUES ('scale_v2', '1')`,
+                                  (iErr) => {
+                                    if (iErr)
+                                      console.warn(
+                                        "[gameManager] scale v2 marker failed:",
+                                        iErr.message,
+                                      );
+                                    else
+                                      console.log(
+                                        "[gameManager] form/resistance rescaled to 1–50",
+                                      );
+                                    next();
+                                  },
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                );
+              });
+
               const runBackfills = (idx: number) => {
                 if (idx >= backfillSteps.length) {
                   if (onDone) onDone(null);
