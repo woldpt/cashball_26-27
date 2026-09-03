@@ -197,8 +197,8 @@ db.serialize(() => {
             (skillRanges[division] || [5, 20])[1],
           );
         const age = p.age || Math.floor(Math.random() * 16) + 18;
-        const form = p.form || Math.floor(Math.random() * 20) + 80;
-        const res = Math.floor(Math.random() * 5) + 1;
+        const form = p.form || Math.floor(Math.random() * 14) + 19;
+        const res = [1, 13, 26, 38, 50][Math.floor(Math.random() * 5)];
         const agg = randomAggressiveness();
         const nat = p.nationality || p.country || "🇵🇹";
         // Mesma fórmula que recalcPlayerValue (gameConstants.ts) para o valor
