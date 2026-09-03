@@ -124,8 +124,8 @@ function PlayerRow({
   isDragging,
   children,
 }) {
-  const f = player.form ?? 100;
-  const formIcon = f >= 115 ? "💪" : f <= 85 ? "😩" : "👍";
+  const f = player.form ?? 32;
+  const formIcon = f >= 41 ? "💪" : f <= 22 ? "😩" : "👍";
   return (
     <div
       draggable={draggable}
@@ -183,9 +183,9 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
           </span>
           <span
             className={`text-[13px] font-black tabular-nums leading-none ${
-              (player.resistance ?? 0) >= 4
+              (player.resistance ?? 0) >= 38
                 ? "text-green-400"
-                : (player.resistance ?? 0) >= 3
+                : (player.resistance ?? 0) >= 26
                   ? "text-yellow-400"
                   : "text-red-400"
             }`}

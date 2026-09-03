@@ -237,9 +237,9 @@ function MarketCard({
                   <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Qual.</p>
                   <p className="font-headline font-black text-base text-primary">{player.skill ?? 0}</p>
                 </div>
-                <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center" title="Forma 70–130 (100 = normal; ≥115 em grande; ≤85 em baixo)">
+                <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center" title="Forma 1–50 (32 = normal; ≥41 em grande; ≤22 em baixo)">
                   <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Forma</p>
-                  <p className={`font-black text-sm ${(player.form ?? 100) >= 115 ? "text-emerald-400" : (player.form ?? 100) <= 85 ? "text-rose-400" : "text-on-surface"}`}>{(player.form ?? 100) >= 115 ? "💪 " : (player.form ?? 100) <= 85 ? "😩 " : "👍 "}{player.form ?? 100}%</p>
+                  <p className={`font-black text-sm ${(player.form ?? 32) >= 41 ? "text-emerald-400" : (player.form ?? 32) <= 22 ? "text-rose-400" : "text-on-surface"}`}>{(player.form ?? 32) >= 41 ? "💪 " : (player.form ?? 32) <= 22 ? "😩 " : "👍 "}{player.form ?? 32}</p>
                 </div>
                 <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center">
                   <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Resist.</p>

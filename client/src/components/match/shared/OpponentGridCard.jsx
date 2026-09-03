@@ -12,10 +12,10 @@ import { POSITION_FULL_LABELS } from "../matchConstants.js";
  */
 export function OpponentGridCard({ player, posStyle, hideResForm = false }) {
   const s = posStyle;
-  const form = player.form ?? 100;
-  const formIcon = form >= 115 ? "💪" : form <= 85 ? "😩" : "👍";
+  const form = player.form ?? 32;
+  const formIcon = form >= 41 ? "💪" : form <= 22 ? "😩" : "👍";
   const formColor =
-    form >= 115 ? "text-emerald-400" : form <= 85 ? "text-rose-400" : "text-on-surface-variant";
+    form >= 41 ? "text-emerald-400" : form <= 22 ? "text-rose-400" : "text-on-surface-variant";
 
   return (
     <div

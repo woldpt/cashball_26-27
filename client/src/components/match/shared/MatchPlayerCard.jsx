@@ -37,7 +37,7 @@ export function MatchPlayerCard({
 }) {
   const s = posStyle || getPosStyle(player.position);
 
-  const form = player.form ?? 100;
+  const form = player.form ?? 32;
   const hasStar = !!player.is_star && (player.position === "MED" || player.position === "ATA");
 
   // Skill color: position-colored (matches PlayersTab/TeamSquadCard which use
@@ -46,11 +46,11 @@ export function MatchPlayerCard({
   const skillColor = selected ? "text-white" : s.badgeText;
 
   // Form: always render the full 💪/👍/😩 triplet. Hiding the neutral 👍
-  // (86–114) made rows with/without a form icon have different widths,
+  // (23–40) made rows with/without a form icon have different widths,
   // shifting the skill/RES columns and misaligning the card list.
-  const formIcon = form >= 115 ? "💪" : form <= 85 ? "😩" : "👍";
+  const formIcon = form >= 41 ? "💪" : form <= 22 ? "😩" : "👍";
   const formColor =
-    form >= 115 ? "text-emerald-400" : form <= 85 ? "text-rose-400" : "text-on-surface-variant";
+    form >= 41 ? "text-emerald-400" : form <= 22 ? "text-rose-400" : "text-on-surface-variant";
   const matchStatsLabel = [
     goals > 0 ? `${goals} golo${goals > 1 ? "s" : ""}` : null,
     yellowCards > 0 ? `${yellowCards} cartão amarelo${yellowCards > 1 ? "s" : ""}` : null,

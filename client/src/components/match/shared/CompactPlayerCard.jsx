@@ -50,14 +50,14 @@ export function CompactPlayerCard({
 }) {
   const s = posStyle || getPosStyle(player.position);
 
-  const form = player.form ?? 100;
+  const form = player.form ?? 32;
   const hasStar = !!player.is_star && (player.position === "MED" || player.position === "ATA");
 
   const skillColor = selected ? "text-white" : s.badgeText;
 
-  const formIcon = form >= 115 ? "💪" : form <= 85 ? "😩" : "👍";
+  const formIcon = form >= 41 ? "💪" : form <= 22 ? "😩" : "👍";
   const formColor =
-    form >= 115 ? "text-emerald-400" : form <= 85 ? "text-rose-400" : "text-on-surface-variant";
+    form >= 41 ? "text-emerald-400" : form <= 22 ? "text-rose-400" : "text-on-surface-variant";
 
   // Fundo/estado — mesma linguagem visual do card expandido.
   const cardBg = forcedOut

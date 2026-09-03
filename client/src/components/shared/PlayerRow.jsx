@@ -57,12 +57,12 @@ export function PlayerRow({
     !!player.is_star &&
     (player.position === "MED" || player.position === "ATA");
 
-  const form = player.form || 100;
-  const formArrow = form >= 115 ? "💪" : form <= 85 ? "😩" : "👍";
+  const form = player.form || 32;
+  const formArrow = form >= 41 ? "💪" : form <= 22 ? "😩" : "👍";
   const formColor =
-    form >= 115
+    form >= 41
       ? "text-emerald-400"
-      : form <= 85
+      : form <= 22
         ? "text-rose-400"
         : "text-zinc-400";
 

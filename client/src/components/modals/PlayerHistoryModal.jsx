@@ -274,18 +274,21 @@ export function PlayerHistoryModal({
                     <span className="text-outline-variant/40 text-[10px] sm:text-xs">·</span>
                     <span
                       className={`text-[9px] sm:text-[9px] font-black ${
-                        (player.form || 100) >= 115
+                        (player.form || 32) >= 41
                           ? "text-emerald-400"
-                          : (player.form || 100) <= 85
+                          : (player.form || 32) <= 22
                             ? "text-rose-400"
                             : "text-on-surface-variant/30"
                       }`}
                     >
-                      {(player.form || 100) >= 115
+                      {(player.form || 32) >= 41
                         ? "💪"
-                        : (player.form || 100) <= 85
+                        : (player.form || 32) <= 22
                           ? "😩"
                           : "👍"}{" "}
+                    </span>
+                    <span className="text-[8px] text-on-surface-variant/50">
+                      Valores de épocas anteriores usam a escala antiga (70–130).
                     </span>
                   </>
                 )}
