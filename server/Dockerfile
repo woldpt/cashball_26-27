@@ -1,5 +1,7 @@
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /app
+# better-sqlite3 precisa de toolchain nativo quando prebuild não cobre a plataforma
+RUN apk add --no-cache python3 make g++
 COPY package*.json ./
 RUN npm install
 COPY . .
