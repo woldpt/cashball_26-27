@@ -451,6 +451,15 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
           const keepSet = new Set(keepIds);
           const dropIds = rows.filter((r) => !keepSet.has(r.id)).map((r) => r.id);
           if (dropIds.length !== 20) console.warn(`[gameManager] drop esperado 20, obtido ${dropIds.length}`);
+          // Guardar manager_ids das equipas a remover para limpar chat_messages após delete de teams
+          let dropManagerIds: number[] = [];
+          if (dropIds.length) {
+            const phM = dropIds.map(() => "?").join(",");
+            try {
+              const mRows: Array<{ manager_id: number }> = tmp.prepare(`SELECT manager_id FROM teams WHERE id IN (${phM}) AND manager_id IS NOT NULL`).all(...dropIds);
+              dropManagerIds = mRows.map((r) => r.manager_id).filter((v) => Number.isFinite(v));
+            } catch (e) { console.warn(`[gameManager] Falha ao recolher manager_ids de drop para chat_messages:`, e); }
+          }
           const tx = tmp.transaction(() => {
             if (dropIds.length) {
               const ph = dropIds.map(() => "?").join(",");
@@ -464,13 +473,19 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
               tmp.prepare(`DELETE FROM cup_matches WHERE home_team_id IN (${ph}) OR away_team_id IN (${ph})`).run(...dropIds, ...dropIds);
               tmp.prepare(`DELETE FROM palmares WHERE team_id IN (${ph})`).run(...dropIds);
               tmp.prepare(`DELETE FROM team_training WHERE team_id IN (${ph})`).run(...dropIds);
-              try { tmp.prepare(`DELETE FROM player_tactic_history WHERE team_id IN (${ph})`).run(...dropIds); } catch {}
-              try { tmp.prepare(`DELETE FROM chat_messages WHERE coach_name IN (SELECT name FROM managers WHERE id NOT IN (SELECT manager_id FROM teams WHERE manager_id IS NOT NULL))`).run(); } catch {}
+              try { tmp.prepare(`DELETE FROM player_tactic_history WHERE team_id IN (${ph})`).run(...dropIds); } catch (e) { console.warn(`[gameManager] player_tactic_history delete falhou:`, e); }
               // club_news secundário por related_team_id
-              try { tmp.prepare(`DELETE FROM club_news WHERE related_team_id IN (${ph})`).run(...dropIds); } catch {}
+              try { tmp.prepare(`DELETE FROM club_news WHERE related_team_id IN (${ph})`).run(...dropIds); } catch (e) { console.warn(`[gameManager] club_news related delete falhou:`, e); }
               tmp.prepare(`DELETE FROM teams WHERE id IN (${ph})`).run(...dropIds);
               tmp.prepare(`DELETE FROM managers WHERE id NOT IN (SELECT manager_id FROM teams WHERE manager_id IS NOT NULL)`).run();
               tmp.prepare(`DELETE FROM player_skill_snapshots WHERE player_id NOT IN (SELECT id FROM players)`).run();
+              // chat_messages após teams/managers: usa dropManagerIds directo (não órfãos antes do delete)
+              if (dropManagerIds.length) {
+                try {
+                  const phMgr = dropManagerIds.map(() => "?").join(",");
+                  tmp.prepare(`DELETE FROM chat_messages WHERE coach_name IN (SELECT name FROM managers WHERE id IN (${phMgr}))`).run(...dropManagerIds);
+                } catch (e) { console.warn(`[gameManager] chat_messages delete falhou:`, e); }
+              }
             }
             tmp.prepare(`INSERT OR REPLACE INTO game_state (key,value) VALUES ('pool_sampling', ?)`).run(JSON.stringify({ kept: keepIds.length, dropped: dropIds.length, at: new Date().toISOString() }));
           });
@@ -480,10 +495,18 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
           tmp.close();
         }
       } else {
-        console.warn(`[gameManager] better-sqlite3 ausente — pool 60→40 não aplicado para ${roomCode} (instalar better-sqlite3)`);
+        console.error(`[gameManager] better-sqlite3 ausente — abortar criação de ${roomCode} (instalar better-sqlite3)`);
+        try { if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath); } catch {}
+        const err = new Error("better-sqlite3 ausente — pool 60→40 não aplicado");
+        if (onReady) onReady(null, err);
+        return null;
       }
     } catch (e) {
       console.error(`[gameManager] Falha ao filtrar pool 60→40 para ${roomCode}:`, e);
+      try { if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath); } catch {}
+      const err = e instanceof Error ? e : new Error(String(e));
+      if (onReady) onReady(null, err);
+      return null;
     }
   }
 

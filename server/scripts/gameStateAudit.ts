@@ -302,11 +302,11 @@ class GameStateAuditor {
     if (!hasPool) {
       const cnt = await this.runQuery<any>("SELECT COUNT(*) c FROM teams");
       const total = cnt[0]?.c ?? 0;
-      if (total === 60) {
+      if (total === 60 && this.roomCode !== "base") {
         this.addIssue(
-          "warning",
+          "error",
           "pool_sampling",
-          "Sala com 60 equipas mas sem pool_sampling (sala antiga, anterior ao sorteio 60→40)",
+          "Sala com 60 equipas mas sem pool_sampling (estado quebrado — devia ter sido filtrada 60→40)",
           { total },
         );
       }
@@ -325,7 +325,7 @@ class GameStateAuditor {
           parsed,
         );
       }
-      if (parsed.kept + parsed.dropped !== 60) {
+      if (Number.isFinite(parsed.kept) && Number.isFinite(parsed.dropped) && parsed.kept + parsed.dropped !== 60) {
         this.addIssue(
           "warning",
           "pool_sampling",
