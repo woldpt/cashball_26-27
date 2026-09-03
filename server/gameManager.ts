@@ -9,6 +9,16 @@ import { getOfflineCoaches } from "./presenceHelpers";
 
 const sqlite = sqlite3.verbose();
 
+// Fisher-Yates shuffle via Math.random — usado no sorteio 60→40 por sala
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 const activeGames: Record<string, ActiveGame> = {};
 
 // Índice global socketId → roomCode para O(1) lookup no disconnect
@@ -400,6 +410,81 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
       return null;
     }
     fs.copyFileSync(basePath, dbPath);
+    // --- Pool 60→40: sorteio por sala (8 por divisão, fixos garantidos) ---
+    try {
+      const BetterSqlite: any = (() => {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          return require("better-sqlite3");
+        } catch {
+          return null;
+        }
+      })();
+      if (BetterSqlite) {
+        const tmp = new BetterSqlite(dbPath);
+        try {
+          tmp.pragma("foreign_keys = ON");
+          const rows: Array<{ id: number; name: string; division: number }> = tmp
+            .prepare("SELECT id, name, division FROM teams")
+            .all();
+          const byDiv: Record<number, typeof rows> = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+          for (const r of rows) {
+            if (byDiv[r.division]) byDiv[r.division].push(r);
+            else byDiv[r.division] = [r];
+          }
+          const FIXED: Record<number, string[]> = {
+            1: ["Sporting", "Porto", "Benfica"],
+            4: ["Juventude", "Juventude SC"],
+          };
+          const keepIds: number[] = [];
+          for (let d = 1; d <= 5; d++) {
+            const pool = byDiv[d] || [];
+            const fixedNames = FIXED[d] || [];
+            const fixed = pool.filter((t) => fixedNames.includes(t.name));
+            const rest = pool.filter((t) => !fixedNames.includes(t.name));
+            const need = 8 - fixed.length;
+            if (pool.length !== 12) console.warn(`[gameManager] D${d} pool inesperado: ${pool.length} (esperado 12)`);
+            if (need < 0) throw new Error(`Fixos a mais na D${d}`);
+            const sampled = shuffle(rest).slice(0, need);
+            keepIds.push(...fixed.map((t) => t.id), ...sampled.map((t) => t.id));
+          }
+          const keepSet = new Set(keepIds);
+          const dropIds = rows.filter((r) => !keepSet.has(r.id)).map((r) => r.id);
+          if (dropIds.length !== 20) console.warn(`[gameManager] drop esperado 20, obtido ${dropIds.length}`);
+          const tx = tmp.transaction(() => {
+            if (dropIds.length) {
+              const ph = dropIds.map(() => "?").join(",");
+              // Limpeza de FKs antes de apagar players/teams (evita SQLITE_CONSTRAINT_FOREIGNKEY)
+              tmp.prepare(`DELETE FROM player_skill_snapshots WHERE player_id IN (SELECT id FROM players WHERE team_id IN (${ph}))`).run(...dropIds);
+              tmp.prepare(`DELETE FROM training_player_history WHERE player_id IN (SELECT id FROM players WHERE team_id IN (${ph})) OR team_id IN (${ph})`).run(...dropIds, ...dropIds);
+              tmp.prepare(`DELETE FROM club_news WHERE player_id IN (SELECT id FROM players WHERE team_id IN (${ph})) OR team_id IN (${ph})`).run(...dropIds, ...dropIds);
+              tmp.prepare(`DELETE FROM players WHERE team_id IN (${ph})`).run(...dropIds);
+              // Tabelas que referenciam teams
+              tmp.prepare(`DELETE FROM matches WHERE home_team_id IN (${ph}) OR away_team_id IN (${ph})`).run(...dropIds, ...dropIds);
+              tmp.prepare(`DELETE FROM cup_matches WHERE home_team_id IN (${ph}) OR away_team_id IN (${ph})`).run(...dropIds, ...dropIds);
+              tmp.prepare(`DELETE FROM palmares WHERE team_id IN (${ph})`).run(...dropIds);
+              tmp.prepare(`DELETE FROM team_training WHERE team_id IN (${ph})`).run(...dropIds);
+              try { tmp.prepare(`DELETE FROM player_tactic_history WHERE team_id IN (${ph})`).run(...dropIds); } catch {}
+              try { tmp.prepare(`DELETE FROM chat_messages WHERE coach_name IN (SELECT name FROM managers WHERE id NOT IN (SELECT manager_id FROM teams WHERE manager_id IS NOT NULL))`).run(); } catch {}
+              // club_news secundário por related_team_id
+              try { tmp.prepare(`DELETE FROM club_news WHERE related_team_id IN (${ph})`).run(...dropIds); } catch {}
+              tmp.prepare(`DELETE FROM teams WHERE id IN (${ph})`).run(...dropIds);
+              tmp.prepare(`DELETE FROM managers WHERE id NOT IN (SELECT manager_id FROM teams WHERE manager_id IS NOT NULL)`).run();
+              tmp.prepare(`DELETE FROM player_skill_snapshots WHERE player_id NOT IN (SELECT id FROM players)`).run();
+            }
+            tmp.prepare(`INSERT OR REPLACE INTO game_state (key,value) VALUES ('pool_sampling', ?)`).run(JSON.stringify({ kept: keepIds.length, dropped: dropIds.length, at: new Date().toISOString() }));
+          });
+          tx();
+          console.log(`[gameManager] Sala ${roomCode}: pool 60→40 filtrado (keep ${keepIds.length}, drop ${dropIds.length})`);
+        } finally {
+          tmp.close();
+        }
+      } else {
+        console.warn(`[gameManager] better-sqlite3 ausente — pool 60→40 não aplicado para ${roomCode} (instalar better-sqlite3)`);
+      }
+    } catch (e) {
+      console.error(`[gameManager] Falha ao filtrar pool 60→40 para ${roomCode}:`, e);
+    }
   }
 
   const db = new sqlite.Database(dbPath);
