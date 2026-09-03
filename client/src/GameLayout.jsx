@@ -423,6 +423,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         <div className={`relative flex items-center justify-between w-full ${isMobileLandscape ? "px-3" : "px-4 lg:px-6"}`}>
           {/* Left: brand + session info */}
           <div className="flex items-center gap-3">
+            <img
+              src="/icon-512.png"
+              alt="Logotipo CashBall"
+              className={`${isMobileLandscape ? "w-6 h-6" : "w-7 h-7"} rounded-full shrink-0`}
+            />
             <h1
               className={`${isMobileLandscape ? "text-sm" : "text-base"} font-headline font-black tracking-tighter uppercase`}
               style={{

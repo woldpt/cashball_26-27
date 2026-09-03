@@ -213,9 +213,11 @@ const LandingPage = ({
 			>
 				<div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
 					<div className="flex items-center gap-3">
-						<div className="w-8 h-8 rounded-lg bg-green-500/15 border border-green-500/30 flex items-center justify-center text-base">
-							⚽
-						</div>
+						<img
+							src="/icon-512.png"
+							alt="Logotipo CashBall"
+							className="w-8 h-8 rounded-lg"
+						/>
 						<span className="font-headline font-black text-xl tracking-tighter text-white">
 							Cash<span className="text-green-400">Ball</span>
 							<span className="text-white/30 font-bold ml-2 text-sm">26/27</span>
@@ -682,8 +684,9 @@ const LandingPage = ({
 			{/* Footer */}
 			<footer className="relative z-10 border-t border-white/[0.06] bg-[#060b08] py-5 short:py-3">
 				<div className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between">
-					<span className="text-xs text-white/30 font-bold">
-						⚽ CashBall 26/27
+					<span className="flex items-center gap-1.5 text-xs text-white/30 font-bold">
+						<img src="/icon-512.png" alt="Logotipo CashBall" className="w-4 h-4 rounded-full" />
+						CashBall 26/27
 					</span>
 					<span className="text-xs text-white/15">
 						v1.02a © 2026 by Fábio Silva

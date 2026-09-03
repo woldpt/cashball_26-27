@@ -353,6 +353,11 @@ function App() {
 		return (
 			<div className="min-h-screen bg-surface text-on-surface flex items-center justify-center">
 				<div className="text-center space-y-3">
+					<img
+						src="/icon-512.png"
+						alt="Logotipo CashBall"
+						className="w-16 h-16 mx-auto mb-1"
+					/>
 					<p className="text-3xl font-headline font-black text-primary tracking-tight">
 						CashBall <span className="text-on-surface">26/27</span>
 					</p>
@@ -438,6 +443,11 @@ function App() {
 									transition={fade.transition}
 								>
 									<div className="text-center space-y-3">
+										<img
+											src="/icon-512.png"
+											alt="Logotipo CashBall"
+											className="w-16 h-16 mx-auto mb-1"
+										/>
 										<p className="text-3xl font-headline font-black text-primary tracking-tight">
 											CashBall <span className="text-on-surface">26/27</span>
 										</p>
