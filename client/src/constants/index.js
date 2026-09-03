@@ -397,8 +397,8 @@ export const DEFAULT_TACTIC = {
 
 // ── AGGRESSIVENESS TIERS ──────────────────────────────────────────────────────
 export const AGG_TIERS = {
-	Santinho: { color: "text-emerald-400" },
-	Escuteiro: { color: "text-sky-400" },
+	Acólito: { color: "text-emerald-400" },
+	Tranquilo: { color: "text-sky-400" },
 	Zen: { color: "text-zinc-400" },
 	Lenhador: { color: "text-orange-400" },
 	Triturador: { color: "text-red-400" },
