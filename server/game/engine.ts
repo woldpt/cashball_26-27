@@ -60,6 +60,7 @@ import {
   computeSidePower,
   computeOpenPlayGoalProbability,
 } from "./matchCalculations";
+import type { SidePower } from "./matchCalculations";
 import type { Rng } from "./matchCalculations";
 import { recalcPlayerValue, MATCH_TUNING } from "../gameConstants";
 import { getTacticBonus } from "./tacticFamiliarity";
@@ -1929,18 +1930,30 @@ export async function simulateMatchSegment(
 
 
   // Familiaridade (memória táctica) — síncrono, em memória no game object.
-  // `let` porque a adoção live a meio do segmento recalcula para a nova tática.
-  let homeFam = getTacticBonus(game, fixture.homeTeamId, homeTactic);
-  let awayFam = getTacticBonus(game, fixture.awayTeamId, awayTactic);
+  // Holder mutável (em vez de `let`): o corpo do minuto corre em
+  // processMatchMinute e a adoção live recalcula para a nova tática.
+  const fam = {
+    home: getTacticBonus(game, fixture.homeTeamId, homeTactic),
+    away: getTacticBonus(game, fixture.awayTeamId, awayTactic),
+  };
 
   // Força com dirty-flag: calcula-se UMA vez por segmento (tática, moral e
   // familiaridade podem mudar entre segmentos) e recalcula-se dentro do
   // minuto só quando o onze mexe — sub/expulsão/lesão/fadiga fazem
   // bumpPowerVersion. Substitui a chave-string O(22) por minuto/lado.
-  let home = computeSidePower(homeSquad, homeTactic, homeMorale, homeFam);
-  let away = computeSidePower(awaySquad, awayTactic, awayMorale, awayFam);
-  fixture._homePower = { power: home, version: getPowerVersion(fixture, "home") };
-  fixture._awayPower = { power: away, version: getPowerVersion(fixture, "away") };
+  // Holder mutável: processMatchMinute lê/escreve via refreshPowerIfDirty.
+  const powers = {
+    home: computeSidePower(homeSquad, homeTactic, homeMorale, fam.home),
+    away: computeSidePower(awaySquad, awayTactic, awayMorale, fam.away),
+  };
+  fixture._homePower = {
+    power: powers.home,
+    version: getPowerVersion(fixture, "home"),
+  };
+  fixture._awayPower = {
+    power: powers.away,
+    version: getPowerVersion(fixture, "away"),
+  };
 
   const refreshPowerIfDirty = (side: MatchSide) => {
     const field = side === "home" ? "_homePower" : "_awayPower";
@@ -1948,711 +1961,39 @@ export async function simulateMatchSegment(
     const cached = fixture[field];
     if (cached && cached.version === version) return cached.power;
     const power = computeSidePower(
-      side === "home" ? home.squad : away.squad,
+      side === "home" ? powers.home.squad : powers.away.squad,
       side === "home" ? homeTactic : awayTactic,
       side === "home" ? homeMorale : awayMorale,
-      side === "home" ? homeFam : awayFam,
+      side === "home" ? fam.home : fam.away,
     );
     fixture[field] = { power, version };
-    if (side === "home") home = power;
-    else away = power;
+    if (side === "home") powers.home = power;
+    else powers.away = power;
     return power;
   };
 
   for (let minute = startMin; minute <= endMin; minute++) {
     fixture._minute = minute;
 
-    // Tática/mentalidade live: o treinador pode mudar a meio do segmento via
-    // setTactic — adotar formação+estilo com efeito neste minuto (o passado
-    // não se re-simula). O XI nunca muda aqui, só via subs/janelas.
-    const homeTacticChange = adoptLiveTactic(
-      game,
+    await processMatchMinute({
       fixture,
-      "home",
+      game,
+      io,
+      minute,
       homeTactic,
-      homeLineupIds,
-    );
-    if (homeTacticChange) {
-      homeFam = getTacticBonus(game, fixture.homeTeamId, homeTactic);
-      const homeName =
-        fixture.homeTeam?.name || String(fixture.homeTeamId);
-      fixture.events.push({
-        minute,
-        type: "tactic_change",
-        team: "home",
-        emoji: "\ud83d\udd04",
-        text: `[${minute}'] \ud83d\udd04 ${homeName} muda para ${homeTacticChange.formation} (${styleDisplayLabel(homeTacticChange.style)})`,
-      });
-    }
-    const awayTacticChange = adoptLiveTactic(
-      game,
-      fixture,
-      "away",
       awayTactic,
+      homeSquad,
+      awaySquad,
+      homeFullRoster,
+      awayFullRoster,
+      homeLineupIds,
       awayLineupIds,
-    );
-    if (awayTacticChange) {
-      awayFam = getTacticBonus(game, fixture.awayTeamId, awayTactic);
-      const awayName =
-        fixture.awayTeam?.name || String(fixture.awayTeamId);
-      fixture.events.push({
-        minute,
-        type: "tactic_change",
-        team: "away",
-        emoji: "\ud83d\udd04",
-        text: `[${minute}'] \ud83d\udd04 ${awayName} muda para ${awayTacticChange.formation} (${styleDisplayLabel(awayTacticChange.style)})`,
-      });
-    }
-
-    if (minute === 1 && !fixture._firstHalfStartComment) {
-      const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
-      const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
-      const homeFormation = homeTactic?.formation || "4-4-2";
-      const awayFormation = awayTactic?.formation || "4-4-2";
-      const homeStyle = normaliseStyle(homeTactic?.style);
-      const awayStyle = normaliseStyle(awayTactic?.style);
-
-      if (isCupFinalRound(fixture.round)) {
-        fixture.events.push({
-          minute,
-          type: "phase_start",
-          team: null,
-          emoji: "🏟️",
-          text: `[1'] 🏟️ ${finalStartPhrase()}`,
-        });
-      } else {
-        fixture.events.push({
-          minute,
-          type: "phase_start",
-          team: null,
-          emoji: "📋",
-          text: `[1'] 📋 ${tacticStartPhrase(homeName, homeFormation, homeStyle, awayName, awayFormation, awayStyle)}`,
-        });
-      }
-      fixture._firstHalfStartComment = true;
-    }
-
-    if (minute === 46 && !fixture._secondHalfStartComment) {
-      const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
-      const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
-      const homeFormation = homeTactic?.formation || "4-4-2";
-      const awayFormation = awayTactic?.formation || "4-4-2";
-      const homeStyle = normaliseStyle(homeTactic?.style);
-      const awayStyle = normaliseStyle(awayTactic?.style);
-      fixture.events.push({
-        minute,
-        type: "phase_start",
-        team: null,
-        emoji: "🔔",
-        text: `[46'] 🔔 ${secondHalfTacticPhrase(homeName, homeFormation, homeStyle, awayName, awayFormation, awayStyle)}`,
-      });
-      fixture._secondHalfStartComment = true;
-    }
-
-    if (minute === 91 && !fixture._extraTimeStartComment) {
-      fixture.events.push({
-        minute,
-        type: "phase_start",
-        team: null,
-        emoji: "⏱️",
-        text: `[91'] ⏱️ ${extraTimeStartPhrase()}`,
-      });
-      fixture._extraTimeStartComment = true;
-    }
-
-    // Cansaço progressivo: cada intervalo de fadiga jogado, -1 skill efetiva,
-    // com escape por resistência. Quem entra depois (subs) começa do zero.
-    trackFatigue(fixture, "home", homeSquad, homeLineupIds, rng);
-    trackFatigue(fixture, "away", awaySquad, awayLineupIds, rng);
-
-    // Condições climatéricas adversas aceleram o desgaste ao minuto 60
-    if (
-      minute === 60 &&
-      !fixture._fatigue3Applied &&
-      (fixture._weather === "neve" || fixture._weather === "frio")
-    ) {
-      applyFatigue(fixture, "home", homeSquad, homeLineupIds, 1, rng);
-      applyFatigue(fixture, "away", awaySquad, awayLineupIds, 1, rng);
-      fixture._fatigue3Applied = true;
-    }
-
-    const currentHome = refreshPowerIfDirty("home");
-    const currentAway = refreshPowerIfDirty("away");
-
-    let goalScoredThisMinute = false;
-
-    const maybeOpenPlayGoal = (attackingSide) => {
-      if (goalScoredThisMinute) return;
-      const attacking = attackingSide === "home" ? currentHome : currentAway;
-      const defending = attackingSide === "home" ? currentAway : currentHome;
-      const isHome = attackingSide === "home";
-
-      // O estilo de cada equipa já está codificado no computeSidePower
-      // (ataque com fator ofensivo próprio, defesa com fator defensivo
-      // próprio). NÃO voltar a ajustar pelo estilo do adversário aqui:
-      // dividir por (1 / fator[adversário]) anulava o bónus defensivo e
-      // fazia com que se marcasse ligeiramente MAIS contra equipas defensivas.
-
-      // Posse de bola: quem domina o meio campo tem ligeiramente mais probabilidade
-      const totalMid =
-        (currentHome.midStrength || 0) + (currentAway.midStrength || 0);
-      const homePossession =
-        totalMid > 0 ? (currentHome.midStrength || 0) / totalMid : 0.5;
-      const possessionFactor = isHome
-        ? 0.9 + homePossession * 0.2 // range 0.90–1.10
-        : 0.9 + (1 - homePossession) * 0.2;
-
-      // Guardar posse no fixture para exibição no cliente
-      fixture._homePossession = Math.round(homePossession * 100);
-      fixture._awayPossession = 100 - fixture._homePossession;
-
-      // Ego conflict penalty: 3+ craques no onze titular reduzem probabilidade
-      const scoringSquad = isHome ? home.squad : away.squad;
-      const craquesInXI = scoringSquad.filter(
-        (p) => p.is_star && (p.position === "MED" || p.position === "ATA"),
-      ).length;
-      let egoFactor = 1;
-      if (craquesInXI > MATCH_TUNING.egoThreshold) {
-        const egoPenalty = Math.min(
-          MATCH_TUNING.egoPenaltyMax,
-          (craquesInXI - MATCH_TUNING.egoThreshold) * MATCH_TUNING.egoPenaltyPerExtra,
-        );
-        egoFactor = 1.0 - egoPenalty;
-      }
-
-      const probGoal = computeOpenPlayGoalProbability({
-        attack: attacking.attack,
-        defense: defending.defense,
-        minute,
-        isHome,
-        isFinal: isCupFinalRound(fixture.round),
-        weather: fixture._weather,
-        possessionFactor,
-        egoFactor,
-      });
-
-      if (rng() >= probGoal) return;
-
-      // Auto-golo (~8% das oportunidades de golo): a bola entra na baliza da
-      // equipa que defende, "creditado" a um defensor desse lado. Conta no
-      // marcador da equipa atacante (beneficiada), mas NÃO credita o jogador —
-      // sem update em players.goals e sem interação com o VAR.
-      if (rng() < MATCH_TUNING.ownGoalShare) {
-        const defendingSquad = isHome ? away.squad : home.squad;
-        const defCulprits = defendingSquad.filter(
-          (p) => p.position === "DEF",
-        );
-        const culpritPool =
-          defCulprits.length > 0
-            ? defCulprits
-            : defendingSquad.filter((p) => p.position !== "GR");
-        const culprit = weightedPickScorer(culpritPool, rng) || null;
-
-        if (isHome) fixture.finalHomeGoals++;
-        else fixture.finalAwayGoals++;
-        goalScoredThisMinute = true;
-
-        fixture.events.push({
-          minute,
-          type: "own_goal",
-          team: attackingSide, // equipa beneficiada — o cliente conta por e.team
-          emoji: "⚽",
-          playerId: culprit ? culprit.id : null,
-          playerName: culprit ? culprit.name : "Jogador",
-          text: `[${minute}'] ⚽ ${ownGoalPhrase(
-            culprit ? culprit.name : "Jogador",
-          )}`,
-        });
-        return;
-      }
-
-      const scorers = scoringSquad.filter(
-        (p) => p.position === "ATA" || p.position === "MED",
-      );
-      const scorer =
-        scorers.length > 0 ? weightedPickScorer(scorers, rng) : scoringSquad[0];
-
-      // VAR: 5% de hipótese de golo ser anulado
-      if (rng() < MATCH_TUNING.varDisallowedShare) {
-        fixture.events.push({
-          minute,
-          type: "var_disallowed",
-          team: attackingSide,
-          emoji: "🚩",
-          playerId: scorer ? scorer.id : null,
-          playerName: scorer ? scorer.name : "Jogador",
-          text: `[${minute}'] 🚩 ${varPhrase(scorer ? scorer.name : "Jogador")}`,
-          wasGoal: true,
-        });
-        return;
-      }
-
-      const homeBefore = fixture.finalHomeGoals;
-      const awayBefore = fixture.finalAwayGoals;
-      if (isHome) fixture.finalHomeGoals++;
-      else fixture.finalAwayGoals++;
-      goalScoredThisMinute = true;
-
-      const scoredSideGoals = isHome
-        ? fixture.finalHomeGoals
-        : fixture.finalAwayGoals;
-      const otherSideGoals = isHome
-        ? fixture.finalAwayGoals
-        : fixture.finalHomeGoals;
-      const wasBehind = isHome
-        ? homeBefore < awayBefore
-        : awayBefore < homeBefore;
-      const goalCtx = {
-        opener: homeBefore + awayBefore === 0,
-        equalizer:
-          scoredSideGoals === otherSideGoals && homeBefore + awayBefore > 0,
-        comeback: wasBehind && scoredSideGoals > otherSideGoals,
-        late: minute >= 85,
-        winningBig:
-          Math.abs(fixture.finalHomeGoals - fixture.finalAwayGoals) >= 3,
-      };
-
-      const decisiveChance = Math.min(
-        MATCH_TUNING.decisiveMax,
-        craquesInXI * MATCH_TUNING.decisivePerStar,
-      );
-      const isDecisive = rng() < decisiveChance;
-
-      const goalText = isCupFinalRound(fixture.round)
-        ? finalGoalPhrase(scorer ? scorer.name : "Jogador")
-        : goalPhrase(scorer ? scorer.name : "Jogador", goalCtx);
-      fixture.events.push({
-        minute,
-        type: "goal",
-        team: attackingSide,
-        emoji: "⚽",
-        playerId: scorer ? scorer.id : null,
-        playerName: scorer ? scorer.name : "Jogador",
-        text: `[${minute}'] ⚽ ${goalText}`,
-        isDecisive,
-      });
-
-      if (scorer) {
-        // Acumulado em memória — flush transacional no apito final.
-        recordMatchGoal(fixture, scorer.id);
-      }
-    };
-
-    const isCupExtraTime =
-      minute >= 91 && context.game?.currentEvent?.type === "cup";
-    // No último minuto regulamentar da liga (min 90+), não disparar eventos bloqueantes
-    // para evitar que a janela de acção apareça após o apito final
-    const isLastLeagueMinute =
-      minute >= 90 && context.game?.currentEvent?.type !== "cup";
-    const penaltyChance =
-      minute < 90 || isCupExtraTime ? MATCH_TUNING.penaltyPerMinute : 0;
-    if (rng() < penaltyChance) {
-      const attackingSide = rng() < 0.5 ? "home" : "away";
-      const attackingSquad = attackingSide === "home" ? home.squad : away.squad;
-      const totalGoalsBefore = fixture.finalHomeGoals + fixture.finalAwayGoals;
-      await applyPenaltyEvent({
-        fixture,
-        teamSide: attackingSide,
-        squad: attackingSquad,
-        currentMatchweek,
-        io,
-        game,
-        rng,
-      });
-      if (fixture.finalHomeGoals + fixture.finalAwayGoals > totalGoalsBefore) {
-        goalScoredThisMinute = true;
-      }
-    }
-
-    maybeOpenPlayGoal("home");
-    maybeOpenPlayGoal("away");
-
-    // Near-miss / big save events — roughly 1–2 per match, commentary-only
-    if (!goalScoredThisMinute && rng() < MATCH_TUNING.nearMissPerMinute) {
-      const nearMissSide =
-        currentHome.attack > currentAway.attack
-          ? rng() < 0.55
-            ? "home"
-            : "away"
-          : rng() < 0.55
-            ? "away"
-            : "home";
-      const nearMissSquad = nearMissSide === "home" ? home.squad : away.squad;
-      const oppSquad = nearMissSide === "home" ? away.squad : home.squad;
-      const attackers = nearMissSquad.filter(
-        (p) => p.position === "ATA" || p.position === "MED",
-      );
-      const attacker =
-        attackers.length > 0 ? weightedPickScorer(attackers, rng) : nearMissSquad[0];
-      if (attacker) {
-        const isBigSave = rng() < MATCH_TUNING.bigSaveShare;
-        const grPlayer = oppSquad.find((p) => p.position === "GR");
-        const phrase =
-          isBigSave && grPlayer
-            ? bigSavePhrase(grPlayer.name)
-            : nearMissPhrase(attacker.name);
-        fixture.events.push({
-          minute,
-          type: "near_miss",
-          team: nearMissSide,
-          emoji: "🥅",
-          playerId: isBigSave && grPlayer ? grPlayer.id : attacker.id,
-          playerName: isBigSave && grPlayer ? grPlayer.name : attacker.name,
-          text: `[${minute}'] 🥅 ${phrase}`,
-        });
-      }
-    }
-
-    const homeAggAvg = average(
-      home.squad.map((p) => getAggressivenessValue(p)),
-    );
-    const awayAggAvg = average(
-      away.squad.map((p) => getAggressivenessValue(p)),
-    );
-
-    const executeRedCard = async (
-      offender: PlayerRow,
-      isHomeCard: boolean,
-      squad: PlayerRow[],
-      side: "home" | "away",
-    ) => {
-      // Acumulado em memória — o flush transacional no apito final aplica o
-      // UPDATE atomicamente com o resultado do jogo.
-      recordMatchRed(fixture, offender.id, currentMatchweek + 2);
-      fixture.events.push({
-        minute,
-        type: "red",
-        team: side,
-        emoji: "🟥",
-        playerId: offender.id,
-        playerName: offender.name,
-        text: `[${minute}'] 🟥 ${redPhrase(offender.name)}`,
-      });
-
-      const lineupIds = isHomeCard ? homeLineupIds : awayLineupIds;
-      const fullRoster = isHomeCard ? homeFullRoster : awayFullRoster;
-      const tactic = isHomeCard ? homeTactic : awayTactic;
-      const teamId = isHomeCard ? fixture.homeTeamId : fixture.awayTeamId;
-
-      if (offender.position === "GR") {
-        // GK sent off — the team must play with 10: the reserve GK comes on and
-        // an outfield player is sacrificed. The coach chooses which field player
-        // leaves; on timeout/NPC the weakest on-pitch field player is sacrificed.
-        const tacticPositions: Record<number, string> = tactic?.positions || {};
-        const benchIds = new Set(
-          Object.entries(tacticPositions)
-            .filter(([, status]) => status === "Suplente")
-            .map(([id]) => Number(id)),
-        );
-        const availableBench = fullRoster.filter(
-          (p) => !lineupIds.has(p.id) && (benchIds.size === 0 || benchIds.has(p.id)),
-        );
-
-        const grBench = availableBench.filter((p) => p.position === "GR");
-        const grCandidates = grBench.length > 0 ? grBench : availableBench;
-        // On-pitch outfield players the coach may sacrifice (the sent-off GK is out)
-        const fieldOnPitch = squad.filter(
-          (p) => p.id !== offender.id && p.position !== "GR",
-        );
-
-        if (grBench.length === 0) {
-          // Último GR expulso e sem GR no banco → GR improvisado: o treinador
-          // escolhe em campo quem vai para a baliza (fallback: o mais fraco).
-          // O expulso sai, a equipa fica com 10 — SEM gastar substituição.
-          removeFromPitch({
-            fixture,
-            game,
-            side,
-            squad,
-            lineupIds,
-            outId: offender.id,
-          });
-
-          await openEmergencyGKAction({
-            fixture,
-            squad,
-            side,
-            teamId,
-            io,
-            game,
-            minute,
-            emergencyCandidates: fieldOnPitch,
-            outPlayer: buildPlayerCard(offender, fixture, side),
-            benchPlayers: availableBench,
-          });
-          return;
-        }
-
-        const fallback = () => {
-          const weakest = [...fieldOnPitch].sort(
-            (a, b) => (getEffectiveSkill(a) || 0) - (getEffectiveSkill(b) || 0),
-          )[0];
-          const bestGR = pickBestPlayer(grCandidates);
-          return { playerOut: weakest?.id ?? null, playerIn: bestGR?.id ?? null };
-        };
-        const result = await waitForMatchAction({
-          game,
-          io,
-          type: "gk_red_card",
-          teamId,
-          payload: {
-            minute,
-            teamId,
-            sentOffPlayer: buildPlayerCard(offender, fixture, side),
-            onPitch: fieldOnPitch.map((p) => buildPlayerCard(p, fixture, side)),
-            benchPlayers: grCandidates.map((p) => buildPlayerCard(p, fixture, side)),
-            currentScore: {
-              home: fixture.finalHomeGoals,
-              away: fixture.finalAwayGoals,
-            },
-          },
-          timeoutMs: MATCH_TUNING.actionTimeoutMs,
-          fallback,
-          fixtureData: buildFixtureData(fixture),
-        });
-
-        const forcedChoice = normalizeMatchChoice(result.choice);
-        const incoming =
-          forcedChoice.playerIn != null
-            ? grCandidates.find((p) => p.id === forcedChoice.playerIn)
-            : null;
-
-        // 1) O GR expulso sai sempre (sem gastar substituição).
-        removeFromPitch({
-          fixture,
-          game,
-          side,
-          squad,
-          lineupIds,
-          outId: offender.id,
-        });
-
-        if (incoming) {
-          // 2)+3) Sacrifica o escolhido e entra o GR suplente.
-          const sacrificed =
-            forcedChoice.playerOut != null
-              ? squad.find((p) => p.id === forcedChoice.playerOut)
-              : null;
-          if (sacrificed) {
-            swapOnPitch({
-              fixture,
-              game,
-              side,
-              squad,
-              lineupIds,
-              outId: sacrificed.id,
-              incoming,
-            });
-          } else {
-            // Escolha degenerada (sem sacrificado): o GR entra sem sacrificar
-            // ninguém — preserva o comportamento anterior para este edge.
-            squad.push(incoming);
-            lineupIds.add(incoming.id);
-            syncTacticPositions(game, fixture, side, teamId, [], [incoming.id]);
-            bumpPowerVersion(fixture, side);
-          }
-
-          fixture.events.push({
-            minute,
-            type: "substitution",
-            team: side,
-            emoji: "🔁",
-            playerId: incoming.id,
-            playerName: incoming.name,
-            text: `[${minute}'] 🔁 ${subPhrase(sacrificed ? sacrificed.name : offender.name, incoming.name)}`,
-          });
-        }
-      } else {
-        // Expulsão de jogador de campo — sai sem reposição (regra oficial).
-        removeFromPitch({
-          fixture,
-          game,
-          side,
-          squad,
-          lineupIds,
-          outId: offender.id,
-        });
-      }
-    };
-
-    const emitCard = async (isHomeCard: boolean) => {
-      const squad = isHomeCard ? home.squad : away.squad;
-      const side = isHomeCard ? "home" : "away";
-      if (squad.length > 0) {
-        const offender = squad[Math.floor(rng() * squad.length)];
-        const offenderId = offender.id;
-
-        if (fixture._yellowCards[offenderId] >= 1) {
-          if (rng() < MATCH_TUNING.secondYellowRedShare) {
-            await executeRedCard(offender, isHomeCard, squad, side);
-          }
-        } else if (rng() < MATCH_TUNING.directRedShare) {
-          await executeRedCard(offender, isHomeCard, squad, side);
-        } else {
-          fixture._yellowCards[offenderId] =
-            (fixture._yellowCards[offenderId] || 0) + 1;
-          fixture.events.push({
-            minute,
-            type: "yellow",
-            team: side,
-            emoji: "🟨",
-            playerId: offender.id,
-            playerName: offender.name,
-            text: `[${minute}'] 🟨 ${yellowPhrase(offender.name)}`,
-          });
-        }
-      }
-    };
-
-    const homeCardProb =
-      MATCH_TUNING.cardBaseRate *
-      (1 + (homeAggAvg - 3) * MATCH_TUNING.cardAggPerPoint);
-    const awayCardProb =
-      MATCH_TUNING.cardBaseRate *
-      (1 + (awayAggAvg - 3) * MATCH_TUNING.cardAggPerPoint);
-    // No último minuto regulamentar da liga não disparar cartões — um vermelho
-    // ao GR abriria a janela obrigatória de substituição após o apito final
-    if (!isLastLeagueMinute && rng() < homeCardProb) await emitCard(true);
-    if (!isLastLeagueMinute && rng() < awayCardProb) await emitCard(false);
-
-    const injuryChance = rng();
-    const weatherInjuryMult =
-      MATCH_TUNING.injuryWeatherMult[fixture._weather ?? ""] ?? 1.0;
-    if (
-      !isLastLeagueMinute &&
-      injuryChance < MATCH_TUNING.injuryPerMinute * weatherInjuryMult
-    ) {
-      const isHomeInjury = rng() > 0.5;
-      const squad = isHomeInjury ? home.squad : away.squad;
-      const side = isHomeInjury ? "home" : "away";
-      const lineupIds = isHomeInjury ? homeLineupIds : awayLineupIds;
-      const fullRoster = isHomeInjury ? homeFullRoster : awayFullRoster;
-      if (squad.length > 0) {
-        const injuredPlayer = squad[Math.floor(rng() * squad.length)];
-        const resistanceSkip =
-          ((injuredPlayer?.resistance ?? RES_NEUTRAL) - 1) *
-          MATCH_TUNING.injuryResistSkipPerPoint;
-        if (rng() < resistanceSkip) {
-          // jogador resistiu — ignorar lesão
-        } else {
-          const injuryResult = await applyInjuryEvent({
-            fixture,
-            teamSide: side,
-            squad,
-            fullRoster,
-            lineupIds,
-            currentMatchweek,
-            io,
-            game,
-            rng,
-          });
-          if (injuryResult.replaced && side === "home") home.squad = squad;
-          if (injuryResult.replaced && side === "away") away.squad = squad;
-        }
-      }
-    }
-
-    // User substitutions (nunca abrir a janela no último minuto regulamentar da liga;
-    // consumir sempre os pedidos pendentes para não vazarem para o jogo seguinte)
-    if (game.pendingSubstitutions && game.pendingSubstitutions.size > 0) {
-      const teamsToSub = [fixture.homeTeamId, fixture.awayTeamId].filter((id) =>
-        game.pendingSubstitutions.has(id),
-      );
-      for (const teamId of teamsToSub) {
-        game.pendingSubstitutions.delete(teamId);
-        if (isLastLeagueMinute) {
-          // Pedido consumido sem janela: termina o banner de pausa dos outros
-          // treinadores (senão ficava à mostra até à próxima substituição).
-          io.to(game.roomCode).emit("substitutionPauseEnded", { teamId });
-          continue;
-        }
-        // Sem substituições restantes: consome o pedido sem abrir a janela e
-        // notifica o treinador de que esgotou as substituições da partida.
-        if (!canMakeSubstitution(fixture, teamId)) {
-          io.to(game.roomCode).emit("substitutionCapReached", { teamId });
-          // O pedido foi consumido sem abrir a janela: termina o banner de pausa.
-          io.to(game.roomCode).emit("substitutionPauseEnded", { teamId });
-          continue;
-        }
-
-        const isHome = teamId === fixture.homeTeamId;
-        const squad = isHome ? home.squad : away.squad;
-        const fullRoster = isHome ? homeFullRoster : awayFullRoster;
-        const tactic = isHome ? homeTactic : awayTactic;
-        const side = isHome ? "home" : "away";
-        const lineupIds = isHome ? homeLineupIds : awayLineupIds;
-
-        const onPitch = squad.filter((p: any) => lineupIds.has(p.id));
-
-        const tacticPositions: Record<number, string> = tactic?.positions || {};
-        const benchIds = new Set(
-          Object.entries(tacticPositions)
-            .filter(([, status]) => status === "Suplente")
-            .map(([id]) => Number(id)),
-        );
-        const availableBench = fullRoster.filter(
-          (p: any) =>
-            !lineupIds.has(p.id) &&
-            benchIds.has(p.id) &&
-            !(fixture._subbedOut as Set<number> | undefined)?.has(p.id),
-        );
-
-        if (onPitch.length > 0 && availableBench.length > 0) {
-          const result = await waitForMatchAction({
-            game,
-            io,
-            type: "user_substitution",
-            teamId,
-            payload: {
-              minute: fixture._minute,
-              teamId,
-              onPitch: onPitch.map((p) => buildPlayerCard(p, fixture, side, { detailed: false })),
-              benchPlayers: availableBench.map((p) => buildPlayerCard(p, fixture, side, { detailed: false })),
-            },
-            timeoutMs: MATCH_TUNING.actionTimeoutMs,
-            fallback: () => null,
-            fixtureData: buildFixtureData(fixture),
-          });
-
-          // Mesmo contrato das restantes ações (ver normalizeMatchChoice):
-          // objeto { playerOut, playerIn }, id nu ou { playerId }.
-          const userChoice = normalizeMatchChoice(result.choice);
-          if (userChoice.playerOut != null && userChoice.playerIn != null) {
-            const playerOutId = userChoice.playerOut;
-            const playerInId = userChoice.playerIn;
-
-            const playerOut = squad.find((p: any) => p.id === playerOutId);
-            const playerIn = fullRoster.find((p: any) => p.id === playerInId);
-
-            if (playerOut && playerIn) {
-              swapOnPitch({
-                fixture,
-                game,
-                side,
-                squad,
-                lineupIds,
-                outId: playerOutId,
-                incoming: playerIn,
-                countSub: true,
-              });
-
-              fixture.events.push({
-                minute: fixture._minute,
-                type: "substitution",
-                team: side,
-                emoji: "🔁",
-                playerId: playerInId,
-                playerName: playerIn.name,
-                text: `[${fixture._minute}'] 🔁 ${subPhrase(playerOut.name, playerIn.name)}`,
-              });
-
-              if (isHome) home.squad = squad;
-              if (!isHome) away.squad = squad;
-            }
-          }
-        }
-      }
-    }
+      currentMatchweek,
+      rng,
+      fam,
+      powers,
+      refreshPower: refreshPowerIfDirty,
+    });
 
     // Hook de progresso por minuto (fix #6): os chamadores recebem cada minuto
     // simulado para emitir updates/dormir, sem partir a simulação em N chamadas
@@ -2681,6 +2022,776 @@ export async function simulateMatchSegment(
       });
     }
     fixture._finalEndComment = true;
+  }
+}
+
+/**
+ * Contexto de um minuto simulado (audit: partir a god-function do segmento).
+ * O loop de simulateMatchSegment limita-se a: minuto → processMatchMinute →
+ * onMinute. O estado mutável partilhado (familiaridade, forças) viaja em
+ * holders para o refresh continuar lazy via dirty-flag.
+ */
+export type MinuteTickContext = {
+  fixture: MatchFixture;
+  game: ActiveGame;
+  io: any;
+  minute: number;
+  homeTactic: Tactic | null;
+  awayTactic: Tactic | null;
+  homeSquad: PlayerRow[];
+  awaySquad: PlayerRow[];
+  homeFullRoster: PlayerRow[];
+  awayFullRoster: PlayerRow[];
+  homeLineupIds: Set<number>;
+  awayLineupIds: Set<number>;
+  currentMatchweek: number;
+  rng: Rng;
+  fam: { home: number; away: number };
+  powers: { home: SidePower; away: SidePower };
+  refreshPower: (side: MatchSide) => SidePower;
+};
+
+/**
+ * Um minuto de jogo (extraído de simulateMatchSegment): adoção de tática
+ * live, comentários de fase, fadiga, golos, cartões, lesões e substituições.
+ */
+/**
+ * Passo do minuto: adota formação/estilo live do treinador (efeito neste
+ * minuto) e recalcula a familiaridade. O XI nunca muda aqui.
+ */
+function applyLiveTacticAdoption(tick: MinuteTickContext): void {
+  const { game, fixture, minute, homeTactic, awayTactic, homeLineupIds, awayLineupIds, fam } = tick;
+
+  // Tática/mentalidade live: o treinador pode mudar a meio do segmento via
+  // setTactic — adotar formação+estilo com efeito neste minuto (o passado
+  // não se re-simula). O XI nunca muda aqui, só via subs/janelas.
+  const homeTacticChange = adoptLiveTactic(
+    game,
+    fixture,
+    "home",
+    homeTactic,
+    homeLineupIds,
+  );
+  if (homeTacticChange) {
+    fam.home = getTacticBonus(game, fixture.homeTeamId, homeTactic);
+    const homeName =
+      fixture.homeTeam?.name || String(fixture.homeTeamId);
+    fixture.events.push({
+      minute,
+      type: "tactic_change",
+      team: "home",
+      emoji: "\ud83d\udd04",
+      text: `[${minute}'] \ud83d\udd04 ${homeName} muda para ${homeTacticChange.formation} (${styleDisplayLabel(homeTacticChange.style)})`,
+    });
+  }
+  const awayTacticChange = adoptLiveTactic(
+    game,
+    fixture,
+    "away",
+    awayTactic,
+    awayLineupIds,
+  );
+  if (awayTacticChange) {
+    fam.away = getTacticBonus(game, fixture.awayTeamId, awayTactic);
+    const awayName =
+      fixture.awayTeam?.name || String(fixture.awayTeamId);
+    fixture.events.push({
+      minute,
+      type: "tactic_change",
+      team: "away",
+      emoji: "\ud83d\udd04",
+      text: `[${minute}'] \ud83d\udd04 ${awayName} muda para ${awayTacticChange.formation} (${styleDisplayLabel(awayTacticChange.style)})`,
+    });
+  }
+}
+
+/**
+ * Passo do minuto: comentários de fase (1'/46'/91') — cada um uma vez por jogo.
+ */
+function pushPhaseStartComments(tick: MinuteTickContext): void {
+  const { fixture, minute, homeTactic, awayTactic } = tick;
+
+  if (minute === 1 && !fixture._firstHalfStartComment) {
+    const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
+    const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
+    const homeFormation = homeTactic?.formation || "4-4-2";
+    const awayFormation = awayTactic?.formation || "4-4-2";
+    const homeStyle = normaliseStyle(homeTactic?.style);
+    const awayStyle = normaliseStyle(awayTactic?.style);
+
+    if (isCupFinalRound(fixture.round)) {
+      fixture.events.push({
+        minute,
+        type: "phase_start",
+        team: null,
+        emoji: "🏟️",
+        text: `[1'] 🏟️ ${finalStartPhrase()}`,
+      });
+    } else {
+      fixture.events.push({
+        minute,
+        type: "phase_start",
+        team: null,
+        emoji: "📋",
+        text: `[1'] 📋 ${tacticStartPhrase(homeName, homeFormation, homeStyle, awayName, awayFormation, awayStyle)}`,
+      });
+    }
+    fixture._firstHalfStartComment = true;
+  }
+
+  if (minute === 46 && !fixture._secondHalfStartComment) {
+    const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
+    const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
+    const homeFormation = homeTactic?.formation || "4-4-2";
+    const awayFormation = awayTactic?.formation || "4-4-2";
+    const homeStyle = normaliseStyle(homeTactic?.style);
+    const awayStyle = normaliseStyle(awayTactic?.style);
+    fixture.events.push({
+      minute,
+      type: "phase_start",
+      team: null,
+      emoji: "🔔",
+      text: `[46'] 🔔 ${secondHalfTacticPhrase(homeName, homeFormation, homeStyle, awayName, awayFormation, awayStyle)}`,
+    });
+    fixture._secondHalfStartComment = true;
+  }
+
+  if (minute === 91 && !fixture._extraTimeStartComment) {
+    fixture.events.push({
+      minute,
+      type: "phase_start",
+      team: null,
+      emoji: "⏱️",
+      text: `[91'] ⏱️ ${extraTimeStartPhrase()}`,
+    });
+    fixture._extraTimeStartComment = true;
+  }
+}
+
+/**
+ * Passo do minuto: fadiga progressiva do XI + desgaste extra com frio/neve.
+ */
+function applyMinuteFatigue(tick: MinuteTickContext): void {
+  const { fixture, minute, homeSquad, awaySquad, homeLineupIds, awayLineupIds, rng } = tick;
+
+  // Cansaço progressivo: cada intervalo de fadiga jogado, -1 skill efetiva,
+  // com escape por resistência. Quem entra depois (subs) começa do zero.
+  trackFatigue(fixture, "home", homeSquad, homeLineupIds, rng);
+  trackFatigue(fixture, "away", awaySquad, awayLineupIds, rng);
+
+  // Condições climatéricas adversas aceleram o desgaste ao minuto 60
+  if (
+    minute === 60 &&
+    !fixture._fatigue3Applied &&
+    (fixture._weather === "neve" || fixture._weather === "frio")
+  ) {
+    applyFatigue(fixture, "home", homeSquad, homeLineupIds, 1, rng);
+    applyFatigue(fixture, "away", awaySquad, awayLineupIds, 1, rng);
+    fixture._fatigue3Applied = true;
+  }
+}
+
+export async function processMatchMinute(tick: MinuteTickContext): Promise<void> {
+  const {
+    fixture,
+    game,
+    io,
+    minute,
+    homeTactic,
+    awayTactic,
+    homeSquad,
+    awaySquad,
+    homeFullRoster,
+    awayFullRoster,
+    homeLineupIds,
+    awayLineupIds,
+    currentMatchweek,
+    rng,
+    fam,
+    powers,
+    refreshPower,
+  } = tick;
+
+  applyLiveTacticAdoption(tick);
+  pushPhaseStartComments(tick);
+  applyMinuteFatigue(tick);
+
+  const currentHome = refreshPower("home");
+  const currentAway = refreshPower("away");
+
+  let goalScoredThisMinute = false;
+
+  const maybeOpenPlayGoal = (attackingSide) => {
+    if (goalScoredThisMinute) return;
+    const attacking = attackingSide === "home" ? currentHome : currentAway;
+    const defending = attackingSide === "home" ? currentAway : currentHome;
+    const isHome = attackingSide === "home";
+
+    // O estilo de cada equipa já está codificado no computeSidePower
+    // (ataque com fator ofensivo próprio, defesa com fator defensivo
+    // próprio). NÃO voltar a ajustar pelo estilo do adversário aqui:
+    // dividir por (1 / fator[adversário]) anulava o bónus defensivo e
+    // fazia com que se marcasse ligeiramente MAIS contra equipas defensivas.
+
+    // Posse de bola: quem domina o meio campo tem ligeiramente mais probabilidade
+    const totalMid =
+      (currentHome.midStrength || 0) + (currentAway.midStrength || 0);
+    const homePossession =
+      totalMid > 0 ? (currentHome.midStrength || 0) / totalMid : 0.5;
+    const possessionFactor = isHome
+      ? 0.9 + homePossession * 0.2 // range 0.90–1.10
+      : 0.9 + (1 - homePossession) * 0.2;
+
+    // Guardar posse no fixture para exibição no cliente
+    fixture._homePossession = Math.round(homePossession * 100);
+    fixture._awayPossession = 100 - fixture._homePossession;
+
+    // Ego conflict penalty: 3+ craques no onze titular reduzem probabilidade
+    const scoringSquad = isHome ? powers.home.squad : powers.away.squad;
+    const craquesInXI = scoringSquad.filter(
+      (p) => p.is_star && (p.position === "MED" || p.position === "ATA"),
+    ).length;
+    let egoFactor = 1;
+    if (craquesInXI > MATCH_TUNING.egoThreshold) {
+      const egoPenalty = Math.min(
+        MATCH_TUNING.egoPenaltyMax,
+        (craquesInXI - MATCH_TUNING.egoThreshold) * MATCH_TUNING.egoPenaltyPerExtra,
+      );
+      egoFactor = 1.0 - egoPenalty;
+    }
+
+    const probGoal = computeOpenPlayGoalProbability({
+      attack: attacking.attack,
+      defense: defending.defense,
+      minute,
+      isHome,
+      isFinal: isCupFinalRound(fixture.round),
+      weather: fixture._weather,
+      possessionFactor,
+      egoFactor,
+    });
+
+    if (rng() >= probGoal) return;
+
+    // Auto-golo (~8% das oportunidades de golo): a bola entra na baliza da
+    // equipa que defende, "creditado" a um defensor desse lado. Conta no
+    // marcador da equipa atacante (beneficiada), mas NÃO credita o jogador —
+    // sem update em players.goals e sem interação com o VAR.
+    if (rng() < MATCH_TUNING.ownGoalShare) {
+      const defendingSquad = isHome ? powers.away.squad : powers.home.squad;
+      const defCulprits = defendingSquad.filter(
+        (p) => p.position === "DEF",
+      );
+      const culpritPool =
+        defCulprits.length > 0
+          ? defCulprits
+          : defendingSquad.filter((p) => p.position !== "GR");
+      const culprit = weightedPickScorer(culpritPool, rng) || null;
+
+      if (isHome) fixture.finalHomeGoals++;
+      else fixture.finalAwayGoals++;
+      goalScoredThisMinute = true;
+
+      fixture.events.push({
+        minute,
+        type: "own_goal",
+        team: attackingSide, // equipa beneficiada — o cliente conta por e.team
+        emoji: "⚽",
+        playerId: culprit ? culprit.id : null,
+        playerName: culprit ? culprit.name : "Jogador",
+        text: `[${minute}'] ⚽ ${ownGoalPhrase(
+          culprit ? culprit.name : "Jogador",
+        )}`,
+      });
+      return;
+    }
+
+    const scorers = scoringSquad.filter(
+      (p) => p.position === "ATA" || p.position === "MED",
+    );
+    const scorer =
+      scorers.length > 0 ? weightedPickScorer(scorers, rng) : scoringSquad[0];
+
+    // VAR: 5% de hipótese de golo ser anulado
+    if (rng() < MATCH_TUNING.varDisallowedShare) {
+      fixture.events.push({
+        minute,
+        type: "var_disallowed",
+        team: attackingSide,
+        emoji: "🚩",
+        playerId: scorer ? scorer.id : null,
+        playerName: scorer ? scorer.name : "Jogador",
+        text: `[${minute}'] 🚩 ${varPhrase(scorer ? scorer.name : "Jogador")}`,
+        wasGoal: true,
+      });
+      return;
+    }
+
+    const homeBefore = fixture.finalHomeGoals;
+    const awayBefore = fixture.finalAwayGoals;
+    if (isHome) fixture.finalHomeGoals++;
+    else fixture.finalAwayGoals++;
+    goalScoredThisMinute = true;
+
+    const scoredSideGoals = isHome
+      ? fixture.finalHomeGoals
+      : fixture.finalAwayGoals;
+    const otherSideGoals = isHome
+      ? fixture.finalAwayGoals
+      : fixture.finalHomeGoals;
+    const wasBehind = isHome
+      ? homeBefore < awayBefore
+      : awayBefore < homeBefore;
+    const goalCtx = {
+      opener: homeBefore + awayBefore === 0,
+      equalizer:
+        scoredSideGoals === otherSideGoals && homeBefore + awayBefore > 0,
+      comeback: wasBehind && scoredSideGoals > otherSideGoals,
+      late: minute >= 85,
+      winningBig:
+        Math.abs(fixture.finalHomeGoals - fixture.finalAwayGoals) >= 3,
+    };
+
+    const decisiveChance = Math.min(
+      MATCH_TUNING.decisiveMax,
+      craquesInXI * MATCH_TUNING.decisivePerStar,
+    );
+    const isDecisive = rng() < decisiveChance;
+
+    const goalText = isCupFinalRound(fixture.round)
+      ? finalGoalPhrase(scorer ? scorer.name : "Jogador")
+      : goalPhrase(scorer ? scorer.name : "Jogador", goalCtx);
+    fixture.events.push({
+      minute,
+      type: "goal",
+      team: attackingSide,
+      emoji: "⚽",
+      playerId: scorer ? scorer.id : null,
+      playerName: scorer ? scorer.name : "Jogador",
+      text: `[${minute}'] ⚽ ${goalText}`,
+      isDecisive,
+    });
+
+    if (scorer) {
+      // Acumulado em memória — flush transacional no apito final.
+      recordMatchGoal(fixture, scorer.id);
+    }
+  };
+
+  const isCupExtraTime =
+    minute >= 91 && game?.currentEvent?.type === "cup";
+  // No último minuto regulamentar da liga (min 90+), não disparar eventos bloqueantes
+  // para evitar que a janela de acção apareça após o apito final
+  const isLastLeagueMinute =
+    minute >= 90 && game?.currentEvent?.type !== "cup";
+  const penaltyChance =
+    minute < 90 || isCupExtraTime ? MATCH_TUNING.penaltyPerMinute : 0;
+  if (rng() < penaltyChance) {
+    const attackingSide = rng() < 0.5 ? "home" : "away";
+    const attackingSquad = attackingSide === "home" ? powers.home.squad : powers.away.squad;
+    const totalGoalsBefore = fixture.finalHomeGoals + fixture.finalAwayGoals;
+    await applyPenaltyEvent({
+      fixture,
+      teamSide: attackingSide,
+      squad: attackingSquad,
+      currentMatchweek,
+      io,
+      game,
+      rng,
+    });
+    if (fixture.finalHomeGoals + fixture.finalAwayGoals > totalGoalsBefore) {
+      goalScoredThisMinute = true;
+    }
+  }
+
+  maybeOpenPlayGoal("home");
+  maybeOpenPlayGoal("away");
+
+  // Near-miss / big save events — roughly 1–2 per match, commentary-only
+  if (!goalScoredThisMinute && rng() < MATCH_TUNING.nearMissPerMinute) {
+    const nearMissSide =
+      currentHome.attack > currentAway.attack
+        ? rng() < 0.55
+          ? "home"
+          : "away"
+        : rng() < 0.55
+          ? "away"
+          : "home";
+    const nearMissSquad = nearMissSide === "home" ? powers.home.squad : powers.away.squad;
+    const oppSquad = nearMissSide === "home" ? powers.away.squad : powers.home.squad;
+    const attackers = nearMissSquad.filter(
+      (p) => p.position === "ATA" || p.position === "MED",
+    );
+    const attacker =
+      attackers.length > 0 ? weightedPickScorer(attackers, rng) : nearMissSquad[0];
+    if (attacker) {
+      const isBigSave = rng() < MATCH_TUNING.bigSaveShare;
+      const grPlayer = oppSquad.find((p) => p.position === "GR");
+      const phrase =
+        isBigSave && grPlayer
+          ? bigSavePhrase(grPlayer.name)
+          : nearMissPhrase(attacker.name);
+      fixture.events.push({
+        minute,
+        type: "near_miss",
+        team: nearMissSide,
+        emoji: "🥅",
+        playerId: isBigSave && grPlayer ? grPlayer.id : attacker.id,
+        playerName: isBigSave && grPlayer ? grPlayer.name : attacker.name,
+        text: `[${minute}'] 🥅 ${phrase}`,
+      });
+    }
+  }
+
+  const homeAggAvg = average(
+    powers.home.squad.map((p) => getAggressivenessValue(p)),
+  );
+  const awayAggAvg = average(
+    powers.away.squad.map((p) => getAggressivenessValue(p)),
+  );
+
+  const executeRedCard = async (
+    offender: PlayerRow,
+    isHomeCard: boolean,
+    squad: PlayerRow[],
+    side: "home" | "away",
+  ) => {
+    // Acumulado em memória — o flush transacional no apito final aplica o
+    // UPDATE atomicamente com o resultado do jogo.
+    recordMatchRed(fixture, offender.id, currentMatchweek + 2);
+    fixture.events.push({
+      minute,
+      type: "red",
+      team: side,
+      emoji: "🟥",
+      playerId: offender.id,
+      playerName: offender.name,
+      text: `[${minute}'] 🟥 ${redPhrase(offender.name)}`,
+    });
+
+    const lineupIds = isHomeCard ? homeLineupIds : awayLineupIds;
+    const fullRoster = isHomeCard ? homeFullRoster : awayFullRoster;
+    const tactic = isHomeCard ? homeTactic : awayTactic;
+    const teamId = isHomeCard ? fixture.homeTeamId : fixture.awayTeamId;
+
+    if (offender.position === "GR") {
+      // GK sent off — the team must play with 10: the reserve GK comes on and
+      // an outfield player is sacrificed. The coach chooses which field player
+      // leaves; on timeout/NPC the weakest on-pitch field player is sacrificed.
+      const tacticPositions: Record<number, string> = tactic?.positions || {};
+      const benchIds = new Set(
+        Object.entries(tacticPositions)
+          .filter(([, status]) => status === "Suplente")
+          .map(([id]) => Number(id)),
+      );
+      const availableBench = fullRoster.filter(
+        (p) => !lineupIds.has(p.id) && (benchIds.size === 0 || benchIds.has(p.id)),
+      );
+
+      const grBench = availableBench.filter((p) => p.position === "GR");
+      const grCandidates = grBench.length > 0 ? grBench : availableBench;
+      // On-pitch outfield players the coach may sacrifice (the sent-off GK is out)
+      const fieldOnPitch = squad.filter(
+        (p) => p.id !== offender.id && p.position !== "GR",
+      );
+
+      if (grBench.length === 0) {
+        // Último GR expulso e sem GR no banco → GR improvisado: o treinador
+        // escolhe em campo quem vai para a baliza (fallback: o mais fraco).
+        // O expulso sai, a equipa fica com 10 — SEM gastar substituição.
+        removeFromPitch({
+          fixture,
+          game,
+          side,
+          squad,
+          lineupIds,
+          outId: offender.id,
+        });
+
+        await openEmergencyGKAction({
+          fixture,
+          squad,
+          side,
+          teamId,
+          io,
+          game,
+          minute,
+          emergencyCandidates: fieldOnPitch,
+          outPlayer: buildPlayerCard(offender, fixture, side),
+          benchPlayers: availableBench,
+        });
+        return;
+      }
+
+      const fallback = () => {
+        const weakest = [...fieldOnPitch].sort(
+          (a, b) => (getEffectiveSkill(a) || 0) - (getEffectiveSkill(b) || 0),
+        )[0];
+        const bestGR = pickBestPlayer(grCandidates);
+        return { playerOut: weakest?.id ?? null, playerIn: bestGR?.id ?? null };
+      };
+      const result = await waitForMatchAction({
+        game,
+        io,
+        type: "gk_red_card",
+        teamId,
+        payload: {
+          minute,
+          teamId,
+          sentOffPlayer: buildPlayerCard(offender, fixture, side),
+          onPitch: fieldOnPitch.map((p) => buildPlayerCard(p, fixture, side)),
+          benchPlayers: grCandidates.map((p) => buildPlayerCard(p, fixture, side)),
+          currentScore: {
+            home: fixture.finalHomeGoals,
+            away: fixture.finalAwayGoals,
+          },
+        },
+        timeoutMs: MATCH_TUNING.actionTimeoutMs,
+        fallback,
+        fixtureData: buildFixtureData(fixture),
+      });
+
+      const forcedChoice = normalizeMatchChoice(result.choice);
+      const incoming =
+        forcedChoice.playerIn != null
+          ? grCandidates.find((p) => p.id === forcedChoice.playerIn)
+          : null;
+
+      // 1) O GR expulso sai sempre (sem gastar substituição).
+      removeFromPitch({
+        fixture,
+        game,
+        side,
+        squad,
+        lineupIds,
+        outId: offender.id,
+      });
+
+      if (incoming) {
+        // 2)+3) Sacrifica o escolhido e entra o GR suplente.
+        const sacrificed =
+          forcedChoice.playerOut != null
+            ? squad.find((p) => p.id === forcedChoice.playerOut)
+            : null;
+        if (sacrificed) {
+          swapOnPitch({
+            fixture,
+            game,
+            side,
+            squad,
+            lineupIds,
+            outId: sacrificed.id,
+            incoming,
+          });
+        } else {
+          // Escolha degenerada (sem sacrificado): o GR entra sem sacrificar
+          // ninguém — preserva o comportamento anterior para este edge.
+          squad.push(incoming);
+          lineupIds.add(incoming.id);
+          syncTacticPositions(game, fixture, side, teamId, [], [incoming.id]);
+          bumpPowerVersion(fixture, side);
+        }
+
+        fixture.events.push({
+          minute,
+          type: "substitution",
+          team: side,
+          emoji: "🔁",
+          playerId: incoming.id,
+          playerName: incoming.name,
+          text: `[${minute}'] 🔁 ${subPhrase(sacrificed ? sacrificed.name : offender.name, incoming.name)}`,
+        });
+      }
+    } else {
+      // Expulsão de jogador de campo — sai sem reposição (regra oficial).
+      removeFromPitch({
+        fixture,
+        game,
+        side,
+        squad,
+        lineupIds,
+        outId: offender.id,
+      });
+    }
+  };
+
+  const emitCard = async (isHomeCard: boolean) => {
+    const squad = isHomeCard ? powers.home.squad : powers.away.squad;
+    const side = isHomeCard ? "home" : "away";
+    if (squad.length > 0) {
+      const offender = squad[Math.floor(rng() * squad.length)];
+      const offenderId = offender.id;
+
+      if (fixture._yellowCards[offenderId] >= 1) {
+        if (rng() < MATCH_TUNING.secondYellowRedShare) {
+          await executeRedCard(offender, isHomeCard, squad, side);
+        }
+      } else if (rng() < MATCH_TUNING.directRedShare) {
+        await executeRedCard(offender, isHomeCard, squad, side);
+      } else {
+        fixture._yellowCards[offenderId] =
+          (fixture._yellowCards[offenderId] || 0) + 1;
+        fixture.events.push({
+          minute,
+          type: "yellow",
+          team: side,
+          emoji: "🟨",
+          playerId: offender.id,
+          playerName: offender.name,
+          text: `[${minute}'] 🟨 ${yellowPhrase(offender.name)}`,
+        });
+      }
+    }
+  };
+
+  const homeCardProb =
+    MATCH_TUNING.cardBaseRate *
+    (1 + (homeAggAvg - 3) * MATCH_TUNING.cardAggPerPoint);
+  const awayCardProb =
+    MATCH_TUNING.cardBaseRate *
+    (1 + (awayAggAvg - 3) * MATCH_TUNING.cardAggPerPoint);
+  // No último minuto regulamentar da liga não disparar cartões — um vermelho
+  // ao GR abriria a janela obrigatória de substituição após o apito final
+  if (!isLastLeagueMinute && rng() < homeCardProb) await emitCard(true);
+  if (!isLastLeagueMinute && rng() < awayCardProb) await emitCard(false);
+
+  const injuryChance = rng();
+  const weatherInjuryMult =
+    MATCH_TUNING.injuryWeatherMult[fixture._weather ?? ""] ?? 1.0;
+  if (
+    !isLastLeagueMinute &&
+    injuryChance < MATCH_TUNING.injuryPerMinute * weatherInjuryMult
+  ) {
+    const isHomeInjury = rng() > 0.5;
+    const squad = isHomeInjury ? powers.home.squad : powers.away.squad;
+    const side = isHomeInjury ? "home" : "away";
+    const lineupIds = isHomeInjury ? homeLineupIds : awayLineupIds;
+    const fullRoster = isHomeInjury ? homeFullRoster : awayFullRoster;
+    if (squad.length > 0) {
+      const injuredPlayer = squad[Math.floor(rng() * squad.length)];
+      const resistanceSkip =
+        ((injuredPlayer?.resistance ?? RES_NEUTRAL) - 1) *
+        MATCH_TUNING.injuryResistSkipPerPoint;
+      if (rng() < resistanceSkip) {
+        // jogador resistiu — ignorar lesão
+      } else {
+        const injuryResult = await applyInjuryEvent({
+          fixture,
+          teamSide: side,
+          squad,
+          fullRoster,
+          lineupIds,
+          currentMatchweek,
+          io,
+          game,
+          rng,
+        });
+        if (injuryResult.replaced && side === "home") powers.home.squad = squad;
+        if (injuryResult.replaced && side === "away") powers.away.squad = squad;
+      }
+    }
+  }
+
+  // User substitutions (nunca abrir a janela no último minuto regulamentar da liga;
+  // consumir sempre os pedidos pendentes para não vazarem para o jogo seguinte)
+  if (game.pendingSubstitutions && game.pendingSubstitutions.size > 0) {
+    const teamsToSub = [fixture.homeTeamId, fixture.awayTeamId].filter((id) =>
+      game.pendingSubstitutions.has(id),
+    );
+    for (const teamId of teamsToSub) {
+      game.pendingSubstitutions.delete(teamId);
+      if (isLastLeagueMinute) {
+        // Pedido consumido sem janela: termina o banner de pausa dos outros
+        // treinadores (senão ficava à mostra até à próxima substituição).
+        io.to(game.roomCode).emit("substitutionPauseEnded", { teamId });
+        continue;
+      }
+      // Sem substituições restantes: consome o pedido sem abrir a janela e
+      // notifica o treinador de que esgotou as substituições da partida.
+      if (!canMakeSubstitution(fixture, teamId)) {
+        io.to(game.roomCode).emit("substitutionCapReached", { teamId });
+        // O pedido foi consumido sem abrir a janela: termina o banner de pausa.
+        io.to(game.roomCode).emit("substitutionPauseEnded", { teamId });
+        continue;
+      }
+
+      const isHome = teamId === fixture.homeTeamId;
+      const squad = isHome ? powers.home.squad : powers.away.squad;
+      const fullRoster = isHome ? homeFullRoster : awayFullRoster;
+      const tactic = isHome ? homeTactic : awayTactic;
+      const side = isHome ? "home" : "away";
+      const lineupIds = isHome ? homeLineupIds : awayLineupIds;
+
+      const onPitch = squad.filter((p: any) => lineupIds.has(p.id));
+
+      const tacticPositions: Record<number, string> = tactic?.positions || {};
+      const benchIds = new Set(
+        Object.entries(tacticPositions)
+          .filter(([, status]) => status === "Suplente")
+          .map(([id]) => Number(id)),
+      );
+      const availableBench = fullRoster.filter(
+        (p: any) =>
+          !lineupIds.has(p.id) &&
+          benchIds.has(p.id) &&
+          !(fixture._subbedOut as Set<number> | undefined)?.has(p.id),
+      );
+
+      if (onPitch.length > 0 && availableBench.length > 0) {
+        const result = await waitForMatchAction({
+          game,
+          io,
+          type: "user_substitution",
+          teamId,
+          payload: {
+            minute: fixture._minute,
+            teamId,
+            onPitch: onPitch.map((p) => buildPlayerCard(p, fixture, side, { detailed: false })),
+            benchPlayers: availableBench.map((p) => buildPlayerCard(p, fixture, side, { detailed: false })),
+          },
+          timeoutMs: MATCH_TUNING.actionTimeoutMs,
+          fallback: () => null,
+          fixtureData: buildFixtureData(fixture),
+        });
+
+        // Mesmo contrato das restantes ações (ver normalizeMatchChoice):
+        // objeto { playerOut, playerIn }, id nu ou { playerId }.
+        const userChoice = normalizeMatchChoice(result.choice);
+        if (userChoice.playerOut != null && userChoice.playerIn != null) {
+          const playerOutId = userChoice.playerOut;
+          const playerInId = userChoice.playerIn;
+
+          const playerOut = squad.find((p: any) => p.id === playerOutId);
+          const playerIn = fullRoster.find((p: any) => p.id === playerInId);
+
+          if (playerOut && playerIn) {
+            swapOnPitch({
+              fixture,
+              game,
+              side,
+              squad,
+              lineupIds,
+              outId: playerOutId,
+              incoming: playerIn,
+              countSub: true,
+            });
+
+            fixture.events.push({
+              minute: fixture._minute,
+              type: "substitution",
+              team: side,
+              emoji: "🔁",
+              playerId: playerInId,
+              playerName: playerIn.name,
+              text: `[${fixture._minute}'] 🔁 ${subPhrase(playerOut.name, playerIn.name)}`,
+            });
+
+            if (isHome) powers.home.squad = squad;
+            if (!isHome) powers.away.squad = squad;
+          }
+        }
+      }
+    }
   }
 }
 
