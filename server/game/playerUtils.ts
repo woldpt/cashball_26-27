@@ -278,8 +278,9 @@ export function pickBestPlayer(players: PlayerRow[] = []) {
 /**
  * Weighted random pick for goal scorer.
  * Weight = positionWeight × starMultiplier × individualForm (ver MATCH_TUNING).
+ * `rng` injetável para simulações determinísticas (omissão = Math.random).
  */
-export function weightedPickScorer(players: PlayerRow[] = []) {
+export function weightedPickScorer(players: PlayerRow[] = [], rng: () => number = Math.random) {
   if (!players.length) return null;
   const weights = players.map((p) => {
     const positionWeight = p.position === "ATA" ? MATCH_TUNING.scorerAtaWeight : 1;
@@ -291,7 +292,7 @@ export function weightedPickScorer(players: PlayerRow[] = []) {
     return positionWeight * starMultiplier * formMultiplier;
   });
   const total = weights.reduce((s, w) => s + w, 0);
-  let r = Math.random() * total;
+  let r = rng() * total;
   for (let i = 0; i < players.length; i++) {
     r -= weights[i];
     if (r <= 0) return players[i];

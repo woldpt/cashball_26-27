@@ -57,6 +57,7 @@ import {
   average,
   selectPenaltyTaker,
 } from "./matchCalculations";
+import type { Rng } from "./matchCalculations";
 import { recalcPlayerValue, MATCH_TUNING } from "../gameConstants";
 import { getTacticBonus } from "./tacticFamiliarity";
 
@@ -809,6 +810,7 @@ async function applyInjuryEvent({
   currentMatchweek,
   io,
   game,
+  rng = Math.random,
 }: {
   fixture: MatchFixture;
   teamSide: "home" | "away";
@@ -818,18 +820,19 @@ async function applyInjuryEvent({
   currentMatchweek: number;
   io: any;
   game: ActiveGame;
+  rng?: Rng;
 }) {
   if (!squad.length) return { replaced: false, injuredPlayer: null };
 
-  const injuredPlayer = squad[Math.floor(Math.random() * squad.length)];
-  const severityRoll = Math.random();
+  const injuredPlayer = squad[Math.floor(rng() * squad.length)];
+  const severityRoll = rng();
   let injuryWeeks;
   let injuryLabel;
   if (severityRoll < MATCH_TUNING.injurySevereShare) {
     // Grave: 3–8 semanas, incomum
     injuryWeeks =
       MATCH_TUNING.injurySevereMinWeeks +
-      Math.floor(Math.random() * MATCH_TUNING.injurySevereExtraWeeks);
+      Math.floor(rng() * MATCH_TUNING.injurySevereExtraWeeks);
     injuryLabel = "grave";
   } else {
     // Leve: 1 semana (afasta da próxima convocatória), comum
@@ -841,7 +844,7 @@ async function applyInjuryEvent({
   const qualityLoss =
     injuryLabel === "grave"
       ? MATCH_TUNING.injurySevereLossBase +
-        Math.floor(Math.random() * MATCH_TUNING.injurySevereLossExtra)
+        Math.floor(rng() * MATCH_TUNING.injurySevereLossExtra)
       : 0;
   const oldSkill = injuredPlayer.skill ?? 0;
   const newSkill = Math.max(1, oldSkill - qualityLoss);
@@ -1068,6 +1071,7 @@ async function applyPenaltyEvent({
   currentMatchweek,
   io,
   game,
+  rng = Math.random,
 }: {
   fixture: MatchFixture;
   teamSide: "home" | "away";
@@ -1075,6 +1079,7 @@ async function applyPenaltyEvent({
   currentMatchweek: number;
   io: any;
   game: ActiveGame;
+  rng?: Rng;
 }) {
   const teamId = teamSide === "home" ? fixture.homeTeamId : fixture.awayTeamId;
   const filteredCandidates = squad.filter((p) =>
@@ -1137,7 +1142,7 @@ async function applyPenaltyEvent({
           MATCH_TUNING.penaltySkillDivisor,
     ),
   );
-  const scored = Math.random() < goalChance;
+  const scored = rng() < goalChance;
 
   if (scored) {
     if (teamSide === "home") fixture.finalHomeGoals++;
@@ -1157,7 +1162,7 @@ async function applyPenaltyEvent({
     });
   } else {
     // Miss type proportions: 60% save · 10% post · 10% wide · 20% panenka
-    const missRoll = Math.random();
+    const missRoll = rng();
     let missType: string;
     if (missRoll < MATCH_TUNING.penaltyMissSave) {
       missType = "DEFENDEU!";
@@ -1221,6 +1226,7 @@ function applyFatigueToPlayer(
   side: MatchSide,
   player: PlayerRow,
   amount: number,
+  rng: Rng = Math.random,
 ) {
   ensureFatigueLedgers(fixture);
 
@@ -1248,14 +1254,15 @@ function applyFatigue(
   squad: PlayerRow[],
   lineupIds: Set<number>,
   amount: number,
+  rng: Rng = Math.random,
 ) {
   for (const p of squad) {
     if (!lineupIds.has(p.id)) continue;
 
     const resistance = p.resistance ?? RES_NEUTRAL;
     const skipChance = (resistance - 1) * MATCH_TUNING.fatigueSkipPerResPoint;
-    if (Math.random() >= skipChance) {
-      applyFatigueToPlayer(fixture, side, p, amount);
+    if (rng() >= skipChance) {
+      applyFatigueToPlayer(fixture, side, p, amount, rng);
     } else {
       syncFatigueSnapshot(fixture, side, p.id, getEffectiveSkill(p));
     }
@@ -1274,6 +1281,7 @@ function trackFatigue(
   side: MatchSide,
   squad: PlayerRow[],
   lineupIds: Set<number>,
+  rng: Rng = Math.random,
 ) {
   ensureFatigueLedgers(fixture);
   const mps = fixture._minutesPlayed[side];
@@ -1286,9 +1294,9 @@ function trackFatigue(
 
     const resistance = p.resistance ?? RES_NEUTRAL;
     const skipChance = (resistance - 1) * MATCH_TUNING.fatigueSkipPerResPoint;
-    if (Math.random() < skipChance) continue;
+    if (rng() < skipChance) continue;
 
-    applyFatigueToPlayer(fixture, side, p, 1);
+    applyFatigueToPlayer(fixture, side, p, 1, rng);
   }
 }
 
@@ -1422,6 +1430,9 @@ async function simulateMatchSegment(
       : 1;
   const io = context.io;
   const game = context.game;
+  // RNG injetável (fix #9): testes/replays passam context.rng (seeded);
+  // produção usa Math.random — comportamento inalterado.
+  const rng: Rng = context.rng ?? Math.random;
 
   let homeSquad;
   const isFreshHomeBuild = !fixture._homeSquad;
@@ -1850,8 +1861,8 @@ async function simulateMatchSegment(
 
     // Cansaço progressivo: cada intervalo de fadiga jogado, -1 skill efetiva,
     // com escape por resistência. Quem entra depois (subs) começa do zero.
-    trackFatigue(fixture, "home", homeSquad, homeLineupIds);
-    trackFatigue(fixture, "away", awaySquad, awayLineupIds);
+    trackFatigue(fixture, "home", homeSquad, homeLineupIds, rng);
+    trackFatigue(fixture, "away", awaySquad, awayLineupIds, rng);
 
     // Condições climatéricas adversas aceleram o desgaste ao minuto 60
     if (
@@ -1859,8 +1870,8 @@ async function simulateMatchSegment(
       !fixture._fatigue3Applied &&
       (fixture._weather === "neve" || fixture._weather === "frio")
     ) {
-      applyFatigue(fixture, "home", homeSquad, homeLineupIds, 1);
-      applyFatigue(fixture, "away", awaySquad, awayLineupIds, 1);
+      applyFatigue(fixture, "home", homeSquad, homeLineupIds, 1, rng);
+      applyFatigue(fixture, "away", awaySquad, awayLineupIds, 1, rng);
       fixture._fatigue3Applied = true;
     }
 
@@ -1921,13 +1932,13 @@ async function simulateMatchSegment(
         probGoal *= 1.0 - egoPenalty;
       }
 
-      if (Math.random() >= probGoal) return;
+      if (rng() >= probGoal) return;
 
       // Auto-golo (~8% das oportunidades de golo): a bola entra na baliza da
       // equipa que defende, "creditado" a um defensor desse lado. Conta no
       // marcador da equipa atacante (beneficiada), mas NÃO credita o jogador —
       // sem update em players.goals e sem interação com o VAR.
-      if (Math.random() < MATCH_TUNING.ownGoalShare) {
+      if (rng() < MATCH_TUNING.ownGoalShare) {
         const defendingSquad = isHome ? away.squad : home.squad;
         const defCulprits = defendingSquad.filter(
           (p) => p.position === "DEF",
@@ -1936,7 +1947,7 @@ async function simulateMatchSegment(
           defCulprits.length > 0
             ? defCulprits
             : defendingSquad.filter((p) => p.position !== "GR");
-        const culprit = weightedPickScorer(culpritPool) || null;
+        const culprit = weightedPickScorer(culpritPool, rng) || null;
 
         if (isHome) fixture.finalHomeGoals++;
         else fixture.finalAwayGoals++;
@@ -1960,10 +1971,10 @@ async function simulateMatchSegment(
         (p) => p.position === "ATA" || p.position === "MED",
       );
       const scorer =
-        scorers.length > 0 ? weightedPickScorer(scorers) : scoringSquad[0];
+        scorers.length > 0 ? weightedPickScorer(scorers, rng) : scoringSquad[0];
 
       // VAR: 5% de hipótese de golo ser anulado
-      if (Math.random() < MATCH_TUNING.varDisallowedShare) {
+      if (rng() < MATCH_TUNING.varDisallowedShare) {
         fixture.events.push({
           minute,
           type: "var_disallowed",
@@ -2006,7 +2017,7 @@ async function simulateMatchSegment(
         MATCH_TUNING.decisiveMax,
         craquesInXI * MATCH_TUNING.decisivePerStar,
       );
-      const isDecisive = Math.random() < decisiveChance;
+      const isDecisive = rng() < decisiveChance;
 
       const goalText =
         fixture.round === 5
@@ -2037,8 +2048,8 @@ async function simulateMatchSegment(
       minute >= 90 && context.game?.currentEvent?.type !== "cup";
     const penaltyChance =
       minute < 90 || isCupExtraTime ? MATCH_TUNING.penaltyPerMinute : 0;
-    if (Math.random() < penaltyChance) {
-      const attackingSide = Math.random() < 0.5 ? "home" : "away";
+    if (rng() < penaltyChance) {
+      const attackingSide = rng() < 0.5 ? "home" : "away";
       const attackingSquad = attackingSide === "home" ? home.squad : away.squad;
       const totalGoalsBefore = fixture.finalHomeGoals + fixture.finalAwayGoals;
       await applyPenaltyEvent({
@@ -2048,6 +2059,7 @@ async function simulateMatchSegment(
         currentMatchweek,
         io,
         game,
+        rng,
       });
       if (fixture.finalHomeGoals + fixture.finalAwayGoals > totalGoalsBefore) {
         goalScoredThisMinute = true;
@@ -2058,13 +2070,13 @@ async function simulateMatchSegment(
     maybeOpenPlayGoal("away");
 
     // Near-miss / big save events — roughly 1–2 per match, commentary-only
-    if (!goalScoredThisMinute && Math.random() < MATCH_TUNING.nearMissPerMinute) {
+    if (!goalScoredThisMinute && rng() < MATCH_TUNING.nearMissPerMinute) {
       const nearMissSide =
         currentHome.attack > currentAway.attack
-          ? Math.random() < 0.55
+          ? rng() < 0.55
             ? "home"
             : "away"
-          : Math.random() < 0.55
+          : rng() < 0.55
             ? "away"
             : "home";
       const nearMissSquad = nearMissSide === "home" ? home.squad : away.squad;
@@ -2073,9 +2085,9 @@ async function simulateMatchSegment(
         (p) => p.position === "ATA" || p.position === "MED",
       );
       const attacker =
-        attackers.length > 0 ? weightedPickScorer(attackers) : nearMissSquad[0];
+        attackers.length > 0 ? weightedPickScorer(attackers, rng) : nearMissSquad[0];
       if (attacker) {
-        const isBigSave = Math.random() < MATCH_TUNING.bigSaveShare;
+        const isBigSave = rng() < MATCH_TUNING.bigSaveShare;
         const grPlayer = oppSquad.find((p) => p.position === "GR");
         const phrase =
           isBigSave && grPlayer
@@ -2316,14 +2328,14 @@ async function simulateMatchSegment(
       const squad = isHomeCard ? home.squad : away.squad;
       const side = isHomeCard ? "home" : "away";
       if (squad.length > 0) {
-        const offender = squad[Math.floor(Math.random() * squad.length)];
+        const offender = squad[Math.floor(rng() * squad.length)];
         const offenderId = offender.id;
 
         if (fixture._yellowCards[offenderId] >= 1) {
-          if (Math.random() < MATCH_TUNING.secondYellowRedShare) {
+          if (rng() < MATCH_TUNING.secondYellowRedShare) {
             await executeRedCard(offender, isHomeCard, squad, side);
           }
-        } else if (Math.random() < MATCH_TUNING.directRedShare) {
+        } else if (rng() < MATCH_TUNING.directRedShare) {
           await executeRedCard(offender, isHomeCard, squad, side);
         } else {
           fixture._yellowCards[offenderId] =
@@ -2349,27 +2361,27 @@ async function simulateMatchSegment(
       (1 + (awayAggAvg - 3) * MATCH_TUNING.cardAggPerPoint);
     // No último minuto regulamentar da liga não disparar cartões — um vermelho
     // ao GR abriria a janela obrigatória de substituição após o apito final
-    if (!isLastLeagueMinute && Math.random() < homeCardProb) await emitCard(true);
-    if (!isLastLeagueMinute && Math.random() < awayCardProb) await emitCard(false);
+    if (!isLastLeagueMinute && rng() < homeCardProb) await emitCard(true);
+    if (!isLastLeagueMinute && rng() < awayCardProb) await emitCard(false);
 
-    const injuryChance = Math.random();
+    const injuryChance = rng();
     const weatherInjuryMult =
       MATCH_TUNING.injuryWeatherMult[fixture._weather ?? ""] ?? 1.0;
     if (
       !isLastLeagueMinute &&
       injuryChance < MATCH_TUNING.injuryPerMinute * weatherInjuryMult
     ) {
-      const isHomeInjury = Math.random() > 0.5;
+      const isHomeInjury = rng() > 0.5;
       const squad = isHomeInjury ? home.squad : away.squad;
       const side = isHomeInjury ? "home" : "away";
       const lineupIds = isHomeInjury ? homeLineupIds : awayLineupIds;
       const fullRoster = isHomeInjury ? homeFullRoster : awayFullRoster;
       if (squad.length > 0) {
-        const injuredPlayer = squad[Math.floor(Math.random() * squad.length)];
+        const injuredPlayer = squad[Math.floor(rng() * squad.length)];
         const resistanceSkip =
           ((injuredPlayer?.resistance ?? RES_NEUTRAL) - 1) *
           MATCH_TUNING.injuryResistSkipPerPoint;
-        if (Math.random() < resistanceSkip) {
+        if (rng() < resistanceSkip) {
           // jogador resistiu — ignorar lesão
         } else {
           const injuryResult = await applyInjuryEvent({
@@ -2381,6 +2393,7 @@ async function simulateMatchSegment(
             currentMatchweek,
             io,
             game,
+            rng,
           });
           if (injuryResult.replaced && side === "home") home.squad = squad;
           if (injuryResult.replaced && side === "away") away.squad = squad;
@@ -2551,6 +2564,7 @@ async function applyPostMatchQualityEvolution(
   currentMatchweek: number,
   season: number,
   calendarIndex: number = 1,
+  rng: Rng = Math.random,
 ) {
   return new Promise<void>((resolve) => {
     const teamResults = new Map();
@@ -2739,7 +2753,7 @@ async function applyPostMatchQualityEvolution(
 
           // Acima do teto de potencial: deriva suave de retorno à média,
           // compensável por performance forte (golos / clean sheet)
-          if (room < 0 && Math.random() < 0.15) {
+          if (room < 0 && rng() < 0.15) {
             delta -= 1;
           }
 
@@ -2752,7 +2766,7 @@ async function applyPostMatchQualityEvolution(
               (player.joined_matchweek || 0) >= calendarIndex - 3;
             const idleForAWhile =
               lastAppearance === 0 ? !justJoined : lastAppearance < calendarIndex - 3;
-            if (idleForAWhile && Math.random() < 0.15) {
+            if (idleForAWhile && rng() < 0.15) {
               delta -= 1;
             }
             if (delta !== 0) {
@@ -2771,7 +2785,7 @@ async function applyPostMatchQualityEvolution(
           if (
             room > 0 &&
             diff >= 1 &&
-            Math.random() < Math.min(0.75, 0.20 + diff / 20) * minutesFactor
+            rng() < Math.min(0.75, 0.20 + diff / 20) * minutesFactor
           ) {
             delta += 1;
           }
@@ -2781,7 +2795,7 @@ async function applyPostMatchQualityEvolution(
             room > 0 &&
             teamResult === "W" &&
             diff >= 0 &&
-            Math.random() < Math.min(0.45, 0.10 + diff / 50) * minutesFactor
+            rng() < Math.min(0.45, 0.10 + diff / 50) * minutesFactor
           ) {
             delta += 1;
           }
@@ -2794,12 +2808,12 @@ async function applyPostMatchQualityEvolution(
               0.18,
               0.04 + Math.max(0, -diff) / 150,
             );
-            if (Math.random() < lossPressure) delta -= 1;
+            if (rng() < lossPressure) delta -= 1;
             // Derrotas consecutivas aumentam a pressão de decaimento
             const streak = teamLossStreak.get(player.team_id) || 0;
             if (
               streak >= 2 &&
-              Math.random() < Math.min(0.20, 0.05 + 0.03 * (streak - 1))
+              rng() < Math.min(0.20, 0.05 + 0.03 * (streak - 1))
             ) {
               delta -= 1;
             }
@@ -2810,7 +2824,7 @@ async function applyPostMatchQualityEvolution(
             room > 0 &&
             teamResult === "D" &&
             diff >= 4 &&
-            Math.random() < 0.20 * minutesFactor
+            rng() < 0.20 * minutesFactor
           ) {
             delta += 1;
           }
@@ -2819,11 +2833,11 @@ async function applyPostMatchQualityEvolution(
           const goals = playerGoals.get(player.id) || 0;
 
           // Marcou 2+ golos: 25% de chance de +1 skill
-          if (goals >= 2 && Math.random() < 0.25) {
+          if (goals >= 2 && rng() < 0.25) {
             delta += 1;
           }
           // Marcou 1 golo: 10% de chance de +1 skill
-          else if (goals === 1 && Math.random() < 0.10) {
+          else if (goals === 1 && rng() < 0.10) {
             delta += 1;
           }
 
@@ -2832,13 +2846,13 @@ async function applyPostMatchQualityEvolution(
             player.position === "GR" &&
             teamResult === "W" &&
             teamCleanSheetWin.has(player.team_id) &&
-            Math.random() < 0.15
+            rng() < 0.15
           ) {
             delta += 1;
           }
 
           // Cartão vermelho: 20% de chance de -1 skill
-          if (playerRedCards.has(player.id) && Math.random() < 0.20) {
+          if (playerRedCards.has(player.id) && rng() < 0.20) {
             delta -= 1;
           }
 
@@ -2846,7 +2860,7 @@ async function applyPostMatchQualityEvolution(
           if (
             playedPrev &&
             room > 0 &&
-            Math.random() < 0.10 * minutesFactor
+            rng() < 0.10 * minutesFactor
           ) {
             delta += 1;
           }
@@ -2854,7 +2868,7 @@ async function applyPostMatchQualityEvolution(
           if (
             playedPrev &&
             (player.games_played || 0) >= 6 &&
-            Math.random() < 0.04
+            rng() < 0.04
           ) {
             delta -= 1;
           }
@@ -3000,6 +3014,7 @@ async function simulateExtraTime(
 function simulatePenaltyShootout(
   homeSquad: PlayerRow[],
   awaySquad: PlayerRow[],
+  rng: Rng = Math.random,
 ) {
   const kicks = [];
   let homeGoals = 0;
@@ -3042,8 +3057,8 @@ function simulatePenaltyShootout(
     if (homeTaker) homeUsed.add(homeTaker.id);
     if (awayTaker) awayUsed.add(awayTaker.id);
 
-    const homeScored = Math.random() < calcScoredChance(homeTaker, awayGK);
-    const awayScored = Math.random() < calcScoredChance(awayTaker, homeGK);
+    const homeScored = rng() < calcScoredChance(homeTaker, awayGK);
+    const awayScored = rng() < calcScoredChance(awayTaker, homeGK);
 
     if (homeScored) homeGoals++;
     if (awayScored) awayGoals++;
@@ -3074,8 +3089,8 @@ function simulatePenaltyShootout(
     if (homeTaker) homeUsed.add(homeTaker.id);
     if (awayTaker) awayUsed.add(awayTaker.id);
 
-    const homeScored = Math.random() < calcScoredChance(homeTaker, awayGK);
-    const awayScored = Math.random() < calcScoredChance(awayTaker, homeGK);
+    const homeScored = rng() < calcScoredChance(homeTaker, awayGK);
+    const awayScored = rng() < calcScoredChance(awayTaker, homeGK);
 
     if (homeScored) homeGoals++;
     if (awayScored) awayGoals++;
@@ -3099,7 +3114,7 @@ function simulatePenaltyShootout(
   // Failsafe do desempate: após 20 rondas de morte súbita ainda empatado
   // (probabilidade ínfima), sorteio imparcial em vez de favorecer a casa.
   if (homeGoals === awayGoals) {
-    if (Math.random() < 0.5) homeGoals++;
+    if (rng() < 0.5) homeGoals++;
     else awayGoals++;
   }
 

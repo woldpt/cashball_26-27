@@ -1118,7 +1118,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			);
 
 			// Post-ET: determine winner (or penalties) for each drawn fixture
-			for (const { fixture, t1, t2, goals90Home, goals90Away } of drawnSetups) {
+			for (const { fixture, t1, t2, goals90Home, goals90Away, ctx } of drawnSetups) {
 				console.log(
 					`[${game.roomCode}] 🏆 ET result: ${fixture.finalHomeGoals}-${fixture.finalAwayGoals} | ${fixture.homeTeam?.name ?? fixture.homeTeamId} vs ${fixture.awayTeam?.name ?? fixture.awayTeamId}`,
 				);
@@ -1167,7 +1167,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 									t2,
 									game.matchweek,
 								)) as any[];
-					const shootout = simulatePenaltyShootout(homeSquad, awaySquad);
+					const shootout = simulatePenaltyShootout(homeSquad, awaySquad, ctx?.rng);
 
 					const humanInThisFixture = (
 						Object.values(game.playersByName) as PlayerSession[]

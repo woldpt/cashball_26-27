@@ -23,7 +23,7 @@
       `coachState.tactic` copiado ~6×. Fix: `removeFromPitch()` / `swapOnPitch()`.
 - [x] **#8 Centralizar tuning** — literais (`0.03`, `0.08`, `0.05`, `0.002`, `0.015`, `0.003`,
       `0.00816`, `0.00653`, fatores de morale) dispersos. Fix: `MATCH_TUNING` com taxas-alvo.
-- [ ] **#9 RNG injetável** — `Math.random()` em ~30 sítios. Fix: `context.rng ?? Math.random`
+- [x] **#9 RNG injetável** — `Math.random()` em ~30 sítios. Fix: `context.rng ?? Math.random`
       (seeded por `roomCode+calendarIndex` nos testes).
 - [ ] **#10 Tipos em vez de `any`** — `Db`, `PlayerRow`, `MatchFixture`, `tactic: any`; `choice`
       objeto-vs-id inconsistente. Fix: tipar e uniformizar.
