@@ -24,6 +24,9 @@
  *   U11 — adoptLiveTactic: setTactic a meio do jogo adota formação/estilo
  *        (bump de power), funde labels mas impõe a verdade de jogo
  *        (XI=Titular, indisponíveis removidos); sem coach ou sem mudança → null
+ *   U11d — estilo muda sem formação: anuncia a formação vigente, nunca null
+ *   U12 — queueMatchDeltaWrites: throw síncrono repõe a flag (deltas retidos);
+ *        erro no callback é reportado mas o flush completa
  *
  * Run: cd server && npm run test:engine-unit
  */
@@ -346,4 +349,47 @@ test("U11d — estilo muda sem formação: anuncia a formação vigente, nunca n
   const game = mkTacticGame({ style: "Defensivo" });
   const change = adoptLiveTactic(game, fixture, "home", v1, new Set());
   assert.deepEqual(change, { formation: "4-4-2", style: "DEFENSIVO" });
+});
+
+test("U12 — queueMatchDeltaWrites: throw síncrono repõe a flag, deltas retidos", () => {
+  const throwingDb = {
+    run() {
+      throw new Error("db fechada");
+    },
+  };
+  const fixture: any = {
+    _deltas: {
+      calendarIndex: 3,
+      appearances: new Set([1]),
+      goals: new Map([[7, 2]]),
+      reds: new Map(),
+      injuries: new Map(),
+    },
+  };
+  queueMatchDeltaWrites(throwingDb as any, [fixture]);
+  assert.equal(fixture._deltasQueued, false);
+  assert.ok(fixture._deltas, "deltas retidos para retry");
+});
+
+test("U12b — erro no callback do sqlite é reportado mas o flush completa", () => {
+  const cbs: Array<(err: unknown) => void> = [];
+  const errDb = {
+    run(_sql: string, _params: unknown[], cb: (err: unknown) => void) {
+      cbs.push(cb);
+    },
+  };
+  const fixture: any = {
+    _deltas: {
+      calendarIndex: 3,
+      appearances: new Set(),
+      goals: new Map([[7, 1]]),
+      reds: new Map(),
+      injuries: new Map(),
+    },
+  };
+  queueMatchDeltaWrites(errDb as any, [fixture]);
+  assert.ok(cbs.length > 0);
+  for (const cb of cbs) cb(new Error("boom"));
+  assert.equal(fixture._deltas, undefined);
+  assert.equal(fixture._deltasQueued, false);
 });

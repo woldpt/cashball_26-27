@@ -201,48 +201,63 @@ export function queueMatchDeltaWrites(db: Db, fixtures: MatchFixture[]): void {
     };
     // Todos os db.run são emitidos de forma síncrona abaixo; cada callback
     // decrementa — quando chegam todos, os deltas podem ser libertados.
+    // O callback corre mesmo em erro do sqlite: reporta e conta na mesma,
+    // para o flush completar em vez de pendurar a flag para sempre.
     const trackedRun = (sql: string, params: any[]) => {
       pending++;
-      db.run(sql, params, () => {
+      db.run(sql, params, (err: unknown) => {
+        if (err)
+          console.error(
+            `[engine] delta write falhou (${sql.slice(0, 60)}…):`,
+            err,
+          );
         pending--;
         if (pending === 0) finish();
       });
     };
 
-    if (d.appearances.size > 0 && d.calendarIndex > 0) {
-      const ids = [...d.appearances];
-      const ph = ids.map(() => "?").join(",");
-      trackedRun(
-        // Guard anti-replay: igual ao incremento imediato anterior — um flush
-        // repetido do mesmo slot nunca conta presenças a dobrar.
-        `UPDATE players SET games_played = games_played + 1, last_appearance_matchweek = MAX(last_appearance_matchweek, ?) WHERE id IN (${ph}) AND COALESCE(last_appearance_matchweek, 0) < ?`,
-        [d.calendarIndex, d.calendarIndex, ...ids],
-      );
+    try {
+
+      if (d.appearances.size > 0 && d.calendarIndex > 0) {
+        const ids = [...d.appearances];
+        const ph = ids.map(() => "?").join(",");
+        trackedRun(
+          // Guard anti-replay: igual ao incremento imediato anterior — um flush
+          // repetido do mesmo slot nunca conta presenças a dobrar.
+          `UPDATE players SET games_played = games_played + 1, last_appearance_matchweek = MAX(last_appearance_matchweek, ?) WHERE id IN (${ph}) AND COALESCE(last_appearance_matchweek, 0) < ?`,
+          [d.calendarIndex, d.calendarIndex, ...ids],
+        );
+      }
+      for (const [id, count] of d.goals) {
+        trackedRun(
+          "UPDATE players SET goals = goals + ?, career_goals = career_goals + ? WHERE id = ?",
+          [count, count, id],
+        );
+      }
+      for (const [id, until] of d.reds) {
+        trackedRun(
+          "UPDATE players SET red_cards = red_cards + 1, career_reds = career_reds + 1, suspension_games = suspension_games + 2, suspension_until_matchweek = CASE WHEN suspension_until_matchweek > ? THEN suspension_until_matchweek ELSE ? END WHERE id = ?",
+          [until, until, id],
+        );
+      }
+      for (const [id, inj] of d.injuries) {
+        trackedRun(
+          "UPDATE players SET injuries = injuries + ?, career_injuries = career_injuries + ?, prev_skill = skill, skill = ?, injury_until_matchweek = CASE WHEN injury_until_matchweek > ? THEN injury_until_matchweek ELSE ? END WHERE id = ?",
+          [inj.count, inj.count, inj.newSkill, inj.injuryUntil, inj.injuryUntil, id],
+        );
+        trackedRun(
+          "INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) VALUES (?, ?, ?, ?)",
+          [id, inj.matchweek, inj.season, inj.oldSkill],
+        );
+      }
+      // Fixture sem writes (deltas vazios): sem callbacks, libertar já.
+      if (pending === 0) finish();
+    } catch (err) {
+      // Throw síncrono a meio da emissão (ex.: DB fechada): repor a flag
+      // para a próxima tentativa não ser ignorada — os deltas ficam retidos.
+      console.error("[engine] flush de deltas interrompido:", err);
+      fixture._deltasQueued = false;
     }
-    for (const [id, count] of d.goals) {
-      trackedRun(
-        "UPDATE players SET goals = goals + ?, career_goals = career_goals + ? WHERE id = ?",
-        [count, count, id],
-      );
-    }
-    for (const [id, until] of d.reds) {
-      trackedRun(
-        "UPDATE players SET red_cards = red_cards + 1, career_reds = career_reds + 1, suspension_games = suspension_games + 2, suspension_until_matchweek = CASE WHEN suspension_until_matchweek > ? THEN suspension_until_matchweek ELSE ? END WHERE id = ?",
-        [until, until, id],
-      );
-    }
-    for (const [id, inj] of d.injuries) {
-      trackedRun(
-        "UPDATE players SET injuries = injuries + ?, career_injuries = career_injuries + ?, prev_skill = skill, skill = ?, injury_until_matchweek = CASE WHEN injury_until_matchweek > ? THEN injury_until_matchweek ELSE ? END WHERE id = ?",
-        [inj.count, inj.count, inj.newSkill, inj.injuryUntil, inj.injuryUntil, id],
-      );
-      trackedRun(
-        "INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) VALUES (?, ?, ?, ?)",
-        [id, inj.matchweek, inj.season, inj.oldSkill],
-      );
-    }
-    // Fixture sem writes (deltas vazios): sem callbacks, libertar já.
-    if (pending === 0) finish();
   }
 }
 
