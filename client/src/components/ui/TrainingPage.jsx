@@ -367,7 +367,7 @@ export function TrainingPage({ me, matchweek }) {
   return (
     <div className="space-y-4">
       {/* ── Summary Widgets ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <SummaryWidget
           label="Foco Atual"
           value={savedTraining ? getTrainingLabel(savedTraining) : "Nenhum"}
@@ -386,7 +386,7 @@ export function TrainingPage({ me, matchweek }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* ── TRAINING SELECTION PANEL ──────────────────────────────────── */}
         <Panel title="Foco de Treino" meta={`Jornada ${matchweek}`} padded={false}>
           <div className="p-3 md:p-4 space-y-4">
@@ -397,7 +397,7 @@ export function TrainingPage({ me, matchweek }) {
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {TRAINING_OPTIONS.map((key) => (
                 <TrainingOptionCard
                   key={key}
