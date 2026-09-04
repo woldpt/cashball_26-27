@@ -1,4 +1,4 @@
-import type { ActiveGame, PlayerSession } from "./types";
+import type { ActiveGame, PlayerSession, Tactic } from "./types";
 import type { CalendarEntry } from "./gameConstants";
 import {
   SEASON_CALENDAR,
@@ -287,7 +287,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     }
 
     // Read tactics for all fixtures once at segment start
-    const fixtureTactics: Array<{ t1: any; t2: any }> = await Promise.all(
+    const fixtureTactics: Array<{ t1: Tactic | null; t2: Tactic | null }> =
+      await Promise.all(
       game.currentFixtures.map(async (fixture) => {
         const p1 = Object.values(game.playersByName).find(
           (p) => p.teamId === fixture.homeTeamId,

@@ -320,9 +320,9 @@ export function getMatchFatigueSnapshot(
  */
 export function buildLineupSnapshot(
   fixture: MatchFixture,
-  squad: any[],
-  tactic: any,
-  fullRoster: any[] | undefined,
+  squad: PlayerRow[],
+  tactic: Tactic | null,
+  fullRoster: PlayerRow[] | undefined,
   side: MatchSide,
 ) {
   const starterIds = new Set(squad.map((p: any) => p.id));
@@ -608,7 +608,22 @@ function getCurrentPlayerState(game: ActiveGame, teamId: number) {
  * Várias janelas podem coexistir (jogos diferentes na mesma sala), por isso
  * a chave é o actionId e não um slot único no game.
  */
-export function getPendingMatchActions(game: ActiveGame): Map<string, any> {
+/** Entrada do mapa de ações pendentes (audit: antes Map<string, any>). */
+export type PendingMatchAction = {
+  actionId: string;
+  type: string;
+  teamId: number;
+  timer: ReturnType<typeof setTimeout>;
+  finalize: (choice: MatchActionChoice, source?: string) => void;
+  fallback: () => MatchActionChoice;
+  // Notify-once no reconnect (socketSessionHandlers): o timer continua vivo
+  // como rede de segurança e só se notifica o cliente, sem consumir a ação.
+  expiredNotified?: boolean;
+};
+
+export function getPendingMatchActions(
+  game: ActiveGame,
+): Map<string, PendingMatchAction> {
   let map = game.pendingMatchActions;
   if (!(map instanceof Map)) {
     map = new Map();
@@ -621,7 +636,7 @@ export function getPendingMatchActions(game: ActiveGame): Map<string, any> {
 export function peekPendingMatchAction(
   game: ActiveGame,
   actionId: string,
-): any | undefined {
+): PendingMatchAction | undefined {
   const map = game.pendingMatchActions;
   return map instanceof Map ? map.get(actionId) : undefined;
 }
@@ -633,7 +648,7 @@ export function peekPendingMatchAction(
 export function takePendingMatchAction(
   game: ActiveGame,
   actionId: string,
-): any | undefined {
+): PendingMatchAction | undefined {
   const map = game.pendingMatchActions;
   if (!(map instanceof Map)) return undefined;
   const pa = map.get(actionId);
@@ -645,7 +660,10 @@ export function takePendingMatchAction(
 }
 
 /** Todas as ações pendentes de uma equipa (para disconnect/leave em lote). */
-export function listTeamMatchActions(game: ActiveGame, teamId: number): any[] {
+export function listTeamMatchActions(
+  game: ActiveGame,
+  teamId: number,
+): PendingMatchAction[] {
   const map = game.pendingMatchActions;
   if (!(map instanceof Map)) return [];
   return [...map.values()].filter((pa) => pa && pa.teamId === teamId);
@@ -667,15 +685,15 @@ function waitForMatchAction({
   teamId: number;
   payload: Record<string, unknown>;
   timeoutMs: number;
-  fallback: () => any;
+  fallback: () => MatchActionChoice;
   fixtureData?: Record<string, unknown>;
-}): Promise<{ choice: any; source: string }> {
+}): Promise<{ choice: MatchActionChoice; source: string }> {
   const humanCoach = getCurrentPlayerState(game, teamId);
   if (!humanCoach) {
     return Promise.resolve({ choice: fallback(), source: "auto" });
   }
 
-  return new Promise<{ choice: any; source: string }>((resolve) => {
+  return new Promise<{ choice: MatchActionChoice; source: string }>((resolve) => {
     const actionId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const finalize = (choice, source = "auto") => {
       // Idempotente: timeout/disconnect/leave podem já ter consumido a ação.
@@ -778,7 +796,7 @@ export function adoptLiveTactic(
   game: ActiveGame,
   fixture: MatchFixture,
   side: MatchSide,
-  tactic: any,
+  tactic: Tactic | null,
   lineupIds: Set<number>,
 ): { formation: string; style: string } | null {
   const teamId = side === "home" ? fixture.homeTeamId : fixture.awayTeamId;
@@ -822,7 +840,7 @@ export function adoptLiveTactic(
   }
   // Verdade de jogo sobre os labels: o XI atual é sempre Titular e quem
   // saiu (vermelho/lesão/substituído) nunca volta via labels.
-  const truthRef = canonical || tactic;
+  const truthRef: any = canonical || tactic;
   if (truthRef && truthRef.positions) {
     const unavailable = new Set<number>();
     for (const e of fixture.events || []) {
@@ -1580,8 +1598,8 @@ function trackFatigue(
 // As guards na engine (!fixture._weather / !fixture._firstHalfStartComment) evitam duplicação.
 export function generateIntroEvents(
   fixture: MatchFixture,
-  homeTactic: any,
-  awayTactic: any,
+  homeTactic: Tactic | null,
+  awayTactic: Tactic | null,
 ): void {
   // Weather — clima determinístico partilhado com a previsão do briefing.
   if (!fixture._weather) {
@@ -1665,8 +1683,8 @@ export function generateIntroEvents(
 // A guard na engine (!fixture._secondHalfStartComment) evita duplicação.
 export function generateSecondHalfIntroEvents(
   fixture: MatchFixture,
-  homeTactic: any,
-  awayTactic: any,
+  homeTactic: Tactic | null,
+  awayTactic: Tactic | null,
 ): void {
   if (!fixture._secondHalfStartComment) {
     const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
