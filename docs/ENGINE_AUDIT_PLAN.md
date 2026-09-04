@@ -19,7 +19,7 @@
 
 ## P1 — Manutenibilidade / testabilidade
 
-- [ ] **#7 Helpers lineup/tática** — bloco splice + `lineupRef` + `tacticRef.positions` +
+- [x] **#7 Helpers lineup/tática** — bloco splice + `lineupRef` + `tacticRef.positions` +
       `coachState.tactic` copiado ~6×. Fix: `removeFromPitch()` / `swapOnPitch()`.
 - [ ] **#8 Centralizar tuning** — literais (`0.03`, `0.08`, `0.05`, `0.002`, `0.015`, `0.003`,
       `0.00816`, `0.00653`, fatores de morale) dispersos. Fix: `MATCH_TUNING` com taxas-alvo.

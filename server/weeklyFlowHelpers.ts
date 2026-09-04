@@ -23,6 +23,7 @@ import {
   ensureFullBench,
   generateIntroEvents,
   generateSecondHalfIntroEvents,
+  buildLineupSnapshot,
   getMatchFatigueSnapshot,
   queueMatchDeltaWrites,
 } from "./game/engine";
@@ -330,41 +331,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     // At the start of the second half, apply halftime tactic changes (substitutions/style)
     // to the cached squads. fixture._homeSquad/_awaySquad were set during the first half and
     // won't reflect tactic position changes made during the interval otherwise.
-    // Helper para criar snapshot de lineup (titulares + suplentes do fullRoster)
-    const lineupSnapshot = (
-      fixture: any,
-      squad: any[],
-      tactic: any,
-      fullRoster: any[] | undefined,
-      teamSide: "home" | "away",
-    ) => {
-      const starterIds = new Set(squad.map((p: any) => p.id));
-      const starters = squad.map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        position: p.position,
-        is_star: p.is_star || 0,
-        skill: p.skill,
-        ...getMatchFatigueSnapshot(fixture, teamSide, p.id),
-        is_starter: true,
-      }));
-      const bench = (fullRoster || [])
-        .filter(
-          (p: any) =>
-            !starterIds.has(p.id) &&
-            (!tactic?.positions || tactic.positions[p.id] === "Suplente"),
-        )
-        .map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          position: p.position,
-          is_star: p.is_star || 0,
-          skill: p.skill,
-          ...getMatchFatigueSnapshot(fixture, teamSide, p.id),
-          is_starter: false,
-        }));
-      return [...starters, ...bench];
-    };
+    // Snapshot via buildLineupSnapshot (implementação única no engine).
 
     // At the start of the second half, apply halftime tactic changes (substitutions/style)
     if (startMin === 46) {
@@ -532,7 +499,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
             // Update the lineup snapshot to reflect the new squad composition
             if (teamSide === "home") {
-              fixture.homeLineup = lineupSnapshot(
+              fixture.homeLineup = buildLineupSnapshot(
                 fixture,
                 squad,
                 tactic,
@@ -540,7 +507,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 "home",
               );
             } else {
-              fixture.awayLineup = lineupSnapshot(
+              fixture.awayLineup = buildLineupSnapshot(
                 fixture,
                 squad,
                 tactic,
@@ -1563,40 +1530,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     // Captura lineups da primeira parte a partir dos squads que realmente jogaram.
     // Liga fixtures não têm homeLineup/awayLineup definidos antes deste ponto.
     // Necessário para applyTrainingBonuses ver todos os jogadores participantes.
-    const lineupSnapshot2 = (
-      fixture: any,
-      squad: any[],
-      tactic: any,
-      fullRoster: any[] | undefined,
-      teamSide: "home" | "away",
-    ) => {
-      const starterIds = new Set(squad.map((p: any) => p.id));
-      const starters = squad.map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        position: p.position,
-        is_star: p.is_star || 0,
-        skill: p.skill,
-        ...getMatchFatigueSnapshot(fixture, teamSide, p.id),
-        is_starter: true,
-      }));
-      const bench = (fullRoster || [])
-        .filter(
-          (p: any) =>
-            !starterIds.has(p.id) &&
-            (!tactic?.positions || tactic.positions[p.id] === "Suplente"),
-        )
-        .map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          position: p.position,
-          is_star: p.is_star || 0,
-          skill: p.skill,
-          ...getMatchFatigueSnapshot(fixture, teamSide, p.id),
-          is_starter: false,
-        }));
-      return [...starters, ...bench];
-    };
+    // Snapshot via buildLineupSnapshot (implementação única no engine).
     for (let fi = 0; fi < game.currentFixtures.length; fi++) {
       const fx = game.currentFixtures[fi];
       const p1 = Object.values(game.playersByName).find(
@@ -1611,7 +1545,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       // snapshot must check length, not just truthiness — otherwise the
       // cup lineups would never be recovered post-first-half.
       if ((!fx.homeLineup || fx.homeLineup.length === 0) && fx._homeSquad)
-        fx.homeLineup = lineupSnapshot2(
+        fx.homeLineup = buildLineupSnapshot(
           fx,
           fx._homeSquad,
           t1,
@@ -1619,7 +1553,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           "home",
         );
       if ((!fx.awayLineup || fx.awayLineup.length === 0) && fx._awaySquad)
-        fx.awayLineup = lineupSnapshot2(
+        fx.awayLineup = buildLineupSnapshot(
           fx,
           fx._awaySquad,
           t2,

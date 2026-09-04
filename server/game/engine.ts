@@ -211,6 +211,46 @@ export function getMatchFatigueSnapshot(
   };
 }
 
+/**
+ * Snapshot de lineup (titulares + suplentes) para exibição no cliente — ÚNICA
+ * implementação (fix #7). Havia 3 cópias (engine, weeklyFlowHelpers ×2) que
+ * divergiram (ex. skill bruto vs. efetiva). Usa sempre a skill efetiva em jogo.
+ */
+export function buildLineupSnapshot(
+  fixture: MatchFixture,
+  squad: any[],
+  tactic: any,
+  fullRoster: any[] | undefined,
+  side: MatchSide,
+) {
+  const starterIds = new Set(squad.map((p: any) => p.id));
+  const starters = squad.map((p) => ({
+    id: p.id,
+    name: p.name,
+    position: p.position,
+    is_star: p.is_star || 0,
+    skill: getEffectiveSkill(p),
+    ...getMatchFatigueSnapshot(fixture, side, p.id),
+    is_starter: true,
+  }));
+  const bench = (fullRoster || [])
+    .filter(
+      (p: any) =>
+        !starterIds.has(p.id) &&
+        (!tactic?.positions || tactic.positions[p.id] === "Suplente"),
+    )
+    .map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      position: p.position,
+      is_star: p.is_star || 0,
+      skill: getEffectiveSkill(p),
+      ...getMatchFatigueSnapshot(fixture, side, p.id),
+      is_starter: false,
+    }));
+  return [...starters, ...bench];
+}
+
 async function getTeamSquad(
   db: Db,
   teamId: number,
@@ -498,6 +538,121 @@ function normalizeForcedChoice(
 }
 
 /**
+ * Sincroniza as táticas após uma saída/entrada em campo, para que
+ * applyHalftimeSubs/applyETSubs não desfaçam substituições forçadas quando a
+ * fase seguinte começa. Sincroniza fixture._t1/_t2 E coachState (no caso comum
+ * são o mesmo objeto; quando diferem — ex. NPC sem coach — ambos importam).
+ */
+function syncTacticPositions(
+  game: ActiveGame,
+  fixture: MatchFixture,
+  side: MatchSide,
+  teamId: number,
+  outIds: number[],
+  inIds: number[],
+) {
+  const tacticRef = side === "home" ? fixture._t1 : fixture._t2;
+  if (tacticRef?.positions) {
+    for (const id of outIds) delete tacticRef.positions[id];
+    for (const id of inIds) tacticRef.positions[id] = "Titular";
+  }
+  const coachState = Object.values(game.playersByName).find(
+    (p: any) => (p as any).teamId === teamId,
+  ) as any;
+  if (coachState?.tactic?.positions) {
+    for (const id of outIds) delete coachState.tactic.positions[id];
+    for (const id of inIds) coachState.tactic.positions[id] = "Titular";
+  }
+}
+
+/**
+ * Remove um jogador de campo sem reposição (lesão sem subs restantes,
+ * expulsão, GR expulso antes do improvisado). Sincroniza squad, lineupIds,
+ * _subbedOut (expulsos/lesados nunca voltam como suplentes), snapshot de
+ * lineup e táticas — o bloco antes copiado em ~4 sítios (fix #7).
+ */
+function removeFromPitch({
+  fixture,
+  game,
+  side,
+  squad,
+  lineupIds,
+  outId,
+}: {
+  fixture: MatchFixture;
+  game: ActiveGame;
+  side: MatchSide;
+  squad: PlayerRow[];
+  lineupIds: Set<number>;
+  outId: number;
+}) {
+  const idx = squad.findIndex((p: any) => p.id === outId);
+  if (idx > -1) squad.splice(idx, 1);
+  lineupIds.delete(outId);
+  (fixture._subbedOut ??= new Set<number>()).add(outId);
+
+  const lineupRef = side === "home" ? fixture.homeLineup : fixture.awayLineup;
+  if (lineupRef) {
+    const li = lineupRef.findIndex((p: any) => p.id === outId);
+    if (li > -1) lineupRef.splice(li, 1);
+  }
+
+  const teamId = side === "home" ? fixture.homeTeamId : fixture.awayTeamId;
+  syncTacticPositions(game, fixture, side, teamId, [outId], []);
+}
+
+/**
+ * Troca um jogador em campo por outro (substituição normal, lesão com
+ * reposição, sacrificado do GR expulso). Com countSub=true conta para o
+ * limite de substituições da partida (expulsões não contam — regra oficial).
+ * O bloco antes copiado em 3 sítios (fix #7).
+ */
+function swapOnPitch({
+  fixture,
+  game,
+  side,
+  squad,
+  lineupIds,
+  outId,
+  incoming,
+  countSub = false,
+}: {
+  fixture: MatchFixture;
+  game: ActiveGame;
+  side: MatchSide;
+  squad: PlayerRow[];
+  lineupIds: Set<number>;
+  outId: number;
+  incoming: PlayerRow;
+  countSub?: boolean;
+}) {
+  const teamId = side === "home" ? fixture.homeTeamId : fixture.awayTeamId;
+  const idx = squad.findIndex((p: any) => p.id === outId);
+  if (idx > -1) squad.splice(idx, 1, incoming);
+  lineupIds.delete(outId);
+  lineupIds.add(incoming.id);
+  (fixture._subbedOut ??= new Set<number>()).add(outId);
+  if (countSub) incrementSubCount(fixture, teamId);
+
+  const lineupRef = side === "home" ? fixture.homeLineup : fixture.awayLineup;
+  if (lineupRef) {
+    const li = lineupRef.findIndex((p: any) => p.id === outId);
+    if (li > -1) {
+      lineupRef[li] = {
+        id: incoming.id,
+        name: incoming.name,
+        position: incoming.position,
+        is_star: incoming.is_star || 0,
+        skill: getEffectiveSkill(incoming),
+        ...getMatchFatigueSnapshot(fixture, side, incoming.id),
+      };
+    }
+  }
+
+  syncTacticPositions(game, fixture, side, teamId, [outId], [incoming.id]);
+}
+
+/**
  * GR improvisado — regra do futebol profissional: quando o GR em campo sai
  * (expulsão ou lesão) e não há outro GR disponível, um jogador de campo
  * calça as luvas até ao fim do jogo (skill no piso de emergência).
@@ -713,20 +868,14 @@ async function applyInjuryEvent({
   if (!canMakeSubstitution(fixture, teamId)) {
     // Notifica o treinador que a equipa passa a jogar com menos um jogador.
     io.to(game.roomCode).emit("substitutionCapReached", { teamId });
-    const idx = squad.findIndex((p) => p.id === injuredPlayer.id);
-    if (idx > -1) squad.splice(idx, 1);
-    lineupIds.delete(injuredPlayer.id);
-    (fixture._subbedOut ??= new Set<number>()).add(injuredPlayer.id);
-
-    // Remover jogador do snapshot de lineup quando sai sem substituto
-    const lineupRefNoSub =
-      teamSide === "home" ? fixture.homeLineup : fixture.awayLineup;
-    if (lineupRefNoSub) {
-      const li = lineupRefNoSub.findIndex(
-        (p: any) => p.id === injuredPlayer.id,
-      );
-      if (li > -1) lineupRefNoSub.splice(li, 1);
-    }
+    removeFromPitch({
+      fixture,
+      game,
+      side: teamSide,
+      squad,
+      lineupIds,
+      outId: injuredPlayer.id,
+    });
 
     // Último GR sai sem reposição → jogador de campo calça as luvas
     // (GR improvisado, skill piso). A equipa fica a jogar com menos um,
@@ -738,19 +887,6 @@ async function applyInjuryEvent({
       const benchList = (fullRoster || squad).filter(
         (p: any) => !lineupIds.has(p.id),
       );
-
-      // O GR lesado deixa de contar na tática (a fase seguinte não o convoca).
-      const tacticRef =
-        teamSide === "home" ? fixture._t1 : fixture._t2;
-      if (tacticRef?.positions) {
-        delete tacticRef.positions[injuredPlayer.id];
-      }
-      const coachState = Object.values(game.playersByName).find(
-        (p: any) => (p as any).teamId === teamId,
-      ) as any;
-      if (coachState?.tactic?.positions) {
-        delete coachState.tactic.positions[injuredPlayer.id];
-      }
 
       await openEmergencyGKAction({
         fixture,
@@ -871,45 +1007,16 @@ async function applyInjuryEvent({
     const incoming = emergencyConversion
       ? convertToEmergencyGK(replacement)
       : replacement;
-    const idx = squad.findIndex((p) => p.id === injuredPlayer.id);
-    if (idx > -1) squad.splice(idx, 1, incoming);
-    lineupIds.delete(injuredPlayer.id);
-    lineupIds.add(incoming.id);
-    (fixture._subbedOut ??= new Set<number>()).add(injuredPlayer.id);
-    incrementSubCount(fixture, teamId);
-
-    // Actualizar snapshot de lineup para que o ecrã de intervalo reflicta a substituição
-    const lineupRef =
-      teamSide === "home" ? fixture.homeLineup : fixture.awayLineup;
-    if (lineupRef) {
-      const li = lineupRef.findIndex((p: any) => p.id === injuredPlayer.id);
-      if (li > -1) {
-        lineupRef[li] = {
-          id: incoming.id,
-          name: incoming.name,
-          position: incoming.position,
-          is_star: incoming.is_star || 0,
-          skill: getEffectiveSkill(incoming),
-          ...getMatchFatigueSnapshot(fixture, teamSide, incoming.id),
-        };
-      }
-    }
-
-    // Keep tactic positions in sync so applyHalftimeSubs/applyETSubs
-    // don't undo this forced substitution when the next phase starts.
-    // (Mirrors the user_substitution path below.)
-    const tacticRef = teamSide === "home" ? fixture._t1 : fixture._t2;
-    if (tacticRef?.positions) {
-      delete tacticRef.positions[injuredPlayer.id];
-      tacticRef.positions[incoming.id] = "Titular";
-    }
-    const coachState = Object.values(game.playersByName).find(
-      (p: any) => (p as any).teamId === teamId,
-    ) as any;
-    if (coachState?.tactic?.positions) {
-      delete coachState.tactic.positions[injuredPlayer.id];
-      coachState.tactic.positions[incoming.id] = "Titular";
-    }
+    swapOnPitch({
+      fixture,
+      game,
+      side: teamSide,
+      squad,
+      lineupIds,
+      outId: injuredPlayer.id,
+      incoming,
+      countSub: true,
+    });
 
     fixture.events.push({
       minute: fixture._minute,
@@ -937,18 +1044,14 @@ async function applyInjuryEvent({
     return { replaced: true, injuredPlayer, replacement: incoming };
   }
 
-  const idx = squad.findIndex((p) => p.id === injuredPlayer.id);
-  if (idx > -1) squad.splice(idx, 1);
-  lineupIds.delete(injuredPlayer.id);
-  (fixture._subbedOut ??= new Set<number>()).add(injuredPlayer.id);
-
-  // Remover jogador do snapshot de lineup quando sai sem substituto
-  const lineupRefNoSub =
-    teamSide === "home" ? fixture.homeLineup : fixture.awayLineup;
-  if (lineupRefNoSub) {
-    const li = lineupRefNoSub.findIndex((p: any) => p.id === injuredPlayer.id);
-    if (li > -1) lineupRefNoSub.splice(li, 1);
-  }
+  removeFromPitch({
+    fixture,
+    game,
+    side: teamSide,
+    squad,
+    lineupIds,
+    outId: injuredPlayer.id,
+  });
 
   return { replaced: false, injuredPlayer, replacement: null };
 }
@@ -1526,49 +1629,16 @@ async function simulateMatchSegment(
     fixture._awayFullRoster = awayFullRoster;
   }
 
-  // Snapshot the lineups for this segment so clients can display "who was on the pitch"
-  // Inclui titulares e suplentes (do fullRoster que não estão no squad activo)
-  const lineupSnapshot = (
-    squad: any[],
-    tactic: any,
-    fullRoster: any[] | undefined,
-    side: MatchSide,
-  ) => {
-    const starterIds = new Set(squad.map((p: any) => p.id));
-    const starters = squad.map((p) => ({
-      id: p.id,
-      name: p.name,
-      position: p.position,
-      is_star: p.is_star || 0,
-      skill: getEffectiveSkill(p),
-      ...getMatchFatigueSnapshot(fixture, side, p.id),
-      is_starter: true,
-    }));
-    const bench = (fullRoster || [])
-      .filter(
-        (p: any) =>
-          !starterIds.has(p.id) &&
-          (!tactic?.positions || tactic.positions[p.id] === "Suplente"),
-      )
-      .map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        position: p.position,
-        is_star: p.is_star || 0,
-        skill: getEffectiveSkill(p),
-        ...getMatchFatigueSnapshot(fixture, side, p.id),
-        is_starter: false,
-      }));
-    return [...starters, ...bench];
-  };
   if (!fixture.homeLineup || fixture.homeLineup.length === 0) {
-    fixture.homeLineup = lineupSnapshot(
+    fixture.homeLineup = buildLineupSnapshot(
+      fixture,
       homeSquad,
       homeTactic,
       fixture._homeFullRoster,
       "home",
     );
-    fixture.awayLineup = lineupSnapshot(
+    fixture.awayLineup = buildLineupSnapshot(
+      fixture,
       awaySquad,
       awayTactic,
       fixture._awayFullRoster,
@@ -2064,29 +2134,14 @@ async function simulateMatchSegment(
           // Último GR expulso e sem GR no banco → GR improvisado: o treinador
           // escolhe em campo quem vai para a baliza (fallback: o mais fraco).
           // O expulso sai, a equipa fica com 10 — SEM gastar substituição.
-          const gkIdx = squad.findIndex((p) => p.id === offender.id);
-          if (gkIdx > -1) squad.splice(gkIdx, 1);
-          lineupIds.delete(offender.id);
-
-          // Snapshot de lineup: o expulso sai.
-          const lineupRef =
-            side === "home" ? fixture.homeLineup : fixture.awayLineup;
-          if (lineupRef) {
-            const gi = lineupRef.findIndex((p: any) => p.id === offender.id);
-            if (gi > -1) lineupRef.splice(gi, 1);
-          }
-
-          // Táticas sincronizadas: o expulso deixa de contar.
-          const tacticRef = side === "home" ? fixture._t1 : fixture._t2;
-          if (tacticRef?.positions) {
-            delete tacticRef.positions[offender.id];
-          }
-          const coachState = Object.values(game.playersByName).find(
-            (p: any) => (p as any).teamId === teamId,
-          ) as any;
-          if (coachState?.tactic?.positions) {
-            delete coachState.tactic.positions[offender.id];
-          }
+          removeFromPitch({
+            fixture,
+            game,
+            side,
+            squad,
+            lineupIds,
+            outId: offender.id,
+          });
 
           await openEmergencyGKAction({
             fixture,
@@ -2185,63 +2240,38 @@ async function simulateMatchSegment(
             ? grCandidates.find((p) => p.id === forcedChoice.playerIn)
             : null;
 
-        // 1) The sent-off GK always leaves.
-        const gkIdx = squad.findIndex((p) => p.id === offender.id);
-        if (gkIdx > -1) squad.splice(gkIdx, 1);
-        lineupIds.delete(offender.id);
+        // 1) O GR expulso sai sempre (sem gastar substituição).
+        removeFromPitch({
+          fixture,
+          game,
+          side,
+          squad,
+          lineupIds,
+          outId: offender.id,
+        });
 
         if (incoming) {
-          // 2) Sacrifice the chosen outfield player so the reserve GK can come on.
+          // 2)+3) Sacrifica o escolhido e entra o GR suplente.
           const sacrificed =
             forcedChoice.playerOut != null
               ? squad.find((p) => p.id === forcedChoice.playerOut)
               : null;
           if (sacrificed) {
-            const si = squad.findIndex((p) => p.id === sacrificed.id);
-            if (si > -1) squad.splice(si, 1);
-            lineupIds.delete(sacrificed.id);
-          }
-
-          // 3) The reserve GK comes on.
-          squad.push(incoming);
-          lineupIds.add(incoming.id);
-
-          const lineupRef =
-            side === "home" ? fixture.homeLineup : fixture.awayLineup;
-          if (lineupRef) {
-            const gi = lineupRef.findIndex((p: any) => p.id === offender.id);
-            if (gi > -1) lineupRef.splice(gi, 1);
-            if (sacrificed) {
-              const li = lineupRef.findIndex((p: any) => p.id === sacrificed.id);
-              if (li > -1) {
-                lineupRef[li] = {
-                  id: incoming.id,
-                  name: incoming.name,
-                  position: incoming.position,
-                  is_star: incoming.is_star || 0,
-                  skill: getEffectiveSkill(incoming),
-                  ...getMatchFatigueSnapshot(fixture, side, incoming.id),
-                };
-              }
-            }
-          }
-
-          // Keep tactic positions in sync so applyHalftimeSubs/applyETSubs
-          // don't undo this forced swap when the next phase starts.
-          const tacticRef =
-            side === "home" ? fixture._t1 : fixture._t2;
-          if (tacticRef?.positions) {
-            delete tacticRef.positions[offender.id];
-            if (sacrificed) delete tacticRef.positions[sacrificed.id];
-            tacticRef.positions[incoming.id] = "Titular";
-          }
-          const coachState = Object.values(game.playersByName).find(
-            (p: any) => (p as any).teamId === teamId,
-          ) as any;
-          if (coachState?.tactic?.positions) {
-            delete coachState.tactic.positions[offender.id];
-            if (sacrificed) delete coachState.tactic.positions[sacrificed.id];
-            coachState.tactic.positions[incoming.id] = "Titular";
+            swapOnPitch({
+              fixture,
+              game,
+              side,
+              squad,
+              lineupIds,
+              outId: sacrificed.id,
+              incoming,
+            });
+          } else {
+            // Escolha degenerada (sem sacrificado): o GR entra sem sacrificar
+            // ninguém — preserva o comportamento anterior para este edge.
+            squad.push(incoming);
+            lineupIds.add(incoming.id);
+            syncTacticPositions(game, fixture, side, teamId, [], [incoming.id]);
           }
 
           fixture.events.push({
@@ -2255,19 +2285,15 @@ async function simulateMatchSegment(
           });
         }
       } else {
-        // Non-GK red card — just remove the player
-        const idx = squad.findIndex((p: any) => p.id === offender.id);
-        if (idx > -1) {
-          squad.splice(idx, 1);
-          lineupIds.delete(offender.id);
-        }
-        // Remover expulso do snapshot de lineup para que o ecrã de
-        // intervalo/live não o mostre (equipa a jogar com menos um).
-        const lineupRef = side === "home" ? fixture.homeLineup : fixture.awayLineup;
-        if (lineupRef) {
-          const li = lineupRef.findIndex((p: any) => p.id === offender.id);
-          if (li > -1) lineupRef.splice(li, 1);
-        }
+        // Expulsão de jogador de campo — sai sem reposição (regra oficial).
+        removeFromPitch({
+          fixture,
+          game,
+          side,
+          squad,
+          lineupIds,
+          outId: offender.id,
+        });
       }
     };
 
@@ -2444,42 +2470,16 @@ async function simulateMatchSegment(
             const playerIn = fullRoster.find((p: any) => p.id === playerInId);
 
             if (playerOut && playerIn) {
-              const idx = squad.findIndex((p: any) => p.id === playerOutId);
-              if (idx > -1) squad.splice(idx, 1, playerIn);
-              lineupIds.delete(playerOutId);
-              lineupIds.add(playerInId);
-              (fixture._subbedOut ??= new Set<number>()).add(playerOutId);
-              incrementSubCount(fixture, teamId);
-
-              // Actualizar snapshot de lineup para que o ecrã de intervalo reflicta a substituição
-              const lineupRef = isHome
-                ? fixture.homeLineup
-                : fixture.awayLineup;
-              if (lineupRef) {
-                const li = lineupRef.findIndex(
-                  (p: any) => p.id === playerOutId,
-                );
-                if (li > -1) {
-                  lineupRef[li] = {
-                    id: playerIn.id,
-                    name: playerIn.name,
-                    position: playerIn.position,
-                    is_star: playerIn.is_star || 0,
-                    skill: getEffectiveSkill(playerIn),
-                    ...getMatchFatigueSnapshot(fixture, side, playerIn.id),
-                  };
-                }
-              }
-
-              // Keep tactic positions in sync so applyHalftimeSubs/applyETSubs
-              // don't undo this substitution when the next phase starts.
-              const coachState = Object.values(game.playersByName).find(
-                (p: any) => (p as any).teamId === teamId,
-              ) as any;
-              if (coachState?.tactic?.positions) {
-                delete coachState.tactic.positions[playerOutId];
-                coachState.tactic.positions[playerInId] = "Titular";
-              }
+              swapOnPitch({
+                fixture,
+                game,
+                side,
+                squad,
+                lineupIds,
+                outId: playerOutId,
+                incoming: playerIn,
+                countSub: true,
+              });
 
               fixture.events.push({
                 minute: fixture._minute,
@@ -2913,6 +2913,7 @@ module.exports = {
   generateSecondHalfIntroEvents,
   getMatchFatigueSnapshot,
   queueMatchDeltaWrites,
+  buildLineupSnapshot,
 };
 
 // ─── EXTRA TIME ──────────────────────────────────────────────────────────────

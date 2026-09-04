@@ -11,7 +11,7 @@ import {
 } from "./gameConstants";
 import { clearPhaseTimer } from "./matchFlowHelpers";
 import { generateAITactic } from "./game/matchCalculations";
-import { getMatchFatigueSnapshot, queueMatchDeltaWrites } from "./game/engine";
+import { getEffectiveSkill, getMatchFatigueSnapshot, queueMatchDeltaWrites } from "./game/engine";
 import { getTeamsWithCoachNames, logClubNews } from "./coreHelpers";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { serializeActiveAuctions } from "./auctionHelpers";
@@ -966,7 +966,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						name: p.name,
 						position: p.position,
 						is_star: p.is_star || 0,
-						skill: p.skill,
+						skill: getEffectiveSkill(p),
 						...getMatchFatigueSnapshot(fx, teamSide, p.id),
 					}));
 
