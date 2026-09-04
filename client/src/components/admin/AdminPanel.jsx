@@ -162,7 +162,7 @@ export function AdminPanel({ open, onClose }) {
         )}
 
         {/* Corpo — scroll ÚNICO: lista por cima, configurações por baixo (sem scroll dentro de scroll) */}
-        <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <div ref={scrollContainerRef} className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain">
           <UserList
             isMobile
             disableInternalScroll
@@ -174,12 +174,12 @@ export function AdminPanel({ open, onClose }) {
           {selectedUser && (
             <div
               ref={detailRef}
-              className="border-t border-outline-variant/15 bg-surface p-4 space-y-6 scroll-mt-3"
+              className="border-t border-outline-variant/15 bg-surface p-4 space-y-6 scroll-mt-3 min-w-0"
             >
               {/* Âncora visual: nome do utilizador selecionado acima das configurações */}
-              <div className="flex items-center gap-2 pb-2 border-b border-outline-variant/10 -mx-4 px-4 -mt-4 pt-4 bg-surface-container-high/30">
-                <span className="material-symbols-outlined text-primary text-xl">settings</span>
-                <span className="text-xs font-black uppercase tracking-widest text-on-surface">
+              <div className="flex items-center gap-2 pb-2 border-b border-outline-variant/10 -mx-4 px-4 -mt-4 pt-4 bg-surface-container-high/30 min-w-0">
+                <span className="material-symbols-outlined text-primary text-xl shrink-0">settings</span>
+                <span className="text-xs font-black uppercase tracking-widest text-on-surface truncate min-w-0">
                   Configurações — {selectedUser.name}
                 </span>
               </div>

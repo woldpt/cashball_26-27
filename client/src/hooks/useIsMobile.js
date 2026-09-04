@@ -11,7 +11,7 @@ import { useSyncExternalStore } from "react";
  * @returns {boolean} `true` se estiver abaixo do threshold (layout mobile).
  */
 export function useIsMobile(threshold = 768) {
-  const query = `max-width: ${threshold - 1}px`;
+  const query = `(max-width: ${threshold - 1}px)`;
   let mql = null;
   const getMql = () => (mql ??= window.matchMedia(query));
 
