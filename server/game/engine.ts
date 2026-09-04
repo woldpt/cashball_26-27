@@ -2956,8 +2956,12 @@ function simulatePenaltyShootout(
     if (homeScored !== awayScored) break; // One scored, other didn't → winner decided
   }
 
-  // Tiebreak failsafe
-  if (homeGoals === awayGoals) homeGoals++;
+  // Failsafe do desempate: após 20 rondas de morte súbita ainda empatado
+  // (probabilidade ínfima), sorteio imparcial em vez de favorecer a casa.
+  if (homeGoals === awayGoals) {
+    if (Math.random() < 0.5) homeGoals++;
+    else awayGoals++;
+  }
 
   return { homeGoals, awayGoals, kicks };
 }
