@@ -327,6 +327,23 @@ async function main() {
   void idsA;
   void idsB;
 
+  // B6 — bloco 46' in-loop: continuação 46-47 SEM pré-geração (chamada direta,
+  // como a Taça) emite o comentário de fase exatamente uma vez
+  await simulateMatchSegment(db, fixtureA, homeTacticA, awayTacticA, 46, 47, {
+    game,
+    io,
+    matchweek: 3,
+    calendarIndex: 5,
+    onMinute: async () => {},
+  });
+  const halfEvents = (fixtureA.events as any[]).filter(
+    (e) => e.minute === 46 && e.type === "phase_start",
+  );
+  check(halfEvents.length === 1, `B6: phase_start aos 46': ${halfEvents.length} (esperado 1)`);
+  if (halfEvents.length === 1) {
+    console.log(`  …2ª parte anunciada in-loop: "${halfEvents[0].text?.slice(0, 70) || ""}"`);
+  }
+
   // Mapa de pending actions termina vazio (tudo consumido/resolvido)
   const { getPendingMatchActions } = require("../game/engine.ts");
   check(

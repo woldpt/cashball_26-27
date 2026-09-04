@@ -93,7 +93,7 @@ interface Emission {
 
 const START_MIN = 1;
 const END_MIN = 45;
-const MATCHES = Number(process.env.MATCHES || 400);
+const MATCHES = Number(process.env.MATCHES || 30);
 
 // Replica EXATAMENTE o que weeklyFlowHelpers.runMatchSegment emite por minuto
  function emitMinuteUpdateLikeWeeklyLoop(

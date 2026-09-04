@@ -37,7 +37,10 @@ jobs:
 
       # Regression scripts — cada um é self-contained (exit 0/1).
       # Rodamos todos; o workflow falha se qualquer um falhar.
+      # penalty-ordering corre a série completa (400); localmente o default é 30.
       - name: Regression tests
+        env:
+          MATCHES: 400
         run: |
           set -e
           for test in \
