@@ -1118,17 +1118,6 @@ function SubsPanel({
           </div>
         </div>
 
-        {/* Substituições confirmadas (halftime) — acima da stack, no fluxo. */}
-        {isHalftime && confirmedSubs.length > 0 && (
-          <div className="shrink-0 border-b border-outline-variant/15 bg-cyan-950/10">
-            <ConfirmedSubsStrip
-              subs={confirmedSubs}
-              annotatedSquad={annotatedSquad}
-              onUndoSub={onUndoSub}
-            />
-          </div>
-        )}
-
         {/* ── Stack de páginas ── */}
         <div className="relative flex-1 min-h-0 overflow-hidden">
           {/* Folha TITULARES (frente por omissão) */}
