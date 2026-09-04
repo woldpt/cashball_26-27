@@ -132,13 +132,15 @@ export function FinancesTab({
   return (
     <div className="space-y-4">
       {/* ── HERO ──────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-0.5 bg-outline-variant/10 overflow-hidden rounded-xl">
+      {/* 3 segmentos lado a lado em todas as larguras: no phone, empilhados
+          gastavam ~380px de altura; em colunas o valor exato cabe em text-[15px]. */}
+      <div className="grid grid-cols-3 gap-0.5 bg-outline-variant/10 overflow-hidden rounded-xl">
         {/* Saldo Actual */}
         <SummaryWidget
           flat
           label="Saldo Actual"
           value={formatCurrency(currentBudget)}
-          valueClass="text-2xl sm:text-4xl font-bold"
+          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-4xl font-bold"
           valueColorClass={currentBudget >= 0 ? "text-primary" : "text-error"}
           className="relative overflow-hidden"
         >
@@ -147,8 +149,8 @@ export function FinancesTab({
               payments
             </span>
           </div>
-          <div className="mt-3 sm:mt-6 flex items-end gap-2">
-            <div className="flex gap-1 h-8 items-end">
+          <div className="mt-2 sm:mt-4 flex items-end gap-2">
+            <div className="hidden sm:flex gap-1 h-6 sm:h-8 items-end">
               <div className="w-1 bg-primary/20 h-2 rounded-t-sm" />
               <div className="w-1 bg-primary/40 h-4 rounded-t-sm" />
               <div className="w-1 bg-primary/60 h-3 rounded-t-sm" />
@@ -165,18 +167,18 @@ export function FinancesTab({
           flat
           label="Resultado da Época"
           value={`${seasonResult >= 0 ? "+" : ""}${formatCurrency(seasonResult)}`}
-          valueClass="text-2xl sm:text-4xl font-bold"
+          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-4xl font-bold"
           valueColorClass={seasonResult >= 0 ? "text-tertiary" : "text-error"}
         >
-          <div className="mt-3 sm:mt-6 flex items-center gap-2">
+          <div className="mt-2 sm:mt-4 flex items-center gap-1 sm:gap-2">
             <span
-              className={`material-symbols-outlined text-sm ${seasonResult >= 0 ? "text-tertiary" : "text-error"}`}
+              className={`material-symbols-outlined text-xs sm:text-sm ${seasonResult >= 0 ? "text-tertiary" : "text-error"}`}
             >
               {seasonResult >= 0
                 ? "trending_up"
                 : "trending_down"}
             </span>
-            <span className="text-[10px] text-on-surface-variant font-medium font-label uppercase">
+            <span className="text-[9px] sm:text-[10px] leading-tight text-on-surface-variant font-medium font-label uppercase">
               {completedJornada} / 14 jornadas concluídas
             </span>
           </div>
@@ -186,7 +188,7 @@ export function FinancesTab({
           flat
           label="Saldo previsto fim de época"
           value={`${projection.projectedEndBudget >= 0 ? "+" : ""}${formatCurrency(projection.projectedEndBudget)}`}
-          valueClass="text-xl sm:text-3xl font-bold"
+          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-3xl font-bold"
           valueColorClass={projection.projectedEndBudget >= 0 ? "text-tertiary" : "text-error"}
           className="relative overflow-hidden"
         >
@@ -195,10 +197,9 @@ export function FinancesTab({
               savings
             </span>
           </div>
-          <div className="mt-3 sm:mt-6">
-            <p className="text-[10px] text-on-surface-variant uppercase mb-1">
-              Bilheteiras previstas - salários - juros (
-              {projection.remainingJornadas} jornadas)
+          <div className="mt-2 sm:mt-4">
+            <p className="text-[9px] sm:text-[10px] leading-tight text-on-surface-variant uppercase mb-1">
+              Bilheteiras - salários - juros ({projection.remainingJornadas} j.)
             </p>
           </div>
         </SummaryWidget>
@@ -222,7 +223,7 @@ export function FinancesTab({
       {/* ── RECEITAS / DESPESAS / CONTROLO ────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Receitas */}
-        <div className="bg-surface-container-low rounded-lg p-5 flex flex-col space-y-3">
+        <div className="bg-surface-container-low rounded-lg p-3 sm:p-5 flex flex-col space-y-3">
           <div className="flex justify-between items-center pb-2 border-b border-outline-variant/15">
             <h3 className="font-headline text-base uppercase tracking-tight flex items-center gap-2 min-w-0 truncate">
               <span className="material-symbols-outlined text-primary text-base shrink-0">
@@ -404,7 +405,7 @@ export function FinancesTab({
         </div>
 
         {/* Despesas */}
-        <div className="bg-surface-container-low rounded-lg p-5 flex flex-col space-y-3">
+        <div className="bg-surface-container-low rounded-lg p-3 sm:p-5 flex flex-col space-y-3">
           <div className="flex justify-between items-center pb-2 border-b border-outline-variant/15">
             <h3 className="font-headline text-base uppercase tracking-tight flex items-center gap-2 min-w-0 truncate">
               <span className="material-symbols-outlined text-error text-base shrink-0">
@@ -547,7 +548,7 @@ export function FinancesTab({
         <div className="space-y-4">
           {/* Folha Salarial */}
           <div
-            className={`bg-surface-container rounded-lg p-5 border-l-4 ${wageSharePct > 75 ? "border-error" : wageSharePct > 50 ? "border-tertiary" : "border-primary"} relative overflow-hidden`}
+            className={`bg-surface-container rounded-lg p-3 sm:p-5 border-l-4 ${wageSharePct > 75 ? "border-error" : wageSharePct > 50 ? "border-tertiary" : "border-primary"} relative overflow-hidden`}
           >
             <div className="flex justify-between items-start mb-3">
               <div>
@@ -603,7 +604,7 @@ export function FinancesTab({
           </div>
 
           {/* Dívida Bancária */}
-          <div className="bg-surface-container rounded-lg p-5 border-t border-outline-variant/10">
+          <div className="bg-surface-container rounded-lg p-3 sm:p-5 border-t border-outline-variant/10">
             <h3 className="font-headline text-xs uppercase tracking-widest text-on-surface-variant mb-3">
               Empréstimos
             </h3>

@@ -41,7 +41,7 @@ export function SummaryWidget({
     <div
       className={`${
         flat
-          ? "bg-surface-container p-4 sm:p-6 rounded-xl flex flex-col justify-between"
+          ? "bg-surface-container p-3 sm:p-6 rounded-xl flex flex-col justify-between"
           : compactMobile
             ? `bg-surface-container-low p-3 sm:p-5 rounded-md flex flex-col justify-between ${sub ? "h-20" : "h-14"} sm:h-28 border-l-4`
             : "bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4"
