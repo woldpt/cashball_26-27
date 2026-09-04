@@ -2498,6 +2498,13 @@ async function simulateMatchSegment(
         }
       }
     }
+
+    // Hook de progresso por minuto (fix #6): os chamadores recebem cada minuto
+    // simulado para emitir updates/dormir, sem partir a simulação em N chamadas
+    // de 1 minuto com setup repetido (plantéis, morale, rostos, lineups).
+    if (typeof context.onMinute === "function") {
+      await context.onMinute(minute);
+    }
   }
 
   delete fixture._minute;
@@ -2955,20 +2962,16 @@ async function simulateExtraTime(
     });
   };
 
-  // Single ET period: minutes 91–120, no halftime pause
-  for (let minute = 91; minute <= 120; minute++) {
-    await simulateMatchSegment(
-      db,
-      fixture,
-      homeTactic,
-      awayTactic,
-      minute,
-      minute,
-      context,
-    );
-    emitMinuteUpdate(minute);
-    if (minute < 120) await new Promise((r) => setTimeout(r, msPerMinute));
-  }
+  // Período único 91–120 (fix #6): uma só chamada, com setup (plantéis,
+  // morale, rosters, lineups) feito uma vez. O hook onMinute preserva os
+  // updates ao vivo e o ritmo do relógio minuto a minuto.
+  await simulateMatchSegment(db, fixture, homeTactic, awayTactic, 91, 120, {
+    ...context,
+    onMinute: async (minute: number) => {
+      emitMinuteUpdate(minute);
+      if (minute < 120) await new Promise((r) => setTimeout(r, msPerMinute));
+    },
+  });
 
   const etEvents = fixture.events.filter((e: any) => e.minute >= 91);
   return { et1Events: etEvents, et2Events: [] };

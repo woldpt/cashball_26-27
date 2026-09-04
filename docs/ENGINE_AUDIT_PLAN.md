@@ -14,7 +14,7 @@
 - [x] **#4 Unificar semente do clima** — bloco `ws ^= ...` copiado em `generateIntroEvents`,
       `simulateMatchSegment` e `matchSummaryHelpers`. Fix: `getWeatherForFixture()` única.
 - [x] **#5 Cachear cálculo de força** — `getPower()` 90–120× por jogo. Fix: cache + invalidação por evento.
-- [ ] **#6 ET sem overhead 30×** — `simulateExtraTime` chama `simulateMatchSegment` 30 vezes,
+- [x] **#6 ET sem overhead 30×** — `simulateExtraTime` chama `simulateMatchSegment` 30 vezes,
       reconstruindo plantéis/morale a cada minuto. Fix: segmento único 91–120.
 
 ## P1 — Manutenibilidade / testabilidade
