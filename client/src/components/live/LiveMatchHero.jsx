@@ -158,12 +158,6 @@ export function LiveMatchHero({
               : `${DIVISION_NAMES[hInfo?.division] || ""} · Jornada ${matchResults?.matchweek ?? "—"}`}
           </span>
           <div className="flex items-center gap-2">
-            {isPlayingMatch && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error/10 border border-error/30 text-error text-[9px] font-black uppercase tracking-widest">
-                <span className="w-1.5 h-1.5 rounded-full bg-error animate-pulse" />
-                AO VIVO
-              </span>
-            )}
             {!isPlayingMatch && isCupMatch && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[9px] font-black uppercase tracking-widest">
                 🏆 {cupMatchRoundName}
