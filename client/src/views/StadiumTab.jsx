@@ -86,7 +86,7 @@ export function StadiumTab({
       </div>
 
       {/* ── ROW: STATS ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <SummaryWidget
           label="Capacidade Actual"
           value={stadiumCapacity.toLocaleString("pt-PT")}
@@ -124,9 +124,9 @@ export function StadiumTab({
         meta={atMaxCapacity ? "Capacidade Máxima" : undefined}
         padded={false}
       >
-        <div className="p-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-            <div className="bg-surface rounded-md border border-outline-variant/15 p-4 flex flex-col gap-1">
+        <div className="p-3 sm:p-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-5">
+            <div className="bg-surface rounded-md border border-outline-variant/15 p-3 sm:p-4 flex flex-col gap-1">
               <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
                 Custo por Obra
               </span>
@@ -137,7 +137,7 @@ export function StadiumTab({
                 +{SEATS_PER_BUILD.toLocaleString("pt-PT")} lugares
               </span>
             </div>
-            <div className="bg-surface rounded-md border border-outline-variant/15 p-4 flex flex-col gap-1">
+            <div className="bg-surface rounded-md border border-outline-variant/15 p-3 sm:p-4 flex flex-col gap-1">
               <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
                 Ganho Receita / Obra
               </span>
