@@ -25,7 +25,7 @@
       `0.00816`, `0.00653`, fatores de morale) dispersos. Fix: `MATCH_TUNING` com taxas-alvo.
 - [x] **#9 RNG injetável** — `Math.random()` em ~30 sítios. Fix: `context.rng ?? Math.random`
       (seeded por `roomCode+calendarIndex` nos testes).
-- [ ] **#10 Tipos em vez de `any`** — `Db`, `PlayerRow`, `MatchFixture`, `tactic: any`; `choice`
+- [x] **#10 Tipos em vez de `any`** — `Db`, `PlayerRow`, `MatchFixture`, `tactic: any`; `choice`
       objeto-vs-id inconsistente. Fix: tipar e uniformizar.
 - [ ] **#11 Exports ESM puros** — `module.exports` + `import` misturados. Fix: só `export`.
 - [ ] **#12 Evolução async/await** — `applyPostMatchQualityEvolution` com callbacks aninhados +

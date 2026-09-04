@@ -1,4 +1,4 @@
-import type { ActiveGame, Tactic } from "../types";
+import type { ActiveGame, Tactic, PlayerRow, MatchFixture, MatchSide } from "../types";
 import {
   generateJuniorGR,
   withJuniorGRs,
@@ -62,9 +62,6 @@ import { recalcPlayerValue, MATCH_TUNING } from "../gameConstants";
 import { getTacticBonus } from "./tacticFamiliarity";
 
 type Db = any;
-type PlayerRow = any;
-type MatchFixture = any;
-type MatchSide = "home" | "away";
 
 // ── Deltas pós-jogo (fix #2: flush transacional) ─────────────────────────────
 // Durante a simulação, golos/cartões/lesões/presenças NÃO escrevem na DB.
@@ -523,19 +520,36 @@ function waitForMatchAction({
   });
 }
 
-// Normalizes a forced-swap choice: the client sends { playerOut, playerIn }
-// (object) while legacy/auto paths may send a bare player id. Returns
-// { playerOut, playerIn } with nulls for missing parts.
-function normalizeForcedChoice(
-  choice: any,
+// Normaliza a escolha de qualquer ação de jogo para { playerOut, playerIn }.
+// Contrato com o cliente (ver resolveMatchAction em socketGameplayHandlers):
+//   - subs (user_substitution/injury/gk_red_card) → objeto { playerOut, playerIn };
+//   - escolha única (penalty/emergency_gk) → id nu (payload.playerId) ou
+//     objeto { playerId } por robustez;
+//   - fallbacks automáticos → qualquer uma das formas acima ou null.
+// Devolve nulls nas partes em falta.
+export type MatchActionChoice =
+  | {
+      playerOut?: number | null;
+      playerIn?: number | null;
+      playerId?: number | null;
+    }
+  | number
+  | null
+  | undefined;
+
+export function normalizeMatchChoice(
+  choice: MatchActionChoice,
 ): { playerOut: number | null; playerIn: number | null } {
-  if (choice && typeof choice === "object") {
+  if (typeof choice === "number") {
+    return { playerOut: null, playerIn: choice };
+  }
+  if (choice != null && typeof choice === "object") {
     return {
       playerOut: choice.playerOut ?? null,
-      playerIn: choice.playerIn ?? null,
+      playerIn: choice.playerIn ?? choice.playerId ?? null,
     };
   }
-  return { playerOut: null, playerIn: choice ?? null };
+  return { playerOut: null, playerIn: null };
 }
 
 /**
@@ -747,13 +761,12 @@ async function openEmergencyGKAction({
     },
   });
 
-  const raw = result.choice;
-  const choiceId =
-    raw && typeof raw === "object" && raw !== null
-      ? raw.playerId ?? null
-      : raw ?? null;
+  const { playerIn: choiceId } = normalizeMatchChoice(result.choice);
   const chosen =
-    emergencyCandidates.find((p) => p.id === choiceId) ?? weakest() ?? null;
+    (choiceId != null &&
+      emergencyCandidates.find((p) => p.id === choiceId)) ||
+    weakest() ||
+    null;
   if (!chosen) return null;
 
   // Converte o escolhido na squad (clone — a referência original fica intacta;
@@ -1002,7 +1015,7 @@ async function applyInjuryEvent({
     },
   });
 
-  const forcedChoice = normalizeForcedChoice(result.choice);
+  const forcedChoice = normalizeMatchChoice(result.choice);
   const replacement =
     forcedChoice.playerIn != null &&
     availableBench.find((p) => p.id === forcedChoice.playerIn);
@@ -1125,10 +1138,11 @@ async function applyPenaltyEvent({
     },
   });
 
+  const { playerIn: takerId } = normalizeMatchChoice(result.choice);
   const taker =
-    result.choice && takerCandidates.find((p) => p.id === result.choice)
-      ? takerCandidates.find((p) => p.id === result.choice)
-      : fallback();
+    (takerId != null && takerCandidates.find((p) => p.id === takerId)) ||
+    takerCandidates.find((p) => p.id === fallback()) ||
+    null;
   if (!taker) return;
 
   // Base 82% goal rate, skill efetiva (range 5–50) shifts it ±6 pp around the mean (30)
@@ -1213,7 +1227,7 @@ function syncFatigueSnapshot(
   const li = lineupRef.findIndex((q: any) => q.id === playerId);
   if (li < 0) return;
 
-  const next = {
+  const next: Record<string, unknown> = {
     ...lineupRef[li],
     ...getMatchFatigueSnapshot(fixture, side, playerId),
   };
@@ -1357,8 +1371,8 @@ export function generateIntroEvents(
 
   // Comentário táctico de início
   if (!fixture._firstHalfStartComment) {
-    const homeName = fixture.homeTeam?.name || fixture.homeTeamId;
-    const awayName = fixture.awayTeam?.name || fixture.awayTeamId;
+    const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
+    const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
     const homeFormation = homeTactic?.formation || "4-4-2";
     const awayFormation = awayTactic?.formation || "4-4-2";
     const homeStyle = normaliseStyle(homeTactic?.style);
@@ -1395,8 +1409,8 @@ export function generateSecondHalfIntroEvents(
   awayTactic: any,
 ): void {
   if (!fixture._secondHalfStartComment) {
-    const homeName = fixture.homeTeam?.name || fixture.homeTeamId;
-    const awayName = fixture.awayTeam?.name || fixture.awayTeamId;
+    const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
+    const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
     const homeFormation = homeTactic?.formation || "4-4-2";
     const awayFormation = awayTactic?.formation || "4-4-2";
     const homeStyle = normaliseStyle(homeTactic?.style);
@@ -1804,8 +1818,8 @@ async function simulateMatchSegment(
     fixture._minute = minute;
 
     if (minute === 1 && !fixture._firstHalfStartComment) {
-      const homeName = fixture.homeTeam?.name || fixture.homeTeamId;
-      const awayName = fixture.awayTeam?.name || fixture.awayTeamId;
+      const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
+      const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
       const homeFormation = homeTactic?.formation || "4-4-2";
       const awayFormation = awayTactic?.formation || "4-4-2";
       const homeStyle = normaliseStyle(homeTactic?.style);
@@ -1832,8 +1846,8 @@ async function simulateMatchSegment(
     }
 
     if (minute === 46 && !fixture._secondHalfStartComment) {
-      const homeName = fixture.homeTeam?.name || fixture.homeTeamId;
-      const awayName = fixture.awayTeam?.name || fixture.awayTeamId;
+      const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);
+      const awayName = fixture.awayTeam?.name || String(fixture.awayTeamId);
       const homeFormation = homeTactic?.formation || "4-4-2";
       const awayFormation = awayTactic?.formation || "4-4-2";
       const homeStyle = normaliseStyle(homeTactic?.style);
@@ -2261,7 +2275,7 @@ async function simulateMatchSegment(
           },
         });
 
-        const forcedChoice = normalizeForcedChoice(result.choice);
+        const forcedChoice = normalizeMatchChoice(result.choice);
         const incoming =
           forcedChoice.playerIn != null
             ? grCandidates.find((p) => p.id === forcedChoice.playerIn)
@@ -2944,6 +2958,7 @@ module.exports = {
   getMatchFatigueSnapshot,
   queueMatchDeltaWrites,
   buildLineupSnapshot,
+  normalizeMatchChoice,
 };
 
 // ─── EXTRA TIME ──────────────────────────────────────────────────────────────

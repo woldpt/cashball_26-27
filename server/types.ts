@@ -12,6 +12,135 @@ export interface Tactic {
   positions?: Record<number, "Titular" | "Suplente" | string>;
 }
 
+export type PlayerPosition = "GR" | "DEF" | "MED" | "ATA";
+
+/**
+ * Linha de jogador (DB + campos efémeros em jogo). Os campos nucleares são
+ * obrigatórios; o resto é opcional. A index signature cobre colunas raras
+ * sem enfraquecer os acessos declarados.
+ */
+export interface PlayerRow {
+  id: number;
+  name: string;
+  position: PlayerPosition;
+  skill: number;
+  // ── Só memória, durante a simulação (nunca persiste) ──
+  _matchSkill?: number; // skill efetiva com fadiga (ver getEffectiveSkill)
+  originalPosition?: PlayerPosition;
+  isEmergencyGK?: boolean;
+  isJunior?: boolean;
+  // ── Atributos ──
+  resistance?: number;
+  form?: number;
+  aggressiveness?: number | string;
+  potential?: number;
+  is_star?: number;
+  // ── Vínculo / estado ──
+  team_id?: number | null;
+  age?: number;
+  nationality?: string;
+  value?: number;
+  wage?: number;
+  transfer_status?: string;
+  transfer_cooldown_until_matchweek?: number;
+  joined_matchweek?: number;
+  signed_season?: number | null;
+  // ── Contadores época / carreira ──
+  games_played?: number;
+  goals?: number;
+  career_goals?: number;
+  yellow_cards?: number;
+  red_cards?: number;
+  career_reds?: number;
+  injuries?: number;
+  career_injuries?: number;
+  suspension_games?: number;
+  suspension_until_matchweek?: number;
+  injury_until_matchweek?: number;
+  last_appearance_matchweek?: number;
+  prev_skill?: number | null;
+  [key: string]: unknown;
+}
+
+export type MatchSide = "home" | "away";
+
+export interface MatchEvent {
+  minute: number;
+  type: string;
+  team: MatchSide | null;
+  text: string;
+  emoji?: string;
+  playerId?: number | null;
+  playerName?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Fixture em jogo. Campos de resultado + caches transitórios (`_`) que só
+ * vivem durante a simulação (plantéis, ledgers de fadiga, deltas pós-jogo,
+ * memoização de força, guards de comentário). Nada com `_` persiste na DB.
+ */
+export interface MatchFixture {
+  homeTeamId: number;
+  awayTeamId: number;
+  homeTeam?: { name?: string; division?: number; position?: number | null } | null;
+  awayTeam?: { name?: string; division?: number; position?: number | null } | null;
+  finalHomeGoals: number;
+  finalAwayGoals: number;
+  events: MatchEvent[];
+  homeLineup?: Array<Record<string, unknown>>;
+  awayLineup?: Array<Record<string, unknown>>;
+  attendance?: number;
+  referee?: unknown;
+  round?: number;
+  season?: number;
+  matchweek?: number;
+  homePossession?: number;
+  awayPossession?: number;
+  // ── Caches transitórios da simulação ──
+  _minute?: number;
+  _weather?: string;
+  _homePossession?: number;
+  _awayPossession?: number;
+  _homeSquad?: PlayerRow[];
+  _awaySquad?: PlayerRow[];
+  _homeFullRoster?: PlayerRow[];
+  _awayFullRoster?: PlayerRow[];
+  _homeMorale?: number;
+  _awayMorale?: number;
+  _t1?: Tactic | null;
+  _t2?: Tactic | null;
+  _yellowCards?: Record<number, number>;
+  _subbedOut?: Set<number>;
+  _subCountByTeam?: Record<number, number>;
+  _minutesPlayed?: { home: Record<number, number>; away: Record<number, number> };
+  _fatigueLoss?: { home: Record<number, number>; away: Record<number, number> };
+  _deltas?: {
+    calendarIndex: number;
+    appearances: Set<number>;
+    goals: Map<number, number>;
+    reds: Map<number, number>;
+    injuries: Map<number, {
+      newSkill: number;
+      injuryUntil: number;
+      oldSkill: number;
+      count: number;
+      matchweek: number;
+      season: number;
+    }>;
+  };
+  _homePower?: { key: string; power: { attack: number; defense: number; style: string; squad: PlayerRow[]; midStrength: number } };
+  _awayPower?: { key: string; power: { attack: number; defense: number; style: string; squad: PlayerRow[]; midStrength: number } };
+  _firstHalfStartComment?: boolean;
+  _secondHalfStartComment?: boolean;
+  _extraTimeStartComment?: boolean;
+  _finalEndComment?: boolean;
+  _bettingIntroShown?: boolean;
+  _fatigue3Applied?: boolean;
+  _winnerId?: number;
+  [key: string]: unknown;
+}
+
 export interface PlayerSession {
   name: string;
   teamId: number | null;
