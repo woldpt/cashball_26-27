@@ -1,3 +1,5 @@
+import type { SidePower } from "./game/matchCalculations";
+
 export type TacticStyle =
   | "Balanced"
   | "Defensive"
@@ -129,8 +131,10 @@ export interface MatchFixture {
       season: number;
     }>;
   };
-  _homePower?: { key: string; power: { attack: number; defense: number; style: string; squad: PlayerRow[]; midStrength: number } };
-  _awayPower?: { key: string; power: { attack: number; defense: number; style: string; squad: PlayerRow[]; midStrength: number } };
+  _homePower?: { power: SidePower; version: number };
+  _awayPower?: { power: SidePower; version: number };
+  _homePowerV?: number;
+  _awayPowerV?: number;
   _firstHalfStartComment?: boolean;
   _secondHalfStartComment?: boolean;
   _extraTimeStartComment?: boolean;

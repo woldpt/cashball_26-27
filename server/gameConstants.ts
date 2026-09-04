@@ -320,4 +320,37 @@ export const MATCH_TUNING = {
   shootoutMin: 0.55,
   shootoutMax: 0.88,
   shootoutSuddenDeathCap: 20,
+  // Janelas de ação do treinador humano: 60s para decisões táticas (subs,
+  // lesões, GR improvisado/expulso), 12s para penáltis (não travar o jogo).
+  actionTimeoutMs: 60000,
+  penaltyActionTimeoutMs: 12000,
+  // Moral: delta por resultado + decaimento semanal para o neutro 50.
+  moraleWinDelta: 25,
+  moraleLossDelta: -20,
+  moraleDrawDelta: 5,
+  moraleDecayRate: 0.1,
+  // Evolução pós-jogo (probabilidades por jogador/semana). Alvos: subidas
+  // lentas por convivência/vitórias, descidas por derrotas/inatividade.
+  evoAboveCeilingRoll: 0.15, // acima do potencial: deriva de retorno
+  evoRustRoll: 0.15, // inativo há 3+ eventos: risco de enferrujar
+  evoCohabitBase: 0.2, // convivência com plantel mais talentoso
+  evoCohabitDivisor: 20, // …+ diff / 20, teto 0.75
+  evoCohabitMax: 0.75,
+  evoWinBase: 0.1, // vitória reforça quem está abaixo da média
+  evoWinDivisor: 50, // …+ diff / 50, teto 0.45
+  evoWinMax: 0.45,
+  evoLossBase: 0.04, // derrota: pressão de decaimento…
+  evoLossDivisor: 150, // …+ max(0,-diff) / 150, teto 0.18
+  evoLossMax: 0.18,
+  evoStreakBase: 0.05, // …agravada por derrotas consecutivas…
+  evoStreakSlope: 0.03, // …+ 0.03 * (streak - 1), teto 0.20
+  evoStreakMax: 0.2,
+  evoDrawDiff: 4, // empate c/ equipa mais forte: dif. mínima p/ evoluir
+  evoDrawChance: 0.2,
+  evoBraceChance: 0.25, // 2+ golos
+  evoGoalChance: 0.1, // 1 golo
+  evoCleanSheetChance: 0.15, // GR com clean sheet em vitória
+  evoRedChance: 0.2, // cartão vermelho
+  evoMomentumChance: 0.1, // presença consecutiva
+  evoStagnationChance: 0.04, // excesso de jogos sem descanso
 } as const;

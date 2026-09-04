@@ -13,7 +13,6 @@ import {
 import {
   canMakeSubstitution,
   incrementSubCount,
-  FORM_NEUTRAL,
   RES_NEUTRAL,
   EMERGENCY_GK_SKILL,
 } from "../gameConstants";
@@ -52,19 +51,47 @@ import {
 } from "./commentary";
 import {
   clampSkill,
-  getGoalTimeMultiplier,
   getWeatherForFixture,
-  getWeatherGoalMultiplier,
   normaliseStyle,
   getAggressivenessValue,
   average,
   selectPenaltyTaker,
+  computeSidePower,
+  computeOpenPlayGoalProbability,
 } from "./matchCalculations";
 import type { Rng } from "./matchCalculations";
 import { recalcPlayerValue, MATCH_TUNING } from "../gameConstants";
 import { getTacticBonus } from "./tacticFamiliarity";
 
 type Db = any;
+
+// Helpers promisificados (a DB é callback-style) — ÚNICA implementação.
+// Antes cada função enrolava o seu `new Promise` à mão (~7 cópias).
+export function dbRunAsync(db: Db, sql: string, params: any[] = []): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    db.run(sql, params, (err: any) => (err ? reject(err) : resolve()));
+  });
+}
+
+export function dbAllAsync<T = any>(db: Db, sql: string, params: any[] = []): Promise<T[]> {
+  return new Promise<T[]>((resolve, reject) => {
+    db.all(sql, params, (err: any, rows: T[]) =>
+      err ? reject(err) : resolve(rows || []),
+    );
+  });
+}
+
+export function dbGetAsync<T = any>(
+  db: Db,
+  sql: string,
+  params: any[] = [],
+): Promise<T | undefined> {
+  return new Promise<T | undefined>((resolve, reject) => {
+    db.get(sql, params, (err: any, row: T) =>
+      err ? reject(err) : resolve(row ?? undefined),
+    );
+  });
+}
 
 // ── Deltas pós-jogo (fix #2: flush transacional) ─────────────────────────────
 // Durante a simulação, golos/cartões/lesões/presenças NÃO escrevem na DB.
@@ -252,22 +279,71 @@ export function buildLineupSnapshot(
   return [...starters, ...bench];
 }
 
+/**
+ * Snapshot do fixture para os payloads das ações de jogo (5 chamadas a
+ * waitForMatchAction repetiam este bloco — ÚNICA implementação).
+ */
+export function buildFixtureData(
+  fixture: MatchFixture,
+): Record<string, unknown> {
+  return {
+    homeTeamId: fixture.homeTeamId,
+    awayTeamId: fixture.awayTeamId,
+    homeTeam: fixture.homeTeam,
+    awayTeam: fixture.awayTeam,
+    attendance: fixture.attendance,
+    referee: fixture.referee,
+    homePossession: fixture.homePossession,
+    awayPossession: fixture.awayPossession,
+    homeGoals: fixture.finalHomeGoals,
+    awayGoals: fixture.finalAwayGoals,
+    events: fixture.events || [],
+  };
+}
+
+/**
+ * Cartão de jogador para as janelas de ação (penálti, lesão, subs, GR).
+ * ÚNICA implementação — antes cada chamada construía o objeto à mão, com
+ * campos inconsistentes (umas com resistance/form/is_star, outras sem).
+ * `detailed=false` + `fatigue=false` reproduz o cartão mínimo do penálti.
+ */
+export function buildPlayerCard(
+  p: PlayerRow,
+  fixture: MatchFixture,
+  side: MatchSide,
+  opts: { detailed?: boolean; fatigue?: boolean } = {},
+): Record<string, unknown> {
+  const { detailed = true, fatigue = true } = opts;
+  return {
+    id: p.id,
+    name: p.name,
+    position: p.position,
+    skill: getEffectiveSkill(p),
+    ...(detailed
+      ? { resistance: p.resistance, form: p.form, is_star: p.is_star }
+      : {}),
+    ...(fatigue ? getMatchFatigueSnapshot(fixture, side, p.id) : {}),
+  };
+}
+
 export async function getTeamSquad(
   db: Db,
   teamId: number,
   tactic: Tactic | null,
   currentMatchweek = 1,
 ): Promise<PlayerRow[]> {
-  return new Promise<PlayerRow[]>((resolve, reject) => {
-    db.all("SELECT * FROM players WHERE team_id = ?", [teamId], (err, rows) => {
-      if (err) return reject(err);
+  const rows = await dbAllAsync<PlayerRow>(
+    db,
+    "SELECT * FROM players WHERE team_id = ?",
+    [teamId],
+  );
 
-      // Build available roster and inject juniors: withJuniorGRs guarantees a
-      // GR, ensureFullBench tops up the pool to 2 GR + 16 field players so the
-      // best-XI auto-pick below can never return a lineup shorter than 11.
-      const availableReal = (rows || []).filter((p) =>
-        isPlayerAvailable(p, currentMatchweek),
-      );
+  // Build available roster and inject juniors: withJuniorGRs guarantees a
+  // GR, ensureFullBench tops up the pool to 2 GR + 16 field players so the
+  // best-XI auto-pick below can never return a lineup shorter than 11.
+  const availableReal = (rows || []).filter((p) =>
+    isPlayerAvailable(p, currentMatchweek),
+  );
       const availableRows = ensureFullBench(
         withJuniorGRs(availableReal, teamId, currentMatchweek),
         teamId,
@@ -276,10 +352,10 @@ export async function getTeamSquad(
 
       // If tactic has explicit position assignments, use them
       if (tactic && tactic.positions) {
-        const lineup = availableRows.filter(
+        const picked = availableRows.filter(
           (p) => tactic.positions[p.id] === "Titular",
         );
-        if (lineup.length === 11) return resolve(lineup);
+        if (picked.length === 11) return picked;
       }
 
       // Auto-pick best 11 based on formation
@@ -312,9 +388,7 @@ export async function getTeamSquad(
         lineup.push(...remaining.slice(0, missing));
       }
 
-      resolve(lineup);
-    });
-  });
+      return lineup;
 }
 
 /**
@@ -378,27 +452,26 @@ function ensureStartingXI(
 //   Par i na jornada r: se (i + r) % 2 === 0 → seeds[i] em casa, senão fora.
 //   Segunda volta: inverter C/F de cada par da primeira volta correspondente.
 //
-// Se seeds estiver vazio, faz query à DB e embaralha aleatoriamente (1ª época).
+// Se seeds estiver vazio, faz query à DB ordenada por id (1ª época).
 export async function generateFixturesForDivision(
   db: Db,
   division: number,
   matchweek: number,
   seeds: number[],
 ): Promise<MatchFixture[]> {
-  // Se não há seeds, buscar equipas da DB ordenadas (sem embaralhar)
+  // Se não há seeds, buscar equipas da DB ordenadas (sem embaralhar).
+  // Em erro de DB, devolve [] (sem equipas não há fixtures).
   let seedIds =
     seeds.length > 0
       ? seeds
-      : await new Promise<number[]>((resolve) => {
-          db.all(
-            "SELECT id FROM teams WHERE division = ? ORDER BY id",
-            [division],
-            (err: any, rows: Array<{ id: number }>) => {
-              if (err || !rows || rows.length < 2) return resolve([]);
-              resolve(rows.map((r) => r.id));
-            },
-          );
-        });
+      : await dbAllAsync<{ id: number }>(
+          db,
+          "SELECT id FROM teams WHERE division = ? ORDER BY id",
+          [division],
+        ).then(
+          (rows) => (rows && rows.length >= 2 ? rows.map((r) => r.id) : []),
+          () => [],
+        );
 
   const n = seedIds.length;
   if (n < 2) return [];
@@ -556,6 +629,23 @@ export function normalizeMatchChoice(
 }
 
 /**
+ * Versão da força de um lado — dirty-flag para o computeSidePower.
+ * Qualquer mutação do onze em campo (sub, expulsão, lesão, fadiga,
+ * conversão em GR improvisado) faz bumpPowerVersion; o loop de minutos
+ * recalcula a força só quando a versão muda.
+ */
+function getPowerVersion(fixture: MatchFixture, side: MatchSide): number {
+  return Number(
+    side === "home" ? (fixture._homePowerV ?? 0) : (fixture._awayPowerV ?? 0),
+  );
+}
+
+function bumpPowerVersion(fixture: MatchFixture, side: MatchSide): void {
+  if (side === "home") fixture._homePowerV = getPowerVersion(fixture, side) + 1;
+  else fixture._awayPowerV = getPowerVersion(fixture, side) + 1;
+}
+
+/**
  * Sincroniza as táticas após uma saída/entrada em campo, para que
  * applyHalftimeSubs/applyETSubs não desfaçam substituições forçadas quando a
  * fase seguinte começa. Sincroniza fixture._t1/_t2 E coachState (no caso comum
@@ -617,6 +707,7 @@ function removeFromPitch({
 
   const teamId = side === "home" ? fixture.homeTeamId : fixture.awayTeamId;
   syncTacticPositions(game, fixture, side, teamId, [outId], []);
+  bumpPowerVersion(fixture, side);
 }
 
 /**
@@ -668,6 +759,7 @@ function swapOnPitch({
   }
 
   syncTacticPositions(game, fixture, side, teamId, [outId], [incoming.id]);
+  bumpPowerVersion(fixture, side);
 }
 
 /**
@@ -722,46 +814,16 @@ async function openEmergencyGKAction({
       minute,
       teamId,
       injuredPlayer: outPlayer,
-      onPitch: emergencyCandidates.map((p) => ({
-        id: p.id,
-        name: p.name,
-        position: p.position,
-        skill: getEffectiveSkill(p),
-        resistance: p.resistance,
-        form: p.form,
-        is_star: p.is_star,
-        ...getMatchFatigueSnapshot(fixture, side, p.id),
-      })),
-      benchPlayers: benchPlayers.map((p) => ({
-        id: p.id,
-        name: p.name,
-        position: p.position,
-        skill: getEffectiveSkill(p),
-        resistance: p.resistance,
-        form: p.form,
-        is_star: p.is_star,
-        ...getMatchFatigueSnapshot(fixture, side, p.id),
-      })),
+      onPitch: emergencyCandidates.map((p) => buildPlayerCard(p, fixture, side)),
+      benchPlayers: benchPlayers.map((p) => buildPlayerCard(p, fixture, side)),
       currentScore: {
         home: fixture.finalHomeGoals,
         away: fixture.finalAwayGoals,
       },
     },
-    timeoutMs: 60000,
+    timeoutMs: MATCH_TUNING.actionTimeoutMs,
     fallback,
-    fixtureData: {
-      homeTeamId: fixture.homeTeamId,
-      awayTeamId: fixture.awayTeamId,
-      homeTeam: fixture.homeTeam,
-      awayTeam: fixture.awayTeam,
-      attendance: fixture.attendance,
-      referee: fixture.referee,
-      homePossession: fixture.homePossession,
-      awayPossession: fixture.awayPossession,
-      homeGoals: fixture.finalHomeGoals,
-      awayGoals: fixture.finalAwayGoals,
-      events: fixture.events || [],
-    },
+    fixtureData: buildFixtureData(fixture),
   });
 
   const { playerIn: choiceId } = normalizeMatchChoice(result.choice);
@@ -777,6 +839,7 @@ async function openEmergencyGKAction({
   const ci = squad.findIndex((p: any) => p.id === chosen.id);
   const converted = convertToEmergencyGK(chosen);
   if (ci > -1) squad[ci] = converted;
+  bumpPowerVersion(fixture, side);
 
   // Snapshot de lineup: o escolhido passa a constar como GR (skill piso).
   const lineupRef = side === "home" ? fixture.homeLineup : fixture.awayLineup;
@@ -921,16 +984,7 @@ async function applyInjuryEvent({
         game,
         minute: fixture._minute,
         emergencyCandidates,
-        outPlayer: {
-          id: injuredPlayer.id,
-          name: injuredPlayer.name,
-          position: injuredPlayer.position,
-          skill: getEffectiveSkill(injuredPlayer),
-          resistance: injuredPlayer.resistance,
-          form: injuredPlayer.form,
-          is_star: injuredPlayer.is_star,
-          ...getMatchFatigueSnapshot(fixture, teamSide, injuredPlayer.id),
-        },
+        outPlayer: buildPlayerCard(injuredPlayer, fixture, teamSide),
         benchPlayers: benchList,
       });
     }
@@ -971,26 +1025,8 @@ async function applyInjuryEvent({
     payload: {
       minute: fixture._minute,
       teamId,
-      injuredPlayer: {
-        id: injuredPlayer.id,
-        name: injuredPlayer.name,
-        position: injuredPlayer.position,
-        skill: getEffectiveSkill(injuredPlayer),
-        resistance: injuredPlayer.resistance,
-        form: injuredPlayer.form,
-        is_star: injuredPlayer.is_star,
-        ...getMatchFatigueSnapshot(fixture, teamSide, injuredPlayer.id),
-      },
-      benchPlayers: substituteCandidates.map((p) => ({
-        id: p.id,
-        name: p.name,
-        position: p.position,
-        skill: getEffectiveSkill(p),
-        resistance: p.resistance,
-        form: p.form,
-        is_star: p.is_star,
-        ...getMatchFatigueSnapshot(fixture, teamSide, p.id),
-      })),
+      injuredPlayer: buildPlayerCard(injuredPlayer, fixture, teamSide),
+      benchPlayers: substituteCandidates.map((p) => buildPlayerCard(p, fixture, teamSide)),
       currentScore: {
         home: fixture.finalHomeGoals,
         away: fixture.finalAwayGoals,
@@ -1001,21 +1037,9 @@ async function applyInjuryEvent({
         ? { incomingBecomesGK: true }
         : {}),
     },
-    timeoutMs: 60000,
+    timeoutMs: MATCH_TUNING.actionTimeoutMs,
     fallback,
-    fixtureData: {
-      homeTeamId: fixture.homeTeamId,
-      awayTeamId: fixture.awayTeamId,
-      homeTeam: fixture.homeTeam,
-      awayTeam: fixture.awayTeam,
-      attendance: fixture.attendance,
-      referee: fixture.referee,
-      homePossession: fixture.homePossession,
-      awayPossession: fixture.awayPossession,
-      homeGoals: fixture.finalHomeGoals,
-      awayGoals: fixture.finalAwayGoals,
-      events: fixture.events || [],
-    },
+    fixtureData: buildFixtureData(fixture),
   });
 
   const forcedChoice = normalizeMatchChoice(result.choice);
@@ -1113,32 +1137,15 @@ async function applyPenaltyEvent({
     payload: {
       minute: fixture._minute,
       teamId,
-      takerCandidates: takerCandidates.map((p) => ({
-        id: p.id,
-        name: p.name,
-        position: p.position,
-        skill: getEffectiveSkill(p),
-      })),
+      takerCandidates: takerCandidates.map((p) => buildPlayerCard(p, fixture, teamSide, { detailed: false, fatigue: false })),
       currentScore: {
         home: fixture.finalHomeGoals,
         away: fixture.finalAwayGoals,
       },
     },
-    timeoutMs: 12000,
+    timeoutMs: MATCH_TUNING.penaltyActionTimeoutMs,
     fallback,
-    fixtureData: {
-      homeTeamId: fixture.homeTeamId,
-      awayTeamId: fixture.awayTeamId,
-      homeTeam: fixture.homeTeam,
-      awayTeam: fixture.awayTeam,
-      attendance: fixture.attendance,
-      referee: fixture.referee,
-      homePossession: fixture.homePossession,
-      awayPossession: fixture.awayPossession,
-      homeGoals: fixture.finalHomeGoals,
-      awayGoals: fixture.finalAwayGoals,
-      events: fixture.events || [],
-    },
+    fixtureData: buildFixtureData(fixture),
   });
 
   const { playerIn: takerId } = normalizeMatchChoice(result.choice);
@@ -1253,6 +1260,8 @@ function applyFatigueToPlayer(
   const before = Number(getEffectiveSkill(player) ?? 0);
   const after = Math.max(1, before - amount);
   player._matchSkill = after;
+  // A skill efetiva mudou — a força do lado fica dirty.
+  if (after !== before) bumpPowerVersion(fixture, side);
 
   const effectiveLoss = Math.max(0, before - after);
   if (effectiveLoss > 0) {
@@ -1465,24 +1474,22 @@ export async function simulateMatchSegment(
       }
     }
     // Junior GRs have negative IDs — fetch real players from DB, then re-add any juniors.
-    homeSquad = await new Promise<any[]>((resolve) => {
-      const allIds = Array.from(homeIds);
-      const realIds = allIds.filter((id: number) => id > 0);
-      const juniorIds = new Set(allIds.filter((id: number) => id < 0));
-      const ph = realIds.length > 0 ? realIds.map(() => "?").join(",") : "0";
-      db.all(
-        `SELECT * FROM players WHERE id IN (${ph})`,
-        realIds.length > 0 ? realIds : [],
-        (_, r) => {
-          const dbPlayers = r || [];
-          // Re-add cached junior GRs whose IDs are still in the active lineup.
-          const cachedJuniors = (fixture._homeFullRoster || []).filter(
-            (p: any) => juniorIds.has(p.id),
-          );
-          resolve([...dbPlayers, ...cachedJuniors]);
-        },
-      );
-    });
+    // Em erro de DB, segue com [] (o ensureStartingXI repõe juniores).
+    const homeAllIds = Array.from(homeIds);
+    const homeRealIds = homeAllIds.filter((id: number) => id > 0);
+    const homeJuniorIds = new Set(homeAllIds.filter((id: number) => id < 0));
+    const homePh =
+      homeRealIds.length > 0 ? homeRealIds.map(() => "?").join(",") : "0";
+    const homeDbPlayers = await dbAllAsync(
+      db,
+      `SELECT * FROM players WHERE id IN (${homePh})`,
+      homeRealIds.length > 0 ? homeRealIds : [],
+    ).catch(() => []);
+    // Re-add cached junior GRs whose IDs are still in the active lineup.
+    const homeCachedJuniors = (fixture._homeFullRoster || []).filter((p: any) =>
+      homeJuniorIds.has(p.id),
+    );
+    homeSquad = [...homeDbPlayers, ...homeCachedJuniors];
     fixture._homeSquad = homeSquad;
   } else {
     homeSquad = await getTeamSquad(
@@ -1517,23 +1524,21 @@ export async function simulateMatchSegment(
       }
     }
     // Junior GRs have negative IDs — fetch real players from DB, then re-add any juniors.
-    awaySquad = await new Promise<any[]>((resolve) => {
-      const allIds = Array.from(awayIds);
-      const realIds = allIds.filter((id: number) => id > 0);
-      const juniorIds = new Set(allIds.filter((id: number) => id < 0));
-      const ph = realIds.length > 0 ? realIds.map(() => "?").join(",") : "0";
-      db.all(
-        `SELECT * FROM players WHERE id IN (${ph})`,
-        realIds.length > 0 ? realIds : [],
-        (_, r) => {
-          const dbPlayers = r || [];
-          const cachedJuniors = (fixture._awayFullRoster || []).filter(
-            (p: any) => juniorIds.has(p.id),
-          );
-          resolve([...dbPlayers, ...cachedJuniors]);
-        },
-      );
-    });
+    // Em erro de DB, segue com [] (o ensureStartingXI repõe juniores).
+    const awayAllIds = Array.from(awayIds);
+    const awayRealIds = awayAllIds.filter((id: number) => id > 0);
+    const awayJuniorIds = new Set(awayAllIds.filter((id: number) => id < 0));
+    const awayPh =
+      awayRealIds.length > 0 ? awayRealIds.map(() => "?").join(",") : "0";
+    const awayDbPlayers = await dbAllAsync(
+      db,
+      `SELECT * FROM players WHERE id IN (${awayPh})`,
+      awayRealIds.length > 0 ? awayRealIds : [],
+    ).catch(() => []);
+    const awayCachedJuniors = (fixture._awayFullRoster || []).filter((p: any) =>
+      awayJuniorIds.has(p.id),
+    );
+    awaySquad = [...awayDbPlayers, ...awayCachedJuniors];
     fixture._awaySquad = awaySquad;
   } else {
     awaySquad = await getTeamSquad(
@@ -1597,21 +1602,15 @@ export async function simulateMatchSegment(
     homeMorale = fixture._homeMorale;
     awayMorale = fixture._awayMorale;
   } else {
+    // Em erro de DB, moral neutra 50 (comportamento anterior).
+    const moraleOrNeutral = (teamId: number) =>
+      dbGetAsync(db, "SELECT morale FROM teams WHERE id = ?", [teamId]).then(
+        (row) => (row && row.morale != null ? row.morale : 50),
+        () => 50,
+      );
     [homeMorale, awayMorale] = await Promise.all([
-      new Promise<number>((res) =>
-        db.get(
-          "SELECT morale FROM teams WHERE id = ?",
-          [fixture.homeTeamId],
-          (err, row) => res(row && row.morale != null ? row.morale : 50),
-        ),
-      ),
-      new Promise<number>((res) =>
-        db.get(
-          "SELECT morale FROM teams WHERE id = ?",
-          [fixture.awayTeamId],
-          (err, row) => res(row && row.morale != null ? row.morale : 50),
-        ),
-      ),
+      moraleOrNeutral(fixture.homeTeamId),
+      moraleOrNeutral(fixture.awayTeamId),
     ]);
     fixture._homeMorale = homeMorale;
     fixture._awayMorale = awayMorale;
@@ -1623,44 +1622,25 @@ export async function simulateMatchSegment(
     homeFullRoster = fixture._homeFullRoster;
     awayFullRoster = fixture._awayFullRoster;
   } else {
-    homeFullRoster = await new Promise<PlayerRow[]>((resolve, reject) => {
-      db.all(
+    const loadFullRoster = async (teamId: number): Promise<PlayerRow[]> => {
+      const rows = await dbAllAsync<PlayerRow>(
+        db,
         "SELECT * FROM players WHERE team_id = ?",
-        [fixture.homeTeamId],
-        (err, rows) => {
-          if (err) return reject(err);
-          const available = (rows || []).filter((p) =>
-            isPlayerAvailable(p, currentMatchweek),
-          );
-          resolve(
-            ensureFullBench(
-              withJuniorGRs(available, fixture.homeTeamId, currentMatchweek),
-              fixture.homeTeamId,
-              currentMatchweek,
-            ),
-          );
-        },
+        [teamId],
       );
-    });
-    awayFullRoster = await new Promise<PlayerRow[]>((resolve, reject) => {
-      db.all(
-        "SELECT * FROM players WHERE team_id = ?",
-        [fixture.awayTeamId],
-        (err, rows) => {
-          if (err) return reject(err);
-          const available = (rows || []).filter((p) =>
-            isPlayerAvailable(p, currentMatchweek),
-          );
-          resolve(
-            ensureFullBench(
-              withJuniorGRs(available, fixture.awayTeamId, currentMatchweek),
-              fixture.awayTeamId,
-              currentMatchweek,
-            ),
-          );
-        },
+      const available = (rows || []).filter((p) =>
+        isPlayerAvailable(p, currentMatchweek),
       );
-    });
+      return ensureFullBench(
+        withJuniorGRs(available, teamId, currentMatchweek),
+        teamId,
+        currentMatchweek,
+      );
+    };
+    [homeFullRoster, awayFullRoster] = await Promise.all([
+      loadFullRoster(fixture.homeTeamId),
+      loadFullRoster(fixture.awayTeamId),
+    ]);
     fixture._homeFullRoster = homeFullRoster;
     fixture._awayFullRoster = awayFullRoster;
   }
@@ -1686,136 +1666,36 @@ export async function simulateMatchSegment(
   const homeLineupIds = new Set<number>(homeSquad.map((p: any) => p.id));
   const awayLineupIds = new Set<number>(awaySquad.map((p: any) => p.id));
 
-  const getPower = (squad, tactic, morale = 50, familiarityBonus = 0) => {
-    const formation = String(tactic?.formation || "4-4-2");
-    const style = normaliseStyle(tactic?.style);
-
-    const midfielders = squad.filter((p) => p.position === "MED");
-    const forwards = squad.filter((p) => p.position === "ATA");
-    const defenders = squad.filter((p) => p.position === "DEF");
-    const keepers = squad.filter((p) => p.position === "GR");
-
-    const avgMidfielderQuality = average(midfielders.map((p) => getEffectiveSkill(p) || 0));
-    const avgForwardQuality = average(forwards.map((p) => getEffectiveSkill(p) || 0));
-    const avgDefenderQuality = average(defenders.map((p) => getEffectiveSkill(p) || 0));
-    const avgKeeperQuality = average(keepers.map((p) => getEffectiveSkill(p) || 0));
-
-    const formationOffensiveFactors = {
-      "4-2-4": 1.15,
-      "3-4-3": 1.12,
-      "4-3-3": 1.08,
-      "3-5-2": 1.05,
-      "4-4-2": 1.0,
-      "4-5-1": 0.9,
-      "5-3-2": 0.85,
-      "5-4-1": 0.8,
-    };
-
-    const formationDefensiveFactors = {
-      "5-4-1": 1.25,
-      "5-3-2": 1.2,
-      "4-5-1": 1.1,
-      "4-4-2": 1.0,
-      "3-5-2": 0.95,
-      "4-3-3": 0.9,
-      "3-4-3": 0.85,
-      "4-2-4": 0.75,
-    };
-
-    const styleOffensiveFactor = {
-      DEFENSIVO: 0.85,
-      EQUILIBRADO: 1.0,
-      OFENSIVO: 1.15,
-    };
-
-    const styleDefensiveFactor = {
-      DEFENSIVO: 1.15,
-      EQUILIBRADO: 1.0,
-      OFENSIVO: 0.85,
-    };
-
-    const formationAttack = formationOffensiveFactors[formation] ?? 1.0;
-    const formationDefense = formationDefensiveFactors[formation] ?? 1.0;
-
-    // Morale (0-100) swings attack by ±10% and defense by ±5% around 50.
-    // Kept deliberately small: form should nudge outcomes, not override the
-    // quality gap between squads (winning streaks used to pile up morale and
-    // make even weaker teams nearly unbeatable).
-    const moraleAttackFactor = 1 + (morale - 50) * MATCH_TUNING.moraleAttackPerPoint;
-    const moraleDefenseFactor = 1 + (morale - 50) * MATCH_TUNING.moraleDefensePerPoint;
-
-    const avgForm = average(squad.map((p) => p.form ?? FORM_NEUTRAL));
-    const formFactor = Math.max(0.85, Math.min(1.15, avgForm / FORM_NEUTRAL));
-
-    const attackBase = avgMidfielderQuality * 0.4 + avgForwardQuality * 0.6;
-    const defenseBase = avgDefenderQuality * 0.6 + avgKeeperQuality * 0.4;
-
-    const familiarityAttackFactor = 1 + familiarityBonus;
-    const familiarityDefenseFactor = 1 + familiarityBonus * 0.5;
-
-    return {
-      attack:
-        attackBase *
-        formationAttack *
-        moraleAttackFactor *
-        styleOffensiveFactor[style] *
-        formFactor *
-        familiarityAttackFactor,
-      defense:
-        defenseBase *
-        formationDefense *
-        moraleDefenseFactor *
-        formFactor *
-        familiarityDefenseFactor,
-      style,
-      squad,
-      midStrength: avgMidfielderQuality,
-    };
-  };
 
   // Familiaridade (memória táctica) — síncrono, em memória no game object
   const homeFam = getTacticBonus(game, fixture.homeTeamId, homeTactic);
   const awayFam = getTacticBonus(game, fixture.awayTeamId, awayTactic);
 
-  // Memoização da força por fixture (fix #5): getPower era recalculado do
-  // zero a cada minuto de cada jogo. A chave cobre TODOS os inputs do cálculo
-  // (plantel, posição, skill efetiva, forma, formação, estilo, morale,
-  // familiaridade) — qualquer sub/expulsão/lesão/fadiga/mudança táctica ao
-  // intervalo altera a chave e força o recálculo; caso contrário reutiliza.
-  // Persiste no fixture porque os chamadores simulam minuto-a-minuto
-  // (uma chamada a simulateMatchSegment por minuto).
-  const buildPowerKey = (
-    squad: PlayerRow[],
-    tactic: Tactic | null,
-    morale: number,
-    familiarityBonus: number,
-  ) =>
-    squad
-      .map(
-        (p) =>
-          `${p.id}:${p.position}:${getEffectiveSkill(p)}:${p.form ?? FORM_NEUTRAL}`,
-      )
-      .join(",") +
-    `|${String(tactic?.formation || "4-4-2")}|${normaliseStyle(tactic?.style)}|${morale}|${familiarityBonus}`;
+  // Força com dirty-flag: calcula-se UMA vez por segmento (tática, moral e
+  // familiaridade podem mudar entre segmentos) e recalcula-se dentro do
+  // minuto só quando o onze mexe — sub/expulsão/lesão/fadiga fazem
+  // bumpPowerVersion. Substitui a chave-string O(22) por minuto/lado.
+  let home = computeSidePower(homeSquad, homeTactic, homeMorale, homeFam);
+  let away = computeSidePower(awaySquad, awayTactic, awayMorale, awayFam);
+  fixture._homePower = { power: home, version: getPowerVersion(fixture, "home") };
+  fixture._awayPower = { power: away, version: getPowerVersion(fixture, "away") };
 
-  const getCachedPower = (
-    side: MatchSide,
-    squad: PlayerRow[],
-    tactic: Tactic | null,
-    morale: number,
-    familiarityBonus: number,
-  ) => {
-    const cacheField = side === "home" ? "_homePower" : "_awayPower";
-    const key = buildPowerKey(squad, tactic, morale, familiarityBonus);
-    const cached = fixture[cacheField];
-    if (cached && cached.key === key) return cached.power;
-    const power = getPower(squad, tactic, morale, familiarityBonus);
-    fixture[cacheField] = { key, power };
+  const refreshPowerIfDirty = (side: MatchSide) => {
+    const field = side === "home" ? "_homePower" : "_awayPower";
+    const version = getPowerVersion(fixture, side);
+    const cached = fixture[field];
+    if (cached && cached.version === version) return cached.power;
+    const power = computeSidePower(
+      side === "home" ? home.squad : away.squad,
+      side === "home" ? homeTactic : awayTactic,
+      side === "home" ? homeMorale : awayMorale,
+      side === "home" ? homeFam : awayFam,
+    );
+    fixture[field] = { power, version };
+    if (side === "home") home = power;
+    else away = power;
     return power;
   };
-
-  const home = getCachedPower("home", homeSquad, homeTactic, homeMorale, homeFam);
-  const away = getCachedPower("away", awaySquad, awayTactic, awayMorale, awayFam);
 
   for (let minute = startMin; minute <= endMin; minute++) {
     fixture._minute = minute;
@@ -1892,8 +1772,8 @@ export async function simulateMatchSegment(
       fixture._fatigue3Applied = true;
     }
 
-    const currentHome = getCachedPower("home", home.squad, homeTactic, homeMorale, homeFam);
-    const currentAway = getCachedPower("away", away.squad, awayTactic, awayMorale, awayFam);
+    const currentHome = refreshPowerIfDirty("home");
+    const currentAway = refreshPowerIfDirty("away");
 
     let goalScoredThisMinute = false;
 
@@ -1903,24 +1783,11 @@ export async function simulateMatchSegment(
       const defending = attackingSide === "home" ? currentAway : currentHome;
       const isHome = attackingSide === "home";
 
-      // Apply opponent style factor to attack per README spec:
-      // força_ofensiva *= (1 / estilo_factor[adversário_instrução])
-      const STYLE_FACTORS = {
-        DEFENSIVO: 0.85,
-        EQUILIBRADO: 1.0,
-        OFENSIVO: 1.15,
-      };
-      const opponentStyleFactor = STYLE_FACTORS[defending.style] || 1.0;
-      const adjustedAttack =
-        (attacking.attack || 1) * (1.0 / opponentStyleFactor);
-
-      const ratio =
-        adjustedAttack / (adjustedAttack + (defending.defense || 1) * 2);
-      let probGoal = ratio * MATCH_TUNING.goalBaseRate * getGoalTimeMultiplier(fixture._minute);
-      if (fixture.round !== 5) {
-        probGoal *= isHome ? MATCH_TUNING.homeGoalFactor : MATCH_TUNING.awayGoalFactor;
-      }
-      probGoal *= getWeatherGoalMultiplier(fixture._weather);
+      // O estilo de cada equipa já está codificado no computeSidePower
+      // (ataque com fator ofensivo próprio, defesa com fator defensivo
+      // próprio). NÃO voltar a ajustar pelo estilo do adversário aqui:
+      // dividir por (1 / fator[adversário]) anulava o bónus defensivo e
+      // fazia com que se marcasse ligeiramente MAIS contra equipas defensivas.
 
       // Posse de bola: quem domina o meio campo tem ligeiramente mais probabilidade
       const totalMid =
@@ -1930,7 +1797,6 @@ export async function simulateMatchSegment(
       const possessionFactor = isHome
         ? 0.9 + homePossession * 0.2 // range 0.90–1.10
         : 0.9 + (1 - homePossession) * 0.2;
-      probGoal *= possessionFactor;
 
       // Guardar posse no fixture para exibição no cliente
       fixture._homePossession = Math.round(homePossession * 100);
@@ -1941,13 +1807,25 @@ export async function simulateMatchSegment(
       const craquesInXI = scoringSquad.filter(
         (p) => p.is_star && (p.position === "MED" || p.position === "ATA"),
       ).length;
+      let egoFactor = 1;
       if (craquesInXI > MATCH_TUNING.egoThreshold) {
         const egoPenalty = Math.min(
           MATCH_TUNING.egoPenaltyMax,
           (craquesInXI - MATCH_TUNING.egoThreshold) * MATCH_TUNING.egoPenaltyPerExtra,
         );
-        probGoal *= 1.0 - egoPenalty;
+        egoFactor = 1.0 - egoPenalty;
       }
+
+      const probGoal = computeOpenPlayGoalProbability({
+        attack: attacking.attack,
+        defense: defending.defense,
+        minute,
+        isHome,
+        isFinal: fixture.round === 5,
+        weather: fixture._weather,
+        possessionFactor,
+        egoFactor,
+      });
 
       if (rng() >= probGoal) return;
 
@@ -2196,16 +2074,7 @@ export async function simulateMatchSegment(
             game,
             minute,
             emergencyCandidates: fieldOnPitch,
-            outPlayer: {
-              id: offender.id,
-              name: offender.name,
-              position: offender.position,
-              skill: getEffectiveSkill(offender),
-              resistance: offender.resistance,
-              form: offender.form,
-              is_star: offender.is_star,
-              ...getMatchFatigueSnapshot(fixture, side, offender.id),
-            },
+            outPlayer: buildPlayerCard(offender, fixture, side),
             benchPlayers: availableBench,
           });
           return;
@@ -2226,56 +2095,17 @@ export async function simulateMatchSegment(
           payload: {
             minute,
             teamId,
-            sentOffPlayer: {
-              id: offender.id,
-              name: offender.name,
-              position: offender.position,
-              skill: getEffectiveSkill(offender),
-              resistance: offender.resistance,
-              form: offender.form,
-              is_star: offender.is_star,
-              ...getMatchFatigueSnapshot(fixture, side, offender.id),
-            },
-            onPitch: fieldOnPitch.map((p) => ({
-              id: p.id,
-              name: p.name,
-              position: p.position,
-              skill: getEffectiveSkill(p),
-              resistance: p.resistance,
-              form: p.form,
-              is_star: p.is_star,
-              ...getMatchFatigueSnapshot(fixture, side, p.id),
-            })),
-            benchPlayers: grCandidates.map((p) => ({
-              id: p.id,
-              name: p.name,
-              position: p.position,
-              skill: getEffectiveSkill(p),
-              resistance: p.resistance,
-              form: p.form,
-              is_star: p.is_star,
-              ...getMatchFatigueSnapshot(fixture, side, p.id),
-            })),
+            sentOffPlayer: buildPlayerCard(offender, fixture, side),
+            onPitch: fieldOnPitch.map((p) => buildPlayerCard(p, fixture, side)),
+            benchPlayers: grCandidates.map((p) => buildPlayerCard(p, fixture, side)),
             currentScore: {
               home: fixture.finalHomeGoals,
               away: fixture.finalAwayGoals,
             },
           },
-          timeoutMs: 60000,
+          timeoutMs: MATCH_TUNING.actionTimeoutMs,
           fallback,
-          fixtureData: {
-            homeTeamId: fixture.homeTeamId,
-            awayTeamId: fixture.awayTeamId,
-            homeTeam: fixture.homeTeam,
-            awayTeam: fixture.awayTeam,
-            attendance: fixture.attendance,
-            referee: fixture.referee,
-            homePossession: fixture.homePossession,
-            awayPossession: fixture.awayPossession,
-            homeGoals: fixture.finalHomeGoals,
-            awayGoals: fixture.finalAwayGoals,
-            events: fixture.events || [],
-          },
+          fixtureData: buildFixtureData(fixture),
         });
 
         const forcedChoice = normalizeMatchChoice(result.choice);
@@ -2316,6 +2146,7 @@ export async function simulateMatchSegment(
             squad.push(incoming);
             lineupIds.add(incoming.id);
             syncTacticPositions(game, fixture, side, teamId, [], [incoming.id]);
+            bumpPowerVersion(fixture, side);
           }
 
           fixture.events.push({
@@ -2472,45 +2303,20 @@ export async function simulateMatchSegment(
             payload: {
               minute: fixture._minute,
               teamId,
-              onPitch: onPitch.map((p: any) => ({
-                id: p.id,
-                name: p.name,
-                position: p.position,
-                skill: getEffectiveSkill(p),
-                ...getMatchFatigueSnapshot(fixture, side, p.id),
-              })),
-              benchPlayers: availableBench.map((p: any) => ({
-                id: p.id,
-                name: p.name,
-                position: p.position,
-                skill: getEffectiveSkill(p),
-                ...getMatchFatigueSnapshot(fixture, side, p.id),
-              })),
+              onPitch: onPitch.map((p) => buildPlayerCard(p, fixture, side, { detailed: false })),
+              benchPlayers: availableBench.map((p) => buildPlayerCard(p, fixture, side, { detailed: false })),
             },
-            timeoutMs: 60000,
+            timeoutMs: MATCH_TUNING.actionTimeoutMs,
             fallback: () => null,
-            fixtureData: {
-              homeTeamId: fixture.homeTeamId,
-              awayTeamId: fixture.awayTeamId,
-              homeTeam: fixture.homeTeam,
-              awayTeam: fixture.awayTeam,
-              attendance: fixture.attendance,
-              referee: fixture.referee,
-              homePossession: fixture.homePossession,
-              awayPossession: fixture.awayPossession,
-              homeGoals: fixture.finalHomeGoals,
-              awayGoals: fixture.finalAwayGoals,
-              events: fixture.events || [],
-            },
+            fixtureData: buildFixtureData(fixture),
           });
 
-          if (
-            result.choice &&
-            result.choice.playerOut &&
-            result.choice.playerIn
-          ) {
-            const playerOutId = result.choice.playerOut;
-            const playerInId = result.choice.playerIn;
+          // Mesmo contrato das restantes ações (ver normalizeMatchChoice):
+          // objeto { playerOut, playerIn }, id nu ou { playerId }.
+          const userChoice = normalizeMatchChoice(result.choice);
+          if (userChoice.playerOut != null && userChoice.playerIn != null) {
+            const playerOutId = userChoice.playerOut;
+            const playerInId = userChoice.playerIn;
 
             const playerOut = squad.find((p: any) => p.id === playerOutId);
             const playerIn = fullRoster.find((p: any) => p.id === playerInId);
@@ -2583,17 +2389,11 @@ export async function applyPostMatchQualityEvolution(
   calendarIndex: number = 1,
   rng: Rng = Math.random,
 ) {
-  // Helpers promisificados (o objeto db é callback-style).
-  const dbRun = (sql: string, params: any[] = []): Promise<void> =>
-    new Promise<void>((resolve, reject) => {
-      db.run(sql, params, (err: any) => (err ? reject(err) : resolve()));
-    });
-  const dbAll = <T = any>(sql: string, params: any[] = []): Promise<T[]> =>
-    new Promise<T[]>((resolve, reject) => {
-      db.all(sql, params, (err: any, rows: T[]) =>
-        err ? reject(err) : resolve(rows || []),
-      );
-    });
+  // Helpers de módulo ligados a esta conexão (ver topo do ficheiro).
+  const dbRun = (sql: string, params: any[] = []) =>
+    dbRunAsync(db, sql, params);
+  const dbAll = <T = any>(sql: string, params: any[] = []) =>
+    dbAllAsync<T>(db, sql, params);
 
   // Nunca rejeitar: os chamadores encadeiam .then() sem .catch() e a evolução
   // é secundária face ao resultado já comitado. Erros logam e seguem.
@@ -2622,15 +2422,15 @@ export async function applyPostMatchQualityEvolution(
     // Depois o delta do resultado — tudo com await (antes era fire-and-forget
     // com race entre o decaimento global e os updates por equipa).
     await dbRun(
-      "UPDATE teams SET morale = MAX(0, MIN(100, CAST(morale + (50 - morale) * 0.1 AS INTEGER)))",
+      `UPDATE teams SET morale = MAX(0, MIN(100, CAST(morale + (50 - morale) * ${MATCH_TUNING.moraleDecayRate} AS INTEGER)))`,
     );
 
     const moraleUpdates: Array<{ teamId: number; delta: number }> = [];
     for (const [teamId, result] of teamResults.entries()) {
       let delta;
-      if (result === "W") delta = 25;
-      else if (result === "L") delta = -20;
-      else delta = 5;
+      if (result === "W") delta = MATCH_TUNING.moraleWinDelta;
+      else if (result === "L") delta = MATCH_TUNING.moraleLossDelta;
+      else delta = MATCH_TUNING.moraleDrawDelta;
       moraleUpdates.push({ teamId, delta });
     }
 
@@ -2791,7 +2591,7 @@ export async function applyPostMatchQualityEvolution(
 
       // Acima do teto de potencial: deriva suave de retorno à média,
       // compensável por performance forte (golos / clean sheet)
-      if (room < 0 && rng() < 0.15) {
+      if (room < 0 && rng() < MATCH_TUNING.evoAboveCeilingRoll) {
         delta -= 1;
       }
 
@@ -2804,7 +2604,7 @@ export async function applyPostMatchQualityEvolution(
           (player.joined_matchweek || 0) >= calendarIndex - 3;
         const idleForAWhile =
           lastAppearance === 0 ? !justJoined : lastAppearance < calendarIndex - 3;
-        if (idleForAWhile && rng() < 0.15) {
+        if (idleForAWhile && rng() < MATCH_TUNING.evoRustRoll) {
           delta -= 1;
         }
         if (delta !== 0) {
@@ -2823,7 +2623,11 @@ export async function applyPostMatchQualityEvolution(
       if (
         room > 0 &&
         diff >= 1 &&
-        rng() < Math.min(0.75, 0.20 + diff / 20) * minutesFactor
+        rng() <
+          Math.min(
+            MATCH_TUNING.evoCohabitMax,
+            MATCH_TUNING.evoCohabitBase + diff / MATCH_TUNING.evoCohabitDivisor,
+          ) * minutesFactor
       ) {
         delta += 1;
       }
@@ -2833,7 +2637,11 @@ export async function applyPostMatchQualityEvolution(
         room > 0 &&
         teamResult === "W" &&
         diff >= 0 &&
-        rng() < Math.min(0.45, 0.10 + diff / 50) * minutesFactor
+        rng() <
+          Math.min(
+            MATCH_TUNING.evoWinMax,
+            MATCH_TUNING.evoWinBase + diff / MATCH_TUNING.evoWinDivisor,
+          ) * minutesFactor
       ) {
         delta += 1;
       }
@@ -2843,15 +2651,21 @@ export async function applyPostMatchQualityEvolution(
       // Jogadores acima da média do plantel são mais afectados
       if (teamResult === "L") {
         const lossPressure = Math.min(
-          0.18,
-          0.04 + Math.max(0, -diff) / 150,
+          MATCH_TUNING.evoLossMax,
+          MATCH_TUNING.evoLossBase +
+            Math.max(0, -diff) / MATCH_TUNING.evoLossDivisor,
         );
         if (rng() < lossPressure) delta -= 1;
         // Derrotas consecutivas aumentam a pressão de decaimento
         const streak = teamLossStreak.get(player.team_id) || 0;
         if (
           streak >= 2 &&
-          rng() < Math.min(0.20, 0.05 + 0.03 * (streak - 1))
+          rng() <
+            Math.min(
+              MATCH_TUNING.evoStreakMax,
+              MATCH_TUNING.evoStreakBase +
+                MATCH_TUNING.evoStreakSlope * (streak - 1),
+            )
         ) {
           delta -= 1;
         }
@@ -2861,8 +2675,8 @@ export async function applyPostMatchQualityEvolution(
       if (
         room > 0 &&
         teamResult === "D" &&
-        diff >= 4 &&
-        rng() < 0.20 * minutesFactor
+        diff >= MATCH_TUNING.evoDrawDiff &&
+        rng() < MATCH_TUNING.evoDrawChance * minutesFactor
       ) {
         delta += 1;
       }
@@ -2871,11 +2685,11 @@ export async function applyPostMatchQualityEvolution(
       const goals = playerGoals.get(player.id) || 0;
 
       // Marcou 2+ golos: 25% de chance de +1 skill
-      if (goals >= 2 && rng() < 0.25) {
+      if (goals >= 2 && rng() < MATCH_TUNING.evoBraceChance) {
         delta += 1;
       }
       // Marcou 1 golo: 10% de chance de +1 skill
-      else if (goals === 1 && rng() < 0.10) {
+      else if (goals === 1 && rng() < MATCH_TUNING.evoGoalChance) {
         delta += 1;
       }
 
@@ -2884,13 +2698,13 @@ export async function applyPostMatchQualityEvolution(
         player.position === "GR" &&
         teamResult === "W" &&
         teamCleanSheetWin.has(player.team_id) &&
-        rng() < 0.15
+        rng() < MATCH_TUNING.evoCleanSheetChance
       ) {
         delta += 1;
       }
 
       // Cartão vermelho: 20% de chance de -1 skill
-      if (playerRedCards.has(player.id) && rng() < 0.20) {
+      if (playerRedCards.has(player.id) && rng() < MATCH_TUNING.evoRedChance) {
         delta -= 1;
       }
 
@@ -2898,7 +2712,7 @@ export async function applyPostMatchQualityEvolution(
       if (
         playedPrev &&
         room > 0 &&
-        rng() < 0.10 * minutesFactor
+        rng() < MATCH_TUNING.evoMomentumChance * minutesFactor
       ) {
         delta += 1;
       }
@@ -2906,7 +2720,7 @@ export async function applyPostMatchQualityEvolution(
       if (
         playedPrev &&
         (player.games_played || 0) >= 6 &&
-        rng() < 0.04
+        rng() < MATCH_TUNING.evoStagnationChance
       ) {
         delta -= 1;
       }
@@ -3060,65 +2874,57 @@ export function simulatePenaltyShootout(
     );
   };
 
+  // Chutes alternados (ordem real: casa → fora em cada ronda). A decisão é
+  // verificada após CADA chute — o segundo batedor joga a saber o resultado
+  // do primeiro, como no futebol real (antes os dois chutavam em
+  // "simultâneo" e só se verificava no fim da ronda).
+  let homeTaken = 0;
+  let awayTaken = 0;
+  const takeKick = (side: "home" | "away", suddenDeath = false) => {
+    const squad = side === "home" ? homeSquad : awaySquad;
+    const used = side === "home" ? homeUsed : awayUsed;
+    // O GR que defende é o da equipa adversária.
+    const gk = side === "home" ? awayGK : homeGK;
+    const taker = pickShooter(squad, used);
+    if (taker) used.add(taker.id);
+    const scored = rng() < calcScoredChance(taker, gk);
+    if (scored) {
+      if (side === "home") homeGoals++;
+      else awayGoals++;
+    }
+    if (side === "home") homeTaken++;
+    else awayTaken++;
+    kicks.push({
+      team: side,
+      playerName: taker ? taker.name : "?",
+      scored,
+      ...(suddenDeath ? { suddenDeath: true } : {}),
+    });
+  };
+  // Decisão regulamentar: a equipa em desvantagem já não chega ao empate
+  // mesmo marcando todos os chutes que lhe restam (5 - já marcados).
+  const regulationDecided = () =>
+    homeGoals > awayGoals + (5 - awayTaken) ||
+    awayGoals > homeGoals + (5 - homeTaken);
+
   // 5 regulation rounds
   for (let round = 0; round < 5; round++) {
-    const homeTaker = pickShooter(homeSquad, homeUsed);
-    const awayTaker = pickShooter(awaySquad, awayUsed);
-    if (homeTaker) homeUsed.add(homeTaker.id);
-    if (awayTaker) awayUsed.add(awayTaker.id);
-
-    const homeScored = rng() < calcScoredChance(homeTaker, awayGK);
-    const awayScored = rng() < calcScoredChance(awayTaker, homeGK);
-
-    if (homeScored) homeGoals++;
-    if (awayScored) awayGoals++;
-
-    kicks.push({
-      team: "home",
-      playerName: homeTaker ? homeTaker.name : "?",
-      scored: homeScored,
-    });
-    kicks.push({
-      team: "away",
-      playerName: awayTaker ? awayTaker.name : "?",
-      scored: awayScored,
-    });
-
-    // Early finish: if one side can't catch up after n rounds
-    const remaining = 4 - round;
-    if (homeGoals > awayGoals + remaining || awayGoals > homeGoals + remaining)
-      break;
+    takeKick("home");
+    if (regulationDecided()) break;
+    takeKick("away");
+    if (regulationDecided()) break;
   }
 
   // Sudden death if still tied
   let sdRound = 0;
   while (homeGoals === awayGoals && sdRound < MATCH_TUNING.shootoutSuddenDeathCap) {
     sdRound++;
-    const homeTaker = pickShooter(homeSquad, homeUsed);
-    const awayTaker = pickShooter(awaySquad, awayUsed);
-    if (homeTaker) homeUsed.add(homeTaker.id);
-    if (awayTaker) awayUsed.add(awayTaker.id);
+    // Na morte súbita a decisão só é possível com igual nº de chutes —
+    // o chute da casa nunca decide sozinho, mas o de fora sim.
+    takeKick("home", true);
+    takeKick("away", true);
 
-    const homeScored = rng() < calcScoredChance(homeTaker, awayGK);
-    const awayScored = rng() < calcScoredChance(awayTaker, homeGK);
-
-    if (homeScored) homeGoals++;
-    if (awayScored) awayGoals++;
-
-    kicks.push({
-      team: "home",
-      playerName: homeTaker ? homeTaker.name : "?",
-      scored: homeScored,
-      suddenDeath: true,
-    });
-    kicks.push({
-      team: "away",
-      playerName: awayTaker ? awayTaker.name : "?",
-      scored: awayScored,
-      suddenDeath: true,
-    });
-
-    if (homeScored !== awayScored) break; // One scored, other didn't → winner decided
+    if (homeGoals !== awayGoals) break; // One scored, other didn't → winner decided
   }
 
   // Failsafe do desempate: após 20 rondas de morte súbita ainda empatado

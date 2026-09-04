@@ -1,7 +1,7 @@
 // ── Match calculation utilities extracted from engine.ts ──────────────────────
 
-import { pickBestPlayer, withJuniorGRs, ensureFullBench, isPlayerAvailable } from "./playerUtils";
-import { MAX_BENCH_SIZE } from "../gameConstants";
+import { pickBestPlayer, withJuniorGRs, ensureFullBench, isPlayerAvailable, getEffectiveSkill } from "./playerUtils";
+import { MAX_BENCH_SIZE, FORM_NEUTRAL, MATCH_TUNING } from "../gameConstants";
 
 type PlayerRow = any;
 
@@ -258,4 +258,146 @@ export async function generateAITactic(
       },
     );
   });
+}
+
+// ── Força da equipa (extraído do closure getPower do engine) ─────────────────
+// Tabelas a nível de módulo: antes eram recriadas a cada chamada de
+// simulateMatchSegment (e o STYLE duplicado a cada minuto de jogo).
+export const FORMATION_ATTACK_FACTORS: Record<string, number> = {
+  "4-2-4": 1.15,
+  "3-4-3": 1.12,
+  "4-3-3": 1.08,
+  "3-5-2": 1.05,
+  "4-4-2": 1.0,
+  "4-5-1": 0.9,
+  "5-3-2": 0.85,
+  "5-4-1": 0.8,
+};
+
+export const FORMATION_DEFENSE_FACTORS: Record<string, number> = {
+  "5-4-1": 1.25,
+  "5-3-2": 1.2,
+  "4-5-1": 1.1,
+  "4-4-2": 1.0,
+  "3-5-2": 0.95,
+  "4-3-3": 0.9,
+  "3-4-3": 0.85,
+  "4-2-4": 0.75,
+};
+
+export const STYLE_ATTACK_FACTORS: Record<string, number> = {
+  DEFENSIVO: 0.85,
+  EQUILIBRADO: 1.0,
+  OFENSIVO: 1.15,
+};
+
+export const STYLE_DEFENSE_FACTORS: Record<string, number> = {
+  DEFENSIVO: 1.15,
+  EQUILIBRADO: 1.0,
+  OFENSIVO: 0.85,
+};
+
+export type SidePower = {
+  attack: number;
+  defense: number;
+  style: string;
+  squad: PlayerRow[];
+  midStrength: number;
+};
+
+/**
+ * Força ofensiva/defensiva de um onze. Função pura (sem cache): o engine
+ * decide quando recalcular via dirty-flag no fixture. O estilo entra UMA
+ * única vez — ataque com o fator ofensivo próprio, defesa com o fator
+ * defensivo próprio (ver fix da dupla contagem no engine).
+ */
+export function computeSidePower(
+  squad: PlayerRow[],
+  tactic: { formation?: string; style?: string } | null,
+  morale = 50,
+  familiarityBonus = 0,
+): SidePower {
+  const formation = String(tactic?.formation || "4-4-2");
+  const style = normaliseStyle(tactic?.style);
+
+  const midfielders = squad.filter((p) => p.position === "MED");
+  const forwards = squad.filter((p) => p.position === "ATA");
+  const defenders = squad.filter((p) => p.position === "DEF");
+  const keepers = squad.filter((p) => p.position === "GR");
+
+  const avgMidfielderQuality = average(midfielders.map((p) => getEffectiveSkill(p) || 0));
+  const avgForwardQuality = average(forwards.map((p) => getEffectiveSkill(p) || 0));
+  const avgDefenderQuality = average(defenders.map((p) => getEffectiveSkill(p) || 0));
+  const avgKeeperQuality = average(keepers.map((p) => getEffectiveSkill(p) || 0));
+
+  const formationAttack = FORMATION_ATTACK_FACTORS[formation] ?? 1.0;
+  const formationDefense = FORMATION_DEFENSE_FACTORS[formation] ?? 1.0;
+
+  // Moral (0-100): desvia o ataque ±10% e a defesa ±5% em torno de 50.
+  // Deliberadamente pequeno — a forma ajusta, não decide.
+  const moraleAttackFactor = 1 + (morale - 50) * MATCH_TUNING.moraleAttackPerPoint;
+  const moraleDefenseFactor = 1 + (morale - 50) * MATCH_TUNING.moraleDefensePerPoint;
+
+  const avgForm = average(squad.map((p) => p.form ?? FORM_NEUTRAL));
+  const formFactor = Math.max(0.85, Math.min(1.15, avgForm / FORM_NEUTRAL));
+
+  const attackBase = avgMidfielderQuality * 0.4 + avgForwardQuality * 0.6;
+  const defenseBase = avgDefenderQuality * 0.6 + avgKeeperQuality * 0.4;
+
+  const familiarityAttackFactor = 1 + familiarityBonus;
+  const familiarityDefenseFactor = 1 + familiarityBonus * 0.5;
+
+  return {
+    attack:
+      attackBase *
+      formationAttack *
+      moraleAttackFactor *
+      STYLE_ATTACK_FACTORS[style] *
+      formFactor *
+      familiarityAttackFactor,
+    defense:
+      defenseBase *
+      formationDefense *
+      moraleDefenseFactor *
+      STYLE_DEFENSE_FACTORS[style] *
+      formFactor *
+      familiarityDefenseFactor,
+    style,
+    squad,
+    midStrength: avgMidfielderQuality,
+  };
+}
+
+/**
+ * Probabilidade de golo em jogo corrido num minuto, para um lado.
+ * Pura e testável: recebe as forças já calculadas e os fatores externos.
+ */
+export function computeOpenPlayGoalProbability({
+  attack,
+  defense,
+  minute,
+  isHome,
+  isFinal,
+  weather,
+  possessionFactor = 1,
+  egoFactor = 1,
+}: {
+  attack: number;
+  defense: number;
+  minute: number;
+  isHome: boolean;
+  isFinal: boolean;
+  weather?: string;
+  possessionFactor?: number;
+  egoFactor?: number;
+}): number {
+  const ratio = (attack || 1) / ((attack || 1) + (defense || 1) * 2);
+  let probGoal = ratio * MATCH_TUNING.goalBaseRate * getGoalTimeMultiplier(minute);
+  if (!isFinal) {
+    probGoal *= isHome ? MATCH_TUNING.homeGoalFactor : MATCH_TUNING.awayGoalFactor;
+  }
+  probGoal *= getWeatherGoalMultiplier(weather);
+  probGoal *= possessionFactor;
+  probGoal *= egoFactor;
+  return probGoal;
 }
