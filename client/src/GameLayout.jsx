@@ -437,12 +437,12 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 (overflow-hidden). Encostado à extrema esquerda e até ao fim
                 da bola na direita, fazendo efeito de semi-círculo. */}
             <div
-              className={`hidden md:flex shrink-0 overflow-hidden items-center justify-start ${isMobileLandscape ? "h-10 w-24 -ml-3" : "h-14 w-[132px] -ml-4 lg:-ml-6"}`}
+              className={`hidden md:flex shrink-0 overflow-hidden items-center justify-start ${isMobileLandscape ? "h-10 w-[72px] -ml-3" : "h-14 w-[99px] -ml-4 lg:-ml-6"}`}
             >
               <img
                 src="/icon-512.png"
                 alt="Logotipo CashBall"
-                className={`${isMobileLandscape ? "h-24 w-24" : "h-[132px] w-[132px]"} max-w-none shrink-0`}
+                className={`${isMobileLandscape ? "h-24 w-24 -ml-[24px]" : "h-[132px] w-[132px] -ml-[33px]"} max-w-none shrink-0`}
               />
             </div>
             <h1
