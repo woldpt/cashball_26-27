@@ -40,6 +40,19 @@ const JUNIOR_LAST_NAMES = [
 ];
 
 /**
+ * Skill efetiva em jogo: durante a simulação a fadiga acumula em
+ * `player._matchSkill` (só memória) sem tocar em `player.skill` (atributo
+ * persistente). Fora de jogo `_matchSkill` não existe e devolve o base.
+ */
+export function getEffectiveSkill(player: PlayerRow): number {
+  const matchSkill = player?._matchSkill;
+  if (typeof matchSkill === "number" && Number.isFinite(matchSkill)) {
+    return matchSkill;
+  }
+  return player?.skill ?? 0;
+}
+
+/**
  * Converte um jogador de campo em GR improvisado (regra do futebol
  * profissional: quando o GR sai e não há outro disponível, um jogador
  * calça as luvas até ao fim do jogo).
@@ -47,15 +60,19 @@ const JUNIOR_LAST_NAMES = [
  * Devolve um CLONE — a referência original (e a posição real na DB) nunca
  * é tocada; apenas a entrada do array em jogo (`squad`/lineup) aponta para
  * o clone. `originalPosition` preserva a posição real para a UI/debug.
+ * O cansaço anterior (`_matchSkill`) é descartado: o improvisado parte do
+ * piso de emergência, como já acontecia quando a fadiga mutava `skill`.
  */
 export function convertToEmergencyGK(player: PlayerRow): PlayerRow {
-  return {
+  const clone = {
     ...player,
     position: "GR",
     skill: EMERGENCY_GK_SKILL,
     originalPosition: player.position,
     isEmergencyGK: true,
   } as PlayerRow;
+  delete clone._matchSkill;
+  return clone;
 }
 
 /**
@@ -255,7 +272,7 @@ export function ensureFullBench(
 
 export function pickBestPlayer(players: PlayerRow[] = []) {
   if (!players.length) return null;
-  return [...players].sort((a, b) => b.skill - a.skill)[0];
+  return [...players].sort((a, b) => getEffectiveSkill(b) - getEffectiveSkill(a))[0];
 }
 
 /**

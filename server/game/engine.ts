@@ -8,6 +8,7 @@ import {
   weightedPickScorer,
   isPlayerAvailable,
   convertToEmergencyGK,
+  getEffectiveSkill,
 } from "./playerUtils";
 import {
   canMakeSubstitution,
@@ -21,6 +22,7 @@ import {
 export {
   withJuniorGRs,
   ensureFullBench,
+  getEffectiveSkill,
 } from "./playerUtils";
 import {
   goalPhrase,
@@ -239,7 +241,7 @@ async function getTeamSquad(
       }
 
       // Auto-pick best 11 based on formation
-      const sorted = [...availableRows].sort((a, b) => b.skill - a.skill);
+      const sorted = [...availableRows].sort((a, b) => getEffectiveSkill(b) - getEffectiveSkill(a));
       const lineup = [];
       const formationStr =
         tactic && tactic.formation ? tactic.formation : "4-4-2";
@@ -307,7 +309,7 @@ function ensureStartingXI(
 
   const candidates = [...pool]
     .filter((p) => !inSquad.has(p.id))
-    .sort((a, b) => b.skill - a.skill);
+    .sort((a, b) => getEffectiveSkill(b) - getEffectiveSkill(a));
 
   for (const p of candidates) {
     if (result.length >= 11) break;
@@ -533,7 +535,7 @@ async function openEmergencyGKAction({
 }) {
   const weakest = () =>
     [...emergencyCandidates].sort(
-      (a, b) => (a.skill || 0) - (b.skill || 0),
+      (a, b) => (getEffectiveSkill(a) || 0) - (getEffectiveSkill(b) || 0),
     )[0];
   const fallback = () => weakest()?.id ?? null;
 
@@ -550,7 +552,7 @@ async function openEmergencyGKAction({
         id: p.id,
         name: p.name,
         position: p.position,
-        skill: p.skill,
+        skill: getEffectiveSkill(p),
         resistance: p.resistance,
         form: p.form,
         is_star: p.is_star,
@@ -560,7 +562,7 @@ async function openEmergencyGKAction({
         id: p.id,
         name: p.name,
         position: p.position,
-        skill: p.skill,
+        skill: getEffectiveSkill(p),
         resistance: p.resistance,
         form: p.form,
         is_star: p.is_star,
@@ -762,7 +764,7 @@ async function applyInjuryEvent({
           id: injuredPlayer.id,
           name: injuredPlayer.name,
           position: injuredPlayer.position,
-          skill: injuredPlayer.skill,
+          skill: getEffectiveSkill(injuredPlayer),
           resistance: injuredPlayer.resistance,
           form: injuredPlayer.form,
           is_star: injuredPlayer.is_star,
@@ -812,7 +814,7 @@ async function applyInjuryEvent({
         id: injuredPlayer.id,
         name: injuredPlayer.name,
         position: injuredPlayer.position,
-        skill: injuredPlayer.skill,
+        skill: getEffectiveSkill(injuredPlayer),
         resistance: injuredPlayer.resistance,
         form: injuredPlayer.form,
         is_star: injuredPlayer.is_star,
@@ -822,7 +824,7 @@ async function applyInjuryEvent({
         id: p.id,
         name: p.name,
         position: p.position,
-        skill: p.skill,
+        skill: getEffectiveSkill(p),
         resistance: p.resistance,
         form: p.form,
         is_star: p.is_star,
@@ -886,7 +888,7 @@ async function applyInjuryEvent({
           name: incoming.name,
           position: incoming.position,
           is_star: incoming.is_star || 0,
-          skill: incoming.skill,
+          skill: getEffectiveSkill(incoming),
           ...getMatchFatigueSnapshot(fixture, teamSide, incoming.id),
         };
       }
@@ -985,7 +987,7 @@ async function applyPenaltyEvent({
         id: p.id,
         name: p.name,
         position: p.position,
-        skill: p.skill,
+        skill: getEffectiveSkill(p),
       })),
       currentScore: {
         home: fixture.finalHomeGoals,
@@ -1015,8 +1017,8 @@ async function applyPenaltyEvent({
       : fallback();
   if (!taker) return;
 
-  // Base 82% goal rate, skill (range 5–50) shifts it ±6 pp around the mean (30)
-  const penaltySkill = taker.skill || 0;
+  // Base 82% goal rate, skill efetiva (range 5–50) shifts it ±6 pp around the mean (30)
+  const penaltySkill = getEffectiveSkill(taker) || 0;
   const goalChance = Math.max(
     0.74,
     Math.min(0.92, 0.82 + (penaltySkill - 30) / 250),
@@ -1111,16 +1113,19 @@ function applyFatigueToPlayer(
 ) {
   ensureFatigueLedgers(fixture);
 
-  const before = Number(player.skill ?? 0);
+  // O cansaço vive em `_matchSkill` (só memória) — `player.skill` é o atributo
+  // persistente e nunca é mutado em jogo (senão o flush de lesões e os
+  // snapshots de lineup guardariam valores fatigados na DB).
+  const before = Number(getEffectiveSkill(player) ?? 0);
   const after = Math.max(1, before - amount);
-  player.skill = after;
+  player._matchSkill = after;
 
   const effectiveLoss = Math.max(0, before - after);
   if (effectiveLoss > 0) {
     fixture._fatigueLoss[side][player.id] =
       (fixture._fatigueLoss[side][player.id] ?? 0) + effectiveLoss;
   }
-  syncFatigueSnapshot(fixture, side, player.id, player.skill);
+  syncFatigueSnapshot(fixture, side, player.id, after);
 }
 
 // Aplica um golpe de cansaço (-amount skill) aos jogadores no onze, com
@@ -1141,7 +1146,7 @@ function applyFatigue(
     if (Math.random() >= skipChance) {
       applyFatigueToPlayer(fixture, side, p, amount);
     } else {
-      syncFatigueSnapshot(fixture, side, p.id, p.skill);
+      syncFatigueSnapshot(fixture, side, p.id, getEffectiveSkill(p));
     }
   }
 }
@@ -1164,7 +1169,7 @@ function trackFatigue(
     if (!lineupIds.has(p.id)) continue;
     const played = (mps[p.id] ?? 0) + 1;
     mps[p.id] = played;
-    syncFatigueSnapshot(fixture, side, p.id, p.skill);
+    syncFatigueSnapshot(fixture, side, p.id, getEffectiveSkill(p));
     if (played % FATIGUE_INTERVAL_MINUTES !== 0) continue;
 
     const resistance = p.resistance ?? RES_NEUTRAL;
@@ -1575,7 +1580,7 @@ async function simulateMatchSegment(
       name: p.name,
       position: p.position,
       is_star: p.is_star || 0,
-      skill: p.skill,
+      skill: getEffectiveSkill(p),
       ...getMatchFatigueSnapshot(fixture, side, p.id),
       is_starter: true,
     }));
@@ -1590,7 +1595,7 @@ async function simulateMatchSegment(
         name: p.name,
         position: p.position,
         is_star: p.is_star || 0,
-        skill: p.skill,
+        skill: getEffectiveSkill(p),
         ...getMatchFatigueSnapshot(fixture, side, p.id),
         is_starter: false,
       }));
@@ -1624,10 +1629,10 @@ async function simulateMatchSegment(
     const defenders = squad.filter((p) => p.position === "DEF");
     const keepers = squad.filter((p) => p.position === "GR");
 
-    const avgMidfielderQuality = average(midfielders.map((p) => p.skill || 0));
-    const avgForwardQuality = average(forwards.map((p) => p.skill || 0));
-    const avgDefenderQuality = average(defenders.map((p) => p.skill || 0));
-    const avgKeeperQuality = average(keepers.map((p) => p.skill || 0));
+    const avgMidfielderQuality = average(midfielders.map((p) => getEffectiveSkill(p) || 0));
+    const avgForwardQuality = average(forwards.map((p) => getEffectiveSkill(p) || 0));
+    const avgDefenderQuality = average(defenders.map((p) => getEffectiveSkill(p) || 0));
+    const avgKeeperQuality = average(keepers.map((p) => getEffectiveSkill(p) || 0));
 
     const formationOffensiveFactors = {
       "4-2-4": 1.15,
@@ -2099,7 +2104,7 @@ async function simulateMatchSegment(
               id: offender.id,
               name: offender.name,
               position: offender.position,
-              skill: offender.skill,
+              skill: getEffectiveSkill(offender),
               resistance: offender.resistance,
               form: offender.form,
               is_star: offender.is_star,
@@ -2112,7 +2117,7 @@ async function simulateMatchSegment(
 
         const fallback = () => {
           const weakest = [...fieldOnPitch].sort(
-            (a, b) => (a.skill || 0) - (b.skill || 0),
+            (a, b) => (getEffectiveSkill(a) || 0) - (getEffectiveSkill(b) || 0),
           )[0];
           const bestGR = pickBestPlayer(grCandidates);
           return { playerOut: weakest?.id ?? null, playerIn: bestGR?.id ?? null };
@@ -2129,7 +2134,7 @@ async function simulateMatchSegment(
               id: offender.id,
               name: offender.name,
               position: offender.position,
-              skill: offender.skill,
+              skill: getEffectiveSkill(offender),
               resistance: offender.resistance,
               form: offender.form,
               is_star: offender.is_star,
@@ -2139,7 +2144,7 @@ async function simulateMatchSegment(
               id: p.id,
               name: p.name,
               position: p.position,
-              skill: p.skill,
+              skill: getEffectiveSkill(p),
               resistance: p.resistance,
               form: p.form,
               is_star: p.is_star,
@@ -2149,7 +2154,7 @@ async function simulateMatchSegment(
               id: p.id,
               name: p.name,
               position: p.position,
-              skill: p.skill,
+              skill: getEffectiveSkill(p),
               resistance: p.resistance,
               form: p.form,
               is_star: p.is_star,
@@ -2217,7 +2222,7 @@ async function simulateMatchSegment(
                   name: incoming.name,
                   position: incoming.position,
                   is_star: incoming.is_star || 0,
-                  skill: incoming.skill,
+                  skill: getEffectiveSkill(incoming),
                   ...getMatchFatigueSnapshot(fixture, side, incoming.id),
                 };
               }
@@ -2402,14 +2407,14 @@ async function simulateMatchSegment(
                 id: p.id,
                 name: p.name,
                 position: p.position,
-                skill: p.skill,
+                skill: getEffectiveSkill(p),
                 ...getMatchFatigueSnapshot(fixture, side, p.id),
               })),
               benchPlayers: availableBench.map((p: any) => ({
                 id: p.id,
                 name: p.name,
                 position: p.position,
-                skill: p.skill,
+                skill: getEffectiveSkill(p),
                 ...getMatchFatigueSnapshot(fixture, side, p.id),
               })),
             },
@@ -2463,7 +2468,7 @@ async function simulateMatchSegment(
                     name: playerIn.name,
                     position: playerIn.position,
                     is_star: playerIn.is_star || 0,
-                    skill: playerIn.skill,
+                    skill: getEffectiveSkill(playerIn),
                     ...getMatchFatigueSnapshot(fixture, side, playerIn.id),
                   };
                 }
@@ -2991,7 +2996,7 @@ function simulatePenaltyShootout(
       return squad[0] || null;
     }
     // Pick by skill
-    available.sort((a, b) => b.skill - a.skill);
+    available.sort((a, b) => getEffectiveSkill(b) - getEffectiveSkill(a));
     return available[0];
   };
 
@@ -3001,8 +3006,8 @@ function simulatePenaltyShootout(
   const awayGK = awaySquad.find((p) => p.position === "GR") || awaySquad[0];
 
   const calcScoredChance = (taker, gk) => {
-    const takerSkill = taker ? taker.skill || 10 : 10;
-    const gkSkill = gk ? gk.skill || 10 : 10;
+    const takerSkill = taker ? getEffectiveSkill(taker) || 10 : 10;
+    const gkSkill = gk ? getEffectiveSkill(gk) || 10 : 10;
     return Math.max(0.55, Math.min(0.88, 0.72 + (takerSkill - gkSkill) / 200));
   };
 

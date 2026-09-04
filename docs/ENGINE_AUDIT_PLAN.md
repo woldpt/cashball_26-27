@@ -5,9 +5,9 @@
 
 ## P0 — Correção / risco real
 
-- [ ] **#1 Shootout sem viés da casa** — `simulatePenaltyShootout` faz `homeGoals++` no failsafe de empate.
+- [x] **#1 Shootout sem viés da casa** — `simulatePenaltyShootout` faz `homeGoals++` no failsafe de empate.
       Fix: coin-flip no failsafe.
-- [ ] **#2 Flush transacional pós-jogo** — `db.run` fire-and-forget de golos/cartões/lesões dentro do
+- [x] **#2 Flush transacional pós-jogo** — `db.run` fire-and-forget de golos/cartões/lesões dentro do
       loop minuto-a-minuto. Fix: acumular deltas em memória, um flush transacional no fim.
 - [ ] **#3 Separar `matchSkill` de `skill`** — a fadiga muta `player.skill` em memória (atributo
       persistente). Fix: campo separado de skill efetiva em jogo.
