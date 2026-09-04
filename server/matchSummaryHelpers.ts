@@ -2,6 +2,7 @@ import type { ActiveGame } from "./types";
 import { FORM_MATCH_MIN, FORM_MAX, SEASON_CALENDAR } from "./gameConstants";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { computeMatchOdds } from "./game/commentary";
+import { getWeatherForFixture } from "./game/matchCalculations";
 import { calculateMatchAttendance } from "./coreHelpers";
 import {
   isPlayerAvailable,
@@ -80,40 +81,6 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     }
     // Seeds will be persisted by checkAllReady when the match starts.
     void changed;
-  }
-
-  function generateWeatherForecast(seed: number) {
-    // PRNG determinística (xorshift32) para garantir previsão estável por jornada
-    let s = seed >>> 0 || 1;
-    s ^= s << 13;
-    s ^= s >>> 17;
-    s ^= s << 5;
-    const weatherRoll = (s >>> 0) / 0xffffffff;
-    let condition: string;
-    let emoji: string;
-    if (weatherRoll < 0.35) {
-      condition = "sol";
-      emoji = "☀️";
-    } else if (weatherRoll < 0.65) {
-      condition = "chuva";
-      emoji = "🌧️";
-    } else if (weatherRoll < 0.8) {
-      condition = "vento";
-      emoji = "💨";
-    } else if (weatherRoll < 0.88) {
-      condition = "chuva_forte";
-      emoji = "⛈️";
-    } else if (weatherRoll < 0.95) {
-      condition = "frio";
-      emoji = "🥶";
-    } else if (weatherRoll < 0.98) {
-      condition = "nevoeiro";
-      emoji = "🌫️";
-    } else {
-      condition = "neve";
-      emoji = "❄️";
-    }
-    return { condition, emoji };
   }
 
   /**
@@ -819,12 +786,12 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         game.matchweek,
       );
 
-      const weatherSeedCup =
-        (game.season ?? 1) * 1000 +
-        (game.matchweek ?? 1) * 31 +
-        team.id +
-        opponent.id;
-      const weather = generateWeatherForecast(weatherSeedCup);
+      const weather = getWeatherForFixture(
+        game.season ?? 1,
+        game.matchweek ?? 1,
+        team.id,
+        opponent.id,
+      );
 
       const odds = computeMatchOdds(
         { division: isHome ? team.division : opponent.division, position: null },
@@ -936,12 +903,12 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       game.matchweek,
     );
 
-    const weatherSeedLeague =
-      (game.season ?? 1) * 1000 +
-      (game.matchweek ?? 1) * 31 +
-      team.id +
-      opponent.id;
-    const weather = generateWeatherForecast(weatherSeedLeague);
+    const weather = getWeatherForFixture(
+      game.season ?? 1,
+      game.matchweek ?? 1,
+      team.id,
+      opponent.id,
+    );
 
     const odds = computeMatchOdds(
       {

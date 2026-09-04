@@ -11,7 +11,7 @@
       loop minuto-a-minuto. Fix: acumular deltas em memória, um flush transacional no fim.
 - [x] **#3 Separar `matchSkill` de `skill`** — a fadiga muta `player.skill` em memória (atributo
       persistente). Fix: campo separado de skill efetiva em jogo.
-- [ ] **#4 Unificar semente do clima** — bloco `ws ^= ...` copiado em `generateIntroEvents`,
+- [x] **#4 Unificar semente do clima** — bloco `ws ^= ...` copiado em `generateIntroEvents`,
       `simulateMatchSegment` e `matchSummaryHelpers`. Fix: `getWeatherForFixture()` única.
 - [ ] **#5 Cachear cálculo de força** — `getPower()` 90–120× por jogo. Fix: cache + invalidação por evento.
 - [ ] **#6 ET sem overhead 30×** — `simulateExtraTime` chama `simulateMatchSegment` 30 vezes,

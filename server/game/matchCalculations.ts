@@ -28,6 +28,50 @@ export function getGoalTimeMultiplier(minute: number): number {
   return 1.62; // 86'–FT  ~18-20%
 }
 
+const WEATHER_EMOJIS: Record<string, string> = {
+  sol: "☀️",
+  chuva: "🌧️",
+  chuva_forte: "⛈️",
+  vento: "💨",
+  frio: "🥶",
+  nevoeiro: "🌫️",
+  neve: "❄️",
+};
+
+/**
+ * Clima determinístico de um jogo — ÚNICA fonte de verdade (fix #4).
+ * A mesma semente (época, jornada, equipas) é usada pela previsão do
+ * briefing (matchSummaryHelpers) e pela simulação (engine), por isso o
+ * clima anunciado é sempre o jogado. A soma comuta: a ordem casa/fora
+ * não altera o resultado.
+ */
+export function getWeatherForFixture(
+  season: number,
+  matchweek: number,
+  teamAId: number,
+  teamBId: number,
+): { condition: string; emoji: string } {
+  let ws =
+    ((season ?? 1) * 1000 +
+      (matchweek ?? 1) * 31 +
+      (teamAId ?? 0) +
+      (teamBId ?? 0)) >>>
+      0 || 1;
+  ws ^= ws << 13;
+  ws ^= ws >>> 17;
+  ws ^= ws << 5;
+  const weatherRoll = (ws >>> 0) / 0xffffffff;
+  let condition: string;
+  if (weatherRoll < 0.35) condition = "sol";
+  else if (weatherRoll < 0.65) condition = "chuva";
+  else if (weatherRoll < 0.8) condition = "vento";
+  else if (weatherRoll < 0.88) condition = "chuva_forte";
+  else if (weatherRoll < 0.95) condition = "frio";
+  else if (weatherRoll < 0.98) condition = "nevoeiro";
+  else condition = "neve";
+  return { condition, emoji: WEATHER_EMOJIS[condition] };
+}
+
 export function getWeatherGoalMultiplier(condition: string | undefined): number {
   switch (condition) {
     case "neve":

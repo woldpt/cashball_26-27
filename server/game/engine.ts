@@ -50,6 +50,7 @@ import {
 import {
   clampSkill,
   getGoalTimeMultiplier,
+  getWeatherForFixture,
   getWeatherGoalMultiplier,
   normaliseStyle,
   getAggressivenessValue,
@@ -1189,43 +1190,22 @@ export function generateIntroEvents(
   homeTactic: any,
   awayTactic: any,
 ): void {
-  // Weather
+  // Weather — clima determinístico partilhado com a previsão do briefing.
   if (!fixture._weather) {
-    // Semente determinística idêntica à usada na previsão (matchSummaryHelpers)
-    const season = fixture.season ?? 1;
-    const matchweek = fixture.matchweek ?? 1;
-    const homeId = fixture.homeTeamId ?? 0;
-    const awayId = fixture.awayTeamId ?? 0;
-    let ws = (season * 1000 + matchweek * 31 + homeId + awayId) >>> 0 || 1;
-    ws ^= ws << 13;
-    ws ^= ws >>> 17;
-    ws ^= ws << 5;
-    const weatherRoll = (ws >>> 0) / 0xffffffff;
-    let weatherCondition: string;
-    if (weatherRoll < 0.35) weatherCondition = "sol";
-    else if (weatherRoll < 0.65) weatherCondition = "chuva";
-    else if (weatherRoll < 0.8) weatherCondition = "vento";
-    else if (weatherRoll < 0.88) weatherCondition = "chuva_forte";
-    else if (weatherRoll < 0.95) weatherCondition = "frio";
-    else if (weatherRoll < 0.98) weatherCondition = "nevoeiro";
-    else weatherCondition = "neve";
-
-    const weatherEmojis: Record<string, string> = {
-      sol: "☀️",
-      chuva: "🌧️",
-      chuva_forte: "⛈️",
-      vento: "💨",
-      frio: "🥶",
-      nevoeiro: "🌫️",
-      neve: "❄️",
-    };
+    const { condition: weatherCondition, emoji: weatherEmoji } =
+      getWeatherForFixture(
+        fixture.season ?? 1,
+        fixture.matchweek ?? 1,
+        fixture.homeTeamId ?? 0,
+        fixture.awayTeamId ?? 0,
+      );
     fixture._weather = weatherCondition;
     fixture.events.push({
       minute: 1,
       type: "weather",
       team: null,
-      emoji: weatherEmojis[weatherCondition] || "🌤️",
-      text: `[1'] ${weatherEmojis[weatherCondition] || "🌤️"} ${weatherPhrase(weatherCondition)}`,
+      emoji: weatherEmoji,
+      text: `[1'] ${weatherEmoji} ${weatherPhrase(weatherCondition)}`,
     });
   }
 
@@ -1451,43 +1431,23 @@ async function simulateMatchSegment(
       recordMatchAppearances(fixture, participantIds, currentCalendarIndex);
     }
 
-    // Weather event — emitted once at the start of each match
+    // Weather event — emitted once at the start of each match (mesma fonte
+    // da previsão do briefing: getWeatherForFixture).
     if (!fixture._weather) {
-      // Semente determinística idêntica à usada em generateIntroEvents / matchSummaryHelpers
-      const season = fixture.season ?? 1;
-      const matchweek = fixture.matchweek ?? 1;
-      const homeId = fixture.homeTeamId ?? 0;
-      const awayId = fixture.awayTeamId ?? 0;
-      let ws = (season * 1000 + matchweek * 31 + homeId + awayId) >>> 0 || 1;
-      ws ^= ws << 13;
-      ws ^= ws >>> 17;
-      ws ^= ws << 5;
-      const weatherRoll = (ws >>> 0) / 0xffffffff;
-      let weatherCondition: string;
-      if (weatherRoll < 0.35) weatherCondition = "sol";
-      else if (weatherRoll < 0.65) weatherCondition = "chuva";
-      else if (weatherRoll < 0.8) weatherCondition = "vento";
-      else if (weatherRoll < 0.88) weatherCondition = "chuva_forte";
-      else if (weatherRoll < 0.95) weatherCondition = "frio";
-      else if (weatherRoll < 0.98) weatherCondition = "nevoeiro";
-      else weatherCondition = "neve";
-
-      const weatherEmojis: Record<string, string> = {
-        sol: "☀️",
-        chuva: "🌧️",
-        chuva_forte: "⛈️",
-        vento: "💨",
-        frio: "🥶",
-        nevoeiro: "🌫️",
-        neve: "❄️",
-      };
+      const { condition: weatherCondition, emoji: weatherEmoji } =
+        getWeatherForFixture(
+          fixture.season ?? 1,
+          fixture.matchweek ?? 1,
+          fixture.homeTeamId ?? 0,
+          fixture.awayTeamId ?? 0,
+        );
       fixture._weather = weatherCondition;
       fixture.events.push({
         minute: 1,
         type: "weather",
         team: null,
-        emoji: weatherEmojis[weatherCondition] || "🌤️",
-        text: `[1'] ${weatherEmojis[weatherCondition] || "🌤️"} ${weatherPhrase(weatherCondition)}`,
+        emoji: weatherEmoji,
+        text: `[1'] ${weatherEmoji} ${weatherPhrase(weatherCondition)}`,
       });
     }
   }
