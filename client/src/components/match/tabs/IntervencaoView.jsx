@@ -13,7 +13,6 @@ import {
   EventCard,
   RefWeatherBar,
   TacticsButtons,
-  ConfirmedSubsStrip,
   MatchPlayerCard,
   CompactPlayerCard,
   MatchIcon,
@@ -85,7 +84,6 @@ export function IntervencaoView({
   onSelectIn,
   onConfirmSub,
   onResetSub,
-  onUndoSub,
   onResetAllSubs,
   redCardedHalftimeIds,
   injuredHalftimeIds,
@@ -512,7 +510,6 @@ export function IntervencaoView({
               isGkRedCard={isGkRedCard}
               isEmergencyGk={isEmergencyGk}
               confirmedSubs={confirmedSubs}
-              annotatedSquad={annotatedSquad}
               tactic={tactic}
               onUpdateTactic={onUpdateTactic}
               playerMatchStats={playerMatchStats}
@@ -534,8 +531,6 @@ export function IntervencaoView({
               onConfirmSub={onConfirmSub}
               onResolveAction={onResolveAction}
               confirmedSubs={confirmedSubs}
-              annotatedSquad={annotatedSquad}
-              onUndoSub={onUndoSub}
               confirmResetAll={confirmResetAll}
               onArmResetAll={handleArmResetAll}
               summary={{ fixture, hInfo, aInfo, liveMinute }}
@@ -682,8 +677,6 @@ function SubsPanel({
   onConfirmSub,
   onResolveAction,
   confirmedSubs,
-  annotatedSquad,
-  onUndoSub,
   confirmResetAll,
   onArmResetAll,
   summary,
@@ -883,9 +876,6 @@ function SubsPanel({
             subsMade={subsMade}
             tactic={tactic}
             onUpdateTactic={onUpdateTactic}
-            confirmedSubs={confirmedSubs}
-            annotatedSquad={annotatedSquad}
-            onUndoSub={onUndoSub}
             swapProps={sharedSwapProps}
           />
         </div>
@@ -920,15 +910,6 @@ function SubsPanel({
               </button>
             )}
           </div>
-          {isHalftime && confirmedSubs.length > 0 && (
-            <div className="shrink-0 border-b border-outline-variant/15 bg-cyan-950/10">
-              <ConfirmedSubsStrip
-                subs={confirmedSubs}
-                annotatedSquad={annotatedSquad}
-                onUndoSub={onUndoSub}
-              />
-            </div>
-          )}
           <div className="flex flex-1 min-h-0 overflow-hidden">
             {/* Titulares */}
             <div className="flex flex-col flex-1 min-w-0 border-r border-outline-variant/15 overflow-hidden">
@@ -1457,9 +1438,6 @@ function MentalidadeColumn({
   tactic,
   onUpdateTactic,
   swapProps,
-  confirmedSubs,
-  annotatedSquad,
-  onUndoSub,
 }) {
   return (
     <div className="flex flex-col min-h-0 min-w-0 overflow-hidden bg-surface-container-high/30">
@@ -1499,21 +1477,8 @@ function MentalidadeColumn({
           {isHalftime && <SubsCounter subsMade={subsMade} />}
         </div>
         <div className="flex-1 overflow-y-auto">
-          <div className="p-4 space-y-4">
+          <div className="p-4">
             <SwapControls {...swapProps} />
-            {isHalftime && confirmedSubs.length > 0 && (
-              <div className="space-y-2">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-                  Confirmadas
-                </span>
-                <ConfirmedSubsStrip
-                  subs={confirmedSubs}
-                  annotatedSquad={annotatedSquad}
-                  onUndoSub={onUndoSub}
-                  className="rounded-md"
-                />
-              </div>
-            )}
           </div>
         </div>
       </div>

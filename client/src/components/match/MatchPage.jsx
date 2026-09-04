@@ -57,7 +57,6 @@ export function MatchPage({
 		handleSelectIn,
 		handleConfirmSub,
 		handleResetSub,
-		handleUndoSub,
 		handleResetAllSubs,
 	} = useTactics();
 
@@ -297,7 +296,6 @@ export function MatchPage({
 						onSelectIn={effectiveSelectIn}
 						onConfirmSub={handleConfirmSub}
 						onResetSub={handleResetSub}
-						onUndoSub={handleUndoSub}
 						onResetAllSubs={handleResetAllSubs}
 						redCardedHalftimeIds={redCardedHalftimeIds}
 						injuredHalftimeIds={injuredHalftimeIds}
