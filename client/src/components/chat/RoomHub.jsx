@@ -166,7 +166,7 @@ export function RoomHub({
   const closeBtn = (
     <button
       onClick={() => setRoomHubOpen(false)}
-      className="w-full py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
+      className="w-full py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 hover:text-rose-300 transition-colors"
     >
       ✕ Fechar
     </button>
