@@ -31,6 +31,13 @@
 - [x] **#12 Evolução async/await** — `applyPostMatchQualityEvolution` com callbacks aninhados +
       contador `remaining`; `UPDATE teams SET morale` global sem await. Fix: async/await + batch.
 
+## Follow-ups descobertos durante a execução (não planeados)
+
+- [ ] Probabilidades da evolução pós-jogo → `MATCH_TUNING` (ficaram literais:
+      0.15/0.75/0.45/0.18/0.20/0.25/0.10/0.04 em `applyPostMatchQualityEvolution`).
+- [ ] `server/gameManager.ts` ainda usa `module.exports` (fora do engine; migração separada).
+- [ ] Telemetria de balanceamento por jogo (golos, cartões, lesões) — por validar taxas-alvo.
+
 ## P2 — Balanceamento / UX / perf (após P0–P1)
 
 - Janelas de 60s por evento (fila única / timeouts decrescentes).
