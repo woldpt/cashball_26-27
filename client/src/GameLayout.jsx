@@ -433,11 +433,17 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         <div className={`relative flex items-center justify-between w-full ${isMobileLandscape ? "px-3" : "px-4 lg:px-6"}`}>
           {/* Left: brand + session info */}
           <div className="flex items-center gap-3">
-            <img
-              src="/icon-512.png"
-              alt="Logotipo CashBall"
-              className={`hidden md:block ${isMobileLandscape ? "w-6 h-6" : "w-7 h-7"} shrink-0`}
-            />
+            {/* Ícone principal em zoom: enorme mas recortado à altura da
+                barra (overflow-hidden no wrapper) — vê-se o centro do ícone. */}
+            <div
+              className={`hidden md:flex shrink-0 items-center justify-center overflow-hidden ${isMobileLandscape ? "h-10 w-14" : "h-14 w-[72px]"}`}
+            >
+              <img
+                src="/icon-512.png"
+                alt="Logotipo CashBall"
+                className={`${isMobileLandscape ? "h-24 w-24" : "h-[132px] w-[132px]"} max-w-none object-cover`}
+              />
+            </div>
             <h1
               className={`${isMobileLandscape ? "text-sm" : "text-base"} font-headline font-black tracking-tighter uppercase`}
               style={{
