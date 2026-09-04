@@ -1536,6 +1536,55 @@ export function generateSecondHalfIntroEvents(
   }
 }
 
+/**
+ * Barreira de minuto para o direto sincronizado (audit #1).
+ * Cada fixture simula o segmento inteiro numa só chamada e invoca
+ * `wait(minuto)` via `onMinute`; o `onTick` (emit + sleep) corre UMA vez
+ * por minuto, só depois de TODAS as fixtures terem simulado esse minuto.
+ * Preserva o pacing observável do antigo loop minuto-a-minuto (incluindo a
+ * espera partilhada em janelas de substituição), sem pagar o setup
+ * (plantéis, moral, rosters, snapshots) 90× por jogo.
+ * `abort()` liberta quem espera — usado quando uma fixture falha, para o
+ * `Promise.all` rejeitar sem deixar tarefas penduradas na barreira.
+ */
+export function createMinuteBarrier(
+  total: number,
+  onTick: (minute: number) => Promise<void>,
+) {
+  let arrived = 0;
+  let aborted = false;
+  let gate: Promise<void> = Promise.resolve();
+  let releaseGate: () => void = () => {};
+  const renewGate = () => {
+    gate = new Promise<void>((r) => {
+      releaseGate = r;
+    });
+  };
+  renewGate();
+  return {
+    async wait(minute: number): Promise<void> {
+      if (aborted) return;
+      arrived++;
+      if (arrived >= total) {
+        arrived = 0;
+        const release = releaseGate;
+        renewGate();
+        try {
+          await onTick(minute);
+        } finally {
+          release();
+        }
+      } else {
+        await gate;
+      }
+    },
+    abort() {
+      aborted = true;
+      releaseGate();
+    },
+  };
+}
+
 export async function simulateMatchSegment(
   db: Db,
   fixture: MatchFixture,

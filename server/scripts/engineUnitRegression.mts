@@ -19,6 +19,8 @@
  *   U8 — queueMatchDeltaWrites: deltas retidos até os writes confirmarem;
  *        segundo enqueue enquanto decorre é ignorado
  *   U9 — isCupFinalRound: só a ronda 5 é final
+ *   U10 — createMinuteBarrier: N fixtures avançam em lockstep (um tick por
+ *        minuto); abort liberta quem espera
  *
  * Run: cd server && npm run test:engine-unit
  */
@@ -37,6 +39,7 @@ const {
   takePendingMatchAction,
   listTeamMatchActions,
   queueMatchDeltaWrites,
+  createMinuteBarrier,
 } = require("../game/engine.ts");
 const {
   computeSidePower,
@@ -231,4 +234,38 @@ test("U9 — isCupFinalRound: só a ronda 5", () => {
   assert.equal(isCupFinalRound(5), true);
   assert.equal(isCupFinalRound(4), false);
   assert.equal(isCupFinalRound(undefined), false);
+});
+
+// ── U10 ─────────────────────────────────────────────────────────────────────
+test("U10 — createMinuteBarrier sincroniza N fixtures por minuto", async () => {
+  const ticks = [];
+  const barrier = createMinuteBarrier(3, async (m) => {
+    ticks.push(m);
+  });
+  const seen = [];
+  await Promise.all(
+    [0, 1, 2].map(async (fi) => {
+      for (const m of [1, 2, 3]) {
+        seen.push(`f${fi}m${m}`);
+        await barrier.wait(m);
+      }
+    }),
+  );
+  // Um tick por minuto, por ordem; toda a gente simulou os 3 minutos
+  assert.deepEqual(ticks, [1, 2, 3]);
+  assert.equal(seen.length, 9);
+});
+
+test("U10b — abort liberta quem espera e desliga a barreira", async () => {
+  const barrier = createMinuteBarrier(2, async () => {});
+  let released = false;
+  const p = barrier.wait(1).then(() => {
+    released = true;
+  });
+  await new Promise((r) => setImmediate(r));
+  assert.equal(released, false);
+  barrier.abort();
+  await p;
+  assert.equal(released, true);
+  await barrier.wait(2); // pós-abort resolve de imediato
 });

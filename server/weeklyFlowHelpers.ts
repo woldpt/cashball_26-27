@@ -26,6 +26,7 @@ import {
   buildLineupSnapshot,
   getMatchFatigueSnapshot,
   queueMatchDeltaWrites,
+  createMinuteBarrier,
 } from "./game/engine";
 import { generateAITactic } from "./game/matchCalculations";
 
@@ -707,44 +708,64 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       await new Promise((r) => setTimeout(r, 2000));
     }
 
-    // ── Simulate minute by minute, all fixtures in parallel ──────────────
-    for (let minute = startMin; minute <= endMin; minute++) {
-      // Simulate this minute for every fixture
-      for (let fi = 0; fi < game.currentFixtures.length; fi++) {
-        const fixture = game.currentFixtures[fi];
-        const { t1, t2 } = fixtureTactics[fi];
-        await simulateMatchSegment(game.db, fixture, t1, t2, minute, minute, {
-          game,
-          io,
-          matchweek: game.matchweek,
-          calendarIndex: game.calendarIndex,
+    // ── Segmento inteiro de uma vez por fixture (audit #1) ───────────────
+    // Antes: simulateMatchSegment(minute, minute) 90× por jogo, pagando setup
+    // (plantéis, moral, rosters, snapshots) a cada minuto. Agora: uma chamada
+    // startMin–endMin por fixture, em paralelo; a barreira rendezvous a cada
+    // minuto para o direto continuar sincronizado (um emit + um sleep por
+    // minuto, como antes). Janelas de substituição continuam a bloquear
+    // dentro do loop de minutos — a espera partilhada mantém-se.
+    const barrier = createMinuteBarrier(
+      game.currentFixtures.length,
+      async (minute) => {
+        // Track current live minute for reconnection recovery
+        game.liveMinute = minute;
+
+        // Emit per-minute update so the client clock stays in sync
+        io.to(game.roomCode).emit("matchMinuteUpdate", {
+          minute,
+          fixtures: game.currentFixtures.map((f) => ({
+            homeTeamId: f.homeTeamId,
+            awayTeamId: f.awayTeamId,
+            homeGoals: f.finalHomeGoals,
+            awayGoals: f.finalAwayGoals,
+            minuteEvents: (f.events || []).filter((e) => e.minute === minute),
+            homeLineup: f.homeLineup || [],
+            awayLineup: f.awayLineup || [],
+            homePossession: f._homePossession ?? 50,
+            awayPossession: f._awayPossession ?? 50,
+          })),
         });
-      }
 
-      // Track current live minute for reconnection recovery
-      game.liveMinute = minute;
-
-      // Emit per-minute update so the client clock stays in sync
-      io.to(game.roomCode).emit("matchMinuteUpdate", {
-        minute,
-        fixtures: game.currentFixtures.map((f) => ({
-          homeTeamId: f.homeTeamId,
-          awayTeamId: f.awayTeamId,
-          homeGoals: f.finalHomeGoals,
-          awayGoals: f.finalAwayGoals,
-          minuteEvents: (f.events || []).filter((e) => e.minute === minute),
-          homeLineup: f.homeLineup || [],
-          awayLineup: f.awayLineup || [],
-          homePossession: f._homePossession ?? 50,
-          awayPossession: f._awayPossession ?? 50,
-        })),
-      });
-
-      // Wait before next minute to sync with client clock
-      if (minute < endMin) {
-        await new Promise((r) => setTimeout(r, effectiveMsPerMinute));
-      }
-    }
+        // Wait before next minute to sync with client clock
+        if (minute < endMin) {
+          await new Promise((r) => setTimeout(r, effectiveMsPerMinute));
+        }
+      },
+    );
+    await Promise.all(
+      game.currentFixtures.map((fixture, fi) => {
+        const { t1, t2 } = fixtureTactics[fi];
+        return simulateMatchSegment(
+          game.db,
+          fixture,
+          t1,
+          t2,
+          startMin,
+          endMin,
+          {
+            game,
+            io,
+            matchweek: game.matchweek,
+            calendarIndex: game.calendarIndex,
+            onMinute: (minute: number) => barrier.wait(minute),
+          },
+        ).catch((err) => {
+          barrier.abort();
+          throw err;
+        });
+      }),
+    );
 
     game._lastCompletedSegment = segmentKey;
     console.log(
