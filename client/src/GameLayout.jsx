@@ -240,6 +240,16 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
   // ── Voo do badge (mobile): ao abrir o fly-up, a soma vira badges individuais ──
   const transfIconRef = useRef(null); // âncora de origem no nav (wrapper do ícone TRANSF)
+  // Shell de conteúdo: altura fixa (h-dvh na raiz) com scroll interno. As views
+  // deixam de adivinhar a altura disponível via 100dvh — o wrapper entrega um
+  // slot com altura definida (overflow-y-auto ou flex para páginas full-bleed).
+  const contentRef = useRef(null);
+
+  // Ao trocar de tab, a posição de scroll volta ao topo (o wrapper é o mesmo
+  // nó DOM; o scrollTop sobreviveria ao remount do conteúdo sem este reset).
+  useLayoutEffect(() => {
+    contentRef.current?.scrollTo(0, 0);
+  }, [activeTab]);
   const subIconRefs = useRef({}); // { market, leiloes } → wrappers dos ícones no fly-up
   const [transferFlyers, setTransferFlyers] = useState([]);
   const transferFlyTimerRef = useRef(0);
@@ -331,7 +341,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   const isMobileLandscape = useMobileLandscape();
 
   return (
-    <div className="min-h-dvh bg-surface text-on-surface font-body tracking-tight">
+    <div className="h-dvh overflow-hidden bg-surface text-on-surface font-body tracking-tight flex flex-col">
       <OfflineBanner />
       {renderError && (
         <div
@@ -590,7 +600,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       onClick={() => {
                         setUserDropdownOpen(false);
                         navigateTab("user_settings");
-                        window.scrollTo(0, 0);
+                        contentRef.current?.scrollTo(0, 0);
                       }}
                       className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-on-surface hover:bg-surface-bright transition-colors text-left"
                     >
@@ -754,7 +764,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   if (isMatchInProgress) return;
                   navigateTab(key);
                   if (key === "bracket") socket.emit("requestCupBracket");
-                  window.scrollTo(0, 0);
+                  contentRef.current?.scrollTo(0, 0);
                 }}
                 title={sidebarCollapsed ? label : undefined}
                 className={`relative w-full flex items-center gap-3 px-2 py-2.5 text-sm font-bold rounded-lg transition-all text-left ${sidebarCollapsed ? "justify-center" : ""} ${
@@ -811,7 +821,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             onClick={() => {
               if (isMatchInProgress) return;
               navigateTab("tactic");
-              window.scrollTo(0, 0);
+              contentRef.current?.scrollTo(0, 0);
               if (socket && teamInfo?.id && tactic) {
                 socket.emit("requestTacticFamiliarity", teamInfo.id);
                 socket.emit("requestAllTacticFamiliarity");
@@ -937,7 +947,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         onClick={() => {
                           navigateTab(key);
                           setMobileSubMenu(null);
-                          window.scrollTo(0, 0);
+                          contentRef.current?.scrollTo(0, 0);
                         }}
                         className={`flex-1 flex flex-col items-center justify-center gap-1 py-4 transition-colors ${
                           activeTab === key
@@ -968,7 +978,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         onClick={() => {
                           navigateTab(key);
                           setMobileSubMenu(null);
-                          window.scrollTo(0, 0);
+                          contentRef.current?.scrollTo(0, 0);
                         }}
                         className={`flex-1 flex flex-col items-center justify-center gap-1 py-4 transition-colors ${
                           activeTab === key
@@ -1043,7 +1053,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                           if (key === "bracket")
                             socket.emit("requestCupBracket");
                           setMobileSubMenu(null);
-                          window.scrollTo(0, 0);
+                          contentRef.current?.scrollTo(0, 0);
                         }}
                         className={`flex-1 flex flex-col items-center justify-center gap-1 py-4 transition-colors ${
                           activeTab === key
@@ -1083,7 +1093,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   onClick={() => {
                     navigateTab("club");
                     setMobileSubMenu(null);
-                    window.scrollTo(0, 0);
+                    contentRef.current?.scrollTo(0, 0);
                   }}
                   className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors relative ${
                     isActive ? "text-primary" : "text-on-surface-variant"
@@ -1150,7 +1160,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     onClick={() => {
                       navigateTab("tactic");
                       setMobileSubMenu(null);
-                      window.scrollTo(0, 0);
+                      contentRef.current?.scrollTo(0, 0);
                       if (socket && teamInfo?.id && tactic) {
                         socket.emit("requestTacticFamiliarity", teamInfo.id);
                         socket.emit("requestAllTacticFamiliarity");
@@ -1315,7 +1325,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
       {panelMode === null && (
         <main
-          className={
+          className={`flex-1 min-h-0 flex flex-col ${
             isMobileLandscape
               // A rail vertical (w-16) só está montada quando !isMatchInProgress —
               // fora disso a ml-16 ficava órfã e deixava uma faixa vazia à
@@ -1325,9 +1335,19 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               // não ser coberto, em vez de pb-3.
               ? `transition-all duration-200 pt-10 ${isMatchInProgress ? "pb-16 ml-0" : "pb-3 ml-16"}`
               : `pt-14 pb-16 lg:pb-12 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-14" : "lg:ml-64"}`
-          }
+          }`}
         >
-          <div className="p-4 lg:p-6">
+          {/* Wrapper de scroll: a maioria das tabs rola aqui (mesma UX de antes,
+              mas ancorada ao shell). "squad" e "leiloes" são páginas full-bleed
+              que gerem o próprio scroll interno (flex-col). */}
+          <div
+            ref={contentRef}
+            className={
+              activeTab === "squad" || activeTab === "leiloes"
+                ? "flex-1 min-h-0 flex flex-col overflow-hidden"
+                : "flex-1 min-h-0 overflow-y-auto p-4 lg:p-6"
+            }
+          >
             {roomBlocked && (
               <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
                 <span className="material-symbols-outlined text-amber-400 text-[20px] leading-none mt-0.5">

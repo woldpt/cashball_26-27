@@ -160,7 +160,7 @@ export function TeamSquadView({
   }, [calendarData, selectedTeam, selectedTeamDivision, teams]);
 
   return (
-    <div className="min-h-screen w-full bg-surface text-on-surface flex flex-col">
+    <div className="min-h-0 flex-1 w-full bg-surface text-on-surface flex flex-col">
       {/* Header mobile — barra compacta + monograma (cor da equipa como acento) */}
       <div className="sm:hidden border-b border-outline-variant/60 bg-surface-container-low">
         {/* Hairline nas cores da equipa */}

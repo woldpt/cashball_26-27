@@ -106,7 +106,8 @@ export function PlayersTab({
       </Panel>
 
       {/* ── Wage distribution chart ── */}
-      <div className="bg-surface-container-low p-5 rounded-md">
+      {/* Gráfico secundário — em landscape não sobra altura para isto. */}
+      <div className="bg-surface-container-low p-3 sm:p-5 rounded-md short:hidden">
         <h3 className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
           Distribuição Salarial por Posição
         </h3>
