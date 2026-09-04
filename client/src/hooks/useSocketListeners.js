@@ -246,15 +246,22 @@ export function useSocketListeners(handlers, refs) {
 		});
 		socket.on("cupDrawStart", (data) => {
 			if (!inRoom()) return;
-			// Never open the cup draw popup during an active match
-			if (refs.isPlayingMatchRef.current) return;
+			// Guarda sempre os dados do sorteio. O servidor emite o sorteio logo
+			// após o fim do jogo anterior, enquanto o cliente ainda está a
+			// terminar o replay (isPlayingMatch=true) — em vez de descartar o
+			// sorteio, fica pendente e o GameContext abre o popup assim que o
+			// jogo termina.
+			handlers.setCupDraw(data);
+			if (refs.isPlayingMatchRef.current) {
+				refs.pendingCupDrawRef.current = true;
+				return;
+			}
 			refs.isCupDrawRef.current = true;
 			// Close any open auction modal to avoid overlap with the draw animation
 			handlers.setSelectedAuctionPlayer(null);
 			handlers.setAuctionBid("");
 			handlers.setMyAuctionBid(null);
 			handlers.setAuctionResult(null);
-			handlers.setCupDraw(data);
 			handlers.setCupDrawRevealIdx(0);
 			handlers.setShowCupDrawPopup(true);
 		});

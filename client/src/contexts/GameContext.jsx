@@ -206,6 +206,10 @@ export function GameProvider({
 	const showHalftimePanelRef = useRef(false);
 	const matchActionRef = useRef(null);
 	const isCupDrawRef = useRef(false);
+	// Sorteio de taça emitido pelo servidor enquanto o replay do jogo anterior
+	// ainda estava a correr (isPlayingMatch=true) — guardado para abrir assim
+	// que o jogo termina, em vez de ser descartado pelo guard.
+	const pendingCupDrawRef = useRef(false);
 	const teamsRef = useRef([]);
 	const playersRef = useRef([]);
 	const isLiveSimulationRef = useRef(false);
@@ -260,6 +264,19 @@ export function GameProvider({
 				setMyAuctionBid(null);
 				setAuctionResult(null);
 				setShowCupDrawPopup(false);
+			});
+		} else if (pendingCupDrawRef.current) {
+			// Sorteio de taça recebido durante o replay do jogo anterior —
+			// abre agora que o jogo terminou.
+			pendingCupDrawRef.current = false;
+			isCupDrawRef.current = true;
+			startTransition(() => {
+				setSelectedAuctionPlayer(null);
+				setAuctionBid("");
+				setMyAuctionBid(null);
+				setAuctionResult(null);
+				setCupDrawRevealIdx(0);
+				setShowCupDrawPopup(true);
 			});
 		}
 	}, [isPlayingMatch]);
@@ -781,6 +798,7 @@ export function GameProvider({
 			showHalftimePanelRef,
 			matchActionRef,
 			isCupDrawRef,
+			pendingCupDrawRef,
 			meRef,
 			roomCodeRef,
 			teamsRef,
