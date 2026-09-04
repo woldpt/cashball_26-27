@@ -9,7 +9,7 @@
       Fix: coin-flip no failsafe.
 - [x] **#2 Flush transacional pós-jogo** — `db.run` fire-and-forget de golos/cartões/lesões dentro do
       loop minuto-a-minuto. Fix: acumular deltas em memória, um flush transacional no fim.
-- [ ] **#3 Separar `matchSkill` de `skill`** — a fadiga muta `player.skill` em memória (atributo
+- [x] **#3 Separar `matchSkill` de `skill`** — a fadiga muta `player.skill` em memória (atributo
       persistente). Fix: campo separado de skill efetiva em jogo.
 - [ ] **#4 Unificar semente do clima** — bloco `ws ^= ...` copiado em `generateIntroEvents`,
       `simulateMatchSegment` e `matchSummaryHelpers`. Fix: `getWeatherForFixture()` única.
