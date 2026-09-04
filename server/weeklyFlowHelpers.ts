@@ -717,6 +717,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       endMin,
       matchweek: game.matchweek,
       isCup: entry?.type === "cup",
+      cupRound: entry?.type === "cup" ? (entry as any).round : null,
       cupRoundName: entry?.type === "cup" ? (entry as any).roundName : null,
       fixtures: game.currentFixtures.map((f) => ({
         homeTeamId: f.homeTeamId,

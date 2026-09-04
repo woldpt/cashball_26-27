@@ -1705,6 +1705,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					game.liveMinute ?? (game.gamePhase === "match_second_half" ? 46 : 1),
 				matchweek: game.matchweek,
 				isCup: isCupHalf,
+				cupRound: isCupHalf ? halfEntry?.round ?? null : null,
 				cupRoundName: isCupHalf ? halfEntry?.roundName || null : null,
 				fixtures: game.currentFixtures.map((f: any) => ({
 					homeTeamId: f.homeTeamId,
@@ -1740,6 +1741,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				minute: game.liveMinute ?? 91,
 				matchweek: game.matchweek,
 				isCup: true,
+				cupRound: entry?.round ?? null,
 				cupRoundName: entry?.roundName || null,
 				fixtures: game.currentFixtures.map((f: any) => ({
 					homeTeamId: f.homeTeamId,
