@@ -743,6 +743,12 @@ export function adoptLiveTactic(
     typeof live.formation === "string" && live.formation
       ? live.formation
       : null;
+  // Fallback para o evento do direto: se a formação vier omissa mas o estilo
+  // mudou, anunciar a formação vigente em vez de "null".
+  const currentFormation =
+    (tactic as any)?.formation ||
+    (canonical as any)?.formation ||
+    "4-4-2";
   const newStyle = normaliseStyle(live.style);
   let tacticalChange = false;
   for (const ref of refs) {
@@ -791,7 +797,7 @@ export function adoptLiveTactic(
   }
   if (tacticalChange) bumpPowerVersion(fixture, side);
   return tacticalChange
-    ? { formation: newFormation as string, style: newStyle }
+    ? { formation: newFormation ?? currentFormation, style: newStyle }
     : null;
 }
 

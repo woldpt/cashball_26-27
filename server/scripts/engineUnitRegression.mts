@@ -339,3 +339,11 @@ test("U11c — sem mudança (mesma ref) ou sem coach → null, sem bump", () => 
   );
   assert.equal(getPowerVersion(fixture, "home"), before);
 });
+
+test("U11d — estilo muda sem formação: anuncia a formação vigente, nunca null", () => {
+  const v1 = { formation: "4-4-2", style: "Equilibrado", positions: {} };
+  const fixture: any = { homeTeamId: 1, awayTeamId: 2, events: [], _t1: v1 };
+  const game = mkTacticGame({ style: "Defensivo" });
+  const change = adoptLiveTactic(game, fixture, "home", v1, new Set());
+  assert.deepEqual(change, { formation: "4-4-2", style: "DEFENSIVO" });
+});
