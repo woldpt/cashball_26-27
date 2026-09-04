@@ -304,7 +304,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
 
       {/* ── SEASON STATS ──────────────────────────────────── */}
       {cal && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
           {/* Unbeaten run */}
           <SummaryWidget
             label="Invencibilidade"
@@ -370,7 +370,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                     key={entry.calendarIndex}
                     className="flex items-stretch gap-0 rounded-lg overflow-hidden opacity-40 bg-surface-container border-l-2 border-l-error"
                   >
-                    <div className="w-16 sm:w-28 shrink-0 flex flex-col justify-center gap-1 px-2 sm:px-3 py-3 border-r border-outline-variant/10">
+                    <div className="w-16 sm:w-28 shrink-0 flex flex-col justify-center gap-1 px-2 sm:px-3 py-2.5 sm:py-3 border-r border-outline-variant/10">
                       <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded self-start bg-error/20 text-error">
                         Taça
                       </span>
@@ -378,7 +378,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                         {weekLabel}
                       </span>
                     </div>
-                    <div className="flex-1 flex items-center gap-3 px-4 py-3 min-w-0">
+                    <div className="flex-1 flex items-center gap-3 px-4 py-2.5 sm:py-3 min-w-0">
                       <div className="shrink-0 w-8 h-8 rounded flex items-center justify-center text-xs font-black border border-error/30 text-error bg-error/10">
                         🏆
                       </div>
@@ -391,7 +391,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                         </span>
                       </div>
                     </div>
-                    <div className="shrink-0 flex items-center justify-end px-4 py-3">
+                    <div className="shrink-0 flex items-center justify-end px-4 py-2.5 sm:py-3">
                       <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-error/20 text-error">
                         Eliminado
                       </span>
@@ -497,7 +497,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                   className={cardBase}
                 >
                   {/* Left: matchweek + competition type */}
-                  <div className="w-16 sm:w-28 shrink-0 flex flex-col justify-center gap-1 px-2 sm:px-3 py-3 border-r border-outline-variant/10">
+                  <div className="w-16 sm:w-28 shrink-0 flex flex-col justify-center gap-1 px-2 sm:px-3 py-2.5 sm:py-3 border-r border-outline-variant/10">
                     <span
                       className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded self-start ${
                         type === "cup"
@@ -531,7 +531,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                   </div>
 
                   {/* Center: teams + stadium */}
-                  <div className="flex-1 flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-3 min-w-0">
+                  <div className="flex-1 flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2.5 sm:py-3 min-w-0">
                     {/* Type icon — hidden on mobile */}
                     <div
                       className={`hidden sm:flex shrink-0 w-8 h-8 rounded items-center justify-center text-xs font-black border ${
@@ -578,7 +578,7 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                   </div>
 
                   {/* Right: score/status */}
-                  <div className="shrink-0 flex items-center justify-end px-2 sm:px-4 py-3">
+                  <div className="shrink-0 flex items-center justify-end px-2 sm:px-4 py-2.5 sm:py-3">
                     {scoreBlock}
                   </div>
                 </div>
