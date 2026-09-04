@@ -21,6 +21,9 @@
  *   U9 — isCupFinalRound: só a ronda 5 é final
  *   U10 — createMinuteBarrier: N fixtures avançam em lockstep (um tick por
  *        minuto); abort liberta quem espera
+ *   U11 — adoptLiveTactic: setTactic a meio do jogo adota formação/estilo
+ *        (bump de power), funde labels mas impõe a verdade de jogo
+ *        (XI=Titular, indisponíveis removidos); sem coach ou sem mudança → null
  *
  * Run: cd server && npm run test:engine-unit
  */
@@ -40,6 +43,8 @@ const {
   listTeamMatchActions,
   queueMatchDeltaWrites,
   createMinuteBarrier,
+  adoptLiveTactic,
+  getPowerVersion,
 } = require("../game/engine.ts");
 const {
   computeSidePower,
@@ -268,4 +273,69 @@ test("U10b — abort liberta quem espera e desliga a barreira", async () => {
   await p;
   assert.equal(released, true);
   await barrier.wait(2); // pós-abort resolve de imediato
+});
+
+// ── U11 ─────────────────────────────────────────────────────────────────────
+function mkTacticGame(tactic: any, teamId = 1) {
+  return { playersByName: { Coach: { teamId, tactic } } };
+}
+
+test("U11 — adoptLiveTactic adota formação+mentalidade e impõe verdade de jogo", () => {
+  const v1 = {
+    formation: "4-4-2",
+    style: "Equilibrado",
+    positions: { 11: "Titular", 12: "Titular" },
+  };
+  const fixture: any = {
+    homeTeamId: 1,
+    awayTeamId: 2,
+    events: [{ type: "injury", team: "home", playerId: 50 }],
+    _t1: v1,
+    _subbedOut: new Set([99]),
+  };
+  // setTactic substitui o objeto (labels do cliente vêm obsoletas: 11 ainda em
+  // campo marcado Suplente, 50 lesionado ainda Titular, 99 já substituído)
+  const game = mkTacticGame({
+    formation: "3-5-2",
+    style: "Ofensivo",
+    positions: { 11: "Suplente", 50: "Titular", 99: "Suplente" },
+  });
+  const before = getPowerVersion(fixture, "home");
+  const change = adoptLiveTactic(game, fixture, "home", v1, new Set([11, 12]));
+  assert.deepEqual(change, { formation: "3-5-2", style: "OFENSIVO" });
+  assert.equal(v1.formation, "3-5-2");
+  assert.equal(v1.style, "Ofensivo");
+  assert.equal(getPowerVersion(fixture, "home"), before + 1);
+  // Verdade de jogo: XI é Titular; lesionado e substituído saem dos labels
+  assert.equal(v1.positions[11], "Titular");
+  assert.equal(v1.positions[12], "Titular");
+  assert.ok(!("50" in v1.positions), "lesionado removido dos labels");
+  assert.ok(!("99" in v1.positions), "substituído removido dos labels");
+});
+
+test("U11b — só mentalidade também conta como mudança tática", () => {
+  const v1 = { formation: "4-4-2", style: "Equilibrado", positions: {} };
+  const fixture: any = { homeTeamId: 1, awayTeamId: 2, events: [], _t1: v1 };
+  const game = mkTacticGame({ formation: "4-4-2", style: "Defensivo" });
+  const before = getPowerVersion(fixture, "home");
+  const change = adoptLiveTactic(game, fixture, "home", v1, new Set());
+  assert.deepEqual(change, { formation: "4-4-2", style: "DEFENSIVO" });
+  assert.equal(getPowerVersion(fixture, "home"), before + 1);
+});
+
+test("U11c — sem mudança (mesma ref) ou sem coach → null, sem bump", () => {
+  const v1 = { formation: "4-4-2", style: "Equilibrado", positions: {} };
+  const fixture: any = { homeTeamId: 1, awayTeamId: 2, events: [], _t1: v1 };
+  const before = getPowerVersion(fixture, "home");
+  // mesma referência: setTactic não aconteceu
+  assert.equal(
+    adoptLiveTactic(mkTacticGame(v1), fixture, "home", v1, new Set()),
+    null,
+  );
+  // equipa NPC (sem coach)
+  assert.equal(
+    adoptLiveTactic({ playersByName: {} }, fixture, "home", v1, new Set()),
+    null,
+  );
+  assert.equal(getPowerVersion(fixture, "home"), before);
 });

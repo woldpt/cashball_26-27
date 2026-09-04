@@ -702,7 +702,100 @@ export function normalizeMatchChoice(
  * conversão em GR improvisado) faz bumpPowerVersion; o loop de minutos
  * recalcula a força só quando a versão muda.
  */
-function getPowerVersion(fixture: MatchFixture, side: MatchSide): number {
+/** Rótulo pt-PT da mentalidade normalizada para o direto. */
+function styleDisplayLabel(style: string): string {
+  if (style === "OFENSIVO") return "Ofensivo";
+  if (style === "DEFENSIVO") return "Defensivo";
+  return "Equilibrado";
+}
+
+/**
+ * Adota tática/mentalidade live do treinador a meio do segmento (efeito
+ * prático no minuto seguinte, sem re-simular o passado).
+ * O setTactic do cliente SUBSTITUI playerState.tactic (objeto novo), por isso
+ * a referência fotografada no início do segmento (fixture._t1/_t2 + params da
+ * simulação) fica obsoleta. Corre no topo de cada minuto e funde o objeto
+ * live para as referências da engine:
+ * - formação/estilo → adotados + bumpPowerVersion (força recalculada no
+ *   minuto); o chamador refresca ainda a familiaridade para a nova tática;
+ * - labels Titular/Suplente → fundidas para janelas futuras, mas o XI nunca
+ *   muda aqui: a verdade de jogo prevalece (XI atual = Titular,
+ *   expulsos/lesionados/substituídos removidos).
+ * Devolve { formation, style } quando formação/estilo mudaram, senão null.
+ */
+export function adoptLiveTactic(
+  game: ActiveGame,
+  fixture: MatchFixture,
+  side: MatchSide,
+  tactic: any,
+  lineupIds: Set<number>,
+): { formation: string; style: string } | null {
+  const teamId = side === "home" ? fixture.homeTeamId : fixture.awayTeamId;
+  const coachState: any = Object.values(game.playersByName || {}).find(
+    (p: any) => p && (p as any).teamId === teamId,
+  );
+  const live = coachState?.tactic;
+  if (!live || typeof live !== "object" || live === tactic) return null;
+  const canonical = side === "home" ? fixture._t1 : fixture._t2;
+  const refs = new Set<any>([tactic, canonical].filter(Boolean));
+  if (refs.size === 0) return null;
+  const newFormation =
+    typeof live.formation === "string" && live.formation
+      ? live.formation
+      : null;
+  const newStyle = normaliseStyle(live.style);
+  let tacticalChange = false;
+  for (const ref of refs) {
+    if (newFormation && ref.formation !== newFormation) {
+      ref.formation = newFormation;
+      tacticalChange = true;
+    }
+    if (newStyle && normaliseStyle(ref.style) !== newStyle) {
+      ref.style = live.style;
+      tacticalChange = true;
+    }
+    if (live.positions && typeof live.positions === "object") {
+      const merged: Record<string, string> = { ...(ref.positions || {}) };
+      for (const [id, status] of Object.entries(live.positions)) {
+        if (status === "Suplente" || status === "Titular")
+          merged[id] = status as string;
+      }
+      ref.positions = merged;
+    }
+  }
+  // Verdade de jogo sobre os labels: o XI atual é sempre Titular e quem
+  // saiu (vermelho/lesão/substituído) nunca volta via labels.
+  const truthRef = canonical || tactic;
+  if (truthRef && truthRef.positions) {
+    const unavailable = new Set<number>();
+    for (const e of fixture.events || []) {
+      if (
+        ((e as any).type === "red" || (e as any).type === "injury") &&
+        (e as any).team === side &&
+        (e as any).playerId != null
+      ) {
+        unavailable.add(Number((e as any).playerId));
+      }
+    }
+    const subbedOut = (fixture as any)._subbedOut;
+    if (subbedOut instanceof Set) {
+      for (const id of subbedOut) unavailable.add(Number(id));
+    }
+    for (const id of unavailable) {
+      delete truthRef.positions[id];
+      delete truthRef.positions[String(id)];
+    }
+    for (const id of lineupIds) {
+      truthRef.positions[id] = "Titular";
+    }
+  }
+  if (tacticalChange) bumpPowerVersion(fixture, side);
+  return tacticalChange
+    ? { formation: newFormation as string, style: newStyle }
+    : null;
+}
+
+export function getPowerVersion(fixture: MatchFixture, side: MatchSide): number {
   return Number(
     side === "home" ? (fixture._homePowerV ?? 0) : (fixture._awayPowerV ?? 0),
   );
@@ -1814,9 +1907,10 @@ export async function simulateMatchSegment(
   const awayLineupIds = new Set<number>(awaySquad.map((p: any) => p.id));
 
 
-  // Familiaridade (memória táctica) — síncrono, em memória no game object
-  const homeFam = getTacticBonus(game, fixture.homeTeamId, homeTactic);
-  const awayFam = getTacticBonus(game, fixture.awayTeamId, awayTactic);
+  // Familiaridade (memória táctica) — síncrono, em memória no game object.
+  // `let` porque a adoção live a meio do segmento recalcula para a nova tática.
+  let homeFam = getTacticBonus(game, fixture.homeTeamId, homeTactic);
+  let awayFam = getTacticBonus(game, fixture.awayTeamId, awayTactic);
 
   // Força com dirty-flag: calcula-se UMA vez por segmento (tática, moral e
   // familiaridade podem mudar entre segmentos) e recalcula-se dentro do
@@ -1846,6 +1940,48 @@ export async function simulateMatchSegment(
 
   for (let minute = startMin; minute <= endMin; minute++) {
     fixture._minute = minute;
+
+    // Tática/mentalidade live: o treinador pode mudar a meio do segmento via
+    // setTactic — adotar formação+estilo com efeito neste minuto (o passado
+    // não se re-simula). O XI nunca muda aqui, só via subs/janelas.
+    const homeTacticChange = adoptLiveTactic(
+      game,
+      fixture,
+      "home",
+      homeTactic,
+      homeLineupIds,
+    );
+    if (homeTacticChange) {
+      homeFam = getTacticBonus(game, fixture.homeTeamId, homeTactic);
+      const homeName =
+        fixture.homeTeam?.name || String(fixture.homeTeamId);
+      fixture.events.push({
+        minute,
+        type: "tactic_change",
+        team: "home",
+        emoji: "\ud83d\udd04",
+        text: `[${minute}'] \ud83d\udd04 ${homeName} muda para ${homeTacticChange.formation} (${styleDisplayLabel(homeTacticChange.style)})`,
+      });
+    }
+    const awayTacticChange = adoptLiveTactic(
+      game,
+      fixture,
+      "away",
+      awayTactic,
+      awayLineupIds,
+    );
+    if (awayTacticChange) {
+      awayFam = getTacticBonus(game, fixture.awayTeamId, awayTactic);
+      const awayName =
+        fixture.awayTeam?.name || String(fixture.awayTeamId);
+      fixture.events.push({
+        minute,
+        type: "tactic_change",
+        team: "away",
+        emoji: "\ud83d\udd04",
+        text: `[${minute}'] \ud83d\udd04 ${awayName} muda para ${awayTacticChange.formation} (${styleDisplayLabel(awayTacticChange.style)})`,
+      });
+    }
 
     if (minute === 1 && !fixture._firstHalfStartComment) {
       const homeName = fixture.homeTeam?.name || String(fixture.homeTeamId);

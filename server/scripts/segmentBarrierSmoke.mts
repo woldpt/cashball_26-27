@@ -183,6 +183,16 @@ async function main() {
   const ticks: number[] = [];
   const barrier = createMinuteBarrier(2, async (minute: number) => {
     ticks.push(minute);
+    // B5 — ao minuto 20 o treinador da casa (jogo A) muda formação + mentalidade
+    // via setTactic (objeto novo, como faz o cliente): tem de vigorar no min 21.
+    if (minute === 20) {
+      game.playersByName["Coach0"].tactic = {
+        formation: "3-5-2",
+        style: "Ofensivo",
+        positions: {},
+      };
+      console.log("  …tática mudada no minuto 20 (casa A → 3-5-2 Ofensivo)");
+    }
     // B3 — a meio do segmento, o treinador da casa (jogo A) pede substituição:
     // monta posições (titulares + 3 suplentes) e injeta o pedido.
     if (minute === 10) {
@@ -280,6 +290,24 @@ async function main() {
     console.log(
       `  …sub concluída: modal@${subModals[0].data.minute}' → evento@${subEvents[0].minute}' (${subEvents[0].text?.slice(0, 60) || ""})`,
     );
+  }
+
+  // B5 — a mudança de tática do minuto 20 vigora no minuto seguinte
+  check(
+    (homeTacticA as any).formation === "3-5-2" &&
+      (homeTacticA as any).style === "Ofensivo",
+    `B5: tática da casa A após setTactic: ${JSON.stringify({ f: (homeTacticA as any).formation, s: (homeTacticA as any).style })}`,
+  );
+  const tacticEvents = (fixtureA.events as any[]).filter(
+    (e) => e.type === "tactic_change" && e.team === "home",
+  );
+  check(tacticEvents.length === 1, `B5: eventos tactic_change da casa A: ${tacticEvents.length} (esperado 1)`);
+  if (tacticEvents.length === 1) {
+    check(
+      tacticEvents[0].minute === 21,
+      `B5: tactic_change no minuto ${tacticEvents[0].minute} (esperado 21)`,
+    );
+    console.log(`  …tática adotada: "${tacticEvents[0].text}"`);
   }
 
   // B4 — sem contaminação: equipas de A nunca aparecem em B e vice-versa
