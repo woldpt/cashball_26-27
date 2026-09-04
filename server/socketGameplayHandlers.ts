@@ -1,5 +1,10 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
+import {
+  peekPendingMatchAction,
+  takePendingMatchAction,
+  listTeamMatchActions,
+} from "./game/engine";
 import { MAX_BENCH_SIZE } from "./gameConstants";
 import { getTacticFamiliarity, getAllTacticFamiliarity } from "./game/tacticFamiliarity";
 
@@ -162,19 +167,16 @@ export function registerGameplaySocketHandlers(
     const game = getGameBySocket(socket.id);
     if (!game) return;
 
-    if (!game.pendingMatchAction) {
+    const pendingAction: any = peekPendingMatchAction(game, actionId);
+    if (!pendingAction) {
       // Já foi resolvido (timer ou desconexão auto-resolveu) — desbloquear cliente preso
       socket.emit("matchActionResolved", { source: "auto" });
       return;
     }
-
-    const pendingAction: any = game.pendingMatchAction;
-    if (pendingAction.actionId !== actionId) return;
     if (pendingAction.teamId !== teamId) return;
+    takePendingMatchAction(game, actionId);
 
     const pending: any = pendingAction;
-    clearTimeout(pending.timer);
-    game.pendingMatchAction = null;
 
     const finalChoice = choice !== undefined ? choice : playerId;
 
@@ -279,11 +281,13 @@ export function registerGameplaySocketHandlers(
         }
       }
 
-      // If the disconnected socket owned the pending match action, auto-resolve it
-      const pendingAction: any = game.pendingMatchAction;
-      if (pendingAction && pendingAction.teamId === playerState.teamId) {
-        clearTimeout(pendingAction.timer);
-        game.pendingMatchAction = null;
+      // If the disconnected socket owned pending match actions, auto-resolve
+      // them all (uma equipa pode ter várias janelas em jogos diferentes).
+      for (const pendingAction of listTeamMatchActions(
+        game,
+        playerState.teamId,
+      )) {
+        takePendingMatchAction(game, pendingAction.actionId);
         const fallbackValue = pendingAction.fallback
           ? pendingAction.fallback()
           : null;

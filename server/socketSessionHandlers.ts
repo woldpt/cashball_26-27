@@ -3,6 +3,10 @@ import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory } from "./co
 import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES } from "./gameConstants";
 import { getGlobalMessages, CHAT_RETENTION_MS } from "./db/globalDatabase";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
+import {
+  takePendingMatchAction,
+  listTeamMatchActions,
+} from "./game/engine";
 import { serializeActiveAuctions } from "./auctionHelpers";
 
 type AnyRow = Record<string, any>;
@@ -188,20 +192,21 @@ export function registerSessionSocketHandlers(
 			});
 		}
 
-		// Check if this team had a pending match action that was already resolved
-		const pendingAction: any = game.pendingMatchAction;
-		if (pendingAction && pendingAction.teamId === team.id) {
-			const actionId = pendingAction.actionId;
+		// Check if this team had pending match actions that were already resolved
+		// (o timer continua vivo como rede de segurança: resolve com fallback
+		// ao expirar — aqui só se notifica o cliente, sem consumir a ação).
+		for (const pendingAction of listTeamMatchActions(game, team.id)) {
+			if (pendingAction.expiredNotified) continue;
+			pendingAction.expiredNotified = true;
 			console.log(
-				`[${roomCode}] ⚠ Reconnecting coach ${name} had pending action (actionId=${actionId}) that was already resolved`,
+				`[${roomCode}] ⚠ Reconnecting coach ${name} had pending action (actionId=${pendingAction.actionId}) that was already resolved`,
 			);
 			socket.emit("matchActionExpired", {
-				actionId,
+				actionId: pendingAction.actionId,
 				type: pendingAction.type,
 				teamId: team.id,
 				reason: "coach_disconnected",
 			});
-			game.pendingMatchAction = null;
 		}
 
 		game.lockedCoaches.add(name);
@@ -1092,10 +1097,12 @@ export function registerSessionSocketHandlers(
 			// Remover dos lockedCoaches
 			game.lockedCoaches.delete(playerState.name);
 
-			// Cancelar pendingMatchAction se era deste coach
-			const pendingAction: any = game.pendingMatchAction;
-			if (pendingAction && pendingAction.teamId === playerState.teamId) {
-				if (pendingAction.timer) clearTimeout(pendingAction.timer);
+			// Cancelar pendingMatchActions se eram deste coach
+			for (const pendingAction of listTeamMatchActions(
+				game,
+				playerState.teamId,
+			)) {
+				takePendingMatchAction(game, pendingAction.actionId);
 				try {
 					pendingAction.finalize(pendingAction.fallback?.(), "auto");
 				} catch (err) {
@@ -1104,7 +1111,6 @@ export function registerSessionSocketHandlers(
 						err,
 					);
 				}
-				game.pendingMatchAction = null;
 			}
 
 			// Remover de playersByName — sessão activa limpa

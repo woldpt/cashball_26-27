@@ -1061,11 +1061,11 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                 );
               }
 
-              // Limpar pendingMatchAction persistida na DB — após reinício do servidor
+              // Limpar pendingMatchActions persistidas na DB — após reinício do servidor
               // o jogo já foi reposto para "lobby", por isso qualquer ação pendente
               // é obsoleta. Criar um stub inerte causaria bloqueios silenciosos.
               if (st["pendingMatchAction"] && st["pendingMatchAction"] !== "null") {
-                game.pendingMatchAction = null;
+                game.pendingMatchActions?.clear();
                 db.run(
                   `INSERT OR REPLACE INTO game_state (key, value) VALUES ('pendingMatchAction', 'null')`,
                   (cleanErr: Error | null) => {
@@ -1347,17 +1347,19 @@ function saveGameState(game: ActiveGame): void {
     JSON.stringify(game.tacticFamiliarity || {}),
   );
 
-  // Persist pending match action for crash recovery (only serialisable fields)
-  if (game.pendingMatchAction) {
-    const pa = game.pendingMatchAction;
+  // Persist pending match actions for crash recovery (only serialisable fields)
+  const pendingList = [...(game.pendingMatchActions?.values() ?? [])];
+  if (pendingList.length > 0) {
     upsert(
       "pendingMatchAction",
-      JSON.stringify({
-        actionId: pa.actionId,
-        type: pa.type,
-        teamId: pa.teamId,
-        fallback: pa.fallback ? pa.fallback() : null,
-      }),
+      JSON.stringify(
+        pendingList.map((pa) => ({
+          actionId: pa.actionId,
+          type: pa.type,
+          teamId: pa.teamId,
+          fallback: pa.fallback ? pa.fallback() : null,
+        })),
+      ),
     );
   } else {
     upsert("pendingMatchAction", "null");

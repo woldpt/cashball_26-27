@@ -320,6 +320,8 @@ export const MATCH_TUNING = {
   shootoutMin: 0.55,
   shootoutMax: 0.88,
   shootoutSuddenDeathCap: 20,
+  // Failsafe do desempate (morte súbita esgotada): prob. de a casa ganhar o sorteio.
+  shootoutFailsafeHome: 0.5,
   // Janelas de ação do treinador humano: 60s para decisões táticas (subs,
   // lesões, GR improvisado/expulso), 12s para penáltis (não travar o jogo).
   actionTimeoutMs: 60000,

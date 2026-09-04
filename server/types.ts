@@ -133,6 +133,17 @@ export interface MatchFixture {
   };
   _homePower?: { power: SidePower; version: number };
   _awayPower?: { power: SidePower; version: number };
+  // Índice id→posição do snapshot de lineup (evita findIndex O(11) por
+  // jogador por minuto no syncFatigueSnapshot). Auto-validado: rebuild se
+  // o array for trocado, mudar de tamanho (splice) ou o id na posição
+  // divergir (swap). Ver getLineupIndex.
+  _lineupIndex?: {
+    home?: { arr: unknown[]; byId: Map<number, number> };
+    away?: { arr: unknown[]; byId: Map<number, number> };
+  };
+  // Deltas já enfileirados para a DB (flush em curso) — impede duplo
+  // enqueue; os `_deltas` só são libertados quando os writes confirmam.
+  _deltasQueued?: boolean;
   _homePowerV?: number;
   _awayPowerV?: number;
   _firstHalfStartComment?: boolean;
@@ -230,7 +241,11 @@ export interface ActiveGame {
   pendingAuctionQueueTimers: ReturnType<typeof setTimeout>[];
   initialized: boolean;
   lastHalftimePayload?: any;
-  pendingMatchAction?: any;
+  // Ações de jogo pendentes por actionId (penáltis, lesões, subs, GR).
+  // É um Map e não um slot único: vários jogos com humanos na mesma sala
+  // podem ter janelas abertas em simultâneo — com slot único, a segunda
+  // ação expulsava a primeira e o timer órfão resolvia-a tarde com fallback.
+  pendingMatchActions?: Map<string, any>;
   pendingSubstitutions?: Set<number>;
 
   // ── Fixture seeds por divisão (ordem aleatória no início de cada época) ──

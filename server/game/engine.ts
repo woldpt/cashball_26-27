@@ -53,6 +53,7 @@ import {
   clampSkill,
   getWeatherForFixture,
   normaliseStyle,
+  isCupFinalRound,
   getAggressivenessValue,
   average,
   selectPenaltyTaker,
@@ -179,19 +180,39 @@ function recordMatchAppearances(
  * Descarrega os deltas acumulados de todos os fixtures para a DB.
  * NÃO gere transação — emite os UPDATEs/INSERTs ordenados na conexão dada,
  * para o chamador os embrulhar na sua transação atómica do apito final.
- * Limpa `fixture._deltas` ao enfileirar (os valores já seguiriam na fila
- * serializada da conexão).
+ * Os `fixture._deltas` só são libertados quando TODOS os writes confirmam
+ * (antes limpavam-se ao enfileirar — uma morte entre o enqueue e o COMMIT
+ * perdia golos/vermelhos/lesões sem hipótese de replay). A flag
+ * `_deltasQueued` impede duplo enqueue enquanto o flush está em curso.
  */
 export function queueMatchDeltaWrites(db: Db, fixtures: MatchFixture[]): void {
   for (const fixture of fixtures || []) {
     const d: MatchDeltas | undefined = fixture?._deltas;
-    if (!d) continue;
-    fixture._deltas = undefined;
+    if (!d || fixture._deltasQueued) continue;
+    fixture._deltasQueued = true;
+
+    let pending = 0;
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      fixture._deltas = undefined;
+      fixture._deltasQueued = false;
+    };
+    // Todos os db.run são emitidos de forma síncrona abaixo; cada callback
+    // decrementa — quando chegam todos, os deltas podem ser libertados.
+    const trackedRun = (sql: string, params: any[]) => {
+      pending++;
+      db.run(sql, params, () => {
+        pending--;
+        if (pending === 0) finish();
+      });
+    };
 
     if (d.appearances.size > 0 && d.calendarIndex > 0) {
       const ids = [...d.appearances];
       const ph = ids.map(() => "?").join(",");
-      db.run(
+      trackedRun(
         // Guard anti-replay: igual ao incremento imediato anterior — um flush
         // repetido do mesmo slot nunca conta presenças a dobrar.
         `UPDATE players SET games_played = games_played + 1, last_appearance_matchweek = MAX(last_appearance_matchweek, ?) WHERE id IN (${ph}) AND COALESCE(last_appearance_matchweek, 0) < ?`,
@@ -199,27 +220,29 @@ export function queueMatchDeltaWrites(db: Db, fixtures: MatchFixture[]): void {
       );
     }
     for (const [id, count] of d.goals) {
-      db.run(
+      trackedRun(
         "UPDATE players SET goals = goals + ?, career_goals = career_goals + ? WHERE id = ?",
         [count, count, id],
       );
     }
     for (const [id, until] of d.reds) {
-      db.run(
+      trackedRun(
         "UPDATE players SET red_cards = red_cards + 1, career_reds = career_reds + 1, suspension_games = suspension_games + 2, suspension_until_matchweek = CASE WHEN suspension_until_matchweek > ? THEN suspension_until_matchweek ELSE ? END WHERE id = ?",
         [until, until, id],
       );
     }
     for (const [id, inj] of d.injuries) {
-      db.run(
+      trackedRun(
         "UPDATE players SET injuries = injuries + ?, career_injuries = career_injuries + ?, prev_skill = skill, skill = ?, injury_until_matchweek = CASE WHEN injury_until_matchweek > ? THEN injury_until_matchweek ELSE ? END WHERE id = ?",
         [inj.count, inj.count, inj.newSkill, inj.injuryUntil, inj.injuryUntil, id],
       );
-      db.run(
+      trackedRun(
         "INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) VALUES (?, ?, ?, ?)",
         [id, inj.matchweek, inj.season, inj.oldSkill],
       );
     }
+    // Fixture sem writes (deltas vazios): sem callbacks, libertar já.
+    if (pending === 0) finish();
   }
 }
 
@@ -529,6 +552,54 @@ function getCurrentPlayerState(game: ActiveGame, teamId: number) {
   );
 }
 
+/**
+ * Mapa de ações de jogo pendentes (ÚNICO acesso — cria on-demand).
+ * Várias janelas podem coexistir (jogos diferentes na mesma sala), por isso
+ * a chave é o actionId e não um slot único no game.
+ */
+export function getPendingMatchActions(game: ActiveGame): Map<string, any> {
+  let map = game.pendingMatchActions;
+  if (!(map instanceof Map)) {
+    map = new Map();
+    game.pendingMatchActions = map;
+  }
+  return map;
+}
+
+/** Espreita sem remover (para validar teamId antes de consumir). */
+export function peekPendingMatchAction(
+  game: ActiveGame,
+  actionId: string,
+): any | undefined {
+  const map = game.pendingMatchActions;
+  return map instanceof Map ? map.get(actionId) : undefined;
+}
+
+/**
+ * Consome a ação: remove do mapa + clearTimeout. Idempotente — resolve
+ * undefined se já tiver sido finalizada (timeout, disconnect, leave).
+ */
+export function takePendingMatchAction(
+  game: ActiveGame,
+  actionId: string,
+): any | undefined {
+  const map = game.pendingMatchActions;
+  if (!(map instanceof Map)) return undefined;
+  const pa = map.get(actionId);
+  if (pa) {
+    if (pa.timer) clearTimeout(pa.timer);
+    map.delete(actionId);
+  }
+  return pa;
+}
+
+/** Todas as ações pendentes de uma equipa (para disconnect/leave em lote). */
+export function listTeamMatchActions(game: ActiveGame, teamId: number): any[] {
+  const map = game.pendingMatchActions;
+  if (!(map instanceof Map)) return [];
+  return [...map.values()].filter((pa) => pa && pa.teamId === teamId);
+}
+
 function waitForMatchAction({
   game,
   io,
@@ -556,11 +627,8 @@ function waitForMatchAction({
   return new Promise<{ choice: any; source: string }>((resolve) => {
     const actionId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const finalize = (choice, source = "auto") => {
-      const pendingAction: any = game.pendingMatchAction;
-      if (pendingAction && pendingAction.actionId === actionId) {
-        clearTimeout(pendingAction.timer);
-        game.pendingMatchAction = null;
-      }
+      // Idempotente: timeout/disconnect/leave podem já ter consumido a ação.
+      takePendingMatchAction(game, actionId);
       io.to(game.roomCode).emit("matchActionResolved", {
         actionId,
         teamId,
@@ -577,14 +645,14 @@ function waitForMatchAction({
       finalize(fallback(), "auto");
     }, timeoutMs);
 
-    game.pendingMatchAction = {
+    getPendingMatchActions(game).set(actionId, {
       actionId,
       type,
       teamId,
       timer,
       finalize,
       fallback,
-    };
+    });
 
     io.to(game.roomCode).emit("matchActionRequired", {
       actionId,
@@ -1225,6 +1293,29 @@ function ensureFatigueLedgers(fixture: MatchFixture) {
   if (!fixture._fatigueLoss.away) fixture._fatigueLoss.away = {};
 }
 
+function getLineupIndex(
+  fixture: MatchFixture,
+  side: MatchSide,
+): Map<number, number> {
+  const lineupRef = side === "home" ? fixture.homeLineup : fixture.awayLineup;
+  const empty = new Map<number, number>();
+  if (!lineupRef) return empty;
+  let cache =
+    side === "home"
+      ? fixture._lineupIndex?.home
+      : fixture._lineupIndex?.away;
+  if (!cache || cache.arr !== lineupRef || cache.byId.size !== lineupRef.length) {
+    const byId = new Map<number, number>();
+    lineupRef.forEach((p: any, i: number) => {
+      if (p && typeof p.id === "number") byId.set(p.id, i);
+    });
+    cache = { arr: lineupRef, byId };
+    if (!fixture._lineupIndex) fixture._lineupIndex = {};
+    fixture._lineupIndex[side] = cache;
+  }
+  return cache.byId;
+}
+
 function syncFatigueSnapshot(
   fixture: MatchFixture,
   side: MatchSide,
@@ -1234,8 +1325,15 @@ function syncFatigueSnapshot(
   const lineupRef = side === "home" ? fixture.homeLineup : fixture.awayLineup;
   if (!lineupRef) return;
 
-  const li = lineupRef.findIndex((q: any) => q.id === playerId);
-  if (li < 0) return;
+  let li = getLineupIndex(fixture, side).get(playerId);
+  // O índice pode estar stale (swapOnPitch troca o id na posição sem mudar
+  // o tamanho): validar pela identidade e forçar rebuild se divergir.
+  if (li === undefined || (lineupRef[li] as any)?.id !== playerId) {
+    if (!fixture._lineupIndex) fixture._lineupIndex = {};
+    fixture._lineupIndex[side] = undefined;
+    li = getLineupIndex(fixture, side).get(playerId);
+    if (li === undefined || (lineupRef[li] as any)?.id !== playerId) return;
+  }
 
   const next: Record<string, unknown> = {
     ...lineupRef[li],
@@ -1390,7 +1488,7 @@ export function generateIntroEvents(
     const homeStyle = normaliseStyle(homeTactic?.style);
     const awayStyle = normaliseStyle(awayTactic?.style);
 
-    if (fixture.round === 5) {
+    if (isCupFinalRound(fixture.round)) {
       fixture.events.push({
         minute: 1,
         type: "phase_start",
@@ -1708,7 +1806,7 @@ export async function simulateMatchSegment(
       const homeStyle = normaliseStyle(homeTactic?.style);
       const awayStyle = normaliseStyle(awayTactic?.style);
 
-      if (fixture.round === 5) {
+      if (isCupFinalRound(fixture.round)) {
         fixture.events.push({
           minute,
           type: "phase_start",
@@ -1821,7 +1919,7 @@ export async function simulateMatchSegment(
         defense: defending.defense,
         minute,
         isHome,
-        isFinal: fixture.round === 5,
+        isFinal: isCupFinalRound(fixture.round),
         weather: fixture._weather,
         possessionFactor,
         egoFactor,
@@ -1914,10 +2012,9 @@ export async function simulateMatchSegment(
       );
       const isDecisive = rng() < decisiveChance;
 
-      const goalText =
-        fixture.round === 5
-          ? finalGoalPhrase(scorer ? scorer.name : "Jogador")
-          : goalPhrase(scorer ? scorer.name : "Jogador", goalCtx);
+      const goalText = isCupFinalRound(fixture.round)
+        ? finalGoalPhrase(scorer ? scorer.name : "Jogador")
+        : goalPhrase(scorer ? scorer.name : "Jogador", goalCtx);
       fixture.events.push({
         minute,
         type: "goal",
@@ -2361,7 +2458,7 @@ export async function simulateMatchSegment(
 
   delete fixture._minute;
 
-  if (fixture.round === 5 && !fixture._finalEndComment) {
+  if (isCupFinalRound(fixture.round) && !fixture._finalEndComment) {
     const winnerName =
       fixture.finalHomeGoals > fixture.finalAwayGoals
         ? fixture.homeTeam?.name
@@ -2829,7 +2926,31 @@ export async function simulateExtraTime(
   });
 
   const etEvents = fixture.events.filter((e: any) => e.minute >= 91);
-  return { et1Events: etEvents, et2Events: [] };
+  return { etEvents };
+}
+
+/**
+ * Escolhe o batedor do desempate por skill, sem repetir enquanto houver
+ * estreantes. Exportado para teste (U6) — a volta reinicia quando todos já
+ * marcaram, mas o escolhido é SEMPRE marcado como usado (inclusive ao
+ * reiniciar): senão o melhor batedor repetia em chutes seguidos de morte
+ * súbita longa.
+ */
+export function pickShootoutTaker(
+  squad: PlayerRow[],
+  usedIds: Set<number>,
+): PlayerRow | null {
+  let available = squad.filter((p) => !usedIds.has(p.id));
+  if (available.length === 0) {
+    // Cycle through again if all have taken a penalty
+    usedIds.clear();
+    available = [...squad];
+  }
+  // Pick by skill
+  available.sort((a, b) => getEffectiveSkill(b) - getEffectiveSkill(a));
+  const taker = available[0] || null;
+  if (taker) usedIds.add(taker.id);
+  return taker;
 }
 
 // ─── PENALTY SHOOTOUT ─────────────────────────────────────────────────────────
@@ -2844,20 +2965,8 @@ export function simulatePenaltyShootout(
   let homeGoals = 0;
   let awayGoals = 0;
 
-  const pickShooter = (squad, usedIds) => {
-    const available = squad.filter((p) => !usedIds.has(p.id));
-    if (available.length === 0) {
-      // Cycle through again if all have taken a penalty
-      usedIds.clear();
-      return squad[0] || null;
-    }
-    // Pick by skill
-    available.sort((a, b) => getEffectiveSkill(b) - getEffectiveSkill(a));
-    return available[0];
-  };
-
-  const homeUsed = new Set();
-  const awayUsed = new Set();
+  const homeUsed = new Set<number>();
+  const awayUsed = new Set<number>();
   const homeGK = homeSquad.find((p) => p.position === "GR") || homeSquad[0];
   const awayGK = awaySquad.find((p) => p.position === "GR") || awaySquad[0];
 
@@ -2885,8 +2994,7 @@ export function simulatePenaltyShootout(
     const used = side === "home" ? homeUsed : awayUsed;
     // O GR que defende é o da equipa adversária.
     const gk = side === "home" ? awayGK : homeGK;
-    const taker = pickShooter(squad, used);
-    if (taker) used.add(taker.id);
+    const taker = pickShootoutTaker(squad, used);
     const scored = rng() < calcScoredChance(taker, gk);
     if (scored) {
       if (side === "home") homeGoals++;
@@ -2930,7 +3038,7 @@ export function simulatePenaltyShootout(
   // Failsafe do desempate: após 20 rondas de morte súbita ainda empatado
   // (probabilidade ínfima), sorteio imparcial em vez de favorecer a casa.
   if (homeGoals === awayGoals) {
-    if (rng() < 0.5) homeGoals++;
+    if (rng() < MATCH_TUNING.shootoutFailsafeHome) homeGoals++;
     else awayGoals++;
   }
 

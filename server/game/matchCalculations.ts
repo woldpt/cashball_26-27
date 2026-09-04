@@ -93,6 +93,14 @@ export function getWeatherGoalMultiplier(condition: string | undefined): number 
   }
 }
 
+/**
+ * A final da Taça é a ronda 5 (ver CUP_ROUND_NAMES em gameConstants).
+ * Helper único — antes o literal `round === 5` estava espalhado pela engine.
+ */
+export function isCupFinalRound(round: unknown): boolean {
+  return round === 5;
+}
+
 export function normaliseStyle(style: unknown) {
   const raw = String(style || "Balanced")
     .trim()
