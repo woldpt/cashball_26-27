@@ -65,7 +65,42 @@ import type { Rng } from "./matchCalculations";
 import { recalcPlayerValue, MATCH_TUNING } from "../gameConstants";
 import { getTacticBonus } from "./tacticFamiliarity";
 
-type Db = any;
+/**
+ * API mínima do sqlite3 usada pelo engine (audit: antes era `type Db = any`,
+ * o que desligava o typecheck em todos os acessos à BD do módulo).
+ * Só run/get/all com callbacks de erro — o resto do sqlite3 não é usado aqui.
+ */
+export type Db = {
+  run(
+    sql: string,
+    params?: any[],
+    callback?: (this: unknown, err: Error | null) => void,
+  ): unknown;
+  get(
+    sql: string,
+    params?: any[],
+    callback?: (this: unknown, err: Error | null, row?: any) => void,
+  ): unknown;
+  all(
+    sql: string,
+    params?: any[],
+    callback?: (this: unknown, err: Error | null, rows?: any[]) => void,
+  ): unknown;
+};
+
+/**
+ * Contexto de um segmento simulado (audit: antes `context: any`).
+ * `game` é obrigatório — todos os chamadores (liga, Taça, testes) passam-no.
+ */
+export type SegmentContext = {
+  game: ActiveGame;
+  io?: any;
+  matchweek?: number;
+  calendarIndex?: number;
+  rng?: Rng;
+  onMinute?: (minute: number) => unknown;
+  hasHumanInET?: boolean;
+};
 
 // Helpers promisificados (a DB é callback-style) — ÚNICA implementação.
 // Antes cada função enrolava o seu `new Promise` à mão (~7 cópias).
@@ -1707,7 +1742,7 @@ export async function simulateMatchSegment(
   awayTactic: Tactic | null,
   startMin: number,
   endMin: number,
-  context: any = {},
+  context: SegmentContext,
 ) {
   const currentMatchweek = context.matchweek || 1;
   // Slot-based: calendarIndex is 0-based (slot 0 is a real first slot). The old
@@ -3192,7 +3227,7 @@ export async function simulateExtraTime(
   fixture: MatchFixture,
   homeTactic: Tactic | null,
   awayTactic: Tactic | null,
-  context: any,
+  context: SegmentContext,
 ) {
   // Use real-time speed ONLY if a human coach is participating in ANY of the ET fixtures.
   // When multiple ET fixtures run in parallel (Promise.all), NPC-only fixtures
