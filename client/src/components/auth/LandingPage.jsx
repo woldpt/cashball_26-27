@@ -148,7 +148,7 @@ const LandingPage = ({
 				<motion.div
 					initial={{ opacity: 0, scale: 0.95 }}
 					animate={{ opacity: 1, scale: 1 }}
-					className="relative bg-[#0e1a12]/80 border border-green-500/20 backdrop-blur-xl p-8 rounded-2xl w-full max-w-md shadow-[0_0_60px_rgba(74,222,128,0.08)] text-center"
+					className="relative bg-[#0e1a12]/80 border border-green-500/20 backdrop-blur-xl p-8 short:p-5 rounded-2xl w-full max-w-md shadow-[0_0_60px_rgba(74,222,128,0.08)] text-center"
 				>
 					<div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-green-400/60 to-transparent rounded-t-2xl" />
 					<div className="w-12 h-12 mx-auto mb-4 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center">
@@ -180,7 +180,7 @@ const LandingPage = ({
 	return (
 		<div
 			className={`min-h-screen bg-[#060b08] text-white flex flex-col relative ${
-				isMode ? "" : "pb-16"
+				isMode ? "" : "pb-16 short:pb-0"
 			}`}
 		>
 			{/* Particle background */}
@@ -214,14 +214,11 @@ const LandingPage = ({
 				<div className="absolute inset-0 bg-gradient-to-b from-[#060b08]/60 via-transparent to-[#060b08]/80" />
 			</div>
 
-			{/* Sticky header — escondido em ecrãs curtos (mobile landscape) durante a
-			    fase de escolha de sala: são 64px de marca sem valor funcional que
-			    esmagam a grelha de salas (RoomSelectScreen recupera com short:h-dvh). */}
+			{/* Sticky header — escondido em ecrãs curtos (mobile landscape) em todas as
+			    fases: 64px de marca esmagam o hero/auth e a grelha de salas. */}
 			<header
 				aria-hidden={scrolled}
-				className={`z-10 w-full border-b border-white/[0.06] bg-[#060b08]/70 backdrop-blur-xl sticky top-0 transition-transform duration-300 ease-out ${
-					isMode ? "short:hidden" : ""
-				} ${scrolled ? "-translate-y-full pointer-events-none" : "translate-y-0"}`}
+				className={`z-10 w-full border-b border-white/[0.06] bg-[#060b08]/70 backdrop-blur-xl sticky top-0 transition-transform duration-300 ease-out short:hidden ${scrolled ? "-translate-y-full pointer-events-none" : "translate-y-0"}`}
 			>
 				<div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
 					<div className="flex items-center gap-3">
@@ -277,14 +274,24 @@ const LandingPage = ({
 					className="flex flex-1 flex-col min-h-0"
 				>
 			{/* Hero + Auth card */}
-			<div className="relative z-10 flex-1 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-16 px-6 sm:px-10 lg:px-16 py-14 short:gap-4 short:py-6 max-w-7xl mx-auto w-full">
+			<div className="relative z-10 flex-1 flex flex-col short:flex-row lg:flex-row items-center justify-center gap-12 lg:gap-16 px-6 sm:px-10 lg:px-16 py-14 short:gap-8 short:py-4 max-w-7xl mx-auto w-full">
 				{/* Left: Hero copy */}
 				<motion.div
 					initial={{ opacity: 0, x: -30 }}
 					animate={{ opacity: 1, x: 0 }}
 					transition={{ duration: 0.6, ease: "easeOut" }}
-					className="w-full lg:w-1/2 flex flex-col items-start text-left"
+					className="w-full short:w-[40%] lg:w-1/2 flex flex-col items-start text-left"
 				>
+					{/* Brand compacta — o header sticky é short:hidden; sem isto a marca
+					    desaparecia em mobile landscape */}
+					<div className="hidden short:flex items-center gap-2 mb-3">
+						<img src="/icon-512.png" alt="Logotipo CashBall" className="w-5 h-5" />
+						<span className="font-headline font-black text-base tracking-tighter text-white">
+							Cash<span className="text-green-400">Ball</span>
+							<span className="text-white/30 font-bold ml-1.5 text-xs">26/27</span>
+						</span>
+					</div>
+
 					<div className="inline-flex items-center gap-2 border border-green-500/20 bg-green-500/5 px-3 py-1 rounded-full mb-8 short:mb-2">
 						<span className="w-1 h-1 rounded-full bg-green-400" />
 						<span className="text-[10px] uppercase tracking-[0.35em] text-green-400/80 font-bold">
@@ -300,7 +307,7 @@ const LandingPage = ({
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.1, duration: 0.5 }}
-							className="block text-[min(3.75rem,calc((100vw-3rem)/5.2))] sm:text-7xl lg:text-[5.5rem] short:text-4xl text-white"
+							className="block text-[min(3.75rem,calc((100vw-3rem)/5.2))] sm:text-7xl lg:text-[5.5rem] short:text-[clamp(1.15rem,3.2vw,1.6rem)] text-white"
 						>
 							TREINA.
 						</motion.span>
@@ -308,7 +315,7 @@ const LandingPage = ({
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.2, duration: 0.5 }}
-							className="block text-[min(3.75rem,calc((100vw-3rem)/5.2))] sm:text-7xl lg:text-[5.5rem] short:text-4xl text-green-400 drop-shadow-[0_0_40px_rgba(74,222,128,0.35)]"
+							className="block text-[min(3.75rem,calc((100vw-3rem)/5.2))] sm:text-7xl lg:text-[5.5rem] short:text-[clamp(1.15rem,3.2vw,1.6rem)] text-green-400 drop-shadow-[0_0_40px_rgba(74,222,128,0.35)]"
 						>
 							PROSPERA.
 						</motion.span>
@@ -316,7 +323,7 @@ const LandingPage = ({
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.3, duration: 0.5 }}
-							className="block text-[min(3.75rem,calc((100vw-3rem)/5.2))] sm:text-7xl lg:text-[5.5rem] short:text-4xl text-white"
+							className="block text-[min(3.75rem,calc((100vw-3rem)/5.2))] sm:text-7xl lg:text-[5.5rem] short:text-[clamp(1.15rem,3.2vw,1.6rem)] text-white"
 						>
 							REPETE.
 						</motion.span>
@@ -326,7 +333,7 @@ const LandingPage = ({
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						transition={{ delay: 0.45, duration: 0.5 }}
-						className="text-base text-white/50 leading-relaxed mb-10 max-w-md short:mb-3"
+						className="text-base text-white/50 leading-relaxed mb-10 max-w-md short:hidden"
 					>
 						A evolução moderna da gestão de futebol clássica. Controla as
 						tácticas, as finanças e o destino do teu clube em ligas multiplayer
@@ -346,7 +353,7 @@ const LandingPage = ({
 						].map(({ icon, label, value }) => (
 							<div
 								key={label}
-								className="flex items-center gap-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-green-500/30 hover:bg-green-500/5 px-4 py-2.5 rounded-xl transition-all duration-300 short:py-1.5"
+								className="flex items-center gap-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-green-500/30 hover:bg-green-500/5 px-4 py-2.5 rounded-xl transition-all duration-300 short:px-3 short:py-1.5"
 							>
 								<span className="text-lg">{icon}</span>
 								<div>
@@ -367,7 +374,7 @@ const LandingPage = ({
 					initial={{ opacity: 0, x: 30 }}
 					animate={{ opacity: 1, x: 0 }}
 					transition={{ duration: 0.6, ease: "easeOut" }}
-					className="w-full lg:w-1/2 flex justify-center lg:justify-end"
+					className="w-full short:w-[60%] lg:w-1/2 flex justify-center lg:justify-end"
 				>
 					<div className="relative w-full max-w-md">
 						{/* Outer glow */}
@@ -388,16 +395,16 @@ const LandingPage = ({
 										animate={{ opacity: 1, x: 0 }}
 										exit={{ opacity: 0, x: 20 }}
 										transition={{ duration: 0.25 }}
-										className="p-8 space-y-5 short:p-5 short:space-y-4"
+										className="p-8 space-y-5 short:p-4 short:space-y-2"
 									>
-										<div className="space-y-1 text-center mb-4">
+										<div className="space-y-1 text-center mb-4 short:mb-2">
 											<p className="text-[10px] text-green-400/60 uppercase font-black tracking-[0.4em]">
 												Painel do Treinador
 											</p>
 											<h2 className="text-2xl font-headline font-black text-white tracking-tight short:text-xl">
 												Acede à tua conta
 											</h2>
-											<p className="text-xs text-white/40">
+											<p className="text-xs text-white/40 short:hidden">
 												Depois escolhes novo jogo, época guardada ou amigos.
 											</p>
 										</div>
@@ -409,7 +416,7 @@ const LandingPage = ({
 												<input
 													type="text"
 													autoComplete="username"
-													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-3 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-2 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
 													value={name}
 													placeholder="Ex: Cobra"
 													onChange={(e) => {
@@ -426,7 +433,7 @@ const LandingPage = ({
 													<input
 														type={showLoginPassword ? "text" : "password"}
 														autoComplete="current-password"
-														className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-3 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+														className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-2 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
 														value={password}
 														placeholder="••••••••"
 														onChange={(e) => {
@@ -458,7 +465,7 @@ const LandingPage = ({
 										<button
 											onClick={() => handleAuthenticate("login")}
 											disabled={!name.trim() || !password || authSubmitting}
-											className="w-full relative overflow-hidden bg-green-500 hover:bg-green-400 disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-3 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)] group"
+											className="w-full relative overflow-hidden bg-green-500 hover:bg-green-400 disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-2.5 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)] group"
 										>
 											<span className="relative z-10">
 												{authSubmitting ? "A VALIDAR..." : "ENTRAR"}
@@ -472,7 +479,7 @@ const LandingPage = ({
 												setJoinError("");
 												setAuthPhase("register");
 											}}
-											className="w-full border border-white/[0.08] bg-white/[0.02] hover:border-green-500/30 hover:bg-green-500/[0.04] text-white/70 hover:text-white py-3 short:py-2.5 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all"
+											className="w-full border border-white/[0.08] bg-white/[0.02] hover:border-green-500/30 hover:bg-green-500/[0.04] text-white/70 hover:text-white py-3 short:py-2 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all"
 										>
 											Criar conta
 										</button>
@@ -497,22 +504,30 @@ const LandingPage = ({
 										animate={{ opacity: 1, x: 0 }}
 										exit={{ opacity: 0, x: -20 }}
 										transition={{ duration: 0.25 }}
-										className="p-8 space-y-5 short:p-5 short:space-y-4"
+										className="p-8 space-y-5 short:p-4 short:space-y-2"
 									>
-										<button
-											onClick={resetAuthFlow}
-											className="text-xs text-white/30 hover:text-white/70 font-black uppercase tracking-widest flex items-center gap-1 transition-colors"
-										>
-											← Voltar
-										</button>
-										<div className="space-y-1 text-center">
-											<p className="text-[10px] text-green-400/60 uppercase font-black tracking-[0.4em]">
-												Nova conta
-											</p>
-											<h2 className="text-2xl font-headline font-black text-white tracking-tight short:text-xl">
-												Cria a tua conta de treinador
-											</h2>
-										</div>
+											{/* Landscape: título e "Voltar" na mesma linha — o bloco de
+											    header ocupava 3 linhas e empurrava o CTA para além do ecrã em
+											    ~375px de altura */}
+											<div className="flex items-center justify-between gap-2">
+											  <button
+											    onClick={resetAuthFlow}
+											    className="text-xs text-white/30 hover:text-white/70 font-black uppercase tracking-widest flex items-center gap-1 transition-colors short:order-2 short:shrink-0"
+											  >
+											    ← Voltar
+											  </button>
+											  <h2 className="hidden short:block min-w-0 truncate text-lg font-headline font-black text-white tracking-tight">
+											    Cria a tua conta de treinador
+											  </h2>
+											</div>
+											<div className="space-y-1 text-center short:hidden">
+											  <p className="text-[10px] text-green-400/60 uppercase font-black tracking-[0.4em]">
+											    Nova conta
+											  </p>
+											  <h2 className="text-2xl font-headline font-black text-white tracking-tight">
+											    Cria a tua conta de treinador
+											  </h2>
+											</div>
 										<div className="space-y-3">
 											<div>
 												<label className="block text-[10px] uppercase text-white/40 mb-2 font-bold tracking-wider">
@@ -521,7 +536,7 @@ const LandingPage = ({
 												<input
 													type="text"
 													autoComplete="username"
-													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-3 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-2 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
 													value={name}
 													placeholder="Ex: Amorim"
 													onChange={(e) => {
@@ -530,6 +545,8 @@ const LandingPage = ({
 													}}
 												/>
 											</div>
+											{/* short: password + confirmar lado a lado (poupa uma linha) */}
+											<div className="space-y-3 short:grid short:grid-cols-2 short:gap-3">
 											<div>
 												<label className="block text-[10px] uppercase text-white/40 mb-2 font-bold tracking-wider">
 													Palavra-passe
@@ -538,7 +555,7 @@ const LandingPage = ({
 													<input
 														type={showRegisterPassword ? "text" : "password"}
 														autoComplete="new-password"
-														className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-3 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+														className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-2 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
 														value={password}
 														placeholder="••••••••"
 														onChange={(e) => {
@@ -570,13 +587,14 @@ const LandingPage = ({
 											</div>
 											<div>
 												<label className="block text-[10px] uppercase text-white/40 mb-2 font-bold tracking-wider">
-													Confirmar Palavra-passe
+													<span className="short:hidden">Confirmar Palavra-passe</span>
+													<span className="hidden short:inline">Confirmar</span>
 												</label>
 												<div className="relative">
 													<input
 														type={showConfirmPassword ? "text" : "password"}
 														autoComplete="new-password"
-														className={`w-full bg-white/[0.04] border p-4 short:py-3 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 ${
+														className={`w-full bg-white/[0.04] border p-4 short:py-2 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 ${
 															registerPasswordMismatch
 																? "border-red-500/60 focus:ring-red-500/30 focus:border-red-500/60"
 																: "border-white/[0.08] focus:border-green-500/50 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
@@ -609,6 +627,7 @@ const LandingPage = ({
 														</span>
 													</button>
 												</div>
+											</div>
 												{registerPasswordMismatch && (
 													<p className="text-red-400 text-xs mt-1 font-bold">
 														As palavras-passe não coincidem.
@@ -625,7 +644,7 @@ const LandingPage = ({
 												authSubmitting ||
 												registerPasswordMismatch
 											}
-											className="w-full relative overflow-hidden bg-green-500 hover:bg-green-400 disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-3 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)] group"
+											className="w-full relative overflow-hidden bg-green-500 hover:bg-green-400 disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-2.5 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)] group"
 										>
 											<span className="relative z-10">
 												{authSubmitting ? "A CRIAR CONTA..." : "CRIAR CONTA"}
@@ -651,7 +670,7 @@ const LandingPage = ({
 			</div>
 
 			{/* Features strip */}
-			<div className="relative z-10 w-full border-t border-white/[0.06] bg-[#080d0a]/60 backdrop-blur-sm">
+			<div className="relative z-10 w-full border-t border-white/[0.06] bg-[#080d0a]/60 backdrop-blur-sm short:hidden">
 				<div className="max-w-7xl mx-auto px-6 lg:px-10 py-10 short:py-6">
 					<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 						{[

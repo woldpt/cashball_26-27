@@ -97,11 +97,11 @@ const RoomSelectScreen = ({
 				transition={{ duration: 0.4, ease: "easeOut", delay: 0.05 }}
 				className="flex flex-wrap items-center justify-between gap-2 sm:gap-4"
 			>
-				<div>
+				<div className="short:min-w-0 short:flex-1">
 					<p className="mb-1 text-[10px] font-black uppercase tracking-[0.4em] text-green-400/60 short:hidden">
 						Sessão autenticada
 					</p>
-					<h2 className="font-headline text-2xl font-black leading-none tracking-tight text-white sm:text-3xl lg:text-4xl short:text-2xl">
+					<h2 className="font-headline text-2xl font-black leading-none tracking-tight text-white sm:text-3xl lg:text-4xl short:text-2xl short:truncate">
 						Olá,{" "}
 						<span className="text-green-400 drop-shadow-[0_0_12px_rgba(74,222,128,0.5)]">
 							{name}
@@ -160,14 +160,14 @@ const RoomSelectScreen = ({
 					<button
 						key={mode}
 						onClick={() => selectJoinMode(mode)}
-						className={`flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3 rounded-xl border px-2 py-3 sm:px-5 sm:py-4 short:py-2 text-left transition-all duration-200 ${
+						className={`flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3 rounded-xl border px-2 py-3 sm:px-5 sm:py-4 short:flex-row short:gap-2 short:py-2 text-left transition-all duration-200 ${
 							joinMode === mode
 								? "border-green-500/40 bg-green-500/10 shadow-[0_0_20px_rgba(74,222,128,0.08)]"
 								: "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
 						}`}
 					>
 						<span
-							className={`material-symbols-outlined shrink-0 text-[20px] sm:text-[24px] leading-none ${
+							className={`material-symbols-outlined shrink-0 text-[20px] sm:text-[24px] short:text-[20px] leading-none ${
 								joinMode === mode ? "text-green-400" : "text-white/30"
 							}`}
 						>
@@ -181,7 +181,7 @@ const RoomSelectScreen = ({
 							>
 								{label}
 							</p>
-							<p className="mt-0.5 hidden sm:block text-[10px] leading-tight text-white/30">
+							<p className="mt-0.5 hidden sm:block short:hidden text-[10px] leading-tight text-white/30">
 								{sub}
 							</p>
 						</div>
@@ -448,7 +448,7 @@ const RoomSelectScreen = ({
 				transition={{ duration: 0.4, ease: "easeOut", delay: 0.25 }}
 				className="mt-3 sm:mt-4 shrink-0 short:mt-2"
 			>
-				<div className="flex flex-col gap-2 sm:gap-3 rounded-2xl border border-white/[0.08] bg-[#0a1410]/85 p-3 sm:p-4 backdrop-blur-xl shadow-[0_-8px_40px_rgba(0,0,0,0.35)] sm:flex-row sm:items-center sm:justify-between short:gap-1.5 short:px-2 short:py-1.5">
+				<div className="flex flex-col gap-2 sm:gap-3 rounded-2xl border border-white/[0.08] bg-[#0a1410]/85 p-3 sm:p-4 backdrop-blur-xl shadow-[0_-8px_40px_rgba(0,0,0,0.35)] sm:flex-row sm:items-center sm:justify-between short:flex-row short:items-center short:justify-between short:gap-1.5 short:px-2 short:py-1.5">
 					<div className="min-w-0 flex-1">
 						{roomCode ? (
 							<div className="flex items-center gap-2.5">
@@ -486,7 +486,7 @@ const RoomSelectScreen = ({
 						<button
 							onClick={handleJoin}
 							disabled={!roomCode || joining}
-							className={`relative overflow-hidden disabled:bg-white/[0.06] disabled:text-white/30 py-3 sm:py-4 short:py-2 px-6 sm:px-8 rounded-xl font-black text-sm uppercase tracking-[0.2em] transition-all active:scale-[0.98] group sm:w-auto w-full ${
+							className={`relative overflow-hidden disabled:bg-white/[0.06] disabled:text-white/30 py-3 sm:py-4 short:py-2 px-6 sm:px-8 rounded-xl font-black text-sm uppercase tracking-[0.2em] transition-all active:scale-[0.98] group sm:w-auto w-full short:w-auto ${
 								joinMode === "saved-game"
 									? "bg-cyan-500 hover:bg-cyan-400 text-black shadow-[0_4px_20px_rgba(6,182,212,0.25)] hover:shadow-[0_4px_30px_rgba(6,182,212,0.4)]"
 									: "bg-green-500 hover:bg-green-400 text-black shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)]"
