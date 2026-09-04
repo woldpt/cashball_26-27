@@ -24,6 +24,7 @@ import {
   generateIntroEvents,
   generateSecondHalfIntroEvents,
   getMatchFatigueSnapshot,
+  queueMatchDeltaWrites,
 } from "./game/engine";
 import { generateAITactic } from "./game/matchCalculations";
 
@@ -949,6 +950,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     return new Promise<void>((resolveOuter) => {
       game.db.serialize(() => {
         game.db.run("BEGIN TRANSACTION");
+
+        // Deltas do jogo (golos, cartões, lesões, presenças) acumulados em
+        // memória pela engine — comitados atomicamente com classificações +
+        // receita + marker 'finalized' (janela de crash fechada).
+        queueMatchDeltaWrites(game.db, fixtures);
 
         for (const match of fixtures) {
           const hG = match.finalHomeGoals;

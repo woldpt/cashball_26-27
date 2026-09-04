@@ -11,7 +11,7 @@ import {
 } from "./gameConstants";
 import { clearPhaseTimer } from "./matchFlowHelpers";
 import { generateAITactic } from "./game/matchCalculations";
-import { getMatchFatigueSnapshot } from "./game/engine";
+import { getMatchFatigueSnapshot, queueMatchDeltaWrites } from "./game/engine";
 import { getTeamsWithCoachNames, logClubNews } from "./coreHelpers";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { serializeActiveAuctions } from "./auctionHelpers";
@@ -1244,6 +1244,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}> = [];
 		// Transacção atómica para receita + resultados + marker (recuperação de crash)
 		await new Promise<void>((resolve) => game.db.run("BEGIN TRANSACTION", () => resolve()));
+		// Deltas do jogo (golos, cartões, lesões, presenças) acumulados em memória
+		// pela engine — comitados atomicamente com o resto (janela de crash fechada).
+		queueMatchDeltaWrites(game.db, setups.map((s) => s.fixture));
 		let cupTxFailed = false;
 		try {
 		for (const { fixture, t1, t2, goals90Home, goals90Away } of setups) {

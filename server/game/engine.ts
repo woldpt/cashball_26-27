@@ -62,6 +62,136 @@ type PlayerRow = any;
 type MatchFixture = any;
 type MatchSide = "home" | "away";
 
+// ── Deltas pós-jogo (fix #2: flush transacional) ─────────────────────────────
+// Durante a simulação, golos/cartões/lesões/presenças NÃO escrevem na DB.
+// São acumulados por fixture e descarregados de uma vez por
+// queueMatchDeltaWrites(), dentro da transação atómica do apito final
+// (finalizeLeagueEvent / finalizeCupRound), junto às classificações e ao
+// marker 'finalized'. Assim um crash a meio do jogo nunca deixa contadores
+// de jogadores a meio sem o resultado correspondente.
+type MatchInjuryDelta = {
+  newSkill: number;
+  injuryUntil: number;
+  oldSkill: number;
+  count: number;
+  matchweek: number;
+  season: number;
+};
+
+type MatchDeltas = {
+  calendarIndex: number;
+  appearances: Set<number>;
+  goals: Map<number, number>;
+  reds: Map<number, number>; // playerId -> suspensionUntil
+  injuries: Map<number, MatchInjuryDelta>;
+};
+
+function getMatchDeltas(fixture: MatchFixture): MatchDeltas {
+  if (!fixture._deltas) {
+    fixture._deltas = {
+      calendarIndex: 0,
+      appearances: new Set<number>(),
+      goals: new Map<number, number>(),
+      reds: new Map<number, number>(),
+      injuries: new Map<number, MatchInjuryDelta>(),
+    };
+  }
+  return fixture._deltas;
+}
+
+function recordMatchGoal(fixture: MatchFixture, playerId: number) {
+  if (typeof playerId !== "number" || playerId <= 0) return; // juniores (IDs negativos) não têm linha na DB
+  const d = getMatchDeltas(fixture);
+  d.goals.set(playerId, (d.goals.get(playerId) ?? 0) + 1);
+}
+
+function recordMatchRed(
+  fixture: MatchFixture,
+  playerId: number,
+  suspensionUntil: number,
+) {
+  if (typeof playerId !== "number" || playerId <= 0) return;
+  const d = getMatchDeltas(fixture);
+  const prev = d.reds.get(playerId);
+  d.reds.set(playerId, prev != null ? Math.max(prev, suspensionUntil) : suspensionUntil);
+}
+
+function recordMatchInjury(
+  fixture: MatchFixture,
+  playerId: number,
+  injury: Omit<MatchInjuryDelta, "count">,
+) {
+  if (typeof playerId !== "number" || playerId <= 0) return;
+  const d = getMatchDeltas(fixture);
+  const prev = d.injuries.get(playerId);
+  d.injuries.set(playerId, {
+    ...injury,
+    // Segunda lesão do mesmo jogador no mesmo jogo: acumula o contador,
+    // mantém o skill/injuryUntil mais recentes.
+    count: (prev?.count ?? 0) + 1,
+  });
+}
+
+function recordMatchAppearances(
+  fixture: MatchFixture,
+  playerIds: number[],
+  calendarIndex: number,
+) {
+  const d = getMatchDeltas(fixture);
+  d.calendarIndex = calendarIndex;
+  for (const id of playerIds) {
+    if (typeof id === "number" && id > 0) d.appearances.add(id);
+  }
+}
+
+/**
+ * Descarrega os deltas acumulados de todos os fixtures para a DB.
+ * NÃO gere transação — emite os UPDATEs/INSERTs ordenados na conexão dada,
+ * para o chamador os embrulhar na sua transação atómica do apito final.
+ * Limpa `fixture._deltas` ao enfileirar (os valores já seguiriam na fila
+ * serializada da conexão).
+ */
+export function queueMatchDeltaWrites(db: Db, fixtures: MatchFixture[]): void {
+  for (const fixture of fixtures || []) {
+    const d: MatchDeltas | undefined = fixture?._deltas;
+    if (!d) continue;
+    fixture._deltas = undefined;
+
+    if (d.appearances.size > 0 && d.calendarIndex > 0) {
+      const ids = [...d.appearances];
+      const ph = ids.map(() => "?").join(",");
+      db.run(
+        // Guard anti-replay: igual ao incremento imediato anterior — um flush
+        // repetido do mesmo slot nunca conta presenças a dobrar.
+        `UPDATE players SET games_played = games_played + 1, last_appearance_matchweek = MAX(last_appearance_matchweek, ?) WHERE id IN (${ph}) AND COALESCE(last_appearance_matchweek, 0) < ?`,
+        [d.calendarIndex, d.calendarIndex, ...ids],
+      );
+    }
+    for (const [id, count] of d.goals) {
+      db.run(
+        "UPDATE players SET goals = goals + ?, career_goals = career_goals + ? WHERE id = ?",
+        [count, count, id],
+      );
+    }
+    for (const [id, until] of d.reds) {
+      db.run(
+        "UPDATE players SET red_cards = red_cards + 1, career_reds = career_reds + 1, suspension_games = suspension_games + 2, suspension_until_matchweek = CASE WHEN suspension_until_matchweek > ? THEN suspension_until_matchweek ELSE ? END WHERE id = ?",
+        [until, until, id],
+      );
+    }
+    for (const [id, inj] of d.injuries) {
+      db.run(
+        "UPDATE players SET injuries = injuries + ?, career_injuries = career_injuries + ?, prev_skill = skill, skill = ?, injury_until_matchweek = CASE WHEN injury_until_matchweek > ? THEN injury_until_matchweek ELSE ? END WHERE id = ?",
+        [inj.count, inj.count, inj.newSkill, inj.injuryUntil, inj.injuryUntil, id],
+      );
+      db.run(
+        "INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) VALUES (?, ?, ?, ?)",
+        [id, inj.matchweek, inj.season, inj.oldSkill],
+      );
+    }
+  }
+}
+
 type MatchFatigueSnapshot = {
   matchMinutes: number;
   fatigueLoss: number;
@@ -513,7 +643,6 @@ async function openEmergencyGKAction({
 }
 
 async function applyInjuryEvent({
-  db,
   fixture,
   teamSide,
   squad,
@@ -523,7 +652,6 @@ async function applyInjuryEvent({
   io,
   game,
 }: {
-  db: Db;
   fixture: MatchFixture;
   teamSide: "home" | "away";
   squad: PlayerRow[];
@@ -554,17 +682,15 @@ async function applyInjuryEvent({
     injuryLabel === "grave" ? 2 + Math.floor(Math.random() * 4) : 0;
   const oldSkill = injuredPlayer.skill ?? 0;
   const newSkill = Math.max(1, oldSkill - qualityLoss);
-  db.run(
-    "UPDATE players SET injuries = injuries + 1, career_injuries = career_injuries + 1, prev_skill = skill, skill = ?, injury_until_matchweek = CASE WHEN injury_until_matchweek > ? THEN injury_until_matchweek ELSE ? END WHERE id = ?",
-    [newSkill, injuryUntil, injuryUntil, injuredPlayer.id],
-    () => {
-      // Record skill snapshot before injury
-      db.run(
-        "INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) VALUES (?, ?, ?, ?)",
-        [injuredPlayer.id, currentMatchweek, game.season || 1, oldSkill],
-      );
-    },
-  );
+  // Acumulado em memória — o flush transacional no apito final aplica o
+  // UPDATE + snapshot de skill atomicamente com o resultado do jogo.
+  recordMatchInjury(fixture, injuredPlayer.id, {
+    newSkill,
+    injuryUntil,
+    oldSkill,
+    matchweek: currentMatchweek,
+    season: game.season || 1,
+  });
 
   fixture.events.push({
     minute: fixture._minute,
@@ -825,7 +951,6 @@ async function applyInjuryEvent({
 }
 
 async function applyPenaltyEvent({
-  db,
   fixture,
   teamSide,
   squad,
@@ -833,7 +958,6 @@ async function applyPenaltyEvent({
   io,
   game,
 }: {
-  db: Db;
   fixture: MatchFixture;
   teamSide: "home" | "away";
   squad: PlayerRow[];
@@ -902,10 +1026,8 @@ async function applyPenaltyEvent({
   if (scored) {
     if (teamSide === "home") fixture.finalHomeGoals++;
     else fixture.finalAwayGoals++;
-    db.run(
-      "UPDATE players SET goals = goals + 1, career_goals = career_goals + 1 WHERE id = ?",
-      [taker.id],
-    );
+    // Acumulado em memória — flush transacional no apito final.
+    recordMatchGoal(fixture, taker.id);
     fixture.events.push({
       minute: fixture._minute,
       type: "penalty_goal",
@@ -1312,23 +1434,16 @@ async function simulateMatchSegment(
     fixture._yellowCards = {};
   }
 
-  // Track games played — increment once per match (startMin === 1, first minute of first half only)
-  // Exclude junior GR negative IDs — they are ephemeral and have no DB row.
+  // Track games played — registado uma vez por jogo (minuto 1 da 1ª parte).
+  // Só acumulado em memória (fixture._deltas); o flush transacional no apito
+  // final aplica o incremento com o guard anti-replay por calendarIndex.
   if (startMin === 1) {
-    const participantIds = [
+    const participantIds = ([
       ...Array.from(new Set((homeSquad || []).map((p: any) => p.id))),
       ...Array.from(new Set((awaySquad || []).map((p: any) => p.id))),
-    ].filter((id) => typeof id === "number" && id > 0);
+    ].filter((id) => typeof id === "number" && id > 0) as number[]);
     if (participantIds.length > 0) {
-      const ph = participantIds.map(() => "?").join(",");
-      db.run(
-        // Crash-safe guard: a replay of an already-appeared calendar slot must not
-        // double-increment games_played. last_appearance_matchweek stores the most
-        // recent calendar slot in which the player appeared (see season reset in
-        // applySeasonEnd, which zeroes it so a new season's slot 0 is not blocked).
-        `UPDATE players SET games_played = games_played + 1, last_appearance_matchweek = MAX(last_appearance_matchweek, ?) WHERE id IN (${ph}) AND COALESCE(last_appearance_matchweek, 0) < ?`,
-        [currentCalendarIndex, currentCalendarIndex, ...participantIds],
-      );
+      recordMatchAppearances(fixture, participantIds, currentCalendarIndex);
     }
 
     // Weather event — emitted once at the start of each match
@@ -1823,10 +1938,8 @@ async function simulateMatchSegment(
       });
 
       if (scorer) {
-        db.run(
-          "UPDATE players SET goals = goals + 1, career_goals = career_goals + 1 WHERE id = ?",
-          [scorer.id],
-        );
+        // Acumulado em memória — flush transacional no apito final.
+        recordMatchGoal(fixture, scorer.id);
       }
     };
 
@@ -1842,7 +1955,6 @@ async function simulateMatchSegment(
       const attackingSquad = attackingSide === "home" ? home.squad : away.squad;
       const totalGoalsBefore = fixture.finalHomeGoals + fixture.finalAwayGoals;
       await applyPenaltyEvent({
-        db,
         fixture,
         teamSide: attackingSide,
         squad: attackingSquad,
@@ -1907,10 +2019,9 @@ async function simulateMatchSegment(
       squad: PlayerRow[],
       side: "home" | "away",
     ) => {
-      db.run(
-        "UPDATE players SET red_cards = red_cards + 1, career_reds = career_reds + 1, suspension_games = suspension_games + 2, suspension_until_matchweek = CASE WHEN suspension_until_matchweek > ? THEN suspension_until_matchweek ELSE ? END WHERE id = ?",
-        [currentMatchweek + 2, currentMatchweek + 2, offender.id],
-      );
+      // Acumulado em memória — o flush transacional no apito final aplica o
+      // UPDATE atomicamente com o resultado do jogo.
+      recordMatchRed(fixture, offender.id, currentMatchweek + 2);
       fixture.events.push({
         minute,
         type: "red",
@@ -2218,7 +2329,6 @@ async function simulateMatchSegment(
           // jogador resistiu — ignorar lesão
         } else {
           const injuryResult = await applyInjuryEvent({
-            db,
             fixture,
             teamSide: side,
             squad,
@@ -2793,6 +2903,7 @@ module.exports = {
   generateIntroEvents,
   generateSecondHalfIntroEvents,
   getMatchFatigueSnapshot,
+  queueMatchDeltaWrites,
 };
 
 // ─── EXTRA TIME ──────────────────────────────────────────────────────────────
