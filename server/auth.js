@@ -407,6 +407,25 @@ function deleteRoomAccess(roomCode) {
 }
 
 /**
+ * Remove a single coach's access to a room (voluntary leave).
+ * Unlike deleteRoomAccess (which wipes the whole room), this keeps the room
+ * DB and the remaining coaches untouched.
+ *
+ * @param {string} managerName
+ * @param {string} roomCode
+ * @returns {Promise<void>}
+ */
+function deleteSingleRoomAccess(managerName, roomCode) {
+	return new Promise((resolve) => {
+		db.run(
+			"DELETE FROM room_managers WHERE room_code = ? COLLATE NOCASE AND manager_name = ? COLLATE NOCASE",
+			[roomCode.toUpperCase(), managerName],
+			() => resolve(),
+		);
+	});
+}
+
+/**
  * Change a manager's password (requires current password verification).
  *
  * @param {string} name
@@ -1458,6 +1477,7 @@ module.exports = {
 	createManager,
 	recordRoomAccess,
 	deleteRoomAccess,
+	deleteSingleRoomAccess,
 	getManagerRooms,
 	getRoomCoaches,
 	changePassword,

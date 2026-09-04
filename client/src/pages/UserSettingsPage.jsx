@@ -195,14 +195,19 @@ export function UserSettingsPage({
 		}
 	};
 
-	const handleDeleteRoom = (roomCode) => {
-		setDeletingRoom({ roomCode });
+	const handleDeleteRoom = (room) => {
+		const roomCode = typeof room === "string" ? room : room?.roomCode;
+		const leaving =
+			typeof room === "object" &&
+			room != null &&
+			Boolean(room.isMultiplayer) &&
+			!room.isAdmin;
+		setDeletingRoom({ roomCode, leaving });
 	};
 
 	const confirmDeleteRoom = async () => {
 		if (!deletingRoom) return;
-		const { roomCode } = deletingRoom;
-		setDeletingRoom(null);
+		const { roomCode, leaving } = deletingRoom;
 		setDeletingRoomLoading(true);
 		try {
 			const res = await fetch(`${backendUrl}/saves/${roomCode}`, {
@@ -211,10 +216,17 @@ export function UserSettingsPage({
 				body: JSON.stringify({ name: me.name, token: me.token }),
 			});
 			const data = await res.json();
-			if (data.ok) {
+			if (data.ok || res.ok) {
 				setRooms((prev) => prev.filter((r) => r.roomCode !== roomCode));
+				setDeletingRoom(null);
+				if (leaving || data.left) {
+					setProfileMsg({
+						type: "success",
+						text: data.message || "Saíste da sala.",
+					});
+				}
 			} else {
-				setProfileMsg({ type: "error", text: data.error || "Erro ao apagar sala." });
+				setProfileMsg({ type: "error", text: data.error || (leaving ? "Erro ao sair da sala." : "Erro ao apagar sala.") });
 			}
 		} catch {
 			setProfileMsg({ type: "error", text: "Erro de ligação ao servidor." });
@@ -571,6 +583,9 @@ export function UserSettingsPage({
 					<div className="space-y-2">
 						{rooms.map((r) => {
 							const isActive = r.roomCode === me?.roomCode;
+							// Salas multiplayer só podem ser apagadas pelo Admin;
+							// os restantes treinadores apenas saem da sala.
+							const canDelete = !r.isMultiplayer || r.isAdmin;
 							return (
 								<div
 									key={r.roomCode}
@@ -605,6 +620,15 @@ export function UserSettingsPage({
 												{r.teamName}
 											</Badge>
 										)}
+										{r.isMultiplayer && (
+											<Badge
+												variant={r.isAdmin ? "info" : "neutral"}
+												className="hidden sm:inline-block"
+												title={r.isAdmin ? "És o Admin desta sala" : "Sala multijogador"}
+											>
+												{r.isAdmin ? "Admin" : `${r.coachCount || 2} treinadores`}
+											</Badge>
+										)}
 										<Button
 											variant={isActive ? "secondary" : "primary"}
 											size="sm"
@@ -615,12 +639,12 @@ export function UserSettingsPage({
 										</Button>
 										{!isActive && (
 											<button
-												onClick={() => handleDeleteRoom(r.roomCode)}
+												onClick={() => handleDeleteRoom(r)}
 												className="text-[9px] font-black uppercase px-2 py-1 rounded border border-red-500/15 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-												title="Eliminar sala"
+												title={canDelete ? "Eliminar sala" : "Sair da sala (multijogador: só o Admin pode apagar)"}
 											>
 												<span className="material-symbols-outlined text-[16px] leading-none">
-													delete
+													{canDelete ? "delete" : "logout"}
 												</span>
 											</button>
 										)}
@@ -628,8 +652,22 @@ export function UserSettingsPage({
 									{deletingRoom?.roomCode === r.roomCode && (
 										<div className="absolute inset-0 bg-surface/90 backdrop-blur-sm rounded-md flex flex-col items-center justify-center gap-2 z-10">
 											<p className="text-[9px] font-black uppercase text-red-400 text-center px-4 tracking-widest">
-												Tem a certeza que deseja eliminar a sala<br />
-												<strong className="text-on-surface">{r.roomName}</strong>? Esta acção é irreversível.
+												{deletingRoom?.leaving ? (
+													<>
+													Vais sair da sala<br />
+													<strong className="text-on-surface">{r.roomName}</strong>. A sala continua para os outros treinadores.
+													</>
+												) : r.isMultiplayer ? (
+													<>
+													Tem a certeza que deseja eliminar a sala<br />
+													<strong className="text-on-surface">{r.roomName}</strong>? É o Admin: será apagada para TODOS os treinadores.
+													</>
+												) : (
+													<>
+													Tem a certeza que deseja eliminar a sala<br />
+													<strong className="text-on-surface">{r.roomName}</strong>? Esta acção é irreversível.
+													</>
+												)}
 											</p>
 											<div className="flex gap-2">
 												<Button
@@ -652,7 +690,7 @@ export function UserSettingsPage({
 														confirmDeleteRoom();
 													}}
 												>
-													{deletingRoomLoading ? "A eliminar..." : "Sim, eliminar"}
+													{deletingRoomLoading ? (deletingRoom?.leaving ? "A sair..." : "A eliminar...") : deletingRoom?.leaving ? "Sim, sair" : "Sim, eliminar"}
 												</Button>
 											</div>
 										</div>

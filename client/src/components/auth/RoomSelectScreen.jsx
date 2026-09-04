@@ -262,6 +262,14 @@ const RoomSelectScreen = ({
 													</span>
 												</div>
 												<div className="flex shrink-0 items-center gap-2">
+													{save.isMultiplayer && (
+														<span
+															className={`inline-flex items-center gap-1 rounded border px-1.5 py-px text-[9px] font-black uppercase tracking-widest ${save.isAdmin ? "border-sky-500/30 bg-sky-500/20 text-sky-400" : "border-white/10 bg-white/5 text-white/40"}`}
+															title={save.isAdmin ? "És o Admin desta sala" : "Sala multijogador — só o Admin pode apagá-la"}
+														>
+															{save.isAdmin ? "Admin" : `${save.coachCount || 2} treinadores`}
+														</span>
+													)}
 													{isLastPlayed && (
 														<span className="inline-flex items-center gap-1 rounded border border-green-500/30 bg-green-500/20 px-1.5 py-px text-[9px] font-black uppercase tracking-widest text-green-400">
 															<span className="h-1 w-1 animate-pulse rounded-full bg-green-400" />
@@ -307,12 +315,13 @@ const RoomSelectScreen = ({
 												<button
 													onClick={(e) => {
 														e.stopPropagation();
-														if (
-															!window.confirm(
-																`Apagar a sala "${save.name}" permanentemente?`,
-															)
-														)
-															return;
+														const canDelete = !save.isMultiplayer || save.isAdmin;
+														const confirmMsg = canDelete
+															? save.isMultiplayer
+																? `És o Admin da sala "${save.name}". Apagar permanentemente PARA TODOS os treinadores?`
+																: `Apagar a sala "${save.name}" permanentemente?`
+															: `Sair da sala "${save.name}"? A sala continua para os restantes treinadores (só o Admin pode apagá-la).`;
+														if (!window.confirm(confirmMsg)) return;
 														fetch(
 															`${backendUrl}/saves/${encodeURIComponent(save.code)}`,
 															{
@@ -351,10 +360,16 @@ const RoomSelectScreen = ({
 															);
 													}}
 													className="rounded-lg p-1.5 text-white/20 transition-colors hover:bg-red-500/10 hover:text-red-400"
-													title="Apagar sala"
+													title={
+														!save.isMultiplayer || save.isAdmin
+															? save.isMultiplayer
+																? "Apagar sala (Admin: apaga para todos)"
+																: "Apagar sala"
+															: "Sair da sala (só o Admin pode apagar)"
+													}
 												>
 													<span className="material-symbols-outlined text-[16px] leading-none">
-														delete
+														{!save.isMultiplayer || save.isAdmin ? "delete" : "logout"}
 													</span>
 												</button>
 											</div>

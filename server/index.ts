@@ -46,6 +46,7 @@ const {
 	getRoomCoaches,
 	getCoachAvatars,
 	deleteRoomAccess,
+	deleteSingleRoomAccess,
 	changePassword,
 	getManagerInfo,
 	getAvatarSeed,
@@ -308,6 +309,52 @@ function getRoomInfo(
 	});
 }
 
+// ── Room ownership (Admin) ───────────────────────────────────────────────────
+// The room creator (Admin) is persisted in each room DB under game_state key
+// "roomCreator". Rooms created before this field existed have no creator —
+// in that legacy case every member is treated as admin so no room becomes
+// impossible to delete.
+function getRoomCreator(roomCode: string): Promise<string> {
+	return new Promise((resolve) => {
+		try {
+			const activeGame = getGame(roomCode);
+			if (activeGame?.roomCreator) {
+				resolve(String(activeGame.roomCreator));
+				return;
+			}
+		} catch {
+			/* ignorar — fallback para leitura da DB */
+		}
+		const dbPath = path.join(resolveDbDir(), `game_${roomCode}.db`);
+		if (!fs.existsSync(dbPath)) {
+			resolve("");
+			return;
+		}
+		const db = new sqlite3.Database(
+			dbPath,
+			sqlite3.OPEN_READONLY,
+			(err: any) => {
+				if (err) {
+					resolve("");
+					return;
+				}
+				db.get(
+					"SELECT value FROM game_state WHERE key = 'roomCreator'",
+						(_err: any, row: any) => {
+							db.close();
+							resolve(row?.value ? String(row.value) : "");
+						},
+					);
+				},
+		);
+	});
+}
+
+function isRoomAdmin(roomCreator: string, managerName: string): boolean {
+	if (!roomCreator) return true; // legado: sem criador, todos são admin
+	return roomCreator.toLowerCase() === managerName.toLowerCase();
+}
+
 const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || "http://localhost:5173")
 	.split(",")
 	.map((s) => s.trim())
@@ -378,10 +425,15 @@ app.get("/saves", apiLimiter, async (req, res) => {
 		// Load room info (name, team, year) for each room
 		const saves = await Promise.all(
 			roomCodes.map(async (roomCode) => {
-				const [info, coaches] = await Promise.all([
-					getSaveInfo(roomCode, managerName as string | null),
-					getRoomCoaches(roomCode, managerName as string),
-				]);
+				const [info, coaches, allCoaches, roomCreator] =
+					await Promise.all([
+						getSaveInfo(roomCode, managerName as string | null),
+						getRoomCoaches(roomCode, managerName as string),
+						getRoomCoaches(roomCode),
+						getRoomCreator(roomCode),
+					]);
+				const coachCount = allCoaches.length;
+				const isMultiplayer = coachCount > 1;
 				return {
 					code: roomCode,
 					name: info.roomName,
@@ -389,6 +441,10 @@ app.get("/saves", apiLimiter, async (req, res) => {
 					year: info.year,
 					lastPlayedAt: info.lastPlayedAt,
 					coaches,
+					coachCount,
+					isMultiplayer,
+					roomCreator,
+					isAdmin: isRoomAdmin(roomCreator, managerName),
 				};
 			}),
 		);
@@ -428,6 +484,28 @@ app.delete("/saves/:roomCode", apiLimiter, async (req, res) => {
 			return res.status(403).json({ error: "Não tens acesso a esta sala." });
 		}
 
+		// Salas multiplayer só podem ser apagadas pelo Admin (criador da sala).
+		// Um treinador sem privilégios de Admin apenas sai da sala: remove o
+		// seu próprio acesso e mantém a sala intacta para os restantes.
+		const [allCoaches, roomCreator] = await Promise.all([
+			getRoomCoaches(roomCode),
+			getRoomCreator(roomCode),
+		]);
+		const isMultiplayer = allCoaches.length > 1;
+		const admin = isRoomAdmin(roomCreator, name);
+
+		if (isMultiplayer && !admin) {
+			await deleteSingleRoomAccess(name, roomCode);
+			console.log(
+				`[/saves] Coach "${name}" left multiplayer room "${roomCode}" (creator: "${roomCreator || "—"}")`,
+			);
+			return res.json({
+				ok: true,
+				left: true,
+				message: "Saíste da sala. A sala continua disponível para os restantes treinadores.",
+			});
+		}
+
 		const activeGame = getGame(roomCode);
 		if (activeGame) {
 			const connected = Object.values(activeGame.playersByName).filter(
@@ -445,8 +523,10 @@ app.delete("/saves/:roomCode", apiLimiter, async (req, res) => {
 		if (fs.existsSync(dbFile)) fs.unlinkSync(dbFile);
 
 		await deleteRoomAccess(roomCode);
-		console.log(`[/saves] Room "${roomCode}" deleted by coach "${name}"`);
-		return res.json({ ok: true });
+		console.log(
+			`[/saves] Room "${roomCode}" deleted by ${admin ? "admin" : "coach"} "${name}"${isMultiplayer ? " (multiplayer, para todos)" : ""}`,
+		);
+		return res.json({ ok: true, deleted: true });
 	} catch (error) {
 		console.error("[/saves DELETE] Error:", error.message);
 		return res.status(500).json({ error: "Erro ao apagar sala." });
@@ -528,22 +608,31 @@ app.get("/auth/manager-info", apiLimiter, async (req, res) => {
 		const result = await getManagerInfo(name);
 		if (!result.ok) return res.status(404).json({ error: result.error });
 
-		const rooms = (
-			await Promise.all(
-				result.info.rooms
-					.filter((code) =>
-						fs.existsSync(path.join(resolveDbDir(), `game_${code}.db`)),
-					)
-					.map(async (code) => {
-						const [info, coaches] = await Promise.all([
+		const rooms = await Promise.all(
+			result.info.rooms
+				.filter((code) =>
+					fs.existsSync(path.join(resolveDbDir(), `game_${code}.db`)),
+				)
+				.map(async (code) => {
+					const [info, coaches, allCoaches, roomCreator] =
+						await Promise.all([
 							getRoomInfo(code, name),
 							getRoomCoaches(code, name),
+							getRoomCoaches(code),
+							getRoomCreator(code),
 						]);
-						if (!info.teamName) return null;
-						return { ...info, coaches };
-					}),
-			)
-		).filter(Boolean);
+					const coachCount = allCoaches.length;
+					const isMultiplayer = coachCount > 1;
+					return {
+						...info,
+						coaches,
+						coachCount,
+						isMultiplayer,
+						roomCreator,
+						isAdmin: isRoomAdmin(roomCreator, name),
+					};
+				}),
+		);
 
 		return res.json({
 			name: result.info.name,
