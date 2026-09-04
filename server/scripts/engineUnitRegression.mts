@@ -12,6 +12,13 @@
  *   U5 — sanidade do fix da dupla contagem do estilo: a mesma força ofensiva
  *        tem MENOR probabilidade de golo contra defesa DEFENSIVA do que
  *        contra defesa OFENSIVA (antes era ao contrário)
+ *   U6 — pickShootoutTaker: ordem por skill, sem repetir; ao esgotar,
+ *        reinicia a volta mas marca o escolhido (sem repetições seguidas)
+ *   U7 — pending actions: várias janelas coexistem por actionId; take é
+ *        idempotente; list filtra por equipa
+ *   U8 — queueMatchDeltaWrites: deltas retidos até os writes confirmarem;
+ *        segundo enqueue enquanto decorre é ignorado
+ *   U9 — isCupFinalRound: só a ronda 5 é final
  *
  * Run: cd server && npm run test:engine-unit
  */
@@ -24,11 +31,18 @@ const {
   normalizeMatchChoice,
   generateFixturesForDivision,
   simulatePenaltyShootout,
+  pickShootoutTaker,
+  getPendingMatchActions,
+  peekPendingMatchAction,
+  takePendingMatchAction,
+  listTeamMatchActions,
+  queueMatchDeltaWrites,
 } = require("../game/engine.ts");
 const {
   computeSidePower,
   computeOpenPlayGoalProbability,
   createSeededRng,
+  isCupFinalRound,
 } = require("../game/matchCalculations.ts");
 
 // ── U1 ──────────────────────────────────────────────────────────────────────
@@ -140,4 +154,81 @@ test("U5 — defensivas sofrem menos (fix dupla contagem do estilo)", () => {
   const pVsDef = computeOpenPlayGoalProbability({ ...base, defense: defDefense });
   const pVsAtk = computeOpenPlayGoalProbability({ ...base, defense: atkDefense });
   assert.ok(pVsDef < pVsAtk, `defensiva (${pVsDef}) devia sofrer menos que ofensiva (${pVsAtk})`);
+});
+
+// ── U6 ──────────────────────────────────────────────────────────────────────
+test("U6 — pickShootoutTaker roda por skill sem repetições seguidas", () => {
+  const squad = [
+    { id: 1, name: "fraco", skill: 10 },
+    { id: 2, name: "craque", skill: 40 },
+    { id: 3, name: "médio", skill: 25 },
+  ];
+  const used = new Set();
+  const picks = [];
+  for (let i = 0; i < 6; i++) picks.push(pickShootoutTaker(squad, used).id);
+  // Duas voltas completas por ordem de skill, sem ninguém repetir em sequência
+  assert.deepEqual(picks, [2, 3, 1, 2, 3, 1]);
+});
+
+// ── U7 ──────────────────────────────────────────────────────────────────────
+test("U7 — pending actions coexistem por actionId", () => {
+  const game = {};
+  const map = getPendingMatchActions(game);
+  assert.ok(map instanceof Map && map.size === 0);
+  // get cria on-demand e devolve sempre o mesmo mapa
+  assert.equal(getPendingMatchActions(game), map);
+  map.set("a1", { actionId: "a1", type: "penalty", teamId: 7, timer: undefined });
+  map.set("a2", { actionId: "a2", type: "user_substitution", teamId: 9, timer: undefined });
+  // peek não consome; take consome e é idempotente
+  assert.equal(peekPendingMatchAction(game, "a1").teamId, 7);
+  assert.equal(map.size, 2);
+  assert.equal(takePendingMatchAction(game, "a1").actionId, "a1");
+  assert.equal(takePendingMatchAction(game, "a1"), undefined);
+  assert.equal(map.size, 1);
+  // list filtra por equipa
+  assert.deepEqual(listTeamMatchActions(game, 9).map((a) => a.actionId), ["a2"]);
+  assert.deepEqual(listTeamMatchActions(game, 7), []);
+  // jogo sem mapa não rebenta
+  assert.equal(takePendingMatchAction({}, "x"), undefined);
+  assert.deepEqual(listTeamMatchActions({}, 1), []);
+});
+
+// ── U8 ──────────────────────────────────────────────────────────────────────
+test("U8 — queueMatchDeltaWrites retém deltas até confirmar", async () => {
+  const calls = [];
+  const callbacks = [];
+  const db = {
+    run: (sql, params, cb) => {
+      calls.push(sql.split(" ").slice(0, 2).join(" "));
+      callbacks.push(cb);
+    },
+  };
+  const fixture = {
+    _deltas: {
+      calendarIndex: 3,
+      appearances: new Set([11, 22]),
+      goals: new Map([[11, 2]]),
+      reds: new Map(),
+      injuries: new Map(),
+    },
+  };
+  queueMatchDeltaWrites(db, [fixture]);
+  assert.equal(calls.length, 2); // appearances + goals
+  // Writes emitidos mas ainda sem callback: deltas RETIDOS
+  assert.ok(fixture._deltas, "deltas limpos antes dos writes confirmarem");
+  // Segundo enqueue enquanto decorre: ignorado (sem writes novos)
+  queueMatchDeltaWrites(db, [fixture]);
+  assert.equal(calls.length, 2);
+  // Confirmar todos → liberta
+  while (callbacks.length > 0) callbacks.shift()();
+  await new Promise((r) => setImmediate(r));
+  assert.equal(fixture._deltas, undefined);
+  assert.equal(fixture._deltasQueued, false);
+});
+
+// ── U9 ──────────────────────────────────────────────────────────────────────
+test("U9 — isCupFinalRound: só a ronda 5", () => {
+  assert.equal(isCupFinalRound(5), true);
+  assert.equal(isCupFinalRound(4), false);
+  assert.equal(isCupFinalRound(undefined), false);
 });
