@@ -1671,8 +1671,45 @@ async function simulateMatchSegment(
   const homeFam = getTacticBonus(game, fixture.homeTeamId, homeTactic);
   const awayFam = getTacticBonus(game, fixture.awayTeamId, awayTactic);
 
-  const home = getPower(homeSquad, homeTactic, homeMorale, homeFam);
-  const away = getPower(awaySquad, awayTactic, awayMorale, awayFam);
+  // Memoização da força por fixture (fix #5): getPower era recalculado do
+  // zero a cada minuto de cada jogo. A chave cobre TODOS os inputs do cálculo
+  // (plantel, posição, skill efetiva, forma, formação, estilo, morale,
+  // familiaridade) — qualquer sub/expulsão/lesão/fadiga/mudança táctica ao
+  // intervalo altera a chave e força o recálculo; caso contrário reutiliza.
+  // Persiste no fixture porque os chamadores simulam minuto-a-minuto
+  // (uma chamada a simulateMatchSegment por minuto).
+  const buildPowerKey = (
+    squad: PlayerRow[],
+    tactic: Tactic | null,
+    morale: number,
+    familiarityBonus: number,
+  ) =>
+    squad
+      .map(
+        (p) =>
+          `${p.id}:${p.position}:${getEffectiveSkill(p)}:${p.form ?? FORM_NEUTRAL}`,
+      )
+      .join(",") +
+    `|${String(tactic?.formation || "4-4-2")}|${normaliseStyle(tactic?.style)}|${morale}|${familiarityBonus}`;
+
+  const getCachedPower = (
+    side: MatchSide,
+    squad: PlayerRow[],
+    tactic: Tactic | null,
+    morale: number,
+    familiarityBonus: number,
+  ) => {
+    const cacheField = side === "home" ? "_homePower" : "_awayPower";
+    const key = buildPowerKey(squad, tactic, morale, familiarityBonus);
+    const cached = fixture[cacheField];
+    if (cached && cached.key === key) return cached.power;
+    const power = getPower(squad, tactic, morale, familiarityBonus);
+    fixture[cacheField] = { key, power };
+    return power;
+  };
+
+  const home = getCachedPower("home", homeSquad, homeTactic, homeMorale, homeFam);
+  const away = getCachedPower("away", awaySquad, awayTactic, awayMorale, awayFam);
 
   for (let minute = startMin; minute <= endMin; minute++) {
     fixture._minute = minute;
@@ -1749,8 +1786,8 @@ async function simulateMatchSegment(
       fixture._fatigue3Applied = true;
     }
 
-    const currentHome = getPower(home.squad, homeTactic, homeMorale, homeFam);
-    const currentAway = getPower(away.squad, awayTactic, awayMorale, awayFam);
+    const currentHome = getCachedPower("home", home.squad, homeTactic, homeMorale, homeFam);
+    const currentAway = getCachedPower("away", away.squad, awayTactic, awayMorale, awayFam);
 
     let goalScoredThisMinute = false;
 
