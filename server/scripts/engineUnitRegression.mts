@@ -27,6 +27,7 @@
  *   U11d — estilo muda sem formação: anuncia a formação vigente, nunca null
  *   U12 — queueMatchDeltaWrites: throw síncrono repõe a flag (deltas retidos);
  *        erro no callback é reportado mas o flush completa
+ *   U13 — quotaFromFormation deriva o XI da tática (fallback 4-4-2)
  *
  * Run: cd server && npm run test:engine-unit
  */
@@ -392,4 +393,44 @@ test("U12b — erro no callback do sqlite é reportado mas o flush completa", ()
   for (const cb of cbs) cb(new Error("boom"));
   assert.equal(fixture._deltas, undefined);
   assert.equal(fixture._deltasQueued, false);
+});
+
+test("U13 — quotaFromFormation deriva o XI da tática (fallback 4-4-2)", () => {
+  const { quotaFromFormation } = require("../game/matchCalculations.ts");
+  assert.deepEqual(quotaFromFormation("3-5-2"), {
+    GR: 1,
+    DEF: 3,
+    MED: 5,
+    ATA: 2,
+  });
+  assert.deepEqual(quotaFromFormation("5-4-1"), {
+    GR: 1,
+    DEF: 5,
+    MED: 4,
+    ATA: 1,
+  });
+  assert.deepEqual(quotaFromFormation("4-4-2"), {
+    GR: 1,
+    DEF: 4,
+    MED: 4,
+    ATA: 2,
+  });
+  assert.deepEqual(quotaFromFormation(null), {
+    GR: 1,
+    DEF: 4,
+    MED: 4,
+    ATA: 2,
+  });
+  assert.deepEqual(quotaFromFormation("4-4-3"), {
+    GR: 1,
+    DEF: 4,
+    MED: 4,
+    ATA: 2,
+  });
+  assert.deepEqual(quotaFromFormation("bananas"), {
+    GR: 1,
+    DEF: 4,
+    MED: 4,
+    ATA: 2,
+  });
 });

@@ -182,6 +182,28 @@ const FORMATION_WEIGHTS: Record<string, { GR: number; DEF: number; MED: number; 
   "5-4-1": { GR: 1, DEF: 5, MED: 4, ATA: 1 },
 };
 
+/**
+ * Quota de posições (GR/DEF/MED/ATA) para completar o XI a partir da
+ * formação ("3-5-2" → 1/3/5/2). Formação omissa ou inválida → 4-4-2.
+ * (audit: o ensureStartingXI usava quota fixa 4-4-2 para todas as táticas.)
+ */
+export function quotaFromFormation(
+  formation: unknown,
+): { GR: number; DEF: number; MED: number; ATA: number } {
+  const fallback = { GR: 1, DEF: 4, MED: 4, ATA: 2 };
+  const parts = String(formation || "")
+    .split("-")
+    .map((n) => Number(n));
+  if (
+    parts.length !== 3 ||
+    !parts.every((n) => Number.isInteger(n) && n >= 0) ||
+    parts[0] + parts[1] + parts[2] !== 10
+  ) {
+    return fallback;
+  }
+  return { GR: 1, DEF: parts[0], MED: parts[1], ATA: parts[2] };
+}
+
 export async function generateAITactic(
   db: any,
   teamId: number,

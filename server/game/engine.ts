@@ -59,6 +59,7 @@ import {
   selectPenaltyTaker,
   computeSidePower,
   computeOpenPlayGoalProbability,
+  quotaFromFormation,
 } from "./matchCalculations";
 import type { SidePower } from "./matchCalculations";
 import type { Rng } from "./matchCalculations";
@@ -476,6 +477,7 @@ function ensureStartingXI(
   squad: PlayerRow[],
   teamId: number,
   matchweek: number,
+  formation?: string | null,
 ): PlayerRow[] {
   const avail = (squad || []).filter((p) => isPlayerAvailable(p, matchweek));
   const grCount = avail.filter((p) => p.position === "GR").length;
@@ -489,7 +491,7 @@ function ensureStartingXI(
   );
   const inSquad = new Set((squad || []).map((p) => p.id));
   const result = [...(squad || [])];
-  const quota = { GR: 1, DEF: 4, MED: 4, ATA: 2 };
+  const quota = quotaFromFormation(formation);
   const currentPos = { GR: grCount, DEF: 0, MED: 0, ATA: 0 };
   for (const p of result) {
     if (p.position !== "GR" && quota[p.position] != null) {
@@ -1821,6 +1823,7 @@ export async function simulateMatchSegment(
       homeSquad,
       fixture.homeTeamId,
       currentMatchweek,
+      homeTactic?.formation,
     );
     fixture._homeSquad = homeSquad;
   }
@@ -1870,6 +1873,7 @@ export async function simulateMatchSegment(
       awaySquad,
       fixture.awayTeamId,
       currentMatchweek,
+      awayTactic?.formation,
     );
     fixture._awaySquad = awaySquad;
   }
