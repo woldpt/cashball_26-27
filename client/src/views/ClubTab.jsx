@@ -197,10 +197,10 @@ export function ClubTab({
     <div className="space-y-4">
 
       {/* ── ROW 1: HERO + BUDGET ─────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
 
         {/* Club hero card */}
-        <div className="lg:col-span-2 rounded-lg border border-outline-variant/25 overflow-hidden relative bg-surface-container">
+        <div className="md:col-span-2 rounded-lg border border-outline-variant/25 overflow-hidden relative bg-surface-container">
           {/* Team colour wash */}
           <div
             className="absolute inset-0 pointer-events-none"
@@ -210,7 +210,7 @@ export function ClubTab({
                 : "linear-gradient(135deg, #2d6a4f22 0%, transparent 60%)",
             }}
           />
-          <div className="relative p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <div className="relative p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
             {/* Badge */}
             <div
               className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 border border-white/10"
@@ -337,7 +337,7 @@ export function ClubTab({
         {/* Estádio */}
         <div className="bg-surface-container rounded-lg border border-outline-variant/25 overflow-hidden flex flex-col">
           <div
-            className="h-28 relative flex items-end"
+            className="h-24 sm:h-28 relative flex items-end"
             style={{
               backgroundImage: `url(${stadiumImg})`,
               backgroundSize: "cover",
