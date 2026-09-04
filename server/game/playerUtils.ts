@@ -1,6 +1,6 @@
 // ── Player utilities extracted from engine.ts ────────────────────────────────
 
-import { FORM_NEUTRAL, EMERGENCY_GK_SKILL } from "../gameConstants";
+import { FORM_NEUTRAL, EMERGENCY_GK_SKILL, MATCH_TUNING } from "../gameConstants";
 
 type PlayerRow = any;
 
@@ -277,17 +277,16 @@ export function pickBestPlayer(players: PlayerRow[] = []) {
 
 /**
  * Weighted random pick for goal scorer.
- * Weight = positionWeight × starMultiplier × individualForm.
- *   ATA: 2, MED: 1; star ×3; form clamped to 0.7–1.3 of nominal 1.0.
+ * Weight = positionWeight × starMultiplier × individualForm (ver MATCH_TUNING).
  */
 export function weightedPickScorer(players: PlayerRow[] = []) {
   if (!players.length) return null;
   const weights = players.map((p) => {
-    const positionWeight = p.position === "ATA" ? 2 : 1;
-    const starMultiplier = p.is_star ? 3 : 1;
+    const positionWeight = p.position === "ATA" ? MATCH_TUNING.scorerAtaWeight : 1;
+    const starMultiplier = p.is_star ? MATCH_TUNING.scorerStarMult : 1;
     const formMultiplier = Math.max(
-      0.7,
-      Math.min(1.3, (p.form ?? FORM_NEUTRAL) / FORM_NEUTRAL),
+      MATCH_TUNING.scorerFormMin,
+      Math.min(MATCH_TUNING.scorerFormMax, (p.form ?? FORM_NEUTRAL) / FORM_NEUTRAL),
     );
     return positionWeight * starMultiplier * formMultiplier;
   });

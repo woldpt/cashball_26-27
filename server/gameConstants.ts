@@ -240,3 +240,84 @@ export function canMakeSubstitution(fixture: any, teamId: number): boolean {
 export function remainingSubstitutions(fixture: any, teamId: number): number {
   return Math.max(0, MAX_SUBSTITUTIONS - getSubCount(fixture, teamId));
 }
+
+// ---------------------------------------------------------------------------
+// Afinação do motor de jogo (fix #8 — fonte única).
+// Todos os literais de probabilidade/intensidade da simulação vivem aqui,
+// com a taxa-alvo em comentário. Para afinar o balanceamento (golos/jogo,
+// lesões/época, cartões/jogo), mexer SÓ aqui — nunca nos call sites.
+// ---------------------------------------------------------------------------
+export const MATCH_TUNING = {
+  // Golos em jogo corrido: taxa base por minuto por equipa (antes de
+  // forma/tempo/clima/posse). Alvo: ~2.5–3.5 golos/jogo no total.
+  goalBaseRate: 0.03,
+  homeGoalFactor: 1.08, // vantagem casa (fora da final da Taça)
+  awayGoalFactor: 0.92,
+  ownGoalShare: 0.08, // ~8% das oportunidades de golo
+  varDisallowedShare: 0.05, // 5% dos golos anulados pelo VAR
+  // Conflito de egos: 3+ craques (MED/ATA) no XI reduzem a probabilidade.
+  egoThreshold: 2,
+  egoPenaltyPerExtra: 0.1,
+  egoPenaltyMax: 0.3,
+  // Craques decidem: probabilidade de o golo ser marcado como decisivo.
+  decisivePerStar: 0.2,
+  decisiveMax: 0.6,
+  // Penáltis em jogo: ~0.2% por minuto (fora do min 90 da liga). Alvo base
+  // 82% de conversão, skill (5–50) desvia ±6pp em torno da média (30).
+  penaltyPerMinute: 0.002,
+  penaltyBase: 0.82,
+  penaltySkillMid: 30,
+  penaltySkillDivisor: 250,
+  penaltyMin: 0.74,
+  penaltyMax: 0.92,
+  // Repartição do falhanço (cumulativos): 60% defesa · 10% poste ·
+  // 10% ao lado · 20% panenka.
+  penaltyMissSave: 0.6,
+  penaltyMissPost: 0.7,
+  penaltyMissWide: 0.8,
+  // Lances de perigo sem golo (só comentário): ~1–2 por jogo.
+  nearMissPerMinute: 0.018,
+  bigSaveShare: 0.45,
+  // Cartões: ~1.5% por minuto por equipa, modulado pela agressividade média
+  // (escala 1–5, âncora 3). Alvo: um vermelho direto é raro.
+  cardBaseRate: 0.015,
+  cardAggPerPoint: 0.1,
+  secondYellowRedShare: 0.15,
+  directRedShare: 0.005,
+  // Lesões: ~0.3% por minuto (antes do multiplicador de clima). Alvo: poucas
+  // por época; clima adverso agrava.
+  injuryPerMinute: 0.003,
+  injuryWeatherMult: {
+    neve: 1.6,
+    chuva_forte: 1.4,
+    vento: 1.3,
+    chuva: 1.2,
+  } as Record<string, number>,
+  // Resistência (escala 1–50): hipótese por ponto de evitar a lesão.
+  injuryResistSkipPerPoint: 0.00653,
+  // Gravidade: 10% graves (3–8 semanas + perda de skill), resto leves (1 semana).
+  injurySevereShare: 0.1,
+  injurySevereMinWeeks: 3,
+  injurySevereExtraWeeks: 6,
+  injurySevereLossBase: 2,
+  injurySevereLossExtra: 4,
+  // Fadiga: a cada intervalo de minutos jogados, -1 skill efetiva, com
+  // escape por resistência (por ponto). Alvo: titulares cansados no fim.
+  fatigueIntervalMinutes: 15,
+  fatigueSkipPerResPoint: 0.00816,
+  // Moral (0–100): desvia o ataque ±10% e a defesa ±5% em torno de 50.
+  // Deliberadamente pequeno — a forma ajusta, não decide.
+  moraleAttackPerPoint: 0.002,
+  moraleDefensePerPoint: 0.001,
+  // Marcador ponderado: peso ATA vs resto, multiplicador craque, clamp de forma.
+  scorerAtaWeight: 2,
+  scorerStarMult: 3,
+  scorerFormMin: 0.7,
+  scorerFormMax: 1.3,
+  // Desempate por penáltis (Taça): base 72% ± skill GR/batedor, cap de morte súbita.
+  shootoutBase: 0.72,
+  shootoutSkillDivisor: 200,
+  shootoutMin: 0.55,
+  shootoutMax: 0.88,
+  shootoutSuddenDeathCap: 20,
+} as const;
