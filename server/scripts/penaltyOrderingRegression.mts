@@ -33,7 +33,7 @@ import { createRequire } from "node:module";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const sqlite3 = require("sqlite3");
-const { simulateMatchSegment } = require("../game/engine.ts");
+const { simulateMatchSegment, peekPendingMatchAction } = require("../game/engine.ts");
 
 // Diagnóstico: logar SQL que falha (o engine usa callbacks; um 'error' órfão
 // num Statement sem listener crasharia o processo)
@@ -148,12 +148,14 @@ async function runMatch(
     to: (_room: string) => ({
       emit: (ev: string, data: any) => {
         emissions.push({ ev, data });
-        // Responder como um cliente faria (fallback do servidor = escolha automática)
+        // Responder como um cliente faria (fallback do servidor = escolha automática).
+        // Usa o mapa de pending actions (fix audit #2): espreita sem consumir;
+        // o finalize consome de forma idempotente.
         if (ev === "matchActionRequired") {
-          const pending = game.pendingMatchAction;
+          const pending = peekPendingMatchAction(game, data?.actionId);
           if (!pending) return;
           setTimeout(() => {
-            if (game.pendingMatchAction?.actionId === pending.actionId) {
+            if (peekPendingMatchAction(game, pending.actionId)) {
               pending.finalize(
                 pending.fallback ? pending.fallback() : null,
                 "auto",
