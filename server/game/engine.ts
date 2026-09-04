@@ -23,6 +23,9 @@ export {
   withJuniorGRs,
   ensureFullBench,
   getEffectiveSkill,
+  generateJuniorGR,
+  generateJuniorFieldPlayer,
+  isPlayerAvailable,
 } from "./playerUtils";
 import {
   goalPhrase,
@@ -249,7 +252,7 @@ export function buildLineupSnapshot(
   return [...starters, ...bench];
 }
 
-async function getTeamSquad(
+export async function getTeamSquad(
   db: Db,
   teamId: number,
   tactic: Tactic | null,
@@ -376,7 +379,7 @@ function ensureStartingXI(
 //   Segunda volta: inverter C/F de cada par da primeira volta correspondente.
 //
 // Se seeds estiver vazio, faz query à DB e embaralha aleatoriamente (1ª época).
-async function generateFixturesForDivision(
+export async function generateFixturesForDivision(
   db: Db,
   division: number,
   matchweek: number,
@@ -1426,7 +1429,7 @@ export function generateSecondHalfIntroEvents(
   }
 }
 
-async function simulateMatchSegment(
+export async function simulateMatchSegment(
   db: Db,
   fixture: MatchFixture,
   homeTactic: Tactic | null,
@@ -2572,7 +2575,7 @@ async function simulateMatchSegment(
   }
 }
 
-async function applyPostMatchQualityEvolution(
+export async function applyPostMatchQualityEvolution(
   db: Db,
   fixtures: MatchFixture[],
   currentMatchweek: number,
@@ -2941,30 +2944,10 @@ updates.forEach((update) => {
 });
 }
 
-module.exports = {
-  withJuniorGRs,
-  generateJuniorGR,
-  generateJuniorFieldPlayer,
-  ensureFullBench,
-  isPlayerAvailable,
-  simulateMatchSegment,
-  getTeamSquad,
-  generateFixturesForDivision,
-  applyPostMatchQualityEvolution,
-  simulateExtraTime,
-  simulatePenaltyShootout,
-  generateIntroEvents,
-  generateSecondHalfIntroEvents,
-  getMatchFatigueSnapshot,
-  queueMatchDeltaWrites,
-  buildLineupSnapshot,
-  normalizeMatchChoice,
-};
-
 // ─── EXTRA TIME ──────────────────────────────────────────────────────────────
 // Simulates a single continuous extra-time period (91–120).
 // No halftime pause at 105 — ET runs straight through.
-async function simulateExtraTime(
+export async function simulateExtraTime(
   db: Db,
   fixture: MatchFixture,
   homeTactic: Tactic | null,
@@ -3026,7 +3009,7 @@ async function simulateExtraTime(
 // ─── PENALTY SHOOTOUT ─────────────────────────────────────────────────────────
 // Simulates a penalty shootout between two squads.
 // Returns { homeGoals, awayGoals, kicks: [{team, playerName, scored}] }
-function simulatePenaltyShootout(
+export function simulatePenaltyShootout(
   homeSquad: PlayerRow[],
   awaySquad: PlayerRow[],
   rng: Rng = Math.random,
