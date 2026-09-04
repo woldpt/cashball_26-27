@@ -1,7 +1,7 @@
 // CashBall service worker — offline fallback para a SPA.
 // Bump VERSION on any client change so activate() clears the stale cache
 // and the user picks up new hashed bundles.
-const VERSION = 'v4';
+const VERSION = 'v5';
 const CACHE = `cashball-${VERSION}`;
 const CORE_URLS = ['/', '/index.html'];
 
