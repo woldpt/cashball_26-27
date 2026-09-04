@@ -2583,8 +2583,22 @@ export async function applyPostMatchQualityEvolution(
   calendarIndex: number = 1,
   rng: Rng = Math.random,
 ) {
-  return new Promise<void>((resolve) => {
-    const teamResults = new Map();
+  // Helpers promisificados (o objeto db é callback-style).
+  const dbRun = (sql: string, params: any[] = []): Promise<void> =>
+    new Promise<void>((resolve, reject) => {
+      db.run(sql, params, (err: any) => (err ? reject(err) : resolve()));
+    });
+  const dbAll = <T = any>(sql: string, params: any[] = []): Promise<T[]> =>
+    new Promise<T[]>((resolve, reject) => {
+      db.all(sql, params, (err: any, rows: T[]) =>
+        err ? reject(err) : resolve(rows || []),
+      );
+    });
+
+  // Nunca rejeitar: os chamadores encadeiam .then() sem .catch() e a evolução
+  // é secundária face ao resultado já comitado. Erros logam e seguem.
+  try {
+    const teamResults = new Map<number, string>();
     for (const match of fixtures || []) {
       const homeResult =
         match.finalHomeGoals > match.finalAwayGoals
@@ -2602,14 +2616,16 @@ export async function applyPostMatchQualityEvolution(
       teamResults.set(match.awayTeamId, awayResult);
     }
 
-    // ── Morale update per team ─────────────────────────────────────────────
-    // Weekly decay toward neutral 50 (once per calendar event) so morale
-    // reflects recent form instead of accumulated cross-season history.
-    db.run(
+    // ── Moral por equipa ───────────────────────────────────────────────
+    // Decaimento semanal para o neutro 50 (uma vez por evento do calendário)
+    // para a moral refletir a forma recente em vez de histórico acumulado.
+    // Depois o delta do resultado — tudo com await (antes era fire-and-forget
+    // com race entre o decaimento global e os updates por equipa).
+    await dbRun(
       "UPDATE teams SET morale = MAX(0, MIN(100, CAST(morale + (50 - morale) * 0.1 AS INTEGER)))",
     );
 
-    const moraleUpdates = [];
+    const moraleUpdates: Array<{ teamId: number; delta: number }> = [];
     for (const [teamId, result] of teamResults.entries()) {
       let delta;
       if (result === "W") delta = 25;
@@ -2619,329 +2635,325 @@ export async function applyPostMatchQualityEvolution(
     }
 
     if (moraleUpdates.length > 0) {
-      db.all(
+      const rows = await dbAll<{ id: number; morale: number | null }>(
         "SELECT id, morale FROM teams WHERE id IN (" +
           moraleUpdates.map(() => "?").join(",") +
           ")",
         moraleUpdates.map((u) => u.teamId),
-        (err, rows) => {
-          if (err || !rows) return;
-          rows.forEach((row) => {
-            const upd = moraleUpdates.find((u) => u.teamId === row.id);
-            if (!upd) return;
-            const newMorale = Math.max(
-              0,
-              Math.min(100, (row.morale ?? 50) + upd.delta),
-            );
-            db.run("UPDATE teams SET morale = ? WHERE id = ?", [
-              newMorale,
-              row.id,
-            ]);
-          });
-        },
       );
+      const current = new Map<number, number>(
+        rows.map((row) => [row.id, row.morale ?? 50]),
+      );
+      // Batch único em vez de SELECT + N UPDATEs.
+      const cases: string[] = [];
+      const params: any[] = [];
+      const ids: number[] = [];
+      for (const { teamId, delta } of moraleUpdates) {
+        if (!current.has(teamId)) continue;
+        const newMorale = Math.max(
+          0,
+          Math.min(100, (current.get(teamId) ?? 50) + delta),
+        );
+        cases.push("WHEN ? THEN ?");
+        params.push(teamId, newMorale);
+        ids.push(teamId);
+      }
+      if (ids.length > 0) {
+        const ph = ids.map(() => "?").join(",");
+        await dbRun(
+          `UPDATE teams SET morale = CASE id ${cases.join(" ")} END WHERE id IN (${ph})`,
+          [...params, ...ids],
+        );
+      }
     }
 
-    // ── Player skill evolution ─────────────────────────────────────────────
-    // Load the season's results and the players in one serialized batch so the
-    // losing streak of each team is ready when computing per-player deltas.
-    db.serialize(() => {
-      const teamLossStreak = new Map<number, number>();
-      const lastTeamResult = new Map<number, string>();
-      db.all(
+    // ── Sequências de derrotas (para a pressão de decaimento) ──────────
+    const teamLossStreak = new Map<number, number>();
+    const lastTeamResult = new Map<number, string>();
+    try {
+      const seasonMatches = await dbAll<any>(
         "SELECT home_team_id AS home, away_team_id AS away, home_score, away_score FROM matches WHERE season = ? ORDER BY matchweek, id",
         [season],
-        (streakErr, seasonMatches) => {
-          if (streakErr) {
-            console.error("[engine] evolution: failed to load season matches:", streakErr);
-          }
-          for (const m of seasonMatches || []) {
-            const homeRes = m.home_score > m.away_score ? "W" : m.home_score < m.away_score ? "L" : "D";
-            const awayRes = m.away_score > m.home_score ? "W" : m.away_score < m.home_score ? "L" : "D";
-            for (const [tid, res] of [
-              [m.home, homeRes],
-              [m.away, awayRes],
-            ] as Array<[number, string]>) {
-              if (res === "L") {
-                teamLossStreak.set(
-                  tid,
-                  (lastTeamResult.get(tid) === "L" ? teamLossStreak.get(tid) || 0 : 0) + 1,
-                );
-              } else {
-                teamLossStreak.set(tid, 0);
-              }
-              lastTeamResult.set(tid, res);
-            }
-          }
-        },
       );
-      db.all(
-        "SELECT id, team_id, position, skill, potential, form, games_played, last_appearance_matchweek, joined_matchweek, injury_until_matchweek, suspension_until_matchweek FROM players WHERE team_id IS NOT NULL ORDER BY team_id, id",
-        (err, players) => {
-        if (err || !players || players.length === 0) {
-          resolve();
-          return;
-        }
-
-        // ── Build individual performance maps from fixture events ─────────
-        const playerGoals = new Map<number, number>();
-        const playerRedCards = new Map<number, boolean>();
-        const teamCleanSheetWin = new Map<number, boolean>();
-        // Players that appeared in any lineup (starters + bench) and those
-        // who actually started — used to weigh minutes and detect rust.
-        const appearedIds = new Set<number>();
-        const starterIds = new Set<number>();
-
-        for (const match of fixtures || []) {
-          // Track clean sheet wins: team won and opponent scored 0
-          if (
-            match.finalHomeGoals > match.finalAwayGoals &&
-            match.finalAwayGoals === 0
-          ) {
-            teamCleanSheetWin.set(match.homeTeamId, true);
-          }
-          if (
-            match.finalAwayGoals > match.finalHomeGoals &&
-            match.finalHomeGoals === 0
-          ) {
-            teamCleanSheetWin.set(match.awayTeamId, true);
-          }
-
-          // Lineups: starters (is_starter) + bench; subbed-in players are part
-          // of the final squad snapshot, so they count as appeared (not started).
-          for (const lineup of [match.homeLineup, match.awayLineup] as any[]) {
-            for (const p of lineup || []) {
-              if (typeof p?.id !== "number" || p.id <= 0) continue;
-              appearedIds.add(p.id);
-              if (p.is_starter) starterIds.add(p.id);
-            }
-          }
-
-          // Parse events for goals and red cards
-          const events = match.events || [];
-          for (const evt of events) {
-            if (!evt.playerId) continue;
-            if (evt.type === "goal" || evt.type === "penalty_goal") {
-              playerGoals.set(
-                evt.playerId,
-                (playerGoals.get(evt.playerId) || 0) + 1,
-              );
-            }
-            if (evt.type === "red" || evt.type === "gk_red_card") {
-              playerRedCards.set(evt.playerId, true);
-            }
-          }
-        }
-
-        const teamGroups = new Map();
-        for (const player of players) {
-          if (!teamGroups.has(player.team_id))
-            teamGroups.set(player.team_id, []);
-          teamGroups.get(player.team_id).push(player);
-        }
-
-        const updates = [];
-        for (const player of players) {
-          if ((player.injury_until_matchweek || 0) >= currentMatchweek)
-            continue;
-          if ((player.suspension_until_matchweek || 0) >= currentMatchweek)
-            continue;
-
-          const group = teamGroups.get(player.team_id) || [];
-          const avgSkill =
-            group.reduce((sum, p) => sum + (p.skill || 0), 0) /
-            Math.max(1, group.length);
-          const diff = avgSkill - (player.skill || 0);
-          const teamResult = teamResults.get(player.team_id) || "D";
-
-          const potential =
-            player.potential != null ? Math.min(50, player.potential) : 50;
-          // Cabeçote até ao teto de potencial (talent ceiling)
-          const room = potential - (player.skill || 0);
-
-          const appeared = appearedIds.has(player.id);
-          const started = starterIds.has(player.id);
-          // 90 min ≈ full effect, só banco/entrou ≈ metade, não jogou ≈ 0
-          const minutesFactor = started ? 1 : appeared ? 0.5 : 0;
-          const lastAppearance = player.last_appearance_matchweek || 0;
-          const playedPrev = lastAppearance > 0 && lastAppearance === calendarIndex - 1;
-
-          let delta = 0;
-
-          // Acima do teto de potencial: deriva suave de retorno à média,
-          // compensável por performance forte (golos / clean sheet)
-          if (room < 0 && rng() < 0.15) {
-            delta -= 1;
-          }
-
-          if (!appeared) {
-            // ── Inatividade / "enferrujar" ─────────────────────────────
-            // Quem não joga há 3+ eventos do calendário tem risco crescente
-            // de perder qualidade, mesmo abaixo do potencial. Contratações
-            // recentes têm um período de graça antes de sofrerem rust.
-            const justJoined =
-              (player.joined_matchweek || 0) >= calendarIndex - 3;
-            const idleForAWhile =
-              lastAppearance === 0 ? !justJoined : lastAppearance < calendarIndex - 3;
-            if (idleForAWhile && rng() < 0.15) {
-              delta -= 1;
-            }
-            if (delta !== 0) {
-              updates.push({
-                id: player.id,
-                skill: clampSkill((player.skill || 0) + delta),
-              });
-            }
-            continue;
-          }
-
-          // Convivência: jogadores abaixo da média do plantel evoluem ao
-          // conviver com colegas mais talentosos (spec: "evoluem se
-          // conviverem com jogadores mais talentosos").
-          // Só aplica enquanto houver cabeçote até ao potencial.
-          if (
-            room > 0 &&
-            diff >= 1 &&
-            rng() < Math.min(0.75, 0.20 + diff / 20) * minutesFactor
-          ) {
-            delta += 1;
-          }
-
-          // Vitória reforça evolução para jogadores abaixo da média
-          if (
-            room > 0 &&
-            teamResult === "W" &&
-            diff >= 0 &&
-            rng() < Math.min(0.45, 0.10 + diff / 50) * minutesFactor
-          ) {
-            delta += 1;
-          }
-
-          // Maus resultados: jogadores perdem qualidade se houver derrotas
-          // (spec: "perdem qualidade se houver muitos maus resultados seguidos")
-          // Jogadores acima da média do plantel são mais afectados
-          if (teamResult === "L") {
-            const lossPressure = Math.min(
-              0.18,
-              0.04 + Math.max(0, -diff) / 150,
+      for (const m of seasonMatches) {
+        const homeRes = m.home_score > m.away_score ? "W" : m.home_score < m.away_score ? "L" : "D";
+        const awayRes = m.away_score > m.home_score ? "W" : m.away_score < m.home_score ? "L" : "D";
+        for (const [tid, res] of [
+          [m.home, homeRes],
+          [m.away, awayRes],
+        ] as Array<[number, string]>) {
+          if (res === "L") {
+            teamLossStreak.set(
+              tid,
+              (lastTeamResult.get(tid) === "L" ? teamLossStreak.get(tid) || 0 : 0) + 1,
             );
-            if (rng() < lossPressure) delta -= 1;
-            // Derrotas consecutivas aumentam a pressão de decaimento
-            const streak = teamLossStreak.get(player.team_id) || 0;
-            if (
-              streak >= 2 &&
-              rng() < Math.min(0.20, 0.05 + 0.03 * (streak - 1))
-            ) {
-              delta -= 1;
-            }
+          } else {
+            teamLossStreak.set(tid, 0);
           }
-
-          // Empate contra equipa mais forte — pequena hipótese de evolução
-          if (
-            room > 0 &&
-            teamResult === "D" &&
-            diff >= 4 &&
-            rng() < 0.20 * minutesFactor
-          ) {
-            delta += 1;
-          }
-
-          // ── Performance individual pós-jogo ──────────────────────────
-          const goals = playerGoals.get(player.id) || 0;
-
-          // Marcou 2+ golos: 25% de chance de +1 skill
-          if (goals >= 2 && rng() < 0.25) {
-            delta += 1;
-          }
-          // Marcou 1 golo: 10% de chance de +1 skill
-          else if (goals === 1 && rng() < 0.10) {
-            delta += 1;
-          }
-
-          // GR com clean sheet em vitória: 15% de chance de +1 skill
-          if (
-            player.position === "GR" &&
-            teamResult === "W" &&
-            teamCleanSheetWin.has(player.team_id) &&
-            rng() < 0.15
-          ) {
-            delta += 1;
-          }
-
-          // Cartão vermelho: 20% de chance de -1 skill
-          if (playerRedCards.has(player.id) && rng() < 0.20) {
-            delta -= 1;
-          }
-
-          // Momentum: presença consecutiva impulsiona a evolução
-          if (
-            playedPrev &&
-            room > 0 &&
-            rng() < 0.10 * minutesFactor
-          ) {
-            delta += 1;
-          }
-          // Estagnação por excesso de jogos sem descanso
-          if (
-            playedPrev &&
-            (player.games_played || 0) >= 6 &&
-            rng() < 0.04
-          ) {
-            delta -= 1;
-          }
-
-          if (delta !== 0) {
-            updates.push({
-              id: player.id,
-              skill: clampSkill((player.skill || 0) + delta),
-            });
-          }
+          lastTeamResult.set(tid, res);
         }
+      }
+    } catch (streakErr) {
+      console.error("[engine] evolution: failed to load season matches:", streakErr);
+    }
 
-        if (updates.length === 0) {
-          // Mesmo sem evoluções, limpar prev_skill de semanas anteriores
-          db.run(
-            "UPDATE players SET prev_skill = NULL WHERE team_id IS NOT NULL",
-            () => {
-              // Snapshot all players' skill for continuity
-              db.run(
-                "INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) SELECT id, ?, ?, skill FROM players WHERE team_id IS NOT NULL AND skill IS NOT NULL",
-                [currentMatchweek, season],
-                () => resolve(),
-              );
-            },
-          );
-          return;
-        }
-
-        let remaining = updates.length;
-        db.serialize(() => {
-          // Limpar prev_skill de semanas anteriores; só os que mudam esta semana ficam marcados
-          db.run(
-            "UPDATE players SET prev_skill = NULL WHERE team_id IS NOT NULL",
-          );
-updates.forEach((update) => {
-            db.run(
-              "UPDATE players SET prev_skill = skill, skill = ?, value = ? WHERE id = ?",
-              [update.skill, recalcPlayerValue(update.skill), update.id],
-              () => {
-                remaining -= 1;
-                if (remaining === 0) {
-                  // Snapshot all players' skill after evolution
-                  db.run(
-                    "INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) SELECT id, ?, ?, skill FROM players WHERE team_id IS NOT NULL AND skill IS NOT NULL",
-                    [currentMatchweek, season],
-                    () => resolve(),
-                  );
-                }
-              },
-            );
-          });
-      });
-    },
+    const players = await dbAll<any>(
+      "SELECT id, team_id, position, skill, potential, form, games_played, last_appearance_matchweek, joined_matchweek, injury_until_matchweek, suspension_until_matchweek FROM players WHERE team_id IS NOT NULL ORDER BY team_id, id",
     );
-    });
-});
+    if (!players || players.length === 0) {
+      return;
+    }
+
+    // ── Build individual performance maps from fixture events ─────────
+    const playerGoals = new Map<number, number>();
+    const playerRedCards = new Map<number, boolean>();
+    const teamCleanSheetWin = new Map<number, boolean>();
+    // Players that appeared in any lineup (starters + bench) and those
+    // who actually started — used to weigh minutes and detect rust.
+    const appearedIds = new Set<number>();
+    const starterIds = new Set<number>();
+
+    for (const match of fixtures || []) {
+      // Track clean sheet wins: team won and opponent scored 0
+      if (
+        match.finalHomeGoals > match.finalAwayGoals &&
+        match.finalAwayGoals === 0
+      ) {
+        teamCleanSheetWin.set(match.homeTeamId, true);
+      }
+      if (
+        match.finalAwayGoals > match.finalHomeGoals &&
+        match.finalHomeGoals === 0
+      ) {
+        teamCleanSheetWin.set(match.awayTeamId, true);
+      }
+
+      // Lineups: starters (is_starter) + bench; subbed-in players are part
+      // of the final squad snapshot, so they count as appeared (not started).
+      for (const lineup of [match.homeLineup, match.awayLineup] as any[]) {
+        for (const p of lineup || []) {
+          if (typeof p?.id !== "number" || p.id <= 0) continue;
+          appearedIds.add(p.id);
+          if (p.is_starter) starterIds.add(p.id);
+        }
+      }
+
+      // Parse events for goals and red cards
+      const events = match.events || [];
+      for (const evt of events) {
+        if (!evt.playerId) continue;
+        if (evt.type === "goal" || evt.type === "penalty_goal") {
+          playerGoals.set(
+            evt.playerId,
+            (playerGoals.get(evt.playerId) || 0) + 1,
+          );
+        }
+        if (evt.type === "red" || evt.type === "gk_red_card") {
+          playerRedCards.set(evt.playerId, true);
+        }
+      }
+    }
+
+    const teamGroups = new Map();
+    for (const player of players) {
+      if (!teamGroups.has(player.team_id))
+        teamGroups.set(player.team_id, []);
+      teamGroups.get(player.team_id).push(player);
+    }
+
+    const updates = [];
+    for (const player of players) {
+      if ((player.injury_until_matchweek || 0) >= currentMatchweek)
+        continue;
+      if ((player.suspension_until_matchweek || 0) >= currentMatchweek)
+        continue;
+
+      const group = teamGroups.get(player.team_id) || [];
+      const avgSkill =
+        group.reduce((sum, p) => sum + (p.skill || 0), 0) /
+        Math.max(1, group.length);
+      const diff = avgSkill - (player.skill || 0);
+      const teamResult = teamResults.get(player.team_id) || "D";
+
+      const potential =
+        player.potential != null ? Math.min(50, player.potential) : 50;
+      // Cabeçote até ao teto de potencial (talent ceiling)
+      const room = potential - (player.skill || 0);
+
+      const appeared = appearedIds.has(player.id);
+      const started = starterIds.has(player.id);
+      // 90 min ≈ full effect, só banco/entrou ≈ metade, não jogou ≈ 0
+      const minutesFactor = started ? 1 : appeared ? 0.5 : 0;
+      const lastAppearance = player.last_appearance_matchweek || 0;
+      const playedPrev = lastAppearance > 0 && lastAppearance === calendarIndex - 1;
+
+      let delta = 0;
+
+      // Acima do teto de potencial: deriva suave de retorno à média,
+      // compensável por performance forte (golos / clean sheet)
+      if (room < 0 && rng() < 0.15) {
+        delta -= 1;
+      }
+
+      if (!appeared) {
+        // ── Inatividade / "enferrujar" ─────────────────────────────
+        // Quem não joga há 3+ eventos do calendário tem risco crescente
+        // de perder qualidade, mesmo abaixo do potencial. Contratações
+        // recentes têm um período de graça antes de sofrerem rust.
+        const justJoined =
+          (player.joined_matchweek || 0) >= calendarIndex - 3;
+        const idleForAWhile =
+          lastAppearance === 0 ? !justJoined : lastAppearance < calendarIndex - 3;
+        if (idleForAWhile && rng() < 0.15) {
+          delta -= 1;
+        }
+        if (delta !== 0) {
+          updates.push({
+            id: player.id,
+            skill: clampSkill((player.skill || 0) + delta),
+          });
+        }
+        continue;
+      }
+
+      // Convivência: jogadores abaixo da média do plantel evoluem ao
+      // conviver com colegas mais talentosos (spec: "evoluem se
+      // conviverem com jogadores mais talentosos").
+      // Só aplica enquanto houver cabeçote até ao potencial.
+      if (
+        room > 0 &&
+        diff >= 1 &&
+        rng() < Math.min(0.75, 0.20 + diff / 20) * minutesFactor
+      ) {
+        delta += 1;
+      }
+
+      // Vitória reforça evolução para jogadores abaixo da média
+      if (
+        room > 0 &&
+        teamResult === "W" &&
+        diff >= 0 &&
+        rng() < Math.min(0.45, 0.10 + diff / 50) * minutesFactor
+      ) {
+        delta += 1;
+      }
+
+      // Maus resultados: jogadores perdem qualidade se houver derrotas
+      // (spec: "perdem qualidade se houver muitos maus resultados seguidos")
+      // Jogadores acima da média do plantel são mais afectados
+      if (teamResult === "L") {
+        const lossPressure = Math.min(
+          0.18,
+          0.04 + Math.max(0, -diff) / 150,
+        );
+        if (rng() < lossPressure) delta -= 1;
+        // Derrotas consecutivas aumentam a pressão de decaimento
+        const streak = teamLossStreak.get(player.team_id) || 0;
+        if (
+          streak >= 2 &&
+          rng() < Math.min(0.20, 0.05 + 0.03 * (streak - 1))
+        ) {
+          delta -= 1;
+        }
+      }
+
+      // Empate contra equipa mais forte — pequena hipótese de evolução
+      if (
+        room > 0 &&
+        teamResult === "D" &&
+        diff >= 4 &&
+        rng() < 0.20 * minutesFactor
+      ) {
+        delta += 1;
+      }
+
+      // ── Performance individual pós-jogo ──────────────────────────
+      const goals = playerGoals.get(player.id) || 0;
+
+      // Marcou 2+ golos: 25% de chance de +1 skill
+      if (goals >= 2 && rng() < 0.25) {
+        delta += 1;
+      }
+      // Marcou 1 golo: 10% de chance de +1 skill
+      else if (goals === 1 && rng() < 0.10) {
+        delta += 1;
+      }
+
+      // GR com clean sheet em vitória: 15% de chance de +1 skill
+      if (
+        player.position === "GR" &&
+        teamResult === "W" &&
+        teamCleanSheetWin.has(player.team_id) &&
+        rng() < 0.15
+      ) {
+        delta += 1;
+      }
+
+      // Cartão vermelho: 20% de chance de -1 skill
+      if (playerRedCards.has(player.id) && rng() < 0.20) {
+        delta -= 1;
+      }
+
+      // Momentum: presença consecutiva impulsiona a evolução
+      if (
+        playedPrev &&
+        room > 0 &&
+        rng() < 0.10 * minutesFactor
+      ) {
+        delta += 1;
+      }
+      // Estagnação por excesso de jogos sem descanso
+      if (
+        playedPrev &&
+        (player.games_played || 0) >= 6 &&
+        rng() < 0.04
+      ) {
+        delta -= 1;
+      }
+
+      if (delta !== 0) {
+        updates.push({
+          id: player.id,
+          skill: clampSkill((player.skill || 0) + delta),
+        });
+      }
+    }
+
+    // Limpar prev_skill de semanas anteriores; só os que mudam esta semana ficam marcados.
+    await dbRun(
+      "UPDATE players SET prev_skill = NULL WHERE team_id IS NOT NULL",
+    );
+    if (updates.length > 0) {
+      // Batch único (CASE) em vez de N UPDATEs com contador `remaining`.
+      const skillCases: string[] = [];
+      const valueCases: string[] = [];
+      const params: any[] = [];
+      const ids: number[] = [];
+      for (const update of updates) {
+        skillCases.push("WHEN ? THEN ?");
+        valueCases.push("WHEN ? THEN ?");
+        params.push(
+          update.id,
+          update.skill,
+          update.id,
+          recalcPlayerValue(update.skill),
+        );
+        ids.push(update.id);
+      }
+      const ph = ids.map(() => "?").join(",");
+      await dbRun(
+        `UPDATE players SET prev_skill = skill, skill = CASE id ${skillCases.join(" ")} END, value = CASE id ${valueCases.join(" ")} END WHERE id IN (${ph})`,
+        [...params, ...ids],
+      );
+    }
+    // Snapshot do skill de todos os jogadores para continuidade.
+    await dbRun(
+      "INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) SELECT id, ?, ?, skill FROM players WHERE team_id IS NOT NULL AND skill IS NOT NULL",
+      [currentMatchweek, season],
+    );
+  } catch (err) {
+    console.error("[engine] evolution failed:", err);
+  }
 }
 
 // ─── EXTRA TIME ──────────────────────────────────────────────────────────────

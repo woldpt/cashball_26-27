@@ -28,7 +28,7 @@
 - [x] **#10 Tipos em vez de `any`** — `Db`, `PlayerRow`, `MatchFixture`, `tactic: any`; `choice`
       objeto-vs-id inconsistente. Fix: tipar e uniformizar.
 - [x] **#11 Exports ESM puros** — `module.exports` + `import` misturados. Fix: só `export`.
-- [ ] **#12 Evolução async/await** — `applyPostMatchQualityEvolution` com callbacks aninhados +
+- [x] **#12 Evolução async/await** — `applyPostMatchQualityEvolution` com callbacks aninhados +
       contador `remaining`; `UPDATE teams SET morale` global sem await. Fix: async/await + batch.
 
 ## P2 — Balanceamento / UX / perf (após P0–P1)
