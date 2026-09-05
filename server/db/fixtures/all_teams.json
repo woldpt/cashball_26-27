@@ -5259,7 +5259,7 @@
       "name": "At. Reguengos",
       "division": 5,
       "colors": {
-        "primary": "#CC0000",
+        "primary": "#347C17",
         "secondary": "#000033"
       },
       "stadium": {
@@ -5842,7 +5842,7 @@
       "name": "Arouca",
       "division": 1,
       "colors": {
-        "primary": "#FFCC00",
+        "primary": "#FDD945",
         "secondary": "#000000"
       },
       "stadium": {
@@ -6142,7 +6142,7 @@
       "name": "Alverca",
       "division": 1,
       "colors": {
-        "primary": "#C8102E",
+        "primary": "#990012",
         "secondary": "#1E3A8A"
       },
       "stadium": {
@@ -6292,7 +6292,7 @@
       "name": "Rio Ave",
       "division": 1,
       "colors": {
-        "primary": "#008000",
+        "primary": "#347C17",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -6742,7 +6742,7 @@
       "name": "Penafiel",
       "division": 2,
       "colors": {
-        "primary": "#000000",
+        "primary": "#AD1814",
         "secondary": "#FF0000"
       },
       "stadium": {
@@ -6892,7 +6892,7 @@
       "name": "Portimonense",
       "division": 2,
       "colors": {
-        "primary": "#1A1A1A",
+        "primary": "#101010",
         "secondary": "#00A650"
       },
       "stadium": {
@@ -7042,7 +7042,7 @@
       "name": "Vit. Setúbal",
       "division": 3,
       "colors": {
-        "primary": "#2E7D32",
+        "primary": "#00703C",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -7192,7 +7192,7 @@
       "name": "São João Ver",
       "division": 3,
       "colors": {
-        "primary": "#0047AB",
+        "primary": "#AD1814",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -7492,7 +7492,7 @@
       "name": "Lusitano Évora",
       "division": 3,
       "colors": {
-        "primary": "#1B5E20",
+        "primary": "#347C17",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -7642,7 +7642,7 @@
       "name": "Oliv. Hospital",
       "division": 4,
       "colors": {
-        "primary": "#0066CC",
+        "primary": "#2D4C97",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -7792,7 +7792,7 @@
       "name": "Malveira",
       "division": 4,
       "colors": {
-        "primary": "#FF0000",
+        "primary": "#2D4C97",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -7942,7 +7942,7 @@
       "name": "Alcochetense",
       "division": 4,
       "colors": {
-        "primary": "#0047AB",
+        "primary": "#347C17",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -8092,7 +8092,7 @@
       "name": "O Elvas",
       "division": 4,
       "colors": {
-        "primary": "#0047AB",
+        "primary": "#273E7C",
         "secondary": "#FFCC00"
       },
       "stadium": {
@@ -8242,7 +8242,7 @@
       "name": "Sintrense",
       "division": 4,
       "colors": {
-        "primary": "#CC0000",
+        "primary": "#FDD945",
         "secondary": "#1E3A8A"
       },
       "stadium": {
@@ -8392,7 +8392,7 @@
       "name": "Cabrela",
       "division": 5,
       "colors": {
-        "primary": "#0a5c36",
+        "primary": "#AD1814",
         "secondary": "#ffffff"
       },
       "stadium": {
@@ -8542,7 +8542,7 @@
       "name": "Escouralense",
       "division": 5,
       "colors": {
-        "primary": "#228B22",
+        "primary": "#2D4C97",
         "secondary": "#FFCC00"
       },
       "stadium": {
@@ -8692,7 +8692,7 @@
       "name": "Aljustrelense",
       "division": 5,
       "colors": {
-        "primary": "#0000FF",
+        "primary": "#2D4C97",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -8842,7 +8842,7 @@
       "name": "Castrense",
       "division": 5,
       "colors": {
-        "primary": "#FF0000",
+        "primary": "#00703C",
         "secondary": "#FFFFFF"
       },
       "stadium": {
