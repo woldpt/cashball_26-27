@@ -106,6 +106,7 @@ export function PlayerRow({
           position={player.position}
           nationality={player.nationality}
           size="mdR"
+          photo={player.photo || null}
         />
         <span
           className={`absolute bottom-0.5 -right-1 px-1 py-px bg-surface-container border-l-2 ${posBorder} ${posText} text-[8px] font-black rounded-sm shadow-md shadow-black/50 tracking-wider`}

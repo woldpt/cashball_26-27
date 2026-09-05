@@ -64,6 +64,8 @@ CREATE TABLE IF NOT EXISTS players (
   transfer_cooldown_until_matchweek INTEGER DEFAULT 0,
   training_skill_progress REAL DEFAULT 0,
   training_resistance_progress REAL DEFAULT 0,
+  photo TEXT DEFAULT NULL,
+  zerozero_id INTEGER DEFAULT NULL,
   team_id INTEGER,
   FOREIGN KEY(team_id) REFERENCES teams(id)
 );

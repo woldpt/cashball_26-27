@@ -252,10 +252,21 @@ function mixHex(baseHex, targetHex, amount) {
  * olhos verticais com pálpebras carregadas e sombreamento cell-shading.
  * @param {{ seed: number|string, position?: string, teamColor?: string, size?: "sm"|"md"|"lg"|"xl"|string, className?: string }} props
  */
-function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg", className = "" }) {
+function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg", className = "", photo }) {
   const rng = mulberry32(xmur3(`${seed ?? 0}|${position ?? "X"}`)());
   const profile = POSITION_PROFILE[position] || POSITION_PROFILE.default;
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
+  if (photo) {
+    return (
+      <img
+        src={photo}
+        alt=""
+        loading="lazy"
+        className={`${AVATAR_SIZE_MAP[size] ?? size} rounded-full object-cover object-top shrink-0 bg-white border border-slate-200 shadow-lg ${className}`}
+        onError={(e) => { e.currentTarget.style.display = "none"; }}
+      />
+    );
+  }
 
   const SKIN_TONES = [
     { base: "#f5dcc6", shadow: "#cf9d7c", blush: "#ec9b8c", lip: "#9c5044" },
@@ -1865,5 +1876,6 @@ export const PlayerAvatar = memo(PlayerAvatarInner, (prev, next) =>
   prev.position === next.position &&
   prev.teamColor === next.teamColor &&
   prev.size === next.size &&
-  prev.nationality === next.nationality,
+  prev.nationality === next.nationality &&
+  prev.photo === next.photo,
 );

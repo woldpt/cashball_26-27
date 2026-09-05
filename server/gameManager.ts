@@ -705,6 +705,8 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
           },
         );
         const continueAfterMigrations = () => {
+          db.run("ALTER TABLE players ADD COLUMN photo TEXT", () => {});
+          db.run("ALTER TABLE players ADD COLUMN zerozero_id INTEGER", () => {});
           db.run("ALTER TABLE teams ADD COLUMN crest TEXT", () => {
             // Backfill crest para salas antigas (game_*.db criadas antes do branding)
             try {
