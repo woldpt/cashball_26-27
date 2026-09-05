@@ -241,12 +241,31 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
     nextGame?.stadiumTeam?.stadium_name ?? null;
   const nextGameIsHome = nextGame?.imHome;
 
-  // Team logo circle helper
+  // Team logo — crest com fallback para inicial
   const TeamCircle = ({ team, size = "lg" }) => {
     const sz =
       size === "lg"
         ? "w-10 h-10 text-base"
         : "w-7 h-7 text-xs";
+    if (team?.crest) {
+      return (
+        <>
+          <img
+            src={team.crest}
+            alt={team?.name || "crest"}
+            onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
+            className={`${sz} rounded-full object-contain bg-white p-1 shrink-0 border border-white/10`}
+            loading="lazy"
+          />
+          <div
+            className={`${sz} rounded-full hidden items-center justify-center font-black shrink-0 border border-white/10`}
+            style={{ background: team?.color_primary || "#333", color: team?.color_secondary || "#fff" }}
+          >
+            {team?.name?.[0] ?? "?"}
+          </div>
+        </>
+      );
+    }
     return (
       <div
         className={`${sz} rounded-full flex items-center justify-center font-black shrink-0 border border-white/10`}

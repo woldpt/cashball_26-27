@@ -1,5 +1,23 @@
 import { readableColor } from "../utils/colorHelpers.js";
 
+function CrestCircle({ team, className = "w-9 h-9 sm:w-12 sm:h-12 text-xs sm:text-lg" }) {
+  if (team?.crest) {
+    return (
+      <>
+        <img
+          src={team.crest}
+          alt={team?.name || "crest"}
+          onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
+          className={`${className} rounded-full object-contain bg-white p-1 shrink-0 border border-white/10`}
+          loading="lazy"
+        />
+        <div className={`${className} rounded-full hidden items-center justify-center font-black shrink-0 border border-white/10`} style={{ background: team?.color_primary || "#333", color: team?.color_secondary || "#fff" }}>{team?.name?.[0] ?? "?"}</div>
+      </>
+    );
+  }
+  return <div className={`${className} rounded-full flex items-center justify-center font-black border border-white/10`} style={{ background: team?.color_primary || "#333", color: team?.color_secondary || "#fff" }}>{team?.name?.[0] ?? "?"}</div>;
+}
+
 export function CupTab({
   cupRoundResults,
   cupDraw,
@@ -103,15 +121,7 @@ export function CupTab({
                       <div className="px-3 sm:px-4 py-2.5 sm:py-5">
                         <div className="flex items-center gap-2 sm:gap-3">
                           <div className="flex-1 flex flex-col items-end gap-1.5">
-                            <div
-                              className="w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-xs sm:text-lg border border-white/10"
-                              style={{
-                                background: hInfo?.color_primary || "#333",
-                                color: hInfo?.color_secondary || "#fff",
-                              }}
-                            >
-                              {hInfo?.name?.[0] ?? "?"}
-                            </div>
+                            <CrestCircle team={hInfo} className="w-9 h-9 sm:w-12 sm:h-12 text-xs sm:text-lg" />
                             <span
                               className="font-black text-sm text-right truncate max-w-25"
                               style={{
@@ -147,15 +157,7 @@ export function CupTab({
                           </div>
 
                           <div className="flex-1 flex flex-col items-start gap-1.5">
-                            <div
-                              className="w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-xs sm:text-lg border border-white/10"
-                              style={{
-                                background: aInfo?.color_primary || "#333",
-                                color: aInfo?.color_secondary || "#fff",
-                              }}
-                            >
-                              {aInfo?.name?.[0] ?? "?"}
-                            </div>
+                            <CrestCircle team={aInfo} className="w-9 h-9 sm:w-12 sm:h-12 text-xs sm:text-lg" />
                             <span
                               className="font-black text-sm text-left truncate max-w-25"
                               style={{
@@ -218,29 +220,13 @@ export function CupTab({
                         >
                           {hInfo?.name || "?"}
                         </span>
-                        <div
-                          className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm shrink-0 border border-white/10"
-                          style={{
-                            background: hInfo?.color_primary || "#333",
-                            color: hInfo?.color_secondary || "#fff",
-                          }}
-                        >
-                          {hInfo?.name?.[0] || "?"}
-                        </div>
+                        <CrestCircle team={hInfo} className="w-9 h-9 text-sm" />
                       </div>
                       <div className="shrink-0 w-8 h-8 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center">
                         <span className="text-zinc-500 text-[10px] font-black uppercase">vs</span>
                       </div>
                       <div className="flex-1 min-w-0 flex items-center gap-3">
-                        <div
-                          className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm shrink-0 border border-white/10"
-                          style={{
-                            background: aInfo?.color_primary || "#333",
-                            color: aInfo?.color_secondary || "#fff",
-                          }}
-                        >
-                          {aInfo?.name?.[0] || "?"}
-                        </div>
+                        <CrestCircle team={aInfo} className="w-9 h-9 text-sm" />
                         <span
                           className="font-black text-sm text-left truncate min-w-0"
                           style={{

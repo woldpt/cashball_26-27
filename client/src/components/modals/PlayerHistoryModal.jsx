@@ -248,6 +248,11 @@ export function PlayerHistoryModal({
               </p>
               <div className="flex items-center gap-1 sm:gap-2 mt-0.5 sm:mt-1 flex-wrap">
                 <span className="text-on-surface-variant text-xs">Clube:</span>
+                {player.team_crest ? (
+                  <img src={player.team_crest} alt={player.team_name || "crest"} onError={(e) => { e.currentTarget.style.display = "none"; }} className="w-5 h-5 object-contain bg-white rounded-sm p-0.5 shrink-0 border border-outline-variant/20" loading="lazy" />
+                ) : player.team_name ? (
+                  <span className="w-5 h-5 rounded-sm flex items-center justify-center text-[8px] font-black shrink-0 border border-white/10" style={{ background: player.team_color_primary || player.color_primary || "#333", color: player.team_color_secondary || player.color_secondary || "#fff" }}>{player.team_name[0]}</span>
+                ) : null}
                 <span className="font-bold text-tertiary text-xs">
                   {player.team_name
                     ? player.transfer_status === "auction" && player.isExClub

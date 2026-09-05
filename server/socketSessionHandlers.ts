@@ -964,7 +964,7 @@ export function registerSessionSocketHandlers(
 			try {
 				const player = await runGet(
 					game.db,
-					`SELECT p.*, t.name as team_name
+					`SELECT p.*, t.name as team_name, t.crest as team_crest, t.color_primary as team_color_primary, t.color_secondary as team_color_secondary
          FROM players p
          LEFT JOIN teams t ON t.id = p.team_id
          WHERE p.id = ?`,

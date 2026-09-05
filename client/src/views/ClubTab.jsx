@@ -211,12 +211,22 @@ export function ClubTab({
             }}
           />
           <div className="relative p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
-            {/* Badge */}
+            {/* Badge — crest com fallback para inicial */}
+            {teamInfo?.crest ? (
+              <img
+                src={teamInfo.crest}
+                alt={teamInfo?.name || "crest"}
+                onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-contain bg-white p-1.5 shrink-0 border border-white/10"
+                loading="lazy"
+              />
+            ) : null}
             <div
               className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 border border-white/10"
               style={{
                 background: teamInfo?.color_primary || "#2a2a2a",
                 color: teamInfo?.color_secondary || "#fff",
+                display: teamInfo?.crest ? "none" : "flex",
               }}
             >
               {teamInfo?.name?.[0] || "?"}
