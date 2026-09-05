@@ -1,7 +1,7 @@
 # AGENTS.md — CashBall · Operações & Regras
 
 > **pt-PT (europeu) SEMPRE** — UI, mensagens, narração, comentários. "Auto-golo" (nunca "golo de contra"/"contra" — pt-BR); "marcador"/"resultado" (nunca "placar").
-> **Leia antes de trabalhar:** backend/arquitetura → `CLAUDE.md` · UI/estilo → `STYLE.md` · UI de referência: `client/src/views/PlayersTab.jsx`.
+> **Leia antes de trabalhar:** arranque de sessão → `NOTES.md` · backend/arquitetura → `CLAUDE.md` · UI/estilo → `STYLE.md` · UI de referência: `client/src/views/PlayersTab.jsx`.
 
 ## ⚡ Comandos
 
@@ -48,5 +48,6 @@ Replay seguro pós-restart (`applied_weeks`, `recoverFinalizedSlot`), WAL e back
 ## 📌 Workflow
 
 - **Commit automático** após cada alteração verificada — skill `.pi/skills/auto-commit/SKILL.md`. Mensagem foca no **porquê** (ex. `fix: prevent duplicate NPC bids in auctions`). Nunca push sem pedido explícito.
+- **Memória entre sessões:** ao fim de cada tarefa atualizar `NOTES.md` (em curso, último estado, decisões, armadilhas) antes de commitar/terminar. Regra permanente → mover para os docs acima e remover de `NOTES.md`.
 - **Mudança de layout/estilo** → skill `mobile-resp-check` antes de terminar/commitar.
 - **Design:** seguir `STYLE.md` (tokens, tipografia, cards, badges); referência: `client/src/views/PlayersTab.jsx`.
