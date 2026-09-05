@@ -37,6 +37,49 @@ import RoomSelectScreen from "./RoomSelectScreen.jsx";
  */
 
 /** Animated particle canvas for background effect */
+/**
+ * Frases do hero em ciclo (3 tempos, imperativo pt-PT). A primeira e a
+ * última frases são a de marca original — o ciclo abre e fecha no ponto de
+ * partida. O 2.º tempo fica verde em todas as frases (consistência visual).
+ */
+const HERO_PHRASES = [
+	["TREINA.", "PROSPERA.", "REPETE."],
+	["GERE.", "VENCE.", "REINA."],
+	["TREINA.", "COMANDA.", "VENCE."],
+	["PLANEIA.", "DECIDE.", "DOMINA."],
+	["GERE.", "PROSPERA.", "DOMINA."],
+	["CONSTRÓI.", "VENCE.", "LEGENDA."],
+];
+
+/** Intervalo entre frases (ms). 3.5s — legível sem ser apressado. */
+const HERO_PHRASE_INTERVAL = 3500;
+
+/** Tamanho do título do hero (partilhado pelas 3 linhas). */
+const HERO_TITLE_SIZE =
+	"text-[min(3.75rem,calc((100vw-3rem)/5.2))] sm:text-7xl lg:text-[5.5rem] short:text-[clamp(1.15rem,3.2vw,1.6rem)]";
+
+/**
+ * `prefers-reduced-motion` reativo — quando ativo, o hero mostra uma frase
+ * estática (a original) em vez de ciclar.
+ *
+ * @returns {boolean} true quando o sistema pede movimento reduzido.
+ */
+function usePrefersReducedMotion() {
+	const [reduced, setReduced] = useState(
+		() =>
+			typeof window !== "undefined" &&
+			window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+	);
+	useEffect(() => {
+		if (typeof window === "undefined" || !window.matchMedia) return;
+		const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+		const onChange = (e) => setReduced(e.matches);
+		mq.addEventListener("change", onChange);
+		return () => mq.removeEventListener("change", onChange);
+	}, []);
+	return reduced;
+}
+
 const ParticleCanvas = () => {
 	const canvasRef = useRef(null);
 
@@ -139,6 +182,18 @@ const LandingPage = ({
 		window.addEventListener("scroll", onScroll, { passive: true });
 		return () => window.removeEventListener("scroll", onScroll);
 	}, []);
+	// Hero: ciclo de frases (crossfade). Pausa com prefers-reduced-motion.
+	const reducedMotion = usePrefersReducedMotion();
+	const [phraseIndex, setPhraseIndex] = useState(0);
+	useEffect(() => {
+		if (reducedMotion) return;
+		const id = setInterval(
+			() => setPhraseIndex((i) => (i + 1) % HERO_PHRASES.length),
+			HERO_PHRASE_INTERVAL,
+		);
+		return () => clearInterval(id);
+	}, [reducedMotion]);
+
 
 	// 1. Reconnecting State
 	if (me && !me.teamId) {
@@ -296,30 +351,40 @@ const LandingPage = ({
 					    never overflows 320px screens (60px text-6xl = 307px wide).
 					    At >=360px the clamp resolves to exactly 3.75rem (text-6xl). */}
 					<h1 className="font-headline font-black leading-none tracking-tighter mb-8 short:mb-2">
-						<motion.span
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: 0.1, duration: 0.5 }}
-							className="block text-[min(3.75rem,calc((100vw-3rem)/5.2))] sm:text-7xl lg:text-[5.5rem] short:text-[clamp(1.15rem,3.2vw,1.6rem)] text-white"
-						>
-							TREINA.
-						</motion.span>
-						<motion.span
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: 0.2, duration: 0.5 }}
-							className="block text-[min(3.75rem,calc((100vw-3rem)/5.2))] sm:text-7xl lg:text-[5.5rem] short:text-[clamp(1.15rem,3.2vw,1.6rem)] text-green-400 drop-shadow-[0_0_40px_rgba(74,222,128,0.35)]"
-						>
-							PROSPERA.
-						</motion.span>
-						<motion.span
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: 0.3, duration: 0.5 }}
-							className="block text-[min(3.75rem,calc((100vw-3rem)/5.2))] sm:text-7xl lg:text-[5.5rem] short:text-[clamp(1.15rem,3.2vw,1.6rem)] text-white"
-						>
-							REPETE.
-						</motion.span>
+						{/* Nome acessível estável — o bloco visual cicla e é decorativo */}
+						<span className="sr-only">TREINA. PROSPERA. REPETE.</span>
+						<span aria-hidden="true" className="block relative">
+							{/* Sizer invisível: reserva a altura (3 linhas) em fluxo normal
+							    para o crossfade não deslocar o layout. */}
+							<span className="block invisible">
+								<span className={`block ${HERO_TITLE_SIZE}`}>TREINA.</span>
+								<span className={`block ${HERO_TITLE_SIZE}`}>PROSPERA.</span>
+								<span className={`block ${HERO_TITLE_SIZE}`}>REPETE.</span>
+							</span>
+							<AnimatePresence mode="wait">
+								<motion.span
+									key={phraseIndex}
+									initial={{ opacity: 0, y: 12 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -12 }}
+									transition={{ duration: 0.45, ease: "easeOut" }}
+									className="absolute inset-0 flex flex-col justify-start"
+								>
+									{HERO_PHRASES[phraseIndex].map((word, i) => (
+										<span
+											key={i}
+											className={`${HERO_TITLE_SIZE} ${
+												i === 1
+													? "text-green-400 drop-shadow-[0_0_40px_rgba(74,222,128,0.35)]"
+													: "text-white"
+											} `}
+										>
+											{word}
+										</span>
+									))}
+								</motion.span>
+							</AnimatePresence>
+						</span>
 					</h1>
 
 					<motion.p
