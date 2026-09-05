@@ -14,7 +14,8 @@
     "test:skillhistory": "node scripts/skillHistoryRegression.mjs",
     "test:squadnav": "node scripts/squadNavigationRegression.mjs",
     "test:owngoalside": "node scripts/ownGoalSideRegression.mjs",
-    "test:mobile": "node scripts/mobileRespCheck.mjs"
+    "test:mobile": "node scripts/mobileRespCheck.mjs",
+    "test:mobile:landscape": "node scripts/mobileRespCheck.mjs --widths 568,667,736,844,926,1023 --height 375"
   },
   "overrides": {
     "uuid": "^11.0.0"

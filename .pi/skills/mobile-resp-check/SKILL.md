@@ -1,24 +1,30 @@
 ---
 name: mobile-resp-check
-description: Always verify mobile responsiveness after any style/layout change to the client (Tailwind classes, index.css, components with className, new views/tabs/modals). Use after the change passes checks (lint/typecheck) and before reporting the task as finished or committing.
+description: Verify mobile responsiveness after STRUCTURAL layout changes to the client (new view/tab/modal, GameLayout.jsx, App.jsx, index.css, new shared component, grid/flex/container-width changes). NOT for small tweaks (padding, colors, text size, point className). Two mandatory passes: portrait (npm run test:mobile) + landscape (npm run test:mobile:landscape). Use after the change passes checks (lint/typecheck) and before reporting the task as finished or committing.
 ---
 
 # Mobile Responsiveness Check
 
-After **any style or layout change to the client**, verify that the app still
-navigates well on mobile screens (no horizontal overflow, no clipped content,
-no JS errors) before reporting the task as finished.
+After a **structural layout change to the client** (see "When to run"), verify
+that the app still navigates well on mobile screens — portrait **and**
+landscape (no horizontal overflow, no clipped content, no JS errors) — before
+reporting the task as finished.
 
 ## When to run
 
-- Any change under `client/src/**` that touches styling or layout:
-  Tailwind classes, `index.css`, components with `className`, new views/tabs/
-  modals, `GameLayout.jsx`.
-- Skip only when the change is pure logic with **no** styling/layout impact
-  (e.g. a socket handler, a pure util with no DOM). When in doubt, run it —
-  it is fast (~15 page loads).
+**Run** (structural changes):
+- New view, tab, or modal.
+- Changes to `GameLayout.jsx`, `App.jsx`, or `index.css`.
+- New shared component under `src/components/**`.
+- Changes to grid/flex structure or container widths (affects the overall
+  layout, not a single element).
 
-## Quick run
+**Do not run** (small tweaks and non-layout changes):
+- Padding/gap/margin tweaks, colors, text sizes, a single `className` change
+  inside an existing container.
+- Pure logic with no styling/layout impact (socket handlers, pure utils).
+
+## Portrait pass
 
 ```bash
 cd client && npm run test:mobile
@@ -39,6 +45,19 @@ Max) in headless Chromium, and reports:
 **Exit code 0 = PASS, 1 = FAIL.** On FAIL the output lists the exact elements
 and pixel excess — fix the CSS, re-run, repeat until PASS.
 
+## Landscape pass (mandatory)
+
+The app is played in landscape (mobile-landscape branch of `GameLayout`).
+After the portrait pass, run the landscape pass over all harnesses:
+
+```bash
+cd client && npm run test:mobile:landscape
+# = node scripts/mobileRespCheck.mjs --widths 568,667,736,844,926,1023 --height 375
+# affected harness only: npm run test:mobile:landscape -- mobile-resp-test
+```
+
+The check is only complete when **both passes PASS** (exit code 0 each).
+
 ## Run only the affected harness
 
 ```bash
@@ -53,7 +72,9 @@ Generate screenshots and **look at them** (the `read` tool renders PNGs):
 
 ```bash
 cd client && npm run test:mobile -- --screenshots /tmp/resp-shots
+cd client && npm run test:mobile:landscape -- --screenshots /tmp/resp-shots-land
 # then read /tmp/resp-shots/<harness>-360.png and <harness>-390.png
+# and one landscape shot, e.g. /tmp/resp-shots-land/<harness>-667.png
 ```
 
 Check: content fits, no element is cut off, tap targets are usable, the bottom
@@ -66,7 +87,7 @@ nav bar (`h-16`) does not cover content (content has `pb-16`), text is legible.
 | `mobile-resp-test.html`    | `views/PlayersTab.jsx` |
 | `scout-resp-test.html`     | `views/PlayerSearchView.jsx` |
 | `intervencao-test.html`    | `components/match/tabs/IntervencaoView.jsx` |
-| `game-landscape-test.html` | `GameLayout.jsx` — skeleton do ramo mobile-landscape (banda vazia à esquerda + pill "AO VIVO" a cobrir o fim do conteúdo). Correr em viewport landscape: `npm run test:mobile -- game-landscape-test --widths 568,667,736,844,926,1023 --height 375` |
+| `game-landscape-test.html` | `GameLayout.jsx` — skeleton do ramo mobile-landscape (banda vazia à esquerda + pill "AO VIVO" a cobrir o fim do conteúdo). Já corre na landscape pass (`npm run test:mobile:landscape`). |
 
 - Changed file maps to a harness → run that harness.
 - Changed file is shared (`GameLayout.jsx`, `src/components/**`, `index.css`,
@@ -111,9 +132,10 @@ The JSON must include `viewport`, `pageOverflowPx`, `clippedRows` (or
 
 ## Rules
 
-1. **Never report the task as finished (and never commit) while the check
-   FAILs.** Fix and re-run until PASS.
-2. Run the numeric check **and** look at at least one screenshot (360 or 390).
+1. **Never report the task as finished (and never commit) while either pass
+   (portrait or landscape) FAILs.** Fix and re-run until both PASS.
+2. Run the numeric check **and** look at at least one portrait screenshot
+   (360 or 390) and one landscape screenshot (e.g. 667).
 3. If you created a new harness, keep it in the commit (it is a regression
    asset, like the other `*-test.html` files).
 4. Commit per the `auto-commit` skill (stage only the files you changed).

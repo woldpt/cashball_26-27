@@ -17,7 +17,8 @@
 | Backend dev · typecheck · build+start | `cd server && npm run dev` · `npm run typecheck` · `npm run build && npm run start` |
 | Seed | `cd server && npm run seed` |
 | Frontend dev · lint · JSDoc check | `cd client && npm run dev` · `npm run lint` · `npm run check:types` |
-| Mobile (obrigatório após mudar layout/estilo) | `cd client && npm run test:mobile` |
+| Mobile — portrait (mudança estrutural de layout) | `cd client && npm run test:mobile` |
+| Mobile — landscape (idem, obrigatório) | `cd client && npm run test:mobile:landscape` |
 | Audit socket.io · audit de sala | `cd server && npm run audit:socketio` · `npm run audit:gamestate <ROOM_CODE>` |
 | Repair job offer | `cd server && npm run repair:joboffer <ROOM_CODE> [--fix]` |
 | Crash-restart E2E (clona p/ `game_CRASHT.db`, limpa ao fim) | `cd server && npm run test:crash-recovery` (origem: `CRASHTEST_ROOM=XXXX`) |
@@ -56,5 +57,5 @@ Replay seguro pós-restart (`applied_weeks`, `recoverFinalizedSlot`), WAL e back
 
 - **Commit automático** após cada alteração verificada — skill `.pi/skills/auto-commit/SKILL.md`. Mensagem foca no **porquê** (ex. `fix: prevent duplicate NPC bids in auctions`). Nunca push sem pedido explícito.
 - **Memória entre sessões:** ao fim de cada tarefa atualizar `NOTES.md` (em curso, último estado, decisões, armadilhas) antes de commitar/terminar. Regra permanente → mover para os docs acima e remover de `NOTES.md`.
-- **Mudança de layout/estilo** → skill `mobile-resp-check` antes de terminar/commitar.
+- **Mudança estrutural de layout** (nova view/tab/modal, `GameLayout.jsx`, `index.css`, novo componente partilhado, grid/flex/larguras de container) → skill `mobile-resp-check` com as **duas** passagens (portrait + landscape) antes de terminar/commitar. Tweaks pequenos (padding, cores, texto, `className` pontual) não disparam a skill.
 - **Design:** seguir `STYLE.md` (tokens, tipografia, cards, badges); referência: `client/src/views/PlayersTab.jsx`.
