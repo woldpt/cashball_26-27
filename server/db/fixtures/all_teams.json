@@ -6900,140 +6900,140 @@
         "capacity": 8000
       },
       "manager": {
-        "name": "Vítor Paneira"
+        "name": "Alex Costa"
       },
       "players": [
         {
-          "name": "Rafa Oliveira",
-          "country": "🇵🇹",
+          "name": "Dudu",
+          "country": "🇩🇪",
           "position": "GR",
-          "age": 22
-        },
-        {
-          "name": "Cristiano Figueiredo",
-          "country": "🇵🇹",
-          "position": "GR",
-          "age": 35
-        },
-        {
-          "name": "Tiago Mesquita",
-          "country": "🇵🇹",
-          "position": "DEF",
-          "age": 35
-        },
-        {
-          "name": "Rafael Vieira",
-          "country": "🇵🇹",
-          "position": "DEF",
-          "age": 34
-        },
-        {
-          "name": "Tiago Cerveira",
-          "country": "🇵🇹",
-          "position": "DEF",
-          "age": 34
-        },
-        {
-          "name": "João Sidónio",
-          "country": "🇵🇹",
-          "position": "DEF",
           "age": 27
         },
         {
-          "name": "Diogo Castro",
+          "name": "Lourenço",
           "country": "🇵🇹",
-          "position": "DEF",
+          "position": "GR",
+          "age": 19
+        },
+        {
+          "name": "Sébastien Cibois",
+          "country": "🇫🇷",
+          "position": "GR",
+          "age": 28
+        },
+        {
+          "name": "Wellington Santana",
+          "country": "🇧🇷",
+          "position": "GR",
           "age": 29
         },
         {
-          "name": "Nuno Cunha",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 25
-        },
-        {
-          "name": "João Neto",
+          "name": "Edney Silva",
           "country": "🇧🇷",
-          "position": "MED",
-          "age": 23
-        },
-        {
-          "name": "Caio Rafael",
-          "country": "🇧🇷",
-          "position": "MED",
+          "position": "DEF",
           "age": 22
         },
         {
-          "name": "Tomás Castro",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 27
+          "name": "Georgii Tunguliiadi",
+          "country": "🇷🇺",
+          "position": "DEF",
+          "age": 21
         },
         {
-          "name": "Tomás Podstawski",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 31
-        },
-        {
-          "name": "José Anunciação",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 18
-        },
-        {
-          "name": "João Pedro",
+          "name": "Jarleysom",
           "country": "🇧🇷",
-          "position": "ATA",
-          "age": 23
-        },
-        {
-          "name": "Miguel Falé",
-          "country": "🇵🇹",
-          "position": "ATA",
+          "position": "DEF",
           "age": 22
         },
         {
-          "name": "Higor Platiny",
-          "country": "🇧🇷",
-          "position": "ATA",
-          "age": 35
-        },
-        {
-          "name": "Vitinho",
-          "country": "🇧🇷",
-          "position": "ATA",
-          "age": 22
-        },
-        {
-          "name": "Sacra",
+          "name": "João Reis",
           "country": "🇵🇹",
-          "position": "ATA",
+          "position": "DEF",
+          "age": 34
+        },
+        {
+          "name": "Marlon Júnior",
+          "country": "🇵🇹",
+          "position": "DEF",
+          "age": 21
+        },
+        {
+          "name": "Samy",
+          "country": "🇦🇴",
+          "position": "DEF",
           "age": 26
         },
         {
-          "name": "Marcão",
+          "name": "Thauan Lara",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 25
+          "age": 22
         },
         {
-          "name": "Wesley Junio",
+          "name": "Jader",
           "country": "🇧🇷",
-          "position": "DEF",
-          "age": 25
-        },
-        {
-          "name": "Leandro Dias",
-          "country": "🇵🇹",
-          "position": "DEF",
+          "position": "MED",
           "age": 23
         },
         {
-          "name": "Marco Freitas",
+          "name": "João Casimiro",
           "country": "🇵🇹",
-          "position": "GR",
+          "position": "MED",
+          "age": 20
+        },
+        {
+          "name": "Paulo Souto",
+          "country": "🇧🇷",
+          "position": "MED",
+          "age": 20
+        },
+        {
+          "name": "Samuel Yépié Yépié",
+          "country": "🇫🇷",
+          "position": "MED",
+          "age": 24
+        },
+        {
+          "name": "Yago Gonçalves",
+          "country": "🇧🇷",
+          "position": "MED",
+          "age": 20
+        },
+        {
+          "name": "Yanis da Rocha",
+          "country": "🇵🇹",
+          "position": "MED",
+          "age": 22
+        },
+        {
+          "name": "Diogo Cabral",
+          "country": "🇵🇹",
+          "position": "ATA",
           "age": 23
+        },
+        {
+          "name": "Midana Cassamá",
+          "country": "🇬🇼",
+          "position": "ATA",
+          "age": 24
+        },
+        {
+          "name": "Shoya Nakajima",
+          "country": "🇯🇵",
+          "position": "ATA",
+          "age": 32
+        },
+        {
+          "name": "Tiago Mamede",
+          "country": "🇵🇹",
+          "position": "ATA",
+          "age": 24
+        },
+        {
+          "name": "Welinton Júnior",
+          "country": "🇧🇷",
+          "position": "ATA",
+          "age": 33
         }
       ],
       "crest": "/logos/portimonense.png"

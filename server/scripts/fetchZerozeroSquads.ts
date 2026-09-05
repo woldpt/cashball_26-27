@@ -83,7 +83,7 @@ const TEAMS: Array<{ name: string; division: number; url: string }> = [
   { name: "Leixões", division: 2, url: "/equipa/leixoes/1727?search=1" },
   { name: "Felgueiras", division: 2, url: "/equipa/fc-felgueiras/11129?search=1" },
   { name: "Penafiel", division: 2, url: "/equipa/fc-penafiel/30?search=1" },
-  { name: "Portimonense", division: 2, url: "/equipa/portimonense/13" },
+  { name: "Portimonense", division: 2, url: "/equipa/portimonense/33?search=1" },
   // D3 novas (4)
   { name: "Vit. Setúbal", division: 3, url: "/equipa/vitoria-fc/35?search=1" },
   { name: "São João Ver", division: 3, url: "/equipa/s-joao-ver/3642?search=1" },
