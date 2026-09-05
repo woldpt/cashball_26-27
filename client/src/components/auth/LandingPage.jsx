@@ -292,13 +292,6 @@ const LandingPage = ({
 						</span>
 					</div>
 
-					<div className="inline-flex items-center gap-2 border border-green-500/20 bg-green-500/5 px-3 py-1 rounded-full mb-8 short:mb-2">
-						<span className="w-1 h-1 rounded-full bg-green-400" />
-						<span className="text-[10px] uppercase tracking-[0.35em] text-green-400/80 font-bold">
-							Gestão de Futebol Multiplayer
-						</span>
-					</div>
-
 					{/* Hero title: base size clamps to the viewport so "PROSPERA."
 					    never overflows 320px screens (60px text-6xl = 307px wide).
 					    At >=360px the clamp resolves to exactly 3.75rem (text-6xl). */}
