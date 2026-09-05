@@ -113,16 +113,24 @@ function measure() {
     .sort((a, b) => b.excess - a.excess)
     .slice(0, 10);
 
-  // Landscape fit: does the modal card (max-w-2xl) fit vertically inside the
-  // fullscreen backdrop (inset-0 p-4 → available = vh - 32px)?
+  // Landscape fit: the card (max-w-2xl) must NOT be clipped by the viewport.
+  // Fullscreen backdrop is inset-0 p-4 → available = vh - 32px.
+  //
+  // Comparamos a height RENDERED (offsetHeight), não o scrollHeight: abaixo de
+  // `short:` (max-height 560px) o card é deliberadamente limitado com
+  // `max-h-[calc(100dvh-2rem)]` + `overflow-y-auto`, pelo que o conteúdo rola
+  // DENTRO do card e a height renderizada sempre cabe. Um card clipado
+  // (variant/cap em falta) renderizaria mais alto que o disponível e FAIL.
   const card = document.querySelector(".max-w-2xl");
   const availH = vh - 32;
-  const cardScrollH = card ? card.scrollHeight : 0;
+  const renderedH = card ? card.offsetHeight : 0;
+  const cardScrollH = card ? card.scrollHeight : 0; // info: conteúdo que rola no card
   const modalFit = {
     viewportH: vh,
     availableH: availH,
+    renderedH,
     cardScrollH,
-    fits: cardScrollH <= availH + 1,
+    fits: renderedH <= availH + 1,
   };
 
   return {
