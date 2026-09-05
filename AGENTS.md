@@ -3,6 +3,13 @@
 > **pt-PT (europeu) SEMPRE** — UI, mensagens, narração, comentários. "Auto-golo" (nunca "golo de contra"/"contra" — pt-BR); "marcador"/"resultado" (nunca "placar").
 > **Leia antes de trabalhar:** arranque de sessão → `NOTES.md` · backend/arquitetura → `CLAUDE.md` · UI/estilo → `STYLE.md` · UI de referência: `client/src/views/PlayersTab.jsx`.
 
+## 🤝 Protocolo antes de editar (sempre)
+
+1. **Perceber:** analisar o pedido a fundo; leitura/investigação livres (ficheiros, git, auditorias) — mas **zero edições**.
+2. **Clarificar:** o utilizador não é expert em prompts — assumir que o pedido pode ser incompleto; se ambíguo ou com decisões em aberto, perguntar (máx. 3–4 perguntas com opções) em vez de presumir.
+3. **Planear:** apresentar plano curto — objetivo, ficheiros a tocar, abordagem, verificação/audits aplicáveis.
+4. **Aguardar OK:** nenhuma criação/edição/apagar de ficheiros sem aprovação explícita do utilizador (1 OK vale para o plano aprovado). Surgiu algo fora do plano → parar e perguntar de novo.
+
 ## ⚡ Comandos
 
 | Tarefa | Comando |
