@@ -8250,140 +8250,140 @@
         "capacity": 2800
       },
       "manager": {
-        "name": "Manuel Rodrigues"
+        "name": "Carlos Pinto"
       },
       "players": [
         {
-          "name": "Bruno Alves",
+          "name": "Pedro Ferreira",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 18
-        },
-        {
-          "name": "Ricardo Neves",
-          "country": "🇵🇹",
-          "position": "GR",
-          "age": 37
-        },
-        {
-          "name": "João Rocha",
-          "country": "🇵🇹",
-          "position": "GR",
-          "age": 19
-        },
-        {
-          "name": "Jota Cruz",
-          "country": "🇵🇹",
-          "position": "DEF",
           "age": 23
         },
         {
-          "name": "Diogo Silva",
+          "name": "Rodrigo Santos",
           "country": "🇵🇹",
-          "position": "DEF",
-          "age": 20
+          "position": "GR",
+          "age": 26
         },
         {
-          "name": "Alex",
+          "name": "Thierry Moura",
+          "country": "🇵🇹",
+          "position": "GR",
+          "age": 19
+        },
+        {
+          "name": "Afonso Simão",
+          "country": "🇵🇹",
+          "position": "DEF",
+          "age": 25
+        },
+        {
+          "name": "Alex Corado",
           "country": "🇵🇹",
           "position": "DEF",
           "age": 19
         },
         {
-          "name": "Gonçalo Sá",
+          "name": "Bernardo Guedes",
           "country": "🇵🇹",
           "position": "DEF",
           "age": 21
         },
         {
-          "name": "Varejão",
+          "name": "Duarte Bonito",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 23
+          "age": 21
         },
         {
-          "name": "Charles Kouassi",
-          "country": "🇨🇮",
+          "name": "Gonçalo Paiva",
+          "country": "🇵🇹",
           "position": "DEF",
-          "age": 23
+          "age": 20
         },
         {
-          "name": "Leandro Mendonça",
-          "country": "🇬🇼",
+          "name": "Gui Gomes",
+          "country": "🇵🇹",
+          "position": "DEF",
+          "age": 22
+        },
+        {
+          "name": "Isah Ali",
+          "country": "🇳🇬",
+          "position": "DEF",
+          "age": 25
+        },
+        {
+          "name": "Joaquim Vaz",
+          "country": "🇵🇹",
+          "position": "DEF",
+          "age": 19
+        },
+        {
+          "name": "Filipe Quintas",
+          "country": "🇵🇹",
           "position": "MED",
           "age": 20
         },
         {
-          "name": "Elísio Esteves",
+          "name": "Fran Pereira",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 37
+          "age": 24
         },
         {
-          "name": "Caio Vidal",
+          "name": "Henrique Henriques",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 20
+          "age": 27
         },
         {
-          "name": "José Coelho",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 20
-        },
-        {
-          "name": "Rodrigo Leite",
+          "name": "Laurantino Mendes",
           "country": "🇵🇹",
           "position": "MED",
           "age": 21
         },
         {
-          "name": "Tomás Mendes",
+          "name": "Tiago Rodrigues",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 19
+          "age": 25
         },
         {
-          "name": "Stanley Awurum",
-          "country": "🇳🇬",
-          "position": "ATA",
-          "age": 36
+          "name": "Zé Maria",
+          "country": "🇵🇹",
+          "position": "MED",
+          "age": 22
         },
         {
-          "name": "Iduitua David",
-          "country": "🇳🇬",
-          "position": "ATA",
-          "age": 29
-        },
-        {
-          "name": "John Anderson",
+          "name": "Breno Zanetti",
           "country": "🇧🇷",
           "position": "ATA",
-          "age": 29
+          "age": 21
         },
         {
-          "name": "Armand Bagramyan",
-          "country": "🇺🇸",
+          "name": "Dedé",
+          "country": "🇨🇻",
           "position": "ATA",
-          "age": 30
+          "age": 20
         },
         {
-          "name": "Diogo Ferreira",
+          "name": "Gonçalo Guido",
           "country": "🇵🇹",
           "position": "ATA",
           "age": 19
         },
         {
-          "name": "Alvand Moosaei",
-          "country": "🇨🇦",
-          "position": "DEF",
-          "age": 18
+          "name": "Leonel Samaina",
+          "country": "🇦🇴",
+          "position": "ATA",
+          "age": 21
         },
         {
-          "name": "Afonso Martins",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 21
+          "name": "Matar Manga",
+          "country": "🇬🇲",
+          "position": "ATA",
+          "age": 22
         }
       ],
       "crest": "/logos/sintrense.png"

@@ -94,7 +94,7 @@ const TEAMS: Array<{ name: string; division: number; url: string }> = [
   { name: "Malveira", division: 4, url: "/equipa/at-malveira/3558?search=1" },
   { name: "Alcochetense", division: 4, url: "/equipa/alcochetense/3548?search=1" },
   { name: "O Elvas", division: 4, url: "/equipa/o-elvas/2180?search=1" },
-  { name: "Sintrense", division: 4, url: "/equipa/sintrense/3590" },
+  { name: "Sintrense", division: 4, url: "/equipa/sintrense/3655?search=1" },
   // D5 distritais novas (4) — sem zerozero fiável, marcar coverage low
   { name: "Cabrela", division: 5, url: "/equipa/gd-cabrela/11054?search=1" },
   { name: "Escouralense", division: 5, url: "/equipa/escouralense/6806?search=1" },
