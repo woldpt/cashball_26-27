@@ -6750,140 +6750,140 @@
         "capacity": 7000
       },
       "manager": {
-        "name": "Rui Eduardo Borges"
+        "name": "José Manuel Aira"
       },
       "players": [
         {
-          "name": "Gonçalo Ferreira",
-          "country": "🇵🇹",
+          "name": "Eric Puerto",
+          "country": "🇪🇸",
           "position": "GR",
-          "age": 22
+          "age": 23
         },
         {
-          "name": "Manu",
-          "country": "🇵🇹",
-          "position": "GR",
-          "age": 27
-        },
-        {
-          "name": "José Costa",
+          "name": "Miguel Oliveira",
           "country": "🇵🇹",
           "position": "GR",
           "age": 32
         },
         {
-          "name": "João Serrão",
+          "name": "Tiago Ribeiro",
+          "country": "🇵🇹",
+          "position": "GR",
+          "age": 19
+        },
+        {
+          "name": "Cláudio Silva",
           "country": "🇵🇹",
           "position": "DEF",
           "age": 26
         },
         {
-          "name": "Tiago Araújo",
+          "name": "Douglas",
+          "country": "🇧🇷",
+          "position": "DEF",
+          "age": 24
+        },
+        {
+          "name": "Gonçalo Negrão",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 25
+          "age": 23
         },
         {
-          "name": "Jorge Miguel",
+          "name": "Iano Simão",
+          "country": "🇬🇼",
+          "position": "DEF",
+          "age": 27
+        },
+        {
+          "name": "Jaime Sánchez",
+          "country": "🇪🇸",
+          "position": "DEF",
+          "age": 31
+        },
+        {
+          "name": "João Miguel",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 35
+          "age": 32
         },
         {
-          "name": "Joel Monteiro",
-          "country": "🇵🇹",
+          "name": "Meireles Injai",
+          "country": "🇬🇼",
           "position": "DEF",
-          "age": 35
+          "age": 23
         },
         {
-          "name": "Diogo Semedo",
-          "country": "🇨🇻",
+          "name": "Teddy Alloh",
+          "country": "🇫🇷",
           "position": "DEF",
-          "age": 19
+          "age": 24
         },
         {
-          "name": "João Tentugal",
-          "country": "🇵🇹",
-          "position": "DEF",
-          "age": 28
-        },
-        {
-          "name": "Tiago Antunes",
+          "name": "Francisco Varela",
           "country": "🇵🇹",
           "position": "MED",
           "age": 26
         },
         {
-          "name": "Rafael Figueiredo",
-          "country": "🇵🇹",
+          "name": "Konrad Nfanseu",
+          "country": "🇨🇲",
           "position": "MED",
           "age": 21
         },
         {
-          "name": "Fábio Borges",
-          "country": "🇵🇹",
+          "name": "Mairlon Oliveira",
+          "country": "🇧🇷",
           "position": "MED",
-          "age": 27
+          "age": 21
         },
         {
-          "name": "Ivo Lemos",
+          "name": "Pedro Sá",
           "country": "🇵🇹",
           "position": "MED",
           "age": 32
         },
         {
-          "name": "Deven Monteiro",
-          "country": "🇨🇻",
+          "name": "Tomás Teixeira",
+          "country": "🇵🇹",
           "position": "MED",
-          "age": 25
+          "age": 19
         },
         {
-          "name": "Miguel Ângelo",
-          "country": "🇵🇹",
+          "name": "Álex Carbonell",
+          "country": "🇪🇸",
           "position": "MED",
           "age": 28
         },
         {
-          "name": "Joel Silva",
-          "country": "🇵🇹",
+          "name": "Davo",
+          "country": "🇪🇸",
           "position": "ATA",
-          "age": 35
+          "age": 31
         },
         {
-          "name": "Salvador Botelho",
+          "name": "João Pinto",
           "country": "🇵🇹",
-          "position": "ATA",
-          "age": 18
-        },
-        {
-          "name": "Zé Thiago",
-          "country": "🇧🇷",
           "position": "ATA",
           "age": 24
         },
         {
-          "name": "Kevin Makinde",
-          "country": "🇧🇷",
+          "name": "Juanda",
+          "country": "🇨🇴",
           "position": "ATA",
-          "age": 20
+          "age": 23
         },
         {
-          "name": "Mica Évora",
-          "country": "🇵🇹",
+          "name": "Max Svensson",
+          "country": "🇪🇸",
           "position": "ATA",
-          "age": 25
+          "age": 24
         },
         {
-          "name": "Nuca",
+          "name": "Ricardo Schutte",
           "country": "🇵🇹",
-          "position": "DEF",
+          "position": "ATA",
           "age": 28
-        },
-        {
-          "name": "Diogo Faria",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 21
         }
       ],
       "crest": "/logos/penafiel.png"
