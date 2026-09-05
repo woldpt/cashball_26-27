@@ -455,6 +455,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
             goalsAgainst: team.goals_against ?? 0,
             colorPrimary: team.color_primary ?? "#888888",
             colorSecondary: team.color_secondary ?? "#ffffff",
+            crest: team.crest ?? null,
             stadiumCapacity: team.stadium_capacity ?? 0,
             stadiumName: team.stadium_name ?? "",
             coaches,
@@ -816,7 +817,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     const team = await runGet<AnyRow>(
       game.db,
       "SELECT id, name, division, budget, points, wins, draws, losses, " +
-        "goals_for, goals_against, color_primary, color_secondary, " +
+        "goals_for, goals_against, color_primary, color_secondary, crest, " +
         "stadium_capacity, stadium_name FROM teams WHERE id = ?",
       [toTeamId],
     );
@@ -840,6 +841,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
             goalsAgainst: team.goals_against ?? 0,
             colorPrimary: team.color_primary ?? "#888888",
             colorSecondary: team.color_secondary ?? "#ffffff",
+            crest: team.crest ?? null,
             stadiumCapacity: team.stadium_capacity ?? 0,
             stadiumName: team.stadium_name ?? "",
             coaches,

@@ -336,6 +336,7 @@ export function registerSessionSocketHandlers(
 							goalsAgainst: d.goals_against ?? 0,
 							colorPrimary: d.color_primary ?? "#888888",
 							colorSecondary: d.color_secondary ?? "#ffffff",
+							crest: d.crest ?? null,
 							stadiumCapacity: d.stadium_capacity ?? 0,
 							stadiumName: d.stadium_name ?? "",
 							coaches,

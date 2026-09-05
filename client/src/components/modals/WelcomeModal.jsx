@@ -52,7 +52,7 @@ export function WelcomeModal({ welcomeModal, me, setWelcomeModal }) {
                   : "linear-gradient(160deg, rgba(45,106,79,0.15) 0%, rgba(10,10,10,0.6) 100%)",
               }}
             >
-              {/* Colour swatch / crest placeholder */}
+              {/* Crest / colour swatch */}
               <div className="relative flex items-center justify-center">
                 <div
                   className="absolute w-20 h-20 sm:w-28 sm:h-28 rounded-full blur-3xl opacity-30"
@@ -60,8 +60,20 @@ export function WelcomeModal({ welcomeModal, me, setWelcomeModal }) {
                     backgroundColor: welcomeModal.colorPrimary || "#2d6a4f",
                   }}
                 />
+                {welcomeModal.crest ? (
+                  <img
+                    src={welcomeModal.crest}
+                    alt={welcomeModal.teamName}
+                    className="relative w-20 h-20 sm:w-24 sm:h-24 short:w-16 short:h-16 object-contain drop-shadow-xl bg-white rounded-xl p-1.5 border-2 border-white/20"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                      const fb = e.currentTarget.nextElementSibling;
+                      if (fb) fb.style.display = "flex";
+                    }}
+                  />
+                ) : null}
                 <div
-                  className="relative w-14 h-14 sm:w-20 sm:h-20 short:w-14 short:h-14 rounded-lg border-2 border-white/20 shadow-xl flex items-center justify-center text-3xl sm:text-4xl short:text-3xl"
+                  className={`relative w-14 h-14 sm:w-20 sm:h-20 short:w-14 short:h-14 rounded-lg border-2 border-white/20 shadow-xl items-center justify-center text-3xl sm:text-4xl short:text-3xl ${welcomeModal.crest ? "hidden" : "flex"}`}
                   style={{
                     backgroundColor: welcomeModal.colorPrimary || "#2d6a4f",
                   }}
