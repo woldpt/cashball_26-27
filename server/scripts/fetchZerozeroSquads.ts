@@ -70,36 +70,36 @@ const TEAMS: Array<{ name: string; division: number; url: string }> = [
   { name: "U. Montemor", division: 5, url: "/equipa/grupo-uniao-sport/3712" },
   { name: "Monte do Trigo", division: 5, url: "/equipa/monte-trigo/3613" },
   { name: "Vendas Novas", division: 5, url: "/equipa/estrela-fc/3581" },
-  { name: "At. Reguengos", division: 5, url: "/equipa/at-reguengos/6808" },
+  { name: "At. Reguengos", division: 5, url: "/equipa/at-reguengos/6808?search=1" },
   { name: "Sp. Viana", division: 5, url: "/equipa/sp-viana/10574" },
   { name: "Arcoense", division: 5, url: "/equipa/arcoense/6809" },
   { name: "Redondense", division: 5, url: "/equipa/redondense/6807" },
   // D1 novas (4)
-  { name: "Arouca", division: 1, url: "/equipa/fc-arouca/3291" },
+  { name: "Arouca", division: 1, url: "/equipa/fc-arouca/3555?search=1" },
   { name: "Vitória SC", division: 1, url: "/equipa/vitoria-sc" },
-  { name: "Alverca", division: 1, url: "/equipa/alverca/2317" },
-  { name: "Rio Ave", division: 1, url: "/equipa/rio-ave" },
+  { name: "Alverca", division: 1, url: "/equipa/fc-alverca/1?search=1" },
+  { name: "Rio Ave", division: 1, url: "/equipa/rio-ave/31?search=1" },
   // D2 novas (4)
   { name: "Leixões", division: 2, url: "/equipa/leixoes/15" },
   { name: "Felgueiras", division: 2, url: "/equipa/felgueiras-1932/3682" },
   { name: "Penafiel", division: 2, url: "/equipa/penafiel/14" },
   { name: "Portimonense", division: 2, url: "/equipa/portimonense/13" },
   // D3 novas (4)
-  { name: "Vit. Setúbal", division: 3, url: "/equipa/vitoria-setubal" },
-  { name: "São João Ver", division: 3, url: "/equipa/s-joao-de-ver/4287" },
+  { name: "Vit. Setúbal", division: 3, url: "/equipa/vitoria-fc/35?search=1" },
+  { name: "São João Ver", division: 3, url: "/equipa/s-joao-ver/3642?search=1" },
   { name: "Fafe", division: 3, url: "/equipa/ad-fafe/3570" },
   { name: "Lusitano Évora", division: 3, url: "/equipa/lusitano-evora/4270" },
   // D4 novas (5)
   { name: "Oliv. Hospital", division: 4, url: "/equipa/oliveira-hospital/3598" },
-  { name: "Malveira", division: 4, url: "/equipa/malveira/6805" },
+  { name: "Malveira", division: 4, url: "/equipa/at-malveira/3558?search=1" },
   { name: "Alcochetense", division: 4, url: "/equipa/alcochetense/3592" },
   { name: "O Elvas", division: 4, url: "/equipa/o-elvas/3604" },
   { name: "Sintrense", division: 4, url: "/equipa/sintrense/3590" },
   // D5 distritais novas (4) — sem zerozero fiável, marcar coverage low
-  { name: "Cabrela", division: 5, url: "" },
-  { name: "Escouralense", division: 5, url: "" },
-  { name: "Aljustrelense", division: 5, url: "" },
-  { name: "Castrense", division: 5, url: "" },
+  { name: "Cabrela", division: 5, url: "/equipa/gd-cabrela/11054?search=1" },
+  { name: "Escouralense", division: 5, url: "/equipa/escouralense/6806?search=1" },
+  { name: "Aljustrelense", division: 5, url: "/equipa/aljustrelense/4327?search=1" },
+  { name: "Castrense", division: 5, url: "/equipa/fc-castrense/5657?search=1" },
 ];
 
 const POS_MAP: Record<string, "GR" | "DEF" | "MED" | "ATA"> = {
@@ -192,7 +192,8 @@ async function fetchTeam(
   if (!team.url) {
     return { name: team.name, division: team.division, zerozeroUrl: team.url, coach: null, players: [], coverage: "low" };
   }
-  const url = `${BASE}${team.url}?epoca_id=${SEASON}`;
+  const sep = team.url.includes("?") ? "&" : "?";
+  const url = `${BASE}${team.url}${sep}epoca_id=${SEASON}`;
   const res = await fetch(url, {
     headers: { "User-Agent": UA, "Accept-Language": "pt-PT,pt;q=0.9" },
     signal: AbortSignal.timeout(30000),
