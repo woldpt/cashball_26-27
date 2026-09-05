@@ -226,7 +226,10 @@ export function RoomHub({
             </div>
 
             {/* Players list */}
-            <div className="flex-1 max-h-40 sm:max-h-none overflow-y-auto divide-y divide-outline-variant/10">
+            {/* max-h proporcional (16dvh) em vez de 160px fixos: em alturas
+                curtas (landscape, h=375) o painel tem só ~295px e 160px de
+                lista deixavam o input fora do ecrã. */}
+            <div className="flex-1 max-h-[16dvh] sm:max-h-none overflow-y-auto divide-y divide-outline-variant/10">
               {[
                 ...players.map((p) => ({
                   name: p.name,
