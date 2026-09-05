@@ -307,7 +307,7 @@ export function registerSessionSocketHandlers(
 		);
 
 		game.db.get(
-			"SELECT id, name, division, budget, points, wins, draws, losses, goals_for, goals_against, color_primary, color_secondary, stadium_capacity, stadium_name FROM teams WHERE id = ?",
+			"SELECT id, name, division, budget, points, wins, draws, losses, goals_for, goals_against, color_primary, color_secondary, crest, stadium_capacity, stadium_name FROM teams WHERE id = ?",
 			[team.id],
 			(err: any, details: any) => {
 				if (err) {

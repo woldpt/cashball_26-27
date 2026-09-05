@@ -688,12 +688,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		for (const fixture of drawFixtures) {
 			const home = await runGet(
 				game.db,
-				"SELECT id, name, color_primary, color_secondary FROM teams WHERE id = ?",
+				"SELECT id, name, color_primary, color_secondary, crest FROM teams WHERE id = ?",
 				[fixture.homeTeamId],
 			);
 			const away = await runGet(
 				game.db,
-				"SELECT id, name, color_primary, color_secondary FROM teams WHERE id = ?",
+				"SELECT id, name, color_primary, color_secondary, crest FROM teams WHERE id = ?",
 				[fixture.awayTeamId],
 			);
 			enrichedFixtures.push({

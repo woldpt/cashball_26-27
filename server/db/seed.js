@@ -106,7 +106,7 @@ db.serialize(() => {
     "INSERT INTO managers (name, reputation) VALUES (?, ?)",
   );
   const insertTeam = db.prepare(
-    "INSERT INTO teams (name, manager_id, division, stadium_capacity, stadium_name, budget, color_primary, color_secondary) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO teams (name, manager_id, division, stadium_capacity, stadium_name, budget, color_primary, color_secondary, crest) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
   const insertPlayer = db.prepare(
     "INSERT INTO players (name, position, skill, age, form, resistance, aggressiveness, nationality, value, wage, goals, is_star, potential, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)",
@@ -157,6 +157,7 @@ db.serialize(() => {
     const budget = BUDGET_BY_DIVISION[teamData.division || 4] ?? 1000000;
 
     const stadiumName = stadium.name || "";
+    const crest = teamData.crest || null;
 
     insertTeam.run(
       teamData.name,
@@ -167,6 +168,7 @@ db.serialize(() => {
       budget,
       primaryColor,
       secondaryColor,
+      crest,
     );
 
     // Load all players from fixture — no random names, no fixed limit

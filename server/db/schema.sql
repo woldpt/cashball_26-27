@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS teams (
   loan_amount INTEGER DEFAULT 0,
   color_primary TEXT,
   color_secondary TEXT,
+  crest TEXT,
   morale INTEGER DEFAULT 50,
   FOREIGN KEY(manager_id) REFERENCES managers(id)
 );

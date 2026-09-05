@@ -1,3 +1,5 @@
+import * as React from "react";
+
 /* ── TeamCrest — crest colorido + badge do treinador ─────────────────────
  *
  * Crest quadrado (3 letras do clube na cor primary/secondary do team) com
@@ -7,12 +9,15 @@
 
 /**
  * @param {Object} props
- * @param {{color_primary?: string, color_secondary?: string, name?: string}|undefined} props.team
+ * @param {{color_primary?: string, color_secondary?: string, name?: string, crest?: string|null}|undefined} props.team
  * @param {boolean} [props.isMine]  - se o clube pertence ao utilizador
  * @param {{name?: string}|null|undefined} [props.coach] - treinador humano (se houver)
  * @param {"md"|"lg"} [props.size]
  */
 export function TeamCrest({ team, isMine = false, coach = null, size = "md" }) {
+  const hasCrest = !!team?.crest;
+  const [imgFailed, setImgFailed] = React.useState(false);
+  const showImg = hasCrest && !imgFailed;
   const dims =
     size === "lg"
       ? "w-14 h-14 sm:w-20 sm:h-20 text-base sm:text-xl rounded-xl"
@@ -21,17 +26,27 @@ export function TeamCrest({ team, isMine = false, coach = null, size = "md" }) {
         : "w-11 h-11 sm:w-12 sm:h-12 text-sm sm:text-base rounded-lg";
   return (
     <div className="relative shrink-0">
-      <span
-        className={`${dims} flex items-center justify-center font-black border-2 ${
-          isMine ? "border-primary" : "border-outline-variant/20"
-        }`}
-        style={{
-          backgroundColor: team?.color_primary || "#333",
-          color: team?.color_secondary || "#fff",
-        }}
-      >
-        {(team?.name || "").substring(0, 3).toUpperCase()}
-      </span>
+      {showImg ? (
+        <img
+          src={team.crest}
+          alt={team.name || "crest"}
+          onError={() => setImgFailed(true)}
+          className={`${dims} object-contain bg-white p-1.5 border-2 ${isMine ? "border-primary" : "border-outline-variant/20"}`}
+          loading="lazy"
+        />
+      ) : (
+        <span
+          className={`${dims} flex items-center justify-center font-black border-2 ${
+            isMine ? "border-primary" : "border-outline-variant/20"
+          }`}
+          style={{
+            backgroundColor: team?.color_primary || "#333",
+            color: team?.color_secondary || "#fff",
+          }}
+        >
+          {(team?.name || "").substring(0, 3).toUpperCase()}
+        </span>
+      )}
       {coach && (
         <span
           className={`absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-sm font-black text-[8px] tracking-widest uppercase whitespace-nowrap shadow-lg ${
