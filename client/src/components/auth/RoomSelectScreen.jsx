@@ -224,7 +224,7 @@ const RoomSelectScreen = ({
 								</button>
 							</motion.div>
 						) : (
-							<div className="grid grid-cols-1 gap-4 pb-4 sm:pb-6 sm:grid-cols-2 xl:grid-cols-3 short:gap-3 short:pb-3">
+							<div className="grid grid-cols-1 gap-3 pb-4 sm:pb-6 sm:grid-cols-2 xl:grid-cols-3 short:gap-2.5 short:pb-3">
 								{availableSaves.map((save, i) => {
 									const selected = roomCode === save.code;
 									const isLastPlayed =
@@ -240,7 +240,7 @@ const RoomSelectScreen = ({
 												delay: Math.min(0.2 + i * 0.05, 0.7),
 											}}
 											onClick={() => setRoomCode(save.code)}
-											className={`group relative flex cursor-pointer flex-col gap-3 rounded-2xl border p-5 short:p-3 transition-all duration-200 ${
+											className={`group relative flex cursor-pointer flex-col gap-2 rounded-2xl border p-4 short:p-3 transition-all duration-200 ${
 												selected
 													? "border-green-500/50 bg-green-500/[0.08] shadow-[0_0_30px_rgba(74,222,128,0.15)]"
 													: "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]"
@@ -249,7 +249,7 @@ const RoomSelectScreen = ({
 											<div className="flex items-start justify-between gap-3">
 												<div className="min-w-0">
 													<p
-														className={`font-headline truncate text-lg font-black uppercase tracking-tight ${
+														className={`font-headline truncate text-base font-black uppercase tracking-tight ${
 															selected
 																? "text-white"
 																: "text-white/80"
