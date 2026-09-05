@@ -80,7 +80,7 @@ const TEAMS: Array<{ name: string; division: number; url: string }> = [
   { name: "Alverca", division: 1, url: "/equipa/fc-alverca/1?search=1" },
   { name: "Rio Ave", division: 1, url: "/equipa/rio-ave/31?search=1" },
   // D2 novas (4)
-  { name: "Leixões", division: 2, url: "/equipa/leixoes/15" },
+  { name: "Leixões", division: 2, url: "/equipa/leixoes/1727?search=1" },
   { name: "Felgueiras", division: 2, url: "/equipa/fc-felgueiras/11129?search=1" },
   { name: "Penafiel", division: 2, url: "/equipa/penafiel/14" },
   { name: "Portimonense", division: 2, url: "/equipa/portimonense/13" },
