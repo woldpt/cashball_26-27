@@ -1,6 +1,6 @@
 ---
 name: mobile-resp-check
-description: Verify mobile responsiveness after STRUCTURAL layout changes to the client (new view/tab/modal, GameLayout.jsx, App.jsx, index.css, new shared component, grid/flex/container-width changes). NOT for small tweaks (padding, colors, text size, point className). Two mandatory passes: portrait (npm run test:mobile) + landscape (npm run test:mobile:landscape). Use after the change passes checks (lint/typecheck) and before reporting the task as finished or committing.
+description: "Verify mobile responsiveness after STRUCTURAL layout changes to the client (new view/tab/modal, GameLayout.jsx, App.jsx, index.css, new shared component, grid/flex/container-width changes). NOT for small tweaks (padding, colors, text size, point className). Two mandatory passes: portrait (npm run test:mobile) + landscape (npm run test:mobile:landscape). Use after the change passes checks (lint/typecheck) and before reporting the task as finished or committing."
 ---
 
 # Mobile Responsiveness Check

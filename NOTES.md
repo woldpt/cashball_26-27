@@ -20,7 +20,7 @@
 
 ## Armadilhas / "não fazer"
 
-- (nada)
+- Frontmatter YAML de skills (`description`): scalar plain não pode conter `:` seguido de espaço (ex. "passes: portrait") — o parser `yaml` do pi falha com `BLOCK_AS_IMPLICIT_KEY`. Sempre entre aspas duplas quando há colones internos.
 
 ## Próximos passos
 
