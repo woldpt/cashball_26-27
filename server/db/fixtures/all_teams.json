@@ -7500,140 +7500,140 @@
         "capacity": 6000
       },
       "manager": {
-        "name": "Rasmus Bertelsen"
+        "name": "Pedro Russiano"
       },
       "players": [
         {
-          "name": "Paul Izzo",
-          "country": "🇦🇺",
+          "name": "Matheus Lemes",
+          "country": "🇧🇷",
           "position": "GR",
-          "age": 31
+          "age": 24
         },
         {
-          "name": "Jannich Storch",
-          "country": "🇩🇰",
+          "name": "Duarte Martins",
+          "country": "🇵🇹",
           "position": "GR",
-          "age": 33
+          "age": 24
         },
         {
-          "name": "Mert Demirci",
-          "country": "🇪🇸",
+          "name": "Ricardo Batista",
+          "country": "🇦🇴",
           "position": "GR",
+          "age": 38
+        },
+        {
+          "name": "Marcos Soares",
+          "country": "🇧🇷",
+          "position": "DEF",
+          "age": 29
+        },
+        {
+          "name": "Eurichano Setila",
+          "country": "🇵🇹",
+          "position": "DEF",
           "age": 22
         },
         {
-          "name": "Nikolas Dyhr",
-          "country": "🇩🇰",
+          "name": "Marco Baixinho",
+          "country": "🇵🇹",
           "position": "DEF",
-          "age": 25
+          "age": 37
         },
         {
-          "name": "Nikolai Hopland",
-          "country": "🇳🇴",
-          "position": "DEF",
-          "age": 22
-        },
-        {
-          "name": "Wessel Dammers",
-          "country": "🇳🇱",
-          "position": "DEF",
-          "age": 31
-        },
-        {
-          "name": "Lucas Lissens",
-          "country": "🇧🇪",
-          "position": "DEF",
-          "age": 25
-        },
-        {
-          "name": "Sabil Hansen",
-          "country": "🇩🇰",
+          "name": "Francisco Rosado",
+          "country": "🇵🇹",
           "position": "DEF",
           "age": 20
         },
         {
-          "name": "Benjamin Orn",
-          "country": "🇸🇪",
+          "name": "Cassiano",
+          "country": "🇧🇷",
           "position": "DEF",
-          "age": 22
+          "age": 32
         },
         {
-          "name": "John Björkengren",
-          "country": "🇸🇪",
+          "name": "Rodrigo Monteiro",
+          "country": "🇵🇹",
+          "position": "DEF",
+          "age": 26
+        },
+        {
+          "name": "Ousmane Diagne",
+          "country": "🇸🇳",
           "position": "MED",
-          "age": 27
+          "age": 28
         },
         {
-          "name": "Laurits Pedersen",
-          "country": "🇩🇰",
-          "position": "MED",
-          "age": 20
-        },
-        {
-          "name": "Axel Henriksson",
-          "country": "🇸🇪",
+          "name": "Bura",
+          "country": "🇬🇼",
           "position": "MED",
           "age": 24
         },
         {
-          "name": "Mathias Greve",
-          "country": "🇩🇰",
+          "name": "Tiago Baptista",
+          "country": "🇵🇹",
           "position": "MED",
-          "age": 31
+          "age": 30
         },
         {
-          "name": "Elies Mahmoud",
-          "country": "🇫🇷",
+          "name": "Jannick Buyla",
+          "country": "🇬🇶",
           "position": "MED",
-          "age": 25
+          "age": 24
         },
         {
-          "name": "Frederik Lauenborg",
-          "country": "🇩🇰",
+          "name": "José Mussole",
+          "country": "🇦🇴",
           "position": "MED",
-          "age": 29
-        },
-        {
-          "name": "Amady Camara",
-          "country": "🇲🇱",
-          "position": "ATA",
           "age": 21
         },
         {
-          "name": "Mike Themsen",
-          "country": "🇩🇰",
-          "position": "ATA",
-          "age": 20
+          "name": "Martim Águas",
+          "country": "🇵🇹",
+          "position": "MED",
+          "age": 33
         },
         {
-          "name": "Warren Caddy",
-          "country": "🇲🇬",
+          "name": "Gustavo Vicente",
+          "country": "🇵🇹",
           "position": "ATA",
-          "age": 29
+          "age": 18
         },
         {
-          "name": "Kasper Junker",
-          "country": "🇩🇰",
-          "position": "ATA",
-          "age": 32
-        },
-        {
-          "name": "Cyril Edudzi",
-          "country": "🇬🇭",
-          "position": "ATA",
-          "age": 20
-        },
-        {
-          "name": "Mohamed Sankoh",
-          "country": "🇳🇱",
+          "name": "Diogo Sequeira",
+          "country": "🇵🇹",
           "position": "ATA",
           "age": 22
         },
         {
-          "name": "Martin Sjolstad",
-          "country": "🇳🇴",
-          "position": "DEF",
-          "age": 26
+          "name": "Sele Davou",
+          "country": "🇳🇬",
+          "position": "ATA",
+          "age": 29
+        },
+        {
+          "name": "Dida",
+          "country": "🇵🇹",
+          "position": "ATA",
+          "age": 30
+        },
+        {
+          "name": "Luís Mota",
+          "country": "🇵🇹",
+          "position": "ATA",
+          "age": 24
+        },
+        {
+          "name": "David Silva",
+          "country": "🇵🇹",
+          "position": "ATA",
+          "age": 31
+        },
+        {
+          "name": "António Carreiro",
+          "country": "🇵🇹",
+          "position": "ATA",
+          "age": 21
         }
       ],
       "crest": "/logos/lusitano-evora.png"
