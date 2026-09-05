@@ -150,26 +150,43 @@ export function TeamSquadModal({
             style={{ background: selectedTeam.color_primary || "#18181b" }}
           >
             <div className="flex items-start justify-between gap-4">
-              <div>
-                <p
-                  className="text-xs uppercase tracking-widest font-black"
-                  style={{ color: selectedTeam.color_secondary || "#ffffff" }}
+              <div className="flex items-start gap-3 min-w-0">
+                {selectedTeam.crest ? (
+                  <img
+                    src={selectedTeam.crest}
+                    alt={selectedTeam.name}
+                    onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
+                    className="w-10 h-10 md:w-12 md:h-12 rounded-lg object-contain bg-white p-1.5 shrink-0 border border-white/20"
+                    loading="lazy"
+                  />
+                ) : null}
+                <div
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-lg hidden items-center justify-center font-black text-sm md:text-base shrink-0 border border-white/20"
+                  style={{ background: selectedTeam.color_primary || "#333", color: selectedTeam.color_secondary || "#fff", display: selectedTeam.crest ? "none" : "flex" }}
                 >
-                  {activeTab === "squad" ? "Plantel" : "Calendário"}
-                </p>
-                <h3
-                  className="text-2xl md:text-3xl font-black"
-                  style={{ color: selectedTeam.color_secondary || "#ffffff" }}
-                >
-                  {selectedTeam.name}
-                </h3>
-                <p
-                  className="text-sm font-bold"
-                  style={{ color: selectedTeam.color_secondary || "#ffffff" }}
-                >
-                  {DIVISION_NAMES[selectedTeam.division] ||
-                    `Divisão ${selectedTeam.division}`}
-                </p>
+                  {(selectedTeam.name || "").substring(0, 3).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p
+                    className="text-xs uppercase tracking-widest font-black"
+                    style={{ color: selectedTeam.color_secondary || "#ffffff" }}
+                  >
+                    {activeTab === "squad" ? "Plantel" : "Calendário"}
+                  </p>
+                  <h3
+                    className="text-2xl md:text-3xl font-black"
+                    style={{ color: selectedTeam.color_secondary || "#ffffff" }}
+                  >
+                    {selectedTeam.name}
+                  </h3>
+                  <p
+                    className="text-sm font-bold"
+                    style={{ color: selectedTeam.color_secondary || "#ffffff" }}
+                  >
+                    {DIVISION_NAMES[selectedTeam.division] ||
+                      `Divisão ${selectedTeam.division}`}
+                  </p>
+                </div>
               </div>
               <button
                 onClick={handleCloseTeamSquad}
@@ -216,7 +233,7 @@ export function TeamSquadModal({
               </div>
             )}
 
-          <div className="overflow-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
             {activeTab === "calendar" ? (
               <div className="space-y-2">
                 {getTeamFixtures().length === 0 && (
@@ -346,15 +363,14 @@ export function TeamSquadModal({
                           >
                             ⚽
                           </div>
-                          <div
-                            className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-black border border-white/10 shrink-0"
-                            style={{
-                              background: opponent?.color_primary || "#333",
-                              color: opponent?.color_secondary || "#fff",
-                            }}
-                          >
-                            {opponent?.name?.[0] ?? "?"}
-                          </div>
+                          {opponent?.crest ? (
+                            <>
+                              <img src={opponent.crest} alt={opponent.name} onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }} className="shrink-0 w-10 h-10 rounded-full object-contain bg-white p-1 border border-white/10" loading="lazy" />
+                              <div className="shrink-0 w-10 h-10 rounded-full hidden items-center justify-center text-sm font-black border border-white/10" style={{ background: opponent?.color_primary || "#333", color: opponent?.color_secondary || "#fff" }}>{opponent?.name?.[0] ?? "?"}</div>
+                            </>
+                          ) : (
+                            <div className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-black border border-white/10" style={{ background: opponent?.color_primary || "#333", color: opponent?.color_secondary || "#fff" }}>{opponent?.name?.[0] ?? "?"}</div>
+                          )}
                           <div className="flex flex-col min-w-0">
                             <button
                               className="text-sm font-black text-on-surface text-left truncate hover:text-primary transition-colors"
