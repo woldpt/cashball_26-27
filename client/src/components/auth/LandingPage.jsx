@@ -398,33 +398,6 @@ const LandingPage = ({
 						com até 8 treinadores.
 					</motion.p>
 
-					<motion.div
-						initial={{ opacity: 0, y: 10 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ delay: 0.55, duration: 0.5 }}
-						className="flex flex-wrap gap-3 short:gap-2"
-					>
-						{[
-							{ icon: "🏆", label: "Divisões", value: "4 Ligas" },
-							{ icon: "👥", label: "Treinadores", value: "Até 8" },
-							{ icon: "⚡", label: "Simulação", value: "Ao vivo" },
-						].map(({ icon, label, value }) => (
-							<div
-								key={label}
-								className="flex items-center gap-2.5 bg-white/[0.03] border border-white/[0.08] hover:border-green-500/30 hover:bg-green-500/5 px-4 py-2.5 rounded-xl transition-all duration-300 short:px-3 short:py-1.5"
-							>
-								<span className="text-lg">{icon}</span>
-								<div>
-									<p className="text-[9px] uppercase tracking-wider text-white/40 font-bold leading-none mb-0.5">
-										{label}
-									</p>
-									<p className="text-sm font-black text-white leading-none">
-										{value}
-									</p>
-								</div>
-							</div>
-						))}
-					</motion.div>
 				</motion.div>
 
 				{/* Right: Auth glass card */}
