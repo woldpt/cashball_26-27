@@ -376,7 +376,7 @@ const LandingPage = ({
 					transition={{ duration: 0.6, ease: "easeOut" }}
 					className="w-full short:w-[60%] lg:w-1/2 flex justify-center lg:justify-end"
 				>
-					<div className="relative w-full max-w-md">
+					<div className="relative w-full max-w-md short:max-w-sm">
 						{/* Outer glow */}
 						<div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-green-500/20 via-transparent to-green-500/5 blur-sm pointer-events-none" />
 						<div className="relative bg-[#0a1410]/90 border border-white/[0.08] backdrop-blur-2xl rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.6),0_0_0_1px_rgba(74,222,128,0.08)]">
@@ -395,13 +395,13 @@ const LandingPage = ({
 										animate={{ opacity: 1, x: 0 }}
 										exit={{ opacity: 0, x: 20 }}
 										transition={{ duration: 0.25 }}
-										className="p-8 space-y-5 short:p-4 short:space-y-2"
+										className="p-8 space-y-5 short:p-3 short:space-y-1.5"
 									>
-										<div className="space-y-1 text-center mb-4 short:mb-2">
+										<div className="space-y-1 text-center mb-4 short:mb-1">
 											<p className="text-[10px] text-green-400/60 uppercase font-black tracking-[0.4em]">
 												Painel do Treinador
 											</p>
-											<h2 className="text-2xl font-headline font-black text-white tracking-tight short:text-xl">
+											<h2 className="text-2xl font-headline font-black text-white tracking-tight short:text-lg">
 												Acede à tua conta
 											</h2>
 											<p className="text-xs text-white/40 short:hidden">
@@ -416,7 +416,7 @@ const LandingPage = ({
 												<input
 													type="text"
 													autoComplete="username"
-													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-2 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-1.5 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
 													value={name}
 													placeholder="Ex: Cobra"
 													onChange={(e) => {
@@ -433,7 +433,7 @@ const LandingPage = ({
 													<input
 														type={showLoginPassword ? "text" : "password"}
 														autoComplete="current-password"
-														className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-2 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+														className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-1.5 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
 														value={password}
 														placeholder="••••••••"
 														onChange={(e) => {
@@ -465,7 +465,7 @@ const LandingPage = ({
 										<button
 											onClick={() => handleAuthenticate("login")}
 											disabled={!name.trim() || !password || authSubmitting}
-											className="w-full relative overflow-hidden bg-green-500 hover:bg-green-400 disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-2.5 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)] group"
+											className="w-full relative overflow-hidden bg-green-500 hover:bg-green-400 disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-2 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)] group"
 										>
 											<span className="relative z-10">
 												{authSubmitting ? "A VALIDAR..." : "ENTRAR"}
@@ -479,7 +479,7 @@ const LandingPage = ({
 												setJoinError("");
 												setAuthPhase("register");
 											}}
-											className="w-full border border-white/[0.08] bg-white/[0.02] hover:border-green-500/30 hover:bg-green-500/[0.04] text-white/70 hover:text-white py-3 short:py-2 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all"
+											className="w-full border border-white/[0.08] bg-white/[0.02] hover:border-green-500/30 hover:bg-green-500/[0.04] text-white/70 hover:text-white py-3 short:py-1.5 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all"
 										>
 											Criar conta
 										</button>
@@ -504,7 +504,7 @@ const LandingPage = ({
 										animate={{ opacity: 1, x: 0 }}
 										exit={{ opacity: 0, x: -20 }}
 										transition={{ duration: 0.25 }}
-										className="p-8 space-y-5 short:p-4 short:space-y-2"
+										className="p-8 space-y-5 short:p-3 short:space-y-1.5"
 									>
 											{/* Landscape: título e "Voltar" na mesma linha — o bloco de
 											    header ocupava 3 linhas e empurrava o CTA para além do ecrã em
@@ -536,7 +536,7 @@ const LandingPage = ({
 												<input
 													type="text"
 													autoComplete="username"
-													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-2 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+													className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-1.5 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
 													value={name}
 													placeholder="Ex: Amorim"
 													onChange={(e) => {
@@ -555,7 +555,7 @@ const LandingPage = ({
 													<input
 														type={showRegisterPassword ? "text" : "password"}
 														autoComplete="new-password"
-														className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-2 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
+														className="w-full bg-white/[0.04] border border-white/[0.08] focus:border-green-500/50 p-4 short:py-1.5 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
 														value={password}
 														placeholder="••••••••"
 														onChange={(e) => {
@@ -594,7 +594,7 @@ const LandingPage = ({
 													<input
 														type={showConfirmPassword ? "text" : "password"}
 														autoComplete="new-password"
-														className={`w-full bg-white/[0.04] border p-4 short:py-2 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 ${
+														className={`w-full bg-white/[0.04] border p-4 short:py-1.5 pr-12 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 ${
 															registerPasswordMismatch
 																? "border-red-500/60 focus:ring-red-500/30 focus:border-red-500/60"
 																: "border-white/[0.08] focus:border-green-500/50 focus:ring-green-500/30 focus:bg-green-500/[0.03]"
@@ -644,7 +644,7 @@ const LandingPage = ({
 												authSubmitting ||
 												registerPasswordMismatch
 											}
-											className="w-full relative overflow-hidden bg-green-500 hover:bg-green-400 disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-2.5 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)] group"
+											className="w-full relative overflow-hidden bg-green-500 hover:bg-green-400 disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-2 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)] group"
 										>
 											<span className="relative z-10">
 												{authSubmitting ? "A CRIAR CONTA..." : "CRIAR CONTA"}
