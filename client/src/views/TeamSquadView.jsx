@@ -160,7 +160,7 @@ export function TeamSquadView({
   }, [calendarData, selectedTeam, selectedTeamDivision, teams]);
 
   return (
-    <div className="min-h-0 flex-1 w-full bg-surface text-on-surface flex flex-col">
+    <div className="min-h-0 flex-1 w-full bg-surface text-on-surface flex flex-col overflow-hidden">
       {/* Header mobile — barra compacta + monograma (cor da equipa como acento) */}
       <div className="sm:hidden border-b border-outline-variant/60 bg-surface-container-low">
         {/* Hairline nas cores da equipa */}
@@ -182,9 +182,18 @@ export function TeamSquadView({
               arrow_back
             </span>
           </button>
-          {/* Monograma */}
+          {/* Crest / Monograma */}
+          {selectedTeam.crest ? (
+            <img
+              src={selectedTeam.crest}
+              alt={selectedTeam.name}
+              onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
+              className="w-10 h-10 rounded-lg object-contain bg-white p-1 shrink-0 border border-white/10"
+              loading="lazy"
+            />
+          ) : null}
           <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-black shrink-0 border border-white/10"
+            className={`w-10 h-10 rounded-lg items-center justify-center text-lg font-black shrink-0 border border-white/10 ${selectedTeam.crest ? "hidden" : "flex"}`}
             style={{
               background: selectedTeam.color_primary || "#2d6a4f",
               color: selectedTeam.color_secondary || "#fff",
@@ -282,9 +291,18 @@ export function TeamSquadView({
 
         {/* Hero section */}
         <div className="relative flex flex-col sm:flex-row gap-3 sm:gap-5 items-start sm:items-center">
-          {/* Team badge */}
+          {/* Team badge — crest com fallback */}
+          {selectedTeam.crest ? (
+            <img
+              src={selectedTeam.crest}
+              alt={selectedTeam.name}
+              onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
+              className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl object-contain bg-white p-2 shrink-0 shadow-lg border border-white/10"
+              loading="lazy"
+            />
+          ) : null}
           <div
-            className="w-12 h-12 sm:w-20 sm:h-20 rounded-xl flex items-center justify-center text-xl sm:text-4xl font-black shrink-0 shadow-lg border border-white/10"
+            className={`w-12 h-12 sm:w-20 sm:h-20 rounded-xl items-center justify-center text-xl sm:text-4xl font-black shrink-0 shadow-lg border border-white/10 ${selectedTeam.crest ? "hidden" : "flex"}`}
             style={{
               background: selectedTeam.color_primary || "#201f1f",
               color: selectedTeam.color_secondary || "#fff",
@@ -378,8 +396,8 @@ export function TeamSquadView({
         </div>
       </div>
 
-      {/* Content */}
-      <div className="overflow-auto flex-1">
+      {/* Content — scroll interno */}
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
         {activeTab === "history" ? (
           <TeamHistoryView
             selectedTeam={selectedTeam}
@@ -515,15 +533,14 @@ export function TeamSquadView({
                       >
                         ⚽
                       </div>
-                      <div
-                        className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-black border border-white/10 shrink-0"
-                        style={{
-                          background: opponent?.color_primary || "#333",
-                          color: opponent?.color_secondary || "#fff",
-                        }}
-                      >
-                        {opponent?.name?.[0] ?? "?"}
-                      </div>
+                      {opponent?.crest ? (
+                        <>
+                          <img src={opponent.crest} alt={opponent.name} onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }} className="shrink-0 w-10 h-10 rounded-full object-contain bg-white p-1 border border-white/10" loading="lazy" />
+                          <div className="shrink-0 w-10 h-10 rounded-full hidden items-center justify-center text-sm font-black border border-white/10" style={{ background: opponent?.color_primary || "#333", color: opponent?.color_secondary || "#fff" }}>{opponent?.name?.[0] ?? "?"}</div>
+                        </>
+                      ) : (
+                        <div className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-black border border-white/10" style={{ background: opponent?.color_primary || "#333", color: opponent?.color_secondary || "#fff" }}>{opponent?.name?.[0] ?? "?"}</div>
+                      )}
                       <div className="flex flex-col min-w-0">
                         <button
                           className="text-sm font-black text-on-surface text-left truncate hover:text-primary transition-colors"
