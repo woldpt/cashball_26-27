@@ -90,7 +90,7 @@ const TEAMS: Array<{ name: string; division: number; url: string }> = [
   { name: "Fafe", division: 3, url: "/equipa/ad-fafe/3570" },
   { name: "Lusitano Évora", division: 3, url: "/equipa/lusitano-evora/4270" },
   // D4 novas (5)
-  { name: "Oliv. Hospital", division: 4, url: "/equipa/oliveira-hospital/3598" },
+  { name: "Oliv. Hospital", division: 4, url: "/equipa/fc-oliv-hospital/3618?search=1" },
   { name: "Malveira", division: 4, url: "/equipa/at-malveira/3558?search=1" },
   { name: "Alcochetense", division: 4, url: "/equipa/alcochetense/3592" },
   { name: "O Elvas", division: 4, url: "/equipa/o-elvas/3604" },

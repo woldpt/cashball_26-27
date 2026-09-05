@@ -7650,140 +7650,140 @@
         "capacity": 3000
       },
       "manager": {
-        "name": "André Santos"
+        "name": "Nuno Pedro"
       },
       "players": [
         {
-          "name": "Rudi Martins",
+          "name": "Lucas Santos",
+          "country": "🇵🇹",
+          "position": "GR",
+          "age": 16
+        },
+        {
+          "name": "Lucas Silva",
+          "country": "🇵🇹",
+          "position": "GR",
+          "age": 22
+        },
+        {
+          "name": "Rafael Cruz",
           "country": "🇵🇹",
           "position": "GR",
           "age": 15
         },
         {
-          "name": "Diogo Oliveira",
-          "country": "🇵🇹",
-          "position": "GR",
-          "age": 29
-        },
-        {
-          "name": "Alexandre Teodoro",
-          "country": "🇵🇹",
-          "position": "GR",
-          "age": 22
-        },
-        {
-          "name": "Tomás Oliveira",
-          "country": "🇵🇹",
-          "position": "DEF",
-          "age": 23
-        },
-        {
-          "name": "Duarte Ferreira",
-          "country": "🇵🇹",
-          "position": "DEF",
-          "age": 18
-        },
-        {
-          "name": "Miguel Caeiro",
-          "country": "🇵🇹",
-          "position": "DEF",
-          "age": 22
-        },
-        {
-          "name": "Edward Arlete",
-          "country": "🇬🇼",
-          "position": "DEF",
-          "age": 18
-        },
-        {
-          "name": "Ryel Santos",
-          "country": "🇵🇹",
-          "position": "DEF",
-          "age": 27
-        },
-        {
-          "name": "Samuel Lourenço",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 25
-        },
-        {
-          "name": "Gui Ribeiro",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 24
-        },
-        {
-          "name": "Rúben Rodrigues",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 23
-        },
-        {
-          "name": "Nuno Aleixo",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 22
-        },
-        {
-          "name": "Gonçalo Cuco",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 20
-        },
-        {
-          "name": "Yordán",
-          "country": "🇨🇴",
-          "position": "ATA",
-          "age": 34
-        },
-        {
-          "name": "Ricardo Neto",
+          "name": "Carlos Ventura",
           "country": "🇧🇷",
-          "position": "ATA",
-          "age": 22
-        },
-        {
-          "name": "Tiago Fonseca",
-          "country": "🇵🇹",
-          "position": "ATA",
-          "age": 22
-        },
-        {
-          "name": "Tomás Correia",
-          "country": "🇵🇹",
-          "position": "ATA",
-          "age": 25
-        },
-        {
-          "name": "José Tubarão",
-          "country": "🇵🇹",
-          "position": "ATA",
-          "age": 18
-        },
-        {
-          "name": "David Botelho",
-          "country": "🇵🇹",
           "position": "DEF",
-          "age": 29
+          "age": 22
         },
         {
-          "name": "Cláudinho",
+          "name": "Gabriel Tibúrcio",
           "country": "🇧🇷",
           "position": "DEF",
           "age": 21
         },
         {
-          "name": "Cláudio Carvalho",
+          "name": "Manu Ribeiro",
           "country": "🇵🇹",
-          "position": "ATA",
-          "age": 31
+          "position": "DEF",
+          "age": 26
         },
         {
-          "name": "Sérgio Carvalho",
+          "name": "Marcos Vinicius",
+          "country": "🇧🇷",
+          "position": "DEF",
+          "age": 25
+        },
+        {
+          "name": "Nuno Viana",
+          "country": "🇵🇹",
+          "position": "DEF",
+          "age": 24
+        },
+        {
+          "name": "Tiago Simão",
+          "country": "🇵🇹",
+          "position": "DEF",
+          "age": 22
+        },
+        {
+          "name": "Zé Simão",
+          "country": "🇵🇹",
+          "position": "DEF",
+          "age": 26
+        },
+        {
+          "name": "Artur Simionato",
+          "country": "🇧🇷",
+          "position": "MED",
+          "age": 25
+        },
+        {
+          "name": "Diogo Hospital",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 18
+          "age": 20
+        },
+        {
+          "name": "Endric Araújo",
+          "country": "🇧🇷",
+          "position": "MED",
+          "age": 32
+        },
+        {
+          "name": "Jorge Monteiro",
+          "country": "🇵🇹",
+          "position": "MED",
+          "age": 21
+        },
+        {
+          "name": "Pedro Peralta",
+          "country": "🇵🇹",
+          "position": "MED",
+          "age": 22
+        },
+        {
+          "name": "Rafael Oliveira",
+          "country": "🇵🇹",
+          "position": "MED",
+          "age": 17
+        },
+        {
+          "name": "Gabriel Amaral",
+          "country": "🇧🇷",
+          "position": "ATA",
+          "age": 22
+        },
+        {
+          "name": "Gustavo Barros",
+          "country": "🇵🇹",
+          "position": "ATA",
+          "age": 22
+        },
+        {
+          "name": "Simão Duarte",
+          "country": "🇵🇹",
+          "position": "ATA",
+          "age": 22
+        },
+        {
+          "name": "Simão Gonçalves",
+          "country": "🇵🇹",
+          "position": "ATA",
+          "age": 21
+        },
+        {
+          "name": "Simão Pita",
+          "country": "🇵🇹",
+          "position": "ATA",
+          "age": 21
+        },
+        {
+          "name": "Wagner Sevene",
+          "country": "🇲🇿",
+          "position": "ATA",
+          "age": 19
         }
       ],
       "crest": "/logos/oliv-hospital.png"
