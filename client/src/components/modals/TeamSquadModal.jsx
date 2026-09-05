@@ -140,9 +140,10 @@ export function TeamSquadModal({
       z={MODAL_Z.teamSquad}
       variant="xl"
       dismissable
+      cardClassName="flex flex-col max-h-[90vh]"
     >
       {selectedTeam && (
-        <div className="flex flex-col" style={{ maxHeight: "90vh" }}>
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Header + Tabs (shrink-0: ver nota em PlayerHistoryModal — o flex-shrink
               do container max-height encolhe o header abaixo do conteúdo) */}
           <div
@@ -233,7 +234,7 @@ export function TeamSquadModal({
               </div>
             )}
 
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-2">
             {activeTab === "calendar" ? (
               <div className="space-y-2">
                 {getTeamFixtures().length === 0 && (

@@ -705,6 +705,21 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
           },
         );
         const continueAfterMigrations = () => {
+          db.run("ALTER TABLE teams ADD COLUMN crest TEXT", () => {
+            // Backfill crest para salas antigas (game_*.db criadas antes do branding)
+            try {
+              const fixturesPath = path.join(__dirname, "db/fixtures/all_teams.json");
+              if (fs.existsSync(fixturesPath)) {
+                const raw = JSON.parse(fs.readFileSync(fixturesPath, "utf-8"));
+                const list: any[] = Array.isArray(raw) ? raw : raw.teams || [];
+                for (const t of list) {
+                  if (t?.crest && t?.id) {
+                    db.run("UPDATE teams SET crest = ? WHERE id = ? AND (crest IS NULL OR crest = '')", [t.crest, t.id]);
+                  }
+                }
+              }
+            } catch {}
+          });
           db.run(
             "ALTER TABLE teams ADD COLUMN morale INTEGER DEFAULT 50",
             () => {},
