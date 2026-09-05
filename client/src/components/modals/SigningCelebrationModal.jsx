@@ -85,6 +85,7 @@ export function SigningCelebrationModal({ signing, onClose, teams, me }) {
             teamColor={teamColor}
             nationality={signing.nationality}
             size="lg"
+            photo={signing.photo || null}
           />
         </div>
 

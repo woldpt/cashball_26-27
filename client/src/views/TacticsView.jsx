@@ -94,6 +94,11 @@ function FamiliarityStars({ stars, fill = false }) {
 const POS_INITIAL = { GR: "G", DEF: "D", MED: "M", ATA: "A" };
 
 function PlayerAvatar({ player, size = "w-7 h-7" }) {
+  if (player.photo) {
+    return (
+      <img src={player.photo} alt="" loading="lazy" className={`${size} rounded-full object-cover object-top shrink-0 bg-white border border-white/20 shadow-md`} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+    );
+  }
   const pos = POS_COLORS[player.position] || { bg: "bg-gray-600" };
   return (
     <div

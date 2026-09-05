@@ -115,6 +115,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
               teamColor={teamColor}
               nationality={auction.nationality}
               size="sm"
+              photo={auction.photo || null}
             />
             <div className="min-w-0 flex-1">
               {/* Mobile: só o essencial (nome + posição) */}
@@ -349,6 +350,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
               teamColor={teamColor}
               nationality={auction.nationality}
               size="sm"
+              photo={auction.photo || null}
             />
             <div className="min-w-0 flex-1">
               <p className="font-headline font-black text-white text-sm leading-tight truncate">

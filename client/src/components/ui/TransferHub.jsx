@@ -137,7 +137,7 @@ function MarketCard({
               </div>
 
               <div className="mt-3 flex items-center justify-between gap-3">
-                <PlayerAvatar seed={player.id} position={player.position} teamColor={teamColor} nationality={player.nationality} size="md" />
+                <PlayerAvatar seed={player.id} position={player.position} teamColor={teamColor} nationality={player.nationality} size="md" photo={player.photo || null} />
                 <div className="text-right min-w-0">
                   <p className="hidden sm:block text-[10px] uppercase tracking-widest text-on-surface-variant font-black">
                     Qualidade
