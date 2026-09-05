@@ -43,10 +43,7 @@
 
 ## 🧯 Crash recovery & backups
 
-- **Replay seguro pós-restart:** `applied_weeks` limita `weekly_finance` a 1× por `(season, slot)`; slot `finalized` → `recoverFinalizedSlot` avança o calendário sem re-simular/re-cobrar. Quebras entre COMMITs podem deixar linhas de jogo/evolução por persistir — `audit:gamestate` surfaceia.
-- **WAL + `busy_timeout=5000`** em DBs de sala/global (`base.db` mantém journal DELETE p/ cópia via `fs.copyFileSync`).
-- SIGTERM/SIGINT/erro fatal → `flushAllGameStates` antes de fechar DBs; Docker `restart: unless-stopped` faz replay limpo.
-- **Backups** (proteção p/ perda de disco): serviço `backups` do compose (diário; `BACKUP_INTERVAL_HOURS`/`RETENTION_COUNT`; snapshots em `./backups/YYYYMMDD_HHMMSS/`); manual: `node scripts/backupDatabases.js` (Online Backup API, seguro com server ativo); host sem Docker: cron + `server/scripts/backupDatabases.sh` (requer CLI sqlite3).
+Replay seguro pós-restart (`applied_weeks`, `recoverFinalizedSlot`), WAL e backups: ver `docs/CRASH.md`.
 
 ## 📌 Workflow
 
