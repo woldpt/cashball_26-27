@@ -224,7 +224,10 @@ export function UserList({ users, loading = false, selectedName = null, onSelect
         emptyBlock
       ) : (
         <div className="flex-1 overflow-y-auto">
-          <table className="w-full text-sm">
+          {/* table-fixed: larguras das colunas fixas (Salas 96px, chevron 48px)
+              e a coluna Nome absorve o resto com truncate — sem isto um nome
+              long sem espaços forçava a tabela além da coluna w-1/2 (clip). */}
+          <table className="w-full table-fixed text-sm">
             <thead className="sticky top-0 bg-surface-container z-0">
               <tr className="text-left text-[10px] uppercase tracking-widest text-on-surface-variant border-b border-outline-variant/15">
                 <th
@@ -234,12 +237,12 @@ export function UserList({ users, loading = false, selectedName = null, onSelect
                   Nome{sortIndicator("name")}
                 </th>
                 <th
-                  className="px-3 py-2 font-black cursor-pointer select-none hover:text-on-surface"
+                  className="w-24 px-3 py-2 text-center font-black cursor-pointer select-none hover:text-on-surface"
                   onClick={() => toggleSort("rooms")}
                 >
                   Salas{sortIndicator("rooms")}
                 </th>
-                <th className="w-8" />
+                <th className="w-12" />
               </tr>
             </thead>
             <tbody>
@@ -251,7 +254,7 @@ export function UserList({ users, loading = false, selectedName = null, onSelect
                     selectedName === user.name ? "bg-primary/10" : "hover:bg-surface-container-high/50"
                   }`}
                 >
-                  <td className="px-3 py-2.5">
+                  <td className="px-3 py-2.5 truncate">
                     <span
                       className={`inline-block w-1.5 h-1.5 rounded-full mr-2 align-middle ${
                         user.online ? "bg-emerald-400" : "bg-on-surface-variant/30"
@@ -265,7 +268,7 @@ export function UserList({ users, loading = false, selectedName = null, onSelect
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2.5 text-xs text-on-surface-variant tabular-nums">
+                  <td className="px-3 py-2.5 text-center text-xs text-on-surface-variant tabular-nums">
                     {user.rooms?.length || 0}
                   </td>
                   <td className="px-3 py-2.5 text-right">
