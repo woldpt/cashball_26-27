@@ -958,24 +958,35 @@ export function GameProvider({
 			socket.emit("resolveMatchAction", payload);
 			setMatchAction(null);
 			setIsMatchActionPending(false);
+			// Tática local para subs: suporta lote (array) enviado pelo modo
+			// "Só Continuar em lote" — aplica todas as trocas sequencialmente.
 			if (
 				["user_substitution", "injury", "gk_red_card"].includes(matchAction.type) &&
 				typeof playerIdOrChoice === "object" &&
 				playerIdOrChoice !== null
 			) {
-				const { playerOut, playerIn } = playerIdOrChoice;
-				setTactic((prevTactic) => {
-					const newPositions = { ...prevTactic.positions };
-					delete newPositions[playerOut];
-					if (matchAction.type === "gk_red_card") {
-						const sentOffId = matchAction.sentOffPlayer?.id;
-						if (sentOffId != null) delete newPositions[sentOffId];
-					}
-					newPositions[playerIn] = "Titular";
-					const next = { ...prevTactic, positions: newPositions };
-					socket.emit("setTactic", next);
-					return next;
-				});
+				const batch = Array.isArray(playerIdOrChoice)
+					? playerIdOrChoice
+					: [playerIdOrChoice];
+				const validBatch = batch.filter(
+					(c) => c && c.playerOut != null && c.playerIn != null,
+				);
+				if (validBatch.length > 0) {
+					setTactic((prevTactic) => {
+						const newPositions = { ...prevTactic.positions };
+						for (const { playerOut, playerIn } of validBatch) {
+							delete newPositions[playerOut];
+							if (matchAction.type === "gk_red_card") {
+								const sentOffId = matchAction.sentOffPlayer?.id;
+								if (sentOffId != null) delete newPositions[sentOffId];
+							}
+							newPositions[playerIn] = "Titular";
+						}
+						const next = { ...prevTactic, positions: newPositions };
+						socket.emit("setTactic", next);
+						return next;
+					});
+				}
 			}
 
 			// GR improvisado: escolha única (playerId) — só sincroniza a tática

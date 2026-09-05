@@ -196,9 +196,11 @@ export function TacticsProvider({ children }) {
   );
 
   const handleConfirmSub = useCallback(() => {
-    if (!swapSource || !swapTarget || subsMade >= 3) return;
-    const srcPlayer = mySquad.find((p) => p.id === swapSource);
-    const tgtPlayer = mySquad.find((p) => p.id === swapTarget);
+    const srcId = typeof swapSource === "object" && swapSource !== null ? swapSource.id : swapSource;
+    const tgtId = typeof swapTarget === "object" && swapTarget !== null ? swapTarget.id : swapTarget;
+    if (!srcId || !tgtId || subsMade >= 3) return;
+    const srcPlayer = mySquad.find((p) => p.id === srcId);
+    const tgtPlayer = mySquad.find((p) => p.id === tgtId);
     if (
       srcPlayer &&
       tgtPlayer &&
@@ -207,14 +209,14 @@ export function TacticsProvider({ children }) {
       return;
     setTactic((prevTactic) => {
       const newPositions = { ...prevTactic.positions };
-      newPositions[swapSource] = "Suplente";
-      newPositions[swapTarget] = "Titular";
+      newPositions[srcId] = "Suplente";
+      newPositions[tgtId] = "Titular";
       const next = { ...prevTactic, positions: newPositions };
       socket.emit("setTactic", next);
       return next;
     });
-    setSubbedOut((prev) => [...prev, swapSource]);
-    setConfirmedSubs((prev) => [...prev, { out: swapSource, in: swapTarget }]);
+    setSubbedOut((prev) => [...prev, srcId]);
+    setConfirmedSubs((prev) => [...prev, { out: srcId, in: tgtId }]);
     setSubsMade((n) => n + 1);
     setSwapSource(null);
     setSwapTarget(null);

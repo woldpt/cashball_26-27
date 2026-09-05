@@ -767,6 +767,19 @@ export function normalizeMatchChoice(
   return { playerOut: null, playerIn: null };
 }
 
+export function normalizeMatchChoices(
+  choice: MatchActionChoice | MatchActionChoice[],
+): { playerOut: number | null; playerIn: number | null }[] {
+  if (Array.isArray(choice)) {
+    return (choice as MatchActionChoice[])
+      .map((c) => normalizeMatchChoice(c))
+      .filter((c) => c.playerOut != null && c.playerIn != null);
+  }
+  const single = normalizeMatchChoice(choice as MatchActionChoice);
+  if (single.playerOut != null && single.playerIn != null) return [single];
+  return [];
+}
+
 /**
  * Versão da força de um lado — dirty-flag para o computeSidePower.
  * Qualquer mutação do onze em campo (sub, expulsão, lesão, fadiga,
@@ -2811,12 +2824,16 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
           fixtureData: buildFixtureData(fixture),
         });
 
-        // Mesmo contrato das restantes ações (ver normalizeMatchChoice):
-        // objeto { playerOut, playerIn }, id nu ou { playerId }.
-        const userChoice = normalizeMatchChoice(result.choice);
-        if (userChoice.playerOut != null && userChoice.playerIn != null) {
-          const playerOutId = userChoice.playerOut;
-          const playerInId = userChoice.playerIn;
+        // Batch: o cliente pode enviar várias trocas na mesma pausa (Substituir
+        // acumula, Continuar resolve em lote). Retrocompatível com escolha única.
+        const batch = normalizeMatchChoices(result.choice as any);
+        for (const userChoice of batch) {
+          if (!canMakeSubstitution(fixture, teamId)) {
+            io.to(game.roomCode).emit("substitutionCapReached", { teamId });
+            break;
+          }
+          const playerOutId = userChoice.playerOut as number;
+          const playerInId = userChoice.playerIn as number;
 
           const playerOut = squad.find((p: any) => p.id === playerOutId);
           const playerIn = fullRoster.find((p: any) => p.id === playerInId);

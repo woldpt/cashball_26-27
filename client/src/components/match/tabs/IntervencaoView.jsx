@@ -88,6 +88,9 @@ export function IntervencaoView({
   redCardedHalftimeIds,
   injuredHalftimeIds,
   onResolveAction,
+  isUserSubPause = false,
+  // eslint-disable-next-line no-unused-vars
+  pauseInitialIdx = null,
 }) {
   const [centerTab, setCenterTab] = useState("subs");
   const [confirmResetAll, setConfirmResetAll] = useState(false);
@@ -178,7 +181,8 @@ export function IntervencaoView({
       : annotatedSquad;
 
   /* ── Our squad ────────────────────────────────────────────────── */
-  const onPitchPlayers = isHalftime
+  const useTacticSquad = isHalftime || isUserSubPause;
+  const onPitchPlayers = useTacticSquad
     ? sortPlayersByPos(
         panelSquad.filter(
           (p) =>
@@ -198,7 +202,7 @@ export function IntervencaoView({
             ? [forceOutPlayer]
             : [];
 
-  const benchPlayers = isHalftime
+  const benchPlayers = useTacticSquad
     ? sortPlayersByPos(
         panelSquad
           .filter((p) => tactic?.positions?.[p.id] === "Suplente")
@@ -219,11 +223,12 @@ export function IntervencaoView({
   const targetPlayer = playerById(selectedInId);
   const sourcePlayer = playerById(effectiveOutId);
   // GR improvisado: escolha única (quem vai para a baliza) — sem par Sai/Entra.
+  const limitReached = subsMade >= MAX_MATCH_SUBS;
   const canConfirmSwap = isEmergencyGk
     ? !!selectedInId && !isHalftime
     : !!effectiveOutId &&
       !!selectedInId &&
-      (!isHalftime || subsMade < MAX_MATCH_SUBS);
+      (!isHalftime && !isUserSubPause ? true : !limitReached);
 
   // During a forced swap the opponent/chronology tabs are noise — lock the
   // view on subs while the auto-substitution countdown runs.
@@ -239,7 +244,7 @@ export function IntervencaoView({
         ? "Escolhe o jogador que sai."
         : !selectedInId
           ? "Escolhe o jogador que entra."
-          : isHalftime && subsMade >= MAX_MATCH_SUBS
+          : limitReached
             ? "Limite de substituições atingido."
             : null;
 
@@ -653,6 +658,7 @@ function CronologiaPanel({
  * chip 'Sai' ou tap no peek. */
 function SubsPanel({
   isHalftime,
+  isUserSubPause = false,
   isForcedSwap,
   isGkRedCard,
   isEmergencyGk = false,
@@ -677,6 +683,7 @@ function SubsPanel({
   onConfirmSub,
   onResolveAction,
   confirmedSubs,
+  pauseInitialIdx = null,
   confirmResetAll,
   onArmResetAll,
   summary,
@@ -779,6 +786,7 @@ function SubsPanel({
 
   const sharedSwapProps = {
     isHalftime,
+    isUserSubPause,
     isForcedSwap,
     isEmergencyGk,
     injuryCountdown,
@@ -791,6 +799,8 @@ function SubsPanel({
     onResetSub,
     onConfirmSub,
     onResolveAction,
+    confirmedSubs,
+    pauseInitialIdx,
   };
 
   // Swipe/tap na faixa lateral do peek. A faixa não é scrollável, por isso o
@@ -873,6 +883,7 @@ function SubsPanel({
           />
           <MentalidadeColumn
             isHalftime={isHalftime}
+            isUserSubPause={isUserSubPause}
             subsMade={subsMade}
             tactic={tactic}
             onUpdateTactic={onUpdateTactic}
@@ -1434,6 +1445,7 @@ function SuplentesColumn({
  *   2. "Substituições"  → controlos Sai→Entra + botões + Confirmadas */
 function MentalidadeColumn({
   isHalftime,
+  isUserSubPause = false,
   subsMade,
   tactic,
   onUpdateTactic,
@@ -1474,7 +1486,7 @@ function MentalidadeColumn({
             <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0 shadow-[0_0_8px_rgba(251,113,133,0.5)]" />
             Substituições
           </h3>
-          {isHalftime && <SubsCounter subsMade={subsMade} />}
+          {(isHalftime || isUserSubPause) && <SubsCounter subsMade={subsMade} />}
         </div>
         <div className="flex-1 overflow-y-auto">
           <div className="p-4">
@@ -1487,11 +1499,11 @@ function MentalidadeColumn({
 }
 
 /* ── SwapControls — Sai → Entra + Limpar/Substituir + hint + countdown ───
- * Shared between the desktop Mentalidade column and the mobile stacked
- * block. Mirrors the confirm branching: halftime (onConfirmSub) vs action
- * (onResolveAction). */
+ * Halftime e pausa user_substitution acumulam em fila (onConfirmSub) e só
+ * avançam em Continuar; restantes ações resolvem imediatamente. */
 function SwapControls({
   isHalftime,
+  isUserSubPause = false,
   isForcedSwap,
   isEmergencyGk = false,
   injuryCountdown,
@@ -1504,6 +1516,8 @@ function SwapControls({
   onResetSub,
   onConfirmSub,
   onResolveAction,
+  confirmedSubs = [],
+  pauseInitialIdx = null,
   compact = false,
   outSlotAction = null,
 }) {
@@ -1623,26 +1637,43 @@ function SwapControls({
         </p>
       )}
 
-      {/* Action buttons */}
-      {isHalftime ? (
-        <div className="flex items-center gap-2 sm:gap-3">
-          <GhostButton
-            onClick={onResetSub}
-            icon={<MatchIcon name="reset" className="h-3.5 w-3.5" />}
-            aria-label="Limpar seleção ou anular última substituição"
-            className="h-11 flex-1 sm:h-10"
-          >
-            Limpar
-          </GhostButton>
-          <PrimaryButton
-            onClick={handleConfirmHalftime}
-            disabled={!canConfirmSwap || submitting}
-            tone="emerald"
-            icon={<MatchIcon name="confirm" className="h-4 w-4" />}
-            className="h-11 flex-1 sm:h-10"
-          >
-            {submitting ? "A substituir…" : "Substituir"}
-          </PrimaryButton>
+      {/* Action buttons — pausa user_substitution usa o mesmo fluxo de fila do intervalo */}
+      {isHalftime || isUserSubPause ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <GhostButton
+              onClick={onResetSub}
+              icon={<MatchIcon name="reset" className="h-3.5 w-3.5" />}
+              aria-label="Limpar seleção ou anular última substituição"
+              className="h-11 flex-1 sm:h-10"
+            >
+              Limpar
+            </GhostButton>
+            <PrimaryButton
+              onClick={handleConfirmHalftime}
+              disabled={!canConfirmSwap || submitting}
+              tone="emerald"
+              icon={<MatchIcon name="confirm" className="h-4 w-4" />}
+              className="h-11 flex-1 sm:h-10"
+            >
+              {submitting ? "A substituir…" : "Substituir"}
+            </PrimaryButton>
+          </div>
+          {isUserSubPause && (() => {
+            const start = pauseInitialIdx ?? confirmedSubs.length;
+            const queued = confirmedSubs.slice(start);
+            if (queued.length === 0) return null;
+            return (
+              <div className="rounded-md border border-emerald-500/20 bg-emerald-500/5 px-2.5 py-2 space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-300/80">
+                  Na fila desta pausa · {queued.length}
+                </p>
+                <p className="text-[11px] font-medium text-on-surface/80">
+                  Clica em <span className="font-black text-emerald-300">Substituir</span> para adicionar mais — só <span className="font-black">Continuar</span> avança o jogo.
+                </p>
+              </div>
+            );
+          })()}
         </div>
       ) : isEmergencyGk ? (
         <PrimaryButton

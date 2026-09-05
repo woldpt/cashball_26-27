@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+/* eslint-disable react-hooks/set-state-in-effect -- snapshot inicial da fila de subs no arranque da pausa */
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { takeover } from "../../motion.js";
 import { MatchView, IntervencaoView } from "./MatchTabs.jsx";
@@ -65,15 +66,49 @@ export function MatchPage({
 	// Banda landscape phone → header menos alto para dar espaço ao conteúdo.
 	const shortLandscape = useLandscapePhone();
 
-	// When a server-driven match action is active, selections go straight to
-	// setSwapSource/setSwapTarget (the server resolves the swap).
-	// During normal halftime the UI handlers manage the swap lifecycle.
-	const effectiveSelectOut = matchAction
-		? (player) => setSwapSource(player)
-		: (playerId) => handleSelectOut(playerId);
-	const effectiveSelectIn = matchAction
-		? (player) => setSwapTarget(player)
-		: (playerId) => handleSelectIn(playerId);
+	// Pausa de substituição a meio do jogo (user_substitution): o botão
+	// Substituir só acumula na fila local (handleConfirmSub), o jogo só avança
+	// em "Continuar" que envia o lote todo de uma vez. Outras ações (injury,
+	// gk_red_card, emergency_gk) continuam a resolver imediatamente.
+	const isUserSubPause = matchAction?.type === "user_substitution";
+	const [pauseInitialIdx, setPauseInitialIdx] = useState(null);
+	useEffect(() => {
+		if (isUserSubPause) {
+			if (pauseInitialIdx === null) {
+				setPauseInitialIdx(confirmedSubs.length);
+			}
+		} else if (pauseInitialIdx !== null) {
+			setPauseInitialIdx(null);
+		}
+	}, [isUserSubPause, confirmedSubs.length, pauseInitialIdx]);
+
+	const effectiveSelectOut = isUserSubPause
+		? (player) => {
+				const id = typeof player === "object" && player !== null ? player.id : player;
+				handleSelectOut(id);
+			}
+		: matchAction
+			? (player) => setSwapSource(player)
+			: (playerId) => handleSelectOut(playerId);
+	const effectiveSelectIn = isUserSubPause
+		? (player) => {
+				const id = typeof player === "object" && player !== null ? player.id : player;
+				handleSelectIn(id);
+			}
+		: matchAction
+			? (player) => setSwapTarget(player)
+			: (playerId) => handleSelectIn(playerId);
+
+	const handlePauseContinue = () => {
+		const start = pauseInitialIdx ?? confirmedSubs.length;
+		const delta = confirmedSubs.slice(start);
+		if (delta.length === 0) {
+			onResolveAction(null);
+			return;
+		}
+		const batch = delta.map((s) => ({ playerOut: s.out, playerIn: s.in }));
+		onResolveAction(batch);
+	};
 
 	// ── Multi-league fixture data ────────────────────────────────────────────
 	const { myDivision, divisionFixtures } = useMemo(() => {
@@ -300,6 +335,8 @@ export function MatchPage({
 						redCardedHalftimeIds={redCardedHalftimeIds}
 						injuredHalftimeIds={injuredHalftimeIds}
 						onResolveAction={onResolveAction}
+						isUserSubPause={isUserSubPause}
+						pauseInitialIdx={pauseInitialIdx}
 					/>
 				) : (
 					<MatchView
@@ -376,10 +413,10 @@ export function MatchPage({
 			)}
 			{mode === "action" && matchAction?.type === "user_substitution" && (
 				<button
-					onClick={() => onResolveAction(null)}
+					onClick={handlePauseContinue}
 					className="shrink-0 w-full py-3.5 text-sm font-black uppercase tracking-widest bg-primary hover:brightness-110 text-on-primary transition-all border-t border-outline"
 				>
-					▶ CONTINUAR
+					▶ CONTINUAR{(() => { const s = pauseInitialIdx ?? confirmedSubs.length; const n = confirmedSubs.length - s; return n > 0 ? ` (${n} troca${n>1?"s":""})` : ""; })()}
 				</button>
 			)}
 			{mode === "detail" && (
