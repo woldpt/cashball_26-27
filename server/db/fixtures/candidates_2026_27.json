@@ -1,6 +1,6 @@
 {
   "season": "2026/27",
-  "generatedAt": "2026-09-03T17:27:23.773358Z",
+  "generatedAt": "2026-09-05T20:33:38.279Z",
   "teams": [
     {
       "name": "Sporting",
@@ -16,11 +16,11 @@
           "value": 6500000
         },
         {
-          "name": "João Virgínia",
+          "name": "Kaique Pereira",
           "position": "GR",
-          "flag": "PT",
-          "age": 26,
-          "value": 850000
+          "flag": "BR",
+          "age": 23,
+          "value": 1900000
         },
         {
           "name": "Diego Callai",
@@ -34,7 +34,7 @@
           "position": "GR",
           "flag": "PT",
           "age": 20,
-          "value": 150000
+          "value": 300000
         },
         {
           "name": "Georgios Vagiannidis",
@@ -61,7 +61,7 @@
           "name": "Gonçalo Inácio",
           "position": "DEF",
           "flag": "PT",
-          "age": 24,
+          "age": 25,
           "value": 40000000
         },
         {
@@ -86,6 +86,13 @@
           "value": 3000000
         },
         {
+          "name": "Moncef Zekri",
+          "position": "DEF",
+          "flag": "MA",
+          "age": 17,
+          "value": 3000000
+        },
+        {
           "name": "Maxi Araújo",
           "position": "DEF",
           "flag": "UY",
@@ -100,6 +107,20 @@
           "value": null
         },
         {
+          "name": "Sotiris Alexandropoulos",
+          "position": "MED",
+          "flag": "GR",
+          "age": 24,
+          "value": 1600000
+        },
+        {
+          "name": "Samuel Justo",
+          "position": "MED",
+          "flag": "PT",
+          "age": 22,
+          "value": 850000
+        },
+        {
           "name": "Silas Andersen",
           "position": "MED",
           "flag": "DK",
@@ -110,7 +131,7 @@
           "name": "Sergi Altimira",
           "position": "MED",
           "flag": "ES",
-          "age": 24,
+          "age": 25,
           "value": 20000000
         },
         {
@@ -121,11 +142,11 @@
           "value": 1900000
         },
         {
-          "name": "Giorgi Kochorashvili",
+          "name": "João Simões",
           "position": "MED",
-          "flag": "GE",
-          "age": 27,
-          "value": 4000000
+          "flag": "PT",
+          "age": 19,
+          "value": 14000000
         },
         {
           "name": "Pedro Lima",
@@ -135,20 +156,6 @@
           "value": 2250000
         },
         {
-          "name": "Daniel Bragança",
-          "position": "MED",
-          "flag": "PT",
-          "age": 27,
-          "value": 12000000
-        },
-        {
-          "name": "João Simões",
-          "position": "MED",
-          "flag": "PT",
-          "age": 19,
-          "value": 14000000
-        },
-        {
           "name": "Issa Doumbia",
           "position": "MED",
           "flag": "IT",
@@ -156,18 +163,18 @@
           "value": 20000000
         },
         {
+          "name": "Rodrigo Zalazar",
+          "position": "MED",
+          "flag": "UY",
+          "age": 27,
+          "value": 31000000
+        },
+        {
           "name": "Geny Catamo",
           "position": "ATA",
           "flag": "MZ",
           "age": 25,
           "value": 24000000
-        },
-        {
-          "name": "Rodrigo Zalazar",
-          "position": "ATA",
-          "flag": "UY",
-          "age": 27,
-          "value": 31000000
         },
         {
           "name": "Luís Guilherme",
@@ -203,13 +210,6 @@
           "flag": "AU",
           "age": 20,
           "value": 10000000
-        },
-        {
-          "name": "Pedro Gonçalves",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 28,
-          "value": 26000000
         },
         {
           "name": "Jesse Derry",
@@ -312,6 +312,13 @@
           "value": 3000000
         },
         {
+          "name": "João Souza",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 20,
+          "value": 12000000
+        },
+        {
           "name": "Francisco Moura",
           "position": "DEF",
           "flag": "PT",
@@ -333,11 +340,11 @@
           "value": 32000000
         },
         {
-          "name": "Stephen Eustáquio",
+          "name": "Tiago Silva",
           "position": "MED",
-          "flag": "CA",
-          "age": 29,
-          "value": 6500000
+          "flag": "PT",
+          "age": 19,
+          "value": 1000000
         },
         {
           "name": "Victor Froholdt",
@@ -361,18 +368,18 @@
           "value": 7000000
         },
         {
+          "name": "Seko Fofana",
+          "position": "MED",
+          "flag": "CI",
+          "age": 31,
+          "value": 8500000
+        },
+        {
           "name": "Gabri Veiga",
           "position": "MED",
           "flag": "ES",
           "age": 24,
           "value": 30000000
-        },
-        {
-          "name": "Rodrigo Mora",
-          "position": "MED",
-          "flag": "PT",
-          "age": 19,
-          "value": 38000000
         },
         {
           "name": "William Gomes",
@@ -410,11 +417,11 @@
           "value": 3000000
         },
         {
-          "name": "Deniz Gül",
+          "name": "Santiago Gimenez",
           "position": "ATA",
-          "flag": "TR",
-          "age": 22,
-          "value": 5000000
+          "flag": "MX",
+          "age": 25,
+          "value": 18000000
         },
         {
           "name": "Eduardo Ferreira",
@@ -431,11 +438,18 @@
           "value": 21000000
         },
         {
+          "name": "Gabriel Mec",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 18,
+          "value": 16000000
+        },
+        {
           "name": "Duarte Cunha",
           "position": "ATA",
           "flag": "PT",
           "age": 18,
-          "value": 650000
+          "value": 1500000
         },
         {
           "name": "Oskar Pietuszewski",
@@ -475,13 +489,6 @@
           "value": 500000
         },
         {
-          "name": "Amar Dedić",
-          "position": "DEF",
-          "flag": "BA",
-          "age": 23,
-          "value": 20000000
-        },
-        {
           "name": "Alexander Bah",
           "position": "DEF",
           "flag": "DK",
@@ -503,18 +510,11 @@
           "value": 5000000
         },
         {
-          "name": "Tomás Araújo",
+          "name": "Alessandro Circati",
           "position": "DEF",
-          "flag": "PT",
-          "age": 24,
-          "value": 30000000
-        },
-        {
-          "name": "Joshua Wynder",
-          "position": "DEF",
-          "flag": "US",
-          "age": 21,
-          "value": 1500000
+          "flag": "AU",
+          "age": 22,
+          "value": 18000000
         },
         {
           "name": "Gabriel Índio",
@@ -522,6 +522,13 @@
           "flag": "BR",
           "age": 18,
           "value": 4000000
+        },
+        {
+          "name": "Tomás Araújo",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 24,
+          "value": 30000000
         },
         {
           "name": "Rui Silva",
@@ -538,25 +545,18 @@
           "value": 13000000
         },
         {
+          "name": "Souffian El Karouani",
+          "position": "DEF",
+          "flag": "MA",
+          "age": 25,
+          "value": 15000000
+        },
+        {
           "name": "José Neto",
           "position": "DEF",
           "flag": "PT",
           "age": 18,
           "value": 3000000
-        },
-        {
-          "name": "Fredrik Aursnes",
-          "position": "MED",
-          "flag": "NO",
-          "age": 30,
-          "value": 15000000
-        },
-        {
-          "name": "Richard Ríos",
-          "position": "MED",
-          "flag": "CO",
-          "age": 26,
-          "value": 26000000
         },
         {
           "name": "Enzo Barrenechea",
@@ -571,6 +571,20 @@
           "flag": "PT",
           "age": 25,
           "value": 7500000
+        },
+        {
+          "name": "João Palhinha",
+          "position": "MED",
+          "flag": "PT",
+          "age": 31,
+          "value": 18000000
+        },
+        {
+          "name": "Fredrik Aursnes",
+          "position": "MED",
+          "flag": "NO",
+          "age": 30,
+          "value": 15000000
         },
         {
           "name": "Leandro Barreiro",
@@ -590,8 +604,15 @@
           "name": "Georgiy Sudakov",
           "position": "MED",
           "flag": "UA",
-          "age": 23,
+          "age": 24,
           "value": 26000000
+        },
+        {
+          "name": "Claudio Echeverri",
+          "position": "MED",
+          "flag": "AR",
+          "age": 20,
+          "value": 15000000
         },
         {
           "name": "Gonçalo Moreira",
@@ -627,20 +648,6 @@
           "flag": "PT",
           "age": 33,
           "value": 4000000
-        },
-        {
-          "name": "Tiago Gouveia",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 25,
-          "value": 4000000
-        },
-        {
-          "name": "João Rego",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 21,
-          "value": 3000000
         },
         {
           "name": "Vangelis Pavlidis",
@@ -715,6 +722,27 @@
           "value": 1400000
         },
         {
+          "name": "Matheus Santos",
+          "position": "GR",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Fodé Pascoal",
+          "position": "DEF",
+          "flag": "GW",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Matheus Araújo",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
           "name": "Víctor Gómez",
           "position": "DEF",
           "flag": "ES",
@@ -761,7 +789,7 @@
           "position": "DEF",
           "flag": "DE",
           "age": 23,
-          "value": 8500000
+          "value": 9000000
         },
         {
           "name": "Adrian Barisic",
@@ -785,11 +813,11 @@
           "value": 800000
         },
         {
-          "name": "Leonardo Lelo",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 26,
-          "value": 5500000
+          "name": "Tommy Marqués",
+          "position": "MED",
+          "flag": "ES",
+          "age": 19,
+          "value": 8000000
         },
         {
           "name": "João Moutinho",
@@ -810,7 +838,7 @@
           "position": "MED",
           "flag": "FR",
           "age": 24,
-          "value": 8500000
+          "value": 9000000
         },
         {
           "name": "Demir Tiknaz",
@@ -827,10 +855,10 @@
           "value": 5000000
         },
         {
-          "name": "Luisinho",
+          "name": "João Trovisco",
           "position": "MED",
           "flag": "PT",
-          "age": 20,
+          "age": 18,
           "value": null
         },
         {
@@ -838,6 +866,20 @@
           "position": "MED",
           "flag": "PT",
           "age": 18,
+          "value": null
+        },
+        {
+          "name": "Jovan Milosevic",
+          "position": "ATA",
+          "flag": "RS",
+          "age": 21,
+          "value": 7000000
+        },
+        {
+          "name": "Rúben Furtado",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 20,
           "value": null
         },
         {
@@ -855,7 +897,7 @@
           "value": 4000000
         },
         {
-          "name": "Pau Victor",
+          "name": "Pau Víctor",
           "position": "ATA",
           "flag": "ES",
           "age": 24,
@@ -880,7 +922,7 @@
           "position": "ATA",
           "flag": "PT",
           "age": 31,
-          "value": 9500000
+          "value": 9000000
         },
         {
           "name": "Gabri Martínez",
@@ -941,10 +983,17 @@
           "value": 2000000
         },
         {
+          "name": "Víctor Rofino",
+          "position": "DEF",
+          "flag": "GW",
+          "age": 24,
+          "value": 650000
+        },
+        {
           "name": "Rodrigo Pinheiro",
           "position": "DEF",
           "flag": "PT",
-          "age": 23,
+          "age": 24,
           "value": 5000000
         },
         {
@@ -965,7 +1014,7 @@
           "name": "Matheus Mattara",
           "position": "DEF",
           "flag": "BR",
-          "age": 19,
+          "age": 20,
           "value": null
         },
         {
@@ -1004,20 +1053,6 @@
           "value": 10000000
         },
         {
-          "name": "Gonzalo Pastor",
-          "position": "MED",
-          "flag": "ES",
-          "age": 20,
-          "value": null
-        },
-        {
-          "name": "Lamine Beye",
-          "position": "MED",
-          "flag": "SN",
-          "age": 19,
-          "value": null
-        },
-        {
           "name": "Paulo Moreira",
           "position": "MED",
           "flag": "PT",
@@ -1030,6 +1065,13 @@
           "flag": "HU",
           "age": 21,
           "value": 1500000
+        },
+        {
+          "name": "Gonzalo Pastor",
+          "position": "MED",
+          "flag": "ES",
+          "age": 20,
+          "value": null
         },
         {
           "name": "Mathis Jangeal",
@@ -1072,6 +1114,13 @@
           "flag": "PT",
           "age": 29,
           "value": 2000000
+        },
+        {
+          "name": "Patricio Salas",
+          "position": "ATA",
+          "flag": "MX",
+          "age": 22,
+          "value": null
         },
         {
           "name": "Georgios Koutsias",
@@ -1128,7 +1177,7 @@
           "name": "José Silva",
           "position": "DEF",
           "flag": "PT",
-          "age": 20,
+          "age": 21,
           "value": 500000
         },
         {
@@ -1142,7 +1191,7 @@
           "name": "Antonio Espigares",
           "position": "DEF",
           "flag": "ES",
-          "age": 21,
+          "age": 22,
           "value": 500000
         },
         {
@@ -1192,21 +1241,14 @@
           "position": "MED",
           "flag": "PT",
           "age": 19,
-          "value": null
-        },
-        {
-          "name": "Facundo Cáseres",
-          "position": "MED",
-          "flag": "AR",
-          "age": 25,
-          "value": 2500000
+          "value": 50000
         },
         {
           "name": "Zé Carlos",
           "position": "MED",
           "flag": "PT",
           "age": 24,
-          "value": 750000
+          "value": 1000000
         },
         {
           "name": "Andreas Lausen",
@@ -1226,8 +1268,15 @@
           "name": "Santi García",
           "position": "MED",
           "flag": "ES",
-          "age": 24,
+          "age": 25,
           "value": 4000000
+        },
+        {
+          "name": "Guilherme Gomes",
+          "position": "MED",
+          "flag": "BR",
+          "age": 20,
+          "value": null
         },
         {
           "name": "Gonçalo Maia",
@@ -1254,7 +1303,7 @@
           "name": "Walace França",
           "position": "ATA",
           "flag": "BR",
-          "age": 20,
+          "age": 21,
           "value": 500000
         },
         {
@@ -1340,7 +1389,7 @@
           "name": "Martin Turk",
           "position": "GR",
           "flag": "SI",
-          "age": 22,
+          "age": 23,
           "value": 300000
         },
         {
@@ -1372,10 +1421,17 @@
           "value": 1000000
         },
         {
-          "name": "Diogo Brasido",
+          "name": "Roko Juriši&#263;",
           "position": "DEF",
-          "flag": "PT",
-          "age": 23,
+          "flag": "HR",
+          "age": 24,
+          "value": 600000
+        },
+        {
+          "name": "Gusttavo",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 20,
           "value": null
         },
         {
@@ -1384,20 +1440,6 @@
           "flag": "ES",
           "age": 20,
           "value": 400000
-        },
-        {
-          "name": "Stelios Andreou",
-          "position": "DEF",
-          "flag": "CY",
-          "age": 24,
-          "value": 2500000
-        },
-        {
-          "name": "Jordan Arnolin",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 18,
-          "value": null
         },
         {
           "name": "Pedro Carvalho",
@@ -1421,6 +1463,27 @@
           "value": 200000
         },
         {
+          "name": "Stelios Andreou",
+          "position": "DEF",
+          "flag": "CY",
+          "age": 24,
+          "value": 2500000
+        },
+        {
+          "name": "Samuel Amissah",
+          "position": "DEF",
+          "flag": null,
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Jordan Arnolin",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
           "name": "Fernando Medrano",
           "position": "DEF",
           "flag": "ES",
@@ -1442,11 +1505,11 @@
           "value": 750000
         },
         {
-          "name": "Jandro Orellana",
+          "name": "Xavi Sintes",
           "position": "MED",
           "flag": "ES",
-          "age": 26,
-          "value": 1000000
+          "age": 25,
+          "value": 300000
         },
         {
           "name": "Xeka",
@@ -1461,6 +1524,13 @@
           "flag": null,
           "age": 26,
           "value": 5000000
+        },
+        {
+          "name": "Nail Omerovic",
+          "position": "MED",
+          "flag": "BA",
+          "age": 23,
+          "value": 2000000
         },
         {
           "name": "João Carvalho",
@@ -1482,6 +1552,20 @@
           "flag": "PT",
           "age": 22,
           "value": 300000
+        },
+        {
+          "name": "Milan Robin",
+          "position": "MED",
+          "flag": "FR",
+          "age": 26,
+          "value": 1000000
+        },
+        {
+          "name": "Axel Camblan",
+          "position": "ATA",
+          "flag": "FR",
+          "age": 23,
+          "value": 650000
         },
         {
           "name": "Khayon Edwards",
@@ -1556,6 +1640,13 @@
           "value": 600000
         },
         {
+          "name": "Rabello",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 18,
+          "value": null
+        },
+        {
           "name": "Leandro Santos",
           "position": "DEF",
           "flag": "PT",
@@ -1566,7 +1657,7 @@
           "name": "Dinis Pinto",
           "position": "DEF",
           "flag": "PT",
-          "age": 25,
+          "age": 26,
           "value": 3000000
         },
         {
@@ -1591,17 +1682,10 @@
           "value": 700000
         },
         {
-          "name": "Pedro Jesus",
-          "position": "DEF",
-          "flag": "BR",
-          "age": 18,
-          "value": null
-        },
-        {
           "name": "Janderson",
           "position": "DEF",
           "flag": "BR",
-          "age": 20,
+          "age": 21,
           "value": 300000
         },
         {
@@ -1610,6 +1694,13 @@
           "flag": "GW",
           "age": 22,
           "value": 1600000
+        },
+        {
+          "name": "Pedro Jesus",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 18,
+          "value": null
         },
         {
           "name": "Álvaro Martínez",
@@ -1626,6 +1717,13 @@
           "value": 1500000
         },
         {
+          "name": "Chipyoka Songa",
+          "position": "MED",
+          "flag": "ZM",
+          "age": 21,
+          "value": 550000
+        },
+        {
           "name": "Mateja Stjepanović",
           "position": "MED",
           "flag": "RS",
@@ -1633,18 +1731,18 @@
           "value": 3000000
         },
         {
-          "name": "Afonso Assis",
-          "position": "MED",
-          "flag": "PT",
-          "age": 20,
-          "value": 200000
-        },
-        {
           "name": "Guilherme Liberato",
           "position": "MED",
           "flag": "BR",
           "age": 25,
           "value": 800000
+        },
+        {
+          "name": "Afonso Assis",
+          "position": "MED",
+          "flag": "PT",
+          "age": 20,
+          "value": 200000
         },
         {
           "name": "João Veloso",
@@ -1682,6 +1780,34 @@
           "value": 100000
         },
         {
+          "name": "Manuel Mendonça",
+          "position": "MED",
+          "flag": "PT",
+          "age": 21,
+          "value": 1800000
+        },
+        {
+          "name": "Tiago Andrade",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 20,
+          "value": 1000000
+        },
+        {
+          "name": "Leonardo Vonić",
+          "position": "ATA",
+          "flag": "HR",
+          "age": 23,
+          "value": 800000
+        },
+        {
+          "name": "Afonso Vieira",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
           "name": "Afonso Carvalho",
           "position": "ATA",
           "flag": "PT",
@@ -1693,13 +1819,6 @@
           "position": "ATA",
           "flag": "ES",
           "age": 21,
-          "value": null
-        },
-        {
-          "name": "Afonso Vieira",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 19,
           "value": null
         },
         {
@@ -1778,7 +1897,7 @@
           "name": "Igor Julião",
           "position": "DEF",
           "flag": "BR",
-          "age": 31,
+          "age": 32,
           "value": 350000
         },
         {
@@ -1789,11 +1908,11 @@
           "value": 400000
         },
         {
-          "name": "Noah Madsen",
+          "name": "Nilton Varela",
           "position": "DEF",
-          "flag": "DK",
-          "age": 24,
-          "value": 1300000
+          "flag": "PT",
+          "age": 25,
+          "value": 850000
         },
         {
           "name": "Paulo Henrique",
@@ -1859,13 +1978,6 @@
           "value": 300000
         },
         {
-          "name": "Francisco Silva",
-          "position": "MED",
-          "flag": "PT",
-          "age": 19,
-          "value": null
-        },
-        {
           "name": "Yellu Santiago",
           "position": "MED",
           "flag": "ES",
@@ -1878,6 +1990,13 @@
           "flag": "NG",
           "age": 21,
           "value": 300000
+        },
+        {
+          "name": "Francisco Silva",
+          "position": "MED",
+          "flag": "PT",
+          "age": 19,
+          "value": null
         },
         {
           "name": "Nélio Batista",
@@ -1915,6 +2034,13 @@
           "value": 1200000
         },
         {
+          "name": "Mons Bassouamina",
+          "position": "ATA",
+          "flag": null,
+          "age": 28,
+          "value": 450000
+        },
+        {
           "name": "Francisco Gomes",
           "position": "ATA",
           "flag": "PT",
@@ -1946,7 +2072,7 @@
           "name": "Maurice Boakye",
           "position": "ATA",
           "flag": "DE",
-          "age": 21,
+          "age": 22,
           "value": 300000
         },
         {
@@ -1969,14 +2095,21 @@
           "name": "Marcos Lavín",
           "position": "GR",
           "flag": "ES",
-          "age": 29,
+          "age": 30,
           "value": 200000
+        },
+        {
+          "name": "Juan Soriano",
+          "position": "GR",
+          "flag": "ES",
+          "age": 29,
+          "value": 950000
         },
         {
           "name": "Matheus Sampaio",
           "position": "GR",
           "flag": "BR",
-          "age": 21,
+          "age": 22,
           "value": 200000
         },
         {
@@ -1992,6 +2125,20 @@
           "flag": "PT",
           "age": 18,
           "value": null
+        },
+        {
+          "name": "Miguel Brau",
+          "position": "DEF",
+          "flag": "ES",
+          "age": 24,
+          "value": 1000000
+        },
+        {
+          "name": "Hugo Gambor",
+          "position": "DEF",
+          "flag": "CF",
+          "age": 23,
+          "value": 1200000
         },
         {
           "name": "Tomás Domingos",
@@ -2120,11 +2267,18 @@
           "value": 250000
         },
         {
-          "name": "Mohamed Bouldini",
+          "name": "Valery Fernández",
           "position": "ATA",
-          "flag": "MA",
-          "age": 30,
-          "value": 400000
+          "flag": "ES",
+          "age": 26,
+          "value": 750000
+        },
+        {
+          "name": "Paulinho",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 26,
+          "value": 450000
         },
         {
           "name": "João Guilherme",
@@ -2139,6 +2293,13 @@
           "flag": "CI",
           "age": 22,
           "value": 350000
+        },
+        {
+          "name": "Mohamed Bouldini",
+          "position": "ATA",
+          "flag": "MA",
+          "age": 30,
+          "value": 400000
         },
         {
           "name": "Dominik Steczyk",
@@ -2160,13 +2321,6 @@
           "flag": "CR",
           "age": 24,
           "value": 1600000
-        },
-        {
-          "name": "Simão Silva",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 21,
-          "value": 250000
         }
       ],
       "coverage": "complete"
@@ -2213,11 +2367,25 @@
           "value": 150000
         },
         {
-          "name": "Volnei Feltes",
+          "name": "Vasco Silva",
           "position": "DEF",
-          "flag": "BR",
-          "age": 26,
-          "value": 450000
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Rodrigo Guerreiro",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Danny Viljoen Ramos",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 21,
+          "value": null
         },
         {
           "name": "Stopira",
@@ -2227,11 +2395,25 @@
           "value": 50000
         },
         {
+          "name": "Volnei Feltes",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 26,
+          "value": 450000
+        },
+        {
           "name": "Javi Vázquez",
           "position": "DEF",
           "flag": "ES",
           "age": 25,
           "value": 2500000
+        },
+        {
+          "name": "Christ  Bouabré",
+          "position": "DEF",
+          "flag": "CI",
+          "age": 18,
+          "value": null
         },
         {
           "name": "Marcos Vinicius",
@@ -2251,7 +2433,7 @@
           "name": "Jonathan Mutombo",
           "position": "DEF",
           "flag": "FR",
-          "age": 23,
+          "age": 24,
           "value": 400000
         },
         {
@@ -2260,13 +2442,6 @@
           "flag": "BR",
           "age": 22,
           "value": 450000
-        },
-        {
-          "name": "Arnau Casas",
-          "position": "DEF",
-          "flag": "ES",
-          "age": 22,
-          "value": 500000
         },
         {
           "name": "Mohamed Diadié",
@@ -2279,7 +2454,7 @@
           "name": "Jérémy Mounsesse",
           "position": "DEF",
           "flag": "CG",
-          "age": 20,
+          "age": 21,
           "value": 250000
         },
         {
@@ -2311,6 +2486,13 @@
           "value": 400000
         },
         {
+          "name": "Amine Oudrhiri",
+          "position": "MED",
+          "flag": "FR",
+          "age": 33,
+          "value": 300000
+        },
+        {
           "name": "André Simões",
           "position": "MED",
           "flag": "PT",
@@ -2325,10 +2507,10 @@
           "value": null
         },
         {
-          "name": "Marquinhos",
+          "name": "Kenen Torres",
           "position": "MED",
-          "flag": "BR",
-          "age": 22,
+          "flag": "CO",
+          "age": 19,
           "value": null
         },
         {
@@ -2342,7 +2524,7 @@
           "name": "João Costinha",
           "position": "MED",
           "flag": "PT",
-          "age": 33,
+          "age": 34,
           "value": 125000
         },
         {
@@ -2356,14 +2538,21 @@
           "name": "Joel Romero",
           "position": "MED",
           "flag": "CO",
-          "age": 19,
+          "age": 20,
           "value": 500000
+        },
+        {
+          "name": "Marquinhos",
+          "position": "MED",
+          "flag": "BR",
+          "age": 22,
+          "value": null
         },
         {
           "name": "Pité",
           "position": "MED",
           "flag": "PT",
-          "age": 31,
+          "age": 32,
           "value": 100000
         },
         {
@@ -2379,6 +2568,34 @@
           "flag": "ES",
           "age": 22,
           "value": 300000
+        },
+        {
+          "name": "Vando Félix",
+          "position": "ATA",
+          "flag": "GW",
+          "age": 24,
+          "value": 700000
+        },
+        {
+          "name": "Malik Abubakari",
+          "position": "ATA",
+          "flag": "GH",
+          "age": 26,
+          "value": 400000
+        },
+        {
+          "name": "João Marques",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 24,
+          "value": 1600000
+        },
+        {
+          "name": "Paulinho Venuto",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 21,
+          "value": null
         },
         {
           "name": "Bryan Meyo",
@@ -2400,20 +2617,6 @@
           "flag": "CO",
           "age": 21,
           "value": 500000
-        },
-        {
-          "name": "Bob Omoregbe",
-          "position": "ATA",
-          "flag": "IT",
-          "age": 22,
-          "value": 350000
-        },
-        {
-          "name": "Kévin Zohi",
-          "position": "ATA",
-          "flag": "ML",
-          "age": 29,
-          "value": 800000
         },
         {
           "name": "Jorge Aguirre",
@@ -2467,13 +2670,6 @@
       "coach": "Fábio Pereira",
       "players": [
         {
-          "name": "Yago Moreira",
-          "position": "GR",
-          "flag": "ES",
-          "age": 20,
-          "value": null
-        },
-        {
           "name": "Christian Sánchez",
           "position": "GR",
           "flag": "CU",
@@ -2488,11 +2684,18 @@
           "value": 250000
         },
         {
-          "name": "José Pedro",
+          "name": "Yago Moreira",
+          "position": "GR",
+          "flag": "ES",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Miguel Nóbrega",
           "position": "DEF",
           "flag": "PT",
-          "age": 24,
-          "value": null
+          "age": 26,
+          "value": 400000
         },
         {
           "name": "Miguel Maga",
@@ -2502,18 +2705,11 @@
           "value": 650000
         },
         {
-          "name": "Leo Mascaró",
+          "name": "José Pedro",
           "position": "DEF",
-          "flag": "BY",
-          "age": 23,
-          "value": 150000
-        },
-        {
-          "name": "Víctor Rofino",
-          "position": "DEF",
-          "flag": "GW",
+          "flag": "PT",
           "age": 24,
-          "value": 650000
+          "value": null
         },
         {
           "name": "Marcelo",
@@ -2523,18 +2719,25 @@
           "value": 100000
         },
         {
+          "name": "Leo Mascaró",
+          "position": "DEF",
+          "flag": "BY",
+          "age": 23,
+          "value": 150000
+        },
+        {
           "name": "Marc Baró",
           "position": "DEF",
           "flag": "ES",
-          "age": 26,
+          "age": 27,
           "value": 750000
         },
         {
-          "name": "Mathias Paez",
-          "position": "MED",
-          "flag": "VE",
-          "age": 19,
-          "value": null
+          "name": "Hugo Masaki",
+          "position": "DEF",
+          "flag": "BE",
+          "age": 22,
+          "value": 350000
         },
         {
           "name": "Reko",
@@ -2544,6 +2747,13 @@
           "value": 350000
         },
         {
+          "name": "Diogo Martins",
+          "position": "MED",
+          "flag": "PT",
+          "age": 30,
+          "value": 300000
+        },
+        {
           "name": "Martim Almeida",
           "position": "MED",
           "flag": "PT",
@@ -2551,17 +2761,10 @@
           "value": 1000000
         },
         {
-          "name": "Diogo Martins",
+          "name": "Mathias Paez",
           "position": "MED",
-          "flag": "PT",
-          "age": 29,
-          "value": 300000
-        },
-        {
-          "name": "Hope Linus",
-          "position": "MED",
-          "flag": "NG",
-          "age": 20,
+          "flag": "VE",
+          "age": 19,
           "value": null
         },
         {
@@ -2586,6 +2789,13 @@
           "value": 20000
         },
         {
+          "name": "Hope Linus",
+          "position": "MED",
+          "flag": "NG",
+          "age": 20,
+          "value": null
+        },
+        {
           "name": "Ibrahima Guirassy",
           "position": "MED",
           "flag": "FR",
@@ -2596,15 +2806,8 @@
           "name": "Albert Lottin",
           "position": "MED",
           "flag": "FR",
-          "age": 24,
+          "age": 25,
           "value": 300000
-        },
-        {
-          "name": "Bernardo Gomes",
-          "position": "MED",
-          "flag": "PT",
-          "age": 22,
-          "value": 150000
         },
         {
           "name": "Duarte Machado",
@@ -2614,11 +2817,18 @@
           "value": null
         },
         {
-          "name": "Juan Muñoz",
+          "name": "Bernardo Gomes",
+          "position": "MED",
+          "flag": "PT",
+          "age": 22,
+          "value": 150000
+        },
+        {
+          "name": "Damien Loppy",
           "position": "ATA",
-          "flag": "ES",
-          "age": 30,
-          "value": 700000
+          "flag": "FR",
+          "age": 28,
+          "value": 400000
         },
         {
           "name": "Jordan van der Gaag",
@@ -2628,18 +2838,18 @@
           "value": 450000
         },
         {
+          "name": "Jaiminho",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 28,
+          "value": 200000
+        },
+        {
           "name": "Jair da Silva",
           "position": "ATA",
           "flag": "BR",
           "age": 29,
           "value": 500000
-        },
-        {
-          "name": "Hugo Masaki",
-          "position": "ATA",
-          "flag": "BE",
-          "age": 22,
-          "value": 350000
         },
         {
           "name": "Martim Ribeiro",
@@ -2663,11 +2873,11 @@
           "value": null
         },
         {
-          "name": "José Nabil Ondó",
+          "name": "Juan Muñoz",
           "position": "ATA",
-          "flag": "GQ",
-          "age": 20,
-          "value": null
+          "flag": "ES",
+          "age": 30,
+          "value": 700000
         },
         {
           "name": "Pablo Fernández",
@@ -2688,6 +2898,13 @@
           "position": "ATA",
           "flag": "MZ",
           "age": 17,
+          "value": null
+        },
+        {
+          "name": "José Nabil Ondó",
+          "position": "ATA",
+          "flag": "GQ",
+          "age": 20,
           "value": null
         },
         {
@@ -2714,13 +2931,6 @@
           "value": 900000
         },
         {
-          "name": "Tim Guillou",
-          "position": "GR",
-          "flag": "FR",
-          "age": 18,
-          "value": null
-        },
-        {
           "name": "Aleksandar Vulic",
           "position": "GR",
           "flag": "RS",
@@ -2735,6 +2945,48 @@
           "value": 100000
         },
         {
+          "name": "Tim Guillou",
+          "position": "GR",
+          "flag": "FR",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Ismael Diallo",
+          "position": "DEF",
+          "flag": "CI",
+          "age": 29,
+          "value": 400000
+        },
+        {
+          "name": "Luis Mina",
+          "position": "DEF",
+          "flag": "CO",
+          "age": 21,
+          "value": 300000
+        },
+        {
+          "name": "Alfred Caicedo",
+          "position": "DEF",
+          "flag": "EC",
+          "age": 21,
+          "value": 300000
+        },
+        {
+          "name": "Jójó",
+          "position": "DEF",
+          "flag": "CV",
+          "age": 25,
+          "value": 400000
+        },
+        {
+          "name": "Jean-Pierre Rhyner",
+          "position": "DEF",
+          "flag": "CH",
+          "age": 30,
+          "value": 250000
+        },
+        {
           "name": "Luís Rocha",
           "position": "DEF",
           "flag": "PT",
@@ -2742,17 +2994,24 @@
           "value": 50000
         },
         {
-          "name": "Bright Godwin",
-          "position": "DEF",
-          "flag": "NG",
-          "age": 24,
-          "value": 600000
-        },
-        {
           "name": "José Sampaio",
           "position": "DEF",
           "flag": "PT",
           "age": 21,
+          "value": 600000
+        },
+        {
+          "name": "Andrea Hristov",
+          "position": "DEF",
+          "flag": "BG",
+          "age": 27,
+          "value": 250000
+        },
+        {
+          "name": "Bright Godwin",
+          "position": "DEF",
+          "flag": "NG",
+          "age": 24,
           "value": 600000
         },
         {
@@ -2763,67 +3022,18 @@
           "value": null
         },
         {
-          "name": "Andrea Hristov",
-          "position": "DEF",
-          "flag": "BG",
-          "age": 27,
-          "value": 250000
-        },
-        {
-          "name": "Jójó",
-          "position": "DEF",
-          "flag": "CV",
-          "age": 25,
-          "value": 400000
-        },
-        {
-          "name": "Alfred Caicedo",
-          "position": "DEF",
-          "flag": "EC",
-          "age": 21,
-          "value": 300000
-        },
-        {
-          "name": "Jean-Pierre Rhyner",
-          "position": "DEF",
-          "flag": "CH",
-          "age": 30,
-          "value": 250000
-        },
-        {
-          "name": "Leverton Pierre",
-          "position": "MED",
-          "flag": "HT",
-          "age": 28,
-          "value": 200000
-        },
-        {
-          "name": "Rodrigo Ramos",
-          "position": "MED",
-          "flag": "PT",
-          "age": 22,
-          "value": 300000
-        },
-        {
-          "name": "Heinz Mörschel",
-          "position": "MED",
-          "flag": "DO",
-          "age": 28,
-          "value": 1200000
-        },
-        {
-          "name": "Ângelo Neto",
-          "position": "MED",
-          "flag": "BR",
-          "age": 34,
-          "value": 100000
-        },
-        {
           "name": "Hristo Ivanov",
           "position": "MED",
           "flag": "BG",
           "age": 25,
           "value": 800000
+        },
+        {
+          "name": "Aliou Traoré",
+          "position": "MED",
+          "flag": "FR",
+          "age": 25,
+          "value": 550000
         },
         {
           "name": "Moustapha Sanogo",
@@ -2840,11 +3050,25 @@
           "value": 150000
         },
         {
+          "name": "Leverton Pierre",
+          "position": "MED",
+          "flag": "HT",
+          "age": 28,
+          "value": 200000
+        },
+        {
           "name": "Miguel Pires",
           "position": "MED",
           "flag": "PT",
           "age": 24,
           "value": 250000
+        },
+        {
+          "name": "Ângelo Neto",
+          "position": "MED",
+          "flag": "BR",
+          "age": 35,
+          "value": 100000
         },
         {
           "name": "Angel Bastunov",
@@ -2854,18 +3078,25 @@
           "value": 350000
         },
         {
-          "name": "Manu Garrido",
-          "position": "ATA",
-          "flag": "ES",
-          "age": 25,
-          "value": 250000
+          "name": "Rodrigo Ramos",
+          "position": "MED",
+          "flag": "PT",
+          "age": 22,
+          "value": 300000
         },
         {
-          "name": "Yann Kitala",
+          "name": "Heinz Mörschel",
+          "position": "MED",
+          "flag": "DO",
+          "age": 29,
+          "value": 1200000
+        },
+        {
+          "name": "Lucas Antañón",
           "position": "ATA",
-          "flag": "CD",
-          "age": 28,
-          "value": 175000
+          "flag": "ES",
+          "age": 23,
+          "value": 200000
         },
         {
           "name": "Karamoko Bamba",
@@ -2878,7 +3109,7 @@
           "name": "Miguel Tavares",
           "position": "ATA",
           "flag": "PT",
-          "age": 27,
+          "age": 28,
           "value": 400000
         },
         {
@@ -2889,6 +3120,13 @@
           "value": 550000
         },
         {
+          "name": "Manu Garrido",
+          "position": "ATA",
+          "flag": "ES",
+          "age": 25,
+          "value": 250000
+        },
+        {
           "name": "Yassin Fortuné",
           "position": "ATA",
           "flag": "HT",
@@ -2896,18 +3134,25 @@
           "value": 300000
         },
         {
+          "name": "Yann Kitala",
+          "position": "ATA",
+          "flag": "CD",
+          "age": 28,
+          "value": 175000
+        },
+        {
+          "name": "Augustine Adamu",
+          "position": "ATA",
+          "flag": "NG",
+          "age": 19,
+          "value": null
+        },
+        {
           "name": "Anthony Carter",
           "position": "ATA",
           "flag": "AU",
-          "age": 31,
+          "age": 32,
           "value": 200000
-        },
-        {
-          "name": "Damien Loppy",
-          "position": "ATA",
-          "flag": "FR",
-          "age": 28,
-          "value": 400000
         },
         {
           "name": "Thio",
@@ -2947,18 +3192,11 @@
           "value": 20000
         },
         {
-          "name": "Vitor Hugo",
+          "name": "Brian Araújo",
           "position": "GR",
-          "flag": "BR",
-          "age": 25,
-          "value": 200000
-        },
-        {
-          "name": "Leo Paiva",
-          "position": "DEF",
           "flag": "PT",
-          "age": 17,
-          "value": null
+          "age": 26,
+          "value": 500000
         },
         {
           "name": "Ricardinho",
@@ -3001,6 +3239,13 @@
           "flag": "PT",
           "age": 22,
           "value": 200000
+        },
+        {
+          "name": "Leo Paiva",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 17,
+          "value": null
         },
         {
           "name": "Guilherme Soares",
@@ -3048,7 +3293,7 @@
           "name": "Arsénio Nunes",
           "position": "MED",
           "flag": "PT",
-          "age": 36,
+          "age": 37,
           "value": 150000
         },
         {
@@ -3062,8 +3307,15 @@
           "name": "André Ricardo",
           "position": "MED",
           "flag": "PT",
-          "age": 25,
+          "age": 26,
           "value": 350000
+        },
+        {
+          "name": "Manel",
+          "position": "MED",
+          "flag": "PT",
+          "age": 19,
+          "value": null
         },
         {
           "name": "Miguel Teixeira",
@@ -3101,6 +3353,13 @@
           "value": 175000
         },
         {
+          "name": "Iuri Moreira",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 22,
+          "value": 1000000
+        },
+        {
           "name": "Mika Borges",
           "position": "ATA",
           "flag": "PT",
@@ -3111,15 +3370,8 @@
           "name": "Paulité",
           "position": "ATA",
           "flag": "PT",
-          "age": 25,
+          "age": 26,
           "value": 400000
-        },
-        {
-          "name": "Manel",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 19,
-          "value": null
         }
       ],
       "coverage": "complete"
@@ -3152,10 +3404,24 @@
           "value": 200000
         },
         {
+          "name": "Miguel Rocha",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Dorival",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 22,
+          "value": null
+        },
+        {
           "name": "Luiz Gustavo",
           "position": "DEF",
           "flag": "BR",
-          "age": 26,
+          "age": 27,
           "value": 350000
         },
         {
@@ -3211,8 +3477,15 @@
           "name": "Mohamed Diaby",
           "position": "MED",
           "flag": "FR",
-          "age": 29,
+          "age": 30,
           "value": 200000
+        },
+        {
+          "name": "Luisinho",
+          "position": "MED",
+          "flag": "PT",
+          "age": 20,
+          "value": null
         },
         {
           "name": "Samad",
@@ -3274,8 +3547,22 @@
           "name": "Jair Monteiro",
           "position": "ATA",
           "flag": "PT",
-          "age": 19,
+          "age": 20,
           "value": null
+        },
+        {
+          "name": "Alexandre Guedes",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 32,
+          "value": 150000
+        },
+        {
+          "name": "Henrique Pereira",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 24,
+          "value": 1800000
         },
         {
           "name": "Piri",
@@ -3306,13 +3593,6 @@
           "value": null
         },
         {
-          "name": "Danny Pires",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 25,
-          "value": null
-        },
-        {
           "name": "Pedrinho",
           "position": "ATA",
           "flag": "BR",
@@ -3336,13 +3616,6 @@
           "value": 400000
         },
         {
-          "name": "Marko Gudzulic",
-          "position": "GR",
-          "flag": "RS",
-          "age": 24,
-          "value": 200000
-        },
-        {
           "name": "Rodrigo Moura",
           "position": "GR",
           "flag": "BR",
@@ -3350,17 +3623,17 @@
           "value": 150000
         },
         {
+          "name": "Marko Gudzulic",
+          "position": "GR",
+          "flag": "RS",
+          "age": 24,
+          "value": 200000
+        },
+        {
           "name": "Thiago Pereira",
           "position": "GR",
           "flag": "PT",
           "age": 22,
-          "value": null
-        },
-        {
-          "name": "Ivo Vázquez",
-          "position": "DEF",
-          "flag": "MX",
-          "age": 25,
           "value": null
         },
         {
@@ -3434,6 +3707,13 @@
           "value": 400000
         },
         {
+          "name": "Ivo Vázquez",
+          "position": "DEF",
+          "flag": "MX",
+          "age": 25,
+          "value": null
+        },
+        {
           "name": "Brice Eboudjé",
           "position": "MED",
           "flag": "CM",
@@ -3451,8 +3731,15 @@
           "name": "Gilberto García",
           "position": "MED",
           "flag": "MX",
-          "age": 25,
+          "age": 26,
           "value": 700000
+        },
+        {
+          "name": "Mohamed Fofana",
+          "position": "MED",
+          "flag": "CI",
+          "age": 21,
+          "value": 150000
         },
         {
           "name": "João Teixeira",
@@ -3467,13 +3754,6 @@
           "flag": null,
           "age": 26,
           "value": 650000
-        },
-        {
-          "name": "Ktatau",
-          "position": "MED",
-          "flag": "BR",
-          "age": 25,
-          "value": 300000
         },
         {
           "name": "Diogo Cardoso",
@@ -3504,13 +3784,6 @@
           "value": null
         },
         {
-          "name": "GB",
-          "position": "ATA",
-          "flag": "BR",
-          "age": 21,
-          "value": 3000000
-        },
-        {
           "name": "Marquinhos",
           "position": "ATA",
           "flag": "BR",
@@ -3530,6 +3803,20 @@
           "flag": "CV",
           "age": 24,
           "value": null
+        },
+        {
+          "name": "Júnior Mendes",
+          "position": "ATA",
+          "flag": "SN",
+          "age": 24,
+          "value": 400000
+        },
+        {
+          "name": "GB",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 21,
+          "value": 3000000
         },
         {
           "name": "Divin Muteba",
@@ -3574,6 +3861,13 @@
           "flag": "PT",
           "age": 23,
           "value": null
+        },
+        {
+          "name": "Diogo Fernandes",
+          "position": "GR",
+          "flag": "PT",
+          "age": 21,
+          "value": 800000
         },
         {
           "name": "Didi",
@@ -3667,6 +3961,13 @@
           "value": null
         },
         {
+          "name": "Rodrigo Carvalho",
+          "position": "MED",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
           "name": "Faissal Zangré",
           "position": "MED",
           "flag": "BF",
@@ -3728,6 +4029,13 @@
           "flag": "PT",
           "age": 33,
           "value": 150000
+        },
+        {
+          "name": "Simão Silva",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 21,
+          "value": 250000
         }
       ],
       "coverage": "complete"
@@ -3896,7 +4204,7 @@
           "name": "Eduardo Souza",
           "position": "ATA",
           "flag": "BR",
-          "age": 27,
+          "age": 28,
           "value": null
         },
         {
@@ -3928,13 +4236,6 @@
           "value": 150000
         },
         {
-          "name": "Francisco Faustino",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 18,
-          "value": null
-        },
-        {
           "name": "Martim Correia",
           "position": "ATA",
           "flag": "PT",
@@ -3956,18 +4257,18 @@
           "value": null
         },
         {
-          "name": "Lian",
-          "position": "ATA",
-          "flag": "BR",
-          "age": 20,
-          "value": null
-        },
-        {
           "name": "Valter Zacarias",
           "position": "ATA",
           "flag": "PT",
           "age": 28,
           "value": 30000
+        },
+        {
+          "name": "Lian",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 20,
+          "value": null
         },
         {
           "name": "Ricardo Fevereiro",
@@ -3993,13 +4294,6 @@
       "coach": "António Barbosa",
       "players": [
         {
-          "name": "Victor Braga",
-          "position": "GR",
-          "flag": "BR",
-          "age": 34,
-          "value": 300000
-        },
-        {
           "name": "Nuno Macedo",
           "position": "GR",
           "flag": "PT",
@@ -4007,25 +4301,25 @@
           "value": null
         },
         {
-          "name": "Afonso Silva",
+          "name": "Victor Braga",
           "position": "GR",
-          "flag": "PT",
-          "age": 18,
-          "value": null
+          "flag": "BR",
+          "age": 34,
+          "value": 300000
         },
         {
           "name": "Carlos Alves",
           "position": "GR",
           "flag": "PT",
           "age": 28,
-          "value": 50000
+          "value": 70000
         },
         {
-          "name": "Miguel Crespo",
-          "position": "GR",
-          "flag": "PT",
-          "age": 18,
-          "value": null
+          "name": "Xavi Grande",
+          "position": "DEF",
+          "flag": "ES",
+          "age": 21,
+          "value": 200000
         },
         {
           "name": "Edson Farias",
@@ -4067,7 +4361,7 @@
           "position": "DEF",
           "flag": "PT",
           "age": 23,
-          "value": null
+          "value": 100000
         },
         {
           "name": "Kaká",
@@ -4119,13 +4413,6 @@
           "value": null
         },
         {
-          "name": "Miguel Rebelo",
-          "position": "MED",
-          "flag": "PT",
-          "age": 22,
-          "value": 200000
-        },
-        {
           "name": "João Oliveira",
           "position": "MED",
           "flag": "PT",
@@ -4133,17 +4420,24 @@
           "value": 94000
         },
         {
+          "name": "Kévin Zohi",
+          "position": "ATA",
+          "flag": "ML",
+          "age": 29,
+          "value": 800000
+        },
+        {
           "name": "Afonso Rodrigues",
           "position": "ATA",
           "flag": "PT",
-          "age": 23,
+          "age": 24,
           "value": 200000
         },
         {
           "name": "Rui Gomes",
           "position": "ATA",
           "flag": "PT",
-          "age": 28,
+          "age": 29,
           "value": 200000
         },
         {
@@ -4210,6 +4504,13 @@
           "flag": "SN",
           "age": 28,
           "value": 150000
+        },
+        {
+          "name": "Renan Silva",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 22,
+          "value": null
         },
         {
           "name": "Kauã Oliveira",
@@ -4431,6 +4732,13 @@
           "value": 125000
         },
         {
+          "name": "Cheick Diakité",
+          "position": "DEF",
+          "flag": "ML",
+          "age": 19,
+          "value": null
+        },
+        {
           "name": "Moussa Camara",
           "position": "DEF",
           "flag": "ML",
@@ -4441,13 +4749,6 @@
           "name": "Kauê Alves",
           "position": "DEF",
           "flag": "BR",
-          "age": 20,
-          "value": null
-        },
-        {
-          "name": "Mamadu Queta",
-          "position": "DEF",
-          "flag": "GW",
           "age": 20,
           "value": null
         },
@@ -4469,7 +4770,7 @@
           "name": "João Ferreira",
           "position": "DEF",
           "flag": "PT",
-          "age": 22,
+          "age": 23,
           "value": null
         },
         {
@@ -4515,32 +4816,11 @@
           "value": 350000
         },
         {
-          "name": "Tiago Trindade",
-          "position": "MED",
-          "flag": "PT",
-          "age": 20,
-          "value": null
-        },
-        {
           "name": "Rodrigo Matos",
           "position": "MED",
           "flag": "PT",
           "age": 22,
           "value": 200000
-        },
-        {
-          "name": "Sergio Silva",
-          "position": "MED",
-          "flag": "PT",
-          "age": 45,
-          "value": null
-        },
-        {
-          "name": "Deme Jr.",
-          "position": "ATA",
-          "flag": "CI",
-          "age": 20,
-          "value": null
         },
         {
           "name": "Leandro Alves",
@@ -4557,10 +4837,10 @@
           "value": null
         },
         {
-          "name": "Ngom",
+          "name": "Deme Jr.",
           "position": "ATA",
-          "flag": "SN",
-          "age": 20,
+          "flag": "CI",
+          "age": 19,
           "value": null
         },
         {
@@ -4585,6 +4865,13 @@
           "value": null
         },
         {
+          "name": "Adama Ngom",
+          "position": "ATA",
+          "flag": "SN",
+          "age": 20,
+          "value": null
+        },
+        {
           "name": "José Precatado",
           "position": "ATA",
           "flag": "PT",
@@ -4604,13 +4891,6 @@
           "flag": "CI",
           "age": 34,
           "value": null
-        },
-        {
-          "name": "Linson Chiquemba",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 19,
-          "value": 150000
         }
       ],
       "coverage": "complete"
@@ -4619,7 +4899,7 @@
       "name": "U. Santarém",
       "division": 3,
       "zerozeroUrl": "/equipa/u-santarem/3947",
-      "coach": "Gonçalo Carvalho",
+      "coach": "Dimas",
       "players": [
         {
           "name": "Ricardo Ribeiro",
@@ -4634,13 +4914,6 @@
           "flag": "PT",
           "age": 23,
           "value": 100000
-        },
-        {
-          "name": "Mário Júnior",
-          "position": "DEF",
-          "flag": "GW",
-          "age": 23,
-          "value": null
         },
         {
           "name": "Dinis Almeida",
@@ -4692,10 +4965,24 @@
           "value": 150000
         },
         {
+          "name": "Mário Júnior",
+          "position": "DEF",
+          "flag": "GW",
+          "age": 23,
+          "value": null
+        },
+        {
           "name": "Rui Geadas",
           "position": "DEF",
           "flag": "PT",
           "age": 21,
+          "value": null
+        },
+        {
+          "name": "Xiaohan Xu",
+          "position": "MED",
+          "flag": "CN",
+          "age": 19,
           "value": null
         },
         {
@@ -4725,6 +5012,13 @@
           "flag": "PT",
           "age": 24,
           "value": 200000
+        },
+        {
+          "name": "Abderrahmane Soumaré",
+          "position": "MED",
+          "flag": "MR",
+          "age": 19,
+          "value": null
         },
         {
           "name": "Maya",
@@ -4762,13 +5056,6 @@
           "value": 250000
         },
         {
-          "name": "Aly Palacios",
-          "position": "ATA",
-          "flag": "CO",
-          "age": 23,
-          "value": 100000
-        },
-        {
           "name": "Rodrigo Silva",
           "position": "ATA",
           "flag": "PT",
@@ -4781,6 +5068,13 @@
           "flag": "PT",
           "age": 26,
           "value": 250000
+        },
+        {
+          "name": "Aly Palacios",
+          "position": "ATA",
+          "flag": "CO",
+          "age": 23,
+          "value": 100000
         }
       ],
       "coverage": "complete"
@@ -4809,7 +5103,7 @@
           "name": "Mateus Andrade",
           "position": "GR",
           "flag": "PT",
-          "age": 18,
+          "age": 19,
           "value": null
         },
         {
@@ -4827,18 +5121,18 @@
           "value": null
         },
         {
-          "name": "João Vale",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 20,
-          "value": 100000
-        },
-        {
           "name": "Luccão",
           "position": "DEF",
           "flag": "BR",
           "age": 23,
           "value": null
+        },
+        {
+          "name": "João Vale",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 20,
+          "value": 100000
         },
         {
           "name": "Joel Oliveira",
@@ -4855,13 +5149,6 @@
           "value": null
         },
         {
-          "name": "Tiago Silva",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 22,
-          "value": null
-        },
-        {
           "name": "Rafael Peixoto",
           "position": "DEF",
           "flag": "PT",
@@ -4870,6 +5157,13 @@
         },
         {
           "name": "Vicente Oliveira",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Tiago Silva",
           "position": "DEF",
           "flag": "PT",
           "age": 22,
@@ -4904,6 +5198,13 @@
           "value": null
         },
         {
+          "name": "Matheus Claudino",
+          "position": "MED",
+          "flag": "BR",
+          "age": 27,
+          "value": null
+        },
+        {
           "name": "Diogo Nunes",
           "position": "MED",
           "flag": "PT",
@@ -4932,17 +5233,17 @@
           "value": null
         },
         {
-          "name": "Kevyn",
+          "name": "Juninho",
           "position": "ATA",
           "flag": "BR",
           "age": 20,
           "value": null
         },
         {
-          "name": "Leo Lopes",
+          "name": "Kevyn",
           "position": "ATA",
-          "flag": "PT",
-          "age": 21,
+          "flag": "BR",
+          "age": 20,
           "value": null
         },
         {
@@ -4953,10 +5254,10 @@
           "value": 200000
         },
         {
-          "name": "Moussa Diarra",
+          "name": "Luis Miguel",
           "position": "ATA",
-          "flag": "ML",
-          "age": 27,
+          "flag": "BR",
+          "age": 21,
           "value": null
         },
         {
@@ -5007,20 +5308,13 @@
           "name": "José Bolívar",
           "position": "GR",
           "flag": "VE",
-          "age": 20,
+          "age": 21,
           "value": null
         },
         {
           "name": "Rodrigo Dias",
           "position": "GR",
           "flag": "PT",
-          "age": 25,
-          "value": null
-        },
-        {
-          "name": "Alison Calegari",
-          "position": "DEF",
-          "flag": "BR",
           "age": 25,
           "value": null
         },
@@ -5032,10 +5326,10 @@
           "value": null
         },
         {
-          "name": "Eduardo Monteiro",
+          "name": "Alison Calegari",
           "position": "DEF",
-          "flag": "PT",
-          "age": 24,
+          "flag": "BR",
+          "age": 25,
           "value": null
         },
         {
@@ -5050,6 +5344,13 @@
           "position": "DEF",
           "flag": "PT",
           "age": 23,
+          "value": null
+        },
+        {
+          "name": "Eduardo Monteiro",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 24,
           "value": null
         },
         {
@@ -5072,6 +5373,20 @@
           "flag": "PT",
           "age": 22,
           "value": null
+        },
+        {
+          "name": "Pedro Ramos",
+          "position": "MED",
+          "flag": "PT",
+          "age": 21,
+          "value": 150000
+        },
+        {
+          "name": "Gabriel Costa",
+          "position": "MED",
+          "flag": "PT",
+          "age": 19,
+          "value": 150000
         },
         {
           "name": "Ricardo Dias",
@@ -5105,15 +5420,8 @@
           "name": "Bernardo Lourenço",
           "position": "MED",
           "flag": "PT",
-          "age": 23,
+          "age": 24,
           "value": 50000
-        },
-        {
-          "name": "Solo Traoré",
-          "position": "ATA",
-          "flag": "ES",
-          "age": 20,
-          "value": 25000
         },
         {
           "name": "Edgar Pacheco",
@@ -5130,11 +5438,11 @@
           "value": null
         },
         {
-          "name": "Nuno Gaspar",
+          "name": "Solo Traoré",
           "position": "ATA",
-          "flag": "PT",
-          "age": 22,
-          "value": null
+          "flag": "ES",
+          "age": 20,
+          "value": 25000
         },
         {
           "name": "Caio Santana",
@@ -5172,6 +5480,13 @@
           "value": null
         },
         {
+          "name": "Nuno Gaspar",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
           "name": "Santiago Hernández",
           "position": "ATA",
           "flag": "CO",
@@ -5188,10 +5503,17 @@
       "coach": "André Irulegui",
       "players": [
         {
+          "name": "Rúben Cerqueira",
+          "position": "GR",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
           "name": "André Reis",
           "position": "GR",
           "flag": "PT",
-          "age": 30,
+          "age": 31,
           "value": null
         },
         {
@@ -5199,13 +5521,6 @@
           "position": "GR",
           "flag": "PT",
           "age": 17,
-          "value": null
-        },
-        {
-          "name": "Benjamin Yeboah",
-          "position": "GR",
-          "flag": "GH",
-          "age": 21,
           "value": null
         },
         {
@@ -5258,6 +5573,13 @@
           "value": null
         },
         {
+          "name": "Gabriel Mesquita",
+          "position": "MED",
+          "flag": "PT",
+          "age": 17,
+          "value": null
+        },
+        {
           "name": "Diogo Dinis",
           "position": "MED",
           "flag": "PT",
@@ -5300,13 +5622,6 @@
           "value": null
         },
         {
-          "name": "Mateus Teixeira",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 18,
-          "value": null
-        },
-        {
           "name": "Victoire Ushindi",
           "position": "ATA",
           "flag": "CD",
@@ -5325,6 +5640,13 @@
           "position": "ATA",
           "flag": "PT",
           "age": 22,
+          "value": null
+        },
+        {
+          "name": "Mateus Teixeira",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 18,
           "value": null
         },
         {
@@ -5577,13 +5899,6 @@
           "value": null
         },
         {
-          "name": "Simão Ramalho",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 19,
-          "value": null
-        },
-        {
           "name": "Nuno Moreira",
           "position": "DEF",
           "flag": "PT",
@@ -5647,13 +5962,6 @@
           "value": null
         },
         {
-          "name": "Gonçalo Hari",
-          "position": "MED",
-          "flag": "PT",
-          "age": 19,
-          "value": null
-        },
-        {
           "name": "Guga",
           "position": "MED",
           "flag": "PT",
@@ -5699,7 +6007,7 @@
           "name": "Ivandro",
           "position": "ATA",
           "flag": "CV",
-          "age": 35,
+          "age": 36,
           "value": null
         },
         {
@@ -5740,6 +6048,13 @@
           "value": null
         },
         {
+          "name": "Duarte Maneta",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
           "name": "Fábio Baldé",
           "position": "DEF",
           "flag": "PT",
@@ -5775,11 +6090,11 @@
           "value": 200000
         },
         {
-          "name": "Richard Santos",
+          "name": "Eduardas Jurjonas",
           "position": "DEF",
-          "flag": "BR",
-          "age": 24,
-          "value": null
+          "flag": "LT",
+          "age": 22,
+          "value": 150000
         },
         {
           "name": "Zé Domingos",
@@ -5793,6 +6108,13 @@
           "position": "DEF",
           "flag": "PT",
           "age": 23,
+          "value": null
+        },
+        {
+          "name": "Richard Santos",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 24,
           "value": null
         },
         {
@@ -5917,17 +6239,17 @@
       "coach": "Natan Costa",
       "players": [
         {
-          "name": "João Lucas",
-          "position": "GR",
-          "flag": "BR",
-          "age": 21,
-          "value": null
-        },
-        {
           "name": "Norbert Haymamba",
           "position": "GR",
           "flag": "CM",
           "age": 27,
+          "value": null
+        },
+        {
+          "name": "João Lucas",
+          "position": "GR",
+          "flag": "BR",
+          "age": 21,
           "value": null
         },
         {
@@ -5980,17 +6302,17 @@
           "value": null
         },
         {
-          "name": "João Cardoso",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 17,
-          "value": null
-        },
-        {
           "name": "Tomás Marques",
           "position": "DEF",
           "flag": "PT",
           "age": 21,
+          "value": null
+        },
+        {
+          "name": "João Cardoso",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 17,
           "value": null
         },
         {
@@ -6015,17 +6337,10 @@
           "value": null
         },
         {
-          "name": "Edgar Moura",
-          "position": "MED",
-          "flag": "PT",
-          "age": 23,
-          "value": null
-        },
-        {
           "name": "Roberto Embaló",
           "position": "MED",
           "flag": "PT",
-          "age": 21,
+          "age": 22,
           "value": null
         },
         {
@@ -6033,6 +6348,13 @@
           "position": "MED",
           "flag": "BR",
           "age": 20,
+          "value": null
+        },
+        {
+          "name": "Edgar Moura",
+          "position": "MED",
+          "flag": "PT",
+          "age": 23,
           "value": null
         },
         {
@@ -6047,13 +6369,6 @@
           "position": "MED",
           "flag": "PT",
           "age": 28,
-          "value": null
-        },
-        {
-          "name": "Vasco Nunes",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 17,
           "value": null
         },
         {
@@ -6089,6 +6404,13 @@
           "position": "ATA",
           "flag": "BR",
           "age": 21,
+          "value": null
+        },
+        {
+          "name": "Vasco Nunes",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 17,
           "value": null
         }
       ],
@@ -6178,24 +6500,10 @@
           "value": null
         },
         {
-          "name": "Dedé",
-          "position": "MED",
-          "flag": "BR",
-          "age": 20,
-          "value": null
-        },
-        {
           "name": "Ricardo Leal",
           "position": "MED",
           "flag": "PT",
-          "age": 22,
-          "value": null
-        },
-        {
-          "name": "Yan Marinho",
-          "position": "MED",
-          "flag": "BR",
-          "age": 22,
+          "age": 23,
           "value": null
         },
         {
@@ -6224,6 +6532,20 @@
           "position": "MED",
           "flag": "PT",
           "age": 20,
+          "value": null
+        },
+        {
+          "name": "Dedé",
+          "position": "MED",
+          "flag": "BR",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Yan Marinho",
+          "position": "MED",
+          "flag": "BR",
+          "age": 22,
           "value": null
         },
         {
@@ -6449,7 +6771,7 @@
           "name": "Martim Cameirão",
           "position": "ATA",
           "flag": "PT",
-          "age": 18,
+          "age": 19,
           "value": null
         }
       ],
@@ -6476,17 +6798,17 @@
           "value": null
         },
         {
-          "name": "Tiago Santos",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 21,
-          "value": null
-        },
-        {
           "name": "Diogo Braizinha",
           "position": "DEF",
           "flag": "PT",
           "age": 22,
+          "value": null
+        },
+        {
+          "name": "Tiago Santos",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 21,
           "value": null
         },
         {
@@ -6504,13 +6826,6 @@
           "value": null
         },
         {
-          "name": "Ivanilson Semedo",
-          "position": "DEF",
-          "flag": "CV",
-          "age": 22,
-          "value": null
-        },
-        {
           "name": "Igor Costa",
           "position": "DEF",
           "flag": "BR",
@@ -6518,24 +6833,17 @@
           "value": null
         },
         {
+          "name": "Ivanilson Semedo",
+          "position": "DEF",
+          "flag": "CV",
+          "age": 23,
+          "value": null
+        },
+        {
           "name": "Clésio Gomes",
           "position": "DEF",
           "flag": "PT",
-          "age": 23,
-          "value": null
-        },
-        {
-          "name": "Valdo Dabó",
-          "position": "MED",
-          "flag": "GW",
-          "age": 25,
-          "value": null
-        },
-        {
-          "name": "João Pereira",
-          "position": "MED",
-          "flag": "PT",
-          "age": 23,
+          "age": 24,
           "value": null
         },
         {
@@ -6546,10 +6854,17 @@
           "value": null
         },
         {
-          "name": "Vincent Selbe",
+          "name": "João Pereira",
           "position": "MED",
-          "flag": "CM",
-          "age": 27,
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Valdo Dabó",
+          "position": "MED",
+          "flag": "GW",
+          "age": 25,
           "value": null
         },
         {
@@ -6581,13 +6896,6 @@
           "value": null
         },
         {
-          "name": "Ailson Nogueira",
-          "position": "ATA",
-          "flag": "BR",
-          "age": 25,
-          "value": null
-        },
-        {
           "name": "Marco Grave",
           "position": "ATA",
           "flag": "PT",
@@ -6595,10 +6903,17 @@
           "value": null
         },
         {
-          "name": "Dani Matos",
+          "name": "Ailson Nogueira",
           "position": "ATA",
-          "flag": "PT",
-          "age": 19,
+          "flag": "BR",
+          "age": 25,
+          "value": null
+        },
+        {
+          "name": "Angelico Dangervil",
+          "position": "ATA",
+          "flag": "CA",
+          "age": 23,
           "value": null
         },
         {
@@ -6609,10 +6924,10 @@
           "value": null
         },
         {
-          "name": "Angelico Dangervil",
+          "name": "Dani Matos",
           "position": "ATA",
-          "flag": "CA",
-          "age": 23,
+          "flag": "PT",
+          "age": 19,
           "value": null
         }
       ],
@@ -6761,7 +7076,7 @@
           "name": "Eduardo Mémé",
           "position": "MED",
           "flag": "PT",
-          "age": 19,
+          "age": 20,
           "value": null
         },
         {
@@ -6837,13 +7152,6 @@
           "value": null
         },
         {
-          "name": "Pedro Amendoeira",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 33,
-          "value": null
-        },
-        {
           "name": "Alejandro Medina",
           "position": "DEF",
           "flag": "CO",
@@ -6865,6 +7173,13 @@
           "value": null
         },
         {
+          "name": "João Consolado",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 24,
+          "value": null
+        },
+        {
           "name": "Dinis Mira",
           "position": "DEF",
           "flag": "PT",
@@ -6872,10 +7187,10 @@
           "value": null
         },
         {
-          "name": "João Consolado",
+          "name": "Pedro Amendoeira",
           "position": "DEF",
           "flag": "PT",
-          "age": 24,
+          "age": 33,
           "value": null
         },
         {
@@ -6886,17 +7201,10 @@
           "value": null
         },
         {
-          "name": "João Nobre",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 31,
-          "value": null
-        },
-        {
           "name": "Afonso Batista",
           "position": "MED",
           "flag": "PT",
-          "age": 21,
+          "age": 22,
           "value": null
         },
         {
@@ -6921,13 +7229,6 @@
           "value": null
         },
         {
-          "name": "Luiz Felipe",
-          "position": "MED",
-          "flag": "BR",
-          "age": 25,
-          "value": null
-        },
-        {
           "name": "Fábio Curado",
           "position": "MED",
           "flag": "PT",
@@ -6935,24 +7236,17 @@
           "value": null
         },
         {
+          "name": "Luiz Felipe",
+          "position": "MED",
+          "flag": "BR",
+          "age": 25,
+          "value": null
+        },
+        {
           "name": "Anssumane Sanhá",
           "position": "ATA",
           "flag": "GW",
           "age": 20,
-          "value": null
-        },
-        {
-          "name": "Moisés Iabna",
-          "position": "ATA",
-          "flag": "GW",
-          "age": 23,
-          "value": null
-        },
-        {
-          "name": "Miguel Serrano",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 30,
           "value": null
         },
         {
@@ -6974,6 +7268,20 @@
           "position": "ATA",
           "flag": "GW",
           "age": 20,
+          "value": null
+        },
+        {
+          "name": "Moisés Iabna",
+          "position": "ATA",
+          "flag": "GW",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Miguel Serrano",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 30,
           "value": null
         },
         {
@@ -7028,6 +7336,13 @@
           "value": null
         },
         {
+          "name": "Sousa",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 34,
+          "value": null
+        },
+        {
           "name": "Tomás Russo",
           "position": "DEF",
           "flag": "PT",
@@ -7052,7 +7367,14 @@
           "name": "Afonso Mendes",
           "position": "MED",
           "flag": "PT",
-          "age": 17,
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Santiago Saturnino",
+          "position": "MED",
+          "flag": "PT",
+          "age": 18,
           "value": null
         },
         {
@@ -7116,13 +7438,6 @@
           "position": "ATA",
           "flag": "PT",
           "age": 25,
-          "value": null
-        },
-        {
-          "name": "Rodrigo Cavalinhos",
-          "position": "ATA",
-          "flag": "PT",
-          "age": null,
           "value": null
         }
       ],
@@ -7214,17 +7529,17 @@
           "value": null
         },
         {
-          "name": "Wesley Henrique",
-          "position": "DEF",
-          "flag": "BR",
-          "age": 31,
-          "value": null
-        },
-        {
           "name": "Daniel Rosa",
           "position": "DEF",
           "flag": "PT",
           "age": 24,
+          "value": null
+        },
+        {
+          "name": "Wesley Henrique",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 31,
           "value": null
         },
         {
@@ -7242,6 +7557,13 @@
           "value": null
         },
         {
+          "name": "Zinédine Fonseca",
+          "position": "MED",
+          "flag": "CV",
+          "age": 27,
+          "value": null
+        },
+        {
           "name": "Samuel Costa",
           "position": "MED",
           "flag": "PT",
@@ -7249,17 +7571,10 @@
           "value": null
         },
         {
-          "name": "Zinédine Fonseca",
+          "name": "Feijão",
           "position": "MED",
-          "flag": "CV",
-          "age": 26,
-          "value": null
-        },
-        {
-          "name": "Francisco Ganço",
-          "position": "MED",
-          "flag": "PT",
-          "age": 22,
+          "flag": "BR",
+          "age": 32,
           "value": null
         },
         {
@@ -7270,10 +7585,10 @@
           "value": null
         },
         {
-          "name": "Hércules Fernandes",
+          "name": "Francisco Ganço",
           "position": "MED",
-          "flag": "BR",
-          "age": 33,
+          "flag": "PT",
+          "age": 22,
           "value": null
         },
         {
@@ -7284,9 +7599,9 @@
           "value": null
         },
         {
-          "name": "Antony Pérez",
-          "position": "ATA",
-          "flag": "CO",
+          "name": "Hércules Fernandes",
+          "position": "MED",
+          "flag": "BR",
           "age": 33,
           "value": null
         },
@@ -7295,6 +7610,13 @@
           "position": "ATA",
           "flag": "AO",
           "age": 24,
+          "value": null
+        },
+        {
+          "name": "Antony Pérez",
+          "position": "ATA",
+          "flag": "CO",
+          "age": 33,
           "value": null
         },
         {
@@ -7309,13 +7631,6 @@
           "position": "ATA",
           "flag": "BR",
           "age": 19,
-          "value": null
-        },
-        {
-          "name": "Vanderson Reis",
-          "position": "ATA",
-          "flag": "BR",
-          "age": 22,
           "value": null
         }
       ],
@@ -7440,6 +7755,13 @@
           "value": null
         },
         {
+          "name": "Samuel Lopes",
+          "position": "MED",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
           "name": "Filipe Serralheiro",
           "position": "MED",
           "flag": "PT",
@@ -7482,6 +7804,13 @@
           "value": null
         },
         {
+          "name": "Vasco Serralheiro",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 24,
+          "value": null
+        },
+        {
           "name": "Gonçalo Araújo",
           "position": "ATA",
           "flag": "PT",
@@ -7505,10 +7834,10 @@
       "coach": "Luís Coxola",
       "players": [
         {
-          "name": "Rui Neves",
+          "name": "Hércules Tavares",
           "position": "GR",
-          "flag": "PT",
-          "age": 19,
+          "flag": "CV",
+          "age": 23,
           "value": null
         },
         {
@@ -7519,10 +7848,10 @@
           "value": null
         },
         {
-          "name": "Hércules Tavares",
+          "name": "Rui Neves",
           "position": "GR",
-          "flag": "CV",
-          "age": 23,
+          "flag": "PT",
+          "age": 19,
           "value": null
         },
         {
@@ -7533,10 +7862,31 @@
           "value": null
         },
         {
+          "name": "Bruno Grenho",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 32,
+          "value": null
+        },
+        {
           "name": "Daniel Bibes",
           "position": "DEF",
           "flag": "PT",
           "age": 28,
+          "value": null
+        },
+        {
+          "name": "Andrey",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 28,
+          "value": null
+        },
+        {
+          "name": "Matheus Xavier",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 25,
           "value": null
         },
         {
@@ -7547,31 +7897,17 @@
           "value": null
         },
         {
-          "name": "Brendo Santos",
-          "position": "DEF",
-          "flag": "BR",
-          "age": 31,
-          "value": null
-        },
-        {
-          "name": "Luís Quintas",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 27,
-          "value": null
-        },
-        {
-          "name": "Bruno Grenho",
-          "position": "DEF",
-          "flag": "PT",
-          "age": 32,
-          "value": null
-        },
-        {
           "name": "Edmilson Mendes",
           "position": "DEF",
           "flag": "GW",
           "age": 21,
+          "value": null
+        },
+        {
+          "name": "Brendo Santos",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 31,
           "value": null
         },
         {
@@ -7582,6 +7918,13 @@
           "value": null
         },
         {
+          "name": "Luís Quintas",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 27,
+          "value": null
+        },
+        {
           "name": "Erick Jovêncio",
           "position": "MED",
           "flag": "BR",
@@ -7589,10 +7932,24 @@
           "value": null
         },
         {
+          "name": "Gonçalo Piçarra",
+          "position": "MED",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
           "name": "Carlos Castanho",
           "position": "MED",
           "flag": "PT",
           "age": 27,
+          "value": null
+        },
+        {
+          "name": "Guilherme Francisco",
+          "position": "MED",
+          "flag": "AO",
+          "age": 26,
           "value": null
         },
         {
@@ -7610,31 +7967,10 @@
           "value": null
         },
         {
-          "name": "Filipe Geadas",
+          "name": "Vasile Condrei",
           "position": "MED",
-          "flag": "PT",
-          "age": 17,
-          "value": null
-        },
-        {
-          "name": "Guilherme Francisco",
-          "position": "MED",
-          "flag": "AO",
-          "age": 26,
-          "value": null
-        },
-        {
-          "name": "João Siquenique",
-          "position": "ATA",
-          "flag": "PT",
-          "age": 25,
-          "value": null
-        },
-        {
-          "name": "Pedrinho",
-          "position": "ATA",
-          "flag": "BR",
-          "age": 26,
+          "flag": "RO",
+          "age": 22,
           "value": null
         },
         {
@@ -7645,6 +7981,13 @@
           "value": null
         },
         {
+          "name": "João Siquenique",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 25,
+          "value": null
+        },
+        {
           "name": "Vítor Borrego",
           "position": "ATA",
           "flag": "PT",
@@ -7652,10 +7995,17 @@
           "value": null
         },
         {
-          "name": "Duarte Carriço",
+          "name": "Elage Darame",
           "position": "ATA",
-          "flag": "PT",
-          "age": 17,
+          "flag": "GW",
+          "age": 26,
+          "value": null
+        },
+        {
+          "name": "Pedrinho",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 26,
           "value": null
         }
       ],
@@ -7667,15 +8017,247 @@
       "zerozeroUrl": "/equipa/fc-arouca/3291",
       "coach": null,
       "players": [],
-      "coverage": "low"
+      "coverage": "error"
     },
     {
       "name": "Vitória SC",
       "division": 1,
       "zerozeroUrl": "/equipa/vitoria-sc",
-      "coach": null,
-      "players": [],
-      "coverage": "low"
+      "coach": "Tiago Margarido",
+      "players": [
+        {
+          "name": "Juan Castillo",
+          "position": "GR",
+          "flag": "CO",
+          "age": 23,
+          "value": 500000
+        },
+        {
+          "name": "Oliwier Zych",
+          "position": "GR",
+          "flag": "PL",
+          "age": 22,
+          "value": 2000000
+        },
+        {
+          "name": "José Ribeiro",
+          "position": "GR",
+          "flag": "PT",
+          "age": 20,
+          "value": 200000
+        },
+        {
+          "name": "Lucas Furtado",
+          "position": "GR",
+          "flag": "BR",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "João Fernandes",
+          "position": "GR",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Toni Borevkovic",
+          "position": "DEF",
+          "flag": "HR",
+          "age": 29,
+          "value": 1900000
+        },
+        {
+          "name": "Miguel Maga",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 23,
+          "value": 1600000
+        },
+        {
+          "name": "Tony Strata",
+          "position": "DEF",
+          "flag": "RO",
+          "age": 21,
+          "value": 2000000
+        },
+        {
+          "name": "Rodrigo Silva",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Óscar Rivas",
+          "position": "DEF",
+          "flag": "ES",
+          "age": 26,
+          "value": 700000
+        },
+        {
+          "name": "Ahmed Sidibé",
+          "position": "DEF",
+          "flag": "FR",
+          "age": 24,
+          "value": 700000
+        },
+        {
+          "name": "Yeimar Mosquera",
+          "position": "DEF",
+          "flag": "CO",
+          "age": 21,
+          "value": 200000
+        },
+        {
+          "name": "Thiago Balieiro",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 23,
+          "value": 500000
+        },
+        {
+          "name": "João Mendes",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 26,
+          "value": 2500000
+        },
+        {
+          "name": "Francisco Dias",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Alan",
+          "position": "MED",
+          "flag": "BR",
+          "age": 26,
+          "value": 5000000
+        },
+        {
+          "name": "Lohann Doucet",
+          "position": "MED",
+          "flag": "BF",
+          "age": 23,
+          "value": 500000
+        },
+        {
+          "name": "Santiago Verdi",
+          "position": "MED",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Ricardo Rocha",
+          "position": "MED",
+          "flag": "PT",
+          "age": 22,
+          "value": 80000
+        },
+        {
+          "name": "Matija Mitrović",
+          "position": "MED",
+          "flag": "RS",
+          "age": 21,
+          "value": 2000000
+        },
+        {
+          "name": "Gonçalo Nogueira",
+          "position": "MED",
+          "flag": "PT",
+          "age": 22,
+          "value": 4000000
+        },
+        {
+          "name": "Beni Mukendi",
+          "position": "MED",
+          "flag": "AO",
+          "age": 24,
+          "value": 4000000
+        },
+        {
+          "name": "Samu Silva",
+          "position": "MED",
+          "flag": "PT",
+          "age": 30,
+          "value": 2500000
+        },
+        {
+          "name": "Zeega",
+          "position": "MED",
+          "flag": "PT",
+          "age": 17,
+          "value": null
+        },
+        {
+          "name": "Gustavo Silva",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 27,
+          "value": 4000000
+        },
+        {
+          "name": "Miguel Nogueira",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 21,
+          "value": 200000
+        },
+        {
+          "name": "Telmo Arcanjo",
+          "position": "ATA",
+          "flag": "CV",
+          "age": 25,
+          "value": 3000000
+        },
+        {
+          "name": "Arnel Jakupović",
+          "position": "ATA",
+          "flag": "AT",
+          "age": 28,
+          "value": 800000
+        },
+        {
+          "name": "Alioune Ndoye",
+          "position": "ATA",
+          "flag": "SN",
+          "age": 24,
+          "value": 1200000
+        },
+        {
+          "name": "Patrick Ouotro",
+          "position": "ATA",
+          "flag": "CI",
+          "age": 20,
+          "value": 300000
+        },
+        {
+          "name": "Costinha",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Oumar Camara",
+          "position": "ATA",
+          "flag": "FR",
+          "age": 19,
+          "value": 8500000
+        },
+        {
+          "name": "Victor Andersson",
+          "position": "ATA",
+          "flag": "SE",
+          "age": 21,
+          "value": null
+        }
+      ],
+      "coverage": "complete"
     },
     {
       "name": "Alverca",
@@ -7683,7 +8265,7 @@
       "zerozeroUrl": "/equipa/alverca/2317",
       "coach": null,
       "players": [],
-      "coverage": "low"
+      "coverage": "error"
     },
     {
       "name": "Rio Ave",
@@ -7691,39 +8273,806 @@
       "zerozeroUrl": "/equipa/rio-ave",
       "coach": null,
       "players": [],
-      "coverage": "low"
+      "coverage": "error"
     },
     {
       "name": "Leixões",
       "division": 2,
       "zerozeroUrl": "/equipa/leixoes/15",
-      "coach": null,
-      "players": [],
-      "coverage": "low"
+      "coach": "Carlos Vicens",
+      "players": [
+        {
+          "name": "Tiago Sá",
+          "position": "GR",
+          "flag": "PT",
+          "age": 31,
+          "value": 300000
+        },
+        {
+          "name": "Bernardo Fontes",
+          "position": "GR",
+          "flag": "BR",
+          "age": 24,
+          "value": 5000000
+        },
+        {
+          "name": "João Carvalho",
+          "position": "GR",
+          "flag": "PT",
+          "age": 22,
+          "value": 1400000
+        },
+        {
+          "name": "Matheus Santos",
+          "position": "GR",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Fodé Pascoal",
+          "position": "DEF",
+          "flag": "GW",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Matheus Araújo",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Víctor Gómez",
+          "position": "DEF",
+          "flag": "ES",
+          "age": 26,
+          "value": 10000000
+        },
+        {
+          "name": "Diogo Travassos",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 22,
+          "value": 6500000
+        },
+        {
+          "name": "Sikou Niakaté",
+          "position": "DEF",
+          "flag": "ML",
+          "age": 27,
+          "value": 5500000
+        },
+        {
+          "name": "Vitor Carvalho",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 29,
+          "value": 4000000
+        },
+        {
+          "name": "Gustaf Lagerbielke",
+          "position": "DEF",
+          "flag": "SE",
+          "age": 26,
+          "value": 10000000
+        },
+        {
+          "name": "Sergio Barcia",
+          "position": "DEF",
+          "flag": "ES",
+          "age": 25,
+          "value": 1500000
+        },
+        {
+          "name": "Bright Arrey-Mbi",
+          "position": "DEF",
+          "flag": "DE",
+          "age": 23,
+          "value": 9000000
+        },
+        {
+          "name": "Adrian Barisic",
+          "position": "DEF",
+          "flag": "BA",
+          "age": 25,
+          "value": 4000000
+        },
+        {
+          "name": "Adrian Bajrami",
+          "position": "DEF",
+          "flag": "CH",
+          "age": 24,
+          "value": 3000000
+        },
+        {
+          "name": "Jónatas Noro",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 21,
+          "value": 800000
+        },
+        {
+          "name": "Tommy Marqués",
+          "position": "MED",
+          "flag": "ES",
+          "age": 19,
+          "value": 8000000
+        },
+        {
+          "name": "João Moutinho",
+          "position": "MED",
+          "flag": "PT",
+          "age": 39,
+          "value": 500000
+        },
+        {
+          "name": "Denis Huseinbasic",
+          "position": "MED",
+          "flag": "BA",
+          "age": 25,
+          "value": 2000000
+        },
+        {
+          "name": "Gorby Baptiste",
+          "position": "MED",
+          "flag": "FR",
+          "age": 24,
+          "value": 9000000
+        },
+        {
+          "name": "Demir Tiknaz",
+          "position": "MED",
+          "flag": "TR",
+          "age": 22,
+          "value": 7500000
+        },
+        {
+          "name": "Diego Rodrigues",
+          "position": "MED",
+          "flag": "PT",
+          "age": 21,
+          "value": 5000000
+        },
+        {
+          "name": "João Trovisco",
+          "position": "MED",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "António Gil",
+          "position": "MED",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Jovan Milosevic",
+          "position": "ATA",
+          "flag": "RS",
+          "age": 21,
+          "value": 7000000
+        },
+        {
+          "name": "Rúben Furtado",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Mario Dorgeles",
+          "position": "ATA",
+          "flag": "CI",
+          "age": 22,
+          "value": 10000000
+        },
+        {
+          "name": "Fran Navarro",
+          "position": "ATA",
+          "flag": "ES",
+          "age": 28,
+          "value": 4000000
+        },
+        {
+          "name": "Pau Víctor",
+          "position": "ATA",
+          "flag": "ES",
+          "age": 24,
+          "value": 15000000
+        },
+        {
+          "name": "Jonas Wind",
+          "position": "ATA",
+          "flag": "DK",
+          "age": 27,
+          "value": 4000000
+        },
+        {
+          "name": "Gabriel Silva",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 24,
+          "value": 6500000
+        },
+        {
+          "name": "Ricardo Horta",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 31,
+          "value": 9000000
+        },
+        {
+          "name": "Gabri Martínez",
+          "position": "ATA",
+          "flag": "ES",
+          "age": 23,
+          "value": 7000000
+        }
+      ],
+      "coverage": "complete"
     },
     {
       "name": "Felgueiras",
       "division": 2,
       "zerozeroUrl": "/equipa/felgueiras-1932/3682",
-      "coach": null,
-      "players": [],
-      "coverage": "low"
+      "coach": "Rui Ferreira",
+      "players": [
+        {
+          "name": "Xico",
+          "position": "GR",
+          "flag": "PT",
+          "age": 31,
+          "value": null
+        },
+        {
+          "name": "Gonçalo Guedes",
+          "position": "GR",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "João Santos",
+          "position": "GR",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Martim Costa",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "João Neto",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 29,
+          "value": null
+        },
+        {
+          "name": "António",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Rodrigo Raposo",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Afonso Silva",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Gonçalo Rodrigues",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Pedro Marques",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Fran Vieira",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Francisco Cardoso",
+          "position": "MED",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Nefi Varela",
+          "position": "MED",
+          "flag": "BR",
+          "age": 25,
+          "value": null
+        },
+        {
+          "name": "Ricardo Pereira",
+          "position": "MED",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Rodrigo Cunha",
+          "position": "MED",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Rodrigo Silva",
+          "position": "MED",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Folha",
+          "position": "MED",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Zé",
+          "position": "MED",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Rafael Silva",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Gonçalo Pinto",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "João Faria",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 28,
+          "value": null
+        },
+        {
+          "name": "Paulo Monteiro",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 31,
+          "value": null
+        },
+        {
+          "name": "Henrique Nunes",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Zuca",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 26,
+          "value": null
+        }
+      ],
+      "coverage": "complete"
     },
     {
       "name": "Penafiel",
       "division": 2,
       "zerozeroUrl": "/equipa/penafiel/14",
-      "coach": null,
-      "players": [],
-      "coverage": "low"
+      "coach": "Rui Eduardo Borges",
+      "players": [
+        {
+          "name": "Gonçalo Ferreira",
+          "position": "GR",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Manu",
+          "position": "GR",
+          "flag": "PT",
+          "age": 27,
+          "value": null
+        },
+        {
+          "name": "José Costa",
+          "position": "GR",
+          "flag": "PT",
+          "age": 32,
+          "value": null
+        },
+        {
+          "name": "João Serrão",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 26,
+          "value": 50000
+        },
+        {
+          "name": "Tiago Araújo",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 25,
+          "value": null
+        },
+        {
+          "name": "Jorge Miguel",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 35,
+          "value": null
+        },
+        {
+          "name": "Joel Monteiro",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 35,
+          "value": null
+        },
+        {
+          "name": "Diogo Semedo",
+          "position": "DEF",
+          "flag": "CV",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "João Tentugal",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 28,
+          "value": null
+        },
+        {
+          "name": "Nuca",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 28,
+          "value": null
+        },
+        {
+          "name": "Rafael Figueiredo",
+          "position": "MED",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Fábio Borges",
+          "position": "MED",
+          "flag": "PT",
+          "age": 27,
+          "value": null
+        },
+        {
+          "name": "Tiago Antunes",
+          "position": "MED",
+          "flag": "PT",
+          "age": 26,
+          "value": 112000
+        },
+        {
+          "name": "Ivo Lemos",
+          "position": "MED",
+          "flag": "PT",
+          "age": 32,
+          "value": null
+        },
+        {
+          "name": "Deven Monteiro",
+          "position": "MED",
+          "flag": "CV",
+          "age": 25,
+          "value": null
+        },
+        {
+          "name": "Miguel Ângelo",
+          "position": "MED",
+          "flag": "PT",
+          "age": 28,
+          "value": null
+        },
+        {
+          "name": "Diogo Faria",
+          "position": "MED",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Adrian Santos",
+          "position": "MED",
+          "flag": "BR",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Salvador Botelho",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Zé Thiago",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 24,
+          "value": null
+        },
+        {
+          "name": "Kevin Makinde",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Mica Évora",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 25,
+          "value": null
+        },
+        {
+          "name": "Miguel Silva",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Joel Silva",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 35,
+          "value": 150000
+        },
+        {
+          "name": "Quben Gaskins",
+          "position": "ATA",
+          "flag": "US",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Gustavo Coutinho",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 24,
+          "value": null
+        },
+        {
+          "name": "Miguel Santos",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        }
+      ],
+      "coverage": "complete"
     },
     {
       "name": "Portimonense",
       "division": 2,
       "zerozeroUrl": "/equipa/portimonense/13",
-      "coach": null,
-      "players": [],
-      "coverage": "low"
+      "coach": "Vítor Paneira",
+      "players": [
+        {
+          "name": "Rafa Oliveira",
+          "position": "GR",
+          "flag": "PT",
+          "age": 22,
+          "value": 50000
+        },
+        {
+          "name": "Cristiano Figueiredo",
+          "position": "GR",
+          "flag": "PT",
+          "age": 35,
+          "value": 30000
+        },
+        {
+          "name": "Tiago Mesquita",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 35,
+          "value": 100000
+        },
+        {
+          "name": "João Sidónio",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 27,
+          "value": null
+        },
+        {
+          "name": "Diogo Castro",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 29,
+          "value": null
+        },
+        {
+          "name": "Marcão",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 25,
+          "value": null
+        },
+        {
+          "name": "Diegão",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 23,
+          "value": 450000
+        },
+        {
+          "name": "Wesley Junio",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 25,
+          "value": null
+        },
+        {
+          "name": "Rafael Vieira",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 34,
+          "value": 50000
+        },
+        {
+          "name": "Leandro Dias",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Tiago Cerveira",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 34,
+          "value": 50000
+        },
+        {
+          "name": "Tomás Podstawski",
+          "position": "MED",
+          "flag": "PT",
+          "age": 31,
+          "value": 50000
+        },
+        {
+          "name": "Nuno Cunha",
+          "position": "MED",
+          "flag": "PT",
+          "age": 25,
+          "value": 200000
+        },
+        {
+          "name": "João Neto",
+          "position": "MED",
+          "flag": "BR",
+          "age": 23,
+          "value": 150000
+        },
+        {
+          "name": "Tomás Castro",
+          "position": "MED",
+          "flag": "PT",
+          "age": 27,
+          "value": 100000
+        },
+        {
+          "name": "José Anunciação",
+          "position": "MED",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Gabriel Coelho",
+          "position": "MED",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Ianis Vulpe",
+          "position": "MED",
+          "flag": "RO",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Tiago Queiroz",
+          "position": "MED",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Caio Rafael",
+          "position": "MED",
+          "flag": "BR",
+          "age": 22,
+          "value": 150000
+        },
+        {
+          "name": "Vitinho",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "João Pedro",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 23,
+          "value": 400000
+        },
+        {
+          "name": "Miguel Falé",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 22,
+          "value": 350000
+        },
+        {
+          "name": "Higor Platiny",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 35,
+          "value": 20000
+        },
+        {
+          "name": "Sacra",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 26,
+          "value": null
+        }
+      ],
+      "coverage": "complete"
     },
     {
       "name": "Vit. Setúbal",
@@ -7731,7 +9080,7 @@
       "zerozeroUrl": "/equipa/vitoria-setubal",
       "coach": null,
       "players": [],
-      "coverage": "low"
+      "coverage": "error"
     },
     {
       "name": "São João Ver",
@@ -7739,31 +9088,538 @@
       "zerozeroUrl": "/equipa/s-joao-de-ver/4287",
       "coach": null,
       "players": [],
-      "coverage": "low"
+      "coverage": "error"
     },
     {
       "name": "Fafe",
       "division": 3,
       "zerozeroUrl": "/equipa/ad-fafe/3570",
-      "coach": null,
-      "players": [],
-      "coverage": "low"
+      "coach": "Diogo Botas",
+      "players": [
+        {
+          "name": "Afonso Rebelo",
+          "position": "GR",
+          "flag": "PT",
+          "age": 24,
+          "value": null
+        },
+        {
+          "name": "Tiago Chibito",
+          "position": "GR",
+          "flag": "PT",
+          "age": 44,
+          "value": null
+        },
+        {
+          "name": "João Costa",
+          "position": "GR",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Rafael Pereira",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Alexandre Couceiro",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Artur Silva",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Tomás Trezentos",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Rafael Gomes",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 26,
+          "value": null
+        },
+        {
+          "name": "Filipe Moreira",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 25,
+          "value": null
+        },
+        {
+          "name": "Martim Marques",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Gonçalo Ribeiro",
+          "position": "MED",
+          "flag": "PT",
+          "age": 24,
+          "value": null
+        },
+        {
+          "name": "Alexandre Vieira",
+          "position": "MED",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Edgar Marques",
+          "position": "MED",
+          "flag": "PT",
+          "age": 25,
+          "value": null
+        },
+        {
+          "name": "Remi Mendes",
+          "position": "MED",
+          "flag": "PT",
+          "age": 26,
+          "value": null
+        },
+        {
+          "name": "Fábio Silva",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 26,
+          "value": null
+        },
+        {
+          "name": "José Pereira",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 29,
+          "value": null
+        },
+        {
+          "name": "Adrien Jesus",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Rodrigo Brás",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Simão Rodrigues",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Joel Batista",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 31,
+          "value": null
+        }
+      ],
+      "coverage": "complete"
     },
     {
       "name": "Lusitano Évora",
       "division": 3,
       "zerozeroUrl": "/equipa/lusitano-evora/4270",
-      "coach": null,
-      "players": [],
-      "coverage": "low"
+      "coach": "Rasmus Bertelsen",
+      "players": [
+        {
+          "name": "Paul Izzo",
+          "position": "GR",
+          "flag": "AU",
+          "age": 31,
+          "value": 500000
+        },
+        {
+          "name": "Mert Demirci",
+          "position": "GR",
+          "flag": "ES",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Jannich Storch",
+          "position": "GR",
+          "flag": "DK",
+          "age": 33,
+          "value": 20000
+        },
+        {
+          "name": "Lucas Lissens",
+          "position": "DEF",
+          "flag": "BE",
+          "age": 25,
+          "value": 650000
+        },
+        {
+          "name": "Daniel Hoegh",
+          "position": "DEF",
+          "flag": "DK",
+          "age": 35,
+          "value": 100000
+        },
+        {
+          "name": "Wessel Dammers",
+          "position": "DEF",
+          "flag": "NL",
+          "age": 31,
+          "value": 850000
+        },
+        {
+          "name": "Oliver Jones",
+          "position": "DEF",
+          "flag": "AU",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Martin Sjolstad",
+          "position": "DEF",
+          "flag": "NO",
+          "age": 26,
+          "value": 250000
+        },
+        {
+          "name": "Benjamin Orn",
+          "position": "DEF",
+          "flag": "SE",
+          "age": 22,
+          "value": 300000
+        },
+        {
+          "name": "Nikolas Dyhr",
+          "position": "DEF",
+          "flag": "DK",
+          "age": 25,
+          "value": 2500000
+        },
+        {
+          "name": "Simon Stüker",
+          "position": "DEF",
+          "flag": "DK",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Nikolai Hopland",
+          "position": "DEF",
+          "flag": "NO",
+          "age": 22,
+          "value": 1600000
+        },
+        {
+          "name": "Sabil Hansen",
+          "position": "DEF",
+          "flag": "DK",
+          "age": 20,
+          "value": 600000
+        },
+        {
+          "name": "Felix Sommer",
+          "position": "DEF",
+          "flag": "DK",
+          "age": 17,
+          "value": null
+        },
+        {
+          "name": "John Björkengren",
+          "position": "MED",
+          "flag": "SE",
+          "age": 27,
+          "value": 2000000
+        },
+        {
+          "name": "Laurits Pedersen",
+          "position": "MED",
+          "flag": "DK",
+          "age": 20,
+          "value": 1000000
+        },
+        {
+          "name": "Elies Mahmoud",
+          "position": "MED",
+          "flag": "FR",
+          "age": 25,
+          "value": 700000
+        },
+        {
+          "name": "Frederik Lauenborg",
+          "position": "MED",
+          "flag": "DK",
+          "age": 29,
+          "value": 200000
+        },
+        {
+          "name": "Mathias Greve",
+          "position": "MED",
+          "flag": "DK",
+          "age": 31,
+          "value": 750000
+        },
+        {
+          "name": "Axel Henriksson",
+          "position": "MED",
+          "flag": "SE",
+          "age": 24,
+          "value": 950000
+        },
+        {
+          "name": "Hector Høyrup",
+          "position": "MED",
+          "flag": "DK",
+          "age": 17,
+          "value": null
+        },
+        {
+          "name": "Ousseynou Seck",
+          "position": "MED",
+          "flag": "SN",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Mike Themsen",
+          "position": "ATA",
+          "flag": "DK",
+          "age": 20,
+          "value": 750000
+        },
+        {
+          "name": "Warren Caddy",
+          "position": "ATA",
+          "flag": "MG",
+          "age": 29,
+          "value": 600000
+        },
+        {
+          "name": "Musa Touré",
+          "position": "ATA",
+          "flag": "AU",
+          "age": 20,
+          "value": 200000
+        },
+        {
+          "name": "Cyril Edudzi",
+          "position": "ATA",
+          "flag": "GH",
+          "age": 20,
+          "value": 400000
+        },
+        {
+          "name": "Amady Camara",
+          "position": "ATA",
+          "flag": "ML",
+          "age": 21,
+          "value": 1200000
+        },
+        {
+          "name": "Mohamed Sankoh",
+          "position": "ATA",
+          "flag": "NL",
+          "age": 22,
+          "value": 400000
+        },
+        {
+          "name": "Kasper Junker",
+          "position": "ATA",
+          "flag": "DK",
+          "age": 32,
+          "value": 500000
+        }
+      ],
+      "coverage": "complete"
     },
     {
       "name": "Oliv. Hospital",
       "division": 4,
       "zerozeroUrl": "/equipa/oliveira-hospital/3598",
-      "coach": null,
-      "players": [],
-      "coverage": "low"
+      "coach": "André Santos",
+      "players": [
+        {
+          "name": "Alexandre Teodoro",
+          "position": "GR",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Rudi Martins",
+          "position": "GR",
+          "flag": "PT",
+          "age": 15,
+          "value": null
+        },
+        {
+          "name": "Diogo Oliveira",
+          "position": "GR",
+          "flag": "PT",
+          "age": 29,
+          "value": null
+        },
+        {
+          "name": "Gilberto Lozano",
+          "position": "DEF",
+          "flag": "CO",
+          "age": 31,
+          "value": null
+        },
+        {
+          "name": "Tomás Oliveira",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Duarte Ferreira",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Miguel Caeiro",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Ryel Santos",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 27,
+          "value": null
+        },
+        {
+          "name": "David Botelho",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 29,
+          "value": null
+        },
+        {
+          "name": "Edward Arlete",
+          "position": "DEF",
+          "flag": "GW",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Cláudinho",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Gui Ribeiro",
+          "position": "MED",
+          "flag": "PT",
+          "age": 24,
+          "value": null
+        },
+        {
+          "name": "Rúben Rodrigues",
+          "position": "MED",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Nuno Aleixo",
+          "position": "MED",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Samuel Lourenço",
+          "position": "MED",
+          "flag": "PT",
+          "age": 25,
+          "value": null
+        },
+        {
+          "name": "Gonçalo Cuco",
+          "position": "MED",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Tomás Correia",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 25,
+          "value": null
+        },
+        {
+          "name": "José Tubarão",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Yordán",
+          "position": "ATA",
+          "flag": "CO",
+          "age": 34,
+          "value": null
+        },
+        {
+          "name": "Ricardo Neto",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Tiago Fonseca",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Cláudio Carvalho",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 31,
+          "value": null
+        },
+        {
+          "name": "Nuno Januário",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 30,
+          "value": null
+        }
+      ],
+      "coverage": "complete"
     },
     {
       "name": "Malveira",
@@ -7771,31 +9627,594 @@
       "zerozeroUrl": "/equipa/malveira/6805",
       "coach": null,
       "players": [],
-      "coverage": "low"
+      "coverage": "error"
     },
     {
       "name": "Alcochetense",
       "division": 4,
       "zerozeroUrl": "/equipa/alcochetense/3592",
-      "coach": null,
-      "players": [],
-      "coverage": "low"
+      "coach": "Delfim Castro",
+      "players": [
+        {
+          "name": "Francisco Maia",
+          "position": "GR",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Gonçalo",
+          "position": "GR",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Leonardo Brito",
+          "position": "GR",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Vasco Pinto",
+          "position": "GR",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "António Tondela",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "André Sousa",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Pedro Castro",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 35,
+          "value": null
+        },
+        {
+          "name": "Elvas",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 25,
+          "value": null
+        },
+        {
+          "name": "Alexandre Freitas",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "André Ribeiro",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 34,
+          "value": null
+        },
+        {
+          "name": "David Pereira",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Gonçalo Oliveira",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Benny",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "João Tondela",
+          "position": "MED",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Edgar",
+          "position": "MED",
+          "flag": "CV",
+          "age": 26,
+          "value": null
+        },
+        {
+          "name": "Patê Djob",
+          "position": "MED",
+          "flag": "PT",
+          "age": 24,
+          "value": null
+        },
+        {
+          "name": "Carlitos",
+          "position": "MED",
+          "flag": "PT",
+          "age": 36,
+          "value": null
+        },
+        {
+          "name": "Mateus Silva",
+          "position": "MED",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "David Barbosa",
+          "position": "MED",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Henry",
+          "position": "MED",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Yussad Nizamo",
+          "position": "MED",
+          "flag": "MZ",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Sanhá",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 28,
+          "value": null
+        },
+        {
+          "name": "Lauer",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Rodrigo Silva",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Pedro Adriano",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Aurio Ebo",
+          "position": "ATA",
+          "flag": "AO",
+          "age": 24,
+          "value": null
+        },
+        {
+          "name": "Márcio",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 27,
+          "value": null
+        },
+        {
+          "name": "Pedro Fernandes",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        }
+      ],
+      "coverage": "complete"
     },
     {
       "name": "O Elvas",
       "division": 4,
       "zerozeroUrl": "/equipa/o-elvas/3604",
-      "coach": null,
-      "players": [],
-      "coverage": "low"
+      "coach": "Hugo Xavier",
+      "players": [
+        {
+          "name": "Paulinho",
+          "position": "GR",
+          "flag": "PT",
+          "age": 31,
+          "value": null
+        },
+        {
+          "name": "Gabriel Gonçalves",
+          "position": "GR",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Rodrigo Palha",
+          "position": "GR",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Kevin Gomes",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Leandro Albano",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 34,
+          "value": null
+        },
+        {
+          "name": "Caio Silva",
+          "position": "DEF",
+          "flag": "BR",
+          "age": 29,
+          "value": null
+        },
+        {
+          "name": "Pedro Barroso",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 26,
+          "value": null
+        },
+        {
+          "name": "Carlos Rocha",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 28,
+          "value": null
+        },
+        {
+          "name": "Pedro Araújo",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 28,
+          "value": null
+        },
+        {
+          "name": "Ivo Ribeiro",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Rafinha",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 28,
+          "value": null
+        },
+        {
+          "name": "Ricardo Martins",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "André Fernandes",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "João Macedo",
+          "position": "MED",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Dino Fernandes",
+          "position": "MED",
+          "flag": "PT",
+          "age": 26,
+          "value": null
+        },
+        {
+          "name": "Pedro Fernandes",
+          "position": "MED",
+          "flag": "PT",
+          "age": 24,
+          "value": null
+        },
+        {
+          "name": "Nelinho",
+          "position": "MED",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Rodrigo Rodrigues",
+          "position": "MED",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Ivo Lopes",
+          "position": "MED",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Afonso Fernandes",
+          "position": "MED",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Miguel Lima",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 32,
+          "value": null
+        },
+        {
+          "name": "Kevinho",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 25,
+          "value": null
+        },
+        {
+          "name": "Rui Ferreira",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "José Mozer",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "João Marna",
+          "position": "ATA",
+          "flag": "GW",
+          "age": 29,
+          "value": null
+        },
+        {
+          "name": "Rui Jorge",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 27,
+          "value": null
+        },
+        {
+          "name": "João Araújo",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 29,
+          "value": null
+        }
+      ],
+      "coverage": "complete"
     },
     {
       "name": "Sintrense",
       "division": 4,
       "zerozeroUrl": "/equipa/sintrense/3590",
-      "coach": null,
-      "players": [],
-      "coverage": "low"
+      "coach": "Manuel Rodrigues",
+      "players": [
+        {
+          "name": "Ricardo Neves",
+          "position": "GR",
+          "flag": "PT",
+          "age": 37,
+          "value": null
+        },
+        {
+          "name": "João Rocha",
+          "position": "GR",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Bruno Alves",
+          "position": "GR",
+          "flag": "PT",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Diogo Silva",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Alex",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Jota Cruz",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Varejão",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Charles Kouassi",
+          "position": "DEF",
+          "flag": "CI",
+          "age": 23,
+          "value": null
+        },
+        {
+          "name": "Alvand Moosaei",
+          "position": "DEF",
+          "flag": "CA",
+          "age": 18,
+          "value": null
+        },
+        {
+          "name": "Gonçalo Sá",
+          "position": "DEF",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Elísio Esteves",
+          "position": "MED",
+          "flag": "PT",
+          "age": 37,
+          "value": null
+        },
+        {
+          "name": "Leandro Mendonça",
+          "position": "MED",
+          "flag": "GW",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "José Coelho",
+          "position": "MED",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Rodrigo Leite",
+          "position": "MED",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "Caio Vidal",
+          "position": "MED",
+          "flag": "PT",
+          "age": 20,
+          "value": null
+        },
+        {
+          "name": "Tomás Mendes",
+          "position": "MED",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Afonso Martins",
+          "position": "MED",
+          "flag": "PT",
+          "age": 21,
+          "value": null
+        },
+        {
+          "name": "John Anderson",
+          "position": "ATA",
+          "flag": "BR",
+          "age": 29,
+          "value": null
+        },
+        {
+          "name": "Stanley Awurum",
+          "position": "ATA",
+          "flag": "NG",
+          "age": 36,
+          "value": 100000
+        },
+        {
+          "name": "Armand Bagramyan",
+          "position": "ATA",
+          "flag": "US",
+          "age": 30,
+          "value": null
+        },
+        {
+          "name": "Diogo Ferreira",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Gonçalo Rebelo",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 22,
+          "value": null
+        },
+        {
+          "name": "Rodrigo Isabel",
+          "position": "ATA",
+          "flag": "PT",
+          "age": 19,
+          "value": null
+        },
+        {
+          "name": "Genta Washizaki",
+          "position": "ATA",
+          "flag": "JP",
+          "age": 28,
+          "value": null
+        },
+        {
+          "name": "Iduitua David",
+          "position": "ATA",
+          "flag": "NG",
+          "age": 29,
+          "value": 100000
+        }
+      ],
+      "coverage": "complete"
     },
     {
       "name": "Cabrela",
