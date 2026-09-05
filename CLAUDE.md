@@ -1,115 +1,63 @@
-# CLAUDE.md — Technical Architecture & Engineering Standards
+# CLAUDE.md — CashBall · Arquitetura & Padrões
 
-This file serves as the primary technical reference for the CashBall 26/27 codebase. It focuses on architecture, engineering patterns, and system internals.
+> Operações/comandos/regressões: `AGENTS.md` · Design/tokens: `STYLE.md` · UI de referência: `client/src/views/PlayersTab.jsx`.
 
-## 🛠️ Tech Stack
+## 🛠️ Stack
 
-| Layer              | Technology          | Notes                                                                 |
-| :----------------- | :------------------ | :-------------------------------------------------------------------- |
-| **Frontend**       | React 19 + Vite 8   | **JavaScript only** (no TypeScript). Use JSDoc for type hints.        |
-| **Styling**        | Tailwind CSS 4      | Uses Material Symbols Outlined for icons. Style guide: `STYLE.md`.   |
-| **Backend**        | Node.js + Express 5 | **TypeScript** (strict: false).                                       |
-| **Real-time**      | Socket.io 4         | Centralized listeners in `client/src/hooks/useSocketListeners.js`.    |
-| **Database**       | SQLite 3            | Local file-based (`server/db/base.db`). No PostgreSQL-specific types. |
-| **Infrastructure** | Docker Compose      | Containerized environment.                                            |
+| Layer | Tech | Notas |
+|---|---|---|
+| Frontend | React 19 + Vite 8 | **JavaScript only** (sem TypeScript); tipos via JSDoc |
+| Estilo | Tailwind CSS 4 | Ícones: Material Symbols Outlined · design system em `STYLE.md` |
+| Backend | Node.js + Express 5 | TypeScript (`strict: false`) |
+| Real-time | Socket.io 4 | Listeners centralizados em `client/src/hooks/useSocketListeners.js` |
+| BD | SQLite 3 | `server/db/base.db` (template) + `game_*.db` (salas); sem tipos PostgreSQL |
+| Infra | Docker Compose | |
 
-### Frontend JSDoc Standards
+### JSDoc (frontend)
 
-To maintain type safety without TypeScript, all components and non-trivial functions must use JSDoc:
+- Componentes: `@param {Object} props` + um `@param` por prop + `@returns {JSX.Element}`.
+- Funções async: `@returns {Promise<User>}`.
+- Arrays de objetos: `@param {Array<{id: number, name: string}>} players`.
+- Validar sempre: `npm run check:types`.
 
-- **Components:**
-  ```javascript
-  /**
-   * @param {Object} props
-   * @param {string} props.name - Description
-   * @returns {JSX.Element}
-   */
-  function MyComponent({ name }) { ... }
-  ```
-- **Async Functions:** Always specify the return type as a Promise: `/** @returns {Promise<User>} */`.
-- **Complexity:** Use `@param {Array<{id: number, name: string}>} players` for complex object arrays.
-- **Validation:** Run `npm run check:types` before committing.
+## 🏗️ Estado & Sincronização
 
----
+- **Truth da época:** `game.calendarIndex` (nunca `matchweek` em lógica de progresso).
+- **Máquina de fases:** `lobby` → `match_first_half` → `match_halftime` → `match_second_half` → `[match_et_gate → match_extra_time]` → `match_finalizing` → `lobby`. Fases transitórias resetam para `lobby` no restart (anti-deadlock).
+- **Memória vs BD:** `activeGames` em `gameManager.ts` é o estado runtime primário; sincronização com a BD é **seletiva** — stats/finanças persistem; minuto de jogo/lineups são transitórios.
+- **Coordenação de fase:** `phaseToken` (UUID) + `phaseAcks` (Set de nomes de coaches confirmados).
+- **Segment guard:** `segmentRunning[roomCode]` impede dupla execução de segmento de jogo.
 
-## 🏗️ Architecture & Core Logic
+## 🏭 Padrões de backend
 
-### 1. State Management & Truth
+- **Factory:** `createXxxHelpers(deps)` com `deps = { io, db, game }`; nunca instanciar helpers diretamente.
+- **Socket handlers:** um ficheiro por domínio (`*Handlers.ts`), registados em `index.ts` via `registerXxxSocketHandlers(socket, deps)`.
+- **Engine:** `game/engine.ts` usa CommonJS (`module.exports`) por compatibilidade; o resto de `game/` usa ESM.
 
-- **Season Truth:** `game.calendarIndex` is the absolute source of truth for the season progression (not `matchweek`).
-- **Game Phase Machine:**
-  `lobby` $\rightarrow$ `match_first_half` $\rightarrow$ `match_halftime` $\rightarrow$ `match_second_half` $\rightarrow$ `[match_et_gate $\rightarrow$ match_extra_time]` $\rightarrow$ `match_finalizing` $\rightarrow$ `lobby`.
-  _Note: Transitional phases reset to `lobby` on server restart to prevent deadlocks._
-- **Memory vs DB:** `activeGames` in `gameManager.ts` is the primary runtime state. DB synchronization is **selective** (stats/finances are persistent; match minute/lineups are transient).
+## 📁 Estrutura
 
-### 2. Synchronization & Gates
+**`/server`**
 
-- **Phase Coordination:** Uses `phaseToken` (UUID) + `phaseAcks` (Set of confirmed coach names) to synchronize multi-player actions.
-- **Segment Guard:** `segmentRunning[roomCode]` prevents double-execution of match segments.
+- `index.ts` — entry (Express + Socket.io)
+- `gameManager.ts` — ciclo de vida de salas/estado
+- `game/` — simulação (`engine.ts`, `commentary.ts`, `playerUtils.ts`)
+- `*Handlers.ts` / `*Helpers.ts` — socket por domínio / lógica de negócio (factory)
+- `db/` — schema, seeds, migrations
 
-### 3. Backend Patterns
+**`/client/src`**
 
-- **Domain Helpers:** Uses the **Factory Pattern**: `createXxxHelpers(deps)` where `deps` includes `{ io, db, game }`. Never instantiate helpers directly.
-- **Socket Handlers:** Each domain (gameplay, transfer, etc.) has its own handler file registered in `index.ts` via `registerXxxSocketHandlers(socket, deps)`.
-- **Simulation Engine:** `game/engine.ts` uses CommonJS (`module.exports`) for compatibility, while other files in `game/` use ES Modules.
+- `App.jsx` — root (auth state, sessão, providers de topo)
+- `contexts/` — `GameContext.jsx` (estado do jogo), `TacticsContext.jsx` (UI de táticas)
+- `hooks/useSocketListeners.js` — eventos de socket
+- `GameLayout.jsx` — container principal (consome os contextos)
+- `views/` — tabs do jogo · `pages/` — páginas fora das tabs (`AuctionsPage.jsx`, `UserSettingsPage.jsx`)
+- `components/` — `modals/`, `ui/`, `shared/` · `utils/` — áudio, formatters, cache
 
----
+## 🎨 Workflow de design (Stitch)
 
-## 📁 Project Structure
+Não inventar designs — usar o fluxo **Stitch AI MCP**:
 
-### Backend (`/server`)
-
-- `index.ts`: Entry point (Express + Socket.io).
-- `gameManager.ts`: Room and state lifecycle management.
-- `game/`: Core simulation logic (`engine.ts`, `commentary.ts`, `playerUtils.ts`).
-- `*Handlers.ts`: Socket.io domain registration.
-- `*Helpers.ts`: Business logic (via Factory Pattern).
-- `db/`: SQLite schema, seed scripts, and migrations.
-
-### Frontend (`/client`)
-
-- `src/App.jsx`: Root orchestrator (Auth state, session management, and top-level providers).
-- `src/contexts/`: Global state management.
-  - `GameContext.jsx`: Core game state (match status, players, finances, sockets).
-  - `TacticsContext.jsx`: UI state and logic for team tactics.
-- `src/hooks/useSocketListeners.js`: Centralized socket event handling.
-- `src/GameLayout.jsx`: Main UI container (consumes all contexts, holds the layout structure).
-- `src/views/`: Modularized tab components (Standings, Market, etc.).
-- `src/pages/`: Full pages outside the game tabs (`AuctionsPage.jsx`, `UserSettingsPage.jsx`).
-- `src/components/`: UI hierarchy (`modals/`, `ui/`, `shared/`).
-- `src/utils/`: Helpers (audio, formatters, cache management).
-
----
-
-## 🎨 Design Workflow (Stitch)
-
-To maintain visual consistency, do not guess designs. Use the **Stitch AI MCP** workflow:
-
-1. **Prototype:** Design/edit in the Stitch project (`projects/2994088005927103850`).
-2. **Extract:** Provide the Screen ID to Claude.
-3. **Implement:** Claude uses `stitch_get_screen` to translate specs into React/Tailwind.
-4. **UI Rules:** Respect position colors (GR: `#eab308`, DEF: `#3b82f6`, MED: `#10b981`, ATA: `#f43f5e`) and Sidebar offsets (`lg:left-14` / `lg:left-64`).
-5. **Style Guide:** Always follow `STYLE.md` for tokens, typography, cards, badges, and responsive patterns. Reference implementation: `client/src/views/PlayersTab.jsx`.
-
----
-
-## 🎨 Style Guide
-
-All pages and components must follow the design system documented in **`STYLE.md`**:
-
-- **Color tokens:** Use semantic tokens (`surface-container`, `on-surface`, `primary`, etc.) — never hardcoded hex colors.
-- **Position colors:** GR: `amber-400`, DEF: `blue-400`, MED: `emerald-400`, ATA: `rose-400`.
-- **Typography:** `font-headline` for numbers/values, `font-black uppercase tracking-widest` for labels, `tabular-nums` for all digits.
-- **Cards:** Use `bg-surface-container-low` / `bg-surface-container` with `border-l-4` accent borders.
-- **Badges:** `text-[9px] font-black uppercase` with `bg-{color}/20` + `border-{color}/30`.
-- **Reference implementation:** `client/src/views/PlayersTab.jsx`.
-
----
-
-## 📜 Engineering Rules (Non-Negotiables)
-
-1. **Frontend:** **STRICTLY JAVASCRIPT**. No TypeScript in `/client`.
-2. **Language:** Always **European Portuguese (pt-PT)** — all UI text, user-facing messages, narration phrases and code comments. "Auto-golo" (never "golo de contra" / "contra", which is pt-BR); "marcador"/"resultado" (never "placar"). Never mix in Brazilian expressions.
-3. **Narration:** All game commentary phrases must live in `server/game/commentary.ts`.
-4. **Database:** SQLite only. Avoid `SERIAL` or `JSONB`.
-5. **Documentation:** Use JSDoc for all complex functions and component props.
+1. Prototipar/editar no projeto Stitch (`projects/2994088005927103850`).
+2. Fornecer o Screen ID.
+3. Implementar com `stitch_get_screen` (spec → React/Tailwind).
+4. Respeitar cores de posição e offsets do sidebar (`lg:left-14` / `lg:left-64`) — valores em `STYLE.md`.

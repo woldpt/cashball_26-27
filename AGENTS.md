@@ -1,129 +1,55 @@
-# AGENTS.md — Operational Manual & Regression Prevention
+# AGENTS.md — CashBall · Operações & Regras
 
-> **Nota:** Este ficheiro é o manual de operações rápidas. Ele complementa o `CLAUDE.md` (Arquitetura) e o `README.md` (Produto).
+> **pt-PT (europeu) SEMPRE** — UI, mensagens, narração, comentários. "Auto-golo" (nunca "golo de contra"/"contra" — pt-BR); "marcador"/"resultado" (nunca "placar").
+> **Leia antes de trabalhar:** backend/arquitetura → `CLAUDE.md` · UI/estilo → `STYLE.md` · UI de referência: `client/src/views/PlayersTab.jsx`.
 
-## ⚡ Quick Commands
+## ⚡ Comandos
 
-| Contexto                 | Comando                                            |
-| :----------------------- | :------------------------------------------------- |
-| **Backend Dev**          | `cd server && npm run dev`                         |
-| **Backend Typecheck**    | `cd server && npm run typecheck`                   |
-| **Backend Build/Start**  | `cd server && npm run build && npm run start`      |
-| **Backend Seed**         | `cd server && npm run seed`                        |
-| **Frontend Dev**         | `cd client && npm run dev`                         |
-| **Frontend Lint**        | `cd client && npm run lint`                        |
-| **Frontend JSDoc Check** | `cd client && npm run check:types`                 |
-| **Mobile Resp Check**    | `cd client && npm run test:mobile`                 |
-| **Socket Audit**         | `cd server && npm run audit:socketio`              |
-| **Game-State Audit**     | `cd server && npm run audit:gamestate <ROOM_CODE>` |
-| **Repair Job Offer**     | `cd server && npm run repair:joboffer <ROOM_CODE> [--fix]` |
-| **Full Stack**           | `docker compose up --build`                        |
+| Tarefa | Comando |
+|---|---|
+| Backend dev · typecheck · build+start | `cd server && npm run dev` · `npm run typecheck` · `npm run build && npm run start` |
+| Seed | `cd server && npm run seed` |
+| Frontend dev · lint · JSDoc check | `cd client && npm run dev` · `npm run lint` · `npm run check:types` |
+| Mobile (obrigatório após mudar layout/estilo) | `cd client && npm run test:mobile` |
+| Audit socket.io · audit de sala | `cd server && npm run audit:socketio` · `npm run audit:gamestate <ROOM_CODE>` |
+| Repair job offer | `cd server && npm run repair:joboffer <ROOM_CODE> [--fix]` |
+| Crash-restart E2E (clona p/ `game_CRASHT.db`, limpa ao fim) | `cd server && npm run test:crash-recovery` (origem: `CRASHTEST_ROOM=XXXX`) |
+| Stack completa | `docker compose up --build` |
 
-> **Reseed automático no arranque:** o `entrypoint.sh` corre `db/ensureSeeded.js`,
-> que re-seeda o `base.db` (template de novas salas) automaticamente se estiver
-> ausente, com schema antigo ou com fixtures alteradas (hash em `game_state.fixtures_hash`).
-> Salas existentes (`game_*.db`) nunca são afetadas. Para refrescar fixtures em
-> produção basta `git pull && docker compose up --build`.
+**Reseed no arranque:** `entrypoint.sh` → `db/ensureSeeded.js` re-seeda só o `base.db` (template de salas novas) se ausente, com schema antigo ou fixtures alteradas (hash em `game_state.fixtures_hash`). Salas (`game_*.db`) nunca são afetadas. Produção: `git pull && docker compose up --build` refresca fixtures.
 
-## ⚠️ REGRESSION PREVENTION (Crucial)
+## 🚫 Regressões proibidas (já corrigidas — não recriar)
 
-**NÃO cometer estes erros que já foram corrigidos em sessões anteriores:**
+- **Transferências:** sempre `TransferHub.jsx` (o `MarketTab.jsx` foi removido); leilões filtrados com `p.transfer_status !== "auction"`.
+- **Leilões:** guard `bids[npcTeam.id] != null` evita lances NPC duplicados; em queries de `playerRows[0]` nunca prefixo `p.` (pode ser `null` sem JOIN).
+- **Histórico de jogador:** abrir via `PlayerRow` (prop `onOpenPlayerHistory`) → `socket.emit("requestPlayerHistory")`.
+- **PlayerAvatar.jsx:** proibido `clipPath` — apenas caminhos geométricos puros.
+- **ModalShell:** `visible={false}` **não** impede a avaliação dos `children` — guardar props nuláveis (ex. `data.teamName`) com early-return/short-circuit, senão `TypeError`.
+- **Progresso da época:** fonte da verdade `game.calendarIndex` — nunca `matchweek`.
+- **Contextos frontend:** `GameContext` = estado do jogo (players, finanças, fase); `TacticsContext` = UI de táticas (drag-and-drop/selection), consome `GameContext`; auth state vive em `App.jsx` e passa por props ao `GameLayout`.
+- **Não persistir `game.lockedCoaches` em BD.**
 
-- **Idioma (pt-PT):** todo o UI, mensagens, narração e comentários são SEMPRE em português europeu. "Auto-golo" — nunca "golo de contra"/"contra" (expressão pt-BR); "marcador"/"resultado", nunca "placar".
-- **Mercado/Transferências:**
-  - Use sempre `TransferHub.jsx` (o antigo `MarketTab.jsx` foi removido).
-  - Garanta que leilões são filtrados em `TransferHub` (`p.transfer_status !== "auction"`).
-- **Leilões (Auctions):**
-  - Verifique sempre o guard `bids[npcTeam.id] != null` para evitar lances duplicados de NPCs.
-  - Não use o prefixo `p.` em queries de `playerRows[0]` (evita `null` sem JOIN).
-- **Histórico de Jogadores:**
-  - A abertura do modal deve seguir o fluxo: `PlayerRow (prop onOpenPlayerHistory)` $\rightarrow$ `socket.emit("requestPlayerHistory")`.
-- **Visual/Avatar:**
-  - **PROIBIDO** usar `clipPath` em `PlayerAvatar.jsx`. Use apenas caminhos geométricos puros.
-- **Modais (`ModalShell`):**
-  - A prop `visible` **NÃO** impede a avaliação dos `children`. Modais cujos children acedem a props nuláveis (ex.: `data.teamName`) têm de guardar essas props com early-return ou short-circuit nos children — senão rebentam com `TypeError` mesmo com `visible={false}`.
-- **Estado do Jogo:**
-  - A fonte da verdade é `game.calendarIndex`. Nunca use `matchweek` para lógica de progresso.
-- **Contextos do Frontend:**
-  - **GameContext:** Única fonte de verdade para o estado do jogo (players, finances, match phase, etc.).
-  - **TacticsContext:** Gerencia o estado da UI de táticas (drag-and-drop, selection). Consome o `GameContext`.
-  - **Auth State:** Gerenciado no `App.jsx` e passado para o `GameLayout` via props.
-- **Não tente persistir `game.lockedCoaches` na base de dados.**
+## 📏 Padrões obrigatórios
 
-## 🔍 Auditing & Validation
+- **Helpers (factory):** nunca instanciar diretamente — `const helpers = createXxxHelpers({ io, db, game });`
+- **Juniors (banco de suplentes), ordem fixa:** 1) `withJuniorGRs(squad, teamId, matchweek)` (1 GR no 11 inicial); 2) `ensureFullBench(squad, teamId, matchweek)` (2 GR + 14 campo). IDs de juniores negativos.
+- **Frontend JavaScript só** (tipos via JSDoc) · **Backend TypeScript** (`strict: false`) · **SQLite** sem `SERIAL`/`JSONB` · **Narração** só em `server/game/commentary.ts`.
 
-**Sempre que alterar a lógica de jogo ou comunicações, execute estas auditorias:**
+## ✅ Antes de "feito" / commit
 
-### 1. Game State Audit (`npm run audit:gamestate <ROOM_CODE>`)
+- Checks verdes aplicáveis: server `npm run typecheck` · client `npm run lint` + `npm run check:types` · layout/estilo → `npm run test:mobile`. **Nunca reportar sucesso sem saída verificada.**
+- Alterou lógica de jogo/comunicações → correr `audit:gamestate <ROOM>` (budgets vs salários, squad mínimo, jogadores duplicados, fases) e `audit:socketio` (orphaned/duplicate handlers).
+- Debug por evidência: reproduzir → isolar causa → só então fixar. Nunca corrigir por hipótese (ex.: `min-w-0` "porque costuma resolver").
 
-Verifica a integridade da base de dados de uma sala:
+## 🧯 Crash recovery & backups
 
-- **Budgets:** Detecta orçamentos inconsistentes vs. salários.
-- **Squad Composition:** Verifica se cada equipa tem o número mínimo de jogadores por posição.
-- **Duplicate Players:** Identifica jogadores em equipas duplicadas (erro crítico).
-- **Match Phases:** Valida se o estado da fase de jogo é válido.
+- **Replay seguro pós-restart:** `applied_weeks` limita `weekly_finance` a 1× por `(season, slot)`; slot `finalized` → `recoverFinalizedSlot` avança o calendário sem re-simular/re-cobrar. Quebras entre COMMITs podem deixar linhas de jogo/evolução por persistir — `audit:gamestate` surfaceia.
+- **WAL + `busy_timeout=5000`** em DBs de sala/global (`base.db` mantém journal DELETE p/ cópia via `fs.copyFileSync`).
+- SIGTERM/SIGINT/erro fatal → `flushAllGameStates` antes de fechar DBs; Docker `restart: unless-stopped` faz replay limpo.
+- **Backups** (proteção p/ perda de disco): serviço `backups` do compose (diário; `BACKUP_INTERVAL_HOURS`/`RETENTION_COUNT`; snapshots em `./backups/YYYYMMDD_HHMMSS/`); manual: `node scripts/backupDatabases.js` (Online Backup API, seguro com server ativo); host sem Docker: cron + `server/scripts/backupDatabases.sh` (requer CLI sqlite3).
 
-### 2. Socket.io Contract Audit (`npm run audit:socketio`)
+## 📌 Workflow
 
-Valida se os eventos de comunicação respeitam os contratos:
-
-- **Orphaned Emissions:** Eventos emitidos mas nunca escutados.
-- **Orphaned Handlers:** Listeners para eventos que nunca são emitidos.
-- **Duplicate Handlers:** Múltiplos listeners para o mesmo evento (conflito).
-
----
-
-## 🔬 Verificação & Debugging
-
-- **Antes de declarar "feito" (e antes de commit):** checks verdes aplicáveis —
-  `npm run typecheck` (server), `npm run lint` + `npm run check:types` (client) e
-  `npm run test:mobile` quando há impacto em layout/estilo. Nunca reportar
-  sucesso sem saída verificada.
-- **Debugging por evidência:** reproduzir o erro → isolar a causa → só então
-  propor fix. Nunca corrigir "à hipótese" (ex.: adicionar `min-w-0` porque
-  "costuma resolver").
-
-## 🧯 Crash Recovery & Backups
-
-**Replay após crash/restart é seguro graças a `applied_weeks`** (em cada `game_*.db`):
-- `weekly_finance` — rendimentos/salários/empréstimo aplicados no máximo 1× por `(season, slot)`.
-- `finalized` — slot da liga/Taça já liquidado: o restart **avança o calendário** em vez de re-simular/re-cobrar (`recoverFinalizedSlot`). Uma quebra numa janela estreita entre COMMITs pode deixar só as linhas do jogo/evolução pós-jogo dessa semana por persistir — `audit:gamestate` surfaceia isso.
-
-**Outras garantias:**
-- DBs de sala e global correm em **WAL** + `busy_timeout=5000` (a base.db mantém journal DELETE para poder ser copiada via `fs.copyFileSync`).
-- SIGTERM/SIGINT e erros fatais fazem flush do estado in-flight (`flushAllGameStates`) antes de fechar as DBs; o Docker reinicia limpo (`restart: unless-stopped`) e a recuperação acima torna o restart replay-safe.
-
-**Teste E2E de crash-restart:** `cd server && npm run test:crash-recovery` — clona uma sala real para `game_CRASHT.db` (descartável, limpa ao final) e valida os 4 cenários: cobrança única do `weekly_finance` com reaplicação pós-restart, e `recoverFinalizedSlot`/`checkAllReady` avançando sem re-simular/re-cobrar em slots de liga e Taça já finalizados. Opção: `CRASHTEST_ROOM=XXXX` para escolher a sala de origem.
-
-**Backups** (proteção contra perda de disco — complementam o WAL):
-- Automático em produção: serviço `backups` do docker-compose (diário por omissão; intervalos/retenção via `BACKUP_INTERVAL_HOURS`/`RETENTION_COUNT`; snapshots em `./backups/YYYYMMDD_HHMMSS/`).
-- Manual: `cd server && node scripts/backupDatabases.js` (Online Backup API — seguro com o server ativo).
-- Alternativa no host sem Docker: cron + `server/scripts/backupDatabases.sh` (requer CLI sqlite3).
-
----
-
-## 🛠️ COMPLEX LOGIC PATTERNS
-
-**Siga estes padrões para garantir a integridade do sistema:**
-
-### 1. Sistema de Juniores (Banco de Suplentes)
-
-Para garantir que uma equipa tem sempre jogadores disponíveis, siga esta ordem de execução obrigatória:
-
-1. `withJuniorGRs(squad, teamId, matchweek)` (Garante 1 GR para o 11 inicial).
-2. `ensureFullBench(squad, teamId, matchweek)` (Garante o resto do banco: 2 GR + 14 campo).
-   _Atenção: Os IDs de juniores são negativos._
-
-### 2. Backend Helpers (Factory Pattern)
-
-Nunca instancie helpers diretamente. Use sempre:
-`const helpers = createXxxHelpers({ io, db, game });`
-
-## 🎨 DESIGN WORKFLOW
-
-**Estilo visual:** Siga sempre o `STYLE.md` como referência de design system. Todas as páginas e componentes devem usar os tokens, tipografia, cards, badges e convenções definidos lá. Referência de implementação: `client/src/views/PlayersTab.jsx`.
-
-## 🚀 Commit Workflow
-
-- **Commit automático:** após cada alteração de código verificada (checks a passar), criar sempre um commit — ver skill `auto-commit` (`.pi/skills/auto-commit/SKILL.md`). Nunca fazer push sem pedido explícito.
-- Mensagens de commit devem focar no **"porquê"** (ex: `fix: prevent duplicate NPC bids in auctions`) e não apenas no "o quê".
+- **Commit automático** após cada alteração verificada — skill `.pi/skills/auto-commit/SKILL.md`. Mensagem foca no **porquê** (ex. `fix: prevent duplicate NPC bids in auctions`). Nunca push sem pedido explícito.
+- **Mudança de layout/estilo** → skill `mobile-resp-check` antes de terminar/commitar.
+- **Design:** seguir `STYLE.md` (tokens, tipografia, cards, badges); referência: `client/src/views/PlayersTab.jsx`.

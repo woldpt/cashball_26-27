@@ -1,268 +1,142 @@
-# STYLE.md — Design System & Styling Guidelines
+# STYLE.md — CashBall · Design System
 
-> **Referência única de estilo visual.** Todas as páginas e componentes do CashBall devem seguir estas convenções. Referência: `client/src/views/PlayersTab.jsx`.
+> Referência única de estilo. Componentes partilhados: §10 (usá-los sempre). Exemplo completo: `client/src/views/PlayersTab.jsx`.
 
----
+## 1. Cores semânticas (tokens CSS)
 
-## 🎨 1. Cores Semânticas (Material Design Tokens)
-
-Use **tokens CSS** em vez de cores hardcoded. Os tokens seguem a nomenclatura Material Design 3:
+Sempre tokens, nunca hex hardcoded (exceto paleta de posição §10). Nota: `outline` **não** está no `@theme` — `border-outline` é no-op silencioso; usar `outline-variant`.
 
 | Token | Uso |
-|-------|-----|
-| `bg` | Fundo principal da página |
-| `surface` / `surface-container-low` / `surface-container` / `surface-container-high` | Superfícies elevadas (cards, painéis) |
-| `on-surface` | Texto principal sobre superfície |
-| `on-surface-variant` | Texto secundário, labels, metadados |
-| `primary` | Cor de destaque principal |
-| `tertiary` | Cor de destaque secundária (orçamento, valores) |
+|---|---|
+| `bg` | Fundo da página |
+| `surface` / `-container-low` / `-container` / `-container-high` | Superfícies elevadas (cards, painéis) |
+| `on-surface` / `on-surface-variant` | Texto principal / secundário, labels |
+| `primary` / `tertiary` | Destaque principal / secundário (orçamento, valores) |
 | `error` / `error-container` | Erros, estados críticos |
-| `outline-variant` | Bordas e divisores (nota: `outline` **não** está definido no `@theme` — `border-outline` é um no-op silencioso) |
+| `outline-variant` | Bordas e divisores |
 
-### Cores por Posição
+### Posições
 
-| Posição | Cor Hex | Tailwind | Uso |
-|---------|---------|----------|-----|
-| **GR** | `#eab308` | `amber-400` | Guarda-redes |
-| **DEF** | `#3b82f6` | `blue-400` | Defesas |
-| **MED** | `#10b981` | `emerald-400` | Médios |
-| **ATA** | `#f43f5e` | `rose-400` | Avançados |
+| Posição | Hex | Tailwind |
+|---|---|---|
+| GR | `#eab308` | `amber-400` |
+| DEF | `#3b82f6` | `blue-400` |
+| MED | `#10b981` | `emerald-400` |
+| ATA | `#f43f5e` | `rose-400` |
 
----
+## 2. Tipografia
 
-## 📐 2. Tipografia
+| Contexto | Classe |
+|---|---|
+| Valores grandes (orçamento, skill) | `text-3xl`/`text-2xl` + `font-headline font-black` |
+| Títulos de secção | `text-base font-black font-headline tracking-tight` |
+| Nomes de jogador | `text-sm uppercase tracking-tight` |
+| Labels de coluna / metadados | `text-[10px]` / `text-[8px]` |
+| Badges inline | `text-[9px]` |
+| Números | `tabular-nums` sempre |
 
-### Fontes
+Labels pequenos: `font-black uppercase tracking-widest text-on-surface-variant`.
 
-| Classe | Fonte | Uso |
-|--------|-------|-----|
-| `font-headline` | Fonte de headlines (display) | Números grandes, títulos, valores monetários |
-| `font-bold` / `font-black` | Fonte padrão bold/black | Texto de interface, labels |
+## 3. Cards & widgets
 
-### Tamanhos Padrão
-
-| Contexto | Tamanho | Classe |
-|----------|---------|--------|
-| **Valores grandes** (orçamento, skill) | `text-3xl` / `text-2xl` | Números de destaque |
-| **Títulos de secção** | `text-base` | Headers de painel |
-| **Nomes de jogador** | `text-sm` | Identificadores |
-| **Labels de coluna** | `text-[10px]` / `text-[8px]` | Headers de tabela, badges |
-| **Badges inline** | `text-[9px]` | Status, tags |
-| **Metadados** | `text-[8px]` | Sub-labels, tracking |
-
-### Pesos e Tracking
-
-- **Títulos e labels:** `font-black uppercase tracking-widest` (labels pequenos) ou `tracking-tight` (títulos grandes)
-- **Números:** `tabular-nums` sempre para alinhar dígitos
-- **Nomes:** `uppercase tracking-tight`
-
----
-
-## 🃏 3. Cards e Widgets
-
-> Componentes: `SummaryWidget`, `Panel`, `EmptyState`, `TabBar` (ver §10).
-
-### Widget de Summary (topo de página)
+**SummaryWidget** (topo de página):
 
 ```jsx
 <div className="bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4 border-primary">
-  <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-    LABEL
-  </span>
-  <span className="text-3xl font-black font-headline tracking-tighter text-on-surface">
-    VALUE
-  </span>
+  <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">LABEL</span>
+  <span className="text-3xl font-black font-headline tracking-tighter text-on-surface">VALUE</span>
 </div>
 ```
 
-**Regras:**
-- Altura fixa: `h-28`
-- Bordas laterais coloridas: `border-l-4` com cor semântica
-- Label pequeno em cima, valor grande em baixo
-- Grid responsivo: `grid-cols-1 sm:grid-cols-3 gap-4`
+Altura fixa `h-28`; `border-l-4` com cor semântica; label em cima, valor em baixo; grid `grid-cols-1 sm:grid-cols-3 gap-4`.
 
-### Painel de Conteúdo
+**Panel** (conteúdo):
 
 ```jsx
 <div className="bg-surface-container rounded-md overflow-hidden">
   <div className="px-5 py-4 flex items-center justify-between bg-surface-container-high/50">
-    <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">
-      TÍTULO
-    </h2>
-    <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-widest">
-      METADATA
-    </span>
+    <h2 className="text-base font-black font-headline tracking-tight text-tertiary uppercase">TÍTULO</h2>
+    <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-widest">METADATA</span>
   </div>
-  <div className="p-3 md:p-4">
-    {/* conteúdo */}
-  </div>
+  <div className="p-3 md:p-4">{/* conteúdo */}</div>
 </div>
 ```
 
----
+## 4. Linhas de jogador (PlayerRow)
 
-## 📋 4. Linhas de Jogador (Card-based Row)
-
-> Componente: `PlayerRow` (ver §10). Resultado da fusão de `SquadRow`
-> (PlayersTab) e `TeamSquadCard` (TeamSquadView/TeamSquadModal).
-
-### Estrutura do `<SquadRow>`
-
-Cada jogador é renderizado como um **card horizontal** com:
-
-```
-┌───┬──────────┬─────┬──────────┬──────────┬──────────┐
-│bar│ avatar   │nome │ skill    │ attrs    │ stats    │
-│   │ + pos    │+bad │ +delta   │(md)     │(xl)      │
-└───┴──────────┴─────┴──────────┴──────────┴──────────┘
-```
-
-### Padrões visuais
+Card horizontal: `faixa posição | avatar+pos | nome+badges | skill+delta | attrs (md) | stats (xl)`.
 
 | Elemento | Classe |
-|----------|--------|
-| **Card container** | `relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r {bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg {glow} shadow-sm shadow-black/30 cursor-pointer` |
-| **Faixa lateral** | `shrink-0 w-1 bg-gradient-to-b {bar}` |
-| **Hover glow** | `hover:border-{pos}-400/70 hover:shadow-{pos}-400/30` |
-| **Separadores** | `border-l border-outline-variant/15 ml-1` |
+|---|---|
+| Container | `relative group flex items-stretch rounded-lg overflow-hidden border border-outline-variant/25 bg-gradient-to-r {bgGrad} via-surface-container/70 to-surface/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg {glow} shadow-sm shadow-black/30 cursor-pointer` |
+| Faixa lateral | `shrink-0 w-1 bg-gradient-to-b {bar}` |
+| Hover glow | `hover:border-{pos}-400/70 hover:shadow-{pos}-400/30` |
+| Separadores | `border-l border-outline-variant/15 ml-1` |
+| Indisponível | `opacity-65 saturate-50` |
+| Glow do skill | `style={{ textShadow: "0 0 10px currentColor" }}` |
 
-### Gradientes por posição
+Gradientes por posição (bar = `from-{pos}-300 via-{pos}-400 to-{pos}-600`; bgGrad = `from-{pos}-500/8`; glow = `{pos}-400`).
 
-| Posição | Faixa (`bar`) | Glow | BG gradient |
-|---------|---------------|------|-------------|
-| GR | `from-amber-300 via-amber-400 to-amber-600` | `amber-400` | `from-amber-500/8` |
-| DEF | `from-blue-300 via-blue-400 to-blue-600` | `blue-400` | `from-blue-500/8` |
-| MED | `from-emerald-300 via-emerald-400 to-emerald-600` | `emerald-400` | `from-emerald-500/8` |
-| ATA | `from-rose-300 via-rose-400 to-rose-600` | `rose-400` | `from-rose-500/8` |
+## 5. Badges inline
 
----
-
-## 🏷️ 5. Badges Inline
-
-> Componente: `Badge` + `PlayerStatusBadges` (ver §10).
-
-### Formato padrão
-
-```jsx
-<span className="text-[9px] font-black uppercase px-1.5 py-px rounded bg-{color}/20 text-{color} border border-{color}/30 tracking-widest">
-  LABEL
-</span>
-```
-
-### Badges existentes
+Formato: `text-[9px] font-black uppercase px-1.5 py-px rounded bg-{color}/20 text-{color} border border-{color}/30 tracking-widest`
 
 | Badge | Cor | Condição |
-|-------|-----|----------|
+|---|---|---|
 | 🎓 Jr | `indigo-500` | `player.isJunior` |
-| ✓ Renovado | `amber-500` (gradient) | Contrato renovado esta época |
-| À venda | `emerald-500` | `player.transfer_status !== "none"` |
+| ✓ Renovado | `amber-500` (gradient) | Renovado esta época |
+| À venda | `emerald-500` | `transfer_status !== "none"` |
 | ✈️ 1J | `sky-500` | Cooldown de transferência |
-| 🟥 NJ | `error` | Suspenso N jornadas |
-| 🩹 NJ | `amber` | Lesionado N jornadas |
+| 🟥 NJ / 🩹 NJ | `error` / `amber` | Suspenso / lesionado N jornadas |
 | ★ | `amber-400` | Craque (`is_star`) |
 
----
+## 6. Barras de distribuição salarial
 
-## 📊 6. Gráficos e Visualizações
+Colunas por posição (`flex items-end`, altura 80px): trilho `bg-primary/10 rounded-t-sm` + preenchimento `absolute inset-x-0 bottom-0` com `height: ${pct}%`, `backgroundColor: posColor`, `opacity: 0.75`, `transition-all duration-700`; label `{pos}` e valor `text-[9px] tabular-nums`.
 
-### Barras de Distribuição Salarial
+## 7. Responsividade
 
-```jsx
-<div className="flex items-end gap-3" style={{ height: "80px" }}>
-  {positions.map((pos) => (
-    <div key={pos} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-      <div className="w-full bg-primary/10 rounded-t-sm relative" style={{ height: "60px" }}>
-        <div className="absolute inset-x-0 bottom-0 rounded-t-sm transition-all duration-700"
-          style={{ height: `${pct}%`, backgroundColor: posColor, opacity: 0.75 }} />
-      </div>
-      <span className="text-[10px] font-black uppercase text-{pos}">{pos}</span>
-      <span className="text-[9px] text-on-surface-variant tabular-nums">{value}</span>
-    </div>
-  ))}
-</div>
-```
+| Breakpoint | Colunas |
+|---|---|
+| Sempre | Faixa, avatar, nome, badges, skill |
+| `md` (`hidden md:flex`) | Atributos (Agr/Res/For), Ordenado + Valor |
+| `xl` (`hidden xl:flex`) | Stats (Jogos, Golos, Vermelhos, Lesões) |
 
----
+Paddings: `p-3 md:p-4`; widgets: `grid-cols-1 sm:grid-cols-3`.
 
-## 📱 7. Responsividade
+## 8. Efeitos
 
-### Breakpoints de colunas
+| Efeito | Classe |
+|---|---|
+| Hover elevation | `hover:-translate-y-px hover:shadow-lg` |
+| Transições | `transition-all duration-200` (UI) / `duration-700` (gráficos) |
 
-| Breakpoint | Adicionado |
-|------------|-----------|
-| **Sempre** | Faixa posição, avatar, nome, badges, skill |
-| **`md`** (`hidden md:flex`) | Atributos (Agr/Res/For), Ordenado + Valor |
-| **`xl`** (`hidden xl:flex`) | Stats (Jogos, Golos, Vermelhos, Lesões) |
+## 9. Convenções
 
-### Grid responsivo
+- Espaçamento: `space-y-4` entre secções; `gap-1.5` entre rows de jogador.
+- Bordas: `border-outline-variant/25` (cards) · `/15` (separadores internos).
+- Sombras: `shadow-sm shadow-black/30` (cards) · `shadow-md shadow-black/50` (chips).
+- Gradientes de fundo: opacidade baixa (`/8`).
+- Estado vazio: `EmptyState` (emoji + título + descrição) ou `py-12 text-center text-zinc-500`.
 
-- Summary widgets: `grid-cols-1 sm:grid-cols-3`
-- Padding: `p-3 md:p-4`
-
----
-
-## ✨ 8. Efeitos e Interatividade
-
-| Efeito | Classe | Uso |
-|--------|--------|-----|
-| Hover elevation | `hover:-translate-y-px hover:shadow-lg` | Cards de jogador |
-| Hover glow | `hover:border-{color}/70 hover:shadow-{color}/30` | Bordas por posição |
-| Text glow | `style={{ textShadow: "0 0 10px currentColor" }}` | Números de skill |
-| Dim unavailable | `opacity-65 saturate-50` | Jogadores indisponíveis |
-| Transitions | `transition-all duration-200` (UI) / `duration-700` (gráficos) | Animações |
-
----
-
-## 🧩 9. Convenções Gerais
-
-1. **Espaçamento:** `space-y-4` entre secções de página; `gap-1.5` entre rows de jogador
-2. **Bordas:** `border-outline-variant/25` para cards; `/15` para separadores internos
-3. **Sombreamento:** `shadow-sm shadow-black/30` para cards; `shadow-md shadow-black/50` para chips
-4. **Gradientes de fundo:** sempre com baixa opacidade (`/8`) para não ofuscar conteúdo
-5. **Estado vazio:** `py-12 text-center text-zinc-500` com emoji + texto
-6. **JSDoc:** todos os componentes e funções recebem documentação JSDoc com tipos de props
-7. **Língua:** todos os textos de UI em **Português (PT)**
-
----
-
-## 🧱 10. Componentes Partilhados (fonte única de verdade)
-
-> Estes componentes unificam padrões que antes eram duplicados inline.
-> **Usá-los sempre**; não re-criar receitas próprias.
+## 10. Componentes partilhados (fonte única — não re-criar receitas)
 
 | Componente | Uso |
-|-----------|-----|
-| `Badge` | Chip de estado (STYLE.md §5). Variantes: `junior`, `renovado`, `sold`, `cooldown`, `suspended`, `injured`, `error`, `info`, `warning`, `neutral`. Sizes: `sm` (padrão), `md` |
-| `PlayerStatusBadges` | Conjunto de badges de um jogador (Jr/Renovado/À venda/Cooldown/Susp/Lesão) derivado do objeto `player` |
+|---|---|
+| `Badge` | Chip de estado (§5). Variantes: `junior`, `renovado`, `sold`, `cooldown`, `suspended`, `injured`, `error`, `info`, `warning`, `neutral`; sizes `sm`/`md` |
+| `PlayerStatusBadges` | Badges de um jogador derivadas do objeto `player` |
 | `StarMark` | Estrela "Craque" junto ao nome |
-| `PlayerRow` | Linha/card de jogador (fusão de SquadRow + TeamSquadCard). Props: `onOpenPlayerHistory`, `dim`, `showContractBadges`, `showProposalCol`/`myBudget`/`onProposal` |
-| `SummaryWidget` | Widget de resumo de topo (§3). `flat` para células de hero sem accent; `accentClass`/`accentStyle` para cor da borda |
-| `Panel` | Painel com header canónico. `icon`, `meta`, `padded={false}`, `headerClassName`/`titleClassName` |
-| `EmptyState` | Estado vazio token-based (emoji + título + descrição) |
-| `TabBar` | Filtros/tabs de página (`size="sm"|"md"`) |
-| `Button` | Botão unificado. Variants: `primary`, `success`, `secondary`, `danger`, `dangerSoft`, `ghost`, `accent`. Sizes: `sm`/`md`/`lg`; `full`, `uppercase` |
-| `ModalShell` | Moldura de modais: backdrop + z-index + animação. Variants: `card`, `md`, `lg`, `wide`, `xl`, `fullscreen`, `transparent`. z-index via `MODAL_Z` |
-| `GameDialog` | Diálogo confirm/prompt (usa `ModalShell` + `Button`) |
+| `PlayerRow` | Card de jogador. Props: `onOpenPlayerHistory`, `dim`, `showContractBadges`, `showProposalCol`/`myBudget`/`onProposal` |
+| `SummaryWidget` | §3. `flat` (sem accent) · `accentClass`/`accentStyle` |
+| `Panel` | §3. `icon`, `meta`, `padded={false}`, `headerClassName`/`titleClassName` |
+| `EmptyState` | Estado vazio token-based |
+| `TabBar` | Filtros/tabs (`size="sm"|"md"`) |
+| `Button` | Variantes: `primary`, `success`, `secondary`, `danger`, `dangerSoft`, `ghost`, `accent`; sizes `sm`/`md`/`lg`; `full`, `uppercase` |
+| `ModalShell` | Moldura de modais (backdrop + z-index + animação). Variants: `card`, `md`, `lg`, `wide`, `xl`, `fullscreen`, `transparent` |
+| `GameDialog` | Confirm/prompt (`ModalShell` + `Button`) |
 
-### Paleta de posições
+**Paleta de posição** — toda a variação vive em `constants/index.js`: `POSITION_TEXT_CLASS`, `POSITION_BORDER_CLASS`, `POSITION_BAR_CLASS`, `POSITION_GLOW_CLASS`, `POSITION_BG_GRADIENT_CLASS`, `POSITION_RING_CLASS`, `POSITION_BADGE_*_CLASS`, `POSITION_ACCENT_HEX`, `POSITION_LABEL_MAP`. `matchConstants.POS_STYLES` e `colorHelpers.posRingClass` derivam daqui — nunca maps locais.
 
-Toda a variação visual por posição vive em `constants/index.js`:
-`POSITION_TEXT_CLASS`, `POSITION_BORDER_CLASS`, `POSITION_BAR_CLASS`,
-`POSITION_GLOW_CLASS`, `POSITION_BG_GRADIENT_CLASS`, `POSITION_RING_CLASS`,
-`POSITION_BADGE_*_CLASS`, `POSITION_ACCENT_HEX`. `matchConstants.POS_STYLES`
-e `colorHelpers.posRingClass` derivam desta fonte — nunca criar maps locais.
+**Z-index** — `MODAL_Z` (`constants/index.js`): `teamSquad` 120, `transferProposal` 130, `cupDraw` 140, `waitingCoaches`/`penalty` 150, `default` 200, `dismissal` 9999. Nunca valores mágicos inline.
 
-### Z-index de modais
-
-Centralizado em `MODAL_Z` (`constants/index.js`): `teamSquad` 120,
-`transferProposal` 130, `cupDraw` 140, `waitingCoaches`/`penalty` 150,
-`default` 200, `dismissal` 9999. Não usar valores mágicos inline.
-
----
-
-## 🔗 Referência
-
-- **Exemplo completo:** `client/src/views/PlayersTab.jsx`
-- **Componentes reutilizáveis:** `PlayerAvatar`, `PlayerLink`, `AggBadge`, `PlayerRow`, `Badge`, `Panel`, `SummaryWidget`, `EmptyState`, `TabBar`, `Button`, `ModalShell`
-- **Constantes:** `POSITION_TEXT_CLASS`, `POSITION_BORDER_CLASS`, `POSITION_LABEL_MAP`, `FLAG_TO_COUNTRY`, `MODAL_Z`
-- **Utilitários:** `formatCurrency`, `getPlayerStat`
+**Utilitários:** `formatCurrency`, `getPlayerStat` · `FLAG_TO_COUNTRY`.
