@@ -340,6 +340,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // Telemóvel em landscape (abaixo de lg): header compacto + rail vertical à esquerda.
   const isMobileLandscape = useMobileLandscape();
 
+  // Páginas full-bleed: gerem o próprio scroll interno (flex-col); o wrapper
+  // e a cadeia grid → item → motion.div têm de passar min-h-0 para baixo,
+  // senão a árvore fica à altura do conteúdo e o scroll interno nunca ocorre.
+  const isFullBleedTab = activeTab === "squad" || activeTab === "leiloes";
+
   return (
     <div className="h-dvh overflow-hidden bg-surface text-on-surface font-body tracking-tight flex flex-col">
       <OfflineBanner />
@@ -1350,7 +1355,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           <div
             ref={contentRef}
             className={
-              activeTab === "squad" || activeTab === "leiloes"
+              isFullBleedTab
                 ? "flex-1 min-h-0 flex flex-col overflow-hidden"
                 : "flex-1 min-h-0 overflow-y-auto p-4 lg:p-6"
             }
@@ -1371,11 +1376,20 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-1 gap-6">
-              <div>
+            <div
+              className={
+                isFullBleedTab
+                  ? "grid grid-cols-1 gap-6 flex-1 min-h-0 grid-rows-[minmax(0,1fr)]"
+                  : "grid grid-cols-1 gap-6"
+              }
+            >
+              <div className={isFullBleedTab ? "flex flex-col min-h-0" : undefined}>
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
                     key={activeTab}
+                    className={
+                      isFullBleedTab ? "flex-1 min-h-0 flex flex-col" : undefined
+                    }
                     initial={fadeSlide.initial}
                     animate={fadeSlide.animate}
                     exit={fadeSlide.exit}
