@@ -19,6 +19,7 @@
   *   className?: string,
   *   flat?: boolean,
   *   compactMobile?: boolean,
+  *   mini?: boolean,
  *   children?: import("react").ReactNode,
  * }} props
  */
@@ -28,33 +29,37 @@ export function SummaryWidget({
   sub,
   accentClass = "border-primary",
   accentStyle,
-  valueClass = "text-3xl",
+  valueClass,
   valueColorClass = "text-on-surface",
   labelClass = "",
   subClass = "",
   className = "",
   flat = false,
   compactMobile = false,
+  mini = false,
   children,
 }) {
+  const resolvedValueClass = valueClass ?? (mini ? "text-sm sm:text-xl" : "text-3xl");
   return (
     <div
       className={`${
-        flat
-          ? "bg-surface-container p-3 sm:p-6 rounded-xl flex flex-col justify-between"
-          : compactMobile
-            ? `bg-surface-container-low p-3 sm:p-5 rounded-md flex flex-col justify-between ${sub ? "h-20" : "h-14"} sm:h-28 border-l-4`
-            : "bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4"
+        mini
+          ? `bg-surface-container-low p-1.5 sm:p-3 rounded-md flex flex-col justify-center ${sub ? "h-12 sm:h-20" : "h-10 sm:h-16"} border-l-4`
+          : flat
+            ? "bg-surface-container p-3 sm:p-6 rounded-xl flex flex-col justify-between"
+            : compactMobile
+              ? `bg-surface-container-low p-3 sm:p-5 rounded-md flex flex-col justify-between ${sub ? "h-20" : "h-14"} sm:h-28 border-l-4`
+              : "bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4"
       } ${flat ? "" : accentClass} ${className}`}
       style={accentStyle}
     >
       <span
-        className={`text-[10px] font-black uppercase tracking-widest text-on-surface-variant ${labelClass}`}
+        className={`${mini ? "text-[8px] sm:text-[10px] tracking-wide leading-none" : "text-[10px] tracking-widest"} font-black uppercase text-on-surface-variant ${labelClass}`}
       >
         {label}
       </span>
       <span
-        className={`font-black font-headline tracking-tighter tabular-nums leading-none ${valueColorClass} ${valueClass}`}
+        className={`font-black font-headline tracking-tighter tabular-nums leading-none ${valueColorClass} ${resolvedValueClass}`}
       >
         {value}
       </span>
