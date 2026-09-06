@@ -12,6 +12,8 @@
 
 ## Último estado
 
+- Audit pt-PT de `server/game/commentary.ts`: 24 correções (calm down→"calma, rapaz", Red card→"Cartão vermelho", zíper→fecho, vestiário→balneário, juiz→árbitro, técnico→treinador 3×, atacante→avançado, bancais→bancadas, assistência→bancada, trave→barra 7×, despeje→corte, "Toque de mais"/"produziu o cartão da camisa", meia-lua→meia bota, "Bola ao ar/cotas/bookmakers/pranchetas"→pt-PT, Spoiler→Alerta) + 4 remates de humor (táticas início/2.ª parte, prolongamento, final). "Contra" verificado: só sentido de adversário, sem violação; "Rua!" mantido (gíria pt-PT). Verificação: 0 erros no ficheiro no `typecheck` (2 erros pré-existentes em `scripts/fetchZerozeroTUI.ts`, fora do âmbito).
+
 - `StadiumTab` com SVG paramétrico (`StadiumIllustration.jsx`, vista lateral em corte): 1/2/3 anéis + cobertura/camarotes/telão por escalão de lotação, bancadas e faixa nas cores da equipa, escala subtil até 120k; 4 JPGs (~800KB) removidos. Verificação: lint + check:types ok.
 
 - Scroll interno das tabs full-bleed (`squad`/`leiloes`): o wrapper `overflow-hidden` esperava que `TeamSquadView`/`AuctionsPage` preenchessem a altura, mas a cadeia intermédia `grid.grid-cols-1 → div → motion.div` (sem classes) era auto-altura — a árvore ficava à altura do conteúdo e o wrapper cortava sem scrollbar. Fix: variável `isFullBleedTab` em `GameLayout.jsx` aplica só às full-bleed `flex-1 min-h-0` na cadeia + `grid-rows-[minmax(0,1fr)]`. Verificação: lint + check:types ok; mobile-resp portrait 125/125 + landscape 150/150 PASS; screenshots 390×844 e 667×375 ok.
