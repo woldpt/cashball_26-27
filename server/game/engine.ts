@@ -279,8 +279,8 @@ export function queueMatchDeltaWrites(db: Db, fixtures: MatchFixture[]): void {
       }
       for (const [id, inj] of d.injuries) {
         trackedRun(
-          "UPDATE players SET injuries = injuries + ?, career_injuries = career_injuries + ?, prev_skill = skill, skill = ?, injury_until_matchweek = CASE WHEN injury_until_matchweek > ? THEN injury_until_matchweek ELSE ? END WHERE id = ?",
-          [inj.count, inj.count, inj.newSkill, inj.injuryUntil, inj.injuryUntil, id],
+          "UPDATE players SET injuries = injuries + ?, career_injuries = career_injuries + ?, prev_skill = skill, skill = ?, value = ?, injury_until_matchweek = CASE WHEN injury_until_matchweek > ? THEN injury_until_matchweek ELSE ? END WHERE id = ?",
+          [inj.count, inj.count, inj.newSkill, recalcPlayerValue(inj.newSkill), inj.injuryUntil, inj.injuryUntil, id],
         );
         trackedRun(
           "INSERT OR REPLACE INTO player_skill_snapshots (player_id, matchweek, season, skill) VALUES (?, ?, ?, ?)",
