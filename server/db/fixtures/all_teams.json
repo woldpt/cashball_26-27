@@ -16,7 +16,9 @@
         "capacity": 50000
       },
       "manager": {
-        "name": "Rui Borges"
+        "name": "Rui Borges",
+        "zerozeroId": 28061,
+        "photo": "/coaches/28061.png"
       },
       "players": [
         {
@@ -196,7 +198,8 @@
           "photo": "/players/641690.png"
         }
       ],
-      "crest": "/logos/sporting.png"
+      "crest": "/logos/sporting.png",
+      "zerozeroUrl": "/equipa/sporting"
     },
     {
       "name": "Porto",
@@ -214,7 +217,9 @@
         "capacity": 50000
       },
       "manager": {
-        "name": "Francesco Farioli"
+        "name": "Francesco Farioli",
+        "zerozeroId": 49791,
+        "photo": "/coaches/49791.png"
       },
       "players": [
         {
@@ -394,7 +399,8 @@
           "photo": "/players/1047621.jpg"
         }
       ],
-      "crest": "/logos/porto.png"
+      "crest": "/logos/porto.png",
+      "zerozeroUrl": "/equipa/fc-porto"
     },
     {
       "name": "Benfica",
@@ -412,7 +418,9 @@
         "capacity": 50000
       },
       "manager": {
-        "name": "Marco Silva"
+        "name": "Marco Silva",
+        "zerozeroId": 4199,
+        "photo": "/coaches/4199.png"
       },
       "players": [
         {
@@ -592,7 +600,8 @@
           "photo": "/players/523684.png"
         }
       ],
-      "crest": "/logos/benfica.png"
+      "crest": "/logos/benfica.png",
+      "zerozeroUrl": "/equipa/benfica"
     },
     {
       "name": "Sp. Braga",
@@ -606,7 +615,9 @@
         "capacity": 30000
       },
       "manager": {
-        "name": "Carlos Vicens"
+        "name": "Carlos Vicens",
+        "zerozeroId": 46995,
+        "photo": "/coaches/46995.png"
       },
       "players": [
         {
@@ -786,7 +797,8 @@
           "photo": "/players/768281.jpg"
         }
       ],
-      "crest": "/logos/sp-braga.png"
+      "crest": "/logos/sp-braga.png",
+      "zerozeroUrl": "/equipa/sc-braga"
     },
     {
       "name": "Famalicão",
@@ -800,7 +812,9 @@
         "capacity": 30000
       },
       "manager": {
-        "name": "Carlos Carvalhal"
+        "name": "Carlos Carvalhal",
+        "zerozeroId": 237,
+        "photo": "/coaches/237.png"
       },
       "players": [
         {
@@ -980,7 +994,8 @@
           "photo": "/players/532656.png"
         }
       ],
-      "crest": "/logos/famalicao.png"
+      "crest": "/logos/famalicao.png",
+      "zerozeroUrl": "/equipa/fc-famalicao/2175"
     },
     {
       "name": "Gil Vicente",
@@ -994,7 +1009,9 @@
         "capacity": 30000
       },
       "manager": {
-        "name": "Luís Pinto"
+        "name": "Luís Pinto",
+        "zerozeroId": 14781,
+        "photo": "/coaches/14781.png"
       },
       "players": [
         {
@@ -1174,7 +1191,8 @@
           "photo": "/players/969554.jpg"
         }
       ],
-      "crest": "/logos/gil-vicente.png"
+      "crest": "/logos/gil-vicente.png",
+      "zerozeroUrl": "/equipa/gil-vicente"
     },
     {
       "name": "Estoril",
@@ -1188,7 +1206,9 @@
         "capacity": 30000
       },
       "manager": {
-        "name": "Vasco Matos"
+        "name": "Vasco Matos",
+        "zerozeroId": 24431,
+        "photo": "/coaches/24431.png"
       },
       "players": [
         {
@@ -1368,7 +1388,8 @@
           "photo": "/players/115423.png"
         }
       ],
-      "crest": "/logos/estoril.png"
+      "crest": "/logos/estoril.png",
+      "zerozeroUrl": "/equipa/estoril-praia/1734"
     },
     {
       "name": "Moreirense",
@@ -1382,7 +1403,9 @@
         "capacity": 30000
       },
       "manager": {
-        "name": "Vasco Botelho da Costa"
+        "name": "Vasco Botelho da Costa",
+        "zerozeroId": 28190,
+        "photo": "/coaches/28190.png"
       },
       "players": [
         {
@@ -1562,7 +1585,8 @@
           "photo": "/players/706011.png"
         }
       ],
-      "crest": "/logos/moreirense.png"
+      "crest": "/logos/moreirense.png",
+      "zerozeroUrl": "/equipa/moreirense/6"
     },
     {
       "name": "Marítimo",
@@ -7603,7 +7627,9 @@
         "capacity": 10000
       },
       "manager": {
-        "name": "Vasco Seabra"
+        "name": "Vasco Seabra",
+        "zerozeroId": 15841,
+        "photo": "/coaches/15841.png"
       },
       "players": [
         {
@@ -7783,7 +7809,8 @@
           "photo": "/players/888543.png"
         }
       ],
-      "crest": "/logos/arouca.png"
+      "crest": "/logos/arouca.png",
+      "zerozeroUrl": "/equipa/fc-arouca/3555?search=1"
     },
     {
       "name": "Vitória SC",
@@ -7797,7 +7824,9 @@
         "capacity": 12000
       },
       "manager": {
-        "name": "Tiago Margarido"
+        "name": "Tiago Margarido",
+        "zerozeroId": 13969,
+        "photo": "/coaches/13969.png"
       },
       "players": [
         {
@@ -7977,7 +8006,8 @@
           "photo": "/players/1054757.png"
         }
       ],
-      "crest": "/logos/vitoria-sc.png"
+      "crest": "/logos/vitoria-sc.png",
+      "zerozeroUrl": "/equipa/vitoria-sc"
     },
     {
       "name": "Alverca",
@@ -7991,7 +8021,9 @@
         "capacity": 8000
       },
       "manager": {
-        "name": "Sérgio Ferreira"
+        "name": "Sérgio Ferreira",
+        "zerozeroId": 7031,
+        "photo": "/coaches/7031.png"
       },
       "players": [
         {
@@ -8171,7 +8203,8 @@
           "photo": "/players/474115.jpg"
         }
       ],
-      "crest": "/logos/alverca.png"
+      "crest": "/logos/alverca.png",
+      "zerozeroUrl": "/equipa/fc-alverca/1?search=1"
     },
     {
       "name": "Rio Ave",
@@ -8185,7 +8218,9 @@
         "capacity": 9000
       },
       "manager": {
-        "name": "Sotiris Sylaidopoulos"
+        "name": "Sotiris Sylaidopoulos",
+        "zerozeroId": 47619,
+        "photo": "/coaches/47619.jpg"
       },
       "players": [
         {
@@ -8365,7 +8400,8 @@
           "photo": "/players/791201.jpg"
         }
       ],
-      "crest": "/logos/rio-ave.png"
+      "crest": "/logos/rio-ave.png",
+      "zerozeroUrl": "/equipa/rio-ave/31?search=1"
     },
     {
       "name": "Leixões",
