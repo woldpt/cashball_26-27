@@ -1,4 +1,5 @@
-﻿import { useTactics } from "../contexts/TacticsContext.jsx";
+﻿import { useState } from "react";
+import { useTactics } from "../contexts/TacticsContext.jsx";
 import { useGame } from "../contexts/GameContext.jsx";
 import { PlayerLink } from "../components/shared/PlayerLink.jsx";
 import { MatchIcon } from "../components/match/shared/MatchIcon.jsx";
@@ -6,6 +7,7 @@ import { MatchBriefing } from "../components/live/MatchBriefing.jsx";
 import { WaitingCoachesModal } from "../components/modals/WaitingCoachesModal.jsx";
 import { socket } from "../socket.js";
 import { TACTIC_FORMATIONS, MAX_BENCH_SIZE } from "../constants/index.js";
+import { PlayerAvatar as PlayerAvatarSVG } from "../components/shared/PlayerAvatar.jsx";
 
 /** Cores por posição */
 const POS_COLORS = {
@@ -87,26 +89,33 @@ function FamiliarityStars({ stars, fill = false }) {
 }
 
 /**
- * Avatar circular com inicial + cor de posicao
+ * Avatar circular — foto com contorno (2px) na cor da posição ou
+ * avatar SVG procedural partilhado quando não há foto (ou a foto falha).
  * @param {{ player: Object, size?: string }} props
  * @returns {JSX.Element}
  */
-const POS_INITIAL = { GR: "G", DEF: "D", MED: "M", ATA: "A" };
-
 function PlayerAvatar({ player, size = "w-7 h-7" }) {
-  if (player.photo) {
+  const pos = POS_COLORS[player.position] || { hex: "#6b7280" };
+  const [imgFailed, setImgFailed] = useState(false);
+  if (player.photo && !imgFailed) {
     return (
-      <img src={player.photo} alt="" loading="lazy" className={`${size} rounded-full object-cover object-top shrink-0 bg-white border border-white/20 shadow-md`} onError={(e) => { e.currentTarget.style.display = "none"; }} />
+      <img
+        src={player.photo}
+        alt=""
+        loading="lazy"
+        className={`${size} rounded-full object-cover object-top shrink-0 bg-white border border-white/20`}
+        style={{ boxShadow: `0 0 0 2px ${pos.hex}` }}
+        onError={() => setImgFailed(true)}
+      />
     );
   }
-  const pos = POS_COLORS[player.position] || { bg: "bg-gray-600" };
   return (
-    <div
-      className={`${size} rounded-full ${pos.bg} flex items-center justify-center shrink-0 font-black text-white shadow-md`}
-      style={{ fontSize: "11px" }}
-    >
-      {POS_INITIAL[player.position] ?? "?"}
-    </div>
+    <PlayerAvatarSVG
+      seed={player.id}
+      position={player.position}
+      nationality={player.nationality}
+      size={size}
+    />
   );
 }
 
