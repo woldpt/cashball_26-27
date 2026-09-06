@@ -12,6 +12,8 @@
 
 ## Último estado
 
+- Fix fotos D2 (commit fix `1838bc5` + fotos por commitar): as 239 fotos das 11 equipas D2 (todas menos Marítimo) nunca tinham sido commitadas — existiam no disco mas não no repo, logo 404 após pull → avatar vazio. PlayerAvatar.jsx só fazia `display:none` no onError sem fallback para o SVG; agora usa estado imgFailed e cai para o procedural. Extra: Bruno Faria (Lourosa) tinha path `/players/656867.png` mas o CDN devolve "Image not found" → `photo: null` (fica SVG; próxima TUI retenta). Seed+audit 0/0.
+
 - Fetch Quarta Divisão via TUI (commit `8bf57e4`, sem push): 12/12 D4 OK 0 erros — 240 fotos novas jogadores + 12 treinador; merge plantel/cores/emblema. Juventude manteve 21 do POC + foto João Mateus. Oliv. Hospital e O Elvas 21 fotos (1 placeholder cada). Audit base 0/0 (verificação da TUI já com o fix). Falta só D5.
 
 - Fetch Terceira Divisão via TUI (commit `84aa845`, sem push): 12/12 D3 OK 0 erros — 260 fotos novas jogadores + 12 treinador; merge plantel/cores/emblema. Fafe sem og:image equipa (mantém emblema manual); Fafe 18 + U. Santarém/São João Ver 21 fotos (placeholders). Bug corrigido: verificação final da TUI chamava `gameStateAudit.ts /tmp/tui_verify.db` mas o audit espera ROOM code — nunca corria; agora copia para `db/game_base.db` + audit `base` + apaga. Audit base 0/0.
