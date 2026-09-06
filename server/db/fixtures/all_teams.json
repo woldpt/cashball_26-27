@@ -1568,7 +1568,7 @@
       "name": "Marítimo",
       "division": 2,
       "colors": {
-        "primary": "#00A650",
+        "primary": "#990012",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -1576,149 +1576,196 @@
         "capacity": 20000
       },
       "manager": {
-        "name": "Mitchell van der Gaag"
+        "name": "Mitchell van der Gaag",
+        "zerozeroId": 1167,
+        "photo": "/coaches/1167.png"
       },
       "players": [
         {
           "name": "Fran Vieites",
           "country": "🇪🇸",
           "position": "GR",
-          "age": 27
+          "age": 27,
+          "zerozeroId": 611347,
+          "photo": "/players/611347.png"
         },
         {
           "name": "Gonçalo Tabuaço",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 505738,
+          "photo": "/players/505738.jpg"
         },
         {
           "name": "Alfonso Pastor",
           "country": "🇪🇸",
           "position": "GR",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 555017,
+          "photo": "/players/555017.jpg"
         },
         {
           "name": "Romain Correia",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 26
+          "age": 27,
+          "zerozeroId": 421998,
+          "photo": "/players/421998.jpg"
         },
         {
           "name": "Gábor Szalai",
           "country": "🇭🇺",
           "position": "DEF",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 883515,
+          "photo": "/players/883515.png"
         },
         {
           "name": "Nilton Varela",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 115387,
+          "photo": "/players/115387.png"
         },
         {
           "name": "Paulo Henrique",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 29
+          "age": 29,
+          "zerozeroId": 364308,
+          "photo": "/players/364308.jpg"
         },
         {
           "name": "Rafael Fernandes",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 195321,
+          "photo": "/players/195321.png"
         },
         {
           "name": "Nathanael Ogbeta",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 544508,
+          "photo": "/players/544508.png"
         },
         {
           "name": "Vladan Danilović",
           "country": "🇧🇦",
           "position": "MED",
-          "age": 27
+          "age": 27,
+          "zerozeroId": 600841,
+          "photo": "/players/600841.jpg"
         },
         {
           "name": "Yellu Santiago",
           "country": "🇪🇸",
           "position": "MED",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 977985,
+          "photo": "/players/977985.png"
         },
         {
           "name": "Maxime Dominguez",
           "country": "🇨🇭",
           "position": "MED",
-          "age": 30
+          "age": 30,
+          "zerozeroId": 395466,
+          "photo": "/players/395466.jpg"
         },
         {
           "name": "Ibrahim Alani",
           "country": "🇳🇬",
           "position": "MED",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 2505557,
+          "photo": "/players/2505557.jpg"
         },
         {
           "name": "Raphael Guzzo",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 31
+          "age": 31,
+          "zerozeroId": 143920,
+          "photo": "/players/143920.jpg"
         },
         {
           "name": "Israel Ayuma",
           "country": "🇳🇬",
           "position": "MED",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 1821471,
+          "photo": "/players/1821471.jpg"
         },
         {
           "name": "Martín Tejón",
           "country": "🇪🇸",
           "position": "ATA",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 1054845,
+          "photo": "/players/1054845.jpg"
         },
         {
           "name": "Simo Bouzaidi",
           "country": "🇲🇦",
           "position": "ATA",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 594105,
+          "photo": "/players/594105.jpg"
         },
         {
           "name": "Adrián Butzke",
           "country": "🇪🇸",
           "position": "ATA",
-          "age": 27
+          "age": 27,
+          "zerozeroId": 649974,
+          "photo": "/players/649974.png"
         },
         {
           "name": "José Melro",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 288444,
+          "photo": "/players/288444.jpg"
         },
         {
           "name": "Mons Bassouamina",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 28
+          "age": 28,
+          "zerozeroId": 564108,
+          "photo": "/players/564108.jpg"
         },
         {
           "name": "Tomás Tavares",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 413293,
+          "photo": "/players/413293.png"
         },
         {
           "name": "Bryan Limbombe",
           "country": "🇧🇪",
           "position": "ATA",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 748370,
+          "photo": "/players/748370.jpg"
         }
       ],
-      "crest": "/logos/maritimo.png"
+      "crest": "/logos/maritimo.png",
+      "zerozeroUrl": "/equipa/maritimo"
     },
     {
       "name": "Ac.Viseu",
       "division": 2,
       "colors": {
-        "primary": "#000000",
+        "primary": "#101010",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -1726,7 +1773,9 @@
         "capacity": 20000
       },
       "manager": {
-        "name": "Bruno Pinheiro"
+        "name": "Bruno Pinheiro",
+        "zerozeroId": 17092,
+        "photo": "/coaches/17092.png"
       },
       "players": [
         {
@@ -1765,7 +1814,7 @@
           "name": "Anthony Correia",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 26,
+          "age": 27,
           "zerozeroId": 524693,
           "photo": "/players/524693.png"
         },
@@ -1906,13 +1955,14 @@
           "photo": "/players/528038.png"
         }
       ],
-      "crest": "/logos/ac-viseu.png"
+      "crest": "/logos/ac-viseu.png",
+      "zerozeroUrl": "/equipa/academico/2181"
     },
     {
       "name": "Torreense",
       "division": 2,
       "colors": {
-        "primary": "#0000FF",
+        "primary": "#800020",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -1920,7 +1970,9 @@
         "capacity": 20000
       },
       "manager": {
-        "name": "Luís Tralhão"
+        "name": "Luís Tralhão",
+        "zerozeroId": 6282,
+        "photo": "/coaches/6282.png"
       },
       "players": [
         {
@@ -2100,13 +2152,14 @@
           "photo": "/players/981255.png"
         }
       ],
-      "crest": "/logos/torreense.png"
+      "crest": "/logos/torreense.png",
+      "zerozeroUrl": "/equipa/torreense/2178"
     },
     {
       "name": "U. Leiria",
       "division": 2,
       "colors": {
-        "primary": "#FFFFFF",
+        "primary": "#E5E4E2",
         "secondary": "#000000"
       },
       "stadium": {
@@ -2114,7 +2167,9 @@
         "capacity": 20000
       },
       "manager": {
-        "name": "Fábio Pereira"
+        "name": "Fábio Pereira",
+        "zerozeroId": 32802,
+        "photo": "/coaches/32802.png"
       },
       "players": [
         {
@@ -2294,13 +2349,14 @@
           "photo": "/players/688790.png"
         }
       ],
-      "crest": "/logos/u-leiria.png"
+      "crest": "/logos/u-leiria.png",
+      "zerozeroUrl": "/equipa/ud-leiria/17"
     },
     {
       "name": "Vizela",
       "division": 2,
       "colors": {
-        "primary": "#0000FF",
+        "primary": "#2D4C97",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -2308,7 +2364,9 @@
         "capacity": 20000
       },
       "manager": {
-        "name": "Ronald Molina"
+        "name": "Ronald Molina",
+        "zerozeroId": 66676,
+        "photo": "/coaches/66676.png"
       },
       "players": [
         {
@@ -2488,13 +2546,14 @@
           "photo": "/players/528079.png"
         }
       ],
-      "crest": "/logos/vizela.png"
+      "crest": "/logos/vizela.png",
+      "zerozeroUrl": "/equipa/fc-vizela/2197"
     },
     {
       "name": "Lus. Lourosa",
       "division": 2,
       "colors": {
-        "primary": "#008000",
+        "primary": "#FDD945",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -2502,7 +2561,9 @@
         "capacity": 20000
       },
       "manager": {
-        "name": "Ricardo Silva"
+        "name": "Ricardo Silva",
+        "zerozeroId": 7772,
+        "photo": "/coaches/7772.png"
       },
       "players": [
         {
@@ -2682,13 +2743,14 @@
           "photo": "/players/159942.png"
         }
       ],
-      "crest": "/logos/lus-lourosa.png"
+      "crest": "/logos/lus-lourosa.png",
+      "zerozeroUrl": "/equipa/lusitania-de-lourosa/3599"
     },
     {
       "name": "Feirense",
       "division": 2,
       "colors": {
-        "primary": "#0000ff",
+        "primary": "#2D4C97",
         "secondary": "#ffffff"
       },
       "stadium": {
@@ -2696,7 +2758,9 @@
         "capacity": 20000
       },
       "manager": {
-        "name": "Mário Nunes"
+        "name": "Mário Nunes",
+        "zerozeroId": 17879,
+        "photo": "/coaches/17879.jpg"
       },
       "players": [
         {
@@ -2873,13 +2937,14 @@
           "position": "GR"
         }
       ],
-      "crest": "/logos/feirense.png"
+      "crest": "/logos/feirense.png",
+      "zerozeroUrl": "/equipa/feirense/1728"
     },
     {
       "name": "Chaves",
       "division": 2,
       "colors": {
-        "primary": "#0033cc",
+        "primary": "#800020",
         "secondary": "#ff0000"
       },
       "stadium": {
@@ -2887,7 +2952,9 @@
         "capacity": 20000
       },
       "manager": {
-        "name": "Vítor Martins"
+        "name": "Vítor Martins",
+        "zerozeroId": 28437,
+        "photo": "/coaches/28437.png"
       },
       "players": [
         {
@@ -3067,7 +3134,8 @@
           "photo": "/players/86139.png"
         }
       ],
-      "crest": "/logos/chaves.png"
+      "crest": "/logos/chaves.png",
+      "zerozeroUrl": "/equipa/gd-chaves/20"
     },
     {
       "name": "Amarante",
@@ -7320,7 +7388,7 @@
       "name": "Leixões",
       "division": 2,
       "colors": {
-        "primary": "#E30613",
+        "primary": "#AD1814",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -7328,7 +7396,9 @@
         "capacity": 6800
       },
       "manager": {
-        "name": "Carlos Fangueiro"
+        "name": "Carlos Fangueiro",
+        "zerozeroId": 13931,
+        "photo": "/coaches/13931.jpg"
       },
       "players": [
         {
@@ -7508,13 +7578,14 @@
           "photo": "/players/123840.jpg"
         }
       ],
-      "crest": "/logos/leixoes.png"
+      "crest": "/logos/leixoes.png",
+      "zerozeroUrl": "/equipa/leixoes/1727?search=1"
     },
     {
       "name": "Felgueiras",
       "division": 2,
       "colors": {
-        "primary": "#FFCC00",
+        "primary": "#800020",
         "secondary": "#0047AB"
       },
       "stadium": {
@@ -7522,7 +7593,9 @@
         "capacity": 6000
       },
       "manager": {
-        "name": "Moreno Teixeira"
+        "name": "Moreno Teixeira",
+        "zerozeroId": 31669,
+        "photo": "/coaches/31669.png"
       },
       "players": [
         {
@@ -7702,7 +7775,8 @@
           "photo": "/players/468478.png"
         }
       ],
-      "crest": "/logos/felgueiras.png"
+      "crest": "/logos/felgueiras.png",
+      "zerozeroUrl": "/equipa/fc-felgueiras/11129?search=1"
     },
     {
       "name": "Penafiel",
@@ -7716,7 +7790,9 @@
         "capacity": 7000
       },
       "manager": {
-        "name": "José Manuel Aira"
+        "name": "José Manuel Aira",
+        "zerozeroId": 11331,
+        "photo": "/coaches/11331.png"
       },
       "players": [
         {
@@ -7895,7 +7971,8 @@
           "photo": "/players/243918.png"
         }
       ],
-      "crest": "/logos/penafiel.png"
+      "crest": "/logos/penafiel.png",
+      "zerozeroUrl": "/equipa/fc-penafiel/30?search=1"
     },
     {
       "name": "Portimonense",
@@ -7909,7 +7986,9 @@
         "capacity": 8000
       },
       "manager": {
-        "name": "Alex Costa"
+        "name": "Alex Costa",
+        "zerozeroId": 13783,
+        "photo": "/coaches/13783.png"
       },
       "players": [
         {
@@ -8089,7 +8168,8 @@
           "photo": "/players/338319.png"
         }
       ],
-      "crest": "/logos/portimonense.png"
+      "crest": "/logos/portimonense.png",
+      "zerozeroUrl": "/equipa/portimonense/33?search=1"
     },
     {
       "name": "Vit. Setúbal",

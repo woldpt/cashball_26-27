@@ -707,6 +707,26 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
         const continueAfterMigrations = () => {
           db.run("ALTER TABLE players ADD COLUMN photo TEXT", () => {});
           db.run("ALTER TABLE players ADD COLUMN zerozero_id INTEGER", () => {});
+          db.run("ALTER TABLE managers ADD COLUMN photo TEXT", () => {});
+          db.run("ALTER TABLE managers ADD COLUMN zerozero_id INTEGER", () => {
+            // Backfill foto do treinador para salas antigas (match por nome base)
+            try {
+              const fixturesPath = path.join(__dirname, "db/fixtures/all_teams.json");
+              if (fs.existsSync(fixturesPath)) {
+                const raw = JSON.parse(fs.readFileSync(fixturesPath, "utf-8"));
+                const list: any[] = Array.isArray(raw) ? raw : raw.teams || [];
+                for (const t of list) {
+                  const mname = t?.manager?.name;
+                  const mphoto = t?.manager?.photo;
+                  if (!mname || !mphoto) continue;
+                  db.run(
+                    "UPDATE managers SET photo = ?, zerozero_id = ? WHERE (name = ? OR name LIKE ? ESCAPE '\\') AND (photo IS NULL OR photo = '')",
+                    [mphoto, t.manager.zerozeroId || null, mname, `${mname.replace(/[%_]/g, "\\$&")} #%`],
+                  );
+                }
+              }
+            } catch {}
+          });
           db.run("ALTER TABLE teams ADD COLUMN crest TEXT", () => {
             // Backfill crest para salas antigas (game_*.db criadas antes do branding)
             try {

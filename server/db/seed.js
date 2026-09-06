@@ -103,7 +103,7 @@ db.serialize(() => {
   console.log(`Seeding ${allTeamsData.length} teams from all_teams.json...`);
 
   const insertManager = db.prepare(
-    "INSERT INTO managers (name, reputation) VALUES (?, ?)",
+    "INSERT INTO managers (name, reputation, photo, zerozero_id) VALUES (?, ?, ?, ?)",
   );
   const insertTeam = db.prepare(
     "INSERT INTO teams (name, manager_id, division, stadium_capacity, stadium_name, budget, color_primary, color_secondary, crest) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -131,7 +131,12 @@ db.serialize(() => {
     managerName = candidate;
     usedManagers.add(managerName);
 
-    insertManager.run(managerName, 50);
+    insertManager.run(
+      managerName,
+      50,
+      teamData.manager?.photo || null,
+      teamData.manager?.zerozeroId || null,
+    );
 
     // Colors from fixture or fallback
     const colors = teamData.colors || {

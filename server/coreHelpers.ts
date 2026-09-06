@@ -206,7 +206,8 @@ export function runExec(
 export function getTeamsWithCoachNames(db: Db): Promise<AnyRow[]> {
   return runAll(
     db,
-    `SELECT t.*, m.name AS coach_name, m.is_human AS coach_is_human
+    `SELECT t.*, m.name AS coach_name, m.is_human AS coach_is_human,
+            m.photo AS coach_photo, m.zerozero_id AS coach_zerozero_id
      FROM teams t
      LEFT JOIN managers m ON t.manager_id = m.id`,
   );

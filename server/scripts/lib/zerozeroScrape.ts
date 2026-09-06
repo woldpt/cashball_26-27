@@ -74,6 +74,22 @@ export function extractHeaderColor(html: string): string | null {
   return raw;
 }
 
+/** Foto do treinador: a og:image das páginas /treinador/ é o placeholder
+ *  zerozero_og-default — a foto real está num <img /img/treinadores/>. */
+export function extractCoachPhoto(html: string): string | null {
+  const srcs: string[] = [];
+  const re = /src="([^"]*\/img\/treinadores\/[^"]*)"/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    if (!srcs.includes(m[1])) srcs.push(m[1]);
+  }
+  if (!srcs.length) return null;
+  const best = srcs.find((s) => s.includes("_pri_")) || srcs[0];
+  if (best.startsWith("//")) return "https:" + best;
+  if (best.startsWith("/")) return BASE + best;
+  return best;
+}
+
 export function extractCoach(html: string): { name: string; href: string } | null {
   const start = html.indexOf('<div id="team_staff"');
   if (start === -1) return null;

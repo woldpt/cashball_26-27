@@ -25,6 +25,7 @@ import {
   cachedHtml,
   extractPlayers,
   extractCoach,
+  extractCoachPhoto,
   extractOgImage,
   extractHeaderColor,
   downloadImage,
@@ -305,6 +306,7 @@ async function main() {
 
   let ok = 0;
   const errors: string[] = [];
+  const report: Array<{ team: string; notes: string[] }> = [];
 
   const logWarn = (msg: string) => {
     s.stop();
@@ -366,21 +368,21 @@ async function main() {
             const cid = coach.href.match(/\/([0-9]+)$/)?.[1];
             if (cid) {
               const coachHtml = await fetchHtml(`${BASE}${coach.href}`, `coach_${coach.href.replace(/\W/g, "_")}`, cli.refresh);
-              const cog = extractOgImage(coachHtml);
-              const ext = cog && cog.includes(".png") ? ".png" : ".jpg";
+              const cphoto = extractCoachPhoto(coachHtml); // og:image é placeholder; foto real está no <img>
+              const ext = cphoto && cphoto.includes(".png") ? ".png" : ".jpg";
               const mAny = team.manager as Record<string, unknown>;
               const photoPath = typeof mAny.photo === "string" && mAny.photo ? mAny.photo : `/coaches/${cid}${ext}`;
               const dest = path.join(PUBLIC, photoPath);
-              if (cog && /\/img\//.test(cog)) { // downloadImage filtra o placeholder por URL
-                if (await downloadImage(cog, dest)) {
+              if (cphoto) {
+                if (await downloadImage(cphoto, dest)) {
                   mAny.zerozeroId = Number(cid);
                   mAny.photo = photoPath;
                   teamNotes.push(`treinador: ${coach.name} → ${photoPath}`);
                 } else {
-                  teamNotes.push(`treinador: ${coach.name} (sem foto/placeholder)`);
+                  teamNotes.push(`treinador: ${coach.name} (download falhou)`);
                 }
               } else {
-                teamNotes.push(`treinador: ${coach.name} (sem og:image)`);
+                teamNotes.push(`treinador: ${coach.name} (sem foto na página)`);
               }
               await sleep(THROTTLE_JOGADOR + jitter());
             }
@@ -426,7 +428,8 @@ async function main() {
       ok++;
       if (!dryRun) saveTeams({ teams }); // grava progressivamente — retoma real
       saveState({ lastTeam: team.name, ok, errors, at: new Date().toISOString(), dryRun });
-      s.message(`${team.name} ✓ ${teamNotes.join(" · ")}`);
+      report.push({ team: team.name, notes: teamNotes });
+      s.message(`${team.name} ✓`);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       errors.push(`${team.name}: ${msg}`);
@@ -441,6 +444,11 @@ async function main() {
   }
 
   s.stop(`Feito: ${ok}/${targetIndices.length} equipa(s) OK${errors.length ? `, ${errors.length} erro(s)` : ""}.`);
+
+  // resumo permanente por equipa (o spinner é transitório)
+  for (const r of report) {
+    p.log.message(`**${r.team}** — ${r.notes.join(" · ") || "sem alterações"}`);
+  }
 
   if (!dryRun && ok > 0) {
     p.log.success(`Gravado em db/fixtures/all_teams.json + imagens em client/public/{logos,players,coaches}`);
