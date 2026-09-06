@@ -5,6 +5,7 @@
  */
 import { formatCurrency } from "../utils/formatters.js";
 import { AuctionCard } from "../components/auctions/AuctionCard.jsx";
+import { AuctionResultRow } from "../components/auctions/AuctionResultRow.jsx";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
@@ -94,19 +95,10 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
       {closed.length > 0 && (
         <div className="flex-1 overflow-y-auto p-3 md:p-4 pt-0">
           <Panel title="Recentes" meta={`${closed.length} leilão${closed.length !== 1 ? "s" : ""}`}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="flex flex-col gap-1.5">
               {closed.map((auction, i) => (
                 <motion.div key={auction.playerId} {...staggerItemProps(i)}>
-                  <AuctionCard
-                    auction={auction}
-                    me={me}
-                    teams={teams}
-                    teamInfo={teamInfo}
-                    matchweekCount={matchweekCount}
-                    socket={socket}
-                    teamColorById={teamColorById}
-                    onOpenDetails={onOpenPlayerHistory}
-                  />
+                  <AuctionResultRow auction={auction} />
                 </motion.div>
               ))}
             </div>

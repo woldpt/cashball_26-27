@@ -8,7 +8,7 @@
 
 ## Em curso
 
-- (nada)
+- Cards de leilão reinventados (estilo cromo, face única, urgência+preço): `AuctionCard.jsx` reescrito, `AuctionResultRow.jsx` novo, `AuctionsPage` Recentes em lista compacta. Verificação: lint + check:types ok; mobile portrait 125/125 + landscape 150/150 PASS. Commit por fazer.
 
 ## Último estado
 
