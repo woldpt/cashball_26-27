@@ -1,4 +1,4 @@
-import { memo, useId } from "react";
+import { memo, useId, useState } from "react";
 import { FLAG_TO_SKIN_REGION, SKIN_REGIONS } from "../../constants";
 import { AVATAR_SIZE_MAP } from "./avatarSizes.js";
 
@@ -250,20 +250,21 @@ function mixHex(baseHex, targetHex, amount) {
  * Avatar procedural com estética Captain Tsubasa:
  * traço a tinta preto, queixo em V, cabelos pontiagudos esvoaçantes,
  * olhos verticais com pálpebras carregadas e sombreamento cell-shading.
- * @param {{ seed: number|string, position?: string, teamColor?: string, size?: "sm"|"md"|"lg"|"xl"|string, className?: string }} props
+ * @param {{ seed: number|string, position?: string, teamColor?: string, size?: "sm"|"md"|"lg"|"xl"|string, className?: string, photo?: string|null }} props
  */
 function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg", className = "", photo }) {
   const rng = mulberry32(xmur3(`${seed ?? 0}|${position ?? "X"}`)());
   const profile = POSITION_PROFILE[position] || POSITION_PROFILE.default;
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
-  if (photo) {
+  const [imgFailed, setImgFailed] = useState(false);
+  if (photo && !imgFailed) {
     return (
       <img
         src={photo}
         alt=""
         loading="lazy"
         className={`${AVATAR_SIZE_MAP[size] ?? size} rounded-full object-cover object-top shrink-0 bg-white border border-slate-200 shadow-lg ${className}`}
-        onError={(e) => { e.currentTarget.style.display = "none"; }}
+        onError={() => setImgFailed(true)}
       />
     );
   }
