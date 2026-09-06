@@ -43,6 +43,12 @@ export async function fetchHtml(url: string, cacheKey?: string, noCache = false)
   return html;
 }
 
+export function cachedHtml(key: string): string | null {
+  const p = path.join(CACHE_DIR, key + ".html");
+  if (!fs.existsSync(p)) return null;
+  return fs.readFileSync(p, "utf-8");
+}
+
 export function extractOgImage(html: string): string | null {
   let m = html.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/);
   if (!m) m = html.match(/content="([^"]+)"[^>]*property="og:image"/);
