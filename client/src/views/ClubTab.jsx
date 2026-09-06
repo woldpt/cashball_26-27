@@ -1,8 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import estadio5000 from "../assets/estadio5000.jpg";
-import estadio15000 from "../assets/estadio15000.jpg";
-import estadio30000 from "../assets/estadio30000.jpg";
-import estadio50000 from "../assets/estadio50000.jpg";
+import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
 import { DIVISION_NAMES } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
@@ -123,15 +120,6 @@ export function ClubTab({
       : morale >= 40
         ? "bg-amber-500"
         : "bg-error";
-
-  const stadiumImg =
-    (teamInfo?.stadium_capacity || 0) >= 50000
-      ? estadio50000
-      : (teamInfo?.stadium_capacity || 0) >= 30000
-        ? estadio30000
-        : (teamInfo?.stadium_capacity || 0) >= 15000
-          ? estadio15000
-          : estadio5000;
 
   // ── Agrupamento do jornal por ano ──────────────────────────────────
   const groupedNews = useMemo(() => {
@@ -346,14 +334,13 @@ export function ClubTab({
 
         {/* Estádio */}
         <div className="bg-surface-container rounded-lg border border-outline-variant/25 overflow-hidden flex flex-col">
-          <div
-            className="h-24 sm:h-28 relative flex items-end"
-            style={{
-              backgroundImage: `url(${stadiumImg})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          >
+          <div className="h-24 sm:h-28 relative flex items-end overflow-hidden">
+            <StadiumIllustration
+              capacity={teamInfo?.stadium_capacity || 10000}
+              primary={teamInfo?.color_primary}
+              secondary={teamInfo?.color_secondary}
+              className="absolute inset-0 h-full w-full"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
             <div className="relative px-4 pb-3">
               <h3 className="font-headline text-base font-black text-white leading-tight drop-shadow">
