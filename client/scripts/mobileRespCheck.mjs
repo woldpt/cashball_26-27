@@ -24,6 +24,7 @@
  *   --height <n>         Viewport height (default 844)
  *   --screenshots <dir>  Save a viewport PNG per harness×width
  *   --keep-server        Do not kill the vite server started by this script
+ *   --concurrency <n>    How many pages to run in parallel (default 10)
  *
  * Env:
  *   CHROMIUM_PATH        Chromium executable (default: auto-detect)
@@ -46,6 +47,7 @@ const opts = {
   height: 844,
   screenshots: null,
   keepServer: false,
+  concurrency: 10,
   harnesses: [],
 };
 for (let i = 0; i < argv.length; i++) {
@@ -56,6 +58,7 @@ for (let i = 0; i < argv.length; i++) {
   else if (a === "--height") opts.height = Number(argv[++i]);
   else if (a === "--screenshots") opts.screenshots = argv[++i];
   else if (a === "--keep-server") opts.keepServer = true;
+  else if (a === "--concurrency") opts.concurrency = Math.max(1, Number(argv[++i]));
   else opts.harnesses.push(a);
 }
 
@@ -177,6 +180,90 @@ const { base, proc } = await ensureServer(opts.port);
 const failures = [];
 const rows = [];
 
+// Build the ordered task list (harness order, then width), flagging missing files
+// up front so a missing harness cannot crash a worker pool.
+const tasks = [];
+const missing = [];
+for (const harness of harnesses) {
+  const file = `${harness}.html`;
+  if (!existsSync(join(clientRoot, file))) {
+    missing.push({ harness: file, width: "-", reason: "file not found" });
+    continue;
+  }
+  for (const width of opts.widths) tasks.push({ harness, file, width });
+}
+for (const m of missing) {
+  rows.push({ harness: m.harness, width: "-", fail: [m.reason], detail: {} });
+}
+
+async function runTask(browser, task) {
+  const { harness, file, width } = task;
+  let page;
+  try {
+    page = await browser.newPage({ viewport: { width, height: opts.height } });
+    const pageErrors = [];
+    const resourceErrors = [];
+    page.on("console", (m) => {
+      if (m.type() === "error") resourceErrors.push(m.text());
+    });
+    page.on("pageerror", (e) => pageErrors.push(String(e)));
+
+    const entry = { harness: file, width, fail: [] };
+    try {
+      await page.goto(`${base}/${file}`, { waitUntil: "load", timeout: 30000 });
+      await page.waitForSelector('#report[data-status="done"]', {
+        timeout: 20000,
+      });
+      const raw = await page.textContent("#report");
+      const report = JSON.parse(raw.replace(/^REPORT:/, ""));
+      // Hide the report before the generic measure so it cannot skew layout.
+      await page.evaluate(() => {
+        const r = document.getElementById("report");
+        if (r) r.style.display = "none";
+      });
+      const generic = await page.evaluate(genericMeasure);
+
+      if (report.verdict !== "PASS") entry.fail.push("harness verdict FAIL");
+      if (generic.pageOverflowPx > 0)
+        entry.fail.push(`page overflow ${generic.pageOverflowPx}px`);
+      if ((report.clippedPlayerRows || report.clippedRows || []).length > 0)
+        entry.fail.push(
+          `${(report.clippedPlayerRows || report.clippedRows).length} clipped row(s)`,
+        );
+      // JS exceptions are real defects; resource 404s (fonts/favicon) are not.
+      if (pageErrors.length > 0)
+        entry.fail.push(`page errors: ${pageErrors.slice(0, 3).join(" | ")}`);
+
+      entry.detail = {
+        pageOverflowPx: generic.pageOverflowPx,
+        resourceErrors: resourceErrors.length,
+        pageErrors: pageErrors.length,
+        clippedRows: (report.clippedPlayerRows || report.clippedRows || []).length,
+        clipEls: generic.clipping.length,
+        smallTargets: `${generic.smallTargets}/${generic.interactiveCount}`,
+        clipping: generic.clipping,
+        extra: {
+          clippedButtons: report.clippedButtons,
+          squashedInputs: report.squashedInputs,
+          filterInputWidths: report.filterInputWidths,
+        },
+      };
+    } catch (err) {
+      entry.fail.push(`error: ${err.message.split("\n")[0]}`);
+      entry.detail = {};
+    }
+    if (opts.screenshots) {
+      mkdirSync(opts.screenshots, { recursive: true });
+      await page.screenshot({
+        path: join(opts.screenshots, `${harness}-${width}.png`),
+      });
+    }
+    return entry;
+  } finally {
+    if (page) await page.close();
+  }
+}
+
 let browser;
 try {
   browser = await chromium.launch({
@@ -184,80 +271,43 @@ try {
     args: ["--no-sandbox", "--disable-gpu"],
   });
 
-  for (const harness of harnesses) {
-    const file = `${harness}.html`;
-    if (!existsSync(join(clientRoot, file))) {
-      failures.push({ harness: file, width: "-", reason: "file not found" });
-      continue;
-    }
-    for (const width of opts.widths) {
-      const page = await browser.newPage({
-        viewport: { width, height: opts.height },
-      });
-      const pageErrors = [];
-      const resourceErrors = [];
-      page.on("console", (m) => {
-        if (m.type() === "error") resourceErrors.push(m.text());
-      });
-      page.on("pageerror", (e) => pageErrors.push(String(e)));
-      const entry = { harness: file, width, fail: [] };
-      try {
-        await page.goto(`${base}/${file}`, {
-          waitUntil: "load",
-          timeout: 30000,
-        });
-        await page.waitForSelector('#report[data-status="done"]', {
-          timeout: 20000,
-        });
-        const raw = await page.textContent("#report");
-        const report = JSON.parse(raw.replace(/^REPORT:/, ""));
-        // Hide the report before the generic measure so it cannot skew layout.
-        await page.evaluate(() => {
-          const r = document.getElementById("report");
-          if (r) r.style.display = "none";
-        });
-        const generic = await page.evaluate(genericMeasure);
-
-        if (report.verdict !== "PASS") entry.fail.push("harness verdict FAIL");
-        if (generic.pageOverflowPx > 0)
-          entry.fail.push(`page overflow ${generic.pageOverflowPx}px`);
-        if ((report.clippedPlayerRows || report.clippedRows || []).length > 0)
-          entry.fail.push(
-            `${(report.clippedPlayerRows || report.clippedRows).length} clipped row(s)`,
-          );
-        // JS exceptions are real defects; resource 404s (fonts/favicon) are not.
-        if (pageErrors.length > 0)
-          entry.fail.push(`page errors: ${pageErrors.slice(0, 3).join(" | ")}`);
-
-        entry.detail = {
-          pageOverflowPx: generic.pageOverflowPx,
-          resourceErrors: resourceErrors.length,
-          pageErrors: pageErrors.length,
-          clippedRows: (report.clippedPlayerRows || report.clippedRows || []).length,
-          clipEls: generic.clipping.length,
-          smallTargets: `${generic.smallTargets}/${generic.interactiveCount}`,
-          clipping: generic.clipping,
-          extra: {
-            clippedButtons: report.clippedButtons,
-            squashedInputs: report.squashedInputs,
-            filterInputWidths: report.filterInputWidths,
-          },
-        };
-      } catch (err) {
-        entry.fail.push(`error: ${err.message.split("\n")[0]}`);
-        entry.detail = {};
+  // Bound-concurrency pool over the task list. Each worker takes the next task
+  // off the shared queue; results stay deterministic because we sort below.
+  const results = [];
+  let cursor = 0;
+  const workers = Array.from(
+    { length: Math.max(1, Math.min(opts.concurrency, tasks.length)) },
+    async () => {
+      while (true) {
+        const task = tasks[cursor++];
+        if (task === undefined) break;
+        let entry;
+        try {
+          entry = await runTask(browser, task);
+        } catch (err) {
+          entry = {
+            harness: task.file,
+            width: task.width,
+            fail: [`error: ${err.message.split("\n")[0]}`],
+            detail: {},
+          };
+        }
+        results.push(entry);
       }
-      if (opts.screenshots) {
-        mkdirSync(opts.screenshots, { recursive: true });
-        await page.screenshot({
-          path: join(opts.screenshots, `${harness}-${width}.png`),
-        });
-      }
-      await page.close();
-      rows.push(entry);
-      if (entry.fail.length > 0) failures.push(entry);
-    }
-  }
+    },
+  );
+  await Promise.all(workers);
+
+  rows.push(...results);
+  // Deterministic order: harness order, then width order.
+  const rank = new Map(harnesses.map((h, i) => [h, i]));
+  rows.sort(
+    (a, b) =>
+      (rank.get(a.harness.replace(/\.html$/, "")) ?? 0) -
+        (rank.get(b.harness.replace(/\.html$/, "")) ?? 0) ||
+      opts.widths.indexOf(a.width) - opts.widths.indexOf(b.width),
+  );
+  for (const entry of rows) if (entry.fail.length > 0) failures.push(entry);
 } finally {
   if (browser) await browser.close();
   if (proc && !opts.keepServer) proc.kill("SIGTERM");

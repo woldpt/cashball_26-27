@@ -30,6 +30,12 @@ reporting the task as finished.
 cd client && npm run test:mobile
 ```
 
+> **Fast:** the runner runs all `*-test.html` harnesses × the 5 widths in
+> **parallel** (default `--concurrency 10`). Full 26-harness run takes
+> **~1 minute** (exit 0, RESULT `130/130`). Use a modest bash timeout (e.g.
+> `timeout 180s`) — no need for `600s` anymore. Tune with `--concurrency <n>`
+> (lower on constrained machines; `1` reproduces the old sequential behaviour).
+
 This starts a throwaway `vite dev` (port 5199, killed afterwards unless one is
 already serving), renders every `*-test.html` harness at mobile viewport widths
 (`320, 360, 390, 414, 430` — small Android → iPhone SE → 12/13/14 → XR → 15 Pro
