@@ -98,17 +98,17 @@ export function StadiumIllustration({
     >
       <defs>
         <linearGradient id="cash-sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#020617" />
-          <stop offset="70%" stopColor="#0f172a" />
-          <stop offset="100%" stopColor="#1e293b" />
+          <stop offset="0%" stopColor="#38bdf8" />
+          <stop offset="70%" stopColor="#bae6fd" />
+          <stop offset="100%" stopColor="#e0f2fe" />
         </linearGradient>
         <linearGradient id="cash-stand" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={home} stopOpacity="0.95" />
           <stop offset="100%" stopColor={home} stopOpacity="0.55" />
         </linearGradient>
         <linearGradient id="cash-roof" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#334155" />
-          <stop offset="100%" stopColor="#0f172a" />
+          <stop offset="0%" stopColor="#e2e8f0" />
+          <stop offset="100%" stopColor="#94a3b8" />
         </linearGradient>
         <linearGradient id="cash-grass" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#22c55e" />
@@ -120,27 +120,27 @@ export function StadiumIllustration({
         </radialGradient>
       </defs>
 
-      {/* Céu nocturno */}
+      {/* Céu diurno */}
       <rect x="0" y="0" width="800" height="360" fill="url(#cash-sky)" />
-      {Array.from({ length: 26 }).map((_, i) => (
-        <circle
-          key={`star-${i}`}
-          cx={(i * 137) % 800}
-          cy={((i * 53) % 90) + 6}
-          r={i % 5 === 0 ? 1.6 : 1}
-          fill="#e2e8f0"
-          opacity={i % 5 === 0 ? 0.9 : 0.45}
-        />
-      ))}
+      {/* Sol */}
+      <circle cx={692} cy={46} r={34} fill="#fef9c3" opacity="0.5" />
+      <circle cx={692} cy={46} r={22} fill="#fde047" />
+      {/* Nuvens */}
+      <g fill="#ffffff" opacity="0.9">
+        <ellipse cx={150} cy={58} rx={44} ry={14} />
+        <ellipse cx={182} cy={50} rx={30} ry={12} />
+        <ellipse cx={470} cy={34} rx={36} ry={11} />
+        <ellipse cx={496} cy={28} rx={24} ry={9} />
+      </g>
 
       {/* Torres de luz */}
       {towerXs.map((x) => (
         <g key={x}>
-          <ellipse cx={x} cy={roofY - 14} rx="46" ry="26" fill="url(#cash-glow)" opacity={tiers >= 2 ? 0.8 : 0.45} />
+          {/* projetores apagados de dia */}
           <rect x={x - 3} y={roofY + 6} width={6} height={BASE_Y - roofY} fill="#475569" />
           <rect x={x - 26} y={roofY - 22} width={52} height={22} rx={3} fill="#1e293b" stroke={away} strokeOpacity="0.5" />
           {[-16, 0, 16].map((dx) => (
-            <circle key={dx} cx={x + dx} cy={roofY - 11} r={5} fill="#fef9c3" />
+            <circle key={dx} cx={x + dx} cy={roofY - 11} r={5} fill="#e2e8f0" stroke="#64748b" strokeWidth="1" />
           ))}
         </g>
       ))}
