@@ -649,8 +649,8 @@ function CronologiaPanel({
 }
 
 /* ── SubsPanel — Titulares | Suplentes | Mentalidade | Substituições ─────
- * Desktop (md+): 3-col grid — a 3ª coluna divide-se em 2 linhas
- * (Mentalidade por cima, Substituições por baixo). Mobile:
+ * Desktop (md+): 3-col grid — a 3ª coluna tem a Mentalidade no topo e as
+ * Substituições fixas ao fundo. Mobile:
  * stack de duas páginas sobrepostas (Titulares/Suplentes) com flip 3D —
  * top cluster (mentalidade recolhível + indicador de página), folha ativa
  * como scroller próprio, peek da outra página em baixo e barra de ação
@@ -1440,9 +1440,11 @@ function SuplentesColumn({
 }
 
 /* ── Mentalidade | Substituições column (desktop) ────────────────────────
- * The 3rd column is split into two stacked rows, each with its own header:
- *   1. "Mentalidade"    → Estilo de jogo (táticas) + Posse de Bola
- *   2. "Substituições"  → controlos Sai→Entra + botões + Confirmadas */
+ * A 3.ª coluna tem dois blocos, cada um com o seu cabeçalho:
+ *   1. "Mentalidade"    → Estilo de jogo (táticas) — alinhada ao topo
+ *   2. "Substituições"  → controlos Sai→Entra + botões + Confirmadas
+ *                           — fixa ao fundo (mt-auto), com o espaço vazio
+ *                           entre os dois blocos */
 function MentalidadeColumn({
   isHalftime,
   isUserSubPause = false,
@@ -1478,9 +1480,10 @@ function MentalidadeColumn({
         )}
       </div>
 
-      {/* ── Row 2: Substituições — flex-1: a faixa de confirmadas cresce aqui
-       * e faz scroll dentro desta linha, em vez de esmagar a Mentalidade. */}
-      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      {/* ── Row 2: Substituições — fixa ao fundo (mt-auto): com espaço sobra,
+       * assenta no fim da coluna; se o conteúdo for maior que a coluna,
+       * encolhe (min-h-0) e a zona interna faz scroll. */}
+      <div className="mt-auto flex flex-col min-h-0 overflow-hidden border-t border-outline-variant/15">
         <div className="shrink-0 px-4 py-3 flex items-center justify-between gap-2 bg-surface-container-high/50 border-b border-outline-variant/15">
           <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0 shadow-[0_0_8px_rgba(251,113,133,0.5)]" />
