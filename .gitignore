@@ -10,6 +10,8 @@ server/db/base.db
 backups/
 .pi-lens/
 Screenshots/
+.cache/
+server/.cache/
 
 # Capacitor
 client/android/
