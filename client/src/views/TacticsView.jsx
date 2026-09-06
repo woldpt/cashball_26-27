@@ -17,6 +17,7 @@ const POS_COLORS = {
     text: "text-yellow-400",
     dot: "bg-yellow-400",
     hex: "#eab308",
+    soft: "rgba(234,179,8,0.08)",
   },
   DEF: {
     bg: "bg-blue-500",
@@ -24,6 +25,7 @@ const POS_COLORS = {
     text: "text-blue-400",
     dot: "bg-blue-400",
     hex: "#3b82f6",
+    soft: "rgba(59,130,246,0.08)",
   },
   MED: {
     bg: "bg-emerald-500",
@@ -31,6 +33,7 @@ const POS_COLORS = {
     text: "text-emerald-400",
     dot: "bg-emerald-400",
     hex: "#10b981",
+    soft: "rgba(16,185,129,0.08)",
   },
   ATA: {
     bg: "bg-rose-500",
@@ -38,6 +41,7 @@ const POS_COLORS = {
     text: "text-rose-400",
     dot: "bg-rose-400",
     hex: "#f43f5e",
+    soft: "rgba(244,63,94,0.08)",
   },
 };
 
@@ -138,6 +142,7 @@ function PlayerRow({
   isDragging,
   children,
 }) {
+  const pos = POS_COLORS[player.position] || { soft: "rgba(107,114,128,0.08)" };
   return (
     <div
       draggable={draggable}
@@ -148,9 +153,10 @@ function PlayerRow({
       onDragLeave={onDragLeave}
       onDrop={onDrop}
       onDragEnd={onDragEnd}
-      className={`relative flex items-center gap-2 px-2 py-1.5 rounded-xl transition-all select-none
+      style={{ "--pos-soft": pos.soft }}
+      className={`relative flex items-center gap-2 px-2 py-1.5 rounded-xl transition-all select-none bg-[var(--pos-soft)]
 ${isDragging ? "opacity-30 scale-95" : ""}
-${isOver ? "bg-white/5 ring-1 ring-[#4ade80]/40" : "hover:bg-white/5"}
+${isOver ? "ring-1 ring-[#4ade80]/40" : "hover:bg-white/5"}
 ${player.isUnavailable ? "opacity-50" : ""}
 ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
 `}
