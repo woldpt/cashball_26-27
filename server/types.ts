@@ -180,6 +180,8 @@ export interface CoachMarketEvent {
   isHuman: boolean;
   colorPrimary?: string;
   colorSecondary?: string;
+  /** Foto real do treinador (zerozero, ex. `/coaches/1167.png`). */
+  coachPhoto?: string;
 }
 
 /**

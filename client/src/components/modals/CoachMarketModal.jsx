@@ -1,18 +1,20 @@
 import { motion } from "framer-motion";
 import { DIVISION_NAMES, MODAL_Z } from "../../constants/index.js";
 import { ModalShell } from "../shared/ModalShell.jsx";
+import { CoachAvatar } from "../shared/CoachAvatar.jsx";
+import { coachAvatarSeed } from "../../utils/coachAvatar.js";
 
 /**
  * Resumo semanal do mercado de treinadores: despedimentos e contratações
  * (NPCs e humanos) que ocorreram após cada jornada.
  *
- * @param {{ report: { matchweek: number, events: Array<object> }|null, onClose: function }} props
+ * @param {{ report: { matchweek: number, events: Array<object> }|null, onClose: function, meName?: string|null, coachAvatars?: object, backendUrl?: string }} props
  */
 
 /**
- * @param {{ event: { type: string, coachName: string, teamName: string, division: number, reason?: string, isHuman: boolean, colorPrimary?: string, colorSecondary?: string } }} props
+ * @param {{ event: { type: string, coachName: string, teamName: string, division: number, reason?: string, isHuman: boolean, colorPrimary?: string, colorSecondary?: string, coachPhoto?: string|null }, meName?: string|null, coachAvatars?: object, backendUrl?: string }} props
  */
-function EventRow({ event }) {
+function EventRow({ event, meName, coachAvatars, backendUrl }) {
 	const {
 		coachName,
 		teamName,
@@ -37,6 +39,16 @@ function EventRow({ event }) {
 			<div
 				className="w-1.5 self-stretch rounded-full shrink-0"
 				style={{ backgroundColor: color }}
+			/>
+			{/* Foto do treinador (enviada > real > procedural) */}
+			<CoachAvatar
+				name={coachName}
+				seed={coachAvatarSeed(coachName, meName)}
+				teamColor={colorPrimary || color}
+				size="sm"
+				coachAvatars={coachAvatars}
+				backendUrl={backendUrl}
+				photo={event.coachPhoto || null}
 			/>
 			<div className="min-w-0 flex-1">
 				<p className="text-white font-bold text-sm truncate leading-tight">
@@ -79,9 +91,9 @@ function EventRow({ event }) {
 }
 
 /**
- * @param {{ events: Array<object>, type: "dismissal"|"hiring" }} props
+ * @param {{ events: Array<object>, type: "dismissal"|"hiring", meName?: string|null, coachAvatars?: object, backendUrl?: string }} props
  */
-function EventList({ events, type }) {
+function EventList({ events, type, meName, coachAvatars, backendUrl }) {
 	if (!events || events.length === 0) return null;
 
 	const isDismissal = type === "dismissal";
@@ -114,14 +126,20 @@ function EventList({ events, type }) {
 			</div>
 			<div className="flex flex-col gap-1.5">
 				{events.map((event, idx) => (
-					<EventRow key={`${event.coachName}-${event.teamName}-${idx}`} event={event} />
+					<EventRow
+						key={`${event.coachName}-${event.teamName}-${idx}`}
+						event={event}
+						meName={meName}
+						coachAvatars={coachAvatars}
+						backendUrl={backendUrl}
+					/>
 				))}
 			</div>
 		</section>
 	);
 }
 
-export function CoachMarketModal({ report, onClose }) {
+export function CoachMarketModal({ report, onClose, meName, coachAvatars, backendUrl }) {
 	const events = report?.events;
 	const dismissals = (events || []).filter((e) => e?.type === "dismissal");
 	const hirings = (events || []).filter((e) => e?.type === "hiring");
@@ -170,8 +188,8 @@ export function CoachMarketModal({ report, onClose }) {
 							</div>
 						) : (
 							<>
-								<EventList events={dismissals} type="dismissal" />
-								<EventList events={hirings} type="hiring" />
+								<EventList events={dismissals} type="dismissal" meName={meName} coachAvatars={coachAvatars} backendUrl={backendUrl} />
+								<EventList events={hirings} type="hiring" meName={meName} coachAvatars={coachAvatars} backendUrl={backendUrl} />
 							</>
 						)}
 					</div>

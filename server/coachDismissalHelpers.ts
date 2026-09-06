@@ -43,9 +43,28 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
    * Regista um evento do mercado de treinadores para o resumo semanal
    * (modal "Mercado de Treinadores" emitido após cada jornada).
    */
-  function recordMarketEvent(game: ActiveGame, event: CoachMarketEvent): void {
+  async function recordMarketEvent(
+    game: ActiveGame,
+    event: CoachMarketEvent,
+  ): Promise<void> {
     if (!Array.isArray(game.coachMarketEvents)) game.coachMarketEvents = [];
-    game.coachMarketEvents.push(event);
+
+    // Foto real do treinador (zerozero) — procurada por nome para persistir no
+    // evento mesmo quando o treinador fica desempregado após o despedimento
+    // (nesse caso já não aparece em nenhuma equipa em `teams`).
+    let coachPhoto: string | undefined;
+    try {
+      const mgr = await runGet<{ photo: string | null }>(
+        game.db,
+        "SELECT photo FROM managers WHERE name = ? COLLATE NOCASE",
+        [event.coachName],
+      );
+      if (mgr?.photo) coachPhoto = mgr.photo;
+    } catch {
+      // falha silenciosa — o cliente usa o avatar procedural como fallback
+    }
+
+    game.coachMarketEvents.push({ ...event, coachPhoto });
   }
 
   /** Re-emite teamsData (nomes de treinadores) para toda a sala. */
@@ -125,7 +144,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     // Free the old team in the DB
     game.db.run("UPDATE teams SET manager_id = NULL WHERE id = ?", [oldTeamId]);
 
-    recordMarketEvent(game, {
+    await recordMarketEvent(game, {
       type: "dismissal",
       coachName,
       teamName,
@@ -217,7 +236,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       io,
     );
 
-    recordMarketEvent(game, {
+    await recordMarketEvent(game, {
       type: "hiring",
       coachName: manager.name,
       teamName: team.name,
@@ -258,7 +277,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       io,
     );
 
-    recordMarketEvent(game, {
+    await recordMarketEvent(game, {
       type: "dismissal",
       coachName,
       teamName: team.name,
@@ -482,7 +501,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       );
     }
 
-    recordMarketEvent(game, {
+    await recordMarketEvent(game, {
       type: "hiring",
       coachName,
       teamName: team.name,

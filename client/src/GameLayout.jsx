@@ -1930,6 +1930,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       <CoachMarketModal
         report={coachMarketReport}
         onClose={() => setCoachMarketReport(null)}
+        meName={me?.name ?? null}
+        coachAvatars={coachAvatars}
+        backendUrl={backendUrl}
       />
 
       <SeasonEndModal

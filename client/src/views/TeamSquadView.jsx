@@ -390,6 +390,7 @@ export function TeamSquadView({
                 size="md"
                 coachAvatars={coachAvatars}
                 backendUrl={backendUrl}
+                photo={selectedTeam.coach_photo || null}
               />
             </div>
           </div>
