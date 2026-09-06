@@ -12,6 +12,8 @@
 
 ## Último estado
 
+- `TeamSquadView`: estádio da equipa na barra de título (mobile + banner desktop) — `StadiumIllustration` à direita com máscara de desvanecimento para a esquerda sobre a cor do clube; conteúdo por cima. Usa `selectedTeam.stadium_capacity` (vem de `SELECT t.*`). Verificação: lint + check:types ok, mobile portrait 125/125 + landscape 150/150 PASS.
+
 - `StadiumIllustration` passa de cena noturna a diurna (dia limpo): céu azul claro, sol + nuvens em vez de estrelas, cobertura cinzento metálico, projetores apagados (torres mantêm-se, sem brilho). Chega a `StadiumTab` e `ClubTab` sem mexer nas vistas. Verificação: lint + check:types ok.
 
 - Fetch Segunda Liga via TUI (commit `c3bced7`, sem push): 12/12 D2 OK 0 erros — Marítimo 22 fotos novas, resto merge plantel/cores/emblema + skip; 12 fotos treinador em `client/public/coaches/`. TUI ganhou resumo permanente por equipa + `extractCoachPhoto` (<img /img/treinadores/>, og:image é placeholder). Pipeline `manager.photo`: schema + seed + migração `gameManager` + `coach_photo` em `getTeamsWithCoachNames`. Verificação: typecheck + seed 60 + audit base 0/0. Nota: fotos Segunda que já estavam untracked antes deste job continuam por commitar (fora do âmbito).

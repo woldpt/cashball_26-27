@@ -11,6 +11,7 @@ import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { TabBar } from "../components/shared/TabBar.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
 import { CoachAvatar } from "../components/shared/CoachAvatar.jsx";
+import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
 import { TeamHistoryView } from "./TeamHistoryView.jsx";
 import { useMemo, useState } from "react";
 
@@ -162,7 +163,7 @@ export function TeamSquadView({
   return (
     <div className="min-h-0 flex-1 w-full bg-surface text-on-surface flex flex-col overflow-hidden">
       {/* Header mobile — barra compacta + monograma (cor da equipa como acento) */}
-      <div className="sm:hidden border-b border-outline-variant/60 bg-surface-container-low">
+      <div className="sm:hidden relative overflow-hidden border-b border-outline-variant/60 bg-surface-container-low">
         {/* Hairline nas cores da equipa */}
         <div
           className="h-0.5 w-full"
@@ -172,7 +173,22 @@ export function TeamSquadView({
             })`,
           }}
         />
-        <div className="flex items-center gap-3 px-4 pt-2.5 pb-2">
+        {/* Estádio da equipa, desvanecido à esquerda */}
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 w-[75%]"
+          style={{
+            maskImage: "linear-gradient(to left, black 40%, transparent 95%)",
+            WebkitMaskImage: "linear-gradient(to left, black 40%, transparent 95%)",
+          }}
+        >
+          <StadiumIllustration
+            capacity={selectedTeam.stadium_capacity || 10000}
+            primary={selectedTeam.color_primary}
+            secondary={selectedTeam.color_secondary}
+            className="h-full w-full"
+          />
+        </div>
+        <div className="relative flex items-center gap-3 px-4 pt-2.5 pb-2">
           <button
             onClick={onBack}
             aria-label="Voltar"
@@ -233,7 +249,7 @@ export function TeamSquadView({
             </div>
           )}
         </div>
-        <div className="px-4 pb-3">
+        <div className="relative px-4 pb-3">
           {/* Segmented control: partilha a largura, sem scroll horizontal */}
           <TabBar
             size="sm"
@@ -275,6 +291,22 @@ export function TeamSquadView({
               : "linear-gradient(to right, #2d6a4f40, transparent 70%)",
           }}
         />
+
+        {/* Estádio da equipa, desvanecido à esquerda sobre a cor do clube */}
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 w-[55%]"
+          style={{
+            maskImage: "linear-gradient(to left, black 55%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to left, black 55%, transparent 100%)",
+          }}
+        >
+          <StadiumIllustration
+            capacity={selectedTeam.stadium_capacity || 10000}
+            primary={selectedTeam.color_primary}
+            secondary={selectedTeam.color_secondary}
+            className="h-full w-full"
+          />
+        </div>
 
         {/* Back */}
         <div className="relative z-10">
