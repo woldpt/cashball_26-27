@@ -12,6 +12,8 @@
 
 ## Último estado
 
+- `StadiumIllustration`: estádios pequenos leem “menores” — fator `span` de largura (0.78× abaixo de 15k, crescendo linearmente até 1× aos 50k; ≥50k inalterado, `bulk` mantém-se). Bancadas, muro, portões laterais, camarotes, corrimão, bandeirolas e sombra seguem `standX0/standX1`; baliza e rede escalam pelo mesmo fator; mastros de luz (<15k) mais baixos e junto às extremidades do muro. Verificação: lint + check:types ok; harness `stadium-resp-test` PASS 5/5 + prova visual dos 4 escalotes.
+
 - `TeamSquadView`: bloco do treinador (desktop) ganhou pastilha escura (`bg-black/55 backdrop-blur-sm border-white/10 rounded-lg`) + `text-shadow` no rótulo "Treinador" e no nome — o estádio claro por detrás lavava o texto. Nome neutro passa a `text-white`. Verificação: lint + check:types ok; tweak pontual, sem mobile-resp.
 
 - `TacticsView`: contorno de posição nas fotos — `PlayerAvatar` local: com foto, `<img>` ganha `boxShadow: 0 0 0 2px ${pos.hex}` (contorno médio) e mantém `border-white/20`; o `shadow-md` saiu (conflitava com o boxShadow inline). Sem foto (ou foto com erro — `imgFailed`), cai para o `PlayerAvatar.jsx` procedural partilhado (seed=`player.id`, position, nationality, 28px) em vez do círculo de iniciais; `POS_INITIAL` removido. Campo (coluna 3) intacto (discos de iniciais já com cor de posição). Verificação: lint + check:types ok; sem testes de responsividade (ajuste de aparência, não estrutural).

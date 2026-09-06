@@ -72,8 +72,8 @@ const WALL_TOP = 146;
 const PITCH_TOP = 164;
 const PITCH_BOT = 260;
 const PITCH_H = PITCH_BOT - PITCH_TOP;
-const STAND_X0 = 84;
-const STAND_X1 = 716;
+const STAND_X0 = 84; // borda esquerda a escala plena (≥50k)
+const STAND_X1 = 716; // borda direita a escala plena (≥50k)
 const CAP_INSET = 24; // profundidade das faces laterais das bancadas
 const PITCH_FAR_HALF = 380; // meia-largura do relvado na linha frontal
 const PITCH_NEAR_HALF = 400; // meia-largura na borda próxima
@@ -101,6 +101,23 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   const grandRoof = capacity >= 50000;
   const boxes = capacity >= 30000;
   const screen = capacity >= 50000;
+
+  // ── Escala de largura: os estádios pequenos ocupam menos espaço ──
+  // 0.78× abaixo de 15k, crescendo linearmente até 1× aos 50k;
+  // ≥50k mantém o desenho atual (o `bulk` trata do crescimento acima).
+  const span =
+    capacity < 15000
+      ? 0.78
+      : capacity < 50000
+        ? 0.78 + ((capacity - 15000) / 35000) * 0.22
+        : 1;
+  const standX0 = 400 - ((STAND_X1 - STAND_X0) / 2) * span;
+  const standX1 = 400 + ((STAND_X1 - STAND_X0) / 2) * span;
+  const goalHalfBot = GOAL_HALF_BOT * span;
+  const goalHalfTop = GOAL_HALF_TOP * span;
+  const netHalf = GOAL_HALF_TOP * span;
+  // Mastro de luz mais baixo, à escala do estádio (só <15k).
+  const poleTop = PITCH_TOP - (PITCH_TOP - 66) * span;
   // Crescimento subtil do corpo acima dos 50k (até +15% aos 120k).
   const bulk =
     capacity > 50000 ? 1 + ((Math.min(capacity, 120000) - 50000) / 70000) * 0.15 : 1;
@@ -135,8 +152,8 @@ export const StadiumIllustration = memo(function StadiumIllustration({
 
   /** Meia-largura do emolduramento da baliza na altura y. */
   const goalHalf = (y) =>
-    GOAL_HALF_BOT -
-    ((GOAL_BOT - y) / (GOAL_BOT - GOAL_TOP)) * (GOAL_HALF_BOT - GOAL_HALF_TOP);
+    goalHalfBot -
+    ((GOAL_BOT - y) / (GOAL_BOT - GOAL_TOP)) * (goalHalfBot - goalHalfTop);
 
   // ── Multidão ─────────────────────────────────────────────────────
   /** Multidão de um anel: manchas de cor (equipa + neutros) com jitter. */
@@ -146,7 +163,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
     let k = 0;
     for (let r = 0; r < rows; r += 1) {
       const yBase = yTop + 3 + ((yBot - yTop - 6) * (r + 0.5)) / rows;
-      for (let x = STAND_X0 + 4 + (r % 2) * 2.5; x < STAND_X1 - 4; x += 5) {
+      for (let x = standX0 + 4 + (r % 2) * 2.5; x < standX1 - 4; x += 5) {
         const zone = hash01(seed + Math.floor(x / 34) * 4.7 + r * 0.8);
         const h = hash01(seed + k * 12.9898);
         const fill =
@@ -188,8 +205,8 @@ export const StadiumIllustration = memo(function StadiumIllustration({
       lines.push(
         <line
           key={`row-${y.toFixed(1)}`}
-          x1={STAND_X0 + 2}
-          x2={STAND_X1 - 2}
+          x1={standX0 + 2}
+          x2={standX1 - 2}
           y1={y}
           y2={y}
           stroke="#020617"
@@ -215,7 +232,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   });
 
   const netLines = [];
-  for (let dx = -30; dx <= 30; dx += 5) {
+  for (let dx = -netHalf; dx <= netHalf + 0.001; dx += netHalf / 6) {
     netLines.push(
       <line
         key={`net-v${dx}`}
@@ -266,7 +283,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
 
   // ── Bandeirolas no corrimão do topo ──────────────────────────────
   const pennants = [];
-  for (let x = STAND_X0 + 10; x < STAND_X1 - 8; x += 34) {
+  for (let x = standX0 + 10; x < standX1 - 8; x += 34) {
     pennants.push(
       <polygon
         key={`pen-${x}`}
@@ -277,7 +294,9 @@ export const StadiumIllustration = memo(function StadiumIllustration({
     );
   }
 
-  const sideGates = [96, 164, 232, 300, 476, 544, 612, 680];
+  const sideGates = [96, 164, 232, 300, 476, 544, 612, 680].map(
+    (x) => 400 + (x - 400) * span,
+  );
 
   return (
     <svg
@@ -392,16 +411,17 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         <path d="M 560 56 q 5 -5 10 0 q 5 -5 10 0" />
       </g>
 
-      {/* Torres de luz baixas (só nos pequenos, sem cobertura) */}
+      {/* Torres de luz baixas (só nos pequenos, sem cobertura) — mais
+          baixas e junto às bancadas, à escala do estádio */}
       {!roofed &&
-        [56, 744].map((x) => (
-          <g key={`light-${x}`}>
-            <rect x={x - 3} y={70} width={6} height={PITCH_TOP - 70} fill="#475569" />
-            <rect x={x - 28} y={48} width={56} height={22} rx={3} fill="#1e293b" stroke={away} strokeOpacity="0.5" />
+        [standX0 - CAP_INSET - 4, standX1 + CAP_INSET + 4].map((x) => (
+          <g key={`light-${Math.round(x)}`}>
+            <rect x={x - 3} y={poleTop} width={6} height={PITCH_TOP - poleTop} fill="#475569" />
+            <rect x={x - 28} y={poleTop - 22} width={56} height={22} rx={3} fill="#1e293b" stroke={away} strokeOpacity="0.5" />
             {[-18, -6, 6, 18].map((dx) => (
-              <g key={`lamp-${x}-${dx}`}>
-                <circle cx={x + dx} cy={59} r={10} fill={url("lamp")} opacity="0.5" />
-                <circle cx={x + dx} cy={59} r={5} fill="#e2e8f0" stroke="#64748b" strokeWidth="1" />
+              <g key={`lamp-${dx}`}>
+                <circle cx={x + dx} cy={poleTop - 11} r={10} fill={url("lamp")} opacity="0.5" />
+                <circle cx={x + dx} cy={poleTop - 11} r={5} fill="#e2e8f0" stroke="#64748b" strokeWidth="1" />
               </g>
             ))}
           </g>
@@ -416,21 +436,21 @@ export const StadiumIllustration = memo(function StadiumIllustration({
           <g key={`tier-${i}`}>
             {/* Faces laterais (profundidade) */}
             <polygon
-              points={`${STAND_X0},${seatTop} ${STAND_X0 - CAP_INSET},${seatTop - 6} ${STAND_X0 - CAP_INSET},${seatBottom + 8} ${STAND_X0},${seatBottom}`}
+              points={`${standX0},${seatTop} ${standX0 - CAP_INSET},${seatTop - 6} ${standX0 - CAP_INSET},${seatBottom + 8} ${standX0},${seatBottom}`}
               fill={url("endcap")}
             />
             <polygon
-              points={`${STAND_X1},${seatTop} ${STAND_X1 + CAP_INSET},${seatTop - 6} ${STAND_X1 + CAP_INSET},${seatBottom + 8} ${STAND_X1},${seatBottom}`}
+              points={`${standX1},${seatTop} ${standX1 + CAP_INSET},${seatTop - 6} ${standX1 + CAP_INSET},${seatBottom + 8} ${standX1},${seatBottom}`}
               fill={url("endcap")}
             />
             {/* Faixa de camarotes por baixo dos anéis superiores */}
             {boxes && i >= 1 && (
               <g>
-                <rect x={STAND_X0} y={boxTop} width={STAND_X1 - STAND_X0} height={BOX_H} fill="#0f172a" stroke={away} strokeOpacity="0.45" />
+                <rect x={standX0} y={boxTop} width={standX1 - standX0} height={BOX_H} fill="#0f172a" stroke={away} strokeOpacity="0.45" />
                 {Array.from({ length: 24 }).map((__, w) => (
                   <rect
                     key={`box-${i}-${w}`}
-                    x={STAND_X0 + 10 + w * 25}
+                    x={standX0 + 12 + w * ((standX1 - standX0 - 40) / 23)}
                     y={boxTop + 2}
                     width={16}
                     height={BOX_H - 4}
@@ -444,9 +464,9 @@ export const StadiumIllustration = memo(function StadiumIllustration({
             )}
             {/* Assentos */}
             <rect
-              x={STAND_X0}
+              x={standX0}
               y={seatTop}
-              width={STAND_X1 - STAND_X0}
+              width={standX1 - standX0}
               height={seatBottom - seatTop}
               fill={url("stand")}
               stroke="#020617"
@@ -456,19 +476,19 @@ export const StadiumIllustration = memo(function StadiumIllustration({
             {rowLines(seatTop, seatBottom)}
             {crowdDots(seatTop, seatBottom, 100 + i * 1000)}
             {/* Passadeira de betão entre anéis + sombra ambiente */}
-            <rect x={STAND_X0 - CAP_INSET} y={seatBottom - 3} width={STAND_X1 - STAND_X0 + CAP_INSET * 2} height={6} fill={url("concrete")} opacity="0.9" />
-            <rect x={STAND_X0 - CAP_INSET} y={seatBottom + 1} width={STAND_X1 - STAND_X0 + CAP_INSET * 2} height={2.5} fill="#000000" opacity="0.2" />
+            <rect x={standX0 - CAP_INSET} y={seatBottom - 3} width={standX1 - standX0 + CAP_INSET * 2} height={6} fill={url("concrete")} opacity="0.9" />
+            <rect x={standX0 - CAP_INSET} y={seatBottom + 1} width={standX1 - standX0 + CAP_INSET * 2} height={2.5} fill="#000000" opacity="0.2" />
           </g>
         );
       })}
 
       {/* Corrimão do topo + bandeirolas */}
-      <rect x={STAND_X0 - CAP_INSET} y={topY - 2} width={STAND_X1 - STAND_X0 + CAP_INSET * 2} height={3} fill={away} opacity="0.9" />
+      <rect x={standX0 - CAP_INSET} y={topY - 2} width={standX1 - standX0 + CAP_INSET * 2} height={3} fill={away} opacity="0.9" />
       {pennants}
 
       {/* Muro base com portões */}
-      <rect x={STAND_X0 - CAP_INSET} y={WALL_TOP} width={STAND_X1 - STAND_X0 + CAP_INSET * 2} height={PITCH_TOP - WALL_TOP} fill={url("concrete")} />
-      <rect x={STAND_X0 - CAP_INSET} y={WALL_TOP} width={STAND_X1 - STAND_X0 + CAP_INSET * 2} height={4} fill={home} opacity="0.95" />
+      <rect x={standX0 - CAP_INSET} y={WALL_TOP} width={standX1 - standX0 + CAP_INSET * 2} height={PITCH_TOP - WALL_TOP} fill={url("concrete")} />
+      <rect x={standX0 - CAP_INSET} y={WALL_TOP} width={standX1 - standX0 + CAP_INSET * 2} height={4} fill={home} opacity="0.95" />
       <path d={gatePath(372, 56, WALL_TOP + 4, PITCH_TOP)} fill="#0f172a" opacity="0.92" stroke="#e2e8f0" strokeOpacity="0.25" />
       {sideGates.map((x) => (
         <path key={`gate-${x}`} d={gatePath(x, 22, WALL_TOP + 7, PITCH_TOP)} fill="#0f172a" opacity="0.85" />
@@ -508,20 +528,20 @@ export const StadiumIllustration = memo(function StadiumIllustration({
       {stripePolys}
       <rect x="0" y={PITCH_TOP} width={W} height={PITCH_H} fill={url("pitchDepth")} />
       {/* Sombra das bancadas projetada no relvado */}
-      <rect x="0" y={PITCH_TOP} width={W} height={18} fill={url("standShadow")} />
+      <rect x={standX0 - CAP_INSET} y={PITCH_TOP} width={standX1 - standX0 + CAP_INSET * 2} height={18} fill={url("standShadow")} />
       {/* Linha de fundo */}
       <line x1={20} y1={PITCH_TOP + 1.5} x2={780} y2={PITCH_TOP + 1.5} stroke="#f8fafc" strokeWidth="1.8" opacity="0.85" />
       {/* Baliza na linha frontal (emolduramento + rede) */}
       <g>
         <polygon
-          points={`${400 - GOAL_HALF_TOP},${GOAL_TOP} ${400 + GOAL_HALF_TOP},${GOAL_TOP} ${400 + GOAL_HALF_BOT},${GOAL_BOT} ${400 - GOAL_HALF_BOT},${GOAL_BOT}`}
+          points={`${400 - goalHalfTop},${GOAL_TOP} ${400 + goalHalfTop},${GOAL_TOP} ${400 + goalHalfBot},${GOAL_BOT} ${400 - goalHalfBot},${GOAL_BOT}`}
           fill="#ffffff"
           opacity="0.07"
         />
         {netLines}
-        <line x1={400 - GOAL_HALF_BOT} y1={GOAL_BOT} x2={400 - GOAL_HALF_TOP} y2={GOAL_TOP} stroke="#f8fafc" strokeWidth="3" strokeLinecap="round" />
-        <line x1={400 + GOAL_HALF_BOT} y1={GOAL_BOT} x2={400 + GOAL_HALF_TOP} y2={GOAL_TOP} stroke="#f8fafc" strokeWidth="3" strokeLinecap="round" />
-        <line x1={400 - GOAL_HALF_TOP} y1={GOAL_TOP} x2={400 + GOAL_HALF_TOP} y2={GOAL_TOP} stroke="#f8fafc" strokeWidth="3.5" strokeLinecap="round" />
+        <line x1={400 - goalHalfBot} y1={GOAL_BOT} x2={400 - goalHalfTop} y2={GOAL_TOP} stroke="#f8fafc" strokeWidth="3" strokeLinecap="round" />
+        <line x1={400 + goalHalfBot} y1={GOAL_BOT} x2={400 + goalHalfTop} y2={GOAL_TOP} stroke="#f8fafc" strokeWidth="3" strokeLinecap="round" />
+        <line x1={400 - goalHalfTop} y1={GOAL_TOP} x2={400 + goalHalfTop} y2={GOAL_TOP} stroke="#f8fafc" strokeWidth="3.5" strokeLinecap="round" />
       </g>
       {/* Linha de meio-campo + círculo central */}
       <line x1={10} y1={212} x2={790} y2={212} stroke="#f8fafc" strokeWidth="1.8" opacity="0.7" />
