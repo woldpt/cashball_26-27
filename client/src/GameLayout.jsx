@@ -1346,7 +1346,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               // conteúdo; reservamos pb-16 (igual ao retrato) para o conteúdo
               // não ser coberto, em vez de pb-3.
               ? `transition-all duration-200 pt-10 ${isMatchInProgress ? "pb-16 ml-0" : "pb-3 ml-16"}`
-              : `pt-14 pb-16 lg:pb-12 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-14" : "lg:ml-64"}`
+              : `pt-14 pb-16 lg:pb-0 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-14" : "lg:ml-64"}`
           }`}
         >
           {/* Wrapper de scroll: a maioria das tabs rola aqui (mesma UX de antes,
