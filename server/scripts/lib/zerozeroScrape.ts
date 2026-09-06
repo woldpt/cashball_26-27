@@ -54,7 +54,17 @@ export function extractOgImage(html: string): string | null {
 export function extractHeaderColor(html: string): string | null {
   const m = html.match(/#page_header_container[^}]*background-color:\s*([^;}\s]+)/i)
     || html.match(/page_header[^>]*style="[^"]*background-color:\s*([^;"]+)/i);
-  return m ? m[1].trim() : null;
+  if (!m) return null;
+  let raw = m[1].trim().replace(/!important/g, "").trim();
+  // rgb(39,62,124) -> #273E7C
+  const rgb = raw.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+  if (rgb) {
+    const toHex = (n: number) => n.toString(16).padStart(2, "0").toUpperCase();
+    return `#${toHex(Number(rgb[1]))}${toHex(Number(rgb[2]))}${toHex(Number(rgb[3]))}`;
+  }
+  // já hex
+  if (/^#[0-9a-f]{3,8}$/i.test(raw)) return raw.toUpperCase();
+  return raw;
 }
 
 export function extractCoach(html: string): { name: string; href: string } | null {
