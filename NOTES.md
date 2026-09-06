@@ -12,6 +12,8 @@
 
 ## Último estado
 
+- `StadiumTab` com SVG paramétrico (`StadiumIllustration.jsx`, vista lateral em corte): 1/2/3 anéis + cobertura/camarotes/telão por escalão de lotação, bancadas e faixa nas cores da equipa, escala subtil até 120k; 4 JPGs (~800KB) removidos. Verificação: lint + check:types ok.
+
 - Scroll interno das tabs full-bleed (`squad`/`leiloes`): o wrapper `overflow-hidden` esperava que `TeamSquadView`/`AuctionsPage` preenchessem a altura, mas a cadeia intermédia `grid.grid-cols-1 → div → motion.div` (sem classes) era auto-altura — a árvore ficava à altura do conteúdo e o wrapper cortava sem scrollbar. Fix: variável `isFullBleedTab` em `GameLayout.jsx` aplica só às full-bleed `flex-1 min-h-0` na cadeia + `grid-rows-[minmax(0,1fr)]`. Verificação: lint + check:types ok; mobile-resp portrait 125/125 + landscape 150/150 PASS; screenshots 390×844 e 667×375 ok.
 
 - Cards de sala em `RoomSelectScreen.jsx` compactados em todas as vistas: `p-5 gap-3`→`p-4 gap-2`, nome `text-lg`→`text-base`, grid `gap-4`→`gap-3` (`short:gap-2.5`). `roomselect-resp-test` PASS em portrait (125/125) e landscape 414–1023×375; screenshots 390×844 e 844×390 ok.

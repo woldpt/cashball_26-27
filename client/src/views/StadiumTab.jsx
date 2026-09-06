@@ -1,8 +1,5 @@
-import estadio5000 from "../assets/estadio5000.jpg";
-import estadio15000 from "../assets/estadio15000.jpg";
-import estadio30000 from "../assets/estadio30000.jpg";
-import estadio50000 from "../assets/estadio50000.jpg";
 import { socket } from "../socket.js";
+import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
 import { DIVISION_NAMES, STADIUM_EXPANSION_COST as EXPANSION_COST } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
@@ -45,27 +42,19 @@ export function StadiumTab({
 
   const atMaxCapacity = stadiumCapacity >= MAX_CAPACITY;
 
-  const stadiumImg =
-    stadiumCapacity >= 50000
-      ? estadio50000
-      : stadiumCapacity >= 30000
-        ? estadio30000
-        : stadiumCapacity >= 15000
-          ? estadio15000
-          : estadio5000;
+
 
   return (
     <div className="space-y-4">
       {/* ── HERO: ESTÁDIO ─────────────────────────────────────────── */}
       <div className="rounded-lg border border-outline-variant/25 overflow-hidden relative bg-surface-container">
-        <div
-          className="h-32 sm:h-56 relative flex items-end"
-          style={{
-            backgroundImage: `url(${stadiumImg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
+        <div className="h-32 sm:h-56 relative flex items-end overflow-hidden">
+          <StadiumIllustration
+            capacity={stadiumCapacity}
+            primary={teamInfo?.color_primary}
+            secondary={teamInfo?.color_secondary}
+            className="absolute inset-0 h-full w-full"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
           <div className="relative px-5 pb-4 w-full">
             <p
