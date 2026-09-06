@@ -3241,25 +3241,27 @@ export async function applyPostMatchQualityEvolution(
     );
     if (updates.length > 0) {
       // Batch único (CASE) em vez de N UPDATEs com contador `remaining`.
+      // ATENÇÃO: os placeholders do SQL vêm agrupados por CASE (todos os de
+      // skill, depois todos os de value) — os params TÊM de seguir a mesma
+      // ordem. Intercalar por jogador (id, skill, id, value) liga os pares
+      // WHEN/THEN ao atributo errado a partir do 2.º e corrompe skill (NULL)
+      // e value (= skill). Ver bug skill 6→0 na J1.
       const skillCases: string[] = [];
       const valueCases: string[] = [];
-      const params: any[] = [];
+      const skillParams: any[] = [];
+      const valueParams: any[] = [];
       const ids: number[] = [];
       for (const update of updates) {
         skillCases.push("WHEN ? THEN ?");
         valueCases.push("WHEN ? THEN ?");
-        params.push(
-          update.id,
-          update.skill,
-          update.id,
-          recalcPlayerValue(update.skill),
-        );
+        skillParams.push(update.id, update.skill);
+        valueParams.push(update.id, recalcPlayerValue(update.skill));
         ids.push(update.id);
       }
       const ph = ids.map(() => "?").join(",");
       await dbRun(
         `UPDATE players SET prev_skill = skill, skill = CASE id ${skillCases.join(" ")} END, value = CASE id ${valueCases.join(" ")} END WHERE id IN (${ph})`,
-        [...params, ...ids],
+        [...skillParams, ...valueParams, ...ids],
       );
     }
     // Snapshot do skill de todos os jogadores para continuidade.
