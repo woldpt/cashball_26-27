@@ -1,15 +1,14 @@
 /**
  * Ilustração paramétrica do estádio (vista frontal panorâmica,
  * como uma foto de transmissão: de longe e câmara baixa).
- * Céu e horizonte em cima, bancada completa com multidão ao
- * centro e relvado em primeiro plano — composto para continuar
- * legível dentro de faixas largas e baixas (slice).
+ * Formato baixo (800×228) para as faixas curtas apanharem
+ * bancada E relvado; céu compacto em cima.
  *
  * O número de anéis, a cobertura, os camarotes e o telão crescem
  * com a lotação; bancadas e multidão usam as cores da equipa.
  *
  * Escalões:
- * - < 15k: 1 anel, sem cobertura, 2 postes de luz
+ * - < 15k: 1 anel, sem cobertura, 2 postes de luz baixos
  * - 15–30k: 1 anel + cobertura + 4 postes de suporte
  * - 30–50k: 2 anéis + faixa de camarotes
  * - ≥ 50k: 3 anéis + cobertura maior + telão
@@ -41,17 +40,18 @@ export function StadiumIllustration({
     capacity > 50000 ? 1 + ((Math.min(capacity, 120000) - 50000) / 70000) * 0.15 : 1;
 
   // ── Geometria da bancada (vista frontal) ──────────────────────
-  const TIER_H = 36;
-  const BOX_H = 15;
-  const WALL_TOP = 250;
-  const PITCH_TOP = 272;
+  const TIER_H = 28;
+  const BOX_H = 12;
+  const WALL_TOP = 146;
+  const PITCH_TOP = 164;
+  const PITCH_BOT = 260;
   const STAND_X0 = 84;
   const STAND_X1 = 716;
   /** Topo do anel i (0 = o de baixo). */
   const tierTop = (i) =>
     WALL_TOP - (i + 1) * TIER_H - (boxes && i >= 1 ? BOX_H : 0);
   const topY = tierTop(tiers - 1);
-  const roofBaseY = topY - (grandRoof ? 20 : 14);
+  const roofBaseY = topY - 12;
   const roofTopY = roofBaseY - (10 + (bulk - 1) * 40);
 
   /** Pseudo-aleatório determinístico (multidão estável entre renders). */
@@ -63,7 +63,7 @@ export function StadiumIllustration({
   /** Multidão de um anel: cabeças nas cores da equipa + neutros. */
   const crowdDots = (yTop, yBot, seed) => {
     const dots = [];
-    const rows = 4;
+    const rows = 3;
     let k = 0;
     for (let r = 0; r < rows; r += 1) {
       const y = yTop + 5 + ((yBot - yTop - 9) * (r + 0.5)) / rows;
@@ -93,7 +93,7 @@ export function StadiumIllustration({
     pennants.push(
       <polygon
         key={`pen-${x}`}
-        points={`${x},${topY + 3} ${x + 14},${topY + 3} ${x + 7},${topY + 12}`}
+        points={`${x},${topY + 3} ${x + 14},${topY + 3} ${x + 7},${topY + 10}`}
         fill={Math.round(x / 34) % 2 === 0 ? home : away}
         opacity="0.95"
       />,
@@ -102,7 +102,7 @@ export function StadiumIllustration({
 
   return (
     <svg
-      viewBox="0 0 800 360"
+      viewBox="0 0 800 272"
       preserveAspectRatio="xMidYMid slice"
       className={className}
       role="img"
@@ -129,58 +129,57 @@ export function StadiumIllustration({
       </defs>
 
       {/* Céu diurno */}
-      <rect x="0" y="0" width="800" height="360" fill="url(#cash-sky)" />
+      <rect x="0" y="0" width="800" height="272" fill="url(#cash-sky)" />
       {/* Sol */}
-      <circle cx={690} cy={42} r={32} fill="#fef9c3" opacity="0.5" />
-      <circle cx={690} cy={42} r={20} fill="#fde047" />
+      <circle cx={688} cy={46} r={22} fill="#fef9c3" opacity="0.5" />
+      <circle cx={688} cy={46} r={14} fill="#fde047" />
       {/* Nuvens */}
       <g fill="#ffffff" opacity="0.9">
-        <ellipse cx={140} cy={52} rx={42} ry={13} />
-        <ellipse cx={172} cy={44} rx={28} ry={11} />
-        <ellipse cx={430} cy={30} rx={34} ry={10} />
-        <ellipse cx={456} cy={24} rx={22} ry={8} />
+        <ellipse cx={140} cy={38} rx={36} ry={10} />
+        <ellipse cx={168} cy={32} rx={24} ry={8} />
+        <ellipse cx={430} cy={34} rx={30} ry={8} />
+        <ellipse cx={452} cy={29} rx={20} ry={7} />
       </g>
       {/* Pássaros */}
       <g stroke="#334155" strokeWidth="2" fill="none" opacity="0.7" strokeLinecap="round">
-        <path d="M 250 66 q 6 -6 12 0 q 6 -6 12 0" />
-        <path d="M 292 82 q 5 -5 10 0 q 5 -5 10 0" />
-        <path d="M 560 58 q 5 -5 10 0 q 5 -5 10 0" />
+        <path d="M 250 62 q 6 -6 12 0 q 6 -6 12 0" />
+        <path d="M 560 56 q 5 -5 10 0 q 5 -5 10 0" />
       </g>
 
       {/* Serra ao longe, na linha do horizonte */}
-      <ellipse cx={130} cy={205} rx={230} ry={34} fill="#8fa8bf" opacity="0.6" />
-      <ellipse cx={690} cy={208} rx={250} ry={38} fill="#93a88f" opacity="0.6" />
+      <ellipse cx={130} cy={96} rx={230} ry={30} fill="#8fa8bf" opacity="0.6" />
+      <ellipse cx={690} cy={99} rx={250} ry={33} fill="#93a88f" opacity="0.6" />
       {/* Árvores nas bermas, assentes no horizonte */}
       <g>
         {[
-          [30, 168, 11], [58, 174, 9], [742, 172, 10], [770, 166, 12],
+          [30, 86, 10], [56, 91, 8], [744, 89, 9], [770, 83, 11],
         ].map(([x, y, r]) => (
           <g key={`${x}-${y}`}>
-            <rect x={x - 2} y={y} width={4} height={12} fill="#654321" />
+            <rect x={x - 2} y={y} width={4} height={10} fill="#654321" />
             <circle cx={x} cy={y - 4} r={r} fill="#15803d" />
             <circle cx={x - r * 0.5} cy={y} r={r * 0.7} fill="#16a34a" />
           </g>
         ))}
       </g>
 
-      {/* Torres de luz (só nos pequenos, sem cobertura) */}
+      {/* Torres de luz baixas (só nos pequenos, sem cobertura) */}
       {!roofed &&
         [56, 744].map((x) => (
           <g key={x}>
-            <rect x={x - 3} y={92} width={6} height={PITCH_TOP - 92} fill="#475569" />
-            <rect x={x - 32} y={66} width={64} height={26} rx={3} fill="#1e293b" stroke={away} strokeOpacity="0.5" />
-            {[-20, -7, 7, 20].map((dx) => (
-              <circle key={dx} cx={x + dx} cy={79} r={6} fill="#e2e8f0" stroke="#64748b" strokeWidth="1" />
+            <rect x={x - 3} y={70} width={6} height={PITCH_TOP - 70} fill="#475569" />
+            <rect x={x - 28} y={48} width={56} height={22} rx={3} fill="#1e293b" stroke={away} strokeOpacity="0.5" />
+            {[-18, -6, 6, 18].map((dx) => (
+              <circle key={dx} cx={x + dx} cy={59} r={5} fill="#e2e8f0" stroke="#64748b" strokeWidth="1" />
             ))}
           </g>
         ))}
 
-      {/* Telão por cima da cobertura (só nos grandes) */}
+      {/* Telão assente na cobertura (só nos grandes) */}
       {screen && (
         <g>
-          <rect x={336} y={roofBaseY - 40} width={128} height={40} rx={4} fill="#0f172a" stroke={away} strokeOpacity="0.7" strokeWidth="2" />
-          <rect x={343} y={roofBaseY - 34} width={114} height={21} fill={home} opacity="0.92" />
-          <text x={400} y={roofBaseY - 18} textAnchor="middle" fontSize="13" fontWeight="900" fill="#020617">
+          <rect x={336} y={roofBaseY - 28} width={128} height={28} rx={4} fill="#0f172a" stroke={away} strokeOpacity="0.7" strokeWidth="2" />
+          <rect x={343} y={roofBaseY - 23} width={114} height={15} fill={home} opacity="0.92" />
+          <text x={400} y={roofBaseY - 11} textAnchor="middle" fontSize="11" fontWeight="900" fill="#020617">
             {`${Math.round(capacity / 1000)}K`}
           </text>
         </g>
@@ -221,9 +220,9 @@ export function StadiumIllustration({
                   <rect
                     key={`box-${i}-${w}`}
                     x={STAND_X0 + 10 + w * 25}
-                    y={boxTop + 3}
+                    y={boxTop + 2}
                     width={16}
-                    height={BOX_H - 6}
+                    height={BOX_H - 4}
                     fill="#cfe4f7"
                     stroke="#0f172a"
                     strokeOpacity="0.5"
@@ -233,12 +232,12 @@ export function StadiumIllustration({
               </g>
             )}
             <polygon
-              points={`${STAND_X0 - 24},${seatTop} ${STAND_X0},${seatTop} ${STAND_X0},${seatBottom} ${STAND_X0 - 24},${seatBottom + 10}`}
+              points={`${STAND_X0 - 24},${seatTop} ${STAND_X0},${seatTop} ${STAND_X0},${seatBottom} ${STAND_X0 - 24},${seatBottom + 8}`}
               fill={home}
               opacity="0.45"
             />
             <polygon
-              points={`${STAND_X1 + 24},${seatTop} ${STAND_X1},${seatTop} ${STAND_X1},${seatBottom} ${STAND_X1 + 24},${seatBottom + 10}`}
+              points={`${STAND_X1 + 24},${seatTop} ${STAND_X1},${seatTop} ${STAND_X1},${seatBottom} ${STAND_X1 + 24},${seatBottom + 8}`}
               fill={home}
               opacity="0.45"
             />
@@ -260,20 +259,20 @@ export function StadiumIllustration({
       })}
 
       {/* Corrimão do topo + bandeirolas */}
-      <rect x={STAND_X0 - 24} y={topY - 2} width={STAND_X1 - STAND_X0 + 48} height={4} fill={away} opacity="0.9" />
+      <rect x={STAND_X0 - 24} y={topY - 2} width={STAND_X1 - STAND_X0 + 48} height={3} fill={away} opacity="0.9" />
       {pennants}
 
       {/* Muro base com portões */}
       <rect x={STAND_X0 - 24} y={WALL_TOP} width={STAND_X1 - STAND_X0 + 48} height={PITCH_TOP - WALL_TOP} fill="url(#cash-concrete)" />
-      <rect x={STAND_X0 - 24} y={WALL_TOP} width={STAND_X1 - STAND_X0 + 48} height={5} fill={home} />
+      <rect x={STAND_X0 - 24} y={WALL_TOP} width={STAND_X1 - STAND_X0 + 48} height={4} fill={home} />
       {Array.from({ length: 8 }).map((_, g) => (
         <rect
           key={`gate-${g}`}
           x={STAND_X0 + 14 + g * 78}
-          y={WALL_TOP + 7}
+          y={WALL_TOP + 6}
           width={30}
-          height={PITCH_TOP - WALL_TOP - 7}
-          rx={7}
+          height={PITCH_TOP - WALL_TOP - 6}
+          rx={6}
           fill="#0f172a"
           opacity="0.85"
         />
@@ -286,7 +285,7 @@ export function StadiumIllustration({
           x={(800 / 12) * s}
           y={PITCH_TOP}
           width={800 / 12 + 1}
-          height={348 - PITCH_TOP}
+          height={PITCH_BOT - PITCH_TOP}
           fill={s % 2 === 0 ? "#22c55e" : "#16a34a"}
         />
       ))}
@@ -297,18 +296,18 @@ export function StadiumIllustration({
         [590, 650],
       ].map(([x0, x1]) => (
         <g key={`${x0}`}>
-          <rect x={x0} y={PITCH_TOP - 12} width={x1 - x0} height={18} fill="#ffffff" opacity="0.22" />
-          <rect x={x0} y={PITCH_TOP - 12} width={x1 - x0} height={18} fill="none" stroke="#f8fafc" strokeWidth="3" />
+          <rect x={x0} y={PITCH_TOP - 4} width={x1 - x0} height={18} fill="#ffffff" opacity="0.22" />
+          <rect x={x0} y={PITCH_TOP - 4} width={x1 - x0} height={18} fill="none" stroke="#f8fafc" strokeWidth="3" />
         </g>
       ))}
       {/* linha de meio-campo + círculo central */}
-      <line x1={400} y1={PITCH_TOP + 6} x2={400} y2={348} stroke="#f8fafc" strokeWidth="2" opacity="0.8" />
-      <ellipse cx={400} cy={318} rx={62} ry={17} fill="none" stroke="#f8fafc" strokeWidth="2" opacity="0.85" />
-      <circle cx={400} cy={318} r={3} fill="#f8fafc" />
+      <line x1={400} y1={PITCH_TOP + 6} x2={400} y2={PITCH_BOT} stroke="#f8fafc" strokeWidth="2" opacity="0.8" />
+      <ellipse cx={400} cy={216} rx={60} ry={16} fill="none" stroke="#f8fafc" strokeWidth="2" opacity="0.85" />
+      <circle cx={400} cy={216} r={2.5} fill="#f8fafc" />
 
       {/* Faixa inferior com as cores do clube */}
-      <rect x={0} y={348} width={800} height={12} fill={home} />
-      <rect x={0} y={348} width={800} height={4} fill={away} opacity="0.85" />
+      <rect x={0} y={PITCH_BOT} width={800} height={272 - PITCH_BOT} fill={home} />
+      <rect x={0} y={PITCH_BOT} width={800} height={4} fill={away} opacity="0.85" />
     </svg>
   );
 }

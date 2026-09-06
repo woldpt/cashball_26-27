@@ -18,6 +18,7 @@
 
 - Fetch Terceira Divisão via TUI (commit `84aa845`, sem push): 12/12 D3 OK 0 erros — 260 fotos novas jogadores + 12 treinador; merge plantel/cores/emblema. Fafe sem og:image equipa (mantém emblema manual); Fafe 18 + U. Santarém/São João Ver 21 fotos (placeholders). Bug corrigido: verificação final da TUI chamava `gameStateAudit.ts /tmp/tui_verify.db` mas o audit espera ROOM code — nunca corria; agora copia para `db/game_base.db` + audit `base` + apaga. Audit base 0/0.
 
+- `StadiumIllustration`: formato baixo (800×272) — torres de luz encurtadas e relvado estendido em primeiro plano para as faixas apanharem bancada + balizas + relvado; prova visual em PNG dos 4 escalões antes de fechar. Verificação: lint + check:types ok, mobile portrait 125/125 + landscape 150/150 PASS.
 - `StadiumIllustration`: recomposto em vista frontal panorâmica (foto de transmissão: de longe, câmara baixa) — céu/horizonte, bancada total com multidão, relvado com faixas de corte e balizas; prova visual em PNG dos 4 escalões antes de fechar. Verificação: lint + check:types ok, mobile portrait 125/125 + landscape 150/150 PASS.
 - `TeamSquadView`: estádio da equipa na barra de título (mobile + banner desktop) — `StadiumIllustration` à direita com máscara de desvanecimento para a esquerda sobre a cor do clube; conteúdo por cima. Usa `selectedTeam.stadium_capacity` (vem de `SELECT t.*`). Verificação: lint + check:types ok, mobile portrait 125/125 + landscape 150/150 PASS.
 
