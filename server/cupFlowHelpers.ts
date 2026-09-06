@@ -462,8 +462,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 		await dbRun("BEGIN");
 		try {
+			// career_goals/reds/injuries já são acumulados por jogo no flush transacional
+			// (queueMatchDeltaWrites → `career_goals = career_goals + ?`). Soma-los aqui de novo
+			// duplicaria a carreira (2× por época) — ver repro E2E: 9 golos época → carreira 18.
+			// Só career_games é escrito exclusivamente aqui (NÃO é incrementado por jogo).
 			await dbRun(
-				"UPDATE players SET career_goals = career_goals + goals, career_reds = career_reds + red_cards, career_injuries = career_injuries + injuries, career_games = career_games + games_played",
+				"UPDATE players SET career_games = career_games + games_played",
 			);
 			await dbRun(
 				// last_appearance_matchweek stores calendar slots (0-based); it must reset with
