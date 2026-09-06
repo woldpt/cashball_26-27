@@ -148,10 +148,10 @@ export function PlayerRow({
 
       {/* Qualidade - número grande com delta */}
       <div className="shrink-0 self-center flex items-center justify-center px-1.5 sm:px-2 min-w-[48px] sm:min-w-14">
-        <div className="flex items-baseline gap-0.5">
+        <div className="flex items-center gap-1">
           {skillDelta !== 0 && (
             <span
-              className={`text-[10px] font-black ${skillDelta > 0 ? "text-emerald-400" : "text-red-400"}`}
+              className={`text-[10px] font-black leading-none shrink-0 ${skillDelta > 0 ? "text-emerald-400" : "text-red-400"}`}
             >
               {skillDelta > 0 ? "▲" : "▼"}
             </span>
