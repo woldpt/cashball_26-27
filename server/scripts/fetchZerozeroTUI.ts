@@ -457,7 +457,14 @@ async function main() {
     try {
       execSync("npm run typecheck", { stdio: "inherit" });
       execSync("DB_PATH=/tmp/tui_verify.db node db/seed.js", { stdio: "inherit" });
-      execSync("npx tsx scripts/gameStateAudit.ts /tmp/tui_verify.db 2>&1 | tail -20", { stdio: "inherit" });
+      // gameStateAudit espera ROOM code (db/game_<ROOM>.db), não path: copiar o seed
+      // de verificação para game_base.db (seed sem filtro de sala = 60 equipas = base).
+      execSync("cp /tmp/tui_verify.db db/game_base.db", { stdio: "inherit" });
+      try {
+        execSync("npx tsx scripts/gameStateAudit.ts base 2>&1 | tail -8", { stdio: "inherit" });
+      } finally {
+        try { fs.unlinkSync("db/game_base.db"); } catch {}
+      }
     } catch {}
   } else if (dryRun) {
     p.log.info("Dry-run — nada foi gravado. Corre de novo sem --dry-run para aplicar.");

@@ -3141,7 +3141,7 @@
       "name": "Amarante",
       "division": 3,
       "colors": {
-        "primary": "#000000",
+        "primary": "#E5E4E2",
         "secondary": "#ffffff"
       },
       "stadium": {
@@ -3149,149 +3149,196 @@
         "capacity": 10000
       },
       "manager": {
-        "name": "Jorge Pinto"
+        "name": "Jorge Pinto",
+        "zerozeroId": 17193,
+        "photo": "/coaches/17193.png"
       },
       "players": [
         {
           "name": "Diogo Fernandes",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 559748,
+          "photo": "/players/559748.png"
         },
         {
           "name": "Didi",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 449848,
+          "photo": "/players/449848.png"
         },
         {
           "name": "Rafael Flores",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 378998,
+          "photo": "/players/378998.png"
         },
         {
           "name": "Alemão",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 33
+          "age": 33,
+          "zerozeroId": 222094,
+          "photo": "/players/222094.png"
         },
         {
           "name": "Rodrigo Beirão",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 545222,
+          "photo": "/players/545222.png"
         },
         {
           "name": "Diogo Costa",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 590578,
+          "photo": "/players/590578.png"
         },
         {
           "name": "Lawrence Adeniyi",
           "country": "🇳🇬",
           "position": "DEF",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 762407,
+          "photo": "/players/762407.png"
         },
         {
           "name": "Feliciano",
           "country": "🇬🇼",
           "position": "DEF",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 1052466,
+          "photo": "/players/1052466.png"
         },
         {
           "name": "João Filipe",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 318229,
+          "photo": "/players/318229.png"
         },
         {
           "name": "Tokinho Dória",
           "country": "🇧🇷",
           "position": "MED",
-          "age": 29
+          "age": 29,
+          "zerozeroId": 568418,
+          "photo": "/players/568418.png"
         },
         {
           "name": "Rúben Alves",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 31
+          "age": 31,
+          "zerozeroId": 218296,
+          "photo": "/players/218296.png"
         },
         {
           "name": "Rodrigo Guedes",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 506055,
+          "photo": "/players/506055.png"
         },
         {
           "name": "Faissal Zangré",
           "country": "🇧🇫",
           "position": "MED",
-          "age": 29
+          "age": 29,
+          "zerozeroId": 622333,
+          "photo": "/players/622333.png"
         },
         {
           "name": "Nito Gomes",
           "country": "🇬🇼",
           "position": "MED",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 1032720,
+          "photo": "/players/1032720.png"
         },
         {
           "name": "Rodrigo Carvalho",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 742772,
+          "photo": "/players/742772.jpg"
         },
         {
           "name": "Simão Silva",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 539756,
+          "photo": "/players/539756.png"
         },
         {
           "name": "Luís Machado",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 33
+          "age": 33,
+          "zerozeroId": 98248,
+          "photo": "/players/98248.jpg"
         },
         {
           "name": "Melvin Costa",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 478413,
+          "photo": "/players/478413.png"
         },
         {
           "name": "Rúben Silva",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 28
+          "age": 28,
+          "zerozeroId": 228452,
+          "photo": "/players/228452.png"
         },
         {
           "name": "Cardoso",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 594374,
+          "photo": "/players/594374.png"
         },
         {
           "name": "Gonçalo Cunha",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 530288,
+          "photo": "/players/530288.png"
         },
         {
           "name": "João Ricardo",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 506052,
+          "photo": "/players/506052.png"
         }
       ],
-      "crest": "/logos/amarante.png"
+      "crest": "/logos/amarante.png",
+      "zerozeroUrl": "/equipa/amarante-fc/4330"
     },
     {
       "name": "Belenenses",
       "division": 3,
       "colors": {
-        "primary": "#0000ff",
+        "primary": "#273E7C",
         "secondary": "#ffffff"
       },
       "stadium": {
@@ -3299,149 +3346,196 @@
         "capacity": 10000
       },
       "manager": {
-        "name": "Gonçalo Brandão"
+        "name": "Gonçalo Brandão",
+        "zerozeroId": 52805,
+        "photo": "/coaches/52805.png"
       },
       "players": [
         {
           "name": "Guilherme Oliveira",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 31
+          "age": 31,
+          "zerozeroId": 79549,
+          "photo": "/players/79549.jpg"
         },
         {
           "name": "Bruno Dias",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 18
+          "age": 18,
+          "zerozeroId": 899266,
+          "photo": "/players/899266.png"
         },
         {
           "name": "Diego Riechelmann",
           "country": "🇧🇷",
           "position": "GR",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 547627,
+          "photo": "/players/547627.png"
         },
         {
           "name": "Nuno Tomás",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 30
+          "age": 30,
+          "zerozeroId": 204663,
+          "photo": "/players/204663.jpg"
         },
         {
           "name": "João Lucas",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 30
+          "age": 30,
+          "zerozeroId": 229187,
+          "photo": "/players/229187.jpg"
         },
         {
           "name": "David Monteiro",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 182350,
+          "photo": "/players/182350.jpg"
         },
         {
           "name": "Afonso Pinto",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 755959,
+          "photo": "/players/755959.jpg"
         },
         {
           "name": "Cesinha",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 648315,
+          "photo": "/players/648315.jpg"
         },
         {
           "name": "Gaebriel Tafara",
           "country": "🇳🇱",
           "position": "DEF",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 2830202,
+          "photo": "/players/2830202.jpg"
         },
         {
           "name": "Tiago Morgado",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 33
+          "age": 33,
+          "zerozeroId": 56573,
+          "photo": "/players/56573.jpg"
         },
         {
           "name": "Diogo Maria",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 430521,
+          "photo": "/players/430521.jpg"
         },
         {
           "name": "Afonso Afonso",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 532613,
+          "photo": "/players/532613.jpg"
         },
         {
           "name": "Luís Caica",
           "country": "🇦🇴",
           "position": "MED",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 1258002,
+          "photo": "/players/1258002.jpg"
         },
         {
           "name": "Afonso Valente",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 589634,
+          "photo": "/players/589634.jpg"
         },
         {
           "name": "Guilherme Martins",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 788740,
+          "photo": "/players/788740.png"
         },
         {
           "name": "Midana Sambú",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 28
+          "age": 28,
+          "zerozeroId": 419838,
+          "photo": "/players/419838.jpg"
         },
         {
           "name": "Bruninho",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 28
+          "age": 28,
+          "zerozeroId": 288919,
+          "photo": "/players/288919.jpg"
         },
         {
           "name": "Chamito",
           "country": "🇲🇿",
           "position": "ATA",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 1027558,
+          "photo": "/players/1027558.jpg"
         },
         {
           "name": "Tiago Moninhas",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 310212,
+          "photo": "/players/310212.png"
         },
         {
           "name": "Valter Zacarias",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 28
+          "age": 28,
+          "zerozeroId": 287932,
+          "photo": "/players/287932.jpg"
         },
         {
           "name": "Miguel Bandarra",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 30
+          "age": 30,
+          "zerozeroId": 247828,
+          "photo": "/players/247828.jpg"
         },
         {
           "name": "Diogo Varela",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 19
+          "age": 19,
+          "zerozeroId": 895417,
+          "photo": "/players/895417.jpg"
         }
       ],
-      "crest": "/logos/belenenses.png"
+      "crest": "/logos/belenenses.png",
+      "zerozeroUrl": "/equipa/belenenses/3"
     },
     {
       "name": "Académica",
       "division": 3,
       "colors": {
-        "primary": "#000000",
+        "primary": "#101010",
         "secondary": "#ffffff"
       },
       "stadium": {
@@ -3449,149 +3543,196 @@
         "capacity": 10000
       },
       "manager": {
-        "name": "António Barbosa"
+        "name": "António Barbosa",
+        "zerozeroId": 24711,
+        "photo": "/coaches/24711.jpg"
       },
       "players": [
         {
           "name": "Victor Braga",
           "country": "🇧🇷",
           "position": "GR",
-          "age": 34
+          "age": 34,
+          "zerozeroId": 188197,
+          "photo": "/players/188197.png"
         },
         {
           "name": "Carlos Alves",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 28
+          "age": 28,
+          "zerozeroId": 406966,
+          "photo": "/players/406966.jpg"
         },
         {
           "name": "Nuno Macedo",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 27
+          "age": 27,
+          "zerozeroId": 526553,
+          "photo": "/players/526553.jpg"
         },
         {
           "name": "Pontus Texel",
           "country": "🇩🇰",
           "position": "DEF",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 770889,
+          "photo": "/players/770889.jpg"
         },
         {
           "name": "Kauan Conceição",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 716277,
+          "photo": "/players/716277.jpg"
         },
         {
           "name": "Xavi Grande",
           "country": "🇪🇸",
           "position": "DEF",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 1241320,
+          "photo": "/players/1241320.png"
         },
         {
           "name": "Hélder Lopes",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 37
+          "age": 37,
+          "zerozeroId": 96821,
+          "photo": "/players/96821.png"
         },
         {
           "name": "Edson Farias",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 34
+          "age": 34,
+          "zerozeroId": 241570,
+          "photo": "/players/241570.jpg"
         },
         {
           "name": "Ricardo Teixeira",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 560884,
+          "photo": "/players/560884.jpg"
         },
         {
           "name": "Leandro Silva",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 32
+          "age": 32,
+          "zerozeroId": 74899,
+          "photo": "/players/74899.jpg"
         },
         {
           "name": "João Oliveira",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 34
+          "age": 34,
+          "zerozeroId": 111788,
+          "photo": "/players/111788.jpg"
         },
         {
           "name": "Marcos Paulo",
           "country": "🇧🇷",
           "position": "MED",
-          "age": 38
+          "age": 38,
+          "zerozeroId": 64517,
+          "photo": "/players/64517.jpg"
         },
         {
           "name": "Jean Sinisterra",
           "country": "🇨🇴",
           "position": "MED",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 697666,
+          "photo": "/players/697666.jpg"
         },
         {
           "name": "Hugo Nunes",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 524208,
+          "photo": "/players/524208.jpg"
         },
         {
           "name": "Tiago Soares",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 16
+          "age": 16,
+          "zerozeroId": 1046616,
+          "photo": "/players/1046616.jpg"
         },
         {
           "name": "Kévin Zohi",
           "country": "🇲🇱",
           "position": "ATA",
-          "age": 29
+          "age": 29,
+          "zerozeroId": 588732,
+          "photo": "/players/588732.png"
         },
         {
           "name": "Martim Tavares",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 534211,
+          "photo": "/players/534211.png"
         },
         {
           "name": "Afonso Rodrigues",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 530313,
+          "photo": "/players/530313.png"
         },
         {
           "name": "Rui Gomes",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 29
+          "age": 29,
+          "zerozeroId": 370176,
+          "photo": "/players/370176.jpg"
         },
         {
           "name": "Ilies Fauré",
           "country": "🇫🇷",
           "position": "ATA",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 781377,
+          "photo": "/players/781377.jpg"
         },
         {
           "name": "Amadou Coundoul",
           "country": "🇸🇳",
           "position": "ATA",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 747570,
+          "photo": "/players/747570.png"
         },
         {
           "name": "Guilherme Silva",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 712272,
+          "photo": "/players/712272.jpg"
         }
       ],
-      "crest": "/logos/academica.png"
+      "crest": "/logos/academica.png",
+      "zerozeroUrl": "/equipa/academica-oaf/19"
     },
     {
       "name": "Varzim",
       "division": 3,
       "colors": {
-        "primary": "#ffffff",
+        "primary": "#101010",
         "secondary": "#000000"
       },
       "stadium": {
@@ -3599,149 +3740,196 @@
         "capacity": 10000
       },
       "manager": {
-        "name": "Carlos Fernandes"
+        "name": "Carlos Fernandes",
+        "zerozeroId": 59766,
+        "photo": "/coaches/59766.jpg"
       },
       "players": [
         {
           "name": "Momo Mbaye",
           "country": "🇸🇳",
           "position": "GR",
-          "age": 28
+          "age": 28,
+          "zerozeroId": 506448,
+          "photo": "/players/506448.png"
         },
         {
           "name": "Gustavo Ramalho",
           "country": "🇧🇷",
           "position": "GR",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 685936,
+          "photo": "/players/685936.png"
         },
         {
           "name": "Tiago Cruz",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 451881,
+          "photo": "/players/451881.png"
         },
         {
           "name": "Stitch",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 593656,
+          "photo": "/players/593656.png"
         },
         {
           "name": "Rúben Fernandes",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 40
+          "age": 40,
+          "zerozeroId": 9118,
+          "photo": "/players/9118.png"
         },
         {
           "name": "Renan Silva",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 719084,
+          "photo": "/players/719084.jpg"
         },
         {
           "name": "Kauã Oliveira",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 865103,
+          "photo": "/players/865103.png"
         },
         {
           "name": "Álvaro Milhazes",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 29
+          "age": 29,
+          "zerozeroId": 418589,
+          "photo": "/players/418589.png"
         },
         {
           "name": "André Guedes",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 421642,
+          "photo": "/players/421642.png"
         },
         {
           "name": "Rúben Oliveira",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 31
+          "age": 31,
+          "zerozeroId": 74348,
+          "photo": "/players/74348.png"
         },
         {
           "name": "David Peres",
           "country": "🇧🇷",
           "position": "MED",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 856189,
+          "photo": "/players/856189.png"
         },
         {
           "name": "Marcelo Cunha",
           "country": "🇨🇻",
           "position": "MED",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 901330,
+          "photo": "/players/901330.png"
         },
         {
           "name": "Diogo Rebelo",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 667088,
+          "photo": "/players/667088.png"
         },
         {
           "name": "Gonçalo Torres",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 18
+          "age": 18,
+          "zerozeroId": 770434,
+          "photo": "/players/770434.png"
         },
         {
           "name": "Martim Boloto",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 658027,
+          "photo": "/players/658027.png"
         },
         {
           "name": "Dani Benchi",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 790970,
+          "photo": "/players/790970.png"
         },
         {
           "name": "Pedro Matos",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 29
+          "age": 29,
+          "zerozeroId": 317344,
+          "photo": "/players/317344.png"
         },
         {
           "name": "Rodrigo Pereira",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 587641,
+          "photo": "/players/587641.png"
         },
         {
           "name": "Jordão Cardoso",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 29
+          "age": 29,
+          "zerozeroId": 292413,
+          "photo": "/players/292413.png"
         },
         {
           "name": "João Couto",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 528996,
+          "photo": "/players/528996.png"
         },
         {
           "name": "Pedro Costa",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 654582,
+          "photo": "/players/654582.png"
         },
         {
           "name": "Luís Oliveira",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 506064,
+          "photo": "/players/506064.png"
         }
       ],
-      "crest": "/logos/varzim.png"
+      "crest": "/logos/varzim.png",
+      "zerozeroUrl": "/equipa/varzim/36"
     },
     {
       "name": "Mafra",
       "division": 3,
       "colors": {
-        "primary": "#009933",
+        "primary": "#FDD945",
         "secondary": "#ffffff"
       },
       "stadium": {
@@ -3749,149 +3937,196 @@
         "capacity": 10000
       },
       "manager": {
-        "name": "Tim Sparv"
+        "name": "Tim Sparv",
+        "zerozeroId": 61950,
+        "photo": "/coaches/61950.png"
       },
       "players": [
         {
           "name": "Pedro Silva",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 29
+          "age": 29,
+          "zerozeroId": 115622,
+          "photo": "/players/115622.png"
         },
         {
           "name": "Francisco Lemos",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 155252,
+          "photo": "/players/155252.png"
         },
         {
           "name": "Rodrigo Estevão",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 944466,
+          "photo": "/players/944466.png"
         },
         {
           "name": "Celso Raposo",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 30
+          "age": 30,
+          "zerozeroId": 400358,
+          "photo": "/players/400358.png"
         },
         {
           "name": "Gonçalo Cardoso",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 588387,
+          "photo": "/players/588387.png"
         },
         {
           "name": "Rafael Moreira",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 486400,
+          "photo": "/players/486400.png"
         },
         {
           "name": "Moussa Camara",
           "country": "🇲🇱",
           "position": "DEF",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 1814097,
+          "photo": "/players/1814097.png"
         },
         {
           "name": "Francisco Ferreira",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 27
+          "age": 27,
+          "zerozeroId": 524462,
+          "photo": "/players/524462.png"
         },
         {
           "name": "Cheick Diakité",
           "country": "🇲🇱",
           "position": "DEF",
-          "age": 19
+          "age": 19,
+          "zerozeroId": 3577058,
+          "photo": "/players/3577058.jpg"
         },
         {
           "name": "Braíma Sambú",
           "country": "🇬🇼",
           "position": "MED",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 549549,
+          "photo": "/players/549549.png"
         },
         {
           "name": "Yacouba Maiga",
           "country": "🇲🇱",
           "position": "MED",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 1813557,
+          "photo": "/players/1813557.png"
         },
         {
           "name": "Rodrigo Matos",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 431292,
+          "photo": "/players/431292.png"
         },
         {
           "name": "Andrey Souza",
           "country": "🇧🇷",
           "position": "MED",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 714384,
+          "photo": "/players/714384.png"
         },
         {
           "name": "Ussumane Djaló",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 642863,
+          "photo": "/players/642863.png"
         },
         {
           "name": "Amadou Ba",
           "country": "🇸🇳",
           "position": "MED",
-          "age": 19
+          "age": 19,
+          "zerozeroId": 3552848,
+          "photo": "/players/3552848.png"
         },
         {
           "name": "Lucas Gabriel",
           "country": "🇧🇷",
           "position": "ATA",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 549749,
+          "photo": "/players/549749.png"
         },
         {
           "name": "Leandro Alves",
           "country": "🇧🇷",
           "position": "ATA",
-          "age": 27
+          "age": 27,
+          "zerozeroId": 593991,
+          "photo": "/players/593991.png"
         },
         {
           "name": "Alassana Baldé",
           "country": "🇬🇼",
           "position": "ATA",
-          "age": 18
+          "age": 18,
+          "zerozeroId": 918249,
+          "photo": "/players/918249.png"
         },
         {
           "name": "Deme Jr.",
           "country": "🇨🇮",
           "position": "ATA",
-          "age": 19
+          "age": 19,
+          "zerozeroId": 3572591,
+          "photo": "/players/3572591.png"
         },
         {
           "name": "Ença Fati",
           "country": "🇬🇼",
           "position": "ATA",
-          "age": 33
+          "age": 33,
+          "zerozeroId": 374087,
+          "photo": "/players/374087.png"
         },
         {
           "name": "Kauê Alves",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 1181322,
+          "photo": "/players/1181322.png"
         },
         {
           "name": "Raphael Rossi",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 36
+          "age": 36,
+          "zerozeroId": 368273,
+          "photo": "/players/368273.png"
         }
       ],
-      "crest": "/logos/mafra.png"
+      "crest": "/logos/mafra.png",
+      "zerozeroUrl": "/equipa/cd-mafra/3696"
     },
     {
       "name": "U. Santarém",
       "division": 3,
       "colors": {
-        "primary": "#ff0000",
+        "primary": "#AD1814",
         "secondary": "#ffffff"
       },
       "stadium": {
@@ -3899,134 +4134,178 @@
         "capacity": 10000
       },
       "manager": {
-        "name": "Dimas"
+        "name": "Dimas",
+        "zerozeroId": 30629,
+        "photo": "/coaches/30629.png"
       },
       "players": [
         {
           "name": "Ricardo Ribeiro",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 568017,
+          "photo": "/players/568017.jpg"
         },
         {
           "name": "João Oliveira",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 507335,
+          "photo": "/players/507335.jpg"
         },
         {
           "name": "Bruno Sousa",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 30
+          "age": 30,
+          "zerozeroId": 287284,
+          "photo": "/players/287284.jpg"
         },
         {
           "name": "Jaime Simões",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 37
+          "age": 37,
+          "zerozeroId": 59597,
+          "photo": "/players/59597.jpg"
         },
         {
           "name": "Luís Martins",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 628976,
+          "photo": "/players/628976.jpg"
         },
         {
           "name": "Dinis Almeida",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 872443,
+          "photo": "/players/872443.jpg"
         },
         {
           "name": "Kelechi John",
           "country": "🇳🇬",
           "position": "DEF",
-          "age": 27
+          "age": 27,
+          "zerozeroId": 554756,
+          "photo": "/players/554756.jpg"
         },
         {
           "name": "João Nóbrega",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 600826,
+          "photo": "/players/600826.jpg"
         },
         {
           "name": "Maya",
           "country": "🇦🇴",
           "position": "MED",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 862914,
+          "photo": "/players/862914.jpg"
         },
         {
           "name": "Manuel Pami",
           "country": "🇬🇼",
           "position": "MED",
-          "age": 27
+          "age": 27,
+          "zerozeroId": 115434,
+          "photo": "/players/115434.jpg"
         },
         {
           "name": "André Sousa",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 36
+          "age": 36,
+          "zerozeroId": 120764,
+          "photo": "/players/120764.jpg"
         },
         {
           "name": "Xiaohan Xu",
           "country": "🇨🇳",
           "position": "MED",
-          "age": 19
+          "age": 19,
+          "zerozeroId": 2834276,
+          "photo": "/players/2834276.jpg"
         },
         {
           "name": "Diogo Ressurreição",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 369020,
+          "photo": "/players/369020.jpg"
         },
         {
           "name": "Kirill Klimov",
           "country": "🇷🇺",
           "position": "ATA",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 662741,
+          "photo": "/players/662741.jpg"
         },
         {
           "name": "Rafael Camacho",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 88339,
+          "photo": "/players/88339.jpg"
         },
         {
           "name": "Aly Palacios",
           "country": "🇨🇴",
           "position": "ATA",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 1241197,
+          "photo": "/players/1241197.jpg"
         },
         {
           "name": "Isnaba Graça",
           "country": "🇬🇼",
           "position": "ATA",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 780409,
+          "photo": "/players/780409.jpg"
         },
         {
           "name": "Omaru King",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 2051749,
+          "photo": "/players/2051749.jpg"
         },
         {
           "name": "David Vinhas",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 535164,
+          "photo": "/players/535164.jpg"
         },
         {
           "name": "Mário Júnior",
           "country": "🇬🇼",
           "position": "DEF",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 851983,
+          "photo": "/players/851983.jpg"
         },
         {
           "name": "Rui Geadas",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 774730,
+          "photo": "/players/774730.jpg"
         },
         {
           "name": "Afonso Teodósio",
@@ -4034,13 +4313,14 @@
           "position": "GR"
         }
       ],
-      "crest": "/logos/u-santarem.png"
+      "crest": "/logos/u-santarem.png",
+      "zerozeroUrl": "/equipa/u-santarem/3947"
     },
     {
       "name": "Trofense",
       "division": 3,
       "colors": {
-        "primary": "#ffcc00",
+        "primary": "#990012",
         "secondary": "#000000"
       },
       "stadium": {
@@ -4048,149 +4328,196 @@
         "capacity": 10000
       },
       "manager": {
-        "name": "Cristiano Couto Brito"
+        "name": "Cristiano Couto Brito",
+        "zerozeroId": 45988,
+        "photo": "/coaches/45988.png"
       },
       "players": [
         {
           "name": "Manuel Baldé",
           "country": "🇬🇼",
           "position": "GR",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 520349,
+          "photo": "/players/520349.png"
         },
         {
           "name": "Ricardo Moura",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 37
+          "age": 37,
+          "zerozeroId": 107030,
+          "photo": "/players/107030.png"
         },
         {
           "name": "Mateus Andrade",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 19
+          "age": 19,
+          "zerozeroId": 633913,
+          "photo": "/players/633913.jpg"
         },
         {
           "name": "João Vale",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 591444,
+          "photo": "/players/591444.jpg"
         },
         {
           "name": "Agustín Granja",
           "country": "🇺🇾",
           "position": "DEF",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 2522034,
+          "photo": "/players/2522034.png"
         },
         {
           "name": "Emerson Buiu",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 1030959,
+          "photo": "/players/1030959.jpg"
         },
         {
           "name": "Luccão",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 728216,
+          "photo": "/players/728216.jpg"
         },
         {
           "name": "Joel Oliveira",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 763678,
+          "photo": "/players/763678.jpg"
         },
         {
           "name": "Tomás Oliveira",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 538194,
+          "photo": "/players/538194.jpg"
         },
         {
           "name": "Jorge López",
           "country": "🇵🇾",
           "position": "MED",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 2530962,
+          "photo": "/players/2530962.jpg"
         },
         {
           "name": "Pedro Teixeira",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 604942,
+          "photo": "/players/604942.png"
         },
         {
           "name": "Matheus Claudino",
           "country": "🇧🇷",
           "position": "MED",
-          "age": 27
+          "age": 27,
+          "zerozeroId": 696884,
+          "photo": "/players/696884.png"
         },
         {
           "name": "Diogo Nunes",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 556595,
+          "photo": "/players/556595.jpg"
         },
         {
           "name": "André Gomes",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 542806,
+          "photo": "/players/542806.png"
         },
         {
           "name": "Sana Ufalá",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 729820,
+          "photo": "/players/729820.png"
         },
         {
           "name": "Kiki Silva",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 28
+          "age": 28,
+          "zerozeroId": 474233,
+          "photo": "/players/474233.png"
         },
         {
           "name": "Jefer Gunjo",
           "country": "🇦🇴",
           "position": "ATA",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 1393726,
+          "photo": "/players/1393726.jpg"
         },
         {
           "name": "Juninho",
           "country": "🇧🇷",
           "position": "ATA",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 865302,
+          "photo": "/players/865302.png"
         },
         {
           "name": "Kevyn",
           "country": "🇧🇷",
           "position": "ATA",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 1206736,
+          "photo": "/players/1206736.png"
         },
         {
           "name": "Luis Miguel",
           "country": "🇧🇷",
           "position": "ATA",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 923355,
+          "photo": "/players/923355.jpg"
         },
         {
           "name": "Rafael Peixoto",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 748703,
+          "photo": "/players/748703.png"
         },
         {
           "name": "Vicente Oliveira",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 550192,
+          "photo": "/players/550192.jpg"
         }
       ],
-      "crest": "/logos/trofense.png"
+      "crest": "/logos/trofense.png",
+      "zerozeroUrl": "/equipa/trofense/3664"
     },
     {
       "name": "Atlético",
       "division": 3,
       "colors": {
-        "primary": "#ffffff",
+        "primary": "#FBB82E",
         "secondary": "#0000ff"
       },
       "stadium": {
@@ -4198,143 +4525,190 @@
         "capacity": 10000
       },
       "manager": {
-        "name": "Pedro D’Oliveira"
+        "name": "Pedro D’Oliveira",
+        "zerozeroId": 35416,
+        "photo": "/coaches/35416.jpg"
       },
       "players": [
         {
           "name": "Nuno Hidalgo",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 34
+          "age": 34,
+          "zerozeroId": 78743,
+          "photo": "/players/78743.png"
         },
         {
           "name": "José Bolívar",
           "country": "🇻🇪",
           "position": "GR",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 774483,
+          "photo": "/players/774483.png"
         },
         {
           "name": "Rodrigo Dias",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 115383,
+          "photo": "/players/115383.png"
         },
         {
           "name": "Bura",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 37
+          "age": 37,
+          "zerozeroId": 61822,
+          "photo": "/players/61822.png"
         },
         {
           "name": "David Dinamite",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 31
+          "age": 31,
+          "zerozeroId": 283182,
+          "photo": "/players/283182.png"
         },
         {
           "name": "Alison Calegari",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 727603,
+          "photo": "/players/727603.png"
         },
         {
           "name": "Janico",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 387592,
+          "photo": "/players/387592.png"
         },
         {
           "name": "Duarte Henriques",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 709297,
+          "photo": "/players/709297.png"
         },
         {
           "name": "Eduardo Monteiro",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 653257,
+          "photo": "/players/653257.png"
         },
         {
           "name": "Pedro Ramos",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 666597,
+          "photo": "/players/666597.png"
         },
         {
           "name": "Gabriel Costa",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 19
+          "age": 19,
+          "zerozeroId": 877713,
+          "photo": "/players/877713.png"
         },
         {
           "name": "César Sousa",
           "country": "🇦🇴",
           "position": "MED",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 606531,
+          "photo": "/players/606531.png"
         },
         {
           "name": "Bernardo Lourenço",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 455206,
+          "photo": "/players/455206.png"
         },
         {
           "name": "Ricardo Dias",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 35
+          "age": 35,
+          "zerozeroId": 50758,
+          "photo": "/players/50758.png"
         },
         {
           "name": "Mohamed Konaté",
           "country": "🇨🇮",
           "position": "MED",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 1257274,
+          "photo": "/players/1257274.png"
         },
         {
           "name": "Hélder Suker",
           "country": "🇨🇻",
           "position": "ATA",
-          "age": 27
+          "age": 27,
+          "zerozeroId": 782836,
+          "photo": "/players/782836.png"
         },
         {
           "name": "Edgar Pacheco",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 588810,
+          "photo": "/players/588810.png"
         },
         {
           "name": "Solo Traoré",
           "country": "🇪🇸",
           "position": "ATA",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 1817802,
+          "photo": "/players/1817802.png"
         },
         {
           "name": "Eric Oliveira",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 19
+          "age": 19,
+          "zerozeroId": 900401,
+          "photo": "/players/900401.jpg"
         },
         {
           "name": "Caio Santana",
           "country": "🇧🇷",
           "position": "ATA",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 950685,
+          "photo": "/players/950685.png"
         },
         {
           "name": "Rafael Tavares",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 441016,
+          "photo": "/players/441016.png"
         },
         {
           "name": "Vicente Durand",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 666347,
+          "photo": "/players/666347.png"
         }
       ],
-      "crest": "/logos/atletico.png"
+      "crest": "/logos/atletico.png",
+      "zerozeroUrl": "/equipa/atletico-cp/2170"
     },
     {
       "name": "Bragança",
@@ -8183,143 +8557,190 @@
         "capacity": 6500
       },
       "manager": {
-        "name": "Filipe Moreira"
+        "name": "Filipe Moreira",
+        "zerozeroId": 3076,
+        "photo": "/coaches/3076.png"
       },
       "players": [
         {
           "name": "Gonçalo Pinto",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 155437,
+          "photo": "/players/155437.jpg"
         },
         {
           "name": "Frederico Silva",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 880195,
+          "photo": "/players/880195.png"
         },
         {
           "name": "Tomás Carvalho",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 477900,
+          "photo": "/players/477900.png"
         },
         {
           "name": "Fábio Pala",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 33
+          "age": 33,
+          "zerozeroId": 211804,
+          "photo": "/players/211804.png"
         },
         {
           "name": "Dénis Martins",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 29
+          "age": 29,
+          "zerozeroId": 155262,
+          "photo": "/players/155262.png"
         },
         {
           "name": "Carlos Amaral",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 818663,
+          "photo": "/players/818663.jpg"
         },
         {
           "name": "Diogo Isnard",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 195319,
+          "photo": "/players/195319.png"
         },
         {
           "name": "Henrique Pires",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 155246,
+          "photo": "/players/155246.png"
         },
         {
           "name": "Óscar Garcia",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 417214,
+          "photo": "/players/417214.png"
         },
         {
           "name": "Bruno Paula",
           "country": "🇧🇷",
           "position": "MED",
-          "age": 29
+          "age": 29,
+          "zerozeroId": 615111,
+          "photo": "/players/615111.png"
         },
         {
           "name": "João Delgado",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 629510,
+          "photo": "/players/629510.png"
         },
         {
           "name": "Gustavo Teixeira",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 888946,
+          "photo": "/players/888946.jpg"
         },
         {
           "name": "André Gomes",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 27
+          "age": 27,
+          "zerozeroId": 588272,
+          "photo": "/players/588272.png"
         },
         {
           "name": "Diogo Carvalheira",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 19
+          "age": 19,
+          "zerozeroId": 759628,
+          "photo": "/players/759628.png"
         },
         {
           "name": "Pedro Pinto",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 166257,
+          "photo": "/players/166257.png"
         },
         {
           "name": "Frank Okenwa",
           "country": "🇳🇬",
           "position": "ATA",
-          "age": 27
+          "age": 27,
+          "zerozeroId": 671705,
+          "photo": "/players/671705.jpg"
         },
         {
           "name": "Carlos Djaló",
           "country": "🇬🇼",
           "position": "ATA",
-          "age": 33
+          "age": 33,
+          "zerozeroId": 441132,
+          "photo": "/players/441132.png"
         },
         {
           "name": "Giovanni Moura",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 589657,
+          "photo": "/players/589657.png"
         },
         {
           "name": "Mário Gomes",
           "country": "🇬🇼",
           "position": "ATA",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 952444,
+          "photo": "/players/952444.png"
         },
         {
           "name": "Chima James",
           "country": "🇳🇬",
           "position": "ATA",
-          "age": 27
+          "age": 27,
+          "zerozeroId": 730257,
+          "photo": "/players/730257.jpg"
         },
         {
           "name": "Rodrigo Gomes",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 1014827,
+          "photo": "/players/1014827.png"
         },
         {
           "name": "Tomás Piedade",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 438847,
+          "photo": "/players/438847.png"
         }
       ],
-      "crest": "/logos/vit-setubal.png"
+      "crest": "/logos/vit-setubal.png",
+      "zerozeroUrl": "/equipa/vitoria-fc/35?search=1"
     },
     {
       "name": "São João Ver",
@@ -8333,134 +8754,178 @@
         "capacity": 4500
       },
       "manager": {
-        "name": "Sandro Raniere"
+        "name": "Sandro Raniere",
+        "zerozeroId": 96093,
+        "photo": "/coaches/96093.png"
       },
       "players": [
         {
           "name": "Ivo Santos",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 17
+          "age": 17,
+          "zerozeroId": 1109594,
+          "photo": "/players/1109594.jpg"
         },
         {
           "name": "Pedro Virgínia",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 660752,
+          "photo": "/players/660752.jpg"
         },
         {
           "name": "Bruno Morais",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 28
+          "age": 28,
+          "zerozeroId": 450195,
+          "photo": "/players/450195.png"
         },
         {
           "name": "Miguel Ventura",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 494200,
+          "photo": "/players/494200.jpg"
         },
         {
           "name": "Ruca Morgado",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 378815,
+          "photo": "/players/378815.jpg"
         },
         {
           "name": "João Matos",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 882704,
+          "photo": "/players/882704.jpg"
         },
         {
           "name": "Filipe Garcia",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 558864,
+          "photo": "/players/558864.png"
         },
         {
           "name": "Miguel Vilela",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 529034,
+          "photo": "/players/529034.jpg"
         },
         {
           "name": "Malam Camará",
           "country": "🇬🇼",
           "position": "MED",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 657911,
+          "photo": "/players/657911.png"
         },
         {
           "name": "Jessé",
           "country": "🇦🇴",
           "position": "MED",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 1248311,
+          "photo": "/players/1248311.jpg"
         },
         {
           "name": "Washington",
           "country": "🇧🇷",
           "position": "MED",
-          "age": 37
+          "age": 37,
+          "zerozeroId": 127116,
+          "photo": "/players/127116.png"
         },
         {
           "name": "Tiago Campas",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 613220,
+          "photo": "/players/613220.jpg"
         },
         {
           "name": "Rodrigo Valente",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 505752,
+          "photo": "/players/505752.jpg"
         },
         {
           "name": "Zequinha",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 39
+          "age": 39,
+          "zerozeroId": 38503,
+          "photo": "/players/38503.png"
         },
         {
           "name": "Erick",
           "country": "🇧🇷",
           "position": "ATA",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 833648,
+          "photo": "/players/833648.jpg"
         },
         {
           "name": "Nuno Pereira",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 30
+          "age": 30,
+          "zerozeroId": 218328,
+          "photo": "/players/218328.png"
         },
         {
           "name": "Luís Soares",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 687587,
+          "photo": "/players/687587.jpg"
         },
         {
           "name": "Joel Carvalho",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 549466,
+          "photo": "/players/549466.png"
         },
         {
           "name": "João Júnior",
           "country": "🇬🇼",
           "position": "GR",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 718356,
+          "photo": "/players/718356.jpg"
         },
         {
           "name": "Rafael Vilela",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 449066,
+          "photo": "/players/449066.jpg"
         },
         {
           "name": "Rui Bruno",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 27
+          "age": 27,
+          "zerozeroId": 588803,
+          "photo": "/players/588803.jpg"
         },
         {
           "name": "André Santos",
@@ -8469,13 +8934,14 @@
           "age": 19
         }
       ],
-      "crest": "/logos/sao-joao-ver.png"
+      "crest": "/logos/sao-joao-ver.png",
+      "zerozeroUrl": "/equipa/s-joao-ver/3642?search=1"
     },
     {
       "name": "Fafe",
       "division": 3,
       "colors": {
-        "primary": "#8B0000",
+        "primary": "#FDD945",
         "secondary": "#FFFFFF"
       },
       "stadium": {
@@ -8483,116 +8949,154 @@
         "capacity": 5000
       },
       "manager": {
-        "name": "Diogo Botas"
+        "name": "Diogo Botas",
+        "zerozeroId": 62731,
+        "photo": "/coaches/62731.jpg"
       },
       "players": [
         {
           "name": "João Costa",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 608275,
+          "photo": "/players/608275.jpg"
         },
         {
           "name": "Rafael Pereira",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 1047278,
+          "photo": "/players/1047278.jpg"
         },
         {
           "name": "Alexandre Couceiro",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 901064,
+          "photo": "/players/901064.jpg"
         },
         {
           "name": "Artur Silva",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 608243,
+          "photo": "/players/608243.jpg"
         },
         {
           "name": "Tomás Trezentos",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 681287,
+          "photo": "/players/681287.jpg"
         },
         {
           "name": "Rafael Gomes",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 839580,
+          "photo": "/players/839580.jpg"
         },
         {
           "name": "Filipe Moreira",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 592314,
+          "photo": "/players/592314.jpg"
         },
         {
           "name": "Gonçalo Ribeiro",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 681218,
+          "photo": "/players/681218.jpg"
         },
         {
           "name": "Alexandre Vieira",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 681275,
+          "photo": "/players/681275.jpg"
         },
         {
           "name": "Edgar Marques",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 841374,
+          "photo": "/players/841374.jpg"
         },
         {
           "name": "Remi Mendes",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 610744,
+          "photo": "/players/610744.jpg"
         },
         {
           "name": "Rodrigo Brás",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 758235,
+          "photo": "/players/758235.jpg"
         },
         {
           "name": "Fábio Silva",
           "country": "🇧🇷",
           "position": "ATA",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 3567633,
+          "photo": "/players/3567633.jpg"
         },
         {
           "name": "José Pereira",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 29
+          "age": 29,
+          "zerozeroId": 529371,
+          "photo": "/players/529371.jpg"
         },
         {
           "name": "Adrien Jesus",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 23
+          "age": 23,
+          "zerozeroId": 1031114,
+          "photo": "/players/1031114.jpg"
         },
         {
           "name": "Simão Rodrigues",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 19
+          "age": 19,
+          "zerozeroId": 1047261,
+          "photo": "/players/1047261.jpg"
         },
         {
           "name": "Martim Marques",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 872083,
+          "photo": "/players/872083.jpg"
         },
         {
           "name": "Joel Batista",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 31
+          "age": 31,
+          "zerozeroId": 678337,
+          "photo": "/players/678337.jpg"
         },
         {
           "name": "Hugo Dias",
@@ -8619,7 +9123,8 @@
           "age": 26
         }
       ],
-      "crest": "/logos/fafe.png"
+      "crest": "/logos/fafe.png",
+      "zerozeroUrl": "/equipa/ad-fafe/3570"
     },
     {
       "name": "Lusitano Évora",
@@ -8633,143 +9138,190 @@
         "capacity": 6000
       },
       "manager": {
-        "name": "Pedro Russiano"
+        "name": "Pedro Russiano",
+        "zerozeroId": 18760,
+        "photo": "/coaches/18760.png"
       },
       "players": [
         {
           "name": "Matheus Lemes",
           "country": "🇧🇷",
           "position": "GR",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 729757,
+          "photo": "/players/729757.png"
         },
         {
           "name": "Duarte Martins",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 24
+          "age": 24,
+          "zerozeroId": 648863,
+          "photo": "/players/648863.png"
         },
         {
           "name": "Ricardo Batista",
           "country": "🇦🇴",
           "position": "GR",
-          "age": 38
+          "age": 39,
+          "zerozeroId": 7797,
+          "photo": "/players/7797.png"
         },
         {
           "name": "Marcos Soares",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 29
+          "age": 29,
+          "zerozeroId": 654364,
+          "photo": "/players/654364.png"
         },
         {
           "name": "Eurichano Setila",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 604842,
+          "photo": "/players/604842.png"
         },
         {
           "name": "Marco Baixinho",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 37
+          "age": 37,
+          "zerozeroId": 56468,
+          "photo": "/players/56468.png"
         },
         {
           "name": "Francisco Rosado",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 20
+          "age": 20,
+          "zerozeroId": 732306,
+          "photo": "/players/732306.png"
         },
         {
           "name": "Cassiano",
           "country": "🇧🇷",
           "position": "DEF",
-          "age": 32
+          "age": 32,
+          "zerozeroId": 456767,
+          "photo": "/players/456767.png"
         },
         {
           "name": "Rodrigo Monteiro",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 26
+          "age": 26,
+          "zerozeroId": 536482,
+          "photo": "/players/536482.png"
         },
         {
           "name": "Ousmane Diagne",
           "country": "🇸🇳",
           "position": "MED",
-          "age": 28
+          "age": 28,
+          "zerozeroId": 662620,
+          "photo": "/players/662620.png"
         },
         {
           "name": "Bura",
           "country": "🇬🇼",
           "position": "MED",
-          "age": 24
+          "age": 30,
+          "zerozeroId": 554773,
+          "photo": "/players/554773.png"
         },
         {
           "name": "Tiago Baptista",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 30
+          "age": 30,
+          "zerozeroId": 321327,
+          "photo": "/players/321327.png"
         },
         {
           "name": "Jannick Buyla",
           "country": "🇬🇶",
           "position": "MED",
-          "age": 24
+          "age": 27,
+          "zerozeroId": 603018,
+          "photo": "/players/603018.png"
         },
         {
           "name": "José Mussole",
           "country": "🇦🇴",
           "position": "MED",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 2506248,
+          "photo": "/players/2506248.png"
         },
         {
           "name": "Martim Águas",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 33
+          "age": 33,
+          "zerozeroId": 109795,
+          "photo": "/players/109795.png"
         },
         {
           "name": "Gustavo Vicente",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 18
+          "age": 18,
+          "zerozeroId": 918435,
+          "photo": "/players/918435.png"
         },
         {
           "name": "Diogo Sequeira",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 22
+          "age": 22,
+          "zerozeroId": 736367,
+          "photo": "/players/736367.png"
         },
         {
           "name": "Sele Davou",
           "country": "🇳🇬",
           "position": "ATA",
-          "age": 29
+          "age": 29,
+          "zerozeroId": 419520,
+          "photo": "/players/419520.png"
         },
         {
           "name": "Dida",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 30
+          "age": 30,
+          "zerozeroId": 208822,
+          "photo": "/players/208822.png"
         },
         {
           "name": "Luís Mota",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 24
+          "age": 22,
+          "zerozeroId": 709295,
+          "photo": "/players/709295.png"
         },
         {
           "name": "David Silva",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 31
+          "age": 31,
+          "zerozeroId": 80623,
+          "photo": "/players/80623.png"
         },
         {
           "name": "António Carreiro",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 21
+          "age": 21,
+          "zerozeroId": 992926,
+          "photo": "/players/992926.png"
         }
       ],
-      "crest": "/logos/lusitano-evora.png"
+      "crest": "/logos/lusitano-evora.png",
+      "zerozeroUrl": "/equipa/lusitano-gc/2173?search=1"
     },
     {
       "name": "Oliv. Hospital",
