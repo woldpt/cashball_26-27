@@ -363,9 +363,9 @@ export function TeamSquadView({
             </p>
           </div>
 
-          {/* Coach */}
-          <div className="shrink-0 text-right hidden sm:block">
-            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant/80 font-black mb-1 flex items-center justify-end gap-1.5">
+          {/* Coach — pastilha escura sobre o estádio para garantir contraste */}
+          <div className="shrink-0 text-right hidden sm:block rounded-lg bg-black/55 backdrop-blur-sm border border-white/10 px-3 py-2 shadow-md shadow-black/50">
+            <p className="text-[10px] uppercase tracking-widest text-white/70 font-black mb-1 flex items-center justify-end gap-1.5 [text-shadow:0_1px_8px_rgba(0,0,0,0.9)]">
               Treinador
               {!isOwnTeam && isHumanCoached && (
                 <Badge variant="warning" size="sm">
@@ -375,10 +375,10 @@ export function TeamSquadView({
             </p>
             <div className="flex items-center justify-end gap-2">
               <p
-                className={`font-headline font-black text-lg tracking-tight ${
+                className={`font-headline font-black text-lg tracking-tight [text-shadow:0_1px_8px_rgba(0,0,0,0.9)] ${
                   !isOwnTeam && isHumanCoached
                     ? "text-amber-300"
-                    : "text-on-surface"
+                    : "text-white"
                 }`}
               >
                 {coachName}
