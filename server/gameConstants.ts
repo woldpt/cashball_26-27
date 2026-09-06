@@ -305,6 +305,10 @@ export const MATCH_TUNING = {
   // escape por resistência (por ponto). Alvo: titulares cansados no fim.
   fatigueIntervalMinutes: 15,
   fatigueSkipPerResPoint: 0.00816,
+  // GR cansam-se muito menos que jogadores de campo: bónus extra de escape
+  // (soma-se ao skipChance) para quem joga como GR (posição "GR", incl. GR
+  // improvisado). +0.50 ≈ metade do desgaste de um jogador de campo médio.
+  fatigueGRSkipBonus: 0.5,
   // Moral (0–100): desvia o ataque ±10% e a defesa ±5% em torno de 50.
   // Deliberadamente pequeno — a forma ajusta, não decide.
   moraleAttackPerPoint: 0.002,

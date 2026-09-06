@@ -1552,6 +1552,17 @@ function applyFatigueToPlayer(
   syncFatigueSnapshot(fixture, side, player.id, after);
 }
 
+// Probabilidade de escape do rolo de cansaço: baseada na resistência
+// (por ponto) + bónus para GR (posição "GR", incl. improvisado) — os GR
+// cansam-se muito menos que os jogadores de campo.
+function fatigueSkipChance(p: PlayerRow): number {
+  const resistance = p.resistance ?? RES_NEUTRAL;
+  const skipChance = (resistance - 1) * MATCH_TUNING.fatigueSkipPerResPoint;
+  return p.position === "GR"
+    ? skipChance + MATCH_TUNING.fatigueGRSkipBonus
+    : skipChance;
+}
+
 // Aplica um golpe de cansaço (-amount skill) aos jogadores no onze, com
 // probabilidade de escape baseada na resistência. Só mexe em memória —
 // nunca persiste na base de dados.
@@ -1566,9 +1577,7 @@ function applyFatigue(
   for (const p of squad) {
     if (!lineupIds.has(p.id)) continue;
 
-    const resistance = p.resistance ?? RES_NEUTRAL;
-    const skipChance = (resistance - 1) * MATCH_TUNING.fatigueSkipPerResPoint;
-    if (rng() >= skipChance) {
+    if (rng() >= fatigueSkipChance(p)) {
       applyFatigueToPlayer(fixture, side, p, amount, rng);
     } else {
       syncFatigueSnapshot(fixture, side, p.id, getEffectiveSkill(p));
@@ -1599,9 +1608,7 @@ function trackFatigue(
     syncFatigueSnapshot(fixture, side, p.id, getEffectiveSkill(p));
     if (played % MATCH_TUNING.fatigueIntervalMinutes !== 0) continue;
 
-    const resistance = p.resistance ?? RES_NEUTRAL;
-    const skipChance = (resistance - 1) * MATCH_TUNING.fatigueSkipPerResPoint;
-    if (rng() < skipChance) continue;
+    if (rng() < fatigueSkipChance(p)) continue;
 
     applyFatigueToPlayer(fixture, side, p, 1, rng);
   }
