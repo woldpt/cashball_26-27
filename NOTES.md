@@ -12,6 +12,8 @@
 
 ## Último estado
 
+- Fetch Distritais/D5 via TUI — **12/12 OK** (1ª passagem 11/12, Castrense com timeout, retentado sozinho OK; verificação automática typecheck+seed+audit **0/0/0**). 10 equipas com 20–22 fotos novas + treinador; At. Reguengos (5 na página) e Cabrela (5 na página, 2 com foto) mantêm preenchimento anterior; Escouralense sem og:image de equipa. **Cobertura total: 60/60 equipas com fotos** (D1 ✓ D2 ✓ D3 ✓ D4 ✓ D5 ✓). Commit por fazer push.
+
 - Fix fotos D2 (commit fix `1838bc5` + fotos por commitar): as 239 fotos das 11 equipas D2 (todas menos Marítimo) nunca tinham sido commitadas — existiam no disco mas não no repo, logo 404 após pull → avatar vazio. PlayerAvatar.jsx só fazia `display:none` no onError sem fallback para o SVG; agora usa estado imgFailed e cai para o procedural. Extra: Bruno Faria (Lourosa) tinha path `/players/656867.png` mas o CDN devolve "Image not found" → `photo: null` (fica SVG; próxima TUI retenta). Seed+audit 0/0.
 
 - Fetch Quarta Divisão via TUI (commit `8bf57e4`, sem push): 12/12 D4 OK 0 erros — 240 fotos novas jogadores + 12 treinador; merge plantel/cores/emblema. Juventude manteve 21 do POC + foto João Mateus. Oliv. Hospital e O Elvas 21 fotos (1 placeholder cada). Audit base 0/0 (verificação da TUI já com o fix). Falta só D5.
