@@ -1176,7 +1176,14 @@ async function applyInjuryEvent({
       ? MATCH_TUNING.injurySevereLossBase +
         Math.floor(rng() * MATCH_TUNING.injurySevereLossExtra)
       : 0;
-  const oldSkill = injuredPlayer.skill ?? 0;
+  // ATENÇÃO: oldSkill vem do fullRoster (objetos reais da BD) e NUNCA de
+  // injuredPlayer.skill — um clone de GR improvisado (convertToEmergencyGK) tem
+  // skill=EMERGENCY_GK_SKILL e pode estar no squad; gravar essa skill na BD
+  // destruiria permanentemente o atributo persistente do jogador real.
+  const oldSkill =
+    (fullRoster || []).find((p: any) => p.id === injuredPlayer.id)?.skill ??
+    injuredPlayer.skill ??
+    0;
   const newSkill = Math.max(1, oldSkill - qualityLoss);
   // Acumulado em memória — o flush transacional no apito final aplica o
   // UPDATE + snapshot de skill atomicamente com o resultado do jogo.
