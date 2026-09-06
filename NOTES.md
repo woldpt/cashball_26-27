@@ -8,9 +8,11 @@
 
 ## Em curso
 
-- Cards de leilão reinventados (estilo cromo, face única, urgência+preço): `AuctionCard.jsx` reescrito, `AuctionResultRow.jsx` novo, `AuctionsPage` Recentes em lista compacta. Verificação: lint + check:types ok; mobile portrait 125/125 + landscape 150/150 PASS. Commit por fazer.
+- (nada)
 
 ## Último estado
+
+- Cards de leilão reinventados (commit `dcb2e3d`): `AuctionCard.jsx` é agora cromo de face única — faixa da posição, avatar com halo + skill sobreposta, countdown gigante (vermelho pulsante ≤15s, formato m/s/h), lance atual + base/salário, mini-stats (forma/jogos/golos) + `AggBadge`, botão Licitar com mínimo no rótulo; histórico via botão dedicado (sem flip). Recentes em `AuctionResultRow` (linhas compactas com ponto verde/cinzento). Verificação: lint + check:types ok; mobile portrait 125/125 + landscape 150/150 PASS.
 
 - `StadiumIllustration`: estádios pequenos leem “menores” — fator `span` de largura (0.78× abaixo de 15k, crescendo linearmente até 1× aos 50k; ≥50k inalterado, `bulk` mantém-se). Bancadas, muro, portões laterais, camarotes, corrimão, bandeirolas e sombra seguem `standX0/standX1`; baliza e rede escalam pelo mesmo fator; mastros de luz (<15k) mais baixos e junto às extremidades do muro. Verificação: lint + check:types ok; harness `stadium-resp-test` PASS 5/5 + prova visual dos 4 escalotes.
 
