@@ -292,9 +292,6 @@ export function PlayerHistoryModal({
                           ? "😩"
                           : "👍"}{" "}
                     </span>
-                    <span className="text-[8px] text-on-surface-variant/50">
-                      Valores de épocas anteriores usam a escala antiga (70–130).
-                    </span>
                   </>
                 )}
               </div>
