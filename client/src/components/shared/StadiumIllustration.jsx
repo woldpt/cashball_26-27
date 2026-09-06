@@ -1,11 +1,16 @@
 /**
- * Ilustração paramétrica do estádio (vista lateral em corte).
+ * Ilustração paramétrica do estádio (vista frontal panorâmica,
+ * como uma foto de transmissão: de longe e câmara baixa).
+ * Céu e horizonte em cima, bancada completa com multidão ao
+ * centro e relvado em primeiro plano — composto para continuar
+ * legível dentro de faixas largas e baixas (slice).
+ *
  * O número de anéis, a cobertura, os camarotes e o telão crescem
- * com a lotação; as bancadas usam as cores da equipa.
+ * com a lotação; bancadas e multidão usam as cores da equipa.
  *
  * Escalões:
  * - < 15k: 1 anel, sem cobertura, 2 postes de luz
- * - 15–30k: 1 anel + cobertura lateral + 4 torres
+ * - 15–30k: 1 anel + cobertura + 4 postes de suporte
  * - 30–50k: 2 anéis + faixa de camarotes
  * - ≥ 50k: 3 anéis + cobertura maior + telão
  * Acima de 50k o desenho escala ligeiramente até aos 120k.
@@ -31,62 +36,69 @@ export function StadiumIllustration({
   const grandRoof = capacity >= 50000;
   const boxes = capacity >= 30000;
   const screen = capacity >= 50000;
-  const towerXs = capacity < 15000 ? [36, 764] : [36, 200, 600, 764];
   // Crescimento subtil do corpo acima dos 50k (até +15% aos 120k).
   const bulk =
     capacity > 50000 ? 1 + ((Math.min(capacity, 120000) - 50000) / 70000) * 0.15 : 1;
 
-  const TIER_H = 52 * bulk;
-  const BASE_Y = 302;
-  const BOX_H = boxes ? 16 : 0;
-  const tierTopY = BASE_Y - tiers * TIER_H - BOX_H;
-  const roofY = tierTopY - (grandRoof ? 30 : 22);
+  // ── Geometria da bancada (vista frontal) ──────────────────────
+  const TIER_H = 36;
+  const BOX_H = 15;
+  const WALL_TOP = 250;
+  const PITCH_TOP = 272;
+  const STAND_X0 = 84;
+  const STAND_X1 = 716;
+  /** Topo do anel i (0 = o de baixo). */
+  const tierTop = (i) =>
+    WALL_TOP - (i + 1) * TIER_H - (boxes && i >= 1 ? BOX_H : 0);
+  const topY = tierTop(tiers - 1);
+  const roofBaseY = topY - (grandRoof ? 20 : 14);
+  const roofTopY = roofBaseY - (10 + (bulk - 1) * 40);
 
-  /** Cantos de um anel: dentro-baixo, dentro-topo, fora-topo, fora-baixo. */
-  const tierCorners = (side, i) => {
-    const boxOffset = boxes && i >= 1 ? BOX_H : 0;
-    const yB = BASE_Y - i * TIER_H - boxOffset;
-    const yT = yB - TIER_H;
-    const spread = i * 26 * bulk;
-    if (side === "L") {
-      return {
-        xInB: 302 - spread * 0.4, yB,
-        xInT: 272 - spread * 0.4, yT,
-        xOutT: 112 - spread, yT2: yT,
-        xOutB: 152 - spread, yB2: yB,
-      };
+  /** Pseudo-aleatório determinístico (multidão estável entre renders). */
+  const hash01 = (n) => {
+    const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+    return s - Math.floor(s);
+  };
+
+  /** Multidão de um anel: cabeças nas cores da equipa + neutros. */
+  const crowdDots = (yTop, yBot, seed) => {
+    const dots = [];
+    const rows = 4;
+    let k = 0;
+    for (let r = 0; r < rows; r += 1) {
+      const y = yTop + 5 + ((yBot - yTop - 9) * (r + 0.5)) / rows;
+      for (let x = STAND_X0 + 6 + (r % 2) * 4; x < STAND_X1 - 5; x += 8) {
+        const h = hash01(seed + k * 12.9898);
+        const fill =
+          h < 0.58 ? home : h < 0.8 ? away : h < 0.94 ? "#fcd9b8" : "#1e293b";
+        dots.push(
+          <circle
+            key={`${seed}-${k}`}
+            cx={x + (hash01(seed + k * 3.7) - 0.5) * 3}
+            cy={y}
+            r={1.7 + hash01(seed + k * 7.3) * 0.9}
+            fill={fill}
+            opacity={0.75 + hash01(seed + k * 5.1) * 0.25}
+          />,
+        );
+        k += 1;
+      }
     }
-    return {
-      xInB: 498 + spread * 0.4, yB,
-      xInT: 528 + spread * 0.4, yT,
-      xOutT: 688 + spread, yT2: yT,
-      xOutB: 648 + spread, yB2: yB,
-    };
+    return dots;
   };
 
-  const tierPoints = (side, i) => {
-    const c = tierCorners(side, i);
-    return `${c.xInB},${c.yB} ${c.xInT},${c.yT} ${c.xOutT},${c.yT2} ${c.xOutB},${c.yB2}`;
-  };
-
-  /** 3 filas de assentos por anel. */
-  const seatRows = (side, i) => {
-    const c = tierCorners(side, i);
-    const rows = [];
-    for (let r = 0; r < 3; r += 1) {
-      const t = (r + 1) / 4;
-      const y = c.yB - TIER_H * t;
-      const left = c.xOutB + (c.xOutT - c.xOutB) * t + 8;
-      const right = c.xInB + (c.xInT - c.xInB) * t - 8;
-      rows.push({
-        key: `${side}${i}r${r}`,
-        x1: Math.min(left, right),
-        x2: Math.max(left, right),
-        y,
-      });
-    }
-    return rows;
-  };
+  /** Bandeirolas alternadas no corrimão do topo. */
+  const pennants = [];
+  for (let x = STAND_X0 + 10; x < STAND_X1 - 8; x += 34) {
+    pennants.push(
+      <polygon
+        key={`pen-${x}`}
+        points={`${x},${topY + 3} ${x + 14},${topY + 3} ${x + 7},${topY + 12}`}
+        fill={Math.round(x / 34) % 2 === 0 ? home : away}
+        opacity="0.95"
+      />,
+    );
+  }
 
   return (
     <svg
@@ -103,140 +115,196 @@ export function StadiumIllustration({
           <stop offset="100%" stopColor="#e0f2fe" />
         </linearGradient>
         <linearGradient id="cash-stand" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={home} stopOpacity="0.95" />
-          <stop offset="100%" stopColor={home} stopOpacity="0.55" />
+          <stop offset="0%" stopColor={home} stopOpacity="0.9" />
+          <stop offset="100%" stopColor={home} stopOpacity="0.5" />
         </linearGradient>
         <linearGradient id="cash-roof" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#e2e8f0" />
+          <stop offset="0%" stopColor="#f1f5f9" />
           <stop offset="100%" stopColor="#94a3b8" />
         </linearGradient>
-        <linearGradient id="cash-grass" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#22c55e" />
-          <stop offset="100%" stopColor="#15803d" />
+        <linearGradient id="cash-concrete" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#cbd5e1" />
+          <stop offset="100%" stopColor="#64748b" />
         </linearGradient>
-        <radialGradient id="cash-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#fefce8" stopOpacity="0.85" />
-          <stop offset="100%" stopColor="#fefce8" stopOpacity="0" />
-        </radialGradient>
       </defs>
 
       {/* Céu diurno */}
       <rect x="0" y="0" width="800" height="360" fill="url(#cash-sky)" />
       {/* Sol */}
-      <circle cx={692} cy={46} r={34} fill="#fef9c3" opacity="0.5" />
-      <circle cx={692} cy={46} r={22} fill="#fde047" />
+      <circle cx={690} cy={42} r={32} fill="#fef9c3" opacity="0.5" />
+      <circle cx={690} cy={42} r={20} fill="#fde047" />
       {/* Nuvens */}
       <g fill="#ffffff" opacity="0.9">
-        <ellipse cx={150} cy={58} rx={44} ry={14} />
-        <ellipse cx={182} cy={50} rx={30} ry={12} />
-        <ellipse cx={470} cy={34} rx={36} ry={11} />
-        <ellipse cx={496} cy={28} rx={24} ry={9} />
+        <ellipse cx={140} cy={52} rx={42} ry={13} />
+        <ellipse cx={172} cy={44} rx={28} ry={11} />
+        <ellipse cx={430} cy={30} rx={34} ry={10} />
+        <ellipse cx={456} cy={24} rx={22} ry={8} />
+      </g>
+      {/* Pássaros */}
+      <g stroke="#334155" strokeWidth="2" fill="none" opacity="0.7" strokeLinecap="round">
+        <path d="M 250 66 q 6 -6 12 0 q 6 -6 12 0" />
+        <path d="M 292 82 q 5 -5 10 0 q 5 -5 10 0" />
+        <path d="M 560 58 q 5 -5 10 0 q 5 -5 10 0" />
       </g>
 
-      {/* Torres de luz */}
-      {towerXs.map((x) => (
-        <g key={x}>
-          {/* projetores apagados de dia */}
-          <rect x={x - 3} y={roofY + 6} width={6} height={BASE_Y - roofY} fill="#475569" />
-          <rect x={x - 26} y={roofY - 22} width={52} height={22} rx={3} fill="#1e293b" stroke={away} strokeOpacity="0.5" />
-          {[-16, 0, 16].map((dx) => (
-            <circle key={dx} cx={x + dx} cy={roofY - 11} r={5} fill="#e2e8f0" stroke="#64748b" strokeWidth="1" />
-          ))}
-        </g>
-      ))}
+      {/* Serra ao longe, na linha do horizonte */}
+      <ellipse cx={130} cy={205} rx={230} ry={34} fill="#8fa8bf" opacity="0.6" />
+      <ellipse cx={690} cy={208} rx={250} ry={38} fill="#93a88f" opacity="0.6" />
+      {/* Árvores nas bermas, assentes no horizonte */}
+      <g>
+        {[
+          [30, 168, 11], [58, 174, 9], [742, 172, 10], [770, 166, 12],
+        ].map(([x, y, r]) => (
+          <g key={`${x}-${y}`}>
+            <rect x={x - 2} y={y} width={4} height={12} fill="#654321" />
+            <circle cx={x} cy={y - 4} r={r} fill="#15803d" />
+            <circle cx={x - r * 0.5} cy={y} r={r * 0.7} fill="#16a34a" />
+          </g>
+        ))}
+      </g>
 
-      {/* Telão central (só nos grandes) */}
+      {/* Torres de luz (só nos pequenos, sem cobertura) */}
+      {!roofed &&
+        [56, 744].map((x) => (
+          <g key={x}>
+            <rect x={x - 3} y={92} width={6} height={PITCH_TOP - 92} fill="#475569" />
+            <rect x={x - 32} y={66} width={64} height={26} rx={3} fill="#1e293b" stroke={away} strokeOpacity="0.5" />
+            {[-20, -7, 7, 20].map((dx) => (
+              <circle key={dx} cx={x + dx} cy={79} r={6} fill="#e2e8f0" stroke="#64748b" strokeWidth="1" />
+            ))}
+          </g>
+        ))}
+
+      {/* Telão por cima da cobertura (só nos grandes) */}
       {screen && (
         <g>
-          <rect x={368} y={roofY - 66} width={64} height={52} fill="#0f172a" stroke={away} strokeOpacity="0.6" />
-          <rect x={374} y={roofY - 60} width={52} height={30} fill={home} opacity="0.9" />
-          <text x={400} y={roofY - 40} textAnchor="middle" fontSize="11" fontWeight="900" fill="#020617">
+          <rect x={336} y={roofBaseY - 40} width={128} height={40} rx={4} fill="#0f172a" stroke={away} strokeOpacity="0.7" strokeWidth="2" />
+          <rect x={343} y={roofBaseY - 34} width={114} height={21} fill={home} opacity="0.92" />
+          <text x={400} y={roofBaseY - 18} textAnchor="middle" fontSize="13" fontWeight="900" fill="#020617">
             {`${Math.round(capacity / 1000)}K`}
           </text>
-          <rect x={378} y={roofY - 14} width={8} height={20} fill="#475569" />
-          <rect x={414} y={roofY - 14} width={8} height={20} fill="#475569" />
-        </g>
-      )}
-
-      {/* Anéis das bancadas */}
-      {Array.from({ length: tiers }).map((_, i) => {
-        const tierKey = `tier-${i}`;
-        const left = tierCorners("L", i);
-        const right = tierCorners("R", i);
-        return (
-          <g key={tierKey}>
-            <polygon points={tierPoints("L", i)} fill="url(#cash-stand)" stroke="#020617" strokeOpacity="0.55" strokeWidth="2" />
-            <polygon points={tierPoints("R", i)} fill="url(#cash-stand)" stroke="#020617" strokeOpacity="0.55" strokeWidth="2" />
-            {[...seatRows("L", i), ...seatRows("R", i)].map((row) => (
-              <line
-                key={row.key}
-                x1={row.x1}
-                y1={row.y}
-                x2={row.x2}
-                y2={row.y}
-                stroke={away}
-                strokeWidth={i === 0 ? 4 : 3}
-                strokeLinecap="round"
-                opacity="0.85"
-              />
-            ))}
-            {/* Faixa da equipa no topo de cada anel */}
-            <line x1={left.xOutT} y1={left.yT2 + 4} x2={left.xInT} y2={left.yT + 4} stroke={away} strokeWidth="4" opacity="0.9" />
-            <line x1={right.xInT} y1={right.yT + 4} x2={right.xOutT} y2={right.yT2 + 4} stroke={away} strokeWidth="4" opacity="0.9" />
-          </g>
-        );
-      })}
-
-      {/* Camarotes entre anéis */}
-      {boxes && (
-        <g>
-          <rect x={140} y={BASE_Y - TIER_H - 14} width={170} height={16} fill="#0f172a" stroke={away} strokeOpacity="0.45" />
-          <rect x={490} y={BASE_Y - TIER_H - 14} width={170} height={16} fill="#0f172a" stroke={away} strokeOpacity="0.45" />
-          {Array.from({ length: 8 }).map((_, i) => (
-            <g key={`box-${i}`}>
-
-              <rect x={148 + i * 20} y={BASE_Y - TIER_H - 11} width={13} height={10} fill="#fefce8" opacity="0.9" />
-              <rect x={498 + i * 20} y={BASE_Y - TIER_H - 11} width={13} height={10} fill="#fefce8" opacity="0.9" />
-            </g>
-          ))}
         </g>
       )}
 
       {/* Cobertura */}
       {roofed && (
         <g>
+          {/* postes de suporte */}
+          {[140, 260, 540, 660].map((x) => (
+            <rect key={x} x={x} y={roofBaseY} width={5} height={topY - roofBaseY} fill="#64748b" />
+          ))}
+          {/* pala superior (profundidade) */}
           <polygon
-            points={`88,${roofY} 296,${roofY} 272,${tierTopY} 60,${tierTopY}`}
+            points={`60,${roofBaseY} 740,${roofBaseY} 706,${roofTopY} 94,${roofTopY}`}
             fill="url(#cash-roof)"
             stroke={away}
             strokeOpacity="0.55"
             strokeWidth="2"
           />
-          <polygon
-            points={`504,${roofY} 712,${roofY} 740,${tierTopY} 528,${tierTopY}`}
-            fill="url(#cash-roof)"
-            stroke={away}
-            strokeOpacity="0.55"
-            strokeWidth="2"
-          />
-          {grandRoof ? (
-            <rect x={88} y={roofY - 6} width={624} height={8} rx={4} fill={home} opacity="0.9" />
-          ) : (
-            <g>
-              <rect x={88} y={roofY - 4} width={208} height={6} rx={3} fill={home} opacity="0.85" />
-              <rect x={504} y={roofY - 4} width={208} height={6} rx={3} fill={home} opacity="0.85" />
-            </g>
-          )}
+          {/* testeira com a cor do clube */}
+          <rect x={60} y={roofBaseY - (grandRoof ? 9 : 7)} width={680} height={grandRoof ? 9 : 7} fill={home} opacity="0.92" />
         </g>
       )}
 
-      {/* Relvado */}
-      <ellipse cx={400} cy={318} rx={302} ry={30} fill="#052e16" opacity="0.9" />
-      <ellipse cx={400} cy={312} rx={286} ry={26} fill="url(#cash-grass)" />
-      <ellipse cx={400} cy={312} rx={120} ry={11} fill="none" stroke="#f8fafc" strokeWidth="2" opacity="0.9" />
-      <line x1={400} y1={286} x2={400} y2={338} stroke="#f8fafc" strokeWidth="2" opacity="0.9" />
-      <circle cx={400} cy={312} r={3} fill="#f8fafc" />
-      <rect x={330} y={292} width={140} height={40} fill="none" stroke="#f8fafc" strokeWidth="2" opacity="0.7" />
+      {/* Anéis das bancadas + multidão */}
+      {Array.from({ length: tiers }).map((_, i) => {
+        const boxTop = tierTop(i);
+        const seatTop = boxTop + (boxes && i >= 1 ? BOX_H : 0);
+        const seatBottom = i === 0 ? WALL_TOP : tierTop(i - 1);
+        return (
+          <g key={`tier-${i}`}>
+            {/* faixa de camarotes por baixo dos anéis superiores */}
+            {boxes && i >= 1 && (
+              <g>
+                <rect x={STAND_X0} y={boxTop} width={STAND_X1 - STAND_X0} height={BOX_H} fill="#0f172a" stroke={away} strokeOpacity="0.45" />
+                {Array.from({ length: 24 }).map((__, w) => (
+                  <rect
+                    key={`box-${i}-${w}`}
+                    x={STAND_X0 + 10 + w * 25}
+                    y={boxTop + 3}
+                    width={16}
+                    height={BOX_H - 6}
+                    fill="#cfe4f7"
+                    stroke="#0f172a"
+                    strokeOpacity="0.5"
+                    opacity={0.75 + hash01(i * 91 + w * 7) * 0.25}
+                  />
+                ))}
+              </g>
+            )}
+            <polygon
+              points={`${STAND_X0 - 24},${seatTop} ${STAND_X0},${seatTop} ${STAND_X0},${seatBottom} ${STAND_X0 - 24},${seatBottom + 10}`}
+              fill={home}
+              opacity="0.45"
+            />
+            <polygon
+              points={`${STAND_X1 + 24},${seatTop} ${STAND_X1},${seatTop} ${STAND_X1},${seatBottom} ${STAND_X1 + 24},${seatBottom + 10}`}
+              fill={home}
+              opacity="0.45"
+            />
+            <rect
+              x={STAND_X0}
+              y={seatTop}
+              width={STAND_X1 - STAND_X0}
+              height={seatBottom - seatTop}
+              fill="url(#cash-stand)"
+              stroke="#020617"
+              strokeOpacity="0.4"
+              strokeWidth="1.5"
+            />
+            {crowdDots(seatTop, seatBottom, 100 + i * 1000)}
+            {/* passadeira de betão entre anéis */}
+            <rect x={STAND_X0 - 24} y={seatBottom - 3} width={STAND_X1 - STAND_X0 + 48} height={4} fill="url(#cash-concrete)" opacity="0.9" />
+          </g>
+        );
+      })}
+
+      {/* Corrimão do topo + bandeirolas */}
+      <rect x={STAND_X0 - 24} y={topY - 2} width={STAND_X1 - STAND_X0 + 48} height={4} fill={away} opacity="0.9" />
+      {pennants}
+
+      {/* Muro base com portões */}
+      <rect x={STAND_X0 - 24} y={WALL_TOP} width={STAND_X1 - STAND_X0 + 48} height={PITCH_TOP - WALL_TOP} fill="url(#cash-concrete)" />
+      <rect x={STAND_X0 - 24} y={WALL_TOP} width={STAND_X1 - STAND_X0 + 48} height={5} fill={home} />
+      {Array.from({ length: 8 }).map((_, g) => (
+        <rect
+          key={`gate-${g}`}
+          x={STAND_X0 + 14 + g * 78}
+          y={WALL_TOP + 7}
+          width={30}
+          height={PITCH_TOP - WALL_TOP - 7}
+          rx={7}
+          fill="#0f172a"
+          opacity="0.85"
+        />
+      ))}
+
+      {/* Relvado em primeiro plano, com faixas de corte */}
+      {Array.from({ length: 12 }).map((_, s) => (
+        <rect
+          key={`stripe-${s}`}
+          x={(800 / 12) * s}
+          y={PITCH_TOP}
+          width={800 / 12 + 1}
+          height={348 - PITCH_TOP}
+          fill={s % 2 === 0 ? "#22c55e" : "#16a34a"}
+        />
+      ))}
+      {/* linha de fundo + balizas */}
+      <line x1={0} y1={PITCH_TOP + 6} x2={800} y2={PITCH_TOP + 6} stroke="#f8fafc" strokeWidth="2" opacity="0.9" />
+      {[
+        [150, 210],
+        [590, 650],
+      ].map(([x0, x1]) => (
+        <g key={`${x0}`}>
+          <rect x={x0} y={PITCH_TOP - 12} width={x1 - x0} height={18} fill="#ffffff" opacity="0.22" />
+          <rect x={x0} y={PITCH_TOP - 12} width={x1 - x0} height={18} fill="none" stroke="#f8fafc" strokeWidth="3" />
+        </g>
+      ))}
+      {/* linha de meio-campo + círculo central */}
+      <line x1={400} y1={PITCH_TOP + 6} x2={400} y2={348} stroke="#f8fafc" strokeWidth="2" opacity="0.8" />
+      <ellipse cx={400} cy={318} rx={62} ry={17} fill="none" stroke="#f8fafc" strokeWidth="2" opacity="0.85" />
+      <circle cx={400} cy={318} r={3} fill="#f8fafc" />
 
       {/* Faixa inferior com as cores do clube */}
       <rect x={0} y={348} width={800} height={12} fill={home} />
