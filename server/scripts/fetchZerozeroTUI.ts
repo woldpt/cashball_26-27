@@ -109,8 +109,9 @@ async function main() {
   })) as unknown as boolean | symbol;
   if (p.isCancel(dryRun)) return p.cancel("Cancelado.");
 
-  const throttleEquipa = 1200;
-  const throttleJogador = 900;
+  const throttleEquipa = 2800; // anti-ban — não baixar sem necessidade
+  const throttleJogador = 1600;
+  const jitter = () => 400 + Math.floor(Math.random() * 900); // 400-1300ms extra
 
   // Mapa de URLs por equipa (a partir de fetchZerozeroSquads TEAMS ou do que está em .cache)
   // Para simplificar, usamos o URL guardado em teamRegistry se existir, senão tenta /equipa/<slug>
@@ -184,7 +185,7 @@ async function main() {
             team.manager.zerozeroId = Number(cid);
             team.manager.photo = `/coaches/${path.basename(dest)}`;
           }
-          await sleep(throttleJogador);
+          await sleep(throttleJogador + jitter());
         }
       }
       if (want.has("fotoJogadores")) {
@@ -206,7 +207,7 @@ async function main() {
               fp.photo = `/players/${path.basename(dest)}`;
             }
           }
-          await sleep(throttleJogador);
+          await sleep(throttleJogador + jitter());
         }
       }
       ok++;
@@ -221,7 +222,7 @@ async function main() {
         break;
       }
     }
-    await sleep(throttleEquipa);
+    await sleep(throttleEquipa + jitter());
   }
 
   s.stop(`Feito: ${ok}/${targetIndices.length} equipa(s) OK${errors.length ? `, ${errors.length} erro(s)` : ""}.`);

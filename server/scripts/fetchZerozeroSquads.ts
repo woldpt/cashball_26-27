@@ -230,7 +230,7 @@ async function main() {
       results.push({ name: t.name, division: t.division, zerozeroUrl: t.url, coach: null, players: [], coverage: "error" });
       process.stdout.write(`error (${err?.message || err})\n`);
     }
-    if (i < TEAMS.length - 1) await new Promise((r) => setTimeout(r, 1200));
+    if (i < TEAMS.length - 1) await new Promise((r) => setTimeout(r, 2800 + Math.floor(Math.random() * 900)));
   }
 
   require("fs").writeFileSync(
