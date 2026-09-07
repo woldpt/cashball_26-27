@@ -427,7 +427,7 @@ export function TacticsView() {
   ).length;
 
   return (
-    <div className="space-y-3 short:space-y-1.5 pb-20 short:pb-4 lg:pb-0">
+    <div className="space-y-3 short:space-y-1.5 pb-20 short:pb-4 xl:pb-0">
       {disconnected && (
         <div className="px-4 py-2 text-red-400 text-[10px] font-bold text-center bg-red-500/10 border border-red-500/20 rounded-2xl">
           ⚠️ Desligado — a reconectar...
@@ -468,11 +468,11 @@ export function TacticsView() {
           </button>
         </div>
       ) : (
-        <div className="flex flex-col lg:flex-row gap-3 short:gap-1.5 lg:items-start">
+        <div className="flex flex-col xl:flex-row gap-3 short:gap-1.5 xl:items-start">
           {/* COL 1 — FORMAÇÃO + MENTALIDADE */}
-          <div className={`lg:w-57.5 shrink-0 flex flex-col gap-2 short:gap-1.5 ${!isLineupComplete && !myReady ? "animate-heartbeat-border rounded-2xl" : ""}`}>
+          <div className={`xl:w-57.5 shrink-0 flex flex-col gap-2 short:gap-1.5 ${!isLineupComplete && !myReady ? "animate-heartbeat-border rounded-2xl" : ""}`}>
             {/* Proximo jogo — mobile: moral + mentality side by side */}
-            <div className="flex gap-2 lg:hidden">
+            <div className="flex gap-2 xl:hidden">
               {nextMatchSummary && (
                 <div className="flex-1 min-w-0 flex flex-col bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
                   {(() => {
@@ -572,7 +572,7 @@ export function TacticsView() {
             </div>
 
             {/* Formação mobile — chips horizontais */}
-            <div className={`lg:hidden bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden ${!isLineupComplete && !myReady ? "animate-heartbeat-border" : ""}`}>
+            <div className={`xl:hidden bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden ${!isLineupComplete && !myReady ? "animate-heartbeat-border" : ""}`}>
               <div className="flex items-center justify-between px-3 py-2 border-b border-[#1a1a1a]">
                 <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
                   Formação
@@ -624,7 +624,7 @@ export function TacticsView() {
 
             {/* Proximo jogo — desktop only */}
             {nextMatchSummary && (
-              <div className="hidden lg:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+              <div className="hidden xl:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
                 {(() => {
                   const morale = teamInfo?.morale ?? 50;
                   const fillColor =
@@ -666,7 +666,7 @@ export function TacticsView() {
             )}
 
             {/* Formação — desktop only */}
-            <div className="hidden lg:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+            <div className="hidden xl:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
               <div className="flex items-center justify-between px-4 short:px-3 py-2.5 short:py-1.5 border-b border-[#1a1a1a]">
                 <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
                   Formação
@@ -726,7 +726,7 @@ ${
             </div>
 
             {/* Mentalidade — desktop only */}
-            <div className="hidden lg:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+            <div className="hidden xl:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
               <div className="px-4 short:px-3 py-2.5 short:py-1.5 border-b border-[#1a1a1a]">
                 <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
                   Mentalidade
@@ -1054,9 +1054,9 @@ ${
           </div>
 
           {/* COL 3 — CAMPO + JOGAR (desktop only — mobile usa FAB) */}
-          <div className="max-lg:hidden lg:w-72.5 shrink-0 flex flex-col gap-2 short:gap-1.5">
+          <div className="max-xl:hidden xl:w-72.5 shrink-0 flex flex-col gap-2 short:gap-1.5">
             {/* Botao JOGAR — desktop */}
-            <div className="max-lg:hidden">
+            <div className="max-xl:hidden">
               <button
                 onClick={isHalftime ? handleHalftimeReady : handleReady}
                 disabled={myReady || !canPlay}
@@ -1309,7 +1309,7 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
         return (
           <button
             onClick={fabHalftime ? handleHalftimeReady : handleReady}
-            className={`lg:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200 ${!myReady ? "animate-heartbeat" : ""}`}
+            className={`xl:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200 ${!myReady ? "animate-heartbeat" : ""}`}
             style={{
               background:
                 "radial-gradient(circle at 35% 30%, rgba(255,255,255,0.3) 0%, transparent 70%), #22c55e",
