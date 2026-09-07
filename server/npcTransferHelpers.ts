@@ -55,7 +55,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
         [npcTeam.id],
       );
       if (squadRows.length >= 24) continue;
-      if (Math.random() > 0.4) continue;
+      if (Math.random() > 0.65) continue;
 
       for (const player of marketPlayers) {
         if (player.team_id === npcTeam.id) continue;
@@ -65,10 +65,10 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
             ? player.transfer_price
             : Math.round((player.value || 0) * 1.2);
         if (listedPrice <= 0) continue;
-        if (listedPrice > npcTeam.budget * 0.55) continue;
-        if (Math.random() > 0.55) continue;
+        if (listedPrice > npcTeam.budget * 0.7) continue;
+        if (Math.random() > 0.75) continue;
 
-        // Contra-oferta: quando o preço pedido aperta o orçamento (entre 35% e 55%),
+        // Contra-oferta: quando o preço pedido aperta o orçamento (entre 35% e 70%),
         // o NPC negocia e compra a 85% do preço listado em vez de ignorar a lista.
         const price =
           listedPrice > npcTeam.budget * 0.35
