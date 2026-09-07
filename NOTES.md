@@ -8,7 +8,7 @@
 
 ## Em curso
 
-- (nada)
+- **`PlayerHistoryModal`: golos duplicados em Carreira Total (a commitar)**: o modal somava a época atual sobre a carreira — `cGoals = career_goals + goals` (idem vermelhos/lesões), mas `career_goals`/`career_reds`/`career_injuries` são contadores VITALÍCIOS (incrementados jogo a jogo no `queueMatchDeltaWrites`, nunca resetados no rollover — `cupFlowHelpers.ts:465-470`) → na 1ª época a carreira mostrava 2× a época. Fix: `cGoals`/`cReds`/`cInjuries` = só o contador vitalício; `cGames` mantém `career_games + games_played` (único contador pré-época — só é atualizado no rollover). Coerente com `PlayerRow.jsx` (exibe `career_goals` direto, sem soma). Verificação: lint + check:types ok; tweak de dados exibidos, sem mobile-resp.
 
 ## Último estado
 

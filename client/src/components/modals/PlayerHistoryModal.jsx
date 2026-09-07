@@ -144,11 +144,16 @@ export function PlayerHistoryModal({
   const sReds = player.red_cards ?? 0;
   const sInjuries = player.injuries ?? 0;
 
-  // Career totals (prior seasons + current)
+  // Career totals. ATENÇÃO à assimetria: career_goals/career_reds/career_injuries
+  // são contadores VITALÍCIOS — o flush jogo a jogo incrementa-os (engine.ts
+  // queueMatchDeltaWrites → `career_goals = career_goals + ?`) e o fecho de
+  // época NÃO os reseta, por isso já incluem a época atual. Só career_games é
+  // pré-época (é atualizado exclusivamente no fecho com
+  // `career_games = career_games + games_played`), pelo que soma games_played.
   const cGames = (player.career_games ?? 0) + sGames;
-  const cGoals = (player.career_goals ?? 0) + sGoals;
-  const cReds = (player.career_reds ?? 0) + sReds;
-  const cInjuries = (player.career_injuries ?? 0) + sInjuries;
+  const cGoals = player.career_goals ?? 0;
+  const cReds = player.career_reds ?? 0;
+  const cInjuries = player.career_injuries ?? 0;
 
   // Contract management — only shown for own team
   const isMyPlayer =
