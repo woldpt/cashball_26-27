@@ -122,7 +122,8 @@ export function LiveMatchHero({
         e.minute <= liveMinute &&
         resolveSide(e) === "home" &&
         [
-          "goal", "penalty_goal", "own_goal", "var_disallowed", "var_goal_pending",
+          "goal", "penalty_goal", "own_goal", "penalty_miss",
+          "var_disallowed", "var_goal_pending",
           "yellow", "red", "injury", "substitution", "halftime_sub",
         ].includes(e.type),
     )
@@ -133,7 +134,8 @@ export function LiveMatchHero({
         e.minute <= liveMinute &&
         resolveSide(e) === "away" &&
         [
-          "goal", "penalty_goal", "own_goal", "var_disallowed", "var_goal_pending",
+          "goal", "penalty_goal", "own_goal", "penalty_miss",
+          "var_disallowed", "var_goal_pending",
           "yellow", "red", "injury", "substitution", "halftime_sub",
         ].includes(e.type),
     )
@@ -408,6 +410,8 @@ function TeamEvents({ events, align }) {
             ? "text-primary"
             : e.type === "own_goal"
               ? "text-orange-400"
+              : e.type === "penalty_miss"
+                ? "text-amber-400/80"
               : e.type === "var_disallowed"
                 ? "text-amber-400/60 line-through"
                 : e.type === "red"

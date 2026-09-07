@@ -18,6 +18,8 @@ export function matchEventIcon(type) {
       return "⚽🔙";
     case "var_disallowed":
       return "🚩";
+    case "penalty_miss":
+      return "❌";
     case "yellow":
       return "🟨";
     case "red":
