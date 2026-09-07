@@ -224,7 +224,7 @@ const RoomSelectScreen = ({
 								</button>
 							</motion.div>
 						) : (
-							<div className="grid grid-cols-1 gap-3 pb-4 sm:pb-6 sm:grid-cols-2 xl:grid-cols-3 short:gap-2.5 short:pb-3">
+							<div className="grid grid-cols-1 gap-2.5 pb-4 sm:pb-6 sm:grid-cols-2 xl:grid-cols-3 short:gap-2 short:pb-3">
 								{availableSaves.map((save, i) => {
 									const selected = roomCode === save.code;
 									const isLastPlayed =
@@ -240,7 +240,7 @@ const RoomSelectScreen = ({
 												delay: Math.min(0.2 + i * 0.05, 0.7),
 											}}
 											onClick={() => setRoomCode(save.code)}
-											className={`group relative flex cursor-pointer flex-col gap-2 rounded-2xl border p-4 short:p-3 transition-all duration-200 ${
+											className={`group relative flex cursor-pointer flex-col gap-1.5 rounded-2xl border p-3 short:p-2.5 transition-all duration-200 ${
 												selected
 													? "border-green-500/50 bg-green-500/[0.08] shadow-[0_0_30px_rgba(74,222,128,0.15)]"
 													: "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]"
@@ -249,7 +249,7 @@ const RoomSelectScreen = ({
 											<div className="flex items-start justify-between gap-3">
 												<div className="min-w-0">
 													<p
-														className={`font-headline truncate text-base font-black uppercase tracking-tight ${
+														className={`font-headline truncate text-sm font-black uppercase tracking-tight ${
 															selected
 																? "text-white"
 																: "text-white/80"
@@ -257,21 +257,21 @@ const RoomSelectScreen = ({
 													>
 														{save.name}
 													</p>
-													<span className="font-mono text-[11px] text-white/35">
+													<span className="font-mono text-[10px] text-white/35">
 														{save.code}
 													</span>
 												</div>
 												<div className="flex shrink-0 items-center gap-2">
 													{save.isMultiplayer && (
 														<span
-															className={`inline-flex items-center gap-1 rounded border px-1.5 py-px text-[9px] font-black uppercase tracking-widest ${save.isAdmin ? "border-sky-500/30 bg-sky-500/20 text-sky-400" : "border-white/10 bg-white/5 text-white/40"}`}
+															className={`inline-flex items-center gap-1 rounded border px-1 py-px text-[9px] font-black uppercase tracking-widest ${save.isAdmin ? "border-sky-500/30 bg-sky-500/20 text-sky-400" : "border-white/10 bg-white/5 text-white/40"}`}
 															title={save.isAdmin ? "És o Admin desta sala" : "Sala multijogador — só o Admin pode apagá-la"}
 														>
 															{save.isAdmin ? "Admin" : `${save.coachCount || 2} treinadores`}
 														</span>
 													)}
 													{isLastPlayed && (
-														<span className="inline-flex items-center gap-1 rounded border border-green-500/30 bg-green-500/20 px-1.5 py-px text-[9px] font-black uppercase tracking-widest text-green-400">
+														<span className="inline-flex items-center gap-1 rounded border border-green-500/30 bg-green-500/20 px-1 py-px text-[9px] font-black uppercase tracking-widest text-green-400">
 															<span className="h-1 w-1 animate-pulse rounded-full bg-green-400" />
 															Última jogada
 														</span>
@@ -280,24 +280,24 @@ const RoomSelectScreen = ({
 											</div>
 
 											{save.coaches && save.coaches.length > 0 && (
-												<span className="inline-block w-fit max-w-full rounded border border-amber-500/30 bg-amber-500/20 px-1.5 py-px text-[9px] font-black uppercase tracking-widest text-amber-400">
+												<span className="inline-block w-fit max-w-full rounded border border-amber-500/30 bg-amber-500/20 px-1 py-px text-[9px] font-black uppercase tracking-widest text-amber-400">
 													{save.coaches.join(", ")}
 												</span>
 											)}
 
-											<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+											<div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
 												{save.teamName && (
-													<span className="text-[11px] text-white/35">
+													<span className="text-[10px] text-white/35">
 														🏟️ {save.teamName}
 													</span>
 												)}
 												{save.year && (
-													<span className="text-[11px] text-white/35">
+													<span className="text-[10px] text-white/35">
 														📅 {save.year}
 													</span>
 												)}
 												{formatMatchDate(save.lastPlayedAt) && (
-													<span className="text-[11px] text-white/35">
+													<span className="text-[10px] text-white/35">
 														⚽ Última partida:{" "}
 														{formatMatchDate(save.lastPlayedAt)}
 													</span>
@@ -359,7 +359,7 @@ const RoomSelectScreen = ({
 																),
 															);
 													}}
-													className="rounded-lg p-1.5 text-white/20 transition-colors hover:bg-red-500/10 hover:text-red-400"
+													className="rounded-lg p-1 text-white/20 transition-colors hover:bg-red-500/10 hover:text-red-400"
 													title={
 														!save.isMultiplayer || save.isAdmin
 															? save.isMultiplayer
