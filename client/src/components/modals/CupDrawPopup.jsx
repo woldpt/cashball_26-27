@@ -4,6 +4,88 @@ import { Button } from "../shared/Button.jsx";
 import { MODAL_Z } from "../../constants/index.js";
 
 /**
+ * Detecta cores pretas/muito escuras (luminância percebida < ~40/255) para
+ * substituir a cor do nome por branco e garantir legibilidade.
+ * @param {string|null|undefined} hex
+ * @returns {boolean}
+ */
+function isDarkColor(hex) {
+  if (typeof hex !== "string") return false;
+  const m = hex.trim().replace(/^#/, "");
+  if (m.length !== 6) return false;
+  const r = parseInt(m.slice(0, 2), 16);
+  const g = parseInt(m.slice(2, 4), 16);
+  const b = parseInt(m.slice(4, 6), 16);
+  if ([r, g, b].some(Number.isNaN)) return false;
+  return 0.299 * r + 0.587 * g + 0.114 * b < 40;
+}
+
+/**
+ * Cor de legibilidade do nome da equipa: preto/escura → branco.
+ * @param {{ color_primary?: string }} [team]
+ * @returns {string}
+ */
+function teamNameColor(team) {
+  return team?.color_primary && !isDarkColor(team.color_primary)
+    ? team.color_primary
+    : "#fff";
+}
+
+/**
+ * Ícone de equipa: crest com fallback para inicial (mesmo padrão das
+ * restantes páginas do jogo); círculo neutro enquanto não revelado.
+ * @param {{ team: object|null, revealed: boolean }} props
+ */
+function TeamCrestIcon({ team, revealed }) {
+  const initial = team?.name?.[0] ?? "?";
+  if (!revealed) {
+    return (
+      <div
+        className="w-8 h-8 rounded-full shrink-0 border border-white/10"
+        style={{ background: "#27272a" }}
+      />
+    );
+  }
+  if (team?.crest) {
+    return (
+      <>
+        <img
+          src={team.crest}
+          alt={team?.name || "crest"}
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+            const fb = e.currentTarget.nextElementSibling;
+            if (fb) fb.style.display = "flex";
+          }}
+          className="w-8 h-8 rounded-full object-contain bg-white p-1 shrink-0 border border-white/10"
+          loading="lazy"
+        />
+        <div
+          className="w-8 h-8 rounded-full hidden items-center justify-center font-black text-xs shrink-0 border border-white/10"
+          style={{
+            background: team?.color_primary || "#333",
+            color: team?.color_secondary || "#fff",
+          }}
+        >
+          {initial}
+        </div>
+      </>
+    );
+  }
+  return (
+    <div
+      className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 border border-white/10"
+      style={{
+        background: team?.color_primary || "#333",
+        color: team?.color_secondary || "#fff",
+      }}
+    >
+      {initial}
+    </div>
+  );
+}
+
+/**
  * @param {{ cupDraw: object|null, cupDrawRevealIdx: number, me: object, players: object[], showCupDrawPopup: boolean, setShowCupDrawPopup: function, setCupDrawRevealIdx: function }} props
  */
 export function CupDrawPopup({
@@ -96,7 +178,7 @@ export function CupDrawPopup({
                     className="block font-black text-xs truncate"
                     style={{
                       color: homeRevealed
-                        ? fixture.homeTeam?.color_primary || "#fff"
+                        ? teamNameColor(fixture.homeTeam)
                         : "transparent",
                     }}
                   >
@@ -108,17 +190,7 @@ export function CupDrawPopup({
                     </span>
                   )}
                 </div>
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 border border-white/10"
-                  style={{
-                    background: homeRevealed
-                      ? fixture.homeTeam?.color_primary || "#333"
-                      : "#27272a",
-                    color: fixture.homeTeam?.color_secondary || "#fff",
-                  }}
-                >
-                  {homeRevealed ? fixture.homeTeam?.name?.[0] || "?" : ""}
-                </div>
+                <TeamCrestIcon team={fixture.homeTeam} revealed={homeRevealed} />
               </div>
 
               {/* VS badge */}
@@ -134,23 +206,13 @@ export function CupDrawPopup({
                   awayRevealed ? "opacity-100" : "opacity-0"
                 }`}
               >
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 border border-white/10"
-                  style={{
-                    background: awayRevealed
-                      ? fixture.awayTeam?.color_primary || "#333"
-                      : "#27272a",
-                    color: fixture.awayTeam?.color_secondary || "#fff",
-                  }}
-                >
-                  {awayRevealed ? fixture.awayTeam?.name?.[0] || "?" : ""}
-                </div>
+                <TeamCrestIcon team={fixture.awayTeam} revealed={awayRevealed} />
                 <div className="min-w-0">
                   <span
                     className="block font-black text-xs truncate"
                     style={{
                       color: awayRevealed
-                        ? fixture.awayTeam?.color_primary || "#fff"
+                        ? teamNameColor(fixture.awayTeam)
                         : "transparent",
                     }}
                   >
