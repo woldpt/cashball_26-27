@@ -1245,6 +1245,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			winnerDiv: number;
 			loserName: string;
 			loserDiv: number;
+			winnerId: number;
+			loserId: number;
 		}> = [];
 		// Transacção atómica para receita + resultados + marker (recuperação de crash)
 		await new Promise<void>((resolve) => game.db.run("BEGIN TRANSACTION", () => resolve()));
@@ -1382,7 +1384,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				const loserName =
 					(winnerIsHome ? fixture.awayTeam : fixture.homeTeam)?.name ??
 					"Desconhecido";
-				upsets.push({ winnerName, winnerDiv, loserName, loserDiv });
+				upsets.push({ winnerName, winnerDiv, loserName, loserDiv, winnerId, loserId });
 			}
 
 			results.push({
@@ -1476,6 +1478,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			results,
 			season,
 			isFinal: round === 5,
+			upsets,
 		};
 		if (hasAnyET) {
 			const anyHumanConnected = (
@@ -1489,13 +1492,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		// Emit results
 		io.to(game.roomCode).emit("cupRoundResults", game.cupResultsPayload);
 
-		// Hype das surpresas de escalão (moral já aplicada na Phase 3)
-		for (const u of upsets) {
-			io.to(game.roomCode).emit("systemMessage", {
-				text: `⚡ SURPRESA NA TAÇA! ${u.winnerName} (${DIVISION_NAMES[u.winnerDiv]}) eliminou ${u.loserName} (${DIVISION_NAMES[u.loserDiv]})!`,
-				broadcast: true,
-			});
-		}
 		// Apply training bonuses for this completed calendar event (cup round)
 		const completedCalendarIndex = game.calendarIndex;
 		try {

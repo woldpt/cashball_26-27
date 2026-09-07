@@ -16,6 +16,7 @@ import { PlayerHistoryModal } from "./components/modals/PlayerHistoryModal.jsx";
 import { CupDrawPopup } from "./components/modals/CupDrawPopup.jsx";
 import { PenaltySuspensePopup } from "./components/modals/PenaltySuspensePopup.jsx";
 import { PenaltyShootoutPopup } from "./components/modals/PenaltyShootoutPopup.jsx";
+import { CupUpsetModal } from "./components/modals/CupUpsetModal.jsx";
 import { PenaltyTakerPopup } from "./components/modals/PenaltyTakerPopup.jsx";
 import { WaitingCoachesModal } from "./components/modals/WaitingCoachesModal.jsx";
 import { MatchPage } from "./components/match/MatchPage.jsx";
@@ -1863,6 +1864,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         setCupPenaltyPopup={setCupPenaltyPopup}
         setCupPenaltyKickIdx={setCupPenaltyKickIdx}
       />
+
+      <CupUpsetModal cupRoundResults={cupRoundResults} teams={teams} />
 
       {/* MatchPage — AnimatePresence mode="wait": abrir/fechar/trocar modo
           (prematch → halftime) faz exit+entrance suave. */}
