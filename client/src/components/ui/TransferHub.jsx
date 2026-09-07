@@ -1,16 +1,25 @@
 /**
  * TransferHub — Mercado de transferências (compra de jogadores).
- * Aplica o design system da STYLE.md: tokens semânticos, cards com header,
- * grid responsivo e estados vazios padronizados.
+ * Estilo cromo face única idêntico ao AuctionCard: faixa por posição,
+ * herói com halo + skill, tiles Forma/Jogos/Golos e rodapé de ação único.
  */
 import { useMemo, useState } from "react";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
 import { AggBadge } from "../shared/AggBadge.jsx";
 import { Badge } from "../shared/Badge.jsx";
+import { StarMark } from "../shared/PlayerStatusBadges.jsx";
+import { StatTile } from "../shared/StatTile.jsx";
 import { Panel } from "../shared/Panel.jsx";
 import { EmptyState } from "../shared/EmptyState.jsx";
-
-import { hexToRgba, posRingClass } from "../../utils/colorHelpers.js";
+import { hexToRgba } from "../../utils/colorHelpers.js";
+import {
+  FLAG_TO_COUNTRY,
+  POSITION_TEXT_CLASS,
+  POSITION_GLOW_CLASS,
+  POSITION_BG_GRADIENT_CLASS,
+  POSITION_BAR_CLASS,
+  POSITION_ACCENT_HEX,
+} from "../../constants/index.js";
 
 /** @param {number} value */
 function fmt(value) {
@@ -21,46 +30,19 @@ function fmt(value) {
   }).format(value || 0);
 }
 
-/** @param {string} pos */
-function posLabel(pos) {
-  return (
-    {
-      GR: "Guarda-Redes",
-      DEF: "Defesa",
-      MED: "Médio",
-      ATA: "Avançado",
-    }[pos] || pos
-  );
-}
-
-/** @param {string} status */
 function statusConfig(status) {
-  if (status === "auction") {
-    return {
-      label: "Leilão",
-      variant: "info",
-    };
-  }
-  if (status === "fixed") {
-    return {
-      label: "À Venda",
-      variant: "sold",
-    };
-  }
-  return {
-    label: "Sem Lista",
-    variant: "neutral",
-  };
+  if (status === "auction") return { label: "Leilão", variant: "info" };
+  if (status === "fixed") return { label: "À Venda", variant: "sold" };
+  return { label: "Sem Lista", variant: "neutral" };
 }
 
 function MarketCard({
   player,
   budget,
   me,
-  isSameTeamId,
+  teams,
   teamColorById,
-  isFlipped,
-  onFlip,
+  isSameTeamId,
   onOpenDetails,
   onBuy,
   onBid,
@@ -76,270 +58,206 @@ function MarketCard({
   const isMyAuction = isSameTeamId(player.auction_seller_team_id, me?.teamId);
   const isSuspended = (player.suspension_until_matchweek ?? 0) > matchweekCount;
   const isInjured = (player.injury_until_matchweek ?? 0) > matchweekCount;
-  const teamColor =
-    player.team_color_primary ||
-    player.color_primary ||
-    teamColorById.get(Number(player.team_id)) ||
-    "#95d4b3";
-  const tintStrong = hexToRgba(teamColor, 0.3);
-  const tintSoft = hexToRgba(teamColor, 0.18);
 
-  // Em mobile o card não vira: um toque abre o histórico completo do jogador.
-  const handleTap = () => {
-    if (window.matchMedia("(min-width: 640px)").matches) onFlip();
-    else onOpenDetails(player);
-  };
+  const posHex = POSITION_ACCENT_HEX[player.position] || "#94a3b8";
+  const posText = POSITION_TEXT_CLASS[player.position] || "text-zinc-400";
+  const countryName = FLAG_TO_COUNTRY?.[player.nationality] || player.nationality || "";
+
+  const sellerTeam =
+    (teams || []).find((t) => Number(t.id) === Number(player.team_id)) || null;
+  const sellerCrest = sellerTeam?.crest || player.team_crest || null;
+  const sellerName = sellerTeam?.name || player.team_name || null;
+  const teamLabel = player.team_name
+    ? player.transfer_status === "auction" && player.isExClub
+      ? `ex-${player.team_name}`
+      : player.team_name
+    : sellerName || "Sem clube";
+
+  const formVal = player.form ?? 32;
+  const formMood = formVal >= 41 ? "💪" : formVal <= 22 ? "😩" : "👍";
+  const formClass = formVal >= 41 ? "text-emerald-400" : formVal <= 22 ? "text-rose-400" : "text-zinc-200";
 
   return (
-    <div className="[perspective:1200px] hover:scale-[1.02] transition-transform duration-300">
-      <div
-        className="block w-full text-left"
-        onClick={handleTap}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            handleTap();
-          }
-        }}
-        role="button"
-        tabIndex={0}
-        aria-label={`Virar card de ${player.name}`}
-        aria-expanded={isFlipped}
-      >
-        <div
-          className={`relative h-[250px] sm:h-[360px] w-full transition-transform duration-300 [transform-style:preserve-3d] ${isFlipped ? "[transform:rotateY(180deg)]" : ""}`}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpenDetails(player)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpenDetails(player);
+        }
+      }}
+      className={`relative flex flex-col rounded-xl overflow-hidden border border-outline-variant/25 bg-gradient-to-b ${POSITION_BG_GRADIENT_CLASS[player.position] || "from-zinc-500/8"} via-surface-container/80 to-surface shadow-sm shadow-black/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg cursor-pointer ${POSITION_GLOW_CLASS[player.position] || ""}`}
+    >
+      {/* Faixa da posição */}
+      <div className={`h-1 shrink-0 bg-gradient-to-r ${POSITION_BAR_CLASS[player.position] || "from-zinc-400 via-zinc-500 to-zinc-600"}`} />
+
+      {/* Header: selo posição + estado + símbolo clube */}
+      <div className="px-3 pt-2.5 flex items-center gap-1.5">
+        <Badge
+          size="sm"
+          style={{
+            background: hexToRgba(posHex, 0.15),
+            color: posHex,
+            borderColor: hexToRgba(posHex, 0.35),
+          }}
         >
-          <article
-            className={`absolute inset-0 rounded-xl border-2 bg-surface-container-low/95 p-4 shadow-xl ring-2 ${posRingClass(player.position)} [backface-visibility:hidden] overflow-hidden`}
-            style={{
-              background: `linear-gradient(165deg, ${tintStrong} 0%, ${tintSoft} 42%, rgba(35,39,56,0.93) 100%)`,
-              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",
-            }}
+          {player.position}
+        </Badge>
+        <Badge variant={status.variant} size="sm">
+          {status.label}
+        </Badge>
+        {!!player.is_star && (player.position === "MED" || player.position === "ATA") && <StarMark />}
+        {isSuspended && <Badge variant="suspended">Suspenso</Badge>}
+        {isInjured && <Badge variant="injured">Lesionado</Badge>}
+        <span className="ml-auto text-[9px] text-zinc-500 truncate max-w-[110px]" title={teamLabel}>
+          {teamLabel}
+        </span>
+        {sellerTeam || sellerCrest ? (
+          sellerCrest ? (
+            <img
+              src={sellerCrest}
+              alt={sellerName || teamLabel}
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+              className="w-6 h-6 object-contain bg-white rounded-sm p-0.5 shrink-0 border border-outline-variant/20"
+              loading="lazy"
+              title={sellerName || teamLabel}
+            />
+          ) : (
+            <span
+              className="w-6 h-6 rounded-sm flex items-center justify-center font-black text-[8px] leading-none shrink-0 border border-outline-variant/20"
+              style={{
+                backgroundColor: sellerTeam?.color_primary || teamColorById.get(Number(player.team_id)) || "#333",
+                color: sellerTeam?.color_secondary || "#fff",
+              }}
+              title={sellerName || teamLabel}
+            >
+              {(sellerName || teamLabel).substring(0, 3).toUpperCase()}
+            </span>
+          )
+        ) : null}
+      </div>
+
+      {/* Herói: avatar com halo + skill */}
+      <div
+        className="mx-3 mt-2 rounded-lg flex flex-col items-center pt-3 pb-2.5 px-2"
+        style={{ background: `radial-gradient(ellipse 90% 100% at 50% 0%, ${hexToRgba(posHex, 0.22)} 0%, transparent 70%)` }}
+      >
+        <div className="relative">
+          <div
+            className="rounded-full"
+            style={{ boxShadow: `0 0 0 2px rgba(10,10,16,0.9), 0 0 0 4px ${posHex}, 0 0 22px ${hexToRgba(posHex, 0.45)}` }}
           >
-            <div className="relative flex h-full flex-col">
-              <div className="flex items-start justify-between gap-2">
-                <Badge variant={status.variant} size="md">
-                  {status.label}
-                </Badge>
-                <div className="flex items-center gap-1.5 shrink-0 min-w-0">
-                  {(isSuspended || isInjured) && (
-                    <Badge
-                      variant={isSuspended ? "suspended" : "injured"}
-                      size="md"
-                    >
-                      {isSuspended ? "🟥 Susp." : "🩹 Les."}
-                    </Badge>
-                  )}
-                  <span className="text-[10px] text-on-surface-variant font-black uppercase tracking-wider">
-                    {player.position}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <PlayerAvatar seed={player.id} position={player.position} teamColor={teamColor} nationality={player.nationality} size="md" photo={player.photo || null} />
-                <div className="text-right min-w-0">
-                  <p className="hidden sm:block text-[10px] uppercase tracking-widest text-on-surface-variant font-black">
-                    Qualidade
-                  </p>
-                  <p className="font-headline font-black text-3xl sm:text-4xl leading-none text-primary tabular-nums">
-                    {player.skill ?? 0}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-3 sm:mt-4 min-w-0">
-                <p className="font-headline font-black uppercase text-base leading-tight text-on-surface line-clamp-2 sm:truncate">
-                  {player.name}
-                  {!!player.is_star &&
-                    (player.position === "MED" || player.position === "ATA") && (
-                      <span className="ml-1 text-amber-400 font-black" title="Craque">★</span>
-                    )}
-                </p>
-                <p className="hidden sm:block text-[11px] text-on-surface-variant truncate mt-0.5">
-                  {posLabel(player.position)}
-                  {player.nationality ? ` · ${player.nationality}` : ""}
-                </p>
-                <p className="hidden sm:block text-[11px] text-on-surface-variant/60 truncate">
-                  {player.team_name
-                    ? player.transfer_status === "auction" && player.isExClub
-                      ? `ex-${player.team_name}`
-                      : player.team_name
-                    : "Sem clube"}
-                </p>
-              </div>
-
-              <div className="mt-3 sm:mt-4 hidden sm:grid grid-cols-2 gap-2">
-                <div className="rounded-md border border-outline-variant/20 bg-surface-container p-2">
-                  <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-black">
-                    Agr
-                  </p>
-                  <div className="mt-1">
-                    <AggBadge value={player.aggressiveness} />
-                  </div>
-                </div>
-                <div className="rounded-md border border-outline-variant/20 bg-surface-container p-2">
-                  <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-black">
-                    Golos
-                  </p>
-                  <p className="font-headline font-black text-lg leading-none text-emerald-400">
-                    {player.goals ?? 0}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-auto pt-3 sm:pt-4 flex items-end justify-between gap-2">
-                <div>
-                  <p className="text-[9px] uppercase tracking-widest text-on-surface-variant font-black">
-                    Preço
-                  </p>
-                  <p
-                    className={`font-mono font-black text-sm tabular-nums ${affordable ? "text-on-surface" : "text-rose-400"}`}
-                  >
-                    {fmt(price)}
-                  </p>
-                </div>
-                <span className="hidden sm:block text-[10px] text-on-surface-variant/50 font-bold uppercase tracking-wider">
-                  tocar para virar
-                </span>
-              </div>
-            </div>
-          </article>
-
-          <article
-            className="absolute inset-0 hidden sm:block rounded-xl border-2 border-outline-variant/35 bg-surface-container-low p-4 shadow-xl [transform:rotateY(180deg)] [backface-visibility:hidden] overflow-hidden"
-            style={{
-              background: `linear-gradient(15deg, ${tintSoft} 0%, rgba(36,40,58,0.95) 52%, ${hexToRgba(teamColor, 0.2)} 100%)`,
-              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)",
-            }}
+            <PlayerAvatar
+              seed={player.id}
+              position={player.position}
+              teamColor={posHex}
+              nationality={player.nationality}
+              size="lg"
+              photo={player.photo || null}
+            />
+          </div>
+          <span
+            className={`absolute -bottom-1 -right-3 min-w-9 h-9 px-1.5 rounded-full bg-surface-container border-2 flex items-center justify-center font-headline font-black text-lg leading-none tabular-nums ${posText}`}
+            style={{ borderColor: posHex, textShadow: "0 0 10px currentColor" }}
+            title={`Skill ${player.skill}`}
           >
-            <div className="relative flex h-full flex-col">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-headline font-black uppercase text-sm text-on-surface truncate">
-                    {player.name}
-                  </p>
-                  <p className="text-[10px] text-on-surface-variant/60 truncate">
-                    {player.team_name
-                      ? player.transfer_status === "auction" && player.isExClub
-                        ? `ex-${player.team_name}`
-                        : player.team_name
-                      : "Sem clube"}
-                  </p>
-                </div>
-                <Badge variant={status.variant} size="md">
-                  {status.label}
-                </Badge>
-              </div>
-
-              <div className="mt-3 grid grid-cols-3 gap-1.5 text-xs">
-                <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center">
-                  <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Qual.</p>
-                  <p className="font-headline font-black text-base text-primary">{player.skill ?? 0}</p>
-                </div>
-                <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center" title="Forma 1–50 (32 = normal; ≥41 em grande; ≤22 em baixo)">
-                  <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Forma</p>
-                  <p className={`font-black text-sm ${(player.form ?? 32) >= 41 ? "text-emerald-400" : (player.form ?? 32) <= 22 ? "text-rose-400" : "text-on-surface"}`}>{(player.form ?? 32) >= 41 ? "💪 " : (player.form ?? 32) <= 22 ? "😩 " : "👍 "}{player.form ?? 32}</p>
-                </div>
-                <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center">
-                  <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Resist.</p>
-                  <p className="font-black text-sm text-cyan-400">{player.resistance ?? 0}</p>
-                </div>
-                <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center">
-                  <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Jogos</p>
-                  <p className="font-black text-sm text-on-surface">{player.games_played ?? 0}</p>
-                </div>
-                <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center">
-                  <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Golos</p>
-                  <p className="font-black text-sm text-emerald-400">{player.goals ?? 0}</p>
-                </div>
-                <div className="rounded-md bg-surface-container p-1 border border-outline-variant/20 text-center">
-                  <p className="text-[8px] uppercase tracking-widest text-on-surface-variant font-black">Verm.</p>
-                  <p className={`font-black text-sm ${(player.red_cards ?? 0) > 0 ? "text-rose-400" : "text-on-surface"}`}>{player.red_cards ?? 0}</p>
-                </div>
-              </div>
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <span className="text-[9px] text-on-surface-variant font-black uppercase tracking-widest">Agressividade</span>
-                <AggBadge value={player.aggressiveness} />
-              </div>
-
-              <div className="mt-3 rounded-md bg-surface-container p-2.5 border border-outline-variant/20">
-                <div className="flex justify-between text-[11px]">
-                  <span className="text-on-surface-variant">Preço</span>
-                  <span
-                    className={`font-mono font-black tabular-nums ${affordable ? "text-on-surface" : "text-rose-400"}`}
-                  >
-                    {fmt(price)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-[11px] mt-1">
-                  <span className="text-on-surface-variant">Ordenado</span>
-                  <span className="font-mono font-black text-on-surface tabular-nums">
-                    {fmt(player.wage || 0)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-auto grid grid-cols-1 gap-2 pt-3">
-                {isListed ? (
-                  isAuction ? (
-                    isMyAuction ? (
-                      <div className="py-2 text-center text-on-surface-variant/60 text-[10px] font-black uppercase tracking-widest border border-outline-variant/20 rounded-md">
-                        O teu leilão
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onBid(player);
-                        }}
-                        disabled={!affordable}
-                        className="w-full py-2 bg-primary hover:brightness-110 disabled:opacity-30 text-on-primary font-headline font-black tracking-[0.14em] rounded-md transition-all uppercase text-[10px]"
-                      >
-                        {affordable ? "Licitar" : "Saldo insuficiente"}
-                      </button>
-                    )
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setGameDialog({
-                          mode: "confirm",
-                          title: `Comprar ${player.name}`,
-                          description: `${player.position} · Qualidade ${player.skill} · Preço: ${fmt(price)}`,
-                          confirmLabel: "Confirmar Compra",
-                          onConfirm: () => onBuy(player.id),
-                          onCancel: () => {},
-                        });
-                      }}
-                      disabled={!affordable}
-                      className="w-full py-2 bg-primary hover:brightness-110 disabled:opacity-30 text-on-primary font-headline font-black tracking-[0.14em] rounded-md transition-all uppercase text-[10px]"
-                    >
-                      {affordable ? "Comprar" : "Saldo insuficiente"}
-                    </button>
-                  )
-                ) : (
-                  <div className="py-2 text-center text-on-surface-variant/60 text-[10px] font-black uppercase tracking-widest border border-outline-variant/20 rounded-md">
-                    Sem transferência
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenDetails(player);
-                  }}
-                  className="w-full py-2 bg-surface-container-high hover:bg-surface-bright text-on-surface font-black tracking-[0.14em] rounded-md transition-all uppercase text-[10px] border border-outline-variant/25"
-                >
-                  Ver detalhes
-                </button>
-              </div>
-            </div>
-          </article>
+            {player.skill ?? 0}
+          </span>
         </div>
+        <p className="mt-2 font-headline font-black text-on-surface text-base leading-tight truncate max-w-full">
+          {player.name}
+        </p>
+        <p className="text-[9px] text-zinc-500 truncate" title={countryName}>
+          {[player.nationality, countryName].filter(Boolean).join(" · ")}
+        </p>
+      </div>
+
+      {/* Preço + salário */}
+      <div className="px-4 mt-3 flex items-end justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70">Preço</p>
+          <p className={`font-mono font-black tabular-nums leading-tight text-xl ${affordable ? "text-on-surface" : "text-rose-400"}`}>
+            {fmt(price)}
+          </p>
+          <p className="text-[9px] text-zinc-500 truncate max-w-[130px]">
+            {isListed ? (affordable ? "disponível" : "saldo insuficiente") : "sem lista"}
+          </p>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/60">Salário/sem</p>
+          <p className="font-mono text-[11px] text-zinc-300 tabular-nums">{fmt(player.wage || 0)}</p>
+        </div>
+      </div>
+
+      {/* Mini-stats */}
+      <div className="px-3 mt-2 grid grid-cols-3 gap-1.5">
+        <StatTile label="Forma">
+          <span className={`tabular-nums ${formClass}`}>
+            {formMood} {formVal}
+          </span>
+        </StatTile>
+        <StatTile label="Jogos">
+          <span className="tabular-nums">{player.games_played ?? 0}</span>
+        </StatTile>
+        <StatTile label="Golos">
+          <span className="tabular-nums">{player.goals ?? 0}</span>
+        </StatTile>
+      </div>
+      {player.aggressiveness != null && (
+        <div className="mt-1.5 flex items-center justify-center gap-1.5">
+          <span className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/50">Agressividade</span>
+          <AggBadge value={player.aggressiveness} />
+        </div>
+      )}
+
+      {/* Rodapé único */}
+      <div className="px-3 py-3 mt-auto">
+        {!isListed ? (
+          <div className="rounded-lg py-2 text-center border border-outline-variant/15 bg-surface/40">
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sem transferência</p>
+          </div>
+        ) : isAuction ? (
+          isMyAuction ? (
+            <div className="rounded-lg py-2 text-center border border-indigo-500/25 bg-indigo-500/10">
+              <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">O teu leilão</p>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onBid(player);
+              }}
+              disabled={!affordable}
+              className="w-full py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{ background: posHex, color: "#0d0d14" }}
+            >
+              Licitar · {fmt(price)}
+            </button>
+          )
+        ) : (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setGameDialog({
+                mode: "confirm",
+                title: `Comprar ${player.name}`,
+                description: `${player.position} · Qualidade ${player.skill} · Preço: ${fmt(price)}`,
+                confirmLabel: "Confirmar Compra",
+                onConfirm: () => onBuy(player.id),
+                onCancel: () => {},
+              });
+            }}
+            disabled={!affordable}
+            className="w-full py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed"
+            style={{ background: posHex, color: "#0d0d14" }}
+          >
+            {affordable ? `Comprar · ${fmt(price)}` : "Saldo insuficiente"}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -380,7 +298,6 @@ export function TransferHub({
   matchweekCount = 0,
 }) {
   const [search, setSearch] = useState("");
-  const [flippedId, setFlippedId] = useState(null);
 
   const teamColorById = useMemo(() => {
     const map = new Map();
@@ -405,12 +322,9 @@ export function TransferHub({
   }, [players, search]);
 
   return (
-    <Panel
-      title="Mercado de Transferências"
-      meta={`${visible.length} jogador${visible.length !== 1 ? "es" : ""}`}
-    >
+    <Panel title="Mercado de Transferências" meta={`${visible.length} jogador${visible.length !== 1 ? "es" : ""}`}>
       <div className="p-3 md:p-4">
-        {/* ── Search + filters ─────────────────────────────────────────── */}
+        {/* Search + filters */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
           <div className="relative md:col-span-2">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 text-sm select-none pointer-events-none">
@@ -447,7 +361,6 @@ export function TransferHub({
           </select>
         </div>
 
-        {/* ── Player grid ──────────────────────────────────────────────── */}
         {visible.length === 0 ? (
           <EmptyState
             emoji="🔄"
@@ -455,19 +368,16 @@ export function TransferHub({
             description="Os jogadores colocados em transferência aparecem aqui."
           />
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
             {visible.map((player) => (
               <MarketCard
                 key={player.id}
                 player={player}
                 budget={budget}
                 me={me}
-                isSameTeamId={isSameTeamId}
+                teams={teams}
                 teamColorById={teamColorById}
-                isFlipped={flippedId === player.id}
-                onFlip={() =>
-                  setFlippedId((prev) => (prev === player.id ? null : player.id))
-                }
+                isSameTeamId={isSameTeamId}
                 onOpenDetails={onOpenPlayerHistory}
                 onBuy={buyPlayer}
                 onBid={openAuctionBid}
