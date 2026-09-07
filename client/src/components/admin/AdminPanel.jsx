@@ -114,7 +114,7 @@ export function AdminPanel({ open, onClose }) {
         cardClassName="h-[calc(100dvh-24px)] flex flex-col"
       >
         {/* Barra superior — dinâmica quando há seleção (lista sempre visível por baixo) */}
-        <header className="shrink-0 px-4 py-3 border-b border-outline-variant/15 bg-surface-container-high/50 flex items-center gap-2 min-w-0">
+        <header className="shrink-0 px-4 short:px-3 py-3 short:py-2 border-b border-outline-variant/15 bg-surface-container-high/50 flex items-center gap-2 min-w-0">
           {selectedUser ? (
             <>
               <Button
@@ -174,7 +174,7 @@ export function AdminPanel({ open, onClose }) {
           {selectedUser && (
             <div
               ref={detailRef}
-              className="border-t border-outline-variant/15 bg-surface p-4 space-y-6 scroll-mt-3 min-w-0"
+              className="border-t border-outline-variant/15 bg-surface p-4 short:p-2.5 space-y-6 short:space-y-3 scroll-mt-3 min-w-0"
             >
               {/* Âncora visual: nome do utilizador selecionado acima das configurações */}
               <div className="flex items-center gap-2 pb-2 border-b border-outline-variant/10 -mx-4 px-4 -mt-4 pt-4 bg-surface-container-high/30 min-w-0">
@@ -189,7 +189,7 @@ export function AdminPanel({ open, onClose }) {
         </div>
 
         {/* Footer — nota de acesso + refresh */}
-        <footer className="shrink-0 px-4 py-2.5 border-t border-outline-variant/15 flex items-center justify-between gap-3 min-w-0">
+        <footer className="shrink-0 px-4 short:px-3 py-2.5 short:py-1.5 border-t border-outline-variant/15 flex items-center justify-between gap-3 min-w-0">
           <span className="text-[10px] text-on-surface-variant truncate">Apenas {me?.name} tem acesso a este painel.</span>
           <Button variant="ghost" size="sm" onClick={fetchUsers} className="shrink-0">
             <span className="material-symbols-outlined text-sm">refresh</span>
@@ -204,7 +204,7 @@ export function AdminPanel({ open, onClose }) {
   return (
     <ModalShell visible={open} onClose={onClose} z={MODAL_Z.admin} variant="xl" cardClassName="max-h-[85vh] flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-outline-variant/15 flex items-center justify-between shrink-0 bg-surface-container-high/50">
+      <div className="px-6 short:px-4 py-4 short:py-2 border-b border-outline-variant/15 flex items-center justify-between shrink-0 bg-surface-container-high/50">
         <div className="flex items-center gap-3 min-w-0">
           <span className="material-symbols-outlined text-amber-400 text-2xl shrink-0">admin_panel_settings</span>
           <div className="min-w-0">
@@ -236,12 +236,12 @@ export function AdminPanel({ open, onClose }) {
 
         {/* Detalhe */}
         <div className="w-1/2 min-h-0 min-w-0 flex flex-col">
-          <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-6">{detailContent}</div>
+          <div className="flex-1 min-h-0 overflow-y-auto p-5 short:p-3 space-y-6 short:space-y-3">{detailContent}</div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-3 border-t border-outline-variant/15 flex flex-col sm:flex-row sm:items-center sm:justify-between text-[10px] text-on-surface-variant shrink-0 gap-2">
+      <div className="px-6 short:px-4 py-3 short:py-2 border-t border-outline-variant/15 flex flex-col sm:flex-row sm:items-center sm:justify-between text-[10px] text-on-surface-variant shrink-0 gap-2">
         <span>Apenas {me?.name} tem acesso a este painel.</span>
         <Button variant="ghost" size="sm" onClick={fetchUsers}>
           <span className="material-symbols-outlined text-sm">refresh</span>

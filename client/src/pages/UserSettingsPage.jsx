@@ -291,7 +291,7 @@ export function UserSettingsPage({
 	);
 
 	return (
-		<div className="space-y-4">
+		<div className="space-y-4 short:space-y-2">
 		{/* Back */}
 		<button
 			onClick={onBack}
@@ -309,7 +309,7 @@ export function UserSettingsPage({
 			meta={me?.name || "—"}
 			className="bg-surface-container-low border border-outline-variant/25"
 		>
-			<div className="flex flex-col sm:flex-row items-center gap-5">
+			<div className="flex flex-col sm:flex-row items-center gap-5 short:gap-3">
 					<div className="flex flex-col items-center gap-2">
 					<CoachAvatar
 						name={me?.name ?? "?"}
@@ -396,7 +396,7 @@ export function UserSettingsPage({
 						<p className="text-[8px] text-on-surface-variant/60 font-bold uppercase tracking-widest mt-0.5">
 							SALA: {me?.roomName || me?.roomCode || "—"}
 						</p>
-						<div className="flex flex-wrap gap-3 mt-3">
+						<div className="flex flex-wrap gap-3 short:gap-2 mt-3 short:mt-1.5">
 							<input
 								type="email"
 								value={email}
@@ -444,7 +444,7 @@ export function UserSettingsPage({
 		</Panel>
 
 		{/* 2-column grid on md+ */}
-		<div className="md:grid md:grid-cols-2 md:gap-4">
+		<div className="md:grid md:grid-cols-2 md:gap-4 short:gap-2">
 			{/* Palmarés */}
 			<Panel
 				title="Conquistas"
@@ -504,7 +504,7 @@ export function UserSettingsPage({
 
 			{/* Change Password */}
 			<Panel title="Palavra-Passe" icon="lock">
-				<div className="p-3 md:p-4 space-y-4">
+				<div className="p-3 md:p-4 short:p-2 space-y-4 short:space-y-2">
 					<div>
 						<label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant block mb-1">
 							Palavra-passe actual
@@ -513,7 +513,7 @@ export function UserSettingsPage({
 							type="password"
 							value={currentPassword}
 							onChange={(e) => setCurrentPassword(e.target.value)}
-							className="w-full bg-surface border border-outline-variant/30 rounded-md px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
+							className="w-full bg-surface border border-outline-variant/30 rounded-md px-4 short:px-3 py-2.5 short:py-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
 							placeholder="••••••••"
 						/>
 					</div>
@@ -525,7 +525,7 @@ export function UserSettingsPage({
 							type="password"
 							value={newPassword}
 							onChange={(e) => setNewPassword(e.target.value)}
-							className="w-full bg-surface border border-outline-variant/30 rounded-md px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
+							className="w-full bg-surface border border-outline-variant/30 rounded-md px-4 short:px-3 py-2.5 short:py-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
 							placeholder="••••••••"
 						/>
 					</div>
@@ -537,7 +537,7 @@ export function UserSettingsPage({
 							type="password"
 							value={confirmPassword}
 							onChange={(e) => setConfirmPassword(e.target.value)}
-							className="w-full bg-surface border border-outline-variant/30 rounded-md px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
+							className="w-full bg-surface border border-outline-variant/30 rounded-md px-4 short:px-3 py-2.5 short:py-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
 							placeholder="••••••••"
 						/>
 					</div>

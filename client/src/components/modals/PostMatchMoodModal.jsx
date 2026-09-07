@@ -49,7 +49,7 @@ export function PostMatchMoodModal({ mood, onClose }) {
       cardClassName="!bg-surface overflow-hidden"
     >
       <div
-        className="relative px-6 py-8 text-center overflow-hidden"
+        className="relative px-6 short:px-4 py-8 short:py-3 text-center overflow-hidden"
         style={{
           background: isLoss
             ? `radial-gradient(ellipse at top, rgba(248,113,113,0.16) 0%, rgba(15,19,32,0) 60%)`
@@ -62,11 +62,11 @@ export function PostMatchMoodModal({ mood, onClose }) {
 
         {/* ── Adeptos ───────────────────────────────────────────────── */}
         {!isWin && (
-          <div className="flex justify-center gap-3 mb-4">
+          <div className="flex justify-center gap-3 short:gap-2 mb-4 short:mb-2">
             {fans.map((fan, i) => (
               <motion.span
                 key={fan}
-                className="text-3xl select-none"
+                className="text-3xl short:text-2xl select-none"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{
                   opacity: [0, 1, 0.6, 1],
@@ -84,11 +84,11 @@ export function PostMatchMoodModal({ mood, onClose }) {
           </div>
         )}
         {isWin && (
-          <div className="flex justify-center gap-3 mb-4">
+          <div className="flex justify-center gap-3 short:gap-2 mb-4 short:mb-2">
             {fans.map((fan, i) => (
               <motion.span
                 key={fan}
-                className="text-3xl select-none"
+                className="text-3xl short:text-2xl select-none"
                 initial={{ opacity: 0, scale: 0.4 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.1 + i * 0.15 }}
@@ -100,14 +100,14 @@ export function PostMatchMoodModal({ mood, onClose }) {
         )}
 
         <span
-          className="inline-block text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm mb-4"
+          className="inline-block text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm mb-4 short:mb-2"
           style={{ background: `${accent}22`, color: accent }}
         >
           {mood.roundLabel || (mood.source === "cup" ? "Taça" : "Liga")}
         </span>
 
         <motion.h2
-          className="font-headline font-black text-3xl tracking-tight text-on-surface uppercase"
+          className="font-headline font-black text-3xl short:text-xl tracking-tight text-on-surface uppercase"
           initial={{ scale: 0.6, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.15 }}
@@ -116,14 +116,14 @@ export function PostMatchMoodModal({ mood, onClose }) {
           {title}
         </motion.h2>
 
-        <p className="mt-3 text-sm font-bold text-on-surface-variant">
+        <p className="mt-3 short:mt-1.5 text-sm short:text-xs font-bold text-on-surface-variant">
           {mood.source === "cup" ? "Eliminatória" : "Jogo contra"}{" "}
           <span className="font-headline font-black text-white">
             {mood.opponentName}
           </span>
         </p>
 
-        <p className="mt-2 font-headline font-black text-4xl tracking-tight text-white tabular-nums">
+        <p className="mt-2 short:mt-1 font-headline font-black text-4xl short:text-2xl tracking-tight text-white tabular-nums">
           {mood.myGoals}
           <span className="mx-2 text-on-surface-variant">–</span>
           {mood.oppGoals}
@@ -135,7 +135,7 @@ export function PostMatchMoodModal({ mood, onClose }) {
           </p>
         )}
 
-        <div className="mt-6">
+        <div className="mt-6 short:mt-3">
           <Button onClick={onClose} variant={isWin ? "success" : "secondary"} full>
             Continuar
           </Button>
