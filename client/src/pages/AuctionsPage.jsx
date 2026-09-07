@@ -32,7 +32,7 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
     /* Scroll único da página: topo + painéis rolam juntos (sem overflow interno). */
     <div className="flex flex-col flex-1 min-h-0 overflow-y-auto overscroll-contain">
       {/* ── Topo compacto: 3 widgets mini em linha em qualquer ecrã ─────── */}
-      <div className="grid grid-cols-3 gap-1.5 sm:gap-3 p-2 sm:p-4 pb-1.5 shrink-0">
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-3 short:gap-1 p-2 sm:p-4 short:p-1.5 pb-1.5 short:pb-1 shrink-0">
         <SummaryWidget
           label="Leilões a decorrer"
           value={live.length}
@@ -57,7 +57,7 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
 
       {/* ── Position filter ─────────────────────────────────────────────── */}
       {activeAuctions.length > 0 && (
-        <div className="px-2 sm:px-4 pb-1.5 shrink-0">
+        <div className="px-2 sm:px-4 short:px-2 pb-1.5 short:pb-1 shrink-0">
           <select
             className="bg-surface border border-outline-variant/30 rounded-sm px-1.5 sm:px-3 py-[3px] sm:py-1 text-[9px] sm:text-[10px] font-bold text-on-surface focus:ring-1 focus:ring-primary focus:outline-none"
             value={positionFilter}
@@ -74,10 +74,10 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
 
       {/* ── Painéis empilhados no scroll único da página ────────────────── */}
       {(live.length > 0 || closed.length > 0) && (
-        <div className="px-2 sm:px-4 pb-4 space-y-2 sm:space-y-3">
+        <div className="px-2 sm:px-4 short:px-2 pb-4 short:pb-2 space-y-2 sm:space-y-3 short:space-y-2">
           {live.length > 0 && (
             <Panel title="Em curso" meta={`${live.length} leilão${live.length !== 1 ? "s" : ""}`}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 short:gap-2">
                 {live.map((auction, i) => (
                   <motion.div key={auction.playerId} {...staggerItemProps(i)}>
                     <AuctionCard
@@ -112,7 +112,7 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
 
       {/* ── Empty state ──────────────────────────────────────────────── */}
       {live.length === 0 && closed.length === 0 && (
-        <div className="flex-1 flex items-center justify-center p-3 md:p-4">
+        <div className="flex-1 flex items-center justify-center p-3 md:p-4 short:p-2">
           <EmptyState
             emoji="⚖️"
             title={activeAuctions.length > 0 ? "Sem leilões para esta posição" : "Sem leilões a mostrar"}

@@ -84,16 +84,16 @@ function RecordText({ v, e, d }) {
  */
 function CompareStat({ label, mine, theirs }) {
   return (
-    <div className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-1.5 lg:py-2.5 flex flex-col items-center justify-center text-center">
+    <div className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 short:px-2 py-1.5 short:py-1 lg:py-2.5 flex flex-col items-center justify-center text-center">
       <span className="text-[7px] uppercase tracking-widest text-gray-600 font-black mb-0.5 lg:mb-1">
         {label}
       </span>
       <div className="flex items-center justify-center gap-1.5 w-full">
-        <span className="text-sm font-black tabular-nums text-white leading-none truncate">
+        <span className="text-sm short:text-xs font-black tabular-nums text-white leading-none truncate">
           {mine}
         </span>
         <span className="w-px h-4 bg-[#222] shrink-0" />
-        <span className="text-sm font-black tabular-nums text-gray-400 leading-none truncate">
+        <span className="text-sm short:text-xs font-black tabular-nums text-gray-400 leading-none truncate">
           {theirs}
         </span>
       </div>
@@ -108,7 +108,7 @@ function CompareStat({ label, mine, theirs }) {
  */
 function MetaTile({ label, children }) {
   return (
-    <div className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 py-2 lg:py-3 flex flex-col items-center justify-center text-center">
+    <div className="min-w-0 bg-[#161616]/60 border border-[#1e1e1e] rounded-xl px-2.5 short:px-2 py-2 short:py-1 lg:py-3 flex flex-col items-center justify-center text-center">
       <span className="text-[7px] uppercase tracking-widest text-gray-600 font-black mb-1">
         {label}
       </span>
@@ -217,7 +217,7 @@ function NextMatchCard({ nextMatchSummary, teamInfo, onOpenTeamSquad }) {
   return (
     <div className="h-full flex flex-col bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
       {/* Cabeçalho: competição + venue */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[#1a1a1a]">
+      <div className="flex items-center justify-between px-4 short:px-3 py-2 short:py-1 border-b border-[#1a1a1a]">
         <div className="flex items-center gap-2">
           {s.isCup ? (
             <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400">
@@ -240,7 +240,7 @@ function NextMatchCard({ nextMatchSummary, teamInfo, onOpenTeamSquad }) {
       </div>
 
       {/* Corpo */}
-      <div className="flex-1 px-4 py-3 lg:py-4 flex flex-col gap-2.5 lg:gap-3 lg:justify-evenly">
+      <div className="flex-1 px-4 short:px-3 py-3 short:py-1.5 lg:py-4 flex flex-col gap-2.5 short:gap-1.5 lg:gap-3 lg:justify-evenly">
         {/* Hero VS — equipa do utilizador à esquerda em casa, à direita fora */}
         {(() => {
           const mySlotTeam = { ...teamInfo, ...myTeam };
@@ -291,7 +291,7 @@ function NextMatchCard({ nextMatchSummary, teamInfo, onOpenTeamSquad }) {
             </span>
           )}
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 lg:flex-1 lg:content-center">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 short:gap-1 lg:flex-1 lg:content-center">
           <CompareStat
             label="Posição"
             mine={s.team?.position ? `${s.team.position}º` : "—"}
@@ -325,7 +325,7 @@ function NextMatchCard({ nextMatchSummary, teamInfo, onOpenTeamSquad }) {
         </div>
 
         {/* Faixa de metadados compacta */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 lg:flex-1 lg:content-center">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 short:gap-1 lg:flex-1 lg:content-center">
           <MetaTile label="Forma recente">
             <div className="flex items-center justify-between gap-1 min-w-0">
               <button
@@ -497,7 +497,7 @@ function StadiumCard({ stadium }) {
   const cap = stadium.capacity ?? 10000;
   const fill = cap > 0 ? Math.round((att / cap) * 100) : 0;
   return (
-    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-3.5 py-2 lg:flex-none lg:flex lg:flex-col lg:justify-center">
+    <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-3.5 short:px-3 py-2 short:py-1.5 lg:flex-none lg:flex lg:flex-col lg:justify-center">
       <div className="flex items-center justify-between mb-1">
         <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
           🏟️ Estádio
@@ -542,7 +542,7 @@ function OpponentFormation({ formation }) {
   const rowYs = ["10%", "32%", "57%", "78%"];
   return (
     <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden lg:flex-1 lg:flex lg:flex-col">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[#1a1a1a] lg:shrink-0">
+      <div className="flex items-center justify-between px-4 short:px-3 py-2 short:py-1 border-b border-[#1a1a1a] lg:shrink-0">
         <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
           🔎 Formação provável
         </span>
@@ -551,7 +551,7 @@ function OpponentFormation({ formation }) {
         </span>
       </div>
       <div
-        className="relative w-full h-56 lg:h-auto lg:flex-1 lg:min-h-[240px]"
+        className="relative w-full h-56 short:h-32 lg:h-auto lg:flex-1 lg:min-h-[240px] short:lg:min-h-[160px]"
         style={{
           background:
             "radial-gradient(ellipse at 50% 25%, #1f5c1a 0%, #123a0d 50%, #09200a 100%)",
@@ -624,12 +624,12 @@ function ThreatGrid({ threats }) {
   };
   return (
     <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden lg:flex-none lg:flex lg:flex-col">
-      <div className="px-4 py-1.5 border-b border-[#1a1a1a]">
+      <div className="px-4 short:px-3 py-1.5 short:py-1 border-b border-[#1a1a1a]">
         <span className="text-[9px] uppercase tracking-widest text-gray-600 font-black">
           ⚠️ Ameaças do adversário
         </span>
       </div>
-      <div className="px-3 py-2 flex flex-col gap-1.5">
+      <div className="px-3 short:px-2 py-2 short:py-1.5 flex flex-col gap-1.5 short:gap-1">
         {threats.map((t) => {
           const meta = META[t.role] ?? { icon: "❗", label: t.role };
           const value =
@@ -677,10 +677,10 @@ export function MatchBriefing() {
   const opponent = s.opponent;
 
   return (
-    <div className="space-y-3 lg:space-y-0 lg:flex lg:flex-col lg:gap-4 lg:min-h-[max(540px,calc(100dvh-9.5rem))]">
+    <div className="space-y-3 short:space-y-1.5 lg:space-y-0 lg:flex lg:flex-col lg:gap-4 short:lg:gap-2 lg:min-h-[max(540px,calc(100dvh-9.5rem))] short:lg:min-h-0">
       {/* Header: manchete + contexto + dificuldade + CTA */}
       <div className="lg:shrink-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2 lg:py-3 border-b border-[#1a1a1a]">
+        <div className="flex items-center justify-between px-4 short:px-3 py-2 short:py-1 lg:py-3 short:lg:py-2 border-b border-[#1a1a1a]">
           <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
             📋 Briefing da Jornada
           </span>
@@ -690,9 +690,9 @@ export function MatchBriefing() {
               : `Jornada ${s.matchweek}`}
           </span>
         </div>
-        <div className="px-4 py-3 lg:py-5 flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6">
+        <div className="px-4 short:px-3 py-3 short:py-2 lg:py-5 short:lg:py-3 flex flex-col lg:flex-row lg:items-center gap-3 short:gap-2 lg:gap-6">
           <div className="flex-1 min-w-0">
-            <p className="text-sm lg:text-base font-bold text-white leading-snug line-clamp-4 lg:line-clamp-2">
+            <p className="text-sm short:text-xs lg:text-base font-bold text-white leading-snug line-clamp-4 lg:line-clamp-2">
               {s.headline ?? "Tudo em aberto nesta jornada."}
             </p>
             {s.stakes && (
@@ -720,7 +720,7 @@ export function MatchBriefing() {
       </div>
 
       {/* Confronto + scouting */}
-      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:flex-1">
+      <div className="flex flex-col lg:flex-row gap-3 short:gap-1.5 items-stretch lg:flex-1">
         {opponent && (
           <div className="flex-1 min-w-0 lg:flex lg:flex-col">
             <NextMatchCard
@@ -730,7 +730,7 @@ export function MatchBriefing() {
             />
           </div>
         )}
-        <div className="lg:w-72 shrink-0 flex flex-col gap-3 lg:h-full">
+        <div className="lg:w-72 shrink-0 flex flex-col gap-3 short:gap-1.5 lg:h-full">
           {s.stadium ? (
             <StadiumCard stadium={s.stadium} />
           ) : opponent ? (

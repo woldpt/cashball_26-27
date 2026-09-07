@@ -154,7 +154,7 @@ function PlayerRow({
       onDrop={onDrop}
       onDragEnd={onDragEnd}
       style={{ "--pos-soft": pos.soft }}
-      className={`relative flex items-center gap-2 px-2 py-1.5 rounded-xl transition-all select-none bg-[var(--pos-soft)]
+      className={`relative flex items-center gap-2 short:gap-1.5 px-2 short:px-1.5 py-1.5 short:py-1 rounded-xl transition-all select-none bg-[var(--pos-soft)]
 ${isDragging ? "opacity-30 scale-95" : ""}
 ${isOver ? "ring-1 ring-[#4ade80]/40" : "hover:bg-white/5"}
 ${player.isUnavailable ? "opacity-50" : ""}
@@ -427,7 +427,7 @@ export function TacticsView() {
   ).length;
 
   return (
-    <div className="space-y-3 pb-20 lg:pb-0">
+    <div className="space-y-3 short:space-y-1.5 pb-20 short:pb-4 lg:pb-0">
       {disconnected && (
         <div className="px-4 py-2 text-red-400 text-[10px] font-bold text-center bg-red-500/10 border border-red-500/20 rounded-2xl">
           ⚠️ Desligado — a reconectar...
@@ -468,9 +468,9 @@ export function TacticsView() {
           </button>
         </div>
       ) : (
-        <div className="flex flex-col lg:flex-row gap-3 lg:items-start">
+        <div className="flex flex-col lg:flex-row gap-3 short:gap-1.5 lg:items-start">
           {/* COL 1 — FORMAÇÃO + MENTALIDADE */}
-          <div className={`lg:w-57.5 shrink-0 flex flex-col gap-2 ${!isLineupComplete && !myReady ? "animate-heartbeat-border rounded-2xl" : ""}`}>
+          <div className={`lg:w-57.5 shrink-0 flex flex-col gap-2 short:gap-1.5 ${!isLineupComplete && !myReady ? "animate-heartbeat-border rounded-2xl" : ""}`}>
             {/* Proximo jogo — mobile: moral + mentality side by side */}
             <div className="flex gap-2 lg:hidden">
               {nextMatchSummary && (
@@ -584,7 +584,7 @@ export function TacticsView() {
                   Limpar
                 </button>
               </div>
-              <div className="p-2 grid grid-cols-4 gap-1.5">
+              <div className="p-2 short:p-1.5 grid grid-cols-4 gap-1.5 short:gap-1">
                 {TACTIC_FORMATIONS.map(({ value, label }) => {
                   const isAvailable =
                     formationAvailabilityByValue[value] === true;
@@ -642,8 +642,8 @@ export function TacticsView() {
                   const label =
                     morale > 75 ? "Alta" : morale >= 50 ? "Média" : "Baixa";
                   return (
-                    <div className="px-4 py-2.5">
-                      <div className="flex items-center justify-between mb-1.5">
+                    <div className="px-4 short:px-3 py-2.5 short:py-1.5">
+                      <div className="flex items-center justify-between mb-1.5 short:mb-1">
                         <span className="text-[9px] uppercase tracking-widest text-gray-600 font-bold">
                           Moral
                         </span>
@@ -667,7 +667,7 @@ export function TacticsView() {
 
             {/* Formação — desktop only */}
             <div className="hidden lg:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
+              <div className="flex items-center justify-between px-4 short:px-3 py-2.5 short:py-1.5 border-b border-[#1a1a1a]">
                 <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
                   Formação
                 </span>
@@ -680,7 +680,7 @@ export function TacticsView() {
               </div>
 
               {/* Lista formacoes */}
-              <div className="px-3 py-2.5 space-y-1">
+              <div className="px-3 short:px-2 py-2.5 short:py-1.5 space-y-1 short:space-y-0.5">
                 {TACTIC_FORMATIONS.map(({ value, label }) => {
                   const isAvailable =
                     formationAvailabilityByValue[value] === true;
@@ -727,12 +727,12 @@ ${
 
             {/* Mentalidade — desktop only */}
             <div className="hidden lg:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-              <div className="px-4 py-2.5 border-b border-[#1a1a1a]">
+              <div className="px-4 short:px-3 py-2.5 short:py-1.5 border-b border-[#1a1a1a]">
                 <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
                   Mentalidade
                 </span>
               </div>
-              <div className="px-3 py-3">
+              <div className="px-3 short:px-2 py-3 short:py-1.5">
                 {(() => {
                   const STYLES = ["Defensive", "Balanced", "Offensive"];
                   const LABELS = {
@@ -791,7 +791,7 @@ ${
           </div>
 
           {/* COL 2 — TITULARES (esq) + SUPLENTES/NÃO CONV. (dir) */}
-          <div className="flex-1 flex flex-col md:flex-row gap-2 min-w-0">
+          <div className="flex-1 flex flex-col md:flex-row gap-2 short:gap-1.5 min-w-0">
             {/* Titulares */}
             <div
               className={`flex-1 min-w-0 bg-[#111] border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/30 bg-[#4ade80]/2" : "border-[#1e1e1e]"}`}
@@ -809,7 +809,7 @@ ${
                 setDragOverSection(null);
               }}
             >
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
+              <div className="flex items-center justify-between px-4 short:px-3 py-2.5 short:py-1.5 border-b border-[#1a1a1a]">
                 <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
                   Titulares
                 </span>
@@ -824,7 +824,7 @@ ${
                   <span className="text-gray-700">/11</span>
                 </span>
               </div>
-              <div className="px-2 py-1 space-y-0.5">
+              <div className="px-2 short:px-1.5 py-1 short:py-0.5 space-y-0.5">
                 {annotatedSquad
                   .filter((p) => p.status === "Titular")
                   .map((player) => (
@@ -881,7 +881,7 @@ ${
             </div>
 
             {/* Suplentes + Nao convocados (coluna direita) */}
-            <div className="flex-1 min-w-0 flex flex-col gap-2">
+            <div className="flex-1 min-w-0 flex flex-col gap-2 short:gap-1.5">
               {/* Suplentes */}
               <div
                 className={`bg-[#111] border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Suplente" ? "border-yellow-500/30 bg-yellow-500/2" : "border-[#1e1e1e]"}`}
@@ -900,7 +900,7 @@ ${
                   setDragOverSection(null);
                 }}
               >
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1a1a1a]">
+                <div className="flex items-center justify-between px-4 short:px-3 py-2.5 short:py-1.5 border-b border-[#1a1a1a]">
                   <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
                     Suplentes
                   </span>
@@ -909,7 +909,7 @@ ${
                     <span className="text-gray-700">/{MAX_BENCH_SIZE}</span>
                   </span>
                 </div>
-                <div className="px-2 py-1 space-y-0.5">
+                <div className="px-2 short:px-1.5 py-1 short:py-0.5 space-y-0.5">
                   {annotatedSquad
                     .filter((p) => p.status === "Suplente" && !p.isUnavailable)
                     .map((player) => (
@@ -1054,13 +1054,13 @@ ${
           </div>
 
           {/* COL 3 — CAMPO + JOGAR (desktop only — mobile usa FAB) */}
-          <div className="max-lg:hidden lg:w-72.5 shrink-0 flex flex-col gap-2">
+          <div className="max-lg:hidden lg:w-72.5 shrink-0 flex flex-col gap-2 short:gap-1.5">
             {/* Botao JOGAR — desktop */}
             <div className="max-lg:hidden">
               <button
                 onClick={isHalftime ? handleHalftimeReady : handleReady}
                 disabled={myReady || !canPlay}
-                className={`w-full py-4 font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-95 relative overflow-hidden ${canPlay && !myReady ? "animate-heartbeat" : ""}
+                className={`w-full py-4 short:py-2.5 font-black rounded-2xl text-sm short:text-xs uppercase tracking-widest transition-all active:scale-95 relative overflow-hidden ${canPlay && !myReady ? "animate-heartbeat" : ""}
 ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161616] text-gray-700 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
                 style={
                   myReady || !canPlay
@@ -1090,7 +1090,7 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
 
             {/* Campo de futebol */}
             <div
-              className={`relative w-full rounded-2xl overflow-hidden transition-all duration-200 ${dragPlayerId && dragOverSection === "Titular" && annotatedSquad.find((p) => p.id === dragPlayerId)?.status !== "Titular" ? "ring-2 ring-[#4ade80]/40 shadow-lg shadow-[#4ade80]/10" : ""}`}
+              className={`relative w-full rounded-2xl overflow-hidden transition-all duration-200 short:max-h-[38dvh] ${dragPlayerId && dragOverSection === "Titular" && annotatedSquad.find((p) => p.id === dragPlayerId)?.status !== "Titular" ? "ring-2 ring-[#4ade80]/40 shadow-lg shadow-[#4ade80]/10" : ""}`}
               style={{
                 aspectRatio: "9/12",
                 background:

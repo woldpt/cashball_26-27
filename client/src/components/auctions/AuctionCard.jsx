@@ -124,7 +124,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
       <div className={`h-1 shrink-0 bg-gradient-to-r ${POSITION_BAR_CLASS[auction.position] || "from-zinc-400 via-zinc-500 to-zinc-600"}`} />
 
       {/* Selo de posição + vendedor + histórico */}
-      <div className="px-3 pt-2.5 flex items-center gap-1.5">
+      <div className="px-3 short:px-2 pt-2.5 short:pt-1.5 flex items-center gap-1.5 short:gap-1">
         <Badge
           size="sm"
           style={{
@@ -174,7 +174,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
 
       {/* Herói: avatar com halo + skill sobreposta */}
       <div
-        className="mx-3 mt-2 rounded-lg flex flex-col items-center pt-3 pb-2.5 px-2"
+        className="mx-3 short:mx-2 mt-2 short:mt-1 rounded-lg flex flex-col items-center pt-3 short:pt-2 pb-2.5 short:pb-1.5 px-2 short:px-1.5"
         style={{ background: `radial-gradient(ellipse 90% 100% at 50% 0%, ${hexToRgba(posHex, 0.22)} 0%, transparent 70%)` }}
       >
         <div className="relative">
@@ -199,7 +199,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             {auction.skill}
           </span>
         </div>
-        <p className="mt-2 font-headline font-black text-on-surface text-base leading-tight truncate max-w-full">
+        <p className="mt-2 short:mt-1 font-headline font-black text-on-surface text-base short:text-sm leading-tight truncate max-w-full">
           {auction.name}
         </p>
         <p className="text-[9px] text-zinc-500 truncate" title={countryName}>
@@ -208,7 +208,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
       </div>
 
       {/* Faixa de urgência: countdown gigante */}
-      <div className="px-3 mt-2">
+      <div className="px-3 short:px-2 mt-2 short:mt-1.5">
         {isClosed ? (
           <div className="rounded-lg border border-outline-variant/15 bg-surface/50 py-2 text-center">
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Leilão encerrado</p>
@@ -224,7 +224,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
           <div
             className={`rounded-lg border py-1.5 text-center transition-colors ${urgent ? "border-error/50 bg-error-container/40 animate-pulse" : "border-outline-variant/15 bg-surface/50"}`}
           >
-            <p className={`font-mono font-black tabular-nums leading-none text-[26px] ${urgent ? "text-error" : "text-on-surface"}`}>
+            <p className={`font-mono font-black tabular-nums leading-none text-[26px] short:text-lg ${urgent ? "text-error" : "text-on-surface"}`}>
               {formatSecs(secs)}
             </p>
             <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70 mt-0.5">
@@ -236,12 +236,12 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
 
       {/* Preço: lance atual em destaque + base/salário */}
       {!isClosed && !isPaused && (
-        <div className="px-4 mt-2 flex items-end justify-between gap-2">
+        <div className="px-4 short:px-2 mt-2 short:mt-1.5 flex items-end justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70">
               {hasBid ? "Lance atual" : "Preço base"}
             </p>
-            <p className={`font-mono font-black tabular-nums leading-tight text-xl ${isLeader ? "text-emerald-400" : "text-on-surface"}`}>
+            <p className={`font-mono font-black tabular-nums leading-tight text-xl short:text-base ${isLeader ? "text-emerald-400" : "text-on-surface"}`}>
               {formatCurrency(hasBid ? auction.currentHighBid : auction.startingPrice)}
             </p>
             <p className="text-[9px] text-zinc-500 truncate max-w-[130px]">
@@ -267,7 +267,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
 
       {/* Mini-stats do cromo */}
       {!isClosed && !isPaused && (
-        <div className="px-3 mt-2 grid grid-cols-3 gap-1.5">
+        <div className="px-3 short:px-2 mt-2 short:mt-1.5 grid grid-cols-3 gap-1.5 short:gap-1">
           <StatTile label="Forma">
             <span className={`tabular-nums ${formClass}`}>{formMood} {formVal}</span>
           </StatTile>
@@ -280,14 +280,14 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
         </div>
       )}
       {!isClosed && !isPaused && auction.aggressiveness != null && (
-        <div className="mt-1.5 flex items-center justify-center gap-1.5">
+        <div className="mt-1.5 short:mt-1 flex items-center justify-center gap-1.5">
           <span className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/50">Agressividade</span>
           <AggBadge value={auction.aggressiveness} />
         </div>
       )}
 
       {/* Zona de ação */}
-      <div className="px-3 py-3 mt-auto">
+      <div className="px-3 short:px-2 py-3 short:py-2 mt-auto">
         {isClosed ? (
           <div className="text-center py-1">
             {auction.result?.sold ? (
