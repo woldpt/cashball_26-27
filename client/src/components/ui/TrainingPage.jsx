@@ -122,24 +122,24 @@ function TrainingOptionCard({ optionKey, selected, isSaved, justSaved, loading, 
       {/* Faixa lateral colorida */}
       <div className={`shrink-0 w-1 bg-gradient-to-b ${style.bar}`} />
 
-      <div className="flex-1 p-4">
-        <div className="flex items-start justify-between mb-2">
-          <div className={`font-black text-sm ${isSelected ? "text-on-surface" : style.text}`}>
+      <div className="flex-1 p-4 short:p-2.5">
+        <div className="flex items-start justify-between mb-2 short:mb-1">
+          <div className={`font-black text-sm short:text-xs ${isSelected ? "text-on-surface" : style.text}`}>
             {meta.label}
           </div>
           <span
-            className={`material-symbols-outlined text-[20px] shrink-0 transition-colors ${
+            className={`material-symbols-outlined text-[20px] short:text-[16px] shrink-0 transition-colors ${
               isSelected ? "text-on-surface" : "text-on-surface-variant group-hover:text-on-surface"
             }`}
           >
             {meta.icon}
           </span>
         </div>
-        <div className="text-xs text-on-surface-variant">{meta.description}</div>
+        <div className="text-xs short:text-[10px] text-on-surface-variant">{meta.description}</div>
 
         {isSaved && (
           <div
-            className={`text-xs font-black mt-2 flex items-center gap-1 ${
+            className={`text-xs short:text-[10px] font-black mt-2 short:mt-1 flex items-center gap-1 ${
               justSaved ? "text-emerald-400" : "text-primary"
             }`}
           >
@@ -221,7 +221,7 @@ function PlayerReportRow({ player, position }) {
       {/* Faixa lateral */}
       <div className={`shrink-0 w-1 bg-gradient-to-b ${bar}`} />
 
-      <div className="flex-1 min-w-0 flex items-center px-3 py-2 gap-3">
+      <div className="flex-1 min-w-0 flex items-center px-3 short:px-2 py-2 short:py-1.5 gap-3 short:gap-2">
         {/* Nome */}
         <span className="flex-1 min-w-0 truncate text-sm font-black tracking-tight text-on-surface">
           {player.name}
@@ -365,31 +365,31 @@ export function TrainingPage({ me, matchweek }) {
   const focusStyle = savedTraining ? getMeta(savedTraining) : null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 short:space-y-2">
       {/* ── Summary Widgets ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 short:gap-2">
         <SummaryWidget
           label="Foco Atual"
           value={savedTraining ? getTrainingLabel(savedTraining) : "Nenhum"}
           compactMobile
-          valueClass="text-lg sm:text-2xl"
+          valueClass="text-lg sm:text-2xl short:!text-sm"
           accentClass={focusStyle ? focusStyle.border : "border-outline-variant"}
         />
-        <SummaryWidget label="Jornada" value={matchweek} compactMobile valueClass="text-lg sm:text-2xl" />
+        <SummaryWidget label="Jornada" value={matchweek} compactMobile valueClass="text-lg sm:text-2xl short:!text-sm" />
         <SummaryWidget
           label="Jogadores Treinados"
           value={uniquePlayerCount}
           compactMobile
-          valueClass="text-lg sm:text-2xl"
+          valueClass="text-lg sm:text-2xl short:!text-sm"
           accentClass="border-tertiary"
           valueColorClass="text-tertiary"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 short:gap-2">
         {/* ── TRAINING SELECTION PANEL ──────────────────────────────────── */}
         <Panel title="Foco de Treino" meta={`Jornada ${matchweek}`} padded={false}>
-          <div className="p-3 md:p-4 space-y-4">
+          <div className="p-3 md:p-4 short:p-2 short:space-y-2 space-y-4">
             {error && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-error-container/30 border border-error/40 text-error text-xs font-black uppercase tracking-widest">
                 <span className="material-symbols-outlined text-sm">error</span>
@@ -397,7 +397,7 @@ export function TrainingPage({ me, matchweek }) {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 short:gap-2">
               {TRAINING_OPTIONS.map((key) => (
                 <TrainingOptionCard
                   key={key}
@@ -412,7 +412,7 @@ export function TrainingPage({ me, matchweek }) {
             </div>
 
             {/* Info card — alinhado com design system */}
-            <div className="bg-surface-container-high/50 rounded-lg p-4 border border-outline-variant/25">
+            <div className="bg-surface-container-high/50 rounded-lg p-4 short:p-2.5 border border-outline-variant/25">
               <div className="flex items-start gap-3">
                 <span className="material-symbols-outlined text-on-surface-variant shrink-0 mt-0.5">
                   info
@@ -466,7 +466,7 @@ export function TrainingPage({ me, matchweek }) {
               description="Nenhum atributo mudou de nível — os jogadores podem ter atingido o limite de potencial, forma ou resistência."
             />
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-5 short:space-y-3">
               {Object.entries(historyByPosition).map(([position, records]) => {
                 const posText =
                   POSITION_TEXT_CLASS[position] || "text-on-surface-variant";
@@ -475,7 +475,7 @@ export function TrainingPage({ me, matchweek }) {
                 if (players.length === 0) return null;
 
                 return (
-                  <div key={position} className="space-y-2">
+                  <div key={position} className="space-y-2 short:space-y-1">
                     {/* Header do grupo */}
                     <h3
                       className={`font-black flex items-center gap-2 text-sm ${posText}`}

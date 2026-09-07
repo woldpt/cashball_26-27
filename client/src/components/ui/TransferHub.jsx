@@ -94,7 +94,7 @@ function MarketCard({
       <div className={`h-1 shrink-0 bg-gradient-to-r ${POSITION_BAR_CLASS[player.position] || "from-zinc-400 via-zinc-500 to-zinc-600"}`} />
 
       {/* Header: selo posição + estado + símbolo clube */}
-      <div className="px-3 pt-2.5 flex items-center gap-1.5">
+      <div className="px-3 short:px-2 pt-2.5 short:pt-1.5 flex items-center gap-1.5 short:gap-1">
         <Badge
           size="sm"
           style={{
@@ -141,7 +141,7 @@ function MarketCard({
 
       {/* Herói: avatar com halo + skill */}
       <div
-        className="mx-3 mt-2 rounded-lg flex flex-col items-center pt-3 pb-2.5 px-2"
+        className="mx-3 short:mx-2 mt-2 short:mt-1 rounded-lg flex flex-col items-center pt-3 short:pt-2 pb-2.5 short:pb-1.5 px-2 short:px-1.5"
         style={{ background: `radial-gradient(ellipse 90% 100% at 50% 0%, ${hexToRgba(posHex, 0.22)} 0%, transparent 70%)` }}
       >
         <div className="relative">
@@ -166,7 +166,7 @@ function MarketCard({
             {player.skill ?? 0}
           </span>
         </div>
-        <p className="mt-2 font-headline font-black text-on-surface text-base leading-tight truncate max-w-full">
+        <p className="mt-2 short:mt-1 font-headline font-black text-on-surface text-base short:text-sm leading-tight truncate max-w-full">
           {player.name}
         </p>
         <p className="text-[9px] text-zinc-500 truncate" title={countryName}>
@@ -175,10 +175,10 @@ function MarketCard({
       </div>
 
       {/* Preço + salário */}
-      <div className="px-4 mt-3 flex items-end justify-between gap-2">
+      <div className="px-4 short:px-2 mt-3 short:mt-2 flex items-end justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70">Preço</p>
-          <p className={`font-mono font-black tabular-nums leading-tight text-xl ${affordable ? "text-on-surface" : "text-rose-400"}`}>
+          <p className={`font-mono font-black tabular-nums leading-tight text-xl short:text-base ${affordable ? "text-on-surface" : "text-rose-400"}`}>
             {fmt(price)}
           </p>
           <p className="text-[9px] text-zinc-500 truncate max-w-[130px]">
@@ -192,7 +192,7 @@ function MarketCard({
       </div>
 
       {/* Mini-stats */}
-      <div className="px-3 mt-2 grid grid-cols-3 gap-1.5">
+      <div className="px-3 short:px-2 mt-2 short:mt-1.5 grid grid-cols-3 gap-1.5 short:gap-1">
         <StatTile label="Forma">
           <span className={`tabular-nums ${formClass}`}>
             {formMood} {formVal}
@@ -206,14 +206,14 @@ function MarketCard({
         </StatTile>
       </div>
       {player.aggressiveness != null && (
-        <div className="mt-1.5 flex items-center justify-center gap-1.5">
+        <div className="mt-1.5 short:mt-1 flex items-center justify-center gap-1.5">
           <span className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/50">Agressividade</span>
           <AggBadge value={player.aggressiveness} />
         </div>
       )}
 
       {/* Rodapé único */}
-      <div className="px-3 py-3 mt-auto">
+      <div className="px-3 short:px-2 py-3 short:py-2 mt-auto">
         {!isListed ? (
           <div className="rounded-lg py-2 text-center border border-outline-variant/15 bg-surface/40">
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sem transferência</p>
@@ -323,23 +323,23 @@ export function TransferHub({
 
   return (
     <Panel title="Mercado de Transferências" meta={`${visible.length} jogador${visible.length !== 1 ? "es" : ""}`}>
-      <div className="p-3 md:p-4">
+      <div className="p-3 md:p-4 short:p-2">
         {/* Search + filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 short:gap-1.5 mb-4 short:mb-2">
           <div className="relative md:col-span-2">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 text-sm select-none pointer-events-none">
               search
             </span>
             <input
               type="text"
-              className="w-full bg-surface border border-outline-variant/30 rounded-sm pl-9 pr-4 py-2.5 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-on-surface-variant/30 text-on-surface"
+              className="w-full bg-surface border border-outline-variant/30 rounded-sm pl-9 pr-4 py-2.5 short:py-1.5 text-xs font-medium focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-on-surface-variant/30 text-on-surface"
               placeholder="Pesquisar jogador, clube ou nacionalidade…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <select
-            className="bg-surface border border-outline-variant/30 rounded-sm px-3 py-2.5 text-[11px] font-bold text-on-surface focus:ring-1 focus:ring-primary focus:outline-none"
+            className="bg-surface border border-outline-variant/30 rounded-sm px-3 py-2.5 short:py-1.5 text-[11px] font-bold text-on-surface focus:ring-1 focus:ring-primary focus:outline-none"
             value={marketPositionFilter}
             onChange={(e) => setMarketPositionFilter(e.target.value)}
           >
@@ -350,7 +350,7 @@ export function TransferHub({
             <option value="ATA">Avançado</option>
           </select>
           <select
-            className="bg-surface border border-outline-variant/30 rounded-sm px-3 py-2.5 text-[11px] font-bold text-on-surface focus:ring-1 focus:ring-primary focus:outline-none"
+            className="bg-surface border border-outline-variant/30 rounded-sm px-3 py-2.5 short:py-1.5 text-[11px] font-bold text-on-surface focus:ring-1 focus:ring-primary focus:outline-none"
             value={marketSort}
             onChange={(e) => setMarketSort(e.target.value)}
           >
@@ -368,7 +368,7 @@ export function TransferHub({
             description="Os jogadores colocados em transferência aparecem aqui."
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 short:gap-2">
             {visible.map((player) => (
               <MarketCard
                 key={player.id}
