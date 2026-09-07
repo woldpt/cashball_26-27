@@ -629,24 +629,28 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
           (game.negativeBudgetStreak[teamId] ?? 0) + 1;
         const streak = game.negativeBudgetStreak[teamId];
 
-        // Aviso da direcção antes do despedimento por insolvência.
+        // Aviso da direcção antes do despedimento por insolvência — emitido
+        // como modal dedicado (boardBudgetWarning) em vez do antigo toast.
         const warned = game.boardBudgetWarned[teamId] ?? 0;
+        const emitBoardWarning = (level: number) => {
+          io.to(player.socketId).emit("boardBudgetWarning", {
+            level,
+            budget,
+            streak,
+            teamId,
+            teamName: team.name,
+            division: team.division,
+            crest: team.crest ?? null,
+            colorPrimary: team.color_primary,
+            colorSecondary: team.color_secondary,
+          });
+        };
         if (warned < 1 && streak >= 1) {
           game.boardBudgetWarned[teamId] = 1;
-          if (player.socketId) {
-            io.to(player.socketId).emit("systemMessage", {
-              text: "⚠️ A Direcção alerta: orçamento negativo — risco de bancarrota se a tendência continuar.",
-              broadcast: false,
-            });
-          }
+          if (player.socketId) emitBoardWarning(1);
         } else if (warned < 3 && streak >= 3) {
           game.boardBudgetWarned[teamId] = 3;
-          if (player.socketId) {
-            io.to(player.socketId).emit("systemMessage", {
-              text: "⚠️ ÚLTIMO AVISO: a Direcção admite despedimento por insolvência se o orçamento continuar negativo.",
-              broadcast: false,
-            });
-          }
+          if (player.socketId) emitBoardWarning(3);
         }
 
         let dismissalChance = 0;

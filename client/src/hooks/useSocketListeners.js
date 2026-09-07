@@ -1417,6 +1417,11 @@ export function useSocketListeners(handlers, refs) {
 			refs.pendingDismissalRef.current = { reason, teamName, detail };
 		});
 
+		socket.on("boardBudgetWarning", (data) => {
+			if (!inRoom()) return;
+			handlers.setBoardWarning(data);
+		});
+
 		socket.on("coachMarketReport", (report) => {
 			if (!inRoom()) return;
 			if (!report || !Array.isArray(report.events) || report.events.length === 0)
@@ -1564,6 +1569,7 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("tacticFamiliarity");
 			socket.off("allTacticFamiliarity");
 			socket.off("coachDismissed");
+			socket.off("boardBudgetWarning");
 			socket.off("coachMarketReport");
 			socket.off("jobOffer");
 			socket.off("chatMessage");

@@ -108,6 +108,7 @@ export function GameProvider({
 	const [welcomeModal, setWelcomeModal] = useState(null);
 	const [jobOfferModal, setJobOfferModal] = useState(null);
 	const [dismissalModal, setDismissalModal] = useState(null);
+	const [boardWarning, setBoardWarning] = useState(null);
 	const [coachMarketReport, setCoachMarketReport] = useState(null);
 	const [seasonEndModal, setSeasonEndModal] = useState(null);
 	// ── Admin panel ──
@@ -769,6 +770,7 @@ export function GameProvider({
 			setWelcomeModal,
 			setJobOfferModal,
 			setDismissalModal,
+			setBoardWarning,
 			setCoachMarketReport,
 			setAdminUsers,
 			setTransferProposalModal,
@@ -1406,6 +1408,8 @@ export function GameProvider({
 		setJobOfferModal,
 		dismissalModal,
 		setDismissalModal,
+		boardWarning,
+		setBoardWarning,
 		coachMarketReport,
 		setCoachMarketReport,
 		seasonEndModal,
