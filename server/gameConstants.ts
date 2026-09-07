@@ -301,6 +301,11 @@ export const MATCH_TUNING = {
   injurySevereExtraWeeks: 6,
   injurySevereLossBase: 2,
   injurySevereLossExtra: 4,
+  // Carga de lesões: se a equipa começa o jogo com jogadores já lesionados
+  // (injury_until_matchweek >= jornada atual), a taxa de lesão dela nesse
+  // jogo é reduzida a este fator — amortiza lesões consecutivas (queixas
+  // de coaches). Lido da BD no arranque do jogo → estável em replays/crashes.
+  injuryLoadSoftener: 0.5,
   // Fadiga: a cada intervalo de minutos jogados, -1 skill efetiva, com
   // escape por resistência (por ponto). Alvo: titulares cansados no fim.
   fatigueIntervalMinutes: 15,

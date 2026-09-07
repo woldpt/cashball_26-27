@@ -108,6 +108,7 @@ export interface MatchFixture {
   _awaySquad?: PlayerRow[];
   _homeFullRoster?: PlayerRow[];
   _awayFullRoster?: PlayerRow[];
+  _injuryLoadMult?: { home: number; away: number };
   _homeMorale?: number;
   _awayMorale?: number;
   _t1?: Tactic | null;

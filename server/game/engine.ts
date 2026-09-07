@@ -1991,6 +1991,30 @@ export async function simulateMatchSegment(
     fixture._awayFullRoster = awayFullRoster;
   }
 
+  // Carga de lesões: equipa que começa o jogo com jogadores lesionados
+  // (injury_until_matchweek >= jornada atual) tem a taxa de lesão reduzida
+  // neste jogo (amortiza lesões consecutivas). Calculado da BD no arranque:
+  // estável em replays de crash (o estado da BD já inclui o flush da
+  // jornada anterior, que finaliza antes da seguinte começar).
+  if (fixture._injuryLoadMult === undefined) {
+    const countInjured = (teamId: number) =>
+      dbGetAsync(
+        db,
+        "SELECT COUNT(*) AS n FROM players WHERE team_id = ? AND injury_until_matchweek >= ?",
+        [teamId, currentMatchweek],
+      )
+        .then((row) => (row && typeof row.n === "number" ? row.n : 0))
+        .catch(() => 0);
+    const [homeInjured, awayInjured] = await Promise.all([
+      countInjured(fixture.homeTeamId),
+      countInjured(fixture.awayTeamId),
+    ]);
+    fixture._injuryLoadMult = {
+      home: homeInjured > 0 ? MATCH_TUNING.injuryLoadSoftener : 1,
+      away: awayInjured > 0 ? MATCH_TUNING.injuryLoadSoftener : 1,
+    };
+  }
+
   if (!fixture.homeLineup || fixture.homeLineup.length === 0) {
     fixture.homeLineup = buildLineupSnapshot(
       fixture,
@@ -2739,40 +2763,47 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
   if (!isLastLeagueMinute && rng() < homeCardProb) await emitCard(true);
   if (!isLastLeagueMinute && rng() < awayCardProb) await emitCard(false);
 
-  const injuryChance = rng();
+  // Lesões: rolls independentes por lado (antes dos multiplicadores de clima
+  // e de carga de lesões). A taxa total equivale ao roll global anterior
+  // (0,3%/min para as duas equipas), mas agora permite multiplicador
+  // por equipa (carga de lesões).
   const weatherInjuryMult =
     MATCH_TUNING.injuryWeatherMult[fixture._weather ?? ""] ?? 1.0;
-  if (
-    !isLastLeagueMinute &&
-    injuryChance < MATCH_TUNING.injuryPerMinute * weatherInjuryMult
-  ) {
-    const isHomeInjury = rng() > 0.5;
-    const squad = isHomeInjury ? powers.home.squad : powers.away.squad;
-    const side = isHomeInjury ? "home" : "away";
-    const lineupIds = isHomeInjury ? homeLineupIds : awayLineupIds;
-    const fullRoster = isHomeInjury ? homeFullRoster : awayFullRoster;
-    if (squad.length > 0) {
-      const injuredPlayer = squad[Math.floor(rng() * squad.length)];
-      const resistanceSkip =
-        ((injuredPlayer?.resistance ?? RES_NEUTRAL) - 1) *
-        MATCH_TUNING.injuryResistSkipPerPoint;
-      if (rng() < resistanceSkip) {
-        // jogador resistiu — ignorar lesão
-      } else {
-        const injuryResult = await applyInjuryEvent({
-          fixture,
-          teamSide: side,
-          squad,
-          fullRoster,
-          lineupIds,
-          currentMatchweek,
-          io,
-          game,
-          rng,
-        });
-        if (injuryResult.replaced && side === "home") powers.home.squad = squad;
-        if (injuryResult.replaced && side === "away") powers.away.squad = squad;
-      }
+  const injuryBasePerSide =
+    (MATCH_TUNING.injuryPerMinute * weatherInjuryMult) / 2;
+  const homeInjuryMult = fixture._injuryLoadMult?.home ?? 1;
+  const awayInjuryMult = fixture._injuryLoadMult?.away ?? 1;
+  const rollInjuryForSide = async (side: "home" | "away") => {
+    const isHome = side === "home";
+    const squad = isHome ? powers.home.squad : powers.away.squad;
+    if (squad.length === 0) return;
+    const injuredPlayer = squad[Math.floor(rng() * squad.length)];
+    const resistanceSkip =
+      ((injuredPlayer?.resistance ?? RES_NEUTRAL) - 1) *
+      MATCH_TUNING.injuryResistSkipPerPoint;
+    if (rng() < resistanceSkip) {
+      // jogador resistiu — ignorar lesão
+      return;
+    }
+    const injuryResult = await applyInjuryEvent({
+      fixture,
+      teamSide: side,
+      squad,
+      fullRoster: isHome ? homeFullRoster : awayFullRoster,
+      lineupIds: isHome ? homeLineupIds : awayLineupIds,
+      currentMatchweek,
+      io,
+      game,
+      rng,
+    });
+    if (injuryResult.replaced && side === "home") powers.home.squad = squad;
+    if (injuryResult.replaced && side === "away") powers.away.squad = squad;
+  };
+  if (!isLastLeagueMinute) {
+    if (rng() < injuryBasePerSide * homeInjuryMult) {
+      await rollInjuryForSide("home");
+    } else if (rng() < injuryBasePerSide * awayInjuryMult) {
+      await rollInjuryForSide("away");
     }
   }
 
