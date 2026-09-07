@@ -16,10 +16,10 @@ const INCOME_TYPES = new Set([
 
 function NewsRow({ news }) {
   return (
-    <div className="px-4 py-3 flex items-center gap-3 hover:bg-white/[0.03] transition-colors">
+    <div className="px-4 short:px-3 py-3 short:py-1.5 flex items-center gap-3 short:gap-2 hover:bg-white/[0.03] transition-colors">
       {/* Icon */}
       <div
-        className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${
+        className={`w-8 h-8 short:w-6 short:h-6 rounded flex items-center justify-center shrink-0 ${
           news.type === "transfer_in"
             ? "bg-emerald-500/15"
             : news.type === "transfer_out"
@@ -182,10 +182,10 @@ export function ClubTab({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 short:space-y-2">
 
       {/* ── ROW 1: HERO + BUDGET ─────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 short:gap-2">
 
         {/* Club hero card */}
         <div className="md:col-span-2 rounded-lg border border-outline-variant/25 overflow-hidden relative bg-surface-container">
@@ -198,19 +198,19 @@ export function ClubTab({
                 : "linear-gradient(135deg, #2d6a4f22 0%, transparent 60%)",
             }}
           />
-          <div className="relative p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
+          <div className="relative p-3 sm:p-4 short:p-2 short:gap-2 flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
             {/* Badge — crest com fallback para inicial */}
             {teamInfo?.crest ? (
               <img
                 src={teamInfo.crest}
                 alt={teamInfo?.name || "crest"}
                 onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
-                className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-contain bg-white p-1.5 shrink-0 border border-white/10"
+                className="w-12 h-12 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg object-contain bg-white p-1.5 short:p-1 shrink-0 border border-white/10"
                 loading="lazy"
               />
             ) : null}
             <div
-              className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 border border-white/10"
+              className="w-12 h-12 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg flex items-center justify-center text-xl sm:text-2xl short:text-base font-black shrink-0 border border-white/10"
               style={{
                 background: teamInfo?.color_primary || "#2a2a2a",
                 color: teamInfo?.color_secondary || "#fff",
@@ -223,11 +223,11 @@ export function ClubTab({
             {/* Info */}
             <div className="flex-1 min-w-0">
               <h1
-                className="font-headline text-lg sm:text-2xl font-black tracking-tight leading-none mb-1 truncate text-on-surface"
+                className="font-headline text-lg sm:text-2xl short:text-base font-black tracking-tight leading-none mb-1 short:mb-0.5 truncate text-on-surface"
               >
                 {teamInfo?.name || "—"}
               </h1>
-              <div className="flex flex-wrap items-center gap-2 mb-3">
+              <div className="flex flex-wrap items-center gap-2 mb-3 short:mb-1.5">
                 <span
                   className="text-[10px] font-black uppercase px-2 py-0.5 rounded tracking-widest"
                   style={{
@@ -330,11 +330,11 @@ export function ClubTab({
       </div>
 
       {/* ── ROW 2: ESTÁDIO + PALMARÉS ─────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 short:gap-2">
 
         {/* Estádio */}
         <div className="bg-surface-container rounded-lg border border-outline-variant/25 overflow-hidden flex flex-col">
-          <div className="h-24 sm:h-28 relative flex items-end overflow-hidden">
+          <div className="h-24 sm:h-28 short:h-16 relative flex items-end overflow-hidden">
             <StadiumIllustration
               capacity={teamInfo?.stadium_capacity || 10000}
               primary={teamInfo?.color_primary}
@@ -342,7 +342,7 @@ export function ClubTab({
               className="absolute inset-0 h-full w-full"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-            <div className="relative px-4 pb-3">
+            <div className="relative px-4 pb-3 short:px-3 short:pb-2">
               <h3 className="font-headline text-base font-black text-white leading-tight drop-shadow">
                 {teamInfo?.stadium_name || "Estádio Municipal"}
               </h3>
@@ -354,7 +354,7 @@ export function ClubTab({
               </p>
             </div>
           </div>
-          <div className="p-3 grid grid-cols-2 gap-2">
+          <div className="p-3 short:p-2 grid grid-cols-2 gap-2 short:gap-1.5">
             <div className="bg-surface-container-high p-2.5 rounded text-center border border-outline-variant/25">
               <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant mb-0.5">
                 Capacidade
@@ -378,8 +378,8 @@ export function ClubTab({
         </div>
 
         {/* Palmarés */}
-        <div className="bg-surface-container rounded-lg border border-outline-variant/25 p-4 flex flex-col">
-          <div className="flex justify-between items-center mb-4">
+        <div className="bg-surface-container rounded-lg border border-outline-variant/25 p-4 short:p-2.5 flex flex-col">
+          <div className="flex justify-between items-center mb-4 short:mb-2">
             <h3 className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
               Palmarés
             </h3>
@@ -426,9 +426,9 @@ export function ClubTab({
               })}
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-outline-variant/25 rounded p-6 bg-surface-container-high">
+            <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-outline-variant/25 rounded p-6 short:p-3 bg-surface-container-high">
               <span
-                className="material-symbols-outlined text-on-surface-variant/30 text-4xl mb-2"
+                className="material-symbols-outlined text-on-surface-variant/30 text-4xl short:text-2xl mb-2 short:mb-1"
                 style={{ fontVariationSettings: "'FILL' 0" }}
               >
                 trophy
@@ -492,7 +492,7 @@ export function ClubTab({
                     <button
                       type="button"
                       onClick={() => toggleYear(year)}
-                      className={`w-full flex items-center justify-between px-4 py-2.5 text-left transition-colors ${
+                      className={`w-full flex items-center justify-between px-4 short:px-3 py-2.5 short:py-1.5 text-left transition-colors ${
                         isExpanded
                           ? "bg-surface-container-high/60"
                           : "bg-surface-container-high/20 hover:bg-surface-container-high/40"

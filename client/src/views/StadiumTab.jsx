@@ -45,10 +45,10 @@ export function StadiumTab({
 
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 short:space-y-2">
       {/* ── HERO: ESTÁDIO ─────────────────────────────────────────── */}
       <div className="rounded-lg border border-outline-variant/25 overflow-hidden relative bg-surface-container">
-        <div className="h-32 sm:h-56 relative flex items-end overflow-hidden">
+        <div className="h-32 sm:h-56 short:h-20 relative flex items-end overflow-hidden">
           <StadiumIllustration
             capacity={stadiumCapacity}
             primary={teamInfo?.color_primary}
@@ -56,14 +56,14 @@ export function StadiumTab({
             className="absolute inset-0 h-full w-full"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-          <div className="relative px-5 pb-4 w-full">
+          <div className="relative px-5 short:px-3 pb-4 short:pb-2 w-full">
             <p
               className="text-[10px] font-black uppercase tracking-widest mb-1 drop-shadow"
               style={{ color: teamInfo?.color_primary || "#4ade80" }}
             >
               Recinto Principal
             </p>
-            <h2 className="font-headline text-lg sm:text-2xl font-black text-white leading-tight drop-shadow">
+            <h2 className="font-headline text-lg sm:text-2xl short:text-base font-black text-white leading-tight drop-shadow">
               {teamInfo?.stadium_name || "Estádio Municipal"}
             </h2>
             <p className="text-[11px] text-white/70 font-bold mt-1 drop-shadow">
@@ -75,7 +75,7 @@ export function StadiumTab({
       </div>
 
       {/* ── ROW: STATS ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 short:gap-2">
         <SummaryWidget
           label="Capacidade Actual"
           value={stadiumCapacity.toLocaleString("pt-PT")}
@@ -113,24 +113,24 @@ export function StadiumTab({
         meta={atMaxCapacity ? "Capacidade Máxima" : undefined}
         padded={false}
       >
-        <div className="p-3 sm:p-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-5">
-            <div className="bg-surface rounded-md border border-outline-variant/15 p-3 sm:p-4 flex flex-col gap-1">
+        <div className="p-3 sm:p-5 short:p-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 short:gap-2 mb-4 sm:mb-5 short:mb-3">
+            <div className="bg-surface rounded-md border border-outline-variant/15 p-3 sm:p-4 short:p-2.5 flex flex-col gap-1 short:gap-0.5">
               <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
                 Custo por Obra
               </span>
-              <span className="text-tertiary font-headline font-bold text-xl tabular-nums">
+              <span className="text-tertiary font-headline font-bold text-xl short:text-base tabular-nums">
                 {formatCurrency(EXPANSION_COST)}
               </span>
               <span className="text-on-surface-variant text-[10px]">
                 +{SEATS_PER_BUILD.toLocaleString("pt-PT")} lugares
               </span>
             </div>
-            <div className="bg-surface rounded-md border border-outline-variant/15 p-3 sm:p-4 flex flex-col gap-1">
+            <div className="bg-surface rounded-md border border-outline-variant/15 p-3 sm:p-4 short:p-2.5 flex flex-col gap-1 short:gap-0.5">
               <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
                 Ganho Receita / Obra
               </span>
-              <span className="text-primary font-headline font-bold text-xl tabular-nums">
+              <span className="text-primary font-headline font-bold text-xl short:text-base tabular-nums">
                 {formatCurrency(SEATS_PER_BUILD * 15)}
               </span>
               <span className="text-on-surface-variant text-[10px]">

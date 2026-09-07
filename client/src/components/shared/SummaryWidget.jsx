@@ -46,10 +46,10 @@ export function SummaryWidget({
         mini
           ? `bg-surface-container-low p-1.5 sm:p-3 rounded-md flex flex-col justify-center ${sub ? "h-12 sm:h-20" : "h-10 sm:h-16"} border-l-4`
           : flat
-            ? "bg-surface-container p-3 sm:p-6 rounded-xl flex flex-col justify-between"
+            ? "bg-surface-container p-3 sm:p-6 short:p-2 rounded-xl flex flex-col justify-between"
             : compactMobile
-              ? `bg-surface-container-low p-3 sm:p-5 rounded-md flex flex-col justify-between ${sub ? "h-20" : "h-14"} sm:h-28 border-l-4`
-              : "bg-surface-container-low p-5 rounded-md flex flex-col justify-between h-28 border-l-4"
+              ? `bg-surface-container-low p-3 sm:p-5 short:p-2 rounded-md flex flex-col justify-between ${sub ? "h-20 short:h-14" : "h-14 short:h-12"} sm:h-28 short:sm:h-14 border-l-4`
+              : "bg-surface-container-low p-5 short:p-3 rounded-md flex flex-col justify-between h-28 short:h-20 border-l-4"
       } ${flat ? "" : accentClass} ${className}`}
       style={accentStyle}
     >

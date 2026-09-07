@@ -130,26 +130,26 @@ export function FinancesTab({
   ]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 short:space-y-2">
       {/* ── HERO ──────────────────────────────────────────────────────── */}
       {/* 3 segmentos lado a lado em todas as larguras: no phone, empilhados
           gastavam ~380px de altura; em colunas o valor exato cabe em text-[15px]. */}
-      <div className="grid grid-cols-3 gap-0.5 bg-outline-variant/10 overflow-hidden rounded-xl">
+      <div className="grid grid-cols-3 gap-0.5 bg-outline-variant/10 overflow-hidden rounded-xl short:rounded-lg">
         {/* Saldo Actual */}
         <SummaryWidget
           flat
           label="Saldo Actual"
           value={formatCurrency(currentBudget)}
-          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-4xl font-bold"
+          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-4xl short:!text-sm font-bold"
           valueColorClass={currentBudget >= 0 ? "text-primary" : "text-error"}
-          className="relative overflow-hidden"
+          className="relative overflow-hidden short:!p-2"
         >
-          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none">
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none short:hidden">
             <span className="material-symbols-outlined text-8xl">
               payments
             </span>
           </div>
-          <div className="mt-2 sm:mt-4 flex items-end gap-2">
+          <div className="mt-2 sm:mt-4 short:mt-1 flex items-end gap-2">
             <div className="hidden sm:flex gap-1 h-6 sm:h-8 items-end">
               <div className="w-1 bg-primary/20 h-2 rounded-t-sm" />
               <div className="w-1 bg-primary/40 h-4 rounded-t-sm" />
@@ -167,10 +167,11 @@ export function FinancesTab({
           flat
           label="Resultado da Época"
           value={`${seasonResult >= 0 ? "+" : ""}${formatCurrency(seasonResult)}`}
-          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-4xl font-bold"
+          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-4xl short:!text-sm font-bold"
+          className="short:!p-2"
           valueColorClass={seasonResult >= 0 ? "text-tertiary" : "text-error"}
         >
-          <div className="mt-2 sm:mt-4 flex items-center gap-1 sm:gap-2">
+          <div className="mt-2 sm:mt-4 short:mt-1 flex items-center gap-1 sm:gap-2">
             <span
               className={`material-symbols-outlined text-xs sm:text-sm ${seasonResult >= 0 ? "text-tertiary" : "text-error"}`}
             >
@@ -188,16 +189,16 @@ export function FinancesTab({
           flat
           label="Saldo previsto fim de época"
           value={`${projection.projectedEndBudget >= 0 ? "+" : ""}${formatCurrency(projection.projectedEndBudget)}`}
-          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-3xl font-bold"
+          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-3xl short:!text-sm font-bold"
           valueColorClass={projection.projectedEndBudget >= 0 ? "text-tertiary" : "text-error"}
-          className="relative overflow-hidden"
+          className="relative overflow-hidden short:!p-2"
         >
-          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none">
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none short:hidden">
             <span className="material-symbols-outlined text-8xl">
               savings
             </span>
           </div>
-          <div className="mt-2 sm:mt-4">
+          <div className="mt-2 sm:mt-4 short:mt-1">
             <p className="text-[9px] sm:text-[10px] leading-tight text-on-surface-variant uppercase mb-1">
               Bilheteiras - salários - juros ({projection.remainingJornadas} j.)
             </p>
@@ -209,6 +210,8 @@ export function FinancesTab({
       <Panel
         title="Evolução do Saldo"
         icon="show_chart"
+        className="short:[&>div:first-child]:!py-2"
+        bodyClassName="short:!p-2"
         meta={
           <span
             className={`font-headline font-black ${currentBudget >= 0 ? "text-primary" : "text-error"}`}
@@ -221,12 +224,12 @@ export function FinancesTab({
       </Panel>
 
       {/* ── RECEITAS / DESPESAS / CONTROLO ────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 short:gap-2">
         {/* Receitas */}
-        <div className="bg-surface-container-low rounded-lg p-3 sm:p-5 flex flex-col space-y-3">
-          <div className="flex justify-between items-center pb-2 border-b border-outline-variant/15">
-            <h3 className="font-headline text-base uppercase tracking-tight flex items-center gap-2 min-w-0 truncate">
-              <span className="material-symbols-outlined text-primary text-base shrink-0">
+        <div className="bg-surface-container-low rounded-lg p-3 sm:p-5 short:p-2.5 flex flex-col space-y-3 short:space-y-2">
+          <div className="flex justify-between items-center pb-2 short:pb-1 border-b border-outline-variant/15">
+            <h3 className="font-headline text-base short:text-sm uppercase tracking-tight flex items-center gap-2 min-w-0 truncate">
+              <span className="material-symbols-outlined text-primary text-base short:text-sm shrink-0">
                 arrow_downward
               </span>
               Receitas
@@ -235,7 +238,7 @@ export function FinancesTab({
               {formatCurrency(totalSeasonIncome)}
             </span>
           </div>
-          <ul className="space-y-3">
+          <ul className="space-y-3 short:space-y-2">
             {(financeData?.ticketBreakdown?.length || 0) > 0 ? (
               <li className="space-y-1">
                 <div
@@ -405,10 +408,10 @@ export function FinancesTab({
         </div>
 
         {/* Despesas */}
-        <div className="bg-surface-container-low rounded-lg p-3 sm:p-5 flex flex-col space-y-3">
-          <div className="flex justify-between items-center pb-2 border-b border-outline-variant/15">
-            <h3 className="font-headline text-base uppercase tracking-tight flex items-center gap-2 min-w-0 truncate">
-              <span className="material-symbols-outlined text-error text-base shrink-0">
+        <div className="bg-surface-container-low rounded-lg p-3 sm:p-5 short:p-2.5 flex flex-col space-y-3 short:space-y-2">
+          <div className="flex justify-between items-center pb-2 short:pb-1 border-b border-outline-variant/15">
+            <h3 className="font-headline text-base short:text-sm uppercase tracking-tight flex items-center gap-2 min-w-0 truncate">
+              <span className="material-symbols-outlined text-error text-base short:text-sm shrink-0">
                 arrow_upward
               </span>
               Despesas
@@ -417,7 +420,7 @@ export function FinancesTab({
               {formatCurrency(totalSeasonExpenses)}
             </span>
           </div>
-          <ul className="space-y-3">
+          <ul className="space-y-3 short:space-y-2">
             <li className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-on-surface-variant">
@@ -545,17 +548,17 @@ export function FinancesTab({
         </div>
 
         {/* Centro de Controlo */}
-        <div className="space-y-4">
+        <div className="space-y-4 short:space-y-2">
           {/* Folha Salarial */}
           <div
-            className={`bg-surface-container rounded-lg p-3 sm:p-5 border-l-4 ${wageSharePct > 75 ? "border-error" : wageSharePct > 50 ? "border-tertiary" : "border-primary"} relative overflow-hidden`}
+            className={`bg-surface-container rounded-lg p-3 sm:p-5 short:p-2.5 border-l-4 ${wageSharePct > 75 ? "border-error" : wageSharePct > 50 ? "border-tertiary" : "border-primary"} relative overflow-hidden`}
           >
             <div className="flex justify-between items-start mb-3">
               <div>
                 <h3 className="font-headline text-xs uppercase tracking-widest text-on-surface-variant">
                   Folha Salarial
                 </h3>
-                <p className="font-headline text-xl font-bold mt-1">
+                <p className="font-headline text-xl short:text-base font-bold mt-1 short:mt-0.5">
                   {formatCurrency(totalWeeklyWage)}{" "}
                   <span className="text-xs font-normal opacity-50">
                     / jornada
@@ -604,7 +607,7 @@ export function FinancesTab({
           </div>
 
           {/* Dívida Bancária */}
-          <div className="bg-surface-container rounded-lg p-3 sm:p-5 border-t border-outline-variant/10">
+          <div className="bg-surface-container rounded-lg p-3 sm:p-5 short:p-2.5 border-t border-outline-variant/10">
             <h3 className="font-headline text-xs uppercase tracking-widest text-on-surface-variant mb-3">
               Empréstimos
             </h3>
