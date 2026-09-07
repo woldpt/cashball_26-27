@@ -89,7 +89,6 @@ export function IntervencaoView({
   injuredHalftimeIds,
   onResolveAction,
   isUserSubPause = false,
-  // eslint-disable-next-line no-unused-vars
   pauseInitialIdx = null,
 }) {
   const [centerTab, setCenterTab] = useState("subs");
@@ -511,6 +510,8 @@ export function IntervencaoView({
           >
             <SubsPanel
               isHalftime={isHalftime}
+              isUserSubPause={isUserSubPause}
+              pauseInitialIdx={pauseInitialIdx}
               isForcedSwap={isForcedSwap}
               isGkRedCard={isGkRedCard}
               isEmergencyGk={isEmergencyGk}
