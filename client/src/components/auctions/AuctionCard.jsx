@@ -94,11 +94,14 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
     });
   }, [bidInput, minBid, auction.playerId, teamInfo, socket]);
 
+  const sellerTeam = (teams || []).find((t) => Number(t.id) === Number(auction.sellerTeamId)) || null;
+  const sellerCrest = sellerTeam?.crest || auction.team_crest || null;
+  const sellerName = sellerTeam?.name || auction.team_name || null;
   const teamLabel = auction.team_name
     ? auction.isExClub
       ? `ex-${auction.team_name}`
       : auction.team_name
-    : "Sem clube";
+    : sellerName || "Sem clube";
 
   const formVal = auction.form ?? 32;
   const formMood = formVal >= 41 ? "💪" : formVal <= 22 ? "😩" : "👍";
@@ -106,7 +109,16 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
 
   return (
     <div
-      className={`relative flex flex-col rounded-xl overflow-hidden border border-outline-variant/25 bg-gradient-to-b ${POSITION_BG_GRADIENT_CLASS[auction.position] || "from-zinc-500/8"} via-surface-container/80 to-surface shadow-sm shadow-black/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg ${POSITION_GLOW_CLASS[auction.position] || ""}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpenDetails?.(auction)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpenDetails?.(auction);
+        }
+      }}
+      className={`relative flex flex-col rounded-xl overflow-hidden border border-outline-variant/25 bg-gradient-to-b ${POSITION_BG_GRADIENT_CLASS[auction.position] || "from-zinc-500/8"} via-surface-container/80 to-surface shadow-sm shadow-black/30 transition-all duration-200 hover:-translate-y-px hover:shadow-lg cursor-pointer ${POSITION_GLOW_CLASS[auction.position] || ""}`}
     >
       {/* Faixa da posição (linguagem PlayerRow, na horizontal) */}
       <div className={`h-1 shrink-0 bg-gradient-to-r ${POSITION_BAR_CLASS[auction.position] || "from-zinc-400 via-zinc-500 to-zinc-600"}`} />
@@ -135,15 +147,29 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
         <span className="ml-auto text-[9px] text-zinc-500 truncate max-w-[110px]" title={teamLabel}>
           {teamLabel}
         </span>
-        <button
-          type="button"
-          onClick={() => onOpenDetails?.(auction)}
-          className="text-zinc-500 hover:text-zinc-200 transition-colors shrink-0"
-          title="Ver histórico do jogador"
-          aria-label="Ver histórico do jogador"
-        >
-          <span className="material-symbols-outlined text-base leading-none block">history</span>
-        </button>
+        {sellerTeam || sellerCrest ? (
+          sellerCrest ? (
+            <img
+              src={sellerCrest}
+              alt={sellerName || teamLabel}
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+              className="w-6 h-6 object-contain bg-white rounded-sm p-0.5 shrink-0 border border-outline-variant/20"
+              loading="lazy"
+              title={sellerName || teamLabel}
+            />
+          ) : (
+            <span
+              className="w-6 h-6 rounded-sm flex items-center justify-center font-black text-[8px] leading-none shrink-0 border border-outline-variant/20"
+              style={{
+                backgroundColor: sellerTeam?.color_primary || "#333",
+                color: sellerTeam?.color_secondary || "#fff",
+              }}
+              title={sellerName || teamLabel}
+            >
+              {(sellerName || teamLabel).substring(0, 3).toUpperCase()}
+            </span>
+          )
+        ) : null}
       </div>
 
       {/* Herói: avatar com halo + skill sobreposta */}
@@ -294,6 +320,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             <div
               className="flex items-center rounded-lg overflow-hidden border bg-surface/60"
               style={{ borderColor: hexToRgba(posHex, 0.4) }}
+              onClick={(e) => e.stopPropagation()}
             >
               <span className="material-symbols-outlined text-base px-2.5 shrink-0" style={{ color: posHex }}>
                 currency_exchange
@@ -303,11 +330,18 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
                 inputMode="numeric"
                 min={minBid}
                 value={bidInput}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.stopPropagation()}
                 onChange={(e) => {
                   setBidInput(e.target.value);
                   setBidError("");
                 }}
-                onKeyDown={(e) => e.key === "Enter" && handleBid()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.stopPropagation();
+                    handleBid();
+                  }
+                }}
                 className="flex-1 min-w-0 bg-transparent py-2 pr-3 text-white font-mono text-xs outline-none"
                 aria-label="Valor do lance"
               />
@@ -320,7 +354,7 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             )}
             <button
               type="button"
-              onClick={handleBid}
+              onClick={(e) => { e.stopPropagation(); handleBid(); }}
               className="w-full py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110"
               style={{ background: posHex, color: "#0d0d14" }}
             >
