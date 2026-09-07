@@ -20,11 +20,27 @@ function fmt(value) {
   }).format(value);
 }
 
-function TeamBadge({ teamId, teamName, teams }) {
+/**
+ * @param {{teamId: number|string, teamName?: string, teams: array, size?: "lg"|"sm"}} props
+ */
+function TeamBadge({ teamId, teamName, teams, size = "lg" }) {
   const team = teams?.find((t) => t.id === teamId || t.id === Number(teamId));
+  const [crestFailed, setCrestFailed] = useState(false);
+  const sz = size === "sm" ? "w-5 h-5 text-[9px]" : "w-8 h-8 text-xs";
+  if (team?.crest && !crestFailed) {
+    return (
+      <img
+        src={team.crest}
+        alt={teamName || "crest"}
+        onError={() => setCrestFailed(true)}
+        className={`${sz} rounded-full object-contain bg-white p-0.5 border border-white/10 shrink-0`}
+        loading="lazy"
+      />
+    );
+  }
   return (
     <div
-      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0"
+      className={`${sz} rounded-full flex items-center justify-center font-black shrink-0 border border-white/10`}
       style={{
         background: team?.color_primary || "#27272a",
         color: team?.color_secondary || "#fff",
@@ -275,9 +291,6 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                     {visiblePromotions.map((p, i) => {
                       const goingUp = p.toDiv < p.fromDiv;
                       const isMe = isMyTeam(p.teamId);
-                      const team = teams?.find(
-                        (t) => t.id === p.teamId || t.id === Number(p.teamId),
-                      );
                       return (
                         <motion.div
                           key={i}
@@ -300,15 +313,12 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                           >
                             {goingUp ? "arrow_upward" : "arrow_downward"}
                           </span>
-                          <div
-                            className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0"
-                            style={{
-                              background: team?.color_primary || "#27272a",
-                              color: team?.color_secondary || "#fff",
-                            }}
-                          >
-                            {p.teamName?.[0] || "?"}
-                          </div>
+                          <TeamBadge
+                            teamId={p.teamId}
+                            teamName={p.teamName}
+                            teams={teams}
+                            size="sm"
+                          />
                           <span className="font-bold flex-1 truncate">
                             {p.teamName}
                           </span>
