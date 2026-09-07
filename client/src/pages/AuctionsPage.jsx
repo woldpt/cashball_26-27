@@ -101,7 +101,7 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
               <div className="flex flex-col gap-1.5">
                 {closed.map((auction, i) => (
                   <motion.div key={auction.playerId} {...staggerItemProps(i)}>
-                    <AuctionResultRow auction={auction} />
+                    <AuctionResultRow auction={auction} teams={teams} onOpenPlayer={onOpenPlayerHistory} />
                   </motion.div>
                 ))}
               </div>
