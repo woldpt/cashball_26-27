@@ -76,7 +76,7 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
       {(live.length > 0 || closed.length > 0) && (
         <div className="px-2 sm:px-4 short:px-2 pb-4 short:pb-2 space-y-2 sm:space-y-3 short:space-y-2">
           {live.length > 0 && (
-            <Panel title="Em curso" meta={`${live.length} leilão${live.length !== 1 ? "s" : ""}`}>
+            <Panel title="Em curso" meta={`${live.length} ${live.length === 1 ? "leilão" : "leilões"}`}>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 short:gap-2">
                 {live.map((auction, i) => (
                   <motion.div key={auction.playerId} {...staggerItemProps(i)}>
@@ -97,7 +97,7 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
           )}
 
           {closed.length > 0 && (
-            <Panel title="Recentes" meta={`${closed.length} leilão${closed.length !== 1 ? "s" : ""}`}>
+            <Panel title="Recentes" meta={`${closed.length} ${closed.length === 1 ? "leilão" : "leilões"}`}>
               <div className="flex flex-col gap-1.5">
                 {closed.map((auction, i) => (
                   <motion.div key={auction.playerId} {...staggerItemProps(i)}>
