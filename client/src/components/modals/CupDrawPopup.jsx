@@ -28,20 +28,21 @@ export function CupDrawPopup({
       visible={showCupDrawPopup}
       z={MODAL_Z.cupDraw}
       variant="fullscreen"
+      backdropClassName="short:p-2 short:justify-start short:gap-1"
     >
       {/* Header */}
-      <div className="w-full text-center mb-6 shrink-0 pt-4 px-2">
-        <p className="text-xs text-amber-400 uppercase font-black tracking-widest sm:tracking-[0.3em] mb-2">
+      <div className="w-full text-center mb-6 short:mb-2 shrink-0 pt-4 short:pt-1 px-2 short:px-1">
+        <p className="text-xs short:text-[10px] text-amber-400 uppercase font-black tracking-widest sm:tracking-[0.3em] mb-2 short:mb-1">
           Taça de Portugal · Temporada {cupDraw.season}
         </p>
-        <h1 className="text-2xl sm:text-3xl font-black text-primary uppercase tracking-tight">
+        <h1 className="text-2xl sm:text-3xl short:!text-base font-black text-primary uppercase tracking-tight">
           Sorteio — {cupDraw.roundName}
         </h1>
       </div>
 
       {/* Saltar botão (skip reveal animation) */}
       {cupDraw.humanInCup && !fullyRevealed && (
-        <div className="w-full max-w-3xl flex justify-end mb-2">
+        <div className="w-full max-w-3xl flex justify-end mb-2 short:mb-1">
           <button
             onClick={() => {
               const total = (cupDraw.fixtures || []).length * 2;
@@ -55,7 +56,7 @@ export function CupDrawPopup({
       )}
 
       {/* Fixtures — two columns on sm+ screens */}
-      <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-2 gap-2 short:gap-1.5">
         {(cupDraw.fixtures || []).map((fixture, pairIdx) => {
           const homeIdx = pairIdx * 2;
           const awayIdx = pairIdx * 2 + 1;
@@ -72,7 +73,7 @@ export function CupDrawPopup({
           return (
             <div
               key={pairIdx}
-              className={`relative flex items-center gap-3 rounded-xl border px-4 py-3 transition-all duration-300 ${
+              className={`relative flex items-center gap-3 short:gap-2 rounded-xl border px-4 short:px-3 py-3 short:py-2 transition-all duration-300 ${
                 isMyPair
                   ? "border-amber-500/60 bg-amber-950/30"
                   : "border-white/8 bg-white/4"
@@ -177,7 +178,7 @@ export function CupDrawPopup({
 
       {/* Continue button */}
       {cupDraw.humanInCup && fullyRevealed && (
-        <div className="mt-6 w-full max-w-xl shrink-0 pb-4">
+        <div className="mt-6 short:mt-3 w-full max-w-xl shrink-0 pb-4 short:pb-2">
           <Button
             variant="primary"
             size="lg"
