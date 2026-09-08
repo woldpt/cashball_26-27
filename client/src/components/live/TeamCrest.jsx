@@ -29,7 +29,7 @@ export function TeamCrest({ team, isMine = false, coach = null, size = "md", rot
         : "w-11 h-11 sm:w-12 sm:h-12 text-sm sm:text-base rounded-lg";
   // Transformação centrada no quadrado do logótipo (sem afetar o badge do treinador).
   const mediaStyle = rotate
-    ? { transform: `rotate(${rotate}deg) scale(1.06)`, transformOrigin: "center" }
+    ? { transform: `rotate(${rotate}deg) scale(1.16)`, transformOrigin: "center" }
     : undefined;
   return (
     <div className="relative shrink-0">
