@@ -144,6 +144,9 @@
 
 ## Último estado
 
+- **Classificação virtual com seletor de divisão (novo):** o `LiveStandingsPanel` (coluna virtual na simulação) mostrava só a tua divisão. Agora tem um dropdown compacto no header com as divisões existentes em `teams` — abre sempre na tua por defeito (estado local, sem persistência), e nas outras divisões o destaque são os selos de treinador humano (iniciais) para seguir um amigo; "TU", cores de subida/descida e legenda seguem a divisão visível. Só tocado `LiveStandings.jsx` (`GameRoutes.jsx` já passa tudo).
+  - Checks: client `lint` 0 erros + `check:types` OK. Só um controlo dentro do header existente → sem mobile-resp-check (vista ao vivo fora do harness).
+
 - **Header refinado (novo):** novo `LiveClock.jsx` unifica as 4 variantes do relógio num só pill horizontal (`38' · 2ªP`, `max-w-[38vw]` + truncagem anti-colisão, `role="timer"` com `aria-label` por extenso). Header com gradiente da cor do clube (`color-mix` …84 % black) + sombra; `--header-h` passa a incluir `env(safe-area-inset-top)` (offsets acompanham). Chat com badge único (não-lidas vencem; senão nº de coaches) + `aria-label`/`aria-expanded`. Dropdown com `AnimatePresence` (a saída agora toca), fecho com `Escape`, `aria-haspopup`/`aria-expanded`, `role="menu/menuitem"` e linha de contexto época·jornada·sala (único sítio visível no mobile).
   - Checks: client `lint` (0 erros; 3 warnings pré-existentes em `JournalTab.jsx`) + `check:types` OK; mobile portrait 140/140 + landscape 168/168 PASS.
 

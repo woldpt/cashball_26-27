@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { DIVISION_NAMES } from "../../constants/index.js";
 import { computeVirtualStandings } from "./liveHelpers.js";
@@ -80,9 +81,21 @@ export function LiveStandingsPanel({
   applyLiveResults,
 }) {
   const myDiv = teams.find((t) => String(t.id) === String(myTeamId))?.division;
+  const availableDivs = [
+    ...new Set(
+      (teams || []).map((t) => t.division).filter((d) => d != null),
+    ),
+  ].sort((a, b) => a - b);
+  const [selectedDiv, setSelectedDiv] = useState(null);
+  // Sem persistência: ao abrir a simulação vale sempre a tua (null = minha).
+  // A escolha só muda a visualização atual; a época nova recarrega a página.
   if (myDiv == null) return null;
+  const viewDiv =
+    selectedDiv != null && availableDivs.includes(selectedDiv)
+      ? selectedDiv
+      : myDiv;
 
-  const divTeams = teams.filter((t) => t.division === myDiv);
+  const divTeams = teams.filter((t) => t.division === viewDiv);
   const rows = computeVirtualStandings({
     teams: divTeams,
     matchResults,
@@ -91,15 +104,28 @@ export function LiveStandingsPanel({
     applyLiveResults,
   });
   const matchweek = matchResults?.matchweek ?? "—";
-  const divLabel = DIVISION_NAMES[myDiv] || `Div ${myDiv}`;
+  const divLabel = DIVISION_NAMES[viewDiv] || `Div ${viewDiv}`;
 
   return (
     <div className="flex flex-col min-h-0 h-full rounded-lg bg-surface-container-low border border-outline-variant/10 overflow-hidden">
       {/* Header */}
-      <div className="shrink-0 px-2.5 py-1.5 border-b border-outline-variant/10 bg-surface-container-high flex items-center justify-between gap-2">
-        <h3 className="font-headline font-extrabold text-[10px] sm:text-[11px] tracking-tighter uppercase text-primary truncate">
-          Classificação virtual · {divLabel} · J{matchweek}
+      <div className="shrink-0 px-2.5 py-1.5 border-b border-outline-variant/10 bg-surface-container-high flex items-center justify-between gap-1.5">
+        <h3 className="min-w-0 flex-1 font-headline font-extrabold text-[10px] sm:text-[11px] tracking-tighter uppercase text-primary truncate">
+          Virtual · J{matchweek}
         </h3>
+        <select
+          value={viewDiv}
+          onChange={(e) => setSelectedDiv(Number(e.target.value))}
+          aria-label={`Escolher divisão (atual: ${divLabel})`}
+          title={divLabel}
+          className="shrink-0 min-w-0 max-w-[7.5rem] bg-surface-container-lowest border border-primary/30 text-primary text-[9px] font-black uppercase rounded-sm px-1 py-0.5 truncate cursor-pointer"
+        >
+          {availableDivs.map((div) => (
+            <option key={div} value={div}>
+              {DIVISION_NAMES[div] || `Div ${div}`}
+            </option>
+          ))}
+        </select>
         <span
           className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-widest border ${
             applyLiveResults
@@ -135,7 +161,7 @@ export function LiveStandingsPanel({
             const t = row.team;
             const isMe = String(t.id) === String(myTeamId);
             const gd = row.goalsFor - row.goalsAgainst;
-            const isPromo = myDiv > 1 && idx < 2;
+            const isPromo = viewDiv > 1 && idx < 2;
             const isRelegate = idx >= rows.length - 2;
             const leftBorder = isPromo
               ? "border-l-2 border-l-emerald-500"
@@ -240,7 +266,7 @@ export function LiveStandingsPanel({
 
       {/* Legend */}
       <div className="shrink-0 flex items-center gap-3 px-2.5 py-1 border-t border-outline-variant/10 bg-surface-container-low/40">
-        {myDiv > 1 && (
+        {viewDiv > 1 && (
           <span className="flex items-center gap-1 text-[8px] text-on-surface-variant/40 font-bold uppercase tracking-wide">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/70 inline-block" />
             Subida
