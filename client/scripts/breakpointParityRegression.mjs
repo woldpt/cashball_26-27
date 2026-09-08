@@ -88,9 +88,10 @@ const jsFiles = walk(srcRoot);
 let leaked = 0;
 for (const file of jsFiles) {
   const txt = readFileSync(file, "utf8");
-  // Ignora imports/refs à própria fonte de verdade e ficheiros de regressão.
-  if (file.includes("constants/breakpoints.js") || file.endsWith("useIsMobile.js"))
-    continue;
+  // Ignora apenas a própria fonte de verdade — os hooks (useIsMobile.js)
+  // constroem os matchMedia a partir das constantes, por isso também são
+  // verificados: um literal re-embutido ali deve falhar.
+  if (file.includes("constants/breakpoints.js")) continue;
   // MatchMedia com breakpoint px embutido é o bug que queremos apanhar.
   if (/matchMedia\s*\(/.test(txt)) {
     for (const px of GUARD_PX) {
