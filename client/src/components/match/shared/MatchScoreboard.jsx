@@ -60,9 +60,9 @@ export function MatchScoreboard({ fixture, teams, liveMinute }) {
         {/* Marcador */}
         <div className="shrink-0 flex flex-col items-center px-3 py-1 sm:px-5 sm:py-1.5 rounded-lg border border-outline-variant/25 bg-surface-container-low/80">
           <span className="flex items-center gap-2 sm:gap-3 font-headline font-black text-xl sm:text-3xl tabular-nums leading-none text-on-surface">
-            <span className="min-w-[1ch] text-right">{homeGoals}</span>
+            <span key={`h${homeGoals}`} className="score-pop min-w-[1ch] text-right">{homeGoals}</span>
             <span className="text-on-surface-variant/40 text-sm sm:text-lg">–</span>
-            <span className="min-w-[1ch] text-left">{awayGoals}</span>
+            <span key={`a${awayGoals}`} className="score-pop min-w-[1ch] text-left">{awayGoals}</span>
           </span>
           <span className="mt-0.5 text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-on-surface-variant tabular-nums">
             {isFinished ? "Fim" : `${min}'`}

@@ -6,6 +6,13 @@
 > - Regra permanente descoberta → mover para `AGENTS.md`/`CLAUDE.md`/`STYLE.md` e remover daqui.
 > - Ao iniciar uma sessão nova: ler este ficheiro + `git log --oneline -10`.
 
+## Efeitos visuais: golos ao vivo + cena de troféu (novo)
+
+- **`GoalFlashOverlay`** (`client/src/components/match/shared/GoalFlashOverlay.jsx`, novo): overlay efémero (~2 s) sobre o `LiveMatchHero` quando um golo é revelado em direto. Reutiliza `CelebrationBurst` e o sinal `goalFlashRef` do `GameContext` (timestamp por fixture+lado, só atualizado durante `isPlayingMatch`) — o MESMO que já fazia o flash vermelho dos números. Marca TU → confete + "GOLO!" com glow na cor da equipa; golo adversário (e és participante) → flash sóbrio + shake, sem festejo. GPU-only, `pointer-events-none`, auto-dismiss, `prefers-reduced-motion` respeitado (framer). Armadilha: importar `CelebrationBurst` a partir de `match/shared/` é `../../shared/CelebrationBurst.jsx` (subir DOIS níveis), não `./`.
+- **Pop do marcador:** dígitos do `MatchScoreboard` re-montam via `key` e disparam a animação CSS `score-pop` (`index.css`, guardada por `@media (prefers-reduced-motion: no-preference)`).
+- **Cena de troféu:** `SeasonEndModal` ganha um bloco "levantar troféu 🏆" (confete `CelebrationBurst` + glow âmbar) antes dos prémios, quando a tua equipa é campeã da divisão (`divisionChampions`) ou vencedora da Taça (`cupWinner`) — `showTitleLift`.
+- Checks: client lint + `check:types` OK; portrait `test:mobile` 140/140 PASS; landscape `test:mobile:landscape` 168/168 PASS. (Sem server typecheck: só alterações visuais no client, nenhuma lógica de jogo/comunicações tocada.)
+
 ## Em curso
 
 ## Economia NPC — "supervisor" descentralizado (novo)

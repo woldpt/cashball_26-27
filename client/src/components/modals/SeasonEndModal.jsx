@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { Button } from "../shared/Button.jsx";
+import { CelebrationBurst } from "../shared/CelebrationBurst.jsx";
 import { MODAL_Z } from "../../constants/index.js";
 
 const DIVISION_NAMES = {
@@ -78,6 +79,20 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
   const myPromotion = data?.promotions?.find((p) => isMyTeam(p.teamId));
   const isPromotion = myPromotion && myPromotion.toDiv < myPromotion.fromDiv;
 
+  // ── Cena de troféu: quando a MINHA equipa vence o campeonato da sua
+  // divisão ou a Taça de Portugal ───────────────────────────────────────────
+  const championDiv = (data?.divisionChampions || []).find((c) =>
+    isMyTeam(c.teamId),
+  );
+  const wonCup = data?.cupWinner ? isMyTeam(data.cupWinner.teamId) : false;
+  const showTitleLift = !!(championDiv || wonCup);
+  const liftTitle = championDiv
+    ? championDiv.divId === 1
+      ? "CAMPEÕES DE PORTUGAL"
+      : "CAMPEÕES"
+    : "VENCEDORES DA TAÇA";
+  const liftSub = championDiv ? championDiv.divName : "Taça de Portugal";
+
   // Ocultar apenas movimentos dentro da Div 5 (NPC internos);
   // mostrar descidas do Campeonato de Portugal (Div 4 → 5) e tudo o resto.
   const visiblePromotions = (data?.promotions || []).filter(
@@ -138,6 +153,75 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                 Prémios e galardões entregues
               </motion.p>
             </div>
+
+            {/* ── Cena de troféu (quando vences o campeonato/taça) ── */}
+            {showTitleLift && (
+              <motion.div
+                className="relative mb-6 rounded-2xl overflow-hidden border border-amber-500/30 text-center px-4 pt-8 pb-6"
+                style={{
+                  background:
+                    "linear-gradient(180deg, rgba(245,158,11,0.12) 0%, rgba(32,31,31,0.4) 70%)",
+                }}
+                initial={{ opacity: 0, y: 14, scale: 0.98 }}
+                animate={{
+                  opacity: revealed ? 1 : 0,
+                  y: revealed ? 0 : 14,
+                  scale: revealed ? 1 : 0.98,
+                }}
+                transition={{ delay: 0.1 }}
+              >
+                {revealed && (
+                  <CelebrationBurst
+                    seed={`season-${displayYear}`}
+                    showChampagne={false}
+                  />
+                )}
+                <motion.span
+                  className="block text-[64px] leading-none mb-2"
+                  style={{
+                    filter:
+                      "drop-shadow(0 0 26px rgba(245,158,11,0.6)) drop-shadow(0 8px 14px rgba(0,0,0,0.4))",
+                  }}
+                  initial={{ scale: 0.3, rotate: -18, y: 10 }}
+                  animate={{ scale: 1, rotate: 0, y: 0 }}
+                  transition={{
+                    delay: 0.2,
+                    type: "spring",
+                    stiffness: 220,
+                    damping: 14,
+                  }}
+                >
+                  🏆
+                </motion.span>
+                <motion.p
+                  className="text-2xl sm:text-3xl font-headline font-black text-amber-400 uppercase tracking-[0.25em]"
+                  style={{ textShadow: "0 0 22px rgba(245,158,11,0.55)" }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.32 }}
+                >
+                  {liftTitle}
+                </motion.p>
+                <motion.p
+                  className="text-[10px] font-black uppercase tracking-widest text-on-surface/70 mt-1"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.42 }}
+                >
+                  {liftSub}
+                </motion.p>
+                {championDiv && (
+                  <motion.p
+                    className="text-sm font-black text-amber-300 tabular-nums mt-2"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    +{fmt(championDiv.prize)} de prémio
+                  </motion.p>
+                )}
+              </motion.div>
+            )}
 
             {/* ── Awards card ─────────────────────────────────────────────── */}
             <div className="bg-surface-container rounded-2xl border border-outline-variant/20 overflow-hidden divide-y divide-outline-variant/15">
