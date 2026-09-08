@@ -821,9 +821,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		// ── Phase 2 (gate): extra time — all drawn fixtures batched ───────────────
 		// If a human coach is in a drawn fixture, pause for tactics (substitutions)
 		// before ET. The gate is state-machine driven: this function returns here
-		// and checkAllReady advances once the relevant coaches are ready (a 90s
-		// safety timer forces ET otherwise). A transient in-memory promise is NOT
-		// used, so a crash can never strand the round at match_et_gate.
+		// and checkAllReady advances once the relevant coaches are ready (no
+		// timeout — the coaches take as long as they need). A transient in-memory
+		// promise is NOT used, so a crash can never strand the round at
+		// match_et_gate.
 		if (hasAnyET && humanInAnyDraw) {
 			console.log(
 				`[${game.roomCode}] ⏸ ET gate: waiting for coaches in drawn fixtures to ready up`,
@@ -854,19 +855,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			emitPresence(game);
 			io.to(game.roomCode).emit("cupETHalfTime", etGatePayload);
 			saveGameState(game);
-
-			// Safety fallback: if the relevant coaches stall or disconnect, force ET
-			// after 90s instead of leaving the round stuck at match_et_gate.
-			if (game._etGateTimer) clearTimeout(game._etGateTimer);
-			game._etGateTimer = setTimeout(() => {
-				game._etGateTimer = null;
-				continueFromEtGate(game).catch((err) =>
-					console.error(
-						`[${game.roomCode}] ❌ ET gate forced continuation failed:`,
-						err,
-					),
-				);
-			}, 90_000);
 			return;
 		}
 
@@ -877,8 +865,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 	/**
 	 * Runs the cup round after the extra-time gate (or directly when no gate is
 	 * needed). State-machine driven: called by checkAllReady once all coaches in
-	 * drawn fixtures are ready, by the 90s safety timer, or inline by
-	 * finalizeCupRound — so an orphaned promise can never strand the round.
+	 * drawn fixtures are ready, or inline by finalizeCupRound — so an orphaned
+	 * promise can never strand the round.
 	 */
 	async function continueFromEtGate(game: ActiveGame) {
 		if (game._etGateRunning) {
@@ -895,10 +883,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				`[${game.roomCode}] ⚠ continueFromEtGate skipped | phase=${game.gamePhase} (not in ET gate)`,
 			);
 			return;
-		}
-		if (game._etGateTimer) {
-			clearTimeout(game._etGateTimer);
-			game._etGateTimer = null;
 		}
 		game._etGateRunning = true;
 
