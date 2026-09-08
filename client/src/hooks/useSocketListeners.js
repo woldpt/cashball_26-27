@@ -312,8 +312,8 @@ export function useSocketListeners(handlers, refs) {
 				})),
 			});
 				handlers.setLiveMinute(45);
-				handlers.setSubsMade(0);
-				handlers.setSubbedOut([]);
+				// Preservar subsMade/subbedOut do 1.º tempo — substituições a meio
+				// da 1.ª parte contam para o limite de 3 no intervalo.
 				handlers.setConfirmedSubs([]);
 				handlers.setSwapSource(null);
 				handlers.setSwapTarget(null);
@@ -365,8 +365,7 @@ export function useSocketListeners(handlers, refs) {
 				})),
 			});
 				handlers.setLiveMinute(90);
-				handlers.setSubsMade(0);
-				// Keep subbedOut across halves into ET: a player who left cannot re-enter.
+				// Preservar subsMade/subbedOut — ET continua a contar para o limite de 3.
 				handlers.setConfirmedSubs([]);
 				handlers.setSwapSource(null);
 				handlers.setSwapTarget(null);
@@ -1149,8 +1148,9 @@ export function useSocketListeners(handlers, refs) {
 					awayPossession: fx.awayPossession ?? fx._awayPossession ?? 50,
 				})),
 			});
-			handlers.setSubsMade(0);
-			handlers.setSubbedOut([]); // Reset substituted-out players for the new match
+			// Preservar subsMade/subbedOut — substituições da 1.ª parte contam
+			// para o limite de 3 no intervalo (fix: sum diverged between mid-half
+			// pause and halftime view).
 			handlers.setConfirmedSubs([]);
 			handlers.setSwapSource(null);
 			handlers.setSwapTarget(null);
