@@ -58,6 +58,7 @@
 
 ## Em curso
 
+- **Cards dos outros jogos das divisões (`LiveFixtureRow`):** sem relógio (tudo simulado em simultâneo) — `memo` + lookups/golos/eventos em `useMemo` (golos num só passe), `isFlashing` sem `Date.now()` no render, treinador humano desduplicado (só a faixa do topo), nomes 11–12 px, eventos 10 px com `title` + fallback "—", `aria-label` no botão e `role="status"` no marcador, sem `translate` no hover. `GameRoutes.jsx`: `key` estável (`home-away`), `humanTeamIds` em `Set` memorizado, contador de jogos no cabeçalho da divisão, comentário do filtro da Taça em pt-PT. Checks: lint + check:types OK; mobile-resp-check portrait 150/150 + landscape 180/180 PASS.
 ## Economia NPC — "supervisor" descentralizado (novo)
 
 - Objectivo: travar os dois desequilíbrios NPC sem um árbitro central — (P1)

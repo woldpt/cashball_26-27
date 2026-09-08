@@ -1,25 +1,26 @@
+import { memo, useMemo } from "react";
 import { getMatchLastEventText } from "../../utils/playerHelpers.js";
 import { FLASH_COLOR, isFlashing, isGoalType } from "./liveHelpers.js";
 
 /* ── LiveFixtureRow — card de jogo ao vivo (3 contextos: divisão, outras
  *    divisões, taça) ─────────────────────────────────────────────────────
  *
- * Card único para todas as listas de jogos ao vivo: dot de cor + nome +
- * treinador (amber), placar central com flash de golo, últimos eventos no
- * rodapé. Substitui as 3 implementações copy-paste do GameLayout.
+ * Card único para todas as listas de jogos ao vivo: faixa de treinador
+ * humano + nomes com dot de cor, marcador central com flash de golo e
+ * últimos eventos no rodapé. Sem relógio: todos os jogos são simulados
+ * em simultâneo, por isso o minuto vive só no hero do próprio jogo.
  */
 
 /**
  * @param {Object} props
- * @param {Object} props.match  - fixture do jogo
+ * @param {Object} props.match - fixture do jogo
  * @param {Array} props.teams
  * @param {Array} props.players - treinadores humanos
- * @param {Object} props.me
  * @param {number} props.liveMinute
  * @param {Object} props.goalFlashRef
  * @param {Function} props.onOpenDetail
  */
-export function LiveFixtureRow({
+function LiveFixtureRowInner({
   match,
   teams,
   players,
@@ -27,50 +28,92 @@ export function LiveFixtureRow({
   goalFlashRef,
   onOpenDetail,
 }) {
-  const hInfo = teams.find((t) => t.id === match.homeTeamId);
-  const aInfo = teams.find((t) => t.id === match.awayTeamId);
-  const matchEvents = match.events || [];
-  const homeGoals = matchEvents.filter(
-    (e) => e.minute <= liveMinute && isGoalType(e.type) && e.team === "home",
+  const homeTeamId = match.homeTeamId;
+  const awayTeamId = match.awayTeamId;
+  const matchEvents = useMemo(() => match.events ?? [], [match.events]);
+
+  // Lookups memorizados: as refs de teams/players são estáveis entre ticks
+  // do liveMinute, por isso isto só recalcula quando os dados mudam.
+  const homeTeam = useMemo(
+    () => teams.find((t) => t.id === homeTeamId),
+    [teams, homeTeamId],
   );
-  const awayGoals = matchEvents.filter(
-    (e) => e.minute <= liveMinute && isGoalType(e.type) && e.team === "away",
+  const awayTeam = useMemo(
+    () => teams.find((t) => t.id === awayTeamId),
+    [teams, awayTeamId],
   );
-  const homeHuman = players.some((p) => p.teamId === match.homeTeamId);
-  const awayHuman = players.some((p) => p.teamId === match.awayTeamId);
-  const isHumanMatch = homeHuman || awayHuman;
-  // eslint-disable-next-line react-hooks/purity
-  const now = Date.now();
-  const homeFlashing = isFlashing(goalFlashRef, match.homeTeamId, match.awayTeamId, "home", now);
-  const awayFlashing = isFlashing(goalFlashRef, match.homeTeamId, match.awayTeamId, "away", now);
-  const lastHomeEvent = getMatchLastEventText(matchEvents, liveMinute, "home");
-  const lastAwayEvent = getMatchLastEventText(matchEvents, liveMinute, "away");
-  const homeCoach = players.find((p) => p.teamId === match.homeTeamId);
-  const awayCoach = players.find((p) => p.teamId === match.awayTeamId);
+  const homeCoach = useMemo(
+    () => players.find((p) => p.teamId === homeTeamId),
+    [players, homeTeamId],
+  );
+  const awayCoach = useMemo(
+    () => players.find((p) => p.teamId === awayTeamId),
+    [players, awayTeamId],
+  );
+  const isHumanMatch = homeCoach != null || awayCoach != null;
+
+  // Contagem de golos num só passe (evita 2× filter por render).
+  const { homeGoals, awayGoals } = useMemo(() => {
+    let home = 0;
+    let away = 0;
+    for (const e of matchEvents) {
+      if ((e.minute ?? -1) > liveMinute || !isGoalType(e.type)) continue;
+      if (e.team === "home") home += 1;
+      else if (e.team === "away") away += 1;
+    }
+    return { homeGoals: home, awayGoals: away };
+  }, [matchEvents, liveMinute]);
+
+  const { lastHomeEvent, lastAwayEvent } = useMemo(
+    () => ({
+      lastHomeEvent: getMatchLastEventText(matchEvents, liveMinute, "home"),
+      lastAwayEvent: getMatchLastEventText(matchEvents, liveMinute, "away"),
+    }),
+    [matchEvents, liveMinute],
+  );
+
+  const homeFlashing = isFlashing(
+    goalFlashRef,
+    homeTeamId,
+    awayTeamId,
+    "home",
+  );
+  const awayFlashing = isFlashing(
+    goalFlashRef,
+    homeTeamId,
+    awayTeamId,
+    "away",
+  );
+
+  const homeName = homeTeam?.name ?? "—";
+  const awayName = awayTeam?.name ?? "—";
   const coachStrip =
-    homeHuman && awayHuman
-      ? `${homeCoach?.name || "—"} vs ${awayCoach?.name || "—"}`
-      : homeHuman
-        ? homeCoach?.name
-        : awayCoach?.name;
+    homeCoach && awayCoach
+      ? `${homeCoach.name} vs ${awayCoach.name}`
+      : (homeCoach ?? awayCoach)?.name;
 
   return (
     <button
+      type="button"
       onClick={onOpenDetail}
-      className={`group w-full text-left rounded-lg overflow-hidden transition-all border ${
+      aria-label={`Ver detalhes: ${homeName} ${homeGoals}-${awayGoals} ${awayName}`}
+      className={`group w-full text-left rounded-lg overflow-hidden transition-colors border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
         isHumanMatch
           ? "bg-gradient-to-b from-amber-500/10 via-surface-container to-surface-container border-l-2 border-amber-400/80 shadow-[0_0_16px_rgba(251,191,36,0.08)] hover:shadow-[0_0_20px_rgba(251,191,36,0.16)]"
           : "bg-surface-container hover:bg-surface-bright border-outline-variant/15"
-      } hover:-translate-y-px hover:shadow-lg hover:shadow-black/30`}
+      }`}
     >
-      {/* Top strip: human-coach match marker */}
+      {/* Faixa única do treinador humano (o nome já não se repete por equipa) */}
       {isHumanMatch && (
         <div className="flex items-center justify-between gap-2 px-3 py-1 bg-amber-500/10 border-b border-amber-400/20">
-          <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-widest text-amber-400 shrink-0">
+          <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-amber-400 shrink-0">
             <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
             Treinador humano
           </span>
-          <span className="text-[8px] font-bold text-amber-300/80 truncate">
+          <span
+            className="text-[9px] font-bold text-amber-300/80 truncate"
+            title={coachStrip}
+          >
             {coachStrip}
           </span>
         </div>
@@ -78,36 +121,34 @@ export function LiveFixtureRow({
       <div className="flex items-center justify-between px-3 py-2 gap-2">
         <span className="flex items-center gap-1.5 flex-1 min-w-0 pr-1">
           <span
+            aria-hidden="true"
             className="w-2 h-2 rounded-full shrink-0 transition-shadow"
             style={{
-              background: hInfo?.color_primary || "#555",
+              background: homeTeam?.color_primary || "#555",
               boxShadow: homeFlashing ? `0 0 8px ${FLASH_COLOR}` : "none",
             }}
           />
-          <span className="flex flex-col min-w-0">
-            <span
-              className={`text-[10px] sm:text-[11px] font-black truncate ${
-                homeHuman ? "text-amber-300" : "text-on-surface/80"
-              }`}
-            >
-              {hInfo?.name}
-            </span>
-            {homeCoach && (
-              <span className="text-[9px] text-amber-400 font-bold truncate leading-none">
-                {homeCoach.name}
-              </span>
-            )}
+          <span
+            className={`text-[11px] sm:text-xs font-black truncate ${
+              homeCoach ? "text-amber-300" : "text-on-surface/80"
+            }`}
+            title={homeName}
+          >
+            {homeName}
           </span>
         </span>
 
-        <span className="font-headline font-black text-xs sm:text-sm tabular-nums shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface/60">
+        <span
+          role="status"
+          className="font-headline font-black text-xs sm:text-sm tabular-nums shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface/60"
+        >
           <span
             style={{
               color: homeFlashing ? FLASH_COLOR : undefined,
               transition: homeFlashing ? "none" : "color 1.25s ease",
             }}
           >
-            {homeGoals.length}
+            {homeGoals}
           </span>
           <span className="text-on-surface-variant/30 text-xs">-</span>
           <span
@@ -116,29 +157,24 @@ export function LiveFixtureRow({
               transition: awayFlashing ? "none" : "color 1.25s ease",
             }}
           >
-            {awayGoals.length}
+            {awayGoals}
           </span>
         </span>
 
         <span className="flex items-center gap-1.5 flex-1 min-w-0 pl-1 justify-end">
-          <span className="flex flex-col min-w-0 items-end">
-            <span
-              className={`text-[10px] sm:text-[11px] font-black truncate ${
-                awayHuman ? "text-amber-300" : "text-on-surface/80"
-              }`}
-            >
-              {aInfo?.name}
-            </span>
-            {awayCoach && (
-              <span className="text-[9px] text-amber-400 font-bold truncate leading-none">
-                {awayCoach.name}
-              </span>
-            )}
+          <span
+            className={`text-[11px] sm:text-xs font-black truncate text-right ${
+              awayCoach ? "text-amber-300" : "text-on-surface/80"
+            }`}
+            title={awayName}
+          >
+            {awayName}
           </span>
           <span
+            aria-hidden="true"
             className="w-2 h-2 rounded-full shrink-0 transition-shadow"
             style={{
-              background: aInfo?.color_primary || "#555",
+              background: awayTeam?.color_primary || "#555",
               boxShadow: awayFlashing ? `0 0 8px ${FLASH_COLOR}` : "none",
             }}
           />
@@ -147,10 +183,16 @@ export function LiveFixtureRow({
 
       {(lastHomeEvent || lastAwayEvent) && (
         <div className="flex px-3 pb-1.5 gap-1">
-          <span className="flex-1 text-[9px] text-on-surface-variant/40 truncate">
+          <span
+            className="flex-1 min-w-0 text-[10px] text-on-surface-variant/60 truncate"
+            title={lastHomeEvent}
+          >
             {lastHomeEvent}
           </span>
-          <span className="flex-1 text-[9px] text-on-surface-variant/40 truncate text-right">
+          <span
+            className="flex-1 min-w-0 text-[10px] text-on-surface-variant/60 truncate text-right"
+            title={lastAwayEvent}
+          >
             {lastAwayEvent}
           </span>
         </div>
@@ -158,3 +200,5 @@ export function LiveFixtureRow({
     </button>
   );
 }
+
+export const LiveFixtureRow = memo(LiveFixtureRowInner);

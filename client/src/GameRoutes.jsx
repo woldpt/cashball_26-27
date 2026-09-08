@@ -132,11 +132,14 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
     setMatchDetailFixture,
   } = useGame();
 
-  // Jogo ao vivo que envolve pelo menos um coach humano (sala multiplayer)
+  // Jogo ao vivo que envolve pelo menos um coach humano (sala multiplayer).
+  // Set memorizado: o sortHumanFirst corre O(n log n) comparações por render.
+  const humanTeamIds = useMemo(
+    () => new Set(players.map((p) => p.teamId)),
+    [players],
+  );
   const isHumanFixture = (m) =>
-    players.some(
-      (p) => p.teamId === m?.homeTeamId || p.teamId === m?.awayTeamId,
-    );
+    humanTeamIds.has(m?.homeTeamId) || humanTeamIds.has(m?.awayTeamId);
   // MOM do meu jogo: a liga já traz `mom` no fixture final (matchResults);
   // na Taça o fixture (matchResults simplificado) não traz — procurar no
   // payload da ronda (cupRoundResults.results).
@@ -313,6 +316,9 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                                           }`}
                                         >
                                           {DIVISION_NAMES[div] || `Div ${div}`}
+                                          <span className="ml-1 text-on-surface/30">
+                                            {divMatches.length}
+                                          </span>
                                           {isMyDiv && (
                                             <span className="ml-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-primary/10 text-primary text-[7px] font-black uppercase tracking-widest border border-primary/30">
                                               A tua divisão
@@ -326,9 +332,9 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                                             Sem jogos
                                           </div>
                                         ) : (
-                                          divMatches.map((match, idx) => (
+                                          divMatches.map((match) => (
                                             <LiveFixtureRow
-                                              key={idx}
+                                              key={`${match.homeTeamId}-${match.awayTeamId}`}
                                               match={match}
                                               teams={teams}
                                               players={players}
@@ -359,14 +365,14 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                                   m.awayTeamId !== me.teamId,
                               )
                               .filter((m) => {
-                                // After 90', only show games still in extra time (score tied at 90)
+                                // Após os 90': só mostra jogos ainda no prolongamento (empatados aos 90)
                                 if (liveMinute <= 90) return true;
                                 return isDrawnAt90(m);
                               })
                               .sort(sortHumanFirst)
-                              .map((match, idx) => (
+                              .map((match) => (
                                 <LiveFixtureRow
-                                  key={idx}
+                                  key={`${match.homeTeamId}-${match.awayTeamId}`}
                                   match={match}
                                   teams={teams}
                                   players={players}
