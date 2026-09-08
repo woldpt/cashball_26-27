@@ -120,6 +120,12 @@
 
 ## Último estado
 
+- **Responsividade mobile — fonte de verdade de breakpoints + geometria do chrome (Fase A/B de uma review do GameLayout):**
+  - Fase A: criado `client/src/constants/breakpoints.js` (BREAKPOINTS md=768/lg=1024, HEIGHTS short=560/compact=520) — `hooks/useIsMobile.js` constrói os `matchMedia` a partir daqui (fim dos literais 767/768/1023/519/520). `index.css` ganhou `--breakpoint-md/-lg` explícitos. Paridade verificada por `npm run test:breakpoints` (`scripts/breakpointParityRegression.mjs`), que também falha se algum `matchMedia` do src re-embutir esses px. Commit `477f91e`.
+  - Fase B: geometria do shell centralizada em vars de `index.css`: `--header-h` (3.5rem; 2.5rem em telemóvel landscape via `@media (orientation:landscape) and (max-width:1023px)`) e `--rail-w` (4rem). `GameLayout.jsx` (header, rail, reservas `pt-`/`ml-` do `<main>`), `RoomHub.jsx` (`top-14`) e o container de toasts (`top-16`) passam a referenciar as vars — mudar a altura do header já não obriga a caçar offsets. MatchPage ficou intacto (o `lg:left-64/14` segue a largura da sidebar, não o header). Checks: lint + check:types OK; mobile portrait PASS 140/140 e landscape PASS 168/168. Commit `3c6ca6c`.
+  - Pendente da review (Fases C/D, não executadas): arquitetura do contexto (split do GameContext / seletores) e redução do monólito GameLayout (extrair routing de páginas e orquestração de modais).
+
+
 - **Timeout do ET gate da Taça removido:** o ecrã de intervalo aos 90' (`match_et_gate`, evento `cupETHalfTime`) tinha um fallback de 90s (`game._etGateTimer` em `finalizeCupRound`, `cupFlowHelpers.ts`) que forçava o prolongamento se o coach não premir Ready — removido; o gate agora aguarda indefinidamente. Segurança mantida: coach desliga → `checkAllReady` (só coaches conectados em jogo empatado) deixa o avanço em curso; crash/restart → `gameManager` trata `match_et_gate` como transitório (reset p/ `lobby`). O `cupETAnimGate` (45s, ack da animação `cupExtraTimeStart`) é de outra fase — intacto. Check: server typecheck OK.
 
 - **Finanças — desktop demasiado grande (ajustado):** no hero, valores `lg:text-4xl`→`lg:text-3xl` e ícones de marca de água `text-8xl`→`text-6xl`; o `BalanceLineChart` (viewBox 640×210, `w-full h-auto`) esticava à largura total do painel no desktop (~490px de altura) — agora envolto em `mx-auto max-w-3xl` (centrado, ~252px de altura). Só tocou em classes `sm:`/`md:`/`lg:` + cap >768px → mobile portrait/landscape intacto (sem mobile-resp-check).
