@@ -31,7 +31,11 @@ export function Panel({
   children,
 }) {
   return (
-    <section className={`bg-surface-container rounded-md overflow-hidden ${className}`}>
+    <section
+      className={`relative bg-surface-container rounded-md overflow-hidden ${className}`}
+    >
+      {/* Hairline de luz no topo (elevação) — ver .top-light em index.css */}
+      <div aria-hidden className="top-light" />
       {/* Header compacto em telemóvel: painéis repetem-se em todas as tabs e
           ~16px por cabeçalho somam scroll desnecessário no phone. */}
       <div

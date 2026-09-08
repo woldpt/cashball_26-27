@@ -42,7 +42,7 @@ export function SummaryWidget({
   const resolvedValueClass = valueClass ?? (mini ? "text-sm sm:text-xl" : "text-3xl");
   return (
     <div
-      className={`${
+      className={`relative ${
         mini
           ? `bg-surface-container-low p-1.5 sm:p-3 rounded-md flex flex-col justify-center ${sub ? "h-12 sm:h-20" : "h-10 sm:h-16"} border-l-4`
           : flat
@@ -53,6 +53,8 @@ export function SummaryWidget({
       } ${flat ? "" : accentClass} ${className}`}
       style={accentStyle}
     >
+      {/* Hairline de luz no topo (elevação) — ver .top-light em index.css */}
+      <div aria-hidden className="top-light" />
       <span
         className={`${mini ? "text-[8px] sm:text-[10px] tracking-wide leading-none" : "text-[10px] tracking-widest"} font-black uppercase text-on-surface-variant ${labelClass}`}
       >

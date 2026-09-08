@@ -213,7 +213,10 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // aguardam o fecho do atual (os dados continuam guardados).
 
   return (
-    <div className="h-dvh overflow-hidden bg-surface text-on-surface font-body tracking-tight flex flex-col">
+    <div className="h-dvh overflow-hidden bg-surface text-on-surface font-body tracking-tight flex flex-col relative isolate">
+      {/* Atmosfera de fundo do interior (ver .ambient em index.css). Fica atrás
+          de todo o conteúdo (isolate + -z-10) e não intercepta cliques. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 ambient" />
       <OfflineBanner />
       {renderError && (
         <div
