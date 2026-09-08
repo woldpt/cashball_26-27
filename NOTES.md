@@ -144,6 +144,9 @@
 
 ## Último estado
 
+- **Header refinado (novo):** novo `LiveClock.jsx` unifica as 4 variantes do relógio num só pill horizontal (`38' · 2ªP`, `max-w-[38vw]` + truncagem anti-colisão, `role="timer"` com `aria-label` por extenso). Header com gradiente da cor do clube (`color-mix` …84 % black) + sombra; `--header-h` passa a incluir `env(safe-area-inset-top)` (offsets acompanham). Chat com badge único (não-lidas vencem; senão nº de coaches) + `aria-label`/`aria-expanded`. Dropdown com `AnimatePresence` (a saída agora toca), fecho com `Escape`, `aria-haspopup`/`aria-expanded`, `role="menu/menuitem"` e linha de contexto época·jornada·sala (único sítio visível no mobile).
+  - Checks: client `lint` (0 erros; 3 warnings pré-existentes em `JournalTab.jsx`) + `check:types` OK; mobile portrait 140/140 + landscape 168/168 PASS.
+
 - **Sidebar com secções + grupos de navegação canónicos (novo):** `constants/navigation.js` (NAV_GROUPS: Clube/Gestão/Competição/Transferências; `getGroupTabs`/`getGroupTabKeys`) é agora a fonte única — desktop e fly-ups mobile derivam daqui. Desktop ganha cabeçalhos de secção discretos (divisores em modo recolhido), ordem Scout→Mercado→Leilões e Classificações antes de Calendário; indicador ativo com `ring-primary/20`; `aria-label` nos navs, `aria-current="page"` e `focus-visible`. Corrige 2 bugs de destaque mobile (Estádio/Treino não acendiam Gestão; Taça não acendia Competição). JOGAR acalmado (fora o `shimmer-sweep`, ficam halo+heartbeat+ping). Larguras em vars (`--sidebar-w`/`--sidebar-w-collapsed`, MatchPage incluído; STYLE §7 atualizado).
   - Checks: client `lint` + `check:types` OK; `test:breakpoints` OK; mobile portrait 140/140 + landscape 168/168 PASS.
 

@@ -5,6 +5,7 @@ import { socket } from "./socket.js";
 import { useGame } from "./contexts/GameContext.jsx";
 import { useTactics } from "./contexts/TacticsContext.jsx";
 import { CoachAvatar } from "./components/shared/CoachAvatar.jsx";
+import { LiveClock } from "./components/shared/LiveClock.jsx";
 import { WelcomeModal } from "./components/modals/WelcomeModal.jsx";
 import { isAdminCoach } from "./components/admin/adminApi.js";
 import { isSameTeamId } from "./utils/teamHelpers.js";
@@ -45,6 +46,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     showHalftimePanel,
     renderError,
     setRoomHubOpen,
+    roomHubOpen,
     unreadRoom,
     unreadGlobal,
     mobileSubMenu,
@@ -174,6 +176,16 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
   useEffect(() => () => window.clearTimeout(transferFlyTimerRef.current), []);
 
+  // Dropdown do utilizador fecha com Escape (a saída animada trata o AnimatePresence no JSX).
+  useEffect(() => {
+    if (!userDropdownOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") setUserDropdownOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [userDropdownOpen, setUserDropdownOpen]);
+
   const transferMenuOpen = mobileSubMenu === "transferencias";
   // Durante o voo o badge de origem e o de destino ficam escondidos para não
   // haver dupla contagem no ponto de aterragem. O `transferFlyers` só é
@@ -300,11 +312,16 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         </AnimatePresence>
       </div>
       <header
-        className={`fixed top-0 left-0 right-0 z-160 flex items-center border-b border-outline-variant/20 h-[var(--header-h)]`}
-        style={{
-          background:
-            teamInfo?.color_primary || "var(--color-surface-container-low)",
-        }}
+        className={`fixed top-0 left-0 right-0 z-160 flex items-center border-b border-outline-variant/20 h-[var(--header-h)] pt-[env(safe-area-inset-top,0px)] shadow-md shadow-black/30`}
+        style={
+          teamInfo?.color_primary
+            ? {
+                background: `linear-gradient(180deg, ${teamInfo.color_primary} 0%, color-mix(in srgb, ${teamInfo.color_primary} 84%, black) 100%)`,
+              }
+            : {
+                background: "var(--color-surface-container-low)",
+              }
+        }
       >
         <div className={`relative flex items-center justify-between w-full ${isMobileLandscape ? "px-3" : "px-4 lg:px-6"}`}>
           {/* Left: brand + session info */}
@@ -342,37 +359,14 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
           {/* Center: live clock (absolute so it's always centered) */}
           {isMatchInProgress && (
-            <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none">
-              {isPlayingMatch ? (
-                <span className={`flex items-center rounded-full bg-surface border border-outline-variant/50 ${isMobileLandscape ? "gap-1.5 px-3 py-0.5" : "flex-col gap-0.5 px-3.5 py-1"}`}>
-                  <span className={`${isMobileLandscape ? "text-sm" : "text-lg"} font-headline font-black tabular-nums leading-none text-on-surface`}>
-                    {liveMinute < 1 ? "⚽" : `${liveMinute}'`}
-                  </span>
-                  <span className="text-[7px] font-bold uppercase tracking-widest leading-none text-on-surface opacity-70">
-                    {liveMinute < 1
-                      ? "A começar"
-                      : liveMinute > 90
-                        ? "Prolongamento"
-                        : liveMinute > 45
-                          ? "2ª Parte"
-                          : "1ª Parte"}
-                  </span>
-                </span>
-              ) : liveMinute === 45 && !isCupMatch ? (
-                <span className="px-3 py-1 rounded-full bg-surface border border-outline-variant/50 text-[10px] font-black uppercase tracking-widest text-on-surface opacity-90">
-                  Intervalo
-                </span>
-              ) : isCupMatch ? (
-                <span className="px-3 py-1 rounded-full bg-surface border border-outline-variant/50 text-[9px] font-black uppercase tracking-widest text-on-surface opacity-90">
-                  🏆 {cupMatchRoundName}
-                  {cupPreMatch
-                    ? " · Pré-Jogo"
-                    : cupExtraTimeBadge
-                      ? " · Prol."
-                      : ""}
-                </span>
-              ) : null}
-            </div>
+            <LiveClock
+              liveMinute={liveMinute}
+              isPlayingMatch={isPlayingMatch}
+              isCupMatch={isCupMatch}
+              cupPreMatch={cupPreMatch}
+              cupMatchRoundName={cupMatchRoundName}
+              cupExtraTimeBadge={cupExtraTimeBadge}
+            />
           )}
 
           {/* Right: user menu + chat */}
@@ -382,7 +376,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               onMouseUp={(e) => e.stopPropagation()}
               onClick={() => setRoomHubOpen((v) => !v)}
               title="Sala e Chat"
-              className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label={`Sala e chat${unreadRoom + unreadGlobal > 0 ? `, ${unreadRoom + unreadGlobal} mensagens não lidas` : ""}`}
+              aria-expanded={roomHubOpen}
+              className="relative flex items-center justify-center w-9 h-9 rounded-lg hover:bg-white/10 transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white/70"
             >
               <span
                 className="material-symbols-outlined text-[20px] leading-none"
@@ -392,16 +388,16 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               >
                 chat
               </span>
-              {/* Badge: nº total de coaches na sala */}
-              <span className="absolute -bottom-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-black leading-none flex items-center justify-center px-1">
-                {totalCoaches}
-              </span>
-              {/* Badge: mensagens não lidas */}
-              {unreadRoom + unreadGlobal > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black leading-none flex items-center justify-center px-1">
+              {/* Badge único: não-lidas vencem (acionável); senão nº de coaches na sala */}
+              {unreadRoom + unreadGlobal > 0 ? (
+                <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black leading-none flex items-center justify-center px-1 tabular-nums">
                   {unreadRoom + unreadGlobal > 9
                     ? "9+"
                     : unreadRoom + unreadGlobal}
+                </span>
+              ) : (
+                <span className="absolute -bottom-0.5 -right-0.5 min-w-4 h-4 rounded-full bg-emerald-500 text-white text-[9px] font-black leading-none flex items-center justify-center px-1 tabular-nums">
+                  {totalCoaches}
                 </span>
               )}
             </button>
@@ -414,6 +410,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   setUserDropdownOpen((v) => !v);
                 }}
                 disabled={isPlayingMatch}
+                aria-haspopup="menu"
+                aria-expanded={userDropdownOpen}
                 title={
                   isPlayingMatch
                     ? "Definições bloqueadas durante o jogo"
@@ -464,6 +462,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               </button>
 
               {/* Dropdown menu */}
+              <AnimatePresence initial={false}>
               {userDropdownOpen && !isPlayingMatch && (
                 <>
                   {/* Backdrop */}
@@ -477,9 +476,16 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     className="absolute right-0 top-full mt-1 w-56 bg-surface-container border border-outline-variant/30 rounded-lg shadow-xl overflow-hidden z-180"
+                    role="menu"
+                    aria-label="Definições do utilizador"
                   >
+                    {/* Contexto da época (único sítio visível no mobile) */}
+                    <p className="px-4 pt-3 pb-2 text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/70 border-b border-outline-variant/20 truncate">
+                      {seasonYear} · J{currentJornada} · {me.roomName || me.roomCode}
+                    </p>
                     {/* A minha conta */}
                     <button
+                      role="menuitem"
                       onClick={() => {
                         setUserDropdownOpen(false);
                         navigateTab("user_settings");
@@ -495,6 +501,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
                     {/* Mudar de Jogo — vai para a landing sem logout */}
                     <button
+                      role="menuitem"
                       onClick={() => {
                         setUserDropdownOpen(false);
                         if (me?.roomCode) {
@@ -532,6 +539,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     {/* Admin (apenas o coach admin — ver ADMIN_COACH_NAME) */}
                     {isAdminCoach(me?.name) && (
                       <button
+                        role="menuitem"
                         onClick={() => {
                           setUserDropdownOpen(false);
                           setAdminPanelOpen(true);
@@ -550,6 +558,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
                     {/* Sair */}
                     <button
+                      role="menuitem"
                       onClick={() => {
                         setUserDropdownOpen(false);
                         handleLogout();
@@ -564,6 +573,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   </motion.div>
                 </>
               )}
+              </AnimatePresence>
             </div>
           </div>
         </div>

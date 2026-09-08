@@ -14,14 +14,14 @@
    o override de telemóvel landscape (header compacto + rail à esquerda) usa
    a mesma media query dos hooks (useMobileLandscape). */
 :root {
-  --header-h: 3.5rem; /* header fixo no topo (h-14: desktop e portrait) */
+  --header-h: calc(3.5rem + env(safe-area-inset-top, 0px)); /* header fixo no topo (h-14: desktop e portrait) + notch em PWA */
   --rail-w: 4rem; /* reserva lateral esquerda (w-16, apenas landscape) */
   --sidebar-w: 16rem; /* sidebar desktop expandida (w-64) */
   --sidebar-w-collapsed: 3.5rem; /* sidebar desktop recolhida (w-14) */
 }
 @media (orientation: landscape) and (max-width: 1023px) {
   :root {
-    --header-h: 2.5rem; /* header compacto (h-10) em telemóvel landscape */
+    --header-h: calc(2.5rem + env(safe-area-inset-top, 0px)); /* header compacto (h-10) em telemóvel landscape */
   }
 }
 
