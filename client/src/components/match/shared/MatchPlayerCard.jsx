@@ -45,12 +45,8 @@ export function MatchPlayerCard({
   // was confused with ATA (avançado) accent colors.
   const skillColor = selected ? "text-white" : s.badgeText;
 
-  // Form: always render the full 💪/👍/😩 triplet. Hiding the neutral 👍
-  // (23–40) made rows with/without a form icon have different widths,
-  // shifting the skill/RES columns and misaligning the card list.
-  const formIcon = form >= 41 ? "💪" : form <= 22 ? "😩" : "👍";
   const formColor =
-    form >= 41 ? "text-emerald-400" : form <= 22 ? "text-rose-400" : "text-on-surface-variant";
+    form >= 38 ? "text-green-400" : form >= 26 ? "text-yellow-400" : "text-red-400";
   const matchStatsLabel = [
     goals > 0 ? `${goals} golo${goals > 1 ? "s" : ""}` : null,
     yellowCards > 0 ? `${yellowCards} cartão amarelo${yellowCards > 1 ? "s" : ""}` : null,
@@ -151,7 +147,7 @@ export function MatchPlayerCard({
               </span>
             </div>
             <div className="self-stretch w-px bg-outline-variant/25" />
-            <span className={`text-sm leading-none ${formColor}`}>{formIcon}</span>
+            <span className={`text-xs font-black tabular-nums leading-none ${formColor}`} title={`Forma: ${form}`}>{player.form ?? "–"}</span>
           </div>
         )}
       </div>

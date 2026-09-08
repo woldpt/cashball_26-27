@@ -13,9 +13,8 @@ import { POSITION_FULL_LABELS } from "../matchConstants.js";
 export function OpponentGridCard({ player, posStyle, hideResForm = false }) {
   const s = posStyle;
   const form = player.form ?? 32;
-  const formIcon = form >= 41 ? "💪" : form <= 22 ? "😩" : "👍";
   const formColor =
-    form >= 41 ? "text-emerald-400" : form <= 22 ? "text-rose-400" : "text-on-surface-variant";
+    form >= 38 ? "text-green-400" : form >= 26 ? "text-yellow-400" : "text-red-400";
 
   return (
     <div
@@ -46,8 +45,8 @@ export function OpponentGridCard({ player, posStyle, hideResForm = false }) {
           <span className="text-[9px] font-bold tabular-nums text-cyan-400 leading-none">
             {player.resistance ?? "–"}
           </span>
-          <span className={`text-xs leading-none ${formColor}`}>
-            {formIcon}
+          <span className={`text-xs font-black tabular-nums leading-none ${formColor}`} title={`Forma: ${form}`}>
+            {player.form ?? "–"}
           </span>
         </div>
       )}

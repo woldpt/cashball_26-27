@@ -55,9 +55,8 @@ export function CompactPlayerCard({
 
   const skillColor = selected ? "text-white" : s.badgeText;
 
-  const formIcon = form >= 41 ? "💪" : form <= 22 ? "😩" : "👍";
   const formColor =
-    form >= 41 ? "text-emerald-400" : form <= 22 ? "text-rose-400" : "text-on-surface-variant";
+    form >= 38 ? "text-green-400" : form >= 26 ? "text-yellow-400" : "text-red-400";
 
   // Fundo/estado — mesma linguagem visual do card expandido.
   const cardBg = forcedOut
@@ -153,8 +152,8 @@ export function CompactPlayerCard({
             <span className="text-[9px] font-bold tabular-nums text-cyan-400 leading-none" title="Resistência">
               {player.resistance ?? "–"}
             </span>
-            <span className={`text-sm leading-none ${formColor}`} title={`Forma: ${form}`}>
-              {formIcon}
+            <span className={`text-xs font-black tabular-nums leading-none ${formColor}`} title={`Forma: ${form}`}>
+              {player.form ?? "–"}
             </span>
           </>
         )}
