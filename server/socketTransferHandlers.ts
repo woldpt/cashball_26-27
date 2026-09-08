@@ -1,6 +1,7 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import {
   logClubNews,
+  recordTransfer,
   runExec,
   runGet,
   runAll,
@@ -198,6 +199,26 @@ export function registerTransferSocketHandlers(
           io,
         );
       }
+
+      // Registo no histórico global de transferências (época atual)
+      recordTransfer(
+        game,
+        {
+          playerId: validPlayerId,
+          playerName: player.name,
+          position: player.position,
+          skill: player.skill,
+          isStar: player.is_star,
+          photo: player.photo || null,
+          sellerTeamId: player.team_id,
+          sellerTeamName: player.team_name || null,
+          buyerTeamId: playerState.teamId,
+          buyerTeamName: buyingTeam?.name || null,
+          amount: price,
+          source: "fixed",
+        },
+        io,
+      );
 
       refreshMarket(game);
       const teams = await getTeamsWithCoachNames(game.db);
@@ -567,6 +588,31 @@ export function registerTransferSocketHandlers(
     }
   });
 
+  socket.on("getTransferHistory", () => {
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    // Histórico de transferências da época atual (source: transfer_history)
+    game.db.all(
+      `SELECT th.* FROM transfer_history th
+       WHERE th.year = ?
+       ORDER BY th.id DESC
+       LIMIT 40`,
+      [game.year || 0],
+      (err: Error | null, rows: any[] | null) => {
+        if (err || !rows) {
+          if (err)
+            console.warn(
+              `[getTransferHistory] query failed (${game.roomCode}):`,
+              err.message,
+            );
+          socket.emit("transferHistory", []);
+          return;
+        }
+        socket.emit("transferHistory", rows);
+      },
+    );
+  });
+
   socket.on("placeAuctionBid", ({ playerId, bidAmount }, ack) => {
     const game = getGameBySocket(socket.id);
     if (!game) return ack?.({ ok: false, error: "Jogo não encontrado." });
@@ -752,6 +798,25 @@ export function registerTransferSocketHandlers(
                                 io,
                               );
                             }
+                            // Registo no histórico global de transferências
+                            recordTransfer(
+                              game,
+                              {
+                                playerId,
+                                playerName: player.name,
+                                position: player.position,
+                                skill: player.skill,
+                                isStar: player.is_star,
+                                photo: player.photo || null,
+                                sellerTeamId: player.team_id,
+                                sellerTeamName: oldTeam?.name || null,
+                                buyerTeamId: playerState.teamId,
+                                buyerTeamName: buyingTeam?.name || null,
+                                amount: proposalPrice,
+                                source: "proposal",
+                              },
+                              io,
+                            );
                           },
                         );
                       },

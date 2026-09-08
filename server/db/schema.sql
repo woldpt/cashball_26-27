@@ -202,3 +202,31 @@ CREATE TABLE IF NOT EXISTS player_skill_snapshots (
 
 CREATE INDEX IF NOT EXISTS idx_skill_snapshots_player ON player_skill_snapshots(player_id, season, matchweek);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_skill_snapshots_unique ON player_skill_snapshots(player_id, matchweek, season);
+
+-- Histórico de transferências concluídas (mercado + leilões + cláusulas + NPC).
+-- Um registo por negócio, com ambas as partes resolvidas por nome para a UI.
+-- "matchweek" guarda game.calendarIndex (igual club_news); "year" é a época.
+CREATE TABLE IF NOT EXISTS transfer_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  player_id INTEGER,
+  player_name TEXT NOT NULL,
+  position TEXT,
+  skill INTEGER,
+  is_star INTEGER DEFAULT 0,
+  photo TEXT,
+  seller_team_id INTEGER,
+  seller_team_name TEXT,
+  buyer_team_id INTEGER,
+  buyer_team_name TEXT,
+  amount INTEGER NOT NULL,
+  source TEXT NOT NULL,
+  matchweek INTEGER,
+  year INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(player_id) REFERENCES players(id),
+  FOREIGN KEY(seller_team_id) REFERENCES teams(id),
+  FOREIGN KEY(buyer_team_id) REFERENCES teams(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_transfer_history_year_created ON transfer_history(year, created_at);
+CREATE INDEX IF NOT EXISTS idx_transfer_history_player ON transfer_history(player_id);

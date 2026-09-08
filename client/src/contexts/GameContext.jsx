@@ -92,6 +92,7 @@ export function GameProvider({
 	const [myAuctionBid, setMyAuctionBid] = useState(null);
 	const [auctionResult, setAuctionResult] = useState(null);
 	const [activeAuctions, setActiveAuctions] = useState([]);
+	const [transferHistory, setTransferHistory] = useState([]);
 	const [nextMatchSummary, setNextMatchSummary] = useState(null);
 	const [nextMatchSummaryLoading, setNextMatchSummaryLoading] = useState(false);
 	const [refereePopup, setRefereePopup] = useState(null);
@@ -714,6 +715,7 @@ export function GameProvider({
 			setMyAuctionBid,
 			setAuctionResult,
 			setActiveAuctions,
+			setTransferHistory,
 			setTopScorers,
 			setSeasonEndModal,
 			setSeasonYear,
@@ -1251,6 +1253,7 @@ export function GameProvider({
 		setPlayers([]);
 		setMySquad([]);
 		setMarketPairs([]);
+		setTransferHistory([]);
 		setTopScorers([]);
 		setMatchResults(null);
 		setAllMatchResults({});
@@ -1382,6 +1385,7 @@ export function GameProvider({
 		setMyAuctionBid,
 		auctionResult,
 		activeAuctions,
+		transferHistory,
 		nextMatchSummary,
 		nextMatchSummaryLoading,
 		setNextMatchSummaryLoading,

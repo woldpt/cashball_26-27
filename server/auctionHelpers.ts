@@ -1,6 +1,7 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import {
   logClubNews,
+  recordTransfer,
   getTeamsWithCoachNames,
   currentEpoch,
   isContractLocked,
@@ -450,6 +451,26 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                           },
                           io,
                           { isAuction: true },
+                        );
+
+                        // Registo no histórico global de transferências (leilão)
+                        recordTransfer(
+                          game,
+                          {
+                            playerId,
+                            playerName: player.name,
+                            position: player.position,
+                            skill: player.skill,
+                            isStar: player.is_star,
+                            photo: player.photo || null,
+                            sellerTeamId: auction.sellerTeamId,
+                            sellerTeamName: player.team_name || null,
+                            buyerTeamId,
+                            buyerTeamName,
+                            amount: finalBid,
+                            source: "auction",
+                          },
+                          io,
                         );
 
                         recordRecentAuction(game, {

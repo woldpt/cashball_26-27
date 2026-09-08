@@ -413,3 +413,119 @@ export function logClubNews(
     },
   );
 }
+
+interface TransferRecord {
+  playerId: number | null;
+  playerName: string;
+  position?: string;
+  skill?: number;
+  isStar?: number;
+  photo?: string | null;
+  sellerTeamId?: number | null;
+  sellerTeamName?: string | null;
+  buyerTeamId?: number | null;
+  buyerTeamName?: string | null;
+  amount: number;
+  source: string;
+}
+
+/**
+ * recordTransfer — regista um negócio concluído no histórico global da época
+ * (tabela transfer_history) e emite transferCompleted para a sala. É a fonte
+ * canónica do painel "Histórico" do Mercado. Não-crítico: fire-and-forget,
+ * nunca interfere com a transação financeira que já ocorreu.
+ */
+export function recordTransfer(game: ActiveGame, info: TransferRecord, io?: any) {
+  const matchweek = game.matchweek || 0;
+  const year = game.year || 0;
+
+  const finish = (
+    sellerTeamName: string | null,
+    buyerTeamName: string | null,
+  ) => {
+    // Payload snake_case — a mesma forma das linhas devolvidas por
+    // getTransferHistory (SELECT th.*), para o cliente tratar uma única forma.
+    const payload = {
+      player_id: info.playerId,
+      player_name: info.playerName,
+      position: info.position || null,
+      skill: info.skill ?? null,
+      is_star: info.isStar ? 1 : 0,
+      photo: info.photo || null,
+      seller_team_id: info.sellerTeamId || null,
+      seller_team_name: sellerTeamName,
+      buyer_team_id: info.buyerTeamId || null,
+      buyer_team_name: buyerTeamName,
+      amount: info.amount || 0,
+      source: info.source,
+      matchweek,
+      year,
+    };
+    game.db.run(
+      `INSERT INTO transfer_history
+        (player_id, player_name, position, skill, is_star, photo, seller_team_id,
+         seller_team_name, buyer_team_id, buyer_team_name, amount, source,
+         matchweek, year)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        payload.player_id,
+        payload.player_name,
+        payload.position,
+        payload.skill,
+        payload.is_star,
+        payload.photo,
+        payload.seller_team_id,
+        payload.seller_team_name,
+        payload.buyer_team_id,
+        payload.buyer_team_name,
+        payload.amount,
+        payload.source,
+        payload.matchweek,
+        payload.year,
+      ],
+      (err: Error | null) => {
+        if (err) {
+          console.warn(
+            `[recordTransfer] insert failed (${game.roomCode}):`,
+            err.message,
+          );
+          return;
+        }
+        if (io) {
+          io.to(game.roomCode).emit("transferCompleted", payload);
+        }
+      },
+    );
+  };
+
+  const needSeller =
+    !info.sellerTeamName && info.sellerTeamId != null && info.sellerTeamId > 0;
+  const needBuyer =
+    !info.buyerTeamName && info.buyerTeamId != null && info.buyerTeamId > 0;
+
+  if (!needSeller && !needBuyer) {
+    finish(info.sellerTeamName || null, info.buyerTeamName || null);
+    return;
+  }
+
+  const fetchName = (id: number) =>
+    new Promise<string | null>((resolve) => {
+      game.db.get(
+        "SELECT name FROM teams WHERE id = ?",
+        [id],
+        (err: Error | null, row: any) => {
+          resolve(err ? null : row?.name || null);
+        },
+      );
+    });
+
+  const sellerP = needSeller ? fetchName(info.sellerTeamId as number) : Promise.resolve(info.sellerTeamName || null);
+  const buyerP = needBuyer ? fetchName(info.buyerTeamId as number) : Promise.resolve(info.buyerTeamName || null);
+  Promise.all([sellerP, buyerP])
+    .then(([sellerName, buyerName]) => {
+      finish(sellerName, buyerName);
+    })
+    .catch(() => {
+      finish(info.sellerTeamName || null, info.buyerTeamName || null);
+    });
+}

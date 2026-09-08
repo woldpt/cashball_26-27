@@ -1,5 +1,5 @@
 import type { ActiveGame } from "./types";
-import { logClubNews, getTeamsWithCoachNames, currentEpoch } from "./coreHelpers";
+import { logClubNews, recordTransfer, getTeamsWithCoachNames, currentEpoch } from "./coreHelpers";
 import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_MATCHWEEKS } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
@@ -163,6 +163,26 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
             .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
             .catch(() => {});
         }
+
+        // Registo no histórico global de transferências (venda a NPC)
+        recordTransfer(
+          game,
+          {
+            playerId: player.id,
+            playerName: player.name,
+            position: player.position,
+            skill: player.skill,
+            isStar: player.is_star,
+            photo: player.photo || null,
+            sellerTeamId: player.team_id,
+            sellerTeamName: player.team_name || null,
+            buyerTeamId: npcTeam.id,
+            buyerTeamName: npcTeam.name,
+            amount: price,
+            source: "npc",
+          },
+          io,
+        );
 
         npcTeam.budget -= price;
         break;

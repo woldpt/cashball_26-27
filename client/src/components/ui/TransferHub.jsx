@@ -36,6 +36,133 @@ function statusConfig(status) {
   return { label: "Sem Lista", variant: "neutral" };
 }
 
+// Rótulo curto por origem do negócio no histórico (uma linha por negócio).
+const SOURCE_LABEL = {
+  auction: "Leilão",
+  fixed: "Mercado",
+  proposal: "Cláusula",
+  npc: "NPC",
+};
+
+/**
+ * TeamMark — mini-brasão (16px) duma equipa no histórico de transferências.
+ * Bloco de iniciais com as cores da equipa (padrão AuctionResultRow, compacto).
+ * @param {{ team: object | null, name: string }} props
+ */
+function TeamMark({ team, name }) {
+  if (!team && !name) return null;
+  const label = name || "—";
+  if (team?.crest) {
+    return (
+      <img
+        src={team.crest}
+        alt={label}
+        onError={(e) => {
+          e.currentTarget.style.display = "none";
+        }}
+        className="w-4 h-4 object-contain bg-white rounded-sm p-px shrink-0 border border-outline-variant/20"
+        loading="lazy"
+      />
+    );
+  }
+  return (
+    <span
+      className="w-4 h-4 rounded-sm flex items-center justify-center overflow-hidden font-black text-[7px] leading-none shrink-0 border border-outline-variant/20"
+      style={{
+        backgroundColor: team?.color_primary || "#333",
+        color: team?.color_secondary || "#fff",
+      }}
+      title={label}
+    >
+      {String(label).substring(0, 3).toUpperCase()}
+    </span>
+  );
+}
+
+/**
+ * TransferRow — linha compacta de uma transferência concluída (histórico).
+ * Faixa da posição à esquerda, nome (clicável — abre a página do jogador),
+ * origem → destino (brasão + nome) e valor à direita. Leitura rápida, sem cards.
+ * @param {{ rec: object, teams?: Array, onOpenPlayer?: (rec: object) => void }} props
+ */
+function TransferRow({ rec, teams = [], onOpenPlayer }) {
+  const posHex = POSITION_ACCENT_HEX[rec.position] || "#94a3b8";
+  const sellerTeam =
+    (teams || []).find((t) => Number(t.id) === Number(rec.seller_team_id)) || null;
+  const buyerTeam =
+    (teams || []).find((t) => Number(t.id) === Number(rec.buyer_team_id)) || null;
+
+  const originName = rec.seller_team_name || sellerTeam?.name || "Sem clube";
+  const buyerName = rec.buyer_team_name || buyerTeam?.name || "";
+  const srcLabel = SOURCE_LABEL[rec.source] || rec.source || "";
+
+  // IDs negativos (juniors efémeros) não têm página de jogador.
+  const canOpen = rec.player_id != null && rec.player_id >= 0;
+  const star =
+    !!rec.is_star && (rec.position === "MED" || rec.position === "ATA") && (
+      <StarMark />
+    );
+
+  return (
+    <div className="relative flex items-center gap-2.5 short:gap-1.5 rounded-lg overflow-hidden border border-outline-variant/15 bg-surface-container/60 pl-3 short:pl-2 pr-3 short:pr-2 py-2 short:py-1.5">
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${POSITION_BAR_CLASS[rec.position] || "from-zinc-400 via-zinc-500 to-zinc-600"}`}
+      />
+      <span
+        className="shrink-0 text-[9px] font-black uppercase tracking-widest tabular-nums"
+        style={{ color: posHex }}
+      >
+        {rec.position}
+      </span>
+      {srcLabel && (
+        <span className="shrink-0 text-[8px] font-black uppercase tracking-widest px-1 py-px rounded-sm border border-outline-variant/20 text-on-surface-variant">
+          {srcLabel}
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        {canOpen ? (
+          <button
+            type="button"
+            onClick={() => onOpenPlayer?.({ id: rec.player_id })}
+            className="block w-full text-left bg-transparent cursor-pointer hover:underline underline-offset-2 text-sm short:text-xs font-bold text-on-surface leading-tight truncate"
+            title="Ver página do jogador"
+          >
+            {rec.player_name}
+            {star}
+          </button>
+        ) : (
+          <p className="text-sm short:text-xs font-bold text-on-surface leading-tight truncate">
+            {rec.player_name}
+            {star}
+          </p>
+        )}
+        <p className="mt-0.5 flex items-center gap-1 text-[9px] text-zinc-500 leading-tight min-w-0">
+          <TeamMark team={sellerTeam} name={originName} />
+          <span className="truncate" title={originName}>
+            {originName}
+          </span>
+          <span className="shrink-0 text-zinc-600" aria-hidden="true">
+            →
+          </span>
+          {buyerName ? (
+            <>
+              <TeamMark team={buyerTeam} name={buyerName} />
+              <span className="truncate text-zinc-300 font-semibold" title={buyerName}>
+                {buyerName}
+              </span>
+            </>
+          ) : (
+            <span className="shrink-0 text-zinc-600">Sem clube</span>
+          )}
+        </p>
+      </div>
+      <p className="shrink-0 font-mono font-black tabular-nums text-sm short:text-xs text-emerald-400">
+        {fmt(rec.amount || 0)}
+      </p>
+    </div>
+  );
+}
+
 function MarketCard({
   player,
   budget,
@@ -93,8 +220,11 @@ function MarketCard({
       {/* Faixa da posição */}
       <div className={`h-1 shrink-0 bg-gradient-to-r ${POSITION_BAR_CLASS[player.position] || "from-zinc-400 via-zinc-500 to-zinc-600"}`} />
 
-      {/* Header: selo posição + estado + símbolo clube */}
-      <div className="px-3 short:px-2 pt-2.5 short:pt-1.5 flex items-center gap-1.5 short:gap-1">
+      {/* Header: selo posição + estado + símbolo clube.
+          flex-wrap: em larguras muito estreitas (320px) com muitos selos
+          (posição + à venda + estrela + suspenso/lesionado + clube) o header
+          partia para a direita em overflow-hidden — passa a quebrar linha. */}
+      <div className="px-3 short:px-2 pt-2.5 short:pt-1.5 flex flex-wrap items-center gap-1.5 short:gap-1">
         <Badge
           size="sm"
           style={{
@@ -267,6 +397,7 @@ function MarketCard({
  * @param {{
  *   players: Array,
  *   teams: Array,
+ *   transferHistory: Array,
  *   budget: number,
  *   me: object,
  *   marketPositionFilter: string,
@@ -284,6 +415,7 @@ function MarketCard({
 export function TransferHub({
   players,
   teams,
+  transferHistory = [],
   budget,
   me,
   marketPositionFilter,
@@ -322,6 +454,7 @@ export function TransferHub({
   }, [players, search]);
 
   return (
+    <div className="flex flex-col gap-4 short:gap-2">
     <Panel title="Mercado de Transferências" meta={`${visible.length} jogador${visible.length !== 1 ? "es" : ""}`}>
       <div className="p-3 md:p-4 short:p-2">
         {/* Search + filters */}
@@ -389,5 +522,25 @@ export function TransferHub({
         )}
       </div>
     </Panel>
+
+    {/* ── Histórico de transferências concluídas (época atual) ──────────── */}
+    {transferHistory.length > 0 && (
+      <Panel
+        title="Histórico de Transferências"
+        meta={`${transferHistory.length} ${transferHistory.length === 1 ? "transferência" : "transferências"}`}
+      >
+        <div className="flex flex-col gap-1.5">
+          {transferHistory.map((rec, i) => (
+            <TransferRow
+              key={rec.id ?? `${rec.player_id}-${rec.amount}-${i}`}
+              rec={rec}
+              teams={teams}
+              onOpenPlayer={onOpenPlayerHistory}
+            />
+          ))}
+        </div>
+      </Panel>
+    )}
+    </div>
   );
 }

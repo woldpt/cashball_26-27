@@ -86,6 +86,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     marketSort,
     setMarketSort,
     marketPairs,
+    transferHistory,
     activeAuctions,
     gameDialog,
     setGameDialog,
@@ -1750,6 +1751,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       <TransferHub
                         players={filteredMarketPlayers}
                         teams={teams}
+                        transferHistory={transferHistory}
                         budget={teamInfo?.budget ?? 0}
                         me={me}
                         marketPositionFilter={marketPositionFilter}

@@ -635,6 +635,29 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     },
   );
 
+  // Histórico de transferências concluídas (mercado + leilões + cláusulas + NPC).
+  // Criação idempotente por sala para salas já existentes antes desta feature.
+  db.run(
+    "CREATE TABLE IF NOT EXISTS transfer_history (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      player_id INTEGER,\n      player_name TEXT NOT NULL,\n      position TEXT,\n      skill INTEGER,\n      is_star INTEGER DEFAULT 0,\n      photo TEXT,\n      seller_team_id INTEGER,\n      seller_team_name TEXT,\n      buyer_team_id INTEGER,\n      buyer_team_name TEXT,\n      amount INTEGER NOT NULL,\n      source TEXT NOT NULL,\n      matchweek INTEGER,\n      year INTEGER DEFAULT 0,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP\n    )",
+    (thErr: Error | null) => {
+      if (thErr)
+        console.error(
+          `[gameManager] Failed to create transfer_history table for ${roomCode}:`,
+          thErr.message,
+        );
+      db.run(
+        "CREATE INDEX IF NOT EXISTS idx_transfer_history_year_created ON transfer_history(year, created_at)",
+        (idxErr: Error | null) => {
+          if (idxErr)
+            console.warn(
+              `[gameManager] transfer_history index failed for ${roomCode}:`,
+              idxErr.message,
+            );
+        },
+      );
+    },
+  );
+
   db.run(
     "CREATE TABLE IF NOT EXISTS game_state (key TEXT PRIMARY KEY, value TEXT)",
     () => {

@@ -1263,6 +1263,37 @@ db.run(
 	},
 );
 
+// Migration: transfer_history table (histórico de transferências concluídas)
+db.run(
+	`CREATE TABLE IF NOT EXISTS transfer_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  player_id INTEGER,
+  player_name TEXT NOT NULL,
+  position TEXT,
+  skill INTEGER,
+  is_star INTEGER DEFAULT 0,
+  photo TEXT,
+  seller_team_id INTEGER,
+  seller_team_name TEXT,
+  buyer_team_id INTEGER,
+  buyer_team_name TEXT,
+  amount INTEGER NOT NULL,
+  source TEXT NOT NULL,
+  matchweek INTEGER,
+  year INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`, 
+	(err: any) => {
+		if (err) console.warn("[migration] transfer_history table:", err.message);
+	},
+);
+db.run(
+	`CREATE INDEX IF NOT EXISTS idx_transfer_history_year_created ON transfer_history(year, created_at)`,
+	(err: any) => {
+		if (err) console.warn("[migration] transfer_history index:", err.message);
+	},
+);
+
 const PORT = 3000;
 server.listen(PORT, () => {
 	const portMsg = `Listening on port ${PORT}`;

@@ -111,6 +111,19 @@ export function useSocketListeners(handlers, refs) {
 			if (!inRoom()) return;
 			handlers.setMarketPairs(data);
 		});
+		socket.on("transferHistory", (data) => {
+			if (!inRoom()) return;
+			handlers.setTransferHistory(Array.isArray(data) ? data : []);
+		});
+		socket.on("transferCompleted", (rec) => {
+			if (!inRoom()) return;
+			if (!rec || !rec.player_name) return;
+			handlers.setTransferHistory((prev) => {
+				const list = Array.isArray(prev) ? prev : [];
+				const next = [rec, ...list];
+				return next.slice(0, 40);
+			});
+		});
 		socket.on("auctionStarted", (auctionData) => {
 			// Add to activeAuctions list (used by AuctionsPage and toast)
 			handlers.setActiveAuctions((prev) => {
@@ -722,6 +735,9 @@ export function useSocketListeners(handlers, refs) {
 			if (Array.isArray(data.activeAuctions)) {
 				handlers.setActiveAuctions(data.activeAuctions);
 			}
+			// Pedir o histórico de transferências da época no (re)join — o server
+			// responde com transferHistory (one-shot, não vai em gameState).
+			socket.emit("getTransferHistory");
 			// Restore match-in-progress state on reconnect
 			if (data.matchState === "halftime" && data.lastHalfTimePayload) {
 				handlers.setMatchResults(data.lastHalfTimePayload);
@@ -1517,6 +1533,8 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("playerListUpdate");
 			socket.off("mySquad");
 			socket.off("marketUpdate");
+			socket.off("transferHistory");
+			socket.off("transferCompleted");
 			socket.off("auctionStarted");
 			socket.off("auctionBidConfirmed");
 			socket.off("auctionBidPlaced");

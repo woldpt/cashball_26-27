@@ -478,6 +478,13 @@
     ],
     "receive": []
   },
+  "transferHistory": {
+    "emit": [
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts"
+    ],
+    "receive": []
+  },
   "auctionBidConfirmed": {
     "emit": [
       "socketTransferHandlers.ts"
@@ -529,6 +536,12 @@
     ]
   },
   "acceptCounterOffer": {
+    "emit": [],
+    "receive": [
+      "socketTransferHandlers.ts"
+    ]
+  },
+  "getTransferHistory": {
     "emit": [],
     "receive": [
       "socketTransferHandlers.ts"
