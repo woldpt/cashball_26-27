@@ -132,6 +132,13 @@
 
 ## Último estado
 
+- **Visual — hero do jogo ao vivo mais cinematográfico ("broadcast"):** o `LiveMatchHero` já tinha scoreboard broadcast, flash de golo a ecrã inteiro (GoalFlashOverlay) e narração; o pass acrescentou drama/tensão de transmissão, tudo reversível e mobile-safe:
+  - Cenografia de luz bilateral (casa à esquerda, fora à direita, a convergir no marcador) + vinheta + "luz de estádio" a subir do chão — substitui o glow único que só usava a cor da casa. Cores das equipas com fallback estável (`hCol`/`aCol`).
+  - Bug "AO VIVO" vermelho pulsante (capsule red + dot `animate-pulse`) na meta strip durante `isPlayingMatch`.
+  - Scoreboard: hairline `top-light` + aura de liderança — halo `boxShadow` na cor da equipa em vantagem com pulso suave (keyframe `scoreLeadGlow`, guardado por `prefers-reduced-motion`).
+  - Não mexeu no GoalFlashOverlay/MatchPage/TeamCrest. Checks: lint + check:types OK; livehero 5/5, mobile portrait PASS 140/140 e landscape PASS 168/168. Commit `817d86b`.
+  - Pendentes visuais (não feitos): dados premium (Finanças/Estádio); camadas de encanto (onboarding/empty states).
+
 - **Visual — atmosfera e profundidade no interior do jogo ("alimentar os olhos"):** a landing tinha vocabulário atmosférico (`pitch-glow`, hairline de luz, glass) que estava *morto* dentro do jogo. Foi levado para o interior, token-based e reversível:
   - `index.css`: nova `.ambient` (radial glows da cor primária/terciária via `color-mix` sobre os tokens, alpha baixo) e `.top-light` (fio de 1px de luz no topo derivado de `on-surface`).
   - `GameLayout.jsx` root: ganhou `relative isolate` + primeiro filho `pointer-events-none absolute inset-0 -z-10 ambient` (fica atrás de todo o conteúdo; sem interferir nos fixed/chrome).
