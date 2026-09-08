@@ -750,7 +750,7 @@ const LandingPage = ({
 						CashBall 26/27
 					</span>
 					<span className="text-xs text-white/15">
-						v1.02a © 2026 by Fábio Silva
+						v1.1a © 2026 by Fábio Silva
 					</span>
 				</div>
 			</footer>
