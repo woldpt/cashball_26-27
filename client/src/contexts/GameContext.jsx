@@ -28,6 +28,8 @@ import {
 	playGoalSound,
 	playVarSound,
 } from "../utils/audio.js";
+import { computeMoodVariant } from "../utils/moodVariant.js";
+import { rankStandings } from "../utils/standingsRank.js";
 import { useSocketListeners } from "../hooks/useSocketListeners.js";
 
 const GameContext = createContext(null);
@@ -491,17 +493,42 @@ export function GameProvider({
 		const myId = me?.teamId;
 		if (myId == null) return;
 
-		const buildMood = (outcome, oppId, myGoals, oppGoals, source, roundLabel, key) => ({
-			outcome,
-			opponentTeamId: oppId,
-			opponentName:
-				teams.find((t) => Number(t.id) === Number(oppId))?.name || "—",
-			myGoals,
-			oppGoals,
-			source,
-			roundLabel,
-			key,
-		});
+		const buildMood = (outcome, oppId, myGoals, oppGoals, source, roundLabel, key) => {
+			const oppTeam = teams.find((t) => Number(t.id) === Number(oppId));
+			const myTeam = teams.find((t) => Number(t.id) === Number(myId));
+			const oppDivision = oppTeam?.division;
+			const myDivision = myTeam?.division;
+			// Posição do adversário na sua divisão (só relevante para a Liga)
+			let opponentRank = 0;
+			let opponentTeamCount = 0;
+			if (source === "league" && oppDivision != null) {
+				const divTeams = rankStandings(
+					teams.filter((t) => t.division === oppDivision),
+				);
+				opponentTeamCount = divTeams.length;
+				opponentRank =
+					divTeams.findIndex((t) => Number(t.id) === Number(oppId)) + 1;
+			}
+			const variant = computeMoodVariant({
+				outcome,
+				source,
+				myDivision,
+				opponentDivision: oppDivision,
+				opponentRank,
+				opponentTeamCount,
+			});
+			return {
+				outcome,
+				variant,
+				opponentTeamId: oppId,
+				opponentName: oppTeam?.name || "—",
+				myGoals,
+				oppGoals,
+				source,
+				roundLabel,
+				key,
+			};
+		};
 
 		// Liga
 		if (activeTab === "standings" && matchResults?.results) {
