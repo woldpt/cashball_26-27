@@ -1366,6 +1366,7 @@ export function useSocketListeners(handlers, refs) {
 			let extraOutId = null;
 			let inId = null;
 			let countSub = false;
+			let markSubbedOut = true;
 			if (type === "injury") {
 				// O lesado sai sempre do campo; a entrada é opcional
 				// (sem banco → joga com 10). A reposição consome sub.
@@ -1385,7 +1386,10 @@ export function useSocketListeners(handlers, refs) {
 				inId = toNum(data.choice?.playerIn);
 			} else {
 				// emergency_gk: escolha única (playerId) — o escolhido vai
-				// para a baliza; o lesado/expulso sai. Não consome sub.
+				// para a baliza; o lesado/expulso sai. Não consome sub e o
+				// que saiu é lesado/expulso (já filtrado por ids de eventos
+				// no intervalo), não "substituído".
+				markSubbedOut = false;
 				inId = toNum(
 					typeof data.choice === "object"
 						? data.choice.playerId ?? data.choice.playerIn
@@ -1407,7 +1411,7 @@ export function useSocketListeners(handlers, refs) {
 				socket.emit("setTactic", next);
 				return next;
 			});
-			if (outId != null && !Number.isNaN(outId)) {
+			if (markSubbedOut && outId != null && !Number.isNaN(outId)) {
 				handlers.setSubbedOut((prev) =>
 					prev.includes(outId) ? prev : [...prev, outId],
 				);

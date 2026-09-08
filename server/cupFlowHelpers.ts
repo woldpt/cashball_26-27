@@ -252,6 +252,15 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					resolve,
 				);
 			});
+			// Registar no diário financeiro etiquetado no início da nova época
+			// (year+1/jornada 1) para o gráfico de saldo mostrar um salto limpo em
+			// vez de somar o prémio nas semanas do ano anterior.
+			logClubNews(game, "prize", "Prémio de Campeão Nacional", iLigaWinner.id, {
+				amount: CHAMPION_PRIZE[1],
+				description: `Campeão Nacional da época ${year}`,
+				year: year + 1,
+				matchweek: 1,
+			});
 			io.to(game.roomCode).emit("systemMessage", {
 				text: `🏆 ${iLigaWinner.name} é o Campeão Nacional de ${year}! (+2.000.000€)`,
 				broadcast: true,
@@ -288,6 +297,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					);
 				});
 				const prizeFormatted = new Intl.NumberFormat("pt-PT").format(prize);
+				logClubNews(game, "prize", `Prémio de Campeão ${DIVISION_NAMES[div]}`, winner.id, {
+					amount: prize,
+					description: `Campeão ${DIVISION_NAMES[div]} da época ${year}`,
+					year: year + 1,
+					matchweek: 1,
+				});
 				io.to(game.roomCode).emit("systemMessage", {
 					text: `🥇 ${winner.name} é Campeão ${DIVISION_NAMES[div]} de ${year}! (+${prizeFormatted}€)`,
 					broadcast: true,
@@ -305,6 +320,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						[sponsorAmount, team.id],
 						resolve,
 					);
+				});
+				logClubNews(game, "prize", "Patrocinadores", team.id, {
+					amount: sponsorAmount,
+					description: `Receita anual de patrocinadores (época ${year})`,
+					year: year + 1,
+					matchweek: 1,
 				});
 			}
 		}
@@ -330,6 +351,14 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					[topScorer.team_id],
 					resolve,
 				);
+			});
+			logClubNews(game, "prize", "Prémio de Melhor Marcador", topScorer.team_id, {
+				amount: 500000,
+				description: `${topScorer.name} — ${topScorer.goals} golos (época ${year})`,
+				player_id: topScorer.id,
+				player_name: topScorer.name,
+				year: year + 1,
+				matchweek: 1,
 			});
 			await new Promise((resolve) => {
 				game.db.run(

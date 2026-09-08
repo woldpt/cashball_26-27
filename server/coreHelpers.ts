@@ -378,6 +378,9 @@ export function logClubNews(
     related_team_id?: number;
     amount?: number;
     description?: string;
+    /** Override opcional do ano/jornada a registar (por omissão usa game). */
+    year?: number;
+    matchweek?: number;
   },
   io?: any,
   extra?: Record<string, any>,
@@ -396,8 +399,8 @@ export function logClubNews(
       data.related_team_id || null,
       data.related_team_name || null,
       data.amount || null,
-      game.matchweek,
-      game.year || 0,
+      data.matchweek ?? game.matchweek,
+      (data.year ?? game.year) || 0,
     ],
     () => {
       if (io) {
