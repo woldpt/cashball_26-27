@@ -502,15 +502,23 @@ function DifficultyGauge({ score = 50, label = "Equilibrado" }) {
 }
 
 /**
- * Estádio e ambiente — lotação esperada e receita potencial (jogos em casa).
- * @param {{ stadium?: { capacity?: number, expectedAttendance?: number, revenue?: number } | null }} props
+ * Estádio e ambiente — lotação esperada, receita potencial e ambiente (jogos
+ * em casa). O ambiente reflete o mood/ocupação: vulcão (≥90%) dá bónus em
+ * campo, morgue (<40%) encolhe a equipa. Os motivos explicam o porquê.
+ * @param {{ stadium?: { capacity?: number, expectedAttendance?: number, revenue?: number, occupancyPct?: number, reasons?: string[] } | null }} props
  * @returns {JSX.Element|null}
  */
 function StadiumCard({ stadium }) {
   if (!stadium) return null;
   const att = stadium.expectedAttendance ?? 0;
   const cap = stadium.capacity ?? 10000;
-  const fill = cap > 0 ? Math.round((att / cap) * 100) : 0;
+  const fill = stadium.occupancyPct ?? (cap > 0 ? Math.round((att / cap) * 100) : 0);
+  const atmosphere =
+    fill >= 90 ? { label: "Vulcão", className: "text-tertiary" }
+    : fill >= 70 ? { label: "Grande ambiente", className: "text-primary" }
+    : fill >= 40 ? { label: "Ambiente morno", className: "text-gray-400" }
+    : { label: "Morgue", className: "text-red-400" };
+  const reasons = Array.isArray(stadium.reasons) ? stadium.reasons.slice(0, 2) : [];
   return (
     <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl px-3.5 short:px-3 py-2 short:py-1.5 lg:flex-none lg:flex lg:flex-col lg:justify-center">
       <div className="flex items-center justify-between mb-1">
@@ -537,6 +545,16 @@ function StadiumCard({ stadium }) {
           className="h-full rounded-full bg-gradient-to-r from-sky-400 to-sky-600"
           style={{ width: `${fill}%` }}
         />
+      </div>
+      <div className="mt-1.5 flex items-center justify-between gap-2">
+        <span className={`text-[8px] font-black uppercase tracking-widest ${atmosphere.className}`}>
+          {fill >= 90 ? "🌋" : fill < 40 ? "🥶" : "📣"} {atmosphere.label}
+        </span>
+        {reasons.length > 0 && (
+          <span className="text-[8px] text-gray-500 font-bold truncate">
+            {reasons.join(" · ")}
+          </span>
+        )}
       </div>
     </div>
   );

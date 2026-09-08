@@ -80,8 +80,8 @@ export function GameProvider({
 	const [activeTab, setActiveTab] = useState(() => {
 		try {
 			const saved = sessionStorage.getItem("cashball_tab");
-			if (saved && !["club", "standings", "players", "finances", "tactic", "live", "calendar", "market", "cup", "bracket", "user_settings", "squad"].includes(saved)) return "club";
-			return saved || "club";
+			if (saved && !["club", "standings", "players", "finances", "tactic", "live", "calendar", "market", "cup", "bracket", "user_settings", "squad", "jornal"].includes(saved)) return "jornal";
+			return saved || "jornal";
 		} catch {
 			return "club";
 		}
@@ -97,6 +97,8 @@ export function GameProvider({
 	const [auctionResult, setAuctionResult] = useState(null);
 	const [activeAuctions, setActiveAuctions] = useState([]);
 	const [transferHistory, setTransferHistory] = useState([]);
+	// Jornal Global: agregado da época (news + results) vindo do server.
+	const [globalNews, setGlobalNews] = useState({ news: [], results: [] });
 	const [nextMatchSummary, setNextMatchSummary] = useState(null);
 	const [nextMatchSummaryLoading, setNextMatchSummaryLoading] = useState(false);
 	const [refereePopup, setRefereePopup] = useState(null);
@@ -751,6 +753,7 @@ export function GameProvider({
 			setAuctionResult,
 			setActiveAuctions,
 			setTransferHistory,
+			setGlobalNews,
 			setTopScorers,
 			setSeasonEndModal,
 			setSeasonYear,
@@ -1258,7 +1261,8 @@ export function GameProvider({
 		() => mySquad.reduce((acc, p) => acc + (p.wage || 0), 0),
 		[mySquad],
 	);
-	const capacityRevPerGame = (teamInfo?.stadium_capacity || 10000) * 15;
+	const capacityRevPerGame =
+		(teamInfo?.stadium_capacity || 10000) * (teamInfo?.ticket_price || 15);
 	const loanAmount = teamInfo?.loan_amount || 0;
 	const loanInterestPerWeek = Math.round(loanAmount * LOAN_INTEREST_RATE);
 	const currentBudget = teamInfo?.budget || 0;
@@ -1437,6 +1441,7 @@ export function GameProvider({
 		auctionResult,
 		activeAuctions,
 		transferHistory,
+		globalNews,
 		nextMatchSummary,
 		nextMatchSummaryLoading,
 		setNextMatchSummaryLoading,

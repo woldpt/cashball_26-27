@@ -6,6 +6,18 @@
 > - Regra permanente descoberta → mover para `AGENTS.md`/`CLAUDE.md`/`STYLE.md` e remover daqui.
 > - Ao iniciar uma sessão nova: ler este ficheiro + `git log --oneline -10`.
 
+## Adeptos dinâmicos: fans_mood + assistências vivas (novo)
+
+- **Modelo**: `teams.fans_mood` (0–100, default 60) e `teams.ticket_price` (tiers 10/15/20/25/30, default 15) — schema + seed (defaults) + migração `gameManager.ts` (verificado numa cópia de sala antiga: 60 equipas a 60/15). Selects usam `SELECT *` + fallback para tolerar DBs sem as colunas.
+- **Mood pós-jogo** (`engine.ts`, dentro de `applyPostMatchQualityEvolution`, logo após a moral — corre na liga E na Taça): decaimento para base de fidelidade por divisão (65/60/55/50/45) + delta com contexto (casa/fora, margem ±2/golo teto ±6, upset +4, vergonha −5, derrota esperada +5, ×2 dérbi mesma divisão, ×ronda Taça até 1.8). Bloco em try/catch próprio para nunca partir a evolução.
+- **Assistência** (`coreHelpers.computeAttendance`): entusiasmo = mood 45% + forma com recência 35% + posição 20% sobre chão de fiéis por divisão (35/30/25/22/20%); bónus com teto (dérbi +12%, visita do líder, título, qualidade do adversário, goleada em casa); multiplicadores Taça (R1 0.85→R5 1.25), meteo determinística, preço (`1 − (preço−15)×0.014`); choques com RNG por jogo (jitter ±10%, noite mágica 5%, deserção 12% se mood≤25 e 3+ sem ganhar). `avg_attendance` deixou de ser piso — crises esvaziam mesmo. `calculateMatchAttendance` (número) e `explainAttendance` (número + ocupação + motivos pt-PT) partilham a semente.
+- **Bónus casa** (`matchCalculations.crowdFactorForOccupancy` + 5.º param de `computeSidePower`): ocupação ≥90% → +4% ataque/+2% defesa; <40% → −3% ataque; resto neutro. Engine passa `fixture._occupancy` (fixada no `runMatchSegment`, que agora usa `explainAttendance` e guarda `_occupancy`/`_ticketPrice`); `refreshPowerIfDirty` preserva o fator. Fora sempre neutro.
+- **Bilheteira**: receita = assistência × preço real (liga em `weeklyFlowHelpers`, Taça em `cupFlowHelpers`); socket `setTicketPrice` (`socketFinanceHandlers.ts` + `socketEventRegistry.json`); `capacityRevPerGame` no GameContext passou a preço real.
+- **UI**: `StadiumTab` com termómetro de mood (etiquetas novas `getFansMoodLabel`: Furiosos→Em Êxtase) + seletor de 5 preços + receita/obra ao preço real; `MatchBriefing StadiumCard` com ambiente (Vulcão/Morgue) + até 2 motivos.
+- **Testes**: `test:attendance` reescrito (7 cenários: gala, crise 2500–4500, preço, dérbi, determinismo, Taça, cap div5) + novo `test:fansmood` (8 asserts, deltas manuais confirmados) + U4b no `test:engine-unit` (vulcão/morgue/neutro). `crashRecoveryRegression` ganhou mock de `explainAttendance`.
+- **Armadilhas**: tabelas de 1 equipa davam sempre "visita do líder" — guard `oppSorted.length > 2`; `edit` do pi falhou 2× com erro de serialização (contornado com python); `audit:socketio` regenera o registry (manter a entrada `setTicketPrice`); sala FHAPAM tem erro pré-existente `POOL_SAMPLING` (60 equipas, alheio).
+- **Checks**: server `typecheck` OK; `test:attendance` + `test:fansmood` + `test:morale` + `test:engine-unit` (19 pass) OK; `audit:socketio` 0 erros; `audit:gamestate FHAPAM` só erro pré-existente; client `lint` + `check:types` OK; mobile portrait 140/140 + landscape 168/168 PASS.
+
 ## Moral por palavras com humor (novo)
 
 - Novo helper `client/src/utils/morale.js` (`getMoraleLabel`): escala única 0–100 — Na Lama / De Rasto / Razoável / Animados / Bom / Em Chamas / Excelente. Cores da barra/texto inalteradas.

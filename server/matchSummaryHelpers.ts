@@ -1,9 +1,10 @@
 import type { ActiveGame } from "./types";
 import { FORM_MATCH_MIN, FORM_MAX, SEASON_CALENDAR } from "./gameConstants";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
+import { createMomHelpers } from "./momHelpers";
 import { computeMatchOdds } from "./game/commentary";
 import { getWeatherForFixture } from "./game/matchCalculations";
-import { calculateMatchAttendance } from "./coreHelpers";
+import { explainAttendance } from "./coreHelpers";
 import {
   isPlayerAvailable,
   withJuniorGRs,
@@ -450,22 +451,21 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     game: ActiveGame,
     homeTeamId: number,
     awayTeamId: number,
+    ctx?: { competition?: "league" | "cup"; cupRound?: number },
   ) {
-    const team = await runGet<{ stadium_capacity?: number }>(
-      game.db,
-      "SELECT stadium_capacity FROM teams WHERE id = ?",
-      [homeTeamId],
-    );
-    const capacity = team?.stadium_capacity || 10000;
-    const expectedAttendance = await calculateMatchAttendance(
-      game.db,
-      homeTeamId,
-      awayTeamId,
-    );
+    const breakdown = await explainAttendance(game.db, homeTeamId, awayTeamId, {
+      competition: ctx?.competition ?? "league",
+      cupRound: ctx?.cupRound,
+      season: game.season || 1,
+      matchweek: game.matchweek || 1,
+    });
     return {
-      capacity,
-      expectedAttendance,
-      revenue: expectedAttendance * 15,
+      capacity: breakdown.capacity,
+      expectedAttendance: breakdown.attendance,
+      revenue: breakdown.attendance * breakdown.ticketPrice,
+      ticketPrice: breakdown.ticketPrice,
+      occupancyPct: Math.round(breakdown.occupancy * 100),
+      reasons: breakdown.reasons,
     };
   }
 
@@ -834,7 +834,10 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         }),
         stakes: buildStakes(null, null, true),
         stadium: isHome
-          ? await buildStadiumInfo(game, team.id, opponent.id)
+          ? await buildStadiumInfo(game, team.id, opponent.id, {
+              competition: "cup",
+              cupRound: currentEntry.round,
+            })
           : null,
         team: {
           id: team.id,
@@ -962,7 +965,9 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       }),
       stakes: buildStakes(myPosition, oppPosition, false),
       stadium: isHome
-        ? await buildStadiumInfo(game, team.id, opponent.id)
+        ? await buildStadiumInfo(game, team.id, opponent.id, {
+            competition: "league",
+          })
         : null,
       team: {
         id: team.id,
@@ -1082,6 +1087,17 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                 const awayResult = awayWon ? "V" : drew ? "E" : "D";
                 recordTacticHistory(match.homeTeamId, match._t1, homeResult);
                 recordTacticHistory(match.awayTeamId, match._t2, awayResult);
+
+                // MOM por equipa (Jornal Global) — mesmo callback atómico do INSERT
+                try {
+                  const momHelpers = createMomHelpers({ db: game.db });
+                  momHelpers.persistMoms(game, match, "League", matchweek, null);
+                } catch (momErr: any) {
+                  console.warn(
+                    `[persistMatchResults] MOM persistence failed (matchweek ${matchweek}):`,
+                    momErr?.message,
+                  );
+                }
 
                 remaining -= 1;
                 if (remaining === 0 && onDone) onDone();

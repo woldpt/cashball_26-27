@@ -2,6 +2,7 @@ import { socket } from "../socket.js";
 import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
 import { DIVISION_NAMES, STADIUM_EXPANSION_COST as EXPANSION_COST } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
+import { getFansMoodLabel } from "../utils/morale.js";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { Button } from "../components/shared/Button.jsx";
@@ -27,6 +28,9 @@ export function StadiumTab({
 }) {
   const stadiumCapacity = teamInfo?.stadium_capacity || 10000;
   const division = teamInfo?.division || 1;
+  const fansMood = teamInfo?.fans_mood ?? 60;
+  const fansMoodLabel = getFansMoodLabel(fansMood).toUpperCase();
+  const ticketPrice = teamInfo?.ticket_price || 15;
 
   const homeMatches =
     financeData?.homeMatchesPlayed || 0;
@@ -98,7 +102,7 @@ export function StadiumTab({
         <SummaryWidget
           label="Receita máx. / jogo"
           value={formatCurrency(capacityRevPerGame)}
-          sub="15€ × lotação"
+          sub={`${ticketPrice}€ × lotação`}
           compactMobile
           valueClass="text-lg sm:text-2xl"
           accentClass="border-tertiary"
@@ -150,6 +154,78 @@ export function StadiumTab({
         </div>
       )}
 
+      {/* ── MOOD DOS ADEPTOS ──────────────────────────────────────── */}
+      <div className="rounded-md bg-surface-container-low px-4 py-3 short:px-3 short:py-2">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+            Mood dos adeptos
+          </span>
+          <span
+            className={`text-[10px] font-black uppercase tracking-widest ${
+              fansMood >= 70
+                ? "text-tertiary"
+                : fansMood >= 45
+                  ? "text-primary"
+                  : "text-red-400"
+            }`}
+          >
+            {fansMoodLabel} · {fansMood}
+          </span>
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-surface-bright">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ${
+              fansMood >= 70
+                ? "bg-gradient-to-r from-tertiary/60 to-tertiary"
+                : fansMood >= 45
+                  ? "bg-gradient-to-r from-primary/50 to-primary"
+                  : "bg-gradient-to-r from-red-500/60 to-red-500"
+            }`}
+            style={{ width: `${Math.max(0, Math.min(100, fansMood))}%` }}
+          />
+        </div>
+        <p className="mt-1.5 text-[10px] uppercase tracking-wider text-on-surface-variant/50">
+          {fansMood >= 70
+            ? "Bancada contigo — as assistências sobem"
+            : fansMood >= 45
+              ? "Bancada expectante — ganha e eles voltam"
+              : "Bancada contra ti — o estádio vai esvaziar"}
+        </p>
+      </div>
+
+      {/* ── BILHETES ──────────────────────────────────────────────── */}
+      <Panel title="Preço do Bilhete" icon="confirmation_number" padded={false}>
+        <div className="p-3 sm:p-5 short:p-2.5">
+          <div className="grid grid-cols-5 gap-1.5 short:gap-1">
+            {[10, 15, 20, 25, 30].map((price) => (
+              <button
+                key={price}
+                type="button"
+                onClick={() => socket.emit("setTicketPrice", price)}
+                className={`rounded-md border px-1 py-2 text-center transition-all active:scale-95 ${
+                  price === ticketPrice
+                    ? "border-tertiary bg-tertiary/15 text-tertiary"
+                    : "border-outline-variant/15 bg-surface text-on-surface-variant hover:border-tertiary/40"
+                }`}
+              >
+                <span className="block text-sm short:text-xs font-black tabular-nums">
+                  {price}€
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-[10px] uppercase tracking-wider text-on-surface-variant/50 text-center">
+            {ticketPrice <= 10
+              ? "Casa cheia, pouco por cabeça"
+              : ticketPrice >= 30
+                ? "Receita máxima por cabeça, menos gente"
+                : ticketPrice >= 20
+                  ? "Equilíbrio a pender para a receita"
+                  : "Preço base — procura normal"}
+          </p>
+        </div>
+      </Panel>
+
       {/* ── EXPANSÃO ──────────────────────────────────────────────── */}
       <Panel
         title="Expansão do Estádio"
@@ -196,7 +272,7 @@ export function StadiumTab({
                 Ganho Receita / Obra
               </span>
               <span className="text-primary font-headline font-bold text-xl short:text-base tabular-nums">
-                {formatCurrency(SEATS_PER_BUILD * 15)}
+                {formatCurrency(SEATS_PER_BUILD * ticketPrice)}
               </span>
               <span className="text-on-surface-variant text-[10px]">
                 por jogo em casa

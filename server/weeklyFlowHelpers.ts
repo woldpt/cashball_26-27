@@ -30,6 +30,7 @@ import {
   createMinuteBarrier,
 } from "./game/engine";
 import { generateAITactic } from "./game/matchCalculations";
+import { computeMoms } from "./game/mom";
 
 const MAX_NPC_HALFTIME_SUBS = 2;
 const NPC_FRESHNESS_SKILL_BUFFER = 2;
@@ -51,7 +52,14 @@ interface WeeklyFlowDeps {
     db: any,
     homeTeamId: number,
     opponentTeamId?: number,
+    ctx?: { competition?: "league" | "cup"; cupRound?: number; season?: number; matchweek?: number },
   ) => Promise<number>;
+  explainAttendance: (
+    db: any,
+    homeTeamId: number,
+    opponentTeamId?: number,
+    ctx?: { competition?: "league" | "cup"; cupRound?: number; season?: number; matchweek?: number },
+  ) => Promise<{ attendance: number; occupancy: number; capacity: number; ticketPrice: number; reasons: string[] }>;
   pickRefereeSummary: (
     roomCode: string,
     teamId: number,
@@ -113,6 +121,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     resumeAllPausedAuctions,
     simulateMatchSegment,
     calculateMatchAttendance,
+    explainAttendance,
     pickRefereeSummary,
     saveGameState,
     persistMatchResults,
@@ -274,12 +283,27 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
     // Calculate attendance only for league first halves
     if (startMin === 1 && (entry?.type === "league" || entry?.type === "cup")) {
+      const attCtx = {
+        competition: (entry?.type ?? "league") as "league" | "cup",
+        cupRound:
+          entry?.type === "cup"
+            ? ((game.currentFixtures[0] as any)?.round ?? (entry as any)?.round)
+            : undefined,
+        season: game.season || 1,
+        matchweek: game.matchweek || 1,
+      };
       for (const fixture of game.currentFixtures) {
-        fixture.attendance = await calculateMatchAttendance(
+        const breakdown = await explainAttendance(
           game.db,
           fixture.homeTeamId,
           fixture.awayTeamId,
+          attCtx,
         );
+        fixture.attendance = breakdown.attendance;
+        // Ambiente e preço vivos na fixture: o motor lê a ocupação para o
+        // bónus casa e a finalização usa o preço real na bilheteira.
+        (fixture as any)._occupancy = breakdown.occupancy;
+        (fixture as any)._ticketPrice = breakdown.ticketPrice;
       }
     }
 
@@ -993,9 +1017,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         // ── BILHETERIA — moved inside the transaction so ticket revenue commits
         // atomically with the standings updates (previously ran after COMMIT,
         // outside any transaction, which left a crash window). Same per-week value:
-        // attendance × 15 for the home team of each fixture.
+        // attendance × preço do bilhete da equipa da casa for each fixture.
         for (const match of fixtures) {
-          const revenue = (match.attendance || 0) * 15;
+          const ticketPrice = (match as any)._ticketPrice || 15;
+          const revenue = (match.attendance || 0) * ticketPrice;
           if (revenue > 0) {
             game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [
               revenue,
@@ -1029,6 +1054,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           // Emit match results
           const fullTimeFixtures = fixtures.map((fixture) => ({
             ...fixture,
+            mom: computeMoms(
+              fixture.events || [],
+              fixture.homeLineup || [],
+              fixture.awayLineup || [],
+            ),
             referee: pickRefereeSummary(
               game.roomCode,
               fixture.homeTeamId,
@@ -1116,6 +1146,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               (err3: any, scorers: any[]) => {
                 io.to(game.roomCode).emit("topScorers", scorers || []);
                 io.to(game.roomCode).emit("standingsUpdated");
+                io.to(game.roomCode).emit("globalNewsUpdated");
               },
             );
 

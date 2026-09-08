@@ -21,6 +21,7 @@
     "test:contractrenewal": "tsx scripts/contractRenewalRegression.mts",
     "test:skillhistory": "tsx scripts/skillHistoryRegression.mts",
     "test:attendance": "tsx scripts/attendanceRegression.mts",
+    "test:fansmood": "tsx scripts/fansMoodRegression.mts",
     "test:training-multiseason": "tsx scripts/trainingMultiSeasonRegression.mts",
     "test:relegation-coach": "tsx scripts/relegationCoachRegression.mts",
     "test:coach-dismissal-league": "tsx scripts/coachDismissalLeagueRegression.mts",

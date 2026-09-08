@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS teams (
   color_secondary TEXT,
   crest TEXT,
   morale INTEGER DEFAULT 50,
+  fans_mood INTEGER DEFAULT 60,
+  ticket_price INTEGER DEFAULT 15,
   FOREIGN KEY(manager_id) REFERENCES managers(id)
 );
 
@@ -230,3 +232,25 @@ CREATE TABLE IF NOT EXISTS transfer_history (
 
 CREATE INDEX IF NOT EXISTS idx_transfer_history_year_created ON transfer_history(year, created_at);
 CREATE INDEX IF NOT EXISTS idx_transfer_history_player ON transfer_history(player_id);
+
+-- "Jogador do Jogo" (MOM) por equipa/partida.
+-- Gravado na finalização de cada partida (Liga e Taça) — os eventos da Taça
+-- só vivem em memória, por isso o Jornal Global precisa deste registo para
+-- épocas anteriores.
+-- "matchweek" = jornada de liga; "round" = ronda da Taça (um dos dois é NULL).
+CREATE TABLE IF NOT EXISTS match_moms (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  season INTEGER NOT NULL,
+  competition TEXT NOT NULL,
+  matchweek INTEGER,
+  round INTEGER,
+  team_id INTEGER NOT NULL,
+  player_id INTEGER NOT NULL,
+  player_name TEXT NOT NULL,
+  score INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY(team_id) REFERENCES teams(id),
+  FOREIGN KEY(player_id) REFERENCES players(id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_match_moms_unique ON match_moms(season, competition, matchweek, round, team_id);
+CREATE INDEX IF NOT EXISTS idx_match_moms_season ON match_moms(season, competition);

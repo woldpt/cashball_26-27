@@ -9,6 +9,7 @@
  *   U3 — simulatePenaltyShootout: termina sempre com vencedor, chutes
  *        estritamente alternados casa/fora, determinismo com seed
  *   U4 — computeSidePower: DEFENSIVO defende mais, OFENSIVO ataca mais
+ *   U4b — crowdFactorForOccupancy + computeSidePower(…, crowd): vulcão/morgue/neutro
  *   U5 — sanidade do fix da dupla contagem do estilo: a mesma força ofensiva
  *        tem MENOR probabilidade de golo contra defesa DEFENSIVA do que
  *        contra defesa OFENSIVA (antes era ao contrário)
@@ -52,6 +53,7 @@ const {
 } = require("../game/engine.ts");
 const {
   computeSidePower,
+  crowdFactorForOccupancy,
   computeOpenPlayGoalProbability,
   createSeededRng,
   isCupFinalRound,
@@ -154,6 +156,22 @@ test("U4 — estilo: DEFENSIVO defende mais, OFENSIVO ataca mais", () => {
   const atk = computeSidePower(squad, { formation: "4-4-2", style: "OFENSIVO" }, 50, 0);
   assert.ok(def.defense > eql.defense && eql.defense > atk.defense, "defesa devia ordenar DEF > EQL > OFE");
   assert.ok(atk.attack > eql.attack && eql.attack > def.attack, "ataque devia ordenar OFE > EQL > DEF");
+});
+
+// ── U4b ─────────────────────────────────────────────────────────────────────
+test("U4b — ambiente: vulcão empurra, morgue encolhe, neutro não mexe", () => {
+  const squad = makeSquad(30, "x");
+  const tactic = { formation: "4-4-2", style: "EQUILIBRADO" };
+  const neutral = computeSidePower(squad, tactic, 50, 0);
+  const volcano = computeSidePower(squad, tactic, 50, 0, crowdFactorForOccupancy(0.95));
+  const morgue = computeSidePower(squad, tactic, 50, 0, crowdFactorForOccupancy(0.3));
+  const unknown = computeSidePower(squad, tactic, 50, 0, crowdFactorForOccupancy(null));
+  assert.equal(crowdFactorForOccupancy(null), 1, "sem ocupação → neutro");
+  assert.equal(crowdFactorForOccupancy(0.7), 1, "meio-termo → neutro");
+  assert.ok(volcano.attack > neutral.attack, "vulcão ataca mais");
+  assert.ok(volcano.defense > neutral.defense, "vulcão defende ligeiramente melhor");
+  assert.ok(morgue.attack < neutral.attack, "morgue ataca menos");
+  assert.deepEqual(unknown, neutral, "ocupação desconhecida não altera nada");
 });
 
 // ── U5 ──────────────────────────────────────────────────────────────────────

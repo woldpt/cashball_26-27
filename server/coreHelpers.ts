@@ -1,9 +1,11 @@
 import type { ActiveGame } from "./types";
 import {
   MAX_ATTENDANCE_BY_DIVISION,
+  MATCH_TUNING,
   CONTRACT_LENGTH_MATCHWEEKS,
   contractEpoch,
 } from "./gameConstants";
+import { getWeatherForFixture } from "./game/matchCalculations";
 
 type Db = any;
 type AnyRow = Record<string, any>;
@@ -286,23 +288,55 @@ export function pickRefereeSummary(
   return { name: refereeName };
 }
 
-export async function calculateMatchAttendance(
+/**
+ * Contexto opcional para o cálculo de assistências. Sem ele, a função usa só
+ * forma + mood + adversário (comportamento dos testes e antevisões simples).
+ */
+export interface AttendanceContext {
+  competition?: "league" | "cup";
+  cupRound?: number;
+  season?: number;
+  matchweek?: number;
+}
+
+export interface AttendanceBreakdown {
+  attendance: number;
+  occupancy: number; // 0..1 (attendance / capacity)
+  capacity: number;
+  ticketPrice: number;
+  reasons: string[]; // etiquetas curtas pt-PT, ordenadas por impacto (máx. 3)
+}
+
+/** RNG determinístico por jogo (mulberry32 sobre o hash): a assistência varia
+ * de jogo para jogo mas é estável em replays/audits do mesmo jogo. */
+function attendanceRng(seedStr: string) {
+  let seed = hashString(seedStr) || 1;
+  return () => {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+async function computeAttendance(
   db: Db,
   homeTeamId: number,
   opponentTeamId?: number,
-) {
-  const team = await runGet<{
-    stadium_capacity?: number;
-    division?: number;
-    avg_attendance?: number;
-  }>(
-    db,
-    "SELECT stadium_capacity, division, avg_attendance FROM teams WHERE id = ?",
-    [homeTeamId],
-  );
-  const rawCapacity = team ? team.stadium_capacity || 10000 : 10000;
-  const divLimit = MAX_ATTENDANCE_BY_DIVISION[team?.division ?? 1] ?? Infinity;
+  ctx?: AttendanceContext,
+): Promise<AttendanceBreakdown> {
+  const T = MATCH_TUNING;
+  // SELECT * de propósito: tolera DBs antigas sem fans_mood/ticket_price
+  // (a migração em gameManager.ts trata o caso geral; aqui há fallback).
+  const team: any =
+    (await runGet(db, "SELECT * FROM teams WHERE id = ?", [homeTeamId])) || {};
+  const rawCapacity = team.stadium_capacity || 10000;
+  const homeDiv = team.division ?? 1;
+  const divLimit = MAX_ATTENDANCE_BY_DIVISION[homeDiv] ?? Infinity;
   const capacity = Math.min(rawCapacity, divLimit);
+  const fansMood = team.fans_mood ?? T.fansMoodDefault;
+  const ticketPrice = team.ticket_price ?? T.ticketBasePrice;
 
   const recentMatches = await runAll<{
     home_team_id: number;
@@ -319,51 +353,228 @@ export async function calculateMatchAttendance(
     [homeTeamId, homeTeamId],
   );
 
-  // Calcular índice de forma (0.0 a 1.0) com base nos últimos 5 jogos
-  // W=1.0, E=0.4, D=0 (conforme README)
-  let formPoints = recentMatches.length === 0 ? 0.5 : 0;
-  for (const m of recentMatches) {
-    const isHome = m.home_team_id === homeTeamId;
-    const gf = isHome ? m.home_score : m.away_score;
-    const ga = isHome ? m.away_score : m.home_score;
-    if (gf > ga) formPoints += 1.0;
-    else if (gf === ga) formPoints += 0.4;
-  }
+  // ── Forma com peso de recência (o jogo mais recente pesa 5× o 5º) ──────
+  // V=1.0, E=0.4, D=0. Sem jogos → 0.5 (neutro).
+  let formPoints = 0.5;
+  let winlessStreak = 0;
+  let lastHomeMargin = 0;
+  let lastHomeWasWin: boolean | null = null;
   if (recentMatches.length > 0) {
-    formPoints /= recentMatches.length;
+    let weighted = 0;
+    let weightSum = 0;
+    recentMatches.forEach((m, i) => {
+      const isHome = m.home_team_id === homeTeamId;
+      const gf = isHome ? m.home_score : m.away_score;
+      const ga = isHome ? m.away_score : m.home_score;
+      const pts = gf > ga ? 1.0 : gf === ga ? 0.4 : 0;
+      const w = recentMatches.length - i; // mais recente pesa mais
+      weighted += pts * w;
+      weightSum += w;
+      if (lastHomeWasWin === null && isHome) {
+        lastHomeWasWin = gf > ga;
+        lastHomeMargin = gf - ga;
+      }
+    });
+    formPoints = weighted / weightSum;
+    for (const m of recentMatches) {
+      const isHome = m.home_team_id === homeTeamId;
+      const gf = isHome ? m.home_score : m.away_score;
+      const ga = isHome ? m.away_score : m.home_score;
+      if (gf > ga) break;
+      winlessStreak += 1;
+    }
   }
 
-  // Ocupação do estádio: mínimo 30%, máximo 100%
-  const formAttendance = Math.floor(capacity * (0.3 + formPoints * 0.7));
-
-  // A média histórica funciona como PISO de reputação — nunca arrasta para
-  // baixo a previsão baseada em forma. Uma equipa em boa forma enche o
-  // estádio; a reputação só garante assistência mínima a equipas em má fase.
-  const prevAvg = team?.avg_attendance || 0;
-  const attendance = Math.max(
-    formAttendance,
-    Math.min(capacity, prevAvg),
-  );
-
-  // ── Multiplicador de qualidade do adversário ──────────────────────
-  // Equipas mais fortes atraem mais público: 0% a +20% de bonus
-  if (opponentTeamId) {
-    const opp = await runGet<{ avg_skill?: number }>(
+  // ── Posição na tabela (dentro da própria divisão) ─────────────────────
+  let homeRank01 = 0.5; // 1 = líder, 0 = último
+  let homeTop3 = false;
+  let homeBottom2 = false;
+  try {
+    const table = await runAll<any>(
       db,
-      `SELECT ROUND(AVG(COALESCE(p.skill, 0))) as avg_skill
-       FROM players p
-       WHERE p.team_id = ? AND p.team_id IS NOT NULL`,
-      [opponentTeamId],
+      `SELECT id, points, goals_for, goals_against FROM teams WHERE division = ?`,
+      [homeDiv],
     );
-    const oppSkill = opp?.avg_skill || 0;
-    const OPPONENT_MAX_SKILL = 50;
-    const OPPONENT_BONUS_MAX = 0.20; // +20% para adversário de skill 50
-    const opponentQuality = Math.min(oppSkill / OPPONENT_MAX_SKILL, 1);
-    const opponentMultiplier = 1 + opponentQuality * OPPONENT_BONUS_MAX;
-    return Math.min(capacity, Math.round(attendance * opponentMultiplier));
+    const sorted = getStandingsRows(table);
+    const idx = sorted.findIndex((t) => t.id === homeTeamId);
+    if (idx >= 0 && sorted.length > 1) {
+      homeRank01 = 1 - idx / (sorted.length - 1);
+      homeTop3 = idx <= 2;
+      homeBottom2 = idx >= sorted.length - 2;
+    }
+  } catch {
+    // tabelas mínimas de teste — mantém neutro
   }
 
-  return attendance;
+  // ── Entusiasmo (0..~1): mood pesa mais que forma, tabela desempatia ───
+  const enthusiasm =
+    0.45 * (fansMood / 100) + 0.35 * formPoints + 0.2 * homeRank01;
+  const faithfulFloor =
+    T.faithfulFloorByDivision[homeDiv] ?? 0.25;
+  let occupancyRatio = faithfulFloor + (1 - faithfulFloor) * enthusiasm;
+
+  // ── Bónus contextuais (soma com teto) ─────────────────────────────────
+  const reasons: Array<{ label: string; impact: number }> = [];
+  let bonus = 0;
+  const pushBonus = (amount: number, label: string | null) => {
+    bonus += amount;
+    if (label) reasons.push({ label, impact: Math.abs(amount) });
+  };
+  let oppDiv: number | null = null;
+  if (opponentTeamId) {
+    let oppSkill = 0;
+    try {
+      const opp = await runGet<{ avg_skill?: number }>(
+        db,
+        `SELECT ROUND(AVG(COALESCE(p.skill, 0))) as avg_skill
+         FROM players p
+         WHERE p.team_id = ? AND p.team_id IS NOT NULL`,
+        [opponentTeamId],
+      );
+      oppSkill = opp?.avg_skill || 0;
+    } catch {
+      oppSkill = 0;
+    }
+    const OPPONENT_MAX_SKILL = 50;
+    const quality = Math.min(oppSkill / OPPONENT_MAX_SKILL, 1);
+    if (quality > 0.3) pushBonus(quality * 0.2, quality > 0.7 ? "adversário de peso" : null);
+    try {
+      const oppRow: any =
+        (await runGet(db, "SELECT * FROM teams WHERE id = ?", [opponentTeamId])) || {};
+      oppDiv = oppRow.division ?? null;
+      if (oppDiv != null && oppDiv === homeDiv) {
+        pushBonus(T.attendanceDerbyBonus, "dérbi");
+      }
+      if (oppDiv != null) {
+        const oppTable = await runAll<any>(
+          db,
+          `SELECT id, points, goals_for, goals_against FROM teams WHERE division = ?`,
+          [oppDiv],
+        );
+        const oppSorted = getStandingsRows(oppTable);
+        const oppIdx = oppSorted.findIndex((t) => t.id === opponentTeamId);
+        if (oppIdx >= 0 && oppSorted.length > 2) {
+          if (oppIdx <= 1) pushBonus(T.attendanceLeaderVisitBonus, "visita do líder");
+          else if (oppIdx >= oppSorted.length - 2)
+            pushBonus(T.attendanceWeakVisitorMalus, null);
+        }
+      }
+    } catch {
+      // ignora contexto do adversário em DBs mínimas
+    }
+  }
+  if (homeTop3) pushBonus(T.attendanceTitleRaceBonus, "luta pelo título");
+  if (homeBottom2) pushBonus(T.attendanceBottomMalus, "crise na tabela");
+  if (lastHomeWasWin === true && lastHomeMargin >= 3)
+    pushBonus(0.05, "goleada em casa");
+  if (lastHomeWasWin === false && lastHomeMargin <= -3)
+    pushBonus(-0.05, "humilhação em casa");
+  bonus = Math.max(-0.25, Math.min(T.attendanceBonusCap, bonus));
+
+  // ── Multiplicadores: Taça, meteo, preço ───────────────────────────────
+  let mult = 1 + bonus;
+  const competition = ctx?.competition ?? "league";
+  if (competition === "cup" && ctx?.cupRound != null) {
+    const cupMult = T.attendanceCupRoundMult[ctx.cupRound] ?? 1;
+    mult *= cupMult;
+    if (ctx.cupRound >= 4)
+      reasons.push({
+        label: ctx.cupRound === 5 ? "final da Taça" : "fase decisiva da Taça",
+        impact: Math.abs(cupMult - 1) + 0.2,
+      });
+  }
+  if (ctx?.season != null && ctx?.matchweek != null && opponentTeamId) {
+    try {
+      const { condition } = getWeatherForFixture(
+        ctx.season,
+        ctx.matchweek,
+        homeTeamId,
+        opponentTeamId,
+      );
+      const wMult = T.attendanceWeatherMult[condition] ?? 1;
+      mult *= wMult;
+      if (condition === "chuva_forte" || condition === "neve")
+        reasons.push({
+          label: condition === "neve" ? "neve" : "chuva forte",
+          impact: Math.abs(wMult - 1) + 0.05,
+        });
+      else if (condition === "sol")
+        reasons.push({ label: "sol", impact: 0.03 });
+    } catch {
+      // sem meteo — segue sem ela
+    }
+  }
+  const ticketMult = Math.max(
+    0.7,
+    Math.min(1.25, 1 - (ticketPrice - T.ticketBasePrice) * T.ticketDemandPerEuro),
+  );
+  mult *= ticketMult;
+  if (ticketPrice > T.ticketBasePrice + 5)
+    reasons.push({ label: "bilhetes caros", impact: 0.08 });
+  else if (ticketPrice < T.ticketBasePrice - 4)
+    reasons.push({ label: "bilhetes baratos", impact: 0.06 });
+
+  // ── Choques: jitter natural + noite mágica / deserção (raros) ─────────
+  const rng = attendanceRng(
+    `${ctx?.season ?? 0}:${ctx?.matchweek ?? 0}:${homeTeamId}:${opponentTeamId ?? 0}:${recentMatches.length}`,
+  );
+  const jitter = 1 + (rng() * 2 - 1) * T.attendanceJitter;
+  mult *= jitter;
+  if (rng() < T.attendanceMagicNightChance) {
+    const magic = 1.08 + rng() * 0.07;
+    mult *= magic;
+    reasons.push({ label: "noite mágica", impact: 0.3 });
+  }
+  if (
+    fansMood <= T.attendanceDesertMoodMax &&
+    winlessStreak >= 3 &&
+    rng() < T.attendanceDesertChance
+  ) {
+    const desert = 1 - (0.12 + rng() * 0.06);
+    mult *= desert;
+    reasons.push({ label: "deserção em crise", impact: 0.35 });
+  }
+  if (fansMood >= 85 && formPoints >= 0.8)
+    reasons.push({ label: "equipa em chamas", impact: 0.15 });
+  else if (fansMood <= 25)
+    reasons.push({ label: "adeptos descontentes", impact: 0.15 });
+
+  const raw = Math.round(capacity * occupancyRatio * mult);
+  const attendance = Math.max(
+    Math.floor(capacity * T.attendanceAbsoluteMinRatio),
+    Math.min(capacity, raw),
+  );
+  reasons.sort((a, b) => b.impact - a.impact);
+  return {
+    attendance,
+    occupancy: capacity > 0 ? attendance / capacity : 0,
+    capacity,
+    ticketPrice,
+    reasons: reasons.slice(0, 3).map((r) => r.label),
+  };
+}
+
+export async function calculateMatchAttendance(
+  db: Db,
+  homeTeamId: number,
+  opponentTeamId?: number,
+  ctx?: AttendanceContext,
+) {
+  return (await computeAttendance(db, homeTeamId, opponentTeamId, ctx)).attendance;
+}
+
+/**
+ * Variante explicada (Briefing/UI): devolve ocupação e motivos além do número.
+ * Mesma semente do cálculo base — o número é idêntico ao de
+ * `calculateMatchAttendance` com o mesmo ctx.
+ */
+export async function explainAttendance(
+  db: Db,
+  homeTeamId: number,
+  opponentTeamId?: number,
+  ctx?: AttendanceContext,
+): Promise<AttendanceBreakdown> {
+  return computeAttendance(db, homeTeamId, opponentTeamId, ctx);
 }
 
 export function logClubNews(
@@ -496,6 +707,7 @@ export function recordTransfer(game: ActiveGame, info: TransferRecord, io?: any)
         }
         if (io) {
           io.to(game.roomCode).emit("transferCompleted", payload);
+          io.to(game.roomCode).emit("globalNewsUpdated");
         }
       },
     );

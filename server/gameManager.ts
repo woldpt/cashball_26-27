@@ -659,6 +659,39 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     },
   );
 
+  // "Jogador do Jogo" por equipa/partida (Liga + Taça) — Jornal Global.
+  // Criação idempotente por sala para salas já existentes antes desta feature.
+  db.run(
+    "CREATE TABLE IF NOT EXISTS match_moms (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      season INTEGER NOT NULL,\n      competition TEXT NOT NULL,\n      matchweek INTEGER,\n      round INTEGER,\n      team_id INTEGER NOT NULL,\n      player_id INTEGER NOT NULL,\n      player_name TEXT NOT NULL,\n      score INTEGER NOT NULL DEFAULT 0,\n      FOREIGN KEY(team_id) REFERENCES teams(id),\n      FOREIGN KEY(player_id) REFERENCES players(id)\n    )",
+    (momErr: Error | null) => {
+      if (momErr)
+        console.error(
+          `[gameManager] Failed to create match_moms table for ${roomCode}:`,
+          momErr.message,
+        );
+      db.run(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_match_moms_unique ON match_moms(season, competition, matchweek, round, team_id)",
+        (idxErr: Error | null) => {
+          if (idxErr)
+            console.warn(
+              `[gameManager] match_moms unique index failed for ${roomCode}:`,
+              idxErr.message,
+            );
+        },
+      );
+      db.run(
+        "CREATE INDEX IF NOT EXISTS idx_match_moms_season ON match_moms(season, competition)",
+        (idxErr2: Error | null) => {
+          if (idxErr2)
+            console.warn(
+              `[gameManager] match_moms season index failed for ${roomCode}:`,
+              idxErr2.message,
+            );
+        },
+      );
+    },
+  );
+
   db.run(
     "CREATE TABLE IF NOT EXISTS game_state (key TEXT PRIMARY KEY, value TEXT)",
     () => {
@@ -769,6 +802,14 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
           });
           db.run(
             "ALTER TABLE teams ADD COLUMN morale INTEGER DEFAULT 50",
+            () => {},
+          );
+          db.run(
+            "ALTER TABLE teams ADD COLUMN fans_mood INTEGER DEFAULT 60",
+            () => {},
+          );
+          db.run(
+            "ALTER TABLE teams ADD COLUMN ticket_price INTEGER DEFAULT 15",
             () => {},
           );
           db.run(

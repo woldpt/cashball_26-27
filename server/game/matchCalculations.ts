@@ -341,11 +341,29 @@ export type SidePower = {
  * única vez — ataque com o fator ofensivo próprio, defesa com o fator
  * defensivo próprio (ver fix da dupla contagem no engine).
  */
+/**
+ * Fator ambiente da casa a partir da ocupação (0..1, null = desconhecida).
+ * Estádio a abarrotar empurra a equipa (+4% ataque, +2% defesa); casa
+ * vazia encolhe (−3% ataque). Fora de [morgue, vulcão] é neutro 1.0.
+ * Puro e testável — o engine resolve a ocupação da fixture para aqui.
+ */
+export function crowdFactorForOccupancy(
+  occupancy: number | null | undefined,
+): number {
+  if (occupancy == null) return 1;
+  if (occupancy >= MATCH_TUNING.crowdBonusOccupancy)
+    return 1 + MATCH_TUNING.crowdBonusAttack;
+  if (occupancy < MATCH_TUNING.crowdPenaltyOccupancy)
+    return 1 + MATCH_TUNING.crowdPenaltyAttack;
+  return 1;
+}
+
 export function computeSidePower(
   squad: PlayerRow[],
   tactic: { formation?: string; style?: string } | null,
   morale = 50,
   familiarityBonus = 0,
+  crowdFactor = 1,
 ): SidePower {
   const formation = String(tactic?.formation || "4-4-2");
   const style = normaliseStyle(tactic?.style);
@@ -377,6 +395,11 @@ export function computeSidePower(
   const familiarityAttackFactor = 1 + familiarityBonus;
   const familiarityDefenseFactor = 1 + familiarityBonus * 0.5;
 
+  // Ambiente da bancada (só equipa da casa recebe ≠ 1): o ataque sente tudo,
+  // a defesa metade — a festa empurra para a frente, não organiza atrás.
+  const crowdAttackFactor = crowdFactor;
+  const crowdDefenseFactor = 1 + (crowdFactor - 1) / 2;
+
   return {
     attack:
       attackBase *
@@ -384,14 +407,16 @@ export function computeSidePower(
       moraleAttackFactor *
       STYLE_ATTACK_FACTORS[style] *
       formFactor *
-      familiarityAttackFactor,
+      familiarityAttackFactor *
+      crowdAttackFactor,
     defense:
       defenseBase *
       formationDefense *
       moraleDefenseFactor *
       STYLE_DEFENSE_FACTORS[style] *
       formFactor *
-      familiarityDefenseFactor,
+      familiarityDefenseFactor *
+      crowdDefenseFactor,
     style,
     squad,
     midStrength: avgMidfielderQuality,

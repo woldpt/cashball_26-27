@@ -81,6 +81,34 @@ export function registerFinanceSocketHandlers(
     socket.emit("systemMessage", "+5000 Lugares Construídos!");
   });
 
+  socket.on("setTicketPrice", async (price) => {
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    const playerState = getPlayerBySocket(game, socket.id);
+    if (!playerState) return;
+
+    const TIERS = [10, 15, 20, 25, 30];
+    const tier = Number(price);
+    if (!TIERS.includes(tier)) {
+      socket.emit("systemMessage", "Preço inválido (10, 15, 20, 25 ou 30€).");
+      return;
+    }
+    try {
+      await runExec(game.db, "UPDATE teams SET ticket_price = ? WHERE id = ?", [
+        tier,
+        playerState.teamId,
+      ]);
+    } catch (err) {
+      console.error("[setTicketPrice] failed:", (err as Error)?.message ?? err);
+      socket.emit("systemMessage", "Erro ao definir o preço.");
+      return;
+    }
+    getTeamsWithCoachNames(game.db)
+      .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
+      .catch(() => {});
+    socket.emit("systemMessage", `Bilhetes a ${tier}€ — a procura ajusta-se ao preço!`);
+  });
+
   socket.on("takeLoan", async () => {
     const game = getGameBySocket(socket.id);
     if (!game) return;

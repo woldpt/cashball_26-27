@@ -78,6 +78,7 @@ const {
 	getTeamsWithCoachNames,
 	pickRefereeSummary,
 	calculateMatchAttendance,
+	explainAttendance,
 } = require("./coreHelpers") as typeof import("./coreHelpers");
 const { DIVISION_NAMES, CUP_ROUND_NAMES, CUP_TEAMS_BY_ROUND, SEASON_CALENDAR } =
 	require("./gameConstants") as typeof import("./gameConstants");
@@ -108,6 +109,8 @@ const { registerAdminSocketHandlers } =
 	require("./socketAdminHandlers") as typeof import("./socketAdminHandlers");
 const { registerScoutSocketHandlers } =
 	require("./socketScoutHandlers") as typeof import("./socketScoutHandlers");
+const { registerNewsSocketHandlers } =
+	require("./socketNewsHandlers") as typeof import("./socketNewsHandlers");
 const { createTrainingHandlers } =
 	require("./socketTrainingHandlers") as typeof import("./socketTrainingHandlers");
 const { createTrainingHelpers } =
@@ -979,6 +982,7 @@ const weeklyFlowHelpers = createWeeklyFlowHelpers({
 	resumeAllPausedAuctions,
 	simulateMatchSegment,
 	calculateMatchAttendance,
+	explainAttendance,
 	pickRefereeSummary,
 	saveGameState,
 	persistMatchResults,
@@ -1134,6 +1138,10 @@ io.on("connection", (socket) => {
 		getGameBySocket,
 		getPlayerBySocket,
 		runAll,
+	});
+
+	registerNewsSocketHandlers(socket, {
+		getGameBySocket,
 	});
 
 	registerAdminSocketHandlers(socket, {
@@ -1330,6 +1338,38 @@ db.run(
 	`CREATE INDEX IF NOT EXISTS idx_transfer_history_year_created ON transfer_history(year, created_at)`,
 	(err: any) => {
 		if (err) console.warn("[migration] transfer_history index:", err.message);
+	},
+);
+
+// Migration: match_moms table (Jogador do Jogo por equipa/partida — Jornal Global)
+db.run(
+	`CREATE TABLE IF NOT EXISTS match_moms (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  season INTEGER NOT NULL,
+  competition TEXT NOT NULL,
+  matchweek INTEGER,
+  round INTEGER,
+  team_id INTEGER NOT NULL,
+  player_id INTEGER NOT NULL,
+  player_name TEXT NOT NULL,
+  score INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY(team_id) REFERENCES teams(id),
+  FOREIGN KEY(player_id) REFERENCES players(id)
+)`,
+	(err: any) => {
+		if (err) console.warn("[migration] match_moms table:", err.message);
+	},
+);
+db.run(
+	`CREATE UNIQUE INDEX IF NOT EXISTS idx_match_moms_unique ON match_moms(season, competition, matchweek, round, team_id)`,
+	(err: any) => {
+		if (err) console.warn("[migration] match_moms unique index:", err.message);
+	},
+);
+db.run(
+	`CREATE INDEX IF NOT EXISTS idx_match_moms_season ON match_moms(season, competition)`,
+	(err: any) => {
+		if (err) console.warn("[migration] match_moms season index:", err.message);
 	},
 );
 

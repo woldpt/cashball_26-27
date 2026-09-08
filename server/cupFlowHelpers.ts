@@ -15,6 +15,8 @@ import { getEffectiveSkill, getMatchFatigueSnapshot, queueMatchDeltaWrites } fro
 import { getTeamsWithCoachNames, logClubNews } from "./coreHelpers";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { serializeActiveAuctions } from "./auctionHelpers";
+import { createMomHelpers } from "./momHelpers";
+import { computeMoms } from "./game/mom";
 
 interface CupFlowDeps {
 	io: any;
@@ -619,6 +621,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					}
 				: null,
 		});
+		io.to(game.roomCode).emit("globalNewsUpdated");
 
 		// Despedimento obrigatório de treinadores humanos despromovidos do
 		// Campeonato de Portugal: a sua equipa caiu para o pool invisível da
@@ -1270,8 +1273,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		let cupTxFailed = false;
 		try {
 		for (const { fixture, t1, t2, goals90Home, goals90Away } of setups) {
-			// ── Bilheteira da Taça (mesma tarifa da liga: 15 € por espectador)
-			const cupRevenue = (fixture.attendance || 0) * 15;
+			// ── Bilheteira da Taça (tarifa da equipa da casa, como na liga)
+			const cupTicketPrice = (fixture as any)._ticketPrice || 15;
+			const cupRevenue = (fixture.attendance || 0) * cupTicketPrice;
 			if (cupRevenue > 0) {
 				await new Promise<void>((resolve) => {
 					game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [cupRevenue, fixture.homeTeamId], () => resolve());
@@ -1355,6 +1359,17 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				);
 			});
 
+			// MOM por equipa (Jornal Global) — dentro da transação da ronda
+			try {
+				const momHelpers = createMomHelpers({ db: game.db });
+				momHelpers.persistMoms(game, fixture, "Cup", null, round);
+			} catch (momErr: any) {
+				console.warn(
+					`[continueFromEtGate] MOM persistence failed (round ${round}):`,
+					momErr?.message,
+				);
+			}
+
 			// Cup upset drama by division gap: the lower-division team that
 			// advances gets an extra morale spike and the higher-division team
 			// it eliminates takes a matching extra hit.
@@ -1416,6 +1431,11 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				penaltyHomeGoals: fixture._penaltyHomeGoals ?? null,
 				penaltyAwayGoals: fixture._penaltyAwayGoals ?? null,
 				events: fixture.events,
+				mom: computeMoms(
+					fixture.events || [],
+					fixture.homeLineup || [],
+					fixture.awayLineup || [],
+				),
 			});
 
 			if (round === 5) {
@@ -1505,6 +1525,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 		// Emit results
 		io.to(game.roomCode).emit("cupRoundResults", game.cupResultsPayload);
+		io.to(game.roomCode).emit("globalNewsUpdated");
 
 		// Apply training bonuses for this completed calendar event (cup round)
 		const completedCalendarIndex = game.calendarIndex;

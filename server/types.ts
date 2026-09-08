@@ -93,6 +93,10 @@ export interface MatchFixture {
   homeLineup?: Array<Record<string, unknown>>;
   awayLineup?: Array<Record<string, unknown>>;
   attendance?: number;
+  /** Ocupação 0..1 calculada no arranque (bónus casa no motor). */
+  _occupancy?: number;
+  /** Preço do bilhete da casa usado na receita deste jogo. */
+  _ticketPrice?: number;
   referee?: unknown;
   round?: number;
   season?: number;

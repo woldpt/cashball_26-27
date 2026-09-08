@@ -58,6 +58,7 @@ import {
   average,
   selectPenaltyTaker,
   computeSidePower,
+  crowdFactorForOccupancy,
   computeOpenPlayGoalProbability,
   quotaFromFormation,
 } from "./matchCalculations";
@@ -2056,8 +2057,13 @@ export async function simulateMatchSegment(
   // minuto só quando o onze mexe — sub/expulsão/lesão/fadiga fazem
   // bumpPowerVersion. Substitui a chave-string O(22) por minuto/lado.
   // Holder mutável: processMatchMinute lê/escreve via refreshPowerIfDirty.
+  // Ambiente da casa: a ocupação foi fixada no arranque (runMatchSegment).
+  // Sem ocupação (replays antigos, testes) → neutro, sem efeito no jogo.
+  const homeCrowd = crowdFactorForOccupancy(
+    typeof fixture._occupancy === "number" ? fixture._occupancy : null,
+  );
   const powers = {
-    home: computeSidePower(homeSquad, homeTactic, homeMorale, fam.home),
+    home: computeSidePower(homeSquad, homeTactic, homeMorale, fam.home, homeCrowd),
     away: computeSidePower(awaySquad, awayTactic, awayMorale, fam.away),
   };
   fixture._homePower = {
@@ -2079,6 +2085,7 @@ export async function simulateMatchSegment(
       side === "home" ? homeTactic : awayTactic,
       side === "home" ? homeMorale : awayMorale,
       side === "home" ? fam.home : fam.away,
+      side === "home" ? homeCrowd : 1,
     );
     fixture[field] = { power, version };
     if (side === "home") powers.home = power;
@@ -3016,6 +3023,104 @@ export async function applyPostMatchQualityEvolution(
           [...params, ...ids],
         );
       }
+    }
+
+    // ── Mood dos adeptos (fans_mood) ───────────────────────────────────
+    // Memória emocional da bancada — distinta da moral do plantel. Determinada
+    // pelo resultado COM contexto (margem, casa/fora, escalão, dérbi, Taça),
+    // espelhando a lógica do moodVariant do cliente. Decai para a base de
+    // fidelidade da divisão; a assistência deriva daqui (coreHelpers).
+    // Bloco isolado em try/catch: DBs antigas sem a coluna não podem partir
+    // a evolução pós-jogo (a migração em gameManager.ts trata o caso geral).
+    try {
+      const fanTeamIds = [...teamResults.keys()];
+      if (fanTeamIds.length > 0) {
+        const divRows = await dbAll<{ id: number; division: number | null }>(
+          "SELECT id, division FROM teams WHERE id IN (" +
+            fanTeamIds.map(() => "?").join(",") +
+            ")",
+          fanTeamIds,
+        );
+        const divisions = new Map<number, number>(
+          divRows.map((r) => [r.id, r.division ?? 4]),
+        );
+        const T = MATCH_TUNING;
+        const baseCase = Object.entries(T.fansBaseByDivision)
+          .map(([div, base]) => `WHEN ${Number(div)} THEN ${Number(base)}`)
+          .join(" ");
+        await dbRun(
+          `UPDATE teams SET fans_mood = MAX(0, MIN(100, CAST(fans_mood + ((CASE division ${baseCase} ELSE 50 END) - fans_mood) * ${T.fansMoodDecayRate} AS INTEGER)))`,
+        );
+        const fanCases: string[] = [];
+        const fanParams: any[] = [];
+        const fanIds: number[] = [];
+        const fanCurrent = await dbAll<{ id: number; fans_mood: number | null }>(
+          "SELECT id, fans_mood FROM teams WHERE id IN (" +
+            fanTeamIds.map(() => "?").join(",") +
+            ")",
+          fanTeamIds,
+        );
+        const fanMoodNow = new Map<number, number>(
+          fanCurrent.map((r) => [r.id, r.fans_mood ?? T.fansMoodDefault]),
+        );
+        for (const match of fixtures || []) {
+          const margin = Math.abs(match.finalHomeGoals - match.finalAwayGoals);
+          const cupRound =
+            typeof (match as any).round === "number"
+              ? (match as any).round
+              : null;
+          const sides = [
+            { teamId: match.homeTeamId, oppId: match.awayTeamId, isHome: true },
+            { teamId: match.awayTeamId, oppId: match.homeTeamId, isHome: false },
+          ];
+          for (const side of sides) {
+            const result = teamResults.get(side.teamId);
+            if (!result || !fanMoodNow.has(side.teamId)) continue;
+            let d =
+              result === "W"
+                ? T.fansWinDelta
+                : result === "L"
+                  ? T.fansLossDelta
+                  : T.fansDrawDelta;
+            if (result !== "D") {
+              if (side.isHome)
+                d += result === "W" ? T.fansHomeWinBonus : T.fansHomeLossMalus;
+              const marginFx =
+                Math.min(Math.max(margin - 1, 0), 3) * T.fansMarginPerGoal;
+              d += result === "W" ? marginFx : -marginFx;
+              const myDiv = divisions.get(side.teamId);
+              const oppDiv = divisions.get(side.oppId);
+              if (myDiv != null && oppDiv != null && oppDiv !== myDiv) {
+                if (result === "W" && oppDiv < myDiv) d += T.fansUpsetBonus;
+                else if (result === "L" && oppDiv > myDiv) d += T.fansShameMalus;
+                else if (result === "L" && oppDiv < myDiv)
+                  d += T.fansExpectedLossSoftener;
+              }
+              if (myDiv != null && myDiv === oppDiv)
+                d *= T.fansDerbyMultiplier;
+              if (cupRound != null)
+                d *= T.fansCupRoundMultiplier[cupRound] ?? 1;
+            }
+            const next = Math.max(
+              0,
+              Math.min(100, (fanMoodNow.get(side.teamId) ?? T.fansMoodDefault) + Math.round(d)),
+            );
+            fanMoodNow.set(side.teamId, next);
+            fanCases.push("WHEN ? THEN ?");
+            fanParams.push(side.teamId, next);
+            fanIds.push(side.teamId);
+          }
+        }
+        if (fanIds.length > 0) {
+          const ph = fanIds.map(() => "?").join(",");
+          await dbRun(
+            `UPDATE teams SET fans_mood = CASE id ${fanCases.join(" ")} END WHERE id IN (${ph})`,
+            [...fanParams, ...fanIds],
+          );
+        }
+      }
+    } catch (fansErr) {
+      console.error("[engine] evolution: fans_mood update skipped:", (fansErr as Error)?.message ?? fansErr);
     }
 
     // ── Sequências de derrotas (para a pressão de decaimento) ──────────

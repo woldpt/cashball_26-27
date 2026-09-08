@@ -165,6 +165,13 @@ function buildHelpers(): any {
     resumeAllPausedAuctions: noop,
     simulateMatchSegment: mustNotRun("simulateMatchSegment"),
     calculateMatchAttendance: () => 0,
+    explainAttendance: async () => ({
+      attendance: 0,
+      occupancy: 0,
+      capacity: 10000,
+      ticketPrice: 15,
+      reasons: [],
+    }),
     pickRefereeSummary: () => null,
     saveGameState, // real — a recovery persiste via este caminho
     persistMatchResults: mustNotRun("persistMatchResults"),

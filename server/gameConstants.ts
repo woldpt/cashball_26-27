@@ -404,6 +404,63 @@ export const MATCH_TUNING = {
   moraleLossDelta: -20,
   moraleDrawDelta: 5,
   moraleDecayRate: 0.1,
+  // ── Mood dos adeptos (fans_mood 0–100, coluna teams.fans_mood) ───────
+  // Memória emocional da bancada — distinta da moral do plantel. A assistência
+  // deriva dela (ver calculateMatchAttendance em coreHelpers).
+  fansMoodDefault: 60, // valor de arranque (época 1 / clubes novos)
+  fansMoodDecayRate: 0.15, // decaimento semanal para a base de fidelidade
+  // Base de fidelidade por divisão (para onde o mood regride sem resultados):
+  // clubes grandes mantêm o apoio, clubes pequenos vivem do momento.
+  fansBaseByDivision: { 1: 65, 2: 60, 3: 55, 4: 50, 5: 45 } as Record<number, number>,
+  fansWinDelta: 9, // vitória base
+  fansLossDelta: -9, // derrota base
+  fansDrawDelta: 2, // empate base
+  fansHomeWinBonus: 1, // ganhar em casa sabe melhor
+  fansHomeLossMalus: -3, // perder em casa dói mais
+  fansMarginPerGoal: 2, // por golo de margem além do 1º (goleada/humilhação)
+  fansMarginMax: 6, // teto do efeito da margem
+  fansUpsetBonus: 4, // vencer equipa de escalão superior (divisão menor)
+  fansShameMalus: -5, // perder com equipa de escalão inferior (vergonha)
+  fansExpectedLossSoftener: 5, // derrota esperada com mais fortes dói menos
+  fansDerbyMultiplier: 2, // dérbi (mesma divisão): emoções a dobrar
+  fansCupRoundMultiplier: { 1: 1, 2: 1.1, 3: 1.25, 4: 1.5, 5: 1.8 } as Record<number, number>,
+  // ── Assistências (calculateMatchAttendance) ──────────────────────────
+  // Chão de fiéis por divisão: % da capacidade que aparece mesmo em crise.
+  faithfulFloorByDivision: { 1: 0.35, 2: 0.3, 3: 0.25, 4: 0.22, 5: 0.2 } as Record<number, number>,
+  attendanceAbsoluteMinRatio: 0.12, // nunca abaixo de 12% (pessoal, erros, curiosos)
+  attendanceJitter: 0.1, // variação natural por jogo ±10%
+  attendanceMagicNightChance: 0.05, // "noite mágica": +8..15% (raro)
+  attendanceDesertChance: 0.12, // "deserção" em crise (mood<25, 3+ sem ganhar)
+  attendanceDesertMoodMax: 25,
+  // Preço do bilhete: procura reage ao desvio face aos 15€ base.
+  ticketBasePrice: 15,
+  ticketDemandPerEuro: 0.014, // mult = 1 − (preço−15) × 0.014
+  ticketTiers: [10, 15, 20, 25, 30] as number[],
+  // Fator adversário/posição: bónus que se somam (teto global em baixo).
+  attendanceDerbyBonus: 0.12, // mesma divisão = rivalidade local
+  attendanceLeaderVisitBonus: 0.08, // visita do 1º/2º classificado
+  attendanceTitleRaceBonus: 0.08, // equipa da casa no top 3
+  attendanceBottomMalus: -0.06, // equipa da casa nos últimos 2
+  attendanceWeakVisitorMalus: -0.05, // visitante dos últimos 2
+  attendanceBonusCap: 0.35, // teto da soma dos bónus contextuais
+  // Ronda da Taça: as primeiras eliminatórias esvaziam, a final enche.
+  attendanceCupRoundMult: { 1: 0.85, 2: 0.9, 3: 1.0, 4: 1.1, 5: 1.25 } as Record<number, number>,
+  // Meteorologia: sol puxa gente, chuva forte/neve esvaziam.
+  attendanceWeatherMult: {
+    sol: 1.05,
+    chuva: 0.94,
+    vento: 0.97,
+    chuva_forte: 0.88,
+    frio: 0.93,
+    nevoeiro: 0.95,
+    neve: 0.85,
+  } as Record<string, number>,
+  // ── Bónus casa por ambiente (computeSidePower, só equipa da casa) ────
+  crowdBonusOccupancy: 0.9, // lotação ≥90% → vulcão
+  crowdBonusAttack: 0.04, // +4% ataque
+  crowdBonusDefense: 0.02, // +2% defesa
+  crowdPenaltyOccupancy: 0.4, // lotação <40% → morgue
+  crowdPenaltyAttack: -0.03, // −3% ataque
   // Evolução pós-jogo (probabilidades por jogador/semana). Alvos: subidas
   // lentas por convivência/vitórias, descidas por derrotas/inatividade.
   evoAboveCeilingRoll: 0.15, // acima do potencial: deriva de retorno

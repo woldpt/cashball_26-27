@@ -57,6 +57,9 @@
       "socketFinanceHandlers.ts",
       "socketFinanceHandlers.ts",
       "socketFinanceHandlers.ts",
+      "socketFinanceHandlers.ts",
+      "socketFinanceHandlers.ts",
+      "socketFinanceHandlers.ts",
       "socketSessionHandlers.ts",
       "socketSessionHandlers.ts",
       "socketSessionHandlers.ts",
@@ -177,6 +180,12 @@
       "socketFinanceHandlers.ts"
     ]
   },
+  "setTicketPrice": {
+    "emit": [],
+    "receive": [
+      "socketFinanceHandlers.ts"
+    ]
+  },
   "takeLoan": {
     "emit": [],
     "receive": [
@@ -277,6 +286,19 @@
     "emit": [],
     "receive": [
       "socketGameplayHandlers.ts"
+    ]
+  },
+  "globalNews": {
+    "emit": [
+      "socketNewsHandlers.ts",
+      "socketNewsHandlers.ts"
+    ],
+    "receive": []
+  },
+  "getGlobalNews": {
+    "emit": [],
+    "receive": [
+      "socketNewsHandlers.ts"
     ]
   },
   "playerSearchResults": {
