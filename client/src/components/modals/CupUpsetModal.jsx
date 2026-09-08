@@ -6,8 +6,6 @@ import { CelebrationBurst } from "../shared/CelebrationBurst.jsx";
 import { MODAL_Z, DIVISION_NAMES } from "../../constants/index.js";
 import { playNotification } from "../../utils/audio.js";
 
-const AUTO_CLOSE_MS = 8000;
-
 /**
  * Brasão da equipa (crest) com fallback para círculo de iniciais —
  * mesmo footprint/padrão do TeamBadge em SeasonEndModal.
@@ -73,7 +71,7 @@ function DivBadge({ div, tone = "cold" }) {
  * Comportamento:
  *  - só aparece quando chega um payload novo (identidade época+ronda) com
  *    surpresas — nunca volta a mostrar para a mesma ronda;
- *  - auto-fecho após ~8s ou botão "Continuar";
+ *  - fecho via botão "Continuar" (sem auto-fecho);
  *  - som de notificação + partículas de festejo (CelebrationBurst).
  *
  * @param {{
@@ -100,13 +98,6 @@ export function CupUpsetModal({ cupRoundResults, teams }) {
     }, 250);
     return () => clearTimeout(t);
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Auto-fecho: só corre enquanto o modal está revelado.
-  useEffect(() => {
-    if (revealedKey !== key) return;
-    const t = setTimeout(() => setRevealedKey(null), AUTO_CLOSE_MS);
-    return () => clearTimeout(t);
-  }, [revealedKey, key]);
 
   if (!key || revealedKey !== key || !upsets.length) return null;
 
