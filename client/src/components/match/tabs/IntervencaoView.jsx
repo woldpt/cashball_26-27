@@ -897,11 +897,24 @@ function SubsPanel({
          * Suplentes em simultâneo — sem folhas sobrepostas, sem
          * peek, sem swipe. Cada coluna tem scroll próprio; a
          * lista passa de ~80px (1 cartão) para ~220px (6 cartões).
-         * Mentalidade fica oculta nesta densidade (disponível em
-         * vertical/desktop). */
+         * Mentalidade em modo compacto na barra do topo. */
         <div className="flex flex-col flex-1 min-h-0">
-          {/* Barra minimalista — só contador + anular todas */}
+          {/* Barra minimalista — mentalidade + contador + anular todas */}
           <div className="shrink-0 flex items-center justify-end gap-2 px-3 py-1.5 border-b border-outline-variant/15 bg-surface-container-low/95">
+            <button
+              type="button"
+              onClick={() => setMentalidadeOpen((o) => !o)}
+              aria-expanded={mentalidadeOpen}
+              aria-label="Mentalidade — abrir/fechar"
+              className={`flex shrink-0 items-center gap-1 rounded-md border px-2 transition-colors ${
+                mentalidadeOpen
+                  ? "h-6 border-violet-500/50 bg-violet-500/15 text-[9px] font-black uppercase tracking-wider text-violet-300"
+                  : "h-6 border-outline-variant/40 text-[9px] font-black uppercase tracking-wider text-on-surface-variant/70 hover:border-violet-500/40 hover:text-violet-300"
+              }`}
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-violet-400 shrink-0" />
+              {STYLE_LABELS[tactic.style] || tactic.style}
+            </button>
             <SubsCounter subsMade={subsMade} />
             {confirmedSubs.length > 0 && (
               <button
@@ -922,6 +935,18 @@ function SubsPanel({
               </button>
             )}
           </div>
+          {mentalidadeOpen && (
+            <div className="shrink-0 border-b border-outline-variant/15 bg-surface-container-low/95 px-3 py-1.5">
+              <TacticsButtons
+                className="w-full"
+                value={tactic.style}
+                onChange={(next) => {
+                  onUpdateTactic(next);
+                  setMentalidadeOpen(false);
+                }}
+              />
+            </div>
+          )}
           <div className="flex flex-1 min-h-0 overflow-hidden">
             {/* Titulares */}
             <div className="flex flex-col flex-1 min-w-0 border-r border-outline-variant/15 overflow-hidden">
@@ -1027,9 +1052,10 @@ function SubsPanel({
          * Cada folha é o próprio scroller vertical → posições de scroll são
          * preservadas entre trocas (sem remount). */
         <div className="flex flex-col flex-1 min-h-0">
-        {/* ── Top cluster: mentalidade (halftime) + indicador de página ── */}
+        {/* ── Top cluster: mentalidade (intervalo e pausas a meio do jogo)
+         *  + indicador de página ── */}
         <div className="shrink-0 border-b border-outline-variant/15 bg-surface-container-low/95">
-          {isHalftime && !shortLandscape && (
+          {!shortLandscape && (
             <>
               <button
                 type="button"
@@ -1465,20 +1491,18 @@ function MentalidadeColumn({
             Mentalidade
           </h3>
         </div>
-        {isHalftime && (
-          <div className="p-4">
-            <div className="space-y-2">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-                Estilo de jogo
-              </span>
-              <TacticsButtons
-                className="w-full"
-                value={tactic.style}
-                onChange={onUpdateTactic}
-              />
-            </div>
+        <div className="p-4">
+          <div className="space-y-2">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
+              Estilo de jogo
+            </span>
+            <TacticsButtons
+              className="w-full"
+              value={tactic.style}
+              onChange={onUpdateTactic}
+            />
           </div>
-        )}
+        </div>
       </div>
 
       {/* ── Row 2: Substituições — fixa ao fundo (mt-auto): com espaço sobra,
