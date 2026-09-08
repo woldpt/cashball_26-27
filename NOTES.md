@@ -6,6 +6,12 @@
 > - Regra permanente descoberta → mover para `AGENTS.md`/`CLAUDE.md`/`STYLE.md` e remover daqui.
 > - Ao iniciar uma sessão nova: ler este ficheiro + `git log --oneline -10`.
 
+## LiveMatchHero — cronómetro sob o marcador (novo)
+
+- Barra de progresso removida da zona do comentário e colocada logo abaixo do scoreboard; labels `0'`/`90'`/`120'` e relógio `{liveMinute}'` eliminados (o minuto continua no botão do marcador).
+- Barra embelezada: mais alta (`h-2`), preenchimento em gradiente primary→emerald com glow, verniz subtil e dots de eventos com rebordo e halo.
+- Checks: client `lint` + `check:types` OK.
+
 ## Presença + convites de sala nas cartas multiplayer (novo)
 
 - Nas cartas de "Continuar" (`RoomSelectScreen.jsx`) de uma sala **multiplayer tua**, cada colega (`save.coaches`) mostra agora o estado em tempo real: **Em jogo aqui** / **Em CODE** (noutra sala) / **Ausente**; se estiver noutra sala, botão **Convidar**.

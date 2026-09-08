@@ -275,19 +275,17 @@ export function LiveMatchHero({
           </div>
         </div>
 
-        {/* ── Team events columns ── */}
-        <div className="w-full max-w-2xl grid grid-cols-2 gap-4 mt-5 px-1">
-          <TeamEvents events={homeEvents} align="left" />
-          <TeamEvents events={awayEvents} align="right" />
-        </div>
-
-        {/* ── Timeline + attendance ── */}
-        <div className="w-full max-w-2xl mt-5 space-y-1.5">
-          <div className="relative h-1.5 bg-outline-variant/20 rounded-full overflow-hidden">
+        {/* ── Barra de cronómetro (sob o marcador) ── */}
+        <div className="w-full max-w-2xl mt-3 px-1">
+          <div className="relative h-2 rounded-full bg-black/40 border border-outline-variant/25 shadow-inner shadow-black/50 overflow-hidden">
             <div
-              className="h-full bg-primary transition-all duration-1000"
-              style={{ width: `${progress}%` }}
+              className="h-full rounded-full bg-gradient-to-r from-primary via-emerald-300 to-primary transition-all duration-1000"
+              style={{
+                width: `${progress}%`,
+                boxShadow: "0 0 12px rgb(var(--color-primary) / 0.55), inset 0 1px 0 rgb(255 255 255 / 0.35)",
+              }}
             />
+            <div className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/15 via-transparent to-black/25" />
             {matchEvents
               .filter(
                 (e) =>
@@ -313,18 +311,23 @@ export function LiveMatchHero({
                     }}
                   >
                     <span
-                      className="block w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: dotColor, boxShadow: `0 0 6px ${dotColor}80` }}
+                      className="block w-2 h-2 rounded-full border border-black/60"
+                      style={{ backgroundColor: dotColor, boxShadow: `0 0 8px ${dotColor}, 0 0 2px ${dotColor}` }}
                     />
                   </span>
                 );
               })}
           </div>
-          <div className="flex justify-between text-[14px] text-on-surface-variant/30 tabular-nums">
-            <span>0'</span>
-            <span className="font-bold text-primary/60">{liveMinute}'</span>
-            <span>{isCupExtraTime ? "120'" : "90'"}</span>
-          </div>
+        </div>
+
+        {/* ── Team events columns ── */}
+        <div className="w-full max-w-2xl grid grid-cols-2 gap-4 mt-5 px-1">
+          <TeamEvents events={homeEvents} align="left" />
+          <TeamEvents events={awayEvents} align="right" />
+        </div>
+
+        {/* ── Comentário ── */}
+        <div className="w-full max-w-2xl mt-5 space-y-1.5">
 
           {/* ── Commentary phrase ── */}
           {(() => {
