@@ -70,6 +70,21 @@ function App() {
 		);
 	};
 
+	// Rede de segurança do join: se o teamId não chegar dentro de 10s, mostra
+	// erro e limpa o estado (a sessão guardada em localStorage sobrevive e o
+	// reload/re-tentar recupera). Re-armada também após o joinGameSuccess, para
+	// cobrir a janela em que o teamAssigned ainda não chegou.
+	const armJoinTimeout = () => {
+		if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
+		joinTimerRef.current = setTimeout(() => {
+			setMe((prev) => (prev && !prev.teamId ? null : prev));
+			setJoining(false);
+			setJoinError(
+				"Sem resposta do servidor. Certifica-te que o servidor está ligado.",
+			);
+		}, 10000);
+	};
+
 	useEffect(() => {
 		const handleJoinError = (msg) => {
 			setJoinError(msg);
@@ -112,7 +127,10 @@ function App() {
 			});
 			setJoining(false);
 			setJoinError("");
-			if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
+			// Re-armar a rede de segurança: o teamAssigned ainda pode demorar ou
+			// perder-se (socket cai neste intervalo) — sem isto o ecrã ficava
+			// bloqueado em "A entrar na sala..." para sempre.
+			armJoinTimeout();
 		};
 
 		socket.on("joinGameSuccess", handleJoinSuccess);
@@ -146,7 +164,6 @@ function App() {
 	// ── Auto-join when savedSession is loaded ──────────────────────────────
 	useEffect(() => {
 		if (!savedSession || me?.teamId) return;
-		if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
 
 		const joinWithRetry = () => {
 			console.log(
@@ -159,13 +176,7 @@ function App() {
 				roomCode: savedSession.roomCode.toUpperCase(),
 			});
 
-			joinTimerRef.current = setTimeout(() => {
-				setMe((prev) => (prev && !prev.teamId ? null : prev));
-				setJoining(false);
-				setJoinError(
-					"Sem resposta do servidor. Certifica-te que o servidor está ligado.",
-				);
-			}, 10000);
+			armJoinTimeout();
 		};
 
 		if (socket.connected) {
@@ -338,13 +349,7 @@ function App() {
 				joinMode,
 			});
 			setMe({ name, token, roomCode: "" });
-			joinTimerRef.current = setTimeout(() => {
-				setMe((prev) => (prev && !prev.teamId ? null : prev));
-				setJoining(false);
-				setJoinError(
-					"Sem resposta do servidor. Certifica-te que o servidor está ligado.",
-				);
-			}, 10000);
+			armJoinTimeout();
 		}
 	};
 

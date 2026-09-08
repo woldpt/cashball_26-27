@@ -1473,9 +1473,13 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setDisconnected(false);
 			handlers.setJoining(false);
 			// Re-join on reconnect using the meRef to avoid stale closure.
+			// Também cobre o estado "à espera do teamAssigned" (roomCode
+			// definido mas teamId ainda ausente): se o socket cair nesse
+			// intervalo, o re-join faz o servidor re-emitir o teamAssigned.
+			// No join manual inicial o roomCode ainda está vazio, por isso
+			// não há join duplicado.
 			const currentMe = refs.meRef.current;
 			if (
-				currentMe?.teamId &&
 				currentMe?.roomCode &&
 				currentMe?.name &&
 				currentMe?.token
