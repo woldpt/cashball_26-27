@@ -87,24 +87,30 @@ export function CupUpsetModal({ cupRoundResults, teams, postMatchMood }) {
   const key = cupRoundResults
     ? `${cupRoundResults.season}:${cupRoundResults.round}`
     : null;
-  const [revealedKey, setRevealedKey] = useState(null);
+  // visibleKey — ronda atualmente em exibição; dismissedKey — última ronda que
+  // o utilizador fechou (persiste após o fecho, impedindo re-exibição da mesma
+  // ronda mesmo que postMatchMood volte a oscilar). O modal só mostra quando
+  // chega um payload novo (visibleKey === key) e nunca repete a mesma ronda.
+  const [visibleKey, setVisibleKey] = useState(null);
+  const [dismissedKey, setDismissedKey] = useState(null);
 
   const upsets = cupRoundResults?.upsets || [];
 
   // Guard de identidade + gate do mood modal: dispara apenas quando chega
-  // um payload novo com surpresas e o PostMatchMoodModal já não está aberto
-  // (mesmo padrão do SeasonEndModal — setState só em callback de timeout,
-  // nunca síncrono no corpo do effect). O timer é rearmado quando o mood muda.
+  // um payload novo (ronda ainda não consumida) com surpresas e o
+  // PostMatchMoodModal já não está aberto (mesmo padrão do SeasonEndModal —
+  // setState só em callback de timeout, nunca síncrono no corpo do effect).
+  // O timer é rearmado quando o mood muda ou após fecho (dismissedKey).
   useEffect(() => {
-    if (!key || !upsets.length || revealedKey === key || postMatchMood) return;
+    if (!key || !upsets.length || dismissedKey === key || postMatchMood) return;
     const t = setTimeout(() => {
-      setRevealedKey(key);
+      setVisibleKey(key);
       playNotification();
     }, 250);
     return () => clearTimeout(t);
-  }, [key, postMatchMood]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, postMatchMood, dismissedKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!key || revealedKey !== key || !upsets.length) return null;
+  if (!key || visibleKey !== key || !upsets.length) return null;
 
   const results = cupRoundResults.results || [];
   const rows = upsets.map((u) => {
@@ -139,7 +145,10 @@ export function CupUpsetModal({ cupRoundResults, teams, postMatchMood }) {
     return { ...u, winner, loser, winnerGoals, loserGoals };
   });
 
-  const handleClose = () => setRevealedKey(null);
+  const handleClose = () => {
+    setDismissedKey(key);
+    setVisibleKey(null);
+  };
 
   return (
     <ModalShell
