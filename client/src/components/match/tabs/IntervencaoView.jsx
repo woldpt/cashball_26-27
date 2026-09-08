@@ -335,7 +335,7 @@ export function IntervencaoView({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
-      className="flex flex-col flex-1 min-h-0 overflow-hidden bg-surface-container-low"
+      className="flex flex-col flex-1 min-h-0 overflow-hidden bg-surface-container-low isolate"
       style={{
         background: `radial-gradient(ellipse 70% 40% at 50% 0%, ${hInfo?.color_primary || "#333"}12 0%, transparent 70%), var(--color-surface-container-low)`,
       }}
@@ -949,7 +949,7 @@ function SubsPanel({
           )}
           <div className="flex flex-1 min-h-0 overflow-hidden">
             {/* Titulares */}
-            <div className="flex flex-col flex-1 min-w-0 border-r border-outline-variant/15 overflow-hidden">
+            <div className="flex flex-col flex-1 min-h-0 min-w-0 border-r border-outline-variant/15 overflow-hidden">
               <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-high/50 border-b border-outline-variant/15">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Titulares</span>
@@ -961,7 +961,7 @@ function SubsPanel({
               {isEmergencyGk && (
                 <p className="px-3 py-1 text-[9px] font-semibold text-amber-300 bg-amber-500/10 border-b border-amber-500/20">Escolhe um jogador para a baliza 🧤</p>
               )}
-              <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1.5">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 py-2 space-y-1.5" style={{ WebkitOverflowScrolling: "touch" }}>
                 {onPitchPlayers.map((p) => {
                   const noGrReplacement = isHalftime && p.position === "GR" && !grAvailableOnBench;
                   const isLockedForced = isForcedSwap && !isGkRedCard && !isEmergencyGk && !!forceOutPlayer && p.id !== forceOutPlayer.id;
@@ -998,13 +998,13 @@ function SubsPanel({
               </div>
             </div>
             {/* Suplentes */}
-            <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+            <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-hidden">
               <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-high/50 border-b border-outline-variant/15">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400">Banco</span>
                 <span className="ml-auto text-[10px] font-bold tabular-nums text-on-surface-variant">{benchPlayers.length}</span>
               </div>
-              <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1.5">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 py-2 space-y-1.5" style={{ WebkitOverflowScrolling: "touch" }}>
                 {benchPlayers.map((p) => {
                   const alreadyUsed = isHalftime && subbedOut.includes(p.id);
                   const positionMismatch = !!forceOutPlayer && (forceOutPlayer.position === "GR") !== (p.position === "GR");
