@@ -314,7 +314,7 @@ export function remainingSubstitutions(fixture: any, teamId: number): number {
 export const MATCH_TUNING = {
   // Golos em jogo corrido: taxa base por minuto por equipa (antes de
   // forma/tempo/clima/posse). Alvo: ~2.5–3.5 golos/jogo no total.
-  goalBaseRate: 0.03,
+  goalBaseRate: 0.04,
   homeGoalFactor: 1.08, // vantagem casa (fora da final da Taça)
   awayGoalFactor: 0.92,
   ownGoalShare: 0.08, // ~8% das oportunidades de golo
