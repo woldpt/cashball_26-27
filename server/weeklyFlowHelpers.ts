@@ -456,6 +456,12 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             );
             toAddIds = toAddIds.filter((id) => !injuredIds.has(id));
 
+            // Quem já foi substituído no 1.º tempo não volta (espelho de
+            // applyETSubs) — mesmo que um payload stale o volte a marcar
+            // "Titular" na tática.
+            const subbedOut = fixture._subbedOut as Set<number> | undefined;
+            if (subbedOut) toAddIds = toAddIds.filter((id) => !subbedOut.has(id));
+
             if (toRemoveIds.length === 0 && toAddIds.length === 0) return;
 
             // Limitado ao número de substituições ainda possíveis na partida.

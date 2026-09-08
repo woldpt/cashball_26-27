@@ -13,6 +13,7 @@ import { socket } from "../socket";
 import {
   DEFAULT_TACTIC,
   LOAN_INTEREST_RATE,
+  MAX_MATCH_SUBS,
   TRANSFER_LISTED_PRICE_MULT,
   SEASON_CALENDAR,
 } from "../constants/index.js";
@@ -207,6 +208,10 @@ export function GameProvider({
 	const isPlayingMatchRef = useRef(false);
 	const showHalftimePanelRef = useRef(false);
 	const matchActionRef = useRef(null);
+	// Última action resolvida pelo próprio cliente (handleResolveMatchAction)
+	// — o handler de matchActionResolved não volta a sincronizar a mesma
+	// action (evita dupla contagem de subs em race resolve/timeout).
+	const resolvedActionIdRef = useRef(null);
 	const isCupDrawRef = useRef(false);
 	// Sorteio de taça emitido pelo servidor enquanto o replay do jogo anterior
 	// ainda estava a correr (isPlayingMatch=true) — guardado para abrir assim
@@ -801,6 +806,7 @@ export function GameProvider({
 			isPlayingMatchRef,
 			showHalftimePanelRef,
 			matchActionRef,
+			resolvedActionIdRef,
 			isCupDrawRef,
 			pendingCupDrawRef,
 			meRef,
@@ -960,6 +966,7 @@ export function GameProvider({
 				payload.playerId = playerIdOrChoice;
 			}
 			socket.emit("resolveMatchAction", payload);
+			resolvedActionIdRef.current = matchAction.actionId;
 			setMatchAction(null);
 			setIsMatchActionPending(false);
 			// Tática local para subs: suporta lote (array) enviado pelo modo
@@ -990,6 +997,19 @@ export function GameProvider({
 						socket.emit("setTactic", next);
 						return next;
 					});
+					// Contadores em sync com o servidor: a reposição por lesão
+				// consome uma das 3 substituições da partida; o vermelho ao GR
+			// é reposição por paragem (não consome) mas o sacrificado fica
+			// subido.
+					const outId = Number(validBatch[0].playerOut);
+					if (!Number.isNaN(outId)) {
+						setSubbedOut((prev) =>
+							prev.includes(outId) ? prev : [...prev, outId],
+						);
+					}
+					if (matchAction.type === "injury") {
+						setSubsMade((n) => Math.min(MAX_MATCH_SUBS, n + 1));
+					}
 				}
 			}
 

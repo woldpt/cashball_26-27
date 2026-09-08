@@ -664,6 +664,26 @@ export function FinancesTab({
                 Pedir +500K
               </Button>
             </div>
+            {loanAmount > 0 && (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setGameDialog({
+                    mode: "confirm",
+                    title: "Liquidar a Dívida Bancária",
+                    description: `Vais pagar o valor total em dívida: ${formatCurrency(loanAmount)}. Ficas com saldo de ${formatCurrency(currentBudget - loanAmount)} e deixas de pagar juros (1,5%/jornada).`,
+                    confirmLabel: "Pagar Dívida",
+                    danger: true,
+                    onConfirm: () => socket.emit("payAllLoan"),
+                    onCancel: () => {},
+                  });
+                }}
+                disabled={currentBudget < loanAmount}
+                className="mt-2 w-full col-span-2"
+              >
+                Pagar Dívida ({formatCurrency(loanAmount)})
+              </Button>
+            )}
           </div>
         </div>
       </div>

@@ -704,6 +704,10 @@ function waitForMatchAction({
         actionId,
         teamId,
         source,
+        // A escolha aplicada permite ao cliente sincronizar posições e
+        // contadores mesmo quando a ação foi resolvida por fallback/timeout
+        // (o cliente não emitiu o resolve e ficaria desincronizado).
+        choice: choice ?? null,
       });
       // Quando a pausa de substituição termina, notificar todos os jogadores
       if (type === "user_substitution") {
@@ -1230,7 +1234,9 @@ async function applyInjuryEvent({
         (p: any) => p.position !== "GR",
       );
       const benchList = (fullRoster || squad).filter(
-        (p: any) => !lineupIds.has(p.id),
+        (p: any) =>
+          !lineupIds.has(p.id) &&
+          !(fixture._subbedOut as Set<number> | undefined)?.has(p.id),
       );
 
       await openEmergencyGKAction({
@@ -2593,7 +2599,10 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
           .map(([id]) => Number(id)),
       );
       const availableBench = fullRoster.filter(
-        (p) => !lineupIds.has(p.id) && (benchIds.size === 0 || benchIds.has(p.id)),
+        (p) =>
+          !lineupIds.has(p.id) &&
+          (benchIds.size === 0 || benchIds.has(p.id)) &&
+          !(fixture._subbedOut as Set<number> | undefined)?.has(p.id),
       );
 
       const grBench = availableBench.filter((p) => p.position === "GR");
@@ -2883,7 +2892,16 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
           const playerOut = squad.find((p: any) => p.id === playerOutId);
           const playerIn = fullRoster.find((p: any) => p.id === playerInId);
 
-          if (playerOut && playerIn) {
+          // Re-entrada é impossível: o "entra" tem de estar no banco da tática
+          // (Suplente), não em campo — incluindo trocas já aplicadas neste
+          // mesmo lote — e nunca ter sido substituído nesta partida.
+          const incomingValid =
+            playerIn != null &&
+            benchIds.has(playerInId) &&
+            !lineupIds.has(playerInId) &&
+            !(fixture._subbedOut as Set<number> | undefined)?.has(playerInId);
+
+          if (playerOut && incomingValid) {
             swapOnPitch({
               fixture,
               game,

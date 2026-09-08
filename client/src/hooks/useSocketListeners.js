@@ -3,7 +3,11 @@ import { socket } from "../socket.js";
 import { isSameTeamId } from "../utils/teamHelpers.js";
 import { seasonToYear } from "../utils/formatters.js";
 import { playGoalSound, playVarSound } from "../utils/audio.js";
-import { POSITION_SHORT_LABELS, POSITION_TEXT_CLASS } from "../constants/index.js";
+import {
+  MAX_MATCH_SUBS,
+  POSITION_SHORT_LABELS,
+  POSITION_TEXT_CLASS,
+} from "../constants/index.js";
 
 function buildPlayerStats({
 	position,
@@ -1325,13 +1329,92 @@ export function useSocketListeners(handlers, refs) {
 			}
 		});
 
-		socket.on("matchActionResolved", () => {
-			console.warn("[MATCH ACTION RESOLVED]");
+		socket.on("matchActionResolved", (data) => {
+			console.warn("[MATCH ACTION RESOLVED]", data);
+			// Action pendente antes de limpar — o tipo/jogadores são
+			// necessários para a sync abaixo (no caso automático o
+			// cliente não a limpa por si).
+			const prevAction = refs.matchActionRef.current;
 			handlers.setIsMatchActionPending(false);
 			clearInterval(refs.injuryCountdownRef.current);
 			refs.injuryCountdownRef.current = null;
 			handlers.setInjuryCountdown(null);
 			handlers.setMatchAction(null);
+
+			// Sync do estado local (positions/subbedOut/subsMade) com a
+			// escolha aplicada — sobretudo em fallback/timeout, quando o
+			// cliente não emitiu o resolve e ficaria desincronizado
+			// (o jogador que entrou automaticamente apareceria como
+			// Suplente no ecrã seguinte). Ações resolvidas pelo próprio
+			// usuário já foram sincronizadas no handleResolveMatchAction.
+			if (
+				refs.resolvedActionIdRef?.current === data?.actionId ||
+				data?.source !== "auto" ||
+				!data?.choice
+			)
+				return;
+			if (!isSameTeamId(data?.teamId, refs.meRef.current?.teamId)) return;
+			const type = prevAction?.type;
+			if (
+				type !== "injury" &&
+				type !== "gk_red_card" &&
+				type !== "emergency_gk"
+			)
+				return;
+			const toNum = (v) => (v == null ? null : Number(v));
+			let outId = null;
+			let extraOutId = null;
+			let inId = null;
+			let countSub = false;
+			if (type === "injury") {
+				// O lesado sai sempre do campo; a entrada é opcional
+				// (sem banco → joga com 10). A reposição consome sub.
+				outId = toNum(
+					(typeof data.choice === "object" ? data.choice.playerOut : null) ??
+						prevAction?.injuredPlayer?.id,
+				);
+				inId = toNum(
+					typeof data.choice === "object" ? data.choice.playerIn : data.choice,
+				);
+				countSub = inId != null;
+			} else if (type === "gk_red_card") {
+				// O GR expulso sai sempre; o sacrificado é opcional (casos
+				// degenerados). Paragem → não consome sub.
+				extraOutId = toNum(prevAction?.sentOffPlayer?.id);
+				outId = toNum(data.choice?.playerOut);
+				inId = toNum(data.choice?.playerIn);
+			} else {
+				// emergency_gk: escolha única (playerId) — o escolhido vai
+				// para a baliza; o lesado/expulso sai. Não consome sub.
+				inId = toNum(
+					typeof data.choice === "object"
+						? data.choice.playerId ?? data.choice.playerIn
+						: data.choice,
+				);
+				outId = toNum(
+					prevAction?.sentOffPlayer?.id ?? prevAction?.injuredPlayer?.id,
+				);
+			}
+			if (outId == null && inId == null && extraOutId == null) return;
+
+			handlers.setTactic((prevTactic) => {
+				const newPositions = { ...prevTactic.positions };
+				for (const id of [outId, extraOutId]) {
+					if (id != null) delete newPositions[id];
+				}
+				if (inId != null) newPositions[inId] = "Titular";
+				const next = { ...prevTactic, positions: newPositions };
+				socket.emit("setTactic", next);
+				return next;
+			});
+			if (outId != null && !Number.isNaN(outId)) {
+				handlers.setSubbedOut((prev) =>
+					prev.includes(outId) ? prev : [...prev, outId],
+				);
+			}
+			if (countSub) {
+				handlers.setSubsMade((n) => Math.min(MAX_MATCH_SUBS, n + 1));
+			}
 		});
 
 		socket.on("substitutionPauseStarted", ({ teamId, coachName }) => {

@@ -393,9 +393,8 @@ const LandingPage = ({
 						transition={{ delay: 0.45, duration: 0.5 }}
 						className="text-base text-white/50 leading-relaxed mb-10 max-w-md short:hidden"
 					>
-						A evolução moderna da gestão de futebol clássica. Controla as
-						tácticas, as finanças e o destino do teu clube em ligas multiplayer
-						com até 8 treinadores.
+						Sem tácticas de génio nem super-gráficos. Só plantel, orçamento e
+						90 minutos que podem correr muito bem — ou muito mal.
 					</motion.p>
 
 				</motion.div>

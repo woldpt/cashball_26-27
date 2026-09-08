@@ -205,6 +205,10 @@ export function IntervencaoView({
     ? sortPlayersByPos(
         panelSquad
           .filter((p) => tactic?.positions?.[p.id] === "Suplente")
+          // Quem já saiu em campo nesta pausa (ou antes) não volta a constar
+          // no banco — re-entrada é impossível (também garantida no servidor).
+          // No intervalo mantém-se visível (desativado) para referência.
+          .filter((p) => !isUserSubPause || !subbedOut.includes(p.id))
           .filter((p) => !injuredHalftimeIds?.has(p.id)),
       )
     : sortPlayersByPos(matchAction?.benchPlayers || []);

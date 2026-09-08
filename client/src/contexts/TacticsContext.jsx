@@ -199,6 +199,14 @@ export function TacticsProvider({ children }) {
     const srcId = typeof swapSource === "object" && swapSource !== null ? swapSource.id : swapSource;
     const tgtId = typeof swapTarget === "object" && swapTarget !== null ? swapTarget.id : swapTarget;
     if (!srcId || !tgtId || subsMade >= 3) return;
+    // Re-entrada é impossível: quem já saiu (nesta pausa ou antes) não pode
+    // voltar a entrar, nem um jogador que já entrou noutra troca pendente.
+    if (
+      subbedOut.includes(tgtId) ||
+      subbedOut.includes(srcId) ||
+      confirmedSubs.some((s) => s.in === tgtId)
+    )
+      return;
     const srcPlayer = mySquad.find((p) => p.id === srcId);
     const tgtPlayer = mySquad.find((p) => p.id === tgtId);
     if (
@@ -224,6 +232,8 @@ export function TacticsProvider({ children }) {
     swapSource,
     swapTarget,
     subsMade,
+    subbedOut,
+    confirmedSubs,
     mySquad,
     setTactic,
     setSubbedOut,

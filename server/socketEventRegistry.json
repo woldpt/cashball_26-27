@@ -54,6 +54,9 @@
       "socketFinanceHandlers.ts",
       "socketFinanceHandlers.ts",
       "socketFinanceHandlers.ts",
+      "socketFinanceHandlers.ts",
+      "socketFinanceHandlers.ts",
+      "socketFinanceHandlers.ts",
       "socketSessionHandlers.ts",
       "socketSessionHandlers.ts",
       "socketSessionHandlers.ts",
@@ -181,6 +184,12 @@
     ]
   },
   "payLoan": {
+    "emit": [],
+    "receive": [
+      "socketFinanceHandlers.ts"
+    ]
+  },
+  "payAllLoan": {
     "emit": [],
     "receive": [
       "socketFinanceHandlers.ts"

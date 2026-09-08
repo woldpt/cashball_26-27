@@ -133,4 +133,48 @@ export function registerFinanceSocketHandlers(
       .catch(() => {});
     socket.emit("systemMessage", "Dívida paga (500.000€) ao Banco.");
   });
+
+  socket.on("payAllLoan", async () => {
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    const playerState = getPlayerBySocket(game, socket.id);
+    if (!playerState) return;
+
+    const team: any = await new Promise((resolve) => {
+      game.db.get(
+        "SELECT loan_amount, budget FROM teams WHERE id = ?",
+        [playerState.teamId],
+        (_err: any, row: any) => resolve(row ?? null),
+      );
+    });
+    if (!team || !(team.loan_amount > 0) || team.budget < team.loan_amount) {
+      socket.emit(
+        "systemMessage",
+        "Sem dívida para liquidar, ou não tens saldo suficiente para a dívida total.",
+      );
+      return;
+    }
+    const amountPaid = team.loan_amount;
+
+    const result = await runExec(
+      game.db,
+      "UPDATE teams SET budget = budget - loan_amount, loan_amount = 0 WHERE id = ? AND loan_amount > 0 AND budget >= loan_amount",
+      [playerState.teamId],
+    );
+    if (result.changes === 0) {
+      socket.emit(
+        "systemMessage",
+        "Sem dívida para liquidar, ou não tens saldo suficiente para a dívida total.",
+      );
+      return;
+    }
+    logClubNews(game, "loan_pay", "Pagamento de Empréstimo", playerState.teamId, {
+      amount: amountPaid,
+      description: "Liquidação integral da dívida ao banco",
+    });
+    getTeamsWithCoachNames(game.db)
+      .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
+      .catch(() => {});
+    socket.emit("systemMessage", "Dívida liquidada por completo ao Banco.");
+  });
 }
