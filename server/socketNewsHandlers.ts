@@ -178,9 +178,10 @@ export function registerNewsSocketHandlers(
                         });
                       socket.emit("globalNews", {
                         news: newsRows.slice(0, NEWS_LIMIT),
-                        results: [...(leagueRows || []), ...(cupRows || [])].map(
-                          mkResults,
-                        ),
+                        results: mkResults([
+                          ...(leagueRows || []),
+                          ...(cupRows || []),
+                        ]),
                         year,
                         season,
                       });
