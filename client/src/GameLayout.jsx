@@ -373,9 +373,21 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // senão a árvore fica à altura do conteúdo e o scroll interno nunca ocorre.
   const isFullBleedTab = activeTab === "squad" || activeTab === "leiloes";
 
-  // Sequência central dos modais pós-jogo: penalties → mood → avisos/renovações.
-  // Decide quais estão visíveis em cada render para nunca se sobreporem; os
-  // restantes aguardam o fecho do atual (os dados continuam guardados).
+  // Sequência central dos modais pós-jogo: penalties → mood → surpresas taça
+  // → avisos/renovações → fim de época (seasonEnd POR ÚLTIMO). Decide quais
+  // estão visíveis em cada render para nunca se sobreporem; os restantes
+  // aguardam o fecho do atual (os dados continuam guardados).
+  // `cupUpsetAckKey` recorda a última ronda da Taça cuja celebração de surpresas
+  // o utilizador fechou, para o sequenciador saber quando o cup upset já não
+  // bloqueia os avisos/fim de época.
+  const [cupUpsetAckKey, setCupUpsetAckKey] = useState(null);
+  const currentCupRoundKey = cupRoundResults
+    ? `${cupRoundResults.season}:${cupRoundResults.round}`
+    : null;
+  const cupUpsetPending =
+    !!currentCupRoundKey &&
+    (cupRoundResults?.upsets?.length ?? 0) > 0 &&
+    currentCupRoundKey !== cupUpsetAckKey;
   const postMatchFlow = computePostMatchFlow({
     seasonEndModal,
     cupPenaltyPopup,
@@ -383,6 +395,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     boardWarning,
     dismissalModal,
     jobOfferModal,
+    cupUpsetPending,
   });
 
   return (
@@ -1919,6 +1932,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         cupRoundResults={postMatchFlow.showCupRoundResults ? cupRoundResults : null}
         teams={teams}
         postMatchMood={postMatchMood}
+        onDismiss={(roundKey) => {
+          if (roundKey != null) setCupUpsetAckKey(roundKey);
+        }}
       />
 
       <BoardWarningModal
@@ -2013,7 +2029,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       />
 
       <SeasonEndModal
-        data={seasonEndModal}
+        data={postMatchFlow.showSeasonEnd ? seasonEndModal : null}
         teams={teams}
         me={me}
         onClose={() => setSeasonEndModal(null)}

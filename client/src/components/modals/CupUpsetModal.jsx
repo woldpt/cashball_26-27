@@ -81,9 +81,10 @@ function DivBadge({ div, tone = "cold" }) {
  *   cupRoundResults: object|null, // { round, roundName, results, season, isFinal, upsets }
  *   teams: array,
  *   postMatchMood: object|null, // mood modal aberto (PostMatchMoodModal)
+ *   onDismiss?: function, // chamado ao fechar a celebração desta ronda
  * }} props
  */
-export function CupUpsetModal({ cupRoundResults, teams, postMatchMood }) {
+export function CupUpsetModal({ cupRoundResults, teams, postMatchMood, onDismiss }) {
   const key = cupRoundResults
     ? `${cupRoundResults.season}:${cupRoundResults.round}`
     : null;
@@ -148,6 +149,7 @@ export function CupUpsetModal({ cupRoundResults, teams, postMatchMood }) {
   const handleClose = () => {
     setDismissedKey(key);
     setVisibleKey(null);
+    onDismiss?.(key);
   };
 
   return (

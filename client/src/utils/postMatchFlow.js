@@ -5,19 +5,17 @@
  * preenchido por um evento socket/efeito próprio). Sem ordenação, vários
  * ficam `true` ao mesmo tempo e aparecem sobrepostos. Este módulo é a única
  * fonte de verdade da ORDEM em que devem surgir: devolve, em cada render,
- * quais podem estar visíveis — os de menor prioridade só revelam depois de o
- * utilizador fechar o atual (os respetivos dados ficam guardados e surgem a
- * seguir). Os `onClose`/acks de cada modal mantêm-se intactos.
+ * quais podem estar visíveis — um passo só "ocupa o ecrã" se todos os de
+ * maior prioridade estiverem inativos; os restantes aguardam o fecho do atual
+ * (os respetivos dados ficam guardados e revelam a seguir). Os `onClose`/acks
+ * de cada modal mantêm-se intactos.
  *
- * Prioridade:
- *   1. seasonEnd        — fim de época (terminal; recarrega a página ao fechar)
- *   2. cupPenaltyPopup  — grandes penalidades (penalties sempre primeiro)
- *   3. postMatchMood    — humor do jogo do utilizador
- *   4. cup upset        — auto-sequenciado dentro do CupUpsetModal (espera o mood)
- *   5. boardWarning / dismissalModal / jobOfferModal — avisos e renovações, por último
- *
- * Nota: o CupUpsetModal gere a própria exibição contra o mood (só mostra sem
- * mood), por isso aqui apenas o bloqueamos nas fases terminal/penalties.
+ * Ordem de revelação:
+ *   1. cupPenaltyPopup — grandes penalidades (sempre primeiro)
+ *   2. postMatchMood  — humor do jogo do utilizador
+ *   3. cup upset      — surpresas da Taça (auto-gerido; `cupUpsetPending`)
+ *   4. boardWarning / dismissalModal / jobOfferModal — avisos e renovações
+ *   5. seasonEndModal — fim de época, POR ÚLTIMO (só quando nada mais pendente)
  *
  * @param {{
  *   seasonEndModal: object|null,
@@ -26,13 +24,16 @@
  *   boardWarning: object|null,
  *   dismissalModal: object|null,
  *   jobOfferModal: object|null,
- * }} inputs Estados brutos dos modais (tal como vêm do contexto).
+ *   cupUpsetPending: boolean,
+ * }} inputs Estados brutos dos modais + se há uma surpresa da Taça da ronda
+ *   atual ainda por celebrar/consumir.
  * @returns {{
  *   showMood: boolean,
  *   showCupRoundResults: boolean,
  *   showBoardWarning: boolean,
  *   showDismissal: boolean,
  *   showJobOffer: boolean,
+ *   showSeasonEnd: boolean,
  * }}
  */
 export function computePostMatchFlow({
@@ -42,40 +43,38 @@ export function computePostMatchFlow({
   boardWarning,
   dismissalModal,
   jobOfferModal,
+  cupUpsetPending,
 }) {
-  // Fases que mandam parar tudo o resto enquanto durar:
-  // fim de época (terminal) e grandes penalidades (sempre primeiro).
-  const terminal = !!seasonEndModal;
   const penalties = !!cupPenaltyPopup;
-  const revealed = !terminal && !penalties;
+  const mood = !!postMatchMood;
+  const board = !!boardWarning;
+  const dismiss = !!dismissalModal;
+  const job = !!jobOfferModal;
+  const seasonEnd = !!seasonEndModal;
 
-  const hasMood = !!postMatchMood;
+  // Um passo mostra-se só quando os anteriores já não estão ativos.
+  const afterPenalties = !penalties;
 
-  // Humor do jogo do utilizador — aparece assim que a fase terminal/penalties
-  // acaba (se ainda houver resultados por mostrar da sua ronda).
-  const showMood = revealed && hasMood;
+  const showMood = afterPenalties && mood;
+  const afterMood = afterPenalties && !mood;
 
-  // Surpresas da Taça: recebem os dados da ronda apenas fora das fases
-  // terminal/penalties e depois de o mood fechar (o CupUpsetModal, por si,
-  // já espera o mood; ao ocultar aqui também evitamos montar em excesso).
-  const showCupRoundResults = revealed && !hasMood;
+  // Surpresas da Taça: recebem os dados da ronda após as fases penalties/mood
+  // (o CupUpsetModal auto-gerido decide a exibição exata e o consumo).
+  const showCupRoundResults = afterMood;
+  const afterCupUpset = afterMood && !cupUpsetPending;
 
-  // Avisos / despedimento / proposta (renovações) surgem só depois do mood e
-  // das fases terminais. Entre si, mostram-se um de cada vez (o que tem maior
-  // prioridade presente); os restantes esperam o fecho do anterior.
-  const avisosUnblocked = revealed && !hasMood;
-  const hasBoardWarning = !!boardWarning;
-  const hasDismissal = !!dismissalModal;
-  const hasJobOffer = !!jobOfferModal;
+  const showBoardWarning = afterCupUpset && board;
+  const afterBoard = afterCupUpset && !board;
 
-  const showBoardWarning = avisosUnblocked && hasBoardWarning;
-  const showDismissal =
-    avisosUnblocked && !hasBoardWarning && hasDismissal;
-  const showJobOffer =
-    avisosUnblocked &&
-    !hasBoardWarning &&
-    !hasDismissal &&
-    hasJobOffer;
+  const showDismissal = afterBoard && dismiss;
+  const afterDismiss = afterBoard && !dismiss;
+
+  const showJobOffer = afterDismiss && job;
+  const afterJob = afterDismiss && !job;
+
+  // Fim de época é sempre o ÚLTIMO: só revela quando mood, surpresas e avisos
+  // já foram resolvidos.
+  const showSeasonEnd = afterJob && seasonEnd;
 
   return {
     showMood,
@@ -83,5 +82,6 @@ export function computePostMatchFlow({
     showBoardWarning,
     showDismissal,
     showJobOffer,
+    showSeasonEnd,
   };
 }
