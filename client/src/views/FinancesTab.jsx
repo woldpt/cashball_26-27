@@ -140,12 +140,12 @@ export function FinancesTab({
           flat
           label="Saldo Actual"
           value={formatCurrency(currentBudget)}
-          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-4xl short:!text-sm font-bold"
+          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-3xl short:!text-sm font-bold"
           valueColorClass={currentBudget >= 0 ? "text-primary" : "text-error"}
           className="relative overflow-hidden short:!p-2"
         >
           <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none short:hidden">
-            <span className="material-symbols-outlined text-8xl">
+            <span className="material-symbols-outlined text-6xl">
               payments
             </span>
           </div>
@@ -167,7 +167,7 @@ export function FinancesTab({
           flat
           label="Resultado da Época"
           value={`${seasonResult >= 0 ? "+" : ""}${formatCurrency(seasonResult)}`}
-          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-4xl short:!text-sm font-bold"
+          valueClass="text-[15px] sm:text-2xl md:text-3xl lg:text-3xl short:!text-sm font-bold"
           className="short:!p-2"
           valueColorClass={seasonResult >= 0 ? "text-tertiary" : "text-error"}
         >
@@ -194,7 +194,7 @@ export function FinancesTab({
           className="relative overflow-hidden short:!p-2"
         >
           <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none select-none short:hidden">
-            <span className="material-symbols-outlined text-8xl">
+            <span className="material-symbols-outlined text-6xl">
               savings
             </span>
           </div>
@@ -220,7 +220,9 @@ export function FinancesTab({
           </span>
         }
       >
-        <BalanceLineChart data={financeData?.balanceHistory || []} />
+        <div className="mx-auto w-full max-w-3xl">
+          <BalanceLineChart data={financeData?.balanceHistory || []} />
+        </div>
       </Panel>
 
       {/* ── RECEITAS / DESPESAS / CONTROLO ────────────────────────────── */}
