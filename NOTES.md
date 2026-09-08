@@ -132,6 +132,12 @@
 
 ## Último estado
 
+- **Visual — dados premium em Finanças/Estádio (eixo 3):** estendida a linguagem das barras (já boa na folha salarial) a visualização real de composição/ocupação. Só aparece com dados reais; reusa tokens/cores. Checks: lint + check:types OK; mobile portrait PASS 140/140 e landscape PASS 168/168. Commit `b8de10b`.
+  - `FinancesTab`: barra segmentada de composição das receitas (Bilheteira `primary` / Patrocinadores `tertiary` / Vendas `sky`) como proporção do total, + legenda com % — no topo da lista de Receitas, quando `totalSeasonIncome > 0`.
+  - `StadiumTab`: barra de progresso capacidade→máximo (com "+N obra(s) até à máxima") no painel de Expansão; e medidor de ocupação média (assistência/capacidade, colorido por grau) sob os stats.
+  - Nota: Finanças já tinha gráfico avançado (`BalanceLineChart`) — não tocado. `BalanceLineChart`/`StadiumIllustration` intocados.
+  - Pendentes visuais: camadas de encanto (onboarding/empty states/crests) — eixo 4 por fazer.
+
 - **Visual — hero do jogo ao vivo mais cinematográfico ("broadcast"):** o `LiveMatchHero` já tinha scoreboard broadcast, flash de golo a ecrã inteiro (GoalFlashOverlay) e narração; o pass acrescentou drama/tensão de transmissão, tudo reversível e mobile-safe:
   - Cenografia de luz bilateral (casa à esquerda, fora à direita, a convergir no marcador) + vinheta + "luz de estádio" a subir do chão — substitui o glow único que só usava a cor da casa. Cores das equipas com fallback estável (`hCol`/`aCol`).
   - Bug "AO VIVO" vermelho pulsante (capsule red + dot `animate-pulse`) na meta strip durante `isPlayingMatch`.
