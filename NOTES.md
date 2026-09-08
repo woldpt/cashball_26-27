@@ -148,3 +148,17 @@
 ## Próximos passos
 
 - Push de `d0c24d2` (crest nos icones + nomes legíveis no popup do sorteio da Taça) — só com pedido explícito do utilizador.
+
+## Próximo trabalho dedicado: Fase C (arquitetura de contexto — NÃO feito, adiado)
+
+Decisão: adiada para sessão dedicada com backend ativo + medição real de re-renders (React DevTools), porque:
+  - `npm run build` está quebrado neste ambiente (binding nativo `rolldown` em falta, `MODULE_NOT_FOUND`) — sem full compile além de eslint/type.
+  - o harness mobile NÃO cobre as rotas de jogo ao vivo/chat → um refactor profundo não é verificável aqui.
+  - o alvo de perf (chat/toasts a re-renderizar o `MatchPage` ao vivo) é de ganho provavelmente pequeno: o servidor já re-renderiza `GameContext` constantemente durante o jogo (minuto, narração, eventos).
+
+Plano C1+C2 (quando fizer):
+  - **C1 — `UIContext`:** criar `client/src/contexts/UIContext.jsx` (UIProvider) e tirar do `GameContext` o estado efémero de shell. *Gatilho central:* os setters de chat/toasts vivem em listeners de socket dentro do `GameProvider` (misturados com dados de jogo num efeito gigante) → movê-los exige extrair essa lógica de socket e religar as transições (incl. `resetGameState` que limpa chat/unread).
+  - **C2 — memoização:** como `GameLayout` é compositor único e ancestral de todo o conteúdo, mover estado de UI só reduz re-renders se a árvore pesada (rotas + `MatchPage`) for memoizada a consumir só dados — o split sozinho quase não ajuda (pai re-renderiza filhos).
+  - Estados candidatos a mover: `toasts`/`addToast`/`dismissToast`, `roomMessages`/`globalMessages`/`globalPlayers`/`unreadRoom`/`unreadGlobal`/`chatInput`, `activeTab`/`navigateTab`, `mobileSubMenu`, `sidebarCollapsed`, `userDropdownOpen`, `roomHubOpen`, `avatarSeed`/`coachAvatars`.
+  - Consumidores atuais (para atualizar): toasts em ~6 ficheiros; chat/unread em `GameContext` + `RoomHub` + header; `activeTab` em GameLayout/GameRoutes/TacticsContext/TacticsView/TeamSquadModal/TeamSquadView; `navigateTab` só GameLayout/GameRoutes/Tutorial.
+  - Ordem: UIProvider à volta do GameProvider no App; mover primeiro os estados set por cliques (activeTab/nav/sidebar/dropdown — seguros), depois chat/toasts (com religação de socket). Validar em jogo ao vivo real antes de afirmar ganho.
