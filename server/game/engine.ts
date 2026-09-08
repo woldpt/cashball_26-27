@@ -2821,13 +2821,12 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
         io.to(game.roomCode).emit("substitutionPauseEnded", { teamId });
         continue;
       }
-      // Sem substituições restantes: consome o pedido sem abrir a janela e
-      // notifica o treinador de que esgotou as substituições da partida.
-      if (!canMakeSubstitution(fixture, teamId)) {
+      // Sem substituições restantes: notifica mas mantém a janela aberta
+      // para permitir alterar a mentalidade (que não consome substituição).
+      // A pausa continua com as substituições bloqueadas.
+      const cappedForMentality = !canMakeSubstitution(fixture, teamId);
+      if (cappedForMentality) {
         io.to(game.roomCode).emit("substitutionCapReached", { teamId });
-        // O pedido foi consumido sem abrir a janela: termina o banner de pausa.
-        io.to(game.roomCode).emit("substitutionPauseEnded", { teamId });
-        continue;
       }
 
       const isHome = teamId === fixture.homeTeamId;
@@ -2852,7 +2851,8 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
           !(fixture._subbedOut as Set<number> | undefined)?.has(p.id),
       );
 
-      if (onPitch.length > 0 && availableBench.length > 0) {
+      const shouldOpenPause = cappedForMentality ? onPitch.length > 0 : onPitch.length > 0 && availableBench.length > 0;
+      if (shouldOpenPause) {
         const result = await waitForMatchAction({
           game,
           io,
