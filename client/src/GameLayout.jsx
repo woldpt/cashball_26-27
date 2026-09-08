@@ -1868,7 +1868,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         setCupPenaltyKickIdx={setCupPenaltyKickIdx}
       />
 
-      <CupUpsetModal cupRoundResults={cupRoundResults} teams={teams} />
+      <CupUpsetModal cupRoundResults={cupRoundResults} teams={teams} postMatchMood={postMatchMood} />
 
       <BoardWarningModal
         boardWarning={boardWarning}

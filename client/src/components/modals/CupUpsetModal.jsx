@@ -71,15 +71,19 @@ function DivBadge({ div, tone = "cold" }) {
  * Comportamento:
  *  - só aparece quando chega um payload novo (identidade época+ronda) com
  *    surpresas — nunca volta a mostrar para a mesma ronda;
+ *  - aguarda o PostMatchMoodModal estar confirmado antes de revelar (evita
+ *    modais sobrepostos); se não há mood modal aberto (jogo do utilizador
+ *    não foi dessa ronda), revela diretamente;
  *  - fecho via botão "Continuar" (sem auto-fecho);
  *  - som de notificação + partículas de festejo (CelebrationBurst).
  *
  * @param {{
  *   cupRoundResults: object|null, // { round, roundName, results, season, isFinal, upsets }
  *   teams: array,
+ *   postMatchMood: object|null, // mood modal aberto (PostMatchMoodModal)
  * }} props
  */
-export function CupUpsetModal({ cupRoundResults, teams }) {
+export function CupUpsetModal({ cupRoundResults, teams, postMatchMood }) {
   const key = cupRoundResults
     ? `${cupRoundResults.season}:${cupRoundResults.round}`
     : null;
@@ -87,17 +91,18 @@ export function CupUpsetModal({ cupRoundResults, teams }) {
 
   const upsets = cupRoundResults?.upsets || [];
 
-  // Guard de identidade: dispara apenas quando chega um payload novo com
-  // surpresas (mesmo padrão do SeasonEndModal — setState só em callback de
-  // timeout, nunca síncrono no corpo do effect).
+  // Guard de identidade + gate do mood modal: dispara apenas quando chega
+  // um payload novo com surpresas e o PostMatchMoodModal já não está aberto
+  // (mesmo padrão do SeasonEndModal — setState só em callback de timeout,
+  // nunca síncrono no corpo do effect). O timer é rearmado quando o mood muda.
   useEffect(() => {
-    if (!key || !upsets.length || revealedKey === key) return;
+    if (!key || !upsets.length || revealedKey === key || postMatchMood) return;
     const t = setTimeout(() => {
       setRevealedKey(key);
       playNotification();
     }, 250);
     return () => clearTimeout(t);
-  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, postMatchMood]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!key || revealedKey !== key || !upsets.length) return null;
 
