@@ -32,6 +32,7 @@ import { GameDialog } from "./components/shared/GameDialog.jsx";
 import { TransferProposalModal } from "./components/modals/TransferProposalModal.jsx";
 import { SigningCelebrationModal } from "./components/modals/SigningCelebrationModal.jsx";
 import { PostMatchMoodModal } from "./components/modals/PostMatchMoodModal.jsx";
+import { computePostMatchFlow } from "./utils/postMatchFlow.js";
 import { AuctionsPage } from "./pages/AuctionsPage.jsx";
 import { UserSettingsPage } from "./pages/UserSettingsPage.jsx";
 import { RoomHub } from "./components/chat/RoomHub.jsx";
@@ -371,6 +372,18 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // e a cadeia grid → item → motion.div têm de passar min-h-0 para baixo,
   // senão a árvore fica à altura do conteúdo e o scroll interno nunca ocorre.
   const isFullBleedTab = activeTab === "squad" || activeTab === "leiloes";
+
+  // Sequência central dos modais pós-jogo: penalties → mood → avisos/renovações.
+  // Decide quais estão visíveis em cada render para nunca se sobreporem; os
+  // restantes aguardam o fecho do atual (os dados continuam guardados).
+  const postMatchFlow = computePostMatchFlow({
+    seasonEndModal,
+    cupPenaltyPopup,
+    postMatchMood,
+    boardWarning,
+    dismissalModal,
+    jobOfferModal,
+  });
 
   return (
     <div className="h-dvh overflow-hidden bg-surface text-on-surface font-body tracking-tight flex flex-col">
@@ -1869,7 +1882,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       />
 
       <PostMatchMoodModal
-        mood={postMatchMood}
+        mood={postMatchFlow.showMood ? postMatchMood : null}
         onClose={() => setPostMatchMood(null)}
       />
 
@@ -1902,10 +1915,14 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         setCupPenaltyKickIdx={setCupPenaltyKickIdx}
       />
 
-      <CupUpsetModal cupRoundResults={cupRoundResults} teams={teams} postMatchMood={postMatchMood} />
+      <CupUpsetModal
+        cupRoundResults={postMatchFlow.showCupRoundResults ? cupRoundResults : null}
+        teams={teams}
+        postMatchMood={postMatchMood}
+      />
 
       <BoardWarningModal
-        boardWarning={boardWarning}
+        boardWarning={postMatchFlow.showBoardWarning ? boardWarning : null}
         onClose={() => setBoardWarning(null)}
       />
 
@@ -1957,7 +1974,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       />
 
       <DismissalModal
-        dismissalModal={dismissalModal}
+        dismissalModal={postMatchFlow.showDismissal ? dismissalModal : null}
         onContinue={() => setDismissalModal(null)}
       />
 
@@ -1983,7 +2000,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       )}
 
       <JobOfferModal
-        jobOfferModal={jobOfferModal}
+        jobOfferModal={postMatchFlow.showJobOffer ? jobOfferModal : null}
         setJobOfferModal={setJobOfferModal}
       />
 
