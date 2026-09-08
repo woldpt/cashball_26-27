@@ -1,6 +1,7 @@
 import { useTactics } from "../../contexts/TacticsContext.jsx";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { TeamCrest } from "./TeamCrest.jsx";
+import { getMoraleLabel } from "../../utils/morale.js";
 
 /* ────────────────────────────────────────────────────────────────────────────
  * MatchBriefing — Fase 1 do pré-jogo.
@@ -314,8 +315,22 @@ function NextMatchCard({ nextMatchSummary, teamInfo, onOpenTeamSquad }) {
           />
           <CompareStat
             label="Moral"
-            mine={isHome ? myMorale : oppMorale}
-            theirs={isHome ? oppMorale : myMorale}
+            mine={
+              <span
+                className="text-xs font-black leading-none truncate"
+                title={`Moral ${isHome ? myMorale : oppMorale}`}
+              >
+                {getMoraleLabel(isHome ? myMorale : oppMorale)}
+              </span>
+            }
+            theirs={
+              <span
+                className="text-xs font-black leading-none truncate"
+                title={`Moral ${isHome ? oppMorale : myMorale}`}
+              >
+                {getMoraleLabel(isHome ? oppMorale : myMorale)}
+              </span>
+            }
           />
           <CompareStat
             label="Qualidade"

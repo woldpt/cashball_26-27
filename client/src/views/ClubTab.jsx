@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
 import { DIVISION_NAMES } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
+import { getMoraleLabel } from "../utils/morale.js";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
@@ -107,8 +108,7 @@ export function ClubTab({
   clubNews,
 }) {
   const morale = teamInfo?.morale ?? 50;
-  const moraleLabel =
-    morale >= 70 ? "ELEVADO" : morale >= 40 ? "ESTÁVEL" : "BAIXO";
+  const moraleLabel = getMoraleLabel(morale).toUpperCase();
   const moraleTextColor =
     morale >= 70
       ? "text-emerald-400"

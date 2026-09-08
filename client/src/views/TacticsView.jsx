@@ -7,6 +7,7 @@ import { MatchBriefing } from "../components/live/MatchBriefing.jsx";
 import { WaitingCoachesModal } from "../components/modals/WaitingCoachesModal.jsx";
 import { socket } from "../socket.js";
 import { TACTIC_FORMATIONS, MAX_BENCH_SIZE } from "../constants/index.js";
+import { getMoraleLabel } from "../utils/morale.js";
 import { PlayerAvatar as PlayerAvatarSVG } from "../components/shared/PlayerAvatar.jsx";
 
 /** Cores por posição */
@@ -489,8 +490,7 @@ export function TacticsView() {
                         : morale >= 50
                           ? "text-yellow-400"
                           : "text-red-400";
-                    const label =
-                      morale > 75 ? "Alta" : morale >= 50 ? "Média" : "Baixa";
+                    const label = getMoraleLabel(morale);
                     return (
                       <>
                         <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-[#1a1a1a]">
@@ -505,9 +505,10 @@ export function TacticsView() {
                         </div>
                         <div className="flex flex-1 flex-col items-center justify-center gap-2.5 px-4 pb-3">
                           <span
-                            className={`text-[38px] leading-none font-black tabular-nums ${textColor}`}
+                            title={`Moral ${morale}`}
+                            className={`text-xl leading-none font-black text-center truncate w-full ${textColor}`}
                           >
-                            {morale}
+                            {label}
                           </span>
                           <div className="h-2 w-full bg-[#1a1a1a] rounded-full overflow-hidden">
                             <div
@@ -639,8 +640,7 @@ export function TacticsView() {
                       : morale >= 50
                         ? "text-yellow-400"
                         : "text-red-400";
-                  const label =
-                    morale > 75 ? "Alta" : morale >= 50 ? "Média" : "Baixa";
+                  const label = getMoraleLabel(morale);
                   return (
                     <div className="px-4 short:px-3 py-2.5 short:py-1.5">
                       <div className="flex items-center justify-between mb-1.5 short:mb-1">
