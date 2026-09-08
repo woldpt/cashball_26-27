@@ -13,6 +13,15 @@
 - **Cena de troféu:** `SeasonEndModal` ganha um bloco "levantar troféu 🏆" (confete `CelebrationBurst` + glow âmbar) antes dos prémios, quando a tua equipa é campeã da divisão (`divisionChampions`) ou vencedora da Taça (`cupWinner`) — `showTitleLift`.
 - Checks: client lint + `check:types` OK; portrait `test:mobile` 140/140 PASS; landscape `test:mobile:landscape` 168/168 PASS. (Sem server typecheck: só alterações visuais no client, nenhuma lógica de jogo/comunicações tocada.)
 
+## Mood pós-jogo com variações por contexto (novo)
+
+- O `PostMatchMoodModal` só variava por resultado (vitória/derrota/empate). Agora diferencia pelo **contexto do adversário**: na Liga, perder com o líder = "Derrota Esperada" (respeito, sem vaia) e perder com o último classificado = "Derrota Vergonhosa" (furiosos); na Taça, perder com equipa de escalão superior (divisão menor) = derrota esperada (sem vaia); vencer um gigante/escalão superior = "Vitória Épica". Também `draw_honorable`/`draw_bitter`.
+- **`client/src/utils/moodVariant.js`** (novo, função pura `computeMoodVariant`): recebe `outcome`, `source`, `myDivision`, `opponentDivision`, `opponentRank`, `opponentTeamCount` → devolve a variante. Liga usa posição na divisão (top = rank 1-2, bottom = rank ≥ total-1); Taça usa `opponentDivision < myDivision` (divisão menor = escalão superior; sem empates em knockout).
+- **`GameContext.jsx`** (`buildMood` no effect do modal): calcula `variant` (posição via `rankStandings` filtrado pela divisão do adversário; divisões via `teams`) e acrescenta o campo `variant` ao objeto `mood`. Campo aditivo → não quebra `postMatchFlow.js`/`CupUpsetModal` (só leem `!!postMatchMood`).
+- **`PostMatchMoodModal.jsx`**: mapa `MOOD_CONFIG` por variante (title, fans, subtitle, accent, gradient, sound, celebrate, fansRepeat); fallback seguro por `outcome` se a variante for desconhecida. Subtitle agora condicional por variante (antes só em derrota).
+- Armadilha: a Taça usa divisões 1-4 (divisão menor = escalão superior); o `outcome` da Taça é sempre win/loss (via `winnerId`), nunca draw.
+- Checks: client lint + check:types OK. `npm run build` falha no ambiente (binding nativo `rolldown` `MODULE_NOT_FOUND`) — pré-existente, não causado por esta alteração. Sem mudança estrutural de layout (mesma estrutura flex, só conteúdo/cor/texto) → sem mobile-resp-check; nenhum harness renderiza este modal.
+
 ## Em curso
 
 ## Economia NPC — "supervisor" descentralizado (novo)
