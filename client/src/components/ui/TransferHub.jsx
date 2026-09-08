@@ -41,7 +41,7 @@ const SOURCE_LABEL = {
   auction: "Leilão",
   fixed: "Mercado",
   proposal: "Cláusula",
-  npc: "NPC",
+  npc: "Transf.",
 };
 
 /**
@@ -441,6 +441,13 @@ export function TransferHub({
     return map;
   }, [teams]);
 
+  // Histórico: omitir vendas por leilão (só listagens Mercado/cláusula/NPC),
+  // porque as vendas de leilão já aparecem no separador "Leilões" (Recentes).
+  const historyRecords = useMemo(() => {
+    const list = transferHistory || [];
+    return list.filter((rec) => rec.source !== "auction");
+  }, [transferHistory]);
+
   const visible = useMemo(() => {
     const filtered = players.filter((p) => p.transfer_status !== "auction");
     if (!search.trim()) return filtered;
@@ -523,14 +530,14 @@ export function TransferHub({
       </div>
     </Panel>
 
-    {/* ── Histórico de transferências concluídas (época atual) ──────────── */}
-    {transferHistory.length > 0 && (
+    {/* ── Histórico de transferências concluídas (época atual, sem leilões) ── */}
+    {historyRecords.length > 0 && (
       <Panel
         title="Histórico de Transferências"
-        meta={`${transferHistory.length} ${transferHistory.length === 1 ? "transferência" : "transferências"}`}
+        meta={`${historyRecords.length} ${historyRecords.length === 1 ? "transferência" : "transferências"}`}
       >
         <div className="flex flex-col gap-1.5">
-          {transferHistory.map((rec, i) => (
+          {historyRecords.map((rec, i) => (
             <TransferRow
               key={rec.id ?? `${rec.player_id}-${rec.amount}-${i}`}
               rec={rec}
