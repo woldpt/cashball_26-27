@@ -17,9 +17,14 @@
 export function EmptyState({ emoji = "📭", title, description, className = "" }) {
   return (
     <div
-      className={`flex flex-col items-center gap-2 rounded-lg border border-outline-variant/25 bg-surface-container py-12 ${className}`}
+      className={`empty-aurora flex flex-col items-center gap-2.5 rounded-lg border border-outline-variant/25 bg-surface-container px-4 py-10 ${className}`}
     >
-      <span className="text-3xl text-on-surface-variant/40">{emoji}</span>
+      <div
+        aria-hidden
+        className="empty-float flex h-14 w-14 items-center justify-center rounded-full bg-surface-bright shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] ring-1 ring-inset ring-outline-variant/30"
+      >
+        <span className="text-2xl leading-none drop-shadow-sm">{emoji}</span>
+      </div>
       <p className="text-on-surface-variant/60 text-xs font-bold text-center">
         {title}
       </p>
