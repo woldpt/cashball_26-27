@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { CelebrationBurst } from "../../shared/CelebrationBurst.jsx";
 
 /* ── GoalFlashOverlay — momento de golo ao vivo ─────────────────────────
  *
- * Overlay efémero (~2s) sobre o painel do teu jogo quando um golo é
- * revelado em direto:
+ * Overlay efémero (~2s) DE PÁGINA INTEIRA quando um golo é revelado em
+ * direto no teu jogo. Renderizado via portal para o <body> como `fixed
+ * inset-0` (o pai LiveMatchHero tem overflow-hidden, que encerraria o
+ * festejo ao card):
  *   - marcas TU  → explosão de confete + "GOLO!" com glow na cor da equipa;
  *   - golo ADVERSÁRIO (e és participante) → flash sóbrio vermelho + shake,
  *     sem festejo — o teu marcador não celebra.
@@ -104,8 +107,8 @@ export function GoalFlashOverlay({
   const color = moment.side === "home" ? hColor : aColor;
   const teamName = moment.side === "home" ? hName : aName;
 
-  return (
-    <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+  const overlay = (
+    <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden">
       {/* wash de cor radial (equipa que marcou) */}
       <motion.div
         className="absolute inset-0"
@@ -196,4 +199,8 @@ export function GoalFlashOverlay({
       </div>
     </div>
   );
+
+  // Portal para o <body> como overlay fixed: cobre a página inteira (o pai
+  // LiveMatchHero tem overflow-hidden, que encerraria o festejo ao card).
+  return createPortal(overlay, document.body);
 }
