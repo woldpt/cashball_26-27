@@ -108,7 +108,14 @@ export function GoalFlashOverlay({
   const teamName = moment.side === "home" ? hName : aName;
 
   const overlay = (
-    <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden">
+    // `key` no flash: cada golo remonta a árvore inteira do zero, mesmo que o
+    // overlay anterior ainda esteja montado (golos seguidos na simulação em
+    // direto). Sem isto, os containers framer terminam em opacity:0 e não
+    // recomeçam — o 2º golo em diante ficaria invisível.
+    <div
+      key={`${moment.side}-${moment.ts}`}
+      className="fixed inset-0 z-[200] pointer-events-none overflow-hidden"
+    >
       {/* wash de cor radial (equipa que marcou) */}
       <motion.div
         className="absolute inset-0"
