@@ -92,7 +92,37 @@ interface SessionHandlerDeps {
 	generateUniqueRoomCode: () => string;
 	globalDb?: any;
 	emitGlobalPlayerUpdate?: () => void;
+	getGlobalPlayerList?: () => { name: string; roomCode: string }[];
+	findOnlineCoachSocket?: (
+		name: string,
+	) => { roomCode: string; socketId: string } | null;
+	presenceRoom?: string;
 	resendPendingContractRequests?: (game: ActiveGame) => Promise<void>;
+}
+
+// ── Convites de sala entre coaches (pre-join → in-game) ─────────────────────
+// O emissor está na escolha de salas (ainda sem sala ligada); o destinatário
+// está online noutra sala. O mapa guarda convites pendentes para que a
+// resposta (aceitar/recusar) volte ao socket do emissor.
+interface PendingRoomInvite {
+	inviteId: string;
+	fromName: string;
+	fromSocketId: string;
+	roomCode: string;
+	roomName: string;
+	toCoach: string;
+}
+
+const pendingRoomInvites = new Map<string, PendingRoomInvite>();
+let roomInviteSeq = 0;
+
+const INVITE_LIMIT_PER_NAME = { max: 20, windowMs: 10 * 60 * 1000 };
+const INVITE_LIMIT_PER_IP = { max: 120, windowMs: 10 * 60 * 1000 };
+const inviteRateStore = new Map<string, LimitRec>();
+
+function nextInviteId(): string {
+	roomInviteSeq += 1;
+	return `inv_${Date.now().toString(36)}_${roomInviteSeq}`;
 }
 
 function safeParse<T>(json: string | null | undefined, fallback: T): T {
@@ -162,6 +192,9 @@ export function registerSessionSocketHandlers(
 		doesGameExist,
 		generateUniqueRoomCode,
 		emitGlobalPlayerUpdate,
+		getGlobalPlayerList,
+		findOnlineCoachSocket,
+		presenceRoom,
 		resendPendingContractRequests,
 	} = deps;
 
@@ -1075,6 +1108,136 @@ export function registerSessionSocketHandlers(
 			}
 		},
 	);
+
+	socket.on("presenceSubscribe", () => {
+		// Pré-jogo (escolha de salas): junta o socket ao canal de presença para
+		// receber updates e devolve o snapshot actual dos coaches online.
+		if (presenceRoom) socket.join(presenceRoom);
+		if (getGlobalPlayerList) {
+			socket.emit("globalPlayersUpdate", getGlobalPlayerList());
+		}
+	});
+
+	socket.on("presenceUnsubscribe", () => {
+		if (presenceRoom) socket.leave(presenceRoom);
+	});
+
+	// ─── Convite de sala (pre-join → coach online noutra sala) ──────────────
+	socket.on("sendRoomInvite", async (data, ack) => {
+		const reply = (payload: any) => {
+			if (typeof ack === "function") ack(payload);
+		};
+
+		const rawName =
+			typeof data?.name === "string" ? data.name.trim() : "";
+		const rawToken =
+			typeof data?.token === "string" ? data.token.trim() : "";
+		const roomCode = (
+			typeof data?.roomCode === "string" ? data.roomCode : ""
+		).toUpperCase();
+		const toCoach =
+			typeof data?.toCoach === "string" ? data.toCoach.trim() : "";
+		const roomName =
+			typeof data?.roomName === "string" && data.roomName
+				? data.roomName
+				: roomCode;
+
+		if (!rawName || !rawToken) return reply({ ok: false, error: "Sessão inválida." });
+		if (!/^[A-Z0-9]{4,8}$/.test(roomCode))
+			return reply({ ok: false, error: "Código de sala inválido." });
+		if (!toCoach)
+			return reply({ ok: false, error: "Treinador inválido." });
+
+		const ip = getSocketIp(socket);
+		if (
+			!allowLimit(
+				inviteRateStore,
+				`name:${rawName.toLowerCase()}`,
+				INVITE_LIMIT_PER_NAME.max,
+				INVITE_LIMIT_PER_NAME.windowMs,
+			) ||
+			!allowLimit(
+				inviteRateStore,
+				`ip:${ip}`,
+				INVITE_LIMIT_PER_IP.max,
+				INVITE_LIMIT_PER_IP.windowMs,
+			)
+		) {
+			return reply({
+				ok: false,
+				error: "Demasiados convites. Tenta novamente em breve.",
+			});
+		}
+
+		const session = await verifySession(rawToken);
+		if (!session.ok)
+			return reply({ ok: false, error: "Sessão expirada. Volta a iniciar sessão." });
+		if (session.name.toLowerCase() !== rawName.toLowerCase())
+			return reply({ ok: false, error: "Sessão inválida para este treinador." });
+
+		// Só se convida para salas de que se é membro; e o alvo deve ser membro.
+		try {
+			const coaches = await getRoomCoaches(roomCode);
+			const lower = (x: string) => x.toLowerCase();
+			const members = new Set(coaches.map(lower));
+			if (!members.has(lower(session.name))) {
+				return reply({ ok: false, error: "Não pertences a esta sala." });
+			}
+			if (!members.has(lower(toCoach))) {
+				return reply({
+					ok: false,
+					error: `${toCoach} já não pertence a esta sala.`,
+				});
+			}
+		} catch {
+			return reply({ ok: false, error: "Erro ao validar a sala." });
+		}
+
+		if (!findOnlineCoachSocket) {
+			return reply({ ok: false, error: "Erro interno (presença)." });
+		}
+		const target = findOnlineCoachSocket(toCoach);
+		if (!target) {
+			return reply({ ok: false, error: `${toCoach} já não está online.` });
+		}
+		if (target.roomCode === roomCode) {
+			return reply({ ok: false, error: `${toCoach} já está nesta sala.` });
+		}
+
+		const inviteId = nextInviteId();
+		pendingRoomInvites.set(inviteId, {
+			inviteId,
+			fromName: session.name,
+			fromSocketId: socket.id,
+			roomCode,
+			roomName,
+			toCoach,
+		});
+
+		io.to(target.socketId).emit("roomInvite", {
+			inviteId,
+			fromName: session.name,
+			roomCode,
+			roomName,
+		});
+		reply({ ok: true, inviteId, toCoach });
+	});
+
+	socket.on("respondRoomInvite", (data) => {
+		const inviteId = typeof data?.inviteId === "string" ? data.inviteId : "";
+		const accepted = !!data?.accepted;
+		const pending = pendingRoomInvites.get(inviteId);
+		if (!pending) return;
+		pendingRoomInvites.delete(inviteId);
+
+		// A resposta volta ao socket do emissor (escolha de salas).
+		io.to(pending.fromSocketId).emit("roomInviteResult", {
+			inviteId,
+			toCoach: pending.toCoach,
+			roomCode: pending.roomCode,
+			accepted,
+		});
+	});
 
 	// ─── leaveRoom ─────────────────────────────────────────────────────────────
 	// Saída voluntária da sala: desvincula o socket, remove da sessão activa e

@@ -1000,8 +1000,16 @@ const weeklyFlowHelpers = createWeeklyFlowHelpers({
 
 const checkAllReady = weeklyFlowHelpers.checkAllReady;
 
-function emitGlobalPlayerUpdate() {
-	const players: { name: string; roomCode: string }[] = [];
+/** Sala Socket.io dos coaches dentro de uma sala (presença/estado pós-join). */
+const GLOBAL_ROOM = "__global__";
+/** Sala Socket.io dos coaches ainda na escolha de salas (presença pré-jogo). */
+const PRESENCE_ROOM = "__presence__";
+
+type GlobalPlayerEntry = { name: string; roomCode: string };
+
+/** Lista de coaches actualmente ligados a uma sala (presença global). */
+function getGlobalPlayerList(): GlobalPlayerEntry[] {
+	const players: GlobalPlayerEntry[] = [];
 	for (const game of Object.values(activeGames) as any[]) {
 		for (const p of Object.values(game.playersByName) as any[]) {
 			if (p.socketId) {
@@ -1009,7 +1017,31 @@ function emitGlobalPlayerUpdate() {
 			}
 		}
 	}
-	io.to("__global__").emit("globalPlayersUpdate", players);
+	return players;
+}
+
+function emitGlobalPlayerUpdate() {
+	const players = getGlobalPlayerList();
+	io.to(GLOBAL_ROOM).emit("globalPlayersUpdate", players);
+	io.to(PRESENCE_ROOM).emit("globalPlayersUpdate", players);
+}
+
+/**
+ * Localiza o socket e a sala actual de um coach online. Útil para enviar
+ * convites de sala directamente a um coach que está noutra sala.
+ */
+function findOnlineCoachSocket(
+	name: string,
+): { roomCode: string; socketId: string } | null {
+	const target = name?.toLowerCase();
+	for (const game of Object.values(activeGames) as any[]) {
+		for (const p of Object.values(game.playersByName) as any[]) {
+			if (p.socketId && p.name?.toLowerCase() === target) {
+				return { roomCode: game.roomCode, socketId: p.socketId };
+			}
+		}
+	}
+	return null;
 }
 
 // ── SOCKET HANDLERS ───────────────────────────────────────────────────────────
@@ -1041,6 +1073,9 @@ io.on("connection", (socket) => {
 		doesGameExist,
 		generateUniqueRoomCode,
 		emitGlobalPlayerUpdate,
+		getGlobalPlayerList,
+		findOnlineCoachSocket,
+		presenceRoom: PRESENCE_ROOM,
 		resendPendingContractRequests,
 	});
 

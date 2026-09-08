@@ -413,6 +413,12 @@
     ],
     "receive": []
   },
+  "globalPlayersUpdate": {
+    "emit": [
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
   "financeData": {
     "emit": [
       "socketSessionHandlers.ts",
@@ -457,6 +463,30 @@
     ]
   },
   "requestPlayerHistory": {
+    "emit": [],
+    "receive": [
+      "socketSessionHandlers.ts"
+    ]
+  },
+  "presenceSubscribe": {
+    "emit": [],
+    "receive": [
+      "socketSessionHandlers.ts"
+    ]
+  },
+  "presenceUnsubscribe": {
+    "emit": [],
+    "receive": [
+      "socketSessionHandlers.ts"
+    ]
+  },
+  "sendRoomInvite": {
+    "emit": [],
+    "receive": [
+      "socketSessionHandlers.ts"
+    ]
+  },
+  "respondRoomInvite": {
     "emit": [],
     "receive": [
       "socketSessionHandlers.ts"

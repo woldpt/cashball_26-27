@@ -353,6 +353,25 @@ function App() {
 		}
 	};
 
+	// Troca de sala (aceitar convite de outro treinador): sai da sala actual e
+	// entra na sala convidada, reutilizando o fluxo de join existente.
+	const switchToRoom = (roomCode) => {
+		if (!name || !token || joining) return;
+		const target = (roomCode || "").toUpperCase();
+		if (!target) return;
+		if (me?.roomCode) socket.emit("leaveRoom");
+		setJoinError("");
+		setJoining(true);
+		socket.emit("joinGame", {
+			name,
+			token,
+			roomCode: target,
+			joinMode: "saved-game",
+		});
+		setMe({ name, token, roomCode: "" });
+		armJoinTimeout();
+	};
+
 	// ── Loading screen ─────────────────────────────────────────────────────
 	if (!cacheReady) {
 		return (
@@ -436,6 +455,7 @@ function App() {
 						roomCodeRef={roomCodeRef}
 						joinTimerRef={joinTimerRef}
 						backendUrl={backendUrl}
+						onAcceptRoomInvite={switchToRoom}
 					>
 						<AnimatePresence mode="wait">
 							{!me?.teamId ? (

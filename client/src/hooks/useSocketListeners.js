@@ -1571,6 +1571,14 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setGlobalPlayers(players || []);
 		});
 
+		// Convite para mudar de sala vindo de outro treinador (estamos online
+		// noutra sala). Mostra um modal Aceitar/Recusar no jogo.
+		socket.on("roomInvite", (invite) => {
+			if (handlers.setPendingRoomInvite && invite?.inviteId) {
+				handlers.setPendingRoomInvite(invite);
+			}
+		});
+
 		// BUG-15 FIX: Track socket connection state
 		const onConnect = () => {
 			handlers.setDisconnected(false);
@@ -1684,6 +1692,7 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("chatMessage");
 			socket.off("chatHistory");
 			socket.off("globalPlayersUpdate");
+			socket.off("roomInvite");
 			socket.off("connect", onConnect);
 			socket.off("disconnect", onDisconnect);
 			socket.off("sessionDisplaced");

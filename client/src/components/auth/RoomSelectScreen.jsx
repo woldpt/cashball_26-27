@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { socket } from "../../socket.js";
 
 /**
  * Vista full-screen de escolha de sala (fase "mode", depois do login).
@@ -81,6 +83,87 @@ const RoomSelectScreen = ({
 				: joinMode === "friend-room"
 					? "JUNTAR A AMIGOS"
 					: "";
+
+	// ── Presença em tempo real (só enquanto vês as cartas de "Continuar") ──
+	// O socket ainda não está ligado a nenhuma sala nesta fase; subescreve-se ao
+	// canal de presença (__presence__) para saber onde estão os colegas online.
+	const [globalPresence, setGlobalPresence] = useState([]);
+	// Estado do convite por colega: `${roomCode}:${coach}` → { status, msg }
+	const [inviteState, setInviteState] = useState({});
+	const inviteTimersRef = useRef({});
+
+	useEffect(() => {
+		if (joinMode !== "saved-game") return;
+		const onPresence = (players) => {
+			setGlobalPresence(Array.isArray(players) ? players : []);
+		};
+		socket.on("globalPlayersUpdate", onPresence);
+		socket.emit("presenceSubscribe");
+		return () => {
+			socket.off("globalPlayersUpdate", onPresence);
+			socket.emit("presenceUnsubscribe");
+			setGlobalPresence([]);
+			setInviteState({});
+		};
+	}, [joinMode]);
+
+	// Resposta do servidor a um convite enviado (aceite / recusa).
+	useEffect(() => {
+		if (joinMode !== "saved-game") return;
+		const onResult = (res) => {
+			if (!res || typeof res.roomCode !== "string") return;
+			const key = `${res.roomCode}:${res.toCoach}`;
+			setInviteState((prev) => ({
+				...prev,
+				[key]: { status: res.accepted ? "accepted" : "declined" },
+			}));
+			// Volta a permitir convidar passados alguns segundos após resposta.
+			const delay = res.accepted ? 8000 : 6000;
+			const t = setTimeout(() => {
+				setInviteState((prev) => {
+					const next = { ...prev };
+					delete next[key];
+					return next;
+				});
+			}, delay);
+			inviteTimersRef.current[key] = t;
+		};
+		socket.on("roomInviteResult", onResult);
+		return () => {
+			socket.off("roomInviteResult", onResult);
+			Object.values(inviteTimersRef.current).forEach(clearTimeout);
+			inviteTimersRef.current = {};
+		};
+	}, [joinMode]);
+
+	// Mapa nome(lower) → código de sala actual do coach (quem está online).
+	const presenceRoomOf = (coachName) => {
+		const lower = coachName.toLowerCase();
+		for (const p of globalPresence) {
+			if (p.name && p.name.toLowerCase() === lower) return p.roomCode;
+		}
+		return null;
+	};
+
+	const sendRoomInvite = (saveCode, saveName, toCoach) => {
+		const key = `${saveCode}:${toCoach}`;
+		setInviteState((prev) => ({ ...prev, [key]: { status: "sending" } }));
+		socket.emit(
+			"sendRoomInvite",
+			{ name, token, roomCode: saveCode, roomName: saveName, toCoach },
+			(res) => {
+				setInviteState((prev) => {
+					if (res && res.ok) {
+						return { ...prev, [key]: { status: "sent" } };
+					}
+					return {
+						...prev,
+						[key]: { status: "error", msg: res?.error || "Erro ao enviar o convite." },
+					};
+				});
+			}
+		);
+	};
 
 	return (
 		<motion.div
@@ -279,11 +362,92 @@ const RoomSelectScreen = ({
 												</div>
 											</div>
 
-											{save.coaches && save.coaches.length > 0 && (
-												<span className="inline-block w-fit max-w-full rounded border border-amber-500/30 bg-amber-500/20 px-1 py-px text-[9px] font-black uppercase tracking-widest text-amber-400">
-													{save.coaches.join(", ")}
-												</span>
-											)}
+										{save.coaches && save.coaches.length > 0 && (
+											<div className="flex flex-col gap-1">
+												{save.coaches.map((coach) => {
+													const room = presenceRoomOf(coach);
+													const inviteKey = `${save.code}:${coach}`;
+													const inv = inviteState[inviteKey];
+													const inThis = room === save.code;
+													const onlineElsewhere = !!room && !inThis;
+													const busy =
+														inv &&
+														["sending", "sent", "accepted", "declined"].includes(
+																inv.status,
+															);
+													return (
+														<div
+															key={coach}
+															className="flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-1.5 py-1"
+														>
+															<span
+																	className={`h-1.5 w-1.5 shrink-0 rounded-full ${room ? "bg-green-400 shadow-[0_0_6px_rgba(74,222,128,0.8)]" : "bg-white/15"}`}
+																title={room ? "Online" : "Offline"}
+															/>
+															<span className="min-w-0 flex-1 truncate text-[11px] font-bold text-white/75">
+																{coach}
+															</span>
+
+															{/* Estado fixo (convite em curso / resposta) */}
+															{inv?.status === "sending" && (
+																<span className="shrink-0 text-[10px] font-black uppercase tracking-wider text-white/40">
+																	A convidar…
+																</span>
+															)}
+															{inv?.status === "sent" && (
+																<span className="shrink-0 rounded border border-green-500/30 bg-green-500/15 px-1 py-px text-[9px] font-black uppercase tracking-widest text-green-400">
+																	Convite enviado
+																</span>
+															)}
+															{inv?.status === "accepted" && (
+																<span className="shrink-0 rounded border border-green-500/40 bg-green-500/20 px-1 py-px text-[9px] font-black uppercase tracking-widest text-green-400">
+																	Aceitou ✓
+																</span>
+															)}
+															{inv?.status === "declined" && (
+																<span className="shrink-0 rounded border border-white/10 bg-white/5 px-1 py-px text-[9px] font-black uppercase tracking-widest text-white/40">
+																	Recusou
+																</span>
+															)}
+															{inv?.status === "error" && (
+																<span className="shrink-0 truncate text-[9px] font-bold text-red-400/90">
+																	{inv.msg || "Erro"}
+																</span>
+															)}
+
+															{/* Sem convite em curso: estado de presença + botão */}
+															{!busy && inThis && (
+																<span className="shrink-0 rounded border border-green-500/30 bg-green-500/15 px-1 py-px text-[9px] font-black uppercase tracking-widest text-green-400">
+																	Em jogo aqui
+																</span>
+															)}
+															{!busy && !inThis && room && (
+																<span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-amber-400/90">
+																	Em {room}
+																</span>
+															)}
+															{!busy && !room && (
+																<span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-white/25">
+																	Ausente
+																</span>
+															)}
+															{!busy && onlineElsewhere && (
+																<button
+																	onClick={(e) => {
+																		e.stopPropagation();
+																		sendRoomInvite(save.code, save.name, coach);
+																	}}
+																	title={`Convidar ${coach} para esta sala`}
+																	className="shrink-0 rounded-md border border-sky-500/30 bg-sky-500/15 px-1.5 py-px text-[9px] font-black uppercase tracking-widest text-sky-300 transition-colors hover:bg-sky-500/25 active:scale-95"
+																>
+																	Convidar
+																</button>
+															)}
+														</div>
+													);
+												})}
+											</div>
+										)}
 
 											<div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
 												{save.teamName && (

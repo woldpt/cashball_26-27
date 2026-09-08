@@ -29,6 +29,7 @@ import {
 } from "./components/live/index.js";
 
 import { GameDialog } from "./components/shared/GameDialog.jsx";
+import { InviteRoomModal } from "./components/modals/InviteRoomModal.jsx";
 import { TransferProposalModal } from "./components/modals/TransferProposalModal.jsx";
 import { SigningCelebrationModal } from "./components/modals/SigningCelebrationModal.jsx";
 import { PostMatchMoodModal } from "./components/modals/PostMatchMoodModal.jsx";
@@ -1900,6 +1901,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       />
 
       <GameDialog dialog={gameDialog} onClose={() => setGameDialog(null)} />
+      <InviteRoomModal />
 
       <PenaltySuspensePopup penaltySuspense={penaltySuspense} />
 

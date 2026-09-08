@@ -51,6 +51,7 @@ export function GameProvider({
 	roomCodeRef,
 	joinTimerRef,
 	backendUrl,
+	onAcceptRoomInvite,
 	children,
 }) {
 	// ── Game state ─────────────────────────────────────────────────────────
@@ -100,6 +101,8 @@ export function GameProvider({
 	const [nextMatchSummaryLoading, setNextMatchSummaryLoading] = useState(false);
 	const [refereePopup, setRefereePopup] = useState(null);
 	const [gameDialog, setGameDialog] = useState(null);
+	// Convite de sala recebido (de um colega que nos quer na sala dele).
+	const [pendingRoomInvite, setPendingRoomInvite] = useState(null);
 	const [cupDraw, setCupDraw] = useState(null);
 	const [showCupDrawPopup, setShowCupDrawPopup] = useState(false);
 	const [cupDrawRevealIdx, setCupDrawRevealIdx] = useState(0);
@@ -801,6 +804,7 @@ export function GameProvider({
 			setRoomCreator,
 			setRefereePopup,
 			setGameDialog,
+			setPendingRoomInvite,
 			setWelcomeModal,
 			setJobOfferModal,
 			setDismissalModal,
@@ -1440,6 +1444,9 @@ export function GameProvider({
 		setRefereePopup,
 		gameDialog,
 		setGameDialog,
+		pendingRoomInvite,
+		setPendingRoomInvite,
+		onAcceptRoomInvite,
 		cupDraw,
 		showCupDrawPopup,
 		setShowCupDrawPopup,
