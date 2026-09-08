@@ -354,6 +354,20 @@ body {
   animation: heartbeat-border 1.5s ease-in-out infinite;
 }
 
+/* Aura de liderança no scoreboard ao vivo — respiração suave na cor da equipa
+   em vantagem (o halo é um elemento separado; só a opacidade anima). */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes scoreLeadGlow {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+  }
+}
+
 /* Familiaridade táctica — brilho pulsante quando a táctica está dominada (5 estrelas) */
 @keyframes familiarity-glow {
   0%,

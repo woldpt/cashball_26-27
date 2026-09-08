@@ -74,6 +74,9 @@ export function LiveMatchHero({
   const aInfo = teams.find((t) => t.id === myMatch.awayTeamId);
   const isCupFinal = isCupMatch && cupMatchRoundName === "Final";
   const stadiumName = isCupFinal ? CUP_FINAL_STADIUM : hInfo?.stadium_name;
+  // Cores das equipas para a cenografia de luz (fallbacks estáveis).
+  const hCol = hInfo?.color_primary || "#3b82f6";
+  const aCol = aInfo?.color_primary || "#f43f5e";
   const matchEvents = myMatch.events || [];
   const weatherEvent = matchEvents.find((e) => e.type === "weather");
   const bettingEvt = matchEvents.find((e) => e.type === "betting");
@@ -90,6 +93,12 @@ export function LiveMatchHero({
   );
   const maxMinute = isCupExtraTime ? 120 : 90;
   const progress = Math.min(100, (liveMinute / maxMinute) * 100);
+
+  // Lado em vantagem (para a aura de liderança do scoreboard).
+  const diffGoals = homeGoals.length - awayGoals.length;
+  const leadSide = diffGoals > 0 ? "home" : diffGoals < 0 ? "away" : null;
+  const leadColor =
+    leadSide === "home" ? hCol : leadSide === "away" ? aCol : null;
 
   // eslint-disable-next-line react-hooks/purity
   const nowTs = Date.now();
@@ -144,12 +153,26 @@ export function LiveMatchHero({
 
   return (
     <div className="relative overflow-hidden rounded-lg bg-surface-container-low border border-outline-variant/10">
-      {/* Stadium radial glow */}
+      {/* ── Cenografia de luz: casa à esquerda · fora à direita · estádio ── */}
       <div
+        aria-hidden
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: `radial-gradient(ellipse 90% 50% at 50% 0%, ${hInfo?.color_primary || "#333"}18 0%, transparent 70%)`,
+          background: [
+            // casa — luz da esquerda a convergir no marcador
+            `radial-gradient(120% 130% at 0% 0%, ${hCol}2b 0%, transparent 55%)`,
+            // fora — luz da direita
+            `radial-gradient(120% 130% at 100% 0%, ${aCol}24 0%, transparent 55%)`,
+            // "luz de estádio" a subir do chão (sóbria)
+            `radial-gradient(ellipse 55% 40% at 50% 112%, rgba(255,255,255,0.05) 0%, transparent 65%)`,
+          ].join(", "),
         }}
+      />
+      {/* vinheta suave nas bordas (profundidade) */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{ boxShadow: "inset 0 0 90px rgba(0,0,0,0.42)" }}
       />
 
       <div className="relative z-10 flex flex-col items-center px-4 pt-5 pb-4">
@@ -161,6 +184,12 @@ export function LiveMatchHero({
               : `${DIVISION_NAMES[hInfo?.division] || ""} · Jornada ${matchResults?.matchweek ?? "—"}`}
           </span>
           <div className="flex items-center gap-2">
+            {isPlayingMatch && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm bg-red-600 text-white text-[9px] font-black uppercase tracking-[0.2em] shadow-[0_0_12px_rgba(239,68,68,0.6)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                AO VIVO
+              </span>
+            )}
             {!isPlayingMatch && isCupMatch && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[9px] font-black uppercase tracking-widest">
                 🏆 {cupMatchRoundName}
@@ -210,8 +239,22 @@ export function LiveMatchHero({
         )}
 
         {/* ── Broadcast scoreboard ── */}
-        <div className="w-full max-w-2xl rounded-2xl overflow-hidden border border-outline-variant/20 bg-surface-container shadow-lg shadow-black/30">
-          <div className="flex items-stretch">
+        <div className="relative w-full max-w-2xl">
+          {/* Aura da equipa em vantagem (pulso suave de liderança) */}
+          {leadColor && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-px rounded-2xl"
+              style={{
+                boxShadow: `0 0 28px ${leadColor}59`,
+                animation: "scoreLeadGlow 2s ease-in-out infinite",
+              }}
+            />
+          )}
+          <div className="relative w-full rounded-2xl overflow-hidden border border-outline-variant/20 bg-surface-container shadow-lg shadow-black/30">
+            {/* Hairline de luz no topo (broadcast on-air) */}
+            <div aria-hidden className="top-light" />
+            <div className="flex items-stretch">
             {/* Home side */}
             <div
               className="flex-1 flex flex-col sm:flex-row items-center gap-3 px-2.5 sm:px-5 py-3 min-w-0"
@@ -271,6 +314,7 @@ export function LiveMatchHero({
                 )}
               </div>
               <TeamCrest team={aInfo} isMine={awayIsMine} coach={awayCoach} size="sm" rotate={-10} />
+            </div>
             </div>
           </div>
         </div>
