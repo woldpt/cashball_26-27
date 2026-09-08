@@ -2,10 +2,16 @@
 @import "tailwindcss";
 
 /* Viewports baixos (telemóvel landscape): compactação vertical de modais/cards.
-   Ex.: `short:p-4` aplica apenas quando height <= 560px. */
+   Ex.: `short:p-4` aplica apenas quando height <= 560px.
+   Alturas/larguras sincronizadas com `constants/breakpoints.js` (HEIGHTS.short);
+   paridade verificada por scripts/breakpointParityRegression.mjs. */
 @custom-variant short (@media (max-height: 560px));
 
 @theme {
+  /* Breakpoints do layout: sincronizados com `constants/breakpoints.js`
+     (md=768, lg=1024). Não mudar sem atualizar o ficheiro e o script de paridade. */
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
   /* ── Stitch: Pitch Master 98 — color tokens ─────────────────── */
   --color-surface: #131313;
   --color-surface-container-low: #1c1b1b;
