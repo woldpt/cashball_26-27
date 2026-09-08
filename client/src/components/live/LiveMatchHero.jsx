@@ -218,7 +218,7 @@ export function LiveMatchHero({
                 background: `linear-gradient(100deg, ${hInfo?.color_primary || "#333"}2e 0%, transparent 90%)`,
               }}
             >
-              <TeamCrest team={hInfo} isMine={homeIsMine} coach={homeCoach} size="sm" />
+              <TeamCrest team={hInfo} isMine={homeIsMine} coach={homeCoach} size="sm" rotate={10} />
               <div className="flex flex-col min-w-0 w-full sm:w-auto">
                 <span className="text-[11px] sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate text-center sm:text-left">
                   {hInfo?.name}
@@ -269,7 +269,7 @@ export function LiveMatchHero({
                   </span>
                 )}
               </div>
-              <TeamCrest team={aInfo} isMine={awayIsMine} coach={awayCoach} size="sm" />
+              <TeamCrest team={aInfo} isMine={awayIsMine} coach={awayCoach} size="sm" rotate={-10} />
             </div>
           </div>
         </div>
