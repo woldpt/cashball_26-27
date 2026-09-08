@@ -450,7 +450,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       )}
       {/* Toast notifications — AnimatePresence para o exit; o container fica
           sempre montado (pointer-events-none) para os toasts poderem sair. */}
-      <div className="fixed top-16 right-4 z-100 flex flex-col gap-2 pointer-events-none">
+      <div className="fixed top-[calc(var(--header-h)+0.5rem)] right-4 z-100 flex flex-col gap-2 pointer-events-none">
         <AnimatePresence initial={false}>
           {toasts.map((t) => (
           <motion.div
@@ -483,7 +483,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         </AnimatePresence>
       </div>
       <header
-        className={`fixed top-0 left-0 right-0 z-160 flex items-center border-b border-outline-variant/20 ${isMobileLandscape ? "h-10" : "h-14"}`}
+        className={`fixed top-0 left-0 right-0 z-160 flex items-center border-b border-outline-variant/20 h-[var(--header-h)]`}
         style={{
           background:
             teamInfo?.color_primary || "var(--color-surface-container-low)",
@@ -754,7 +754,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
       <nav
-        className={`hidden lg:flex fixed left-0 top-14 bottom-0 flex-col z-10 transition-all duration-200 bg-surface-container-high border-r border-outline-variant/15 ${sidebarCollapsed ? "w-14" : "w-64"}`}
+        className={`hidden lg:flex fixed left-0 top-[var(--header-h)] bottom-0 flex-col z-10 transition-all duration-200 bg-surface-container-high border-r border-outline-variant/15 ${sidebarCollapsed ? "w-14" : "w-64"}`}
       >
         {/* Toggle button */}
         <button
@@ -1150,7 +1150,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           <nav
             className={
               isMobileLandscape
-                ? "lg:hidden fixed left-0 top-10 bottom-0 w-16 z-40 flex flex-col bg-surface-container-high/95 backdrop-blur-sm border-r border-outline-variant/30 py-2 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
+                ? "lg:hidden fixed left-0 top-[var(--header-h)] bottom-0 w-[var(--rail-w)] z-40 flex flex-col bg-surface-container-high/95 backdrop-blur-sm border-r border-outline-variant/30 py-2 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
                 : "lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-high/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex items-stretch pb-[env(safe-area-inset-bottom)]"
             }
           >
@@ -1402,14 +1402,14 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         <main
           className={`flex-1 min-h-0 flex flex-col ${
             isMobileLandscape
-              // A rail vertical (w-16) só está montada quando !isMatchInProgress —
-              // fora disso a ml-16 ficava órfã e deixava uma faixa vazia à
-              // esquerda do ecrã de jogo ao vivo.
+              // A rail vertical (w-[var(--rail-w)]) só está montada quando
+              // !isMatchInProgress — fora disso a ml-var ficava órfã e deixava
+              // uma faixa vazia à esquerda do ecrã de jogo ao vivo.
               // Em jogo, o pill "AO VIVO" (fixed bottom-3) flutua sobre o
               // conteúdo; reservamos pb-16 (igual ao retrato) para o conteúdo
               // não ser coberto, em vez de pb-3.
-              ? `transition-all duration-200 pt-10 ${isMatchInProgress ? "pb-16 ml-0" : "pb-3 ml-16"}`
-              : `pt-14 pb-16 lg:pb-0 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-14" : "lg:ml-64"}`
+              ? `transition-all duration-200 pt-[var(--header-h)] ${isMatchInProgress ? "pb-16 ml-0" : "pb-3 ml-[var(--rail-w)]"}`
+              : `pt-[var(--header-h)] pb-16 lg:pb-0 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-14" : "lg:ml-64"}`
           }`}
         >
           {/* Wrapper de scroll: a maioria das tabs rola aqui (mesma UX de antes,
