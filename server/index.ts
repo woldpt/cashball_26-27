@@ -887,6 +887,8 @@ const processContractExpiries = contractHelpers.processContractExpiries;
 const processAgentRenegotiations = contractHelpers.processAgentRenegotiations;
 const resendPendingContractRequests =
 	contractHelpers.resendPendingContractRequests;
+const processNpcAgentPressure = contractHelpers.processNpcAgentPressure;
+const forceNpcWageCut = contractHelpers.forceNpcWageCut;
 const processNpcTransferActivity = (game) =>
 	npcTransferHelpers.processNpcTransferActivity(game, listPlayerOnMarket);
 
@@ -931,6 +933,7 @@ const coachDismissalHelpers = createCoachDismissalHelpers({
 	saveGameState,
 	getRoomCoaches,
 	getCoachAvatars,
+	forceNpcWageCut,
 });
 const processCoachEvents = coachDismissalHelpers.processCoachEvents;
 const handleAcceptJobOffer = coachDismissalHelpers.handleAcceptJobOffer;
@@ -989,6 +992,7 @@ const weeklyFlowHelpers = createWeeklyFlowHelpers({
 	processContractExpiries,
 	processAgentRenegotiations,
 	resendPendingContractRequests,
+	processNpcAgentPressure,
 	processNpcTransferActivity,
 	refreshMarket,
 	processCoachEvents,

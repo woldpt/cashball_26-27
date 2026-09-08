@@ -108,6 +108,70 @@ export const SPONSOR_REVENUE_BY_DIVISION: Record<number, number> = {
 };
 
 /**
+ * Rendimento base semanal creditado a cada equipa pela sua divisão
+ * (mantém as equipas das divisões baixas viáveis). Promovido aqui para ser
+ * partilhado pela folha semanal e pela economia NPC (evita duplicação).
+ */
+export const WEEKLY_BASE_INCOME: Record<number, number> = {
+  1: 80000,
+  2: 50000,
+  3: 35000,
+  4: 25000,
+  5: 12000,
+};
+
+/** Número de eventos (semanas de jogo) por época = SEASON_CALENDAR.length (14 liga + 5 taça). */
+export const NPC_SEASON_WEEKS = 19;
+
+/**
+ * Folha salarial semanal "de equilíbrio" (break-even) de uma divisão:
+ * o que uma equipa pode pagar em ordenados ao longo de uma época inteira
+ * sem perder dinheiro, dados o rendimento base semanal e o patrocínio anual
+ * (único, creditado no fim de época) amortizado pelas semanas da época.
+ * Acima deste valor a folha sozinha excede a receita garantida → insolvência
+ * estrutural (depende de prémios/bilheteiras/vendas para não afundar).
+ */
+export function npcStructuralBreakEvenFolha(division: number): number {
+  const base = WEEKLY_BASE_INCOME[division] ?? 12000;
+  const sponsor = SPONSOR_REVENUE_BY_DIVISION[division] ?? 0;
+  return Math.round(base + sponsor / NPC_SEASON_WEEKS);
+}
+
+/**
+ * Teto para a pressão de agentes dos NPCs (P1): nunca se sobe a folha acima
+ * de NPC_FOLHA_CAP_RATIO × break-even (nunca se compromete um NPC a pagar
+ * mais do que ganha numa época — sem risco de insolvência criada pelo próprio
+ * mecanismo anti-acumulação). <1 deixa uma pequena margem de segurança anual.
+ */
+export const NPC_FOLHA_CAP_RATIO = 0.95;
+
+/** Teto efetivo da folha usado nas subidas de salário dos NPCs (P1). */
+export function npcSustainableWeeklyFolha(division: number): number {
+  return Math.round(
+    npcStructuralBreakEvenFolha(division) * NPC_FOLHA_CAP_RATIO,
+  );
+}
+
+/**
+ * Semanas consecutivas de "insolvência estrutural" (orçamento negativo E
+ * folha acima do break-even) antes de um NPC entrar em restrições (aviso).
+ */
+export const NPC_NEGATIVE_BUDGET_WARN_STREAK = 2;
+
+/**
+ * Idem, para a redução forçada de custos: a direção coloca os excedentários
+ * de maior ordenado à venda. Repete-se de X em X semanas enquanto se mantiver
+ * em insolvência estrutural. Só clubes que perdem dinheiro *com garantia*
+ * (folha > receita anual) são cortados — clubes só apertados (negativo
+ * transitório, mas folha ≤ break-even, recuperáveis no patrocínio) NÃO são.
+ */
+export const NPC_NEGATIVE_BUDGET_CUT_STREAK = 4;
+export const NPC_NEGATIVE_BUDGET_CUT_INTERVAL = 3;
+
+/** Máximo de jogadores excedentários libertados por evento de corte de custos. */
+export const NPC_WAGE_CUT_PER_EVENT = 2;
+
+/**
  * Incremento mínimo entre lances num leilão (servidor e cliente devem usar o mesmo valor).
  * Aplica-se a qualquer leilão, incluindo os que começam a €0.
  */

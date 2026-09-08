@@ -3,6 +3,8 @@ import {
   CONTRACT_LENGTH_MATCHWEEKS,
   getAgentName,
   fairWeeklyWage,
+  npcSustainableWeeklyFolha,
+  NPC_WAGE_CUT_PER_EVENT,
   FORM_NEUTRAL,
   RES_NEUTRAL,
   RES_MIN,
@@ -12,6 +14,8 @@ import {
 import {
   currentEpoch,
   contractEndInfo,
+  getAllTeamForms,
+  logClubNews,
 } from "./coreHelpers";
 
 type AnyRow = Record<string, any>;
@@ -332,10 +336,147 @@ export function createContractHelpers(deps: ContractDeps) {
 
   };
 
+  // ── ECONOMIA NPC ─────────────────────────────────────────────────────────
+
+  /**
+   * Pressão salarial anti-acumulação (P1). Para cada NPC das divisões 1-4,
+   * alguns jogadores subvalorizados (wage < fairWage ajustada à riqueza e ao
+   * desempenho do clube) recebem um aumento gradual — o agente pede mais a
+   * quem pode pagar. O aumento é limitado ao teto sustentável da folha
+   * (nunca provoca insolvência) e a ~+15%/evento por jogador (sem choques).
+   * Ricos / em boa forma acumulam excedentes → a folha sobe até ao equilíbrio;
+   * clubes equilibrados não têm margem → os salários estagnam.
+   */
+  const processNpcAgentPressure = async (game: ActiveGame): Promise<void> => {
+    // Equipas humanas (coach em playersByName, mesmo offline) e o pool interno
+    // div 5 ficam de fora — só NPCs reais das divisões 1-4.
+    const humanTeamIds = new Set<number>(
+      Object.values(game.playersByName)
+        .map((p) => p.teamId)
+        .filter((id): id is number => id != null && id !== undefined),
+    );
+    const forms = await getAllTeamForms(game.db, game.season).catch(() => ({}));
+    const teams = await runAll<AnyRow>(
+      game.db,
+      "SELECT id, division, budget FROM teams",
+    );
+    for (const team of teams) {
+      if (!team || humanTeamIds.has(team.id)) continue;
+      const division = Number(team.division ?? 4);
+      if (division === 5) continue; // pool interno, invisível
+      const sustainable = npcSustainableWeeklyFolha(division);
+      const recentForm = (forms[team.id] || "").slice(0, 5);
+      const wins = recentForm.split("").filter((c) => c === "V").length;
+      const players = await runAll<AnyRow>(
+        game.db,
+        "SELECT id, name, skill, position, wage, form, resistance, is_star FROM players WHERE team_id = ? AND id > 0 AND transfer_status = 'none' AND contract_request_pending = 0",
+        [team.id],
+      );
+      let folha = players.reduce((s, p) => s + (p.wage || 0), 0);
+      if (folha <= 0) continue;
+      if (folha >= sustainable) continue; // sem margem → não subir
+
+      // Riqueza (excedente de orçamento) e desempenho (vitórias últ. 5 jogos)
+      // sobem a procura do agente: até +25% por riqueza e +15% por forma.
+      const surplus = Math.max(0, team.budget || 0);
+      const wealthFactor = Math.min(surplus / 2000000, 1) * 0.25;
+      const perfFactor = (wins / 5) * 0.15;
+      const multiplier = 1 + wealthFactor + perfFactor;
+
+      for (const player of players) {
+        const wage = player.wage || 0;
+        if (wage <= 0) continue;
+        const demandWage = Math.round(fairWageOf(player) * multiplier);
+        if (wage >= demandWage) continue; // já pago ao justo p/ este clube
+        if (Math.random() > 0.06) continue; // gradual, sem choque
+        // Subida limitada a +15% num evento e nunca acima da procura ajustada.
+        const newWage = Math.min(demandWage, Math.round(wage * 1.15));
+        const newFolha = folha + (newWage - wage);
+        if (newFolha > sustainable) continue; // teto de sustentabilidade
+        // Espera o write para manter `folha` exacta (teto cumulativo correcto).
+        await new Promise<void>((resolve) => {
+          game.db.run(
+            "UPDATE players SET wage = ? WHERE id = ?",
+            [newWage, player.id],
+            () => {
+              folha = newFolha;
+              logClubNews(game, "renegotiation", "Novo contrato", team.id, {
+                player_id: player.id,
+                player_name: player.name,
+                description: `${player.name} renovou com aumento salarial (pressão do agente).`,
+              });
+              resolve();
+            },
+          );
+        });
+      }
+    }
+  };
+
+  /**
+   * Redução forçada de custos (P2). Um NPC persistentemente insolvente
+   * (orçamento negativo) coloca à venda os excedentários de maior ordenado —
+   * a direção "força a saída" para cortar a folha. Só toca em jogadores que,
+   * ao sair, mantêm o plantel acima do mínimo por posição (nunca deixa a
+   * equipa sem jogadores). Devolve quantos foram libertados (0 = nada a cortar).
+   */
+  const forceNpcWageCut = async (
+    game: ActiveGame,
+    team: AnyRow,
+  ): Promise<number> => {
+    const teamId = team.id;
+    const squad = await runAll<AnyRow>(
+      game.db,
+      "SELECT id, name, skill, position, wage, form, resistance, is_star FROM players WHERE team_id = ? AND id > 0 AND transfer_status = 'none'",
+      [teamId],
+    );
+    if (squad.length === 0) return 0;
+    // Agrupar por posição e ordenar por ordenado desc dentro de cada uma.
+    const byPos: Record<string, AnyRow[]> = {};
+    for (const p of squad) (byPos[p.position] ||= []).push(p);
+    for (const key of Object.keys(byPos))
+      byPos[key].sort((a, b) => (b.wage || 0) - (a.wage || 0));
+    // Excedentários = os que, numa dada posição, excedem o mínimo (protegido).
+    // Ao sair mantêm sempre o plantel ≥ mínimo → a equipa nunca fica sem jogar.
+    const surplus: AnyRow[] = [];
+    for (const key of Object.keys(byPos)) {
+      const list = byPos[key];
+      const floor = POS_MIN[key] ?? 3;
+      for (let i = floor; i < list.length; i++) surplus.push(list[i]);
+    }
+    surplus.sort((a, b) => (b.wage || 0) - (a.wage || 0));
+    const toRelease = surplus.slice(0, NPC_WAGE_CUT_PER_EVENT);
+    let released = 0;
+    for (const player of toRelease) {
+      const auctionPrice = Math.max(
+        Math.round(effectiveValue(player) * 0.65),
+        Math.max(Math.round((player.skill || 0) * 40), 500) * 12,
+      );
+      await new Promise<void>((resolve) => {
+        game.db.run(
+          "UPDATE players SET contract_start_epoch = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ?",
+          [player.id],
+          () => {
+            startAuction(game, player, auctionPrice, resolve, true);
+          },
+        );
+      });
+      logClubNews(game, "cost_cut", "Saída forçada", teamId, {
+        player_id: player.id,
+        player_name: player.name,
+        description: `${team.name} coloca ${player.name} à venda para cortar a folha salarial (restrições financeiras).`,
+      });
+      released += 1;
+    }
+    return released;
+  };
+
   return {
     maybeTriggerContractRequest,
     resendPendingContractRequests,
     processAgentRenegotiations,
     processContractExpiries,
+    processNpcAgentPressure,
+    forceNpcWageCut,
   };
 }

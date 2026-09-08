@@ -609,6 +609,7 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     // Coach dismissal & job offers
     pendingJobOffers: {},
     negativeBudgetStreak: {},
+    npcNegativeBudgetStreak: {},
     boardBudgetWarned: {},
     coachMatchesManaged: {},
     npcMatchesManaged: {},
@@ -978,6 +979,17 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                 try {
                   const parsed = JSON.parse(st["negativeBudgetStreak"]);
                   game.negativeBudgetStreak = Object.fromEntries(
+                    Object.entries(parsed).map(([k, v]) => [
+                      Number(k),
+                      Number(v),
+                    ]),
+                  );
+                } catch (_) {}
+              }
+              if (st["npcNegativeBudgetStreak"]) {
+                try {
+                  const parsed = JSON.parse(st["npcNegativeBudgetStreak"]);
+                  game.npcNegativeBudgetStreak = Object.fromEntries(
                     Object.entries(parsed).map(([k, v]) => [
                       Number(k),
                       Number(v),
@@ -1418,6 +1430,10 @@ function saveGameState(game: ActiveGame): void {
   upsert(
     "negativeBudgetStreak",
     JSON.stringify(game.negativeBudgetStreak || {}),
+  );
+  upsert(
+    "npcNegativeBudgetStreak",
+    JSON.stringify(game.npcNegativeBudgetStreak || {}),
   );
   upsert(
     "boardBudgetWarned",

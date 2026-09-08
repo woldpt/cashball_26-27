@@ -1,5 +1,11 @@
 import type { ActiveGame, CoachMarketEvent } from "./types";
 import {
+  NPC_NEGATIVE_BUDGET_WARN_STREAK,
+  NPC_NEGATIVE_BUDGET_CUT_STREAK,
+  NPC_NEGATIVE_BUDGET_CUT_INTERVAL,
+  npcStructuralBreakEvenFolha,
+} from "./gameConstants";
+import {
   getAllTeamForms,
   getStandingsRows,
   logClubNews,
@@ -31,11 +37,22 @@ interface CoachDismissalDeps {
     excludeName?: string,
   ) => Promise<string[]>;
   getCoachAvatars: (names: string[]) => Promise<Record<string, number>>;
+  forceNpcWageCut: (
+    game: ActiveGame,
+    team: AnyRow,
+  ) => Promise<number>;
 }
 
 export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
-  const { io, runAll, runGet, saveGameState, getRoomCoaches, getCoachAvatars } =
-    deps;
+  const {
+    io,
+    runAll,
+    runGet,
+    saveGameState,
+    getRoomCoaches,
+    getCoachAvatars,
+    forceNpcWageCut,
+  } = deps;
 
   // ── Internal helpers ───────────────────────────────────────────────────────
 
@@ -719,6 +736,38 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     for (const team of npcTeams) {
       if (team.coach_is_human !== 0) continue; // só treinadores NPC (skip humanos/órfãos)
       if (team.division === 5) continue; // pool interno, invisível
+
+      // Insolvência ESTRUTURAL (independe da carência do treinador): a folha
+      // salarial excede o que a equipa ganha numa época inteira (break-even),
+      // por isso o saldo não se recupera sozinho. Um saldo só negativamente
+      // transitório (folha ≤ break-even, recuperável no patrocínio de fim de
+      // época) NÃO conta — só corta quem perde dinheiro com garantia.
+      const breakEven = npcStructuralBreakEvenFolha(team.division ?? 4);
+      const folhaRow = await runGet<{ w: number }>(
+        game.db,
+        "SELECT COALESCE(SUM(wage), 0) AS w FROM players WHERE team_id = ?",
+        [team.id],
+      );
+      const folha = folhaRow?.w ?? 0;
+      if ((team.budget ?? 0) < 0 && folha > breakEven) {
+        game.npcNegativeBudgetStreak[team.id] =
+          (game.npcNegativeBudgetStreak[team.id] ?? 0) + 1;
+        const streak = game.npcNegativeBudgetStreak[team.id];
+        if (streak === NPC_NEGATIVE_BUDGET_WARN_STREAK) {
+          logClubNews(game, "cost_cut", "Aviso de restrições", team.id, {
+            description: `A direção alerta: a folha salarial excede a receita e o orçamento está negativo há ${streak} semanas.`,
+          });
+        } else if (
+          streak >= NPC_NEGATIVE_BUDGET_CUT_STREAK &&
+          (streak - NPC_NEGATIVE_BUDGET_CUT_STREAK) %
+            NPC_NEGATIVE_BUDGET_CUT_INTERVAL ===
+            0
+        ) {
+          await forceNpcWageCut(game, team);
+        }
+      } else {
+        game.npcNegativeBudgetStreak[team.id] = 0;
+      }
 
       // Carência: só avalia forma após GRACE_MATCHES jogos do treinador atual.
       game.npcMatchesManaged[team.id] =

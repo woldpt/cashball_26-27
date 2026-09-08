@@ -558,6 +558,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		game.lastHalftimePayload = null;
 		game.dismissalsThisSeason = new Set<string>();
 		game.negativeBudgetStreak = {};
+		game.npcNegativeBudgetStreak = {};
 		game.boardBudgetWarned = {};
 		clearPhaseTimer(game);
 		game.phaseAcks = new Set();

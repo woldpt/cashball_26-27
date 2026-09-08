@@ -3,6 +3,7 @@ import type { CalendarEntry } from "./gameConstants";
 import {
   SEASON_CALENDAR,
   LOAN_WEEKLY_INSTALLMENT,
+  WEEKLY_BASE_INCOME,
   remainingSubstitutions,
   incrementSubCount,
 } from "./gameConstants";
@@ -96,6 +97,7 @@ interface WeeklyFlowDeps {
     usedProposals: Set<number>,
   ) => Promise<void>;
   resendPendingContractRequests: (game: ActiveGame) => Promise<void>;
+  processNpcAgentPressure: (game: ActiveGame) => Promise<void>;
   processNpcTransferActivity: (game: ActiveGame) => Promise<void>;
   refreshMarket: (game: ActiveGame, emitToRoom?: boolean) => void;
   processCoachEvents: (game: ActiveGame) => Promise<void>;
@@ -124,6 +126,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     processContractExpiries,
     processAgentRenegotiations,
     resendPendingContractRequests,
+    processNpcAgentPressure,
     processNpcTransferActivity,
     refreshMarket,
     processCoachEvents,
@@ -1185,6 +1188,12 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                   await processAgentRenegotiations(game, weeklyProposals);
                 } catch (_) {}
                 try {
+                  // Economia NPC: pressão salarial anti-acumulação (folha sobe
+                  // com riqueza/desempenho até ao teto sustentável). Correr logo
+                  // a seguir às negociações humanas, antes das transferências.
+                  await processNpcAgentPressure(game);
+                } catch (_) {}
+                try {
                   await processNpcTransferActivity(game);
                 } catch (_) {}
                 // Retomar leilões pausados durante o jogo (antes de refreshMarket
@@ -1324,14 +1333,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             // Already charged in a previous attempt for this slot.
             return resolve(true);
           }
-
-          const WEEKLY_BASE_INCOME: Record<number, number> = {
-            1: 80000,
-            2: 50000,
-            3: 35000,
-            4: 25000,
-            5: 12000,
-          };
 
           game.db.run("BEGIN TRANSACTION", (begErr: any) => {
             if (begErr) {

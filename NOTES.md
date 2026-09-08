@@ -8,6 +8,43 @@
 
 ## Em curso
 
+## Economia NPC — "supervisor" descentralizado (novo)
+
+- Objectivo: travar os dois desequilíbrios NPC sem um árbitro central — (P1)
+  NPC ricos a acumular saldos multimilionários e (P2) NPC em bancarrota sem
+  consequência. Fecha lacunas que já existiam: NPCs não sofrem pressão de
+  agente (só humanos, `contractHelpers`) e o loop de insolvência só tratava
+  humanos (`coachDismissalHelpers` loop 4 só via forma).
+- **P1 `processNpcAgentPressure`** (`contractHelpers.ts`, corre na cadeia
+  semanal logo após as negociações humanas): sobe gradualmente (prob ~6%/sem,
+  +15% máx) o salário de NPC subvalorizados rumo a `fairWage×(1+riqueza+forma)`
+  — mas só enquanto a folha ≤ `npcSustainableWeeklyFolha` (nunca provoca
+  insolvência). Ricos/formados pagam mais → a folha absorve o excedente.
+- **P2 no loop NPC de `processCoachEvents`**: insolvência é **estrutural**, não
+  saldo negativo transitório — só incrementa streak quando `budget<0` **E**
+  folha > `npcStructuralBreakEvenFolha` (base semanal + patrocínio anual/19).
+  Ao fim de N semanas seguidas (`NPC_NEGATIVE_BUDGET_CUT_STREAK`),
+  `forceNpcWageCut` coloca à venda (leilão isExClub) os excedentários de maior
+  ordenado, mantendo sempre o plantel ≥ mínimo por posição (`POS_MIN`).
+- `npcStructuralBreakEvenFolha`/`npcSustainableWeeklyFolha` em `gameConstants`
+  (promovi `WEEKLY_BASE_INCOME` para lá; `NPC_SEASON_WEEKS=19`
+  = SEASON_CALENDAR.length). Patrocínio amortizado pela época inteira.
+- Estado `npcNegativeBudgetStreak` (types + gameManager init/load/save + reset
+  fim-de-época em cupFlowHelpers). Wiring em index.ts (contractHelpers antes de
+  coachDismissal; helper passado a ambos).
+- **Observabilidade:** os eventos (novo contrato/reestruturação) vão para o
+  diário do clube NPC (`club_news`, `type:'renegotiation'`/`'cost_cut'`, sem
+  `amount` → não distorcem o gráfico de saldo que é reconstruído por type). Mas
+  esse diário é por-equipa e só visível ao próprio clube → o efeito
+  *visível ao jogador* é o dos jogadores forçados a aparecer no mercado/leilões
+  e no Histórico de Transferências. Registo no diário mantém-se (fonte canónica,
+  coerente com wages/income NPC).
+- Checks: server typecheck + build OK; `audit:gamestate 445WU8` 0 erros;
+  `audit:socketio` 0 erros. Sem mudança de layout → sem mobile-resp-check.
+- **Constantes são placeholder** (riqueza/forma caps, 2000000/0.25/0.15,
+  prob 0.06, cap ratio 0.95, streaks 2/4/3, 2 por corte): validar e afinar em
+  jogo real de 1–2 épocas (regra anti-overfit) — não verificado em runtime aqui.
+
 - **Gráfico de saldo — prémios de fim de época:** o gráfico (2 épocas, reconstruído a partir do diário `club_news`) mostrava o valor dos prémios de fim de época *esmagado* nas semanas do ano anterior em vez de um salto limpo. Causa: `applySeasonEnd` creditava ao `budget` (via `UPDATE`) os prémios de Campeão (Liga/div 2-4), Melhor Marcador e o patrocínio anual, **sem** os registar em `club_news` — a reconciliação inversa da âncora empurrava esse rendimento invisível para toda a linha do ano anterior.
   - Fix: `logClubNews` ganhou override opcional `data.year`/`data.matchweek` (`coreHelpers.ts`); em `cupFlowHelpers.ts` os 4 créditos agora são registados como `type:'prize'` etiquetados em `year+1, matchweek:1` → salto único no início da nova época (decisão do utilizador: semana 1 do novo ano, não fim do ano anterior).
   - Só corrige dali em diante (sem backfill de histórico). Verificar num jogo real que passou pela viragem de época.
