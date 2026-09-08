@@ -129,6 +129,25 @@ export function FinancesTab({
     currentBudget,
   ]);
 
+  // Composição das receitas (proporção) para a barra segmentada do painel.
+  const incomeSegments = useMemo(() => {
+    if (totalSeasonIncome <= 0) return [];
+    const parts = [
+      {
+        label: "Bilheteira",
+        v: financeData?.totalTicketRevenue || 0,
+        bg: "bg-primary",
+      },
+      {
+        label: "Patrocinadores",
+        v: financeData?.sponsorRevenue || 0,
+        bg: "bg-tertiary",
+      },
+      { label: "Vendas", v: financeData?.totalTransferIncome || 0, bg: "bg-sky-500" },
+    ].filter((p) => p.v > 0);
+    return parts.map((p) => ({ ...p, pct: (p.v / totalSeasonIncome) * 100 }));
+  }, [totalSeasonIncome, financeData]);
+
   return (
     <div className="space-y-4 short:space-y-2">
       {/* ── HERO ──────────────────────────────────────────────────────── */}
@@ -240,6 +259,34 @@ export function FinancesTab({
               {formatCurrency(totalSeasonIncome)}
             </span>
           </div>
+          {incomeSegments.length > 0 && (
+            <div className="pt-1 short:pt-0.5">
+              <div className="flex h-2 w-full overflow-hidden rounded-full gap-px">
+                {incomeSegments.map((s) => (
+                  <div
+                    key={s.label}
+                    className={`h-full ${s.bg}`}
+                    style={{ width: `${s.pct}%` }}
+                    title={`${s.label}: ${Math.round(s.pct)}%`}
+                  />
+                ))}
+              </div>
+              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
+                {incomeSegments.map((s) => (
+                  <span
+                    key={s.label}
+                    className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-on-surface-variant/70"
+                  >
+                    <span className={`h-2 w-2 rounded-[2px] ${s.bg}`} />
+                    {s.label}
+                    <span className="text-on-surface-variant/90 tabular-nums">
+                      {Math.round(s.pct)}%
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           <ul className="space-y-3 short:space-y-2">
             {(financeData?.ticketBreakdown?.length || 0) > 0 ? (
               <li className="space-y-1">

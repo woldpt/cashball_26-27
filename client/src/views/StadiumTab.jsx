@@ -42,6 +42,18 @@ export function StadiumTab({
 
   const atMaxCapacity = stadiumCapacity >= MAX_CAPACITY;
 
+  // Progresso da capacidade até ao máximo e obras restantes.
+  const capacityPct = Math.min(100, (stadiumCapacity / MAX_CAPACITY) * 100);
+  const worksToMax = Math.max(
+    0,
+    Math.ceil((MAX_CAPACITY - stadiumCapacity) / SEATS_PER_BUILD),
+  );
+  // Ocupação média (quando há jogos em casa).
+  const occupancyPct =
+    avgAttendance != null && stadiumCapacity > 0
+      ? Math.min(100, (avgAttendance / stadiumCapacity) * 100)
+      : null;
+
 
 
   return (
@@ -106,6 +118,38 @@ export function StadiumTab({
         />
       </div>
 
+      {/* ── OCUPAÇÃO MÉDIA ──────────────────────────────────────── */}
+      {occupancyPct != null && (
+        <div className="rounded-md bg-surface-container-low px-4 py-3 short:px-3 short:py-2">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+              Ocupação média
+            </span>
+            <span
+              className={`text-[10px] font-black tabular-nums ${
+                occupancyPct >= 95
+                  ? "text-tertiary"
+                  : occupancyPct >= 70
+                    ? "text-primary"
+                    : "text-on-surface-variant/80"
+              }`}
+            >
+              {Math.round(occupancyPct)}%
+            </span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-surface-bright">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-primary/50 to-primary transition-all duration-700"
+              style={{ width: `${occupancyPct}%` }}
+            />
+          </div>
+          <p className="mt-1.5 text-[10px] uppercase tracking-wider text-on-surface-variant/50">
+            {avgAttendance?.toLocaleString("pt-PT")} adeptos /{" "}
+            {stadiumCapacity.toLocaleString("pt-PT")} lugares
+          </p>
+        </div>
+      )}
+
       {/* ── EXPANSÃO ──────────────────────────────────────────────── */}
       <Panel
         title="Expansão do Estádio"
@@ -114,6 +158,27 @@ export function StadiumTab({
         padded={false}
       >
         <div className="p-3 sm:p-5 short:p-2.5">
+          {/* Progresso da capacidade até ao máximo */}
+          <div className="mb-4 sm:mb-5 short:mb-3">
+            <div className="mb-1 flex items-center justify-between text-[10px] font-black uppercase tracking-wider">
+              <span className="text-on-surface-variant">Capacidade</span>
+              <span className="tabular-nums text-on-surface-variant/90">
+                {stadiumCapacity.toLocaleString("pt-PT")} /{" "}
+                {MAX_CAPACITY.toLocaleString("pt-PT")}
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-surface-bright">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-tertiary/50 to-tertiary transition-all duration-700"
+                style={{ width: `${capacityPct}%` }}
+              />
+            </div>
+            {!atMaxCapacity && (
+              <p className="mt-1 text-[10px] uppercase tracking-wider text-on-surface-variant/50">
+                +{worksToMax} obra(s) até à capacidade máxima
+              </p>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 short:gap-2 mb-4 sm:mb-5 short:mb-3">
             <div className="bg-surface rounded-md border border-outline-variant/15 p-3 sm:p-4 short:p-2.5 flex flex-col gap-1 short:gap-0.5">
               <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
