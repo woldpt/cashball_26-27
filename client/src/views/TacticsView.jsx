@@ -470,7 +470,7 @@ export function TacticsView() {
       ) : (
         <div className="flex flex-col xl:flex-row gap-3 short:gap-1.5 xl:items-start">
           {/* COL 1 — FORMAÇÃO + MENTALIDADE */}
-          <div className={`xl:w-57.5 shrink-0 flex flex-col gap-2 short:gap-1.5 ${!isLineupComplete && !myReady ? "animate-heartbeat-border rounded-2xl" : ""}`}>
+          <div data-tour="tactic-lineup" className={`xl:w-57.5 shrink-0 flex flex-col gap-2 short:gap-1.5 ${!isLineupComplete && !myReady ? "animate-heartbeat-border rounded-2xl" : ""}`}>
             {/* Proximo jogo — mobile: moral + mentality side by side */}
             <div className="flex gap-2 xl:hidden">
               {nextMatchSummary && (
@@ -1056,7 +1056,7 @@ ${
           {/* COL 3 — CAMPO + JOGAR (desktop only — mobile usa FAB) */}
           <div className="max-xl:hidden xl:w-72.5 shrink-0 flex flex-col gap-2 short:gap-1.5">
             {/* Botao JOGAR — desktop */}
-            <div className="max-xl:hidden">
+            <div className="max-xl:hidden" data-tour="tactic-play">
               <button
                 onClick={isHalftime ? handleHalftimeReady : handleReady}
                 disabled={myReady || !canPlay}
@@ -1308,6 +1308,7 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
             : "play_arrow";
         return (
           <button
+            data-tour="tactic-play"
             onClick={fabHalftime ? handleHalftimeReady : handleReady}
             className={`xl:hidden fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all active:scale-90 duration-200 ${!myReady ? "animate-heartbeat" : ""}`}
             style={{

@@ -98,6 +98,7 @@ export function ClubTab({
   teamInfo,
   seasonYear,
   me,
+  onReplayTutorial,
   currentBudget,
   totalWeeklyWage,
   loanAmount,
@@ -241,6 +242,19 @@ export function ClubTab({
                     `Divisão ${teamInfo?.division}`}
                 </span>
                 <span className="text-[10px] text-on-surface-variant">{seasonYear}</span>
+                {onReplayTutorial && (
+                  <button
+                    type="button"
+                    onClick={onReplayTutorial}
+                    className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-primary border border-outline-variant/25 hover:border-primary/50 rounded px-2 py-0.5 transition-colors"
+                    title="Rever o tutorial passo a passo"
+                  >
+                    <span className="material-symbols-outlined text-[13px] leading-none">
+                      school
+                    </span>
+                    Rever tutorial
+                  </button>
+                )}
               </div>
 
               {/* Morale bar */}

@@ -51,6 +51,9 @@ import { TransferHub } from "./components/ui/TransferHub.jsx";
 import { DIVISION_NAMES } from "./constants/index.js";
 import { isSameTeamId } from "./utils/teamHelpers.js";
 import { useMobileLandscape } from "./hooks/useIsMobile.js";
+import { useCoachTutorial } from "./hooks/useCoachTutorial.js";
+import { CoachTutorial } from "./components/tutorial/CoachTutorial.jsx";
+import { COACH_TUTORIAL_STEPS } from "./components/tutorial/coachTutorialSteps.js";
 import { OfflineBanner } from "./components/shared/OfflineBanner.jsx";
 
 /**
@@ -229,6 +232,25 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
   // ── Derived ───────────────────────────────────────────────────────────
   const myReady = players.find((p) => p.name === me?.name)?.ready;
+
+  // ── Tutorial guiado (contas novas de Coach) ───────────────────────────
+  const {
+    tutorial,
+    startTutorial,
+    replayTutorial,
+    nextStep,
+    prevStep,
+    skipTutorial,
+    finishTutorial,
+  } = useCoachTutorial(me);
+
+  /** Navega para a tab do passo e abre o submenu mobile correspondente. */
+  const handleTutorialNavigate = (step) => {
+    if (!step) return;
+    if (step.tab && step.tab !== activeTab) navigateTab(step.tab);
+    setMobileSubMenu(step.submenu ?? null);
+    contentRef.current?.scrollTo(0, 0);
+  };
 
   // Badges da barra lateral: nº de leilões a decorrer e nº de jogadores em lista de transferências
   const liveAuctionCount = activeAuctions.filter(
@@ -768,6 +790,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               return (
               <motion.button
                 key={key}
+                data-tour={`nav-${key}`}
                 variants={{
                   hidden: { opacity: 0, x: -12 },
                   visible: {
@@ -834,6 +857,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             />
           )}
           <button
+            data-tour="nav-play"
             onClick={() => {
               if (isMatchInProgress) return;
               navigateTab("tactic");
@@ -960,6 +984,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     ].map(({ key, label, icon }) => (
                       <button
                         key={key}
+                        data-tour={`nav-${key}-sub`}
                         onClick={() => {
                           navigateTab(key);
                           setMobileSubMenu(null);
@@ -991,6 +1016,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     ].map(({ key, label, icon, badge }) => (
                       <button
                         key={key}
+                        data-tour={`nav-${key}-sub`}
                         onClick={() => {
                           navigateTab(key);
                           setMobileSubMenu(null);
@@ -1106,6 +1132,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               return (
                 <motion.button
                   whileTap={{ scale: 0.88 }}
+                  data-tour="nav-club-mobile"
                   onClick={() => {
                     navigateTab("club");
                     setMobileSubMenu(null);
@@ -1137,6 +1164,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               return (
                 <motion.button
                   whileTap={{ scale: 0.88 }}
+                  data-tour="nav-gestao"
                   onClick={() => setMobileSubMenu(isOpen ? null : "gestao")}
                   className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors relative ${
                     isChildActive || isOpen
@@ -1173,6 +1201,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   )}
                   <motion.button
                     whileTap={{ scale: 0.9 }}
+                    data-tour="nav-play-mobile"
                     onClick={() => {
                       navigateTab("tactic");
                       setMobileSubMenu(null);
@@ -1218,6 +1247,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               return (
                 <motion.button
                   whileTap={{ scale: 0.88 }}
+                  data-tour="nav-competicao"
                   onClick={() => setMobileSubMenu(isOpen ? null : "competicao")}
                   className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors relative ${
                     isChildActive || isOpen
@@ -1250,6 +1280,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               return (
                 <motion.button
                   whileTap={{ scale: 0.88 }}
+                  data-tour="nav-transferencias"
                   onClick={() =>
                     setMobileSubMenu(isOpen ? null : "transferencias")
                   }
@@ -1621,6 +1652,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                         teamInfo={teamInfo}
                         seasonYear={seasonYear}
                         me={me}
+                        onReplayTutorial={replayTutorial}
                         currentBudget={currentBudget}
                         totalWeeklyWage={totalWeeklyWage}
                         loanAmount={loanAmount}
@@ -1931,7 +1963,22 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         welcomeModal={dismissalModal ? null : welcomeModal}
         me={me}
         setWelcomeModal={setWelcomeModal}
+        onNewWelcomeClose={startTutorial}
       />
+
+      {tutorial.active && !isMatchInProgress && !welcomeModal && (
+        <CoachTutorial
+          stepIndex={tutorial.index}
+          onNavigate={handleTutorialNavigate}
+          onNext={() =>
+            tutorial.index >= COACH_TUTORIAL_STEPS.length - 1
+              ? finishTutorial()
+              : nextStep()
+          }
+          onBack={prevStep}
+          onSkip={skipTutorial}
+        />
+      )}
 
       <JobOfferModal
         jobOfferModal={jobOfferModal}

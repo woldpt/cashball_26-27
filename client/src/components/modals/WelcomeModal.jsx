@@ -9,9 +9,14 @@ import {
 } from "../../utils/localStorage.js";
 
 /**
- * @param {{ welcomeModal: object, me: object, setWelcomeModal: function }} props
+ * @param {{ welcomeModal: object, me: object, setWelcomeModal: function, onNewWelcomeClose?: function }} props
  */
-export function WelcomeModal({ welcomeModal, me, setWelcomeModal }) {
+export function WelcomeModal({
+  welcomeModal,
+  me,
+  setWelcomeModal,
+  onNewWelcomeClose,
+}) {
   return (
     <ModalShell
       visible={!!welcomeModal && !!me?.teamId}
@@ -234,12 +239,14 @@ export function WelcomeModal({ welcomeModal, me, setWelcomeModal }) {
               {/* Action button */}
               <button
                 onClick={() => {
-                  if (welcomeModal.isNew) {
+                  const wasNew = !!welcomeModal.isNew;
+                  if (wasNew) {
                     markWelcomeSeen(me.name, me.roomCode);
                   } else {
                     markWelcomeSeenThisSession(me.name, me.roomCode);
                   }
                   setWelcomeModal(null);
+                  if (wasNew) onNewWelcomeClose?.();
                 }}
                 className="w-full font-black py-2.5 short:py-2 rounded-lg text-sm uppercase tracking-widest transition-all active:scale-95 hover:-translate-y-px shadow-lg"
                 style={{
