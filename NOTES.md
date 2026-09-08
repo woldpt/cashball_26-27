@@ -144,6 +144,11 @@
 
 ## Último estado
 
+- **Palco de gala da Final da Taça (novo):** a final era um card pequeno isolado quando não participavas (`myMatch` nulo → hero com `return null`). Novo `CupFinalStage.jsx` (faixa 🏆 Final · Jamor, frente-a-frente das finalistas com crests `lg` + treinadores, medalhão VS com minuto, cenografia dourada + marca de água do troféu) com o `LiveMatchHero` em destaque dentro. A final tem SEMPRE palco: participas → intervenção normal; és espetador → hero em `readOnly` (marcador não clicável). `GameRoutes.jsx`: condição `isCupMatch && roundName === "Final"`, multiview de 1 card suprimida na final, MOM da final via lookup em `cupRoundResults`.
+  - **Ritmo de gala:** final sem humanos corria a 100 ms/min (sprint NPC). Nova constante `CUP_FINAL_SPECTATOR_MS_PER_MINUTE = 500` (`gameConstants.ts`): aplica-se no tempo regulamentar (`weeklyFlowHelpers`, via `entry.roundName`) e no prolongamento (`engine.simulateExtraTime` via `ctx.cupFinalSpectator`, posto em `cupFlowHelpers`). Com humanos mantém 1000 ms.
+  - Armadilhas: `edit` do pi com erro de serialização num ficheiro (contornado com python); badge de treinador do `TeamCrest` sobrepunha o minuto no palco → palco não passa `coach` (nomes já estão por baixo, em âmbar).
+  - Checks: server `typecheck` OK; client `lint` 0 erros + `check:types` OK; `audit:socketio` 0 erros; `audit:gamestate 445WU8` 0 erros; mobile portrait 150/150 + landscape 180/180 PASS (harness novo `cupfinal-resp-test.html/.jsx` com os dois regimes). Falta teste manual numa sala real na semana da final.
+
 - **Classificação virtual com seletor de divisão (novo):** o `LiveStandingsPanel` (coluna virtual na simulação) mostrava só a tua divisão. Agora tem um dropdown compacto no header com as divisões existentes em `teams` — abre sempre na tua por defeito (estado local, sem persistência), e nas outras divisões o destaque são os selos de treinador humano (iniciais) para seguir um amigo; "TU", cores de subida/descida e legenda seguem a divisão visível. Só tocado `LiveStandings.jsx` (`GameRoutes.jsx` já passa tudo).
   - Checks: client `lint` 0 erros + `check:types` OK. Só um controlo dentro do header existente → sem mobile-resp-check (vista ao vivo fora do harness).
 

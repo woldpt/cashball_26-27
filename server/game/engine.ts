@@ -15,6 +15,7 @@ import {
   incrementSubCount,
   RES_NEUTRAL,
   EMERGENCY_GK_SKILL,
+  CUP_FINAL_SPECTATOR_MS_PER_MINUTE,
 } from "../gameConstants";
 
 // Re-export so external files can still import from "./game/engine"
@@ -102,6 +103,8 @@ export type SegmentContext = {
   rng?: Rng;
   onMinute?: (minute: number) => unknown;
   hasHumanInET?: boolean;
+  // Final da Taça sem humanos: ritmo de gala (meio-tempo) no prolongamento.
+  cupFinalSpectator?: boolean;
 };
 
 // Helpers promisificados (a DB é callback-style) — ÚNICA implementação.
@@ -3445,6 +3448,8 @@ export async function simulateExtraTime(
   // before the human fixture's minute-91 update arrives, causing the clock to
   // visibly jump forward and then snap back.
   // If no human is in ANY ET fixture, run fast (100ms) to avoid wasting time.
+  // Exceção: a Final sem humanos tem ritmo de gala (meio-tempo) para se
+  // acompanhar como espetador — igual ao tempo regulamentar da final.
   const anyHumanInET =
     context.hasHumanInET ??
     (context.game &&
@@ -3453,7 +3458,11 @@ export async function simulateExtraTime(
           !!p.socketId &&
           (p.teamId === fixture.homeTeamId || p.teamId === fixture.awayTeamId),
       ));
-  const msPerMinute = anyHumanInET ? 1000 : 100;
+  const msPerMinute = anyHumanInET
+    ? 1000
+    : context.cupFinalSpectator
+      ? CUP_FINAL_SPECTATOR_MS_PER_MINUTE
+      : 100;
 
   const emitMinuteUpdate = (minute: number) => {
     if (!context.io || !context.game) return;

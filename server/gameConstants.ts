@@ -12,6 +12,10 @@ export const RES_MIN = 1;
 export const RES_MAX = 50;
 /** Referência económica: preserva o fator médio antigo form/90 (100→1,11). */
 export const ECON_FORM_REF = 100 / 90;
+/** Ritmo da simulação ao vivo (ms por minuto de jogo): 1000 com humanos,
+ * 100 nas rondas só-NPC. A Final sem humanos corre a meio-tempo (500)
+ * para se acompanhar como espetador — ritmo de gala. */
+export const CUP_FINAL_SPECTATOR_MS_PER_MINUTE = 500;
 
 export const DIVISION_NAMES: Record<number, string> = {
   1: "Primeira Liga",

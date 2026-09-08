@@ -1,7 +1,9 @@
+import { useMemo } from "react";
 import { socket } from "./socket.js";
 import { useGame } from "./contexts/GameContext.jsx";
 import {
   LiveMatchHero,
+  CupFinalStage,
   LiveFixtureRow,
   LiveStandingsPanel,
   isDrawnAt90,
@@ -11,6 +13,7 @@ import { BracketTab } from "./views/BracketTab.jsx";
 import { CupTab } from "./views/CupTab.jsx";
 import { CalendarioTab } from "./views/CalendarioTab.jsx";
 import { ClubTab } from "./views/ClubTab.jsx";
+import { JournalTab } from "./views/JournalTab.jsx";
 import { FinancesTab } from "./views/FinancesTab.jsx";
 import { StadiumTab } from "./views/StadiumTab.jsx";
 import { PlayersTab } from "./views/PlayersTab.jsx";
@@ -96,6 +99,8 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
     // mercado / scout
     filteredMarketPlayers,
     transferHistory,
+    // jornal global
+    globalNews,
     marketPositionFilter,
     setMarketPositionFilter,
     marketSort,
@@ -132,8 +137,41 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
     players.some(
       (p) => p.teamId === m?.homeTeamId || p.teamId === m?.awayTeamId,
     );
+  // MOM do meu jogo: a liga já traz `mom` no fixture final (matchResults);
+  // na Taça o fixture (matchResults simplificado) não traz — procurar no
+  // payload da ronda (cupRoundResults.results).
+  const myMatchMom = useMemo(() => {
+    if (myMatch?.mom) return myMatch.mom;
+    if (!isCupMatch || !myMatch || !cupRoundResults?.results) return null;
+    const row = cupRoundResults.results.find(
+      (r) =>
+        Number(r.homeTeamId) === Number(myMatch.homeTeamId) &&
+        Number(r.awayTeamId) === Number(myMatch.awayTeamId),
+    );
+    return row?.mom || null;
+  }, [myMatch, isCupMatch, cupRoundResults]);
+
   const sortHumanFirst = (a, b) =>
     Number(isHumanFixture(b)) - Number(isHumanFixture(a));
+
+  // Final da Taça: palco de gala quer participes quer não. Sem o teu jogo,
+  // a fixture da final (results[0] — a final é sempre jogo único).
+  const isCupFinal = isCupMatch && cupMatchRoundName === "Final";
+  const finalFixture = isCupFinal
+    ? (myMatch ?? matchResults?.results?.[0] ?? null)
+    : null;
+  // MOM da final (para o palco): a mesma lookup do teu jogo, mas sobre a
+  // fixture da final — quando participas, coincide com myMatchMom.
+  const finalMom = useMemo(() => {
+    if (!isCupFinal || !finalFixture || !cupRoundResults?.results)
+      return null;
+    const row = cupRoundResults.results.find(
+      (r) =>
+        Number(r.homeTeamId) === Number(finalFixture.homeTeamId) &&
+        Number(r.awayTeamId) === Number(finalFixture.awayTeamId),
+    );
+    return row?.mom || null;
+  }, [isCupFinal, finalFixture, cupRoundResults]);
 
   return (
     <>
@@ -141,6 +179,43 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                       <div
                         className={`bg-surface-container text-on-surface font-body p-3 sm:p-6 border border-outline-variant/20 shadow-sm relative overflow-hidden${isMatchInProgress ? " rounded-lg" : " min-h-150 rounded-lg"}`}
                       >
+                        {/* ── FINAL DA TAÇA: palco de gala (participes ou não) ── */}
+                        {isCupFinal && finalFixture ? (
+                          <div className="mb-3">
+                            <CupFinalStage
+                              finalFixture={finalFixture}
+                              mom={finalMom}
+                              teams={teams}
+                              players={players}
+                              me={me}
+                              liveMinute={liveMinute}
+                              isPlayingMatch={isPlayingMatch}
+                              isMatchActionPending={isMatchActionPending}
+                              cupMatchRoundName={cupMatchRoundName}
+                              substitutionPause={substitutionPause}
+                              goalFlashRef={goalFlashRef}
+                              isCupExtraTime={isCupExtraTime}
+                              matchResults={matchResults}
+                              readOnly={!myMatch}
+                              onScoreClick={
+                                myMatch
+                                  ? () => {
+                                      if (
+                                        isPlayingMatch &&
+                                        !isMatchActionPending
+                                      ) {
+                                        socket.emit("request_substitution");
+                                      } else {
+                                        setMatchDetailFixture(myMatch);
+                                        setShowMatchDetail(true);
+                                      }
+                                    }
+                                  : undefined
+                              }
+                            />
+                          </div>
+                        ) : (
+                        <>
                         {/* ── ROW 1: MY GAME + VIRTUAL CLASSIFICATION ── */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
                           <div
@@ -150,6 +225,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                             {matchResults && (
                               <LiveMatchHero
                                 myMatch={myMatch}
+                                mom={myMatchMom}
                                 teams={teams}
                                 players={players}
                                 me={me}
@@ -191,6 +267,8 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                             </div>
                           )}
                         </div>
+                        </>
+                        )}
 
                         {/* ── ROW 2: ALL DIVISIONS ── */}
                         {!isCupMatch &&
@@ -271,8 +349,8 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                             );
                           })()}
 
-                        {/* ── CUP MULTIVIEW (all other games in responsive columns) ── */}
-                        {isCupMatch && matchResults?.results && (
+                        {/* ── CUP MULTIVIEW (rondas anteriores; a final tem palco próprio) ── */}
+                        {isCupMatch && !isCupFinal && matchResults?.results && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                             {matchResults.results
                               .filter(
@@ -366,6 +444,20 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                         palmaresTeamId={palmaresTeamId}
                         palmares={palmares}
                         clubNews={clubNews}
+                      />
+                    )}
+
+                    {activeTab === "jornal" && (
+                      <JournalTab
+                        globalNews={globalNews}
+                        teams={teams}
+                        me={me}
+                        seasonYear={seasonYear}
+                        onOpenPlayerHistory={(player) =>
+                          socket.emit("requestPlayerHistory", {
+                            playerId: player.id,
+                          })
+                        }
                       />
                     )}
 

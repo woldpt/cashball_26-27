@@ -1134,6 +1134,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			await Promise.all(
 				drawnSetups.map(({ fixture, t1, t2, ctx }) => {
 					(ctx as any).hasHumanInET = humanInAnyDraw;
+					// Ritmo de gala no prolongamento da final sem humanos (ver engine).
+					(ctx as any).cupFinalSpectator =
+						roundName === "Final" && !humanInAnyDraw;
 					return simulateExtraTime(game.db, fixture, t1, t2, ctx);
 				}),
 			);

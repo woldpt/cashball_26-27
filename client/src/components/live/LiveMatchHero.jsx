@@ -37,6 +37,7 @@ const COMMENTARY_EFFECTS = {
 /**
  * @param {Object} props
  * @param {Object|null} props.myMatch
+ * @param {Object|null} props.mom  - {home, away} do "Jogador do Jogo" (pós-jogo)
  * @param {Array} props.teams
  * @param {Array} props.players
  * @param {Object} props.me
@@ -51,9 +52,12 @@ const COMMENTARY_EFFECTS = {
  * @param {boolean} props.isCupExtraTime
  * @param {Object|null} props.matchResults
  * @param {Function} props.onScoreClick
+ * @param {boolean} [props.readOnly] - modo só-visualização (final sem o
+ *   utilizador): o marcador não é clicável nem pede substituições.
  */
 export function LiveMatchHero({
   myMatch,
+  mom,
   teams,
   players,
   me,
@@ -67,6 +71,7 @@ export function LiveMatchHero({
   isCupExtraTime,
   matchResults,
   onScoreClick,
+  readOnly = false,
 }) {
   if (!myMatch) return null;
 
@@ -275,15 +280,19 @@ export function LiveMatchHero({
               </div>
             </div>
 
-            {/* Center score — clique para substituição/detalhe */}
+            {/* Center score — clique para substituição/detalhe (só-visualização na final neutra) */}
             <button
-              onClick={onScoreClick}
+              onClick={readOnly ? undefined : onScoreClick}
               title={
-                isPlayingMatch && !isMatchActionPending
-                  ? "Pedir substituição"
-                  : "Ver detalhes da partida"
+                readOnly
+                  ? "Final da Taça"
+                  : isPlayingMatch && !isMatchActionPending
+                    ? "Pedir substituição"
+                    : "Ver detalhes da partida"
               }
-              className="shrink-0 flex flex-col items-center justify-center px-1.5 min-[430px]:px-2.5 sm:px-6 py-2 bg-surface/80 border-x border-outline-variant/15 cursor-pointer group"
+              aria-disabled={readOnly || undefined}
+              tabIndex={readOnly ? -1 : undefined}
+              className={`shrink-0 flex flex-col items-center justify-center px-1.5 min-[430px]:px-2.5 sm:px-6 py-2 bg-surface/80 border-x border-outline-variant/15 ${readOnly ? "cursor-default" : "cursor-pointer group"}`}
             >
               <div className="font-headline font-black text-2xl min-[430px]:text-3xl sm:text-5xl tracking-tighter tabular-nums flex items-center gap-1 min-[430px]:gap-1.5 sm:gap-2 whitespace-nowrap">
                 <span style={flashStyle(myHomeFlashing)}>{homeGoals.length}</span>
@@ -318,6 +327,26 @@ export function LiveMatchHero({
             </div>
           </div>
         </div>
+
+        {/* ── Jogador do Jogo (pós-jogo) ── */}
+        {mom && !isPlayingMatch && (mom.home || mom.away) && (
+          <div className="w-full max-w-2xl mt-3 rounded-md border border-amber-500/25 bg-amber-500/[0.07] px-3 py-2">
+            <p className="text-[9px] font-black uppercase tracking-widest text-amber-400 mb-1.5">
+              ⭐ Jogador do Jogo
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="flex-1 min-w-0 truncate text-left text-xs font-bold text-on-surface">
+                {mom.home ? mom.home.playerName : "—"}
+              </span>
+              <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
+                vs
+              </span>
+              <span className="flex-1 min-w-0 truncate text-right text-xs font-bold text-on-surface">
+                {mom.away ? mom.away.playerName : "—"}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* ── Barra de cronómetro (sob o marcador) ── */}
         <div className="w-full max-w-2xl mt-3 px-1">

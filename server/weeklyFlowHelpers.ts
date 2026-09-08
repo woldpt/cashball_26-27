@@ -4,6 +4,7 @@ import {
   SEASON_CALENDAR,
   LOAN_WEEKLY_INSTALLMENT,
   WEEKLY_BASE_INCOME,
+  CUP_FINAL_SPECTATOR_MS_PER_MINUTE,
   remainingSubstitutions,
   incrementSubCount,
 } from "./gameConstants";
@@ -355,7 +356,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           (p.teamId === f.homeTeamId || p.teamId === f.awayTeamId),
       ),
     );
-    const effectiveMsPerMinute = humanInFixtures ? MS_PER_GAME_MINUTE : 100;
+    const effectiveMsPerMinute = humanInFixtures
+      ? MS_PER_GAME_MINUTE
+      : entry?.type === "cup" && (entry as any)?.roundName === "Final"
+        ? CUP_FINAL_SPECTATOR_MS_PER_MINUTE
+        : 100;
 
     // At the start of the second half, apply halftime tactic changes (substitutions/style)
     // to the cached squads. fixture._homeSquad/_awaySquad were set during the first half and
