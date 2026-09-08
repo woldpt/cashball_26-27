@@ -211,7 +211,7 @@ export function MatchPage({
 		!!fixture &&
 		Number(fixture.homeTeamId) !== Number(myTeamId) &&
 		Number(fixture.awayTeamId) !== Number(myTeamId);
-	const sidebarLeft = sidebarCollapsed ? "lg:left-14" : "lg:left-64";
+	const sidebarLeft = sidebarCollapsed ? "lg:left-[var(--sidebar-w-collapsed)]" : "lg:left-[var(--sidebar-w)]";
 
 	// ── Mode-based rendering ──────────────────────────────────────────────
 	const isIntervencao = mode === "halftime" || mode === "action";

@@ -10,6 +10,7 @@ import { isAdminCoach } from "./components/admin/adminApi.js";
 import { isSameTeamId } from "./utils/teamHelpers.js";
 import { useMobileLandscape } from "./hooks/useIsMobile.js";
 import { useCoachTutorial } from "./hooks/useCoachTutorial.js";
+import { NAV_GROUPS, getGroupTabKeys, getGroupTabs } from "./constants/navigation.js";
 import { CoachTutorial } from "./components/tutorial/CoachTutorial.jsx";
 import { COACH_TUTORIAL_STEPS } from "./components/tutorial/coachTutorialSteps.js";
 import { OfflineBanner } from "./components/shared/OfflineBanner.jsx";
@@ -570,7 +571,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
       <nav
-        className={`hidden lg:flex fixed left-0 top-[var(--header-h)] bottom-0 flex-col z-10 transition-all duration-200 bg-surface-container-high border-r border-outline-variant/15 ${sidebarCollapsed ? "w-14" : "w-64"}`}
+        aria-label="Navegação principal"
+        className={`hidden lg:flex fixed left-0 top-[var(--header-h)] bottom-0 flex-col z-10 transition-all duration-200 bg-surface-container-high border-r border-outline-variant/15 ${sidebarCollapsed ? "w-[var(--sidebar-w-collapsed)]" : "w-[var(--sidebar-w)]"}`}
       >
         {/* Toggle button */}
         <button
@@ -600,37 +602,36 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               visible: { transition: { staggerChildren: 0.055 } },
             }}
           >
-            {[
-              { key: "club", label: "Clube", icon: "groups_3" },
-              { key: "finances", label: "Finanças", icon: "payments" },
-              { key: "stadium", label: "Estádio", icon: "stadium" },
-              { key: "players", label: "Plantel", icon: "group" },
-              { key: "training", label: "Treino", icon: "fitness_center" },
-              {
-                key: "calendario",
-                label: "Calendário",
-                icon: "calendar_month",
-              },
-              {
-                key: "standings",
-                label: "Classificações",
-                icon: "leaderboard",
-              },
-              {
-                key: "bracket",
-                label: "Taça",
-                icon: "emoji_events",
-              },
-              { key: "market", label: "Mercado", icon: "swap_horiz" },
-              { key: "leiloes", label: "Leilões", icon: "gavel" },
-              { key: "scout", label: "Scout", icon: "search" },
-            ].map(({ key, label, icon }) => {
+            {NAV_GROUPS.map((group, gi) => (
+              <motion.div
+                key={group.id}
+                variants={{
+                  hidden: {},
+                  visible: { transition: { staggerChildren: 0.055 } },
+                }}
+              >
+                {gi > 0 && !sidebarCollapsed && (
+                  <p
+                    aria-hidden
+                    className="px-3 pt-3 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/50"
+                  >
+                    {group.label}
+                  </p>
+                )}
+                {gi > 0 && sidebarCollapsed && (
+                  <div
+                    aria-hidden
+                    className="mx-auto my-2 w-6 border-t border-outline-variant/25"
+                  />
+                )}
+                {group.tabs.map(({ key, label, icon, cupBracket }) => {
               const badgeCount =
                 key === "leiloes"
                   ? liveAuctionCount
                   : key === "market"
                     ? marketListedCount
                     : 0;
+              const isActive = activeTab === key;
               return (
               <motion.button
                 key={key}
@@ -646,26 +647,28 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 onClick={() => {
                   if (isMatchInProgress) return;
                   navigateTab(key);
-                  if (key === "bracket") socket.emit("requestCupBracket");
+                  if (cupBracket) socket.emit("requestCupBracket");
                   contentRef.current?.scrollTo(0, 0);
                 }}
                 title={sidebarCollapsed ? label : undefined}
-                className={`relative w-full flex items-center gap-3 px-2 py-2.5 text-sm font-bold rounded-lg transition-all text-left ${sidebarCollapsed ? "justify-center" : ""} ${
+                aria-current={isActive ? "page" : undefined}
+                aria-disabled={isMatchInProgress || undefined}
+                className={`relative w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold rounded-lg transition-all text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${sidebarCollapsed ? "justify-center" : ""} ${
                   isMatchInProgress
                     ? "text-on-surface-variant/25 cursor-not-allowed"
-                    : activeTab === key
+                    : isActive
                       ? "text-primary"
                       : "text-on-surface-variant hover:bg-surface-bright hover:text-on-surface"
                 }`}
               >
-                {activeTab === key && (
+                {isActive && (
                   <motion.span
                     layoutId="sidebarTabIndicator"
-                    className="absolute inset-0 rounded-lg bg-primary-container/25"
+                    className="absolute inset-0 rounded-lg bg-primary-container/25 ring-1 ring-inset ring-primary/20"
                     transition={SPRING.indicator}
                   />
                 )}
-                <span className="relative material-symbols-outlined text-[20px] shrink-0 leading-none">
+                <span aria-hidden className="relative material-symbols-outlined text-[20px] shrink-0 leading-none">
                   {icon}
                 </span>
                 {!sidebarCollapsed && (
@@ -673,7 +676,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 )}
                 {badgeCount > 0 && (
                   <span
-                    className={`absolute flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none ${
+                    className={`absolute flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none tabular-nums ${
                       sidebarCollapsed
                         ? "-top-1 -right-1 min-w-[18px] h-[18px] px-1 text-[10px]"
                         : "right-2 top-1/2 -translate-y-1/2 min-w-5 h-5 px-1.5 text-[10px]"
@@ -686,6 +689,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               </motion.button>
               );
             })}
+              </motion.div>
+            ))}
           </motion.div>
         </div>
 
@@ -728,18 +733,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   : "bg-primary/15 text-primary border border-primary/50 hover:bg-primary/25 shadow-md shadow-primary/20"
             }`}
           >
-            {/* shimmer sweep (idle only) */}
-            {!isMatchInProgress && activeTab !== "tactic" && !myReady && (
-              <span
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background:
-                    "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.22) 50%, transparent 70%)",
-                  animation: "shimmer-sweep 2.6s ease-in-out infinite",
-                }}
-              />
-            )}
-            <span className="material-symbols-outlined text-[20px] shrink-0 leading-none relative z-10">
+            <span aria-hidden className="material-symbols-outlined text-[20px] shrink-0 leading-none relative z-10">
               {isMatchInProgress ? "sensors" : "strategy"}
             </span>
             {!sidebarCollapsed && (
@@ -808,24 +802,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               <div className="bg-surface-container-high border border-outline-variant/30 rounded-xl shadow-2xl overflow-hidden">
                 {mobileSubMenu === "gestao" && (
                   <div className="flex">
-                    {[
-                      {
-                        key: "finances",
-                        label: "Finanças",
-                        icon: "payments",
-                      },
-                      {
-                        key: "stadium",
-                        label: "Estádio",
-                        icon: "stadium",
-                      },
-                      { key: "players", label: "Plantel", icon: "group" },
-                      {
-                        key: "training",
-                        label: "Treino",
-                        icon: "fitness_center",
-                      },
-                    ].map(({ key, label, icon }) => (
+                    {getGroupTabs("gestao").map(({ key, shortLabel, icon }) => (
                       <button
                         key={key}
                         data-tour={`nav-${key}-sub`}
@@ -844,7 +821,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                           {icon}
                         </span>
                         <span className="text-[10px] font-black uppercase tracking-wider">
-                          {label}
+                          {shortLabel}
                         </span>
                       </button>
                     ))}
@@ -853,11 +830,14 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 {mobileSubMenu === "transferencias" && (
                   <div className="flex">
                     {/* eslint-disable react-hooks/refs -- callbacks de ref intencionais para medir posição dos badges */}
-                    {[
-                      { key: "market", label: "Mercado", icon: "swap_horiz", badge: marketListedCount },
-                      { key: "leiloes", label: "Leilões", icon: "gavel", badge: liveAuctionCount },
-                      { key: "scout", label: "Scout", icon: "search", badge: 0 },
-                    ].map(({ key, label, icon, badge }) => (
+                    {getGroupTabs("transferencias").map(({ key, shortLabel, icon }) => {
+                      const badge =
+                        key === "market"
+                          ? marketListedCount
+                          : key === "leiloes"
+                            ? liveAuctionCount
+                            : 0;
+                      return (
                       <button
                         key={key}
                         data-tour={`nav-${key}-sub`}
@@ -906,37 +886,22 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                           )}
                         </span>
                         <span className="text-[10px] font-black uppercase tracking-wider">
-                          {label}
+                          {shortLabel}
                         </span>
                       </button>
-                    ))}
+                      );
+                    })}
                     {/* eslint-enable react-hooks/refs */}
                   </div>
                 )}
                 {mobileSubMenu === "competicao" && (
                   <div className="flex">
-                    {[
-                      {
-                        key: "standings",
-                        label: "Classif.",
-                        icon: "leaderboard",
-                      },
-                      {
-                        key: "calendario",
-                        label: "Calendário",
-                        icon: "calendar_month",
-                      },
-                      {
-                        key: "bracket",
-                        label: "Taça",
-                        icon: "emoji_events",
-                      },
-                    ].map(({ key, label, icon }) => (
+                    {getGroupTabs("competicao").map(({ key, shortLabel, icon, cupBracket }) => (
                       <button
                         key={key}
                         onClick={() => {
                           navigateTab(key);
-                          if (key === "bracket")
+                          if (cupBracket)
                             socket.emit("requestCupBracket");
                           setMobileSubMenu(null);
                           contentRef.current?.scrollTo(0, 0);
@@ -951,7 +916,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                           {icon}
                         </span>
                         <span className="text-[10px] font-black uppercase tracking-wider">
-                          {label}
+                          {shortLabel}
                         </span>
                       </button>
                     ))}
@@ -964,6 +929,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
           {/* Main nav bar — 5 buttons, JOGAR no centro */}
           <nav
+            aria-label="Navegação móvel"
             className={
               isMobileLandscape
                 ? "lg:hidden fixed left-0 top-[var(--header-h)] bottom-0 w-[var(--rail-w)] z-40 flex flex-col bg-surface-container-high/95 backdrop-blur-sm border-r border-outline-variant/30 py-2 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
@@ -1003,7 +969,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
             {/* Gestão (Finanças + Plantel) */}
             {(() => {
-              const isChildActive = ["finances", "players"].includes(activeTab);
+              const isChildActive = getGroupTabKeys("gestao").includes(activeTab);
               const isOpen = mobileSubMenu === "gestao";
               return (
                 <motion.button
@@ -1062,18 +1028,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     }`}
                     style={isMobileLandscape ? undefined : { marginBottom: "10px" }}
                   >
-                    {/* shimmer sweep (idle) */}
-                    {!isActive && !myReady && (
-                      <span
-                        className="absolute inset-0 pointer-events-none"
-                        style={{
-                          background:
-                            "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%)",
-                          animation: "shimmer-sweep 2.6s ease-in-out infinite",
-                        }}
-                      />
-                    )}
-                    <span className="material-symbols-outlined text-[24px] leading-none relative z-10">
+                    <span aria-hidden className="material-symbols-outlined text-[24px] leading-none relative z-10">
                       strategy
                     </span>
                     <span className="relative z-10 leading-none">JOGAR</span>
@@ -1084,7 +1039,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
 
             {/* Competição (Classificações + Calendário) */}
             {(() => {
-              const isChildActive = ["standings", "calendario"].includes(
+              const isChildActive = getGroupTabKeys("competicao").includes(
                 activeTab,
               );
               const isOpen = mobileSubMenu === "competicao";
@@ -1117,7 +1072,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             {/* Transferências (Mercado + Leilões) */}
             {/* eslint-disable react-hooks/refs */}
             {(() => {
-              const isChildActive = ["market", "leiloes", "scout"].includes(
+              const isChildActive = getGroupTabKeys("transferencias").includes(
                 activeTab,
               );
               const isOpen = mobileSubMenu === "transferencias";
@@ -1225,7 +1180,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               // conteúdo; reservamos pb-16 (igual ao retrato) para o conteúdo
               // não ser coberto, em vez de pb-3.
               ? `transition-all duration-200 pt-[var(--header-h)] ${isMatchInProgress ? "pb-16 ml-0" : "pb-3 ml-[var(--rail-w)]"}`
-              : `pt-[var(--header-h)] pb-16 lg:pb-0 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-14" : "lg:ml-64"}`
+              : `pt-[var(--header-h)] pb-16 lg:pb-0 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-[var(--sidebar-w-collapsed)]" : "lg:ml-[var(--sidebar-w)]"}`
           }`}
         >
           {/* Wrapper de scroll: a maioria das tabs rola aqui (mesma UX de antes,

@@ -144,6 +144,9 @@
 
 ## Último estado
 
+- **Sidebar com secções + grupos de navegação canónicos (novo):** `constants/navigation.js` (NAV_GROUPS: Clube/Gestão/Competição/Transferências; `getGroupTabs`/`getGroupTabKeys`) é agora a fonte única — desktop e fly-ups mobile derivam daqui. Desktop ganha cabeçalhos de secção discretos (divisores em modo recolhido), ordem Scout→Mercado→Leilões e Classificações antes de Calendário; indicador ativo com `ring-primary/20`; `aria-label` nos navs, `aria-current="page"` e `focus-visible`. Corrige 2 bugs de destaque mobile (Estádio/Treino não acendiam Gestão; Taça não acendia Competição). JOGAR acalmado (fora o `shimmer-sweep`, ficam halo+heartbeat+ping). Larguras em vars (`--sidebar-w`/`--sidebar-w-collapsed`, MatchPage incluído; STYLE §7 atualizado).
+  - Checks: client `lint` + `check:types` OK; `test:breakpoints` OK; mobile portrait 140/140 + landscape 168/168 PASS.
+
 - **Visual — empty states carismáticos (eixo 4, início):** componente partilhado `EmptyState.jsx` ganhou (1) aurora ténue de `primary` no topo (`.empty-aurora`, imagem radial sobre o `background-color` token — molda-se aos cantos sem `overflow-hidden`) e (2) emoji num medalhão `surface-bright` com ring sutil + brilho interno + flutuação (`.empty-float`, gated `prefers-reduced-motion`). Aplica-se a todos os ~16 consumidores sem tocar layouts/textos. Checks: lint + check:types OK; mobile portrait 140/140 e landscape 168/168. Commit `027af1c`.
   - Pendentes no eixo 4: crestes/branding e onboarding/tutorial. `IntervencaoView` tem `EmptyState` local separado — não afetado.
 

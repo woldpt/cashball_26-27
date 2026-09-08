@@ -8,14 +8,16 @@
 @custom-variant short (@media (max-height: 560px));
 
 /* Chrome geometry — fonte única das alturas/insets do shell fixo (header,
-   rail lateral). Os offsets de conteúdo e dos elementos fixos derivam destas
-   vars (ex. `pt-[var(--header-h)]`), NUNCA de números à mão, para mudar a
+   rail lateral, sidebar desktop). Os offsets de conteúdo e dos elementos
+   fixos derivam destas vars (ex. `pt-[var(--header-h)]`), NUNCA de números à mão, para mudar a
    altura do header num sítio e tudo acompanhar. Default = desktop/portrait;
    o override de telemóvel landscape (header compacto + rail à esquerda) usa
    a mesma media query dos hooks (useMobileLandscape). */
 :root {
   --header-h: 3.5rem; /* header fixo no topo (h-14: desktop e portrait) */
   --rail-w: 4rem; /* reserva lateral esquerda (w-16, apenas landscape) */
+  --sidebar-w: 16rem; /* sidebar desktop expandida (w-64) */
+  --sidebar-w-collapsed: 3.5rem; /* sidebar desktop recolhida (w-14) */
 }
 @media (orientation: landscape) and (max-width: 1023px) {
   :root {

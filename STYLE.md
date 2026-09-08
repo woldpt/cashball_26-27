@@ -102,7 +102,7 @@ Colunas por posição (`flex items-end`, altura 80px): trilho `bg-primary/10 rou
 | `md` (`hidden md:flex`) | Atributos (Agr/Res/For), Ordenado + Valor |
 | `xl` (`hidden xl:flex`) | Stats (Jogos, Golos, Vermelhos, Lesões) |
 
-Paddings: `p-3 md:p-4`; widgets: `grid-cols-1 sm:grid-cols-3`. Offsets do sidebar: elementos fixos/absolutos usam `lg:left-14` (sidebar compacta) / `lg:left-64` (expandida).
+Paddings: `p-3 md:p-4`; widgets: `grid-cols-1 sm:grid-cols-3`. Navegação: grupos canónicos em `constants/navigation.js` (Clube/Gestão/Competição/Transferências); offsets do sidebar: elementos fixos/absolutos usam `lg:left-[var(--sidebar-w-collapsed)]` / `lg:left-[var(--sidebar-w)]`.
 
 ## 8. Efeitos
 
