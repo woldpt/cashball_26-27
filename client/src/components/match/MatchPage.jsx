@@ -41,6 +41,7 @@ export function MatchPage({
 	sidebarCollapsed,
 	matchResults,
 	isCupExtraTime,
+	cupRoundResults,
 }) {
 	// ── Tactic state & handlers from context ─────────────────────────────────
 	const {
@@ -63,6 +64,20 @@ export function MatchPage({
 
 	// Telemóvel em horizontal: largura de desktop, altura de telemóvel → layout compacto.
 	const compact = useCompactViewport();
+
+	// MOM do jogo: o fixture da liga já traz `mom` no payload final
+	// (matchResults); na Taça o fixture (matchResults simplificado) não traz,
+	// por isso procurar no payload da ronda (cupRoundResults.results).
+	const momOverride = useMemo(() => {
+		if (fixture?.mom) return fixture.mom;
+		if (!isCupMatch || !fixture || !cupRoundResults?.results) return null;
+		const row = cupRoundResults.results.find(
+			(r) =>
+				Number(r.homeTeamId) === Number(fixture.homeTeamId) &&
+				Number(r.awayTeamId) === Number(fixture.awayTeamId),
+		);
+		return row?.mom || null;
+	}, [fixture, isCupMatch, cupRoundResults]);
 	// Banda landscape phone → header menos alto para dar espaço ao conteúdo.
 	const shortLandscape = useLandscapePhone();
 
@@ -347,6 +362,7 @@ export function MatchPage({
 						cupMatchRoundName={cupMatchRoundName}
 						showFatigue={!isThirdPartyMatch}
 						spectate={isThirdPartyMatch}
+						mom={momOverride}
 					/>
 				)}
 

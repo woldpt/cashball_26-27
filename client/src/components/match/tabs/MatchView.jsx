@@ -20,7 +20,7 @@ import {
  *    separadores nem bancos.
  */
 /** fixture (destaque), liveMinute, teams, isCupMatch, cupMatchRoundName, showFatigue (jogo próprio), spectate (jogo alheio: dual-pitch sem bancos). */
-export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoundName, showFatigue = true, spectate = false }) {
+export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoundName, showFatigue = true, spectate = false, mom }) {
   const [pitchSide, setPitchSide] = useState("home");
 
   if (!fixture) return null;
@@ -59,6 +59,7 @@ export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoun
             className="flex flex-col gap-3 px-4 pb-4 lg:w-[340px] lg:flex-none lg:min-h-0 lg:overflow-y-auto lg:border-l lg:border-outline-variant/20"
           >
             <RefWeatherBar attendance={fixture.attendance} referee={ref} weatherEvent={weatherEvent} teamStadium={stadiumName} />
+            <MomStrip mom={mom ?? fixture.mom} hInfo={hInfo} aInfo={aInfo} />
             <div className="flex flex-col gap-1 px-1 pt-1 pb-3 border-b border-outline-variant/20">
               <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">Eventos</p>
               <EventList events={visibleEvts} hInfo={hInfo} aInfo={aInfo} />
@@ -122,6 +123,7 @@ export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoun
         {/* RIGHT: weather + possession + events */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3 border-t border-outline-variant/25 md:border-t-0 md:border-l">
           <RefWeatherBar attendance={fixture.attendance} referee={ref} weatherEvent={weatherEvent} teamStadium={stadiumName} />
+          <MomStrip mom={mom ?? fixture.mom} hInfo={hInfo} aInfo={aInfo} />
 
           {/* Possession */}
           <div className="rounded-md overflow-hidden">
@@ -217,6 +219,37 @@ function EventList({ events, hInfo, aInfo }) {
           </motion.div>
         );
       })}
+    </div>
+  );
+}
+
+/* ── MomStrip — "Jogador do Jogo" pós-jogo (liga e taça) ───────────────
+ * Aparece apenas quando o fixture já tem `mom` (payload final:
+ * matchResults / cupRoundResults), ou seja, só no fim de jogo.
+ * mom = { home: {playerId, playerName, score}|null, away: ...|null }.
+ */
+/** mom: {home, away}|null; hInfo/aInfo: equipas (nomes de contexto). */
+function MomStrip({ mom, hInfo, aInfo }) {
+  if (!mom || (!mom.home && !mom.away)) return null;
+  return (
+    <div className="rounded-md border border-amber-500/25 bg-amber-500/[0.07] px-3 py-2">
+      <p className="text-[9px] font-black uppercase tracking-widest text-amber-400 mb-1.5">
+        ⭐ Jogador do Jogo
+      </p>
+      <div className="flex items-center gap-2">
+        <span className="flex-1 min-w-0 truncate text-xs font-bold text-on-surface">
+          {mom.home ? mom.home.playerName : "—"}
+        </span>
+        <span
+          className="shrink-0 text-[9px] font-black uppercase tracking-widest text-on-surface-variant"
+          title={`${hInfo?.name || "Casa"} vs ${aInfo?.name || "Fora"}`}
+        >
+          vs
+        </span>
+        <span className="flex-1 min-w-0 truncate text-right text-xs font-bold text-on-surface">
+          {mom.away ? mom.away.playerName : "—"}
+        </span>
+      </div>
     </div>
   );
 }

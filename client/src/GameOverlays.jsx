@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { socket } from "./socket.js";
 import { useGame } from "./contexts/GameContext.jsx";
@@ -33,6 +33,7 @@ import { AdminPanel } from "./components/admin/AdminPanel.jsx";
 export function GameOverlays() {
   const {
     activeChatTabRef,
+    activeTab,
     addToast,
     adminPanelOpen,
     avatarSeed,
@@ -75,6 +76,7 @@ export function GameOverlays() {
     matchweekCount,
     me,
     myMatch,
+    navigateTab,
     myTeamInCup,
     openAuctionBid,
     panelFixture,
@@ -141,6 +143,34 @@ export function GameOverlays() {
     jobOfferModal,
     cupUpsetPending,
   });
+
+  // Landing pós-jogo: quando a partida termina (Liga ou Taça) e nenhum modal
+  // pós-jogo está ativo, regressar ao Jornal (tab landing). Dispara uma vez
+  // por partida (chave jornada/ronda) — o utilizador pode voltar ao tab
+  // "Jogar" para ver o jogo final sem ser devolvido.
+  const endedMatchKey = isCupMatch && cupRoundResults
+    ? `cup:${cupRoundResults.season}:${cupRoundResults.round}`
+    : matchResults?.matchweek
+      ? `league:${season}:${matchResults.matchweek}`
+      : null;
+  const postMatchLandedKeyRef = useRef(null);
+  const anyPostMatchModal =
+    postMatchMood ||
+    cupPenaltyPopup ||
+    cupUpsetPending ||
+    boardWarning ||
+    dismissalModal ||
+    jobOfferModal ||
+    seasonEndModal;
+  useEffect(() => {
+    if (!endedMatchKey) return;
+    if (postMatchLandedKeyRef.current === endedMatchKey) return;
+    if (anyPostMatchModal) return;
+    if (activeTab !== "live") return;
+    postMatchLandedKeyRef.current = endedMatchKey;
+    navigateTab("jornal");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [endedMatchKey, anyPostMatchModal, activeTab]);
 
   return (
     <>
@@ -235,6 +265,7 @@ export function GameOverlays() {
             onResolveAction={handleResolveMatchAction}
             matchResults={matchResults}
             isCupExtraTime={isCupExtraTime}
+            cupRoundResults={cupRoundResults}
           />
         )}
       </AnimatePresence>

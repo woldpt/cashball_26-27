@@ -44,6 +44,7 @@ export const NAV_GROUPS = [
     id: "competicao",
     label: "Competição",
     tabs: [
+      { key: "jornal", label: "Jornal", shortLabel: "Jornal", icon: "newspaper" },
       { key: "standings", label: "Classificações", shortLabel: "Classif.", icon: "leaderboard" },
       { key: "calendario", label: "Calendário", shortLabel: "Calendário", icon: "calendar_month" },
       { key: "bracket", label: "Taça", shortLabel: "Taça", icon: "emoji_events", cupBracket: true },

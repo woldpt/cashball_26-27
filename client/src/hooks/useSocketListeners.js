@@ -128,6 +128,20 @@ export function useSocketListeners(handlers, refs) {
 				return next.slice(0, 40);
 			});
 		});
+		socket.on("globalNews", (data) => {
+			if (!inRoom()) return;
+			handlers.setGlobalNews(
+				data && Array.isArray(data.news) && Array.isArray(data.results)
+					? data
+					: { news: [], results: [] },
+			);
+		});
+		// Broadcast do servidor (fim de jornada, Taça, fim de época, transferências)
+		// → refetch imediato do Jornal Global.
+		socket.on("globalNewsUpdated", () => {
+			if (!inRoom()) return;
+			socket.emit("getGlobalNews");
+		});
 		socket.on("auctionStarted", (auctionData) => {
 			// Add to activeAuctions list (used by AuctionsPage and toast)
 			handlers.setActiveAuctions((prev) => {
@@ -742,6 +756,8 @@ export function useSocketListeners(handlers, refs) {
 			// Pedir o histórico de transferências da época no (re)join — o server
 			// responde com transferHistory (one-shot, não vai em gameState).
 			socket.emit("getTransferHistory");
+			// Jornal Global: pedir o agregado da época no (re)join.
+			socket.emit("getGlobalNews");
 			// Restore match-in-progress state on reconnect
 			if (data.matchState === "halftime" && data.lastHalfTimePayload) {
 				handlers.setMatchResults(data.lastHalfTimePayload);
@@ -1630,6 +1646,8 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("marketUpdate");
 			socket.off("transferHistory");
 			socket.off("transferCompleted");
+			socket.off("globalNews");
+			socket.off("globalNewsUpdated");
 			socket.off("auctionStarted");
 			socket.off("auctionBidConfirmed");
 			socket.off("auctionBidPlaced");
