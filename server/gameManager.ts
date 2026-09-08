@@ -590,6 +590,7 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
     lockedCoaches: new Set<string>(),
     globalMarket: [],
     auctions: {} as Record<string, unknown>,
+    recentAuctions: [],
     auctionTimers: {} as Record<string, unknown>,
     pendingAuctionQueue: [],
     pendingAuctionQueueTimers: [],
@@ -1123,6 +1124,19 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
               // Set currentEvent from calendarIndex
               game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
 
+              // ── Restaurar leilões concluídos ("Recentes": visíveis durante 2 jornadas) ──
+              if (st["recentAuctions"]) {
+                try {
+                  const parsed = JSON.parse(st["recentAuctions"]);
+                  if (Array.isArray(parsed)) {
+                    const mw = game.matchweek || 0;
+                    (game as any).recentAuctions = parsed
+                      .filter((r) => r && r.playerId != null && mw - (r.closedMatchweek ?? mw) <= 2)
+                      .slice(-100);
+                  }
+                } catch (_) {}
+              }
+
               // ── Restaurar leilões ativos (open + paused) ─────────────────────────
               let restoredAuctionIds: number[] = [];
               // Novo formato: activeAuctions (open+paused). Fallback legado: pausedAuctions
@@ -1176,10 +1190,33 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                           const auc = (game.auctions as any)?.[pid];
                           if (!auc || auc.status !== "open") return;
                           const hasBids = auc.bids && Object.keys(auc.bids).length > 0;
+                          const pushRecent = (player: any, result: any) => {
+                            const list = (((game as any).recentAuctions as any[]) || []).filter(
+                              (r: any) => r && Number(r.playerId) !== Number(pid),
+                            );
+                            list.push({
+                              playerId: pid,
+                              name: player?.name ?? "?",
+                              position: player?.position ?? null,
+                              photo: player?.photo || null,
+                              skill: player?.skill,
+                              is_star: player?.is_star || 0,
+                              team_name: player?.team_name || null,
+                              sellerTeamId: auc.sellerTeamId ?? null,
+                              isExClub: !!auc.isExClub,
+                              result,
+                              closed: true,
+                              closedMatchweek: game.matchweek || 0,
+                            });
+                            (game as any).recentAuctions = list.slice(-100);
+                          };
                           if (!hasBids) {
-                            db.run("UPDATE players SET transfer_status='none', transfer_price=0 WHERE id=?", [pid]);
-                            delete (game.auctions as any)[pid];
-                            delete (game.auctionTimers as any)[pid];
+                            db.get("SELECT p.*, COALESCE(t.name, '?') as team_name FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.id=?", [pid], (_e0: any, pl0: any) => {
+                              if (pl0) pushRecent(pl0, { playerId: pid, playerName: pl0.name, sold: false });
+                              db.run("UPDATE players SET transfer_status='none', transfer_price=0 WHERE id=?", [pid]);
+                              delete (game.auctions as any)[pid];
+                              delete (game.auctionTimers as any)[pid];
+                            });
                             return;
                           }
                           // Com lances: finaliza inline (merge mínimo de auctionHelpers.finalizeAuction) para não deixar órfão
@@ -1195,10 +1232,13 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                             delete (game.auctionTimers as any)[pid];
                             return;
                           }
-                          db.get("SELECT * FROM players WHERE id=?", [pid], (_e: any, player: any) => {
+                          db.get("SELECT p.*, COALESCE(t.name, '?') as team_name FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.id=?", [pid], (_e: any, player: any) => {
                             if (!player) { delete (game.auctions as any)[pid]; delete (game.auctionTimers as any)[pid]; return; }
                             const buyerTeamId = winnerTeamId as number;
                             const finalBid = winnerBid;
+                            db.get("SELECT name FROM teams WHERE id=?", [buyerTeamId], (_e2: any, buyerTeam: any) => {
+                              pushRecent(player, { playerId: pid, playerName: player.name, sold: true, buyerTeamId, buyerTeamName: buyerTeam?.name ?? "?", finalBid });
+                            });
                             db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [finalBid, auc.sellerTeamId], () => {
                               db.run("UPDATE teams SET budget = budget - ? WHERE id = ?", [finalBid, buyerTeamId], () => {
                                 const seasonEndMw = Math.ceil(Math.max(1, (game.matchweek || 1)) / 14) * 14;
@@ -1442,6 +1482,13 @@ function saveGameState(game: ActiveGame): void {
   const legacyPaused = activeAuctions.filter((a: any) => a.status === "paused");
   upsert("pausedAuctions", JSON.stringify(legacyPaused));
   upsert("activeAuctions", JSON.stringify(activeAuctions));
+  // Leilões concluídos ("Recentes"): expiram 2 jornadas após o fecho
+  const mw = game.matchweek || 0;
+  const recentAuctions = (((game as any).recentAuctions as any[]) || []).filter(
+    (r: any) => r && mw - (r.closedMatchweek ?? mw) <= 2,
+  );
+  (game as any).recentAuctions = recentAuctions;
+  upsert("recentAuctions", JSON.stringify(recentAuctions.slice(-100)));
 
   // ── Legacy keys (backward compat — kept so old clients/DBs still work) ──
   // Derive legacy values from new state

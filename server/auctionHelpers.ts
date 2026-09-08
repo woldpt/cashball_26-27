@@ -18,6 +18,27 @@ interface AuctionDeps {
   scheduleNpcCounterBid: (game: ActiveGame, playerId: number, npcTeamId: number) => void;
 }
 
+// Recentes visíveis na jornada de fecho e nas 2 seguintes (saem na +3).
+export const RECENT_AUCTIONS_WINDOW = 2;
+
+export function getRecentAuctions(game: ActiveGame): any[] {
+  const mw = game.matchweek || 0;
+  const all = ((game as any).recentAuctions as any[]) || [];
+  return all.filter((r) => r && mw - (r.closedMatchweek ?? mw) <= RECENT_AUCTIONS_WINDOW);
+}
+
+function recordRecentAuction(game: ActiveGame, entry: any) {
+  const list = (((game as any).recentAuctions as any[]) || []).filter(
+    (r) => r && Number(r.playerId) !== Number(entry.playerId),
+  );
+  list.push({ ...entry, closed: true, closedMatchweek: game.matchweek || 0 });
+  // Poda expirados + teto de segurança
+  const mw = game.matchweek || 0;
+  (game as any).recentAuctions = list
+    .filter((r) => mw - (r.closedMatchweek ?? mw) <= RECENT_AUCTIONS_WINDOW)
+    .slice(-100);
+}
+
 export function serializeActiveAuctions(game: ActiveGame): any[] {
   const out: any[] = [];
   const marketRows = ((game.globalMarket as any[]) || []) as any[];
@@ -56,6 +77,8 @@ export function serializeActiveAuctions(game: ActiveGame): any[] {
       injury_until_matchweek: row.injury_until_matchweek,
     });
   }
+  // Concluídos: sobrevivem ao refresh, visíveis durante 2 jornadas após o fecho.
+  for (const r of getRecentAuctions(game)) out.push({ ...r, closed: true });
   return out;
 }
 
@@ -269,6 +292,18 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                 { isAuction: true },
               );
 
+              recordRecentAuction(game, {
+                playerId,
+                name: player.name,
+                position: player.position,
+                photo: player.photo || null,
+                skill: player.skill,
+                is_star: player.is_star || 0,
+                team_name: player.team_name || null,
+                sellerTeamId: auction.sellerTeamId,
+                isExClub: !!auction.isExClub,
+                result: { playerId, playerName: player.name, sold: false },
+              });
               delete game.auctions![playerId];
               delete game.auctionTimers?.[playerId];
               refreshMarket(game);
@@ -300,6 +335,18 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                   `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até ${seasonToYear(end.season)}, Jornada ${end.matchweek}. Não vai para o leilão.`,
                 );
               }
+              recordRecentAuction(game, {
+                playerId,
+                name: player.name,
+                position: player.position,
+                photo: player.photo || null,
+                skill: player.skill,
+                is_star: player.is_star || 0,
+                team_name: player.team_name || null,
+                sellerTeamId: auction.sellerTeamId,
+                isExClub: !!auction.isExClub,
+                result: { playerId, playerName: player.name, sold: false },
+              });
               delete game.auctions![playerId];
               delete game.auctionTimers?.[playerId];
               refreshMarket(game);
@@ -405,6 +452,25 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                           { isAuction: true },
                         );
 
+                        recordRecentAuction(game, {
+                          playerId,
+                          name: player.name,
+                          position: player.position,
+                          photo: player.photo || null,
+                          skill: player.skill,
+                          is_star: player.is_star || 0,
+                          team_name: player.team_name || null,
+                          sellerTeamId: auction.sellerTeamId,
+                          isExClub: !!auction.isExClub,
+                          result: {
+                            playerId,
+                            playerName: player.name,
+                            sold: true,
+                            buyerTeamId,
+                            buyerTeamName,
+                            finalBid,
+                          },
+                        });
                         delete game.auctions?.[playerId];
                         delete game.auctionTimers?.[playerId];
                         refreshMarket(game);

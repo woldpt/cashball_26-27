@@ -239,6 +239,7 @@ export interface ActiveGame {
   lockedCoaches: Set<string>;
   globalMarket: any[];
   auctions: Record<string, unknown>;
+  recentAuctions: any[]; // leilões concluídos visíveis em "Recentes" durante 2 jornadas
   auctionTimers: Record<string, unknown>;
   pendingAuctionQueue: unknown[];
   pendingAuctionQueueTimers: ReturnType<typeof setTimeout>[];
