@@ -126,6 +126,13 @@
 
 ## Último estado
 
+- **Visual — atmosfera e profundidade no interior do jogo ("alimentar os olhos"):** a landing tinha vocabulário atmosférico (`pitch-glow`, hairline de luz, glass) que estava *morto* dentro do jogo. Foi levado para o interior, token-based e reversível:
+  - `index.css`: nova `.ambient` (radial glows da cor primária/terciária via `color-mix` sobre os tokens, alpha baixo) e `.top-light` (fio de 1px de luz no topo derivado de `on-surface`).
+  - `GameLayout.jsx` root: ganhou `relative isolate` + primeiro filho `pointer-events-none absolute inset-0 -z-10 ambient` (fica atrás de todo o conteúdo; sem interferir nos fixed/chrome).
+  - `shared/Panel.jsx` + `SummaryWidget.jsx`: `relative` + filho `.top-light` no topo — como são os contentores canónicos (STYLE §3), a elevação propaga a todos os painéis de uma vez.
+  - Armadilha: adicionar `overflow-hidden` ao `SummaryWidget` clipei conteúdo legítimo que já transbordava (finances/topwidgets reprovaram no harness) — mantido só `relative`, sem `overflow-hidden`. Checks: lint + check:types OK; mobile portrait PASS 140/140 e landscape PASS 168/168. Commit `a4a8a65`.
+  - Próximos passos visuais possíveis (não feitos): hero do jogo ao vivo mais cinematográfico; dados premium (Finanças/Estádio); camadas de encanto (onboarding/empty states).
+
 - **Refactor do GameLayout — rotas e overlays extraídos (Fase D da review):** `GameLayout` deixou de ser o monolito de ~2090 linhas para ~1310 (chrome puro).
   - `client/src/GameRoutes.jsx` (novo): o switch de `activeTab` (27 páginas/views) moveu-se verbatim; consome `useGame()` sozinho (só props `handleLogout`/`setAuthPhase`/`replayTutorial`).
   - `client/src/GameOverlays.jsx` (novo): os ~20 modais de evento + MatchPage + WaitingCoaches + RoomHub + AdminPanel; consome `useGame()` e é dono da sequenciação pós-jogo (`cupUpsetAckKey` + `postMatchFlow`, que saíram do GameLayout).
