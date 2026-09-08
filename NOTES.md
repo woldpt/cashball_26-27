@@ -6,6 +6,12 @@
 > - Regra permanente descoberta → mover para `AGENTS.md`/`CLAUDE.md`/`STYLE.md` e remover daqui.
 > - Ao iniciar uma sessão nova: ler este ficheiro + `git log --oneline -10`.
 
+## Moral por palavras com humor (novo)
+
+- Novo helper `client/src/utils/morale.js` (`getMoraleLabel`): escala única 0–100 — Na Lama / De Rasto / Razoável / Animados / Bom / Em Chamas / Excelente. Cores da barra/texto inalteradas.
+- `TacticsView.jsx` (mobile + desktop), `ClubTab.jsx` (etiqueta em maiúsculas) e `MatchBriefing.jsx` (tile comparativo passa a palavras, com `title` do valor numérico) usam o helper; número visível removido.
+- Checks: client `lint` + `check:types` OK. Só texto/`className` pontual → sem mobile-resp-check.
+
 ## LiveMatchHero — cronómetro sob o marcador (novo)
 
 - Barra de progresso removida da zona do comentário e colocada logo abaixo do scoreboard; labels `0'`/`90'`/`120'` e relógio `{liveMinute}'` eliminados (o minuto continua no botão do marcador).
