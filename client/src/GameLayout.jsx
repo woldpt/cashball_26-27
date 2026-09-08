@@ -6,50 +6,7 @@ import { useGame } from "./contexts/GameContext.jsx";
 import { useTactics } from "./contexts/TacticsContext.jsx";
 import { CoachAvatar } from "./components/shared/CoachAvatar.jsx";
 import { WelcomeModal } from "./components/modals/WelcomeModal.jsx";
-import { DismissalModal } from "./components/modals/DismissalModal.jsx";
-import { SeasonEndModal } from "./components/modals/SeasonEndModal.jsx";
-import { JobOfferModal } from "./components/modals/JobOfferModal.jsx";
-import { CoachMarketModal } from "./components/modals/CoachMarketModal.jsx";
-import { AdminPanel } from "./components/admin/AdminPanel.jsx";
 import { isAdminCoach } from "./components/admin/adminApi.js";
-import { PlayerHistoryModal } from "./components/modals/PlayerHistoryModal.jsx";
-import { CupDrawPopup } from "./components/modals/CupDrawPopup.jsx";
-import { PenaltySuspensePopup } from "./components/modals/PenaltySuspensePopup.jsx";
-import { PenaltyShootoutPopup } from "./components/modals/PenaltyShootoutPopup.jsx";
-import { CupUpsetModal } from "./components/modals/CupUpsetModal.jsx";
-import { BoardWarningModal } from "./components/modals/BoardWarningModal.jsx";
-import { PenaltyTakerPopup } from "./components/modals/PenaltyTakerPopup.jsx";
-import { WaitingCoachesModal } from "./components/modals/WaitingCoachesModal.jsx";
-import { MatchPage } from "./components/match/MatchPage.jsx";
-import {
-  LiveMatchHero,
-  LiveFixtureRow,
-  LiveStandingsPanel,
-} from "./components/live/index.js";
-
-import { GameDialog } from "./components/shared/GameDialog.jsx";
-import { InviteRoomModal } from "./components/modals/InviteRoomModal.jsx";
-import { TransferProposalModal } from "./components/modals/TransferProposalModal.jsx";
-import { SigningCelebrationModal } from "./components/modals/SigningCelebrationModal.jsx";
-import { PostMatchMoodModal } from "./components/modals/PostMatchMoodModal.jsx";
-import { computePostMatchFlow } from "./utils/postMatchFlow.js";
-import { AuctionsPage } from "./pages/AuctionsPage.jsx";
-import { UserSettingsPage } from "./pages/UserSettingsPage.jsx";
-import { RoomHub } from "./components/chat/RoomHub.jsx";
-import { StandingsTab } from "./views/StandingsTab.jsx";
-import { BracketTab } from "./views/BracketTab.jsx";
-import { TrainingTab } from "./views/TrainingTab.jsx";
-import { CupTab } from "./views/CupTab.jsx";
-import { CalendarioTab } from "./views/CalendarioTab.jsx";
-import { ClubTab } from "./views/ClubTab.jsx";
-import { FinancesTab } from "./views/FinancesTab.jsx";
-import { StadiumTab } from "./views/StadiumTab.jsx";
-import { PlayersTab } from "./views/PlayersTab.jsx";
-import { PlayerSearchView } from "./views/PlayerSearchView.jsx";
-import { TeamSquadView } from "./views/TeamSquadView.jsx";
-import { TacticsView } from "./views/TacticsView.jsx";
-import { TransferHub } from "./components/ui/TransferHub.jsx";
-import { DIVISION_NAMES } from "./constants/index.js";
 import { isSameTeamId } from "./utils/teamHelpers.js";
 import { useMobileLandscape } from "./hooks/useIsMobile.js";
 import { useCoachTutorial } from "./hooks/useCoachTutorial.js";
@@ -57,6 +14,7 @@ import { CoachTutorial } from "./components/tutorial/CoachTutorial.jsx";
 import { COACH_TUTORIAL_STEPS } from "./components/tutorial/coachTutorialSteps.js";
 import { OfflineBanner } from "./components/shared/OfflineBanner.jsx";
 import { GameRoutes } from "./GameRoutes.jsx";
+import { GameOverlays } from "./GameOverlays.jsx";
 
 /**
  * Renders the entire game UI. All state comes from useGame() and useTactics().
@@ -66,66 +24,28 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // ── All game state from GameContext ─────────────────────────────────────
   const {
     // State
-    teams,
     players,
     sessionDisplaced,
     toasts,
     awaitingCoaches,
-    roomCreator,
-    matchResults,
-    matchweekCount,
-    season,
     seasonYear,
     activeTab,
     marketPairs,
     activeAuctions,
-    gameDialog,
-    setGameDialog,
-    cupDraw,
-    showCupDrawPopup,
-    cupDrawRevealIdx,
-    cupRoundResults,
-    cupPenaltyPopup,
-    setCupPenaltyPopup,
-    cupPenaltyKickIdx,
     welcomeModal,
     setWelcomeModal,
-    jobOfferModal,
-    setJobOfferModal,
     dismissalModal,
-    setDismissalModal,
-    boardWarning,
-    setBoardWarning,
-    coachMarketReport,
-    setCoachMarketReport,
-    seasonEndModal,
     isCupMatch,
     cupPreMatch,
     cupMatchRoundName,
     cupExtraTimeBadge,
-    playerHistoryModal,
-    setPlayerHistoryModal,
-    transferProposalModal,
-    setTransferProposalModal,
-    signingCelebration,
-    setSigningCelebration,
-    postMatchMood,
-    setPostMatchMood,
     liveMinute,
     isPlayingMatch,
     showHalftimePanel,
-    matchAction,
-    injuryCountdown,
     renderError,
-    roomHubOpen,
     setRoomHubOpen,
-    roomMessages,
-    globalMessages,
-    globalPlayers,
     unreadRoom,
     unreadGlobal,
-    chatInput,
-    setChatInput,
     mobileSubMenu,
     setMobileSubMenu,
     sidebarCollapsed,
@@ -133,49 +53,22 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     avatarSeed,
     coachAvatars,
     // Refs
-    chatMessagesRef,
-    roomHubRef,
-    chatOpenRef,
-    activeChatTabRef,
     // Auth
     me,
     setMe,
     backendUrl,
     // Handlers
-    addToast,
     dismissToast,
-    handleHalftimeReady,
     navigateTab,
-    handleResolveMatchAction,
-    handleCloseMatch,
-    buyPlayer,
-    renewPlayerContract,
-    listPlayerAuction,
-    listPlayerFixed,
-    removeFromTransferList,
-    openAuctionBid,
     resetGameState,
     // Derived
     isMatchInProgress,
     teamInfo,
-    myMatch,
-    redCardedHalftimeIds,
-    injuredHalftimeIds,
-    myTeamInCup,
     lockedCoaches,
     panelMode,
-    panelFixture,
-    panelIsReady,
     currentJornada,
     // Additional state needed by JSX
     sidebarUserPrefRef,
-    isCupExtraTime,
-    penaltySuspense,
-    setShowCupDrawPopup,
-    setCupDrawRevealIdx,
-    setCupPenaltyKickIdx,
-    setSeasonEndModal,
-    adminPanelOpen,
     setAdminPanelOpen,
     userDropdownOpen,
     setUserDropdownOpen,
@@ -318,26 +211,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // → avisos/renovações → fim de época (seasonEnd POR ÚLTIMO). Decide quais
   // estão visíveis em cada render para nunca se sobreporem; os restantes
   // aguardam o fecho do atual (os dados continuam guardados).
-  // `cupUpsetAckKey` recorda a última ronda da Taça cuja celebração de surpresas
-  // o utilizador fechou, para o sequenciador saber quando o cup upset já não
-  // bloqueia os avisos/fim de época.
-  const [cupUpsetAckKey, setCupUpsetAckKey] = useState(null);
-  const currentCupRoundKey = cupRoundResults
-    ? `${cupRoundResults.season}:${cupRoundResults.round}`
-    : null;
-  const cupUpsetPending =
-    !!currentCupRoundKey &&
-    (cupRoundResults?.upsets?.length ?? 0) > 0 &&
-    currentCupRoundKey !== cupUpsetAckKey;
-  const postMatchFlow = computePostMatchFlow({
-    seasonEndModal,
-    cupPenaltyPopup,
-    postMatchMood,
-    boardWarning,
-    dismissalModal,
-    jobOfferModal,
-    cupUpsetPending,
-  });
 
   return (
     <div className="h-dvh overflow-hidden bg-surface text-on-surface font-body tracking-tight flex flex-col">
@@ -1412,118 +1285,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         </main>
       )}
 
-      <TransferProposalModal
-        transferProposalModal={transferProposalModal}
-        setTransferProposalModal={setTransferProposalModal}
-      />
-
-      <SigningCelebrationModal
-        signing={signingCelebration}
-        onClose={() => setSigningCelebration(null)}
-        teams={teams}
-        me={me}
-      />
-
-      <PostMatchMoodModal
-        mood={postMatchFlow.showMood ? postMatchMood : null}
-        onClose={() => setPostMatchMood(null)}
-      />
-
-      <GameDialog dialog={gameDialog} onClose={() => setGameDialog(null)} />
-      <InviteRoomModal />
-
-      <PenaltySuspensePopup penaltySuspense={penaltySuspense} />
-
-      <PenaltyTakerPopup
-        key={matchAction?.actionId ?? "none"}
-        matchAction={matchAction}
-        teams={teams}
-        onResolveAction={handleResolveMatchAction}
-      />
-
-      <CupDrawPopup
-        showCupDrawPopup={showCupDrawPopup}
-        cupDraw={cupDraw}
-        cupDrawRevealIdx={cupDrawRevealIdx}
-        me={me}
-        players={players}
-        setShowCupDrawPopup={setShowCupDrawPopup}
-        setCupDrawRevealIdx={setCupDrawRevealIdx}
-      />
-
-      <PenaltyShootoutPopup
-        cupPenaltyPopup={cupPenaltyPopup}
-        cupPenaltyKickIdx={cupPenaltyKickIdx}
-        teams={teams}
-        setCupPenaltyPopup={setCupPenaltyPopup}
-        setCupPenaltyKickIdx={setCupPenaltyKickIdx}
-      />
-
-      <CupUpsetModal
-        cupRoundResults={postMatchFlow.showCupRoundResults ? cupRoundResults : null}
-        teams={teams}
-        postMatchMood={postMatchMood}
-        onDismiss={(roundKey) => {
-          if (roundKey != null) setCupUpsetAckKey(roundKey);
-        }}
-      />
-
-      <BoardWarningModal
-        boardWarning={postMatchFlow.showBoardWarning ? boardWarning : null}
-        onClose={() => setBoardWarning(null)}
-      />
-
-      {/* MatchPage — AnimatePresence mode="wait": abrir/fechar/trocar modo
-          (prematch → halftime) faz exit+entrance suave. */}
-      <AnimatePresence mode="wait">
-        {panelMode !== null && (
-          <MatchPage
-            key={panelMode}
-            mode={panelMode}
-            onClose={handleCloseMatch}
-            fixture={panelFixture}
-            liveMinute={liveMinute}
-            teams={teams}
-            isCupMatch={isCupMatch}
-            cupMatchRoundName={cupMatchRoundName}
-            currentJornada={currentJornada}
-            isPlayingMatch={isPlayingMatch}
-            sidebarCollapsed={sidebarCollapsed}
-            onReady={handleHalftimeReady}
-            isReady={panelIsReady}
-            cupPreMatch={cupPreMatch}
-            myTeamInCup={myTeamInCup}
-            myTeamId={me?.teamId}
-            redCardedHalftimeIds={redCardedHalftimeIds}
-            injuredHalftimeIds={injuredHalftimeIds}
-            matchAction={matchAction}
-            injuryCountdown={injuryCountdown}
-            onResolveAction={handleResolveMatchAction}
-            matchResults={matchResults}
-            isCupExtraTime={isCupExtraTime}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Modal de espera multiplayer no intervalo */}
-      {/* Espectadores da Taça (sem fixture nesta ronda → !myMatch) são auto-ready
-          ao intervalo; permitir cancelar bloquearia o jogo sem razão. */}
-      <WaitingCoachesModal
-        players={players}
-        visible={
-          panelMode === "halftime" &&
-          panelIsReady &&
-          lockedCoaches &&
-          lockedCoaches.length >= 2
-        }
-        onCancel={() => socket.emit("setReady", false)}
-        canCancel={!(isCupMatch && !myMatch)}
-      />
-
-      <DismissalModal
-        dismissalModal={postMatchFlow.showDismissal ? dismissalModal : null}
-        onContinue={() => setDismissalModal(null)}
-      />
+      <GameOverlays />
 
       <WelcomeModal
         welcomeModal={dismissalModal ? null : welcomeModal}
@@ -1546,74 +1308,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         />
       )}
 
-      <JobOfferModal
-        jobOfferModal={postMatchFlow.showJobOffer ? jobOfferModal : null}
-        setJobOfferModal={setJobOfferModal}
-      />
-
-      <CoachMarketModal
-        report={coachMarketReport}
-        onClose={() => setCoachMarketReport(null)}
-        meName={me?.name ?? null}
-        coachAvatars={coachAvatars}
-        backendUrl={backendUrl}
-      />
-
-      <SeasonEndModal
-        data={postMatchFlow.showSeasonEnd ? seasonEndModal : null}
-        teams={teams}
-        me={me}
-        onClose={() => setSeasonEndModal(null)}
-      />
-
-      <PlayerHistoryModal
-        playerHistoryModal={playerHistoryModal}
-        setPlayerHistoryModal={setPlayerHistoryModal}
-        myTeamId={me?.teamId}
-        matchweekCount={matchweekCount}
-        season={season}
-        isPlayingMatch={isPlayingMatch}
-        showHalftimePanel={showHalftimePanel}
-        renewPlayerContract={renewPlayerContract}
-        listPlayerAuction={listPlayerAuction}
-        listPlayerFixed={listPlayerFixed}
-        removeFromTransferList={removeFromTransferList}
-        buyPlayer={buyPlayer}
-        openAuctionBid={openAuctionBid}
-        myBudget={teamInfo?.budget ?? 0}
-        setGameDialog={setGameDialog}
-      />
-
-      <RoomHub
-        me={me}
-        roomHubRef={roomHubRef}
-        roomHubOpen={roomHubOpen}
-        setRoomHubOpen={setRoomHubOpen}
-        roomMessages={roomMessages}
-        globalMessages={globalMessages}
-        globalPlayers={globalPlayers}
-        players={players}
-        teams={teams}
-        roomCreator={roomCreator}
-        matchweekCount={matchweekCount}
-        unreadRoom={unreadRoom}
-        unreadGlobal={unreadGlobal}
-        chatInput={chatInput}
-        setChatInput={setChatInput}
-        avatarSeed={avatarSeed}
-        coachAvatars={coachAvatars}
-        backendUrl={backendUrl}
-        chatMessagesRef={chatMessagesRef}
-        addToast={addToast}
-        awaitingCoaches={awaitingCoaches}
-        chatOpenRef={chatOpenRef}
-        activeChatTabRef={activeChatTabRef}
-      />
-
-      <AdminPanel
-        open={adminPanelOpen}
-        onClose={() => setAdminPanelOpen(false)}
-      />
     </div>
   );
 }
