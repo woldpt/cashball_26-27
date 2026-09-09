@@ -1,5 +1,27 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MAX_MATCH_SUBS } from "../../../constants/index.js";
+
+/**
+ * `prefers-reduced-motion` reativo — crossfades e transições passam a
+ * instantâneas em vez de animadas.
+ *
+ * @returns {boolean} true quando o sistema pede movimento reduzido.
+ */
+export function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onChange = (e) => setReduced(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return reduced;
+}
 
 /**
  * Regras de estado dos cartões de substituição — fonte única usada pelas
