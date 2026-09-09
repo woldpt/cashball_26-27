@@ -24,9 +24,9 @@ import {
  *      · played  → gradient decay (the lower the form, the slower the drop)
  *      · rested  → +2 recovery (rotation keeps the squad fresh)
  *  - Not training Resistência (deliberately slower than the training gain so
- *    neglect takes longer to noticeably harm stamina):
- *      · played  → -1.84 resistance progress
- *      · rested  → -0.61 resistance progress
+ *    neglect takes longer to noticeably harm stamina — losses halved):
+ *      · played  → -0.92 resistance progress
+ *      · rested  → -0.30 resistance progress
  *
  * Skill and resistance use accumulator columns (training_skill_progress,
  * training_resistance_progress) because the underlying columns are INTEGER —
@@ -187,7 +187,7 @@ export function createTrainingHelpers(_deps: { io: any }) {
                         1.15,
                         Math.max(0.5, 0.5 + 0.5 * ((player.form ?? FORM_NEUTRAL) / FORM_NEUTRAL)),
                       );
-                      const gain = 2.5 * potentialFactor * formFactor;
+                      const gain = 5 * potentialFactor * formFactor;
                       // Quanto maior o skill, mais progresso é preciso por ponto.
                       const progressNeeded = Math.max(1, Math.ceil(oldSkill / 10));
 
@@ -257,8 +257,8 @@ export function createTrainingHelpers(_deps: { io: any }) {
                     const oldProg = player.resistance_progress ?? 0;
                     // Quem jogou desgasta mais; quem descansa perde menos.
                     // Decaimento propositadamente lento para a resistência não
-                    // minguar depressa sem treino.
-                    const resLoss = played ? -1.84 : -0.61;
+                    // minguar depressa sem treino (perdas a metade do ganho).
+                    const resLoss = played ? -0.92 : -0.3;
                     let newProg = oldProg + resLoss;
                     let newRes = oldRes;
                     while (newProg < 0 && newRes > RES_MIN) {

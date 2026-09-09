@@ -181,6 +181,9 @@
 
 ## Último estado
 
+- **Treinos: posição mais imediata + decay de resistência a metade (novo):** `server/trainingHelpers.ts` — ganho base de posição `2,5 → 5` (skill 30 passa de ~1-2 semanas para ~1 semana por ponto; travão perto do potencial intacto); decay sem treino `jogado −1,84 → −0,92`, `descansado −0,61 → −0,30` (ganho `+4,9` intacto). Só afeta treinos futuros (acumuladores existentes mantêm-se).
+  - Checks: server `typecheck` OK; `audit:gamestate 445WU8` 0 erros; `audit:socketio` 0 erros. Sem toque no cliente → sem lint/mobile-resp-check.
+
 - **Palco de gala da Final da Taça (novo):** a final era um card pequeno isolado quando não participavas (`myMatch` nulo → hero com `return null`). Novo `CupFinalStage.jsx` (faixa 🏆 Final · Jamor, frente-a-frente das finalistas com crests `lg` + treinadores, medalhão VS com minuto, cenografia dourada + marca de água do troféu) com o `LiveMatchHero` em destaque dentro. A final tem SEMPRE palco: participas → intervenção normal; és espetador → hero em `readOnly` (marcador não clicável). `GameRoutes.jsx`: condição `isCupMatch && roundName === "Final"`, multiview de 1 card suprimida na final, MOM da final via lookup em `cupRoundResults`.
   - **Ritmo de gala:** final sem humanos corria a 100 ms/min (sprint NPC). Nova constante `CUP_FINAL_SPECTATOR_MS_PER_MINUTE = 500` (`gameConstants.ts`): aplica-se no tempo regulamentar (`weeklyFlowHelpers`, via `entry.roundName`) e no prolongamento (`engine.simulateExtraTime` via `ctx.cupFinalSpectator`, posto em `cupFlowHelpers`). Com humanos mantém 1000 ms.
   - Armadilhas: `edit` do pi com erro de serialização num ficheiro (contornado com python); badge de treinador do `TeamCrest` sobrepunha o minuto no palco → palco não passa `coach` (nomes já estão por baixo, em âmbar).
