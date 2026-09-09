@@ -7,8 +7,8 @@ import {
 } from "../shared/index.js";
 
 /* ── SwapControls — Sai → Entra + Limpar/Substituir + hint + countdown ───
- * Halftime e pausa user_substitution acumulam em fila (onConfirmSub) e só
- * avançam em Continuar; restantes ações resolvem imediatamente. */
+ * No intervalo e na pausa de substituição acumula-se em fila (onConfirmSub) e só
+ * se avança em Continuar; as restantes ações resolvem de imediato. */
 export function SwapControls({
   isHalftime,
   isUserSubPause = false,
@@ -29,11 +29,11 @@ export function SwapControls({
   compact = false,
   outSlotAction = null,
 }) {
-  // Local "resolving" state gives immediate feedback on click in action mode
-  // (was: button fired and the user got no signal until the parent reacted).
+  // Estado local «a resolver» dá feedback imediato ao toque em modo de ação
+  // (antes: o botão disparava e o utilizador ficava sem sinal até o pai reagir).
   const [resolving, setResolving] = useState(false);
-  // Halftime mirror: the confirm button is never unmounted, so feedback is a
-  // brief transient state that auto-disarms instead of getting stuck.
+  // Espelho do intervalo: o botão de confirmar nunca desmonta, por isso o
+  // feedback é um estado breve que se desarma sozinho em vez de ficar preso.
   const [submitting, setSubmitting] = useState(false);
 
   const handleConfirmHalftime = () => {
@@ -44,11 +44,11 @@ export function SwapControls({
 
   return (
     <div className={`space-y-3 ${compact ? "px-4 py-3" : ""}`}>
-      {/* Forced-swap countdown — a single pulsing element where urgency matters. */}
+      {/* Countdown da troca obrigatória — um único elemento pulsante onde a urgência importa. */}
       {isForcedSwap && injuryCountdown !== null && (
         <>
-          {/* One-time screen-reader announcement: the ticking number is
-           * aria-hidden to avoid spamming the live region every second. */}
+          {/* Anúncio único ao leitor de ecrã: o número a contar fica
+           * aria-hidden para não spammar a live region a cada segundo. */}
           <span role="status" className="sr-only">
             {isEmergencyGk
               ? "Escolha automática iminente — quem vai para a baliza?"
@@ -63,9 +63,9 @@ export function SwapControls({
         </>
       )}
 
-      {/* The Sai/Entra chain — two grouped clusters so the eye can scan
-       * "[who's leaving] → [who's coming in]". Empty slots are dashed
-       * placeholders with an actionable hint (was: bare "—"). */}
+      {/* Cadeia Sai/Entra — dois grupos para o olho ler
+       * «[quem sai] → [quem entra]». Vazios são placeholders tracejados
+       * com dica acionável (antes: «—» seco). */}
       {/* GR improvisado: sem par Sai/Entra — escolha única de quem calça as
        * luvas (não é substituição; ninguém sai para dar lugar). */}
       {isEmergencyGk ? (
@@ -138,14 +138,14 @@ export function SwapControls({
         </div>
       )}
 
-      {/* Why the confirm button is disabled — never leave it silent. */}
+      {/* Motivo do botão de confirmar desativado — nunca em silêncio. */}
       {!canConfirmSwap && confirmHint && (
         <p className="text-[11px] font-semibold text-amber-300/90">
           {confirmHint}
         </p>
       )}
 
-      {/* Action buttons — pausa user_substitution usa o mesmo fluxo de fila do intervalo */}
+      {/* Botões de ação — a pausa de substituição usa o mesmo fluxo de fila do intervalo. */}
       {isHalftime || isUserSubPause ? (
         <div className="space-y-2">
           <div className="flex items-center gap-2 sm:gap-3">
@@ -218,13 +218,13 @@ export function SwapControls({
 }
 
 /**
- * SAI/ENTRA value box. Filled: pos badge + name chip.
- * Empty: dashed placeholder with an actionable hint.
+ * Caixa de valor SAI/ENTRA. Preenchida: badge da posição + chip do nome.
+ * Vazia: placeholder tracejado com dica acionável.
  * Com `onClick` torna-se um botão (mobile: devolve à folha de titulares).
  *
- * @param {string} tone - Color tone of the filled chip ("rose"|"emerald").
- * @param {object} player - Player to display; null renders the placeholder.
- * @param {string} placeholder - Empty-state hint text.
+ * @param {string} tone - Tom de cor do chip preenchido ("rose"|"emerald").
+ * @param {object} player - Jogador a mostrar; null mostra o placeholder.
+ * @param {string} placeholder - Texto de dica do estado vazio.
  * @param {Function} [props.onClick] - Handler que torna o slot um botão.
  * @param {string} [props.ariaLabel] - Rótulo acessível quando é botão.
  */

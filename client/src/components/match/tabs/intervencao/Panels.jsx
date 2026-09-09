@@ -60,14 +60,14 @@ export function CronologiaPanel({
 }
 
 /**
- * Scoreline + possession + minute. Fills the Mentalidade column's dead
- * space with decision-relevant context.
+ * Marcador + posse + minuto. Preenche o espaço morto da coluna Mentalidade
+ * com contexto relevante para a decisão.
  *
- * @param {object} fixture - Fixture data (score, possession).
- * @param {object} hInfo - Home team info (name, color_primary).
- * @param {object} aInfo - Away team info (name, color_primary).
- * @param {number} liveMinute - Current match minute.
- * @param {string} className - Extra classes (e.g. "mt-auto").
+ * @param {object} fixture - Dados do jogo (marcador, posse).
+ * @param {object} hInfo - Equipa da casa (nome, color_primary).
+ * @param {object} aInfo - Equipa de fora (nome, color_primary).
+ * @param {number} liveMinute - Minuto atual do jogo.
+ * @param {string} className - Classes extra (ex. "mt-auto").
  */
 export function MatchSummaryBlock({ fixture, hInfo, aInfo, liveMinute, className = "" }) {
   if (!fixture || !hInfo?.name || !aInfo?.name) return null;
@@ -113,7 +113,7 @@ export function AdversarioPanel({
   oppRows,
   oppBench,
 }) {
-  // Sort each position row by skill descending
+  // Ordena cada linha de posição por skill descendente.
   const sortDesc = (arr) => [...arr].sort((a, b) => (b.skill ?? 0) - (a.skill ?? 0));
   const gr = sortDesc(oppRows.GR);
   const def = sortDesc(oppRows.DEF);
@@ -124,7 +124,7 @@ export function AdversarioPanel({
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      {/* Header: crest + nome + formação */}
+      {/* Cabeçalho: emblema + nome + formação */}
       <div className="shrink-0 px-4 pt-4 pb-3 flex items-center justify-between gap-3 border-b border-outline-variant/15 bg-surface-container-high/30">
         <div className="flex items-center gap-2.5 min-w-0">
           <TeamCrest team={oppInfo} />
@@ -134,7 +134,7 @@ export function AdversarioPanel({
         </div>
       </div>
 
-      {/* Scroll container */}
+      {/* Contentor de scroll */}
       <div className="flex-1 min-h-0 overflow-y-auto p-3 md:p-4">
         {!hasLineups ? (
           <EmptyState

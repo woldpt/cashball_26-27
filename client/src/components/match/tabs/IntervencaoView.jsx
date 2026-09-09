@@ -59,8 +59,8 @@ export function IntervencaoView({
   const [centerTab, setCenterTab] = useState("subs");
   const [confirmResetAll, setConfirmResetAll] = useState(false);
 
-  // Two-tap arm for "Anular todas" auto-disarms after 3s so a stale armed
-  // state can't surprise the user later.
+  // Rearme de dois toques do «Anular todas»: desarma sozinho após 3s para
+  // um estado armado antigo não surpreender o utilizador mais tarde.
   useEffect(() => {
     if (!confirmResetAll) return;
     const timer = setTimeout(() => setConfirmResetAll(false), 3000);
@@ -76,14 +76,15 @@ export function IntervencaoView({
   // Banda landscape phone → compressão extra; o vertical não muda.
   const shortLandscape = useLandscapePhone();
 
-  // Mobile halftime: the top zone alternates between the score and the phase
-  // title, fading over every 5 seconds.
+  // Mobile no intervalo: o topo alterna entre marcador e nome da fase com
+  // desvanecimento de 5 em 5 segundos. O toque alterna manualmente e
+  // reinicia a cadência (phaseIsScore nas deps).
   const [phaseIsScore, setPhaseIsScore] = useState(true);
   useEffect(() => {
     if (!isHalftime) return;
     const timer = setInterval(() => setPhaseIsScore((v) => !v), 5000);
     return () => clearInterval(timer);
-  }, [isHalftime]);
+  }, [isHalftime, phaseIsScore]);
 
   const reducedMotion = usePrefersReducedMotion();
 
@@ -236,12 +237,13 @@ export function IntervencaoView({
       !!selectedInId &&
       (!isHalftime && !isUserSubPause ? true : !limitReached);
 
-  // During a forced swap the opponent/chronology tabs are noise — lock the
-  // view on subs while the auto-substitution countdown runs.
+  // Durante uma troca obrigatória as tabs de adversário/cronologia são ruído
+  // — a vista fica presa nas subs enquanto corre o countdown da substituição
+  // automática.
   const activeCenterTab = isForcedSwap ? "subs" : centerTab;
 
-  // Reason the confirm button is disabled — surfaced next to the button
-  // instead of leaving the user guessing (was: silent disabled state).
+  // Motivo do botão de confirmar desativado — mostrado junto ao botão em vez
+  // de deixar o utilizador adivinhar (antes: estado desativado silencioso).
   const confirmHint = canConfirmSwap
     ? null
     : isEmergencyGk
@@ -356,7 +358,7 @@ export function IntervencaoView({
   /* ── Tabs ──────────────────────────────────────────────────────── */
   const tabs = [
     { key: "cronologia", label: "Cronologia" },
-    { key: "subs", label: "Substituições" },
+    { key: "subs", label: "Substituições", short: "Subs" },
     { key: "adversario", label: "Adversário" },
   ];
 
@@ -375,7 +377,23 @@ export function IntervencaoView({
        * Substitui (só no mobile) a barra de score do MatchPage e o bloco de
        * posse de bola; desvanecimento de 5s entre os dois estados. */}
       {isHalftime && hInfo?.name && aInfo?.name && (
-        <div className={`${compact ? "" : "hidden"} shrink-0 border-b border-outline-variant/25 bg-surface-container-high`}>
+        <div
+          className={`${compact ? "" : "hidden"} shrink-0 cursor-pointer border-b border-outline-variant/25 bg-surface-container-high`}
+          onClick={() => setPhaseIsScore((v) => !v)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setPhaseIsScore((v) => !v);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label={
+            phaseIsScore
+              ? "A mostrar o marcador — tocar para ver a fase"
+              : "A mostrar a fase — tocar para ver o marcador"
+          }
+        >
           <div className="relative h-10 overflow-hidden">
             {/* Score — versão compacta do banner de intervalo do MatchPage. */}
             <motion.div
@@ -487,7 +505,8 @@ export function IntervencaoView({
                     : "text-on-surface-variant/70 hover:text-on-surface-variant hover:bg-surface-container-high/50"
                 }`}
               >
-                {tab.label}
+                <span className="hidden min-[380px]:inline">{tab.label}</span>
+                <span className="min-[380px]:hidden">{tab.short ?? tab.label}</span>
               </button>
             ))}
           </div>

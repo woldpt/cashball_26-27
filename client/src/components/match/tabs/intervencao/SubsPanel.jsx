@@ -32,7 +32,7 @@ const STYLE_LABELS = {
 
 /* Largura da faixa lateral (peek) em que a zona das skills da página de trás
  * permanece minimamente destapada no mobile. */
-const PEEK_W = 96;
+const PEEK_W = 64;
 
 /**
  * Folha da stack de páginas mobile (Titulares/Suplentes). A folha à frente
@@ -71,6 +71,7 @@ function StackSheet({ isFront, reducedMotion, children }) {
         width: `calc(100% - ${PEEK_W}px)`,
       }}
       aria-hidden={!isFront}
+      {...(!isFront ? { inert: true } : {})}
       className={`absolute left-0 top-0 h-full overflow-hidden rounded-lg bg-surface-container ${isFront ? "shadow-[10px_0_24px_-12px_rgba(0,0,0,0.9)]" : ""}`}
     >
       <div className="h-full overflow-y-auto overscroll-contain">{children}</div>
@@ -81,7 +82,8 @@ function StackSheet({ isFront, reducedMotion, children }) {
 /* ── SubsPanel — Titulares | Suplentes | Mentalidade | Substituições ─────
  * Desktop (md+): 3-col grid — a 3ª coluna tem a Mentalidade no topo e as
  * Substituições fixas ao fundo. Mobile:
- * stack de duas páginas sobrepostas (Titulares/Suplentes) com flip 3D —
+ * stack de duas páginas sobrepostas (Titulares/Suplentes) com deslizamento
+ * horizontal —
  * top cluster (mentalidade recolhível + indicador de página), folha ativa
  * como scroller próprio, peek da outra página em baixo e barra de ação
  * contextual na zona do polegar. Navegação: seleção, swipe horizontal,
@@ -327,8 +329,8 @@ export function SubsPanel({
               aria-label="Mentalidade — abrir/fechar"
               className={`flex shrink-0 items-center gap-1 rounded-md border px-2 transition-colors ${
                 mentalidadeOpen
-                  ? "h-6 border-violet-500/50 bg-violet-500/15 text-[9px] font-black uppercase tracking-wider text-violet-300"
-                  : "h-6 border-outline-variant/40 text-[9px] font-black uppercase tracking-wider text-on-surface-variant/70 hover:border-violet-500/40 hover:text-violet-300"
+                  ? "h-9 border-violet-500/50 bg-violet-500/15 text-[9px] font-black uppercase tracking-wider text-violet-300"
+                  : "h-9 border-outline-variant/40 text-[9px] font-black uppercase tracking-wider text-on-surface-variant/70 hover:border-violet-500/40 hover:text-violet-300"
               }`}
             >
               <span className="h-1.5 w-1.5 rounded-full bg-violet-400 shrink-0" />
@@ -342,8 +344,8 @@ export function SubsPanel({
                 aria-label="Anular todas as substituições planeadas"
                 className={`flex shrink-0 items-center justify-center rounded-md border transition-colors ${
                   confirmResetAll
-                    ? "h-6 border-rose-500/50 bg-rose-500/15 px-2 text-[9px] font-black uppercase tracking-wider text-rose-300"
-                    : "h-6 w-6 border-outline-variant/40 text-on-surface-variant/70 hover:border-rose-500/40 hover:text-rose-300"
+                    ? "h-9 border-rose-500/50 bg-rose-500/15 px-2 text-[9px] font-black uppercase tracking-wider text-rose-300"
+                    : "h-9 w-9 border-outline-variant/40 text-on-surface-variant/70 hover:border-rose-500/40 hover:text-rose-300"
                 }`}
               >
                 {confirmResetAll ? (
@@ -538,8 +540,8 @@ export function SubsPanel({
                 aria-label="Anular todas as substituições planeadas"
                 className={`flex shrink-0 items-center justify-center rounded-md border transition-colors ${
                   confirmResetAll
-                    ? "h-6 border-rose-500/50 bg-rose-500/15 px-2 text-[9px] font-black uppercase tracking-wider text-rose-300"
-                    : "h-6 w-6 border-outline-variant/40 text-on-surface-variant/70 hover:border-rose-500/40 hover:text-rose-300"
+                    ? "h-9 border-rose-500/50 bg-rose-500/15 px-2 text-[9px] font-black uppercase tracking-wider text-rose-300"
+                    : "h-9 w-9 border-outline-variant/40 text-on-surface-variant/70 hover:border-rose-500/40 hover:text-rose-300"
                 }`}
               >
                 {confirmResetAll ? (
