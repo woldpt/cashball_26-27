@@ -12,7 +12,7 @@
  * `getGlobalNews`, atualizado via `globalNewsUpdated`). `teams` do
  * GameContext para os crests (cores/crest do TeamCrest).
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { TeamCrest } from "../components/live/TeamCrest.jsx";
@@ -138,6 +138,40 @@ function ResultRow({ r, teamById, myTeamId }) {
 }
 
 /**
+ * Segmented control Relevante/Tudo do Jornal.
+ *
+ * @param {{filter: string, onChange: (f: string) => void}} props
+ */
+function FilterChips({ filter, onChange }) {
+  const base =
+    "px-2.5 py-1 text-[10px] font-black uppercase tracking-widest rounded-full transition-colors";
+  return (
+    <div
+      className="flex items-center gap-1 self-start rounded-full bg-surface-container-high/60 border border-outline-variant/20 p-0.5"
+      role="group"
+      aria-label="Filtro do jornal"
+    >
+      <button
+        type="button"
+        onClick={() => onChange("relevant")}
+        aria-pressed={filter === "relevant"}
+        className={`${base} ${filter === "relevant" ? "bg-primary text-on-primary" : "text-on-surface-variant hover:text-on-surface"}`}
+      >
+        Relevante
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("all")}
+        aria-pressed={filter === "all"}
+        className={`${base} ${filter === "all" ? "bg-primary text-on-primary" : "text-on-surface-variant hover:text-on-surface"}`}
+      >
+        Tudo
+      </button>
+    </div>
+  );
+}
+
+/**
  * @param {{
  *   globalNews: {news: Array, results: Array},
  *   teams: Array,
@@ -168,50 +202,83 @@ export function JournalTab({
     return map;
   }, [teams]);
 
+  // Filtro de relevância: por defeito mostra só o que interessa ao treinador
+  // (notícias do próprio clube + transferências de todos + resultados da
+  // própria divisão e Taça completa); "Tudo" repõe o jornal global.
+  const [filter, setFilter] = useState("relevant");
+  const myTeam =
+    me?.teamId != null
+      ? (teamById.get(me.teamId) ?? teamById.get(Number(me.teamId)) ?? null)
+      : null;
+  const myDivision = myTeam?.division ?? null;
+  const myTeamName = myTeam?.name ?? null;
+  const hasIdentity = myTeamName != null && myDivision != null;
+
+  const visibleNews = useMemo(() => {
+    if (filter === "all" || !hasIdentity) return news;
+    return news.filter(
+      (n) => n.source === "transfer" || n.team_name === myTeamName,
+    );
+  }, [news, filter, hasIdentity, myTeamName]);
+
+  const visibleResults = useMemo(() => {
+    if (filter === "all" || !hasIdentity) return results;
+    return results.filter((r) => {
+      if (r.competition !== "League") return true;
+      return r.homeDivision === myDivision || r.awayDivision === myDivision;
+    });
+  }, [results, filter, hasIdentity, myDivision]);
+
   // Resultados da Liga agrupados por jornada (mais recente primeiro)
   const leagueGroups = useMemo(() => {
     const map = new Map();
-    for (const r of results) {
+    for (const r of visibleResults) {
       if (r.competition !== "League") continue;
       const key = r.matchweek;
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(r);
     }
     return [...map.entries()].sort((a, b) => b[0] - a[0]);
-  }, [results]);
+  }, [visibleResults]);
 
   // Rondas da Taça (mais recente primeiro)
   const cupGroups = useMemo(() => {
     const map = new Map();
-    for (const r of results) {
+    for (const r of visibleResults) {
       if (r.competition !== "Cup") continue;
       const key = r.round;
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(r);
     }
     return [...map.entries()].sort((a, b) => b[0] - a[0]);
-  }, [results]);
+  }, [visibleResults]);
 
   // Notícias agrupadas por jornada (mais recente primeiro)
   const newsGroups = useMemo(() => {
     const map = new Map();
-    for (const n of news) {
+    for (const n of visibleNews) {
       const key = Number(n.matchweek) || 0;
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(n);
     }
     return [...map.entries()].sort((a, b) => b[0] - a[0]);
-  }, [news]);
+  }, [visibleNews]);
 
   const hasContent = newsGroups.length > 0 || leagueGroups.length > 0 || cupGroups.length > 0;
+  const hasAnyContent = news.length > 0 || results.length > 0;
 
   if (!hasContent) {
     return (
       <div className="space-y-4 short:space-y-2">
+        <FilterChips filter={filter} onChange={setFilter} />
         <EmptyState
           emoji="📰"
           title="Jornal sem notícias"
-          description="Ainda não houve resultados nem notícias nesta época."
+          description={
+            hasAnyContent
+              ? "Nada relevante para o teu clube — muda para «Tudo» para veres os outros clubes."
+              : "Ainda não houve resultados nem notícias nesta época."
+          }
         />
       </div>
     );
@@ -229,11 +296,21 @@ export function JournalTab({
         </span>
       </div>
 
+      {/* ── FILTRO DE RELEVÂNCIA ─────────────────────────────────────── */}
+      <div className="flex items-center gap-2 px-1 short:px-0">
+        <FilterChips filter={filter} onChange={setFilter} />
+        <span className="ml-auto text-[10px] text-on-surface-variant truncate">
+          {filter === "relevant"
+            ? "Teu clube · transferências · tua divisão"
+            : "Todos os clubes e divisões"}
+        </span>
+      </div>
+
       {/* ── RESULTADOS DA ÉPOCA ─────────────────────────────────────── */}
       <Panel
         title="Resultados"
         icon="leaderboard"
-        meta={`${results.length} jogo${results.length !== 1 ? "s" : ""}`}
+        meta={`${visibleResults.length} jogo${visibleResults.length !== 1 ? "s" : ""}`}
         padded={false}
       >
         {leagueGroups.length === 0 && cupGroups.length === 0 ? (
@@ -286,7 +363,7 @@ export function JournalTab({
       <Panel
         title="Jornal da época"
         icon="newspaper"
-        meta={`${news.length} notícia${news.length !== 1 ? "s" : ""}`}
+        meta={`${visibleNews.length} notícia${visibleNews.length !== 1 ? "s" : ""}`}
         padded={false}
       >
         {newsGroups.length === 0 ? (

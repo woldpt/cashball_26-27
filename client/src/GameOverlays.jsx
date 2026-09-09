@@ -67,6 +67,7 @@ export function GameOverlays() {
     isCupMatch,
     isPlayingMatch,
     jobOfferModal,
+    isMatchActionPending,
     listPlayerAuction,
     listPlayerFixed,
     liveMinute,
@@ -144,16 +145,32 @@ export function GameOverlays() {
     cupUpsetPending,
   });
 
-  // Landing pós-jogo: quando a partida termina (Liga ou Taça) e nenhum modal
-  // pós-jogo está ativo, regressar ao Jornal (tab landing). Dispara uma vez
-  // por partida (chave jornada/ronda) — o utilizador pode voltar ao tab
-  // "Jogar" para ver o jogo final sem ser devolvido.
+  // Landing pós-jogo: quando a partida TERMINOU (Liga ou Taça) e TODOS os
+  // modais pós-jogo estão concluídos, regressar ao Jornal (tab landing).
+  // Dispara uma vez por partida (chave jornada/ronda) — o utilizador pode
+  // voltar ao tab "Jogar" para ver o jogo final sem ser devolvido.
+  // Duas guardas contra o disparo antecipado (o matchResults já existe no
+  // pontapé de saída e ao intervalo): (1) `hadMatchInProgressRef` garante
+  // que houve mesmo jogo a decorrer nesta sessão; (2) o jogo tem de estar
+  // parado no minuto final (sem intervalo, ação ou pausa pendente).
   const endedMatchKey = isCupMatch && cupRoundResults
     ? `cup:${cupRoundResults.season}:${cupRoundResults.round}`
     : matchResults?.matchweek
       ? `league:${season}:${matchResults.matchweek}`
       : null;
   const postMatchLandedKeyRef = useRef(null);
+  const hadMatchInProgressRef = useRef(false);
+  const matchFinished =
+    !isPlayingMatch &&
+    !showHalftimePanel &&
+    !matchAction &&
+    !isMatchActionPending &&
+    liveMinute >= 90;
+  // Qualquer modal que possa surgir no pós-jogo bloqueia o landing — não
+  // só a sequência central (postMatchFlow) mas também agentes/contratos
+  // (gameDialog), mercado de treinadores, propostas, celebrações e o
+  // sorteio da Taça. Os estados brutos (não os `show*` faseados) garantem
+  // que o landing espera pela fila inteira, não só pelo modal visível.
   const anyPostMatchModal =
     postMatchMood ||
     cupPenaltyPopup ||
@@ -161,16 +178,38 @@ export function GameOverlays() {
     boardWarning ||
     dismissalModal ||
     jobOfferModal ||
-    seasonEndModal;
+    seasonEndModal ||
+    gameDialog ||
+    coachMarketReport ||
+    transferProposalModal ||
+    signingCelebration ||
+    showCupDrawPopup ||
+    penaltySuspense ||
+    playerHistoryModal;
   useEffect(() => {
+    if (isPlayingMatch || showHalftimePanel || matchAction) {
+      hadMatchInProgressRef.current = true;
+      return;
+    }
+    if (!hadMatchInProgressRef.current) return;
+    if (!matchFinished) return;
     if (!endedMatchKey) return;
     if (postMatchLandedKeyRef.current === endedMatchKey) return;
     if (anyPostMatchModal) return;
     if (activeTab !== "live") return;
     postMatchLandedKeyRef.current = endedMatchKey;
+    hadMatchInProgressRef.current = false;
     navigateTab("jornal");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [endedMatchKey, anyPostMatchModal, activeTab]);
+  }, [
+    endedMatchKey,
+    anyPostMatchModal,
+    activeTab,
+    isPlayingMatch,
+    showHalftimePanel,
+    matchAction,
+    matchFinished,
+  ]);
 
   return (
     <>

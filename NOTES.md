@@ -67,6 +67,12 @@
 - Armadilha: a Taça usa divisões 1-4 (divisão menor = escalão superior); o `outcome` da Taça é sempre win/loss (via `winnerId`), nunca draw.
 - Checks: client lint + check:types OK. `npm run build` falha no ambiente (binding nativo `rolldown` `MODULE_NOT_FOUND`) — pré-existente, não causado por esta alteração. Sem mudança estrutural de layout (mesma estrutura flex, só conteúdo/cor/texto) → sem mobile-resp-check; nenhum harness renderiza este modal.
 
+## Jornal: sem salto no pontapé de saída + filtro Relevante (novo)
+
+- **Salto indevido ao carregar Jogar (fix):** o landing pós-jogo (`GameOverlays.jsx`) disparava com qualquer `matchResults` + `activeTab === "live"` — mas o `matchResults` já existe no pontapé de saída e ao intervalo, por isso o utilizador era atirado para o Jornal ao iniciar a partida. Agora só aterra com jogo **terminado** (`!isPlayingMatch`, sem intervalo/ação/pausa, `liveMinute >= 90`) **e** com jogo decorrido antes (`hadMatchInProgressRef` — evita aterrar no lobby/revisão), uma vez por partida. Aprovado pelo utilizador: só segue para o jornal **após concluídos todos os modais pós-jogo** — a gate inclui os estados brutos todos (`gameDialog` de agentes, `coachMarketReport`, propostas, celebrações, sorteio da Taça, suspense, histórico de jogador), não só a sequência central.
+- **Filtro Relevante/Tudo (`JournalTab.jsx`):** queixa de "demasiada informação irrelevante" — por defeito mostra só notícias do próprio clube + transferências (todos) + resultados da própria divisão (Taça completa por ser curta); chips Relevante/Tudo no topo + contadores e empty state adaptados. Sem identidade (sem equipa) mostra tudo.
+- Checks: client `lint` + `check:types` OK; mobile portrait 150/150 + landscape 180/180 PASS.
+
 ## Em curso
 
 - **Crash-loop do backend (fix):** `getGlobalNews` (`server/socketNewsHandlers.ts`) fazia `[...league, ...cup].map(mkResults)` mas `mkResults(rows)` espera o array inteiro → `rows.map is not a function` → uncaught → `fatalShutdown` com segfault do sqlite3 (exit 139, restart em loop). Fix de 1 linha: `mkResults([...])`. Rebuild + restart: `/health` 200 e estável; typecheck + `audit:socketio` 0 erros + `audit:gamestate 445WU8` 0 erros.
