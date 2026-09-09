@@ -1,15 +1,15 @@
 import { useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { getPosStyle } from "../matchConstants.js";
+import { getPosStyle } from "../../matchConstants.js";
 import {
   CompactPlayerCard,
   MatchIcon,
   TacticsButtons,
-} from "../shared/index.js";
+} from "../../shared/index.js";
 import {
   useCompactViewport,
   useLandscapePhone,
-} from "../../../hooks/useIsMobile.js";
+} from "../../../../hooks/useIsMobile.js";
 import {
   getBenchCardState,
   getPitchCardState,

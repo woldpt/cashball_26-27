@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { MAX_MATCH_SUBS } from "../../../constants/index.js";
+import { MAX_MATCH_SUBS } from "../../../../constants/index.js";
 
 /**
  * `prefers-reduced-motion` reativo — crossfades e transições passam a

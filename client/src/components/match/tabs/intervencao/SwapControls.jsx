@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { getPosStyle } from "../matchConstants.js";
+import { getPosStyle } from "../../matchConstants.js";
 import {
   GhostButton,
   MatchIcon,
   PrimaryButton,
-} from "../shared/index.js";
+} from "../../shared/index.js";
 
 /* ── SwapControls — Sai → Entra + Limpar/Substituir + hint + countdown ───
  * No intervalo e na pausa de substituição acumula-se em fila (onConfirmSub) e só

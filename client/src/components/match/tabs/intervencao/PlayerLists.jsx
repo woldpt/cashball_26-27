@@ -1,9 +1,9 @@
-import { MAX_MATCH_SUBS } from "../../../constants/index.js";
-import { getPosStyle } from "../matchConstants.js";
+import { MAX_MATCH_SUBS } from "../../../../constants/index.js";
+import { getPosStyle } from "../../matchConstants.js";
 import {
   CompactPlayerCard,
   MatchPlayerCard,
-} from "../shared/index.js";
+} from "../../shared/index.js";
 import {
   getBenchCardState,
   getPitchCardState,

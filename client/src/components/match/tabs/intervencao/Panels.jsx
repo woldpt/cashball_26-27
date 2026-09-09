@@ -1,12 +1,12 @@
-import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
-import { getPosStyle } from "../matchConstants.js";
+import { POSITION_SHORT_LABELS } from "../../../../constants/index.js";
+import { getPosStyle } from "../../matchConstants.js";
 import {
   EventCard,
   OpponentGridCard,
   PossessionBar,
   RefWeatherBar,
-} from "../shared/index.js";
-import { TeamCrest } from "../../live/TeamCrest.jsx";
+} from "../../shared/index.js";
+import { TeamCrest } from "../../../live/TeamCrest.jsx";
 
 function EventList({ events }) {
   if (events.length === 0) {
