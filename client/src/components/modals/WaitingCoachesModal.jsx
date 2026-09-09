@@ -127,7 +127,7 @@ export function WaitingCoachesModal({
       visible={visible && lockedCoaches.length >= 2}
       z={MODAL_Z.waitingCoaches}
       variant="wide"
-      cardClassName="flex flex-col max-h-full min-h-0"
+      cardClassName="flex flex-col max-h-[90dvh] min-h-0"
       backdropStyle={{
         background:
           "radial-gradient(ellipse at center, rgba(34,197,94,0.08) 0%, rgba(10,10,10,0.96) 70%)",
