@@ -186,6 +186,9 @@
 
 ## Último estado
 
+- **Fim de jogo cai no Jornal, não na Classificação (fix):** cadeia em 3 peças — o relógio forçava `setActiveTab("standings")` aos 90'+3s (herança pré-Jornal), o mood exigia tab Classificação/Taça, e o landing exige tab Jogo: o salto final ficava bloqueado para sempre. Removidos os saltos forçados (relógio 2 ramos + pós-penáltis); mood abre sobre o tab atual mal chegam os resultados; chaves anti-repetição passam a incluir a época (`league:{época}:{jornada}`, `taça:{época}:{ronda}` — antes colidiam entre épocas, o mood só aparecia na 1.ª). Fluxo: Jogo → modais → Jornal, igual na Liga e na Taça. Só `client/src/contexts/GameContext.jsx` (navegação; `GameOverlays.jsx` intacto).
+  - Checks: client `lint` + `check:types` OK. Sem audits de servidor/mobile-resp-check (só navegação). **Pendente:** teste manual numa sala real até aos 90' (Liga e Taça), não reproduzível neste ambiente.
+
 - **LandingPage com tema de balneário/quadro tático (novo):** só camada visual, sem mexer em layout nem lógica — fundo com faixas de relva + linha lateral/círculo central em giz + grelha de giz (partículas 55→32), etiqueta "placar de balneário" (Treinador · Época 26/27 · 90') com fita-cola no título, cartão com linha de giz no topo e crachá `badge` nos headers, features com ícones material (`stadium`/`group`/`payments`/`live_tv`). Só `client/src/components/auth/LandingPage.jsx`.
   - Checks: client `lint` + `check:types` OK. Sem mobile-resp-check (sem mudança de grid/flex/larguras).
 

@@ -396,7 +396,8 @@ export function GameProvider({
 							socket.emit("cupSecondHalfDone");
 						} else {
 							socket.emit("leagueAnimDone");
-							setActiveTab("standings");
+							// Sem salto para a Classificação: fica no Jogo durante os
+							// modais pós-jogo; o landing (GameOverlays) leva ao Jornal.
 						}
 					}, 3000);
 					return () => clearTimeout(timer);
@@ -429,7 +430,8 @@ export function GameProvider({
 						socket.emit("cupSecondHalfDone");
 					} else {
 						socket.emit("leagueAnimDone");
-						setActiveTab("standings");
+						// Sem salto para a Classificação: fica no Jogo durante os
+						// modais pós-jogo; o landing (GameOverlays) leva ao Jornal.
 					}
 				}, 3000);
 				return () => clearTimeout(timer);
@@ -491,9 +493,10 @@ export function GameProvider({
 	}, [liveMinute, matchResults, me?.teamId, players]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// ── Post-match mood modal (Vitória / Adeptos descontentes / Empate) ─────
-	// Liga → aparece ao chegar ao tab Classificação. Taça → tab Taça/Bracket.
-	// Sem timeout: requer clique do coach para avançar. Mostra uma vez por
-	// jornada/ronda (guard `ackedPostMatchKeyRef`).
+	// Abre sobre o tab onde o utilizador está (em regra, o Jogo) mal chegam
+	// os resultados — sem exigir tab Classificação/Taça. Sem timeout: requer
+	// clique do coach para avançar. Mostra uma vez por época + jornada/ronda
+	// (guard `ackedPostMatchKeyRef`).
 	useEffect(() => {
 		const myId = me?.teamId;
 		if (myId == null) return;
@@ -536,7 +539,7 @@ export function GameProvider({
 		};
 
 		// Liga
-		if (activeTab === "standings" && matchResults?.results) {
+		if (matchResults?.results) {
 			const myMatch = matchResults.results.find(
 				(r) =>
 					Number(r.homeTeamId) === Number(myId) ||
@@ -555,7 +558,7 @@ export function GameProvider({
 				const oppId = isHome ? myMatch.awayTeamId : myMatch.homeTeamId;
 				const outcome =
 					myGoals > oppGoals ? "win" : myGoals < oppGoals ? "loss" : "draw";
-				const key = `league:${matchResults.matchweek}`;
+				const key = `league:${season}:${matchResults.matchweek}`;
 				if (ackedPostMatchKeyRef.current !== key) {
 					ackedPostMatchKeyRef.current = key;
 					setPostMatchMood(
@@ -574,10 +577,7 @@ export function GameProvider({
 		}
 
 		// Taça
-		if (
-			(activeTab === "cup" || activeTab === "bracket") &&
-			cupRoundResults?.results
-		) {
+		if (cupRoundResults?.results) {
 			const myMatch = cupRoundResults.results.find(
 				(r) =>
 					Number(r.homeTeamId) === Number(myId) ||
@@ -590,7 +590,7 @@ export function GameProvider({
 				const oppId = isHome ? myMatch.awayTeamId : myMatch.homeTeamId;
 				const outcome =
 					Number(myMatch.winnerId) === Number(myId) ? "win" : "loss";
-				const key = `cup:${cupRoundResults.round}`;
+				const key = `cup:${cupRoundResults.season}:${cupRoundResults.round}`;
 				if (ackedPostMatchKeyRef.current !== key) {
 					ackedPostMatchKeyRef.current = key;
 					setPostMatchMood(
@@ -607,7 +607,7 @@ export function GameProvider({
 				}
 			}
 		}
-	}, [activeTab, matchResults, cupRoundResults, me?.teamId, teams]);
+	}, [matchResults, cupRoundResults, me?.teamId, teams, season]);
 
 	// ── Cup draw reveal animation ───────────────────────────────────────────
 	useEffect(() => {
@@ -641,7 +641,7 @@ export function GameProvider({
 		if (!pendingCupRoundResults) return;
 		startTransition(() => {
 			setPendingCupRoundResults(null);
-			setActiveTab("cup");
+			// Sem salto para o tab Taça: fica no Jogo; o landing leva ao Jornal.
 			setIsCupMatch(false);
 			setCupPreMatch(false);
 			setIsCupExtraTime(false);
