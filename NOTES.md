@@ -6,6 +6,13 @@
 > - Regra permanente descoberta → mover para `AGENTS.md`/`CLAUDE.md`/`STYLE.md` e remover daqui.
 > - Ao iniciar uma sessão nova: ler este ficheiro + `git log --oneline -10`.
 
+## FinancesTab — Empréstimos como cartão de crédito "CashBall Bank" (novo)
+
+- Bloco "Empréstimos" (coluna Centro de Controlo) redesenhado como face de cartão: cabeçalho emissor `CashBall Bank` + ícone contactless/NFC, chip geométrico dourado, linha "época {seasonYear}", valor da dívida grande (`text-error`/branco quando dívida; verde-esmeralda + "Sem juros · liquidado" quando pago), aviso "Juros 1,5%/jornada", e barra de plafond (% de `LOAN_MAX` 2.500.000€; thresholds 75/40 → rose/amber/emerald). Botões e dialogs (`payLoan`/`takeLoan`/`payAllLoan`) intactos — só `FinancesTab.jsx`.
+- Armadilha: bolhas decorativas `absolute` com offsets negativos que estouravam a caixa `overflow-hidden` do cartão inflavam `scrollWidth` → `clipEls=+40px` no harness; reposicionadas para `-top-16 right-0` / `-bottom-16 left-0` (só overflow vertical, já clippado) — report limpo.
+- Checks: client `lint` + `check:types` OK; portrait (320–430) e landscape (568–1023) do harness `finances-resp-test` PASS, `clipEls=0`, + variante local com `loanAmount=0` (estado liquidado) PASS.
+- **Workaround mobile-resp-check (infra quebrada — ver nota abaixo):** `node_modules` é root/musl e o host é glibc → rolldown não arranca. Solução: `rsync -a --exclude node_modules --exclude dist ./ /tmp/cb-client-test/ && cd /tmp/cb-client-test && npm ci` e correr `node scripts/mobileRespCheck.mjs <harness> ...` de lá (chromium em `/usr/bin/chromium`; servidor próprio: `npx vite --port 5199 --strictPort`). Testes unitários com `playwright-core` + `executablePath: "/usr/bin/chromium"`.
+
 ## Pitches broadcast com avatares + badges live (novo)
 
 - `PitchFormation.jsx` redesenhado (transmissão TV): relvado com faixas de corte + foco de luz + vinheta, linhas SVG mais nítidas (marcas de penálti, ponto central), `PlayerMarker` com cara (`PlayerAvatar`, anel na cor da posição via `POSITION_ACCENT_HEX`, camisola na cor da equipa) + sigla da posição + placard nome/skill + badges de eventos (⚽×n, 🟨/🟥 via `filterMatchEvents(events, liveMinute)`).
