@@ -90,6 +90,16 @@ const TRAINING_META = {
 
 const TRAINING_OPTIONS = Object.keys(TRAINING_META);
 
+// Atributo do relatório realçado por cada foco de treino.
+const FOCUS_ATTRIBUTE = {
+  GR: "skill",
+  Defesas: "skill",
+  Médios: "skill",
+  Avançados: "skill",
+  Forma: "form",
+  Resistência: "resistance",
+};
+
 const POSITION_LABELS = {
   GR: "Guarda-redes",
   DEF: "Defesas",
@@ -143,7 +153,7 @@ function TrainingOptionCard({ optionKey, selected, isSaved, justSaved, loading, 
         isSelected
           ? `${style.border} bg-primary/10 text-on-surface shadow-lg ${style.glow}`
           : `border-outline-variant/25 bg-gradient-to-r ${style.bgGrad} via-surface-container/70 to-surface/30 ${style.glow} shadow-sm shadow-black/30 hover:border-outline-variant/50`
-      } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+      } ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${isSaved && justSaved ? "training-saved-pulse" : ""}`}
     >
       {/* Faixa lateral colorida */}
       <div className={`shrink-0 w-1 bg-gradient-to-b ${style.bar}`} />
@@ -229,11 +239,21 @@ function groupByPlayer(records) {
  * @param {{
  *   player: { player_id: number, name: string, changes: object[] },
  *   position: string,
+ *   highlightAttr?: string,
+ *   highlightClass?: string,
  * }} props
  */
-function PlayerReportRow({ player, position }) {
+function PlayerReportRow({ player, position, highlightAttr, highlightClass }) {
   const byAttr = {};
   for (const c of player.changes) byAttr[c.attribute] = c;
+
+  // Cabeçalho da coluna do atributo treinado leva a cor do foco;
+  // os restantes esbatem-se para o olho ir direto ao que interessa.
+  const headerClass = (attr) => {
+    if (attr === highlightAttr && highlightClass) return highlightClass;
+    if (highlightAttr) return "text-on-surface-variant/40";
+    return "text-on-surface-variant/70";
+  };
 
   const bar = POSITION_BAR_CLASS[position] || "from-zinc-500 to-zinc-600";
   const glow = POSITION_GLOW_CLASS[position] || "";
@@ -260,7 +280,9 @@ function PlayerReportRow({ player, position }) {
               key={col.key}
               className="flex flex-col items-center min-w-[48px]"
             >
-              <span className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant/70 mb-0.5">
+              <span
+                className={`text-[8px] font-black uppercase tracking-widest mb-0.5 ${headerClass(col.key)}`}
+              >
                 {col.label}
               </span>
               <DeltaCell record={byAttr[col.key]} />
@@ -289,6 +311,8 @@ export function TrainingPage({ me, matchweek }) {
   });
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  // Contador de confirmações — remontado na key do cartão, relança o pulso.
+  const [savedTick, setSavedTick] = useState(0);
   const [error, setError] = useState("");
 
   // Persist selected training to localStorage (por sala)
@@ -329,6 +353,7 @@ export function TrainingPage({ me, matchweek }) {
       if (data.teamId === me?.teamId) {
         setSavedTraining(data.trainingFocus);
         setSaved(true);
+        setSavedTick((t) => t + 1);
         clearTimeout(savedTimeoutRef.current);
         savedTimeoutRef.current = setTimeout(() => setSaved(false), 2000);
       }
@@ -397,6 +422,10 @@ export function TrainingPage({ me, matchweek }) {
 
   // Resolve border accent do foco atual
   const focusStyle = savedTraining ? getMeta(savedTraining) : null;
+  const focusMeta = savedTraining ? TRAINING_META[savedTraining] : null;
+  const focusAttr = savedTraining
+    ? (FOCUS_ATTRIBUTE[savedTraining] ?? null)
+    : null;
 
   return (
     <div className="space-y-4 short:space-y-2">
@@ -405,10 +434,24 @@ export function TrainingPage({ me, matchweek }) {
         <SummaryWidget
           label="Foco Atual"
           value={savedTraining ? getTrainingLabel(savedTraining) : "Nenhum"}
+          sub={focusMeta?.description}
           compactMobile
           valueClass="text-lg sm:text-2xl short:!text-sm"
           accentClass={focusStyle ? focusStyle.border : "border-outline-variant"}
-        />
+        >
+          {focusMeta && focusStyle && (
+            <span
+              aria-hidden
+              className={`absolute top-2 right-2 short:top-1 short:right-1 inline-flex items-center justify-center rounded-full bg-surface-bright p-1.5 short:p-1 border shadow-sm ${focusStyle.border}`}
+            >
+              <span
+                className={`material-symbols-outlined text-[18px] short:text-[14px] ${focusStyle.text}`}
+              >
+                {focusMeta.icon}
+              </span>
+            </span>
+          )}
+        </SummaryWidget>
         <SummaryWidget label="Jornada" value={matchweek} compactMobile valueClass="text-lg sm:text-2xl short:!text-sm" />
         <SummaryWidget
           label="Jogadores Treinados"
@@ -438,7 +481,7 @@ export function TrainingPage({ me, matchweek }) {
             >
               {TRAINING_OPTIONS.map((key) => (
                 <TrainingOptionCard
-                  key={key}
+                  key={savedTraining === key ? `foco-${savedTick}` : key}
                   optionKey={key}
                   selected={selectedTraining}
                   isSaved={savedTraining === key}
@@ -535,6 +578,8 @@ export function TrainingPage({ me, matchweek }) {
                           key={p.player_id}
                           player={p}
                           position={position}
+                          highlightAttr={focusAttr}
+                          highlightClass={focusStyle?.text}
                         />
                       ))}
                     </div>

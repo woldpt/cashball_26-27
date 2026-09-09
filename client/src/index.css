@@ -351,6 +351,24 @@ body {
   }
 }
 
+/* Pulso de confirmação do cartão de treino — replay ao guardar (remount via key). */
+@keyframes training-saved-pulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.035);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .training-saved-pulse {
+    animation: training-saved-pulse 0.45s ease-out;
+  }
+}
+
 /* Heartbeat for JOGAR button */
 @keyframes heartbeat {
   0%,
