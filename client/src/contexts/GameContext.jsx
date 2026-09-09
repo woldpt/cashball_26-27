@@ -545,7 +545,14 @@ export function GameProvider({
 					Number(r.homeTeamId) === Number(myId) ||
 					Number(r.awayTeamId) === Number(myId),
 			);
-			if (myMatch) {
+			// Só os resultados finais trazem `mom` (o servidor anexa-o na
+			// finalização, ver weeklyFlowHelpers). O mesmo estado `matchResults`
+			// é reutilizado para o direto (pontapé de saída, minuto a minuto,
+			// intervalo — incluindo fixtures da Taça), onde os golos ainda vão
+			// 0-0. Sem esta guarda o modal abria ao início do jogo sempre com
+			// empate e ainda consumia a chave anti-repetição, bloqueando o
+			// humor real no apito final.
+			if (myMatch && myMatch.mom != null) {
 				const isHome = Number(myMatch.homeTeamId) === Number(myId);
 				// Liga envia fixtures com finalHomeGoals/finalAwayGoals; a Taça usa
 				// homeGoals/awayGoals. Aceitar ambos os formatos (ver LeagueStandings).
