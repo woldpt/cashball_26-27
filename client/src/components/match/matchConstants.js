@@ -62,6 +62,24 @@ export function buildPositionRows(starters) {
   return rows;
 }
 
+/* Etiquetas de meteorologia (pt-PT) — partilhadas pelo briefing pré-jogo. */
+export const WEATHER_LABELS = {
+  sol: "Sol",
+  chuva: "Chuva",
+  vento: "Vento",
+  chuva_forte: "Tempestade",
+  frio: "Frio",
+  nevoeiro: "Nevoeiro",
+  neve: "Neve",
+};
+
+/* Meta dos papéis de ameaça do scouting (briefing pré-jogo). */
+export const THREAT_ROLE_META = {
+  goleador: { icon: "⚽", label: "Melhor marcador" },
+  qualidade: { icon: "💎", label: "Maior qualidade" },
+  forma: { icon: "🔥", label: "Em grande forma" },
+};
+
 /* Event types to display in the match chronology */
 export const MATCH_EVENT_TYPES = [
   "goal", "penalty_goal", "own_goal", "penalty_miss",

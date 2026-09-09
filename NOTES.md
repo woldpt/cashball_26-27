@@ -6,6 +6,17 @@
 > - Regra permanente descoberta → mover para `AGENTS.md`/`CLAUDE.md`/`STYLE.md` e remover daqui.
 > - Ao iniciar uma sessão nova: ler este ficheiro + `git log --oneline -10`.
 
+## MatchBriefing — refactor total (view-model + pasta briefing/)
+
+- `MatchBriefing.jsx` virou orquestrador fino (memo do VM + composição); lógica pura em `live/briefing/briefingViewModel.js` (`orderedPair`, odds/probs/favorito, último confronto, atmosfera, slots) + 11 blocos (`Tile`/`CompareStat`, `VersusHero`, `NextMatchCard`, `DifficultyGauge`, `StadiumCard`, `OpponentFormation`, `ThreatGrid`, `FormChips`, `RecordText`, `PrepStepper`, `BriefingSkeleton`). Novo `shared/PrimaryCTA.jsx` (CTA verde canónico).
+- Visual: GM/GS fundidos em "Golos M:S" (5 tiles), moral com dot + valor em tooltip (`getMoraleColor` novo em `morale.js`), qualidade com /100, barra do estádio na cor da atmosfera + label "Receita", favorito nas odds (ring) + ⓘ "iguais às das apostas", stepper "1 Briefing → 2 Tática", microcopy "Podes voltar atrás", skeleton (`nextMatchSummaryLoading` do GameContext) + `EmptyState` em vez de `null`.
+- `WEATHER_LABELS` + `THREAT_ROLE_META` mudados para `matchConstants.js`; hex `#111/#1e1e1e/#161616` → tokens (`surface-container`, `outline-variant/25`); labels 7px→8px; `rounded-2xl` mantido (linguagem do módulo live, desvio consciente do §3).
+- A11y: gauge e barra de ocupação com `role="progressbar"`, chips de forma com `role="img"`, botões de plantel com `aria-label`, emojis decorativos com `aria-hidden`.
+- Armadilhas (bugs pré-existentes expostos pela fixture de nomes longos, corrigidos): filhos de `Tile` sem `w-full` (OddsTiles/FormRow/Registo) + botão do nome sem `min-w-0` → overflow horizontal; score do LC lado a lado com o badge → agora empilhado com `whitespace-nowrap`.
+- Testes: `npm run test:briefing` (29 asserts S1–S8) OK; harness novo `briefing-resp-test.html/.jsx` (fixture extrema: nomes longos, LC de taça com penáltis, vulcão) PASS portrait 320–430 + landscape 568–1023; resto da suite igual (só falha `cupupset-resp-test`, harness stale que importa `CupUpsetModal.jsx` inexistente — pré-existente, não mexido).
+- Infra mobile (mesmo bloqueio do `node_modules` root/musl): sem `pkill -f vite` (mata servidores alheios!) — corri em cópia `/tmp/cb-brief-check` (tar sem node_modules + symlink para `/tmp/cb-journal/node_modules`). Reparos fora do repo (manter): symlinks em `/home/woldpt/node_modules/` para `@rolldown/binding-linux-x64-gnu`, `lightningcss-linux-x64-gnu`, `@tailwindcss/oxide-linux-x64-gnu` (apontam p/ `/tmp/cb-journal`) — sem eles o `vite` local nem arranca.
+- Por fazer (fora do plano aprovado): migrar os CTAs inline do `TacticsView.jsx` para `PrimaryCTA`; tabs "Confronto|Scouting" em mobile; corrigir/apagar harness `cupupset` stale.
+
 ## JournalTab — robustez + acessibilidade + UX mobile
 
 - Robustez: `compareRows` local removido → `compareStandingsRows` de `utils/standingsRank.js` (fonte única com servidor e tabela); `gameKey` e todos os lookups `teamById` com `Number()` (IDs do SQLite vs contexto); memos `teamById`/`humanTeamIds`/`coachByTeamId` juntos numa só passagem; parse da rota de transferências (`"{jogador} · {vendedor} → {comprador}"`) extraído para `transferRoute()` com fallback para o título intacto; `onOpenPlayerHistory` agora sempre `{id}` (o GameRoutes só usa `playerId`).

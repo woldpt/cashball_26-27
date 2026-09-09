@@ -16,6 +16,18 @@ export function getMoraleLabel(morale) {
 }
 
 /**
+ * Cor semântica da moral do plantel (mesmos limiares do TacticsView).
+ * @param {number} morale Valor 0–100 (qualquer número é limitado à escala)
+ * @returns {string} chave de cor ("green"|"amber"|"red") para mapear para classes
+ */
+export function getMoraleColor(morale) {
+  const v = Math.max(0, Math.min(100, Number(morale) || 0));
+  if (v > 75) return "green";
+  if (v >= 50) return "amber";
+  return "red";
+}
+
+/**
  * Etiqueta do mood dos adeptos (bancada) — escala própria, mais emocional
  * que a moral do plantel. Partilhada por StadiumTab e MatchBriefing.
  * @param {number} mood Valor 0–100 (qualquer número é limitado à escala)
