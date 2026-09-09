@@ -229,36 +229,55 @@ export function StadiumTab({
       {/* ── EXPANSÃO ──────────────────────────────────────────────── */}
       <Panel
         title="Expansão do Estádio"
-        icon="stadium"
-        meta={atMaxCapacity ? "Capacidade Máxima" : undefined}
+        icon="construction"
+        meta={atMaxCapacity ? "Obra concluída" : "Estaleiro aberto"}
         padded={false}
       >
         <div className="p-3 sm:p-5 short:p-2.5">
-          {/* Progresso da capacidade até ao máximo */}
+          {/* Fita de sinalização do estaleiro */}
+          <div
+            aria-hidden
+            className="mb-4 h-2.5 rounded-sm opacity-90 short:mb-3"
+            style={{
+              background:
+                "repeating-linear-gradient(-45deg, var(--color-amber-400, #fbbf24) 0 16px, var(--color-zinc-950, #09090b) 16px 32px)",
+            }}
+          />
+          {/* Frente de obra — progresso da capacidade até ao máximo */}
           <div className="mb-4 sm:mb-5 short:mb-3">
             <div className="mb-1 flex items-center justify-between text-[10px] font-black uppercase tracking-wider">
-              <span className="text-on-surface-variant">Capacidade</span>
+              <span className="text-on-surface-variant">Frente de obra — capacidade</span>
               <span className="tabular-nums text-on-surface-variant/90">
                 {stadiumCapacity.toLocaleString("pt-PT")} /{" "}
                 {MAX_CAPACITY.toLocaleString("pt-PT")}
               </span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-surface-bright">
+            <div className="h-2.5 w-full overflow-hidden rounded-full border border-amber-400/30 bg-surface-bright">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-tertiary/50 to-tertiary transition-all duration-700"
+                className="relative h-full rounded-full bg-gradient-to-r from-tertiary/50 to-tertiary transition-all duration-700"
                 style={{ width: `${capacityPct}%` }}
-              />
+              >
+                {/* Risca de viga sobre o progresso */}
+                <div
+                  aria-hidden
+                  className="absolute inset-0 opacity-25"
+                  style={{
+                    background:
+                      "repeating-linear-gradient(-55deg, transparent 0 6px, var(--color-zinc-950, #09090b) 6px 8px)",
+                  }}
+                />
+              </div>
             </div>
             {!atMaxCapacity && (
               <p className="mt-1 text-[10px] uppercase tracking-wider text-on-surface-variant/50">
-                +{worksToMax} obra(s) até à capacidade máxima
+                Faltam +{worksToMax} obra(s) para concluir o estaleiro
               </p>
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 short:gap-2 mb-4 sm:mb-5 short:mb-3">
-            <div className="bg-surface rounded-md border border-outline-variant/15 p-3 sm:p-4 short:p-2.5 flex flex-col gap-1 short:gap-0.5">
+            <div className="bg-surface rounded-md border border-dashed border-amber-400/40 p-3 sm:p-4 short:p-2.5 flex flex-col gap-1 short:gap-0.5">
               <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
-                Custo por Obra
+                🧾 Custo por Obra
               </span>
               <span className="text-tertiary font-headline font-bold text-xl short:text-base tabular-nums">
                 {formatCurrency(EXPANSION_COST)}
@@ -267,9 +286,9 @@ export function StadiumTab({
                 +{SEATS_PER_BUILD.toLocaleString("pt-PT")} lugares
               </span>
             </div>
-            <div className="bg-surface rounded-md border border-outline-variant/15 p-3 sm:p-4 short:p-2.5 flex flex-col gap-1 short:gap-0.5">
+            <div className="bg-surface rounded-md border border-dashed border-amber-400/40 p-3 sm:p-4 short:p-2.5 flex flex-col gap-1 short:gap-0.5">
               <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
-                Ganho Receita / Obra
+                🧱 Ganho Receita / Obra
               </span>
               <span className="text-primary font-headline font-bold text-xl short:text-base tabular-nums">
                 {formatCurrency(SEATS_PER_BUILD * ticketPrice)}
@@ -281,7 +300,7 @@ export function StadiumTab({
           </div>
 
           <Button
-            variant="primary"
+            variant="accent"
             size="lg"
             full
             disabled={atMaxCapacity || currentBudget < EXPANSION_COST}
@@ -296,16 +315,17 @@ export function StadiumTab({
               });
             }}
           >
+            <span className="material-symbols-outlined text-[18px]">construction</span>
             Expandir Estádio — {formatCurrency(EXPANSION_COST)}
           </Button>
 
           {atMaxCapacity ? (
             <p className="text-on-surface-variant text-[10px] text-center mt-2 uppercase tracking-wider opacity-60">
-              Capacidade máxima atingida ({MAX_CAPACITY.toLocaleString("pt-PT")} lugares)
+              Obra concluída — lotação máxima ({MAX_CAPACITY.toLocaleString("pt-PT")} lugares)
             </p>
           ) : currentBudget < EXPANSION_COST ? (
             <p className="text-on-surface-variant text-[10px] text-center mt-2 uppercase tracking-wider opacity-60">
-              Saldo insuficiente · faltam{" "}
+              Obra em espera · faltam materiais ·{" "}
               {formatCurrency(EXPANSION_COST - currentBudget)}
             </p>
           ) : null}

@@ -6,6 +6,13 @@
 > - Regra permanente descoberta → mover para `AGENTS.md`/`CLAUDE.md`/`STYLE.md` e remover daqui.
 > - Ao iniciar uma sessão nova: ler este ficheiro + `git log --oneline -10`.
 
+## StadiumTab — painel Expansão com aspeto de estaleiro (novo)
+
+- Só o bloco Expansão (`StadiumTab.jsx`): fita de sinalização amarelo/preto no topo (repeating-linear-gradient com `var(--color-amber-400)`/`--color-zinc-950` + fallback hex, sem imagens), ícone do header `stadium`→`construction`, meta "Estaleiro aberto"/"Obra concluída".
+- Barra de capacidade virou viga (borda âmbar + risca diagonal sobre o progresso), label "Frente de obra — capacidade", resto "Faltam +N obra(s) para concluir o estaleiro"; cartões custo/ganho como placas (borda tracejada âmbar + 🧾/🧱); botão `primary`→`accent` com ícone `construction`.
+- Voz de placa de obra: máxima "Obra concluída — lotação máxima", sem saldo "Obra em espera · faltam materiais". Lógica, emits (`buildStadium`) e dialog intactos; resto da tab intocado.
+- Checks: client `lint` + `check:types` OK. Sem mobile-resp-check (mesma estrutura/grid, só decoração).
+
 ## FinancesTab — Empréstimos como cartão de crédito "CashBall Bank" (novo)
 
 - Bloco "Empréstimos" (coluna Centro de Controlo) redesenhado como face de cartão: cabeçalho emissor `CashBall Bank` + ícone contactless/NFC, chip geométrico dourado, linha "época {seasonYear}", valor da dívida grande (`text-error`/branco quando dívida; verde-esmeralda + "Sem juros · liquidado" quando pago), aviso "Juros 1,5%/jornada", e barra de plafond (% de `LOAN_MAX` 2.500.000€; thresholds 75/40 → rose/amber/emerald). Botões e dialogs (`payLoan`/`takeLoan`/`payAllLoan`) intactos — só `FinancesTab.jsx`.
