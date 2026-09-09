@@ -1288,6 +1288,30 @@ for (const m of trainingMigrations) {
 	});
 }
 
+// Migration: ticket_revenue por jogo (receita faturada à altura, não recalculada
+// ao preço atual). Sem DEFAULT: linhas antigas ficam NULL e o painel usa fallback.
+for (const m of [
+  {
+    sql: `ALTER TABLE matches ADD COLUMN ticket_revenue INTEGER`,
+    label: "matches.ticket_revenue",
+  },
+  {
+    sql: `ALTER TABLE cup_matches ADD COLUMN ticket_revenue INTEGER`,
+    label: "cup_matches.ticket_revenue",
+  },
+]) {
+  db.run(m.sql, (err: any) => {
+    if (
+      err &&
+      err.message &&
+      !err.message.includes("duplicate column name") &&
+      !err.message.includes("no such table")
+    ) {
+      console.warn(`[migration] ${m.label}:`, err.message);
+    }
+  });
+}
+
 // Migration: player_skill_snapshots table
 db.run(
 	`CREATE TABLE IF NOT EXISTS player_skill_snapshots (

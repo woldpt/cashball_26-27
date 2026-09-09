@@ -824,6 +824,12 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
             "ALTER TABLE matches ADD COLUMN attendance INTEGER DEFAULT 0",
             () => {},
           );
+          // Receita faturada à altura (attendance × preço do bilhete de então).
+          // Sem DEFAULT: linhas antigas ficam NULL e o painel usa o fallback.
+          db.run(
+            "ALTER TABLE matches ADD COLUMN ticket_revenue INTEGER",
+            () => {},
+          );
           db.run("ALTER TABLE matches ADD COLUMN home_lineup TEXT", () => {});
           db.run("ALTER TABLE matches ADD COLUMN away_lineup TEXT", () => {});
           db.run(
@@ -843,11 +849,16 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
             home_penalties INTEGER DEFAULT 0,
             away_penalties INTEGER DEFAULT 0,
             attendance INTEGER DEFAULT 0,
+            ticket_revenue INTEGER DEFAULT 0,
             winner_team_id INTEGER,
             played BOOLEAN DEFAULT 0
           )`);
           db.run(
             "ALTER TABLE cup_matches ADD COLUMN attendance INTEGER DEFAULT 0",
+            () => {},
+          );
+          db.run(
+            "ALTER TABLE cup_matches ADD COLUMN ticket_revenue INTEGER",
             () => {},
           );
           db.run(`CREATE TABLE IF NOT EXISTS palmares (

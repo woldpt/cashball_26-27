@@ -1256,8 +1256,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 
 		// ── Phase 3: DB updates, morale, and results for all fixtures ────────────
-		// Bilheteira da Taça: credita attendance × 15 € à equipa da casa de cada
-		// eliminatória (mesma tarifa da liga) e persiste attendance em cup_matches.
+		// Bilheteira da Taça: credita attendance × preço do bilhete da casa de cada
+		// eliminatória e persiste attendance + receita faturada em cup_matches.
 		// Executado antes dos resultados para garantir que receita e attendance fazem
 		// parte do bloco idempotente marcado por applied_weeks('finalized').
 		const upsets: Array<{
@@ -1290,11 +1290,11 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					related_team_name: (fixture.awayTeam as any)?.name || null,
 				});
 			}
-			// Persiste attendance mesmo quando 0 (para auditoria e finances)
+			// Persiste attendance + receita faturada mesmo quando 0 (auditoria e finances)
 			await new Promise<void>((resolve) => {
 				game.db.run(
-					"UPDATE cup_matches SET attendance = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
-					[fixture.attendance || 0, season, round, fixture.homeTeamId, fixture.awayTeamId],
+					"UPDATE cup_matches SET attendance = ?, ticket_revenue = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
+					[fixture.attendance || 0, cupRevenue, season, round, fixture.homeTeamId, fixture.awayTeamId],
 					() => resolve(),
 				);
 			});

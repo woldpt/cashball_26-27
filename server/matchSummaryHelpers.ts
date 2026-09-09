@@ -1011,8 +1011,8 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
           () => {
             game.db.run(
               `INSERT INTO matches (
-                season, matchweek, home_team_id, away_team_id, home_score, away_score, played, narrative, competition, attendance, home_lineup, away_lineup
-              ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, 'League', ?, ?, ?)`,
+                season, matchweek, home_team_id, away_team_id, home_score, away_score, played, narrative, competition, attendance, ticket_revenue, home_lineup, away_lineup
+              ) VALUES (?, ?, ?, ?, ?, ?, 1, ?, 'League', ?, ?, ?, ?)`,
               [
                 game.season,
                 matchweek,
@@ -1022,6 +1022,9 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                 match.finalAwayGoals,
                 JSON.stringify(match.events || []),
                 match.attendance || 0,
+                // Receita faturada à altura (mesma fórmula do crédito em
+                // finalizeLeagueEvent: attendance × preço do bilhete de então).
+                (match.attendance || 0) * ((match as any)._ticketPrice || 15),
                 JSON.stringify(historicalLineup(match.homeLineup || [])),
                 JSON.stringify(historicalLineup(match.awayLineup || [])),
               ],

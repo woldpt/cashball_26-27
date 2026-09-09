@@ -1305,21 +1305,40 @@ export function registerSessionSocketHandlers(
 			const game = getGameBySocket(socket.id);
 			if (!game || !teamId) return;
 			try {
-				const homeMatches = await runAll(
-					game.db,
-					`SELECT m.attendance, m.matchweek, m.away_team_id, COALESCE(t.name, '?') as away_team_name
+				// Bilheteira ao preço faturado à altura (ticket_revenue persistido na
+				// finalização). Linhas antigas têm NULL → fallback attendance × 15.
+				const billedOrEstimate = (m: any) =>
+					m.ticket_revenue ?? (m.attendance || 0) * 15;
+				let homeMatches: any[];
+				try {
+					homeMatches = await runAll(
+						game.db,
+						`SELECT m.attendance, m.ticket_revenue, m.matchweek, m.away_team_id, COALESCE(t.name, '?') as away_team_name
            FROM matches m
            LEFT JOIN teams t ON t.id = m.away_team_id
            WHERE m.home_team_id = ? AND m.played = 1 AND m.season = ?
            ORDER BY m.matchweek ASC`,
-					[teamId, game.season],
-				);
+						[teamId, game.season],
+					);
+				} catch (ticketErr: any) {
+					// DBs antigas sem coluna ticket_revenue — fallback sem receita exacta
+					if (!String(ticketErr?.message || "").includes("no such column")) throw ticketErr;
+					homeMatches = await runAll(
+						game.db,
+						`SELECT m.attendance, m.matchweek, m.away_team_id, COALESCE(t.name, '?') as away_team_name
+           FROM matches m
+           LEFT JOIN teams t ON t.id = m.away_team_id
+           WHERE m.home_team_id = ? AND m.played = 1 AND m.season = ?
+           ORDER BY m.matchweek ASC`,
+						[teamId, game.season],
+					);
+				}
 				// Taça: jogos em casa com receita de bilheteira (attendance já persistido em cup_matches)
 				let cupHomeMatches: any[] = [];
 				try {
 					cupHomeMatches = await runAll(
 						game.db,
-						`SELECT cm.attendance, cm.round, cm.away_team_id, COALESCE(t.name, '?') as away_team_name
+						`SELECT cm.attendance, cm.ticket_revenue, cm.round, cm.away_team_id, COALESCE(t.name, '?') as away_team_name
                FROM cup_matches cm
                LEFT JOIN teams t ON t.id = cm.away_team_id
                WHERE cm.home_team_id = ? AND cm.played = 1 AND cm.season = ?
@@ -1327,16 +1346,29 @@ export function registerSessionSocketHandlers(
 						[teamId, game.season],
 					);
 				} catch (cupErr: any) {
-					// DBs antigas sem coluna attendance em cup_matches — fallback sem receita
+					// DBs antigas sem coluna attendance/ticket_revenue em cup_matches
 					if (!String(cupErr?.message || "").includes("no such column")) throw cupErr;
-					cupHomeMatches = [];
+					try {
+						cupHomeMatches = await runAll(
+							game.db,
+							`SELECT cm.attendance, cm.round, cm.away_team_id, COALESCE(t.name, '?') as away_team_name
+               FROM cup_matches cm
+               LEFT JOIN teams t ON t.id = cm.away_team_id
+               WHERE cm.home_team_id = ? AND cm.played = 1 AND cm.season = ?
+               ORDER BY cm.round ASC`,
+							[teamId, game.season],
+						);
+					} catch (cupErr2: any) {
+						if (!String(cupErr2?.message || "").includes("no such column")) throw cupErr2;
+						cupHomeMatches = [];
+					}
 				}
 				const leagueTicketRevenue = homeMatches.reduce(
-					(sum, m) => sum + (m.attendance || 0) * 15,
+					(sum, m) => sum + billedOrEstimate(m),
 					0,
 				);
 				const cupTicketRevenue = cupHomeMatches.reduce(
-					(sum, m) => sum + (m.attendance || 0) * 15,
+					(sum, m) => sum + billedOrEstimate(m),
 					0,
 				);
 				const totalTicketRevenue = leagueTicketRevenue + cupTicketRevenue;
@@ -1346,7 +1378,7 @@ export function registerSessionSocketHandlers(
 					round: null as number | null,
 					roundName: null as string | null,
 					attendance: m.attendance || 0,
-					revenue: (m.attendance || 0) * 15,
+					revenue: billedOrEstimate(m),
 					away_team_name: m.away_team_name || "—",
 				}));
 				const cupBreakdown = cupHomeMatches.map((m) => ({
@@ -1355,7 +1387,7 @@ export function registerSessionSocketHandlers(
 					round: m.round as number,
 					roundName: (CUP_ROUND_NAMES[m.round] || `Ronda ${m.round}`) as string,
 					attendance: m.attendance || 0,
-					revenue: (m.attendance || 0) * 15,
+					revenue: billedOrEstimate(m),
 					away_team_name: m.away_team_name || "—",
 				}));
 				const ticketBreakdown = [...leagueBreakdown, ...cupBreakdown];
