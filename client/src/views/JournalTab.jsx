@@ -535,7 +535,7 @@ export function JournalTab({
     return { rows, myPos: pos + 1, total: divTeams.length };
   }, [divStandings, myDivision, myTeamId]);
 
-  // ── Artilheiros + mercado ───────────────────────────────────────────────
+  // ── Bota de Ouro + mercado ────────────────────────────────────────────
   const scorers = useMemo(
     () => (Array.isArray(topScorers) ? topScorers.slice(0, 5) : []),
     [topScorers],
@@ -891,7 +891,7 @@ export function JournalTab({
 
         {scorers.length > 0 && (
           <FanzineCard
-            sticker="Artilheiros"
+            sticker="Bota de Ouro"
             stickerClass="bg-tertiary text-zinc-950"
             meta="Top 5"
             tilt={crafty ? tiltNeg : ""}
