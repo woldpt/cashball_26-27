@@ -329,3 +329,6 @@ Plano C1+C2 (quando fizer):
 
 - **Treino — "centro de treino vivo" (cosmética):** widget Foco Atual com medalhão do ícone do foco (cor da opção) + descrição como `sub`; cabeçalhos das colunas do relatório com realce cruzado (atributo do foco na cor do foco via `FOCUS_ATTRIBUTE`, restantes a `/40`); pulso de confirmação `training-saved-pulse` no cartão guardado (keyframes em `index.css` ao lado do `score-pop`, gated por `prefers-reduced-motion`, replay via `key` com contador `savedTick` — padrão do `GoalFlashOverlay`).
   - Checks: eslint limpo nos ficheiros + `check:types` OK. Sem mobile-resp-check (só cor/texto/animação, sem mudança de grelha/flex/larguras — keyframes não mexem em layout).
+
+- **PlayersTab — cabeçalhos ricos + filtro + ordenação (novo):** cabeçalho de cada posição com `count · massa salarial/sem · skill média` (do `useMemo` existente); `TabBar expand` com filtro Todos·N/GR·n/DEF·n/… e `select` nativo compacto (Base/Skill/Salário/Valor, descendente, só dentro de cada grupo — estrutura GR/DEF/MED/ATA se mantém); filtro sem jogadores → `EmptyState` 🔍. Estado local (reinicia ao sair da tab, que desmonta). Só `PlayersTab.jsx`.
+  - Checks: eslint + `check:types` OK; mobile portrait 5/5 + landscape 6/6 PASS no `mobile-resp-test` (renderiza o PlayersTab real; `resErr=1` info, sem overflow/clipping).
