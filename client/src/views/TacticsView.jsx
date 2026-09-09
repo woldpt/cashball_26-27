@@ -8,6 +8,7 @@ import { WaitingCoachesModal } from "../components/modals/WaitingCoachesModal.js
 import { socket } from "../socket.js";
 import { TACTIC_FORMATIONS, MAX_BENCH_SIZE } from "../constants/index.js";
 import { getMoraleLabel } from "../utils/morale.js";
+import { isPostMatchQueueActive } from "../utils/postMatchFlow.js";
 import { PlayerAvatar as PlayerAvatarSVG } from "../components/shared/PlayerAvatar.jsx";
 
 /** Cores por posição */
@@ -375,7 +376,18 @@ export function TacticsView() {
     setPrepPhase,
   } = useTactics();
 
-  const { lockedCoaches, liveMinute, isCupExtraTime, mobileSubMenu } = useGame();
+  const {
+    lockedCoaches,
+    liveMinute,
+    isCupExtraTime,
+    mobileSubMenu,
+    seasonEndModal,
+    cupPenaltyPopup,
+    postMatchMood,
+    boardWarning,
+    dismissalModal,
+    jobOfferModal,
+  } = useGame();
 
   const getBestForFormation = (formation) => {
     const styles = ["OFENSIVO", "DEFENSIVO", "EQUILIBRADO"];
@@ -1335,7 +1347,16 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
           myReady &&
           !isPlayingMatch &&
           !showHalftimePanel &&
-          lockedCoaches.length >= 2
+          lockedCoaches.length >= 2 &&
+          // Disciplina pós-jogo: a espera só revela com a fila drenada.
+          !isPostMatchQueueActive({
+            seasonEndModal,
+            cupPenaltyPopup,
+            postMatchMood,
+            boardWarning,
+            dismissalModal,
+            jobOfferModal,
+          })
         }
         // Unilateral (não o toggle handleReady): duplo clique no Cancelar
         // emitia false e logo true, religando e reabrindo o modal em loop.

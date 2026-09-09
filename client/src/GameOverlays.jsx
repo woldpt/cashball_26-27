@@ -123,6 +123,14 @@ export function GameOverlays() {
     unreadRoom,
   } = useGame();
 
+  // A espera multiplayer quer mostrar-se ao intervalo (pronto, sala com
+  // 2+ coaches); a fila disciplina-a: suprimida enquanto houver passo
+  // pós-jogo pendente (ver postMatchFlow.showWaiting).
+  const halftimeWaitingWantsShow =
+    panelMode === "halftime" &&
+    panelIsReady &&
+    lockedCoaches &&
+    lockedCoaches.length >= 2;
   const postMatchFlow = computePostMatchFlow({
     seasonEndModal,
     cupPenaltyPopup,
@@ -130,6 +138,7 @@ export function GameOverlays() {
     boardWarning,
     dismissalModal,
     jobOfferModal,
+    waitingWantsShow: halftimeWaitingWantsShow,
   });
 
   // Landing pós-jogo: quando a partida TERMINOU (Liga ou Taça) e TODOS os
@@ -165,6 +174,7 @@ export function GameOverlays() {
     dismissalModal ||
     jobOfferModal ||
     seasonEndModal ||
+    postMatchFlow.showWaiting ||
     gameDialog ||
     coachMarketReport ||
     transferProposalModal ||
@@ -291,12 +301,7 @@ export function GameOverlays() {
           ao intervalo; permitir cancelar bloquearia o jogo sem razão. */}
       <WaitingCoachesModal
         players={players}
-        visible={
-          panelMode === "halftime" &&
-          panelIsReady &&
-          lockedCoaches &&
-          lockedCoaches.length >= 2
-        }
+        visible={postMatchFlow.showWaiting}
         onCancel={() => socket.emit("setReady", false)}
         canCancel={!(isCupMatch && !myMatch)}
       />

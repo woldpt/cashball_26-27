@@ -207,6 +207,9 @@
 
 ## Último estado
 
+- **Fila pós-jogo rígida inclui o Aguardar Coaches (novo):** `computePostMatchFlow` recebe `waitingWantsShow` e devolve `showWaiting` (só com a fila drenada); helper `isPostMatchQueueActive` para portões fora do GameOverlays. `GameOverlays` (espera do intervalo passa por `showWaiting` + gate do landing inclui-a) e `TacticsView` (espera pré-jogo suprimida com fila ativa) — os dados ficam guardados, só ordena. Histórico continua a furar; popups em jogo, lobby e mercado livres (decisão do utilizador). Checks: client `lint` + `check:types` OK. Sem audits/mobile (só visibilidade UI).
+
+
 - **Cancelar do WaitingCoachesModal pré-jogo agora é unilateral (fix loop):** `TacticsView.jsx` passava `onCancel={handleReady}` (toggle `setReady(!isReady)`) — duplo clique emitia false e logo true, religando e reabrindo o modal. Agora emite `setReady(false)` direto, igual ao do intervalo (`GameOverlays.jsx`). Botão principal Pronto mantém o toggle (correto aí). Checks: client `lint` + `check:types` OK. Sem mobile-resp-check (só handler).
 
 
