@@ -562,6 +562,15 @@ export function useSocketListeners(handlers, refs) {
 			// matchweek doesn't increment after cup rounds, so the useEffect in App.jsx
 			// won't fire — refresh calendar manually.
 			socket.emit("requestCalendar");
+			// Reset intencional de jornada (igual à liga): 11 limpo + Neutro.
+			handlers.setTactic((prev) => {
+				const allExcluded = Object.fromEntries(
+					(refs.mySquadRef.current || []).map((p) => [p.id, "Excluído"]),
+				);
+				const next = { ...prev, positions: allExcluded, style: "Balanced" };
+				socket.emit("setTactic", next);
+				return next;
+			});
 		});
 		socket.on("cupSecondHalfStart", (data) => {
 			handlers.setIsMatchActionPending(false);
@@ -1542,12 +1551,13 @@ export function useSocketListeners(handlers, refs) {
 				handlers.setIsPlayingMatch(true);
 			}
 
-			// Após jogo: todos os jogadores vão a "Não convocado"
+			// Após jogo: todos os jogadores vão a "Não convocado" e a
+			// mentalidade volta a Neutro (reset intencional de jornada).
 			handlers.setTactic((prev) => {
 				const allExcluded = Object.fromEntries(
 					(refs.mySquadRef.current || []).map((p) => [p.id, "Excluído"]),
 				);
-				const next = { ...prev, positions: allExcluded };
+				const next = { ...prev, positions: allExcluded, style: "Balanced" };
 				socket.emit("setTactic", next);
 				return next;
 			});

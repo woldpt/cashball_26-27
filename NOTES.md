@@ -82,6 +82,8 @@
 
 ## Em curso
 
+- **Mentalidade com reset intencional a Neutro por jornada (novo):** `useSocketListeners.js` — `matchResults` (liga) e `cupRoundResults` (Taça) repõem `style: "Balanced"` além de limpar `positions` (emite `setTactic`, sem tocar no servidor). O intervalo não é afetado (só dispara a jogo terminado). Checks: client `lint` + `check:types` OK.
+
 - **Jornal fanzine — capa ousada (novo):** `JournalTab.jsx` reescrito em estética de jornal fotocopiado da bancada (direção aprovada: fanzine + gozão de café + manchete gigante). Masthead "A Gazeta do Cashball" (n.º da jornada, preço: 3 pontos), manchete gigante do teu jogo com cartoon-burst (📣/👟/🪣/🧱/📯/👑 por contexto), carimbo rodado (CABAZADA/GALA/VITÓRIA/VERGONHA…), placar enorme e voz gerada por `utils/journalHeadlines.js` (função pura `buildHeadline`: margem de golos, casa/fora, tomba-gigantes/tropeção via posições na série, MOM; determinística). Tiras em molduras de BD com sombra dura + fita-cola + autocolantes: série, classificação (👑 líder, TU, corte ✂️), humanos (🧢 coaches), artilheiros (preços de golo), mercado (etiquetas 🏷️ rotadas) e bancadas (termómetro com voz por escalão de mood). Mesmos dados/props — zero backend. Só tokens do STYLE + `tactical-pattern`; rotações só em autocolantes/stickers (sem risco de overflow de página).
   - Checks: client `lint` + `check:types` OK. **mobile-resp-check PENDENTE** — harness `journal-resp-test` não arranca neste ambiente (`vite dev` sem binding `@rolldown/binding-linux-x64-gnu`; falha pré-existente já registada). Correr `test:mobile` + `test:mobile:landscape` noutro ambiente antes de considerar fechado.
 
