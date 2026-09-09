@@ -73,6 +73,13 @@
 - **Filtro Relevante/Tudo (`JournalTab.jsx`):** queixa de "demasiada informação irrelevante" — por defeito mostra só notícias do próprio clube + transferências (todos) + resultados da própria divisão (Taça completa por ser curta); chips Relevante/Tudo no topo + contadores e empty state adaptados. Sem identidade (sem equipa) mostra tudo.
 - Checks: client `lint` + `check:types` OK; mobile portrait 150/150 + landscape 180/180 PASS.
 
+## Jornal como capa (reescrita)
+
+- `JournalTab.jsx` reescrito: capa com 7 quadros, todos limitados à jornada anterior — Manchete (teu jogo da jornada, ou o teu jogo da Taça mais recente), A tua série (restantes jogos da divisão, sem duplicar a manchete), Humanos (jogos de `coach_is_human === 1` ∪ `players.teamId` noutras divisões, com etiqueta Série/coach), Classificação (mini-tabela: líder + zona do clube + descida, com ⋮ nos cortes, J/Pts/pontinhos de forma), Artilheiros (top 5 de `topScorers`, clicáveis), Mercado (5 transferências mais valiosas da época por `amount` desc, jogador clicável) e Bancadas (mood com `getFansMoodLabel` + barra, preço do bilhete, melhor casa da série). Filtro Relevante/Tudo removido — a relevância é estrutural. `GameRoutes.jsx` passa `topScorers`/`teamForms`/`players`.
+- Servidor: `getGlobalNews` (`socketNewsHandlers.ts`) devolve `attendance` + `homeCapacity` por jogo (liga e Taça; colunas já migradas no `gameManager`, sem migração nova) para o quadro Bancadas.
+- Armadilhas: eslint `preserve-manual-memoization` rejeita deps derivados de `Map` construído com `.set` (`teamById.get(...)` → `myDivision` "may be mutated later") — derivar `myTeam` de `teams.find` dentro de `useMemo`; `headline = a ?? b` precisa do seu próprio `useMemo` senão invalida a cadeia.
+- Checks: server `typecheck` OK; client `lint` + `check:types` OK; `audit:socketio` 0 erros; `audit:gamestate 445WU8` 0 erros; harness `journal-resp-test.jsx` atualizado (8 equipas na série p/ exercitar o ⋮, humanos, artilheiros, assistências). mobile-resp-check NÃO correu — `vite dev` não arranca (binding `rolldown` gnu em falta, `npm install` sem permissões; bloqueio pré-existente já registado).
+
 ## Em curso
 
 - **Comparador da mesma posição no modal do agente (novo):** `contractRequest` (renovação + renegociação) e `renewContractCounterOffer` anexam `positionPeers` (colegas da mesma posição no próprio plantel, sem o próprio, ordenados por skill desc) derivados do `mySquadRef` (`useSocketListeners.js` → `buildPositionPeers`); `GameDialog.jsx` renderiza secção mínima (nome, skill, salário/sem, scroll `max-h-40`) ou "É o único X do plantel". Checks: client `lint` + `check:types` OK.

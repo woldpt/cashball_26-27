@@ -459,6 +459,9 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                         teams={teams}
                         me={me}
                         seasonYear={seasonYear}
+                        topScorers={topScorers}
+                        teamForms={teamForms}
+                        players={players}
                         onOpenPlayerHistory={(player) =>
                           socket.emit("requestPlayerHistory", {
                             playerId: player.id,

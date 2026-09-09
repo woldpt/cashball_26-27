@@ -120,6 +120,7 @@ export function registerNewsSocketHandlers(
               game.db.all(
                 `SELECT 'League' AS competition, m.matchweek, NULL AS round,
                         m.home_team_id, m.away_team_id, m.home_score, m.away_score,
+                        m.attendance, th.stadium_capacity AS home_capacity,
                         th.name AS home_name, ta.name AS away_name,
                         th.division AS home_division, ta.division AS away_division
                  FROM matches m
@@ -140,6 +141,7 @@ export function registerNewsSocketHandlers(
                   game.db.all(
                     `SELECT 'Cup' AS competition, NULL AS matchweek, cm.round,
                             cm.home_team_id, cm.away_team_id, cm.home_score, cm.away_score,
+                            cm.attendance, th.stadium_capacity AS home_capacity,
                             th.name AS home_name, ta.name AS away_name,
                             th.division AS home_division, ta.division AS away_division
                      FROM cup_matches cm
@@ -172,6 +174,8 @@ export function registerNewsSocketHandlers(
                             awayDivision: r.away_division,
                             homeScore: r.home_score,
                             awayScore: r.away_score,
+                            attendance: r.attendance ?? null,
+                            homeCapacity: r.home_capacity ?? null,
                             momHome: momsByKey[homeKey] ?? null,
                             momAway: momsByKey[awayKey] ?? null,
                           };
