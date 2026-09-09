@@ -252,3 +252,5 @@ Plano C1+C2 (quando fizer):
   - Estados candidatos a mover: `toasts`/`addToast`/`dismissToast`, `roomMessages`/`globalMessages`/`globalPlayers`/`unreadRoom`/`unreadGlobal`/`chatInput`, `activeTab`/`navigateTab`, `mobileSubMenu`, `sidebarCollapsed`, `userDropdownOpen`, `roomHubOpen`, `avatarSeed`/`coachAvatars`.
   - Consumidores atuais (para atualizar): toasts em ~6 ficheiros; chat/unread em `GameContext` + `RoomHub` + header; `activeTab` em GameLayout/GameRoutes/TacticsContext/TacticsView/TeamSquadModal/TeamSquadView; `navigateTab` só GameLayout/GameRoutes/Tutorial.
   - Ordem: UIProvider à volta do GameProvider no App; mover primeiro os estados set por cliques (activeTab/nav/sidebar/dropdown — seguros), depois chat/toasts (com religação de socket). Validar em jogo ao vivo real antes de afirmar ganho.
+
+- **WaitingCoachesModal — só limite vertical (2.ª tentativa):** a 1.ª tentativa (9 classes: flex/alturas/quebra de palavra) piorou o layout → revert total (`e4d9f12`). Nova abordagem mínima: só `cardClassName` `max-h-full`→`max-h-[90dvh]` (1 classe); a cadeia `min-h-0`/`overflow-y-auto` interior já existia. Checks: lint + check:types OK.
