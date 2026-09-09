@@ -75,6 +75,8 @@
 
 ## Em curso
 
+- **Duração de lesão/castigo no Mercado + Leilões (novo):** selos `Suspenso`/`Lesionado` passaram a `🟥 nJ` / `🩹 nJ` (fórmula do plantel `until - matchweekCount + 1`, sem tooltip por decisão do utilizador) em `TransferHub.jsx` (`MarketCard`) e `AuctionCard.jsx`. Checks: lint + check:types OK.
+
 - **Finanças por época (fix):** `requestFinanceData` somava vendas/compras/obras de **todas** as épocas (`club_news` sem filtro de ano); agora filtra `year = game.year`. Bilheteira já era por época (`season`), patrocínio anual e folha/juros (`completedJornada % 14`) já renovavam, gráfico mantém 2 épocas (decisão do utilizador).
 - **Bilheteira ao preço faturado (novo):** o painel recalculava `attendance × 15` fixo, errado com preço dinâmico e inconsistente com saldo/gráfico. Nova coluna `ticket_revenue` em `matches`/`cup_matches` (schema.sql + migração por sala em gameManager + one-shot base.db em index.ts; sem DEFAULT → histórico antigo fica NULL), escrita na finalização com a mesma fórmula do crédito (`_ticketPrice`, liga em matchSummaryHelpers, Taça em cupFlowHelpers) e lida com `COALESCE(ticket_revenue, attendance × 15)` + fallback sem coluna para DBs muito antigas. Histórico nunca recalculado ao preço atual (cada jornada tem o seu preço).
 

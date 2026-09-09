@@ -239,8 +239,8 @@ function MarketCard({
           {status.label}
         </Badge>
         {!!player.is_star && (player.position === "MED" || player.position === "ATA") && <StarMark />}
-        {isSuspended && <Badge variant="suspended">Suspenso</Badge>}
-        {isInjured && <Badge variant="injured">Lesionado</Badge>}
+        {isSuspended && <Badge variant="suspended">🟥 {(player.suspension_until_matchweek ?? 0) - matchweekCount + 1}J</Badge>}
+        {isInjured && <Badge variant="injured">🩹 {(player.injury_until_matchweek ?? 0) - matchweekCount + 1}J</Badge>}
         <span className="ml-auto text-[9px] text-zinc-500 truncate max-w-[110px]" title={teamLabel}>
           {teamLabel}
         </span>

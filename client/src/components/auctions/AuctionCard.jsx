@@ -139,10 +139,10 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
           <StarMark />
         )}
         {(auction.suspension_until_matchweek ?? 0) > matchweekCount && (
-          <Badge variant="suspended">Suspenso</Badge>
+          <Badge variant="suspended">🟥 {(auction.suspension_until_matchweek ?? 0) - matchweekCount + 1}J</Badge>
         )}
         {(auction.injury_until_matchweek ?? 0) > matchweekCount && (
-          <Badge variant="injured">Lesionado</Badge>
+          <Badge variant="injured">🩹 {(auction.injury_until_matchweek ?? 0) - matchweekCount + 1}J</Badge>
         )}
         <span className="ml-auto text-[9px] text-zinc-500 truncate max-w-[110px]" title={teamLabel}>
           {teamLabel}
