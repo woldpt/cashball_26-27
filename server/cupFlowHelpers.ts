@@ -1417,6 +1417,35 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					(winnerIsHome ? fixture.awayTeam : fixture.homeTeam)?.name ??
 					"Desconhecido";
 				upsets.push({ winnerName, winnerDiv, loserName, loserDiv, winnerId, loserId });
+				// Notícia persistente do tomba-gigantes (o modal do cliente foi
+				// substituído pela tira do Jornal): dentro da transação, logo
+				// replay-safe pelo marker 'finalized'. Sem amount (não toca no
+				// gráfico de saldo) e sem emit próprio — o globalNewsUpdated do
+				// fim da ronda refresca o Jornal.
+				const wGoals = winnerIsHome
+					? (fixture.finalHomeGoals ?? goals90Home)
+					: (fixture.finalAwayGoals ?? goals90Away);
+				const lGoals = winnerIsHome
+					? (fixture.finalAwayGoals ?? goals90Away)
+					: (fixture.finalHomeGoals ?? goals90Home);
+				const upsetScore =
+					wGoals != null && lGoals != null ? `${wGoals}–${lGoals}` : null;
+				logClubNews(
+					game,
+					"cup_upset",
+					`Tomba-gigantes: ${winnerName} elimina ${loserName}`,
+					winnerId,
+					{
+						description: [
+							roundName || `Ronda ${round}`,
+							`${DIVISION_NAMES[winnerDiv] ?? `Div ${winnerDiv}`} vence ${DIVISION_NAMES[loserDiv] ?? `Div ${loserDiv}`}`,
+							upsetScore ??
+								(fixture._decidedByPenalties ? "nos penáltis" : "na eliminatória"),
+						].join(" · "),
+						related_team_id: loserId,
+						related_team_name: loserName,
+					},
+				);
 			}
 
 			results.push({

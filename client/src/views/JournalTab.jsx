@@ -495,6 +495,33 @@ export function JournalTab({
     [news],
   );
 
+  // Tomba-gigantes da Taça (notícias persistentes `cup_upset` gravadas na
+  // finalização da ronda). A description vem no formato
+  // "{ronda} · {divV} vence {divP} · {resultado}"; parse defensivo com
+  // fallback para o título.
+  const cupUpsets = useMemo(
+    () =>
+      news
+        .filter((n) => n.type === "cup_upset")
+        .map((n) => {
+          const parts = String(n.description || "").split(" · ");
+          const m = /^Tomba-gigantes:\s*(.+?)\s+elimina\s+(.+?)$/.exec(
+            String(n.title || ""),
+          );
+          return {
+            id: n.id,
+            title: n.title,
+            round: parts[0] || null,
+            detail: parts[1] || null,
+            score: parts[2] || null,
+            winner: n.team_name || m?.[1] || null,
+            loser: n.related_team_name || m?.[2] || null,
+          };
+        })
+        .slice(0, 5),
+    [news],
+  );
+
   // ── Bancadas ────────────────────────────────────────────────────────────
   const fansMood = myTeam?.fans_mood ?? null;
   const myGameCrowd = headline ? crowdLine(headline) : null;
@@ -513,7 +540,8 @@ export function JournalTab({
     humanGames.length > 0 ||
     miniTable.rows.length > 0 ||
     scorers.length > 0 ||
-    topTransfers.length > 0;
+    topTransfers.length > 0 ||
+    cupUpsets.length > 0;
 
   if (!hasAnything) {
     return (
@@ -901,6 +929,45 @@ export function JournalTab({
                       {formatCurrency(n.amount)}
                     </span>
                   )}
+                </div>
+              ))}
+            </div>
+          </FanzineCard>
+        )}
+
+        {cupUpsets.length > 0 && (
+          <FanzineCard
+            sticker="Tomba-gigantes"
+            stickerClass="bg-amber-400 text-zinc-950"
+            meta="Taça"
+            tilt={crafty ? tiltNeg : ""}
+            shadowCls={cardShadow}
+            stickerRot={stickerRot}
+            craft={crafty}
+          >
+            <div>
+              {cupUpsets.map((u) => (
+                <div
+                  key={`u-${u.id}`}
+                  className="flex items-center gap-2.5 px-2.5 short:px-2 py-2 short:py-1.5 m-1.5 rounded-sm border border-dashed border-outline-variant/40 bg-surface-container-low"
+                >
+                  <span aria-hidden className="shrink-0 text-base">⚡</span>
+                  <div className="flex-1 min-w-0">
+                    {u.winner && u.loser ? (
+                      <p className="truncate text-xs font-black text-on-surface">
+                        {u.winner}
+                        <span className="font-bold text-on-surface-variant"> elimina </span>
+                        {u.loser}
+                      </p>
+                    ) : (
+                      <p className="truncate text-xs font-black text-on-surface">
+                        {u.title}
+                      </p>
+                    )}
+                    <p className="text-[10px] text-on-surface-variant truncate">
+                      {[u.round, u.detail, u.score].filter(Boolean).join(" · ")}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

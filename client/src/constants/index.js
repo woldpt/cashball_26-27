@@ -346,7 +346,6 @@ export const MODAL_Z = {
 	coachMarket: 160,
 	signing: 190,
 	postMatch: 210,
-	cupUpset: 215,
 	boardWarning: 220,
 	default: 200,
 	admin: 300,

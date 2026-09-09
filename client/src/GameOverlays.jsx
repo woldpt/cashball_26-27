@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
 import { socket } from "./socket.js";
 import { useGame } from "./contexts/GameContext.jsx";
@@ -12,7 +12,6 @@ import { PenaltySuspensePopup } from "./components/modals/PenaltySuspensePopup.j
 import { PenaltyTakerPopup } from "./components/modals/PenaltyTakerPopup.jsx";
 import { CupDrawPopup } from "./components/modals/CupDrawPopup.jsx";
 import { PenaltyShootoutPopup } from "./components/modals/PenaltyShootoutPopup.jsx";
-import { CupUpsetModal } from "./components/modals/CupUpsetModal.jsx";
 import { BoardWarningModal } from "./components/modals/BoardWarningModal.jsx";
 import { WaitingCoachesModal } from "./components/modals/WaitingCoachesModal.jsx";
 import { DismissalModal } from "./components/modals/DismissalModal.jsx";
@@ -28,7 +27,7 @@ import { AdminPanel } from "./components/admin/AdminPanel.jsx";
  * GameOverlays — monta todos os overlays do jogo (modais de evento, ecrã de
  * jogo ao vivo, chat/room, admin). Consome useGame() sozinho. Separado do
  * GameLayout para o chrome não agregar a orquestração dos modais nem a
- * sequenciação pós-jogo (cupUpsetAckKey + postMatchFlow).
+ * sequenciação pós-jogo (postMatchFlow).
  */
 export function GameOverlays() {
   const {
@@ -124,17 +123,6 @@ export function GameOverlays() {
     unreadRoom,
   } = useGame();
 
-  // `cupUpsetAckKey` recorda a última ronda da Taça cuja celebração de surpresas
-  // o utilizador fechou, para o sequenciador saber quando o cup upset já não
-  // bloqueia os avisos/fim de época.
-  const [cupUpsetAckKey, setCupUpsetAckKey] = useState(null);
-  const currentCupRoundKey = cupRoundResults
-    ? `${cupRoundResults.season}:${cupRoundResults.round}`
-    : null;
-  const cupUpsetPending =
-    !!currentCupRoundKey &&
-    (cupRoundResults?.upsets?.length ?? 0) > 0 &&
-    currentCupRoundKey !== cupUpsetAckKey;
   const postMatchFlow = computePostMatchFlow({
     seasonEndModal,
     cupPenaltyPopup,
@@ -142,7 +130,6 @@ export function GameOverlays() {
     boardWarning,
     dismissalModal,
     jobOfferModal,
-    cupUpsetPending,
   });
 
   // Landing pós-jogo: quando a partida TERMINOU (Liga ou Taça) e TODOS os
@@ -174,7 +161,6 @@ export function GameOverlays() {
   const anyPostMatchModal =
     postMatchMood ||
     cupPenaltyPopup ||
-    cupUpsetPending ||
     boardWarning ||
     dismissalModal ||
     jobOfferModal ||
@@ -260,15 +246,6 @@ export function GameOverlays() {
         teams={teams}
         setCupPenaltyPopup={setCupPenaltyPopup}
         setCupPenaltyKickIdx={setCupPenaltyKickIdx}
-      />
-
-      <CupUpsetModal
-        cupRoundResults={postMatchFlow.showCupRoundResults ? cupRoundResults : null}
-        teams={teams}
-        postMatchMood={postMatchMood}
-        onDismiss={(roundKey) => {
-          if (roundKey != null) setCupUpsetAckKey(roundKey);
-        }}
       />
 
       <BoardWarningModal
