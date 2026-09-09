@@ -40,6 +40,23 @@ const CARTOON_EMOJI = {
 };
 
 /**
+ * Nomes de capa do Jornal — feitos na bancada dos adeptos (banais, sem marca,
+ * sem "cashball"). Cada época herda um par nome+slogan determinístico
+ * (seed = seasonYear), estável durante toda a temporada e sem Math.random,
+ * para a capa não oscilar entre renders.
+ */
+const MASTHEADS = [
+  { name: "A Voz da Bancada", tagline: "a voz do povo que não cala — nem joga" },
+  { name: "Feito na Bancada", tagline: "impresso entre assobios e palmas" },
+  { name: "O Correio da Bancada", tagline: "notícias de cima, do quiosque e da tasca" },
+  { name: "Do Alto da Bancada", tagline: "a melhor vista e os piores palpites" },
+  { name: "O Grito da Bancada", tagline: "quando calamos é porque perdeu" },
+  { name: "O Pingo da Bancada", tagline: "gotas de verdade entre a chuva de assobios" },
+  { name: "O Boletim do Adepto", tagline: "o parecer oficial de quem só assobia" },
+  { name: "Notícias da Tasca", tagline: "tudo o que se soube antes do pão com manteiga" },
+];
+
+/**
  * Ordenação canónica da classificação: pontos → diferença de golos →
  * golos marcados → nome (igual ao servidor e a `standingsRank`).
  */
@@ -221,6 +238,12 @@ export function JournalTab({
   players = [],
   onOpenPlayerHistory,
 }) {
+  // Masthead da época (nome+slogan) — determinístico por seasonYear.
+  const masthead = useMemo(() => {
+    const list = MASTHEADS;
+    return list[Math.abs(Number(seasonYear) || 0) % list.length];
+  }, [seasonYear]);
+
   const news = useMemo(
     () => (Array.isArray(globalNews?.news) ? globalNews.news : []),
     [globalNews],
@@ -438,10 +461,10 @@ export function JournalTab({
         <div className="relative flex items-end justify-between gap-3">
           <div className="min-w-0">
             <p className="inline-flex -rotate-2 rounded-sm bg-error px-1.5 py-px text-[9px] font-black uppercase tracking-widest text-zinc-950 shadow-md shadow-black/50">
-              O diário que não embrulha peixe
+              {masthead.tagline}
             </p>
             <h1 className="mt-1 font-headline text-2xl sm:text-4xl short:text-xl font-black uppercase tracking-tight leading-none text-on-surface">
-              A Gazeta do Cashball
+              {masthead.name}
             </h1>
             <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
               {lastWeek > 0 ? `N.º ${lastWeek}` : "N.º 0"} · Época {seasonYear || ""} · Preço: 3 pontos
