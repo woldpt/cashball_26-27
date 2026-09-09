@@ -61,7 +61,7 @@ function usePlayerBadges(events, liveMinute) {
  * Cara do jogador (PlayerAvatar) com anel na cor da posição, placard com
  * nome + skill e badges de eventos da Live (golos, cartões). */
 /** player, teamColor, badges {goals,yellow,red}|undefined, starColor, count, showFatigue. */
-const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badges, starColor = "amber-400", count = 1, showFatigue = true }) {
+export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badges, starColor = "amber-400", count = 1, showFatigue = true }) {
   const accent = POSITION_ACCENT_HEX?.[player.position] || "#94a3b8";
   const compact = count >= 4;
   const avatarCls = compact ? "w-8 h-8" : "w-10 h-10";
@@ -134,7 +134,7 @@ const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badges, sta
 });
 
 /* ── Linha de jogadores ────────────────────────────────────────────────── */
-function PlayerRow({ posKey, players, teamColor, badgesById, starColor, showFatigue = true }) {
+export function PlayerRow({ posKey, players, teamColor, badgesById, starColor, showFatigue = true }) {
   if (!players || players.length === 0) return null;
   return (
     <div
