@@ -503,7 +503,6 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
 
                     {activeTab === "players" && (
                       <PlayersTab
-                        mySquad={mySquad}
                         annotatedSquad={annotatedSquad}
                         matchweekCount={matchweekCount}
                         season={season}
