@@ -622,6 +622,11 @@ export type PendingMatchAction = {
   timer: ReturnType<typeof setTimeout>;
   finalize: (choice: MatchActionChoice, source?: string) => void;
   fallback: () => MatchActionChoice;
+  // Payload original (para re-emitir ao treinador que (re)ligar a meio da
+  // janela) + deadline absoluta (para o countdown do cliente derivar do
+  // servidor em vez de um valor fixo local).
+  payload: Record<string, unknown>;
+  expiresAt: number;
   // Notify-once no reconnect (socketSessionHandlers): o timer continua vivo
   // como rede de segurança e só se notifica o cliente, sem consumir a ação.
   expiredNotified?: boolean;
@@ -724,6 +729,7 @@ function waitForMatchAction({
       finalize(fallback(), "auto");
     }, timeoutMs);
 
+    const expiresAt = Date.now() + timeoutMs;
     getPendingMatchActions(game).set(actionId, {
       actionId,
       type,
@@ -731,6 +737,8 @@ function waitForMatchAction({
       timer,
       finalize,
       fallback,
+      payload: { ...(payload || {}), ...(fixtureData || {}) },
+      expiresAt,
     });
 
     io.to(game.roomCode).emit("matchActionRequired", {
@@ -739,6 +747,7 @@ function waitForMatchAction({
       teamId,
       ...payload,
       ...(fixtureData || {}),
+      expiresAt,
     });
   });
 }

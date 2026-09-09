@@ -255,6 +255,9 @@ export interface ActiveGame {
   // ação expulsava a primeira e o timer órfão resolvia-a tarde com fallback.
   pendingMatchActions?: Map<string, any>;
   pendingSubstitutions?: Set<number>;
+  // Ids de ações críticas já executadas (anti-duplicado em retry/reconnect).
+  // Ver server/actionDedup.ts — memória por sala, não persistida.
+  recentActionIds?: Map<string, number>;
 
   // ── Fixture seeds por divisão (ordem aleatória no início de cada época) ──
   fixtureSeeds: Record<number, number[]>; // div → [teamId, ...] ordenado por seed

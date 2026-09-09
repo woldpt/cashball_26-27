@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
-import { socket } from "./socket.js";
+import { queueEmit } from "./socket.js";
 import { useGame } from "./contexts/GameContext.jsx";
 import { computePostMatchFlow } from "./utils/postMatchFlow.js";
 import { TransferProposalModal } from "./components/modals/TransferProposalModal.jsx";
@@ -302,7 +302,7 @@ export function GameOverlays() {
       <WaitingCoachesModal
         players={players}
         visible={postMatchFlow.showWaiting}
-        onCancel={() => socket.emit("setReady", false)}
+        onCancel={() => queueEmit("setReady", false)}
         canCancel={!(isCupMatch && !myMatch)}
       />
 

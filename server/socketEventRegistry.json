@@ -314,6 +314,12 @@
       "socketScoutHandlers.ts"
     ]
   },
+  "matchActionRequired": {
+    "emit": [
+      "socketSessionHandlers.ts"
+    ],
+    "receive": []
+  },
   "matchActionExpired": {
     "emit": [
       "socketSessionHandlers.ts"

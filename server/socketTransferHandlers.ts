@@ -14,6 +14,7 @@ import {
   seasonToYear,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
+import { claimActionId } from "./actionDedup";
 import { signingWage, getAgentName, fairWeeklyWage } from "./gameConstants";
 
 interface TransferHandlerDeps {
@@ -613,11 +614,14 @@ export function registerTransferSocketHandlers(
     );
   });
 
-  socket.on("placeAuctionBid", ({ playerId, bidAmount }, ack) => {
+  socket.on("placeAuctionBid", ({ playerId, bidAmount, __actionId }, ack) => {
     const game = getGameBySocket(socket.id);
     if (!game) return ack?.({ ok: false, error: "Jogo não encontrado." });
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return ack?.({ ok: false, error: "Jogador não encontrado." });
+
+    // Retry do cliente após timeout de ack: o lance pode já ter entrado.
+    // Sem isto, um flape wifi→5G duplicava o lance (dois débitos em leilão).
 
     if (isMatchInProgress(game)) {
       ack?.({ ok: false, error: "Não é possível licitar durante uma partida." });
@@ -628,6 +632,13 @@ export function registerTransferSocketHandlers(
     const validBidAmount = validateNonNegativeInt(bidAmount);
     if (!validPlayerId || !validBidAmount) {
       return ack?.({ ok: false, error: "Lance inválido." });
+    }
+
+    if (!claimActionId(game, __actionId)) {
+      // Duplicado (retry após ack perdido): o lance original já entrou.
+      // Confirmar como sucesso para o cliente convergir sem toast de erro.
+      ack?.({ ok: true, dedup: true });
+      return;
     }
 
     placeAuctionBid(game, playerState.teamId, validPlayerId, validBidAmount)

@@ -225,21 +225,45 @@ export function registerSessionSocketHandlers(
 			});
 		}
 
-		// Check if this team had pending match actions that were already resolved
-		// (o timer continua vivo como rede de segurança: resolve com fallback
-		// ao expirar — aqui só se notifica o cliente, sem consumir a ação).
+		// Ações pendentes da equipa que sobreviveram ao disconnect (flape rápido:
+		// o join novo fez bind antes do disconnect do socket velho, que por isso
+		// já não auto-resolveu). Re-emitir o `matchActionRequired` REAL com o
+		// tempo restante — o cliente reconstrói o modal em vez de ficar preso
+		// até ao fallback. Só restos com deadline passada recebem
+		// `matchActionExpired` (o timer dispara de seguida na mesma).
 		for (const pendingAction of listTeamMatchActions(game, team.id)) {
-			if (pendingAction.expiredNotified) continue;
-			pendingAction.expiredNotified = true;
-			console.log(
-				`[${roomCode}] ⚠ Reconnecting coach ${name} had pending action (actionId=${pendingAction.actionId}) that was already resolved`,
-			);
-			socket.emit("matchActionExpired", {
-				actionId: pendingAction.actionId,
-				type: pendingAction.type,
-				teamId: team.id,
-				reason: "coach_disconnected",
-			});
+			const now = Date.now();
+			const live =
+				typeof pendingAction.expiresAt !== "number" ||
+				pendingAction.expiresAt > now;
+			if (live) {
+				// Sem flag: cada rejoin re-emite (idempotente no cliente pelo
+				// actionId) para cobrir tab morta e reaberta a meio da janela.
+				console.log(
+					`[${roomCode}] 🔁 Reenviando ação pendente a ${name} (actionId=${pendingAction.actionId}, type=${pendingAction.type})`,
+				);
+				socket.emit("matchActionRequired", {
+					actionId: pendingAction.actionId,
+					type: pendingAction.type,
+					teamId: team.id,
+					...(pendingAction.payload || {}),
+					expiresAt: pendingAction.expiresAt ?? now + 60000,
+				});
+			} else {
+				// Resto com deadline passada: notificar uma vez (o timer de
+				// fallback dispara de seguida na mesma).
+				if (pendingAction.expiredNotified) continue;
+				pendingAction.expiredNotified = true;
+				console.log(
+					`[${roomCode}] ⚠ Reconnecting coach ${name} had pending action (actionId=${pendingAction.actionId}) that was already resolved`,
+				);
+				socket.emit("matchActionExpired", {
+					actionId: pendingAction.actionId,
+					type: pendingAction.type,
+					teamId: team.id,
+					reason: "coach_disconnected",
+				});
+			}
 		}
 
 		game.lockedCoaches.add(name);

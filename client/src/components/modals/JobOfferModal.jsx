@@ -1,4 +1,4 @@
-import { socket } from "../../socket.js";
+import { queueEmit } from "../../socket.js";
 import {
   DIVISION_NAMES,
   POSITION_LABEL_MAP,
@@ -109,7 +109,7 @@ export function JobOfferModal({ jobOfferModal, setJobOfferModal }) {
               <Button
                 variant="accent"
                 onClick={() => {
-                  socket.emit("acceptJobOffer");
+                  queueEmit("acceptJobOffer");
                   setJobOfferModal(null);
                 }}
               >
@@ -118,7 +118,7 @@ export function JobOfferModal({ jobOfferModal, setJobOfferModal }) {
               <Button
                 variant="secondary"
                 onClick={() => {
-                  socket.emit("declineJobOffer");
+                  queueEmit("declineJobOffer");
                   setJobOfferModal(null);
                 }}
               >

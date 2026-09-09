@@ -9,7 +9,7 @@ import {
 	useState,
 	startTransition,
 } from "react";
-import { socket } from "../socket";
+import { socket, queueEmit } from "../socket";
 import {
   DEFAULT_TACTIC,
   LOAN_INTEREST_RATE,
@@ -30,6 +30,7 @@ import {
 } from "../utils/audio.js";
 import { computeMoodVariant } from "../utils/moodVariant.js";
 import { rankStandings } from "../utils/standingsRank.js";
+import { saveTacticSnapshot } from "../utils/uiSnapshot.js";
 import { useSocketListeners } from "../hooks/useSocketListeners.js";
 
 const GameContext = createContext(null);
@@ -322,6 +323,17 @@ export function GameProvider({
 	useEffect(() => {
 		tacticRef.current = tactic;
 	}, [tactic]);
+	// Snapshot da tática para sobreviver à morte da tab (throttle 500ms).
+	// O restauro dá-se no handler de gameState (só a meio de jogo).
+	useEffect(() => {
+		if (!me?.name || !me?.roomCode) return;
+		const coach = me.name;
+		const room = me.roomCode;
+		const timer = setTimeout(() => {
+			saveTacticSnapshot(coach, room, tacticRef.current);
+		}, 500);
+		return () => clearTimeout(timer);
+	}, [tactic, me?.name, me?.roomCode]);
 	useEffect(() => {
 		selectedTeamRef.current = selectedTeam;
 	}, [selectedTeam]);
@@ -878,7 +890,7 @@ export function GameProvider({
 
 	// ── Handlers ─────────────────────────────────────────────────────────────
 	const handleHalftimeReady = useCallback(() => {
-		socket.emit("setReady", true);
+		queueEmit("setReady", true);
 	}, []);
 
 	const closeSquadState = useCallback(() => {
@@ -1006,7 +1018,7 @@ export function GameProvider({
 			} else {
 				payload.playerId = playerIdOrChoice;
 			}
-			socket.emit("resolveMatchAction", payload);
+			queueEmit("resolveMatchAction", payload);
 			resolvedActionIdRef.current = matchAction.actionId;
 			setMatchAction(null);
 			setIsMatchActionPending(false);
@@ -1035,7 +1047,7 @@ export function GameProvider({
 							newPositions[playerIn] = "Titular";
 						}
 						const next = { ...prevTactic, positions: newPositions };
-						socket.emit("setTactic", next);
+						queueEmit("setTactic", next);
 						return next;
 					});
 					// Contadores em sync com o servidor: a reposição por lesão
@@ -1068,7 +1080,7 @@ export function GameProvider({
 					if (outId != null) delete newPositions[Number(outId)];
 					newPositions[playerIdOrChoice] = "Titular";
 					const next = { ...prevTactic, positions: newPositions };
-					socket.emit("setTactic", next);
+					queueEmit("setTactic", next);
 					return next;
 				});
 			}
@@ -1084,7 +1096,7 @@ export function GameProvider({
 	}, []);
 
 	const buyPlayer = useCallback((playerId) => {
-		socket.emit("buyPlayer", playerId);
+		queueEmit("buyPlayer", playerId);
 	}, []);
 
 	const renewPlayerContract = useCallback((player) => {
@@ -1100,7 +1112,7 @@ export function GameProvider({
 			onConfirm: (val) => {
 				const offeredWage = Number(val);
 				if (!Number.isFinite(offeredWage) || offeredWage <= 0) return;
-				socket.emit("renewContract", { playerId: player.id, offeredWage });
+				queueEmit("renewContract", { playerId: player.id, offeredWage });
 			},
 			onCancel: () => {},
 		});

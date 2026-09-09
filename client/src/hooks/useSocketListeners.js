@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { socket } from "../socket.js";
+import { socket, queueEmit, flushOutbox } from "../socket.js";
+import { loadTacticSnapshot } from "../utils/uiSnapshot.js";
 import { isSameTeamId } from "../utils/teamHelpers.js";
 import { seasonToYear } from "../utils/formatters.js";
 import { playGoalSound, playVarSound } from "../utils/audio.js";
@@ -388,7 +389,7 @@ export function useSocketListeners(handlers, refs) {
 						(fx) => fx.homeTeam?.id == myId || fx.awayTeam?.id == myId,
 					);
 				if (!userInMatch) {
-					socket.emit("setReady", true);
+					queueEmit("setReady", true);
 				}
 			} catch (err) {
 				console.error("Error handling cupHalfTimeResults:", err, "data:", data);
@@ -443,7 +444,7 @@ export function useSocketListeners(handlers, refs) {
 							fx.homeGoals === fx.awayGoals,
 					);
 				if (!myDrawnFixture) {
-					socket.emit("setReady", true);
+					queueEmit("setReady", true);
 				}
 			} catch (err) {
 				console.error("Error handling cupETHalfTime:", err, "data:", data);
@@ -568,7 +569,7 @@ export function useSocketListeners(handlers, refs) {
 					(refs.mySquadRef.current || []).map((p) => [p.id, "Excluído"]),
 				);
 				const next = { ...prev, positions: allExcluded, style: "Balanced" };
-				socket.emit("setTactic", next);
+				queueEmit("setTactic", next);
 				return next;
 			});
 		});
@@ -670,9 +671,9 @@ export function useSocketListeners(handlers, refs) {
 					confirmLabel: "Aceitar",
 					cancelLabel: "Leilão",
 					onConfirm: () =>
-						socket.emit("acceptCounterOffer", { playerId, accepted: true }),
+						queueEmit("acceptCounterOffer", { playerId, accepted: true }),
 					onCancel: () =>
-						socket.emit("acceptCounterOffer", { playerId, accepted: false }),
+						queueEmit("acceptCounterOffer", { playerId, accepted: false }),
 				});
 			},
 		);
@@ -715,12 +716,12 @@ export function useSocketListeners(handlers, refs) {
 					cancelLabel: "Leilão",
 					cancelDanger: true,
 					onConfirm: () =>
-						socket.emit("renewContract", {
+						queueEmit("renewContract", {
 							playerId,
 							offeredWage: requestedWage,
 						}),
 					onCancel: () =>
-						socket.emit("declineContractRequest", { playerId }),
+						queueEmit("declineContractRequest", { playerId }),
 				});
 			},
 		);
@@ -762,6 +763,10 @@ export function useSocketListeners(handlers, refs) {
 					handlers.setWelcomeModal(data);
 				}
 			}
+			// O socket já está ligado no servidor: esvaziar a fila offline.
+			// (O gameState também faz flush — o primeiro a chegar vence, o
+				// segundo é no-op porque a fila já está vazia.)
+			flushOutbox();
 		});
 		socket.on("gameState", (data) => {
 			if (!inRoom()) return;
@@ -778,6 +783,29 @@ export function useSocketListeners(handlers, refs) {
 					...data.tactic,
 					positions: data.tactic.positions || prev.positions || {},
 				}));
+				// Tab morta a MEIO de jogo + servidor sem a tática (restart perdeu
+				// a memória): repõe o snapshot local e reenvia-o. No lobby o
+				// servidor limpa de propósito — aí o snapshot NÃO se aplica.
+				const serverEmpty =
+					!data.tactic.positions ||
+					Object.keys(data.tactic.positions).length === 0;
+				const midMatch =
+					data.matchState === "halftime" ||
+					data.matchState === "running_first_half" ||
+					data.matchState === "playing_second_half";
+				if (serverEmpty && midMatch) {
+					const me = refs.meRef.current;
+					const snap = loadTacticSnapshot(me?.name, me?.roomCode);
+					if (snap) {
+						const restored = {
+							formation: snap.formation,
+							style: snap.style,
+							positions: snap.positions,
+						};
+						handlers.setTactic((prev) => ({ ...prev, ...restored }));
+						queueEmit("setTactic", restored);
+					}
+				}
 			}
 			if (Array.isArray(data.lockedCoaches)) {
 				handlers.setLockedCoaches(data.lockedCoaches);
@@ -824,6 +852,9 @@ export function useSocketListeners(handlers, refs) {
 				handlers.setMatchAction(null);
 				handlers.setIsMatchActionPending(false);
 			}
+			// O join já está ligado no servidor: esvaziar a fila offline
+			// (tática, pronto, resoluções) + repor intenções sticky.
+			flushOutbox();
 		});
 
 		socket.on("seasonState", (data) => {
@@ -1360,7 +1391,16 @@ export function useSocketListeners(handlers, refs) {
 					normalizedAction.type === "gk_red_card" ||
 					normalizedAction.type === "emergency_gk"
 				) {
-					handlers.setInjuryCountdown(60);
+					// Deadline do servidor (rejoin a meio da janela recebe o
+					// expiresAt original) — fallback aos 60s históricos.
+					const remaining =
+						typeof data?.expiresAt === "number"
+							? Math.max(
+									1,
+									Math.ceil((data.expiresAt - Date.now()) / 1000),
+								)
+							: 60;
+					handlers.setInjuryCountdown(remaining);
 					refs.injuryCountdownRef.current = setInterval(() => {
 						handlers.setInjuryCountdown((prev) => {
 							if (prev <= 1) {
@@ -1461,7 +1501,7 @@ export function useSocketListeners(handlers, refs) {
 				}
 				if (inId != null) newPositions[inId] = "Titular";
 				const next = { ...prevTactic, positions: newPositions };
-				socket.emit("setTactic", next);
+				queueEmit("setTactic", next);
 				return next;
 			});
 			if (markSubbedOut && outId != null && !Number.isNaN(outId)) {
@@ -1558,7 +1598,7 @@ export function useSocketListeners(handlers, refs) {
 					(refs.mySquadRef.current || []).map((p) => [p.id, "Excluído"]),
 				);
 				const next = { ...prev, positions: allExcluded, style: "Balanced" };
-				socket.emit("setTactic", next);
+				queueEmit("setTactic", next);
 				return next;
 			});
 		});
@@ -1649,6 +1689,9 @@ export function useSocketListeners(handlers, refs) {
 				currentMe?.name &&
 				currentMe?.token
 			) {
+				// Feedback imediato: o rejoin + flush se dão no gameState/
+				// teamAssigned que se seguem.
+				handlers.addToast("Ligação restabelecida — a sincronizar…");
 				socket.emit("joinGame", {
 					name: currentMe.name,
 					token: currentMe.token,

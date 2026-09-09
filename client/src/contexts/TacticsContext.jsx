@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { socket } from "../socket";
+import { queueEmit } from "../socket";
 import { TACTIC_FORMATIONS, MAX_BENCH_SIZE } from "../constants/index.js";
 import {
   buildAutoPositions,
@@ -138,7 +138,7 @@ export function TacticsProvider({ children }) {
     (patch) => {
       setTactic((prev) => {
         const next = { ...prev, ...patch };
-        socket.emit("setTactic", next);
+        queueEmit("setTactic", next);
         return next;
       });
     },
@@ -151,7 +151,7 @@ export function TacticsProvider({ children }) {
         mySquad.map((p) => [p.id, "Excluído"]),
       );
       const next = { ...prev, formation: "", positions: allExcluded };
-      socket.emit("setTactic", next);
+      queueEmit("setTactic", next);
       return next;
     });
   }, [mySquad, setTactic]);
@@ -171,7 +171,7 @@ export function TacticsProvider({ children }) {
       );
       setTactic((prev) => {
         const next = { ...prev, formation, positions: autoPositions };
-        socket.emit("setTactic", next);
+        queueEmit("setTactic", next);
         return next;
       });
     },
@@ -220,7 +220,7 @@ export function TacticsProvider({ children }) {
       newPositions[srcId] = "Suplente";
       newPositions[tgtId] = "Titular";
       const next = { ...prevTactic, positions: newPositions };
-      socket.emit("setTactic", next);
+      queueEmit("setTactic", next);
       return next;
     });
     setSubbedOut((prev) => [...prev, srcId]);
@@ -253,7 +253,7 @@ export function TacticsProvider({ children }) {
         newPositions[sub.out] = "Titular";
         newPositions[sub.in] = "Suplente";
         const next = { ...prevTactic, positions: newPositions };
-        socket.emit("setTactic", next);
+        queueEmit("setTactic", next);
         return next;
       });
       setSubbedOut((prev) => prev.filter((id) => id !== sub.out));
@@ -303,7 +303,7 @@ export function TacticsProvider({ children }) {
         newPositions[inId] = "Suplente";
       });
       const next = { ...prevTactic, positions: newPositions };
-      socket.emit("setTactic", next);
+      queueEmit("setTactic", next);
       return next;
     });
     setSubbedOut([]);
@@ -377,7 +377,7 @@ export function TacticsProvider({ children }) {
 
         newPositions[playerId] = status;
         const next = { ...prev, positions: newPositions };
-        socket.emit("setTactic", next);
+        queueEmit("setTactic", next);
         return next;
       });
       setOpenStatusPickerId(null);
@@ -440,7 +440,7 @@ export function TacticsProvider({ children }) {
         }
 
         const next = { ...prev, positions: newPositions };
-        socket.emit("setTactic", next);
+        queueEmit("setTactic", next);
         return next;
       });
       setDragOverPlayerId(null);
@@ -513,7 +513,7 @@ export function TacticsProvider({ children }) {
 
         newPositions[playerId] = targetSection;
         const next = { ...prev, positions: newPositions };
-        socket.emit("setTactic", next);
+        queueEmit("setTactic", next);
         return next;
       });
       setDragOverPlayerId(null);
@@ -532,11 +532,11 @@ export function TacticsProvider({ children }) {
 
   const handleReady = useCallback(() => {
     const isReady = players.find((p) => p.name === me?.name)?.ready;
-    socket.emit("setReady", !isReady);
+    queueEmit("setReady", !isReady);
   }, [players, me]);
 
   const handleHalftimeReady = useCallback(() => {
-    socket.emit("setReady", true);
+    queueEmit("setReady", true);
   }, []);
 
   // ── Context value ────────────────────────────────────────────────────────

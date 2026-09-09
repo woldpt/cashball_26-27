@@ -5,7 +5,7 @@ import { PlayerLink } from "../components/shared/PlayerLink.jsx";
 import { MatchIcon } from "../components/match/shared/MatchIcon.jsx";
 import { MatchBriefing } from "../components/live/MatchBriefing.jsx";
 import { WaitingCoachesModal } from "../components/modals/WaitingCoachesModal.jsx";
-import { socket } from "../socket.js";
+import { socket, queueEmit } from "../socket.js";
 import { TACTIC_FORMATIONS, MAX_BENCH_SIZE } from "../constants/index.js";
 import { getMoraleLabel } from "../utils/morale.js";
 import { isPostMatchQueueActive } from "../utils/postMatchFlow.js";
@@ -1360,7 +1360,7 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
         }
         // Unilateral (não o toggle handleReady): duplo clique no Cancelar
         // emitia false e logo true, religando e reabrindo o modal em loop.
-        onCancel={() => socket.emit("setReady", false)}
+        onCancel={() => queueEmit("setReady", false)}
         canCancel={!isEliminatedCupSpectator}
       />
     </div>

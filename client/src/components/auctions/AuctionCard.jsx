@@ -15,6 +15,7 @@ import { StarMark } from "../shared/PlayerStatusBadges.jsx";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
 import { StatTile } from "../shared/StatTile.jsx";
 import { hexToRgba } from "../../utils/colorHelpers.js";
+import { emitComAck } from "../../socket.js";
 
 function useCountdown(endsAt) {
   const [secs, setSecs] = useState(null);
@@ -83,15 +84,26 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
       return;
     }
     setBidError("");
-    socket.emit("placeAuctionBid", { playerId: auction.playerId, bidAmount: amount }, (res) => {
-      if (res?.ok) {
-        setBidSuccess(true);
-        setTimeout(() => setBidSuccess(false), 3000);
-      } else {
-        setBidError(res?.error || "Erro ao processar o lance.");
-        setTimeout(() => setBidError(""), 3000);
-      }
-    });
+    if (!socket?.connected) {
+      // Sem rede: o lance fica em fila e é enviado ao reconectar (com
+      // __actionId anti-duplicado no servidor). Feedback imediato.
+      setBidError("Sem ligação — lance em fila para enviar.");
+    }
+    emitComAck(
+      "placeAuctionBid",
+      { playerId: auction.playerId, bidAmount: amount },
+      {
+        onOk: () => {
+          setBidError("");
+          setBidSuccess(true);
+          setTimeout(() => setBidSuccess(false), 3000);
+        },
+        onError: (err) => {
+          setBidError(err?.message || "Erro ao processar o lance.");
+          setTimeout(() => setBidError(""), 3000);
+        },
+      },
+    );
   }, [bidInput, minBid, auction.playerId, teamInfo, socket]);
 
   const sellerTeam = (teams || []).find((t) => Number(t.id) === Number(auction.sellerTeamId)) || null;

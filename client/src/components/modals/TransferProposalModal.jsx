@@ -1,4 +1,4 @@
-import { socket } from "../../socket.js";
+import { queueEmit } from "../../socket.js";
 import { formatCurrency } from "../../utils/formatters.js";
 import {
   FLAG_TO_COUNTRY,
@@ -88,7 +88,7 @@ export function TransferProposalModal({
             variant="success"
             className="flex-1"
             onClick={() => {
-              socket.emit("makeTransferProposal", {
+              queueEmit("makeTransferProposal", {
                 playerId: player.id,
               });
             }}
