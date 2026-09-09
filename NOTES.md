@@ -6,6 +6,14 @@
 > - Regra permanente descoberta → mover para `AGENTS.md`/`CLAUDE.md`/`STYLE.md` e remover daqui.
 > - Ao iniciar uma sessão nova: ler este ficheiro + `git log --oneline -10`.
 
+## JournalTab — robustez + acessibilidade + UX mobile
+
+- Robustez: `compareRows` local removido → `compareStandingsRows` de `utils/standingsRank.js` (fonte única com servidor e tabela); `gameKey` e todos os lookups `teamById` com `Number()` (IDs do SQLite vs contexto); memos `teamById`/`humanTeamIds`/`coachByTeamId` juntos numa só passagem; parse da rota de transferências (`"{jogador} · {vendedor} → {comprador}"`) extraído para `transferRoute()` com fallback para o título intacto; `onOpenPlayerHistory` agora sempre `{id}` (o GameRoutes só usa `playerId`).
+- Acessibilidade: classificação e artilheiros em `<ol>/<li>`; `MiniFormDots` com `role="img"` + etiqueta textual (antes só cor); zona de subida/descida com texto `sr-only` (antes só borda colorida); botões de histórico com `aria-label`.
+- UX mobile: carimbo em fluxo ao lado do kicker no telemóvel (antes `absolute top-9` tapava o título a 320px), absoluto só no `sm+` (um legível por breakpoint); coluna "J" da mini-tabela escondida abaixo de 420px para dar espaço aos nomes; placar com gaps/padding mais apertados no telemóvel; limiares de `fans_mood` (70/45/25) unificados em `fansMoodTone()`.
+- Não mexido: sistema `.jp-*` do `index.css`, tapes/rotações/nódoas, `journalHeadlines.js`, ordem das tiras (sequência narrativa preservada para leitores de ecrã).
+- Checks: eslint limpo em `JournalTab.jsx`; `check:types` OK; harness pré-existente `journal-resp-test` portrait 5/5 + landscape 6/6 PASS (`clipEls=0`, screenshots 360 e 667 verificados). `npm run lint` global falha em `client/journal-cup-diagnostic.jsx` (ficheiro untracked de outra sessão, `import ... assert` — não tocado).
+
 ## StadiumTab — painel Expansão com aspeto de estaleiro (novo)
 
 - Só o bloco Expansão (`StadiumTab.jsx`): fita de sinalização amarelo/preto no topo (repeating-linear-gradient com `var(--color-amber-400)`/`--color-zinc-950` + fallback hex, sem imagens), ícone do header `stadium`→`construction`, meta "Estaleiro aberto"/"Obra concluída".

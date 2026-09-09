@@ -21,13 +21,14 @@
  * Dados: `globalNews` ({news, results} com `attendance`/`homeCapacity` por
  * jogo) + `teams` (com `coach_is_human`, `coach_name`, `division`,
  * `fans_mood`, `ticket_price`) + `topScorers` + `teamForms` + `players`
- * (coaches), tudo do GameContext.
+ * (só para detetar equipas de treinadores humanos), tudo do GameContext.
  */
 import { useMemo } from "react";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { TeamCrest } from "../components/live/TeamCrest.jsx";
 import { formatCurrency } from "../utils/formatters.js";
 import { getFansMoodLabel } from "../utils/morale.js";
+import { compareStandingsRows } from "../utils/standingsRank.js";
 import {
   buildHeadline,
   STAMP_TONE_CLASS,
@@ -76,27 +77,70 @@ function journalTier(division) {
   return 0;
 }
 
-/**
- * Ordenação canónica da classificação: pontos → diferença de golos →
- * golos marcados → nome (igual ao servidor e a `standingsRank`).
- */
-function compareRows(a, b) {
-  return (
-    (b.points || 0) - (a.points || 0) ||
-    (b.goals_for || 0) -
-      (b.goals_against || 0) -
-      ((a.goals_for || 0) - (a.goals_against || 0)) ||
-    (b.goals_for || 0) - (a.goals_for || 0) ||
-    String(a.name || "").localeCompare(String(b.name || ""))
-  );
-}
-
 function cupLabel(round) {
   return CUP_ROUND_LABELS[round] || `Ronda ${round}`;
 }
 
+/**
+ * Chave estável de um resultado. Os IDs vêm do SQLite (números) mas o
+ * GameContext pode trazê-los como strings — normalizar com Number() evita
+ * chaves duplicadas e jogos escondidos/exibidos no sítio errado.
+ */
 function gameKey(r) {
-  return `${r.competition}|${r.matchweek ?? ""}|${r.round ?? ""}|${r.homeTeamId}|${r.awayTeamId}`;
+  return `${r.competition}|${r.matchweek ?? ""}|${r.round ?? ""}|${Number(r.homeTeamId)}|${Number(r.awayTeamId)}`;
+}
+
+/**
+ * Tom das bancadas a partir de fans_mood (0-100). Limiares num sítio só —
+ * antes estavam repetidos em quatro sítios (emoji, cor, barra, frase).
+ */
+function fansMoodTone(mood) {
+  const m = Number(mood) || 0;
+  if (m >= 70)
+    return {
+      emoji: "🥳",
+      textClass: "text-tertiary",
+      barClass: "bg-tertiary",
+      quote: "A bancada está pelo clube — tragam é golos!",
+    };
+  if (m >= 45)
+    return {
+      emoji: "🙂",
+      textClass: "text-primary",
+      barClass: "bg-primary",
+      quote: "Morno. Um bom resultado e isto ferve.",
+    };
+  if (m >= 25)
+    return {
+      emoji: "😬",
+      textClass: "text-amber-500",
+      barClass: "bg-amber-500",
+      quote: "Adeptos de sobrolho carregado. Cuidado com os assobios.",
+    };
+  return {
+    emoji: "🤬",
+    textClass: "text-error",
+    barClass: "bg-error",
+    quote: "Lenços brancos na gaveta… por enquanto.",
+  };
+}
+
+/**
+ * Rota de uma notícia de transferência ("vendedor → comprador").
+ * O servidor monta o título como
+ * "{jogador} · {vendedor} → {comprador}" (socketNewsHandlers) sem colunas
+ * separadas para o vendedor — parse defensivo com fallback para o título
+ * intacto quando o formato não bate certo.
+ */
+function transferRoute(n) {
+  const title = String(n?.title || "");
+  if (!title.includes("→")) return title;
+  const parts = title
+    .split("·")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (parts.length <= 1) return title;
+  return parts.slice(1).join(" · ");
 }
 
 function crowdLine(r) {
@@ -197,8 +241,8 @@ function FanzineCard({
 
 /* ── Resultado em vinheta: recorte com linha de tesoura (caso) / limpo ─── */
 function ComicResultRow({ r, teamById, myTeamId, contextLabel, craft = true }) {
-  const home = teamById.get(r.homeTeamId);
-  const away = teamById.get(r.awayTeamId);
+  const home = teamById.get(Number(r.homeTeamId));
+  const away = teamById.get(Number(r.awayTeamId));
   const moms = [r.momHome?.playerName, r.momAway?.playerName].filter(Boolean);
   return (
     <div
@@ -244,12 +288,26 @@ function ComicResultRow({ r, teamById, myTeamId, contextLabel, craft = true }) {
   );
 }
 
-/** Pontinhos de forma V/E/D (letra mais recente à direita). */
+/** Pontinhos de forma V/E/D (letra mais recente à direita). Com role="img"
+ *  e etiqueta textual — antes eram só cor, ilegíveis para leitores de ecrã. */
 function MiniFormDots({ form = "" }) {
   const chars = String(form).split("").slice(-5);
   while (chars.length < 5) chars.unshift(null);
+  const words = chars.map((c) =>
+    c === "V"
+      ? "vitória"
+      : c === "E"
+        ? "empate"
+        : c === "D"
+          ? "derrota"
+          : "por jogar",
+  );
   return (
-    <span className="inline-flex items-center gap-0.5" aria-hidden="true">
+    <span
+      className="inline-flex items-center gap-0.5"
+      role="img"
+      aria-label={`Forma recente: ${words.join(", ")}`}
+    >
       {chars.map((c, i) => (
         <span
           key={i}
@@ -305,11 +363,23 @@ export function JournalTab({
     [globalNews],
   );
 
-  const teamById = useMemo(() => {
-    const map = new Map();
-    for (const t of teams || []) map.set(t.id, t);
-    return map;
-  }, [teams]);
+  // Mapas da jornada numa só passagem sobre teams/players: emblema por
+  // equipa, equipas de treinadores humanos e nome do treinador por equipa.
+  // Chaves sempre Number() — o servidor manda números, o contexto pode
+  // trazer strings.
+  const { teamById, humanTeamIds, coachByTeamId } = useMemo(() => {
+    const byId = new Map();
+    const humans = new Set();
+    const coaches = new Map();
+    for (const t of teams || []) {
+      byId.set(Number(t.id), t);
+      if (t.coach_is_human === 1) humans.add(Number(t.id));
+      if (t.coach_name) coaches.set(Number(t.id), t.coach_name);
+    }
+    for (const p of players || [])
+      if (p?.teamId != null) humans.add(Number(p.teamId));
+    return { teamById: byId, humanTeamIds: humans, coachByTeamId: coaches };
+  }, [teams, players]);
 
   const myTeamId = me?.teamId != null ? Number(me.teamId) : null;
   const myTeam = useMemo(
@@ -346,22 +416,6 @@ export function JournalTab({
     : crafty
       ? "sm:rotate-[-0.15deg]"
       : "";
-
-  const humanTeamIds = useMemo(() => {
-    const set = new Set();
-    for (const t of teams || [])
-      if (t.coach_is_human === 1) set.add(Number(t.id));
-    for (const p of players || [])
-      if (p?.teamId != null) set.add(Number(p.teamId));
-    return set;
-  }, [teams, players]);
-
-  const coachByTeamId = useMemo(() => {
-    const map = new Map();
-    for (const t of teams || [])
-      if (t.coach_name) map.set(Number(t.id), t.coach_name);
-    return map;
-  }, [teams]);
 
   // ── Jornada anterior (só Liga) ──────────────────────────────────────────
   const leagueResults = useMemo(
@@ -411,7 +465,7 @@ export function JournalTab({
     if (myDivision == null) return [];
     return [...(teams || [])]
       .filter((t) => Number(t.division) === Number(myDivision))
-      .sort(compareRows);
+      .sort(compareStandingsRows);
   }, [teams, myDivision]);
   const myPos = useMemo(() => {
     if (myTeamId == null) return null;
@@ -555,8 +609,9 @@ export function JournalTab({
     );
   }
 
-  const headlineHome = headline ? teamById.get(headline.homeTeamId) : null;
-  const headlineAway = headline ? teamById.get(headline.awayTeamId) : null;
+  const headlineHome = headline ? teamById.get(Number(headline.homeTeamId)) : null;
+  const headlineAway = headline ? teamById.get(Number(headline.awayTeamId)) : null;
+  const mood = fansMood != null ? fansMoodTone(fansMood) : null;
 
   return (
     <PaperSheet tierCls={tierCls} amateur={amateur}>
@@ -600,9 +655,11 @@ export function JournalTab({
             </>
           )}
           {crafty && <div aria-hidden className="tactical-pattern absolute inset-0" />}
-          {/* Carimbo rodado */}
+          {/* Carimbo rodado: em fluxo ao lado do kicker no telemóvel
+              (nunca tapa o título); absoluto sobre a manchete no sm+. */}
           <span
-            className={`absolute right-2 sm:right-4 top-9 sm:top-10 ${stampRot} rounded-sm border-4 px-2 py-0.5 font-headline text-sm sm:text-lg font-black uppercase tracking-widest bg-surface/70 ${stampClass}`}
+            aria-hidden
+            className={`absolute right-4 top-10 hidden sm:inline-block ${stampRot} rounded-sm border-4 px-2 py-0.5 font-headline text-lg font-black uppercase tracking-widest bg-surface/70 ${stampClass}`}
           >
             {voice.stamp.text}
           </span>
@@ -610,11 +667,18 @@ export function JournalTab({
             <div className="flex items-start gap-3">
               <Burst emoji={CARTOON_EMOJI[voice.cartoon] || "📣"} className="text-tertiary mt-1" size={64} />
               <div className="min-w-0 flex-1">
-                <p
-                  className={`inline-flex ${crafty ? "-rotate-1" : ""} rounded-sm bg-primary px-1.5 py-px text-[9px] font-black uppercase tracking-widest text-zinc-950`}
-                >
-                  {voice.kicker}
-                </p>
+                <div className="flex items-start justify-between gap-2">
+                  <p
+                    className={`inline-flex ${crafty ? "-rotate-1" : ""} rounded-sm bg-primary px-1.5 py-px text-[9px] font-black uppercase tracking-widest text-zinc-950`}
+                  >
+                    {voice.kicker}
+                  </p>
+                  <span
+                    className={`sm:hidden inline-flex shrink-0 ${stampRot} rounded-sm border-[3px] px-1.5 py-px font-headline text-[11px] font-black uppercase tracking-widest bg-surface/70 ${stampClass}`}
+                  >
+                    {voice.stamp.text}
+                  </span>
+                </div>
                 <h2 className="mt-1 font-headline text-2xl sm:text-4xl short:text-xl font-black uppercase tracking-tight leading-[1.02] text-on-surface">
                   {voice.title}
                 </h2>
@@ -630,7 +694,7 @@ export function JournalTab({
             </div>
 
             {/* Placar */}
-            <div className="mt-3 flex items-center gap-3 short:gap-2 rounded-sm border-2 border-on-surface/20 bg-surface-container-low px-3 py-3 short:py-2">
+            <div className="mt-3 flex items-center gap-2 sm:gap-3 rounded-sm border-2 border-on-surface/20 bg-surface-container-low px-2 sm:px-3 py-3 short:py-2">
               <div className="flex-1 min-w-0 flex flex-col items-center gap-1.5 text-center">
                 <TeamCrest
                   team={headlineHome || { name: headline.homeName }}
@@ -723,21 +787,27 @@ export function JournalTab({
             stickerRot={stickerRot}
             craft={crafty}
           >
-            <div>
+            <ol>
               {miniTable.rows.map(({ team, pos }, i) => {
                 const prev = miniTable.rows[i - 1]?.pos ?? null;
                 const gap = prev != null && pos - prev > 1;
                 const isMe = Number(team.id) === myTeamId;
                 const played =
                   (team.wins || 0) + (team.draws || 0) + (team.losses || 0);
-                const marker =
+                const zone =
                   myDivision > 1 && pos <= 2
-                    ? "border-l-emerald-500"
+                    ? "subida"
                     : pos > miniTable.total - 2
+                      ? "descida"
+                      : null;
+                const marker =
+                  zone === "subida"
+                    ? "border-l-emerald-500"
+                    : zone === "descida"
                       ? "border-l-red-500"
                       : "border-l-transparent";
                 return (
-                  <div key={team.id}>
+                  <li key={team.id}>
                     {gap && (
                       <p className="px-3 text-center text-[10px] text-on-surface-variant/50 leading-none py-0.5">
                         ✂️ - - - - - - - - -
@@ -759,19 +829,22 @@ export function JournalTab({
                       <p className="flex-1 min-w-0 text-xs font-black text-on-surface truncate">
                         {pos === 1 ? "👑 " : ""}{team.name}
                         {isMe ? " · TU" : ""}
+                        {zone && (
+                          <span className="sr-only">{` (zona de ${zone})`}</span>
+                        )}
                       </p>
                       <MiniFormDots form={teamForms[team.id] || ""} />
-                      <span className="w-6 shrink-0 text-right text-[10px] text-on-surface-variant tabular-nums">
+                      <span className="hidden min-[420px]:inline w-6 shrink-0 text-right text-[10px] text-on-surface-variant tabular-nums">
                         {played}J
                       </span>
                       <span className="w-7 shrink-0 text-right text-xs font-black text-on-surface tabular-nums">
                         {team.points || 0}
                       </span>
                     </div>
-                  </div>
+                  </li>
                 );
               })}
-            </div>
+            </ol>
           </FanzineCard>
         )}
 
@@ -826,9 +899,9 @@ export function JournalTab({
             stickerRot={stickerRot}
             craft={crafty}
           >
-            <div>
+            <ol>
               {scorers.map((s, i) => (
-                <div
+                <li
                   key={s.id}
                   className={`flex items-center gap-2.5 px-2.5 short:px-2 py-2 short:py-1.5 m-1.5 rounded-sm border ${
                     i === 0
@@ -852,6 +925,7 @@ export function JournalTab({
                   <div className="flex-1 min-w-0">
                     <button
                       type="button"
+                      aria-label={`Ver histórico de ${s.name}`}
                       onClick={() =>
                         s.id != null && onOpenPlayerHistory?.({ id: s.id })
                       }
@@ -870,9 +944,9 @@ export function JournalTab({
                   >
                     {s.goals} {s.goals === 1 ? "golo" : "golos"}
                   </span>
-                </div>
+                </li>
               ))}
-            </div>
+            </ol>
           </FanzineCard>
         )}
 
@@ -897,10 +971,10 @@ export function JournalTab({
                     {n.player_id && n.player_name ? (
                       <button
                         type="button"
+                        aria-label={`Ver histórico de ${n.player_name}`}
                         onClick={() =>
                           onOpenPlayerHistory?.({
                             id: n.player_id,
-                            name: n.player_name,
                           })
                         }
                         className="block max-w-full truncate text-xs font-black text-on-surface hover:text-primary transition-colors text-left"
@@ -913,10 +987,7 @@ export function JournalTab({
                       </p>
                     )}
                     <p className="text-[10px] text-on-surface-variant truncate">
-                      {n.title.includes("→")
-                        ? n.title.split("·").slice(1).join("·").trim() ||
-                          n.title
-                        : n.title}
+                      {transferRoute(n)}
                       {n.description ? ` · ${n.description}` : ""}
                     </p>
                   </div>
@@ -974,7 +1045,7 @@ export function JournalTab({
           </FanzineCard>
         )}
 
-        {fansMood != null && (
+        {mood && (
           <FanzineCard
             sticker="Bancadas"
             stickerClass="bg-error text-zinc-950"
@@ -986,7 +1057,7 @@ export function JournalTab({
           >
             <div className="px-2.5 short:px-2 py-2.5 short:py-1.5">
               <div className="flex items-center gap-2.5">
-                <Burst emoji={fansMood >= 70 ? "🥳" : fansMood >= 45 ? "🙂" : fansMood >= 25 ? "😬" : "🤬"} className={fansMood >= 70 ? "text-tertiary" : fansMood >= 45 ? "text-primary" : fansMood >= 25 ? "text-amber-500" : "text-error"} size={52} />
+                <Burst emoji={mood.emoji} className={mood.textClass} size={52} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-xs font-black text-on-surface truncate">
@@ -1007,20 +1078,14 @@ export function JournalTab({
                     aria-label="Estado de espírito dos adeptos"
                   >
                     <div
-                      className={`h-full rounded-full transition-all ${fansMood >= 70 ? "bg-tertiary" : fansMood >= 45 ? "bg-primary" : fansMood >= 25 ? "bg-amber-500" : "bg-error"}`}
+                      className={`h-full rounded-full transition-all ${mood.barClass}`}
                       style={{
                         width: `${Math.max(0, Math.min(100, Number(fansMood) || 0))}%`,
                       }}
                     />
                   </div>
                   <p className="mt-1 text-[10px] italic text-on-surface-variant/80">
-                    {fansMood >= 70
-                      ? "A bancada está pelo clube — tragam é golos!"
-                      : fansMood >= 45
-                        ? "Morno. Um bom resultado e isto ferve."
-                        : fansMood >= 25
-                          ? "Adeptos de sobrolho carregado. Cuidado com os assobios."
-                          : "Lenços brancos na gaveta… por enquanto."}
+                    {mood.quote}
                   </p>
                 </div>
               </div>
