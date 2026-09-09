@@ -96,7 +96,7 @@ const ParticleCanvas = () => {
 		resize();
 		window.addEventListener("resize", resize);
 
-		const particles = Array.from({ length: 55 }, () => ({
+		const particles = Array.from({ length: 32 }, () => ({
 			x: Math.random() * window.innerWidth,
 			y: Math.random() * window.innerHeight,
 			r: Math.random() * 1.4 + 0.3,
@@ -132,7 +132,7 @@ const ParticleCanvas = () => {
 	return (
 		<canvas
 			ref={canvasRef}
-			className="pointer-events-none fixed inset-0 z-0 opacity-40"
+			className="pointer-events-none fixed inset-0 z-0 opacity-25"
 		/>
 	);
 };
@@ -241,17 +241,35 @@ const LandingPage = ({
 			{/* Particle background */}
 			<ParticleCanvas />
 
-			{/* Background layers */}
+			{/* Background layers — relvado de noite + quadro tático */}
 			<div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-				{/* Pitch grid lines */}
+				{/* Faixas de relva aparada */}
 				<div
-					className="absolute inset-0 opacity-[0.04]"
+					className="absolute inset-0 opacity-60"
+					style={{
+						background:
+							"repeating-linear-gradient(90deg, rgba(74,222,128,0.028) 0 120px, transparent 120px 240px)",
+					}}
+				/>
+				{/* Linha lateral + círculo central em giz */}
+				<div aria-hidden="true" className="absolute inset-y-[-10%] left-1/2 w-px bg-white/[0.05]" />
+				<div
+					aria-hidden="true"
+					className="absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.05]"
+				/>
+				<div
+					aria-hidden="true"
+					className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/[0.07]"
+				/>
+				{/* Grelha de giz do quadro tático */}
+				<div
+					className="absolute inset-0 opacity-[0.05]"
 					style={{
 						backgroundImage: `
-							linear-gradient(rgba(74,222,128,1) 1px, transparent 1px),
-							linear-gradient(90deg, rgba(74,222,128,1) 1px, transparent 1px)
+							linear-gradient(rgba(255,255,255,1) 1px, transparent 1px),
+							linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)
 						`,
-						backgroundSize: "80px 80px",
+						backgroundSize: "28px 28px",
 					}}
 				/>
 				{/* Glow halos as background gradients: clipped to this layer, no scroll overflow */}
@@ -347,10 +365,29 @@ const LandingPage = ({
 						</span>
 					</div>
 
+					{/* Placar de balneário — etiqueta de treinador com cronómetro */}
+					<div className="mb-5 short:mb-2 flex max-w-full flex-wrap items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
+						<span className="material-symbols-outlined text-green-400 text-[16px] leading-none">
+							sports_soccer
+						</span>
+						<span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">
+							Treinador · Época 26/27
+						</span>
+						<span className="flex items-center gap-1.5 border-l border-white/10 pl-2">
+							<span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+							<span className="text-[10px] font-black tabular-nums tracking-widest text-green-400">
+								90'
+							</span>
+						</span>
+					</div>
+
 					{/* Hero title: base size clamps to the viewport so "PROSPERA."
 					    never overflows 320px screens (60px text-6xl = 307px wide).
 					    At >=360px the clamp resolves to exactly 3.75rem (text-6xl). */}
-					<h1 className="font-headline font-black leading-none tracking-tighter mb-8 short:mb-2">
+					<h1 className="relative font-headline font-black leading-none tracking-tighter mb-8 short:mb-2">
+						{/* Fita-cola — folha afixada no quadro tático */}
+						<span aria-hidden="true" className="absolute -top-2 left-8 h-4 w-14 -rotate-6 rounded-[2px] bg-white/15" />
+						<span aria-hidden="true" className="absolute -top-2 right-8 h-4 w-14 rotate-6 rounded-[2px] bg-white/15" />
 						{/* Nome acessível estável — o bloco visual cicla e é decorativo */}
 						<span className="sr-only">TREINA. PROSPERA. REPETE.</span>
 						<span aria-hidden="true" className="block relative">
@@ -410,8 +447,8 @@ const LandingPage = ({
 						{/* Outer glow */}
 						<div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-green-500/20 via-transparent to-green-500/5 blur-sm pointer-events-none" />
 						<div className="relative bg-[#0a1410]/90 border border-white/[0.08] backdrop-blur-2xl rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.6),0_0_0_1px_rgba(74,222,128,0.08)]">
-							{/* Top accent bar */}
-							<div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-green-400/70 to-transparent" />
+							{/* Linha de giz do quadro tático */}
+							<div aria-hidden="true" className="absolute top-0 inset-x-0 h-[2px] opacity-50" style={{ background: "repeating-linear-gradient(90deg, rgba(255,255,255,0.3) 0 10px, transparent 10px 20px)" }} />
 							{/* Corner accents */}
 							<div className="absolute top-3 right-3 w-10 h-10 border-t border-r border-green-500/20 rounded-tr-xl pointer-events-none" />
 							<div className="absolute bottom-3 left-3 w-10 h-10 border-b border-l border-green-500/20 rounded-bl-xl pointer-events-none" />
@@ -428,7 +465,10 @@ const LandingPage = ({
 										className="p-8 space-y-5 short:p-2.5 short:space-y-1"
 									>
 										<div className="space-y-1 text-center mb-4 short:mb-1">
-											<p className="text-[10px] text-green-400/60 uppercase font-black tracking-[0.4em]">
+											<p className="flex items-center justify-center gap-1.5 text-[10px] text-green-400/60 uppercase font-black tracking-[0.4em]">
+												<span className="material-symbols-outlined text-[14px] leading-none">
+													badge
+												</span>
 												Painel do Treinador
 											</p>
 											<h2 className="text-2xl font-headline font-black text-white tracking-tight short:text-base">
@@ -551,7 +591,10 @@ const LandingPage = ({
 											  </h2>
 											</div>
 											<div className="space-y-1 text-center short:hidden">
-											  <p className="text-[10px] text-green-400/60 uppercase font-black tracking-[0.4em]">
+											  <p className="flex items-center justify-center gap-1.5 text-[10px] text-green-400/60 uppercase font-black tracking-[0.4em]">
+											    <span className="material-symbols-outlined text-[14px] leading-none">
+											      badge
+											    </span>
 											    Nova conta
 											  </p>
 											  <h2 className="text-2xl font-headline font-black text-white tracking-tight">
@@ -705,22 +748,22 @@ const LandingPage = ({
 					<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 						{[
 							{
-								icon: "🌍",
+								icon: "stadium",
 								label: "4 Divisões",
 								desc: "Primeira Liga, Segunda, Liga 3 e Campeonato de Portugal com promoção e descida.",
 							},
 							{
-								icon: "👥",
+								icon: "group",
 								label: "Até 8 Treinadores",
 								desc: "Multiplayer assíncrono — submete as tácticas quando quiseres, simula em grupo.",
 							},
 							{
-								icon: "💰",
+								icon: "payments",
 								label: "Finanças & Contratos",
 								desc: "Gere o orçamento, renegocia contratos e evita a falência do clube.",
 							},
 							{
-								icon: "⚡",
+								icon: "live_tv",
 								label: "Simulação ao Vivo",
 								desc: "Eventos em tempo real. Acompanhe os jogos e notícias à medida que acontecem.",
 							},
@@ -729,8 +772,10 @@ const LandingPage = ({
 								key={label}
 								className="bg-white/[0.02] border border-white/[0.06] hover:border-green-500/25 hover:bg-green-500/[0.03] rounded-xl p-5 short:p-3 transition-all duration-300 group"
 							>
-								<div className="w-10 h-10 flex items-center justify-center text-xl bg-white/[0.04] rounded-xl mb-4 short:mb-2 group-hover:bg-green-500/10 transition-colors duration-300">
-									{icon}
+								<div className="w-10 h-10 flex items-center justify-center bg-white/[0.04] border border-white/[0.06] rounded-xl mb-4 short:mb-2 group-hover:bg-green-500/10 transition-colors duration-300">
+									<span className="material-symbols-outlined text-green-400/80 text-[22px] leading-none">
+										{icon}
+									</span>
 								</div>
 								<p className="font-headline font-black text-sm text-white mb-1.5 tracking-tight">
 									{label}

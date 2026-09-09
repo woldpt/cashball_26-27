@@ -186,6 +186,9 @@
 
 ## Último estado
 
+- **LandingPage com tema de balneário/quadro tático (novo):** só camada visual, sem mexer em layout nem lógica — fundo com faixas de relva + linha lateral/círculo central em giz + grelha de giz (partículas 55→32), etiqueta "placar de balneário" (Treinador · Época 26/27 · 90') com fita-cola no título, cartão com linha de giz no topo e crachá `badge` nos headers, features com ícones material (`stadium`/`group`/`payments`/`live_tv`). Só `client/src/components/auth/LandingPage.jsx`.
+  - Checks: client `lint` + `check:types` OK. Sem mobile-resp-check (sem mudança de grid/flex/larguras).
+
 - **Treinos: posição mais imediata + decay de resistência a metade (novo):** `server/trainingHelpers.ts` — ganho base de posição `2,5 → 5` (skill 30 passa de ~1-2 semanas para ~1 semana por ponto; travão perto do potencial intacto); decay sem treino `jogado −1,84 → −0,92`, `descansado −0,61 → −0,30` (ganho `+4,9` intacto). Só afeta treinos futuros (acumuladores existentes mantêm-se).
   - Checks: server `typecheck` OK; `audit:gamestate 445WU8` 0 erros; `audit:socketio` 0 erros. Sem toque no cliente → sem lint/mobile-resp-check.
 
