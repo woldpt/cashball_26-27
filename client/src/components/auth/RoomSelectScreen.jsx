@@ -418,17 +418,17 @@ const RoomSelectScreen = ({
 															{/* Sem convite em curso: estado de presença + botão */}
 															{!busy && inThis && (
 																<span className="shrink-0 rounded border border-green-500/30 bg-green-500/15 px-1 py-px text-[9px] font-black uppercase tracking-widest text-green-400">
-																	Em jogo aqui
+																	A Jogar
 																</span>
 															)}
 															{!busy && !inThis && room && (
 																<span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-amber-400/90">
-																	Em {room}
+																	Noutra Sala
 																</span>
 															)}
 															{!busy && !room && (
 																<span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-white/25">
-																	Ausente
+																	Offline
 																</span>
 															)}
 															{!busy && onlineElsewhere && (
