@@ -1,16 +1,27 @@
 /**
- * JournalTab — capa de fanzine da bancada.
+ * JournalTab — o jornal da bancada.
  *
- * Landing tab (pós-login e pós-jogo). Estética de jornal fotocopiado:
- * cabeçalho-masthead, manchete gigante do teu jogo com carimbo rodado,
- * tiras secundárias em molduras de banda desenhada (série, classificação,
- * humanos, artilheiros, mercado, bancadas) e voz de gozão de café
- * (utils/journalHeadlines.js, pt-PT).
+ * Landing tab (pós-login e pós-jogo). Uma FOLHA DE PAPEL clara (bege-creme)
+ * pousada sobre o fundo escuro da app, com estética que evolui com o clube:
+ *   · div 3-4 → .jp-amador: fotocópia de garagem (granulado forte, tapes,
+ *     rotações, nódoa de café, dobra ao meio, masthead a preto-e-branco);
+ *   · div 2   → .jp-semi: folha clara, caseiro cuidado (menos rotação,
+ *     sem nódoas/dobra);
+ *   · div 1   → .jp-pro: quase branco, grelha direita — sem tapes nem
+ *     rotações, mas a voz de gozão de café mantém-se.
+ * A 5.ª divisão não é jogável — irrelevante (cai no amador, nunca acontece).
+ *
+ * Conteúdo: masthead (nome+slogan por época), manchete gigante do teu jogo
+ * com carimbo e cartoon, e tiras em molduras de "recorte-e-cola" (série,
+ * classificação, humanos, artilheiros, mercado, bancadas). Voz gerada por
+ * utils/journalHeadlines.js (função pura, determinística). A folha de papel
+ * vem de .jp-paper/.jp-* no index.css (tokens redefinidos SCOPED, sem tocar
+ * no resto da app).
  *
  * Dados: `globalNews` ({news, results} com `attendance`/`homeCapacity` por
- * jogo) + `teams` (com `coach_is_human`, `coach_name`, `fans_mood`,
- * `ticket_price`) + `topScorers` + `teamForms` + `players` (coaches),
- * tudo do GameContext.
+ * jogo) + `teams` (com `coach_is_human`, `coach_name`, `division`,
+ * `fans_mood`, `ticket_price`) + `topScorers` + `teamForms` + `players`
+ * (coaches), tudo do GameContext.
  */
 import { useMemo } from "react";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
@@ -55,6 +66,17 @@ const MASTHEADS = [
 ];
 
 /**
+ * Patamar de aspeto da folha a partir da divisão do clube.
+ * 1 → profissional (2); 2 → semi (1); 3-4 (e 5/nula, não jogável) → amador (0).
+ */
+function journalTier(division) {
+  const d = Number(division);
+  if (d === 1) return 2;
+  if (d === 2) return 1;
+  return 0;
+}
+
+/**
  * Ordenação canónica da classificação: pontos → diferença de golos →
  * golos marcados → nome (igual ao servidor e a `standingsRank`).
  */
@@ -86,6 +108,29 @@ function crowdLine(r) {
   return `${Number(r.attendance).toLocaleString("pt-PT")}${occ}`;
 }
 
+/**
+ * Envoltório da folha de papel. O patamar (jp-amador/semi/pro) decide a cor
+ * da folha, o granulado e a tinta (tokens scoped no index.css); os ornamentos
+ * de fotocópia crua (nódoas + dobra) só aparecem no amador.
+ */
+function PaperSheet({ tierCls, amateur, children }) {
+  return (
+    <div
+      className={`jp-paper ${tierCls} relative overflow-hidden rounded-md sm:rounded-lg px-2 sm:px-5 py-4 sm:py-5`}
+    >
+      {amateur && (
+        <>
+          <div aria-hidden className="jp-stain jp-stain-a" />
+          <div aria-hidden className="jp-stain jp-stain-b" />
+          <div aria-hidden className="jp-crease" />
+        </>
+      )}
+      <div className="relative z-[1] space-y-4 short:space-y-2">{children}</div>
+      <div aria-hidden className="jp-grain" />
+    </div>
+  );
+}
+
 /* ── Rabiscos: estrela de banda desenhada com emoji lá dentro ──────────── */
 function Burst({ emoji, className = "text-tertiary", size = 56 }) {
   return (
@@ -107,32 +152,35 @@ function Burst({ emoji, className = "text-tertiary", size = 56 }) {
   );
 }
 
-/* ── Tira de fita-cola (pura decoração) ────────────────────────────────── */
+/* ── Tira de fita-cola (pura decoração; só nos patamares caseiros) ─────── */
 function Tape({ className = "" }) {
   return (
     <div
       aria-hidden
-      className={`pointer-events-none absolute -top-0 left-10 h-5 w-20 -translate-y-1/2 rotate-[-6deg] bg-tertiary/50 shadow-sm ${className}`}
+      className={`jp-tape pointer-events-none absolute -top-0 left-10 h-5 w-20 -translate-y-1/2 rotate-[-6deg] ${className}`}
     />
   );
 }
 
-/* ── Moldura fanzine: cartão com sombra dura + autocolante de título ───── */
+/* ── Moldura fanzine: cartão recortado com autocolante de título ───────── */
 function FanzineCard({
   sticker,
   stickerClass = "bg-tertiary text-zinc-950",
   meta,
   tilt = "",
+  shadowCls = "",
+  stickerRot = "",
+  craft = true,
   children,
 }) {
   return (
     <section
-      className={`relative overflow-hidden rounded-md border-2 border-on-surface/15 bg-surface-container shadow-[4px_4px_0_rgba(0,0,0,0.45)] ${tilt}`}
+      className={`relative overflow-hidden rounded-md border-2 border-on-surface/15 bg-surface-container ${shadowCls} ${tilt}`}
     >
-      <Tape />
+      {craft && <Tape />}
       <div className="flex items-center justify-between gap-2 px-3 short:px-2 pt-3 short:pt-2">
         <span
-          className={`inline-flex -rotate-2 rounded-sm px-2 py-0.5 text-[10px] font-black uppercase tracking-widest shadow-md shadow-black/50 ${stickerClass}`}
+          className={`inline-flex ${stickerRot} rounded-sm px-2 py-0.5 text-[10px] font-black uppercase tracking-widest ${craft ? "shadow-md shadow-black/50" : "shadow-sm"} ${stickerClass}`}
         >
           {sticker}
         </span>
@@ -147,19 +195,25 @@ function FanzineCard({
   );
 }
 
-/* ── Resultado em vinheta de banda desenhada ───────────────────────────── */
-function ComicResultRow({ r, teamById, myTeamId, contextLabel }) {
+/* ── Resultado em vinheta: recorte com linha de tesoura (caso) / limpo ─── */
+function ComicResultRow({ r, teamById, myTeamId, contextLabel, craft = true }) {
   const home = teamById.get(r.homeTeamId);
   const away = teamById.get(r.awayTeamId);
   const moms = [r.momHome?.playerName, r.momAway?.playerName].filter(Boolean);
   return (
-    <div className="m-1.5 rounded-sm border border-dashed border-outline-variant/40 bg-surface-container-low px-2 py-1.5">
+    <div
+      className={`m-1.5 rounded-sm border bg-surface-container-low px-2 py-1.5 ${
+        craft
+          ? "border-dashed border-outline-variant/40"
+          : "border-outline-variant/30"
+      }`}
+    >
       <div className="flex items-center gap-2 min-w-0">
         <TeamCrest
           team={home || { name: r.homeName }}
           isMine={r.homeTeamId === myTeamId}
           size="sm"
-          rotate={6}
+          rotate={craft ? 6 : 0}
         />
         <p className="flex-1 min-w-0 text-right text-xs font-black text-on-surface truncate">
           {r.homeName}
@@ -176,7 +230,7 @@ function ComicResultRow({ r, teamById, myTeamId, contextLabel }) {
           team={away || { name: r.awayName }}
           isMine={r.awayTeamId === myTeamId}
           size="sm"
-          rotate={-6}
+          rotate={craft ? -6 : 0}
         />
       </div>
       {(moms.length > 0 || contextLabel) && (
@@ -266,6 +320,32 @@ export function JournalTab({
     [teams, myTeamId],
   );
   const myDivision = myTeam?.division ?? null;
+
+  // ── Patamar da folha (1 → pro · 2 → semi · 3-4 → amador) ──────────────
+  const tier = journalTier(myDivision);
+  const tierCls = tier === 2 ? "jp-pro" : tier === 1 ? "jp-semi" : "jp-amador";
+  const amateur = tier === 0; // fotocópia crua (nódoas, dobra, masthead B&W)
+  const crafty = tier < 2; // ornamentos caseiros (tapes/rotações/recortes)
+  const cardShadow = amateur
+    ? "shadow-[5px_5px_0_rgba(0,0,0,0.45)]"
+    : crafty
+      ? "shadow-[3px_3px_0_rgba(0,0,0,0.28)]"
+      : "shadow-sm";
+  const stampRot = amateur ? "rotate-[12deg]" : crafty ? "rotate-[6deg]" : "";
+  const stickerRot = amateur ? "-rotate-2" : crafty ? "-rotate-1" : "";
+  const scoreRot = amateur ? "-rotate-1" : crafty ? "-rotate-[0.5deg]" : "";
+  // Inclinações de moldura: par/ímpar alternam o sinal (estáticas no ficheiro
+  // para o scanner do Tailwind as gerar; amplitude cai no patamar limpo).
+  const tiltPos = amateur
+    ? "sm:rotate-[0.4deg]"
+    : crafty
+      ? "sm:rotate-[0.15deg]"
+      : "";
+  const tiltNeg = amateur
+    ? "sm:rotate-[-0.4deg]"
+    : crafty
+      ? "sm:rotate-[-0.15deg]"
+      : "";
 
   const humanTeamIds = useMemo(() => {
     const set = new Set();
@@ -437,13 +517,13 @@ export function JournalTab({
 
   if (!hasAnything) {
     return (
-      <div className="space-y-4 short:space-y-2">
+      <PaperSheet tierCls={tierCls} amateur={amateur}>
         <EmptyState
           emoji="📰"
           title="Jornal sem manchetes"
           description="Ainda não se jogou nesta época."
         />
-      </div>
+      </PaperSheet>
     );
   }
 
@@ -451,14 +531,20 @@ export function JournalTab({
   const headlineAway = headline ? teamById.get(headline.awayTeamId) : null;
 
   return (
-    <div className="space-y-4 short:space-y-2">
+    <PaperSheet tierCls={tierCls} amateur={amateur}>
       {/* ── MASTHEAD ──────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-md border-2 border-on-surface/20 bg-surface-container px-4 short:px-3 py-3 short:py-2 shadow-[4px_4px_0_rgba(0,0,0,0.45)]">
-        <Tape className="left-1/2" />
-        <div aria-hidden className="tactical-pattern absolute inset-0" />
+      <div
+        className={`relative overflow-hidden rounded-md border-2 border-on-surface/20 bg-surface-container px-4 short:px-3 py-3 short:py-2 ${
+          amateur ? "jp-photocopy " : ""
+        }${crafty ? cardShadow : "shadow-sm"}`}
+      >
+        {crafty && <Tape className="left-1/2" />}
+        {crafty && <div aria-hidden className="tactical-pattern absolute inset-0" />}
         <div className="relative flex items-end justify-between gap-3">
           <div className="min-w-0">
-            <p className="inline-flex -rotate-2 rounded-sm bg-error px-1.5 py-px text-[9px] font-black uppercase tracking-widest text-zinc-950 shadow-md shadow-black/50">
+            <p
+              className={`inline-flex ${stickerRot} rounded-sm bg-error px-1.5 py-px text-[9px] font-black uppercase tracking-widest text-zinc-950 shadow-md shadow-black/50`}
+            >
               {masthead.tagline}
             </p>
             <h1 className="mt-1 font-headline text-2xl sm:text-4xl short:text-xl font-black uppercase tracking-tight leading-none text-on-surface">
@@ -474,13 +560,21 @@ export function JournalTab({
 
       {/* ── MANCHETE GIGANTE ──────────────────────────────────────────── */}
       {headline && (
-        <section className="relative overflow-hidden rounded-md border-2 border-tertiary/40 bg-surface-container shadow-[6px_6px_0_rgba(0,0,0,0.5)]">
-          <Tape />
-          <Tape className="left-auto right-10 rotate-[5deg]" />
-          <div aria-hidden className="tactical-pattern absolute inset-0" />
+        <section
+          className={`relative overflow-hidden rounded-md border-2 border-tertiary/40 bg-surface-container ${
+            crafty ? cardShadow : "shadow-sm"
+          }`}
+        >
+          {amateur && (
+            <>
+              <Tape />
+              <Tape className="left-auto right-10 rotate-[5deg]" />
+            </>
+          )}
+          {crafty && <div aria-hidden className="tactical-pattern absolute inset-0" />}
           {/* Carimbo rodado */}
           <span
-            className={`absolute right-2 sm:right-4 top-9 sm:top-10 rotate-[12deg] rounded-sm border-4 px-2 py-0.5 font-headline text-sm sm:text-lg font-black uppercase tracking-widest bg-surface/70 ${stampClass}`}
+            className={`absolute right-2 sm:right-4 top-9 sm:top-10 ${stampRot} rounded-sm border-4 px-2 py-0.5 font-headline text-sm sm:text-lg font-black uppercase tracking-widest bg-surface/70 ${stampClass}`}
           >
             {voice.stamp.text}
           </span>
@@ -488,7 +582,9 @@ export function JournalTab({
             <div className="flex items-start gap-3">
               <Burst emoji={CARTOON_EMOJI[voice.cartoon] || "📣"} className="text-tertiary mt-1" size={64} />
               <div className="min-w-0 flex-1">
-                <p className="inline-flex -rotate-1 rounded-sm bg-primary px-1.5 py-px text-[9px] font-black uppercase tracking-widest text-zinc-950">
+                <p
+                  className={`inline-flex ${crafty ? "-rotate-1" : ""} rounded-sm bg-primary px-1.5 py-px text-[9px] font-black uppercase tracking-widest text-zinc-950`}
+                >
                   {voice.kicker}
                 </p>
                 <h2 className="mt-1 font-headline text-2xl sm:text-4xl short:text-xl font-black uppercase tracking-tight leading-[1.02] text-on-surface">
@@ -512,7 +608,7 @@ export function JournalTab({
                   team={headlineHome || { name: headline.homeName }}
                   isMine={Number(headline.homeTeamId) === myTeamId}
                   size="lg"
-                  rotate={6}
+                  rotate={crafty ? 6 : 0}
                 />
                 <p className="text-sm short:text-xs font-black text-on-surface leading-tight break-words">
                   {headline.homeName}
@@ -523,7 +619,7 @@ export function JournalTab({
                   </p>
                 )}
               </div>
-              <div className="shrink-0 flex flex-col items-center gap-1 px-3 py-1.5 rounded bg-surface-container-high border-2 border-tertiary/40 -rotate-1">
+              <div className={`shrink-0 flex flex-col items-center gap-1 px-3 py-1.5 rounded bg-surface-container-high border-2 border-tertiary/40 ${scoreRot}`}>
                 <div className="flex items-center gap-2">
                   <span className="text-3xl sm:text-5xl short:text-2xl font-black font-headline text-on-surface tabular-nums">
                     {headline.homeScore}
@@ -539,7 +635,7 @@ export function JournalTab({
                   team={headlineAway || { name: headline.awayName }}
                   isMine={Number(headline.awayTeamId) === myTeamId}
                   size="lg"
-                  rotate={-6}
+                  rotate={crafty ? -6 : 0}
                 />
                 <p className="text-sm short:text-xs font-black text-on-surface leading-tight break-words">
                   {headline.awayName}
@@ -561,10 +657,17 @@ export function JournalTab({
         </section>
       )}
 
-      {/* ── TIRAS FANZINE ──────────────────────────────────────────────── */}
+      {/* ── TIRAS (recortes de moldura) ───────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 short:gap-2 items-start">
         {seriesGames.length > 0 && (
-          <FanzineCard sticker="A tua série" meta={`Jornada ${lastWeek}`} tilt="sm:rotate-[0.4deg]">
+          <FanzineCard
+            sticker="A tua série"
+            meta={`Jornada ${lastWeek}`}
+            tilt={crafty ? tiltPos : ""}
+            shadowCls={cardShadow}
+            stickerRot={stickerRot}
+            craft={crafty}
+          >
             <div>
               {seriesGames.map((r) => (
                 <ComicResultRow
@@ -572,6 +675,7 @@ export function JournalTab({
                   r={r}
                   teamById={teamById}
                   myTeamId={myTeamId}
+                  craft={crafty}
                 />
               ))}
             </div>
@@ -586,7 +690,10 @@ export function JournalTab({
             sticker="Classificação"
             stickerClass="bg-primary text-zinc-950"
             meta={miniTable.myPos > 0 ? `${miniTable.myPos}.º` : ""}
-            tilt="sm:rotate-[-0.4deg]"
+            tilt={crafty ? tiltNeg : ""}
+            shadowCls={cardShadow}
+            stickerRot={stickerRot}
+            craft={crafty}
           >
             <div>
               {miniTable.rows.map(({ team, pos }, i) => {
@@ -610,7 +717,11 @@ export function JournalTab({
                     )}
                     <div
                       className={`flex items-center gap-2 px-2.5 short:px-2 py-1.5 border-l-2 ${marker} ${
-                        isMe ? "bg-primary-container/25 -rotate-[0.5deg]" : ""
+                        isMe
+                          ? crafty
+                            ? "bg-primary-container/25 -rotate-[0.5deg]"
+                            : "bg-primary-container/25"
+                          : ""
                       }`}
                     >
                       <span className="w-4 shrink-0 text-[10px] font-black text-on-surface-variant tabular-nums">
@@ -641,7 +752,10 @@ export function JournalTab({
             sticker="Os outros humanos"
             stickerClass="bg-amber-500 text-zinc-950"
             meta={`${humanGames.length} jogo${humanGames.length !== 1 ? "s" : ""}`}
-            tilt="sm:rotate-[0.4deg]"
+            tilt={crafty ? tiltPos : ""}
+            shadowCls={cardShadow}
+            stickerRot={stickerRot}
+            craft={crafty}
           >
             <div>
               {humanGames.map((r) => {
@@ -662,6 +776,7 @@ export function JournalTab({
                     r={r}
                     teamById={teamById}
                     myTeamId={myTeamId}
+                    craft={crafty}
                     contextLabel={`${div != null ? `Série ${div}` : "Taça"}${coachTxt ? ` · 🧢 ${coachTxt}` : ""}`}
                   />
                 );
@@ -678,7 +793,10 @@ export function JournalTab({
             sticker="Artilheiros"
             stickerClass="bg-tertiary text-zinc-950"
             meta="Top 5"
-            tilt="sm:rotate-[-0.4deg]"
+            tilt={crafty ? tiltNeg : ""}
+            shadowCls={cardShadow}
+            stickerRot={stickerRot}
+            craft={crafty}
           >
             <div>
               {scorers.map((s, i) => (
@@ -686,12 +804,16 @@ export function JournalTab({
                   key={s.id}
                   className={`flex items-center gap-2.5 px-2.5 short:px-2 py-2 short:py-1.5 m-1.5 rounded-sm border ${
                     i === 0
-                      ? "border-tertiary/50 bg-tertiary/10 -rotate-[0.5deg]"
+                      ? crafty
+                        ? "border-tertiary/50 bg-tertiary/10 -rotate-[0.5deg]"
+                        : "border-tertiary/50 bg-tertiary/10"
                       : "border-dashed border-outline-variant/40 bg-surface-container-low"
                   }`}
                 >
                   <span
-                    className={`shrink-0 w-6 h-6 flex items-center justify-center text-[10px] font-black rounded-sm rotate-[-4deg] ${
+                    className={`shrink-0 w-6 h-6 flex items-center justify-center text-[10px] font-black rounded-sm ${
+                      crafty ? "rotate-[-4deg] " : ""
+                    }${
                       i === 0
                         ? "bg-tertiary text-zinc-950"
                         : "bg-surface-bright text-on-surface"
@@ -713,7 +835,11 @@ export function JournalTab({
                       {s.team_name || ""}
                     </p>
                   </div>
-                  <span className="shrink-0 rounded-sm bg-surface-container-high border border-on-surface/15 px-1.5 py-0.5 text-xs font-black text-on-surface tabular-nums rotate-[2deg]">
+                  <span
+                    className={`shrink-0 rounded-sm bg-surface-container-high border border-on-surface/15 px-1.5 py-0.5 text-xs font-black text-on-surface tabular-nums ${
+                      crafty ? "rotate-[2deg]" : ""
+                    }`}
+                  >
                     {s.goals} {s.goals === 1 ? "golo" : "golos"}
                   </span>
                 </div>
@@ -727,7 +853,10 @@ export function JournalTab({
             sticker="Mercado negro… quer dizer, mercado"
             stickerClass="bg-emerald-400 text-zinc-950"
             meta="Top 5"
-            tilt="sm:rotate-[0.4deg]"
+            tilt={crafty ? tiltPos : ""}
+            shadowCls={cardShadow}
+            stickerRot={stickerRot}
+            craft={crafty}
           >
             <div>
               {topTransfers.map((n) => (
@@ -764,7 +893,11 @@ export function JournalTab({
                     </p>
                   </div>
                   {n.amount != null && (
-                    <span className="shrink-0 rotate-[2deg] rounded-sm bg-emerald-400 px-1.5 py-0.5 text-[11px] font-black text-zinc-950 tabular-nums shadow-md shadow-black/50">
+                    <span
+                      className={`shrink-0 rounded-sm bg-emerald-400 px-1.5 py-0.5 text-[11px] font-black text-zinc-950 tabular-nums shadow-md shadow-black/50 ${
+                        crafty ? "rotate-[2deg]" : ""
+                      }`}
+                    >
                       {formatCurrency(n.amount)}
                     </span>
                   )}
@@ -779,7 +912,10 @@ export function JournalTab({
             sticker="Bancadas"
             stickerClass="bg-error text-zinc-950"
             meta="Termómetro"
-            tilt="sm:rotate-[-0.4deg]"
+            tilt={crafty ? tiltNeg : ""}
+            shadowCls={cardShadow}
+            stickerRot={stickerRot}
+            craft={crafty}
           >
             <div className="px-2.5 short:px-2 py-2.5 short:py-1.5">
               <div className="flex items-center gap-2.5">
@@ -834,9 +970,10 @@ export function JournalTab({
 
       {/* ── RODAPÉ ────────────────────────────────────────────────────── */}
       <p className="text-center text-[10px] italic text-on-surface-variant/60 px-4">
-        Impresso na bancada com tinta e suor · Proibido insultar o árbitro ·
-        Devolver ao quiosque depois de ler 🗞️
+        {tier === 2
+          ? "Uma publicação da bancada · Direção de arte: o café · Proibido insultar o árbitro 🗞️"
+          : "Impresso na bancada com tinta e suor · Proibido insultar o árbitro · Devolver ao quiosque depois de ler 🗞️"}
       </p>
-    </div>
+    </PaperSheet>
   );
 }

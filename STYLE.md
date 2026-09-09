@@ -140,3 +140,33 @@ Paddings: `p-3 md:p-4`; widgets: `grid-cols-1 sm:grid-cols-3`. Navegação: grup
 **Z-index** — `MODAL_Z` (`constants/index.js`): `teamSquad` 120, `transferProposal` 130, `cupDraw` 140, `waitingCoaches`/`penalty` 150, `default` 200, `dismissal` 9999. Nunca valores mágicos inline.
 
 **Utilitários:** `formatCurrency`, `getPlayerStat` · `FLAG_TO_COUNTRY`.
+
+## 11. Jornal — folha de papel (JournalTab)
+
+A tab Jornal é uma **folha de papel clara** pousada sobre o fundo escuro da
+app, com aspeto que evolui com o clube. Implementação em `index.css` (seção
+`JORNAL — "papel" (JP)`) + `JournalTab.jsx`; a 5.ª divisão não é jogável
+(irrelevante).
+
+| Patamar | Divisão | Classe | Folha | Ornamentos |
+|---|---|---|---|---|
+| Amador (fotocópia) | 3-4 | `.jp-amador` | bege envelhecida | granulado forte, nódoas de café, dobra ao meio, tapes, rotações, masthead a preto-e-branco (`.jp-photocopy`) |
+| Semi (caseiro) | 2 | `.jp-semi` | creme clara | granulado leve, tapes, pouca rotação, sem nódoas/dobra |
+| Profissional | 1 | `.jp-pro` | quase branca | grelha direita: sem tapes/rotações/padrão de pontos — a voz gozona mantém-se |
+
+**Como funciona:** `.jp-paper` redefine **scoped** os tokens do `@theme`
+(`--color-surface…`, `--color-on-surface…`, `--color-outline-variant`,
+acessórios de impressão como `--color-error`/`emerald`/`amber`/`zinc-950` e
+`--color-primary/tertiary`). Como o Tailwind emite `var(--color-…)`, todos os
+utilitários dos componentes do jornal passam a tinta escura sobre papel sem
+tocar no resto da app. Hex aqui permitido: é a paleta de impressão do jornal
+(análoga à paleta de posição). Granulado: `--jp-grain` (noise SVG por
+patamar) renderizado por `.jp-grain` (overlay acima do conteúdo, como tinta
+sobre papel); cor da folha: `--jp-sheet`.
+
+**Regras:** nunca usar `Math.random` para as decorações (flicker entre
+renders — capa determinística); rotações/tapes/filtros vivem no JSX por
+patamar (`amateur`/`crafty`/`tierCls`), as classes arbitrárias (ex.
+`sm:rotate-[0.15deg]`) têm de estar como literais no ficheiro para o scanner
+do Tailwind as gerar; `PaperSheet` é o envoltório (sobreposições `jp-stain` /
+`jp-crease` só amador).
