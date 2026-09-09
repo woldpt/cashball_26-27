@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MAX_MATCH_SUBS, POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import {
@@ -21,6 +21,11 @@ import {
   OpponentGridCard,
 } from "../shared/index.js";
 import { TeamCrest } from "../../live/TeamCrest.jsx";
+import {
+  getBenchCardState,
+  getPitchCardState,
+  useSubsDrag,
+} from "./intervencao/subsSelection.js";
 import {
   useCompactViewport,
   useLandscapePhone,
@@ -157,67 +162,105 @@ export function IntervencaoView({
   const hInfo = teams?.find((t) => t.id === fixture?.homeTeamId);
   const aInfo = teams?.find((t) => t.id === fixture?.awayTeamId);
 
-  // The normal squad comes from the database and intentionally keeps the
-  // permanent skill. During a match, overlay the fixture's transient fatigue
-  // state so the halftime decision compares tired starters with fresh bench
-  // players without persisting match state into the squad.
+  // O plantel base vem da BD e mantém a skill permanente. Durante o jogo,
+  // sobrepõe-se a fadiga transitória do fixture para a decisão do intervalo
+  // comparar titulares cansados com suplentes frescos sem persistir estado
+  // de jogo no plantel.
   const liveOwnLineup = isHome ? fixture?.homeLineup : fixture?.awayLineup;
-  const liveOwnById = new Map(
-    (liveOwnLineup || []).map((player) => [Number(player.id), player]),
+  const liveOwnById = useMemo(
+    () =>
+      new Map(
+        (liveOwnLineup || []).map((player) => [Number(player.id), player]),
+      ),
+    [liveOwnLineup],
   );
-  const panelSquad =
-    isHalftime && isMyFixture
-      ? annotatedSquad.map((player) => {
-          const livePlayer = liveOwnById.get(Number(player.id));
-          if (!livePlayer) return player;
-          return {
-            ...player,
-            skill: livePlayer.skill ?? player.skill,
-            matchMinutes: livePlayer.matchMinutes ?? 0,
-            fatigueLoss: livePlayer.fatigueLoss ?? 0,
-          };
-        })
-      : annotatedSquad;
+  const panelSquad = useMemo(
+    () =>
+      isHalftime && isMyFixture
+        ? annotatedSquad.map((player) => {
+            const livePlayer = liveOwnById.get(Number(player.id));
+            if (!livePlayer) return player;
+            return {
+              ...player,
+              skill: livePlayer.skill ?? player.skill,
+              matchMinutes: livePlayer.matchMinutes ?? 0,
+              fatigueLoss: livePlayer.fatigueLoss ?? 0,
+            };
+          })
+        : annotatedSquad,
+    [isHalftime, isMyFixture, annotatedSquad, liveOwnById],
+  );
 
   /* ── Our squad ────────────────────────────────────────────────── */
   const useTacticSquad = isHalftime || isUserSubPause;
-  const onPitchPlayers = useTacticSquad
-    ? sortPlayersByPos(
-        panelSquad.filter(
-          (p) =>
-            tactic?.positions?.[p.id] === "Titular" &&
-            !subbedOut.includes(p.id) &&
-            !redCardedHalftimeIds.has(p.id) &&
-            !injuredHalftimeIds?.has(p.id),
-        ),
-      )
-    : isActionSub
-      ? sortPlayersByPos(matchAction?.onPitch || [])
-      : isGkRedCard
-        ? sortPlayersByPos(matchAction?.onPitch || [])
-        : isEmergencyGk
+  const onPitchPlayers = useMemo(
+    () =>
+      useTacticSquad
+        ? sortPlayersByPos(
+            panelSquad.filter(
+              (p) =>
+                tactic?.positions?.[p.id] === "Titular" &&
+                !subbedOut.includes(p.id) &&
+                !redCardedHalftimeIds.has(p.id) &&
+                !injuredHalftimeIds?.has(p.id),
+            ),
+          )
+        : isActionSub
           ? sortPlayersByPos(matchAction?.onPitch || [])
-          : forceOutPlayer
-            ? [forceOutPlayer]
-            : [];
+          : isGkRedCard
+            ? sortPlayersByPos(matchAction?.onPitch || [])
+            : isEmergencyGk
+              ? sortPlayersByPos(matchAction?.onPitch || [])
+              : forceOutPlayer
+                ? [forceOutPlayer]
+                : [],
+    [
+      useTacticSquad,
+      panelSquad,
+      tactic,
+      subbedOut,
+      redCardedHalftimeIds,
+      injuredHalftimeIds,
+      isActionSub,
+      isGkRedCard,
+      isEmergencyGk,
+      matchAction,
+      forceOutPlayer,
+    ],
+  );
 
-  const benchPlayers = useTacticSquad
-    ? sortPlayersByPos(
-        panelSquad
-          .filter((p) => tactic?.positions?.[p.id] === "Suplente")
-          // Quem já saiu em campo nesta pausa (ou antes) não volta a constar
-          // no banco — re-entrada é impossível (também garantida no servidor).
-          // No intervalo mantém-se visível (desativado) para referência.
-          .filter((p) => !isUserSubPause || !subbedOut.includes(p.id))
-          .filter((p) => !injuredHalftimeIds?.has(p.id)),
-      )
-    : sortPlayersByPos(matchAction?.benchPlayers || []);
+  const benchPlayers = useMemo(
+    () =>
+      useTacticSquad
+        ? sortPlayersByPos(
+            panelSquad
+              .filter((p) => tactic?.positions?.[p.id] === "Suplente")
+              // Quem já saiu em campo nesta pausa (ou antes) não volta a constar
+              // no banco — re-entrada é impossível (também garantida no servidor).
+              // No intervalo mantém-se visível (desativado) para referência.
+              .filter((p) => !isUserSubPause || !subbedOut.includes(p.id))
+              .filter((p) => !injuredHalftimeIds?.has(p.id)),
+          )
+        : sortPlayersByPos(matchAction?.benchPlayers || []),
+    [
+      useTacticSquad,
+      panelSquad,
+      tactic,
+      isUserSubPause,
+      subbedOut,
+      injuredHalftimeIds,
+      matchAction,
+    ],
+  );
 
-  const playerById = (id) =>
-    panelSquad.find((p) => p.id === id) ||
-    onPitchPlayers.find((p) => p.id === id) ||
-    benchPlayers.find((p) => p.id === id) ||
-    null;
+  const playerById = useCallback(
+    (id) =>
+      panelSquad.find((p) => p.id === id) ||
+      onPitchPlayers.find((p) => p.id === id) ||
+      benchPlayers.find((p) => p.id === id) ||
+      null,
+    [panelSquad, onPitchPlayers, benchPlayers],
+  );
 
   const effectiveOutId = isGkRedCard
     ? selectedOutId
@@ -251,41 +294,58 @@ export function IntervencaoView({
             ? "Limite de substituições atingido."
             : null;
 
-  /* ── Opponent data ────────────────────────────────────────────── */
-  // Strict check: arrays vazios ([] são truthy) não contam como escalação.
-  const hasLineups =
-    !!fixture?.homeLineup?.length && !!fixture?.awayLineup?.length;
-  const oppLineupRaw = isHome ? fixture?.awayLineup : fixture?.homeLineup;
-  const oppLineup = oppLineupRaw || [];
-  // Defensive: expulsos adversários não podem constar da escalação exibida
-  // (o snapshot do servidor pode estar stale em jogos a decorrer).
-  const oppRedCardedIds = new Set(
-    (fixture?.events || [])
-      .filter(
-        (e) =>
-          e.type === "red" &&
-          e.team === (isHome ? "away" : "home") &&
-          e.playerId != null,
-      )
-      .map((e) => Number(e.playerId)),
-  );
-  const oppLineupFiltered = oppLineup.filter(
-    (p) => !oppRedCardedIds.has(Number(p.id)),
-  );
-  const oppStarters = sortPlayersByPos(
-    oppLineupFiltered.filter((p) => p.is_starter === true).slice(0, 11),
-  );
-  const oppBench = sortPlayersByPos(
-    oppLineupFiltered.filter((p) => p.is_starter === false),
-  );
-  const oppRows = buildPositionRows(oppStarters);
-  const oppInfo = isHome ? aInfo : hInfo;
+  /* ── Dados do adversário ──────────────────────────────────────── */
+  // Verificação estrita: arrays vazios ([] são truthy) não contam como escalação.
+  const oppData = useMemo(() => {
+    const hasLineups =
+      !!fixture?.homeLineup?.length && !!fixture?.awayLineup?.length;
+    const oppLineup =
+      (isHome ? fixture?.awayLineup : fixture?.homeLineup) || [];
+    // Defesa: expulsos adversários não podem constar da escalação exibida
+    // (o snapshot do servidor pode estar stale em jogos a decorrer).
+    const oppRedCardedIds = new Set(
+      (fixture?.events || [])
+        .filter(
+          (e) =>
+            e.type === "red" &&
+            e.team === (isHome ? "away" : "home") &&
+            e.playerId != null,
+        )
+        .map((e) => Number(e.playerId)),
+    );
+    const oppLineupFiltered = oppLineup.filter(
+      (p) => !oppRedCardedIds.has(Number(p.id)),
+    );
+    const oppStarters = sortPlayersByPos(
+      oppLineupFiltered.filter((p) => p.is_starter === true).slice(0, 11),
+    );
+    const oppBench = sortPlayersByPos(
+      oppLineupFiltered.filter((p) => p.is_starter === false),
+    );
+    return {
+      hasLineups,
+      oppStarters,
+      oppBench,
+      oppRows: buildPositionRows(oppStarters),
+      oppInfo: isHome ? aInfo : hInfo,
+    };
+  }, [fixture, isHome, aInfo, hInfo]);
+  const { hasLineups, oppBench, oppRows, oppInfo } = oppData;
 
-  /* ── Chronology events ────────────────────────────────────────── */
-  const evts = fixture?.events || [];
-  const weatherEvent = evts.find((e) => e.type === "weather");
-  const visibleEvts = filterMatchEvents(evts, liveMinute);
-  const playerMatchStats = buildPlayerMatchStats(evts, liveMinute);
+  /* ── Cronologia ───────────────────────────────────────────────── */
+  const evts = useMemo(() => fixture?.events || [], [fixture]);
+  const weatherEvent = useMemo(
+    () => evts.find((e) => e.type === "weather"),
+    [evts],
+  );
+  const visibleEvts = useMemo(
+    () => filterMatchEvents(evts, liveMinute),
+    [evts, liveMinute],
+  );
+  const playerMatchStats = useMemo(
+    () => buildPlayerMatchStats(evts, liveMinute),
+    [evts, liveMinute],
+  );
   const referee = fixture.referee;
 
   /* ── Action title ─────────────────────────────────────────────── */
@@ -306,25 +366,32 @@ export function IntervencaoView({
       : "from-emerald-500/15 via-primary/10 to-transparent";
 
   /* ── Handlers ──────────────────────────────────────────────────── */
-  const handlePickOut = (player) => {
-    if (!player) return;
-    onSelectOut(isHalftime ? player.id : player);
-  };
-  const handlePickIn = (player) => {
-    if (!player) return;
-    onSelectIn(isHalftime ? player.id : player);
-  };
+  const handlePickOut = useCallback(
+    (player) => {
+      if (!player) return;
+      onSelectOut(isHalftime ? player.id : player);
+    },
+    [onSelectOut, isHalftime],
+  );
+  const handlePickIn = useCallback(
+    (player) => {
+      if (!player) return;
+      onSelectIn(isHalftime ? player.id : player);
+    },
+    [onSelectIn, isHalftime],
+  );
 
-  // "Anular todas" is two-tap: first tap arms, second confirms. Shared by the
-  // desktop ghost button and the compact mobile icon next to the SUBS counter.
-  const handleArmResetAll = () => {
+  // "Anular todas" em dois toques: o primeiro arma, o segundo confirma.
+  // Partilhado pelo botão desktop e pelo ícone compacto do mobile junto ao
+  // contador SUBS.
+  const handleArmResetAll = useCallback(() => {
     if (confirmResetAll) {
       onResetAllSubs();
       setConfirmResetAll(false);
     } else {
       setConfirmResetAll(true);
     }
-  };
+  }, [confirmResetAll, onResetAllSubs]);
 
   /* ── Tabs ──────────────────────────────────────────────────────── */
   const tabs = [
@@ -540,7 +607,6 @@ export function IntervencaoView({
               onResetSub={onResetSub}
               onConfirmSub={onConfirmSub}
               onResolveAction={onResolveAction}
-              confirmedSubs={confirmedSubs}
               confirmResetAll={confirmResetAll}
               onArmResetAll={handleArmResetAll}
               summary={{ fixture, hInfo, aInfo, liveMinute }}
@@ -710,46 +776,17 @@ function SubsPanel({
   // Compressão extra só na banda landscape phone.
   const shortLandscape = useLandscapePhone();
 
-  // Drag-and-drop swap (HTML5 DnD, no extra lib). `dragFrom` records the
-  // dragged player + source side; `dragOverSide` highlights the valid target
-  // column. Falling back to tap-pick-out/tap-pick-in stays fully supported
-  // for touch. Drops only resolve across columns (pitch⇄bench).
-  const [dragFrom, setDragFrom] = useState(null);
-  const [dragOverSide, setDragOverSide] = useState(null);
-
-  const handleDragStart = (p, side) => (e) => {
-    setDragFrom({ player: p, side });
-    if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
-  };
-  const handleDragEnd = () => {
-    setDragFrom(null);
-    setDragOverSide(null);
-  };
-  const handleDragOver = (side) => (e) => {
-    e.preventDefault();
-    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-    setDragOverSide(side);
-  };
-  const resolveDrop = () => {
-    setDragFrom(null);
-    setDragOverSide(null);
-  };
-  const handleDropOnPitch = (target) => (e) => {
-    e.preventDefault();
-    const src = dragFrom;
-    resolveDrop();
-    if (!src || src.side !== "bench") return;
-    handlePickOut(target);
-    handlePickIn(src.player);
-  };
-  const handleDropOnBench = (target) => (e) => {
-    e.preventDefault();
-    const src = dragFrom;
-    resolveDrop();
-    if (!src || src.side !== "pitch") return;
-    handlePickOut(src.player);
-    handlePickIn(target);
-  };
+  // Arrastar-largar entre colunas (só rato; em toque é por seleção).
+  // Estado e regras vivem em `useSubsDrag` para as três vistas partilharem.
+  const {
+    dragFrom,
+    dragOverSide,
+    handleDragStart,
+    handleDragEnd,
+    handleDragOver,
+    handleDropOnPitch,
+    handleDropOnBench,
+  } = useSubsDrag({ handlePickOut, handlePickIn });
 
   /**
    * Seleciona o jogador que sai e traz a folha dos suplentes para a frente
@@ -764,12 +801,43 @@ function SubsPanel({
   const grAvailableOnBench = benchPlayers.some(
     (bp) => bp.position === "GR" && !subbedOut.includes(bp.id),
   );
-  // Visible warning replaces the old `title` tooltip — tooltips are
-  // unreachable on touch, so the lock reason must be on screen.
+  // Aviso visível em vez do antigo `title` — tooltips não chegam ao toque,
+  // por isso o motivo do bloqueio tem de estar no ecrã.
   const grLockedNoReplacement =
     isHalftime &&
     !grAvailableOnBench &&
     onPitchPlayers.some((p) => p.position === "GR");
+
+  // Contexto único para o estado dos cartões — titulares, banco e landscape
+  // aplicam as mesmas regras via getPitchCardState/getBenchCardState.
+  const cardCtx = useMemo(
+    () => ({
+      isHalftime,
+      isForcedSwap,
+      isGkRedCard,
+      isEmergencyGk,
+      forceOutPlayer,
+      subsMade,
+      subbedOut,
+      grAvailableOnBench,
+      effectiveOutId,
+      selectedInId,
+      playerMatchStats,
+    }),
+    [
+      isHalftime,
+      isForcedSwap,
+      isGkRedCard,
+      isEmergencyGk,
+      forceOutPlayer,
+      subsMade,
+      subbedOut,
+      grAvailableOnBench,
+      effectiveOutId,
+      selectedInId,
+      playerMatchStats,
+    ],
+  );
 
   // No banco, sem escolha de quem sai: a dica remete para o chip 'Sai', que
   // devolve aos titulares (a confirmHint genérica aponta para um cartão que
@@ -848,17 +916,10 @@ function SubsPanel({
             className="border-r border-outline-variant/15"
             players={onPitchPlayers}
             isHalftime={isHalftime}
-            isForcedSwap={isForcedSwap}
-            isGkRedCard={isGkRedCard}
             isEmergencyGk={isEmergencyGk}
-            selectedInId={selectedInId}
+            cardCtx={cardCtx}
             handlePickIn={handlePickIn}
-            forceOutPlayer={forceOutPlayer}
-            subsMade={subsMade}
-            grAvailableOnBench={grAvailableOnBench}
             grLockedNoReplacement={grLockedNoReplacement}
-            effectiveOutId={effectiveOutId}
-            playerMatchStats={playerMatchStats}
             pickOut={pickOut}
             dragFrom={dragFrom}
             dragOverSide={dragOverSide}
@@ -870,13 +931,8 @@ function SubsPanel({
           <SuplentesColumn
             className="border-r border-outline-variant/15"
             players={benchPlayers}
-            isHalftime={isHalftime}
             isEmergencyGk={isEmergencyGk}
-            forceOutPlayer={forceOutPlayer}
-            subsMade={subsMade}
-            subbedOut={subbedOut}
-            selectedInId={selectedInId}
-            playerMatchStats={playerMatchStats}
+            cardCtx={cardCtx}
             handlePickIn={handlePickIn}
             dragFrom={dragFrom}
             dragOverSide={dragOverSide}
@@ -967,11 +1023,8 @@ function SubsPanel({
               )}
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 py-2 space-y-1.5" style={{ WebkitOverflowScrolling: "touch" }}>
                 {onPitchPlayers.map((p) => {
-                  const noGrReplacement = isHalftime && p.position === "GR" && !grAvailableOnBench;
-                  const isLockedForced = isForcedSwap && !isGkRedCard && !isEmergencyGk && !!forceOutPlayer && p.id !== forceOutPlayer.id;
-                  const disabled = noGrReplacement || isLockedForced || (isHalftime && subsMade >= MAX_MATCH_SUBS);
-                  const selected = isEmergencyGk ? selectedInId === p.id : effectiveOutId === p.id;
-                  const stats = playerMatchStats?.get(p.id);
+                  const { disabled, selected, forcedOut, stats } =
+                    getPitchCardState(p, cardCtx);
                   return (
                     <CompactPlayerCard
                       key={p.id}
@@ -986,7 +1039,7 @@ function SubsPanel({
                       goals={stats?.goals ?? 0}
                       yellowCards={stats?.yellowCards ?? 0}
                       swapIndicator={isHalftime}
-                      forcedOut={isForcedSwap && !isEmergencyGk && !!forceOutPlayer && p.id === forceOutPlayer.id}
+                      forcedOut={forcedOut}
                       draggable={!disabled}
                       onDragStart={handleDragStart(p, "pitch")}
                       onDragOver={handleDragOver("pitch")}
@@ -1010,11 +1063,10 @@ function SubsPanel({
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 py-2 space-y-1.5" style={{ WebkitOverflowScrolling: "touch" }}>
                 {benchPlayers.map((p) => {
-                  const alreadyUsed = isHalftime && subbedOut.includes(p.id);
-                  const positionMismatch = !!forceOutPlayer && (forceOutPlayer.position === "GR") !== (p.position === "GR");
-                  const disabled = isEmergencyGk || alreadyUsed || positionMismatch || (isHalftime && subsMade >= MAX_MATCH_SUBS);
-                  const selected = selectedInId === p.id;
-                  const stats = playerMatchStats?.get(p.id);
+                  const { disabled, selected, stats } = getBenchCardState(
+                    p,
+                    cardCtx,
+                  );
                   return (
                     <CompactPlayerCard
                       key={p.id}
@@ -1149,17 +1201,10 @@ function SubsPanel({
               flat
               players={onPitchPlayers}
               isHalftime={isHalftime}
-              isForcedSwap={isForcedSwap}
-              isGkRedCard={isGkRedCard}
               isEmergencyGk={isEmergencyGk}
-              selectedInId={selectedInId}
+              cardCtx={cardCtx}
               handlePickIn={handlePickIn}
-              forceOutPlayer={forceOutPlayer}
-              subsMade={subsMade}
-              grAvailableOnBench={grAvailableOnBench}
               grLockedNoReplacement={grLockedNoReplacement}
-              effectiveOutId={effectiveOutId}
-              playerMatchStats={playerMatchStats}
               pickOut={pickOut}
               dragFrom={dragFrom}
               dragOverSide={dragOverSide}
@@ -1175,13 +1220,8 @@ function SubsPanel({
             <SuplentesColumn
               flat
               players={benchPlayers}
-              isHalftime={isHalftime}
               isEmergencyGk={isEmergencyGk}
-              forceOutPlayer={forceOutPlayer}
-              subsMade={subsMade}
-              subbedOut={subbedOut}
-              selectedInId={selectedInId}
-              playerMatchStats={playerMatchStats}
+              cardCtx={cardCtx}
               handlePickIn={handlePickIn}
               dragFrom={dragFrom}
               dragOverSide={dragOverSide}
@@ -1266,17 +1306,10 @@ function TitularesColumn({
   className,
   players,
   isHalftime,
-  isForcedSwap,
-  isGkRedCard,
   isEmergencyGk = false,
-  selectedInId,
+  cardCtx,
   handlePickIn,
-  forceOutPlayer,
-  subsMade,
-  grAvailableOnBench,
   grLockedNoReplacement,
-  effectiveOutId,
-  playerMatchStats,
   pickOut,
   dragFrom,
   dragOverSide,
@@ -1317,22 +1350,10 @@ function TitularesColumn({
       )}
       <div className={flat ? "space-y-2 px-3 pt-2 pb-3" : "flex-1 overflow-y-auto px-3 py-2.5 space-y-2"}>
         {players.map((p) => {
-          const noGrReplacement =
-            isHalftime && p.position === "GR" && !grAvailableOnBench;
-          const isLockedForced =
-            isForcedSwap &&
-            !isGkRedCard &&
-            !isEmergencyGk &&
-            !!forceOutPlayer &&
-            p.id !== forceOutPlayer.id;
-          const disabled =
-            noGrReplacement ||
-            isLockedForced ||
-            (isHalftime && subsMade >= MAX_MATCH_SUBS);
-          const selected = isEmergencyGk
-            ? selectedInId === p.id
-            : effectiveOutId === p.id;
-          const stats = playerMatchStats?.get(p.id);
+          const { disabled, selected, forcedOut, stats } = getPitchCardState(
+            p,
+            cardCtx,
+          );
 
           return (
             <Card
@@ -1348,12 +1369,7 @@ function TitularesColumn({
               goals={stats?.goals ?? 0}
               yellowCards={stats?.yellowCards ?? 0}
               swapIndicator={isHalftime}
-              forcedOut={
-                isForcedSwap &&
-                !isEmergencyGk &&
-                !!forceOutPlayer &&
-                p.id === forceOutPlayer.id
-              }
+              forcedOut={forcedOut}
               draggable={!disabled}
               onDragStart={handleDragStart(p, "pitch")}
               onDragOver={handleDragOver("pitch")}
@@ -1377,13 +1393,8 @@ function TitularesColumn({
 function SuplentesColumn({
   className,
   players,
-  isHalftime,
   isEmergencyGk = false,
-  forceOutPlayer,
-  subsMade,
-  subbedOut,
-  selectedInId,
-  playerMatchStats,
+  cardCtx,
   handlePickIn,
   dragFrom,
   dragOverSide,
@@ -1418,17 +1429,7 @@ function SuplentesColumn({
       )}
       <div className={flat ? "space-y-2 px-3 pt-2 pb-3" : "flex-1 overflow-y-auto px-3 py-2.5 space-y-2"}>
         {players.map((p) => {
-          const alreadyUsed = isHalftime && subbedOut.includes(p.id);
-          const positionMismatch =
-            !!forceOutPlayer &&
-            (forceOutPlayer.position === "GR") !== (p.position === "GR");
-          const disabled =
-            isEmergencyGk ||
-            alreadyUsed ||
-            positionMismatch ||
-            (isHalftime && subsMade >= MAX_MATCH_SUBS);
-          const selected = selectedInId === p.id;
-          const stats = playerMatchStats?.get(p.id);
+          const { disabled, selected, stats } = getBenchCardState(p, cardCtx);
 
           return (
             <Card
