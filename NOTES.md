@@ -207,6 +207,8 @@
 
 ## Último estado
 
+- **Jornal: tira "Os outros humanos" → "Outros treinadores":** só a prop `sticker` do `FanzineCard` em `JournalTab.jsx` (1 ocorrência). Checks: eslint do ficheiro OK; sem mobile-resp-check (tweak de texto pontual).
+
 - **Fila pós-jogo rígida inclui o Aguardar Coaches (novo):** `computePostMatchFlow` recebe `waitingWantsShow` e devolve `showWaiting` (só com a fila drenada); helper `isPostMatchQueueActive` para portões fora do GameOverlays. `GameOverlays` (espera do intervalo passa por `showWaiting` + gate do landing inclui-a) e `TacticsView` (espera pré-jogo suprimida com fila ativa) — os dados ficam guardados, só ordena. Histórico continua a furar; popups em jogo, lobby e mercado livres (decisão do utilizador). Checks: client `lint` + `check:types` OK. Sem audits/mobile (só visibilidade UI).
 
 

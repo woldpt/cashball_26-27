@@ -777,7 +777,7 @@ export function JournalTab({
 
         {humanGames.length > 0 && (
           <FanzineCard
-            sticker="Os outros humanos"
+            sticker="Outros treinadores"
             stickerClass="bg-amber-500 text-zinc-950"
             meta={`${humanGames.length} jogo${humanGames.length !== 1 ? "s" : ""}`}
             tilt={crafty ? tiltPos : ""}
