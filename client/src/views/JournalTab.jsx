@@ -47,11 +47,9 @@ const CARTOON_EMOJI = {
  */
 const MASTHEADS = [
   { name: "A Voz da Bancada", tagline: "a voz do povo que não cala — nem joga" },
-  { name: "Feito na Bancada", tagline: "impresso entre assobios e palmas" },
   { name: "O Correio da Bancada", tagline: "notícias de cima, do quiosque e da tasca" },
   { name: "Do Alto da Bancada", tagline: "a melhor vista e os piores palpites" },
   { name: "O Grito da Bancada", tagline: "quando calamos é porque perdeu" },
-  { name: "O Pingo da Bancada", tagline: "gotas de verdade entre a chuva de assobios" },
   { name: "O Boletim do Adepto", tagline: "o parecer oficial de quem só assobia" },
   { name: "Notícias da Tasca", tagline: "tudo o que se soube antes do pão com manteiga" },
 ];
