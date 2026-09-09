@@ -24,7 +24,7 @@ const POS_FULL = {
 };
 
 
-function SkillBar({ label, value, maxValue = 50, color }) {
+function SkillBar({ label, value, maxValue = 50, color, valueLabel }) {
   const pct = Math.min(100, Math.round((value / maxValue) * 100));
   return (
     <div>
@@ -33,7 +33,7 @@ function SkillBar({ label, value, maxValue = 50, color }) {
           {label}
         </span>
         <span className="font-black font-headline text-base" style={{ color }}>
-          {value}
+          {valueLabel ?? value}
         </span>
       </div>
       <div className="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
@@ -42,19 +42,6 @@ function SkillBar({ label, value, maxValue = 50, color }) {
           style={{ width: `${pct}%`, backgroundColor: color, opacity: 0.85 }}
         />
       </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value, color = "text-on-surface" }) {
-  return (
-    <div className="bg-surface-container rounded-lg p-3 flex flex-col items-center gap-1">
-      <span className={`font-black font-headline text-xl ${color}`}>
-        {value}
-      </span>
-      <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant text-center leading-tight">
-        {label}
-      </span>
     </div>
   );
 }
@@ -135,8 +122,15 @@ export function PlayerHistoryModal({
   const isStar = player.is_star === 1;
   const skill = player.skill ?? 0;
 
-  // Aggressiveness
+  // Atributos — agressividade numa escala de 1–5, o resto em 0–50
   const aggKey = aggLabel(player.aggressiveness);
+  const AGG_ORDER = ["Acólito", "Tranquilo", "Zen", "Lenhador", "Triturador"];
+  const aggNum =
+    typeof player.aggressiveness === "number"
+      ? Math.max(1, Math.min(5, Math.round(player.aggressiveness)))
+      : Math.max(1, AGG_ORDER.indexOf(aggKey) + 1);
+  const formVal = player.form ?? 32;
+  const formHex = formVal >= 41 ? "#34d399" : formVal <= 22 ? "#fb7185" : "#71717a";
 
   // Season stats
   const sGames = player.games_played ?? 0;
@@ -154,6 +148,14 @@ export function PlayerHistoryModal({
   const cGoals = player.career_goals ?? 0;
   const cReds = player.career_reds ?? 0;
   const cInjuries = player.career_injuries ?? 0;
+
+  // Linhas da tabela de desempenho (época vs carreira)
+  const perfRows = [
+    { label: "Jogos", season: sGames, career: cGames, seasonClass: "text-on-surface", careerClass: "text-on-surface" },
+    { label: "Golos", season: sGoals, career: cGoals, seasonClass: "text-tertiary", careerClass: "text-tertiary" },
+    { label: "Vermelhos", season: sReds, career: cReds, seasonClass: sReds > 0 ? "text-error" : "text-on-surface", careerClass: cReds > 0 ? "text-error" : "text-on-surface" },
+    { label: "Lesões", season: sInjuries, career: cInjuries, seasonClass: sInjuries > 0 ? "text-amber-400" : "text-on-surface", careerClass: cInjuries > 0 ? "text-amber-400" : "text-on-surface" },
+  ];
 
   // Contract management — only shown for own team
   const isMyPlayer =
@@ -265,40 +267,6 @@ export function PlayerHistoryModal({
                       : player.team_name
                     : "Sem clube"}
                 </span>
-                {aggKey && (
-                  <>
-                    <span className="text-outline-variant/40 text-xs">·</span>
-                    <AggBadge value={player.aggressiveness} />
-                  </>
-                )}
-                {player.resistance != null && (
-                  <>
-                    <span className="text-outline-variant/40 text-[10px] sm:text-xs">·</span>
-                    <span className="text-[10px] sm:text-[12px] text-cyan-400/70 font-black">
-                      🛡️ {player.resistance}
-                    </span>
-                  </>
-                )}
-                {player.form != null && (
-                  <>
-                    <span className="text-outline-variant/40 text-[10px] sm:text-xs">·</span>
-                    <span
-                      className={`text-[9px] sm:text-[9px] font-black ${
-                        (player.form || 32) >= 41
-                          ? "text-emerald-400"
-                          : (player.form || 32) <= 22
-                            ? "text-rose-400"
-                            : "text-on-surface-variant/30"
-                      }`}
-                    >
-                      {(player.form || 32) >= 41
-                        ? "💪"
-                        : (player.form || 32) <= 22
-                          ? "😩"
-                          : "👍"}{" "}
-                    </span>
-                  </>
-                )}
               </div>
             </div>
 
@@ -315,14 +283,45 @@ export function PlayerHistoryModal({
         {/* ── SCROLLABLE BODY ── */}
         <div className="overflow-y-auto flex-1">          {/* ── 2-COLUMN LAYOUT (md+) ── */}
           <div className="md:grid md:grid-cols-2 md:divide-x md:divide-outline-variant/10">
-            {/* LEFT COLUMN: Financial + Contract */}
+            {/* LEFT COLUMN: Attributes + Financial + Contract */}
             <div className="flex flex-col">
+              {/* ── ATRIBUTOS ── */}
+              <div className="px-6 py-5 border-b border-outline-variant/10">
+                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
+                  Atributos
+                </p>
+                <div className="flex flex-col gap-4">
+                  <SkillBar label="Qualidade" value={skill} color={barColor} />
+                  <SkillBar
+                    label="Agressividade"
+                    value={aggNum}
+                    maxValue={5}
+                    color={barColor}
+                    valueLabel={<AggBadge value={player.aggressiveness} />}
+                  />
+                  {player.resistance != null && (
+                    <SkillBar
+                      label="Resistência"
+                      value={player.resistance}
+                      color="#22d3ee"
+                    />
+                  )}
+                  {player.form != null && (
+                    <SkillBar
+                      label="Forma"
+                      value={player.form}
+                      color={formHex}
+                    />
+                  )}
+                </div>
+              </div>
+
               {/* Value / Wage */}
               <div className="px-6 py-5 border-b border-outline-variant/10">
                 <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
                   Financeiro
                 </p>
-                <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="min-w-0">
                     <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
                       Valor de mercado
@@ -340,7 +339,6 @@ export function PlayerHistoryModal({
                     </p>
                   </div>
                 </div>
-                <SkillBar label="Qualidade" value={skill} color={barColor} />
               </div>
 
               {/* Market purchase — for players from other teams listed in the market */}
@@ -496,56 +494,44 @@ export function PlayerHistoryModal({
               )}
             </div>
 
-            {/* RIGHT COLUMN: Stats */}
+            {/* RIGHT COLUMN: Performance */}
             <div className="flex flex-col">
-              {/* Season stats */}
+              {/* ── DESEMPENHO (época vs carreira) ── */}
               <div className="px-6 py-5 border-b border-outline-variant/10">
                 <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
-                  Época Actual
+                  Desempenho
                 </p>
-                <div className="grid grid-cols-4 gap-2">
-                  <StatCard label="Jogos" value={sGames} />
-                  <StatCard
-                    label="Golos"
-                    value={sGoals}
-                    color="text-tertiary"
-                  />
-                  <StatCard
-                    label="Vermelhos"
-                    value={sReds}
-                    color={sReds > 0 ? "text-error" : "text-on-surface"}
-                  />
-                  <StatCard
-                    label="Lesões"
-                    value={sInjuries}
-                    color={sInjuries > 0 ? "text-amber-400" : "text-on-surface"}
-                  />
-                </div>
-              </div>
-
-              {/* Career stats */}
-              <div className="px-6 py-5">
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">
-                  Carreira Total
-                </p>
-                <div className="grid grid-cols-4 gap-2">
-                  <StatCard label="Jogos" value={cGames} />
-                  <StatCard
-                    label="Golos"
-                    value={cGoals}
-                    color="text-tertiary"
-                  />
-                  <StatCard
-                    label="Vermelhos"
-                    value={cReds}
-                    color={cReds > 0 ? "text-error" : "text-on-surface"}
-                  />
-                  <StatCard
-                    label="Lesões"
-                    value={cInjuries}
-                    color={cInjuries > 0 ? "text-amber-400" : "text-on-surface"}
-                  />
-                </div>
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
+                      <th className="py-1 pr-3 font-black"></th>
+                      <th className="py-1 px-3 text-right font-black">Época</th>
+                      <th className="py-1 pl-3 text-right font-black">Carreira</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {perfRows.map((r) => (
+                      <tr
+                        key={r.label}
+                        className="border-t border-outline-variant/10"
+                      >
+                        <td className="py-2 pr-3 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                          {r.label}
+                        </td>
+                        <td
+                          className={`px-3 py-2 text-right font-black font-headline text-base tabular-nums ${r.seasonClass}`}
+                        >
+                          {r.season}
+                        </td>
+                        <td
+                          className={`pl-3 py-2 text-right font-black font-headline text-base tabular-nums ${r.careerClass}`}
+                        >
+                          {r.career}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
               {/* Skill evolution chart */}

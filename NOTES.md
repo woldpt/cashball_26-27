@@ -82,6 +82,9 @@
 
 ## Em curso
 
+- **PlayerHistoryModal reinventado (novo):** características deixaram de estar espalhadas (header com Agr/Res/For inline + Qualidade no Financeiro). Agora: header só identidade (avatar, nome, posição, clube, badge de disponibilidade); nova secção **Atributos** (Qualidade + Agressividade 1–5 com `AggBadge` + Resistência + Forma, tudo em `SkillBar`); nova tabela **Desempenho** (4 linhas Jogos/Golos/Vermelhos/Lesões × colunas Época|Carreira, substitui as duas grelhas de 4 cards); Financeiro só Valor/Ordenado; Mercado/Contrato, Prémios, Transferências e `SkillLineChart` intactos. Só `client/src/components/modals/PlayerHistoryModal.jsx`.
+  - Checks: client `lint` + `check:types` OK. **mobile-resp-check PENDENTE** — harness não arranca neste ambiente (`vite dev` sem binding `@rolldown/binding-linux-x64-gnu`, só existe o musl; `npm install` sem permissões; falha pré-existente já registada para o `build`). Correr `test:mobile` + `test:mobile:landscape` noutro ambiente antes de considerar fechado.
+
 - **Comparador da mesma posição no modal do agente (novo):** `contractRequest` (renovação + renegociação) e `renewContractCounterOffer` anexam `positionPeers` (colegas da mesma posição no próprio plantel, sem o próprio, ordenados por skill desc) derivados do `mySquadRef` (`useSocketListeners.js` → `buildPositionPeers`); `GameDialog.jsx` renderiza secção mínima (nome, skill, salário/sem, scroll `max-h-40`) ou "É o único X do plantel". Checks: client `lint` + `check:types` OK.
 
 - **Duração de lesão/castigo no Mercado + Leilões (novo):** selos `Suspenso`/`Lesionado` passaram a `🟥 nJ` / `🩹 nJ` (fórmula do plantel `until - matchweekCount + 1`, sem tooltip por decisão do utilizador) em `TransferHub.jsx` (`MarketCard`) e `AuctionCard.jsx`. Checks: lint + check:types OK.
