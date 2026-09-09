@@ -82,9 +82,11 @@ function EventRow({ event, meName, coachAvatars, backendUrl }) {
 						{DIVISION_NAMES[division] || `Div ${division}`}
 					</span>
 				)}
-				<span className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant/60">
-					{isHuman ? "Treinador" : "NPC"}
-				</span>
+				{isHuman && (
+					<span className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant/60">
+						Treinador
+					</span>
+				)}
 			</div>
 		</div>
 	);
