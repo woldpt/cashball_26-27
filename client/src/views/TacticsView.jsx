@@ -1337,7 +1337,9 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
           !showHalftimePanel &&
           lockedCoaches.length >= 2
         }
-        onCancel={handleReady}
+        // Unilateral (não o toggle handleReady): duplo clique no Cancelar
+        // emitia false e logo true, religando e reabrindo o modal em loop.
+        onCancel={() => socket.emit("setReady", false)}
         canCancel={!isEliminatedCupSpectator}
       />
     </div>
