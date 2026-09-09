@@ -75,6 +75,8 @@
 
 ## Em curso
 
+- **Comparador da mesma posição no modal do agente (novo):** `contractRequest` (renovação + renegociação) e `renewContractCounterOffer` anexam `positionPeers` (colegas da mesma posição no próprio plantel, sem o próprio, ordenados por skill desc) derivados do `mySquadRef` (`useSocketListeners.js` → `buildPositionPeers`); `GameDialog.jsx` renderiza secção mínima (nome, skill, salário/sem, scroll `max-h-40`) ou "É o único X do plantel". Checks: client `lint` + `check:types` OK.
+
 - **Duração de lesão/castigo no Mercado + Leilões (novo):** selos `Suspenso`/`Lesionado` passaram a `🟥 nJ` / `🩹 nJ` (fórmula do plantel `until - matchweekCount + 1`, sem tooltip por decisão do utilizador) em `TransferHub.jsx` (`MarketCard`) e `AuctionCard.jsx`. Checks: lint + check:types OK.
 
 - **Finanças por época (fix):** `requestFinanceData` somava vendas/compras/obras de **todas** as épocas (`club_news` sem filtro de ano); agora filtra `year = game.year`. Bilheteira já era por época (`season`), patrocínio anual e folha/juros (`completedJornada % 14`) já renovavam, gráfico mantém 2 épocas (decisão do utilizador).

@@ -17,6 +17,8 @@ import { Button } from "./Button.jsx";
  *    cancelLabel?: string,
  *    danger?: boolean,
  *    cancelDanger?: boolean,
+    peerPositionLabel?: string,
+    positionPeers?: Array<{ id: number, name: string, skill: number, wage: number }>,
  *     onConfirm: (value?: string) => void,
  *     onCancel: () => void,
  *   } | null,
@@ -94,6 +96,37 @@ export function GameDialog({ dialog, onClose, z = MODAL_Z.default }) {
                   {stat.value}
                 </span>
               ))}
+            </div>
+          )}
+          {dialog?.mode === "confirm" && Array.isArray(dialog?.positionPeers) && (
+            <div className="mb-1">
+              <p className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant mb-1.5">
+                Mesma posição no plantel{dialog?.peerPositionLabel ? ` · ${dialog.peerPositionLabel}` : ""}
+              </p>
+              {dialog.positionPeers.length === 0 ? (
+                <p className="text-[11px] text-on-surface-variant/70">
+                  É o único{dialog?.peerPositionLabel ? ` ${dialog.peerPositionLabel}` : ""} do plantel.
+                </p>
+              ) : (
+                <ul className="max-h-40 overflow-y-auto divide-y divide-outline-variant/15 rounded-md border border-outline-variant/20 bg-surface/60">
+                  {dialog.positionPeers.map((peer) => (
+                    <li
+                      key={peer.id}
+                      className="flex items-center gap-2 px-2 py-1.5"
+                    >
+                      <span className="flex-1 min-w-0 truncate text-xs uppercase tracking-tight text-on-surface">
+                        {peer.name}
+                      </span>
+                      <span className="text-[11px] font-black tabular-nums text-on-surface">
+                        {peer.skill}
+                      </span>
+                      <span className="w-24 shrink-0 text-right text-[11px] tabular-nums text-on-surface-variant">
+                        €{Number(peer.wage ?? 0).toLocaleString("pt-PT")}/sem
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
           {dialog?.mode === "prompt" && (

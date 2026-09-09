@@ -9,6 +9,30 @@ import {
   POSITION_TEXT_CLASS,
 } from "../constants/index.js";
 
+/**
+ * Colegas da mesma posição no próprio plantel (sem o próprio jogador),
+ * ordenados por skill descendente — contexto mínimo para avaliar o negócio.
+ *
+ * @param {object} refs refs partilhados (usa `mySquadRef`)
+ * @param {string} position posição do jogador em negociação
+ * @param {number} playerId id do jogador em negociação (excluído da lista)
+ * @returns {Array<{id: number, name: string, skill: number, wage: number}>}
+ */
+function buildPositionPeers(refs, position, playerId) {
+	const squad = Array.isArray(refs.mySquadRef?.current)
+		? refs.mySquadRef.current
+		: [];
+	return squad
+		.filter((p) => p.position === position && Number(p.id) !== Number(playerId))
+		.map((p) => ({
+			id: p.id,
+			name: p.name,
+			skill: Number(p.skill ?? 0),
+			wage: Number(p.wage ?? 0),
+		}))
+		.sort((a, b) => b.skill - a.skill);
+}
+
 function buildPlayerStats({
 	position,
 	skill,
@@ -632,6 +656,8 @@ export function useSocketListeners(handlers, refs) {
 						wage,
 						requestedWage: demandedWage,
 					}),
+					peerPositionLabel: POSITION_SHORT_LABELS[position] ?? position,
+					positionPeers: buildPositionPeers(refs, position, playerId),
 					confirmLabel: "Aceitar",
 					cancelLabel: "Leilão",
 					onConfirm: () =>
@@ -674,6 +700,8 @@ export function useSocketListeners(handlers, refs) {
 						contractEndMatchweek,
 						contractEndSeason,
 					}),
+					peerPositionLabel: POSITION_SHORT_LABELS[position] ?? position,
+					positionPeers: buildPositionPeers(refs, position, playerId),
 					confirmLabel: "Aceitar",
 					cancelLabel: "Leilão",
 					cancelDanger: true,
