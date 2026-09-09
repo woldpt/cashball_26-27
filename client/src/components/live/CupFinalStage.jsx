@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { CUP_FINAL_STADIUM } from "../../constants/index.js";
 import { LiveMatchHero } from "./LiveMatchHero.jsx";
 import { TeamCrest } from "./TeamCrest.jsx";
+import { FLASH_COLOR, isFlashing, isGoalType } from "./liveHelpers.js";
 
 /* ── CupFinalStage — palco de gala da Final da Taça ───────────────────────
  *
@@ -10,9 +11,13 @@ import { TeamCrest } from "./TeamCrest.jsx";
  * treinadores, e o jogo ao vivo em destaque via `LiveMatchHero`.
  *
  * Dois regimes, mesma gala:
- *   - participas (`readOnly` falso) → hero com intervenção normal
+ *   - participas (`readOnly` falso) → marcador com intervenção normal
  *     (substituições/detalhe);
- *   - és espetador (`readOnly` true) → hero em modo só-visualização.
+ *   - és espetador (`readOnly` true) → marcador em modo só-visualização.
+ *
+ * O frente-a-frente inclui o marcador ao centro (bloco único fundido);
+ * o `LiveMatchHero` é renderizado sem a barra broadcast (`hideScoreboard`)
+ * para não duplicar emblemas e nomes.
  *
  * O brilho da equipa do utilizador (isMine no crest) é automático.
  */
@@ -62,6 +67,27 @@ export function CupFinalStage({
   const awayCoach = players.find((p) => p.teamId === finalFixture.awayTeamId);
   const homeIsMine = Number(finalFixture.homeTeamId) === Number(me?.teamId);
   const awayIsMine = Number(finalFixture.awayTeamId) === Number(me?.teamId);
+
+  // Marcador fundido ao centro do frente-a-frente (mesma regra de golos do hero).
+  const finalEvents = finalFixture.events || [];
+  const homeGoals = finalEvents.filter(
+    (e) => e.minute <= liveMinute && isGoalType(e.type) && e.team === "home",
+  );
+  const awayGoals = finalEvents.filter(
+    (e) => e.minute <= liveMinute && isGoalType(e.type) && e.team === "away",
+  );
+  // eslint-disable-next-line react-hooks/purity
+  const nowTs = Date.now();
+  const homeFlashing = isFlashing(goalFlashRef, finalFixture.homeTeamId, finalFixture.awayTeamId, "home", nowTs);
+  const awayFlashing = isFlashing(goalFlashRef, finalFixture.homeTeamId, finalFixture.awayTeamId, "away", nowTs);
+  const phaseLabel = liveMinute > 90 ? "Prolongamento" : liveMinute > 45 ? "2ª Parte" : "1ª Parte";
+  const flashStyle = (flashing) => ({
+    color: flashing ? FLASH_COLOR : undefined,
+    textShadow: flashing ? `0 0 22px ${FLASH_COLOR}90` : "none",
+    transform: flashing ? "scale(1.12)" : "scale(1)",
+    transition: flashing ? "none" : "color 1.25s ease, text-shadow 1.25s ease, transform 1.25s ease",
+    display: "inline-block",
+  });
 
   return (
     <motion.section
@@ -121,16 +147,28 @@ export function CupFinalStage({
           </div>
 
           <div className="shrink-0 flex flex-col items-center justify-center gap-1 px-1">
-            <span className="flex items-center justify-center w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-amber-500/15 border border-amber-500/50 text-amber-300 text-[10px] sm:text-xs font-black tracking-widest shadow-[0_0_14px_rgba(251,191,36,0.25)]">
-              VS
-            </span>
-            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-on-surface-variant/50 tabular-nums">
-              {liveMinute < 1
-                ? "Apito inicial…"
-                : liveMinute > 90
-                  ? `Prol. ${liveMinute}'`
-                  : `${liveMinute}'`}
-            </span>
+            <button
+              onClick={readOnly ? undefined : onScoreClick}
+              title={
+                readOnly
+                  ? "Final da Taça"
+                  : isPlayingMatch && !isMatchActionPending
+                    ? "Pedir substituição"
+                    : "Ver detalhes da partida"
+              }
+              aria-disabled={readOnly || undefined}
+              tabIndex={readOnly ? -1 : undefined}
+              className={`flex flex-col items-center justify-center px-3 sm:px-4 py-2 rounded-xl bg-black/40 border border-amber-500/50 shadow-[0_0_14px_rgba(251,191,36,0.25)] ${readOnly ? "cursor-default" : "cursor-pointer"}`}
+            >
+              <span className="font-headline font-black text-xl sm:text-3xl tracking-tighter tabular-nums flex items-center gap-1.5 whitespace-nowrap">
+                <span style={flashStyle(homeFlashing)}>{homeGoals.length}</span>
+                <span className="text-on-surface/20 text-base sm:text-xl">:</span>
+                <span style={flashStyle(awayFlashing)}>{awayGoals.length}</span>
+              </span>
+              <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-amber-300/80 tabular-nums text-center leading-tight">
+                {liveMinute < 1 ? "Apito inicial…" : `${liveMinute}' · ${phaseLabel}`}
+              </span>
+            </button>
           </div>
 
           <div className="flex-1 min-w-0 flex flex-col items-center gap-1.5">
@@ -171,6 +209,7 @@ export function CupFinalStage({
           matchResults={matchResults}
           readOnly={readOnly}
           onScoreClick={onScoreClick}
+          hideScoreboard
         />
       </div>
     </motion.section>

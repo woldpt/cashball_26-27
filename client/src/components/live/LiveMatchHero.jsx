@@ -54,6 +54,9 @@ const COMMENTARY_EFFECTS = {
  * @param {Function} props.onScoreClick
  * @param {boolean} [props.readOnly] - modo só-visualização (final sem o
  *   utilizador): o marcador não é clicável nem pede substituições.
+ * @param {boolean} [props.hideScoreboard] - esconde a meta strip e a barra
+ *   broadcast (emblemas + marcador); usado na Final fundida, onde o
+ *   `CupFinalStage` já mostra o frente-a-frente com o marcador ao centro.
  */
 export function LiveMatchHero({
   myMatch,
@@ -72,6 +75,7 @@ export function LiveMatchHero({
   matchResults,
   onScoreClick,
   readOnly = false,
+  hideScoreboard = false,
 }) {
   if (!myMatch) return null;
 
@@ -181,7 +185,8 @@ export function LiveMatchHero({
       />
 
       <div className="relative z-10 flex flex-col items-center px-4 pt-5 pb-4">
-        {/* ── Meta strip ── */}
+        {/* ── Meta strip (oculta na Final fundida — a faixa cerimonial já a mostra) ── */}
+        {!hideScoreboard && (
         <div className="flex items-center justify-between w-full mb-4">
           <span className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/50 font-black">
             {isCupMatch
@@ -202,6 +207,7 @@ export function LiveMatchHero({
             )}
           </div>
         </div>
+        )}
 
         {/* Banner de pausa de substituição — visível aos outros treinadores */}
         {substitutionPause && (
@@ -243,7 +249,8 @@ export function LiveMatchHero({
           </div>
         )}
 
-        {/* ── Broadcast scoreboard ── */}
+        {/* ── Broadcast scoreboard (oculta na Final fundida — o marcador vive no frente-a-frente) ── */}
+        {!hideScoreboard && (
         <div className="relative w-full max-w-2xl">
           {/* Aura da equipa em vantagem (pulso suave de liderança) */}
           {leadColor && (
@@ -327,6 +334,7 @@ export function LiveMatchHero({
             </div>
           </div>
         </div>
+        )}
 
         {/* ── Jogador do Jogo (pós-jogo) ── */}
         {mom && !isPlayingMatch && (mom.home || mom.away) && (
