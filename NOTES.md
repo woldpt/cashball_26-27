@@ -75,6 +75,8 @@
 
 ## Em curso
 
+- **Finanças por época (fix):** `requestFinanceData` somava vendas/compras/obras de **todas** as épocas (`club_news` sem filtro de ano); agora filtra `year = game.year`. Bilheteira já era por época (`season`), patrocínio anual e folha/juros (`completedJornada % 14`) já renovavam, gráfico mantém 2 épocas (decisão do utilizador).
+
 - **Crash-loop do backend (fix):** `getGlobalNews` (`server/socketNewsHandlers.ts`) fazia `[...league, ...cup].map(mkResults)` mas `mkResults(rows)` espera o array inteiro → `rows.map is not a function` → uncaught → `fatalShutdown` com segfault do sqlite3 (exit 139, restart em loop). Fix de 1 linha: `mkResults([...])`. Rebuild + restart: `/health` 200 e estável; typecheck + `audit:socketio` 0 erros + `audit:gamestate 445WU8` 0 erros.
 
 - **Cards dos outros jogos das divisões (`LiveFixtureRow`):** sem relógio (tudo simulado em simultâneo) — `memo` + lookups/golos/eventos em `useMemo` (golos num só passe), `isFlashing` sem `Date.now()` no render, treinador humano desduplicado (só a faixa do topo), nomes 11–12 px, eventos 10 px com `title` + fallback "—", `aria-label` no botão e `role="status"` no marcador, sem `translate` no hover. `GameRoutes.jsx`: `key` estável (`home-away`), `humanTeamIds` em `Set` memorizado, contador de jogos no cabeçalho da divisão, comentário do filtro da Taça em pt-PT. Checks: lint + check:types OK; mobile-resp-check portrait 150/150 + landscape 180/180 PASS.

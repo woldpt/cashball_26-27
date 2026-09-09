@@ -1360,20 +1360,23 @@ export function registerSessionSocketHandlers(
 				}));
 				const ticketBreakdown = [...leagueBreakdown, ...cupBreakdown];
 
+				// Folha contabilística renova a cada época: vendas, compras e obras
+				// filtrados pelo ano corrente (club_news.year = game.year).
+				const currentYear = game.year || 0;
 				const transferInList = await runAll(
 					game.db,
-					"SELECT player_name, amount, related_team_name, matchweek FROM club_news WHERE team_id = ? AND type = 'transfer_in' AND amount > 0 ORDER BY matchweek ASC",
-					[teamId],
+					"SELECT player_name, amount, related_team_name, matchweek FROM club_news WHERE team_id = ? AND type = 'transfer_in' AND amount > 0 AND year = ? ORDER BY matchweek ASC",
+					[teamId, currentYear],
 				);
 				const transferOutList = await runAll(
 					game.db,
-					"SELECT player_name, amount, related_team_name, matchweek FROM club_news WHERE team_id = ? AND type = 'transfer_out' AND amount > 0 ORDER BY matchweek ASC",
-					[teamId],
+					"SELECT player_name, amount, related_team_name, matchweek FROM club_news WHERE team_id = ? AND type = 'transfer_out' AND amount > 0 AND year = ? ORDER BY matchweek ASC",
+					[teamId, currentYear],
 				);
 				const stadiumBuilds = await runAll(
 					game.db,
-					"SELECT amount FROM club_news WHERE team_id = ? AND type = 'stadium_build' AND amount > 0",
-					[teamId],
+					"SELECT amount FROM club_news WHERE team_id = ? AND type = 'stadium_build' AND amount > 0 AND year = ?",
+					[teamId, currentYear],
 				);
 				const totalTransferIncome = transferOutList.reduce(
 					(sum, n) => sum + (n.amount || 0),
@@ -1411,7 +1414,6 @@ export function registerSessionSocketHandlers(
 					"loan_take",
 					"prize",
 				]);
-				const currentYear = game.year || 0;
 				const journal = await runAll(
 					game.db,
 					"SELECT type, amount, matchweek, year FROM club_news WHERE team_id = ? AND year IN (?, ?) AND amount IS NOT NULL",
