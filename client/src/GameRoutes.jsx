@@ -41,6 +41,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
     allMatchResults,
     matchAction,
     matchweekCount,
+    currentJornada,
     cupMatchRoundName,
     substitutionPause,
     liveMinute,
@@ -544,11 +545,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                     )}
 
                     {activeTab === "training" && (
-                      <TrainingTab
-                        me={me}
-                        players={players}
-                        matchweekCount={matchweekCount}
-                      />
+                      <TrainingTab me={me} matchweek={currentJornada} />
                     )}
 
                     {activeTab === "tactic" && <TacticsView />}

@@ -12,7 +12,29 @@ import { Panel } from "../shared/Panel.jsx";
 import { SummaryWidget } from "../shared/SummaryWidget.jsx";
 import { EmptyState } from "../shared/EmptyState.jsx";
 
-const TRAINING_FOCUS_STORAGE_KEY = "cashball_training_focus";
+const TRAINING_FOCUS_STORAGE_BASE_KEY = "cashball_training_focus";
+
+/**
+ * Chave de localStorage por sala — evita o flash do foco de outra sala
+ * no mesmo browser. A leitura mantém fallback para a chave antiga (sem sala).
+ * @param {string} [roomCode]
+ */
+function trainingFocusKey(roomCode) {
+  return roomCode
+    ? `${TRAINING_FOCUS_STORAGE_BASE_KEY}:${roomCode}`
+    : TRAINING_FOCUS_STORAGE_BASE_KEY;
+}
+
+/**
+ * @param {string} [roomCode]
+ */
+function readStoredTrainingFocus(roomCode) {
+  return (
+    localStorage.getItem(trainingFocusKey(roomCode)) ||
+    localStorage.getItem(TRAINING_FOCUS_STORAGE_BASE_KEY) ||
+    null
+  );
+}
 
 /* ═══════════════════════════════════════════════════════════════
    Maps de estilo por opção de treino.  GR/DEF/MED/ATA puxam
@@ -75,6 +97,9 @@ const POSITION_LABELS = {
   ATA: "Avançados",
 };
 
+// Ordem canónica dos grupos no relatório — igual à do plantel em PlayersTab.
+const POSITION_ORDER = ["GR", "DEF", "MED", "ATA"];
+
 const ATTR_COLUMNS = [
   { key: "skill", label: "Skill" },
   { key: "form", label: "Forma" },
@@ -113,6 +138,7 @@ function TrainingOptionCard({ optionKey, selected, isSaved, justSaved, loading, 
     <button
       onClick={onClick}
       disabled={loading}
+      aria-pressed={isSelected}
       className={`relative group flex items-stretch rounded-lg overflow-hidden border-2 transition-all duration-200 text-left ${
         isSelected
           ? `${style.border} bg-primary/10 text-on-surface shadow-lg ${style.glow}`
@@ -163,7 +189,7 @@ function DeltaCell({ record }) {
   const isUp = delta > 0;
   return (
     <Badge
-      variant={isUp ? "sold" : "error"}
+      variant={isUp ? "info" : "error"}
       title={`${record.old_value} → ${record.new_value}`}
     >
       <span className="material-symbols-outlined text-[10px] leading-none align-middle mr-0.5">
@@ -254,25 +280,26 @@ function PlayerReportRow({ player, position }) {
  */
 export function TrainingPage({ me, matchweek }) {
   const [selectedTraining, setSelectedTraining] = useState(() => {
-    return localStorage.getItem(TRAINING_FOCUS_STORAGE_KEY) || null;
+    return readStoredTrainingFocus(me?.roomCode);
   });
   const [trainingHistory, setTrainingHistory] = useState([]);
   const [historyCalendarIndex, setHistoryCalendarIndex] = useState(null);
   const [savedTraining, setSavedTraining] = useState(() => {
-    return localStorage.getItem(TRAINING_FOCUS_STORAGE_KEY) || null;
+    return readStoredTrainingFocus(me?.roomCode);
   });
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
 
-  // Persist selected training to localStorage
+  // Persist selected training to localStorage (por sala)
   useEffect(() => {
+    const key = trainingFocusKey(me?.roomCode);
     if (selectedTraining != null) {
-      localStorage.setItem(TRAINING_FOCUS_STORAGE_KEY, selectedTraining);
+      localStorage.setItem(key, selectedTraining);
     } else {
-      localStorage.removeItem(TRAINING_FOCUS_STORAGE_KEY);
+      localStorage.removeItem(key);
     }
-  }, [selectedTraining]);
+  }, [selectedTraining, me?.roomCode]);
 
   // Fetch current training and history on component mount
   useEffect(() => {
@@ -350,16 +377,23 @@ export function TrainingPage({ me, matchweek }) {
     historyByPosition[record.position].push(record);
   });
 
-  const uniquePlayerCount = new Set(trainingHistory.map((r) => r.player_id)).size;
-
-  // Players with at least one real attribute change — the only ones the report
-  // can display (groupByPlayer drops no-change rows).  If all rows of the
-  // latest event are no-change, the report must say so instead of going blank.
+  // Jogadores com pelo menos uma mudança real de atributo — os únicos que o
+  // relatório consegue mostrar (groupByPlayer ignora linhas sem mudança).
+  // O widget usa a mesma contagem para não divergir do relatório.
   const visiblePlayerCount = new Set(
     trainingHistory
       .filter((r) => r.new_value !== r.old_value)
       .map((r) => r.player_id),
   ).size;
+
+  // Grupos pela ordem canónica do plantel (GR→ATA); posições desconhecidas
+  // (se alguma vez existirem) caem para o fim em vez de desaparecer.
+  const orderedPositions = [
+    ...POSITION_ORDER.filter((pos) => historyByPosition[pos]),
+    ...Object.keys(historyByPosition).filter(
+      (pos) => !POSITION_ORDER.includes(pos),
+    ),
+  ];
 
   // Resolve border accent do foco atual
   const focusStyle = savedTraining ? getMeta(savedTraining) : null;
@@ -378,7 +412,7 @@ export function TrainingPage({ me, matchweek }) {
         <SummaryWidget label="Jornada" value={matchweek} compactMobile valueClass="text-lg sm:text-2xl short:!text-sm" />
         <SummaryWidget
           label="Jogadores Treinados"
-          value={uniquePlayerCount}
+          value={visiblePlayerCount}
           compactMobile
           valueClass="text-lg sm:text-2xl short:!text-sm"
           accentClass="border-tertiary"
@@ -397,7 +431,11 @@ export function TrainingPage({ me, matchweek }) {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3 short:gap-2">
+            <div
+              className="grid grid-cols-2 gap-3 short:gap-2"
+              role="group"
+              aria-label="Escolha o foco de treino"
+            >
               {TRAINING_OPTIONS.map((key) => (
                 <TrainingOptionCard
                   key={key}
@@ -467,7 +505,8 @@ export function TrainingPage({ me, matchweek }) {
             />
           ) : (
             <div className="space-y-5 short:space-y-3">
-              {Object.entries(historyByPosition).map(([position, records]) => {
+              {orderedPositions.map((position) => {
+                const records = historyByPosition[position];
                 const posText =
                   POSITION_TEXT_CLASS[position] || "text-on-surface-variant";
                 const posLabel = POSITION_LABELS[position] || position;
