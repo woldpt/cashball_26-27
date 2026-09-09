@@ -2,6 +2,8 @@ import { useTactics } from "../../contexts/TacticsContext.jsx";
 import { useGame } from "../../contexts/GameContext.jsx";
 import { TeamCrest } from "./TeamCrest.jsx";
 import { getMoraleLabel } from "../../utils/morale.js";
+import { PitchFormation } from "../match/shared/PitchFormation.jsx";
+import { PITCH_POS_COLORS } from "../match/matchConstants.js";
 
 /* ────────────────────────────────────────────────────────────────────────────
  * MatchBriefing — Fase 1 do pré-jogo.
@@ -26,14 +28,6 @@ const WEATHER_LABELS = {
   frio: "Frio",
   nevoeiro: "Nevoeiro",
   neve: "Neve",
-};
-
-/** Cores por posição (ecrã do briefing) */
-const POS_STYLES = {
-  GR: { hex: "#eab308", label: "GR" },
-  DEF: { hex: "#3b82f6", label: "DEF" },
-  MED: { hex: "#10b981", label: "MED" },
-  ATA: { hex: "#f43f5e", label: "ATA" },
 };
 
 /**
@@ -561,18 +555,17 @@ function StadiumCard({ stadium }) {
 }
 
 /**
- * Mini-campo com a formação provável do adversário (altura fixa para não
- * crescer com a largura da viewport).
- * @param {{ formation?: { formation?: string, players?: Array<{ name: string, position: string, skill: number, isJunior?: boolean }> } | null }} props
+ * Mini-campo com a formação provável do adversário — reutiliza o relvado
+ * broadcast partilhado (PitchFormation) com as caras dos jogadores.
+ * @param {{ formation?: { formation?: string, players?: Array<{ name: string, position: string, skill: number, isJunior?: boolean }> } | null, teamColor?: string|null }} props
  * @returns {JSX.Element|null}
  */
-function OpponentFormation({ formation }) {
+function OpponentFormation({ formation, teamColor }) {
   if (!formation || !formation.formation) return null;
-  const players = formation.players ?? [];
-  const rows = ["ATA", "MED", "DEF", "GR"].map((pos) =>
-    players.filter((p) => p.position === pos),
-  );
-  const rowYs = ["10%", "32%", "57%", "78%"];
+  const rows = { ATA: [], MED: [], DEF: [], GR: [] };
+  for (const p of formation.players ?? []) {
+    if (rows[p.position]) rows[p.position].push(p);
+  }
   return (
     <div className="min-w-0 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden lg:flex-1 lg:flex lg:flex-col">
       <div className="flex items-center justify-between px-4 short:px-3 py-2 short:py-1 border-b border-[#1a1a1a] lg:shrink-0">
@@ -583,61 +576,8 @@ function OpponentFormation({ formation }) {
           {formation.formation}
         </span>
       </div>
-      <div
-        className="relative w-full h-56 short:h-32 lg:h-auto lg:flex-1 lg:min-h-[240px] short:lg:min-h-[160px]"
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 25%, #1f5c1a 0%, #123a0d 50%, #09200a 100%)",
-        }}
-      >
-        <svg
-          className="absolute inset-0 w-full h-full pointer-events-none"
-          viewBox="0 0 16 10"
-          preserveAspectRatio="none"
-          fill="none"
-          stroke="rgba(255,255,255,0.14)"
-          strokeWidth="0.12"
-        >
-          <rect x="0.6" y="0.6" width="14.8" height="8.8" rx="0.08" />
-          <line x1="0.6" y1="5" x2="15.4" y2="5" />
-          <circle cx="8" cy="5" r="1.6" />
-          <rect x="2.8" y="7.6" width="10.4" height="1.8" />
-          <rect x="4.2" y="8.6" width="7.6" height="0.8" />
-        </svg>
-        {rows.map((rowPlayers, ri) =>
-          rowPlayers.length > 0 ? (
-            <div
-              key={ri}
-              className="absolute w-full flex justify-evenly items-start px-2"
-              style={{ top: rowYs[ri] }}
-            >
-              {rowPlayers.map((p, i) => {
-                const style = POS_STYLES[p.position] || { hex: "#6b7280" };
-                const isJunior = p.isJunior === true;
-                return (
-                  <div key={`${p.name}-${i}`} className="flex flex-col items-center">
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-white font-black text-[10px]"
-                      title={isJunior ? "Júnior" : p.name}
-                      style={{
-                        background: `radial-gradient(circle at 35% 28%, rgba(255,255,255,0.28) 0%, transparent 65%), ${style.hex}`,
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.5), 0 0 0 1.5px rgba(255,255,255,0.12)",
-                      }}
-                    >
-                      {isJunior ? "JR" : (p.name?.charAt(0)?.toUpperCase() ?? "?")}
-                    </div>
-                    <span
-                      className="mt-0.5 text-[7px] font-bold leading-none text-white/80"
-                      style={{ textShadow: "0 1px 3px rgba(0,0,0,0.95)" }}
-                    >
-                      {isJunior ? "Júnior" : (p.skill ?? "")}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : null,
-        )}
+      <div className="relative w-full h-64 short:h-40 lg:h-auto lg:flex-1 lg:min-h-[280px] short:lg:min-h-[180px]">
+        <PitchFormation rows={rows} posColors={PITCH_POS_COLORS} teamColor={teamColor} showFatigue={false} />
       </div>
     </div>
   );
@@ -781,7 +721,7 @@ export function MatchBriefing() {
             </div>
           ) : null}
           {opponent?.probableFormation && (
-            <OpponentFormation formation={opponent.probableFormation} />
+            <OpponentFormation formation={opponent.probableFormation} teamColor={opponent.color_primary} />
           )}
           <ThreatGrid threats={opponent?.threats} />
         </div>

@@ -47,8 +47,8 @@ export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoun
         <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
           {/* Pitches — empilhados < lg; lado a lado (2 colunas) >= lg */}
           <div className="grid grid-cols-1 gap-4 p-4 min-w-0 lg:flex-1 lg:min-h-0 lg:grid-cols-2 lg:auto-rows-fr">
-            <SpectatePitchCard side="home" team={hInfo} lineup={hasLineups ? fixture.homeLineup : []} posColors={posColors} delay={0.05} />
-            <SpectatePitchCard side="away" team={aInfo} lineup={hasLineups ? fixture.awayLineup : []} posColors={posColors} delay={0.15} />
+            <SpectatePitchCard side="home" team={hInfo} lineup={hasLineups ? fixture.homeLineup : []} posColors={posColors} events={evts} liveMinute={liveMinute} delay={0.05} />
+            <SpectatePitchCard side="away" team={aInfo} lineup={hasLineups ? fixture.awayLineup : []} posColors={posColors} events={evts} liveMinute={liveMinute} delay={0.15} />
           </div>
 
           {/* Coluna contextual — estádio/árbitro/clima + eventos */}
@@ -103,7 +103,7 @@ export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoun
             {/* Pitch */}
             <div className="relative w-full max-w-[280px] mx-auto rounded-md overflow-hidden border border-white/10 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)] md:w-auto md:h-full md:max-w-full">
               {hasLineups ? (
-                <MatchPitch rows={rows} posColors={posColors} showFatigue={showFatigue} />
+                <MatchPitch rows={rows} posColors={posColors} showFatigue={showFatigue} events={evts} liveMinute={liveMinute} teamColor={(pitchSide === "home" ? hInfo : aInfo)?.color_primary} />
               ) : (
                 <div className="flex flex-col items-center justify-center h-64 gap-2 px-4">
                   <p className="text-on-surface-variant/60 text-xs font-bold uppercase tracking-wider text-center">Sem escalação disponível</p>
@@ -144,8 +144,8 @@ export function MatchView({ fixture, liveMinute, teams, isCupMatch, cupMatchRoun
 /* ── SpectatePitchCard — card de pitch com identidade da equipa (spectate)
  * Mobile: width-driven (cap 280px, como o MatchPitch legado).
  * >= lg: height-driven (preenche o slot do grid; largura segue 9:16). */
-/** side (home|away), team (info/ cor da equipa), lineup, posColors, delay (stagger de entrada). */
-function SpectatePitchCard({ side, team, lineup, posColors, delay = 0 }) {
+/** side (home|away), team (info/ cor da equipa), lineup, posColors, events+liveMinute (badges), delay (stagger de entrada). */
+function SpectatePitchCard({ side, team, lineup, posColors, events, liveMinute, delay = 0 }) {
   const color = team?.color_primary || "#6366f1";
   const starters = (lineup || []).filter((p) => p.is_starter === true).slice(0, 11);
   const rows = buildPositionRows(starters);
@@ -184,7 +184,7 @@ function SpectatePitchCard({ side, team, lineup, posColors, delay = 0 }) {
               <p className="text-on-surface-variant/60 text-xs font-bold uppercase tracking-wider text-center px-4">Sem escalação disponível</p>
             </div>
           ) : (
-            <PitchFormation rows={rows} posColors={posColors} showFatigue={false} />
+            <PitchFormation rows={rows} posColors={posColors} showFatigue={false} events={events} liveMinute={liveMinute} teamColor={team?.color_primary} />
           )}
         </div>
       </div>

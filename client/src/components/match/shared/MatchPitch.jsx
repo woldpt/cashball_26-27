@@ -10,13 +10,13 @@ import { PitchFormation } from "./PitchFormation.jsx";
  *   - O SVG usa preserveAspectRatio="none", por isso linhas e jogadores
  *     mantêm-se alinhados mesmo quando a caixa é clampada por max-w-full.
  */
-export function MatchPitch({ rows, posColors, starColor, emptyLabel, className = "", showFatigue = true }) {
+export function MatchPitch({ rows, posColors, starColor, events, liveMinute, teamColor, emptyLabel, className = "", showFatigue = true }) {
   const isEmpty =
     !rows || Object.values(rows).every((arr) => !arr || arr.length === 0);
 
   return (
     <div
-      className={`relative w-full max-w-[280px] mx-auto md:mx-0 md:w-auto md:h-full md:max-w-full rounded-md overflow-hidden border border-outline-variant/25 bg-[linear-gradient(180deg,#05430e_0%,#0b5e1a_50%,#05430e_100%)] shadow-[0_0_30px_rgba(5,67,14,0.3)] ${className}`}
+      className={`relative w-full max-w-[280px] mx-auto md:mx-0 md:w-auto md:h-full md:max-w-full rounded-md overflow-hidden border border-white/15 bg-surface-container shadow-[0_0_36px_rgba(5,67,14,0.45)] ${className}`}
       style={{ aspectRatio: "9/16" }}
     >
       {isEmpty ? (
@@ -26,7 +26,7 @@ export function MatchPitch({ rows, posColors, starColor, emptyLabel, className =
           </p>
         </div>
       ) : (
-        <PitchFormation rows={rows} posColors={posColors} starColor={starColor} showFatigue={showFatigue} />
+        <PitchFormation rows={rows} posColors={posColors} starColor={starColor} events={events} liveMinute={liveMinute} teamColor={teamColor} showFatigue={showFatigue} />
       )}
     </div>
   );

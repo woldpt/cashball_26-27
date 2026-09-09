@@ -6,6 +6,12 @@
 > - Regra permanente descoberta → mover para `AGENTS.md`/`CLAUDE.md`/`STYLE.md` e remover daqui.
 > - Ao iniciar uma sessão nova: ler este ficheiro + `git log --oneline -10`.
 
+## Pitches broadcast com avatares + badges live (novo)
+
+- `PitchFormation.jsx` redesenhado (transmissão TV): relvado com faixas de corte + foco de luz + vinheta, linhas SVG mais nítidas (marcas de penálti, ponto central), `PlayerMarker` com cara (`PlayerAvatar`, anel na cor da posição via `POSITION_ACCENT_HEX`, camisola na cor da equipa) + sigla da posição + placard nome/skill + badges de eventos (⚽×n, 🟨/🟥 via `filterMatchEvents(events, liveMinute)`).
+- `MatchPitch.jsx` passa a moldura (relvado vive no `PitchFormation`) e repassa `events`/`liveMinute`/`teamColor`; `MatchView.jsx` (spectate + jogo próprio) liga os destaques live; `MatchBriefing.jsx` (`OpponentFormation`) reutiliza o mesmo `PitchFormation` (map local `POS_STYLES` removido) com `teamColor={opponent.color_primary}`.
+- Checks: client `lint` + `check:types` OK; eslint limpo nos 4 ficheiros. **mobile-resp-check BLOQUEADO pela infra**: `vite dev` não arranca (`@rolldown/binding-linux-x64-gnu` em falta, `node_modules` owned by root, sem sudo) — falha pré-existente, anterior a carregar qualquer código. Rerun `test:mobile` + `test:mobile:landscape` quando o `node_modules` for reparado (ex. `sudo npm install` ou docker).
+
 ## Jornal Global + Jogador do Jogo (MOM) (novo)
 
 - **Tab "Jornal" = landing** (pós-login/choque de sala E pós-jogo): `GameContext` mudou o `activeTab` por defeito de `"club"` para `"jornal"` (allowlist `sessionStorage` +fallbacks); `JournalTab.jsx` (nova view) com dois painéis — "Resultados" (Liga por jornada + Taça por ronda, com ⭐ MOM por equipa em cada jogo) e "Jornal da época" (linha do tempo: `club_news` de todos os clubes + `transfer_history`, agrupadas por jornada, jogadores clicáveis → `requestPlayerHistory`). Navegação: `constants/navigation.js` — `jornal` no grupo "Competição" (sidebar desktop + fly-up mobile; destaque automático via `getGroupTabKeys`).
