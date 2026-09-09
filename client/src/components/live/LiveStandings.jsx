@@ -83,7 +83,7 @@ export function LiveStandingsPanel({
   const myDiv = teams.find((t) => String(t.id) === String(myTeamId))?.division;
   const availableDivs = [
     ...new Set(
-      (teams || []).map((t) => t.division).filter((d) => d != null),
+      (teams || []).map((t) => t.division).filter((d) => d != null && d !== 5),
     ),
   ].sort((a, b) => a - b);
   const [selectedDiv, setSelectedDiv] = useState(null);
@@ -126,16 +126,6 @@ export function LiveStandingsPanel({
             </option>
           ))}
         </select>
-        <span
-          className={`shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-widest border ${
-            applyLiveResults
-              ? "bg-error/10 border-error/30 text-error"
-              : "bg-surface-container-low border-outline-variant/25 text-on-surface-variant/60"
-          }`}
-        >
-          {applyLiveResults && <span className="w-1 h-1 rounded-full bg-error animate-pulse" />}
-          {applyLiveResults ? "AO VIVO" : "FINAL"}
-        </span>
       </div>
 
       {/* Table */}
