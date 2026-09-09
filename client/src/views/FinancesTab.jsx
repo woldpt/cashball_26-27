@@ -655,36 +655,110 @@ export function FinancesTab({
             </div>
           </div>
 
-          {/* Dívida Bancária */}
+          {/* Dívida Bancária — cartão de crédito */}
           <div className="bg-surface-container rounded-lg p-3 sm:p-5 short:p-2.5 border-t border-outline-variant/10">
-            <h3 className="font-headline text-xs uppercase tracking-widest text-on-surface-variant mb-3">
+            <h3 className="font-headline text-xs uppercase tracking-widest text-on-surface-variant mb-3 short:mb-2 flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-sm text-primary shrink-0">
+                account_balance
+              </span>
               Empréstimos
             </h3>
-            <div className="mb-4">
-              <p className="text-[10px] opacity-50 uppercase mb-0.5">
-                Dívida Actual
-              </p>
-              <p
-                className={`font-headline text-2xl font-bold tracking-tight ${loanAmount > 0 ? "text-error" : "text-primary"}`}
-              >
-                {formatCurrency(loanAmount)}
-              </p>
-              {loanAmount > 0 && (
-                <p className="text-[10px] text-error font-medium mt-0.5">
-                  JUROS: 1,5% / JORNADA
-                </p>
-              )}
-              <div className="mt-2 h-1.5 w-full bg-surface-bright rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${loanPct > 75 ? "bg-error" : loanPct > 40 ? "bg-tertiary" : "bg-amber-400"}`}
-                  style={{ width: `${loanPct}%` }}
-                />
+
+            {/* ── Face do cartão ─────────────────────────────────── */}
+            <div
+              className={`relative overflow-hidden rounded-xl p-4 sm:p-5 short:p-2.5 shadow-lg shadow-black/40 ring-1 transition-colors ${
+                loanAmount > 0
+                  ? "bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 ring-white/10"
+                  : "bg-gradient-to-br from-zinc-900 via-zinc-800 to-emerald-950 ring-emerald-400/25"
+              }`}
+            >
+              <div className="pointer-events-none absolute -top-16 right-0 h-32 w-32 rounded-full bg-rose-500/10 blur-2xl" />
+              <div className="pointer-events-none absolute -bottom-16 left-0 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
+
+              <div className="relative flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <span className="material-symbols-outlined text-base text-amber-400 shrink-0">
+                    account_balance
+                  </span>
+                  <span className="font-headline text-[11px] sm:text-xs font-black uppercase tracking-widest text-white/90 truncate">
+                    CashBall Bank
+                  </span>
+                </span>
+                <span
+                  className="material-symbols-outlined text-lg text-white/40 shrink-0"
+                  title="Pagamento por aproximação"
+                >
+                  nfc
+                </span>
               </div>
-              <p className="text-[10px] opacity-40 text-right mt-0.5">
-                {loanPct.toFixed(0)}% de 2.500.000€
-              </p>
+
+              <div className="relative mt-4 short:mt-2.5 flex items-start justify-between gap-3">
+                {/* chip do cartão */}
+                <div className="flex flex-col items-center shrink-0">
+                  <div className="h-8 w-11 rounded-md bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 p-[3px] shadow-inner ring-1 ring-black/25">
+                    <div className="flex h-full w-full items-stretch justify-center gap-[3px] rounded-[4px] bg-gradient-to-b from-white/25 to-transparent">
+                      <span className="w-px bg-black/25" />
+                      <span className="w-px bg-black/25" />
+                      <span className="w-px bg-black/25" />
+                    </div>
+                  </div>
+                  <span className="mt-1 text-[7px] sm:text-[8px] uppercase tracking-widest text-white/35 tabular-nums">
+                    época {seasonYear}
+                  </span>
+                </div>
+
+                {/* valor em dívida */}
+                <div className="min-w-0 text-right">
+                  <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-white/45">
+                    Dívida actual
+                  </p>
+                  <p
+                    className={`font-headline text-xl sm:text-2xl font-black tracking-tight tabular-nums leading-tight ${
+                      loanAmount > 0 ? "text-white" : "text-emerald-300"
+                    }`}
+                  >
+                    {formatCurrency(loanAmount)}
+                  </p>
+                  {loanAmount > 0 ? (
+                    <p className="mt-0.5 inline-flex items-center gap-1 text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-rose-300">
+                      <span className="material-symbols-outlined text-[11px]">
+                        warning
+                      </span>
+                      Juros 1,5% / jornada
+                    </p>
+                  ) : (
+                    <p className="mt-0.5 text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-emerald-300/90">
+                      Sem juros · liquidado
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* plafond utilizado */}
+              <div className="relative mt-4 short:mt-2.5">
+                <div className="mb-1 flex items-baseline justify-between gap-2 text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-white/45">
+                  <span className="truncate">Plafond utilizado</span>
+                  <span className="tabular-nums shrink-0">
+                    {loanPct.toFixed(0)}% de {formatCurrency(LOAN_MAX)}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      loanPct > 75
+                        ? "bg-rose-400"
+                        : loanPct > 40
+                          ? "bg-amber-400"
+                          : "bg-emerald-400"
+                    }`}
+                    style={{ width: `${loanPct}%` }}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+
+            {/* operações */}
+            <div className="mt-3 short:mt-2 grid grid-cols-2 gap-2">
               <Button
                 variant="secondary"
                 onClick={() => socket.emit("payLoan")}
@@ -726,7 +800,7 @@ export function FinancesTab({
                   });
                 }}
                 disabled={currentBudget < loanAmount}
-                className="mt-2 w-full col-span-2"
+                className="mt-2 w-full"
               >
                 Pagar Dívida ({formatCurrency(loanAmount)})
               </Button>
