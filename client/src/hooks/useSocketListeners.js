@@ -656,6 +656,7 @@ export function useSocketListeners(handlers, refs) {
 				demandedWage,
 				agent,
 			}) => {
+				if (!inRoom()) return;
 				handlers.setGameDialog({
 					mode: "confirm",
 					title: `Contra-proposta — ${playerName}`,
@@ -691,6 +692,7 @@ export function useSocketListeners(handlers, refs) {
 				contractEndSeason,
 				isRenegotiation,
 			}) => {
+				if (!inRoom()) return;
 				const endText =
 					contractEndMatchweek && contractEndSeason
 						? ` Contrato até ${seasonToYear(contractEndSeason)}, Jornada ${contractEndMatchweek}.`
@@ -698,8 +700,9 @@ export function useSocketListeners(handlers, refs) {
 				const headline = isRenegotiation
 					? `📈 ${agent} viu o teu plantel no Excel: ${playerName} vale muito mais do que recebe. Exige €${requestedWage.toLocaleString("pt-PT")}/sem ou ameaça "conversas com outros clubes".${endText}`
 					: `📞 ${agent} ligou em pânico: ${playerName} anda a olhar para vitrinas de troféus que não são as tuas! Exige €${requestedWage.toLocaleString("pt-PT")}/sem.${endText}`;
-				handlers.setGameDialog({
+				handlers.queueContractDialog({
 					mode: "confirm",
+					playerId,
 					title: `Agente do Jogador — ${playerName}`,
 					description: headline,
 					stats: buildPlayerStats({

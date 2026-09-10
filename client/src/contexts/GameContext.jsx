@@ -105,6 +105,11 @@ export function GameProvider({
 	const [nextMatchSummaryLoading, setNextMatchSummaryLoading] = useState(false);
 	const [refereePopup, setRefereePopup] = useState(null);
 	const [gameDialog, setGameDialog] = useState(null);
+	const [contractQueue, setContractQueue] = useState([]);
+	// Fila FIFO de pedidos do agente: cada `contractRequest` entra aqui e o
+	// modal mostra sempre a cabeça — sem isto, 2 pedidos seguidos faziam o
+	// segundo esmagar o primeiro (slot único) e o Aceitar renovava o jogador
+	// errado. Sem duplicados por playerId (o servidor re-emite pendentes).
 	// Convite de sala recebido (de um colega que nos quer na sala dele).
 	const [pendingRoomInvite, setPendingRoomInvite] = useState(null);
 	const [cupDraw, setCupDraw] = useState(null);
@@ -244,6 +249,8 @@ export function GameProvider({
 	const marketPairsRef = useRef([]);
 	const mySquadRef = useRef([]);
 	const tacticRef = useRef({ positions: {} });
+	const gameDialogRef = useRef(null);
+	const contractQueueRef = useRef([]);
 	const goalFlashRefSetter = useRef(setGoalFlashRef);
 
 	// ── Helpers ──────────────────────────────────────────────────────────────
@@ -328,6 +335,12 @@ export function GameProvider({
 	useEffect(() => {
 		tacticRef.current = tactic;
 	}, [tactic]);
+	useEffect(() => {
+		gameDialogRef.current = gameDialog;
+	}, [gameDialog]);
+	useEffect(() => {
+		contractQueueRef.current = contractQueue;
+	}, [contractQueue]);
 	// Snapshot da tática para sobreviver à morte da tab (throttle 500ms).
 	// O restauro dá-se no handler de gameState (só a meio de jogo).
 	useEffect(() => {
@@ -831,6 +844,7 @@ export function GameProvider({
 			setRoomCreator,
 			setRefereePopup,
 			setGameDialog,
+			queueContractDialog,
 			setPendingRoomInvite,
 			setWelcomeModal,
 			setJobOfferModal,
@@ -890,6 +904,8 @@ export function GameProvider({
 			playersRef,
 			chatOpenRef,
 			activeChatTabRef,
+			gameDialogRef,
+			contractQueueRef,
 		},
 	);
 
@@ -1103,6 +1119,29 @@ export function GameProvider({
 	const buyPlayer = useCallback((playerId) => {
 		queueEmit("buyPlayer", playerId);
 	}, []);
+
+	const queueContractDialog = useCallback((dialog) => {
+		const pid = Number(dialog?.playerId);
+		if (!Number.isFinite(pid)) {
+			setGameDialog(dialog);
+			return;
+		}
+		if (Number(gameDialogRef.current?.playerId) === pid) return;
+		if (
+			(contractQueueRef.current || []).some((d) => Number(d.playerId) === pid)
+		) return;
+		setContractQueue((q) => [...q, dialog]);
+	}, []);
+
+	// Promove a cabeça da fila quando o modal fica livre. Fechar no X/Escape
+	// (só onClose, sem onCancel) adia a decisão: o pedido continua pendente
+	// no servidor e é re-emitido mais tarde.
+	useEffect(() => {
+		if (gameDialog !== null || contractQueue.length === 0) return;
+		const [head, ...rest] = contractQueue;
+		setContractQueue(rest);
+		setGameDialog(head);
+	}, [gameDialog, contractQueue]);
 
 	const renewPlayerContract = useCallback((player) => {
 		const defaultWage = Math.round(
@@ -1399,6 +1438,7 @@ export function GameProvider({
 		setGlobalMessages([]);
 		setGlobalPlayers([]);
 		setGameDialog(null);
+		setContractQueue([]);
 		setUnreadRoom(0);
 		setUnreadGlobal(0);
 		setSubstitutionPause(null);

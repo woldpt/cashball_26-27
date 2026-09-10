@@ -398,3 +398,6 @@ Plano C1+C2 (quando fizer):
   - Checks: eslint do ficheiro + `check:types` OK; `lint` global só falha no untracked alheio pré-existente `journal-cup-diagnostic.jsx`.
 
 - **Diagrama do ciclo de jogo (novo):** `docs/FLUXO-JOGO.md` — calendário de 19 semanas, máquina de fases, lobby→jogo→intervalo→fim (liga vs taça com ET gate), fila pós-jogo + landing no jornal, jornal→lobby, fim de época, legenda de eventos socket por transição e 6 pontos quentes de incoerências. Só doc, sem código.
+
+- **Pedidos do agente com jogador trocado (fix):** `gameDialog` era slot único — 2 `contractRequest` seguidos (rajada normal: o resend de pendentes não tem limite nem espaçamento) e o 2.º esmagava o 1.º sem o utilizador dar por isso (layout igual, agentes colidem em `id % 8`); o Aceitar renovava o visível no clique, não o lido. Agora `contractRequest` entra em fila FIFO (`contractQueue` no `GameContext`, dedup por `playerId`, promoção quando o modal liberta; X adia, Leilão recusa como antes) e os dois handlers ganharam a guarda `inRoom()` que faltava. Âmbito aprovado: só `contractRequest` (contra-proposta/prompts manuais intactos).
+  - Checks: eslint dos 2 ficheiros + `check:types` OK. Sem audits (zero servidor) e sem mobile-resp-check (mesmo modal, zero layout). **Pendente:** teste manual com 2 pendentes numa sala real.
