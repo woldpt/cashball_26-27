@@ -145,7 +145,7 @@ export function WaitingCoachesModal({
       />
 
       <motion.div
-        className="relative flex flex-col min-h-0 w-full bg-surface-container border border-outline-variant/20 rounded-xl shadow-2xl overflow-hidden"
+        className="relative flex flex-col min-h-0 max-h-[90dvh] w-full bg-surface-container border border-outline-variant/20 rounded-xl shadow-2xl overflow-hidden"
         initial={{ scale: 0.93, y: 24 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.93, y: 24 }}
@@ -182,9 +182,9 @@ export function WaitingCoachesModal({
                 horizontal incluído) e desktop; empilhado em mobile vertical.
                 A altura total é limitada à viewport (max-h-full no card) e
                 cada coluna faz scroll interno (flex-1 + min-h-0). */}
-            <div className="flex-1 min-h-0 flex flex-col min-[560px]:flex-row">
+            <div className="flex-1 min-h-0 flex flex-col min-[560px]:flex-row min-[560px]:max-h-[60vh] min-[560px]:overflow-hidden">
             {/* Lista de coaches */}
-            <div className="divide-y divide-outline-variant/10 flex-1 min-h-0 overflow-y-auto max-h-[45vh] min-[560px]:max-h-none min-[560px]:flex-1">
+            <div className="divide-y divide-outline-variant/10 flex-1 min-h-0 overflow-y-auto max-h-[45vh] min-[560px]:max-h-[60vh]">
               {coaches.map((coach) => {
                 const st = STATUS_MAP[coach.status] || STATUS_MAP.thinking;
                 return (
@@ -236,7 +236,7 @@ export function WaitingCoachesModal({
             </div>
 
             {/* Chat rápido da sala */}
-            <div className="flex-1 min-h-0 min-h-40 max-h-[45vh] min-[560px]:max-h-none min-[560px]:flex-none min-[560px]:w-72 min-[560px]:shrink-0 flex flex-col bg-surface-container-high border-t border-outline-variant/15 min-[560px]:border-t-0 min-[560px]:border-l">
+            <div className="flex-1 min-h-0 min-h-40 max-h-[45vh] min-[560px]:max-h-[60vh] min-[560px]:flex-none min-[560px]:w-72 min-[560px]:shrink-0 flex flex-col bg-surface-container-high border-t border-outline-variant/15 min-[560px]:border-t-0 min-[560px]:border-l">
               <div className="shrink-0 flex items-center gap-1.5 px-4 pt-2 pb-1">
                 <span className="text-xs">💬</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">

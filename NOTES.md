@@ -382,3 +382,6 @@ Plano C1+C2 (quando fizer):
 
 - **Jornal amador em sépia tabaco (novo):** `.jp-amador --jp-sheet` `#d6c9a8` → `#c19a5b` (opção A aprovada pelo utilizador; semi/pro intactos, tinta e granulado iguais). Só `client/src/index.css`.
   - Checks: `check:types` OK; `lint` global só falha no untracked alheio `journal-cup-diagnostic.jsx` (pré-existente). Sem mobile-resp-check (só cor, sem mudança de grelha/flex/larguras).
+
+- **WaitingCoachesModal com altura limitada em desktop (fix):** as colunas tinham `min-[560px]:max-h-none` (sem limite) e o contentor interno sem `max-h` — com muitos coaches/mensagens o modal estendia e o topo ficava cortado. Agora: contentor interno `max-h-[90dvh]`, zona central `min-[560px]:max-h-[60vh]` e cada coluna com `max-h-[60vh]` + scroll interno (cabeçalho e rodapé sempre visíveis). Só `WaitingCoachesModal.jsx` (4 classes).
+  - Checks: eslint do ficheiro + `check:types` OK. Sem mobile-resp-check (tweak pontual de classes, sem mudança estrutural).
