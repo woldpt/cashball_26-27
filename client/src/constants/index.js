@@ -441,6 +441,8 @@ export const LOAN_STEP = 500000;
 export const LOAN_INTEREST_RATE = 0.015;
 /** Custo de cada obra de expansão do estádio. */
 export const STADIUM_EXPANSION_COST = 300000;
+/** Rótulo da época em curso (marca, header, footer e ecrã de carregamento). */
+export const SEASON_LABEL = "26/27";
 /** Total de jornadas de liga por época. */
 export const SEASON_JORNADAS = 14;
 /** Jogos em casa por época (metade das jornadas). */

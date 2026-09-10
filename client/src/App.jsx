@@ -9,6 +9,7 @@ import LandingPage from "./components/auth/LandingPage.jsx";
 import { GameProvider } from "./contexts/GameContext.jsx";
 import { TacticsProvider } from "./contexts/TacticsContext.jsx";
 import { GameLayout } from "./GameLayout.jsx";
+import { SEASON_LABEL } from "./constants/index.js";
 import { loadSavedSession } from "./utils/localStorage.js";
 import { checkCacheVersion } from "./utils/cacheVersion.js";
 import { initPushNotifications } from "./services/pushNotifications.js";
@@ -383,7 +384,7 @@ function App() {
 						className="w-16 h-16 mx-auto mb-1"
 					/>
 					<p className="text-3xl font-headline font-black text-primary tracking-tight">
-						CashBall <span className="text-on-surface">26/27</span>
+						CashBall <span className="text-on-surface">{SEASON_LABEL}</span>
 					</p>
 					<p className="text-xs text-on-surface-variant uppercase tracking-[0.3em] font-bold animate-pulse">
 						A carregar...
@@ -474,7 +475,7 @@ function App() {
 											className="w-16 h-16 mx-auto mb-1"
 										/>
 										<p className="text-3xl font-headline font-black text-primary tracking-tight">
-											CashBall <span className="text-on-surface">26/27</span>
+											CashBall <span className="text-on-surface">{SEASON_LABEL}</span>
 										</p>
 										<p className="text-xs text-on-surface-variant uppercase tracking-[0.3em] font-bold animate-pulse">
 											A entrar na sala...

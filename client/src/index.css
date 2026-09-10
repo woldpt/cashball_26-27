@@ -49,6 +49,14 @@
   --color-error: #ffb4ab;
   --color-error-container: #93000a;
 
+  /* ── Landing (página de entrada) ────────────────────────────────
+     Tema escuro próprio do marketing, deliberadamente fora da paleta de
+     jogo. Tokens aqui — nunca hex solto no JSX (§1 STYLE.md). */
+  --color-landing-bg: #060b08;
+  --color-landing-surface: #080d0a;
+  --color-landing-panel: #0a1410;
+  --color-landing-panel-alt: #0e1a12;
+
   /* ── Typography ─────────────────────────────────────────────── */
   --font-sans: "Inter", system-ui, sans-serif;
   --font-headline: "Space Grotesk", system-ui, sans-serif;
