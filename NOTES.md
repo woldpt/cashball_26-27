@@ -376,5 +376,7 @@ Plano C1+C2 (quando fizer):
 - **Ponytail audit Fase 2 (fábricas, mínima):** `momHelpers` virou `persistMoms(db, game, …)` direto (2 callsites já tinham `game.db` em scope); `trainingHelpers` virou 2 exports diretos (deps `io` nunca usadas — confirmado por grep); `index.ts` importa direto sem intermediários; regra do `AGENTS.md` agora prefere funções simples, factory só quando o objeto viaja entre módulos. Restantes 7 fábricas ficam (conversão total daria +linhas no núcleo weekly/cup — decisão do utilizador).
   - Checks: server `typecheck` exit 0; `audit:socketio` 0 erros (91 warnings pré-existentes, registry intacto); `audit:gamestate 445WU8` 0 erros. Sem client → sem lint/mobile.
 
+- **Ponytail "sem risco" ABORTADO (Fase A):** `tsc --checkJs` dá 319 erros no client vs 0 do `jsDocTypeChecker` — o checker artesanal é leniente por desenho (convenção JSDoc, não tipos reais); a troca não é equivalente. Veredito: manter o atual; `tsc` a sério exigiria anotar o client todo (fora de "sem risco"). Fase B (fundir 4 utils, 10 importadores p/ ~40 linhas) também recusada — churn > ganho.
+
 - **Jornal amador em sépia tabaco (novo):** `.jp-amador --jp-sheet` `#d6c9a8` → `#c19a5b` (opção A aprovada pelo utilizador; semi/pro intactos, tinta e granulado iguais). Só `client/src/index.css`.
   - Checks: `check:types` OK; `lint` global só falha no untracked alheio `journal-cup-diagnostic.jsx` (pré-existente). Sem mobile-resp-check (só cor, sem mudança de grelha/flex/larguras).
