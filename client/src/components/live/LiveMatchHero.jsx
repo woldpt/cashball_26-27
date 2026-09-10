@@ -6,6 +6,15 @@ import { GoalFlashOverlay } from "../match/shared/GoalFlashOverlay.jsx";
 import { TeamCrest } from "./TeamCrest.jsx";
 import { FLASH_COLOR, isFlashing, isGoalType, isDrawnAt90, matchEventIcon, parseOdds, resolveEventSide } from "./liveHelpers.js";
 
+/* Texto do banner de pausa por tipo de decisão (visível aos outros coaches) */
+const PAUSE_TEXT = {
+  user_substitution: "está a fazer substituições...",
+  injury: "está a tratar uma lesão...",
+  penalty: "vai marcar um penálti...",
+  emergency_gk: "está a reorganizar a equipa...",
+  gk_red_card: "está a reorganizar a equipa...",
+};
+
 const WEATHER_LABELS = {
   "☀️": "Sol",
   "🌧️": "Chuva",
@@ -209,14 +218,14 @@ export function LiveMatchHero({
         </div>
         )}
 
-        {/* Banner de pausa de substituição — visível aos outros treinadores */}
+        {/* Banner de pausa de decisão — visível aos outros treinadores */}
         {substitutionPause && (
           <div className="w-full mb-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-semibold">
             <span className="material-symbols-outlined text-[16px] shrink-0">
               pause_circle
             </span>
             <span>
-              {substitutionPause.coachName} está a fazer substituições...
+              {substitutionPause.coachName} {PAUSE_TEXT[substitutionPause.type] || PAUSE_TEXT.user_substitution}
             </span>
           </div>
         )}

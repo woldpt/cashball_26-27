@@ -160,6 +160,7 @@ export function registerGameplaySocketHandlers(
     io.to(game.roomCode).emit("substitutionPauseStarted", {
       teamId: playerState.teamId,
       coachName: playerState.name,
+      type: "user_substitution",
     });
   });
 

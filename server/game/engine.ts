@@ -718,8 +718,15 @@ function waitForMatchAction({
         // (o cliente não emitiu o resolve e ficaria desincronizado).
         choice: choice ?? null,
       });
-      // Quando a pausa de substituição termina, notificar todos os jogadores
-      if (type === "user_substitution") {
+      // Quando a pausa de decisão termina, notificar todos os jogadores
+      // (substituição pedida + lesão/penálti/GR abrem banner nos outros coaches).
+      if (
+        type === "user_substitution" ||
+        type === "injury" ||
+        type === "penalty" ||
+        type === "emergency_gk" ||
+        type === "gk_red_card"
+      ) {
         io.to(game.roomCode).emit("substitutionPauseEnded", { teamId });
       }
       resolve({ choice, source });
@@ -749,6 +756,22 @@ function waitForMatchAction({
       ...(fixtureData || {}),
       expiresAt,
     });
+
+    // Lesão/penálti/GR: avisar os outros coaches com o mesmo banner da
+    // pausa de substituição (a substituição pedida já notificou via
+    // "request_substitution").
+    if (
+      type === "injury" ||
+      type === "penalty" ||
+      type === "emergency_gk" ||
+      type === "gk_red_card"
+    ) {
+      io.to(game.roomCode).emit("substitutionPauseStarted", {
+        teamId,
+        coachName: (humanCoach as any)?.name,
+        type,
+      });
+    }
   });
 }
 

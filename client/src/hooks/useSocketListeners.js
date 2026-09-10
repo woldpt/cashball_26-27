@@ -1517,11 +1517,11 @@ export function useSocketListeners(handlers, refs) {
 			}
 		});
 
-		socket.on("substitutionPauseStarted", ({ teamId, coachName }) => {
+		socket.on("substitutionPauseStarted", ({ teamId, coachName, type }) => {
 			// Não mostrar o banner ao próprio treinador que pediu a pausa
 			const myTeamId = refs.meRef.current?.teamId;
 			if (myTeamId && myTeamId === teamId) return;
-			handlers.setSubstitutionPause({ teamId, coachName });
+			handlers.setSubstitutionPause({ teamId, coachName, type });
 		});
 
 		socket.on("substitutionPauseEnded", ({ teamId }) => {
