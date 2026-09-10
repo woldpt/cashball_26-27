@@ -773,6 +773,21 @@ export function GameProvider({
 		};
 	}, []);
 
+	// Fila FIFO de pedidos do agente (tem de ficar ANTES dos socket listeners:
+	// o objeto `handlers` lê esta const durante o render — TDZ se ficar abaixo).
+	const queueContractDialog = useCallback((dialog) => {
+		const pid = Number(dialog?.playerId);
+		if (!Number.isFinite(pid)) {
+			setGameDialog(dialog);
+			return;
+		}
+		if (Number(gameDialogRef.current?.playerId) === pid) return;
+		if (
+			(contractQueueRef.current || []).some((d) => Number(d.playerId) === pid)
+		) return;
+		setContractQueue((q) => [...q, dialog]);
+	}, []);
+
 	// ── Socket listeners ────────────────────────────────────────────────────
 	useSocketListeners(
 		{
@@ -1120,27 +1135,17 @@ export function GameProvider({
 		queueEmit("buyPlayer", playerId);
 	}, []);
 
-	const queueContractDialog = useCallback((dialog) => {
-		const pid = Number(dialog?.playerId);
-		if (!Number.isFinite(pid)) {
-			setGameDialog(dialog);
-			return;
-		}
-		if (Number(gameDialogRef.current?.playerId) === pid) return;
-		if (
-			(contractQueueRef.current || []).some((d) => Number(d.playerId) === pid)
-		) return;
-		setContractQueue((q) => [...q, dialog]);
-	}, []);
-
 	// Promove a cabeça da fila quando o modal fica livre. Fechar no X/Escape
 	// (só onClose, sem onCancel) adia a decisão: o pedido continua pendente
 	// no servidor e é re-emitido mais tarde.
+	// Bomba de fila intencional: só dispara com modal livre e fila não vazia.
 	useEffect(() => {
 		if (gameDialog !== null || contractQueue.length === 0) return;
 		const [head, ...rest] = contractQueue;
+		/* eslint-disable react-hooks/set-state-in-effect -- bomba de fila intencional */
 		setContractQueue(rest);
 		setGameDialog(head);
+		/* eslint-enable react-hooks/set-state-in-effect */
 	}, [gameDialog, contractQueue]);
 
 	const renewPlayerContract = useCallback((player) => {
