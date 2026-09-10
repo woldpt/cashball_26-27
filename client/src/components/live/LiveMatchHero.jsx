@@ -279,11 +279,6 @@ export function LiveMatchHero({
                 <span className="text-[11px] sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate text-center sm:text-left">
                   {hInfo?.name}
                 </span>
-                {homeCoach && (
-                  <span className="hidden sm:block text-[9px] font-bold text-amber-400 truncate">
-                    {homeCoach.name}
-                  </span>
-                )}
               </div>
             </div>
 
@@ -323,11 +318,6 @@ export function LiveMatchHero({
                 <span className="text-[11px] sm:text-sm font-black font-headline uppercase tracking-tight text-on-surface truncate text-center sm:text-right">
                   {aInfo?.name}
                 </span>
-                {awayCoach && (
-                  <span className="hidden sm:block text-[9px] font-bold text-amber-400 truncate text-right">
-                    {awayCoach.name}
-                  </span>
-                )}
               </div>
               <TeamCrest team={aInfo} isMine={awayIsMine} coach={awayCoach} size="sm" rotate={-10} />
             </div>

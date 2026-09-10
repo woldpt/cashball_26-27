@@ -385,3 +385,6 @@ Plano C1+C2 (quando fizer):
 
 - **WaitingCoachesModal com altura limitada em desktop (fix):** as colunas tinham `min-[560px]:max-h-none` (sem limite) e o contentor interno sem `max-h` — com muitos coaches/mensagens o modal estendia e o topo ficava cortado. Agora: contentor interno `max-h-[90dvh]`, zona central `min-[560px]:max-h-[60vh]` e cada coluna com `max-h-[60vh]` + scroll interno (cabeçalho e rodapé sempre visíveis). Só `WaitingCoachesModal.jsx` (4 classes).
   - Checks: eslint do ficheiro + `check:types` OK. Sem mobile-resp-check (tweak pontual de classes, sem mudança estrutural).
+
+- **Nome do treinador duplicado no marcador (fix):** o `LiveMatchHero` mostrava o coach 2x em `sm+` — badge por baixo do logotipo (`TeamCrest`) + texto por baixo do nome do clube. Removidos os dois `span`s sob o nome do clube; o badge fica como fonte única (visível também no mobile, distingue equipa própria das outras). `MatchScoreboard.jsx`/`CupFinalStage.jsx` intactos (já só tinham 1x). Só `LiveMatchHero.jsx` (-10 linhas).
+  - Checks: eslint do ficheiro + `check:types` OK; `lint` global só falha no untracked alheio pré-existente `journal-cup-diagnostic.jsx`.
