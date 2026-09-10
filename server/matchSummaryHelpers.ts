@@ -1,7 +1,7 @@
 import type { ActiveGame } from "./types";
 import { FORM_MATCH_MIN, FORM_MAX, SEASON_CALENDAR } from "./gameConstants";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
-import { createMomHelpers } from "./momHelpers";
+import { persistMoms } from "./momHelpers";
 import { computeMatchOdds } from "./game/commentary";
 import { getWeatherForFixture } from "./game/matchCalculations";
 import { explainAttendance } from "./coreHelpers";
@@ -1093,8 +1093,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
 
                 // MOM por equipa (Jornal Global) — mesmo callback atómico do INSERT
                 try {
-                  const momHelpers = createMomHelpers({ db: game.db });
-                  momHelpers.persistMoms(game, match, "League", matchweek, null);
+                  persistMoms(game.db, game, match, "League", matchweek, null);
                 } catch (momErr: any) {
                   console.warn(
                     `[persistMatchResults] MOM persistence failed (matchweek ${matchweek}):`,

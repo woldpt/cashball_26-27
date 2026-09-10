@@ -15,7 +15,7 @@ import { getEffectiveSkill, getMatchFatigueSnapshot, queueMatchDeltaWrites } fro
 import { getTeamsWithCoachNames, logClubNews } from "./coreHelpers";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { serializeActiveAuctions } from "./auctionHelpers";
-import { createMomHelpers } from "./momHelpers";
+import { persistMoms } from "./momHelpers";
 import { computeMoms } from "./game/mom";
 
 interface CupFlowDeps {
@@ -1364,8 +1364,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 			// MOM por equipa (Jornal Global) — dentro da transação da ronda
 			try {
-				const momHelpers = createMomHelpers({ db: game.db });
-				momHelpers.persistMoms(game, fixture, "Cup", null, round);
+				persistMoms(game.db, game, fixture, "Cup", null, round);
 			} catch (momErr: any) {
 				console.warn(
 					`[continueFromEtGate] MOM persistence failed (round ${round}):`,

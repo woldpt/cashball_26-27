@@ -39,7 +39,7 @@
 
 ## 📏 Padrões obrigatórios
 
-- **Helpers (factory):** nunca instanciar diretamente — `const helpers = createXxxHelpers({ io, db, game });`
+- **Helpers:** funções simples por defeito (deps por chamada); factory só quando o objeto viaja entre módulos.
 - **Juniors (banco de suplentes), ordem fixa:** 1) `withJuniorGRs(squad, teamId, matchweek)` (1 GR no 11 inicial); 2) `ensureFullBench(squad, teamId, matchweek)` (2 GR + 14 campo). IDs de juniores negativos.
 - **Frontend JavaScript só** (tipos via JSDoc) · **Backend TypeScript** (`strict: false`) · **SQLite** sem `SERIAL`/`JSONB` · **Narração** só em `server/game/commentary.ts`.
 - **Frontmatter YAML de skills** (`description`): scalar plain não pode conter `:` seguido de espaço (ex. "passes: portrait") — o parser `yaml` do pi falha com `BLOCK_AS_IMPLICIT_KEY`. Sempre entre aspas duplas quando há colones internos.

@@ -113,7 +113,7 @@ const { registerNewsSocketHandlers } =
 	require("./socketNewsHandlers") as typeof import("./socketNewsHandlers");
 const { createTrainingHandlers } =
 	require("./socketTrainingHandlers") as typeof import("./socketTrainingHandlers");
-const { createTrainingHelpers } =
+const { applyTrainingBonuses, clearSeasonTrainingState } =
 	require("./trainingHelpers") as typeof import("./trainingHelpers");
 const { emitAwaitingCoaches: emitAwaitingCoachesHelper } =
 	require("./presenceHelpers") as typeof import("./presenceHelpers");
@@ -917,9 +917,6 @@ function scheduleNpcCounterBid(game, playerId, npcTeamId) {
 // weeklyFlowHelpers calls startCupRound (from cupFlowHelpers) when preparing
 // the lobby for an upcoming cup week.
 
-const trainingHelpers = createTrainingHelpers({ io });
-const applyTrainingBonuses = trainingHelpers.applyTrainingBonuses;
-const clearSeasonTrainingState = trainingHelpers.clearSeasonTrainingState;
 
 const trainingHandlers = createTrainingHandlers({ io });
 const setTrainingFocus = trainingHandlers.setTrainingFocus;
