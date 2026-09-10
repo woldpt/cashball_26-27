@@ -40,31 +40,28 @@ const HeroSection = () => {
 			<div className="hidden short:flex items-center gap-2 mb-3">
 				<img src="/icon-512.png" alt="Logotipo CashBall" className="w-5 h-5" />
 				<span className="font-headline font-black text-base tracking-tighter text-white">
-					Cash<span className="text-green-400">Ball</span>
+					Cash<span className="text-landing-accent">Ball</span>
 					<span className="text-white/30 font-bold ml-1.5 text-xs">{SEASON_LABEL}</span>
 				</span>
 			</div>
 
 			{/* Placar de balneário — etiqueta de treinador com cronómetro */}
 			<div className="mb-5 short:mb-2 flex max-w-full flex-wrap items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
-				<span className="material-symbols-outlined text-green-400 text-[16px] leading-none">
+				<span className="material-symbols-outlined text-landing-accent text-[16px] leading-none">
 					sports_soccer
 				</span>
 				<span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">
 					Treinador · Época {SEASON_LABEL}
 				</span>
 				<span className="flex items-center gap-1.5 border-l border-white/10 pl-2">
-					<span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-					<span className="text-[10px] font-black tabular-nums tracking-widest text-green-400">
+					<span className="w-1.5 h-1.5 rounded-full bg-landing-accent animate-pulse" />
+					<span className="text-[10px] font-black tabular-nums tracking-widest text-tertiary">
 						90'
 					</span>
 				</span>
 			</div>
 
 			<h1 className="relative font-headline font-black leading-none tracking-tighter mb-8 short:mb-2">
-				{/* Fita-cola — folha afixada no quadro tático */}
-				<span aria-hidden="true" className="absolute -top-2 left-8 h-4 w-14 -rotate-6 rounded-[2px] bg-white/15" />
-				<span aria-hidden="true" className="absolute -top-2 right-8 h-4 w-14 rotate-6 rounded-[2px] bg-white/15" />
 				{/* Nome acessível estável — o bloco visual cicla e é decorativo */}
 				<span className="sr-only">{HERO_PHRASES[0].join(" ")}</span>
 				<span aria-hidden="true" className="block relative">
@@ -89,7 +86,7 @@ const HeroSection = () => {
 									key={i}
 									className={`${HERO_TITLE_SIZE} ${
 										i === 1
-											? "text-green-400 drop-shadow-[0_0_40px_rgba(74,222,128,0.35)]"
+											? "text-landing-accent drop-shadow-[0_0_40px_rgba(52,211,153,0.35)]"
 											: "text-white"
 									} `}
 								>

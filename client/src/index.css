@@ -56,6 +56,10 @@
   --color-landing-surface: #080d0a;
   --color-landing-panel: #0a1410;
   --color-landing-panel-alt: #0e1a12;
+  /* Acento da página de entrada: esmeralda, escopada ao landing — o verde do
+     jogo é o `primary` sálvia e não deve ser afetado por estas utilities. */
+  --color-landing-accent: #34d399;
+  --color-landing-accent-strong: #10b981;
 
   /* ── Typography ─────────────────────────────────────────────── */
   --font-sans: "Inter", system-ui, sans-serif;

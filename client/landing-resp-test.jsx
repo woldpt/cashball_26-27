@@ -117,7 +117,9 @@ const measure = () => {
       out.errors.push(`missing instance ${a.id}`);
       continue;
     }
-    const cta = w.querySelector('button[class*="bg-green-500"]');
+    // CTA = botão de submissão do formulário; não farejar classes de cor, que
+    // mudam com a paleta (era `button[class*="bg-green-500"]`).
+    const cta = w.querySelector('button[type="submit"]');
     const card = cta ? cta.closest('div[class*="max-w-md"]') : null;
     if (!card || !cta) {
       out.errors.push(`${a.id}: auth card/CTA not found`);

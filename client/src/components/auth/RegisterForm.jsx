@@ -62,7 +62,7 @@ const RegisterForm = ({
 				</h2>
 			</div>
 			<div className="space-y-1 text-center short:hidden">
-				<p className="flex items-center justify-center gap-1.5 text-[10px] text-green-400/60 uppercase font-black tracking-[0.4em]">
+				<p className="flex items-center justify-center gap-1.5 text-[10px] text-landing-accent/60 uppercase font-black tracking-[0.4em]">
 					<span className="material-symbols-outlined text-[14px] leading-none">badge</span>
 					Nova conta
 				</p>
@@ -146,7 +146,7 @@ const RegisterForm = ({
 						authSubmitting ||
 						registerPasswordMismatch
 					}
-					className="w-full relative overflow-hidden bg-green-500 hover:bg-green-400 disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-1.5 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)] group"
+					className="w-full relative overflow-hidden bg-landing-accent-strong hover:bg-landing-accent disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-1.5 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(52,211,153,0.25)] hover:shadow-[0_4px_30px_rgba(52,211,153,0.4)] group"
 				>
 					<span className="relative z-10">
 						{authSubmitting ? "A CRIAR CONTA..." : "CRIAR CONTA"}

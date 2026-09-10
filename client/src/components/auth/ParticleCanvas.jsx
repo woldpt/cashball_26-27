@@ -52,7 +52,7 @@ const ParticleCanvas = () => {
 			for (const p of particles) {
 				ctx.beginPath();
 				ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-				ctx.fillStyle = `rgba(74,222,128,${p.alpha})`;
+				ctx.fillStyle = `rgba(52,211,153,${p.alpha})`;
 				ctx.fill();
 				if (reduced) continue;
 				p.x += p.dx;

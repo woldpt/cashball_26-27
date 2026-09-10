@@ -40,7 +40,7 @@ const LoginForm = ({
 		className="p-8 space-y-5 short:p-2.5 short:space-y-1"
 	>
 		<div className="space-y-1 text-center mb-4 short:mb-1">
-			<p className="flex items-center justify-center gap-1.5 text-[10px] text-green-400/60 uppercase font-black tracking-[0.4em]">
+			<p className="flex items-center justify-center gap-1.5 text-[10px] text-landing-accent/60 uppercase font-black tracking-[0.4em]">
 				<span className="material-symbols-outlined text-[14px] leading-none">badge</span>
 				Painel do Treinador
 			</p>
@@ -88,7 +88,7 @@ const LoginForm = ({
 			<button
 				type="submit"
 				disabled={!name.trim() || !password || authSubmitting}
-				className="w-full relative overflow-hidden bg-green-500 hover:bg-green-400 disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-1.5 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(74,222,128,0.25)] hover:shadow-[0_4px_30px_rgba(74,222,128,0.4)] group"
+				className="w-full relative overflow-hidden bg-landing-accent-strong hover:bg-landing-accent disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-1.5 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(52,211,153,0.25)] hover:shadow-[0_4px_30px_rgba(52,211,153,0.4)] group"
 			>
 				<span className="relative z-10">{authSubmitting ? "A VALIDAR..." : "ENTRAR"}</span>
 				<div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
@@ -98,7 +98,7 @@ const LoginForm = ({
 		<button
 			type="button"
 			onClick={onCreateAccount}
-			className="w-full border border-white/[0.08] bg-white/[0.02] hover:border-green-500/30 hover:bg-green-500/[0.04] text-white/70 hover:text-white py-3 short:py-1 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all"
+			className="w-full border border-landing-accent-strong/30 bg-landing-accent-strong/[0.03] hover:border-landing-accent-strong/60 hover:bg-landing-accent-strong/[0.08] text-landing-accent/90 hover:text-landing-accent py-3 short:py-1 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all"
 		>
 			Criar conta
 		</button>

@@ -13,17 +13,17 @@ const FeaturesStrip = () => (
 				{LANDING_FEATURES.map(({ icon, label, desc }) => (
 					<div
 						key={label}
-						className="bg-white/[0.02] border border-white/[0.06] hover:border-green-500/25 hover:bg-green-500/[0.03] rounded-xl p-5 transition-all duration-300 group"
+						className="bg-white/[0.02] border border-white/[0.06] hover:border-landing-accent-strong/25 hover:bg-landing-accent-strong/[0.03] rounded-xl p-5 transition-all duration-300 group"
 					>
-						<div className="w-10 h-10 flex items-center justify-center bg-white/[0.04] border border-white/[0.06] rounded-xl mb-4 group-hover:bg-green-500/10 transition-colors duration-300">
-							<span className="material-symbols-outlined text-green-400/80 text-[22px] leading-none">
+						<div className="w-10 h-10 flex items-center justify-center bg-white/[0.04] border border-white/[0.06] rounded-xl mb-4 group-hover:bg-landing-accent-strong/10 transition-colors duration-300">
+							<span className="material-symbols-outlined text-landing-accent/80 text-[22px] leading-none">
 								{icon}
 							</span>
 						</div>
 						<p className="font-headline font-black text-sm text-white mb-1.5 tracking-tight">
 							{label}
 						</p>
-						<p className="text-xs text-white/40 leading-relaxed">{desc}</p>
+						<p className="text-xs text-white/55 leading-relaxed">{desc}</p>
 					</div>
 				))}
 			</div>

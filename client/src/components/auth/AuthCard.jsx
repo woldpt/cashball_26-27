@@ -10,8 +10,8 @@
 const AuthCard = ({ children }) => (
 	<div className="relative w-full max-w-md short:max-w-xs">
 		{/* Outer glow */}
-		<div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-green-500/20 via-transparent to-green-500/5 blur-sm pointer-events-none" />
-		<div className="relative bg-landing-panel/90 border border-white/[0.08] backdrop-blur-2xl rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.6),0_0_0_1px_rgba(74,222,128,0.08)]">
+		<div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-landing-accent-strong/20 via-transparent to-landing-accent-strong/5 blur-sm pointer-events-none" />
+		<div className="relative bg-landing-panel/90 border border-white/[0.08] backdrop-blur-2xl rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.6),0_0_0_1px_rgba(52,211,153,0.08)]">
 			{/* Linha de giz do quadro tático */}
 			<div
 				aria-hidden="true"
@@ -21,9 +21,11 @@ const AuthCard = ({ children }) => (
 						"repeating-linear-gradient(90deg, rgba(255,255,255,0.3) 0 10px, transparent 10px 20px)",
 				}}
 			/>
-			{/* Corner accents */}
-			<div className="absolute top-3 right-3 w-10 h-10 border-t border-r border-green-500/20 rounded-tr-xl pointer-events-none" />
-			<div className="absolute bottom-3 left-3 w-10 h-10 border-b border-l border-green-500/20 rounded-bl-xl pointer-events-none" />
+			{/* Corner accents — 4/4: cantos assimétricos liam-se como esquecimento */}
+			<div className="absolute top-3 right-3 w-10 h-10 border-t border-r border-landing-accent-strong/20 rounded-tr-xl pointer-events-none" />
+			<div className="absolute top-3 left-3 w-10 h-10 border-t border-l border-landing-accent-strong/20 rounded-tl-xl pointer-events-none" />
+			<div className="absolute bottom-3 left-3 w-10 h-10 border-b border-l border-landing-accent-strong/20 rounded-bl-xl pointer-events-none" />
+			<div className="absolute bottom-3 right-3 w-10 h-10 border-b border-r border-landing-accent-strong/20 rounded-br-xl pointer-events-none" />
 			{children}
 		</div>
 	</div>

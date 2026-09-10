@@ -34,13 +34,13 @@ const AuthField = ({
 
 	const stateClass = invalid
 		? "border border-red-500/60 focus:border-red-500/60 focus:ring-red-500/30"
-		: "border border-white/[0.08] focus:border-green-500/50 focus:ring-green-500/30 focus:bg-green-500/[0.03]";
+		: "border border-white/[0.08] focus:border-landing-accent-strong/50 focus:ring-landing-accent-strong/30 focus:bg-landing-accent-strong/[0.03]";
 
 	return (
 		<div>
 			<label
 				htmlFor={id}
-				className="block text-[10px] uppercase text-white/40 mb-2 font-bold tracking-wider"
+				className="block text-[10px] uppercase text-white/55 mb-2 font-bold tracking-wider"
 			>
 				{label}
 			</label>
