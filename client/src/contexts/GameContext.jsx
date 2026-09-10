@@ -233,7 +233,11 @@ export function GameProvider({
 	const matchReplayActiveRef = useRef(false);
 	const liveMinuteRef = useRef(0);
 	const selectedTeamRef = useRef(null);
-	const ackedPostMatchKeyRef = useRef(null);
+	// Chaves anti-repetição do humor pós-jogo, UMA POR COMPETIÇÃO: com uma
+	// só chave partilhada, o ramo da Taça recriava o modal da ronda anterior
+	// por cima do da Liga (e vice-versa), porque `matchResults`/`cupRoundResults`
+	// mantêm os dados da prova anterior enquanto se joga a outra.
+	const ackedPostMatchKeysRef = useRef({ league: null, cup: null });
 	const activeTabRef = useRef("club");
 	const teamSquadReturnTabRef = useRef("club");
 	const marketPairsRef = useRef([]);
@@ -508,7 +512,7 @@ export function GameProvider({
 	// Abre sobre o tab onde o utilizador está (em regra, o Jogo) mal chegam
 	// os resultados — sem exigir tab Classificação/Taça. Sem timeout: requer
 	// clique do coach para avançar. Mostra uma vez por época + jornada/ronda
-	// (guard `ackedPostMatchKeyRef`).
+	// (guard `ackedPostMatchKeysRef`, separado por competição).
 	useEffect(() => {
 		const myId = me?.teamId;
 		if (myId == null) return;
@@ -578,8 +582,8 @@ export function GameProvider({
 				const outcome =
 					myGoals > oppGoals ? "win" : myGoals < oppGoals ? "loss" : "draw";
 				const key = `league:${season}:${matchResults.matchweek}`;
-				if (ackedPostMatchKeyRef.current !== key) {
-					ackedPostMatchKeyRef.current = key;
+				if (ackedPostMatchKeysRef.current.league !== key) {
+					ackedPostMatchKeysRef.current.league = key;
 					setPostMatchMood(
 						buildMood(
 							outcome,
@@ -610,8 +614,8 @@ export function GameProvider({
 				const outcome =
 					Number(myMatch.winnerId) === Number(myId) ? "win" : "loss";
 				const key = `cup:${cupRoundResults.season}:${cupRoundResults.round}`;
-				if (ackedPostMatchKeyRef.current !== key) {
-					ackedPostMatchKeyRef.current = key;
+				if (ackedPostMatchKeysRef.current.cup !== key) {
+					ackedPostMatchKeysRef.current.cup = key;
 					setPostMatchMood(
 						buildMood(
 							outcome,

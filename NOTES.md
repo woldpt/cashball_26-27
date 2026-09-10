@@ -238,6 +238,8 @@
 
 ## Último estado
 
+- **Modal pós-jogo trocado entre Taça e Liga (fix):** o effect do humor (`GameContext.jsx`) usava UMA chave anti-repetição partilhada para as duas provas, e `matchResults`/`cupRoundResults` mantêm os dados da prova anterior — após a jornada da Liga, o ramo da Taça recriava o modal da ronda antiga por cima (e vice-versa). Chaves separadas por competição (`ackedPostMatchKeysRef = {league, cup}`); decisão do utilizador: se o modal anterior ainda estiver por dispensar, o novo substitui (sem fila). Checks: eslint do ficheiro + `check:types` OK (`lint` global só falha no untracked pré-existente `journal-cup-diagnostic.jsx`). Sem mobile-resp-check (zero layout). **Pendente:** teste manual numa sala real (Taça → Liga, confirmar ordem).
+
 - **Jornal: tira "Os outros humanos" → "Outros treinadores":** só a prop `sticker` do `FanzineCard` em `JournalTab.jsx` (1 ocorrência). Checks: eslint do ficheiro OK; sem mobile-resp-check (tweak de texto pontual).
 
 - **Fila pós-jogo rígida inclui o Aguardar Coaches (novo):** `computePostMatchFlow` recebe `waitingWantsShow` e devolve `showWaiting` (só com a fila drenada); helper `isPostMatchQueueActive` para portões fora do GameOverlays. `GameOverlays` (espera do intervalo passa por `showWaiting` + gate do landing inclui-a) e `TacticsView` (espera pré-jogo suprimida com fila ativa) — os dados ficam guardados, só ordena. Histórico continua a furar; popups em jogo, lobby e mercado livres (decisão do utilizador). Checks: client `lint` + `check:types` OK. Sem audits/mobile (só visibilidade UI).
