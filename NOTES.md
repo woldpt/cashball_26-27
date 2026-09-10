@@ -396,3 +396,5 @@ Plano C1+C2 (quando fizer):
 
 - **Nome do treinador duplicado no marcador (fix):** o `LiveMatchHero` mostrava o coach 2x em `sm+` — badge por baixo do logotipo (`TeamCrest`) + texto por baixo do nome do clube. Removidos os dois `span`s sob o nome do clube; o badge fica como fonte única (visível também no mobile, distingue equipa própria das outras). `MatchScoreboard.jsx`/`CupFinalStage.jsx` intactos (já só tinham 1x). Só `LiveMatchHero.jsx` (-10 linhas).
   - Checks: eslint do ficheiro + `check:types` OK; `lint` global só falha no untracked alheio pré-existente `journal-cup-diagnostic.jsx`.
+
+- **Diagrama do ciclo de jogo (novo):** `docs/FLUXO-JOGO.md` — calendário de 19 semanas, máquina de fases, lobby→jogo→intervalo→fim (liga vs taça com ET gate), fila pós-jogo + landing no jornal, jornal→lobby, fim de época, legenda de eventos socket por transição e 6 pontos quentes de incoerências. Só doc, sem código.
