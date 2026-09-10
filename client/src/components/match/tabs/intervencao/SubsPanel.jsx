@@ -32,7 +32,7 @@ const STYLE_LABELS = {
 
 /* Largura da faixa lateral (peek) em que a zona das skills da página de trás
  * permanece minimamente destapada no mobile. */
-const PEEK_W = 64;
+const PEEK_W = 96;
 
 /**
  * Folha da stack de páginas mobile (Titulares/Suplentes). A folha à frente
