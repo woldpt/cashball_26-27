@@ -351,8 +351,6 @@ Inventário de todos os ficheiros do projecto (sem `node_modules`/`.git`) com a 
 | `server/scripts/gameStateAudit.ts` | Auditoria de integridade do estado do jogo (budgets, squads, fases). |
 | `server/scripts/socketioContractValidator.ts` | Validador de contratos Socket.io (orphaned/duplicate handlers). |
 | `server/scripts/repairDuplicateJobOffer.ts` | Reparação de propostas de trabalho duplicadas. |
-| `server/scripts/repairDuplicateJobOfferTUI.ts` | Variante TUI do reparador de propostas duplicadas. |
-| `server/scripts/repair-duplicate-job-offer.sh` | Wrapper shell do reparador. |
 | `server/scripts/attendanceRegression.mts` | Regressão: lotação do estádio reflete a forma da equipa. |
 | `server/scripts/contractRenewalRegression.mts` | Regressão: renovação de contratos (modal obrigatório, 1 proposta/semana). |
 | `server/scripts/contractYearRegression.mts` | Regressão: designação de contratos ("Ano 1, J1" → "2026, Jornada 1"). |

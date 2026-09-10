@@ -18,4 +18,3 @@
 
 - **Automático em produção:** serviço `backups` do docker-compose (diário por omissão; intervalos/retenção via `BACKUP_INTERVAL_HOURS`/`RETENTION_COUNT`; snapshots em `./backups/YYYYMMDD_HHMMSS/`).
 - **Manual:** `cd server && node scripts/backupDatabases.js` (Online Backup API — seguro com o server ativo).
-- **Alternativa no host sem Docker:** cron + `server/scripts/backupDatabases.sh` (requer CLI sqlite3).

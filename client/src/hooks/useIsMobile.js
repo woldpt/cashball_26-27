@@ -7,17 +7,13 @@ import {
 } from "../constants/breakpoints.js";
 
 /**
- * useIsMobile — devolve `true` quando a largura da janela está abaixo do
- * breakpoint `md` do Tailwind (768px).
+ * Subscrição partilhada de uma media query — os 4 hooks abaixo só diferem
+ * na query; o corpo do `useSyncExternalStore` era 4× igual.
  *
- * Lê o matchMedia dentro de um effect para evitar mismatch de hidratação e
- * subscreve as alterações de largura em tempo real.
- *
- * @param {number} [threshold=BREAKPOINTS.md] Largura (px) a partir da qual conta como desktop.
- * @returns {boolean} `true` se estiver abaixo do threshold (layout mobile).
+ * @param {string} query media query CSS
+ * @returns {boolean} `true` quando a query corresponde.
  */
-export function useIsMobile(threshold = BREAKPOINTS.md) {
-  const query = mediaQuery("max-width", threshold - 1);
+function useMediaQuery(query) {
   let mql = null;
   const getMql = () => (mql ??= window.matchMedia(query));
 
@@ -28,8 +24,22 @@ export function useIsMobile(threshold = BREAKPOINTS.md) {
       return () => q.removeEventListener("change", onChange);
     },
     () => getMql().matches,
-    () => false
+    () => false,
   );
+}
+
+/**
+ * useIsMobile — devolve `true` quando a largura da janela está abaixo do
+ * breakpoint `md` do Tailwind (768px).
+ *
+ * Lê o matchMedia dentro de um effect para evitar mismatch de hidratação e
+ * subscreve as alterações de largura em tempo real.
+ *
+ * @param {number} [threshold=BREAKPOINTS.md] Largura (px) a partir da qual conta como desktop.
+ * @returns {boolean} `true` se estiver abaixo do threshold (layout mobile).
+ */
+export function useIsMobile(threshold = BREAKPOINTS.md) {
+  return useMediaQuery(mediaQuery("max-width", threshold - 1));
 }
 
 /**
@@ -41,21 +51,8 @@ export function useIsMobile(threshold = BREAKPOINTS.md) {
  * @returns {boolean} `true` se orientation for landscape e width < lg.
  */
 export function useMobileLandscape() {
-  const query = `(orientation: landscape) and ${mediaQuery(
-    "max-width",
-    BREAKPOINT_LIMITS.lgBelow,
-  )}`;
-  let mql = null;
-  const getMql = () => (mql ??= window.matchMedia(query));
-
-  return useSyncExternalStore(
-    (onChange) => {
-      const q = getMql();
-      q.addEventListener("change", onChange);
-      return () => q.removeEventListener("change", onChange);
-    },
-    () => getMql().matches,
-    () => false
+  return useMediaQuery(
+    `(orientation: landscape) and ${mediaQuery("max-width", BREAKPOINT_LIMITS.lgBelow)}`,
   );
 }
 
@@ -71,18 +68,8 @@ export function useMobileLandscape() {
  * @returns {boolean} `true` quando deve ser usado o layout compacto.
  */
 export function useCompactViewport() {
-  const query = `(min-width: ${BREAKPOINTS.md}px) and (min-height: ${HEIGHTS.compact}px)`;
-  let mql = null;
-  const getMql = () => (mql ??= window.matchMedia(query));
-
-  return !useSyncExternalStore(
-    (onChange) => {
-      const q = getMql();
-      q.addEventListener("change", onChange);
-      return () => q.removeEventListener("change", onChange);
-    },
-    () => getMql().matches,
-    () => false
+  return !useMediaQuery(
+    `(min-width: ${BREAKPOINTS.md}px) and (min-height: ${HEIGHTS.compact}px)`,
   );
 }
 
@@ -96,20 +83,7 @@ export function useCompactViewport() {
  * @returns {boolean} `true` se orientation for landscape e height < compact.
  */
 export function useLandscapePhone() {
-  const query = `(orientation: landscape) and ${mediaQuery(
-    "max-height",
-    BREAKPOINT_LIMITS.compactBelow,
-  )}`;
-  let mql = null;
-  const getMql = () => (mql ??= window.matchMedia(query));
-
-  return useSyncExternalStore(
-    (onChange) => {
-      const q = getMql();
-      q.addEventListener("change", onChange);
-      return () => q.removeEventListener("change", onChange);
-    },
-    () => getMql().matches,
-    () => false
+  return useMediaQuery(
+    `(orientation: landscape) and ${mediaQuery("max-height", BREAKPOINT_LIMITS.compactBelow)}`,
   );
 }
