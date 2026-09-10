@@ -106,7 +106,11 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
     setMarketPositionFilter,
     marketSort,
     setMarketSort,
+    showOwnMarketPlayers,
+    setShowOwnMarketPlayers,
     buyPlayer,
+    listPlayerAuction,
+    removeFromTransferList,
     openAuctionBid,
     activeAuctions,
     playerSearchData,
@@ -561,8 +565,12 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                         setMarketPositionFilter={setMarketPositionFilter}
                         marketSort={marketSort}
                         setMarketSort={setMarketSort}
+                        showOwnMarketPlayers={showOwnMarketPlayers}
+                        setShowOwnMarketPlayers={setShowOwnMarketPlayers}
                         isSameTeamId={isSameTeamId}
                         buyPlayer={buyPlayer}
+                        listPlayerAuction={listPlayerAuction}
+                        removeFromTransferList={removeFromTransferList}
                         openAuctionBid={openAuctionBid}
                         onOpenPlayerHistory={(player) =>
                           socket.emit("requestPlayerHistory", {

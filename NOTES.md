@@ -132,6 +132,14 @@
 - Armadilhas: eslint `preserve-manual-memoization` rejeita deps derivados de `Map` construído com `.set` (`teamById.get(...)` → `myDivision` "may be mutated later") — derivar `myTeam` de `teams.find` dentro de `useMemo`; `headline = a ?? b` precisa do seu próprio `useMemo` senão invalida a cadeia.
 - Checks: server `typecheck` OK; client `lint` + `check:types` OK; `audit:socketio` 0 erros; `audit:gamestate 445WU8` 0 erros; harness `journal-resp-test.jsx` atualizado (8 equipas na série p/ exercitar o ⋮, humanos, artilheiros, assistências). mobile-resp-check NÃO correu — `vite dev` não arranca (binding `rolldown` gnu em falta, `npm install` sem permissões; bloqueio pré-existente já registado).
 
+## Mercado mostra os próprios jogadores à venda (novo)
+
+- Pedido: os meus jogadores também no Mercado. Implementado como interruptor desligado por defeito (decisão do utilizador: só à venda/leilão, com toggle, gerindo a listagem no card).
+- `GameContext.jsx`: estado novo `showOwnMarketPlayers` (default false); `filteredMarketPlayers` inclui os próprios com `transfer_status === "fixed"` quando ligado. Servidor já os enviava (`globalMarket` = todos os listados) — era só o filtro `team_id !== marketTeamId` que os escondia.
+- `GameRoutes.jsx`: passa flag + setter e as ações existentes (`listPlayerAuction`, `removeFromTransferList`) ao `TransferHub`.
+- `TransferHub.jsx`: checkbox "Mostrar os meus à venda" na linha de filtros; selo "Teu" (`Badge info`) nos próprios; rodapé dos próprios troca Comprar por Retirar + Leiloar (reutiliza dialogs do Plantel). Próprios em leilão continuam só nos Leilões.
+- Checks: eslint limpo nos 3 ficheiros (`lint` global só falha no untracked pré-existente `journal-cup-diagnostic.jsx`); `check:types` OK. Sem mobile-resp-check (toggle + rodapé condicional, sem mudança estrutural) e sem audits (zero servidor/lógica de jogo).
+
 ## Em curso
 
 - **Mentalidade com reset intencional a Neutro por jornada (novo):** `useSocketListeners.js` — `matchResults` (liga) e `cupRoundResults` (Taça) repõem `style: "Balanced"` além de limpar `positions` (emite `setTactic`, sem tocar no servidor). O intervalo não é afetado (só dispara a jogo terminado). Checks: client `lint` + `check:types` OK.

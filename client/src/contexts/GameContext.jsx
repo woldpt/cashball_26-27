@@ -91,6 +91,7 @@ export function GameProvider({
 	const [marketPairs, setMarketPairs] = useState([]);
 	const [marketPositionFilter, setMarketPositionFilter] = useState("all");
 	const [marketSort, setMarketSort] = useState("quality-desc");
+	const [showOwnMarketPlayers, setShowOwnMarketPlayers] = useState(false);
 	const [auctionBid, setAuctionBid] = useState("");
 	const [selectedAuctionPlayer, setSelectedAuctionPlayer] = useState(null);
 	const [isAuctionExpanded, setIsAuctionExpanded] = useState(false);
@@ -1306,7 +1307,11 @@ export function GameProvider({
 			return (b.skill || 0) - (a.skill || 0);
 		};
 		return marketPairs
-			.filter((player) => player.team_id !== marketTeamId)
+			.filter(
+				(player) =>
+					player.team_id !== marketTeamId ||
+					(showOwnMarketPlayers && player.transfer_status === "fixed"),
+			)
 			.filter((player) =>
 				marketPositionFilter === "all"
 					? true
@@ -1314,7 +1319,7 @@ export function GameProvider({
 			)
 			.map((player) => ({ ...player, marketPrice: getPlayerPrice(player) }))
 			.sort(comparePlayers);
-	}, [marketPairs, marketPositionFilter, marketSort, me?.teamId]);
+	}, [marketPairs, marketPositionFilter, marketSort, me?.teamId, showOwnMarketPlayers]);
 
 	const resetGameState = useCallback(() => {
 		matchReplayActiveRef.current = false;
@@ -1455,6 +1460,8 @@ export function GameProvider({
 		setMarketPositionFilter,
 		marketSort,
 		setMarketSort,
+		showOwnMarketPlayers,
+		setShowOwnMarketPlayers,
 		auctionBid,
 		selectedAuctionPlayer,
 		isAuctionExpanded,

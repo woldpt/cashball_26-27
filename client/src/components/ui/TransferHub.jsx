@@ -173,6 +173,8 @@ function MarketCard({
   onOpenDetails,
   onBuy,
   onBid,
+  onAuction,
+  onRemove,
   setGameDialog,
   matchweekCount,
 }) {
@@ -183,6 +185,7 @@ function MarketCard({
   const isFixed = player.transfer_status === "fixed";
   const isListed = isAuction || isFixed;
   const isMyAuction = isSameTeamId(player.auction_seller_team_id, me?.teamId);
+  const isOwn = isSameTeamId(player.team_id, me?.teamId);
   const isSuspended = (player.suspension_until_matchweek ?? 0) > matchweekCount;
   const isInjured = (player.injury_until_matchweek ?? 0) > matchweekCount;
 
@@ -238,6 +241,7 @@ function MarketCard({
         <Badge variant={status.variant} size="sm">
           {status.label}
         </Badge>
+        {isOwn && <Badge variant="info" size="sm" title="Jogador do teu plantel">Teu</Badge>}
         {!!player.is_star && (player.position === "MED" || player.position === "ATA") && <StarMark />}
         {isSuspended && <Badge variant="suspended">🟥 {(player.suspension_until_matchweek ?? 0) - matchweekCount + 1}J</Badge>}
         {isInjured && <Badge variant="injured">🩹 {(player.injury_until_matchweek ?? 0) - matchweekCount + 1}J</Badge>}
@@ -344,7 +348,31 @@ function MarketCard({
 
       {/* Rodapé único */}
       <div className="px-3 short:px-2 py-3 short:py-2 mt-auto">
-        {!isListed ? (
+        {isOwn ? (
+          <div className="flex gap-1.5 short:gap-1">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove(player);
+              }}
+              className="flex-1 py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110 border border-outline-variant/30 bg-surface text-on-surface-variant"
+            >
+              Retirar
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAuction(player);
+              }}
+              className="flex-1 py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110"
+              style={{ background: posHex, color: "#0d0d14" }}
+            >
+              Leiloar
+            </button>
+          </div>
+        ) : !isListed ? (
           <div className="rounded-lg py-2 text-center border border-outline-variant/15 bg-surface/40">
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Sem transferência</p>
           </div>
@@ -404,8 +432,12 @@ function MarketCard({
  *   setMarketPositionFilter: function,
  *   marketSort: string,
  *   setMarketSort: function,
+ *   showOwnMarketPlayers: boolean,
+ *   setShowOwnMarketPlayers: function,
  *   isSameTeamId: function,
  *   buyPlayer: function,
+ *   listPlayerAuction: function,
+ *   removeFromTransferList: function,
  *   openAuctionBid: function,
  *   onOpenPlayerHistory: function,
  *   setGameDialog: function,
@@ -422,8 +454,12 @@ export function TransferHub({
   setMarketPositionFilter,
   marketSort,
   setMarketSort,
+  showOwnMarketPlayers = false,
+  setShowOwnMarketPlayers,
   isSameTeamId,
   buyPlayer,
+  listPlayerAuction,
+  removeFromTransferList,
   openAuctionBid,
   onOpenPlayerHistory,
   setGameDialog,
@@ -499,6 +535,15 @@ export function TransferHub({
             <option value="price-asc">Preço ↑</option>
             <option value="price-desc">Preço ↓</option>
           </select>
+          <label className="flex items-center gap-2 px-3 py-2.5 short:py-1.5 text-[11px] font-bold text-on-surface-variant cursor-pointer select-none md:col-span-2">
+            <input
+              type="checkbox"
+              checked={!!showOwnMarketPlayers}
+              onChange={(e) => setShowOwnMarketPlayers?.(e.target.checked)}
+              className="w-4 h-4 accent-emerald-500"
+            />
+            Mostrar os meus à venda
+          </label>
         </div>
 
         {visible.length === 0 ? (
@@ -521,6 +566,8 @@ export function TransferHub({
                 onOpenDetails={onOpenPlayerHistory}
                 onBuy={buyPlayer}
                 onBid={openAuctionBid}
+                onAuction={listPlayerAuction}
+                onRemove={removeFromTransferList}
                 setGameDialog={setGameDialog}
                 matchweekCount={matchweekCount}
               />
