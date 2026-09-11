@@ -2,7 +2,7 @@ node_modules/
 .env
 dist/
 game.db
-server/db/game_*.db
+#server/db/game_*.db
 server/db/accounts.db
 server/server.log
 .vscode/mcp.json
