@@ -69,7 +69,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     teamInfo,
     lockedCoaches,
     panelMode,
-    currentJornada,
+    calendarIndex,
     // Additional state needed by JSX
     sidebarUserPrefRef,
     setAdminPanelOpen,
@@ -353,7 +353,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 opacity: 0.7,
               }}
             >
-              {seasonYear} · J{currentJornada} · {me.roomName || me.roomCode}
+              {seasonYear} · S{(calendarIndex ?? 0) + 1} · {me.roomName || me.roomCode}
             </span>
           </div>
 
@@ -481,7 +481,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   >
                     {/* Contexto da época (único sítio visível no mobile) */}
                     <p className="px-4 pt-3 pb-2 text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/70 border-b border-outline-variant/20 truncate">
-                      {seasonYear} · J{currentJornada} · {me.roomName || me.roomCode}
+                      {seasonYear} · S{(calendarIndex ?? 0) + 1} · {me.roomName || me.roomCode}
                     </p>
                     {/* A minha conta */}
                     <button
