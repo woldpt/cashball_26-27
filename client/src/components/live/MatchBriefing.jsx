@@ -58,7 +58,7 @@ export function MatchBriefing() {
       <div className="lg:shrink-0 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
         <div className="flex items-center justify-between gap-2 px-4 short:px-3 py-2 short:py-1 lg:py-3 short:lg:py-2 border-b border-outline-variant/15">
           <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
-            <span aria-hidden>📋</span> Briefing da Jornada
+            <span aria-hidden>📋</span> Briefing · {vm.competition}
           </span>
           <PrepStepper current="briefing" />
         </div>
@@ -88,13 +88,43 @@ export function MatchBriefing() {
         </div>
       </div>
 
-      {/* Confronto + scouting */}
+      {/* Faixa do amigável: só para testar */}
+      {vm.cupRound === 0 && (
+        <div className="flex items-center gap-2 rounded-2xl border border-outline-variant/25 bg-surface-container px-4 short:px-3 py-2.5 short:py-2">
+          <span aria-hidden>🤝</span>
+          <p className="text-[11px] short:text-[10px] font-bold text-gray-300">
+            Amigável de pré-época — só para testar: sem cartões nem lesões.
+          </p>
+        </div>
+      )}
+
+      {/* Confronto + scouting (ou espião sem adversário) */}
       <div className="flex flex-col lg:flex-row gap-3 short:gap-1.5 items-stretch lg:flex-1">
-        {vm.hasOpponent && (
+        {vm.hasOpponent ? (
           <div className="flex-1 min-w-0 lg:flex lg:flex-col">
             <NextMatchCard vm={vm} onOpenTeamSquad={handleOpenTeamSquad} />
           </div>
-        )}
+        ) : vm.spyGames.length > 0 ? (
+          <div className="flex-1 min-w-0 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden lg:flex lg:flex-col">
+            <div className="px-4 short:px-3 py-2 short:py-1.5 border-b border-outline-variant/15">
+              <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
+                <span aria-hidden>🔭</span> Jogos da ronda
+              </span>
+            </div>
+            <ul className="px-3 short:px-2 py-2 short:py-1.5 flex flex-col gap-1.5 short:gap-1">
+              {vm.spyGames.map((g, i) => (
+                <li
+                  key={`${g.homeTeamId}-${g.awayTeamId}-${i}`}
+                  className="min-w-0 bg-surface-container-low/60 border border-outline-variant/25 rounded-xl px-2.5 py-2 flex items-center gap-2 text-[11px] font-black text-white"
+                >
+                  <span className="flex-1 min-w-0 truncate text-right">{g.homeName}</span>
+                  <span aria-hidden className="shrink-0 text-gray-600 text-[9px]">VS</span>
+                  <span className="flex-1 min-w-0 truncate">{g.awayName}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <div className="lg:w-72 shrink-0 flex flex-col gap-3 short:gap-1.5 lg:h-full">
           {vm.stadium ? (
             <StadiumCard stadium={vm.stadium} />

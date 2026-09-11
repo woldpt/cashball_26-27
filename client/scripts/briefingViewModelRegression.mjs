@@ -14,6 +14,8 @@
  *   S6 — atmosfera do estádio nos limiares 90/70/40;
  *   S7 — tempo: etiqueta pt-PT com fallback para condição desconhecida;
  *   S8 — sem resumo → null; sem adversário → modelo parcial (hasOpponent false).
+ *   S9 — prova no modelo: cupRound passa, competição do amigável etiqueta,
+ *        roundFixtures viram spyGames (vazias por omissão).
  *
  * Run: cd client && npm run test:briefing
  */
@@ -250,6 +252,47 @@ check(
 check(
   vmNoOpp.compare.quality[1] === null,
   "S8d: qualidade do adversário ausente → null (mostra —)",
+);
+
+/* ── S9: prova e espião ──────────────────────────────────────────────── */
+const vmCup = buildBriefingViewModel(
+  { ...baseSummary, isCup: true, cupRound: 2, cupRoundName: "Oitavos de final" },
+  teamInfo,
+);
+check(
+  vmCup.cupRound === 2 && vmCup.competition === "Oitavos de final",
+  "S9a: ronda da taça passa e etiqueta a competição",
+);
+const vmFriendly = buildBriefingViewModel(
+  { ...baseSummary, isCup: true, cupRound: 0, cupRoundName: "Amigável de pré-época" },
+  teamInfo,
+);
+check(
+  vmFriendly.cupRound === 0 &&
+    vmFriendly.competition === "Amigável de pré-época" &&
+    vmFriendly.spyGames.length === 0,
+  "S9b: amigável etiqueta e sem espião",
+);
+check(
+  vmHome.cupRound === null && vmHome.competition === "Jornada 7",
+  "S9c: liga sem ronda e etiqueta Jornada N",
+);
+const vmSpy = buildBriefingViewModel(
+  {
+    ...baseSummary,
+    opponent: null,
+    roundFixtures: [
+      { homeTeamId: 1, awayTeamId: 2, homeName: "A", awayName: "B" },
+      { homeTeamId: 3, awayTeamId: 4, homeName: "C", awayName: "D" },
+    ],
+  },
+  teamInfo,
+);
+check(
+  vmSpy.hasOpponent === false &&
+    vmSpy.spyGames.length === 2 &&
+    vmSpy.spyGames[0].homeName === "A",
+  "S9d: eliminado com ronda → 2 jogos espiões",
 );
 
 if (failures > 0) {

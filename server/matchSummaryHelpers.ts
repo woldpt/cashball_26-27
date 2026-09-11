@@ -764,13 +764,32 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         [game.season, currentEntry.round, teamId, teamId],
       );
       if (!cupMatch) {
-        // Team is eliminated from this round — return spectator summary (no opponent)
+        // Sem jogo esta semana (eliminado da Taça ou bye do amigável) —
+        // resumo espião: a ronda para ver os outros em vez de briefing vazio.
+        const roundFixtures = await runAll(
+          game.db,
+          `SELECT cm.home_team_id, cm.away_team_id, th.name AS home_name, ta.name AS away_name
+           FROM cup_matches cm
+           LEFT JOIN teams th ON th.id = cm.home_team_id
+           LEFT JOIN teams ta ON ta.id = cm.away_team_id
+           WHERE cm.season = ? AND cm.round = ?
+           ORDER BY cm.id`,
+          [game.season, currentEntry.round],
+        );
         return {
           matchweek: game.matchweek,
           isCup: true,
           cupRound: (currentEntry as any).round,
           cupRoundName: (currentEntry as any).roundName,
           opponent: null,
+          headline: "Sem jogo esta semana — sobra espiar os outros.",
+          stakes: buildStakes(null, null, true),
+          roundFixtures: (roundFixtures || []).map((m: any) => ({
+            homeTeamId: m.home_team_id,
+            awayTeamId: m.away_team_id,
+            homeName: m.home_name ?? "—",
+            awayName: m.away_name ?? "—",
+          })),
         };
       }
 

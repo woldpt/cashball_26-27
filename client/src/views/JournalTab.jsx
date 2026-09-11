@@ -24,6 +24,7 @@
  * (só para detetar equipas de treinadores humanos), tudo do GameContext.
  */
 import { useMemo } from "react";
+import { SEASON_CALENDAR } from "../constants/index.js";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { TeamCrest } from "../components/live/TeamCrest.jsx";
 import { formatCurrency } from "../utils/formatters.js";
@@ -363,6 +364,28 @@ export function JournalTab({
     [globalNews],
   );
 
+  // ── Último evento: a capa segue o jogo antecedente ─────────────────────
+  // Índice de calendário por resultado (liga/taça/amigável). Sem resultados
+  // → null (pré-época ou época nova); nesse caso só as tiras de época contam.
+  const lastEvent = useMemo(() => {
+    let best = -1;
+    for (const r of results) {
+      let idx = -1;
+      if (r.competition === "League") {
+        idx = SEASON_CALENDAR.findIndex(
+          (e) => e.type === "league" && e.matchweek === r.matchweek,
+        );
+      } else if (r.competition === "Cup" || r.competition === "Friendly") {
+        const round = r.competition === "Friendly" ? 0 : r.round;
+        idx = SEASON_CALENDAR.findIndex(
+          (e) => (e.type === "cup" || e.type === "friendly") && e.round === round,
+        );
+      }
+      if (idx > best) best = idx;
+    }
+    return best >= 0 ? (SEASON_CALENDAR[best] ?? null) : null;
+  }, [results]);
+
   // Mapas da jornada numa só passagem sobre teams/players: emblema por
   // equipa, equipas de treinadores humanos e nome do treinador por equipa.
   // Chaves sempre Number() — o servidor manda números, o contexto pode
@@ -444,17 +467,39 @@ export function JournalTab({
           ) ?? null),
     [lastWeekGames, myTeamId],
   );
+  // Última ronda da Taça jogada. O meu jogo da taça é o dessa ronda — se fui
+  // eliminado antes, não há jogo meu (cai na liga em vez de manchete velha).
+  const lastCupRound = useMemo(
+    () =>
+      results.reduce(
+        (max, r) =>
+          r.competition === "Cup" ? Math.max(max, r.round || 0) : max,
+        0,
+      ),
+    [results],
+  );
+  // Jogos da ronda (só quando a ronda manda na capa).
+  const cupRoundGames = useMemo(
+    () =>
+      lastEvent?.type === "cup"
+        ? results.filter(
+            (r) => r.competition === "Cup" && (r.round || 0) === lastEvent.round,
+          )
+        : [],
+    [results, lastEvent],
+  );
   const myCupGame = useMemo(() => {
-    if (myTeamId == null) return null;
-    const mine = results.filter(
-      (r) =>
-        r.competition === "Cup" &&
-        (Number(r.homeTeamId) === myTeamId ||
-          Number(r.awayTeamId) === myTeamId),
+    if (myTeamId == null || lastCupRound === 0) return null;
+    return (
+      results.find(
+        (r) =>
+          r.competition === "Cup" &&
+          (r.round || 0) === lastCupRound &&
+          (Number(r.homeTeamId) === myTeamId ||
+            Number(r.awayTeamId) === myTeamId),
+      ) ?? null
     );
-    mine.sort((a, b) => (b.round || 0) - (a.round || 0));
-    return mine[0] ?? null;
-  }, [results, myTeamId]);
+  }, [results, myTeamId, lastCupRound]);
   const headline = useMemo(
     () => myLeagueGame ?? myCupGame,
     [myLeagueGame, myCupGame],
@@ -546,6 +591,44 @@ export function JournalTab({
     });
   }, [lastWeekGames, myDivision, headline, humanTeamIds]);
 
+  // Jogos de humanos da ronda (a tira da taça; sem o jogo da manchete).
+  const roundHumans = useMemo(() => {
+    if (lastEvent?.type !== "cup") return [];
+    const headKey = headline ? gameKey(headline) : null;
+    return cupRoundGames.filter((r) => {
+      if (gameKey(r) === headKey) return false;
+      return (
+        humanTeamIds.has(Number(r.homeTeamId)) ||
+        humanTeamIds.has(Number(r.awayTeamId))
+      );
+    });
+  }, [cupRoundGames, headline, humanTeamIds, lastEvent]);
+
+  // Linha de jogo de humanos (tira da ronda + tira de treinadores).
+  const renderHumanRow = (r) => {
+    const div =
+      Number(r.homeDivision) === Number(r.awayDivision)
+        ? r.homeDivision
+        : null;
+    const coachIds = [r.homeTeamId, r.awayTeamId].filter((id) =>
+      humanTeamIds.has(Number(id)),
+    );
+    const coachTxt = coachIds
+      .map((id) => coachByTeamId.get(Number(id)))
+      .filter(Boolean)
+      .join(" · ");
+    return (
+      <ComicResultRow
+        key={gameKey(r)}
+        r={r}
+        teamById={teamById}
+        myTeamId={myTeamId}
+        craft={crafty}
+        contextLabel={`${div != null ? `Série ${div}` : "Taça"}${coachTxt ? ` · 🧢 ${coachTxt}` : ""}`}
+      />
+    );
+  };
+
   // ── Mini-classificação da minha divisão ─────────────────────────────────
   const miniTable = useMemo(() => {
     if (myDivision == null) return { rows: [], myPos: -1, total: 0 };
@@ -603,17 +686,22 @@ export function JournalTab({
   const fansMood = myTeam?.fans_mood ?? null;
   const myGameCrowd = headline ? crowdLine(headline) : null;
   const bestHouse = useMemo(() => {
-    const pool = [...seriesGames, ...(myLeagueGame ? [myLeagueGame] : [])].filter(
-      (r) => r.attendance != null,
-    );
+    const eventPool =
+      lastEvent?.type === "cup"
+        ? cupRoundGames
+        : lastEvent?.type === "friendly"
+          ? friendlyResults
+          : [...seriesGames, ...(myLeagueGame ? [myLeagueGame] : [])];
+    const pool = eventPool.filter((r) => r.attendance != null);
     if (pool.length === 0) return null;
     pool.sort((a, b) => (b.attendance || 0) - (a.attendance || 0));
     return pool[0];
-  }, [seriesGames, myLeagueGame]);
+  }, [seriesGames, myLeagueGame, cupRoundGames, friendlyResults, lastEvent]);
 
   const hasAnything =
     headline != null ||
     friendlyResults.length > 0 ||
+    cupRoundGames.length > 0 ||
     seriesGames.length > 0 ||
     humanGames.length > 0 ||
     miniTable.rows.length > 0 ||
@@ -775,7 +863,7 @@ export function JournalTab({
 
       {/* ── TIRAS (recortes de moldura) ───────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 short:gap-2 items-start">
-        {friendlyResults.length > 0 && lastWeek === 0 && (
+        {friendlyResults.length > 0 && lastEvent?.type === "friendly" && (
           <FanzineCard
             sticker="Pré-época"
             meta="Amigável"
@@ -803,7 +891,7 @@ export function JournalTab({
           </FanzineCard>
         )}
 
-        {seriesGames.length > 0 && (
+        {seriesGames.length > 0 && lastEvent?.type === "league" && (
           <FanzineCard
             sticker="A tua série"
             meta={`Jornada ${lastWeek}`}
@@ -825,6 +913,23 @@ export function JournalTab({
             </div>
             <p className="px-2.5 pb-2 text-[10px] italic text-on-surface-variant/70">
               Recorte e cole no caderno do mister. ✂️
+            </p>
+          </FanzineCard>
+        )}
+
+        {lastEvent?.type === "cup" && roundHumans.length > 0 && (
+          <FanzineCard
+            sticker="Taça"
+            stickerClass="bg-amber-500 text-zinc-950"
+            meta={cupLabel(lastEvent.round)}
+            tilt={crafty ? tiltPos : ""}
+            shadowCls={cardShadow}
+            stickerRot={stickerRot}
+            craft={crafty}
+          >
+            <div>{roundHumans.map(renderHumanRow)}</div>
+            <p className="px-2.5 pb-2 text-[10px] italic text-on-surface-variant/70">
+              A eliminar é que está o ganho.
             </p>
           </FanzineCard>
         )}
@@ -900,7 +1005,7 @@ export function JournalTab({
           </FanzineCard>
         )}
 
-        {humanGames.length > 0 && (
+        {humanGames.length > 0 && lastEvent?.type === "league" && (
           <FanzineCard
             sticker="Outros treinadores"
             stickerClass="bg-amber-500 text-zinc-950"
@@ -910,31 +1015,7 @@ export function JournalTab({
             stickerRot={stickerRot}
             craft={crafty}
           >
-            <div>
-              {humanGames.map((r) => {
-                const div =
-                  Number(r.homeDivision) === Number(r.awayDivision)
-                    ? r.homeDivision
-                    : null;
-                const coachIds = [r.homeTeamId, r.awayTeamId].filter((id) =>
-                  humanTeamIds.has(Number(id)),
-                );
-                const coachTxt = coachIds
-                  .map((id) => coachByTeamId.get(Number(id)))
-                  .filter(Boolean)
-                  .join(" · ");
-                return (
-                  <ComicResultRow
-                    key={gameKey(r)}
-                    r={r}
-                    teamById={teamById}
-                    myTeamId={myTeamId}
-                    craft={crafty}
-                    contextLabel={`${div != null ? `Série ${div}` : "Taça"}${coachTxt ? ` · 🧢 ${coachTxt}` : ""}`}
-                  />
-                );
-              })}
-            </div>
+            <div>{humanGames.map(renderHumanRow)}</div>
             <p className="px-2.5 pb-2 text-[10px] italic text-on-surface-variant/70">
               Espionagem legal: vê como andam os teus rivais de carne e osso. 🕵️
             </p>

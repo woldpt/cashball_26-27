@@ -507,6 +507,45 @@ const teamForms = {
 
 const players = [{ teamId: 3, name: "Mister da Segunda" }];
 
+// Cenário B — antecedente de taça (sem liga): manchete da ronda + tira de
+// humanos. Exercita a capa por último evento com nomes compridos.
+const resultsB = [
+  {
+    competition: "Cup",
+    matchweek: null,
+    round: 4,
+    homeTeamId: 1,
+    awayTeamId: 4,
+    homeName: "Real Desportivo Atlético de Santa Maria da Feira",
+    awayName: "F.C. Atlântico Norte",
+    homeDivision: 1,
+    awayDivision: 3,
+    homeScore: 2,
+    awayScore: 1,
+    attendance: 24110,
+    homeCapacity: 25000,
+    momHome: null,
+    momAway: null,
+  },
+  {
+    competition: "Cup",
+    matchweek: null,
+    round: 4,
+    homeTeamId: 3,
+    awayTeamId: 12,
+    homeName: "União Recreacionista de Vila Nova de Milharadas",
+    awayName: "Clube Oriental da Segunda Com Nome Bastante Comprido",
+    homeDivision: 2,
+    awayDivision: 2,
+    homeScore: 0,
+    awayScore: 0,
+    attendance: 9876,
+    homeCapacity: 12000,
+    momHome: null,
+    momAway: null,
+  },
+];
+
 const root = createRoot(document.getElementById("root"));
 root.render(
   // Mimics the GameLayout mobile container: <main> > div.p-4 > tab content
@@ -514,6 +553,21 @@ root.render(
     <div className="p-4 lg:p-6">
       <JournalTab
         globalNews={{ news, results }}
+        teams={teams}
+        me={{ teamId: 1 }}
+        seasonYear={2026}
+        topScorers={topScorers}
+        teamForms={teamForms}
+        players={players}
+        onOpenPlayerHistory={() => {}}
+      />
+    </div>
+    <div className="p-4 lg:p-6">
+      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest my-4">
+        Cenário B — ronda da Taça
+      </p>
+      <JournalTab
+        globalNews={{ news, results: resultsB }}
         teams={teams}
         me={{ teamId: 1 }}
         seasonYear={2026}

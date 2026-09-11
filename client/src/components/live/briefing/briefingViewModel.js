@@ -8,7 +8,7 @@
  * (`scripts/briefingViewModelRegression.mjs`).
  *
  * Contrato de entrada (servidor — ver `server/matchSummaryHelpers.ts`):
- * - summary: `{ venue, isCup, matchweek, cupRoundName, headline, stakes,
+ * - summary: `{ venue, isCup, matchweek, cupRound, cupRoundName, roundFixtures, headline, stakes,
  *   difficulty: { score, label }, team: {...}, opponent: {...}|null,
  *   odds: { home, draw, away }, referee: { name }|null,
  *   weatherForecast: { condition, emoji }|null, stadium: {...}|null }`
@@ -145,6 +145,8 @@ export function buildBriefingViewModel(s, teamInfo) {
     hasOpponent,
     isHome,
     isCup: !!s.isCup,
+    cupRound: s.cupRound ?? null,
+    spyGames: Array.isArray(s.roundFixtures) ? s.roundFixtures : [],
     venue: s.venue ?? null,
     competition: s.isCup
       ? (s.cupRoundName ?? "Taça")
