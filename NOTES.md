@@ -435,3 +435,9 @@ Plano C1+C2 (quando fizer):
 
 - **Aviso de pausa estendido a lesão/penálti/GR (novo):** os outros coaches só viam o banner por cima do marcador em substituições pedidas (`request_substitution`); lesão/penálti/GR improvisado/GR expulso abriam `matchActionRequired` que o cliente alheio descartava em silêncio. Agora o `waitForMatchAction` (`server/game/engine.ts`) emite `substitutionPauseStarted` com `{ teamId, coachName, type }` ao abrir ação de `injury`/`penalty`/`emergency_gk`/`gk_red_card` e `substitutionPauseEnded` ao resolver (antes só `user_substitution`); `request_substitution` passou a enviar `type: "user_substitution"`; `useSocketListeners.js` guarda o `type`; `LiveMatchHero.jsx` mostra texto por tipo (`PAUSE_TEXT`: substituições/lesão/penálti/reorganizar equipa). Banner continua oculto para o próprio (vê o modal).
   - Checks: server `typecheck` OK; eslint dos ficheiros + `check:types` OK (`lint` global só falha no untracked alheio `journal-cup-diagnostic.jsx`, pré-existente); `audit:socketio` 0 erros (emits via `io.to()` no engine não entram no registry — como antes).
+
+## BalanceLineChart — eixo Y com zoom aos dados (fix)
+
+- Eixo deixou de forçar o zero (`Math.min(0,…)`/`Math.max(0,…)` removidos): `axisMin`/`axisMax` = `rawMin/rawMax ± pad` (12% do span, mín. 1); 4 níveis igualmente espaçados mantidos. A escala segue a amplitude do histórico em vez de saltar ancorada ao zero.
+- Área fecha em `fillY` (zero visível, senão bordo do gráfico) para não projetar para fora do SVG quando tudo é positivo/negativo; baseline zero e pontos de cruzamento mantêm o `zeroY` real. Só `BalanceLineChart.jsx`.
+- Checks: eslint limpo + `check:types` OK. Sem mobile-resp-check (mesma estrutura SVG, só cálculo de escala).
