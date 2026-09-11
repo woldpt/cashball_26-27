@@ -3,7 +3,7 @@ import { socket, queueEmit, flushOutbox } from "../socket.js";
 import { loadTacticSnapshot } from "../utils/uiSnapshot.js";
 import { isSameTeamId } from "../utils/teamHelpers.js";
 import { seasonToYear } from "../utils/formatters.js";
-import { playGoalSound, playVarSound } from "../utils/audio.js";
+import { playGoalSound, playVarSound, playSigningSound, playBooSound } from "../utils/audio.js";
 import {
   MAX_MATCH_SUBS,
   POSITION_SHORT_LABELS,
@@ -67,6 +67,51 @@ function buildPlayerStats({
 		});
 	}
 	return stats;
+}
+
+/**
+ * Avatar para os modais de contrato (proposta e festa), a partir do plantel.
+ *
+ * @param {object} refs refs partilhados (usa `mySquadRef`, `teamsRef`, `meRef`)
+ * @param {number} playerId id do jogador
+ * @param {object} over campos vindos do servidor (preferidos ao plantel)
+ */
+function contractAvatar(refs, playerId, over = {}) {
+	const squad = Array.isArray(refs.mySquadRef?.current)
+		? refs.mySquadRef.current
+		: [];
+	const row = squad.find((p) => Number(p.id) === Number(playerId));
+	const teams = Array.isArray(refs.teamsRef?.current)
+		? refs.teamsRef.current
+		: [];
+	const myTeam = teams.find(
+		(t) => Number(t.id) === Number(refs.meRef?.current?.teamId),
+	);
+	return {
+		seed: playerId,
+		position: over.position ?? row?.position,
+		teamColor: myTeam?.color_primary || myTeam?.colorPrimary || "#27272a",
+		nationality: over.nationality ?? row?.nationality ?? null,
+		photo: over.photo ?? row?.photo ?? null,
+	};
+}
+
+/**
+ * Mostra o desfecho de um contrato (festa/malas): transforma o modal do
+ * próprio jogador se ainda estiver aberto, senão entra na fila (nunca
+ * esmaga o pedido de outro jogador que esteja no ecrã).
+ */
+function showContractOutcome(handlers, refs, playerId, dialog) {
+	const cur = refs.gameDialogRef?.current;
+	if (
+		cur &&
+		cur.kind === "contract" &&
+		Number(cur.playerId) === Number(playerId)
+	) {
+		handlers.setGameDialog(dialog);
+	} else {
+		handlers.queueContractDialog(dialog);
+	}
 }
 
 function hasSeenWelcome(coachName, roomCode) {
@@ -657,8 +702,13 @@ export function useSocketListeners(handlers, refs) {
 				agent,
 			}) => {
 				if (!inRoom()) return;
-				handlers.setGameDialog({
+				const waitingText = `A falar com ${agent || "o agente"}…`;
+				const counter = {
 					mode: "confirm",
+					kind: "contract",
+					playerId,
+					awaitServer: true,
+					phase: "proposal",
 					title: `Contra-proposta — ${playerName}`,
 					description: `🤨 ${agent || "O agente"} diz que a tua oferta é "um insulto à profissão". ${playerName} exige €${demandedWage.toLocaleString("pt-PT")}/sem. Aceitas ou vai brilhar no leilão?`,
 					stats: buildPlayerStats({
@@ -671,11 +721,18 @@ export function useSocketListeners(handlers, refs) {
 					positionPeers: buildPositionPeers(refs, position, playerId),
 					confirmLabel: "Aceitar",
 					cancelLabel: "Leilão",
-					onConfirm: () =>
-						queueEmit("acceptCounterOffer", { playerId, accepted: true }),
-					onCancel: () =>
-						queueEmit("acceptCounterOffer", { playerId, accepted: false }),
-				});
+					onConfirm: () => {
+						queueEmit("acceptCounterOffer", { playerId, accepted: true });
+						handlers.setGameDialog({ ...counter, phase: "waiting", waitingText });
+					},
+					onCancel: () => {
+						queueEmit("acceptCounterOffer", { playerId, accepted: false });
+						handlers.setGameDialog({ ...counter, phase: "waiting", waitingText });
+					},
+				};
+				// A contra-proposta é o desfecho da espera do próprio jogador:
+				// transforma esse modal, nunca o de outro jogador.
+				showContractOutcome(handlers, refs, playerId, counter);
 			},
 		);
 		socket.on(
@@ -700,9 +757,13 @@ export function useSocketListeners(handlers, refs) {
 				const headline = isRenegotiation
 					? `📈 ${agent} viu o teu plantel no Excel: ${playerName} vale muito mais do que recebe. Exige €${requestedWage.toLocaleString("pt-PT")}/sem ou ameaça "conversas com outros clubes".${endText}`
 					: `📞 ${agent} ligou em pânico: ${playerName} anda a olhar para vitrinas de troféus que não são as tuas! Exige €${requestedWage.toLocaleString("pt-PT")}/sem.${endText}`;
-				handlers.queueContractDialog({
+				const waitingText = `A falar com ${agent}…`;
+				const proposal = {
 					mode: "confirm",
+					kind: "contract",
 					playerId,
+					awaitServer: true,
+					phase: "proposal",
 					title: `Agente do Jogador — ${playerName}`,
 					description: headline,
 					stats: buildPlayerStats({
@@ -718,13 +779,97 @@ export function useSocketListeners(handlers, refs) {
 					confirmLabel: "Aceitar",
 					cancelLabel: "Leilão",
 					cancelDanger: true,
-					onConfirm: () =>
+					onConfirm: () => {
 						queueEmit("renewContract", {
 							playerId,
 							offeredWage: requestedWage,
-						}),
-					onCancel: () =>
-						queueEmit("declineContractRequest", { playerId }),
+						});
+						handlers.setGameDialog({ ...proposal, phase: "waiting", waitingText });
+					},
+					onCancel: () => {
+						queueEmit("declineContractRequest", { playerId });
+						handlers.setGameDialog({ ...proposal, phase: "waiting", waitingText });
+					},
+				};
+				handlers.queueContractDialog(proposal);
+			},
+		);
+		socket.on(
+			"contractRenewed",
+			({
+				playerId,
+				playerName,
+				position,
+				skill,
+				wage,
+				agent,
+				contractEndMatchweek,
+				contractEndSeason,
+				photo,
+				nationality,
+			}) => {
+				if (!inRoom()) return;
+				playSigningSound();
+				const endText =
+					contractEndMatchweek && contractEndSeason
+						? `${seasonToYear(contractEndSeason)}, Jornada ${contractEndMatchweek}`
+						: "";
+				showContractOutcome(handlers, refs, playerId, {
+					mode: "confirm",
+					kind: "contract",
+					playerId,
+					phase: "renewed",
+					hideCancel: true,
+					title: `Renovado — ${playerName}`,
+					description: `🥂 ${playerName} renovou${endText ? ` até ${endText}` : ""}. ${agent} já celebrou com champanhe… que depois te manda a conta.`,
+					stats: buildPlayerStats({
+						position,
+						skill,
+						wage,
+						contractEndMatchweek,
+						contractEndSeason,
+					}),
+					avatar: contractAvatar(refs, playerId, {
+						position,
+						photo,
+						nationality,
+					}),
+					confirmLabel: "Continuar",
+					onConfirm: () => {},
+					onCancel: () => {},
+				});
+			},
+		);
+		socket.on(
+			"contractDeclined",
+			({
+				playerId,
+				playerName,
+				position,
+				skill,
+				agent,
+				photo,
+				nationality,
+			}) => {
+				if (!inRoom()) return;
+				playBooSound();
+				showContractOutcome(handlers, refs, playerId, {
+					mode: "confirm",
+					kind: "contract",
+					playerId,
+					phase: "declined",
+					hideCancel: true,
+					title: `Fez as malas — ${playerName}`,
+					description: `💼 ${agent} fez as malas: ${playerName} vai para leilão. Se for vendido, a verba vai para o teu clube.`,
+					stats: buildPlayerStats({ position, skill }),
+					avatar: contractAvatar(refs, playerId, {
+						position,
+						photo,
+						nationality,
+					}),
+					confirmLabel: "Continuar",
+					onConfirm: () => {},
+					onCancel: () => {},
 				});
 			},
 		);
@@ -1743,6 +1888,8 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("playerSigned");
 			socket.off("renewContractCounterOffer");
 			socket.off("contractRequest");
+			socket.off("contractRenewed");
+			socket.off("contractDeclined");
 			socket.off("teamAssigned");
 			socket.off("teamSquadData");
 			socket.off("nextMatchSummary");

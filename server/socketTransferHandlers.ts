@@ -418,10 +418,18 @@ export function registerTransferSocketHandlers(
               const end = contractEndInfo({ contract_start_epoch: epoch });
               refreshMarket(game);
               emitSquadForPlayer(game, playerState.teamId);
-              socket.emit(
-                "systemMessage",
-                `🥂 ${player.name} renovou até ${seasonToYear(end.season)}, Jornada ${end.matchweek}. ${getAgentName(player.id)} já celebrou com champanhe… que depois te manda a conta.`,
-              );
+              socket.emit("contractRenewed", {
+                playerId,
+                playerName: player.name,
+                position: player.position,
+                skill: player.skill,
+                wage: acceptedWage,
+                agent: getAgentName(player.id),
+                contractEndSeason: end.season,
+                contractEndMatchweek: end.matchweek,
+                photo: player.photo || null,
+                nationality: player.nationality || null,
+              });
             },
           );
         } else {
@@ -455,10 +463,15 @@ export function registerTransferSocketHandlers(
                   else emitSquadForPlayer(game, playerState.teamId);
                 },
               );
-              socket.emit(
-                "systemMessage",
-                `💼 ${getAgentName(player.id)} fez as malas: ${player.name} recusou e foi para leilão.`,
-              );
+              socket.emit("contractDeclined", {
+                playerId,
+                playerName: player.name,
+                position: player.position,
+                skill: player.skill,
+                agent: getAgentName(player.id),
+                photo: player.photo || null,
+                nationality: player.nationality || null,
+              });
             }, true);
           };
 
@@ -524,10 +537,15 @@ export function registerTransferSocketHandlers(
               else emitSquadForPlayer(game, playerState.teamId);
             },
           );
-          socket.emit(
-            "systemMessage",
-            `💼 ${getAgentName(player.id)} fez as malas: ${player.name} recusou esperar e foi para leilão. Se for vendido, a verba vai para o teu clube.`,
-          );
+          socket.emit("contractDeclined", {
+            playerId,
+            playerName: player.name,
+            position: player.position,
+            skill: player.skill,
+            agent: getAgentName(player.id),
+            photo: player.photo || null,
+            nationality: player.nationality || null,
+          });
         }, true);
       },
     );
@@ -576,16 +594,45 @@ export function registerTransferSocketHandlers(
               const end = contractEndInfo({ contract_start_epoch: epoch });
               refreshMarket(game);
               emitSquadForPlayer(game, playerState.teamId);
-              socket.emit(
-                "systemMessage",
-                `🥂 ${player.name} renovou até ${seasonToYear(end.season)}, Jornada ${end.matchweek}. ${getAgentName(player.id)} já celebrou com champanhe… que depois te manda a conta.`,
-              );
+              socket.emit("contractRenewed", {
+                playerId,
+                playerName: player.name,
+                position: player.position,
+                skill: player.skill,
+                wage: pending.demandedWage,
+                agent: getAgentName(player.id),
+                contractEndSeason: end.season,
+                contractEndMatchweek: end.matchweek,
+                photo: player.photo || null,
+                nationality: player.nationality || null,
+              });
             },
           );
         },
       );
     } else {
-      pending.sendToAuction();
+      game.db.get(
+        "SELECT * FROM players WHERE id = ?",
+        [playerId],
+        (err: Error | null, player: any) => {
+          if (
+            !err &&
+            player &&
+            Number(player.team_id) === Number(playerState.teamId)
+          ) {
+            socket.emit("contractDeclined", {
+              playerId,
+              playerName: player.name,
+              position: player.position,
+              skill: player.skill,
+              agent: getAgentName(player.id),
+              photo: player.photo || null,
+              nationality: player.nationality || null,
+            });
+          }
+          pending.sendToAuction();
+        },
+      );
     }
   });
 

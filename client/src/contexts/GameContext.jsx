@@ -1162,6 +1162,25 @@ export function GameProvider({
 				const offeredWage = Number(val);
 				if (!Number.isFinite(offeredWage) || offeredWage <= 0) return;
 				queueEmit("renewContract", { playerId: player.id, offeredWage });
+				// A festa chega por `contractRenewed` (ou a contra-proposta) —
+				// o modal fica em espera em vez de fechar.
+				setGameDialog({
+					mode: "confirm",
+					kind: "contract",
+					playerId: player.id,
+					awaitServer: true,
+					phase: "waiting",
+					title: `Renovar Contrato — ${player.name}`,
+					waitingText: "A falar com o agente…",
+					avatar: {
+						seed: player.id,
+						position: player.position,
+						nationality: player.nationality ?? null,
+						photo: player.photo ?? null,
+					},
+					onConfirm: () => {},
+					onCancel: () => {},
+				});
 			},
 			onCancel: () => {},
 		});

@@ -85,10 +85,6 @@
       "socketTransferHandlers.ts",
       "socketTransferHandlers.ts",
       "socketTransferHandlers.ts",
-      "socketTransferHandlers.ts",
-      "socketTransferHandlers.ts",
-      "socketTransferHandlers.ts",
-      "socketTransferHandlers.ts",
       "socketTransferHandlers.ts"
     ],
     "receive": []
@@ -534,6 +530,21 @@
   },
   "playerSigned": {
     "emit": [
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts"
+    ],
+    "receive": []
+  },
+  "contractRenewed": {
+    "emit": [
+      "socketTransferHandlers.ts",
+      "socketTransferHandlers.ts"
+    ],
+    "receive": []
+  },
+  "contractDeclined": {
+    "emit": [
+      "socketTransferHandlers.ts",
       "socketTransferHandlers.ts",
       "socketTransferHandlers.ts"
     ],

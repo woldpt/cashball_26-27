@@ -1,7 +1,10 @@
 import { useEffect, useRef } from "react";
-import { MODAL_Z } from "../../constants/index.js";
+import { motion } from "framer-motion";
+import { MODAL_Z, POSITION_ACCENT_HEX } from "../../constants/index.js";
 import { ModalShell } from "./ModalShell.jsx";
 import { Button } from "./Button.jsx";
+import { CelebrationBurst } from "./CelebrationBurst.jsx";
+import { PlayerAvatar } from "./PlayerAvatar.jsx";
 
 /**
  * Custom in-game dialog replacing window.prompt / window.confirm.
@@ -21,6 +24,17 @@ import { Button } from "./Button.jsx";
     positionPeers?: Array<{ id: number, name: string, skill: number, wage: number }>,
  *     onConfirm: (value?: string) => void,
  *     onCancel: () => void,
+ *     // Contratos: o modal fica aberto à espera do servidor e transforma-se
+ *     // no sítio (proposal → waiting → renewed|declined|counter). Com
+ *     // `awaitServer`, Confirmar/Cancelar emitem sem fechar; a fase `waiting`
+ *     // esconde os botões; as fases terminais mostram Continuar (hideCancel).
+ *     kind?: "contract",
+ *     playerId?: number,
+ *     awaitServer?: boolean,
+ *     phase?: "proposal"|"waiting"|"renewed"|"declined",
+ *     waitingText?: string,
+ *     hideCancel?: boolean,
+ *     avatar?: { seed: string|number, position?: string, teamColor?: string, nationality?: string, photo?: string|null },
  *   } | null,
  *   z?: number,
  *   onClose: () => void,
@@ -43,14 +57,25 @@ export function GameDialog({ dialog, onClose, z = MODAL_Z.default }) {
     } else {
       dialog.onConfirm();
     }
-    onClose();
+    if (!dialog.awaitServer) onClose();
   };
+
+  const handleCancel = () => {
+    dialog?.onCancel?.();
+    if (!dialog || !dialog.awaitServer) onClose();
+  };
+
+  const phase = dialog?.phase || "proposal";
+  const isTerminal = phase === "renewed" || phase === "declined";
+  const accent = POSITION_ACCENT_HEX[dialog?.avatar?.position] || "#d97706";
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") handleConfirm();
     if (e.key === "Escape") {
-      dialog?.onCancel?.();
-      onClose();
+      // Em espera o Escape só fecha (o pedido já foi emitido — o resultado
+      // chega por evento e reabre em fallback); senão equivale a Cancelar.
+      if (phase === "waiting") onClose();
+      else handleCancel();
     }
   };
 
@@ -83,6 +108,67 @@ export function GameDialog({ dialog, onClose, z = MODAL_Z.default }) {
 
         {/* Body */}
         <div className="px-5 py-4">
+          {phase === "waiting" ? (
+            <div className="py-6 text-center" role="status">
+              <p className="text-2xl animate-pulse" aria-hidden>💬</p>
+              <p className="mt-2 text-xs font-bold text-on-surface-variant">
+                {dialog?.waitingText ?? "A falar com o agente…"}
+              </p>
+            </div>
+          ) : isTerminal ? (
+            <div className="relative text-center overflow-hidden py-2">
+              {phase === "renewed" ? (
+                <CelebrationBurst seed={dialog?.avatar?.seed ?? dialog?.playerId ?? "contract"} />
+              ) : (
+                <motion.div
+                  className="text-5xl mb-3"
+                  aria-hidden
+                  initial={{ x: 60, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 120, damping: 16 }}
+                >
+                  💼
+                </motion.div>
+              )}
+              <motion.p
+                className="font-headline font-black text-2xl tracking-tight uppercase mb-1"
+                style={phase === "renewed" ? { color: accent } : undefined}
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 260, damping: 18 }}
+              >
+                {phase === "renewed" ? "Renovado!" : "Fez as malas"}
+              </motion.p>
+              {dialog?.avatar && phase === "renewed" && (
+                <div className="flex justify-center mb-3">
+                  <PlayerAvatar
+                    seed={dialog.avatar.seed}
+                    position={dialog.avatar.position}
+                    teamColor={dialog.avatar.teamColor}
+                    nationality={dialog.avatar.nationality}
+                    size="lg"
+                    photo={dialog.avatar.photo || null}
+                  />
+                </div>
+              )}
+              {dialog?.stats?.length > 0 && (
+                <div className="mb-3 flex flex-wrap justify-center gap-1.5">
+                  {dialog.stats.map((stat, i) => (
+                    <span
+                      key={i}
+                      className={`rounded-md border px-2 py-1 text-[11px] font-bold ${stat.className ?? "border-outline-variant/20 bg-surface text-on-surface-variant"}`}
+                    >
+                      <span className="mr-1 uppercase tracking-wide opacity-70">
+                        {stat.label}
+                      </span>
+                      {stat.value}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+          <>
           {dialog?.mode === "confirm" && dialog?.stats?.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-1.5">
               {dialog.stats.map((stat, i) => (
@@ -138,20 +224,22 @@ export function GameDialog({ dialog, onClose, z = MODAL_Z.default }) {
               className="w-full rounded-md border border-outline-variant/30 bg-surface px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-colors"
             />
           )}
+          </>
+          )}
         </div>
 
         {/* Actions */}
+        {phase !== "waiting" && (
         <div className="flex gap-2 px-5 pb-5">
+          {!dialog?.hideCancel && (
           <Button
             variant={dialog?.cancelDanger ? "dangerSoft" : "secondary"}
             className="flex-1"
-            onClick={() => {
-              dialog?.onCancel?.();
-              onClose();
-            }}
+            onClick={handleCancel}
           >
             {dialog?.cancelLabel ?? "Cancelar"}
           </Button>
+          )}
           <Button
             variant={dialog?.danger ? "dangerSoft" : "success"}
             className="flex-1"
@@ -160,6 +248,7 @@ export function GameDialog({ dialog, onClose, z = MODAL_Z.default }) {
             {dialog?.confirmLabel ?? "Confirmar"}
           </Button>
         </div>
+        )}
       </div>
     </ModalShell>
   );
