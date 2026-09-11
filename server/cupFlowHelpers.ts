@@ -7,7 +7,7 @@ import {
   FORM_NEUTRAL,
   FRIENDLY_ROUND,
   FRIENDLY_ROUND_NAME,
-  fansBaseByDivision,
+  MATCH_TUNING,
   recalcPlayerValue,
   remainingSubstitutions,
   incrementSubCount,
@@ -466,11 +466,11 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			await dbRun(
 				"UPDATE teams SET fans_mood = CASE division WHEN 1 THEN ? WHEN 2 THEN ? WHEN 3 THEN ? WHEN 4 THEN ? ELSE ? END",
 				[
-					fansBaseByDivision[1],
-					fansBaseByDivision[2],
-					fansBaseByDivision[3],
-					fansBaseByDivision[4],
-					fansBaseByDivision[5],
+					MATCH_TUNING.fansBaseByDivision[1],
+					MATCH_TUNING.fansBaseByDivision[2],
+					MATCH_TUNING.fansBaseByDivision[3],
+					MATCH_TUNING.fansBaseByDivision[4],
+					MATCH_TUNING.fansBaseByDivision[5],
 				],
 			);
 			await dbRun("COMMIT");
@@ -735,7 +735,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 	}
 
 	// Enriquecimento partilhado taca/amigavel (as taticas leem-se ao vivo).
-	async function enrichFixturePair(homeTeamId: number, awayTeamId: number, round: number) {
+	async function enrichFixturePair(game: ActiveGame, homeTeamId: number, awayTeamId: number, round: number) {
 		const home = await runGet(
 			game.db,
 			"SELECT id, name, color_primary, color_secondary, crest FROM teams WHERE id = ?",
@@ -806,7 +806,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		const enriched: any[] = [];
 		for (const pair of pairs) {
 			enriched.push(
-				await enrichFixturePair(pair.homeTeamId, pair.awayTeamId, FRIENDLY_ROUND),
+				await enrichFixturePair(game, pair.homeTeamId, pair.awayTeamId, FRIENDLY_ROUND),
 			);
 		}
 		game.currentFixtures = enriched;
@@ -832,7 +832,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		const enrichedFixtures: any[] = [];
 		for (const fixture of drawFixtures) {
 			enrichedFixtures.push(
-				await enrichFixturePair(fixture.homeTeamId, fixture.awayTeamId, round),
+				await enrichFixturePair(game, fixture.homeTeamId, fixture.awayTeamId, round),
 			);
 		}
 
