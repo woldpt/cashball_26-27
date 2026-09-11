@@ -188,10 +188,11 @@ class GameStateAuditor {
   }
 
   private async auditContractExpiry() {
+    // contract_until_matchweek vive em slots 1-20: comparar com calendarIndex+1.
     const state = await this.runQuery<any>(
-      "SELECT value FROM game_state WHERE key = 'matchweek'",
+      "SELECT value FROM game_state WHERE key = 'calendarIndex'",
     );
-    const currentMatchweek = parseInt(state[0]?.value ?? "1", 10) || 1;
+    const currentMatchweek = (parseInt(state[0]?.value ?? "0", 10) || 0) + 1;
 
     const expiredContracts = await this.runQuery<any>(
       "SELECT id, name, team_id, contract_until_matchweek FROM players WHERE contract_until_matchweek > 0 AND contract_until_matchweek <= ?",

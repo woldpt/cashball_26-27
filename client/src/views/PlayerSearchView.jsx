@@ -7,6 +7,7 @@ import { PlayerRow } from "../components/shared/PlayerRow.jsx";
 import {
   DIVISION_NAMES,
   SEASON_JORNADAS,
+  SEASON_WEEKS,
   TRANSFER_CLAUSE_MULT,
   TRANSFER_LISTED_PRICE_MULT,
 } from "../constants/index.js";
@@ -53,6 +54,7 @@ function inputClass() {
  *   myBudget: number,
  *   matchweekCount: number,
  *   season?: number,
+ *   currentSlot?: number,
  *   playerSearchData: { results: Array, total: number, truncated: boolean },
  *   playerSearchLoading: boolean,
  *   setPlayerSearchLoading: function,
@@ -69,6 +71,7 @@ export function PlayerSearchView({
   myBudget = 0,
   matchweekCount = 0,
   season = 1,
+  currentSlot = 0,
   playerSearchData = { results: [], total: 0, truncated: false },
   playerSearchLoading = false,
   setPlayerSearchLoading,
@@ -188,11 +191,16 @@ export function PlayerSearchView({
     }
 
     const contractStart = player.contract_start_epoch || 0;
+    // Mesma escala do servidor (contractEpoch: época em 20 slots).
     const currentEpoch =
-      (Math.max(1, season) - 1) * SEASON_JORNADAS +
-      Math.min(SEASON_JORNADAS, matchweekCount + 1);
+      currentSlot > 0
+        ? (Math.max(1, season) - 1) * SEASON_WEEKS +
+          Math.min(SEASON_WEEKS, currentSlot)
+        : (Math.max(1, season) - 1) * SEASON_JORNADAS +
+          Math.min(SEASON_JORNADAS, matchweekCount + 1);
+    const contractLength = currentSlot > 0 ? SEASON_WEEKS : SEASON_JORNADAS;
     const contractLocked =
-      contractStart > 0 && currentEpoch < contractStart + SEASON_JORNADAS;
+      contractStart > 0 && currentEpoch < contractStart + contractLength;
     if (contractLocked) {
       return (
         <span className="text-[10px] text-on-surface-variant/50 font-bold uppercase whitespace-nowrap">

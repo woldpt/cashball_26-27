@@ -748,12 +748,13 @@ export function useSocketListeners(handlers, refs) {
 				agent,
 				contractEndMatchweek,
 				contractEndSeason,
+				contractEndLabel,
 				isRenegotiation,
 			}) => {
 				if (!inRoom()) return;
 				const endText =
 					contractEndMatchweek && contractEndSeason
-						? ` Contrato até ${seasonToYear(contractEndSeason)}, Jornada ${contractEndMatchweek}.`
+						? ` Contrato até ${seasonToYear(contractEndSeason)}, ${contractEndLabel || `Jornada ${contractEndMatchweek}`}.`
 						: "";
 				const headline = isRenegotiation
 					? `📈 ${agent} viu o teu plantel no Excel: ${playerName} vale muito mais do que recebe. Exige €${requestedWage.toLocaleString("pt-PT")}/sem ou ameaça "conversas com outros clubes".${endText}`
@@ -806,6 +807,7 @@ export function useSocketListeners(handlers, refs) {
 				agent,
 				contractEndMatchweek,
 				contractEndSeason,
+				contractEndLabel,
 				photo,
 				nationality,
 			}) => {
@@ -813,7 +815,7 @@ export function useSocketListeners(handlers, refs) {
 				playSigningSound();
 				const endText =
 					contractEndMatchweek && contractEndSeason
-						? `${seasonToYear(contractEndSeason)}, Jornada ${contractEndMatchweek}`
+						? `${seasonToYear(contractEndSeason)}, ${contractEndLabel || `Jornada ${contractEndMatchweek}`}`
 						: "";
 				showContractOutcome(handlers, refs, playerId, {
 					mode: "confirm",

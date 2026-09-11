@@ -448,6 +448,8 @@ export const STADIUM_EXPANSION_COST = 300000;
 export const SEASON_LABEL = "26/27";
 /** Total de jornadas de liga por época. */
 export const SEASON_JORNADAS = 14;
+/** Total de semanas (slots do relógio único) por época — escala dos contratos. */
+export const SEASON_WEEKS = 20;
 /** Jogos em casa por época (metade das jornadas). */
 export const SEASON_HOME_MATCHES = 7;
 /** Factor de ocupação estimado para projetar bilheteiras sem histórico. */

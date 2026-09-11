@@ -41,6 +41,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
     allMatchResults,
     matchAction,
     matchweekCount,
+    calendarIndex,
     currentJornada,
     cupMatchRoundName,
     substitutionPause,
@@ -480,6 +481,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                         financeData={financeData}
                         totalWeeklyWage={totalWeeklyWage}
                         completedJornada={completedJornada}
+                        elapsedWeeks={calendarIndex ?? 0}
                         loanInterestPerWeek={loanInterestPerWeek}
                         loanAmount={loanAmount}
                         currentBudget={currentBudget}
@@ -605,6 +607,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                         myBudget={currentBudget}
                         matchweekCount={matchweekCount}
                         season={season}
+                        currentSlot={(calendarIndex ?? 0) + 1}
                         playerSearchData={playerSearchData}
                         playerSearchLoading={playerSearchLoading}
                         setPlayerSearchLoading={setPlayerSearchLoading}

@@ -428,6 +428,7 @@ export function registerTransferSocketHandlers(
                 agent: getAgentName(player.id),
                 contractEndSeason: end.season,
                 contractEndMatchweek: end.matchweek,
+                contractEndLabel: end.label,
                 photo: player.photo || null,
                 nationality: player.nationality || null,
               });
@@ -604,6 +605,7 @@ export function registerTransferSocketHandlers(
                 agent: getAgentName(player.id),
                 contractEndSeason: end.season,
                 contractEndMatchweek: end.matchweek,
+                contractEndLabel: end.label,
                 photo: player.photo || null,
                 nationality: player.nationality || null,
               });

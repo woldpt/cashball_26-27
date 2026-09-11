@@ -136,6 +136,7 @@ export function createContractHelpers(deps: ContractDeps) {
             agent: getAgentName(player.id),
             contractEndSeason: end.season,
             contractEndMatchweek: end.matchweek,
+            contractEndLabel: end.label,
             isRenegotiation,
           });
           resolve();
@@ -176,6 +177,7 @@ export function createContractHelpers(deps: ContractDeps) {
         agent: getAgentName(player.id),
         contractEndSeason: end.season,
         contractEndMatchweek: end.matchweek,
+        contractEndLabel: end.label,
         isRenegotiation: !!player.contract_request_is_renegotiation,
       });
     }

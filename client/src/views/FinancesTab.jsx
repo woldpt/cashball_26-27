@@ -11,6 +11,7 @@ import {
   LOAN_INTEREST_RATE,
   STADIUM_EXPANSION_COST,
   SEASON_JORNADAS,
+  SEASON_WEEKS,
   SEASON_HOME_MATCHES,
   TICKET_ESTIMATE_FACTOR,
 } from "../constants/index.js";
@@ -20,6 +21,7 @@ import {
  *   financeData: object|null,
  *   totalWeeklyWage: number,
  *   completedJornada: number,
+ *   elapsedWeeks?: number,
  *   loanInterestPerWeek: number,
  *   loanAmount: number,
  *   currentBudget: number,
@@ -39,6 +41,7 @@ export function FinancesTab({
   financeData,
   totalWeeklyWage,
   completedJornada,
+  elapsedWeeks,
   loanInterestPerWeek,
   loanAmount,
   currentBudget,
@@ -53,6 +56,7 @@ export function FinancesTab({
   setShowTicketBreakdown,
   setGameDialog,
 }) {
+  const weeksElapsed = elapsedWeeks ?? completedJornada;
   const {
     totalSeasonIncome,
     totalSeasonExpenses,
@@ -65,8 +69,8 @@ export function FinancesTab({
       (financeData?.sponsorRevenue || 0) +
       (financeData?.totalTransferIncome || 0);
     const totalSeasonExpenses =
-      totalWeeklyWage * completedJornada +
-      loanInterestPerWeek * completedJornada +
+      totalWeeklyWage * weeksElapsed +
+      loanInterestPerWeek * weeksElapsed +
       (financeData?.totalTransferExpenses || 0) +
       (financeData?.totalStadiumExpenses || 0);
     const seasonResult = totalSeasonIncome - totalSeasonExpenses;
@@ -76,7 +80,7 @@ export function FinancesTab({
         ? Math.min(
             100,
             Math.round(
-              ((totalWeeklyWage * completedJornada) / totalSeasonIncome) * 100,
+              ((totalWeeklyWage * weeksElapsed) / totalSeasonIncome) * 100,
             ),
           )
         : 0;
@@ -90,13 +94,16 @@ export function FinancesTab({
   }, [
     financeData,
     totalWeeklyWage,
-    completedJornada,
+    weeksElapsed,
     loanInterestPerWeek,
     loanAmount,
   ]);
 
   const projection = useMemo(() => {
-    const remainingJornadas = Math.max(0, SEASON_JORNADAS - completedJornada);
+    const remainingJornadas = Math.max(
+      0,
+      (elapsedWeeks != null ? SEASON_WEEKS : SEASON_JORNADAS) - weeksElapsed,
+    );
     const remainingHomeMatches = Math.max(
       0,
       SEASON_HOME_MATCHES - (financeData?.homeMatchesPlayed || 0),
@@ -121,7 +128,8 @@ export function FinancesTab({
     );
     return { remainingJornadas, projectedEndBudget };
   }, [
-    completedJornada,
+    weeksElapsed,
+    elapsedWeeks,
     financeData,
     capacityRevPerGame,
     totalWeeklyWage,
@@ -219,7 +227,7 @@ export function FinancesTab({
           </div>
           <div className="mt-2 sm:mt-4 short:mt-1">
             <p className="text-[9px] sm:text-[10px] leading-tight text-on-surface-variant uppercase mb-1">
-              Bilheteiras - salários - juros ({projection.remainingJornadas} j.)
+              Bilheteiras - salários - juros ({projection.remainingJornadas} sem.)
             </p>
           </div>
         </SummaryWidget>

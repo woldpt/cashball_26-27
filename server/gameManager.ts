@@ -3,7 +3,7 @@ import path from "path";
 import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { SEASON_CALENDAR, fairWeeklyWage, signingWage } from "./gameConstants";
-import { currentEpoch } from "./coreHelpers";
+import { currentEpoch, getSeasonEndMatchweek } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { getOfflineCoaches } from "./presenceHelpers";
 
@@ -1362,7 +1362,7 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                             });
                             db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [finalBid, auc.sellerTeamId], () => {
                               db.run("UPDATE teams SET budget = budget - ? WHERE id = ?", [finalBid, buyerTeamId], () => {
-                                const seasonEndMw = Math.ceil(Math.max(1, (game.matchweek || 1)) / 14) * 14;
+                                const seasonEndMw = getSeasonEndMatchweek(game.matchweek || 1);
                                 const wage = signingWage(player);
                                 const epoch = currentEpoch(game as any);
                                 db.run("UPDATE players SET team_id=?, wage=?, contract_until_matchweek=?, contract_start_epoch=?, joined_matchweek=?, transfer_cooldown_until_matchweek=?, transfer_status='none', transfer_price=0, contract_request_pending=0, contract_requested_wage=0, contract_request_is_renegotiation=0 WHERE id=?", [buyerTeamId, wage, seasonEndMw, epoch, game.matchweek, game.matchweek, pid], () => {
