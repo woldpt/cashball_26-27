@@ -24,9 +24,9 @@ function compactCurrency(value) {
 
 /**
  * Gráfico de área mostrando a evolução do saldo financeiro por jornada.
- * O eixo Y é dinâmico (inclui sempre o zero), a linha muda de cor conforme o
+ * O eixo Y faz zoom à amplitude dos dados, a linha muda de cor conforme o
  * saldo é positivo (primary) ou negativo (error) e a área preenche até à
- * baseline zero com gradiente.
+ * baseline zero (ou ao bordo do gráfico quando o zero está fora do domínio).
  * @param {{ data: Array<{x?: number, year?: number, matchweek: number, balance: number}> }} props
  */
 export function BalanceLineChart({ data = [] }) {
@@ -65,14 +65,14 @@ export function BalanceLineChart({ data = [] }) {
   const lastX = px(clean[pointCount - 1]);
   const xRange = Math.max(lastX - firstX, 1);
 
-  // ── Eixo Y dinâmico — inclui sempre o zero ──
+  // ── Eixo Y com zoom aos dados (sem forçar o zero) ──
   const rawValues = clean.map((p) => p.balance);
   const rawMin = Math.min(...rawValues);
   const rawMax = Math.max(...rawValues);
   const rawSpan = rawMax - rawMin;
   const pad = rawSpan > 0 ? Math.max(Math.ceil(rawSpan * 0.12), 1) : 1;
-  const axisMin = Math.floor(Math.min(0, rawMin) - pad);
-  const axisMax = Math.ceil(Math.max(0, rawMax) + pad);
+  const axisMin = Math.floor(rawMin - pad);
+  const axisMax = Math.ceil(rawMax + pad);
   const axisSpan = Math.max(axisMax - axisMin, 1);
 
   // Linhas de grelha (4 níveis, com valores redondos)
@@ -93,6 +93,12 @@ export function BalanceLineChart({ data = [] }) {
     padding.top + graphHeight - ((balance - axisMin) / axisSpan) * graphHeight;
 
   const zeroY = getY(0);
+  // Âncora de preenchimento da área: o zero quando visível, senão o bordo
+  // do gráfico (fundo se tudo positivo, topo se tudo negativo).
+  const fillY = Math.min(
+    Math.max(zeroY, padding.top),
+    chartHeight - padding.bottom,
+  );
 
   // Ponto interpolado de cruzamento do zero (área não extravasa a baseline)
   const extended = [];
@@ -131,13 +137,13 @@ export function BalanceLineChart({ data = [] }) {
         d += `${inRun ? "L" : "M"} ${x} ${y}`;
         inRun = true;
       } else if (inRun) {
-        if (fill) d += ` L ${x} ${zeroY} Z`;
+        if (fill) d += ` L ${x} ${fillY} Z`;
         inRun = false;
       }
     }
     if (inRun && fill) {
       const last = extended[extended.length - 1];
-      d += ` L ${last.x} ${zeroY} Z`;
+      d += ` L ${last.x} ${fillY} Z`;
     }
     return d;
   };
