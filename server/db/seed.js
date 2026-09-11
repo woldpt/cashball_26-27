@@ -106,7 +106,7 @@ db.serialize(() => {
     "INSERT INTO managers (name, reputation, photo, zerozero_id) VALUES (?, ?, ?, ?)",
   );
   const insertTeam = db.prepare(
-    "INSERT INTO teams (name, manager_id, division, stadium_capacity, stadium_name, budget, color_primary, color_secondary, crest) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO teams (name, manager_id, division, stadium_capacity, stadium_name, budget, color_primary, color_secondary, crest, fanbase) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
   const insertPlayer = db.prepare(
     "INSERT INTO players (name, position, skill, age, form, resistance, aggressiveness, nationality, value, wage, goals, is_star, potential, photo, zerozero_id, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)",
@@ -164,6 +164,14 @@ db.serialize(() => {
     const stadiumName = stadium.name || "";
     const crest = teamData.crest || null;
 
+    // Massa adepta inicial: procura típica da divisão (raramente limita de
+    // arranque; limita a expansão). Espelha FANBASE_BY_DIVISION (gameConstants).
+    const FANBASE_SEED = { 1: 35000, 2: 15000, 3: 10000, 4: 7000, 5: 4000 };
+    const fanbase = Math.min(
+      stadiumCapacity,
+      FANBASE_SEED[teamData.division || 4] ?? 7000,
+    );
+
     insertTeam.run(
       teamData.name,
       managerId,
@@ -174,6 +182,7 @@ db.serialize(() => {
       primaryColor,
       secondaryColor,
       crest,
+      fanbase,
     );
 
     // Load all players from fixture — no random names, no fixed limit

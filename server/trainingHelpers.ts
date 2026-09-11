@@ -43,6 +43,13 @@ export async function applyTrainingBonuses(
   fixtures: any[],
   completedCalendarIndex: number,
 ): Promise<void> {
+  // NPCs treinam sozinhos (foco automático) — sem isto só os humanos
+  // evoluíam e o fosso de skill alargava época após época.
+  try {
+    await ensureNpcTrainingFocus(game, completedCalendarIndex);
+  } catch (e) {
+    console.error(`[${game.roomCode}] training: npc focus failed:`, e);
+  }
   return new Promise<void>((resolve) => {
     game.db.all(
       "SELECT team_id, training_focus FROM team_training WHERE matchweek = ? AND applied = 0",
@@ -435,6 +442,74 @@ function markApplied(
       done();
     },
   );
+}
+
+/**
+ * Foco automático dos NPCs: a linha mais fraca do plantel treina — exceto
+ * quando o grupo está quebrado fisicamente (resistência média < 24) ou em
+ * baixo de forma (< 30), aí recupera como um treinador sensato faria.
+ * Sem isto os NPCs nunca treinavam (só humanos tinham linhas em
+ * team_training) e apodreciam fisicamente com o decaimento.
+ */
+export async function ensureNpcTrainingFocus(
+  game: ActiveGame,
+  completedCalendarIndex: number,
+): Promise<void> {
+  const humanTeamIds = new Set<number>(
+    Object.values(game.playersByName || {})
+      .map((p: any) => p?.teamId)
+      .filter((id: any) => id != null),
+  );
+  const all = (id: string) =>
+    new Promise<any[]>((resolve) => {
+      game.db.all(id, (err: any, rows: any[]) => resolve(err ? [] : rows || []));
+    });
+  const teamIds = (await all("SELECT id, division FROM teams"))
+    .filter((t) => !humanTeamIds.has(t.id) && Number(t.division ?? 4) !== 5)
+    .map((t) => t.id);
+  if (teamIds.length === 0) return;
+  const placeholders = teamIds.map(() => "?").join(",");
+  const existing = await new Promise<any[]>((resolve) => {
+    game.db.all(
+      `SELECT team_id FROM team_training WHERE matchweek = ? AND team_id IN (${placeholders})`,
+      [completedCalendarIndex, ...teamIds],
+      (err: any, rows: any[]) => resolve(err ? [] : rows || []),
+    );
+  });
+  const hasFocus = new Set(existing.map((r) => r.team_id));
+  const FOCUS_BY_POS: Record<string, string> = { GR: "GR", DEF: "Defesas", MED: "Médios", ATA: "Avançados" };
+  for (const teamId of teamIds) {
+    if (hasFocus.has(teamId)) continue;
+    const squad = await new Promise<any[]>((resolve) => {
+      game.db.all(
+        "SELECT position, skill, resistance, form FROM players WHERE team_id = ? AND id > 0",
+        [teamId],
+        (err: any, rows: any[]) => resolve(err ? [] : rows || []),
+      );
+    });
+    if (squad.length === 0) continue;
+    const avg = (xs: number[]) => xs.reduce((s, v) => s + (v || 0), 0) / xs.length;
+    let focus: string | null = null;
+    if (avg(squad.map((p) => p.resistance)) < 24) focus = "Resistência";
+    else if (avg(squad.map((p) => p.form)) < 30) focus = "Forma";
+    else {
+      const byPos: Record<string, number[]> = {};
+      for (const p of squad) (byPos[p.position] ||= []).push(p.skill || 0);
+      let weakest: string | null = null;
+      for (const pos of Object.keys(FOCUS_BY_POS)) {
+        if (!byPos[pos]?.length) { weakest = pos; break; }
+        if (weakest == null || avg(byPos[pos]) < avg(byPos[weakest])) weakest = pos;
+      }
+      focus = (weakest && FOCUS_BY_POS[weakest]) || "Médios";
+    }
+    await new Promise<void>((resolve) => {
+      game.db.run(
+        "INSERT OR IGNORE INTO team_training (team_id, matchweek, training_focus, applied) VALUES (?, ?, ?, 0)",
+        [teamId, completedCalendarIndex, focus],
+        () => resolve(),
+      );
+    });
+  }
 }
 
 /**

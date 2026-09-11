@@ -4,7 +4,7 @@ import { FORM_NEUTRAL, EMERGENCY_GK_SKILL, MATCH_TUNING } from "../gameConstants
 
 type PlayerRow = any;
 
-const JUNIOR_FIRST_NAMES = [
+export const JUNIOR_FIRST_NAMES = [
   "Carlos",
   "João",
   "Miguel",
@@ -21,7 +21,7 @@ const JUNIOR_FIRST_NAMES = [
   "Rafael",
   "Marco",
 ];
-const JUNIOR_LAST_NAMES = [
+export const JUNIOR_LAST_NAMES = [
   "Silva",
   "Santos",
   "Ferreira",

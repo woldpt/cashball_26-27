@@ -3,7 +3,11 @@ import {
   CONTRACT_LENGTH_MATCHWEEKS,
   getAgentName,
   fairWeeklyWage,
+  recalcPlayerValue,
+  wealthAgentMultiplier,
   npcSustainableWeeklyFolha,
+  NPC_INVEST_BUDGET_THRESHOLD,
+  NPC_ACADEMY_COST,
   NPC_WAGE_CUT_PER_EVENT,
   FORM_NEUTRAL,
   RES_NEUTRAL,
@@ -18,6 +22,7 @@ import {
   getAllTeamForms,
   logClubNews,
 } from "./coreHelpers";
+import { JUNIOR_FIRST_NAMES, JUNIOR_LAST_NAMES } from "./game/playerUtils";
 
 type AnyRow = Record<string, any>;
 
@@ -99,13 +104,21 @@ export function createContractHelpers(deps: ContractDeps) {
     if (!player || !player.team_id) return Promise.resolve();
     if (player.contract_request_pending) return Promise.resolve();
 
+    return runGet<{ budget?: number }>(
+      game.db,
+      "SELECT budget FROM teams WHERE id = ?",
+      [player.team_id],
+    ).then((teamRow) => {
     const wage = player.wage || 0;
     const fairWage = fairWageOf(player);
+    // Agentes farejam riqueza: clubes com o banco cheio recebem pedidos
+    // progressivamente maiores (até ×1.5); abaixo de 5M€ nada muda.
+    const wealthMult = wealthAgentMultiplier(teamRow?.budget || 0);
     const demandBase = isRenegotiation
-      ? Math.max(Math.round(fairWage * 1.15), Math.round(wage * 1.2))
-      : Math.max(fairWage, Math.round(wage * 1.05), wage + 100);
+      ? Math.max(Math.round(fairWage * 1.15 * wealthMult), Math.round(wage * 1.2 * wealthMult))
+      : Math.max(Math.round(fairWage * wealthMult), Math.round(wage * 1.05 * wealthMult), wage + 100);
 
-    const cap = isRenegotiation ? Math.round(wage * 1.2) : Math.round(wage * 1.25);
+    const cap = isRenegotiation ? Math.round(wage * 1.2 * wealthMult) : Math.round(wage * 1.25 * wealthMult);
     const requestedWage = Math.min(
       Math.round(demandBase * (1.0 + Math.random() * 0.15)),
       cap,
@@ -142,6 +155,7 @@ export function createContractHelpers(deps: ContractDeps) {
           resolve();
         },
       );
+    });
     });
   };
 
@@ -474,12 +488,92 @@ export function createContractHelpers(deps: ContractDeps) {
     return released;
   };
 
+  /**
+   * Direção investe excedente. NPC com banco acima do limiar gasta 1 ação
+   * por semana até regressar ao limiar: obra (300k, se houver margem até
+   * 120k) ou academia (500k → prospeto real para o plantel, com ordenado).
+   * Esvazia as pilhas multimilionárias (Porto 60M€) sem árbitro central.
+   */
+  const NPC_STADIUM_BUILD_COST = 300000;
+  const NPC_MAX_CAPACITY = 120000;
+  const processNpcInvestment = async (game: ActiveGame): Promise<void> => {
+    const humanTeamIds = new Set<number>(
+      Object.values(game.playersByName)
+        .map((p) => p.teamId)
+        .filter((id): id is number => id != null && id !== undefined),
+    );
+    const teams = await runAll<AnyRow>(
+      game.db,
+      "SELECT id, division, budget, stadium_capacity, name FROM teams WHERE budget > ?",
+      [NPC_INVEST_BUDGET_THRESHOLD],
+    );
+    for (const team of teams) {
+      if (!team || humanTeamIds.has(team.id)) continue;
+      if (Number(team.division ?? 4) === 5) continue; // pool interno
+      const capacity = team.stadium_capacity || 10000;
+      if (capacity < NPC_MAX_CAPACITY && team.budget - NPC_STADIUM_BUILD_COST >= NPC_INVEST_BUDGET_THRESHOLD) {
+        await new Promise<void>((resolve) => {
+          game.db.run(
+            "UPDATE teams SET budget = budget - ?, stadium_capacity = MIN(stadium_capacity + 5000, ?) WHERE id = ?",
+            [NPC_STADIUM_BUILD_COST, NPC_MAX_CAPACITY, team.id],
+            () => {
+              logClubNews(game, "stadium_build", "Obra no Estádio", team.id, {
+                amount: NPC_STADIUM_BUILD_COST,
+                description: `A direção investe o excedente em mais 5.000 lugares.`,
+              });
+              resolve();
+            },
+          );
+        });
+        continue;
+      }
+      if (team.budget - NPC_ACADEMY_COST < NPC_INVEST_BUDGET_THRESHOLD) continue;
+      const squad = await runAll<AnyRow>(
+        game.db,
+        "SELECT position FROM players WHERE team_id = ? AND id > 0",
+        [team.id],
+      );
+      if (squad.length >= 26) continue;
+      const counts: Record<string, number> = { GR: 0, DEF: 0, MED: 0, ATA: 0 };
+      for (const p of squad) if (counts[p.position] !== undefined) counts[p.position]++;
+      let needPos = "MED";
+      for (const pos of ["GR", "DEF", "MED", "ATA"]) {
+        if ((counts[pos] ?? 0) < (counts[needPos] ?? 0)) needPos = pos;
+      }
+      const skill = 12 + Math.floor(Math.random() * 11);
+      const potential = 30 + Math.floor(Math.random() * 16);
+      const name = `${JUNIOR_FIRST_NAMES[Math.floor(Math.random() * JUNIOR_FIRST_NAMES.length)]} ${JUNIOR_LAST_NAMES[Math.floor(Math.random() * JUNIOR_LAST_NAMES.length)]}`;
+      const wage = fairWeeklyWage(skill);
+      await new Promise<void>((resolve) => {
+        game.db.run(
+          "UPDATE teams SET budget = budget - ? WHERE id = ?",
+          [NPC_ACADEMY_COST, team.id],
+          () => resolve(),
+        );
+      });
+      const prospectId = await new Promise<number>((resolve) => {
+        game.db.run(
+          "INSERT INTO players (name, position, skill, age, form, resistance, aggressiveness, nationality, value, wage, potential, contract_until_matchweek, contract_start_epoch, joined_matchweek, transfer_cooldown_until_matchweek, transfer_status, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'none', ?)",
+          [name, needPos, skill, 17 + Math.floor(Math.random() * 3), FORM_NEUTRAL, RES_NEUTRAL, 3, "🇵🇹", recalcPlayerValue(skill), wage, potential, getSeasonEndMatchweek(game.matchweek), currentEpoch(game), currentSlot(game), currentSlot(game), team.id],
+          function (this: any) { resolve(this?.lastID ?? 0); },
+        );
+      });
+      logClubNews(game, "academy", "Prospeto da Academia", team.id, {
+        amount: NPC_ACADEMY_COST,
+        player_id: prospectId || undefined,
+        player_name: name,
+        description: `${name} (${needPos}) sobe da academia — investimento da direção.`,
+      });
+    }
+  };
+
   return {
     maybeTriggerContractRequest,
     resendPendingContractRequests,
     processAgentRenegotiations,
     processContractExpiries,
     processNpcAgentPressure,
+    processNpcInvestment,
     forceNpcWageCut,
   };
 }

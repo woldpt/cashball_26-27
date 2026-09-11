@@ -31,6 +31,7 @@ export function StadiumTab({
   const fansMood = teamInfo?.fans_mood ?? 60;
   const fansMoodLabel = getFansMoodLabel(fansMood).toUpperCase();
   const ticketPrice = teamInfo?.ticket_price || 15;
+  const fanbase = teamInfo?.fanbase > 0 ? teamInfo.fanbase : null;
 
   const homeMatches =
     financeData?.homeMatchesPlayed || 0;
@@ -150,6 +151,9 @@ export function StadiumTab({
           <p className="mt-1.5 text-[10px] uppercase tracking-wider text-on-surface-variant/50">
             {avgAttendance?.toLocaleString("pt-PT")} adeptos /{" "}
             {stadiumCapacity.toLocaleString("pt-PT")} lugares
+            {fanbase != null && (
+              <> · massa adepta {fanbase.toLocaleString("pt-PT")}</>
+            )}
           </p>
         </div>
       )}

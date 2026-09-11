@@ -369,6 +369,11 @@ async function computeAttendance(
   const homeDiv = team.division ?? 1;
   const divLimit = MAX_ATTENDANCE_BY_DIVISION[homeDiv] ?? Infinity;
   const capacity = Math.min(rawCapacity, divLimit);
+  // Massa adepta: a procura manda, não o cimento. Sem fanbase registada
+  // (DBs pré-migração) não limita. A ocupação segue física: gigante
+  // vazio sente-se vazio (bónus de ambiente em conformidade).
+  const fanbase = team.fanbase > 0 ? team.fanbase : capacity;
+  const effectiveCap = Math.min(capacity, fanbase);
   const fansMood = team.fans_mood ?? T.fansMoodDefault;
   const ticketPrice = team.ticket_price ?? T.ticketBasePrice;
 
@@ -573,10 +578,10 @@ async function computeAttendance(
   else if (fansMood <= 25)
     reasons.push({ label: "adeptos descontentes", impact: 0.15 });
 
-  const raw = Math.round(capacity * occupancyRatio * mult);
+  const raw = Math.round(effectiveCap * occupancyRatio * mult);
   const attendance = Math.max(
     Math.floor(capacity * T.attendanceAbsoluteMinRatio),
-    Math.min(capacity, raw),
+    Math.min(effectiveCap, raw),
   );
   reasons.sort((a, b) => b.impact - a.impact);
   return {

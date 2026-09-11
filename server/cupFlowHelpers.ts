@@ -8,6 +8,13 @@ import {
   FRIENDLY_ROUND,
   FRIENDLY_ROUND_NAME,
   MATCH_TUNING,
+  FANBASE_BY_DIVISION,
+  FANBASE_DIV_CAP,
+  FANBASE_GROWTH_TITLE,
+  FANBASE_GROWTH_PROMOTED,
+  FANBASE_GROWTH_MIDTABLE,
+  FANBASE_DECLINE_BOTTOM,
+  FANBASE_DECLINE_RELEGATED,
   recalcPlayerValue,
   remainingSubstitutions,
   incrementSubCount,
@@ -477,6 +484,40 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		} catch (txErr) {
 			await dbRun("ROLLBACK").catch(() => {});
 			throw txErr;
+		}
+
+		// ── Evolução da massa adepta ─────────────────────────────────────
+		// byDiv tem as classificações finais (divisões antigas); promotions
+		// diz a divisão nova. Campeão/promovido cresce até +20%, meio da
+		// tabela +5%, despromovido −20%, com teto suave da nova divisão:
+		// sem subir não há enchente de 50k (5k→50k leva ~13 épocas).
+		try {
+			const newDivByTeam = new Map<number, number>();
+			for (const p of promotions) newDivByTeam.set(p.teamId, p.toDiv);
+			const promotedIds = new Set<number>();
+			const relegatedIds = new Set<number>();
+			for (const p of promotions) {
+				if (p.toDiv < p.fromDiv) promotedIds.add(p.teamId);
+				else if (p.toDiv > p.fromDiv) relegatedIds.add(p.teamId);
+			}
+			for (const divKey of Object.keys(byDiv)) {
+				const rows = byDiv[Number(divKey)] || [];
+				for (let i = 0; i < rows.length; i++) {
+					const team = allTeams.find((t: any) => t.id === rows[i].id);
+					if (!team) continue;
+					const newDiv = newDivByTeam.get(team.id) ?? team.division;
+					let growth = FANBASE_GROWTH_MIDTABLE;
+					if (i === 0 || promotedIds.has(team.id)) growth = Math.max(FANBASE_GROWTH_TITLE, FANBASE_GROWTH_PROMOTED);
+					else if (relegatedIds.has(team.id)) growth = FANBASE_DECLINE_RELEGATED;
+					else if (i >= rows.length - 2) growth = FANBASE_DECLINE_BOTTOM;
+					const base = team.fanbase > 0 ? team.fanbase : (FANBASE_BY_DIVISION[team.division] ?? 7000);
+					const cap = FANBASE_DIV_CAP[newDiv] ?? 8000;
+					const updated = Math.max(1000, Math.min(cap, Math.round(base * (1 + growth))));
+					await dbRun("UPDATE teams SET fanbase = ? WHERE id = ?", [updated, team.id]);
+				}
+			}
+		} catch (fbErr) {
+			console.error(`[${game.roomCode}] fanbase evolution failed:`, (fbErr as any)?.message || fbErr);
 		}
 
 		// Persist avg_attendance per team (rolling average: blend previous + this season)

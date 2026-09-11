@@ -3,6 +3,7 @@ import type { CalendarEntry } from "./gameConstants";
 import {
   SEASON_CALENDAR,
   LOAN_WEEKLY_INSTALLMENT,
+  STADIUM_UPKEEP_PER_SEAT_WEEK,
   WEEKLY_BASE_INCOME,
   CUP_FINAL_SPECTATOR_MS_PER_MINUTE,
   remainingSubstitutions,
@@ -109,6 +110,7 @@ interface WeeklyFlowDeps {
   ) => Promise<void>;
   resendPendingContractRequests: (game: ActiveGame) => Promise<void>;
   processNpcAgentPressure: (game: ActiveGame) => Promise<void>;
+  processNpcInvestment: (game: ActiveGame) => Promise<void>;
   processNpcTransferActivity: (game: ActiveGame) => Promise<void>;
   refreshMarket: (game: ActiveGame, emitToRoom?: boolean) => void;
   processCoachEvents: (game: ActiveGame) => Promise<void>;
@@ -141,6 +143,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     processAgentRenegotiations,
     resendPendingContractRequests,
     processNpcAgentPressure,
+    processNpcInvestment,
     processNpcTransferActivity,
     refreshMarket,
     processCoachEvents,
@@ -1238,6 +1241,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                 try {
                   await processNpcTransferActivity(game);
                 } catch (_) {}
+                try {
+                  // Direção investe excedente: NPCs ricos gastam (obra/academia)
+                  // até ao limiar — esvazia pilhas sem árbitro central.
+                  await processNpcInvestment(game);
+                } catch (_) {}
                 // Retomar leilões pausados durante o jogo (antes de refreshMarket
                 // para que o mercado emitido já reflicta os leilões como "open")
                 resumeAllPausedAuctions(game);
@@ -1406,15 +1414,17 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
                 // Deduct weekly wages + loan interest + principal installment (same for
                 // cup and league weeks). The installment abates the loan principal so the
-                // visible debt shrinks week over week.
+                // visible debt shrinks week over week. Stadium upkeep scales with
+                // capacity: giant stadiums cost millions per season (anti-snowball).
                 game.db.run(
                   `UPDATE teams SET
                     loan_amount = MAX(0, loan_amount - ?),
                     budget = budget
                       - CAST((loan_amount * 0.015) AS INTEGER)
                       - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
+                      - CAST((COALESCE(stadium_capacity, 0) * ?) AS INTEGER)
                       - MIN(?, loan_amount)`,
-                  [LOAN_WEEKLY_INSTALLMENT, LOAN_WEEKLY_INSTALLMENT],
+                  [LOAN_WEEKLY_INSTALLMENT, STADIUM_UPKEEP_PER_SEAT_WEEK, LOAN_WEEKLY_INSTALLMENT],
                   (expErr: any) => {
                     if (expErr) {
                       console.error(
@@ -1429,7 +1439,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                     // and principal installment that were just applied, so the balance
                     // history chart can reconstruct the season's budget evolution.
                     game.db.all(
-                      `SELECT t.id, t.division,
+                      `SELECT t.id, t.division, t.stadium_capacity,
                               COALESCE((SELECT SUM(wage) FROM players WHERE players.team_id = t.id), 0) AS wage_sum
                        FROM teams t`,
                       (logErr: any, teams: any[]) => {
@@ -1447,6 +1457,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                           const wages = team.wage_sum || 0;
                           const interest = Math.floor(oldLoan * 0.015);
                           const installment = Math.min(LOAN_WEEKLY_INSTALLMENT, oldLoan);
+                          const upkeep = Math.floor((team.stadium_capacity || 0) * STADIUM_UPKEEP_PER_SEAT_WEEK);
                           if (income > 0)
                             logClubNews(game, "weekly_income", "Rendimento Semanal", team.id, {
                               amount: income,
@@ -1456,6 +1467,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                             logClubNews(game, "wages", "Folha Salarial", team.id, {
                               amount: wages,
                               description: "Salários pagos na semana",
+                            });
+                          if (upkeep > 0)
+                            logClubNews(game, "stadium_upkeep", "Manutenção do Estádio", team.id, {
+                              amount: upkeep,
+                              description: "Conservação do estádio (proporcional à capacidade)",
                             });
                           if (interest > 0)
                             logClubNews(game, "loan_interest", "Juros Bancários", team.id, {

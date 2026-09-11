@@ -34,6 +34,65 @@ export const MAX_ATTENDANCE_BY_DIVISION: Record<number, number> = {
 };
 
 /**
+ * Manutenção semanal do estádio: custo por lugar por semana de jogo.
+ * 1.5€ → um 120k custa ~3.6M€/época, um 10k ~300k€/época (20 semanas).
+ * Calibrado contra a sala FGPQH6 (Chaves: ~4.9M€ bilheteira/época).
+ */
+export const STADIUM_UPKEEP_PER_SEAT_WEEK = 1.5;
+
+/**
+ * Massa adepta inicial por divisão (novos clubes e base da migração).
+ * Aproxima a procura típica: raramente limita de arranque, limita a expansão.
+ */
+export const FANBASE_BY_DIVISION: Record<number, number> = {
+  1: 35000,
+  2: 15000,
+  3: 10000,
+  4: 7000,
+  5: 4000,
+};
+
+/**
+ * Teto suave da massa adepta por divisão: sem subir de divisão não há
+ * enchente de 50k. Revisto em cada evolução de fim de época.
+ */
+export const FANBASE_DIV_CAP: Record<number, number> = {
+  1: 120000,
+  2: 60000,
+  3: 30000,
+  4: 15000,
+  5: 8000,
+};
+
+/** Variação máxima da massa adepta por fim de época. */
+export const FANBASE_GROWTH_TITLE = 0.2;
+export const FANBASE_GROWTH_PROMOTED = 0.2;
+export const FANBASE_GROWTH_MIDTABLE = 0.05;
+export const FANBASE_DECLINE_BOTTOM = -0.1;
+export const FANBASE_DECLINE_RELEGATED = -0.2;
+
+/**
+ * Agentes farejam riqueza (só humanos): mult = 1 + min(CAP, max(0, budget - FLOOR) / SCALE).
+ * Banco de 14M€ → pedidos ×1.45; abaixo de 5M€ nada muda.
+ */
+export const WEALTH_AGENT_FLOOR = 5000000;
+export const WEALTH_AGENT_SCALE = 20000000;
+export const WEALTH_AGENT_CAP = 0.5;
+
+export function wealthAgentMultiplier(budget: number): number {
+  return (
+    1 + Math.min(WEALTH_AGENT_CAP, Math.max(0, (budget || 0) - WEALTH_AGENT_FLOOR) / WEALTH_AGENT_SCALE)
+  );
+}
+
+/** Direção NPC investe excedente: limiar de riqueza e custo da academia. */
+export const NPC_INVEST_BUDGET_THRESHOLD = 10000000;
+export const NPC_ACADEMY_COST = 500000;
+
+/** Piso de skill nas compras NPC: rejeita abaixo de (nível da equipa − margem). */
+export const NPC_BUY_FLOOR_MARGIN = 10;
+
+/**
  * Valor de mercado base, derivado do skill (não-linear).
  * A elite vale desproporcionalmente mais: skill² × 500.
  * O termo linear (skill × 2000) e o piso fixo (€30.000) garantem que os

@@ -1,6 +1,6 @@
 import type { ActiveGame } from "./types";
 import { logClubNews, recordTransfer, getTeamsWithCoachNames, currentEpoch, currentSlot } from "./coreHelpers";
-import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_MATCHWEEKS } from "./gameConstants";
+import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_MATCHWEEKS, NPC_BUY_FLOOR_MARGIN } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
 
@@ -57,8 +57,21 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
       if (squadRows.length >= 24) continue;
       if (Math.random() > 0.65) continue;
 
+      // Nível da equipa: média dos 14 melhores (não do plantel inteiro —
+      // suplentes e juniores puxavam a fasquia para baixo). Só compra quem
+      // está à altura: rejeita abaixo de (nível − margem), sem teto acima.
+      const levelRows = await runAll<{ skill?: number }>(
+        game.db,
+        "SELECT skill FROM players WHERE team_id = ? AND id > 0 ORDER BY skill DESC LIMIT 14",
+        [npcTeam.id],
+      );
+      const teamLevel = levelRows.length > 0
+        ? levelRows.reduce((s, p) => s + (p.skill || 0), 0) / levelRows.length
+        : 0;
+
       for (const player of marketPlayers) {
         if (player.team_id === npcTeam.id) continue;
+        if (teamLevel > 0 && (player.skill || 0) < teamLevel - NPC_BUY_FLOOR_MARGIN) continue;
 
         const listedPrice =
           player.transfer_status === "fixed" && player.transfer_price > 0
@@ -282,7 +295,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
                 let processed = 0;
                 for (const npcTeam of npcTeams) {
                   game.db.all(
-                    "SELECT position, skill FROM players WHERE team_id = ?",
+                    "SELECT id, position, skill FROM players WHERE team_id = ?",
                     [npcTeam.id],
                     (errS: any, squadRows: any[]) => {
                       processed++;
@@ -304,13 +317,16 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
                       const hasUrgentNeed = posCount < posMin;
                       const hasModerateNeed = posCount >= posMin && squadRows.length < 20;
 
-                      // Calcular nível médio do plantel — NPC só compra se o jogador
-                      // for compatível com o nível da equipa (±15 skill)
-                      const avgSkill = squadRows.length > 0
-                        ? squadRows.reduce((s, p) => s + (p.skill || 0), 0) / squadRows.length
+                      // Calcular nível médio do plantel pelos 14 melhores — NPC só compra
+                      // se o jogador estiver à altura (piso: nível − margem, sem teto).
+                      const levelRows = [...squadRows]
+                        .filter((p) => (p as any).id > 0)
+                        .sort((a, b) => ((b as any).skill || 0) - ((a as any).skill || 0))
+                        .slice(0, 14);
+                      const avgSkill = levelRows.length > 0
+                        ? levelRows.reduce((s, p) => s + ((p as any).skill || 0), 0) / levelRows.length
                         : playerSkill;
-                      const skillCompatible = Math.abs(playerSkill - avgSkill) <= 15;
-                      if (!skillCompatible) return;
+                      if (playerSkill < avgSkill - NPC_BUY_FLOOR_MARGIN) return;
 
                       // Probabilidade de participação
                       let interestProb = 0.0;

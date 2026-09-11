@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
-import { SEASON_CALENDAR, fairWeeklyWage, signingWage } from "./gameConstants";
+import { SEASON_CALENDAR, fairWeeklyWage, signingWage, FANBASE_BY_DIVISION } from "./gameConstants";
 import { currentEpoch, getSeasonEndMatchweek } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { getOfflineCoaches } from "./presenceHelpers";
@@ -821,6 +821,22 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
           db.run(
             "ALTER TABLE teams ADD COLUMN avg_attendance INTEGER DEFAULT 0",
             () => {},
+          );
+          db.run(
+            "ALTER TABLE teams ADD COLUMN fanbase INTEGER DEFAULT 0",
+            () => {
+              // Backfill: massa adepta arranca da assistência histórica real
+              // (saves em curso não colapsam), com piso da base da divisão.
+              try {
+                for (const [div, base] of Object.entries(FANBASE_BY_DIVISION)) {
+                  db.run(
+                    "UPDATE teams SET fanbase = MAX(COALESCE(avg_attendance, 0), ?) WHERE division = ? AND (fanbase IS NULL OR fanbase <= 0)",
+                    [base, Number(div)],
+                    () => {},
+                  );
+                }
+              } catch {}
+            },
           );
           db.run(
             "ALTER TABLE matches ADD COLUMN attendance INTEGER DEFAULT 0",

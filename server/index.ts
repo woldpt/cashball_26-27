@@ -891,6 +891,7 @@ const processAgentRenegotiations = contractHelpers.processAgentRenegotiations;
 const resendPendingContractRequests =
 	contractHelpers.resendPendingContractRequests;
 const processNpcAgentPressure = contractHelpers.processNpcAgentPressure;
+const processNpcInvestment = contractHelpers.processNpcInvestment;
 const forceNpcWageCut = contractHelpers.forceNpcWageCut;
 const processNpcTransferActivity = (game) =>
 	npcTransferHelpers.processNpcTransferActivity(game, listPlayerOnMarket);
@@ -998,6 +999,7 @@ const weeklyFlowHelpers = createWeeklyFlowHelpers({
 	processAgentRenegotiations,
 	resendPendingContractRequests,
 	processNpcAgentPressure,
+	processNpcInvestment,
 	processNpcTransferActivity,
 	refreshMarket,
 	processCoachEvents,
