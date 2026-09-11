@@ -39,6 +39,9 @@ import {
   subPhrase,
   emergencyGkPhrase,
   nearMissPhrase,
+  chanceSavedPhrase,
+  chancePostPhrase,
+  chanceOffTargetPhrase,
   bigSavePhrase,
   weatherPhrase,
   extraTimeStartPhrase,
@@ -60,7 +63,10 @@ import {
   selectPenaltyTaker,
   computeSidePower,
   crowdFactorForOccupancy,
-  computeOpenPlayGoalProbability,
+  computePossession,
+  computeChanceGoalProbability,
+  getGoalTimeMultiplier,
+  getWeatherGoalMultiplier,
   quotaFromFormation,
 } from "./matchCalculations";
 import type { SidePower } from "./matchCalculations";
@@ -2128,6 +2134,22 @@ export async function simulateMatchSegment(
     return power;
   };
 
+  // Posse e nº de chances (hatrick-style): os médios repartem o total de
+  // chances, fixado no 1.º apito (não por minuto). A curva de tempo
+  // espalha-as; a qualidade (ATA vs DEF+GR) decide a conversão.
+  if (fixture._homeChances == null) {
+    const possH = computePossession(
+      powers.home.midStrength || 0,
+      powers.away.midStrength || 0,
+      homeTactic?.style,
+      awayTactic?.style,
+    );
+    fixture._homePossession = Math.round(possH * 100);
+    fixture._awayPossession = 100 - fixture._homePossession;
+    fixture._homeChances = MATCH_TUNING.chancesTotal * possH;
+    fixture._awayChances = MATCH_TUNING.chancesTotal * (1 - possH);
+  }
+
   for (let minute = startMin; minute <= endMin; minute++) {
     fixture._minute = minute;
 
@@ -2383,27 +2405,22 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
     const defending = attackingSide === "home" ? currentAway : currentHome;
     const isHome = attackingSide === "home";
 
-    // O estilo de cada equipa já está codificado no computeSidePower
-    // (ataque com fator ofensivo próprio, defesa com fator defensivo
-    // próprio). NÃO voltar a ajustar pelo estilo do adversário aqui:
-    // dividir por (1 / fator[adversário]) anulava o bónus defensivo e
-    // fazia com que se marcasse ligeiramente MAIS contra equipas defensivas.
+    // Hatrick-style: posse (médios, fixa no apito) → nº de chances → cada
+    // chance é um evento concreto: vira golo ou vai para o log do jogo
+    // (defesa do GR, poste, ao lado).
+    const nChances = isHome ? fixture._homeChances : fixture._awayChances;
+    if (nChances == null) return;
+    const chanceRate = (nChances * getGoalTimeMultiplier(minute)) / 90;
+    if (rng() >= chanceRate) return;
 
-    // Posse de bola: quem domina o meio campo tem ligeiramente mais probabilidade
-    const totalMid =
-      (currentHome.midStrength || 0) + (currentAway.midStrength || 0);
-    const homePossession =
-      totalMid > 0 ? (currentHome.midStrength || 0) / totalMid : 0.5;
-    const possessionFactor = isHome
-      ? 0.9 + homePossession * 0.2 // range 0.90–1.10
-      : 0.9 + (1 - homePossession) * 0.2;
-
-    // Guardar posse no fixture para exibição no cliente
-    fixture._homePossession = Math.round(homePossession * 100);
-    fixture._awayPossession = 100 - fixture._homePossession;
+    // Chance! O rematador (avançado) é creditado — o mesmo jogador marca ou
+    // falha o lance.
+    const scoringSquad = isHome ? powers.home.squad : powers.away.squad;
+    const forwards = scoringSquad.filter((p) => p.position === "ATA");
+    const scorer =
+      forwards.length > 0 ? weightedPickScorer(forwards, rng) : scoringSquad[0];
 
     // Ego conflict penalty: 3+ craques no onze titular reduzem probabilidade
-    const scoringSquad = isHome ? powers.home.squad : powers.away.squad;
     const craquesInXI = scoringSquad.filter(
       (p) => p.is_star && (p.position === "MED" || p.position === "ATA"),
     ).length;
@@ -2416,18 +2433,56 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
       egoFactor = 1.0 - egoPenalty;
     }
 
-    const probGoal = computeOpenPlayGoalProbability({
-      attack: attacking.attack,
-      defense: defending.defense,
-      minute,
-      isHome,
-      isFinal: isCupFinalRound(fixture.round),
-      weather: fixture._weather,
-      possessionFactor,
-      egoFactor,
-    });
+    // A qualidade (ATA vs DEF+GR, médias) decide a conversão; casa/clima/ego
+    // continuam multiplicadores.
+    let probGoal = computeChanceGoalProbability(
+      attacking.attack,
+      defending.defense,
+    );
+    if (!isCupFinalRound(fixture.round)) {
+      probGoal *= isHome
+        ? MATCH_TUNING.homeGoalFactor
+        : MATCH_TUNING.awayGoalFactor;
+    }
+    probGoal *= getWeatherGoalMultiplier(fixture._weather);
+    probGoal *= egoFactor;
 
-    if (rng() >= probGoal) return;
+    if (rng() >= probGoal) {
+      // Sem golo: o lance vai para o log com o seu desfecho.
+      const r = rng();
+      const defendingSquad = isHome ? powers.away.squad : powers.home.squad;
+      const grPlayer = defendingSquad.find((p) => p.position === "GR");
+      let emoji: string;
+      let text: string;
+      if (r < MATCH_TUNING.chanceSaveShare) {
+        const grName = grPlayer ? grPlayer.name : "o guarda-redes";
+        emoji = "🧤";
+        text = `[${minute}'] 🧤 ${chanceSavedPhrase(
+          scorer ? scorer.name : "Jogador",
+          grName,
+        )}`;
+      } else if (r < MATCH_TUNING.chancePostShare) {
+        emoji = "🥅";
+        text = `[${minute}'] 🥅 ${chancePostPhrase(
+          scorer ? scorer.name : "Jogador",
+        )}`;
+      } else {
+        emoji = "💨";
+        text = `[${minute}'] 💨 ${chanceOffTargetPhrase(
+          scorer ? scorer.name : "Jogador",
+        )}`;
+      }
+      fixture.events.push({
+        minute,
+        type: "chance",
+        team: attackingSide,
+        emoji,
+        playerId: scorer ? scorer.id : null,
+        playerName: scorer ? scorer.name : "Jogador",
+        text,
+      });
+      return;
+    }
 
     // Auto-golo (~8% das oportunidades de golo): a bola entra na baliza da
     // equipa que defende, "creditado" a um defensor desse lado. Conta no
@@ -2461,12 +2516,6 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
       });
       return;
     }
-
-    const scorers = scoringSquad.filter(
-      (p) => p.position === "ATA" || p.position === "MED",
-    );
-    const scorer =
-      scorers.length > 0 ? weightedPickScorer(scorers, rng) : scoringSquad[0];
 
     // VAR: 5% de hipótese de golo ser anulado
     if (rng() < MATCH_TUNING.varDisallowedShare) {

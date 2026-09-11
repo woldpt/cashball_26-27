@@ -327,6 +327,13 @@ export const STYLE_DEFENSE_FACTORS: Record<string, number> = {
   OFENSIVO: 0.85,
 };
 
+/** Inclinação de posse por estilo (hatrick-style): DEFENSIVO segura a bola, OFENSIVO perde-a. */
+export const STYLE_POSSESSION_FACTORS: Record<string, number> = {
+  DEFENSIVO: 1,
+  EQUILIBRADO: 0,
+  OFENSIVO: -1,
+};
+
 export type SidePower = {
   attack: number;
   defense: number;
@@ -389,7 +396,10 @@ export function computeSidePower(
   const avgForm = average(squad.map((p) => p.form ?? FORM_NEUTRAL));
   const formFactor = Math.max(0.85, Math.min(1.15, avgForm / FORM_NEUTRAL));
 
-  const attackBase = avgMidfielderQuality * 0.4 + avgForwardQuality * 0.6;
+  // Hatrick-style: o ataque é o dos avançados (médios contam só via posse,
+  // ver computePossession). A defesa mantém a parede DEF+GR — médias, para o
+  // nº de jogadores não pesar na resolução da chance.
+  const attackBase = avgForwardQuality;
   const defenseBase = avgDefenderQuality * 0.6 + avgKeeperQuality * 0.4;
 
   const familiarityAttackFactor = 1 + familiarityBonus;
@@ -424,8 +434,39 @@ export function computeSidePower(
 }
 
 /**
+ * Posse da equipa A (0.30–0.70) a partir dos médios + estilo — hatrick-style,
+ * calculada UMA vez no apito inicial e fixa o resto do jogo. Médios melhores →
+ * mais posse; DEFENSIVO segura a bola, OFENSIVO perde-a por pressa.
+ */
+export function computePossession(
+  midA: number,
+  midB: number,
+  styleA: string,
+  styleB: string,
+): number {
+  const tiltA = STYLE_POSSESSION_FACTORS[normaliseStyle(styleA)] ?? 0;
+  const tiltB = STYLE_POSSESSION_FACTORS[normaliseStyle(styleB)] ?? 0;
+  const raw =
+    0.5 + (midA - midB) * MATCH_TUNING.possePerPoint + (tiltA - tiltB) * MATCH_TUNING.posseStyleDefensiva;
+  return Math.max(0.3, Math.min(0.7, raw));
+}
+
+/**
+ * Probabilidade de uma chance (criada pelo nº de posse) ser golo.
+ * ATA (médio dos avançados, já com modificadores) contra a "parede"
+ * DEF+GR — média vs média, logo o nº de jogadores não pesa.
+ */
+export function computeChanceGoalProbability(attack: number, defense: number): number {
+  const a = attack || 1;
+  const d = defense || 1;
+  const p = MATCH_TUNING.chanceGoalBase * (a / (a + MATCH_TUNING.chanceDefWeight * d));
+  return Math.max(MATCH_TUNING.chanceGoalMin, Math.min(MATCH_TUNING.chanceGoalMax, p));
+}
+
+/**
  * Probabilidade de golo em jogo corrido num minuto, para um lado.
- * Pura e testável: recebe as forças já calculadas e os fatores externos.
+ * Modelo antigo (contínuo por minuto) — mantido para a calibração
+ * (scripts/engineCalibration.mts) e para regressões.
  */
 export function computeOpenPlayGoalProbability({
   attack,

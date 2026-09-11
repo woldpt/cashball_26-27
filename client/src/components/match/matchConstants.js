@@ -82,7 +82,7 @@ export const THREAT_ROLE_META = {
 
 /* Event types to display in the match chronology */
 export const MATCH_EVENT_TYPES = [
-  "goal", "penalty_goal", "own_goal", "penalty_miss",
+  "goal", "penalty_goal", "own_goal", "penalty_miss", "chance",
   "yellow", "red", "injury", "substitution", "emergency_gk", "phase_start",
   "weather", "betting",
 ];

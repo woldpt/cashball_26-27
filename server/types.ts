@@ -108,6 +108,9 @@ export interface MatchFixture {
   _weather?: string;
   _homePossession?: number;
   _awayPossession?: number;
+  /** Chances (hatrick-style): total por equipa, fixo no apito inicial. */
+  _homeChances?: number;
+  _awayChances?: number;
   _homeSquad?: PlayerRow[];
   _awaySquad?: PlayerRow[];
   _homeFullRoster?: PlayerRow[];

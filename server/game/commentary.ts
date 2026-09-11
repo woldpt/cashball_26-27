@@ -636,6 +636,36 @@ function subPhrase(outName: string, inName: string): string {
   ]);
 }
 
+/** Chance sem golo (log hatrick-style): GR defendeu. */
+function chanceSavedPhrase(attacker: string, grName: string): string {
+  return pickPhrase([
+    `Chance de ${attacker} — ${grName} defendeu com segurança.`,
+    `${attacker} remata e ${grName} nega com a ponta dos dedos.`,
+    `Bom remate de ${attacker}, mas ${grName} estava lá.`,
+    `${grName} sai bem da baliza e corta o remate de ${attacker}.`,
+    `${attacker} ficou na cara do golo — defesa atenta de ${grName}.`,
+  ]);
+}
+
+/** Chance sem golo: bola no poste. */
+function chancePostPhrase(attacker: string): string {
+  return pickPhrase([
+    `Chance de ${attacker} — a bola bateu no poste e saiu!`,
+    `${attacker} rematou e o ferro salvou a equipa contrária.`,
+    `No poste! ${attacker} não teve sorte no remate.`,
+  ]);
+}
+
+/** Chance sem golo: ao lado / por cima. */
+function chanceOffTargetPhrase(attacker: string): string {
+  return pickPhrase([
+    `Chance de ${attacker} — remate ao lado.`,
+    `${attacker} atirou por cima da barra.`,
+    `Remate de ${attacker} saiu ao lado da baliza.`,
+    `${attacker} tentou de longe — longe do alvo.`,
+  ]);
+}
+
 function nearMissPhrase(name: string): string {
   return pickPhrase([
     `Que remate de ${name}! A bola passou a centímetros do poste. Quase.`,
@@ -1092,6 +1122,9 @@ export {
   subPhrase,
   emergencyGkPhrase,
   nearMissPhrase,
+  chanceSavedPhrase,
+  chancePostPhrase,
+  chanceOffTargetPhrase,
   bigSavePhrase,
   weatherPhrase,
   extraTimeStartPhrase,

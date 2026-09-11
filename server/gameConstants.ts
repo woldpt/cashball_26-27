@@ -326,9 +326,23 @@ export function remainingSubstitutions(fixture: any, teamId: number): number {
 export const MATCH_TUNING = {
   // Golos em jogo corrido: taxa base por minuto por equipa (antes de
   // forma/tempo/clima/posse). Alvo: ~2.5–3.5 golos/jogo no total.
-  goalBaseRate: 0.04,
+  goalBaseRate: 0.04, // (modelo antigo — calibração/scripts)
   homeGoalFactor: 1.08, // vantagem casa (fora da final da Taça)
   awayGoalFactor: 0.92,
+  // Posse (hatrick-style): médios decidem a repartição das chances, fixada
+  // no apito inicial. 50% ± diferença de médios × possePorPonto + estilo.
+  chancesTotal: 30, // chances/jogo no total, divididas pela posse
+  possePerPoint: 0.0075, // 10 pts de diferença de médios ≈ 7.5pp de posse
+  posseStyleDefensiva: 0.02, // estilo inclina: DEFENSIVO + / OFENSIVO −
+  // Conversão de chance: p = base × ATA/(ATA + defWeight×(DEF+GR)).
+  // Médias → o nº de jogadores não pesa; defWeight é a "parede".
+  chanceGoalBase: 0.175,
+  chanceDefWeight: 1.2,
+  chanceGoalMin: 0.06,
+  chanceGoalMax: 0.32,
+  // Chance sem golo: repartição (cumulativo) GR defende · poste · resto ao lado.
+  chanceSaveShare: 0.55,
+  chancePostShare: 0.7,
   ownGoalShare: 0.08, // ~8% das oportunidades de golo
   varDisallowedShare: 0.05, // 5% dos golos anulados pelo VAR
   // Conflito de egos: 3+ craques (MED/ATA) no XI reduzem a probabilidade.

@@ -19,8 +19,11 @@ export function EventCard({ event, accent, showTeamBadge, showIcon = true, teamN
     ? event.text.replace(/^\[(?:\d+'|HT)\]\s*/, "").trim()
     : null;
 
+  // Chances (hatrick-style) são eventos de contexto — atenuadas para não
+  // competirem com os golos no log.
+  const isMinor = event.type === "chance";
   return (
-    <div className="relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-surface-container/50 shadow-sm shadow-black/30">
+    <div className={`relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-surface-container/50 shadow-sm shadow-black/30 ${isMinor ? "opacity-60" : ""}`}>
       {accent && (
         <div className="shrink-0 w-1" style={{ background: `linear-gradient(to bottom, ${accent}99, ${accent})` }} />
       )}
