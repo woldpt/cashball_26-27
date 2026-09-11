@@ -7,6 +7,7 @@ import {
   FORM_NEUTRAL,
   FRIENDLY_ROUND,
   FRIENDLY_ROUND_NAME,
+  fansBaseByDivision,
   recalcPlayerValue,
   remainingSubstitutions,
   incrementSubCount,
@@ -458,6 +459,19 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			}
 			await dbRun(
 				"UPDATE teams SET points=0, wins=0, draws=0, losses=0, goals_for=0, goals_against=0",
+			);
+			// Reset emocional de época nova: moral neutra para todos e adeptos
+			// à base de fidelidade da (nova) divisão — sem herdar euforias nem crises.
+			await dbRun("UPDATE teams SET morale = 50");
+			await dbRun(
+				"UPDATE teams SET fans_mood = CASE division WHEN 1 THEN ? WHEN 2 THEN ? WHEN 3 THEN ? WHEN 4 THEN ? ELSE ? END",
+				[
+					fansBaseByDivision[1],
+					fansBaseByDivision[2],
+					fansBaseByDivision[3],
+					fansBaseByDivision[4],
+					fansBaseByDivision[5],
+				],
 			);
 			await dbRun("COMMIT");
 		} catch (txErr) {
