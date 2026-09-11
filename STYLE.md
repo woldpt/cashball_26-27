@@ -141,28 +141,29 @@ Paddings: `p-3 md:p-4`; widgets: `grid-cols-1 sm:grid-cols-3`. Navegação: grup
 
 **Utilitários:** `formatCurrency`, `getPlayerStat` · `FLAG_TO_COUNTRY`.
 
-## 11. Jornal — folha de papel (JournalTab)
+## 11. Jornal — folha escura (JournalTab)
 
-A tab Jornal é uma **folha de papel clara** pousada sobre o fundo escuro da
-app, com aspeto que evolui com o clube. Implementação em `index.css` (seção
-`JORNAL — "papel" (JP)`) + `JournalTab.jsx`; a 5.ª divisão não é jogável
-(irrelevante).
+A tab Jornal é uma **folha escura** (fanzine de bancada) sobre o fundo escuro
+da app, com aspeto que evolui com o clube. Implementação em `index.css`
+(seção `JORNAL — "quadro-negro" (JP)`) + `JournalTab.jsx`; a 5.ª divisão não
+é jogável (irrelevante).
 
 | Patamar | Divisão | Classe | Folha | Ornamentos |
 |---|---|---|---|---|
-| Amador (fotocópia) | 3-4 | `.jp-amador` | bege envelhecida | granulado forte, nódoas de café, dobra ao meio, tapes, rotações, masthead a preto-e-branco (`.jp-photocopy`) |
-| Semi (caseiro) | 2 | `.jp-semi` | creme clara | granulado leve, tapes, pouca rotação, sem nódoas/dobra |
-| Profissional | 1 | `.jp-pro` | quase branca | grelha direita: sem tapes/rotações/padrão de pontos — a voz gozona mantém-se |
+| Amador (fotocópia) | 3-4 | `.jp-amador` | ardósia quente | pó de giz forte, tapes, rotações, masthead a preto-e-branco (`.jp-photocopy`) |
+| Semi (caseiro) | 2 | `.jp-semi` | ardósia neutra | pó de giz leve, tapes, pouca rotação |
+| Profissional | 1 | `.jp-pro` | ardósia fria | grelha direita: sem tapes/rotações/padrão de pontos — a voz gozona mantém-se |
 
 **Como funciona:** `.jp-paper` redefine **scoped** os tokens do `@theme`
 (`--color-surface…`, `--color-on-surface…`, `--color-outline-variant`,
 acessórios de impressão como `--color-error`/`emerald`/`amber`/`zinc-950` e
 `--color-primary/tertiary`). Como o Tailwind emite `var(--color-…)`, todos os
-utilitários dos componentes do jornal passam a tinta escura sobre papel sem
-tocar no resto da app. Hex aqui permitido: é a paleta de impressão do jornal
-(análoga à paleta de posição). Granulado: `--jp-grain` (noise SVG por
-patamar) renderizado por `.jp-grain` (overlay acima do conteúdo, como tinta
-sobre papel); cor da folha: `--jp-sheet`.
+utilitários dos componentes do jornal passam a giz claro sobre ardósia sem
+tocar no resto da app. `--color-zinc-950` fica escuro de propósito (é a tinta
+dos chips coloridos, não do texto corrido). Hex aqui permitido: é a paleta de
+impressão do jornal (análoga à paleta de posição). Pó de giz: `--jp-grain`
+(noise SVG claro por patamar) renderizado por `.jp-grain` (overlay acima do
+conteúdo, como tinta sobre ardósia); cor da folha: `--jp-sheet`.
 
 **Regras:** nunca usar `Math.random` para as decorações (flicker entre
 renders — capa determinística); rotações/tapes/filtros vivem no JSX por

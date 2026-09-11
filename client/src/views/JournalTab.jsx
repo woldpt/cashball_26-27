@@ -1,13 +1,12 @@
 /**
  * JournalTab — o jornal da bancada.
  *
- * Landing tab (pós-login e pós-jogo). Uma FOLHA DE PAPEL clara (bege-creme)
- * pousada sobre o fundo escuro da app, com estética que evolui com o clube:
- *   · div 3-4 → .jp-amador: fotocópia de garagem (granulado forte, tapes,
- *     rotações, nódoa de café, dobra ao meio, masthead a preto-e-branco);
- *   · div 2   → .jp-semi: folha clara, caseiro cuidado (menos rotação,
- *     sem nódoas/dobra);
- *   · div 1   → .jp-pro: quase branco, grelha direita — sem tapes nem
+ * Landing tab (pós-login e pós-jogo). Uma FOLHA ESCURA (fanzine de bancada)
+ * sobre o fundo escuro da app, com estética que evolui com o clube:
+ *   · div 3-4 → .jp-amador: fotocópia de garagem (pó de giz forte, tapes,
+ *     rotações, masthead a preto-e-branco);
+ *   · div 2   → .jp-semi: escuro, caseiro cuidado (menos rotação);
+ *   · div 1   → .jp-pro: ardósia fria, grelha direita — sem tapes nem
  *     rotações, mas a voz de gozão de café mantém-se.
  * A 5.ª divisão não é jogável — irrelevante (cai no amador, nunca acontece).
  *
@@ -154,22 +153,14 @@ function crowdLine(r) {
 }
 
 /**
- * Envoltório da folha de papel. O patamar (jp-amador/semi/pro) decide a cor
- * da folha, o granulado e a tinta (tokens scoped no index.css); os ornamentos
- * de fotocópia crua (nódoas + dobra) só aparecem no amador.
+ * Envoltório da folha escura. O patamar (jp-amador/semi/pro) decide a cor
+ * da folha, o pó de giz e a tinta (tokens scoped no index.css).
  */
-function PaperSheet({ tierCls, amateur, children }) {
+function PaperSheet({ tierCls, children }) {
   return (
     <div
       className={`jp-paper ${tierCls} relative overflow-hidden rounded-md sm:rounded-lg px-2 sm:px-5 py-4 sm:py-5`}
     >
-      {amateur && (
-        <>
-          <div aria-hidden className="jp-stain jp-stain-a" />
-          <div aria-hidden className="jp-stain jp-stain-b" />
-          <div aria-hidden className="jp-crease" />
-        </>
-      )}
       <div className="relative z-[1] space-y-4 short:space-y-2">{children}</div>
       <div aria-hidden className="jp-grain" />
     </div>
@@ -417,7 +408,7 @@ export function JournalTab({
   // ── Patamar da folha (1 → pro · 2 → semi · 3-4 → amador) ──────────────
   const tier = journalTier(myDivision);
   const tierCls = tier === 2 ? "jp-pro" : tier === 1 ? "jp-semi" : "jp-amador";
-  const amateur = tier === 0; // fotocópia crua (nódoas, dobra, masthead B&W)
+  const amateur = tier === 0; // fotocópia crua (tapes, masthead B&W, rotações)
   const crafty = tier < 2; // ornamentos caseiros (tapes/rotações/recortes)
   const cardShadow = amateur
     ? "shadow-[5px_5px_0_rgba(0,0,0,0.45)]"
@@ -711,7 +702,7 @@ export function JournalTab({
 
   if (!hasAnything) {
     return (
-      <PaperSheet tierCls={tierCls} amateur={amateur}>
+      <PaperSheet tierCls={tierCls}>
         <EmptyState
           emoji="📰"
           title="Jornal sem manchetes"
@@ -726,7 +717,7 @@ export function JournalTab({
   const mood = fansMood != null ? fansMoodTone(fansMood) : null;
 
   return (
-    <PaperSheet tierCls={tierCls} amateur={amateur}>
+    <PaperSheet tierCls={tierCls}>
       {/* ── MASTHEAD ──────────────────────────────────────────────────── */}
       <div
         className={`relative overflow-hidden rounded-md border-2 border-on-surface/20 bg-surface-container px-4 short:px-3 py-3 short:py-2 ${
