@@ -133,6 +133,7 @@ function PlayerAvatar({ player, size = "w-7 h-7" }) {
 function PlayerRow({
   player,
   matchweekCount,
+  calendarIndex,
   onClick,
   draggable,
   onDragStart,
@@ -179,15 +180,16 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
             const susp = player.suspension_until_matchweek || 0;
             const inj = player.injury_until_matchweek || 0;
             const cooldown = player.transfer_cooldown_until_matchweek || 0;
-            const isSusp = susp > matchweekCount;
+            const nowIdx = calendarIndex ?? matchweekCount ?? 0;
+            const isSusp = susp > nowIdx;
             const isCooldown =
               !isSusp &&
-              !(inj > matchweekCount) &&
+              !(inj > nowIdx) &&
               cooldown > 0 &&
-              cooldown > matchweekCount;
+              cooldown > nowIdx;
             if (isCooldown)
               return <span className="text-[10px] ml-0.5">✈️</span>;
-            const left = isSusp ? susp - matchweekCount : inj - matchweekCount;
+            const left = isSusp ? susp - nowIdx : inj - nowIdx;
             return (
               <span className="text-[9px] ml-0.5 text-red-400">
                 {isSusp ? "🟥" : "🩹"}({left})
@@ -379,6 +381,7 @@ export function TacticsView() {
   const {
     lockedCoaches,
     liveMinute,
+    calendarIndex,
     isCupExtraTime,
     mobileSubMenu,
     seasonEndModal,
@@ -844,6 +847,7 @@ ${
                       key={player.id}
                       player={player}
                       matchweekCount={matchweekCount}
+                      calendarIndex={calendarIndex}
                       onClick
                       draggable={!player.isJunior}
                       onDragStart={handleDragStart}
@@ -929,6 +933,7 @@ ${
                         key={player.id}
                         player={player}
                         matchweekCount={matchweekCount}
+                        calendarIndex={calendarIndex}
                         onClick
                         draggable={!player.isJunior}
                         onDragStart={handleDragStart}
@@ -1016,6 +1021,7 @@ ${
                             key={player.id}
                             player={player}
                             matchweekCount={matchweekCount}
+                            calendarIndex={calendarIndex}
                             draggable
                             onDragStart={handleDragStart}
                             onDragOver={(e) => {
@@ -1235,10 +1241,10 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
                               {player.isUnavailable && (
                                 <span className="absolute -top-1 -right-1 text-[9px] bg-black/60 rounded-full px-0.5 leading-none">
                                   {(player.suspension_until_matchweek || 0) >
-                                  matchweekCount
+                                  (calendarIndex ?? matchweekCount)
                                     ? "🟥"
                                     : (player.injury_until_matchweek || 0) >
-                                        matchweekCount
+                                        (calendarIndex ?? matchweekCount)
                                       ? "🩹"
                                       : "✈️"}
                                 </span>

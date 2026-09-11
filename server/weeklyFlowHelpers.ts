@@ -86,6 +86,8 @@ interface WeeklyFlowDeps {
     fixtures: any[],
     completedCalendarIndex: number,
   ) => Promise<void>;
+  prepareFriendlyFixtures: (game: ActiveGame) => Promise<void>;
+  finalizeFriendly: (game: ActiveGame) => Promise<void>;
   startCupRound: (game: ActiveGame, round: number) => Promise<void>;
   finalizeCupRound: (game: ActiveGame) => Promise<void>;
   continueFromEtGate: (game: ActiveGame) => Promise<void>;
@@ -128,6 +130,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     persistMatchResults,
     applyPostMatchQualityEvolution,
     applyTrainingBonuses,
+    prepareFriendlyFixtures,
+    finalizeFriendly,
     startCupRound,
     finalizeCupRound,
     continueFromEtGate,
@@ -283,13 +287,13 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     const entry = game.currentEvent as CalendarEntry | null;
 
     // Calculate attendance only for league first halves
-    if (startMin === 1 && (entry?.type === "league" || entry?.type === "cup")) {
+    if (startMin === 1 && entry?.type != null) {
       const attCtx = {
-        competition: (entry?.type ?? "league") as "league" | "cup",
+        competition: (entry?.type === "friendly" ? "cup" : (entry?.type ?? "league")) as "league" | "cup",
         cupRound:
-          entry?.type === "cup"
-            ? ((game.currentFixtures[0] as any)?.round ?? (entry as any)?.round)
-            : undefined,
+          entry?.type === "league"
+            ? undefined
+            : ((game.currentFixtures[0] as any)?.round ?? (entry as any)?.round),
         season: game.season || 1,
         matchweek: game.matchweek || 1,
       };
@@ -331,7 +335,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             game.db,
             fixture.homeTeamId,
             fixture.awayTeamId,
-            game.matchweek || 1,
+            (game.calendarIndex ?? 0) + 1,
           );
         }
         if (!t2) {
@@ -339,7 +343,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             game.db,
             fixture.awayTeamId,
             fixture.homeTeamId,
-            game.matchweek || 1,
+            (game.calendarIndex ?? 0) + 1,
           );
         }
         fixture._t1 = t1;
@@ -724,9 +728,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       startMin,
       endMin,
       matchweek: game.matchweek,
-      isCup: entry?.type === "cup",
-      cupRound: entry?.type === "cup" ? (entry as any).round : null,
-      cupRoundName: entry?.type === "cup" ? (entry as any).roundName : null,
+      isCup: entry?.type !== "league",
+      cupRound: entry?.type !== "league" ? ((entry as any).round ?? null) : null,
+      cupRoundName: entry?.type !== "league" ? ((entry as any).roundName ?? null) : null,
       fixtures: game.currentFixtures.map((f) => ({
         homeTeamId: f.homeTeamId,
         awayTeamId: f.awayTeamId,
@@ -795,7 +799,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           {
             game,
             io,
-            matchweek: game.matchweek,
+            matchweek: (game.calendarIndex ?? 0) + 1,
             calendarIndex: game.calendarIndex,
             onMinute: (minute: number) => barrier.wait(minute),
           },
@@ -818,7 +822,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       );
       game.gamePhase = "match_halftime";
 
-      if (entry?.type === "cup") {
+      if (entry?.type !== "league") {
         const halftimePayload = {
           round: (entry as any).round,
           roundName: (entry as any).roundName,
@@ -892,6 +896,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
     if (entry?.type === "cup") {
       await finalizeCupRound(game);
+    } else if (entry?.type === "friendly") {
+      await finalizeFriendly(game);
     } else {
       await finalizeLeagueEvent(game);
     }
@@ -925,8 +931,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     game.phaseToken = makePhaseToken(game);
     saveGameState(game);
 
-    // For cup matches, emit animation before second half starts
-    if (entry?.type === "cup") {
+    // For cup/friendly matches, emit animation before second half starts
+    if (entry?.type !== "league") {
       io.to(game.roomCode).emit("cupSecondHalfStart", {
         round: entry.round,
         roundName: entry.roundName,
@@ -1155,7 +1161,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               },
             );
 
-            applyPostMatchQualityEvolution(game.db, fixtures, completedMatchweek, game.season || 1, completedCalendarIndex)
+            applyPostMatchQualityEvolution(game.db, fixtures, completedCalendarIndex + 1, game.season || 1, completedCalendarIndex)
               .then(() =>
                 applyTrainingBonuses(game, fixtures, completedCalendarIndex),
               )
@@ -1293,10 +1299,10 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                             withJuniorGRs(
                               squad,
                               player.teamId as number,
-                              game.matchweek || 1,
+                              (game.calendarIndex ?? 0) + 1,
                             ),
                             player.teamId as number,
-                            game.matchweek || 1,
+                            (game.calendarIndex ?? 0) + 1,
                           ),
                         );
                       });
@@ -1514,7 +1520,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     game._lastCompletedSegment = null;
 
     console.log(
-      `[${game.roomCode}] 🏟 Starting match | type=${entry.type} | calendarIndex=${game.calendarIndex} | ${entry.type === "cup" ? `round=${(entry as any).round}` : `mw=${(entry as any).matchweek}`}`,
+      `[${game.roomCode}] 🏟 Starting match | type=${entry.type} | calendarIndex=${game.calendarIndex} | ${entry.type === "cup" ? `round=${(entry as any).round}` : entry.type === "friendly" ? `amigável` : `mw=${(entry as any).matchweek}`}`,
     );
 
     const financed = await applyWeeklyFinancesOnce(game);
@@ -1529,7 +1535,13 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     }
 
     try {
-      if (entry.type === "cup") {
+      if (entry.type === "friendly") {
+        // Amigável: sorteio invisível feito à entrada do lobby (fim de época).
+        // Fallback: preparar agora se faltar (ex. recovery).
+        if (!game.currentFixtures || game.currentFixtures.length === 0) {
+          await prepareFriendlyFixtures(game);
+        }
+      } else if (entry.type === "cup") {
         // Cup fixtures were prepared when we entered the lobby (see finalizeLeagueEvent).
         // Fallback: prepare now if missing (e.g. crash recovery).
         if (!game.currentFixtures || game.currentFixtures.length === 0) {
@@ -1636,9 +1648,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       return;
     }
 
-    // Auto-advance cup halftime when no human coach is in any fixture.
+    // Auto-advance cup/friendly halftime when no human coach is in any fixture.
     // (All eliminated — no substitutions screen needed, continue immediately.)
-    if (phaseNow === "match_halftime" && entry?.type === "cup") {
+    if (phaseNow === "match_halftime" && entry?.type !== "league") {
       const humanInAnyFixture = game.currentFixtures.some((f) =>
         (Object.values(game.playersByName) as PlayerSession[]).some(
           (p) =>

@@ -492,6 +492,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
               home_et_score, away_et_score, home_penalties, away_penalties
        FROM cup_matches
        WHERE played = 1
+         AND round > 0
          AND ((home_team_id = ? AND away_team_id = ?)
            OR (home_team_id = ? AND away_team_id = ?))
        ORDER BY season DESC, round DESC
@@ -753,8 +754,10 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
 
     const currentEntry = SEASON_CALENDAR[game.calendarIndex];
 
-    // ── CUP WEEK ────────────────────────────────────────────────────────────
-    if (currentEntry?.type === "cup") {
+    // ── CUP/FRIENDLY WEEK ───────────────────────────────────────────────────
+    // O amigável (ronda 0) reutiliza o ramo da taça: adversário da tabela,
+    // Casa/Fora real (só a final é no Jamor) e isCup para a vista live.
+    if (currentEntry?.type === "cup" || currentEntry?.type === "friendly") {
       const cupMatch = await runGet(
         game.db,
         "SELECT * FROM cup_matches WHERE season = ? AND round = ? AND (home_team_id = ? OR away_team_id = ?) AND played = 0",

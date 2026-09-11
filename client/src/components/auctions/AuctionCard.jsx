@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useContext } from "react";
+import { GameContext } from "../../contexts/GameContext.jsx";
 import { formatCurrency } from "../../utils/formatters.js";
 import {
   FLAG_TO_COUNTRY,
@@ -50,6 +51,7 @@ function formatSecs(secs) {
 export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket, onOpenDetails }) {
   const [bidError, setBidError] = useState("");
   const [bidSuccess, setBidSuccess] = useState(false);
+  const nowIdx = useContext(GameContext)?.calendarIndex ?? matchweekCount;
 
   const secs = useCountdown(auction.closed || auction.paused ? null : auction.endsAt);
   const posHex = POSITION_ACCENT_HEX[auction.position] || "#94a3b8";
@@ -150,11 +152,11 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
         {!!auction.is_star && (auction.position === "MED" || auction.position === "ATA") && (
           <StarMark />
         )}
-        {(auction.suspension_until_matchweek ?? 0) > matchweekCount && (
-          <Badge variant="suspended">🟥 {(auction.suspension_until_matchweek ?? 0) - matchweekCount + 1}J</Badge>
+        {(auction.suspension_until_matchweek ?? 0) > nowIdx && (
+          <Badge variant="suspended">🟥 {(auction.suspension_until_matchweek ?? 0) - nowIdx + 1}J</Badge>
         )}
-        {(auction.injury_until_matchweek ?? 0) > matchweekCount && (
-          <Badge variant="injured">🩹 {(auction.injury_until_matchweek ?? 0) - matchweekCount + 1}J</Badge>
+        {(auction.injury_until_matchweek ?? 0) > nowIdx && (
+          <Badge variant="injured">🩹 {(auction.injury_until_matchweek ?? 0) - nowIdx + 1}J</Badge>
         )}
         <span className="ml-auto text-[9px] text-zinc-500 truncate max-w-[110px]" title={teamLabel}>
           {teamLabel}

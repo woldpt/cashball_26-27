@@ -147,7 +147,7 @@ export function registerNewsSocketHandlers(
                      FROM cup_matches cm
                      JOIN teams th ON th.id = cm.home_team_id
                      JOIN teams ta ON ta.id = cm.away_team_id
-                     WHERE cm.season = ? AND cm.played = 1
+                     WHERE cm.season = ? AND cm.round > 0 AND cm.played = 1
                      ORDER BY cm.round DESC`,
                     [season],
                     (cupErr: Error | null, cupRows: any[] | null) => {
@@ -158,37 +158,61 @@ export function registerNewsSocketHandlers(
                         );
                         return fail();
                       }
-                      const mkResults = (rows: any[]) =>
-                        rows.map((r) => {
-                          const homeKey = `${r.competition}|${r.matchweek ?? ""}|${r.round ?? ""}|${r.home_team_id}`;
-                          const awayKey = `${r.competition}|${r.matchweek ?? ""}|${r.round ?? ""}|${r.away_team_id}`;
-                          return {
-                            competition: r.competition,
-                            matchweek: r.matchweek ?? null,
-                            round: r.round ?? null,
-                            homeTeamId: r.home_team_id,
-                            awayTeamId: r.away_team_id,
-                            homeName: r.home_name,
-                            awayName: r.away_name,
-                            homeDivision: r.home_division,
-                            awayDivision: r.away_division,
-                            homeScore: r.home_score,
-                            awayScore: r.away_score,
-                            attendance: r.attendance ?? null,
-                            homeCapacity: r.home_capacity ?? null,
-                            momHome: momsByKey[homeKey] ?? null,
-                            momAway: momsByKey[awayKey] ?? null,
-                          };
-                        });
-                      socket.emit("globalNews", {
-                        news: newsRows.slice(0, NEWS_LIMIT),
-                        results: mkResults([
-                          ...(leagueRows || []),
-                          ...(cupRows || []),
-                        ]),
-                        year,
-                        season,
-                      });
+                      // ── Resultados: Amigável (ronda 0, competição própria) ──
+                      game.db.all(
+                        `SELECT 'Friendly' AS competition, NULL AS matchweek, cm.round,
+                                cm.home_team_id, cm.away_team_id, cm.home_score, cm.away_score,
+                                cm.attendance, th.stadium_capacity AS home_capacity,
+                                th.name AS home_name, ta.name AS away_name,
+                                th.division AS home_division, ta.division AS away_division
+                         FROM cup_matches cm
+                         JOIN teams th ON th.id = cm.home_team_id
+                         JOIN teams ta ON ta.id = cm.away_team_id
+                         WHERE cm.season = ? AND cm.round = 0 AND cm.played = 1
+                         ORDER BY cm.id`,
+                        [season],
+                        (friErr: Error | null, friRows: any[] | null) => {
+                          if (friErr) {
+                            console.warn(
+                              `[getGlobalNews] friendly results failed (${game.roomCode}):`,
+                              friErr.message,
+                            );
+                            return fail();
+                          }
+                          const mkResults = (rows: any[]) =>
+                            rows.map((r) => {
+                              const homeKey = `${r.competition}|${r.matchweek ?? ""}|${r.round ?? ""}|${r.home_team_id}`;
+                              const awayKey = `${r.competition}|${r.matchweek ?? ""}|${r.round ?? ""}|${r.away_team_id}`;
+                              return {
+                                competition: r.competition,
+                                matchweek: r.matchweek ?? null,
+                                round: r.round ?? null,
+                                homeTeamId: r.home_team_id,
+                                awayTeamId: r.away_team_id,
+                                homeName: r.home_name,
+                                awayName: r.away_name,
+                                homeDivision: r.home_division,
+                                awayDivision: r.away_division,
+                                homeScore: r.home_score,
+                                awayScore: r.away_score,
+                                attendance: r.attendance ?? null,
+                                homeCapacity: r.home_capacity ?? null,
+                                momHome: momsByKey[homeKey] ?? null,
+                                momAway: momsByKey[awayKey] ?? null,
+                              };
+                            });
+                          socket.emit("globalNews", {
+                            news: newsRows.slice(0, NEWS_LIMIT),
+                            results: mkResults([
+                              ...(leagueRows || []),
+                              ...(cupRows || []),
+                              ...(friRows || []),
+                            ]),
+                            year,
+                            season,
+                          });
+                        },
+                      );
                     },
                   );
                 },

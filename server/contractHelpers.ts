@@ -13,6 +13,7 @@ import {
 } from "./gameConstants";
 import {
   currentEpoch,
+  currentSlot,
   contractEndInfo,
   getAllTeamForms,
   logClubNews,
@@ -309,7 +310,7 @@ export function createContractHelpers(deps: ContractDeps) {
           await new Promise<void>((resolve) => {
             game.db.run(
               "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
-              [fairWage, seasonEnd, now, game.matchweek, player.id],
+              [fairWage, seasonEnd, now, currentSlot(game), player.id],
               () => resolve(),
             );
           });

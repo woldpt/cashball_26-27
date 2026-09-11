@@ -1,8 +1,8 @@
 import type { ActiveGame, PlayerSession } from "./types";
 import {
 	CONTRACT_LENGTH_MATCHWEEKS,
-	contractEpoch,
 } from "./gameConstants";
+import { currentEpoch } from "./coreHelpers";
 
 type AnyRow = Record<string, any>;
 
@@ -142,7 +142,7 @@ export function registerScoutSocketHandlers(
 				where.push("(p.team_id IS NULL OR p.team_id != ?)");
 				params.push(playerState.teamId);
 			}
-			const epoch = contractEpoch(game.season || 1, game.matchweek || 1);
+			const epoch = currentEpoch(game);
 			where.push("(p.contract_start_epoch = 0 OR p.contract_start_epoch + ? <= ?)");
 			params.push(CONTRACT_LENGTH_MATCHWEEKS, epoch);
 		}

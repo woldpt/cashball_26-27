@@ -1,4 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useContext, useEffect, useRef } from "react";
+import { GameContext } from "../../contexts/GameContext.jsx";
+import { slotLabel } from "../../utils/slotLabel.js";
 import { formatCurrency, seasonToYear } from "../../utils/formatters.js";
 import { AggBadge } from "../shared/AggBadge.jsx";
 import { Badge } from "../shared/Badge.jsx";
@@ -82,6 +84,8 @@ export function PlayerHistoryModal({
   myBudget = 0,
   setGameDialog,
 }) {
+  // Relógio único primeiro (regras dos hooks: antes de qualquer return).
+  const ctxIdx = useContext(GameContext)?.calendarIndex;
   // History API: push an entry when the modal opens so the browser back
   // button closes it, keeping navigation state consistent.
   const wasOpen = useRef(false);
@@ -162,17 +166,20 @@ export function PlayerHistoryModal({
     myTeamId != null &&
     player.team_id != null &&
     Number(myTeamId) === Number(player.team_id);
-  const currentEpoch = (Math.max(1, season) - 1) * 14 + Math.min(14, matchweekCount + 1);
+  const nowIdx = ctxIdx ?? matchweekCount;
+  const currentEpoch = (Math.max(1, season) - 1) * 20 + Math.min(20, nowIdx + 1);
   const contractStart = player.contract_start_epoch || 0;
-  const isLocked = contractStart > 0 && currentEpoch < contractStart + 14;
-  const contractEndEpoch = contractStart > 0 ? contractStart + 14 : 0;
-  const contractEndSeason = contractStart > 0 ? Math.ceil(contractEndEpoch / 14) : 0;
+  const isLocked = contractStart > 0 && currentEpoch < contractStart + 20;
+  const contractEndEpoch = contractStart > 0 ? contractStart + 20 : 0;
+  const contractEndSeason = contractStart > 0 ? Math.ceil(contractEndEpoch / 20) : 0;
   const contractEndMatchweek = contractStart > 0
-    ? contractEndEpoch - (contractEndSeason - 1) * 14
+    ? contractEndEpoch - (contractEndSeason - 1) * 20
     : 0;
+  const contractEndLabel = contractStart > 0 ? slotLabel(contractEndMatchweek) : "";
   const contractEndYear = contractStart > 0 ? seasonToYear(contractEndSeason) : 0;
   const matchInProgress = isPlayingMatch || showHalftimePanel;
   // Server uses >= to prevent re-auction in same matchweek (auctionHelpers.ts:459)
+  // Guarda anti-releilão: servidor escreve/lê em matchweek da liga (rótulo).
   const alreadyAuctionedThisWeek =
     matchweekCount > 0 &&
     (player.last_auctioned_matchweek || 0) >= matchweekCount;
@@ -187,15 +194,15 @@ export function PlayerHistoryModal({
 
   // Availability badge
   let availBadge = null;
-  if ((player.suspension_until_matchweek ?? 0) > matchweekCount) {
-    const jLeft = player.suspension_until_matchweek - matchweekCount + 1;
+  if ((player.suspension_until_matchweek ?? 0) > nowIdx) {
+    const jLeft = player.suspension_until_matchweek - nowIdx + 1;
     availBadge = (
       <Badge variant="suspended" size="md">
         🟥 Suspenso · {jLeft}J
       </Badge>
     );
-  } else if ((player.injury_until_matchweek ?? 0) > matchweekCount) {
-    const jLeft = player.injury_until_matchweek - matchweekCount + 1;
+  } else if ((player.injury_until_matchweek ?? 0) > nowIdx) {
+    const jLeft = player.injury_until_matchweek - nowIdx + 1;
     availBadge = (
       <Badge variant="injured" size="md">
         🩹 Lesionado · {jLeft}J
@@ -412,8 +419,7 @@ export function PlayerHistoryModal({
                   <div className="flex flex-col gap-2">
                     {isLocked && (
                       <p className="text-[11px] text-amber-400/90 font-bold">
-                        🔒 Contrato em vigor até {contractEndYear}, Jornada
-                        {contractEndMatchweek} — não pode ser transferido.
+                        🔒 Contrato em vigor até {contractEndYear}, {contractEndLabel} — não pode ser transferido.
                       </p>
                     )}
                     <Button
@@ -440,9 +446,9 @@ export function PlayerHistoryModal({
                         matchInProgress
                           ? "Disponível após as partidas"
                           : isLocked
-                            ? `Contrato até ${contractEndYear}, Jornada ${contractEndMatchweek}`
+                            ? `Contrato até ${contractEndYear}, ${contractEndLabel}`
                             : alreadyAuctionedThisWeek
-                              ? "Já foi a leilão nesta jornada"
+                              ? "Já foi a leilão nesta semana"
                               : "Vender em Leilão"
                       }
                       onClick={() => {
@@ -478,7 +484,7 @@ export function PlayerHistoryModal({
                           matchInProgress
                             ? "Disponível após as partidas"
                             : isLocked
-                              ? `Contrato até ${contractEndYear}, Jornada ${contractEndMatchweek}`
+                              ? `Contrato até ${contractEndYear}, ${contractEndLabel}`
                               : "Listar para Transferência"
                         }
                         onClick={() => {

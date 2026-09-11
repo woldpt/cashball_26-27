@@ -214,10 +214,15 @@ export interface ActiveGame {
   roomMembers: Set<string>;
 
   // ── Single calendar cursor (replaces matchweek + cupRound as progress trackers) ──
-  calendarIndex: number; // 0..18 within the season (index into SEASON_CALENDAR)
+  calendarIndex: number; // 0..19 within the season (index into SEASON_CALENDAR)
   season: number;
   year: number;
   matchweek: number; // convenience field: updated at end of each league event
+  // Migração calendário v2 (20 semanas): época até à qual os contratos da
+  // época em curso se avaliam na escala velha (14). undefined = já em slots.
+  contractCutoverSeason?: number | null;
+  // Versão do calendário persistida (1 = 19 semanas, 2 = 20 com amigável).
+  calendarVersion?: number;
 
   // ── Single state machine (replaces matchState + cupState) ──
   gamePhase: GamePhase;

@@ -216,6 +216,25 @@ async function main(): Promise<void> {
   let game: any;
 
   try {
+    // ── S0 — migração v2: clone antigo (19 semanas) migra ao carregar ──────
+    console.log("S0 · migração calendário v2 (19 → 20 semanas)");
+    const preIdx = parseInt((await kvGet("calendarIndex")) || "0", 10);
+    const preVer = await kvGet("calendarVersion");
+    const preMarks = ((await rawGet(dstPath, "SELECT COUNT(*) AS n FROM applied_weeks WHERE season = ?", [season]))[0]?.n ?? 0);
+    game = await loadRoom();
+    ok((await kvGet("calendarVersion")) === "2", "versão persistida = 2");
+    ok(game.calendarVersion === 2, "memória: calendarVersion = 2");
+    if (preVer !== "2") {
+      ok(
+        game.calendarIndex === Math.min(preIdx + 1, SEASON_CALENDAR.length - 1),
+        `índice deslocado ${preIdx} → ${game.calendarIndex}`,
+      );
+      ok(game.contractCutoverSeason === game.season, "contratos da época em curso na escala velha");
+      ok(fs.existsSync(dstPath + ".pre20"), "backup .pre20 criado");
+      const postMarks = ((await rawGet(dstPath, "SELECT COUNT(*) AS n FROM applied_weeks WHERE season = ?", [season]))[0]?.n ?? 0);
+      ok(postMarks === preMarks, `marcadores preservados (${preMarks})`);
+    }
+    await closeRoom(game);
     // ── S1 — finanças semanais: cobrança única, sem replay após restart ────────
     console.log("S1 · applyWeeklyFinancesOnce (idempotência weekly_finance)");
     ok(SEASON_CALENDAR[2].type === "league", "setup: slot 2 é de liga");
@@ -272,13 +291,13 @@ async function main(): Promise<void> {
     // ── S2 — slot de liga já finalizado: avançar, nunca re-simular ────────────
     console.log("\nS2 · recoverFinalizedSlot (liga)");
     await closeRoom(game);
-    const entryL = SEASON_CALENDAR[4] as any; // liga MW5
-    ok(entryL.type === "league", "setup: slot 4 é de liga");
-    await kvSet("calendarIndex", "4");
+    const entryL = SEASON_CALENDAR[5] as any; // liga (mapa de 20: slot 5 = L4)
+    ok(entryL.type === "league", "setup: slot 5 é de liga");
+    await kvSet("calendarIndex", "5");
     await kvSet("gamePhase", "lobby");
     await rawExec(
       dstPath,
-      `INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, 4, 'finalized')`,
+      `INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, 5, 'finalized')`,
       [season],
     );
     const mwL = entryL.matchweek;
@@ -292,16 +311,16 @@ async function main(): Promise<void> {
 
     game = await loadRoom();
     ok(
-      game.calendarIndex === 4 && game.currentEvent?.type === "league",
+      game.calendarIndex === 5 && game.currentEvent?.type === "league",
       "sala carrega no slot finalizado (crash antes de avançar)",
     );
     const mwMem0 = game.matchweek;
     helpers.recoverFinalizedSlot(game, entryL);
-    ok(game.calendarIndex === 5, "memória: calendarIndex 4 → 5");
+    ok(game.calendarIndex === 6, "memória: calendarIndex 5 → 6");
     ok(game.matchweek === mwMem0 + 1, `memória: matchweek ${mwMem0} → ${mwMem0 + 1}`);
     ok(
-      await waitForKv("calendarIndex", "5"),
-      "disco: calendarIndex persistido = 5 (visível por um restart)",
+      await waitForKv("calendarIndex", "6"),
+      "disco: calendarIndex persistido = 6 (visível por um restart)",
     );
     ok((await sumBudget()) === Bpre2, "SEM re-cobrança de bilheteira/rendimentos");
     const matchesN1 = (
@@ -315,36 +334,36 @@ async function main(): Promise<void> {
     // ── S3 — slot de taça já finalizado: idem, sem mexer na liga ──────────────
     console.log("\nS3 · recoverFinalizedSlot (Taça)");
     await closeRoom(game);
-    const entryC = SEASON_CALENDAR[3] as any; // Taça R1
-    ok(entryC.type === "cup", "setup: slot 3 é de taça");
-    await kvSet("calendarIndex", "3");
+    const entryC = SEASON_CALENDAR[4] as any; // Taça R1 (mapa de 20: slot 4)
+    ok(entryC.type === "cup", "setup: slot 4 é de taça");
+    await kvSet("calendarIndex", "4");
     await kvSet("gamePhase", "lobby");
     await rawExec(
       dstPath,
-      `INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, 3, 'finalized')`,
+      `INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, 4, 'finalized')`,
       [season],
     );
     const Bpre3 = await sumBudget();
 
     game = await loadRoom();
     ok(
-      game.calendarIndex === 3 && game.currentEvent?.type === "cup",
+      game.calendarIndex === 4 && game.currentEvent?.type === "cup",
       "sala carrega no slot de taça finalizado (crash antes de avançar)",
     );
     const mwMem1 = game.matchweek;
     helpers.recoverFinalizedSlot(game, entryC);
-    ok(game.calendarIndex === 4, "memória: calendarIndex 3 → 4");
+    ok(game.calendarIndex === 5, "memória: calendarIndex 4 → 5");
     ok(
       game.matchweek === mwMem1,
       "matchweek da liga NÃO incrementado por round de taça",
     );
-    ok(await waitForKv("calendarIndex", "4"), "disco: calendarIndex persistido = 4");
+    ok(await waitForKv("calendarIndex", "5"), "disco: calendarIndex persistido = 5");
     ok((await sumBudget()) === Bpre3, "SEM re-cobrança (palmarés/verba intactos)");
 
     // ── S4 — entrypoint real: checkAllReady escolhe recovery com marcador ─────
     console.log("\nS4 · checkAllReady (dispatch de produção)");
     await closeRoom(game);
-    await kvSet("calendarIndex", "3");
+    await kvSet("calendarIndex", "4");
     await kvSet("gamePhase", "lobby");
     // Preferir os coaches humanos reais da sala (lockedCoaches é re-derivado
     // do DB na carga); senão, injetar 2 sessões de teste qualquer.
@@ -370,8 +389,8 @@ async function main(): Promise<void> {
 
     await helpers.checkAllReady(game);
     ok(
-      await waitForKv("calendarIndex", "4"),
-      "dispatch escolheu recovery (calendário avançou p/ 4, sem replay)",
+      await waitForKv("calendarIndex", "5"),
+      "dispatch escolheu recovery (calendário avançou p/ 5, sem replay)",
     );
     ok((await sumBudget()) === Bpre4, "SEM re-cobrança via entrypoint real");
     ok(game.gamePhase === "lobby", "fase volta a lobby após recovery");

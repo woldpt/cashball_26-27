@@ -3,7 +3,8 @@
  * Estilo cromo face única idêntico ao AuctionCard: faixa por posição,
  * herói com halo + skill, tiles Forma/Jogos/Golos e rodapé de ação único.
  */
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
+import { GameContext } from "../../contexts/GameContext.jsx";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
 import { AggBadge } from "../shared/AggBadge.jsx";
 import { Badge } from "../shared/Badge.jsx";
@@ -186,8 +187,10 @@ function MarketCard({
   const isListed = isAuction || isFixed;
   const isMyAuction = isSameTeamId(player.auction_seller_team_id, me?.teamId);
   const isOwn = isSameTeamId(player.team_id, me?.teamId);
-  const isSuspended = (player.suspension_until_matchweek ?? 0) > matchweekCount;
-  const isInjured = (player.injury_until_matchweek ?? 0) > matchweekCount;
+  const ctxIdx = useContext(GameContext)?.calendarIndex;
+  const nowIdx = ctxIdx ?? matchweekCount;
+  const isSuspended = (player.suspension_until_matchweek ?? 0) > nowIdx;
+  const isInjured = (player.injury_until_matchweek ?? 0) > nowIdx;
 
   const posHex = POSITION_ACCENT_HEX[player.position] || "#94a3b8";
   const posText = POSITION_TEXT_CLASS[player.position] || "text-zinc-400";
@@ -243,8 +246,8 @@ function MarketCard({
         </Badge>
         {isOwn && <Badge variant="info" size="sm" title="Jogador do teu plantel">Teu</Badge>}
         {!!player.is_star && (player.position === "MED" || player.position === "ATA") && <StarMark />}
-        {isSuspended && <Badge variant="suspended">🟥 {(player.suspension_until_matchweek ?? 0) - matchweekCount + 1}J</Badge>}
-        {isInjured && <Badge variant="injured">🩹 {(player.injury_until_matchweek ?? 0) - matchweekCount + 1}J</Badge>}
+        {isSuspended && <Badge variant="suspended">🟥 {(player.suspension_until_matchweek ?? 0) - nowIdx + 1}J</Badge>}
+        {isInjured && <Badge variant="injured">🩹 {(player.injury_until_matchweek ?? 0) - nowIdx + 1}J</Badge>}
         <span className="ml-auto text-[9px] text-zinc-500 truncate max-w-[110px]" title={teamLabel}>
           {teamLabel}
         </span>

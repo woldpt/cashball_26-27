@@ -4,6 +4,7 @@ import {
   MATCH_TUNING,
   CONTRACT_LENGTH_MATCHWEEKS,
   contractEpoch,
+  SEASON_CALENDAR,
 } from "./gameConstants";
 import { getWeatherForFixture } from "./game/matchCalculations";
 
@@ -64,19 +65,51 @@ const refereeNames = [
 ];
 
 export function getSeasonEndMatchweek(matchweek: number) {
-  return Math.ceil(Math.max(1, matchweek) / 14) * 14;
+  return Math.ceil(Math.max(1, matchweek) / 20) * 20;
 }
 
 /**
- * Época absoluta actual derivada do estado do jogo.
+ * Slot actual 1-based (1..20) — o relógio único do jogo. Anda em todas as
+ * semanas (amigável, liga e taça); o matchweek só anda nas jornadas da liga.
+ */
+export function currentSlot(game: ActiveGame): number {
+  return (game.calendarIndex ?? 0) + 1;
+}
+
+/**
+ * Época absoluta actual derivada do estado do jogo (em slots).
+ * Salas migradas do calendário de 19 avaliam contratos da época em curso
+ * com a fórmula velha até ao fim da época (ver contractCutoverSeason).
  */
 export function currentEpoch(game: ActiveGame): number {
-  return contractEpoch(game.season || 1, game.matchweek || 1);
+  const season = game.season || 1;
+  if (
+    game.contractCutoverSeason != null &&
+    season <= game.contractCutoverSeason
+  ) {
+    return (
+      (Math.max(1, season) - 1) * 14 +
+      Math.min(14, Math.max(1, game.matchweek || 1))
+    );
+  }
+  return contractEpoch(season, currentSlot(game));
+}
+
+/**
+ * Etiqueta humana de um slot (para mensagens de contrato): "Jornada N",
+ * nome da ronda da Taça ou "Pré-época".
+ */
+export function slotLabel(slot: number): string {
+  const entry = SEASON_CALENDAR[Math.max(1, slot) - 1];
+  if (!entry) return `Semana ${slot}`;
+  if (entry.type === "league") return `Jornada ${entry.matchweek}`;
+  if (entry.type === "friendly") return "Pré-época";
+  return entry.roundName;
 }
 
 /**
  * Jogador com contrato em vigor (contract_start_epoch > 0) só é transferível
- * a partir do aniversário do contrato (start + 14 jornadas). Epoch 0 = sem
+ * a partir do aniversário do contrato (start + 20 semanas). Epoch 0 = sem
  * contrato (free agent / seed) → transferível de imediato.
  */
 export function isContractLocked(
@@ -121,18 +154,19 @@ export function buildSkillHistory(
 }
 
 /**
- * Jornada e época (season-relative) em que um contrato termina, derivadas do
- * epoch absoluto. Usado em mensagens e badges.
+ * Slot e época (season-relative) em que um contrato termina, derivados do
+ * epoch absoluto. Usado em mensagens e badges (`label` já pronto a mostrar).
  */
 export function contractEndInfo(
   player: { contract_start_epoch?: number | null },
-): { season: number; matchweek: number } {
+): { season: number; matchweek: number; label: string } {
   const start = player.contract_start_epoch || 0;
-  if (start <= 0) return { season: 0, matchweek: 0 };
+  if (start <= 0) return { season: 0, matchweek: 0, label: "—" };
   const endEpoch = start + CONTRACT_LENGTH_MATCHWEEKS;
   const season = Math.ceil(endEpoch / CONTRACT_LENGTH_MATCHWEEKS);
   const mw = endEpoch - (season - 1) * CONTRACT_LENGTH_MATCHWEEKS;
-  return { season, matchweek: mw === 0 ? CONTRACT_LENGTH_MATCHWEEKS : mw };
+  const slot = mw === 0 ? CONTRACT_LENGTH_MATCHWEEKS : mw;
+  return { season, matchweek: slot, label: slotLabel(slot) };
 }
 
 /**

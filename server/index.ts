@@ -962,6 +962,8 @@ const cupFlowHelpers = createCupFlowHelpers({
 });
 
 const applySeasonEnd = cupFlowHelpers.applySeasonEnd;
+const prepareFriendlyFixtures = cupFlowHelpers.prepareFriendlyFixtures;
+const finalizeFriendly = cupFlowHelpers.finalizeFriendly;
 const startCupRound = cupFlowHelpers.startCupRound;
 const finalizeCupRound = cupFlowHelpers.finalizeCupRound;
 const continueFromEtGate = cupFlowHelpers.continueFromEtGate;
@@ -985,6 +987,8 @@ const weeklyFlowHelpers = createWeeklyFlowHelpers({
 	persistMatchResults,
 	applyPostMatchQualityEvolution,
 	applyTrainingBonuses,
+	prepareFriendlyFixtures,
+	finalizeFriendly,
 	startCupRound,
 	finalizeCupRound,
 	continueFromEtGate,

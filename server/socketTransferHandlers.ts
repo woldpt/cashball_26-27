@@ -9,6 +9,7 @@ import {
   validateNonNegativeInt,
   getTeamsWithCoachNames,
   currentEpoch,
+  currentSlot,
   isContractLocked,
   contractEndInfo,
   seasonToYear,
@@ -101,7 +102,7 @@ export function registerTransferSocketHandlers(
         const end = contractEndInfo(player);
         socket.emit(
           "systemMessage",
-          `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até ${seasonToYear(end.season)}, Jornada ${end.matchweek}. Ninguém mexe no menino dele.`,
+          `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até ${seasonToYear(end.season)}, ${end.label}. Ninguém mexe no menino dele.`,
         );
         return;
       }
@@ -151,8 +152,8 @@ export function registerTransferSocketHandlers(
             signingWage(player),
             getSeasonEndMatchweek(game.matchweek),
             currentEpoch(game),
-            game.matchweek,
-            game.matchweek,
+            currentSlot(game),
+            currentSlot(game),
             validPlayerId,
           ],
         );
@@ -286,7 +287,7 @@ export function registerTransferSocketHandlers(
             const end = contractEndInfo(player);
             socket.emit(
               "systemMessage",
-              `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até ${seasonToYear(end.season)}, Jornada ${end.matchweek}. Ninguém mexe no menino dele.`,
+              `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até ${seasonToYear(end.season)}, ${end.label}. Ninguém mexe no menino dele.`,
             );
             return;
           }
@@ -729,7 +730,7 @@ export function registerTransferSocketHandlers(
           const end = contractEndInfo(player);
           socket.emit("transferProposalResult", {
             ok: false,
-            message: `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até ${seasonToYear(end.season)}, Jornada ${end.matchweek}. Ninguém mexe no menino dele.`,
+            message: `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até ${seasonToYear(end.season)}, ${end.label}. Ninguém mexe no menino dele.`,
           });
           return;
         }
@@ -803,8 +804,8 @@ export function registerTransferSocketHandlers(
                     signingWage(player),
                     getSeasonEndMatchweek(game.matchweek),
                     currentEpoch(game),
-                    game.matchweek,
-                    game.matchweek,
+                    currentSlot(game),
+                    currentSlot(game),
                     playerId,
                   ],
                   (errPlayer) => {

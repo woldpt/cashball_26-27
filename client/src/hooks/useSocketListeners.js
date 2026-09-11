@@ -3,6 +3,7 @@ import { socket, queueEmit, flushOutbox } from "../socket.js";
 import { loadTacticSnapshot } from "../utils/uiSnapshot.js";
 import { isSameTeamId } from "../utils/teamHelpers.js";
 import { seasonToYear } from "../utils/formatters.js";
+import { slotLabel } from "../utils/slotLabel.js";
 import { playGoalSound, playVarSound, playSigningSound, playBooSound } from "../utils/audio.js";
 import {
   MAX_MATCH_SUBS,
@@ -63,7 +64,7 @@ function buildPlayerStats({
 	if (contractEndMatchweek && contractEndSeason) {
 		stats.push({
 			label: "Contrato",
-			value: `${seasonToYear(contractEndSeason)}, Jornada ${contractEndMatchweek}`,
+			value: `${seasonToYear(contractEndSeason)}, ${slotLabel(contractEndMatchweek)}`,
 		});
 	}
 	return stats;

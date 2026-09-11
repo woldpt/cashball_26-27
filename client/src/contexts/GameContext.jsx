@@ -141,8 +141,9 @@ export function GameProvider({
 	// client via SEASON_CALENDAR, evitando duplicar a lista no backend.
 	const [currentCupRound, setCurrentCupRound] = useState(null);
 	const cupMatchRoundName =
-		SEASON_CALENDAR.find((e) => e.type === "cup" && e.round === currentCupRound)
-			?.roundName || null;
+		SEASON_CALENDAR.find(
+			(e) => (e.type === "cup" || e.type === "friendly") && e.round === currentCupRound,
+		)?.roundName || null;
 	const [cupExtraTimeBadge, setCupExtraTimeBadge] = useState(false);
 	const [isCupExtraTime, setIsCupExtraTime] = useState(false);
 	const [cupActiveTeamIds, setCupActiveTeamIds] = useState([]);
@@ -1291,7 +1292,7 @@ export function GameProvider({
 						...p,
 						status: isOut ? "Out" : tactic.positions[p.id] || "Excluído",
 						isSubbedOut: isOut,
-						isUnavailable: !isPlayerAvailable(p, matchweekCount + 1),
+						isUnavailable: !isPlayerAvailable(p, (calendarIndex ?? matchweekCount) + 1),
 					};
 				})
 				.sort((a, b) => {
@@ -1301,7 +1302,7 @@ export function GameProvider({
 					if (aPos !== bPos) return aPos - bPos;
 					return a.name.localeCompare(b.name);
 				}),
-		[mySquad, tactic.positions, activeTab, subbedOut, matchweekCount],
+		[mySquad, tactic.positions, activeTab, subbedOut, matchweekCount, calendarIndex],
 	);
 
 	// Penáltis são resolvidos via `PenaltyTakerPopup` (modal sobre o jogo ao

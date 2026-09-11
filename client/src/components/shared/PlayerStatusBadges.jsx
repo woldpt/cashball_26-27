@@ -6,7 +6,10 @@
  * Substitui as implementações inline duplicadas em SquadRow/TeamSquadCard
  * e noutros pontos da app (STYLE.md §5).
  */
+import { useContext } from "react";
 import { Badge } from "./Badge.jsx";
+import { GameContext } from "../../contexts/GameContext.jsx";
+import { slotLabel } from "../../utils/slotLabel.js";
 
 /**
  * @param {{
@@ -22,17 +25,21 @@ export function PlayerStatusBadges({
   showContractBadges = false,
   season = 1,
 }) {
+  // Relógio único: slot 0-based do contexto; fora do provider (harnesses)
+  // cai no matchweekCount como antes.
+  const ctxIdx = useContext(GameContext)?.calendarIndex;
+  const nowIdx = ctxIdx ?? matchweekCount;
   const susp = player.suspension_until_matchweek || 0;
   const inj = player.injury_until_matchweek || 0;
   const cooldown = player.transfer_cooldown_until_matchweek || 0;
-  const isSuspended = susp > matchweekCount;
-  const isInjured = inj > matchweekCount;
+  const isSuspended = susp > nowIdx;
+  const isInjured = inj > nowIdx;
   const isCooldown =
-    !isSuspended && !isInjured && cooldown > 0 && cooldown > matchweekCount;
+    !isSuspended && !isInjured && cooldown > 0 && cooldown > nowIdx;
 
   const contractStart = player.contract_start_epoch || 0;
-  const currentEpoch = (Math.max(1, season) - 1) * 14 + Math.min(14, matchweekCount + 1);
-  const isLocked = contractStart > 0 && currentEpoch < contractStart + 14;
+  const currentEpoch = (Math.max(1, season) - 1) * 20 + Math.min(20, nowIdx + 1);
+  const isLocked = contractStart > 0 && currentEpoch < contractStart + 20;
   const isUnderContract = contractStart > 0;
   const isListed =
     player.transfer_status && player.transfer_status !== "none";
@@ -55,18 +62,18 @@ export function PlayerStatusBadges({
         <Badge variant="sold">À venda</Badge>
       )}
       {isCooldown && (
-        <Badge variant="cooldown" title="Em viagem — disponível na próxima jornada">
+        <Badge variant="cooldown" title="Em viagem — disponível na próxima semana">
           ✈️ 1J
         </Badge>
       )}
       {isSuspended && (
-        <Badge variant="suspended" title={`Suspenso até jornada ${susp + 1}`}>
-          🟥 {susp - matchweekCount + 1}J
+        <Badge variant="suspended" title={`Suspenso até ${slotLabel(susp + 1)}`}>
+          🟥 {susp - nowIdx + 1}J
         </Badge>
       )}
       {isInjured && (
-        <Badge variant="injured" title={`Lesionado até jornada ${inj + 1}`}>
-          🩹 {inj - matchweekCount + 1}J
+        <Badge variant="injured" title={`Lesionado até ${slotLabel(inj + 1)}`}>
+          🩹 {inj - nowIdx + 1}J
         </Badge>
       )}
     </>

@@ -42,7 +42,7 @@ export function registerCupSocketHandlers(socket: any, deps: CupHandlerDeps) {
         FROM cup_matches cm
         LEFT JOIN teams th ON cm.home_team_id = th.id
         LEFT JOIN teams ta ON cm.away_team_id = ta.id
-        WHERE cm.season = ?
+        WHERE cm.season = ? AND cm.round > 0
         ORDER BY cm.round, cm.id`,
         [game.season],
       );

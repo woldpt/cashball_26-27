@@ -460,6 +460,29 @@ export function JournalTab({
     [myLeagueGame, myCupGame],
   );
 
+  // ── Pré-época: o amigável (competição própria, ronda 0) ────────────────
+  const friendlyResults = useMemo(
+    () => results.filter((r) => r.competition === "Friendly"),
+    [results],
+  );
+  const myFriendlyGame = useMemo(
+    () =>
+      myTeamId == null
+        ? null
+        : (friendlyResults.find(
+            (r) =>
+              Number(r.homeTeamId) === myTeamId ||
+              Number(r.awayTeamId) === myTeamId,
+          ) ?? null),
+    [friendlyResults, myTeamId],
+  );
+  const otherFriendlyGames = useMemo(() => {
+    const myKey = myFriendlyGame ? gameKey(myFriendlyGame) : null;
+    return friendlyResults
+      .filter((r) => gameKey(r) !== myKey)
+      .slice(0, 6);
+  }, [friendlyResults, myFriendlyGame]);
+
   // ── Posições na série (para o gozão: tombar gigantes / tropeções) ───────
   const divStandings = useMemo(() => {
     if (myDivision == null) return [];
@@ -590,6 +613,7 @@ export function JournalTab({
 
   const hasAnything =
     headline != null ||
+    friendlyResults.length > 0 ||
     seriesGames.length > 0 ||
     humanGames.length > 0 ||
     miniTable.rows.length > 0 ||
@@ -751,6 +775,34 @@ export function JournalTab({
 
       {/* ── TIRAS (recortes de moldura) ───────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 short:gap-2 items-start">
+        {friendlyResults.length > 0 && lastWeek === 0 && (
+          <FanzineCard
+            sticker="Pré-época"
+            meta="Amigável"
+            tilt={crafty ? tiltPos : ""}
+            shadowCls={cardShadow}
+            stickerRot={stickerRot}
+            craft={crafty}
+          >
+            <div>
+              {[myFriendlyGame, ...otherFriendlyGames]
+                .filter(Boolean)
+                .map((r) => (
+                  <ComicResultRow
+                    key={gameKey(r)}
+                    r={r}
+                    teamById={teamById}
+                    myTeamId={myTeamId}
+                    craft={crafty}
+                  />
+                ))}
+            </div>
+            <p className="px-2.5 pb-2 text-[10px] italic text-on-surface-variant/70">
+              Roda-se a equipa antes da época. Sem cartões, sem lesões.
+            </p>
+          </FanzineCard>
+        )}
+
         {seriesGames.length > 0 && (
           <FanzineCard
             sticker="A tua série"

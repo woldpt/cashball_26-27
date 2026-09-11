@@ -49,11 +49,63 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
   const calEntries = SEASON_CALENDAR.filter((entry) => {
     if (calFilter === "league")
       return entry.type === "league";
-    if (calFilter === "cup") return entry.type === "cup";
+    if (calFilter === "cup")
+      return entry.type === "cup" || entry.type === "friendly";
     return true;
   })
     .map((entry) => {
       const status = getStatus(entry);
+      if (entry.type === "friendly") {
+        // Amigável de pré-época (ronda 0): sem eliminação nem Jamor.
+        const friFixtures =
+          cal?.cupMatches?.filter((m) => m.round === 0) ?? [];
+        const myMatch = friFixtures.find(
+          (f) =>
+            f.home_team_id === myTeamId ||
+            f.away_team_id === myTeamId,
+        );
+        if (!myMatch && friFixtures.length > 0) return null;
+        const opponent = myMatch
+          ? teams.find(
+              (t) =>
+                t.id ===
+                (myMatch.home_team_id === myTeamId
+                  ? myMatch.away_team_id
+                  : myMatch.home_team_id),
+            )
+          : null;
+        const imHome = myMatch?.home_team_id === myTeamId;
+        const myScore = myMatch?.played
+          ? imHome
+            ? myMatch.home_score
+            : myMatch.away_score
+          : null;
+        const opScore = myMatch?.played
+          ? imHome
+            ? myMatch.away_score
+            : myMatch.home_score
+          : null;
+        return {
+          entry,
+          status,
+          type: "friendly",
+          myMatch,
+          opponent,
+          imHome,
+          stadiumTeam: imHome ? myTeam : opponent,
+          venueLabel: opponent ? (imHome ? "Casa" : "Fora") : "—",
+          myScore,
+          opScore,
+          won:
+            myScore != null && opScore != null
+              ? myScore > opScore
+              : null,
+          drew:
+            myScore != null && opScore != null
+              ? myScore === opScore
+              : null,
+        };
+      }
       if (entry.type === "cup") {
         // Rounds after elimination → show eliminated placeholder
         if (
@@ -442,9 +494,9 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
 
               // Left date column content
               const weekLabel =
-                type === "cup"
-                  ? entry.roundName
-                  : `Jornada ${entry.matchweek}`;
+                type === "league"
+                  ? `Jornada ${entry.matchweek}`
+                  : entry.roundName;
 
               // Score/status right column
               const scoreBlock =
@@ -519,12 +571,16 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                   <div className="w-16 sm:w-28 shrink-0 flex flex-col justify-center gap-1 px-2 sm:px-3 short:px-1.5 py-2.5 sm:py-3 short:py-1.5 border-r border-outline-variant/10">
                     <span
                       className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded self-start ${
-                        type === "cup"
-                          ? "bg-amber-500/20 text-amber-400"
-                          : "bg-primary/20 text-primary"
+                        type === "league"
+                          ? "bg-primary/20 text-primary"
+                          : "bg-amber-500/20 text-amber-400"
                       }`}
                     >
-                      {type === "cup" ? "Taça" : "Liga"}
+                      {type === "league"
+                        ? "Liga"
+                        : type === "friendly"
+                          ? "Amigável"
+                          : "Taça"}
                     </span>
                     <span className="text-[10px] font-black text-on-surface leading-tight">
                       {weekLabel}
@@ -554,12 +610,12 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
                     {/* Type icon — hidden on mobile */}
                     <div
                       className={`hidden sm:flex shrink-0 w-8 h-8 rounded items-center justify-center text-xs font-black border ${
-                        type === "cup"
-                          ? "border-amber-500/30 text-amber-400 bg-amber-500/10"
-                          : "border-primary/30 text-primary bg-primary/10"
+                        type === "league"
+                          ? "border-primary/30 text-primary bg-primary/10"
+                          : "border-amber-500/30 text-amber-400 bg-amber-500/10"
                       }`}
                     >
-                      {type === "cup" ? "🏆" : "⚽"}
+                      {type === "league" ? "⚽" : type === "friendly" ? "🤝" : "🏆"}
                     </div>
                     {/* Opponent logo */}
                     <TeamCircle team={opponent} />

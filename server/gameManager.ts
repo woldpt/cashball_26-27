@@ -282,8 +282,8 @@ function ensurePlayerSchema(
                 missing.some(([n]: [string, string]) => n === "joined_matchweek")
               ) {
                 backfillSteps.push((next) => {
-                  // Backfill all players with a team as "joined at matchweek 1"
-                  // so they become eligible for renegotiations after 28 matchweeks.
+                  // Backfill all players with a team as "joined at slot 1"
+                  // so they become eligible for renegotiations after 40 slots (2 épocas).
                   db.run(
                     `UPDATE players SET joined_matchweek = 1 WHERE team_id IS NOT NULL AND joined_matchweek = 0`,
                     (backfillErr) => {
@@ -563,6 +563,8 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
 
     // New unified state machine
     calendarIndex: 0,
+    calendarVersion: 2,
+    contractCutoverSeason: null,
     gamePhase: "lobby",
     season: 1,
     year: 2026,
@@ -918,6 +920,38 @@ function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
                   legacyCR,
                   legacyCS,
                 );
+              }
+
+              // Migracao calendario v2 (20 semanas, amigavel no slot 0).
+              // Salas novas ja nascem na v2; salas com indice antigo deslocam +1
+              // (matchweek intacto) e avaliam contratos na escala velha ate ao
+              // fim da epoca em curso. Idempotente via chave calendarVersion.
+              game.calendarVersion = 2;
+              if (st["contractCutoverSeason"] != null && st["contractCutoverSeason"] !== "null") {
+                game.contractCutoverSeason = parseInt(st["contractCutoverSeason"]) || null;
+              } else {
+                game.contractCutoverSeason = null;
+              }
+              if ((st["calendarVersion"] || "1") !== "2") {
+                try {
+                  if (!fs.existsSync(dbPath + ".pre20")) fs.copyFileSync(dbPath, dbPath + ".pre20");
+                } catch (bkErr: any) {
+                  console.error(`[gameManager] Backup pre20 falhou para ${roomCode}:`, bkErr?.message);
+                }
+                if (st["calendarIndex"]) {
+                  game.calendarIndex = Math.min(game.calendarIndex + 1, SEASON_CALENDAR.length - 1);
+                  db.run("UPDATE applied_weeks SET slot = slot + 1 WHERE season = ?", [game.season], (wErr: any) => {
+                    if (wErr) console.error(`[gameManager] applied_weeks shift falhou para ${roomCode}:`, wErr.message);
+                  });
+                  db.run("UPDATE team_training SET matchweek = matchweek + 1 WHERE applied = 0", (tErr: any) => {
+                    if (tErr) console.error(`[gameManager] team_training shift falhou para ${roomCode}:`, tErr.message);
+                  });
+                }
+                game.contractCutoverSeason = game.season;
+                db.run("INSERT OR REPLACE INTO game_state (key, value) VALUES ('calendarVersion', '2')", () => {});
+                db.run("INSERT OR REPLACE INTO game_state (key, value) VALUES ('contractCutoverSeason', ?)", [String(game.season)], () => {});
+                db.run("INSERT OR REPLACE INTO game_state (key, value) VALUES ('calendarIndex', ?)", [String(game.calendarIndex)], () => {});
+                console.log(`[gameManager] Sala ${roomCode} migrada para calendario v2 (idx ${game.calendarIndex}, epoca ${game.season})`);
               }
 
               // Game phase (new key first; derive from legacy if absent)
@@ -1449,6 +1483,11 @@ function saveGameState(game: ActiveGame): void {
 
   // ── New keys ──────────────────────────────────────────────────────────────
   upsert("calendarIndex", String(game.calendarIndex));
+  upsert("calendarVersion", "2");
+  upsert(
+    "contractCutoverSeason",
+    game.contractCutoverSeason != null ? String(game.contractCutoverSeason) : "null",
+  );
   upsert("gamePhase", game.gamePhase);
   upsert("phaseToken", game.phaseToken || "");
   upsert("season", String(game.season || 1));

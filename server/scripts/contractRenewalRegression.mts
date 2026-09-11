@@ -89,12 +89,12 @@ interface Harness {
   runGet: (sql: string, params?: any[]) => Promise<any>;
 }
 
-// now = contractEpoch(season, matchweek) = (season-1)*14 + clamp(mw,1,14).
-// Default season=2, mw=1 → now=15: um contrato com start=1 expira em 15 ≤ 15.
+// now = contractEpoch(season, slot) = (season-1)*20 + clamp(slot,1,20).
+// Default season=2, slot=1 → now=21: um contrato com start=1 expira em 21 ≤ 21.
 function makeHarness(
   playersByName: Record<string, any> = {},
   season = 2,
-  matchweek = 1,
+  slot = 1,
 ): Harness {
   const db = new sqlite3.Database(":memory:");
   db.exec(SCHEMA);
@@ -137,8 +137,8 @@ function makeHarness(
     playersByName,
     roomCode: "TEST",
     season,
-    matchweek,
-    calendarIndex: 0,
+    matchweek: slot,
+    calendarIndex: slot - 1,
   };
 
   const insertPlayer = (p: Record<string, any>) =>
@@ -201,9 +201,9 @@ const pinRandom = (value: number) => {
 {
   const restore = pinRandom(0.05); // rolamento passa (< 0.25)
   try {
-    // season 2, mw 2 → now=16: semana seguinte à expiração (15) do start=1
+    // season 2, slot 2 → now=22: semana seguinte à expiração (21) do start=1
     const h = makeHarness({ Coach: ONLINE }, 2, 2);
-    // contrato start=1 expirou em 1+14=15; now=16 passa a janela mínima
+    // contrato start=1 expirou em 1+20=21; now=22 passa a janela mínima
     await h.insertPlayer({ id: 1, team_id: 1, contract_start_epoch: 1 });
 
     await h.helpers.processContractExpiries(h.game, new Set<number>());
@@ -245,7 +245,7 @@ const pinRandom = (value: number) => {
 {
   const restore = pinRandom(0.05);
   try {
-    const h = makeHarness({ Coach: OFFLINE }, 2, 2); // now=16
+    const h = makeHarness({ Coach: OFFLINE }, 2, 2); // now=22
     await h.insertPlayer({ id: 3, team_id: 1, contract_start_epoch: 1 });
 
     await h.helpers.processContractExpiries(h.game, new Set<number>());
@@ -270,8 +270,7 @@ const pinRandom = (value: number) => {
   const restore = pinRandom(0.05);
   try {
     const h = makeHarness({ Coach: ONLINE });
-    // start=4 → expira em 18; now=15 está dentro da ANTIGA janela das últimas
-    // 3 jornadas (4+11 <= 15 < 4+14) mas o lock continua ativo. Subavaliado
+    // start=4 → expira em 24; now=21 com lock ativo (4+20 > 21). Subavaliado
     // de propósito para que a renegociação também tentaria disparar.
     await h.insertPlayer({
       id: 4,
@@ -301,7 +300,7 @@ const pinRandom = (value: number) => {
 
 // ── T5: nunca logo após o unlock + atraso aleatório ───────────────────────
 {
-  // Expiração em now=15 (season 2, mw 1) → a própria semana não conta.
+  // Expiração em now=21 (season 2, slot 1) → a própria semana não conta.
   let restore = pinRandom(0.05); // rolamento favorável — mesmo assim nada
   try {
     const h = makeHarness({ Coach: ONLINE });
@@ -322,9 +321,10 @@ const pinRandom = (value: number) => {
     );
     assert(row0.p === 0, "T5: sem pedido persistido na semana do fim");
 
-    // Semana seguinte (now=16) com rolamento desfavorável → silêncio.
+    // Semana seguinte (now=22) com rolamento desfavorável → silêncio.
     restore();
     h.game.matchweek = 2;
+    h.game.calendarIndex = 1;
     restore = pinRandom(0.99);
     await h.helpers.processContractExpiries(h.game, new Set<number>());
     const row1 = await h.runGet(
@@ -332,9 +332,10 @@ const pinRandom = (value: number) => {
     );
     assert(row1.p === 0, "T5: semana que 'falha' no rolamento também não emite");
 
-    // Semana seguinte (now=17) com rolamento favorável → a chamada acontece.
+    // Semana seguinte (now=23) com rolamento favorável → a chamada acontece.
     restore();
     h.game.matchweek = 3;
+    h.game.calendarIndex = 2;
     restore = pinRandom(0.05);
     await h.helpers.processContractExpiries(h.game, new Set<number>());
     const req = h.emitted.find((e) => e.event === "contractRequest");
@@ -352,7 +353,7 @@ const pinRandom = (value: number) => {
 {
   const restore = pinRandom(0.05);
   try {
-    const h = makeHarness({ Coach: ONLINE }, 2, 2); // now=16 (pós-janela mínima)
+    const h = makeHarness({ Coach: ONLINE }, 2, 2); // now=22 (pós-janela mínima)
     await h.insertPlayer({ id: 6, team_id: 1, contract_start_epoch: 1 });
     // B: expirado E subavaliado — candidato tanto a renovação como à
     // renegociação; o orçamento garante que só há 1 proposta na semana.
@@ -374,7 +375,7 @@ const pinRandom = (value: number) => {
 {
   const restore = pinRandom(0.05); // passa o gate de 12% (0.05 <= 0.12)
   try {
-    const h = makeHarness({ Coach: ONLINE }, 2, 2); // now=16 (pós-janela mínima)
+    const h = makeHarness({ Coach: ONLINE }, 2, 2); // now=22 (pós-janela mínima)
     // Expired + subavaliado → candidato a renegociação (slot livre).
     await h.insertPlayer({ id: 8, team_id: 1, contract_start_epoch: 1, wage: 100, skill: 70 });
 

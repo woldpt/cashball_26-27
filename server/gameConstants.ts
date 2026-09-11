@@ -124,8 +124,8 @@ export const WEEKLY_BASE_INCOME: Record<number, number> = {
   5: 12000,
 };
 
-/** Número de eventos (semanas de jogo) por época = SEASON_CALENDAR.length (14 liga + 5 taça). */
-export const NPC_SEASON_WEEKS = 19;
+/** Número de eventos (semanas de jogo) por época = SEASON_CALENDAR.length (1 amigável + 14 liga + 5 taça). */
+export const NPC_SEASON_WEEKS = 20;
 
 /**
  * Folha salarial semanal "de equilíbrio" (break-even) de uma divisão:
@@ -191,20 +191,19 @@ export const AUCTION_BID_STEP = 10000;
 export const LOAN_WEEKLY_INSTALLMENT = 35000;
 
 /**
- * Duração de um contrato em matchweeks (1 época = 14 jornadas de liga).
- * Um jogador contratado/renovado na Jornada X só pode ser transferido a
- * partir da Jornada X da época seguinte.
+ * Duração de um contrato em slots de calendário (1 época = 20 semanas).
+ * Um jogador contratado/renovado no slot X só pode ser transferido a
+ * partir do slot X da época seguinte. Relógio único: os slots andam em
+ * todas as semanas (amigável, liga e taça), não só nas jornadas da liga.
  */
-export const CONTRACT_LENGTH_MATCHWEEKS = 14;
+export const CONTRACT_LENGTH_MATCHWEEKS = 20;
 
 /**
- * Época absoluta (1-based) derivada de (season, matchweek).
- * O matchweek é season-relative (1..14) e reseta no fim de época; durante a
- * final da Taça pode transitoriamente valer 15 — clampamos a 14 para manter
- * o epoch monótono.
+ * Época absoluta (1-based) derivada de (season, slot).
+ * O slot é 1-based (1..20) e reseta no fim de época — monótono por época.
  */
-export function contractEpoch(season: number, matchweek: number): number {
-  return (Math.max(1, season) - 1) * CONTRACT_LENGTH_MATCHWEEKS + Math.min(14, Math.max(1, matchweek));
+export function contractEpoch(season: number, slot: number): number {
+  return (Math.max(1, season) - 1) * CONTRACT_LENGTH_MATCHWEEKS + Math.min(20, Math.max(1, slot));
 }
 
 /**
@@ -227,40 +226,49 @@ export function getAgentName(playerId: number): string {
   return AGENT_NAMES[idx];
 }
 
+/** Ronda reservada ao amigável de pré-época em cup_matches (nunca avança). */
+export const FRIENDLY_ROUND = 0;
+/** Nome canónico do amigável (servidor e cliente usam a mesma string). */
+export const FRIENDLY_ROUND_NAME = "Amigável de pré-época";
+
 /**
- * Typed calendar entry — either a league matchweek or a cup round.
- * calendarIndex is the position in SEASON_CALENDAR (0-based, 0..18).
+ * Typed calendar entry — a league matchweek, a cup round or the pre-season friendly.
+ * calendarIndex is the position in SEASON_CALENDAR (0-based, 0..19).
+ * O amigável viaja no fio como taça (ronda 0): a vista live e o jornal
+ * reutilizam o caminho da taça sem estados novos.
  */
 export type CalendarEntry =
   | { type: "league"; matchweek: number; calendarIndex: number }
-  | { type: "cup"; round: number; roundName: string; teamsIn: number; calendarIndex: number };
+  | { type: "cup"; round: number; roundName: string; teamsIn: number; calendarIndex: number }
+  | { type: "friendly"; round: 0; roundName: string; calendarIndex: number };
 
 /**
  * The single source of truth for season structure.
  * Each entry is one "game week" — the game plays exactly one event per entry.
- * League and cup NEVER run simultaneously.
- * 19 entries total: 14 league matchweeks + 5 cup rounds.
+ * League, cup and friendly NEVER run simultaneously.
+ * 20 entries total: 1 pre-season friendly + 14 league matchweeks + 5 cup rounds.
  */
 export const SEASON_CALENDAR: CalendarEntry[] = [
-  { type: "league", matchweek: 1,  calendarIndex: 0  },
-  { type: "league", matchweek: 2,  calendarIndex: 1  },
-  { type: "league", matchweek: 3,  calendarIndex: 2  },
-  { type: "cup",    round: 1, roundName: "16 avos de final", teamsIn: 32, calendarIndex: 3  },
-  { type: "league", matchweek: 4,  calendarIndex: 4  },
-  { type: "league", matchweek: 5,  calendarIndex: 5  },
-  { type: "league", matchweek: 6,  calendarIndex: 6  },
-  { type: "cup",    round: 2, roundName: "Oitavos de final", teamsIn: 16, calendarIndex: 7  },
-  { type: "league", matchweek: 7,  calendarIndex: 8  },
-  { type: "league", matchweek: 8,  calendarIndex: 9  },
-  { type: "league", matchweek: 9,  calendarIndex: 10 },
-  { type: "cup",    round: 3, roundName: "Quartos de final", teamsIn: 8,  calendarIndex: 11 },
-  { type: "league", matchweek: 10, calendarIndex: 12 },
-  { type: "league", matchweek: 11, calendarIndex: 13 },
-  { type: "cup",    round: 4, roundName: "Meias-finais",     teamsIn: 4,  calendarIndex: 14 },
-  { type: "league", matchweek: 12, calendarIndex: 15 },
-  { type: "league", matchweek: 13, calendarIndex: 16 },
-  { type: "league", matchweek: 14, calendarIndex: 17 },
-  { type: "cup",    round: 5, roundName: "Final",            teamsIn: 2,  calendarIndex: 18 },
+  { type: "friendly", round: 0, roundName: "Amigável de pré-época", calendarIndex: 0  },
+  { type: "league", matchweek: 1,  calendarIndex: 1  },
+  { type: "league", matchweek: 2,  calendarIndex: 2  },
+  { type: "league", matchweek: 3,  calendarIndex: 3  },
+  { type: "cup",    round: 1, roundName: "16 avos de final", teamsIn: 32, calendarIndex: 4  },
+  { type: "league", matchweek: 4,  calendarIndex: 5  },
+  { type: "league", matchweek: 5,  calendarIndex: 6  },
+  { type: "league", matchweek: 6,  calendarIndex: 7  },
+  { type: "cup",    round: 2, roundName: "Oitavos de final", teamsIn: 16, calendarIndex: 8  },
+  { type: "league", matchweek: 7,  calendarIndex: 9  },
+  { type: "league", matchweek: 8,  calendarIndex: 10 },
+  { type: "league", matchweek: 9,  calendarIndex: 11 },
+  { type: "cup",    round: 3, roundName: "Quartos de final", teamsIn: 8,  calendarIndex: 12 },
+  { type: "league", matchweek: 10, calendarIndex: 13 },
+  { type: "league", matchweek: 11, calendarIndex: 14 },
+  { type: "cup",    round: 4, roundName: "Meias-finais",     teamsIn: 4,  calendarIndex: 15 },
+  { type: "league", matchweek: 12, calendarIndex: 16 },
+  { type: "league", matchweek: 13, calendarIndex: 17 },
+  { type: "league", matchweek: 14, calendarIndex: 18 },
+  { type: "cup",    round: 5, roundName: "Final",            teamsIn: 2,  calendarIndex: 19 },
 ];
 
 // ---------------------------------------------------------------------------

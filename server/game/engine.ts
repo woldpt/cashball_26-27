@@ -2536,6 +2536,8 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
 
   const isCupExtraTime =
     minute >= 91 && game?.currentEvent?.type === "cup";
+  // Amigável de pré-época: só para testar — sem cartões nem lesões.
+  const isFriendly = game?.currentEvent?.type === "friendly";
   // No último minuto regulamentar da liga (min 90+), não disparar eventos bloqueantes
   // para evitar que a janela de acção apareça após o apito final
   const isLastLeagueMinute =
@@ -2811,8 +2813,8 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
     (1 + (awayAggAvg - 3) * MATCH_TUNING.cardAggPerPoint);
   // No último minuto regulamentar da liga não disparar cartões — um vermelho
   // ao GR abriria a janela obrigatória de substituição após o apito final
-  if (!isLastLeagueMinute && rng() < homeCardProb) await emitCard(true);
-  if (!isLastLeagueMinute && rng() < awayCardProb) await emitCard(false);
+  if (!isLastLeagueMinute && !isFriendly && rng() < homeCardProb) await emitCard(true);
+  if (!isLastLeagueMinute && !isFriendly && rng() < awayCardProb) await emitCard(false);
 
   // Lesões: rolls independentes por lado (antes dos multiplicadores de clima
   // e de carga de lesões). A taxa total equivale ao roll global anterior
@@ -2850,7 +2852,7 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
     if (injuryResult.replaced && side === "home") powers.home.squad = squad;
     if (injuryResult.replaced && side === "away") powers.away.squad = squad;
   };
-  if (!isLastLeagueMinute) {
+  if (!isLastLeagueMinute && !isFriendly) {
     if (rng() < injuryBasePerSide * homeInjuryMult) {
       await rollInjuryForSide("home");
     } else if (rng() < injuryBasePerSide * awayInjuryMult) {

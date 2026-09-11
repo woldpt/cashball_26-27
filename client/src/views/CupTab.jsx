@@ -57,7 +57,7 @@ export function CupTab({
                 <div>
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="px-2 py-0.5 bg-primary/20 border border-primary/30 rounded text-primary text-[10px] font-black uppercase tracking-widest">
-                      Taça de Portugal
+                      {cupRoundResults.round === 0 ? "Amigável" : "Taça de Portugal"}
                     </span>
                     <span className="text-zinc-500 text-xs font-semibold">
                       {cupRoundResults.roundName}
