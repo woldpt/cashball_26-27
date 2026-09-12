@@ -106,13 +106,13 @@ function migrateLegacyRoomDbsToCreatorFolders(dbDir?: string): number {
     return 0;
   }
   if (files.length === 0) return 0;
-  let BetterSqlite: any = null;
+  let DatabaseSync: any = null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    BetterSqlite = require("better-sqlite3");
+    DatabaseSync = require("node:sqlite").DatabaseSync;
   } catch {
     console.error(
-      "[migração] better-sqlite3 ausente — salas mantidas na raiz (o servidor continua a encontrá-las).",
+      "[migração] node:sqlite indisponível (requer Node ≥ 22.13) — salas mantidas na raiz (o servidor continua a encontrá-las).",
     );
     return 0;
   }
@@ -123,7 +123,7 @@ function migrateLegacyRoomDbsToCreatorFolders(dbDir?: string): number {
     const src = path.join(legacyDir, file);
     let creator = "";
     try {
-      const tmp = new BetterSqlite(src, { readonly: true });
+      const tmp = new DatabaseSync(src, { readonly: true });
       try {
         const row = tmp
           .prepare("SELECT value FROM game_state WHERE key = 'roomCreator'")
@@ -519,18 +519,18 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
     fs.copyFileSync(basePath, dbPath);
     // --- Pool 60→40: sorteio por sala (8 por divisão, fixos garantidos) ---
     try {
-      const BetterSqlite: any = (() => {
+      const DatabaseSync: any = (() => {
         try {
           // eslint-disable-next-line @typescript-eslint/no-require-imports
-          return require("better-sqlite3");
+          return require("node:sqlite").DatabaseSync;
         } catch {
           return null;
         }
       })();
-      if (BetterSqlite) {
-        const tmp = new BetterSqlite(dbPath);
+      if (DatabaseSync) {
+        const tmp = new DatabaseSync(dbPath);
         try {
-          tmp.pragma("foreign_keys = ON");
+          tmp.exec("PRAGMA foreign_keys = ON");
           const rows: Array<{ id: number; name: string; division: number }> = tmp
             .prepare("SELECT id, name, division FROM teams")
             .all();
@@ -567,7 +567,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
               dropManagerIds = mRows.map((r) => r.manager_id).filter((v) => Number.isFinite(v));
             } catch (e) { console.warn(`[gameManager] Falha ao recolher manager_ids de drop para chat_messages:`, e); }
           }
-          const tx = tmp.transaction(() => {
+          tmp.exec("BEGIN");
             if (dropIds.length) {
               const ph = dropIds.map(() => "?").join(",");
               // Limpeza de FKs antes de apagar players/teams (evita SQLITE_CONSTRAINT_FOREIGNKEY)
@@ -595,16 +595,16 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
               }
             }
             tmp.prepare(`INSERT OR REPLACE INTO game_state (key,value) VALUES ('pool_sampling', ?)`).run(JSON.stringify({ kept: keepIds.length, dropped: dropIds.length, at: new Date().toISOString() }));
-          });
-          tx();
+          tmp.exec("COMMIT");
           console.log(`[gameManager] Sala ${roomCode}: pool 60→40 filtrado (keep ${keepIds.length}, drop ${dropIds.length})`);
         } finally {
+          try { tmp.exec("ROLLBACK"); } catch { /* COMMIT já executado */ }
           tmp.close();
         }
       } else {
-        console.error(`[gameManager] better-sqlite3 ausente — abortar criação de ${roomCode} (instalar better-sqlite3)`);
+        console.error(`[gameManager] node:sqlite indisponível (requer Node ≥ 22.13) — abortar criação de ${roomCode}`);
         try { if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath); } catch {}
-        const err = new Error("better-sqlite3 ausente — pool 60→40 não aplicado");
+        const err = new Error("node:sqlite indisponível — pool 60→40 não aplicado");
         if (onReady) onReady(null, err);
         return null;
       }

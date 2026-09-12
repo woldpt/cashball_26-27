@@ -1,3 +1,8 @@
+## SQLite: node:sqlite (recoloca better-sqlite3) — 2026-09-12
+- As duas ilhas sync em `server/gameManager.ts` (migração de saves + pool 60→40) usam `require("node:sqlite").DatabaseSync` — stdlib, zero dependência nativa.
+- `better-sqlite3` removido de `server/package.json` (menos um native a compilar em prod).
+- Diffs de API: `pragma()` → `exec("PRAGMA ...")`; `transaction()` → `exec("BEGIN")`/`COMMIT"` + ROLLBACK no finally.
+- Requisito: Node ≥ 22.13 (Dockerfile `node:22-alpine` e local v26 OK).
 # NOTES.md — Estado corrente do projeto
 
 > **Regra (1 ficheiro, nunca um por sessão):**
