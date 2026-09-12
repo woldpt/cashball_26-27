@@ -22,7 +22,7 @@ import {
 import { clearPhaseTimer } from "./matchFlowHelpers";
 import { generateAITactic } from "./game/matchCalculations";
 import { getEffectiveSkill, getMatchFatigueSnapshot, queueMatchDeltaWrites } from "./game/engine";
-import { getTeamsWithCoachNames, logClubNews } from "./coreHelpers";
+import { getTeamsWithCoachNames, logClubNews, snapshotBalanceHistory } from "./coreHelpers";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { serializeActiveAuctions } from "./auctionHelpers";
 import { persistMoms } from "./momHelpers";
@@ -1653,6 +1653,14 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			await new Promise<void>((resolve) => {
 				game.db.run("COMMIT", () => resolve());
 			});
+			// Saldo de fim de semana (inclui a bilheteira da Taça).
+			await snapshotBalanceHistory(
+				game,
+				game.season,
+				game.calendarIndex,
+				game.year || 0,
+				game.matchweek || 0,
+			).catch(() => {});
 		} catch (cupTxErr) {
 			cupTxFailed = true;
 			console.error(`[${game.roomCode}] ❌ Cup transaction failed:`, cupTxErr);
@@ -1870,6 +1878,14 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			await new Promise<void>((resolve) => {
 				game.db.run("COMMIT", () => resolve());
 			});
+			// Saldo de fim de semana (inclui a bilheteira do amigável).
+			await snapshotBalanceHistory(
+				game,
+				game.season,
+				game.calendarIndex,
+				game.year || 0,
+				game.matchweek || 0,
+			).catch(() => {});
 		} catch (friendlyTxErr) {
 			friendlyTxFailed = true;
 			console.error(`[${game.roomCode}] Friendly transaction failed:`, friendlyTxErr);

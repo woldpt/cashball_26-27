@@ -1428,6 +1428,30 @@ db.run(
 	},
 );
 
+// Migration: team_balance_history (saldo real de fim de semana por equipa)
+db.run(
+	`CREATE TABLE IF NOT EXISTS team_balance_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  team_id INTEGER NOT NULL,
+  season INTEGER NOT NULL,
+  slot INTEGER NOT NULL,
+  matchweek INTEGER,
+  year INTEGER DEFAULT 0,
+  balance INTEGER NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(team_id) REFERENCES teams(id)
+)`,
+	(err: any) => {
+		if (err) console.warn("[migration] team_balance_history table:", err.message);
+	},
+);
+db.run(
+	`CREATE UNIQUE INDEX IF NOT EXISTS idx_balance_history_unique ON team_balance_history(season, slot, team_id)`,
+	(err: any) => {
+		if (err) console.warn("[migration] balance_history unique index:", err.message);
+	},
+);
+
 // Migração one-shot das salas do db/ legado para saves/<criador>/ (idempotente).
 try {
 	migrateLegacyRoomDbsToCreatorFolders(resolveDbDir());

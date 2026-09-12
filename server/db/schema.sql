@@ -163,6 +163,25 @@ CREATE INDEX IF NOT EXISTS idx_club_news_team_id ON club_news(team_id);
 CREATE INDEX IF NOT EXISTS idx_club_news_player_id ON club_news(player_id);
 CREATE INDEX IF NOT EXISTS idx_club_news_created_at ON club_news(created_at);
 
+-- Saldo real de fim de semana por equipa (gráfico de evolução do saldo).
+-- Um registo por (season, slot, team_id): gravado após as finanças semanais e
+-- atualizado após a bilheteira da finalização (upsert na mesma chave).
+-- "slot" é o game.calendarIndex; "matchweek"/"year" servem os rótulos do gráfico.
+CREATE TABLE IF NOT EXISTS team_balance_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  team_id INTEGER NOT NULL,
+  season INTEGER NOT NULL,
+  slot INTEGER NOT NULL,
+  matchweek INTEGER,
+  year INTEGER DEFAULT 0,
+  balance INTEGER NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(team_id) REFERENCES teams(id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_balance_history_unique ON team_balance_history(season, slot, team_id);
+CREATE INDEX IF NOT EXISTS idx_balance_history_team ON team_balance_history(team_id, season, slot);
+
 -- NOTE: column "matchweek" actually stores game.calendarIndex (not the league matchweek),
 -- so that training also covers cup events. Each calendar entry = one training "week".
 CREATE TABLE IF NOT EXISTS team_training (

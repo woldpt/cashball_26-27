@@ -14,6 +14,7 @@ import {
   getStandingsRows,
   getTeamsWithCoachNames,
   logClubNews,
+  snapshotBalanceHistory,
 } from "./coreHelpers";
 import {
   finalizeAllRunningAuctions,
@@ -1065,6 +1066,15 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             return;
           }
 
+          // Saldo de fim de semana (inclui a bilheteira acabada de creditar).
+          snapshotBalanceHistory(
+            game,
+            game.season,
+            completedCalendarIndex,
+            game.year || 0,
+            completedMatchweek,
+          );
+
           // Emit match results
           const fullTimeFixtures = fixtures.map((fixture) => ({
             ...fixture,
@@ -1501,6 +1511,16 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                                 game.db.run("ROLLBACK", () => resolve(false));
                                 return;
                               }
+                              // Saldo real pós-descontos (o jogo da semana ainda não
+                              // foi jogado); a finalização atualiza o mesmo slot
+                              // com a bilheteira — o ponto final é de fim de semana.
+                              snapshotBalanceHistory(
+                                game,
+                                game.season,
+                                slot,
+                                game.year || 0,
+                                game.matchweek || 0,
+                              );
                               resolve(true);
                             });
                           },

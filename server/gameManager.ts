@@ -811,6 +811,29 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
     },
   );
 
+  // Saldo real de fim de semana por equipa (gráfico de evolução do saldo).
+  // Criação idempotente por sala para salas já existentes antes desta feature.
+  db.run(
+    "CREATE TABLE IF NOT EXISTS team_balance_history (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      team_id INTEGER NOT NULL,\n      season INTEGER NOT NULL,\n      slot INTEGER NOT NULL,\n      matchweek INTEGER,\n      year INTEGER DEFAULT 0,\n      balance INTEGER NOT NULL,\n      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n      FOREIGN KEY(team_id) REFERENCES teams(id)\n    )",
+    (balErr: Error | null) => {
+      if (balErr)
+        console.error(
+          `[gameManager] Failed to create team_balance_history table for ${roomCode}:`,
+          balErr.message,
+        );
+      db.run(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_balance_history_unique ON team_balance_history(season, slot, team_id)",
+        (idxErr: Error | null) => {
+          if (idxErr)
+            console.warn(
+              `[gameManager] balance_history unique index failed for ${roomCode}:`,
+              idxErr.message,
+            );
+        },
+      );
+    },
+  );
+
   db.run(
     "CREATE TABLE IF NOT EXISTS game_state (key TEXT PRIMARY KEY, value TEXT)",
     () => {

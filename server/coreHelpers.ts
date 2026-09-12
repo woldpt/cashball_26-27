@@ -667,6 +667,51 @@ export function logClubNews(
   );
 }
 
+/**
+ * Grava o saldo real de todas as equipas para um slot do calendário
+ * (tabela team_balance_history, upsert por season/slot/team_id).
+ * Chamado após as finanças semanais e atualizado após a bilheteira da
+ * finalização — o último upsert do slot é o saldo de fim de semana.
+ * Fire-and-forget seguro: nunca rejeita nem parte o fluxo chamador.
+ */
+export function snapshotBalanceHistory(
+  game: ActiveGame,
+  season: number,
+  slot: number,
+  year: number,
+  matchweek: number,
+): Promise<void> {
+  return new Promise<void>((resolve) => {
+    game.db.all(
+      "SELECT id, budget FROM teams",
+      (err: any, rows: any[]) => {
+        if (err || !rows) {
+          console.warn(
+            `[${game.roomCode}] balance snapshot skipped:`,
+            err?.message,
+          );
+          return resolve();
+        }
+        if (rows.length === 0) return resolve();
+        let pending = rows.length;
+        const done = () => {
+          pending -= 1;
+          if (pending <= 0) resolve();
+        };
+        for (const r of rows) {
+          game.db.run(
+            `INSERT INTO team_balance_history (team_id, season, slot, matchweek, year, balance)
+             VALUES (?, ?, ?, ?, ?, ?)
+             ON CONFLICT(season, slot, team_id) DO UPDATE SET balance = excluded.balance, matchweek = excluded.matchweek, year = excluded.year`,
+            [r.id, season, slot, matchweek, year, Math.round(r.budget ?? 0)],
+            () => done(),
+          );
+        }
+      },
+    );
+  });
+}
+
 interface TransferRecord {
   playerId: number | null;
   playerName: string;
