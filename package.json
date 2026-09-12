@@ -1,8 +1,8 @@
 {
   "dependencies": {
-    "@juicesharp/rpiv-btw": "^1.5.1",
+    "@juicesharp/rpiv-btw": "^2.9.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "pi-lens": "^3.8.43"
+    "pi-lens": "^4.1.6"
   },
   "name": "cashball",
   "version": "1.0.0",

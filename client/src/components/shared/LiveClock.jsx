@@ -30,11 +30,11 @@ export function LiveClock({
   cupExtraTimeBadge,
 }) {
   /** @type {string|null} Texto grande (minuto ou símbolo). */
-  let time = null;
+  let time;
   /** @type {string} Fase abreviada. */
-  let shortPhase = "";
+  let shortPhase;
   /** @type {string} Fase por extenso (leitores de ecrã). */
-  let longPhase = "";
+  let longPhase;
 
   if (isPlayingMatch) {
     if (liveMinute < 1) {
