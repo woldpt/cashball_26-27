@@ -27,6 +27,22 @@ function savesDirFor(dbDir) {
   return dir;
 }
 
+/**
+ * Move um ficheiro, com fallback para copiar+apagar quando origem e destino
+ * estão em filesystems diferentes (EXDEV — ex.: /app/db e /app/saves são
+ * volumes separados no docker). Usado pela migração de salas e pelo rename.
+ */
+function movePath(src, dest) {
+  try {
+    fs.renameSync(src, dest);
+    return;
+  } catch (err) {
+    if (!err || err.code !== "EXDEV") throw err;
+  }
+  fs.copyFileSync(src, dest);
+  fs.unlinkSync(src);
+}
+
 function roomFileName(roomCode) {
   return `game_${roomCode}.db`;
 }
@@ -112,6 +128,7 @@ function listRoomCodes(dbDir) {
 
 module.exports = {
   OWNERLESS_DIR,
+  movePath,
   savesDirFor,
   roomFileName,
   sanitizeCreatorName,

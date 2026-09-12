@@ -159,6 +159,14 @@
 - `TransferHub.jsx`: checkbox "Mostrar os meus à venda" na linha de filtros; selo "Teu" (`Badge info`) nos próprios; rodapé dos próprios troca Comprar por Retirar + Leiloar (reutiliza dialogs do Plantel). Próprios em leilão continuam só nos Leilões.
 - Checks: eslint limpo nos 3 ficheiros (`lint` global só falha no untracked pré-existente `journal-cup-diagnostic.jsx`); `check:types` OK. Sem mobile-resp-check (toggle + rodapé condicional, sem mudança estrutural) e sem audits (zero servidor/lógica de jogo).
 
+## Migração falhou — diagnóstico + fixes (novo)
+
+- Causa 1 (principal): o contentor corria imagem de antes dos commits (`dist` sem a migração) — rebuild com `docker compose up --build` por fazer.
+- Causa 2 (latente, corrigida): `/app/db` e `/app/saves` são volumes separados → `renameSync` dá EXDEV. Novo `movePath` em `roomPaths.js` (rename com fallback copiar+apagar), usado na migração e no rename; EXDEV real verificado entre filesystems distintos.
+- Causa 3 (perda de dados, corrigida): o `node:sqlite` em readonly apagava o `-wal` no close. A migração abre agora em leitura+escrita com `wal_checkpoint(TRUNCATE)` antes de mover (funde resíduo de crash no `.db`); verificado com `-wal` de `kill -9` (marker=42 intacto).
+- Checks: typecheck OK; `audit:socketio` 0 erros; `audit:gamestate 445WU8` 0 erros; `run-saves.mts` 16/16 OK. Sem client.
+- **POR ATIVAR:** `docker compose up --build` + restart (com o timing dos jogadores).
+
 ## Saves em server/saves/<criador>/ (novo, substitui db/<criador>/)
 
 - `db/` só com globais (`base.db`, `accounts.db`, `global_chat.db`); salas em `server/saves/<criador>/`. Novo `savesDirFor` em `roomPaths.js` (irmão de `db/`, com mkdir); gameManager/index/auth/scripts com fallback duplo (saves/ → legado db/); migração recolhe raiz + antigas subpastas e remove pastas esvaziadas; backup cobre saves+globals; docker monta `./server/saves` (backend+backups); `server/saves/` no `.gitignore`.

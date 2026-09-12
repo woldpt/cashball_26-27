@@ -97,6 +97,7 @@ const {
 	findRoomDbFile,
 	creatorDbPath,
 	savesDirFor,
+	movePath,
 } = require("./db/roomPaths");
 
 // Diretório de saves (server/saves/) — irmão do diretório das bases.
@@ -122,10 +123,10 @@ function moveRoomToCreatorFolder(roomCode, fromPath, creatorName) {
 		return `Sala ${roomCode} já existe na pasta nova — mover manualmente.`;
 	try {
 		fs.mkdirSync(path.dirname(dest), { recursive: true });
-		fs.renameSync(fromPath, dest);
+		movePath(fromPath, dest);
 		for (const suffix of ["-wal", "-shm", "-journal", ".pre20"]) {
 			const sidecar = fromPath + suffix;
-			if (fs.existsSync(sidecar)) fs.renameSync(sidecar, dest + suffix);
+			if (fs.existsSync(sidecar)) movePath(sidecar, dest + suffix);
 		}
 	} catch (e) {
 		return `Falha ao mover a sala ${roomCode} para a pasta nova.`;

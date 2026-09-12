@@ -12,7 +12,7 @@ const sqlite = sqlite3.verbose();
 // Localização das salas: saves/<criador>/game_<ROOM>.db (com fallback ao
 // db/ legado: raiz e antigas subpastas por criador).
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { findRoomDbFile, creatorDbPath, savesDirFor } = require("./db/roomPaths");
+const { findRoomDbFile, creatorDbPath, savesDirFor, movePath } = require("./db/roomPaths");
 
 // Fisher-Yates shuffle via Math.random — usado no sorteio 60→40 por sala
 function shuffle<T>(arr: T[]): T[] {
@@ -123,8 +123,14 @@ function migrateLegacyRoomDbsToCreatorFolders(dbDir?: string): number {
     const src = path.join(legacyDir, file);
     let creator = "";
     try {
-      const tmp = new DatabaseSync(src, { readonly: true });
+      // Leitura+escrita de propósito: o checkpoint funde um -wal de crash
+      // no ficheiro principal ANTES de mover (mover o .db sem o -wal
+      // perdia dados; só abrir em readonly também o apaga no close).
+      const tmp = new DatabaseSync(src);
       try {
+        try {
+          tmp.prepare("PRAGMA wal_checkpoint(TRUNCATE)").get();
+        } catch {}
         const row = tmp
           .prepare("SELECT value FROM game_state WHERE key = 'roomCreator'")
           .get() as { value?: string } | undefined;
@@ -143,7 +149,11 @@ function migrateLegacyRoomDbsToCreatorFolders(dbDir?: string): number {
     }
     try {
       fs.mkdirSync(path.dirname(dest), { recursive: true });
-      fs.renameSync(src, dest);
+      movePath(src, dest);
+      for (const suffix of ["-wal", "-shm", "-journal", ".pre20"]) {
+        const sidecar = src + suffix;
+        if (fs.existsSync(sidecar)) movePath(sidecar, dest + suffix);
+      }
       // Remover pastas de criador esvaziadas no legado (só a hierarquia
       // anterior; nunca a raiz nem fixtures).
       const srcDir = path.dirname(src);
@@ -151,10 +161,6 @@ function migrateLegacyRoomDbsToCreatorFolders(dbDir?: string): number {
         try {
           if (fs.readdirSync(srcDir).length === 0) fs.rmdirSync(srcDir);
         } catch {}
-      }
-      for (const suffix of ["-wal", "-shm", "-journal", ".pre20"]) {
-        const sidecar = src + suffix;
-        if (fs.existsSync(sidecar)) fs.renameSync(sidecar, dest + suffix);
       }
       moved += 1;
     } catch (e) {
