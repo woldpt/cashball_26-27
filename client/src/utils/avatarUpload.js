@@ -6,8 +6,8 @@
  * no servidor (sem `sharp`). O resultado é base64 + mime para a REST POST.
  */
 
-export const AVATAR_TARGET_SIZE = 256;
-export const MAX_AVATAR_FILE_BYTES = 4 * 1024 * 1024; // ~4MB original
+const AVATAR_TARGET_SIZE = 256;
+const MAX_AVATAR_FILE_BYTES = 4 * 1024 * 1024; // ~4MB original
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 function loadImageFromFile(file) {

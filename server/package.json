@@ -40,7 +40,6 @@
   "type": "commonjs",
   "dependencies": {
     "@clack/prompts": "^1.7.0",
-    "@sentry/node": "^10.72.0",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^13.0.3",
     "cors": "^2.8.6",

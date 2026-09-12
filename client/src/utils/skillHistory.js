@@ -15,7 +15,7 @@ export const MATCHWEEKS_PER_SEASON = 14;
  * @param {number|undefined} matchweek - jornada dentro da época (1..14)
  * @returns {number}
  */
-export function skillEpoch(season, matchweek) {
+function skillEpoch(season, matchweek) {
   const s = Math.max(1, Number(season) || 1);
   const mw = Math.min(MATCHWEEKS_PER_SEASON, Math.max(1, Number(matchweek) || 1));
   return (s - 1) * MATCHWEEKS_PER_SEASON + mw;

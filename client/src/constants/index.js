@@ -231,9 +231,6 @@ export const POSITION_SHORT_LABELS = {
 	ATA: "A",
 };
 
-// Enable row background color per position
-export const ENABLE_ROW_BG = true;
-
 // ── POSITION VISUAL SYSTEM (única fonte de verdade) ─────────────────────
 // Todas as variações visuais por posição derivam destas constantes.
 // Cor base por posição (STYLE.md §1): GR amber-400, DEF blue-400,
@@ -278,14 +275,6 @@ export const POSITION_BG_GRADIENT_CLASS = {
 	ATA: "from-rose-500/8",
 };
 
-// Ring + borda dos flip cards (mercado/leilões)
-export const POSITION_RING_CLASS = {
-	GR: "ring-amber-400/60 border-amber-400/35",
-	DEF: "ring-blue-400/60 border-blue-400/35",
-	MED: "ring-emerald-400/60 border-emerald-400/35",
-	ATA: "ring-rose-400/60 border-rose-400/35",
-};
-
 // Badges de posição (bg / text / border separados para recombinação)
 export const POSITION_BADGE_BG_CLASS = {
 	GR: "bg-amber-400/20",
@@ -323,19 +312,9 @@ export const POSITION_LABEL_MAP = {
 	ATA: "ATA",
 };
 
-// Background color classes for each position (soft, subtle)
-export const POSITION_BG_CLASS = {
-	GR: "bg-yellow-500/8",
-	DEF: "bg-blue-500/8",
-	MED: "bg-emerald-500/8",
-	ATA: "bg-rose-500/8",
-};
-
 export const MAX_MATCH_SUBS = 3;
 /** Número máximo de jogadores no banco de suplentes (pré-jogo) */
 export const MAX_BENCH_SIZE = 7;
-export const ADMIN_SESSION_KEY = "cashballAdminSession";
-
 // ── MODAL Z-INDEX (camadas centralizadas) ────────────────────────────────
 export const MODAL_Z = {
 	teamSquad: 120,
@@ -357,8 +336,6 @@ export const MODAL_Z = {
 export const CUP_FINAL_STADIUM = "Estádio do Jamor";
 
 // ── SEASON CALENDAR ───────────────────────────────────────────────────────────
-export const FRIENDLY_ROUND_NAME = "Amigável de pré-época";
-
 export const SEASON_CALENDAR = [
 	{ type: "friendly", round: 0, roundName: "Amigável de pré-época", calendarIndex: 0 },
 	{ type: "league", matchweek: 1, calendarIndex: 1 },

@@ -1,4 +1,3 @@
-import { POSITION_RING_CLASS } from "../constants/index.js";
 
 export function normalizeHex(hex) {
   if (typeof hex !== "string") return null;
@@ -47,6 +46,3 @@ export function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-export function posRingClass(pos) {
-  return POSITION_RING_CLASS[pos] || "ring-zinc-400/50 border-zinc-500/35";
-}

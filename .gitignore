@@ -19,3 +19,4 @@ client/ios/
 
 # Artefactos de sessão (subagentes) — nunca versionar
 .pi/subagent-in-memory/
+server/socketEventRegistry.json

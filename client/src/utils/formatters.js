@@ -1,7 +1,7 @@
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
 /** Milissegundos do início (local) do dia de uma data. */
-export function startOfDay(d) {
+function startOfDay(d) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 }
 

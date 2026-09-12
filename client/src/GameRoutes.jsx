@@ -18,7 +18,7 @@ import { FinancesTab } from "./views/FinancesTab.jsx";
 import { StadiumTab } from "./views/StadiumTab.jsx";
 import { PlayersTab } from "./views/PlayersTab.jsx";
 import { TeamSquadView } from "./views/TeamSquadView.jsx";
-import { TrainingTab } from "./views/TrainingTab.jsx";
+import { TrainingPage } from "./components/ui/TrainingPage.jsx";
 import { TacticsView } from "./views/TacticsView.jsx";
 import { TransferHub } from "./components/ui/TransferHub.jsx";
 import { AuctionsPage } from "./pages/AuctionsPage.jsx";
@@ -551,7 +551,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                     )}
 
                     {activeTab === "training" && (
-                      <TrainingTab me={me} matchweek={currentJornada} />
+                      <TrainingPage me={me} matchweek={currentJornada} />
                     )}
 
                     {activeTab === "tactic" && <TacticsView />}

@@ -15,7 +15,7 @@ export function isPlayerAvailable(player, currentMatchweek = 1) {
   return currentMatchweek > Math.max(suspensionUntil, injuryUntil, cooldownUntil);
 }
 
-export function getFormationRequirements(formation = "4-4-2") {
+function getFormationRequirements(formation = "4-4-2") {
   const formationParts = String(formation || "4-4-2").split("-");
   return {
     GR: 1,

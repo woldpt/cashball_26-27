@@ -503,7 +503,6 @@ export const MATCH_TUNING = {
   fansHomeWinBonus: 1, // ganhar em casa sabe melhor
   fansHomeLossMalus: -3, // perder em casa dói mais
   fansMarginPerGoal: 2, // por golo de margem além do 1º (goleada/humilhação)
-  fansMarginMax: 6, // teto do efeito da margem
   fansUpsetBonus: 4, // vencer equipa de escalão superior (divisão menor)
   fansShameMalus: -5, // perder com equipa de escalão inferior (vergonha)
   fansExpectedLossSoftener: 5, // derrota esperada com mais fortes dói menos
@@ -520,7 +519,6 @@ export const MATCH_TUNING = {
   // Preço do bilhete: procura reage ao desvio face aos 15€ base.
   ticketBasePrice: 15,
   ticketDemandPerEuro: 0.014, // mult = 1 − (preço−15) × 0.014
-  ticketTiers: [10, 15, 20, 25, 30] as number[],
   // Fator adversário/posição: bónus que se somam (teto global em baixo).
   attendanceDerbyBonus: 0.12, // mesma divisão = rivalidade local
   attendanceLeaderVisitBonus: 0.08, // visita do 1º/2º classificado
@@ -543,7 +541,6 @@ export const MATCH_TUNING = {
   // ── Bónus casa por ambiente (computeSidePower, só equipa da casa) ────
   crowdBonusOccupancy: 0.9, // lotação ≥90% → vulcão
   crowdBonusAttack: 0.04, // +4% ataque
-  crowdBonusDefense: 0.02, // +2% defesa
   crowdPenaltyOccupancy: 0.4, // lotação <40% → morgue
   crowdPenaltyAttack: -0.03, // −3% ataque
   // Evolução pós-jogo (probabilidades por jogador/semana). Alvos: subidas

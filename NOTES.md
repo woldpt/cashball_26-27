@@ -4,6 +4,12 @@
 > - Atualizar no fim de cada tarefa/funcionalidade — e antes de fechar a sessão.
 > - Bullets curtos em pt-PT. Blocos antigos (> ~2 semanas) já refletidos em commits: apagar.
 > - Regra permanente descoberta → mover para `AGENTS.md`/`CLAUDE.md`/`STYLE.md` e remover daqui.
+
+## Cleanup zero-risk — audit ponytail (2026-09-11)
+- Morto removido: 4 exports `constants/index.js` (ENABLE_ROW_BG, POSITION_BG_CLASS, ADMIN_SESSION_KEY, FRIENDLY_ROUND_NAME) + POSITION_RING_CLASS (órfã com posRingClass, removida de `colorHelpers.js`); des-export (uso interno): AVATAR_TARGET_SIZE, MAX_AVATAR_FILE_BYTES, startOfDay, getFormationRequirements, skillEpoch. 3 dials mortos de MATCH_TUNING: fansMarginMax, ticketTiers, crowdBonusDefense. `TrainingTab.jsx` inlined em `GameRoutes.jsx` (delegava 1:1 para TrainingPage).
+- `@sentry/node` removido do server (zero imports); `server/socketEventRegistry.json` untracked (gerado a cada audit → gitignore); `client/journal-cup-diagnostic.{jsx,html}` apagados (untracked, resto de diagnóstico).
+- Pendente (decisão do utilizador, audit): 53 MB de `game_*.db` em git — `.gitignore` tem a linha comentada e o commit `59c4589` adicionou-os → parece intencional (backups), deixar; root `package.json` MCP (deps + `main: mcp-proxy.js` inexistente) — uso externo pelo pi, intenção incerta; unificação sqlite3/better-sqlite3 — arriscado, trabalho próprio.
+- Pendente (dificuldade): alavancas anti-bola-de-neve A+B+C (evolução vs desempenho, inflação económica anual, custo de estádio) — diagnóstico feito, utilizador ainda não escolheu.
 > - Ao iniciar uma sessão nova: ler este ficheiro + `git log --oneline -10`.
 
 ## Engine: chances discretas estilo hatrick (novo)
