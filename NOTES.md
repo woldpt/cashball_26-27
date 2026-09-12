@@ -159,6 +159,14 @@
 - `TransferHub.jsx`: checkbox "Mostrar os meus à venda" na linha de filtros; selo "Teu" (`Badge info`) nos próprios; rodapé dos próprios troca Comprar por Retirar + Leiloar (reutiliza dialogs do Plantel). Próprios em leilão continuam só nos Leilões.
 - Checks: eslint limpo nos 3 ficheiros (`lint` global só falha no untracked pré-existente `journal-cup-diagnostic.jsx`); `check:types` OK. Sem mobile-resp-check (toggle + rodapé condicional, sem mudança estrutural) e sem audits (zero servidor/lógica de jogo).
 
+## Migração em prod OK — 35 salas (novo)
+
+- O log colado era da corrida antiga (mensagem sem detalhe = imagem pré-fix); o contentor estava ainda mais atrás (sem mount `saves/`, `dist` sem `movePath`).
+- Desbloqueio do build: `client/.npmrc` (`legacy-peer-deps=true`, intenção já declarada no commit dos bumps) + `COPY .npmrc` no `client/Dockerfile` (só copiava `package*.json`, o flag nunca chegava à imagem).
+- `docker compose up --build -d`: backend+backups recriados e a correr; frontend não arranca por rede externa `cftunnel` sem subnet para o IP fixo (pré-existente, já não corria antes).
+- `[migração] 35 sala(s) movida(s)`; `server/db/` sem `game_*.db`; `server/saves/<criador>/` populado (incl. `_sem-dono`); `/health` ok.
+- `audit:gamestate FGPQH6` = 53 erros — os mesmos pré-existentes de mínimos de plantel (confirmados em stash anteriormente), não da migração. `audit:socketio` 0 erros.
+
 ## Migração falhou em prod — diagnóstico fechado (novo)
 
 - O log das 09:24 mostra `falha ao mover` SEM detalhe → imagem construída da árvore pré-fix (corrida com o commit 33aae36 das 09:21:22). Sem `movePath`, todo o `renameSync` dá EXDEV entre os volumes `/app/db` e `/app/saves` (confirmado: réplica em contentor `node:22-alpine` com volumes separados falha sem o fix e passa com ele).
