@@ -57,12 +57,9 @@ export function PlayersTab({
   const { groupedByPos, groupStats, wageByPos, staggerIndex } = useMemo(() => {
     const groups = { GR: [], DEF: [], MED: [], ATA: [] };
     const wages = { GR: 0, DEF: 0, MED: 0, ATA: 0 };
-    const skillSums = { GR: 0, DEF: 0, MED: 0, ATA: 0 };
     for (const p of annotatedSquad) {
       if (groups[p.position]) groups[p.position].push(p);
       if (wages[p.position] !== undefined) wages[p.position] += p.wage || 0;
-      if (skillSums[p.position] !== undefined)
-        skillSums[p.position] += p.skill || 0;
     }
     // Ordenação só dentro de cada posição (a estrutura GR/DEF/MED/ATA fica).
     const compare = SORT_COMPARATORS[sortKey];
@@ -83,9 +80,6 @@ export function PlayersTab({
       stats[pos] = {
         count: group.length,
         wage: wages[pos],
-        avgSkill: group.length
-          ? Math.round(skillSums[pos] / group.length)
-          : 0,
       };
     }
     return {
@@ -182,8 +176,7 @@ export function PlayersTab({
                           {POS_GROUP_LABEL[pos]}
                         </h3>
                         <span className="text-[9px] text-on-surface-variant/70 font-bold tabular-nums">
-                          {stats.count} · {formatCurrency(stats.wage)}/sem ·
-                          skill {stats.avgSkill}
+                          {stats.count} · {formatCurrency(stats.wage)}/sem
                         </span>
                       </div>
                       <ul className="flex flex-col gap-1.5 list-none m-0 p-0">

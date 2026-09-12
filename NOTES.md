@@ -3,6 +3,10 @@
 - `better-sqlite3` removido de `server/package.json` (menos um native a compilar em prod).
 - Diffs de API: `pragma()` → `exec("PRAGMA ...")`; `transaction()` → `exec("BEGIN")`/`COMMIT"` + ROLLBACK no finally.
 - Requisito: Node ≥ 22.13 (Dockerfile `node:22-alpine` e local v26 OK).
+## Plantel sem médias por posição (novo)
+- A força na simulação é a média dos titulares em campo, não do plantel — as médias `skill` por posição no cabeçalho de cada grupo do Plantel (`PlayersTab.jsx`) induziam em erro. Removidas (cálculo `skillSums`/`avgSkill` incluído); ficam contagem + massa salarial.
+- Checks: `lint` no ficheiro + `check:types` OK.
+
 ## Barreira do 11 + banco no servidor (novo)
 - Bug FGPQH6 (intervalo vazio no Chaves): o `setReady` aceitava tudo e o engine fazia auto-pick silencioso — o `IntervencaoView` lê só `tactic.positions`, daí as listas vazias. Garantia nova: sem 11 + banco não se avança.
 - Novo `server/game/lineupReady.ts` (puro): `checkLineupReady` (11 disponíveis = 1 GR + 10 campo; banco = 7 com 1 GR, via `MAX_BENCH_SIZE`; pool com juniores como o cliente) + `isLobbyStarter` (espectadores sem jogo na ronda passam; sem fixtures → fail-open) + `upcomingMatchweek` (mesma base do cliente).
