@@ -9,9 +9,10 @@ import { getOfflineCoaches } from "./presenceHelpers";
 
 const sqlite = sqlite3.verbose();
 
-// Localização das salas: db/<criador>/game_<ROOM>.db (com fallback à raiz legado).
+// Localização das salas: saves/<criador>/game_<ROOM>.db (com fallback ao
+// db/ legado: raiz e antigas subpastas por criador).
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { findRoomDbFile, creatorDbPath } = require("./db/roomPaths");
+const { findRoomDbFile, creatorDbPath, savesDirFor } = require("./db/roomPaths");
 
 // Fisher-Yates shuffle via Math.random — usado no sorteio 60→40 por sala
 function shuffle<T>(arr: T[]): T[] {
@@ -56,13 +57,15 @@ function resolveDbPaths(roomCode: string, creatorName?: string) {
     fs.mkdirSync(targetDbDir, { recursive: true });
   }
 
-  // Sala existente: onde quer que esteja (raiz legado ou subpasta do criador).
-  // Sala nova com criador conhecido: nasce logo em db/<criador>/.
+  const savesDir = savesDirFor(targetDbDir);
+  // Sala existente: onde quer que esteja (saves/ ou legado em db/).
+  // Sala nova com criador conhecido: nasce logo em saves/<criador>/.
   const dbPath =
+    findRoomDbFile(savesDir, roomCode) ??
     findRoomDbFile(targetDbDir, roomCode) ??
     (creatorName
-      ? creatorDbPath(targetDbDir, roomCode, creatorName)
-      : path.join(targetDbDir, `game_${roomCode}.db`));
+      ? creatorDbPath(savesDir, roomCode, creatorName)
+      : path.join(savesDir, `game_${roomCode}.db`));
 
   if (!fs.existsSync(path.dirname(dbPath))) {
     fs.mkdirSync(path.dirname(dbPath), { recursive: true });
@@ -76,19 +79,29 @@ function resolveDbPaths(roomCode: string, creatorName?: string) {
 }
 
 /**
- * Migração one-shot (idempotente): move `game_*.db` da raiz de `db/` para
- * `db/<criador>/` segundo o `roomCreator` gravado em cada sala (ou
- * `_sem-dono` quando desconhecido). Ficheiros `-wal`/`-shm` e `.pre20`
- * acompanham. Corre no arranque do servidor; se o destino já existir,
- * a sala é saltada com aviso (nunca sobrescreve).
+ * Migração one-shot (idempotente): move `game_*.db` do `db/` legado (raiz
+ * ou antigas subpastas por criador) para `saves/<criador>/` segundo o
+ * `roomCreator` gravado em cada sala (ou `_sem-dono` quando desconhecido).
+ * Ficheiros `-wal`/`-shm` e `.pre20` acompanham. Corre no arranque do
+ * servidor; se o destino já existir, a sala é saltada com aviso
+ * (nunca sobrescreve).
  */
 function migrateLegacyRoomDbsToCreatorFolders(dbDir?: string): number {
-  const dir = dbDir || resolveDbPaths("__probe__").targetDbDir;
-  let files: string[];
+  const legacyDir = dbDir || resolveDbPaths("__probe__").targetDbDir;
+  const savesDir = savesDirFor(legacyDir);
+  const files: string[] = [];
   try {
-    files = fs
-      .readdirSync(dir)
-      .filter((f) => f.startsWith("game_") && f.endsWith(".db"));
+    for (const f of fs.readdirSync(legacyDir)) {
+      if (f.startsWith("game_") && f.endsWith(".db")) files.push(f);
+    }
+    // Restos da hierarquia anterior (db/<criador>/) também são recolhidos.
+    for (const e of fs.readdirSync(legacyDir, { withFileTypes: true })) {
+      if (!e.isDirectory() || e.name === "fixtures") continue;
+      for (const f of fs.readdirSync(path.join(legacyDir, e.name))) {
+        if (f.startsWith("game_") && f.endsWith(".db"))
+          files.push(path.join(e.name, f));
+      }
+    }
   } catch {
     return 0;
   }
@@ -105,8 +118,9 @@ function migrateLegacyRoomDbsToCreatorFolders(dbDir?: string): number {
   }
   let moved = 0;
   for (const file of files) {
-    const roomCode = file.replace("game_", "").replace(".db", "");
-    const src = path.join(dir, file);
+    const base = path.basename(file);
+    const roomCode = base.replace("game_", "").replace(".db", "");
+    const src = path.join(legacyDir, file);
     let creator = "";
     try {
       const tmp = new BetterSqlite(src, { readonly: true });
@@ -122,7 +136,7 @@ function migrateLegacyRoomDbsToCreatorFolders(dbDir?: string): number {
       console.warn(`[migração] ${file}: sem leitura do criador — a saltar.`);
       continue;
     }
-    const dest: string = creatorDbPath(dir, roomCode, creator);
+    const dest: string = creatorDbPath(savesDir, roomCode, creator);
     if (fs.existsSync(dest)) {
       console.warn(`[migração] ${file}: destino já existe — a saltar.`);
       continue;
@@ -130,6 +144,14 @@ function migrateLegacyRoomDbsToCreatorFolders(dbDir?: string): number {
     try {
       fs.mkdirSync(path.dirname(dest), { recursive: true });
       fs.renameSync(src, dest);
+      // Remover pastas de criador esvaziadas no legado (só a hierarquia
+      // anterior; nunca a raiz nem fixtures).
+      const srcDir = path.dirname(src);
+      if (srcDir !== legacyDir) {
+        try {
+          if (fs.readdirSync(srcDir).length === 0) fs.rmdirSync(srcDir);
+        } catch {}
+      }
       for (const suffix of ["-wal", "-shm", "-journal", ".pre20"]) {
         const sidecar = src + suffix;
         if (fs.existsSync(sidecar)) fs.renameSync(sidecar, dest + suffix);

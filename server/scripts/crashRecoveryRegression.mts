@@ -27,9 +27,10 @@ import { fileURLToPath } from "node:url";
 const require = createRequire(import.meta.url);
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const dbDir = path.join(scriptDir, "..", "db");
+const savesDir = savesDirFor(dbDir);
 
 const TEST_ROOM = "CRASHT"; // código reservado ao teste — nunca usar numa sala real
-const dstPath = path.join(dbDir, `game_${TEST_ROOM}.db`);
+const dstPath = path.join(savesDir, `game_${TEST_ROOM}.db`);
 
 const { getGame, saveGameState, activeGames } = require("../gameManager") as any;
 const { generateFixturesForDivision, applyPostMatchQualityEvolution } =
@@ -195,8 +196,12 @@ async function main(): Promise<void> {
   // ── preparação: snapshot WAL-safe de uma sala real para o quarto de teste ──
   const { findRoomDbFile, listRoomCodes } = require("../db/roomPaths");
   const srcCode =
-    process.env.CRASHTEST_ROOM || listRoomCodes(dbDir)[0];
-  const srcPath = srcCode ? findRoomDbFile(dbDir, srcCode) : null;
+    process.env.CRASHTEST_ROOM ||
+    listRoomCodes(savesDir)[0] ||
+    listRoomCodes(dbDir)[0];
+  const srcPath = srcCode
+    ? (findRoomDbFile(savesDir, srcCode) ?? findRoomDbFile(dbDir, srcCode))
+    : null;
   if (!srcCode || !srcPath) {
     console.warn(`⚠ Sem game_*.db em ${dbDir} — nada para clonar. Skip.`);
     return;

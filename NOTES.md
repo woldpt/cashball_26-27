@@ -154,6 +154,13 @@
 - `TransferHub.jsx`: checkbox "Mostrar os meus à venda" na linha de filtros; selo "Teu" (`Badge info`) nos próprios; rodapé dos próprios troca Comprar por Retirar + Leiloar (reutiliza dialogs do Plantel). Próprios em leilão continuam só nos Leilões.
 - Checks: eslint limpo nos 3 ficheiros (`lint` global só falha no untracked pré-existente `journal-cup-diagnostic.jsx`); `check:types` OK. Sem mobile-resp-check (toggle + rodapé condicional, sem mudança estrutural) e sem audits (zero servidor/lógica de jogo).
 
+## Saves em server/saves/<criador>/ (novo, substitui db/<criador>/)
+
+- `db/` só com globais (`base.db`, `accounts.db`, `global_chat.db`); salas em `server/saves/<criador>/`. Novo `savesDirFor` em `roomPaths.js` (irmão de `db/`, com mkdir); gameManager/index/auth/scripts com fallback duplo (saves/ → legado db/); migração recolhe raiz + antigas subpastas e remove pastas esvaziadas; backup cobre saves+globals; docker monta `./server/saves` (backend+backups); `server/saves/` no `.gitignore`.
+- **Bug apanhado à posteriori:** o commit anterior deixava `auth.js` a usar `roomDbPath`/`moveRoomToCreatorFolder` sem as definir (`ReferenceError` em rename/admin) — reposto e verificado em runtime.
+- Checks: typecheck OK; `audit:socketio` 0 erros; `audit:gamestate 445WU8` 0 erros; `/tmp/cb-mig-test/run-saves.mts` 16/16 OK. Sem client.
+- **POR ATIVAR:** produção corre de `dist/` — `npm run build` + restart para migrar; após a migração, os `game_*.db` versionados aparecem como apagados no git (limpeza: `git rm` ou deixar).
+
 ## Salas em db/<criador>/ (novo)
 
 - Saves em subpastas por criador: `server/db/<criador>/game_<ROOM>.db` (sanitizado; `_sem-dono` sem criador). Novo `server/db/roomPaths.js` (finder raiz+subpastas, usado em gameManager/index/auth/scripts); `resolveDbPaths` aceita hint de criador; `getGame` recebe-o em new-game; arranque migra a raiz (idempotente, nunca sobrescreve); rename de conta atualiza `roomCreator` em disco e move salas inativas (ativas movem no restart); DELETE limpa sidecars; backup recursivo com nomes planos (restauro re-arquiva no arranque).

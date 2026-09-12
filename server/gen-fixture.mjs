@@ -6,9 +6,12 @@ import { join } from "node:path";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { findRoomDbFile } = require("./db/roomPaths.js");
+const { findRoomDbFile, savesDirFor } = require("./db/roomPaths.js");
+const savesDir = savesDirFor(join("db"));
 const cuprePath =
-  findRoomDbFile(join("db"), "CUPRE") ?? join("db", "game_CUPRE.db");
+  findRoomDbFile(savesDir, "CUPRE") ??
+  findRoomDbFile(join("db"), "CUPRE") ??
+  join(savesDir, "game_CUPRE.db");
 if (!existsSync(cuprePath)) {
   console.error(`Sala CUPRE não encontrada (${cuprePath}).`);
   process.exit(1);

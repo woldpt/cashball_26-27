@@ -34,6 +34,7 @@ const {
 const {
 	findRoomDbFile,
 	listRoomCodes,
+	savesDirFor,
 } = require("./db/roomPaths");
 const {
 	generateFixturesForDivision,
@@ -146,12 +147,17 @@ function resolveDbDir() {
 	);
 }
 
-// Caminho do ficheiro de uma sala (db/<criador>/game_<ROOM>.db, com
-// fallback à raiz para salas ainda não migradas ou inexistentes).
+// Diretório de saves (server/saves/) — irmão do diretório das bases.
+// Caminho do ficheiro de uma sala (saves/<criador>/game_<ROOM>.db, com
+// fallback ao legado em db/ para salas ainda não migradas ou inexistentes).
+function savesDir(): string {
+	return savesDirFor(resolveDbDir());
+}
 function roomDbPath(roomCode: string): string {
 	return (
+		findRoomDbFile(savesDir(), roomCode) ??
 		findRoomDbFile(resolveDbDir(), roomCode) ??
-		path.join(resolveDbDir(), `game_${roomCode}.db`)
+		path.join(savesDir(), `game_${roomCode}.db`)
 	);
 }
 
@@ -430,7 +436,11 @@ app.get("/saves", apiLimiter, async (req, res) => {
 		const sessionName = await getSessionNameFromReq(req);
 		if (!sessionName) return res.json([]);
 
-		const allSaves = listRoomCodes(resolveDbDir());
+		const seen = new Set([
+			...listRoomCodes(savesDir()),
+			...listRoomCodes(resolveDbDir()),
+		]);
+		const allSaves = [...seen];
 
 		const managerName = sessionName;
 		const mySaves = await getManagerRooms(managerName);
@@ -629,7 +639,11 @@ app.get("/auth/manager-info", apiLimiter, async (req, res) => {
 
 		const rooms = await Promise.all(
 			result.info.rooms
-				.filter((code) => findRoomDbFile(resolveDbDir(), code))
+				.filter(
+					(code) =>
+						findRoomDbFile(savesDir(), code) ||
+						findRoomDbFile(resolveDbDir(), code),
+				)
 				.map(async (code) => {
 					const [info, coaches, allCoaches, roomCreator] =
 						await Promise.all([
@@ -1414,7 +1428,7 @@ db.run(
 	},
 );
 
-// Migração one-shot das salas da raiz para db/<criador>/ (idempotente).
+// Migração one-shot das salas do db/ legado para saves/<criador>/ (idempotente).
 try {
 	migrateLegacyRoomDbsToCreatorFolders(resolveDbDir());
 } catch (err) {

@@ -16,6 +16,7 @@
  *
  * Variáveis de ambiente:
  *   DB_DIR          — diretório das bases (default: <server>/db)
+ *   SAVES_DIR       — diretório dos saves (default: <server>/saves)
  *   BACKUP_DIR      — raiz dos backups (default: <repo>/backups)
  *   RETENTION_COUNT — nº de snapshots a manter (default: 7)
  */
@@ -29,6 +30,8 @@ const SERVER_DIR = path.join(__dirname, "..");
 const REPO_ROOT = path.join(SERVER_DIR, "..");
 
 const DB_DIR = process.env.DB_DIR || path.join(SERVER_DIR, "db");
+const SAVES_DIR =
+  process.env.SAVES_DIR || path.join(SERVER_DIR, "saves");
 const BACKUP_ROOT =
   process.env.BACKUP_DIR || path.join(REPO_ROOT, "backups");
 const RETENTION_COUNT = Math.max(
@@ -46,12 +49,13 @@ function timestampDir() {
 }
 
 function listRoomDbs() {
-  // Salas em db/<criador>/game_<ROOM>.db + legado na raiz; o backup usa
-  // caminhos relativos a DB_DIR para não colidir entre pastas.
-  if (!fs.existsSync(DB_DIR)) return [];
+  // Saves em saves/<criador>/game_<ROOM>.db + bases globais de DB_DIR
+  // (base/accounts/global_chat) + legado na raiz de DB_DIR. O snapshot usa
+  // nomes planos (basenames únicos); ao repor para a raiz, o arranque volta
+  // a arquivar cada sala na pasta do criador.
   const found = [];
-  const collect = (rel) => {
-    const dir = path.join(DB_DIR, rel);
+  const collect = (root, rel) => {
+    const dir = path.join(root, rel);
     let entries;
     try {
       entries = fs.readdirSync(dir);
@@ -63,22 +67,28 @@ function listRoomDbs() {
       const full = path.join(dir, f);
       try {
         if (fs.statSync(full).isFile() && fs.statSync(full).size > 0)
-          found.push(path.join(rel, f));
+          found.push({ root, rel: path.join(rel, f) });
       } catch {}
     }
   };
-  collect("");
-  for (const e of fs.readdirSync(DB_DIR, { withFileTypes: true })) {
-    if (e.isDirectory()) collect(e.name);
-  }
+  const collectTree = (root) => {
+    if (!fs.existsSync(root)) return;
+    collect(root, "");
+    for (const e of fs.readdirSync(root, { withFileTypes: true })) {
+      if (e.isDirectory()) collect(root, e.name);
+    }
+  };
+  collectTree(SAVES_DIR);
+  collectTree(DB_DIR);
   return found;
 }
 
 /** Backs up one source DB into destDir using the Online Backup API. */
-function backupOne(srcFile, destDir) {
+function backupOne(srcEntry, destDir) {
   return new Promise((resolve) => {
-    const src = path.join(DB_DIR, srcFile);
-    // Nome plano no snapshot (o código de sala é único); ver nota em listRoomDbs.
+    const srcFile = srcEntry.rel;
+    const src = path.join(srcEntry.root, srcFile);
+    // Nome plano no snapshot (basenames únicos); ver nota em listRoomDbs.
     const dest = path.join(destDir, path.basename(srcFile));
     let db;
     try {
@@ -155,7 +165,7 @@ function pruneOldBackups() {
 async function runBackup() {
   const dbs = listRoomDbs();
   if (dbs.length === 0) {
-    console.warn(`[backup] no databases found in ${DB_DIR} — nothing to do`);
+    console.warn(`[backup] no databases found in ${SAVES_DIR} / ${DB_DIR} — nothing to do`);
     return true;
   }
   fs.mkdirSync(BACKUP_ROOT, { recursive: true });

@@ -93,6 +93,46 @@ const DB_PATH = resolveAccountsDbPath();
 const dbDir = path.dirname(DB_PATH);
 if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
+const {
+	findRoomDbFile,
+	creatorDbPath,
+	savesDirFor,
+} = require("./db/roomPaths");
+
+// Diretório de saves (server/saves/) — irmão do diretório das bases.
+// Caminho do ficheiro de uma sala (saves/<criador>/game_<ROOM>.db, com
+// fallback ao legado em db/ para salas ainda não migradas ou inexistentes).
+function savesDir() {
+	return savesDirFor(path.dirname(DB_PATH));
+}
+function roomDbPath(roomCode) {
+	return (
+		findRoomDbFile(savesDir(), roomCode) ??
+		findRoomDbFile(path.dirname(DB_PATH), roomCode) ??
+		path.join(savesDir(), `game_${roomCode}.db`)
+	);
+}
+
+// Move os ficheiros de uma sala para a pasta do (novo) criador.
+// Devolve mensagem de aviso ou null quando corre bem / nada a fazer.
+function moveRoomToCreatorFolder(roomCode, fromPath, creatorName) {
+	const dest = creatorDbPath(savesDir(), roomCode, creatorName);
+	if (path.resolve(fromPath) === path.resolve(dest)) return null;
+	if (fs.existsSync(dest))
+		return `Sala ${roomCode} já existe na pasta nova — mover manualmente.`;
+	try {
+		fs.mkdirSync(path.dirname(dest), { recursive: true });
+		fs.renameSync(fromPath, dest);
+		for (const suffix of ["-wal", "-shm", "-journal", ".pre20"]) {
+			const sidecar = fromPath + suffix;
+			if (fs.existsSync(sidecar)) fs.renameSync(sidecar, dest + suffix);
+		}
+	} catch (e) {
+		return `Falha ao mover a sala ${roomCode} para a pasta nova.`;
+	}
+	return null;
+}
+
 const db = new sqlite3.Database(DB_PATH, (err) => {
 	if (err) {
 		console.error("[auth] Failed to open accounts.db:", err.message);

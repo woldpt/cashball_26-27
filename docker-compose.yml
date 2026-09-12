@@ -6,6 +6,7 @@ services:
       - ./server/.env
     volumes:
       - ./server/db:/app/db
+      - ./server/saves:/app/saves
     networks:
       - cashball-net
     healthcheck:
@@ -33,6 +34,7 @@ services:
       BACKUP_INTERVAL_HOURS: "24"
     volumes:
       - ./server/db:/app/db
+      - ./server/saves:/app/saves
       - ./backups:/app/backups
     networks:
       - cashball-net

@@ -1,10 +1,10 @@
 /**
  * roomPaths.js — Localização dos ficheiros de sala (`game_<ROOM>.db`).
  *
- * Layout: `db/<criador>/game_<ROOM>.db` (pasta por criador da sala).
- * Ficheiros antigos ainda na raiz de `db/` continuam a ser encontrados
- * (compatibilidade + migração) — o `findRoomDbFile` procura na raiz e
- * depois nas subpastas (um nível).
+ * Layout: `saves/<criador>/game_<ROOM>.db` (pasta por criador da sala).
+ * Ficheiros antigos no `db/` legado continuam a ser encontrados
+ * (compatibilidade + migração) — o `findRoomDbFile` procura no diretório
+ * dado: raiz primeiro, depois subpastas (um nível).
  *
  * CommonJS de propósito: é exigido tanto por TypeScript (`gameManager`,
  * `index`, scripts via tsx) como por JS puro (`auth.js`).
@@ -16,6 +16,16 @@ const path = require("path");
 
 // Pasta de salas cujo criador é desconhecido (salas legado sem `roomCreator`).
 const OWNERLESS_DIR = "_sem-dono";
+
+/**
+ * Diretório de saves (`saves/`, irmão do diretório das bases).
+ * Cria-o quando necessário; as bases globais continuam em `db/`.
+ */
+function savesDirFor(dbDir) {
+  const dir = path.normalize(path.join(dbDir, "..", "saves"));
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
 
 function roomFileName(roomCode) {
   return `game_${roomCode}.db`;
@@ -102,6 +112,7 @@ function listRoomCodes(dbDir) {
 
 module.exports = {
   OWNERLESS_DIR,
+  savesDirFor,
   roomFileName,
   sanitizeCreatorName,
   creatorDbPath,

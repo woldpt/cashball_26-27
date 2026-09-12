@@ -11,11 +11,13 @@
 
 ## Localização das salas
 
-- Cada sala vive em `server/db/<criador>/game_<ROOM>.db` (pasta pelo nome do
-  criador, sanitizado; `_sem-dono` quando desconhecido). O arranque migra
-  automaticamente o que ainda estiver na raiz (nunca sobrescreve).
+- `server/db/` guarda só as bases globais (`base.db`, `accounts.db`,
+  `global_chat.db`); cada sala vive em `server/saves/<criador>/game_<ROOM>.db`
+  (pasta pelo nome do criador, sanitizado; `_sem-dono` quando desconhecido).
+  O arranque migra automaticamente o que ainda estiver no `db/` legado
+  (nunca sobrescreve).
 - Todo o acesso passa pelo `findRoomDbFile` (`server/db/roomPaths.js`) —
-  raiz + subpastas — por isso restauros planos de backup voltam a ser
+  `saves/` + legado — por isso restauros planos de backup voltam a ser
   arquivados sozinhos no arranque seguinte.
 
 ## Garantias
