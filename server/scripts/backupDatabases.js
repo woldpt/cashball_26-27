@@ -46,17 +46,40 @@ function timestampDir() {
 }
 
 function listRoomDbs() {
+  // Salas em db/<criador>/game_<ROOM>.db + legado na raiz; o backup usa
+  // caminhos relativos a DB_DIR para não colidir entre pastas.
   if (!fs.existsSync(DB_DIR)) return [];
-  return fs
-    .readdirSync(DB_DIR)
-    .filter((f) => f.endsWith(".db") && fs.statSync(path.join(DB_DIR, f)).size > 0);
+  const found = [];
+  const collect = (rel) => {
+    const dir = path.join(DB_DIR, rel);
+    let entries;
+    try {
+      entries = fs.readdirSync(dir);
+    } catch {
+      return;
+    }
+    for (const f of entries) {
+      if (!f.endsWith(".db")) continue;
+      const full = path.join(dir, f);
+      try {
+        if (fs.statSync(full).isFile() && fs.statSync(full).size > 0)
+          found.push(path.join(rel, f));
+      } catch {}
+    }
+  };
+  collect("");
+  for (const e of fs.readdirSync(DB_DIR, { withFileTypes: true })) {
+    if (e.isDirectory()) collect(e.name);
+  }
+  return found;
 }
 
 /** Backs up one source DB into destDir using the Online Backup API. */
 function backupOne(srcFile, destDir) {
   return new Promise((resolve) => {
     const src = path.join(DB_DIR, srcFile);
-    const dest = path.join(destDir, srcFile);
+    // Nome plano no snapshot (o código de sala é único); ver nota em listRoomDbs.
+    const dest = path.join(destDir, path.basename(srcFile));
     let db;
     try {
       db = new sqlite3.Database(src, sqlite3.OPEN_READONLY);

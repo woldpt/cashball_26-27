@@ -9,6 +9,10 @@ import { getOfflineCoaches } from "./presenceHelpers";
 
 const sqlite = sqlite3.verbose();
 
+// Localização das salas: db/<criador>/game_<ROOM>.db (com fallback à raiz legado).
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { findRoomDbFile, creatorDbPath } = require("./db/roomPaths");
+
 // Fisher-Yates shuffle via Math.random — usado no sorteio 60→40 por sala
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -37,7 +41,7 @@ function dbDirCandidates() {
   ];
 }
 
-function resolveDbPaths(roomCode: string) {
+function resolveDbPaths(roomCode: string, creatorName?: string) {
   const candidates = dbDirCandidates();
   const existingBasePath = candidates
     .map((dir) => path.join(dir, "base.db"))
@@ -52,11 +56,92 @@ function resolveDbPaths(roomCode: string) {
     fs.mkdirSync(targetDbDir, { recursive: true });
   }
 
+  // Sala existente: onde quer que esteja (raiz legado ou subpasta do criador).
+  // Sala nova com criador conhecido: nasce logo em db/<criador>/.
+  const dbPath =
+    findRoomDbFile(targetDbDir, roomCode) ??
+    (creatorName
+      ? creatorDbPath(targetDbDir, roomCode, creatorName)
+      : path.join(targetDbDir, `game_${roomCode}.db`));
+
+  if (!fs.existsSync(path.dirname(dbPath))) {
+    fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+  }
+
   return {
-    dbPath: path.join(targetDbDir, `game_${roomCode}.db`),
+    dbPath,
     basePath: existingBasePath || path.join(targetDbDir, "base.db"),
     targetDbDir,
   };
+}
+
+/**
+ * Migração one-shot (idempotente): move `game_*.db` da raiz de `db/` para
+ * `db/<criador>/` segundo o `roomCreator` gravado em cada sala (ou
+ * `_sem-dono` quando desconhecido). Ficheiros `-wal`/`-shm` e `.pre20`
+ * acompanham. Corre no arranque do servidor; se o destino já existir,
+ * a sala é saltada com aviso (nunca sobrescreve).
+ */
+function migrateLegacyRoomDbsToCreatorFolders(dbDir?: string): number {
+  const dir = dbDir || resolveDbPaths("__probe__").targetDbDir;
+  let files: string[];
+  try {
+    files = fs
+      .readdirSync(dir)
+      .filter((f) => f.startsWith("game_") && f.endsWith(".db"));
+  } catch {
+    return 0;
+  }
+  if (files.length === 0) return 0;
+  let BetterSqlite: any = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    BetterSqlite = require("better-sqlite3");
+  } catch {
+    console.error(
+      "[migração] better-sqlite3 ausente — salas mantidas na raiz (o servidor continua a encontrá-las).",
+    );
+    return 0;
+  }
+  let moved = 0;
+  for (const file of files) {
+    const roomCode = file.replace("game_", "").replace(".db", "");
+    const src = path.join(dir, file);
+    let creator = "";
+    try {
+      const tmp = new BetterSqlite(src, { readonly: true });
+      try {
+        const row = tmp
+          .prepare("SELECT value FROM game_state WHERE key = 'roomCreator'")
+          .get() as { value?: string } | undefined;
+        creator = row?.value ? String(row.value) : "";
+      } finally {
+        tmp.close();
+      }
+    } catch (e) {
+      console.warn(`[migração] ${file}: sem leitura do criador — a saltar.`);
+      continue;
+    }
+    const dest: string = creatorDbPath(dir, roomCode, creator);
+    if (fs.existsSync(dest)) {
+      console.warn(`[migração] ${file}: destino já existe — a saltar.`);
+      continue;
+    }
+    try {
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.renameSync(src, dest);
+      for (const suffix of ["-wal", "-shm", "-journal", ".pre20"]) {
+        const sidecar = src + suffix;
+        if (fs.existsSync(sidecar)) fs.renameSync(sidecar, dest + suffix);
+      }
+      moved += 1;
+    } catch (e) {
+      console.warn(`[migração] ${file}: falha ao mover — a saltar.`);
+    }
+  }
+  if (moved > 0)
+    console.log(`[migração] ${moved} sala(s) movida(s) para subpastas por criador.`);
+  return moved;
 }
 
 function doesGameExist(roomCode: string) {
@@ -377,13 +462,13 @@ function deriveGamePhase(matchState: string, cupState: string): GamePhase {
   return "lobby";
 }
 
-function getGame(roomCode: string, onReady?: OnReady): ActiveGame | null {
+function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): ActiveGame | null {
   if (activeGames[roomCode]) {
     if (onReady) onReady(activeGames[roomCode]);
     return activeGames[roomCode];
   }
 
-  const { dbPath, basePath, targetDbDir } = resolveDbPaths(roomCode);
+  const { dbPath, basePath, targetDbDir } = resolveDbPaths(roomCode, creatorName);
 
   if (!fs.existsSync(dbPath)) {
     if (!fs.existsSync(basePath)) {
@@ -1789,6 +1874,7 @@ module.exports = {
   activeGames,
   doesGameExist,
   generateUniqueRoomCode,
+  migrateLegacyRoomDbsToCreatorFolders,
   closeAllDatabases,
   flushAllGameStates,
 };

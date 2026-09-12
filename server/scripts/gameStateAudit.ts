@@ -415,10 +415,13 @@ async function main() {
     process.exit(1);
   }
 
+  const dbDir = path.join(__dirname, "..", "db");
+  const { findRoomDbFile } = require("../db/roomPaths");
   const dbPath =
     roomCode === "base"
-      ? path.join(__dirname, "..", "db", "base.db")
-      : path.join(__dirname, "..", "db", `game_${roomCode}.db`);
+      ? path.join(dbDir, "base.db")
+      : (findRoomDbFile(dbDir, roomCode) ??
+        path.join(dbDir, `game_${roomCode}.db`));
   if (!fs.existsSync(dbPath)) {
     console.error(`❌ Database not found: ${dbPath}`);
     process.exit(1);

@@ -29,7 +29,12 @@ const {
 	closeAllDatabases,
 	flushAllGameStates,
 	activeGames,
+	migrateLegacyRoomDbsToCreatorFolders,
 } = require("./gameManager") as typeof import("./gameManager");
+const {
+	findRoomDbFile,
+	listRoomCodes,
+} = require("./db/roomPaths");
 const {
 	generateFixturesForDivision,
 	simulateMatchSegment,
@@ -141,9 +146,18 @@ function resolveDbDir() {
 	);
 }
 
+// Caminho do ficheiro de uma sala (db/<criador>/game_<ROOM>.db, com
+// fallback à raiz para salas ainda não migradas ou inexistentes).
+function roomDbPath(roomCode: string): string {
+	return (
+		findRoomDbFile(resolveDbDir(), roomCode) ??
+		path.join(resolveDbDir(), `game_${roomCode}.db`)
+	);
+}
+
 function getRoomName(roomCode: string): Promise<string> {
 	return new Promise((resolve) => {
-		const dbPath = path.join(resolveDbDir(), `game_${roomCode}.db`);
+		const dbPath = roomDbPath(roomCode);
 		const db = new sqlite3.Database(dbPath, (err: any) => {
 			if (err) {
 				resolve(roomCode); // fallback to room code if db error
@@ -175,7 +189,7 @@ function getSaveInfo(
 	lastPlayedAt: string | null;
 }> {
 	return new Promise((resolve) => {
-		const dbPath = path.join(resolveDbDir(), `game_${roomCode}.db`);
+		const dbPath = roomDbPath(roomCode);
 		if (!fs.existsSync(dbPath)) {
 			resolve({
 				roomName: roomCode,
@@ -272,7 +286,7 @@ function getRoomInfo(
 	managerName: string,
 ): Promise<{ roomCode: string; roomName: string; teamName: string | null }> {
 	return new Promise((resolve) => {
-		const dbPath = path.join(resolveDbDir(), `game_${roomCode}.db`);
+		const dbPath = roomDbPath(roomCode);
 		if (!fs.existsSync(dbPath)) {
 			resolve({ roomCode, roomName: roomCode, teamName: null });
 			return;
@@ -328,7 +342,7 @@ function getRoomCreator(roomCode: string): Promise<string> {
 		} catch {
 			/* ignorar — fallback para leitura da DB */
 		}
-		const dbPath = path.join(resolveDbDir(), `game_${roomCode}.db`);
+		const dbPath = roomDbPath(roomCode);
 		if (!fs.existsSync(dbPath)) {
 			resolve("");
 			return;
@@ -416,10 +430,7 @@ app.get("/saves", apiLimiter, async (req, res) => {
 		const sessionName = await getSessionNameFromReq(req);
 		if (!sessionName) return res.json([]);
 
-		const files = fs.readdirSync(resolveDbDir());
-		const allSaves = files
-			.filter((f) => f.startsWith("game_") && f.endsWith(".db"))
-			.map((f) => f.replace("game_", "").replace(".db", ""));
+		const allSaves = listRoomCodes(resolveDbDir());
 
 		const managerName = sessionName;
 		const mySaves = await getManagerRooms(managerName);
@@ -521,9 +532,14 @@ app.delete("/saves/:roomCode", apiLimiter, async (req, res) => {
 			}
 		}
 
-		const dbDir = resolveDbDir();
-		const dbFile = path.join(dbDir, `game_${roomCode}.db`);
-		if (fs.existsSync(dbFile)) fs.unlinkSync(dbFile);
+		const dbFile = roomDbPath(roomCode);
+		if (fs.existsSync(dbFile)) {
+			fs.unlinkSync(dbFile);
+			for (const suffix of ["-wal", "-shm", "-journal"]) {
+				const sidecar = dbFile + suffix;
+				if (fs.existsSync(sidecar)) fs.unlinkSync(sidecar);
+			}
+		}
 
 		await deleteRoomAccess(roomCode);
 		console.log(
@@ -613,9 +629,7 @@ app.get("/auth/manager-info", apiLimiter, async (req, res) => {
 
 		const rooms = await Promise.all(
 			result.info.rooms
-				.filter((code) =>
-					fs.existsSync(path.join(resolveDbDir(), `game_${code}.db`)),
-				)
+				.filter((code) => findRoomDbFile(resolveDbDir(), code))
 				.map(async (code) => {
 					const [info, coaches, allCoaches, roomCreator] =
 						await Promise.all([
@@ -1399,6 +1413,13 @@ db.run(
 		if (err) console.warn("[migration] match_moms season index:", err.message);
 	},
 );
+
+// Migração one-shot das salas da raiz para db/<criador>/ (idempotente).
+try {
+	migrateLegacyRoomDbsToCreatorFolders(resolveDbDir());
+} catch (err) {
+	console.error("[migração] Falha na migração das salas:", err.message);
+}
 
 const PORT = 3000;
 server.listen(PORT, () => {

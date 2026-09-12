@@ -63,6 +63,7 @@ interface SessionHandlerDeps {
 	getGame: (
 		roomCode: string,
 		onReady?: (game: ActiveGame | null, error?: Error) => void,
+		creatorName?: string,
 	) => ActiveGame | null;
 	recordRoomAccess: (name: string, roomCode: string) => void;
 	getRoomCoaches: (roomCode: string, excludeName?: string) => Promise<string[]>;
@@ -549,6 +550,7 @@ export function registerSessionSocketHandlers(
 			}
 		}
 
+		const creatorHint = joinMode === "new-game" ? trimmedName : undefined;
 		getGame(finalRoomCode, (game, gameErr) => {
 			if (!game || gameErr) {
 				return socket.emit(
@@ -739,7 +741,9 @@ export function registerSessionSocketHandlers(
 			} else {
 				doJoin();
 			}
-		});
+		},
+		creatorHint,
+		);
 	});
 
 	socket.on("requestNextMatchSummary", async ({ teamId }) => {

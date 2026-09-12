@@ -9,6 +9,15 @@
   - `finalized` — slot da liga/Taça já liquidado: o restart **avança o calendário** em vez de re-simular/re-cobrar (`recoverFinalizedSlot`).
 - Uma quebra numa janela estreita entre COMMITs pode deixar só as linhas do jogo/evolução pós-jogo dessa semana por persistir — `audit:gamestate <ROOM_CODE>` surfaceia isso.
 
+## Localização das salas
+
+- Cada sala vive em `server/db/<criador>/game_<ROOM>.db` (pasta pelo nome do
+  criador, sanitizado; `_sem-dono` quando desconhecido). O arranque migra
+  automaticamente o que ainda estiver na raiz (nunca sobrescreve).
+- Todo o acesso passa pelo `findRoomDbFile` (`server/db/roomPaths.js`) —
+  raiz + subpastas — por isso restauros planos de backup voltam a ser
+  arquivados sozinhos no arranque seguinte.
+
 ## Garantias
 
 - DBs de sala e global correm em **WAL** + `busy_timeout=5000` (`base.db` mantém journal DELETE para poder ser copiada via `fs.copyFileSync`).

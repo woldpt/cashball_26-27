@@ -1092,10 +1092,7 @@ function adminRenameManager(oldName, newName, activeGames) {
 										};
 
 										for (const roomCode of roomCodes) {
-											const gameDbPath = path.join(
-												path.dirname(DB_PATH),
-												`game_${roomCode}.db`,
-											);
+											const gameDbPath = roomDbPath(roomCode);
 
 											// If the game is active in memory, update playersByName there too
 											if (activeGames && activeGames[roomCode]) {
@@ -1170,9 +1167,55 @@ function adminRenameManager(oldName, newName, activeGames) {
 																	gdbErr.message,
 																);
 																warnings.push(`Falha ao actualizar sala ${roomCode}.`);
-															}
 															gameDb.close();
-															done();
+														done();
+															return;
+															}
+															// Se o renomeado era o criador, actualizar em disco e
+															// acompanhar a pasta (salas em memória movem-se no
+															// próximo arranque, com o ficheiro fechado).
+															gameDb.get(
+																"SELECT value FROM game_state WHERE key = 'roomCreator'",
+																(cErr, cRow) => {
+																	const finishMove = () => {
+																		gameDb.close(() => {
+																			if (
+																				!cErr &&
+																				cRow?.value &&
+																				String(cRow.value).toLowerCase() ===
+																					normalizedOld.toLowerCase()
+																			) {
+																				if (activeGames && activeGames[roomCode]) {
+																					warnings.push(
+																						`Sala ${roomCode} em uso — será movida para a pasta nova no próximo arranque.`,
+																					);
+																				} else {
+																					const moveErr = moveRoomToCreatorFolder(
+																						roomCode,
+																						gameDbPath,
+																						normalizedNew,
+																					);
+																					if (moveErr) warnings.push(moveErr);
+																				}
+																			}
+																				done();
+																			});
+																	};
+																	if (
+																		cErr ||
+																		!cRow?.value ||
+																		String(cRow.value).toLowerCase() !==
+																			normalizedOld.toLowerCase()
+																	) {
+																		return finishMove();
+																	}
+																	gameDb.run(
+																		"UPDATE game_state SET value = ? WHERE key = 'roomCreator'",
+																		[normalizedNew],
+																		() => finishMove(),
+																	);
+																},
+															);
 														},
 													);
 												} catch (perr) {
@@ -1217,7 +1260,7 @@ function adminAddRoomAccess(managerName, roomCode) {
 	}
 
 	// Validate room exists on disk
-	const gameDbPath = path.join(path.dirname(DB_PATH), `game_${normalizedRoom}.db`);
+	const gameDbPath = roomDbPath(normalizedRoom);
 	if (!fs.existsSync(gameDbPath)) {
 		return Promise.resolve({
 			ok: false,
@@ -1304,7 +1347,7 @@ function adminGetRoomCoaches(roomCode) {
 		return Promise.resolve({ ok: false, error: "Código de sala inválido." });
 	}
 
-	const gameDbPath = path.join(path.dirname(DB_PATH), `game_${normalizedRoom}.db`);
+	const gameDbPath = roomDbPath(normalizedRoom);
 	if (!fs.existsSync(gameDbPath)) {
 		return Promise.resolve({ ok: false, error: `A sala "${normalizedRoom}" não existe.` });
 	}
@@ -1377,7 +1420,7 @@ function adminSetCoachTeam(roomCode, coachName, teamId, activeGames) {
 		return Promise.resolve({ ok: false, error: "Dados inválidos." });
 	}
 
-	const gameDbPath = path.join(path.dirname(DB_PATH), `game_${normalizedRoom}.db`);
+	const gameDbPath = roomDbPath(normalizedRoom);
 	if (!fs.existsSync(gameDbPath)) {
 		return Promise.resolve({ ok: false, error: `A sala "${normalizedRoom}" não existe.` });
 	}

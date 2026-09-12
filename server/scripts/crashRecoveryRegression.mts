@@ -193,16 +193,15 @@ function buildHelpers(): any {
 
 async function main(): Promise<void> {
   // ── preparação: snapshot WAL-safe de uma sala real para o quarto de teste ──
-  const srcName =
-    process.env.CRASHTEST_ROOM ||
-    fs
-      .readdirSync(dbDir)
-      .find((f) => f.startsWith("game_") && f.endsWith(".db"));
-  if (!srcName) {
+  const { findRoomDbFile, listRoomCodes } = require("../db/roomPaths");
+  const srcCode =
+    process.env.CRASHTEST_ROOM || listRoomCodes(dbDir)[0];
+  const srcPath = srcCode ? findRoomDbFile(dbDir, srcCode) : null;
+  if (!srcCode || !srcPath) {
     console.warn(`⚠ Sem game_*.db em ${dbDir} — nada para clonar. Skip.`);
     return;
   }
-  const srcPath = path.join(dbDir, srcName);
+  const srcName = `game_${srcCode}.db`;
   for (const suffix of ["", "-wal", "-shm"]) fs.rmSync(dstPath + suffix, { force: true });
   await rawExec(srcPath, `VACUUM INTO '${dstPath}'`);
 
