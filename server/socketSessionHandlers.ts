@@ -1,6 +1,6 @@
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory } from "./coreHelpers";
-import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES } from "./gameConstants";
+import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES, SEASON_CALENDAR } from "./gameConstants";
 import { getGlobalMessages, CHAT_RETENTION_MS } from "./db/globalDatabase";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import {
@@ -551,7 +551,8 @@ export function registerSessionSocketHandlers(
 		}
 
 		const creatorHint = joinMode === "new-game" ? trimmedName : undefined;
-		getGame(finalRoomCode, (game, gameErr) => {
+		try {
+			getGame(finalRoomCode, (game, gameErr) => {
 			if (!game || gameErr) {
 				return socket.emit(
 					"joinError",
@@ -742,8 +743,17 @@ export function registerSessionSocketHandlers(
 				doJoin();
 			}
 		},
-		creatorHint,
-		);
+			creatorHint,
+			);
+		} catch (err) {
+			// Falha ao localizar/criar o ficheiro da sala (ex.: pasta de saves
+			// sem escrita) — erro só para este join, sem derrubar o servidor.
+			console.error(`[join] Sala ${finalRoomCode}:`, (err as Error)?.message || err);
+			return socket.emit(
+				"joinError",
+				"Erro ao carregar o jogo. Contacta o administrador.",
+			);
+		}
 	});
 
 	socket.on("requestNextMatchSummary", async ({ teamId }) => {
@@ -1460,85 +1470,39 @@ export function registerSessionSocketHandlers(
 					SPONSOR_REVENUE_BY_DIVISION[team?.division || 4] || 0;
 
 				// ── Balance history ──────────────────────────────────────────────
-				// Reconstrói a evolução do saldo por jornada a partir do diário
-				// financeiro (club_news), com histórico de até 2 épocas
-				// (época anterior + actual). A âncora é o saldo actual: o ponto
-				// inicial é obtido por reconciliação inversa (saldo actual − Σ
-				// eventos do período), garantindo que o último ponto bate sempre
-				// com o currentBudget real. Cada ponto tem um índice global `x`
+				// Saldo real de fim de semana, gravado em team_balance_history
+				// (um ponto por slot do calendário). Só há pontos a partir da
+				// ativação desta feature — salas em curso preenchem o gráfico
+				// semana a semana. Cada ponto tem um índice global `x`
 				// (contínuo entre épocas) para o eixo X do gráfico.
-				const INCOME_TYPES = new Set([
-					"transfer_out",
-					"weekly_income",
-					"ticket_revenue",
-					"loan_take",
-					"prize",
-				]);
-				const journal = await runAll(
-					game.db,
-					"SELECT type, amount, matchweek, year FROM club_news WHERE team_id = ? AND year IN (?, ?) AND amount IS NOT NULL",
-					[teamId, currentYear - 1, currentYear],
-				);
-				const signed = (journal || []).map((e) => ({
-					year: e.year,
-					matchweek: e.matchweek ?? 0,
-					amount: (INCOME_TYPES.has(e.type) ? 1 : -1) * (e.amount || 0),
-				}));
-				const totalDelta = signed.reduce((sum, e) => sum + e.amount, 0);
-				const initialBudget = (team?.budget ?? 0) - totalDelta;
-				const byYearMw = new Map<
-					string,
-					{ year: number; matchweek: number; amount: number }
-				>();
-				for (const e of signed) {
-					const key = `${e.year}:${e.matchweek}`;
-					const entry = byYearMw.get(key);
-					if (entry) {
-						entry.amount += e.amount;
-					} else {
-						byYearMw.set(key, {
-							year: e.year,
-							matchweek: e.matchweek,
-							amount: e.amount,
-						});
-					}
-				}
-				const ordered = [...byYearMw.values()].sort(
-					(a, b) => a.year - b.year || a.matchweek - b.matchweek,
-				);
-				// Posição global no eixo X: cada época ocupa um bloco de
-				// SEASON_SPAN unidades (matchweeks 0..14), preservando os gaps
-				// dentro da época e separando as duas épocas no gráfico.
-				const SEASON_SPAN = 15;
-				const years = [...new Set(ordered.map((e) => e.year))].sort(
-					(a, b) => a - b,
-				);
-				const seasonIndex = new Map(years.map((y, i) => [y, i]));
-				// Época do ponto âncora: a primeira época com eventos (assim uma
-				// equipa na 1ª época não mostra uma fronteira/época fictícia).
-				const anchorYear = years.length > 0 ? years[0] : currentYear - 1;
-				let running = initialBudget;
-				const balanceHistory: Array<{
+				const SEASON_SPAN = SEASON_CALENDAR.length;
+				let balanceHistory: Array<{
 					x: number;
 					year: number;
 					matchweek: number;
 					balance: number;
-				}> = [
-					{
-						x: 0,
-						year: anchorYear,
-						matchweek: 0,
-						balance: Math.round(running),
-					},
-				];
-				for (const entry of ordered) {
-					running += entry.amount;
-					balanceHistory.push({
-						x: (seasonIndex.get(entry.year) ?? 0) * SEASON_SPAN + entry.matchweek,
-						year: entry.year,
-						matchweek: entry.matchweek,
-						balance: Math.round(running),
-					});
+				}> = [];
+				try {
+					const histRows = await runAll(
+						game.db,
+						`SELECT season, slot, matchweek, year, balance FROM team_balance_history
+						 WHERE team_id = ? AND season IN (?, ?)
+						 ORDER BY season ASC, slot ASC`,
+						[teamId, game.season - 1, game.season],
+					);
+					const seasons = [...new Set((histRows || []).map((r) => r.season))].sort(
+						(a, b) => a - b,
+					);
+					const seasonIndex = new Map(seasons.map((s, i) => [s, i]));
+					balanceHistory = (histRows || []).map((r) => ({
+						x: (seasonIndex.get(r.season) ?? 0) * SEASON_SPAN + (r.slot ?? 0),
+						year: r.year ?? 0,
+						matchweek: r.matchweek ?? 0,
+						balance: Math.round(r.balance ?? 0),
+					}));
+				} catch (histErr: any) {
+					// Sala antiga sem a tabela — o gráfico começa vazio.
+					if (!String(histErr?.message || "").includes("no such table")) throw histErr;
 				}
 
 				socket.emit("financeData", {
