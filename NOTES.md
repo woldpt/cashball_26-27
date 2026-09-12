@@ -159,6 +159,12 @@
 - `TransferHub.jsx`: checkbox "Mostrar os meus à venda" na linha de filtros; selo "Teu" (`Badge info`) nos próprios; rodapé dos próprios troca Comprar por Retirar + Leiloar (reutiliza dialogs do Plantel). Próprios em leilão continuam só nos Leilões.
 - Checks: eslint limpo nos 3 ficheiros (`lint` global só falha no untracked pré-existente `journal-cup-diagnostic.jsx`); `check:types` OK. Sem mobile-resp-check (toggle + rodapé condicional, sem mudança estrutural) e sem audits (zero servidor/lógica de jogo).
 
+## Migração falhou em prod — diagnóstico fechado (novo)
+
+- O log das 09:24 mostra `falha ao mover` SEM detalhe → imagem construída da árvore pré-fix (corrida com o commit 33aae36 das 09:21:22). Sem `movePath`, todo o `renameSync` dá EXDEV entre os volumes `/app/db` e `/app/saves` (confirmado: réplica em contentor `node:22-alpine` com volumes separados falha sem o fix e passa com ele).
+- Melhoria: avisos da migração incluem agora o código/mensagem do erro (`e.code || e.message`).
+- Armadilha de teste: ler um destino inexistente sem `readOnly` cria um `.db` vazio (de 배터리 "no such table" fantasma) — sempre `readOnly` em leituras de verificação.
+
 ## Migração falhou — diagnóstico + fixes (novo)
 
 - Causa 1 (principal): o contentor corria imagem de antes dos commits (`dist` sem a migração) — rebuild com `docker compose up --build` por fazer.

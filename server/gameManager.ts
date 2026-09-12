@@ -138,8 +138,10 @@ function migrateLegacyRoomDbsToCreatorFolders(dbDir?: string): number {
       } finally {
         tmp.close();
       }
-    } catch (e) {
-      console.warn(`[migração] ${file}: sem leitura do criador — a saltar.`);
+    } catch (e: any) {
+      console.warn(
+        `[migração] ${file}: sem leitura do criador (${e?.code || e?.message}) — a saltar.`,
+      );
       continue;
     }
     const dest: string = creatorDbPath(savesDir, roomCode, creator);
@@ -163,8 +165,10 @@ function migrateLegacyRoomDbsToCreatorFolders(dbDir?: string): number {
         } catch {}
       }
       moved += 1;
-    } catch (e) {
-      console.warn(`[migração] ${file}: falha ao mover — a saltar.`);
+    } catch (e: any) {
+      console.warn(
+        `[migração] ${file}: falha ao mover (${e?.code || e?.message}) — a saltar.`,
+      );
     }
   }
   if (moved > 0)
