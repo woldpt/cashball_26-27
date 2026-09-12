@@ -31,7 +31,13 @@ import {
   getMatchFatigueSnapshot,
   queueMatchDeltaWrites,
   createMinuteBarrier,
+  dbAllAsync,
 } from "./game/engine";
+import {
+  checkLineupReady,
+  isLobbyStarter,
+  upcomingMatchweek,
+} from "./game/lineupReady";
 import { generateAITactic } from "./game/matchCalculations";
 import { computeMoms } from "./game/mom";
 
@@ -1845,6 +1851,46 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
     // ── Lobby → start match (league OR cup, identical) ──────────────────────
     if (game.gamePhase === "lobby") {
+      // Barreira do 11 no pontapé de saída: a tática pode ter mudado depois
+      // do ready (ex. desmarcou um titular). Sem 11 + banco completo o jogo
+      // não arranca; o treinador em falta perde o ready (volta a clicar
+      // depois de corrigir) e é avisado. Espectadores sem jogo na ronda
+      // passam sempre; sem fixtures conhecidas, fail-open (não bloqueia).
+      const lobbyFixtures = (game as any).currentFixtures;
+      if (lobbyFixtures && lobbyFixtures.length > 0) {
+        const blockers: string[] = [];
+        const involved = getPlayerList(game).filter(
+          (p) => p.teamId != null && isLobbyStarter(lobbyFixtures, p.teamId),
+        );
+        for (const p of involved) {
+          const rows = await dbAllAsync(game.db,
+            "SELECT * FROM players WHERE team_id = ?",
+            [p.teamId],
+          ).catch(() => null);
+          if (!rows) continue;
+          const check = checkLineupReady(
+            (p.tactic as any)?.positions,
+            rows,
+            p.teamId as number,
+            upcomingMatchweek(game),
+          );
+          if (!check.ok) {
+            p.ready = false;
+            blockers.push(`${p.name}: ${check.reason}`);
+            if (p.socketId) {
+              io.to(p.socketId).emit("systemMessage", {
+                text: `⛔ Arranque travado — ${check.reason}`,
+              });
+            }
+          }
+        }
+        if (blockers.length > 0) {
+          console.warn(
+            `[${game.roomCode}] ⛔ Lobby→match bloqueado: 11/banco incompleto: ${blockers.join(" | ")}`,
+          );
+          return;
+        }
+      }
       if (segmentRunning[game.roomCode]) {
         console.warn(
           `[${game.roomCode}] ⚠ Lobby→match blocked: segmentRunning is true (match already in progress)`,

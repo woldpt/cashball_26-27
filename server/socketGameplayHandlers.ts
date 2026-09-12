@@ -7,6 +7,11 @@ import {
 } from "./game/engine";
 import { MAX_BENCH_SIZE } from "./gameConstants";
 import { getTacticFamiliarity, getAllTacticFamiliarity } from "./game/tacticFamiliarity";
+import {
+  checkLineupReady,
+  isLobbyStarter,
+  upcomingMatchweek,
+} from "./game/lineupReady";
 
 interface GameplayHandlerDeps {
   io: any;
@@ -114,6 +119,48 @@ export function registerGameplaySocketHandlers(
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
     if (!playerState.teamId) return;
+    // Barreira do 11 no pré-jogo: sem 11 + banco completo não há ready.
+    // Fora do lobby (intervalo, prolongamento) passa sempre — a escalação
+    // é a mesma. Espectadores sem jogo na ronda também passam.
+    if (
+      ready === true &&
+      game.gamePhase === "lobby" &&
+      isLobbyStarter((game as any).currentFixtures, playerState.teamId)
+    ) {
+      game.db.all(
+        "SELECT * FROM players WHERE team_id = ?",
+        [playerState.teamId],
+        (err: any, rows: any[]) => {
+          if (err) {
+            console.error(
+              `[${game.roomCode}] ⚠ setReady: squad read failed — fail-open`,
+              err.message,
+            );
+          } else {
+            const check = checkLineupReady(
+              (playerState.tactic as any)?.positions,
+              rows || [],
+              playerState.teamId as number,
+              upcomingMatchweek(game),
+            );
+            if (!check.ok) {
+              console.warn(
+                `[${game.roomCode}] ⛔ ${playerState.name} ready recusado: ${check.reason}`,
+              );
+              socket.emit("systemMessage", { text: `⛔ ${check.reason}` });
+              return;
+            }
+          }
+          playerState.ready = true;
+          console.log(
+            `[${game.roomCode}] 👤 ${playerState.name} setReady=true | phase=${game.gamePhase}`,
+          );
+          emitPresence(game);
+          checkAllReady(game);
+        },
+      );
+      return;
+    }
     playerState.ready = ready;
     console.log(
       `[${game.roomCode}] 👤 ${playerState.name} setReady=${ready} | phase=${game.gamePhase}`,

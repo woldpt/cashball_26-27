@@ -1098,7 +1098,7 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
               </button>
               {!canPlay && !myReady && (
                 <p className="text-[10px] font-bold text-red-400/70 mt-1.5 text-center">
-                  Faltam titulares: 1 GR + 10 de campo
+                  Faltam: 11 titulares (1 GR + 10) + {MAX_BENCH_SIZE} suplentes (1 GR)
                 </p>
               )}
               {canPlay && !myReady && (

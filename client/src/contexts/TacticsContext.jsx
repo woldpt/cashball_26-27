@@ -111,13 +111,20 @@ export function TacticsProvider({ children }) {
   // Só conta titulares que estão efectivamente disponíveis (não lesionados / suspensos).
   // Impede que um jogador indisponível pre-seleccionado de uma ronda anterior
   // habilite o botão "Jogar Jornada" sem validação.
+  // Espelho da barreira do servidor (checkLineupReady): exige também banco
+  // completo (MAX_BENCH_SIZE suplentes disponíveis, 1 GR) — sem banco não há jogo.
   const isLineupComplete = useMemo(() => {
     const validTitulares = annotatedSquad.filter(
       (p) => p.status === "Titular" && !p.isUnavailable,
     );
+    const validSuplentes = annotatedSquad.filter(
+      (p) => p.status === "Suplente" && !p.isUnavailable,
+    );
     return (
       validTitulares.filter((p) => p.position === "GR").length === 1 &&
-      validTitulares.filter((p) => p.position !== "GR").length === 10
+      validTitulares.filter((p) => p.position !== "GR").length === 10 &&
+      validSuplentes.length >= MAX_BENCH_SIZE &&
+      validSuplentes.filter((p) => p.position === "GR").length >= 1
     );
   }, [annotatedSquad]);
 
