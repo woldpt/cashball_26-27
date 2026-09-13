@@ -605,6 +605,11 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
               }
             }
             tmp.prepare(`INSERT OR REPLACE INTO game_state (key,value) VALUES ('pool_sampling', ?)`).run(JSON.stringify({ kept: keepIds.length, dropped: dropIds.length, at: new Date().toISOString() }));
+            // Sala nova arranca no amigável (slot 0): o template não traz
+            // calendarIndex e o derive cairia na 1.ª jornada da liga.
+            // calendarVersion=2 salta a migração v2; cutover=1 preserva a
+            // avaliação de contratos da época 1 como até aqui.
+            tmp.prepare(`INSERT OR REPLACE INTO game_state (key,value) VALUES ('calendarIndex','0'),('calendarVersion','2'),('contractCutoverSeason','1')`).run();
           tmp.exec("COMMIT");
           console.log(`[gameManager] Sala ${roomCode}: pool 60→40 filtrado (keep ${keepIds.length}, drop ${dropIds.length})`);
         } finally {

@@ -296,6 +296,10 @@ db.serialize(() => {
   db.run("INSERT INTO game_state (key, value) VALUES ('season', '1')");
   db.run("INSERT INTO game_state (key, value) VALUES ('cupRound', '0')");
   db.run("INSERT INTO game_state (key, value) VALUES ('cupState', 'idle')");
+  // Sala nova arranca no amigável de pré-época (slot 0 do calendário v2).
+  db.run("INSERT INTO game_state (key, value) VALUES ('calendarIndex', '0')");
+  db.run("INSERT INTO game_state (key, value) VALUES ('calendarVersion', '2')");
+  db.run("INSERT INTO game_state (key, value) VALUES ('contractCutoverSeason', '1')");
   // Marcador de versão das fixtures — usado pelo ensureSeeded.js para
   // detetar quando o base.db está desatualizado (fixtures, seed ou schema novos).
   // Tem de coincidir com templateHash() em ensureSeeded.js.

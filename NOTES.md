@@ -1,6 +1,11 @@
 ## README reescrito para jogadores (novo)
 - Reescrita completa do `README.md`: pitch Elifoot 98 + multiplayer assíncrono 1–8, como se joga (tática → Pronto → direto), visão do jogo (plantel/craques, Liga 4 divisões, Taça 5 rondas, mercado/leilões, finanças/despedimento, carreira) e bloco curto para programadores (stack + 4 comandos + links para AGENTS/CLAUDE/STYLE/docs). Sem código tocado → sem checks/audits.
 
+## Sala nova arranca no amigável (fix)
+- Causa: `base.db` não traz `calendarIndex`/`calendarVersion` → `getGame` caía no `deriveCalendarIndex(1,0,idle)` = liga jornada 1, saltando o slot 0.
+- Fix: na cópia de sala nova (`gameManager.ts`, transação do pool 60→40) grava `calendarIndex=0, calendarVersion=2, contractCutoverSeason=1` (só salas novas; contratos da época 1 como até aqui); `seed.js` semeia as mesmas 3 chaves (muda o `fixtures_hash` → reseed automático do `base.db` no arranque).
+- Checks: server `typecheck` OK; `node --check seed.js` OK; simulação da leitura (cópia + INSERT) → `calendarIndex=0, currentEvent=friendly`. Sem client/audits (zero handlers).
+
 ## Badge Transferências sem piscar (fix)
 - O destino (soma no TRANSF / sub-badges no fly-up) só fazia fade-in após a remoção do flyer → ~150 ms sem nada visível. Novo `transferLanded` (`GameLayout.jsx`) antecipa o fade-in 100 ms antes da aterragem (crossfade no mesmo ponto); flyer parte de `scale: 1` (antes 0.85, salto na descolagem).
 - Checks: `eslint` no ficheiro + `check:types` OK. Tweak de animação, sem mobile-resp-check.
