@@ -343,6 +343,8 @@ export function buildLineupSnapshot(
     position: p.position,
     is_star: p.is_star || 0,
     skill: getEffectiveSkill(p),
+    photo: (p as any).photo || null,
+    nationality: (p as any).nationality || null,
     ...getMatchFatigueSnapshot(fixture, side, p.id),
     is_starter: true,
   }));
@@ -358,6 +360,8 @@ export function buildLineupSnapshot(
       position: p.position,
       is_star: p.is_star || 0,
       skill: getEffectiveSkill(p),
+      photo: p.photo || null,
+      nationality: p.nationality || null,
       ...getMatchFatigueSnapshot(fixture, side, p.id),
       is_starter: false,
     }));

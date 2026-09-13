@@ -184,12 +184,14 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       name: string;
       position: string;
       skill: number;
+      photo: string | null;
+      nationality: string | null;
       suspension_until_matchweek: number;
       injury_until_matchweek: number;
       transfer_cooldown_until_matchweek: number;
     }>(
       game.db,
-      `SELECT id, name, position, skill,
+      `SELECT id, name, position, skill, photo, nationality,
               suspension_until_matchweek, injury_until_matchweek,
               transfer_cooldown_until_matchweek
        FROM players
@@ -215,9 +217,12 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     return {
       formation: `${Math.min(def, 5)}-${Math.min(med, 5)}-${Math.min(ata, 5)}`,
       players: xi.map((p) => ({
+        id: p.id,
         name: p.name,
         position: p.position,
         skill: p.skill,
+        photo: (p as any).photo || null,
+        nationality: (p as any).nationality || null,
         isJunior: p.isJunior === true || p.id < 0,
       })),
     };

@@ -83,6 +83,7 @@ export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badg
             position={player.position}
             teamColor={teamColor}
             nationality={player.nationality}
+            photo={player.photo || null}
             size={avatarCls}
             className="block"
           />
