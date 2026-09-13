@@ -1,3 +1,6 @@
+## AGENTS.md optimizado (novo)
+- Enxugado 5881→5636 bytes (mobile 2 linhas→1, Reseed/Workflow/Protocolo §2 comprimidos); dups com CLAUDE.md mantidos (reforço intencional). Fix factual: `ensureFullBench` = 2 GR + 16 campo (estava 14). Política de poda nas Regressões (teto ~10). Só markdown → sem checks.
+
 ## CLAUDE.md factual (novo)
 - 6 retoques: BD → `saves/<criador>/` via `roomPaths.js`; `game/` com os 7 ficheiros; cliente com `TransferHub`/`GameRoutes`/`GameOverlays`; regra helpers alinhada com AGENTS.md; removida nota falsa do CommonJS (`engine.ts` é ESM); secção nova "Sistemas transversais" (MOM, adeptos, barreira do 11, presença, 1 linha cada). Só markdown → sem checks.
 
