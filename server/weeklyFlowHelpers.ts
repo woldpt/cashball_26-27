@@ -1851,6 +1851,14 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
     // ── Lobby → start match (league OR cup, identical) ──────────────────────
     if (game.gamePhase === "lobby") {
+      // Single-flight do arranque de semana: a barreira do 11 (com awaits) e o
+      // callback do db.get abaixo criam uma janela onde um segundo dispatch
+      // (dois "Pronto" quase simultâneos) entrava em startWeekOnce em paralelo
+      // e o segundo BEGIN das finanças falhava dentro da transação do primeiro
+      // (SQLITE_ERROR: cannot start a transaction within a transaction).
+      // Reclamar aqui, de forma síncrona; as saídas antecipadas deste ramo
+      // repõem a false (o startWeekOnce gere a flag a partir daqui).
+      segmentRunning[game.roomCode] = true;
       // Barreira do 11 no pontapé de saída: a tática pode ter mudado depois
       // do ready (ex. desmarcou um titular). Sem 11 + banco completo o jogo
       // não arranca; o treinador em falta perde o ready (volta a clicar
@@ -1888,6 +1896,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           console.warn(
             `[${game.roomCode}] ⛔ Lobby→match bloqueado: 11/banco incompleto: ${blockers.join(" | ")}`,
           );
+          segmentRunning[game.roomCode] = false;
           return;
         }
       }
@@ -1903,6 +1912,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         console.warn(
           `[${game.roomCode}] ⚠ checkAllReady: calendarIndex ${game.calendarIndex} out of range (calendar length: ${SEASON_CALENDAR.length})`,
         );
+        segmentRunning[game.roomCode] = false;
         return;
       }
 
@@ -1920,6 +1930,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             );
           } else if (finRow) {
             recoverFinalizedSlot(game, entry);
+            segmentRunning[game.roomCode] = false;
             return;
           }
           startWeekOnce(game, entry).catch((startErr: any) => {

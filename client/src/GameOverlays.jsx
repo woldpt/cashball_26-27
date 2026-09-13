@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { queueEmit } from "./socket.js";
 import { useGame } from "./contexts/GameContext.jsx";
@@ -149,13 +149,32 @@ export function GameOverlays() {
   // pontapé de saída e ao intervalo): (1) `hadMatchInProgressRef` garante
   // que houve mesmo jogo a decorrer nesta sessão; (2) o jogo tem de estar
   // parado no minuto final (sem intervalo, ação ou pausa pendente).
-  const endedMatchKey = isCupMatch && cupRoundResults
-    ? `cup:${cupRoundResults.season}:${cupRoundResults.round}`
-    : matchResults?.matchweek
-      ? `league:${season}:${matchResults.matchweek}`
-      : null;
+  // Chave do último jogo terminado (latch): a Taça/amigável chega via
+  // cupRoundResults, mas o efeito de limpeza desliga isCupMatch no commit
+  // seguinte — derivar a chave de isCupMatch perdia a aterragem sempre que o
+  // direto do cliente ainda não tinha terminado (sistemático no amigável).
+  // Agarra-se à chegada, só com jogo visto (hadMatch), e cada chegada
+  // sobrescreve: rondas seguintes continuam a aterrar. Liga: o mesmo estado
+  // é reutilizado no direto, por isso só agarra com mom (só o final traz).
+  const [latchedEndedKey, setLatchedEndedKey] = useState(null);
+  const endedMatchKey = latchedEndedKey;
   const postMatchLandedKeyRef = useRef(null);
   const hadMatchInProgressRef = useRef(false);
+  useEffect(() => {
+    if (cupRoundResults && hadMatchInProgressRef.current) {
+      setLatchedEndedKey(
+        `cup:${cupRoundResults.season}:${cupRoundResults.round}`,
+      );
+    }
+  }, [cupRoundResults]);
+  useEffect(() => {
+    const leagueFinal =
+      matchResults?.matchweek &&
+      (matchResults.results || []).some((r) => r.mom != null);
+    if (leagueFinal && hadMatchInProgressRef.current) {
+      setLatchedEndedKey(`league:${season}:${matchResults.matchweek}`);
+    }
+  }, [matchResults, season]);
   const matchFinished =
     !isPlayingMatch &&
     !showHalftimePanel &&

@@ -1,4 +1,8 @@
-## AGENTS.md optimizado (novo)
+## Double-start semanal + landing do amigável (fix duplo)
+- **Finanças `cannot start a transaction within a transaction` (KKHTGJ):** dois "Pronto" quase simultâneos passavam a barreira do 11 (awaits) antes de `segmentRunning=true` → dois `startWeekOnce` sobrepostos → segundo BEGIN dentro da transação do primeiro. Fix: single-flight síncrono no ramo lobby do `checkAllReady` (reclama à entrada; repõe nas saídas antecipadas: barreira, `!entry`, `recoverFinalizedSlot`). `startWeekOnce` tem um só chamador.
+- **Sem aterragem ao Jornal após amigável:** a chave `cup:época:ronda` derivava de `isCupMatch`, morto pelo efeito de limpeza no commit seguinte aos resultados — se o direto ainda não tinha terminado, a chave nascia morta. Fix (`GameOverlays.jsx`): latch em estado à chegada dos resultados (só com jogo visto; Taça/amigável sobrescrevem; Liga só com `mom`, que o direto não traz). Viajem/gate intactos.
+- Checks: server `typecheck` OK; client `eslint` + `check:types` OK; `audit:socketio` 0 erros; `audit:gamestate 445WU8` 0/0/0 (KKHTGJ só existe em prod). Sem mobile-resp-check (zero layout).
+- **Por fazer (observado, fora do plano):** empate no amigável mostra humor de derrota (`winnerId null → "loss"` no efeito Taça do `GameContext.jsx`).
 - Enxugado 5881→5636 bytes (mobile 2 linhas→1, Reseed/Workflow/Protocolo §2 comprimidos); dups com CLAUDE.md mantidos (reforço intencional). Fix factual: `ensureFullBench` = 2 GR + 16 campo (estava 14). Política de poda nas Regressões (teto ~10). Só markdown → sem checks.
 
 ## CLAUDE.md factual (novo)
