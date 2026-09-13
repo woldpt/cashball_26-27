@@ -35,6 +35,7 @@ interface MatchSummaryDeps {
     opponentId: number,
     matchweek: number,
   ) => { name: string };
+  prepareFriendlyFixtures: (game: ActiveGame) => Promise<void>;
 }
 
 export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
@@ -44,6 +45,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     getStandingsRows,
     generateFixturesForDivision,
     pickRefereeSummary,
+    prepareFriendlyFixtures,
   } = deps;
 
   async function ensureFixtureSeeds(
@@ -763,6 +765,16 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     // O amigável (ronda 0) reutiliza o ramo da taça: adversário da tabela,
     // Casa/Fora real (só a final é no Jamor) e isCup para a vista live.
     if (currentEntry?.type === "cup" || currentEntry?.type === "friendly") {
+      // Amigável sem sorteio (sala nova: o sorteio só corria no fim de época
+      // ou no pontapé de saída) — preparar aqui para o lobby ter briefing + 11.
+      // Guard de fase: nunca tocar no currentFixtures a meio do jogo.
+      if (currentEntry.type === "friendly" && game.gamePhase === "lobby") {
+        try {
+          await prepareFriendlyFixtures(game);
+        } catch (prepErr) {
+          console.error(`[${game.roomCode}] Friendly lazy-prep failed:`, prepErr);
+        }
+      }
       const cupMatch = await runGet(
         game.db,
         "SELECT * FROM cup_matches WHERE season = ? AND round = ? AND (home_team_id = ? OR away_team_id = ?) AND played = 0",

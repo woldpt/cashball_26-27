@@ -1,6 +1,11 @@
 ## README reescrito para jogadores (novo)
 - Reescrita completa do `README.md`: pitch Elifoot 98 + multiplayer assíncrono 1–8, como se joga (tática → Pronto → direto), visão do jogo (plantel/craques, Liga 4 divisões, Taça 5 rondas, mercado/leilões, finanças/despedimento, carreira) e bloco curto para programadores (stack + 4 comandos + links para AGENTS/CLAUDE/STYLE/docs). Sem código tocado → sem checks/audits.
 
+## Briefing + 11 no amigável (fix)
+- Causa: o sorteio do amigável só corria no fim de época ou no pontapé de saída — sala nova chegava ao lobby do slot 0 sem fixtures; o cliente lia `isCup && !opponent` como "eliminado da Taça" e escondia briefing + editor do 11 (jogo com auto-pick).
+- Fix: lazy-prepare idempotente no ramo friendly do `buildNextMatchSummary` (`matchSummaryHelpers.ts`, nova dep `prepareFriendlyFixtures` ligada em `index.ts` via closure diferida); guard `gamePhase === "lobby"` para nunca reescrever `currentFixtures` live.
+- Checks: server `typecheck` OK; harness tsx temporário (cópia fresca do `base.db`, 0 pares) → briefing com adversário + 2.ª chamada sem duplicar (30 pares); `audit:socketio` 0 erros. Harness apagado após verificação.
+
 ## Sala nova arranca no amigável (fix)
 - Causa: `base.db` não traz `calendarIndex`/`calendarVersion` → `getGame` caía no `deriveCalendarIndex(1,0,idle)` = liga jornada 1, saltando o slot 0.
 - Fix: na cópia de sala nova (`gameManager.ts`, transação do pool 60→40) grava `calendarIndex=0, calendarVersion=2, contractCutoverSeason=1` (só salas novas; contratos da época 1 como até aqui); `seed.js` semeia as mesmas 3 chaves (muda o `fixtures_hash` → reseed automático do `base.db` no arranque).

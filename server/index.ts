@@ -902,6 +902,10 @@ const matchSummaryHelpers = createMatchSummaryHelpers({
 	getStandingsRows,
 	generateFixturesForDivision,
 	pickRefereeSummary,
+	// Closure diferida: cupFlowHelpers só é criado abaixo, mas a chamada
+	// acontece sempre depois (pedido do cliente em lobby).
+	prepareFriendlyFixtures: (game: ActiveGame) =>
+		cupFlowHelpers.prepareFriendlyFixtures(game),
 });
 
 const buildNextMatchSummary = matchSummaryHelpers.buildNextMatchSummary;
