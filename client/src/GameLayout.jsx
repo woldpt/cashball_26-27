@@ -126,6 +126,10 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   const subIconRefs = useRef({}); // { market, leiloes } → wrappers dos ícones no fly-up
   const [transferFlyers, setTransferFlyers] = useState([]);
   const transferFlyTimerRef = useRef(0);
+  const transferLandTimerRef = useRef(0);
+  // Aterragem antecipada: o destino começa o fade-in ~100 ms antes da
+  // remoção do flyer (crossfade no mesmo ponto, sem janela vazia = sem piscar).
+  const [transferLanded, setTransferLanded] = useState(false);
   const prevTransferMenuOpenRef = useRef(false);
 
   useLayoutEffect(() => {
@@ -165,16 +169,28 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       }
     }
     setTransferFlyers(items);
+    setTransferLanded(false);
     window.clearTimeout(transferFlyTimerRef.current);
-    // Limpa logo após o voo (DUR.slow ≈ 280 ms) para o flyer de regresso não
-    // ficar a sobrepor a badge que reaparece no TRANSF (pulso duplo no fecho).
+    window.clearTimeout(transferLandTimerRef.current);
+    // O destino começa a aparecer antes da aterragem (crossfade); o flyer
+    // sai logo após o voo (DUR.slow ≈ 280 ms), já com o destino quase opaco.
+    transferLandTimerRef.current = window.setTimeout(
+      () => setTransferLanded(true),
+      DUR.slow * 1000 - 100,
+    );
     transferFlyTimerRef.current = window.setTimeout(
       () => setTransferFlyers([]),
       DUR.slow * 1000 + 60,
     );
   }, [mobileSubMenu, marketListedCount, liveAuctionCount]);
 
-  useEffect(() => () => window.clearTimeout(transferFlyTimerRef.current), []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(transferFlyTimerRef.current);
+      window.clearTimeout(transferLandTimerRef.current);
+    },
+    [],
+  );
 
   // Dropdown do utilizador fecha com Escape (a saída animada trata o AnimatePresence no JSX).
   useEffect(() => {
@@ -196,8 +212,12 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   const transferIsClosing = !transferMenuOpen && prevTransferMenuOpenRef.current;
   const transferFlyingNow =
     transferFlyers.length > 0 || transferIsOpening || transferIsClosing;
-  const transfSumHidden = transferMenuOpen || transferFlyingNow;
-  const subBadgesResting = transferMenuOpen && !transferFlyingNow;
+  // `transferLanded` antecipa o fade-in do destino para ainda durante o voo
+  // (crossfade no ponto de aterragem) — sem ele havia ~150 ms sem nada visível.
+  const transfSumHidden =
+    transferMenuOpen || (transferFlyingNow && !transferLanded);
+  const subBadgesResting =
+    transferMenuOpen && (!transferFlyingNow || transferLanded);
   /* eslint-enable react-hooks/refs */
   const totalCoaches =
     players.length +
@@ -1148,7 +1168,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 <motion.span
                   key={`${transferMenuOpen ? "open" : "back"}-${f.id}`}
                   className="absolute left-0 top-0"
-                  initial={{ x: f.from.x, y: f.from.y, scale: 0.85, opacity: 1 }}
+                  initial={{ x: f.from.x, y: f.from.y, scale: 1, opacity: 1 }}
                   animate={{ x: f.to.x, y: f.to.y, scale: 1, opacity: 1 }}
                   // Exit instantaneo: o flyer ja esta ancorado ao centro da
                 // badge de destino quando e removido, por isso a remocao e

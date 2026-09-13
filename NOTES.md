@@ -1,3 +1,7 @@
+## Badge Transferências sem piscar (fix)
+- O destino (soma no TRANSF / sub-badges no fly-up) só fazia fade-in após a remoção do flyer → ~150 ms sem nada visível. Novo `transferLanded` (`GameLayout.jsx`) antecipa o fade-in 100 ms antes da aterragem (crossfade no mesmo ponto); flyer parte de `scale: 1` (antes 0.85, salto na descolagem).
+- Checks: `eslint` no ficheiro + `check:types` OK. Tweak de animação, sem mobile-resp-check.
+
 ## SQLite: node:sqlite (recoloca better-sqlite3) — 2026-09-12
 - As duas ilhas sync em `server/gameManager.ts` (migração de saves + pool 60→40) usam `require("node:sqlite").DatabaseSync` — stdlib, zero dependência nativa.
 - `better-sqlite3` removido de `server/package.json` (menos um native a compilar em prod).
