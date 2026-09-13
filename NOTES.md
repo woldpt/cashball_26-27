@@ -16,6 +16,10 @@
 - Checks: server `typecheck` OK; helper testado via tsx (ok / banco sem GR / titular lesionado); client `lint` nos 2 ficheiros + `check:types` OK (`lint` global só nos 2 erros pré-existentes); `audit:socketio` 0 erros; `audit:gamestate FGPQH6` só os 53 pré-existentes de mínimos de plantel.
 - **POR ATIVAR:** restart do servidor (corre de `tsx`/fonte há dias — confirmar antes de reiniciar a meio de jogo).
 
+## Familiaridade táctica com estrelas SVG (novo)
+- `FamiliarityStars` (`TacticsView.jsx`) trocou a barra de 5 segmentos por 5 estrelas SVG com contorno (gradiente âmbar + brilho nas ativas, cinzento nas vazias); mantém `title`, prop `fill`, glow + shimmer no 5/5 e tamanhos compactos (mobile + desktop).
+- Checks: `eslint` no ficheiro + `check:types` OK (`lint` global só os 2 erros pré-existentes).
+
 # NOTES.md — Estado corrente do projeto
 
 > **Regra (1 ficheiro, nunca um por sessão):**

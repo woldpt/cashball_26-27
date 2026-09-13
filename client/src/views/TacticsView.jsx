@@ -49,10 +49,10 @@ const POS_COLORS = {
 
 
 /**
- * Familiaridade táctica — barra de 5 segmentos que preenche o espaço disponível.
+ * Familiaridade táctica — 5 estrelas SVG com contorno.
  * @param {Object} props
  * @param {number} props.stars Estrelas (0-5) calculadas no servidor (score 0..100)
- * @param {boolean} [props.fill=false] Estica a barra até à largura total do contentor
+ * @param {boolean} [props.fill=false] Estica a fila até à largura total do contentor
  * @returns {JSX.Element}
  */
 function FamiliarityStars({ stars, fill = false }) {
@@ -69,25 +69,44 @@ function FamiliarityStars({ stars, fill = false }) {
           : `${value}/5 estrelas de familiaridade táctica`
       }
     >
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div
-            key={i}
-            className={`h-2 flex-1 rounded-full transition-all duration-300 ${
-              i <= value
-                ? "bg-gradient-to-b from-amber-300 via-amber-400 to-amber-500"
-                : "bg-gray-700/40"
-            }`}
-            style={
-              i <= value
-                ? {
-                    boxShadow:
-                      "inset 0 1px 0 rgba(255,255,255,0.35), 0 0 6px rgba(251,191,36,0.35)",
-                  }
-                : undefined
-            }
-          />
-        ))}
+      <svg width="0" height="0" className="absolute" aria-hidden="true">
+        <defs>
+          <linearGradient id="famStarGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fcd34d" />
+            <stop offset="55%" stopColor="#fbbf24" />
+            <stop offset="100%" stopColor="#f59e0b" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div className="flex justify-center gap-0.5">
+        {[1, 2, 3, 4, 5].map((i) =>
+          i <= value ? (
+            <svg
+              key={i}
+              viewBox="0 0 24 24"
+              className="h-3.5 flex-1 max-w-4 transition-all duration-300"
+              fill="url(#famStarGrad)"
+              stroke="#fde68a"
+              strokeWidth="1"
+              strokeLinejoin="round"
+              style={{ filter: "drop-shadow(0 0 3px rgba(251,191,36,0.45))" }}
+            >
+              <path d="M12 2.5l2.9 6.3 6.6.6-5 4.4 1.5 6.5L12 16.9 6 20.3l1.5-6.5-5-4.4 6.6-.6z" />
+            </svg>
+          ) : (
+            <svg
+              key={i}
+              viewBox="0 0 24 24"
+              className="h-3.5 flex-1 max-w-4 transition-all duration-300"
+              fill="rgba(55,65,81,0.35)"
+              stroke="#4b5563"
+              strokeWidth="1.2"
+              strokeLinejoin="round"
+            >
+              <path d="M12 2.5l2.9 6.3 6.6.6-5 4.4 1.5 6.5L12 16.9 6 20.3l1.5-6.5-5-4.4 6.6-.6z" />
+            </svg>
+          ),
+        )}
       </div>
       {full && <div className="fam-shimmer" />}
     </div>
