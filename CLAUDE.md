@@ -10,7 +10,7 @@
 | Estilo | Tailwind CSS 4 | Ícones: Material Symbols Outlined · design system em `STYLE.md` |
 | Backend | Node.js + Express 5 | TypeScript (`strict: false`) |
 | Real-time | Socket.io 4 | Listeners centralizados em `client/src/hooks/useSocketListeners.js` |
-| BD | SQLite 3 | `server/db/base.db` (template) + `game_*.db` (salas); sem tipos PostgreSQL |
+| BD | SQLite 3 | `server/db/base.db` (template) + `server/saves/<criador>/game_*.db` (salas, via `db/roomPaths.js`); sem tipos PostgreSQL |
 | Infra | Docker Compose | |
 
 ### JSDoc (frontend)
@@ -28,11 +28,18 @@
 - **Coordenação de fase:** `phaseToken` (UUID) + `phaseAcks` (Set de nomes de coaches confirmados).
 - **Segment guard:** `segmentRunning[roomCode]` impede dupla execução de segmento de jogo.
 
+## 🧩 Sistemas transversais (1 linha cada)
+
+- **MOM:** `game/mom.ts` (puro) + `momHelpers.ts` (persiste em `match_moms`).
+- **Adeptos:** `teams.fans_mood` + `coreHelpers.computeAttendance/explainAttendance` (mood, preço, meteo).
+- **Barreira do 11:** `game/lineupReady.ts` valida 11 + banco antes do pontapé de saída.
+- **Presença:** canal `__presence__` + convites de sala (`presenceHelpers.ts`, `InviteRoomModal.jsx`).
+
 ## 🏭 Padrões de backend
 
-- **Factory:** `createXxxHelpers(deps)` com `deps = { io, db, game }`; nunca instanciar helpers diretamente.
-- **Socket handlers:** um ficheiro por domínio (`*Handlers.ts`), registados em `index.ts` via `registerXxxSocketHandlers(socket, deps)`.
-- **Engine:** `game/engine.ts` usa CommonJS (`module.exports`) por compatibilidade; o resto de `game/` usa ESM.
+- **Helpers:** funções simples por defeito (deps por chamada); factory `createXxxHelpers(deps)` com `deps = { io, db, game }` só quando o objeto viaja entre módulos (regra em `AGENTS.md`).
+- **Socket handlers:** um ficheiro por domínio (`*Handlers.ts`), registados em `index.ts` via `registerXxxSocketHandlers(socket, deps)`; eventos espelhados em `socketEventRegistry.json` (regenerado pelo `audit:socketio`).
+- **Engine:** `game/engine.ts` (ESM) consome `matchCalculations.ts`, `playerUtils.ts` e `commentary.ts` (narração só aqui).
 
 ## 📁 Estrutura
 
@@ -40,9 +47,9 @@
 
 - `index.ts` — entry (Express + Socket.io)
 - `gameManager.ts` — ciclo de vida de salas/estado
-- `game/` — simulação (`engine.ts`, `commentary.ts`, `playerUtils.ts`)
-- `*Handlers.ts` / `*Helpers.ts` — socket por domínio / lógica de negócio (factory)
-- `db/` — schema, seeds, migrations
+- `game/` — simulação: `engine.ts`, `commentary.ts`, `playerUtils.ts`, `matchCalculations.ts`, `mom.ts`, `lineupReady.ts`, `tacticFamiliarity.ts`
+- `*Handlers.ts` / `*Helpers.ts` — socket por domínio / lógica de negócio (`weeklyFlow`, `cupFlow`, `matchFlow`, `matchSummary`, `training`, `contract`, `mom`, `presence`, …)
+- `db/` — schema, seeds, migrations + `roomPaths.js` (salas em `saves/<criador>/`, fallback legado)
 
 **`/client/src`**
 
@@ -51,4 +58,5 @@
 - `hooks/useSocketListeners.js` — eventos de socket
 - `GameLayout.jsx` — container principal (consome os contextos)
 - `views/` — tabs do jogo · `pages/` — páginas fora das tabs (`AuctionsPage.jsx`, `UserSettingsPage.jsx`)
-- `components/` — `modals/`, `ui/`, `shared/` · `utils/` — áudio, formatters, cache
+- `GameRoutes.jsx` — roteamento das tabs · `GameOverlays.jsx` — modais globais · `constants/` — navegação, tuning
+- `components/` — `modals/`, `ui/` (incl. `TransferHub.jsx`, o hub de transferências), `shared/` · `utils/` — áudio, formatters, cache

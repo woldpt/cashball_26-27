@@ -1,3 +1,6 @@
+## CLAUDE.md factual (novo)
+- 6 retoques: BD → `saves/<criador>/` via `roomPaths.js`; `game/` com os 7 ficheiros; cliente com `TransferHub`/`GameRoutes`/`GameOverlays`; regra helpers alinhada com AGENTS.md; removida nota falsa do CommonJS (`engine.ts` é ESM); secção nova "Sistemas transversais" (MOM, adeptos, barreira do 11, presença, 1 linha cada). Só markdown → sem checks.
+
 ## README reescrito para jogadores (novo)
 - Reescrita completa do `README.md`: pitch Elifoot 98 + multiplayer assíncrono 1–8, como se joga (tática → Pronto → direto), visão do jogo (plantel/craques, Liga 4 divisões, Taça 5 rondas, mercado/leilões, finanças/despedimento, carreira) e bloco curto para programadores (stack + 4 comandos + links para AGENTS/CLAUDE/STYLE/docs). Sem código tocado → sem checks/audits.
 
