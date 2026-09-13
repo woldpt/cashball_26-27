@@ -1,80 +1,38 @@
 # CashBall 26/27
 
-Jogo de gestão de futebol baseado em texto/dados, inspirado no **Elifoot 98**, a correr no browser com suporte a **multiplayer assíncrono**. 1 a 8 treinadores humanos submetem tácticas quando podem; a simulação corre em directo quando todos confirmam "Pronto". Sem horários fixos — o ritmo é ditado pelos jogadores.
+Jogo de gestão de futebol no browser, inspirado no **Elifoot 98**. Começas na base, montas o onze, defines a tática e lutas pela subida — sozinho ou com até **8 treinadores humanos** na mesma sala, cada um ao seu ritmo.
 
-## 🚀 Visão Geral
+Sem horários fixos: submetes a tática quando podes e carregas em **Pronto**. Quando todos confirmam, a simulação corre em direto, minuto a minuto.
 
-CashBall oferece uma experiência de gestão profunda onde o tempo é o teu aliado. Não precisas de estar online ao mesmo tempo que outros treinadores; submete a tua tática e espera que a simulação avance.
+## Como se joga
 
-### Stack Tecnológica
+1. **Cria conta e entra numa sala** (ou cria a tua e partilha o código).
+2. **Prepara a equipa:** escolhe o onze, o banco (com suplente para a baliza), a formação e a mentalidade.
+3. **Carrega em Pronto** e vê o jogo em direto — primeira parte, intervalo (com substituições), segunda parte e, na Taça, prolongamento e penáltis.
+4. **Gere entre jornadas:** treina, compra e vende, ajusta preços de bilhetes e o estádio, renova contratos.
 
-- **Frontend:** React 19, Tailwind CSS 4
-- **Backend:** Node.js, Express 5, Socket.io
-- **Base de Dados:** SQLite
+## O que há para gerir
 
----
+- **Plantel:** cada jogador tem qualidade (`skill`), salário e agressividade. Só médios e avançados podem ser **craques** — cada craque no onze aumenta a hipótese de um golo decisivo.
+- **Liga (4 divisões):** todos contra todos, a duas voltas, 14 jornadas por época. Os de cima sobem, os de baixo descem. Começas no Campeonato de Portugal.
+- **Taça de Portugal:** eliminação direta, 5 rondas até à final. O atalho para a glória — e para os prémios.
+- **Mercado:** preços negociados e **leilões rápidos** de 2 minutos. Se o plantel estiver curto, o clube desenrasca juniores para nunca faltares ao jogo.
+- **Dinheiro:** salários, bilheteira (o preço do bilhete e o humor dos adeptos contam), patrocínios e obras no estádio. Cofre vazio e maus resultados levam ao **despedimento**.
+- **Carreira:** o prestígio abre portas a convites de clubes maiores. Ganha, sobe e segura o lugar.
 
-## ⚽ Mecânicas de Jogo
+## Entrar num jogo
 
-### Atributos e Craques
+Basta um browser moderno, no computador ou no telemóvel. Registas-te, escolhes «Continuar jogo» ou «Novo jogo», e jogas a partir do separador **Jornal** — manchete da jornada, classificação, artilheiros e mercado.
 
-A qualidade do teu plantel define o teu sucesso.
+## Para programadores
 
-- **Atributos:** Cada jogador possui `skill` (qualidade), `wage` (salário) e `aggressiveness` (agressividade).
-- **Craques (`is_star`):** Apenas jogadores de MED e ATA podem ser craques.
-  - Cada craque no onze titular dá **+20% de chance de um golo ser decisivo** (máximo 60%).
+Stack: React 19 + Vite + Tailwind 4 no `client/`; Node + Express 5 + Socket.io 4 no `server/` (TypeScript); SQLite; `docker compose` para a stack completa.
 
-### Simulação de Jogos
+```bash
+docker compose up --build        # stack completa
+cd server && npm run dev         # backend
+cd client && npm run dev         # frontend
+cd server && npm run seed        # repor dados base
+```
 
-As partidas são decididas minuto a minuto em tempo real:
-
-- **Dinâmica:** 45' de 1ª parte $\rightarrow$ Intervalo (substituições) $\rightarrow$ 45' de 2ª parte.
-- **Taça:** Se empatar, passamos para o **Tempo Extra** e, se necessário, para a tensão dos **Penalties**.
-- **Juniores:** Se o teu plantel estiver incompleto, o clube fornece automaticamente jogadores juniores para garantir que podes competir.
-
-### Competições e Calendário
-
-O futebol é linear e organizado. O campeonato e a taça intercalam-se para manter o ritmo constante.
-
-#### **Campeonato (4 Divisões)**
-
-- **Divisões:** Primeira Liga, Segunda Liga, Liga 3 e Campeonato de Portugal.
-- **Formato:** Todos-contra-todos (ida e volta), 14 jornadas por época.
-- **Promoções/Descidas:** O topo sobe, o fundo desce. A sobrevivência é fundamental.
-
-#### **Taça de Portugal**
-
-- **Formato:** Knock-out (eliminação direta). 5 rondas até à grande final.
-- **Glória:** Ganhar a taça é o caminho mais rápido para o prestígio e prémios financeiros.
-
-### Mercado e Finanças
-
-A gestão económica é tão importante quanto a tática de campo.
-
-- **Transferências:** Compra e vende jogadores com preços negociados ou através de **Leilões Rápidos** de 2 minutos.
-- **Gestão Financeira:** Controla os teus salários, receitas de bilheteira e patrocínios.
-- **Atenção:** O orçamento negativo e os maus resultados podem levar ao teu **despedimento**.
-
----
-
-## 👥 Gestão de Treinadores
-
-- **Início:** Começas na base, no Campeonato de Portugal.
-- **Multiplayer:** Até 8 treinadores humanos por sala.
-- **Carreira:** Recebe convites de clubes maiores, gere o teu prestígio e evita o despedimento através de uma gestão sólida.
-
-## 📊 Dados e Estatísticas
-
-O jogo baseia-se em dados persistentes. Os clubes, plantéis e resultados são geridos de forma a garantir uma experiência contínua e competitiva.
-
-## 🎨 Design System
-
-A interface visual segue um design system consistente documentado em **`STYLE.md`**:
-
-- **Cores semânticas** baseadas em tokens Material Design 3 (`surface`, `primary`, `tertiary`, `error`)
-- **Cores por posição:** GR (âmbar), DEF (azul), MED (esmeralda), ATA (rosa)
-- **Tipografia:** headlines em `font-headline`, labels em uppercase com `tracking-widest`
-- **Cards com bordas laterais** coloridas e gradientes sutis de fundo
-- **Badges inline** para status (junior, renovado, suspenso, lesionado, à venda)
-- **Responsividade:** informação progressiva — basics sempre visíveis, stats detalhados em `md` e `xl`
-- **Referência:** `client/src/views/PlayersTab.jsx`
+Documentação do repo: `AGENTS.md` (operações e regras), `CLAUDE.md` (arquitetura), `STYLE.md` (design system), `docs/`.
