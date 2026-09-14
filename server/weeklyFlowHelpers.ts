@@ -1856,8 +1856,16 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       // (dois "Pronto" quase simultâneos) entrava em startWeekOnce em paralelo
       // e o segundo BEGIN das finanças falhava dentro da transação do primeiro
       // (SQLITE_ERROR: cannot start a transaction within a transaction).
-      // Reclamar aqui, de forma síncrona; as saídas antecipadas deste ramo
-      // repõem a false (o startWeekOnce gere a flag a partir daqui).
+      // Reclamar aqui, de forma síncrona (check + set sem await pelo meio
+      // é atómico em JS): o 2.º dispatch simultâneo é rejeitado; as saídas
+      // antecipadas deste ramo repõem a false (o startWeekOnce gere a flag
+      // a partir daqui).
+      if (segmentRunning[game.roomCode]) {
+        console.warn(
+          `[${game.roomCode}] ⚠ Lobby→match blocked: segmentRunning is true (match already in progress)`,
+        );
+        return;
+      }
       segmentRunning[game.roomCode] = true;
       // Barreira do 11 no pontapé de saída: a tática pode ter mudado depois
       // do ready (ex. desmarcou um titular). Sem 11 + banco completo o jogo
@@ -1900,13 +1908,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           return;
         }
       }
-      if (segmentRunning[game.roomCode]) {
-        console.warn(
-          `[${game.roomCode}] ⚠ Lobby→match blocked: segmentRunning is true (match already in progress)`,
-        );
-        return;
-      }
-
       const entry = SEASON_CALENDAR[game.calendarIndex];
       if (!entry) {
         console.warn(

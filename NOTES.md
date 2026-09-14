@@ -257,6 +257,12 @@
 
 ## Em curso
 
+## Lobby→jogo bloqueado em todas as salas (fix crítico)
+- Causa: o single-flight do `7785baa` reclamava `segmentRunning=true` sem verificar antes e tinha um guard pós-barreira `if (segmentRunning)` — sempre verdade, porque fomos nós a pôr a `true`. Todo o arranque lobby→jogo morria aí, sem repor a flag (deadlock em memória até restart). O amigável foi só onde se notou (`8T3U4X`: dispatch com `segmentRunning=false` → `blocked: true`).
+- Fix (`weeklyFlowHelpers.ts`, ramo lobby do `checkAllReady`): check-then-claim atómico à entrada (2.º "Pronto" simultâneo é rejeitado — a intenção original) + guard pós-barreira apagado. `startWeekOnce` não verifica a flag à entrada, só a reclama — compatível.
+- Checks: server `typecheck` OK; `audit:socketio` 0 erros. Sem harness E2E (exigiria forjar socket/jogador/tática; evidência = log de prod + releitura do ramo).
+- **POR ATIVAR:** `build` + restart — o restart limpa sozinho o deadlock atual (flag em memória).
+
 ## Amigável imediato em sala nova + sem rótulos de Taça (novo)
 - Causa da espera: sala nova nascia sem sorteio — o `prepareFriendlyFixtures` só corria no 1.º `requestNextMatchSummary`, com ~20 INSERTs um-a-um + ~40 SELECTs de enrich em série a bloquear a resposta; sem guard em memória nem single-flight.
 - Fix: sorteio na criação (`gameManager.ts`, na transação do pool 60→40, 1 INSERT com 20 VALUES, ronda 0 época 1); briefing lê o par direto da tabela e só corre o prepare como fallback para salas antigas sem pares (contagem prévia); `prepareFriendlyFixtures` com guard em memória + single-flight por sala e lote único (1 INSERT + 1 SELECT IN em vez de ~60 queries).
