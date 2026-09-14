@@ -22,6 +22,23 @@ export function EventCard({ event, accent, showTeamBadge, showIcon = true, teamN
   // Chances (hatrick-style) são eventos de contexto — atenuadas para não
   // competirem com os golos no log.
   const isMinor = event.type === "chance";
+  // Nas chances o cartão mostra nome + frase curta. O text traz o prefixo
+  // "[12'] 🧤" e repete o nome do jogador — remove-se ambos para não
+  // duplicar (o ticker do LiveMatchHero continua a usar o text completo).
+  const chanceSuffix =
+    isMinor && name && event.text
+      ? event.text
+          .replace(/^\[(?:\d+'|HT)\]\s*\S*\s*/, "")
+          .split(name)
+          .join("")
+          .replace(/\s{2,}/g, " ")
+          .replace(/^chance de\s*[—–-]\s*/i, "")
+          .replace(/\s+(de|por)\s*([,.—–-])/, (_, __, p) =>
+            p === "," || p === "." ? p : ` ${p}`,
+          )
+          .replace(/\s+(de|por)\s*$/, "")
+          .trim()
+      : null;
   return (
     <div className={`relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-surface-container/50 shadow-sm shadow-black/30 ${isMinor ? "opacity-60" : ""}`}>
       {accent && (
@@ -56,6 +73,11 @@ export function EventCard({ event, accent, showTeamBadge, showIcon = true, teamN
               {event.type === "own_goal" && (
                 <span className="shrink-0 text-[9px] font-black uppercase px-1 py-px rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 tracking-widest">
                   Auto-golo
+                </span>
+              )}
+              {chanceSuffix && (
+                <span className="truncate min-w-0 flex-1 text-[11px] font-normal text-on-surface-variant/70">
+                  {chanceSuffix}
                 </span>
               )}
             </>

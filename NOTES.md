@@ -1,3 +1,8 @@
+## Chances com descrição rica e curta na Cronologia (novo)
+- `commentary.ts`: `chanceSavedPhrase` 5→12, `chancePostPhrase` 3→8, `chanceOffTargetPhrase` 4→10 — frases de 1 oração com cor de lance (cabeceamento, de primeira, contra-ataque, livre, canto); nomes mantidos porque o ticker do `LiveMatchHero` mostra o texto isolado.
+- `EventCard.jsx`: nas `chance`, a frase aparece a seguir ao nome (atenuada, `truncate`) — antes o `text` era ignorado quando havia `playerName`. Sufixo deriva do texto (fora prefixo `[NN']` emoji + nome, com arranjo de `de/por` órfãos); verificado 30/30 frases via script.
+- Checks: server `typecheck` OK; client `eslint` + `check:types` OK. Tweak de texto/`className` → sem mobile-resp-check.
+
 ## Cooldown/contratos: unidades de matchweek unificadas (fix)
 
 - **Bug real (alta):** `transfer_cooldown_until_matchweek` misturava unidades — os escritores por slot (`currentSlot`, 1..20: venda de leilão, compra NPC, prospeto da academia e `joined_matchweek` da renovação NPC) escreviam slots, mas o leitor `isPlayerAvailable` compara com `game.matchweek` (1..14). Jogador adquirido na Taça (slots 15–20 = mw 12–14) ficava com `mw > cooldown` nunca verdadeiro → indisponível o resto da época (o comprador humano pagava por um jogador que não jogava). Fix: todos os escritores passam a `game.matchweek` (`auctionHelpers.ts`, `npcTransferHelpers.ts`, `contractHelpers.ts` ×2); a limpeza de fim-de-época (`cupFlowHelpers`) já era matchweek. `joined_matchweek` dos escritores de compra já era matchweek; só a renovação NPC era slot (tolerância do grace do enferrugamento em `engine.ts` fica ±1–2 — impacto desprezável).

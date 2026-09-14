@@ -644,6 +644,13 @@ function chanceSavedPhrase(attacker: string, grName: string): string {
     `Bom remate de ${attacker}, mas ${grName} estava lá.`,
     `${grName} sai bem da baliza e corta o remate de ${attacker}.`,
     `${attacker} ficou na cara do golo — defesa atenta de ${grName}.`,
+    `${attacker} cabeceia ao primeiro poste — ${grName} tira para canto.`,
+    `${attacker} tenta de longe — ${grName} encaixa sem ressaltar.`,
+    `${attacker} apanha de primeira — ${grName} desvia por cima da barra.`,
+    `Contra-ataque: ${attacker} isola-se, mas ${grName} fecha o ângulo.`,
+    `${attacker} cobra o livre em jeito — ${grName} espalma para o lado.`,
+    `Canto: ${attacker} aparece ao segundo poste — ${grName} tira em cima da linha.`,
+    `${attacker} finta o defesa e remata colocado — ${grName} mergulha e segura.`,
   ]);
 }
 
@@ -653,6 +660,11 @@ function chancePostPhrase(attacker: string): string {
     `Chance de ${attacker} — a bola bateu no poste e saiu!`,
     `${attacker} rematou e o ferro salvou a equipa contrária.`,
     `No poste! ${attacker} não teve sorte no remate.`,
+    `${attacker} cabeceia ao poste — a baliza tremeu.`,
+    `${attacker} enche o pé de longe — estrondo no ferro.`,
+    `Remate cruzado de ${attacker} — beija o poste e sai.`,
+    `Livre com veneno de ${attacker} — tinta do poste.`,
+    `${attacker} isola-se e atira à trave. Que desperdício.`,
   ]);
 }
 
@@ -661,8 +673,14 @@ function chanceOffTargetPhrase(attacker: string): string {
   return pickPhrase([
     `Chance de ${attacker} — remate ao lado.`,
     `${attacker} atirou por cima da barra.`,
-    `Remate de ${attacker} saiu ao lado da baliza.`,
+    `${attacker} remata torto — ao lado da baliza.`,
     `${attacker} tentou de longe — longe do alvo.`,
+    `${attacker} cabeceia por cima — tinha tempo.`,
+    `${attacker} apanha de primeira e manda às nuvens.`,
+    `Contra-ataque desperdiçado por ${attacker} — ao lado.`,
+    `${attacker} tenta o chapéu — sai largo.`,
+    `Remate torto de ${attacker}. A bancada suspira.`,
+    `${attacker} chega atrasado ao cruzamento — pela linha de fundo.`,
   ]);
 }
 
