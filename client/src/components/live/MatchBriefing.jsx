@@ -32,8 +32,8 @@ import {
  * @returns {JSX.Element|null}
  */
 export function MatchBriefing() {
-  const { nextMatchSummary, teamInfo, setPrepPhase } = useTactics();
-  const { handleOpenTeamSquad, nextMatchSummaryLoading } = useGame();
+  const { teamInfo, setPrepPhase } = useTactics();
+  const { nextMatchSummary, handleOpenTeamSquad, nextMatchSummaryLoading } = useGame();
   const vm = useMemo(
     () => buildBriefingViewModel(nextMatchSummary, teamInfo),
     [nextMatchSummary, teamInfo],
@@ -49,6 +49,11 @@ export function MatchBriefing() {
           description="A aguardar os dados do próximo jogo…"
         />
       );
+    // vm nulo mas nextMatchSummary existe → inconsistência de dados
+    console.warn(
+      "[MatchBriefing] buildBriefingViewModel retornou null para nextMatchSummary existente",
+      { nextMatchSummary },
+    );
     return null;
   }
 
