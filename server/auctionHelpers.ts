@@ -4,7 +4,6 @@ import {
   recordTransfer,
   getTeamsWithCoachNames,
   currentEpoch,
-  currentSlot,
   isContractLocked,
   contractEndInfo,
   seasonToYear,
@@ -384,8 +383,8 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                         signingWage(player),
                         getSeasonEndMatchweek(game.matchweek),
                         currentEpoch(game),
-                        currentSlot(game),
-                        currentSlot(game),
+                        game.matchweek,
+                        game.matchweek,
                         playerId,
                       ],
                       () => {

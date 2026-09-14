@@ -17,7 +17,6 @@ import {
 } from "./gameConstants";
 import {
   currentEpoch,
-  currentSlot,
   contractEndInfo,
   getAllTeamForms,
   logClubNews,
@@ -118,7 +117,12 @@ export function createContractHelpers(deps: ContractDeps) {
       ? Math.max(Math.round(fairWage * 1.15 * wealthMult), Math.round(wage * 1.2 * wealthMult))
       : Math.max(Math.round(fairWage * wealthMult), Math.round(wage * 1.05 * wealthMult), wage + 100);
 
-    const cap = isRenegotiation ? Math.round(wage * 1.2 * wealthMult) : Math.round(wage * 1.25 * wealthMult);
+    // Piso defensivo: com wage = 0 o cap seria 0 e o pedido ficaria preso
+    // (contract_requested_wage = 0 nunca é re-emitido pelo resend).
+    const cap = Math.max(
+      isRenegotiation ? Math.round(wage * 1.2 * wealthMult) : Math.round(wage * 1.25 * wealthMult),
+      wage + 100,
+    );
     const requestedWage = Math.min(
       Math.round(demandBase * (1.0 + Math.random() * 0.15)),
       cap,
@@ -261,7 +265,8 @@ export function createContractHelpers(deps: ContractDeps) {
         LEFT JOIN teams t ON p.team_id = t.id
         WHERE p.team_id IS NOT NULL
           AND p.contract_start_epoch > 0
-          AND p.contract_start_epoch + ? <= ?`,
+          AND p.contract_start_epoch + ? <= ?
+          AND p.transfer_status NOT IN ('fixed', 'auction')`,
       [CONTRACT_LENGTH_MATCHWEEKS, now],
     );
     // Ordem aleatória: se vários jogadores da mesma equipa estiverem sem
@@ -326,7 +331,7 @@ export function createContractHelpers(deps: ContractDeps) {
           await new Promise<void>((resolve) => {
             game.db.run(
               "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
-              [fairWage, seasonEnd, now, currentSlot(game), player.id],
+              [fairWage, seasonEnd, now, game.matchweek, player.id],
               () => resolve(),
             );
           });
@@ -554,7 +559,7 @@ export function createContractHelpers(deps: ContractDeps) {
       const prospectId = await new Promise<number>((resolve) => {
         game.db.run(
           "INSERT INTO players (name, position, skill, age, form, resistance, aggressiveness, nationality, value, wage, potential, contract_until_matchweek, contract_start_epoch, joined_matchweek, transfer_cooldown_until_matchweek, transfer_status, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'none', ?)",
-          [name, needPos, skill, 17 + Math.floor(Math.random() * 3), FORM_NEUTRAL, RES_NEUTRAL, 3, "🇵🇹", recalcPlayerValue(skill), wage, potential, getSeasonEndMatchweek(game.matchweek), currentEpoch(game), currentSlot(game), currentSlot(game), team.id],
+          [name, needPos, skill, 17 + Math.floor(Math.random() * 3), FORM_NEUTRAL, RES_NEUTRAL, 3, "🇵🇹", recalcPlayerValue(skill), wage, potential, getSeasonEndMatchweek(game.matchweek), currentEpoch(game), game.matchweek, game.matchweek, team.id],
           function (this: any) { resolve(this?.lastID ?? 0); },
         );
       });

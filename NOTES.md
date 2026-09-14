@@ -1,3 +1,10 @@
+## Cooldown/contratos: unidades de matchweek unificadas (fix)
+
+- **Bug real (alta):** `transfer_cooldown_until_matchweek` misturava unidades — os escritores por slot (`currentSlot`, 1..20: venda de leilão, compra NPC, prospeto da academia e `joined_matchweek` da renovação NPC) escreviam slots, mas o leitor `isPlayerAvailable` compara com `game.matchweek` (1..14). Jogador adquirido na Taça (slots 15–20 = mw 12–14) ficava com `mw > cooldown` nunca verdadeiro → indisponível o resto da época (o comprador humano pagava por um jogador que não jogava). Fix: todos os escritores passam a `game.matchweek` (`auctionHelpers.ts`, `npcTransferHelpers.ts`, `contractHelpers.ts` ×2); a limpeza de fim-de-época (`cupFlowHelpers`) já era matchweek. `joined_matchweek` dos escritores de compra já era matchweek; só a renovação NPC era slot (tolerância do grace do enferrugamento em `engine.ts` fica ±1–2 — impacto desprezável).
+- **Inconsistência NPC/NPC:** `processContractExpiries` não filtrava `transfer_status` — um jogador já listado como "fixed" na semana anterior podia ser renovado (e tirado do mercado) na mesma semana em que expirava. Fix: `AND p.transfer_status NOT IN ('fixed', 'auction')` na query de expirados; os candidatos à venda continuam a ser re-listados pela venda semanal NPC como antes.
+- **Endurecimento:** `maybeTriggerContractRequest` — com `wage = 0`, `cap = 0` e o pedido ficava preso (`contract_requested_wage = 0` nunca é re-emitido pelo resend; `processContractExpiries` pula pendentes). Fix: `cap = max(cálculo, wage + 100)` (piso; o caminho não é atingível hoje — seed/renovação/pressão dão sempre salário > 0).
+- Checks: server `typecheck` OK; `audit:socketio` 0 erros; `audit:gamestate TST148` 0/0/0. Sem mobile-resp-check (zero cliente).
+
 ## Pitch do 11 provável invisível no briefing (fix)
 
 - **Causa real: colapso de altura, não faltam dados.** Servidor inocente provado em todos os saves/ramos (liga, taça, amigável — `getOpponentProbableFormation` devolve sempre 11; `dist/` atual). View-model cliente ok com payload real. O card "Formação provável" renderizava as rows mas o relvado media **0px no desktop**.
