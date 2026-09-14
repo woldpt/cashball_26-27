@@ -15,6 +15,7 @@ import {
   seasonToYear,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
+import { upcomingMatchweek } from "./game/lineupReady";
 import { claimActionId } from "./actionDedup";
 import { signingWage, getAgentName, fairWeeklyWage } from "./gameConstants";
 
@@ -233,9 +234,9 @@ export function registerTransferSocketHandlers(
       socket.emit(
         "mySquad",
         ensureFullBench(
-          withJuniorGRs(squad, playerState.teamId as number, game.matchweek || 1),
+          withJuniorGRs(squad, playerState.teamId as number, upcomingMatchweek(game)),
           playerState.teamId as number,
-          game.matchweek || 1,
+          upcomingMatchweek(game),
         ),
       );
       if (sellerTeamId) {
@@ -896,10 +897,10 @@ export function registerTransferSocketHandlers(
                             withJuniorGRs(
                               squad || [],
                               playerState.teamId as number,
-                              game.matchweek || 1,
+                              upcomingMatchweek(game),
                             ),
                             playerState.teamId as number,
-                            game.matchweek || 1,
+                            upcomingMatchweek(game),
                           ),
                         ),
                     );

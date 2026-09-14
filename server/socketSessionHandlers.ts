@@ -3,6 +3,7 @@ import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory } from "./co
 import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES, SEASON_CALENDAR } from "./gameConstants";
 import { getGlobalMessages, CHAT_RETENTION_MS } from "./db/globalDatabase";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
+import { upcomingMatchweek } from "./game/lineupReady";
 import {
   takePendingMatchAction,
   listTeamMatchActions,
@@ -290,9 +291,9 @@ export function registerSessionSocketHandlers(
 				socket.emit(
 					"mySquad",
 					ensureFullBench(
-						withJuniorGRs(squad || [], team.id, game.matchweek || 1),
+						withJuniorGRs(squad || [], team.id, upcomingMatchweek(game)),
 						team.id,
-						game.matchweek || 1,
+						upcomingMatchweek(game),
 					),
 				),
 		);

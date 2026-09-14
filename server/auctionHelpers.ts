@@ -10,6 +10,7 @@ import {
   seasonToYear,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
+import { upcomingMatchweek } from "./game/lineupReady";
 import { signingWage, AUCTION_BID_STEP, getAgentName, FORM_NEUTRAL, RES_NEUTRAL } from "./gameConstants";
 
 interface AuctionDeps {
@@ -226,9 +227,9 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           io.to(player.socketId as string).emit(
             "mySquad",
             ensureFullBench(
-              withJuniorGRs(squad || [], teamId, game.matchweek || 1),
+              withJuniorGRs(squad || [], teamId, upcomingMatchweek(game)),
               teamId,
-              game.matchweek || 1,
+              upcomingMatchweek(game),
             ),
           );
       },

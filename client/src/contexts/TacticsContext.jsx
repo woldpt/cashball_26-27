@@ -44,6 +44,7 @@ export function TacticsProvider({ children }) {
     mySquad,
     activeTab,
     matchweekCount,
+    calendarIndex,
     nextMatchSummary,
     players,
     me,
@@ -86,10 +87,15 @@ export function TacticsProvider({ children }) {
     [matchdayKey],
   );
 
+  // Base única de disponibilidade (espelho de upcomingMatchweek no servidor):
+  // a jornada que aí vem (calendarIndex + 1). matchweekCount é a jornada que
+  // passou — usá-la aqui gerava juniores-fantasma no banco (FGPQH6).
+  const upcomingBase = (calendarIndex ?? matchweekCount) + 1;
+
   // ── Computed values ──────────────────────────────────────────────────────
   const availablePositionCounts = useMemo(
-    () => getAvailablePositionCounts(mySquad, matchweekCount + 1),
-    [mySquad, matchweekCount],
+    () => getAvailablePositionCounts(mySquad, upcomingBase),
+    [mySquad, upcomingBase],
   );
 
   const formationAvailabilityByValue = useMemo(
@@ -167,14 +173,14 @@ export function TacticsProvider({ children }) {
     (formation) => {
       const availableCounts = getAvailablePositionCounts(
         mySquad,
-        matchweekCount + 1,
+        upcomingBase,
       );
       if (!isFormationAvailable(formation, availableCounts)) return;
 
       const autoPositions = buildAutoPositions(
         mySquad,
         formation,
-        matchweekCount + 1,
+        upcomingBase,
       );
       setTactic((prev) => {
         const next = { ...prev, formation, positions: autoPositions };
@@ -182,7 +188,7 @@ export function TacticsProvider({ children }) {
         return next;
       });
     },
-    [matchweekCount, mySquad, setTactic],
+    [upcomingBase, mySquad, setTactic],
   );
 
   const handleSelectOut = useCallback(
@@ -336,7 +342,7 @@ export function TacticsProvider({ children }) {
         if (player?.isJunior) return prev;
 
         if (status === "Titular" || status === "Suplente") {
-          if (player && !isPlayerAvailable(player, matchweekCount + 1))
+          if (player && !isPlayerAvailable(player, upcomingBase))
             return prev;
         }
 
@@ -359,7 +365,7 @@ export function TacticsProvider({ children }) {
           const currentSubs = Object.entries(newPositions).filter(
             ([id, s]) => s === "Suplente" && Number(id) !== playerId,
           ).length;
-          if (currentSubs >= 5) return prev;
+          if (currentSubs >= MAX_BENCH_SIZE) return prev;
         }
 
         if (status === "Titular") {
@@ -389,7 +395,7 @@ export function TacticsProvider({ children }) {
       });
       setOpenStatusPickerId(null);
     },
-    [mySquad, matchweekCount, setTactic],
+    [mySquad, upcomingBase, setTactic],
   );
 
   const handleSwapPlayerStatuses = useCallback(
@@ -413,14 +419,14 @@ export function TacticsProvider({ children }) {
         if (targetStatus === "Titular" || targetStatus === "Suplente") {
           if (
             draggedPlayer &&
-            !isPlayerAvailable(draggedPlayer, matchweekCount + 1)
+            !isPlayerAvailable(draggedPlayer, upcomingBase)
           )
             return prev;
         }
         if (draggedStatus === "Titular" || draggedStatus === "Suplente") {
           if (
             targetPlayer &&
-            !isPlayerAvailable(targetPlayer, matchweekCount + 1)
+            !isPlayerAvailable(targetPlayer, upcomingBase)
           )
             return prev;
         }
@@ -454,7 +460,7 @@ export function TacticsProvider({ children }) {
       setDragPlayerId(null);
       dragPlayerStatusRef.current = null;
     },
-    [mySquad, matchweekCount, setTactic],
+    [mySquad, upcomingBase, setTactic],
   );
 
   /**
@@ -474,7 +480,7 @@ export function TacticsProvider({ children }) {
 
         // Verificar disponibilidade
         if (targetSection === "Titular" || targetSection === "Suplente") {
-          if (!isPlayerAvailable(player, matchweekCount + 1)) return prev;
+          if (!isPlayerAvailable(player, upcomingBase)) return prev;
         }
 
         // Verificar capacidade
@@ -515,7 +521,7 @@ export function TacticsProvider({ children }) {
           const count = Object.entries(newPositions).filter(
             ([id, s]) => s === "Suplente" && Number(id) !== playerId,
           ).length;
-          if (count >= 5) return prev;
+          if (count >= MAX_BENCH_SIZE) return prev;
         }
 
         newPositions[playerId] = targetSection;
@@ -527,7 +533,7 @@ export function TacticsProvider({ children }) {
       setDragPlayerId(null);
       dragPlayerStatusRef.current = null;
     },
-    [mySquad, matchweekCount, setTactic],
+    [mySquad, upcomingBase, setTactic],
   );
 
   const handleDragStart = useCallback((e) => {

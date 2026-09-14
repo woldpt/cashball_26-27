@@ -12,6 +12,7 @@ import {
   getTeamsWithCoachNames,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
+import { upcomingMatchweek } from "./game/lineupReady";
 
 type Db = any;
 type AnyRow = Record<string, any>;
@@ -508,9 +509,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
             io.to(player.socketId as string).emit(
               "mySquad",
               ensureFullBench(
-                withJuniorGRs(squad || [], team.id, game.matchweek || 1),
+                withJuniorGRs(squad || [], team.id, upcomingMatchweek(game)),
                 team.id,
-                game.matchweek || 1,
+                upcomingMatchweek(game),
               ),
             );
           }
@@ -930,9 +931,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
             io.to(player.socketId as string).emit(
               "mySquad",
               ensureFullBench(
-                withJuniorGRs(squad || [], toTeamId, game.matchweek || 1),
+                withJuniorGRs(squad || [], toTeamId, upcomingMatchweek(game)),
                 toTeamId,
-                game.matchweek || 1,
+                upcomingMatchweek(game),
               ),
             );
           }
