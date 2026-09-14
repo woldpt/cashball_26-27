@@ -1,3 +1,11 @@
+## Pitch do 11 provável invisível no briefing (fix)
+
+- **Causa real: colapso de altura, não faltam dados.** Servidor inocente provado em todos os saves/ramos (liga, taça, amigável — `getOpponentProbableFormation` devolve sempre 11; `dist/` atual). View-model cliente ok com payload real. O card "Formação provável" renderizava as rows mas o relvado media **0px no desktop**.
+- **Mecânica:** wrapper do relvado usava `lg:h-auto lg:flex-1 lg:min-h-[280px]` — altura indefinida (`h-auto` + só `min-height`) → o filho `h-full` do `PitchFormation` resolve 100% de indefinido = 0. Mobile escapava porque `h-64`/`h-40` são alturas definidas.
+- **Fix:** alturas definidas em todos os breakpoints — `lg:h-[280px] short:lg:h-[180px]` (1 linha, `OpponentFormation.jsx`). Corte de ~26px da linha ATA é pré-existente do mobile (h-64 cortava igual) — consistente agora.
+- **Evidência:** harness `briefing-resp-test.html` no Chromium — pitch 0→280px no desktop; 256px no mobile (intacto).
+- **Regra permanente:** altura definida (fixa ou esticada por flex de pai com altura definida) sempre que um filho `h-full` vive dentro de `flex-1` — `min-height` não dá base para percentagens.
+
 ## Auditoria engine.ts: reset parcial incompleto + fallback de lesão (fix)
 
 - **Auditoria proativa ao `server/game/engine.ts`** (3784 linhas + chamadores + testes): typecheck OK, `test:engine-unit` 19/19, `test:segment-barrier` OK. Um bug real:
