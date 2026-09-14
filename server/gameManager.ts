@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
-import { SEASON_CALENDAR, fairWeeklyWage, signingWage, FANBASE_BY_DIVISION } from "./gameConstants";
+import { SEASON_CALENDAR, FRIENDLY_ROUND, fairWeeklyWage, signingWage, FANBASE_BY_DIVISION } from "./gameConstants";
 import { currentEpoch, getSeasonEndMatchweek } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { getOfflineCoaches } from "./presenceHelpers";
@@ -610,6 +610,18 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
             // calendarVersion=2 salta a migração v2; cutover=1 preserva a
             // avaliação de contratos da época 1 como até aqui.
             tmp.prepare(`INSERT OR REPLACE INTO game_state (key,value) VALUES ('calendarIndex','0'),('calendarVersion','2'),('contractCutoverSeason','1')`).run();
+            // Sorteio imediato do amigável de pré-época (ronda 0, época 1):
+            // a sala nova já nasce com adversário — o briefing não espera.
+            const friendlyIds: number[] = tmp.prepare("SELECT id FROM teams WHERE division BETWEEN 1 AND 5 ORDER BY id").all().map((r: any) => r.id);
+            const shuffledFriendly = shuffle(friendlyIds);
+            if (shuffledFriendly.length % 2 === 1) shuffledFriendly.pop();
+            const friendlyVals: string[] = [];
+            const friendlyParams: number[] = [];
+            for (let i = 0; i + 1 < shuffledFriendly.length; i += 2) {
+              friendlyVals.push("(1, ?, ?, ?)");
+              friendlyParams.push(FRIENDLY_ROUND, shuffledFriendly[i], shuffledFriendly[i + 1]);
+            }
+            if (friendlyVals.length) tmp.prepare(`INSERT INTO cup_matches (season, round, home_team_id, away_team_id) VALUES ${friendlyVals.join(",")}`).run(...friendlyParams);
           tmp.exec("COMMIT");
           console.log(`[gameManager] Sala ${roomCode}: pool 60→40 filtrado (keep ${keepIds.length}, drop ${dropIds.length})`);
         } finally {

@@ -765,12 +765,19 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     // O amigável (ronda 0) reutiliza o ramo da taça: adversário da tabela,
     // Casa/Fora real (só a final é no Jamor) e isCup para a vista live.
     if (currentEntry?.type === "cup" || currentEntry?.type === "friendly") {
-      // Amigável sem sorteio (sala nova: o sorteio só corria no fim de época
-      // ou no pontapé de saída) — preparar aqui para o lobby ter briefing + 11.
-      // Guard de fase: nunca tocar no currentFixtures a meio do jogo.
-      if (currentEntry.type === "friendly" && game.gamePhase === "lobby") {
+      const isFriendly = currentEntry.type === "friendly";
+      // Sala nova já nasce sorteada (criação) — o par lê-se direto da tabela.
+      // Fallback só para salas antigas sem pares; o enrich completo das 20
+      // fica para o pontapé de saída. Guard de fase: nunca tocar no
+      // currentFixtures a meio do jogo.
+      if (isFriendly && game.gamePhase === "lobby") {
         try {
-          await prepareFriendlyFixtures(game);
+          const existingCount: any = await runGet(
+            game.db,
+            "SELECT COUNT(*) AS n FROM cup_matches WHERE season = ? AND round = ?",
+            [game.season, currentEntry.round],
+          );
+          if (!existingCount || existingCount.n === 0) await prepareFriendlyFixtures(game);
         } catch (prepErr) {
           console.error(`[${game.roomCode}] Friendly lazy-prep failed:`, prepErr);
         }
@@ -800,7 +807,9 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
           cupRoundName: (currentEntry as any).roundName,
           opponent: null,
           headline: "Sem jogo esta semana — sobra espiar os outros.",
-          stakes: buildStakes(null, null, true),
+          stakes: isFriendly
+            ? "Amigável — sem pontos em disputa, só ritmo e testes."
+            : buildStakes(null, null, true),
           roundFixtures: (roundFixtures || []).map((m: any) => ({
             homeTeamId: m.home_team_id,
             awayTeamId: m.away_team_id,
@@ -871,7 +880,9 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
           myPoints: null,
           oppPoints: null,
         }),
-        stakes: buildStakes(null, null, true),
+        stakes: isFriendly
+          ? "Amigável — sem pontos em disputa, só ritmo e testes."
+          : buildStakes(null, null, true),
         stadium: isHome
           ? await buildStadiumInfo(game, team.id, opponent.id, {
               competition: "cup",

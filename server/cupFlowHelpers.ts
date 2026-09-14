@@ -805,7 +805,35 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 	// Sorteio invisivel do amigavel de pre-epoca: todas as equipas (divs 1-5),
 	// sem animacao. Idempotente por epoca (ronda 0): se ja houver pares por
 	// jogar, reconstrói a partir da tabela em vez de redesenhar.
+	// Single-flight por sala: pedidos concorrentes partilham o mesmo sorteio
+	// em vez de sortear/enriquecer em duplicado.
+	const friendlyPrepInflight = new Map<string, Promise<void>>();
+
 	async function prepareFriendlyFixtures(game: ActiveGame) {
+		// Já preparado em memória: não repetir os ~60 SELECTs.
+		if (
+			(game.currentFixtures?.length ?? 0) > 0 &&
+			(game.currentFixtures[0] as any)?.round === FRIENDLY_ROUND
+		) return;
+		const ongoing = friendlyPrepInflight.get(game.roomCode);
+		if (ongoing) {
+			await ongoing;
+			return;
+		}
+		let release: () => void = () => {};
+		const gate = new Promise<void>((res) => {
+			release = res;
+		});
+		friendlyPrepInflight.set(game.roomCode, gate);
+		try {
+		await runFriendlyPrep(game);
+		} finally {
+		friendlyPrepInflight.delete(game.roomCode);
+		release();
+		}
+	}
+
+	async function runFriendlyPrep(game: ActiveGame) {
 		const season = game.season || 1;
 		const existing = await runAll(
 			game.db,
@@ -831,25 +859,49 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			// Impar: uma fica de fora (quem nao joga nao treina).
 			if (ids.length % 2 === 1) ids.pop();
 			pairs = [];
+			const placeholders: string[] = [];
+			const insertParams: any[] = [];
 			for (let i = 0; i < ids.length; i += 2) {
 				const homeTeamId = ids[i];
 				const awayTeamId = ids[i + 1];
 				pairs.push({ homeTeamId, awayTeamId });
+				placeholders.push("(?, ?, ?, ?)");
+				insertParams.push(season, FRIENDLY_ROUND, homeTeamId, awayTeamId);
+			}
+			// 1 INSERT com todos os pares em vez de 20 round-trips.
+			if (placeholders.length > 0) {
 				await new Promise((resolve) => {
 					game.db.run(
-						"INSERT INTO cup_matches (season, round, home_team_id, away_team_id) VALUES (?, ?, ?, ?)",
-						[season, FRIENDLY_ROUND, homeTeamId, awayTeamId],
+						`INSERT INTO cup_matches (season, round, home_team_id, away_team_id) VALUES ${placeholders.join(",")}`,
+						insertParams,
 						resolve,
 					);
 				});
 			}
 		}
-		const enriched: any[] = [];
-		for (const pair of pairs) {
-			enriched.push(
-				await enrichFixturePair(game, pair.homeTeamId, pair.awayTeamId, FRIENDLY_ROUND),
-			);
-		}
+		// 1 SELECT para todas as equipas em vez de 2 por par em série.
+		const allIds = [...new Set(pairs.flatMap((p) => [p.homeTeamId, p.awayTeamId]))];
+		const teamRows =
+			allIds.length > 0
+				? await runAll(
+						game.db,
+						`SELECT id, name, color_primary, color_secondary, crest FROM teams WHERE id IN (${allIds.map(() => "?").join(",")})`,
+						allIds,
+					)
+				: [];
+		const teamsById = new Map((teamRows as any[]).map((t: any) => [t.id, t]));
+		const enriched: any[] = pairs.map((pair) => ({
+			homeTeamId: pair.homeTeamId,
+			awayTeamId: pair.awayTeamId,
+			homeTeam: teamsById.get(pair.homeTeamId) ?? null,
+			awayTeam: teamsById.get(pair.awayTeamId) ?? null,
+			round: FRIENDLY_ROUND,
+			finalHomeGoals: 0,
+			finalAwayGoals: 0,
+			events: [],
+			homeLineup: [],
+			awayLineup: [],
+		}));
 		game.currentFixtures = enriched;
 		game.currentEvent = SEASON_CALENDAR[game.calendarIndex];
 		game.cupHalftimePayload = null;

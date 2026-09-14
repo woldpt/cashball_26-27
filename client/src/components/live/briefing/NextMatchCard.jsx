@@ -121,7 +121,11 @@ export const NextMatchCard = memo(function NextMatchCard({ vm, onOpenTeamSquad }
       {/* Cabeçalho: competição + venue */}
       <div className="flex items-center justify-between px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
         <div className="flex items-center gap-2">
-          {vm.isCup ? (
+          {vm.isCup && vm.cupRound === 0 ? (
+            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">
+              <span aria-hidden>🤝</span> Amigável
+            </span>
+          ) : vm.isCup ? (
             <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400">
               <span aria-hidden>🏆</span> Taça
             </span>
