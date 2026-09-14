@@ -347,6 +347,43 @@ export function resetPartialMatchState(fixture: MatchFixture): boolean {
   // ser simuláveis (a guarda anti-duplo-minuto continua a valer para o run em
   // curso, não para um jogo descartado).
   fixture._simulatedMinutes = new Set<number>();
+  // Estado parcial restante do jogo descartado — sem isto, o replay herdava:
+  // deltas acumulados (golos/vermelhos/lesões contavam a dobrar no flush),
+  // _subbedOut/_yellowCards (banido/cartão do jogo velho), squads/rosters
+  // cacheados (onze com subs já aplicadas), moral e ledgers de fadiga.
+  delete fixture._deltas;
+  delete fixture._deltasQueued;
+  delete fixture._subbedOut;
+  delete fixture._yellowCards;
+  delete fixture._homeSquad;
+  delete fixture._awaySquad;
+  delete fixture._homeFullRoster;
+  delete fixture._awayFullRoster;
+  delete fixture._homeMorale;
+  delete fixture._awayMorale;
+  delete fixture._minutesPlayed;
+  delete fixture._fatigueLoss;
+  delete fixture._homePower;
+  delete fixture._awayPower;
+  delete fixture._homePowerV;
+  delete fixture._awayPowerV;
+  delete fixture._injuryLoadMult;
+  delete fixture._homeChances;
+  delete fixture._awayChances;
+  delete fixture._homePossession;
+  delete fixture._awayPossession;
+  delete fixture._weather;
+  // Flags de comentários já gerados: os events foram limpos, os comentários de
+  // introdução (weather/tática/intervalo/prolongamento) têm de poder nascer de novo.
+  delete fixture._firstHalfStartComment;
+  delete fixture._secondHalfStartComment;
+  delete fixture._extraTimeStartComment;
+  delete fixture._finalEndComment;
+  delete fixture._bettingIntroShown;
+  delete fixture._lineupIndex;
+  delete fixture._minute;
+  // _occupancy/_ticketPrice/attendance ficam: ambiente pré-jogo fixado na
+  // preparação da jornada (não é estado parcial do jogo interrompido).
   return hadProgress;
 }
 
@@ -1420,9 +1457,12 @@ async function applyInjuryEvent({
   });
 
   const forcedChoice = normalizeMatchChoice(result.choice);
+  // Validar contra substituteCandidates (a lista enviada ao cliente), NÃO
+  // availableBench: quando o lesionado é GR, a lista mostrada só tem GR —
+  // um choice válido fora dela deixaria a equipa sem GR em campo.
   const replacement =
     forcedChoice.playerIn != null &&
-    availableBench.find((p) => p.id === forcedChoice.playerIn);
+    substituteCandidates.find((p) => p.id === forcedChoice.playerIn);
   if (replacement) {
     // Último GR sai e não há GR no banco → o substituto que entra calça as
     // luvas (GR improvisado, clone com skill piso — a posição real fica

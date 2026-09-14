@@ -1,3 +1,11 @@
+## Auditoria engine.ts: reset parcial incompleto + fallback de lesão (fix)
+
+- **Auditoria proativa ao `server/game/engine.ts`** (3784 linhas + chamadores + testes): typecheck OK, `test:engine-unit` 19/19, `test:segment-barrier` OK. Um bug real:
+- **`resetPartialMatchState` descartava só golos/eventos/lineups/`_simulatedMinutes`** — deixava `_deltas` (golos/vermelhos/lesões da passagem interrompida contavam a dobrar no flush do apito final), `_subbedOut`/`_yellowCards` (banido/cartão do jogo velho), `_homeSquad`/`_awaySquad`/rosters/moral/fadiga cacheados e os flags de comentários (`_firstHalfStartComment` etc. → replay sem eventos de introdução). Agora apaga tudo o residual e mantém ambiente pré-jogo (`_occupancy`/`_ticketPrice` fixados na preparação da jornada).
+- **Fallback de lesão:** validação do substituto passou a usar `substituteCandidates` (a lista enviada ao cliente) em vez de `availableBench` — quando o lesionado é GR com GR no banco, um choice fora da lista deixava a equipa sem GR em campo.
+- **Não-bugs verificados:** prolongamento sem janelas de ação (fallback do timeout resolve, aceitável); guarda anti-replay das presenças com `calendarIndex` correto (slot 0 excluído por desenho); 2 golos no mesmo minuto impossível numa passagem (penálti falhado + open play do outro lado é o único par possível).
+- Checks: server `typecheck` OK; `test:engine-unit` 20/20 (novo U14); `audit:socketio` 0 erros; `audit:gamestate FGPQH6` 53 (pré-existentes de mínimos de plantel). Sem mobile-resp-check (zero cliente). Prod corre de `dist/` → `build` + restart.
+
 ## Saída sem pedido de renovação (fix)
 
 - **Fuga na cláusula de rescisão:** `makeTransferProposal` (`server/socketTransferHandlers.ts`) bloqueava propostas só contra equipas com treinador **ligado** (`p.socketId`) — o resto do servidor usa "esteve na sala = humano, mesmo offline". Contrato expirado + dono offline + agente ainda sem ligar (1.ª semana pós-lock excluída + 25%/semana) → outro humano comprava por cláusula sem a janela de renovação aparecer; com `contract_request_pending` também passava. Guarda agora sem `socketId` + rejeição explícita se `contract_request_pending`.

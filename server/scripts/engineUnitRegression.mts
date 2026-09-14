@@ -29,6 +29,9 @@
  *   U12 — queueMatchDeltaWrites: throw síncrono repõe a flag (deltas retidos);
  *        erro no callback é reportado mas o flush completa
  *   U13 — quotaFromFormation deriva o XI da tática (fallback 4-4-2)
+ *   U14 — resetPartialMatchState descarta golos/eventos/lineups E estado
+ *        residual (deltas, subs, cartões, squads, fadiga, flags de comentário)
+ *        mantendo o ambiente pré-jogo (occupancy/ticketPrice)
  *
  * Run: cd server && npm run test:engine-unit
  */
@@ -451,4 +454,74 @@ test("U13 — quotaFromFormation deriva o XI da tática (fallback 4-4-2)", () =>
     MED: 4,
     ATA: 2,
   });
+});
+
+// ── U14 ─────────────────────────────────────────────────────────────────────
+test("U14 — resetPartialMatchState descarta TODO o estado parcial", () => {
+  const { resetPartialMatchState } = require("../game/engine.ts");
+  const fixture: any = {
+    finalHomeGoals: 2,
+    finalAwayGoals: 1,
+    events: [{ minute: 10, type: "goal" }],
+    homeLineup: [{ id: 1, is_starter: true }],
+    awayLineup: [{ id: 2, is_starter: true }],
+    _simulatedMinutes: new Set([1, 2]),
+    _deltas: { calendarIndex: 3, appearances: new Set([1]), goals: new Map([[1, 2]]) },
+    _deltasQueued: true,
+    _subbedOut: new Set([9]),
+    _yellowCards: { 1: 1 },
+    _homeSquad: [{ id: 1 }],
+    _awaySquad: [{ id: 2 }],
+    _homeFullRoster: [{ id: 1 }],
+    _awayFullRoster: [{ id: 2 }],
+    _homeMorale: 80,
+    _awayMorale: 20,
+    _minutesPlayed: { home: { 1: 10 }, away: {} },
+    _fatigueLoss: { home: { 1: 1 }, away: {} },
+    _homePower: { power: 1, version: 1 },
+    _awayPower: { power: 1, version: 1 },
+    _homePowerV: 5,
+    _awayPowerV: 3,
+    _injuryLoadMult: { home: 1, away: 0.8 },
+    _homeChances: 7.5,
+    _awayChances: 6.5,
+    _homePossession: 55,
+    _awayPossession: 45,
+    _weather: "sol",
+    _firstHalfStartComment: true,
+    _secondHalfStartComment: true,
+    _extraTimeStartComment: true,
+    _finalEndComment: true,
+    _bettingIntroShown: true,
+    _lineupIndex: { home: { arr: [], byId: new Map() } },
+    _minute: 10,
+    // Ambiente pré-jogo — TEM de sobreviver ao reset.
+    _occupancy: 0.72,
+    _ticketPrice: 12,
+  };
+  assert.equal(resetPartialMatchState(fixture), true);
+  assert.equal(fixture.finalHomeGoals, 0);
+  assert.equal(fixture.finalAwayGoals, 0);
+  assert.deepEqual(fixture.events, []);
+  assert.deepEqual(fixture.homeLineup, []);
+  assert.deepEqual(fixture.awayLineup, []);
+  assert.equal(fixture._simulatedMinutes.size, 0);
+  for (const key of [
+    "_deltas", "_deltasQueued", "_subbedOut", "_yellowCards",
+    "_homeSquad", "_awaySquad", "_homeFullRoster", "_awayFullRoster",
+    "_homeMorale", "_awayMorale", "_minutesPlayed", "_fatigueLoss",
+    "_homePower", "_awayPower", "_homePowerV", "_awayPowerV",
+    "_injuryLoadMult", "_homeChances", "_awayChances",
+    "_homePossession", "_awayPossession", "_weather",
+    "_firstHalfStartComment", "_secondHalfStartComment",
+    "_extraTimeStartComment", "_finalEndComment", "_bettingIntroShown",
+    "_lineupIndex", "_minute",
+  ]) {
+    assert.equal(fixture[key], undefined, `${key} limpo`);
+  }
+  // Ambiente pré-jogo intocado
+  assert.equal(fixture._occupancy, 0.72);
+  assert.equal(fixture._ticketPrice, 12);
+  // Jogo limpo de origem: nada a descartar
+  assert.equal(resetPartialMatchState({ events: [] }), false);
 });
