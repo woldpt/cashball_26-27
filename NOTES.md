@@ -257,6 +257,12 @@
 
 ## Em curso
 
+## Pitch do 11 provável vazio no briefing (diagnóstico)
+- Auditoria em sala nova (`WH2J0Q`, fábricas reais): 20 pares em 9ms, `probableFormation` "4-4-2" + 11 jogadores, agrupamento cliente com 0 descartados. Servidor inocente (fonte e `dist/` com a mesma lógica).
+- `OpponentFormation.jsx`: fallback visível ("11 provável indisponível de momento.") + `console.warn` com a forma do payload quando a formação chega sem jogadores renderizáveis. Memoizado: só dispara por payload novo.
+- Checks: eslint do ficheiro OK (2 erros do `lint` global são pré-existentes: `landing-resp-test.jsx`, `GameContext.jsx`); `check:types` OK; `test:briefing` OK.
+- Falta evidência do browser: hard-refresh + consola/screenshot do utilizador.
+
 ## Lobby→jogo bloqueado em todas as salas (fix crítico)
 - Causa: o single-flight do `7785baa` reclamava `segmentRunning=true` sem verificar antes e tinha um guard pós-barreira `if (segmentRunning)` — sempre verdade, porque fomos nós a pôr a `true`. Todo o arranque lobby→jogo morria aí, sem repor a flag (deadlock em memória até restart). O amigável foi só onde se notou (`8T3U4X`: dispatch com `segmentRunning=false` → `blocked: true`).
 - Fix (`weeklyFlowHelpers.ts`, ramo lobby do `checkAllReady`): check-then-claim atómico à entrada (2.º "Pronto" simultâneo é rejeitado — a intenção original) + guard pós-barreira apagado. `startWeekOnce` não verifica a flag à entrada, só a reclama — compatível.
