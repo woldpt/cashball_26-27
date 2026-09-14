@@ -231,11 +231,17 @@ export function IntervencaoView({
   const sourcePlayer = playerById(effectiveOutId);
   // GR improvisado: escolha única (quem vai para a baliza) — sem par Sai/Entra.
   const limitReached = subsMade >= MAX_MATCH_SUBS;
+  // Lesão sem suplentes disponíveis: o lesado sai e a equipa joga com menos
+  // um. Sem uma via de confirmação o treinador ficava preso no countdown.
+  const noReplacement =
+    isForcedSwap && !isEmergencyGk && benchPlayers.length === 0;
   const canConfirmSwap = isEmergencyGk
     ? !!selectedInId && !isHalftime
-    : !!effectiveOutId &&
-      !!selectedInId &&
-      (!isHalftime && !isUserSubPause ? true : !limitReached);
+    : noReplacement
+      ? !!effectiveOutId
+      : !!effectiveOutId &&
+        !!selectedInId &&
+        (!isHalftime && !isUserSubPause ? true : !limitReached);
 
   // Durante uma troca obrigatória as tabs de adversário/cronologia são ruído
   // — a vista fica presa nas subs enquanto corre o countdown da substituição
@@ -245,7 +251,9 @@ export function IntervencaoView({
   // Motivo do botão de confirmar desativado — mostrado junto ao botão em vez
   // de deixar o utilizador adivinhar (antes: estado desativado silencioso).
   const confirmHint = canConfirmSwap
-    ? null
+    ? noReplacement
+      ? "Sem suplentes disponíveis — o lesado sai e jogas com menos um."
+      : null
     : isEmergencyGk
       ? "Escolhe quem vai para a baliza."
       : !effectiveOutId
@@ -583,6 +591,7 @@ export function IntervencaoView({
               injuryCountdown={injuryCountdown}
               confirmHint={confirmHint}
               canConfirmSwap={canConfirmSwap}
+              noReplacement={noReplacement}
               onResetSub={onResetSub}
               onConfirmSub={onConfirmSub}
               onResolveAction={onResolveAction}

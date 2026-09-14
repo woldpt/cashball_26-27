@@ -14,6 +14,7 @@ export function SwapControls({
   isUserSubPause = false,
   isForcedSwap,
   isEmergencyGk = false,
+  noReplacement = false,
   injuryCountdown,
   effectiveOutId,
   sourcePlayer,
@@ -138,8 +139,9 @@ export function SwapControls({
         </div>
       )}
 
-      {/* Motivo do botão de confirmar desativado — nunca em silêncio. */}
-      {!canConfirmSwap && confirmHint && (
+      {/* Motivo do botão de confirmar desativado — nunca em silêncio. (Lesão
+       * sem banco é a exceção: o aviso aparece mesmo com o botão ativo.) */}
+      {(noReplacement || !canConfirmSwap) && confirmHint && (
         <p className="text-[11px] font-semibold text-amber-300/90">
           {confirmHint}
         </p>
@@ -201,16 +203,22 @@ export function SwapControls({
           disabled={!canConfirmSwap || resolving}
           onClick={() => {
             setResolving(true);
+            // Sem banco disponível: confirma só a saída do lesado (equivale a
+            // jogar com menos um, sem reposição).
             onResolveAction({
               playerOut: effectiveOutId,
-              playerIn: selectedInId,
+              playerIn: noReplacement ? null : selectedInId,
             });
           }}
           tone="indigo"
           icon={<MatchIcon name="confirm" className="h-4 w-4" />}
           className="h-11 w-full sm:h-10"
         >
-          {resolving ? "A substituir…" : "Substituir"}
+          {noReplacement
+            ? "Continuar sem substituição"
+            : resolving
+              ? "A substituir…"
+              : "Substituir"}
         </PrimaryButton>
       )}
     </div>

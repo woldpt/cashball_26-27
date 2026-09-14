@@ -1488,15 +1488,16 @@ export function useSocketListeners(handlers, refs) {
 					if (incomingBench.length > 0) {
 						normalizedAction.benchPlayers = incomingBench;
 					} else {
-						// Fallback: use players on the bench in the current tactic
-						const suplentes = currentSquad
-							.filter((player) => currentPositions[player.id] === "Suplente")
+						// Fallback: banco da tática atual. NUNCA o plantel inteiro — quem
+						// está em campo não pode entrar (o servidor rejeita a escolha e a
+						// reposição não se aplica). Sem suplentes a lista fica vazia e o
+						// treinador é avisado que joga com menos um.
+						normalizedAction.benchPlayers = currentSquad
+							.filter(
+								(player) => currentPositions[player.id] === "Suplente",
+							)
 							.map(toCandidate)
 							.filter(Boolean);
-						normalizedAction.benchPlayers =
-							suplentes.length > 0
-								? suplentes
-								: currentSquad.map(toCandidate).filter(Boolean);
 					}
 				}
 
