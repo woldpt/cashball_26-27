@@ -1,3 +1,8 @@
+## Fotos no campo da Tática + restart prod (novo)
+- O campo da Tática mostrava só a inicial (por desenho); os marcadores usam agora o `PlayerAvatar` local (foto com anel da posição, fallback SVG), mesma medida `w-10 h-10`, badge de indisponível intacto. Só cliente.
+- Cartão “Formação Provável” vazio + fotos em falta no direto: backend corria imagem com 44h (anterior ao fix das fotos `e0cc1c3` — o resumo do adversário seguia sem `id`/`photo`). `docker compose up --build -d backend` com as 35 salas em lobby; verificado listening + socket. Falta o Fabio re-picar a formação e confirmar o cartão.
+- Checks: client `eslint` + `check:types` OK. Sem mobile-resp-check (mesma medida/estrutura, só conteúdo do círculo).
+
 ## 11+7 verde no cliente, recusado no servidor (fix FGPQH6)
 - Causa: três bases de disponibilidade divergentes com `calendarIndex=16, matchweek=12` — `mySquad` (6 emits) e auto-pick/handlers usavam `matchweek(+1)` = 12/13 (Pedro Santos lesionado até 16 → indisponível → 1 júnior-fantasma no pool), mas a validação (cliente `annotatedSquad` + servidor `checkLineupReady`) usa `calendarIndex+1` = 17 (Pedro disponível, sem júnior). A tática marcava o fantasma no banco + Pedro excluído → servidor contava 6 suplentes reais. Botão verde porque o cliente conta o fantasma como válido.
 - Fix: base única `upcomingBase = (calendarIndex ?? matchweekCount) + 1` no `TacticsContext` (contagens, auto-pick, 3 handlers); 6 emits `mySquad` passam a `upcomingMatchweek(game)` (`auction`, `coachDismissal` ×2, `socketSession`, `socketTransfer` ×2; `weeklyFlow` já estava certo). Teto manual de suplentes `5` → `MAX_BENCH_SIZE` (2 handlers; o teto 5 de titulares por posição está correto). Vistas só-leitura (`teamSquadData`, job offers, scouting adversário) intactas.

@@ -1252,13 +1252,9 @@ ${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161
                             }}
                           >
                             <div
-                              className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-sm relative cursor-grab active:cursor-grabbing ${player.isUnavailable ? "opacity-50" : ""}`}
-                              style={{
-                                background: `radial-gradient(circle at 35% 28%, rgba(255,255,255,0.28) 0%, transparent 65%), ${pos.hex}`,
-                                boxShadow: `0 4px 16px rgba(0,0,0,0.55), 0 0 0 2px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.22)`,
-                              }}
+                              className={`relative cursor-grab active:cursor-grabbing ${player.isUnavailable ? "opacity-50" : ""}`}
                             >
-                              {player.name?.charAt(0)?.toUpperCase() ?? "?"}
+                              <PlayerAvatar player={player} size="w-10 h-10" />
                               {player.isUnavailable && (
                                 <span className="absolute -top-1 -right-1 text-[9px] bg-black/60 rounded-full px-0.5 leading-none">
                                   {(player.suspension_until_matchweek || 0) >
