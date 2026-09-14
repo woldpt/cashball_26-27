@@ -1,3 +1,9 @@
+## Saída sem pedido de renovação (fix)
+
+- **Fuga na cláusula de rescisão:** `makeTransferProposal` (`server/socketTransferHandlers.ts`) bloqueava propostas só contra equipas com treinador **ligado** (`p.socketId`) — o resto do servidor usa "esteve na sala = humano, mesmo offline". Contrato expirado + dono offline + agente ainda sem ligar (1.ª semana pós-lock excluída + 25%/semana) → outro humano comprava por cláusula sem a janela de renovação aparecer; com `contract_request_pending` também passava. Guarda agora sem `socketId` + rejeição explícita se `contract_request_pending`.
+- **`buyPlayer` sem validação de mercado:** só a UI filtrava `transfer_status != 'none'` — socket direto comprava qualquer jogador. Guarda server-side adicionada.
+- Checks: server `typecheck` OK; `audit:socketio` 0 erros. Sem mobile-resp-check (zero cliente). **Pendente:** teste manual com contrato expirado e dono offline.
+
 ## Motor: banco a marcar, 2 golos no mesmo minuto, lesão sem ecrã (fix)
 
 - **Suplente a marcar (era real, não do motor):** `swapOnPitch` (`server/game/engine.ts`) escrevia a entrada de lineup do jogador que entra **sem `is_starter`** e deixava lá a entrada antiga de banco → o cliente (`MatchView.jsx` separa XI/banco por `is_starter`) mostrava-o no Banco enquanto o motor o tinha em campo. Agora a entrada leva `is_starter: true` e a antiga de banco é removida (sem duplicados). Varredura das 1495 partidas em `server/saves`: 252 entradas sem flag (todas com id duplicado no mesmo lineup) e 8 partidas em que o autor do golo constava como banco.

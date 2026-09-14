@@ -107,6 +107,10 @@ export function registerTransferSocketHandlers(
         );
         return;
       }
+      if (!player.transfer_status || player.transfer_status === "none") {
+        socket.emit("systemMessage", "Este jogador não está no mercado.");
+        return;
+      }
 
       const team = await runGet<any>(
         game.db,
@@ -744,9 +748,19 @@ export function registerTransferSocketHandlers(
           });
           return;
         }
-        // Only allow proposals to teams without a connected human coach
+        if (player.contract_request_pending) {
+          socket.emit("transferProposalResult", {
+            ok: false,
+            message: `${getAgentName(player.id)} tem uma renovação em aberto com o clube atual. Espera pela decisão.`,
+          });
+          return;
+        }
+        // Só propostas a equipas sem treinador humano (esteve na sala =
+        // humano, mesmo offline — mesmo discriminador do resto do servidor).
+        // Sem isto, um contrato expirado podia ser comprado por cláusula
+        // antes de o agente ter feito o pedido de renovação.
         const targetTeamHasHuman = Object.values(game.playersByName).some(
-          (p: any) => Number(p.teamId) === Number(player.team_id) && p.socketId,
+          (p: any) => Number(p.teamId) === Number(player.team_id),
         );
         if (targetTeamHasHuman) {
           socket.emit("transferProposalResult", {
