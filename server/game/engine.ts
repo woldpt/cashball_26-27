@@ -325,6 +325,32 @@ export function getMatchFatigueSnapshot(
 }
 
 /**
+ * Descarta o estado parcial de um jogo interrompido (crash/restart a meio):
+ * volta a 0-0 e limpa eventos e lineups. A fase transitória do jogo volta a
+ * lobby e a semana recomeça — sem isto o segmento era re-simulado por cima do
+ * que já estava gravado (golos a dobrar, suplentes de um lineup obsoleto em
+ * campo). Devolve true se havia progresso para descartar.
+ */
+export function resetPartialMatchState(fixture: MatchFixture): boolean {
+  const hadProgress =
+    (fixture.finalHomeGoals || 0) > 0 ||
+    (fixture.finalAwayGoals || 0) > 0 ||
+    (fixture.events?.length ?? 0) > 0 ||
+    (fixture.homeLineup?.length ?? 0) > 0 ||
+    (fixture.awayLineup?.length ?? 0) > 0;
+  fixture.finalHomeGoals = 0;
+  fixture.finalAwayGoals = 0;
+  fixture.events = [];
+  fixture.homeLineup = [];
+  fixture.awayLineup = [];
+  // O jogo vai recomeçar do minuto 1: os minutos descartados têm de voltar a
+  // ser simuláveis (a guarda anti-duplo-minuto continua a valer para o run em
+  // curso, não para um jogo descartado).
+  fixture._simulatedMinutes = new Set<number>();
+  return hadProgress;
+}
+
+/**
  * Snapshot de lineup (titulares + suplentes) para exibição no cliente — ÚNICA
  * implementação (fix #7). Havia 3 cópias (engine, weeklyFlowHelpers ×2) que
  * divergiram (ex. skill bruto vs. efetiva). Usa sempre a skill efetiva em jogo.
@@ -711,6 +737,25 @@ function waitForMatchAction({
 }): Promise<{ choice: MatchActionChoice; source: string }> {
   const humanCoach = getCurrentPlayerState(game, teamId);
   if (!humanCoach) {
+    // Treinador conhecido mas sem socket (tab fechada/morta, telemóvel): a
+    // decisão é automática. Sem aviso isto ficava silencioso para quem volta
+    // depois — "o ecrã de escolha nunca apareceu". NPCs (sem registo em
+    // playersByName) não geram ruído.
+    const offlineCoach = Object.values(game.playersByName).find(
+      (p) => p.teamId === teamId,
+    );
+    if (offlineCoach) {
+      const label =
+        type === "injury"
+          ? "lesão"
+          : type === "penalty"
+            ? "penálti"
+            : "substituição";
+      io.to(game.roomCode).emit("systemMessage", {
+        text: `⏱️ ${offlineCoach.name} está offline — ${label} resolvida automaticamente.`,
+        broadcast: true,
+      });
+    }
     return Promise.resolve({ choice: fallback(), source: "auto" });
   }
 
@@ -1048,14 +1093,26 @@ function swapOnPitch({
   if (lineupRef) {
     const li = lineupRef.findIndex((p: any) => p.id === outId);
     if (li > -1) {
+      // is_starter é o que o cliente usa para separar XI/banco (MatchView) e o
+      // briefing para derivar a formação — sem ele o jogador que entrava
+      // desaparecia do relvado e continuava a constar como suplente (um
+      // "suplente" marcava golos). A entrada antiga de banco do mesmo jogador
+      // tem de sair: senão ficava duplicado (XI sem flag + banco com false).
       lineupRef[li] = {
         id: incoming.id,
         name: incoming.name,
         position: incoming.position,
         is_star: incoming.is_star || 0,
+        is_starter: true,
         skill: getEffectiveSkill(incoming),
         ...getMatchFatigueSnapshot(fixture, side, incoming.id),
       };
+      for (let i = lineupRef.length - 1; i > li; i--) {
+        if (lineupRef[i].id === incoming.id) lineupRef.splice(i, 1);
+      }
+      for (let i = li - 1; i >= 0; i--) {
+        if (lineupRef[i].id === incoming.id) lineupRef.splice(i, 1);
+      }
     }
   }
 
@@ -1263,6 +1320,16 @@ async function applyInjuryEvent({
   if (!canMakeSubstitution(fixture, teamId)) {
     // Notifica o treinador que a equipa passa a jogar com menos um jogador.
     io.to(game.roomCode).emit("substitutionCapReached", { teamId });
+    // O toast pode passar despercebido: sem janela de escolha, o treinador tem
+    // de saber explicitamente que o lesado sai sem reposição.
+    const capTeamName =
+      teamSide === "home"
+        ? fixture.homeTeam?.name || String(teamId)
+        : fixture.awayTeam?.name || String(teamId);
+    io.to(game.roomCode).emit("systemMessage", {
+      text: `🚑 ${injuredPlayer.name} (${capTeamName}) sai sem reposição — substituições esgotadas. A equipa joga com menos um.`,
+      broadcast: true,
+    });
     removeFromPitch({
       fixture,
       game,
@@ -2157,25 +2224,38 @@ export async function simulateMatchSegment(
   for (let minute = startMin; minute <= endMin; minute++) {
     fixture._minute = minute;
 
-    await processMatchMinute({
-      fixture,
-      game,
-      io,
-      minute,
-      homeTactic,
-      awayTactic,
-      homeSquad,
-      awaySquad,
-      homeFullRoster,
-      awayFullRoster,
-      homeLineupIds,
-      awayLineupIds,
-      currentMatchweek,
-      rng,
-      fam,
-      powers,
-      refreshPower: refreshPowerIfDirty,
-    });
+    // Guarda anti-duplo-minuto: uma fixture nunca simula o mesmo minuto duas
+    // vezes. Sem isto, dois arranques sobrepostos da mesma semana (dois
+    // "Pronto" quase simultâneos, antes do single-flight do lobby) ou um
+    // segmento repetido produziam dois golos no mesmo minuto da mesma equipa
+    // — `goalScoredThisMinute` só protege dentro de uma passagem.
+    const alreadySimulated = fixture._simulatedMinutes?.has(minute);
+    if (alreadySimulated) {
+      console.warn(
+        `[${game?.roomCode}] ⚠ minuto ${minute} já simulado nesta fixture — ignorado`,
+      );
+    } else {
+      (fixture._simulatedMinutes ??= new Set<number>()).add(minute);
+      await processMatchMinute({
+        fixture,
+        game,
+        io,
+        minute,
+        homeTactic,
+        awayTactic,
+        homeSquad,
+        awaySquad,
+        homeFullRoster,
+        awayFullRoster,
+        homeLineupIds,
+        awayLineupIds,
+        currentMatchweek,
+        rng,
+        fam,
+        powers,
+        refreshPower: refreshPowerIfDirty,
+      });
+    }
 
     // Hook de progresso por minuto (fix #6): os chamadores recebem cada minuto
     // simulado para emitir updates/dormir, sem partir a simulação em N chamadas

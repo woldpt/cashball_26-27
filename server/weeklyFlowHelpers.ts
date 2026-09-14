@@ -28,6 +28,7 @@ import {
   generateIntroEvents,
   generateSecondHalfIntroEvents,
   buildLineupSnapshot,
+  resetPartialMatchState,
   getMatchFatigueSnapshot,
   queueMatchDeltaWrites,
   createMinuteBarrier,
@@ -1634,6 +1635,25 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     }
 
     saveGameState(game);
+
+    // Reinício a meio de um jogo anterior: as fixtures vêm da BD com golos,
+    // eventos e lineups da partida interrompida. Fase transitória volta a
+    // lobby e a semana recomeça — sem descartar o estado parcial, o segmento
+    // era re-simulado por cima (golos a dobrar, suplentes em campo,
+    // disponibilidade de banco já consumida). Jogo recomeça limpo, com aviso.
+    const discarded = game.currentFixtures.filter((fx) =>
+      resetPartialMatchState(fx),
+    ).length;
+    if (discarded > 0) {
+      game.liveMinute = null;
+      console.warn(
+        `[${game.roomCode}] ♻️ ${discarded} jogo(s) interrompido(s) — estado parcial descartado (recomeça a 0-0)`,
+      );
+      io.to(game.roomCode).emit("systemMessage", {
+        text: "♻️ O jogo anterior foi interrompido por um reinício do servidor — as partidas recomeçam de novo.",
+        broadcast: true,
+      });
+    }
 
     try {
       await runMatchSegment(game, 1, 45);

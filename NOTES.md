@@ -1,3 +1,13 @@
+## Motor: banco a marcar, 2 golos no mesmo minuto, lesão sem ecrã (fix)
+
+- **Suplente a marcar (era real, não do motor):** `swapOnPitch` (`server/game/engine.ts`) escrevia a entrada de lineup do jogador que entra **sem `is_starter`** e deixava lá a entrada antiga de banco → o cliente (`MatchView.jsx` separa XI/banco por `is_starter`) mostrava-o no Banco enquanto o motor o tinha em campo. Agora a entrada leva `is_starter: true` e a antiga de banco é removida (sem duplicados). Varredura das 1495 partidas em `server/saves`: 252 entradas sem flag (todas com id duplicado no mesmo lineup) e 8 partidas em que o autor do golo constava como banco.
+- **2 golos no mesmo minuto da mesma equipa:** impossível numa passagem (`goalScoredThisMinute` fecha os dois lados + penálti); 800 jogos completos (1-45 + 46-90 + 91-120) no motor atual → 0 casos e 0 divergências marcador↔eventos. Só acontecia com a mesma fixture a correr dois segmentos (duplo arranque da semana, fechado a 13/14-set). Guarda nova: `fixture._simulatedMinutes` — minuto já simulado é saltado com `console.warn`.
+- **Lesão sem ecrã:** três rotas silenciosas fechadas — treinador sem socket e limite de 3 substituições passam a emitir `systemMessage` broadcast; a reemissão da ação pendente no reconnect passou a vir **depois** de `emitCurrentPhaseToSocket` (o `matchReplay` limpava o modal). Cliente: o fallback de lesão deixou de oferecer o plantel inteiro (quem está em campo não pode entrar) e, sem banco, mostra o hint + botão "Continuar sem substituição" (equipa joga com menos um).
+- **Restart a meio de jogo (reiniciar limpo, decisão do utilizador):** `resetPartialMatchState` (engine, puro) é chamado no `startWeekOnce` e descarta golos/eventos/lineups parciais antes de re-simular, com aviso broadcast. Antes, o replay somava golos por cima e punha um plantel de 17-18 (snapshot starters+suplentes) em campo — harness reproduziu 28% de jogos com suplente a marcar.
+- **Prolongamento:** `getGoalTimeMultiplier` devolvia 1.62 a todos os minutos >86, incluindo 91-120. Nova chave `MATCH_TUNING.extraTimeChanceMult: 1` — 1500 jogos: 1.62 → 1.19 golos/ET e 70% dos ET decididos; 1.0 → 0.72 e 51% (49% para penáltis).
+- Checks: server `typecheck` OK; client `lint` (só os 2 pré-existentes) + `check:types` OK; `audit:socketio` 0 erros; `audit:gamestate FGPQH6` 53 (só os pré-existentes de mínimos de plantel); `test:mobile` + `test:mobile:landscape` no harness `intervencao-test` PASS (5/5 e 6/6, screenshot landscape 667 visto). Harness tsx temporário (em `/tmp`, apagável): lineup sem duplicados/flags após sub, 2.º segmento não repete minutos, reset limpa estado.
+- **Por ativar:** restart do backend (produção corre de `dist/`).
+
 ## Fotos no campo da Tática + restart prod (novo)
 - O campo da Tática mostrava só a inicial (por desenho); os marcadores usam agora o `PlayerAvatar` local (foto com anel da posição, fallback SVG), mesma medida `w-10 h-10`, badge de indisponível intacto. Só cliente.
 - Cartão “Formação Provável” vazio + fotos em falta no direto: backend corria imagem com 44h (anterior ao fix das fotos `e0cc1c3` — o resumo do adversário seguia sem `id`/`photo`). `docker compose up --build -d backend` com as 35 salas em lobby; verificado listening + socket. Falta o Fabio re-picar a formação e confirmar o cartão.
@@ -575,3 +585,7 @@ Plano C1+C2 (quando fizer):
 - Eixo deixou de forçar o zero (`Math.min(0,…)`/`Math.max(0,…)` removidos): `axisMin`/`axisMax` = `rawMin/rawMax ± pad` (12% do span, mín. 1); 4 níveis igualmente espaçados mantidos. A escala segue a amplitude do histórico em vez de saltar ancorada ao zero.
 - Área fecha em `fillY` (zero visível, senão bordo do gráfico) para não projetar para fora do SVG quando tudo é positivo/negativo; baseline zero e pontos de cruzamento mantêm o `zeroY` real. Só `BalanceLineChart.jsx`.
 - Checks: eslint limpo + `check:types` OK. Sem mobile-resp-check (mesma estrutura SVG, só cálculo de escala).
+
+
+## Audit MatchBriefing (2026-09-12)
+- 4 ajustes menores: `nextMatchSummary` agora vem direto de `useGame()` (elimina indirection); `BriefingSkeleton` completado com faixa amigável e grelha de confronto; `console.warn` no guard `!vm` para detetar inconsistências de dados; `DifficultyGauge` verificado (já alinhado, não era bug). Checks: client `lint` + `check:types` OK.

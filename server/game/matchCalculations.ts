@@ -25,6 +25,7 @@ export function getGoalTimeMultiplier(minute: number): number {
   if (minute <= 65) return 0.94; // 56'–65' ~11%
   if (minute <= 75) return 1.11; // 66'–75' ~13%
   if (minute <= 85) return 1.28; // 76'–85' ~15%
+  if (minute > 90) return MATCH_TUNING.extraTimeChanceMult; // prolongamento
   return 1.62; // 86'–FT  ~18-20%
 }
 

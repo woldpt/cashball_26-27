@@ -402,6 +402,10 @@ export const MATCH_TUNING = {
   // Chance sem golo: repartição (cumulativo) GR defende · poste · resto ao lado.
   chanceSaveShare: 0.55,
   chancePostShare: 0.7,
+  // Prolongamento (91'–120'): sem o pico de 1.62 dos 86'–90'. Medido com
+  // 1500 jogos (harness): 1.62 → 1.17 golos/ET e 70% dos ET decididos; a 1.0
+  // ficam 0.72 golos/ET e 51% decididos no ET (49% para penáltis).
+  extraTimeChanceMult: 1,
   ownGoalShare: 0.08, // ~8% das oportunidades de golo
   varDisallowedShare: 0.05, // 5% dos golos anulados pelo VAR
   // Conflito de egos: 3+ craques (MED/ATA) no XI reduzem a probabilidade.
