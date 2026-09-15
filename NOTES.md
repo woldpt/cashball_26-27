@@ -1,3 +1,8 @@
+## Tutorial: balão com fundo claro
+
+- O balão e a seta do tutorial usam fundo branco, texto escuro e progresso vazio em cinzento claro para melhor leitura sobre o overlay escuro.
+- Checks: `npx eslint src/components/tutorial/CoachTutorial.jsx` e `npm run check:types` OK.
+
 ## Jornal: transferência com percurso visual (2026-09-15)
 
 - Notícias de negócios passam a apresentar a foto do jogador em cima e, por baixo, os emblemas da equipa de origem e da equipa de destino lado a lado, com seta vendedor → comprador. As restantes notícias mantêm a media genérica.

@@ -139,7 +139,7 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
 
       {/* Balão */}
       <div
-        className="absolute bg-surface-container border border-primary/30 rounded-xl shadow-2xl p-4 flex flex-col gap-2"
+        className="absolute bg-white border border-primary/50 rounded-xl shadow-2xl p-4 flex flex-col gap-2 text-zinc-900"
         style={{
           left: balloon.left,
           top: balloon.top,
@@ -152,7 +152,7 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
         {/* Seta para o alvo */}
         {rect && (
           <span
-            className="absolute w-3 h-3 rotate-45 bg-surface-container border-primary/30"
+            className="absolute w-3 h-3 rotate-45 bg-white border-primary/50"
             style={{
               left: Math.min(
                 Math.max(rect.x + rect.w / 2 - balloon.left - 6, 16),
@@ -167,10 +167,10 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
         <p className="text-[10px] font-black uppercase tracking-widest text-primary">
           Tutorial · Passo {stepIndex + 1} de {total}
         </p>
-        <h3 className="text-base font-black font-headline tracking-tight text-on-surface uppercase">
+        <h3 className="text-base font-black font-headline tracking-tight text-zinc-900 uppercase">
           {step.title}
         </h3>
-        <p className="text-sm text-on-surface-variant leading-relaxed">
+        <p className="text-sm text-zinc-700 leading-relaxed">
           {step.text}
         </p>
         {/* Progresso */}
@@ -178,7 +178,7 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
           {COACH_TUTORIAL_STEPS.map((s, i) => (
             <span
               key={s.id}
-              className={`h-1 flex-1 rounded-full ${i <= stepIndex ? "bg-primary" : "bg-outline-variant/30"}`}
+              className={`h-1 flex-1 rounded-full ${i <= stepIndex ? "bg-primary" : "bg-zinc-200"}`}
             />
           ))}
         </div>
@@ -186,7 +186,7 @@ export function CoachTutorial({ stepIndex, onNavigate, onNext, onBack, onSkip })
           <button
             type="button"
             onClick={onSkip}
-            className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors px-1 py-2"
+            className="text-[10px] font-black uppercase tracking-widest text-zinc-600 hover:text-zinc-900 transition-colors px-1 py-2"
           >
             Saltar
           </button>
