@@ -9,10 +9,15 @@
 //     data-status="done"
 //   - json must include: viewport, pageOverflowPx, clippedRows,
 //     clippingElements, verdict ("PASS" | "FAIL")
+//
+// Além do layout, verifica um contrato de comportamento: o badge do Jornal
+// (GameLayout) e a lista (JournalTab) são duas instâncias de `useInbox` e têm
+// de ver as mesmas leituras — abrir uma notícia baixa o número nos dois.
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
 import { GameContext } from "./src/contexts/GameContext.jsx";
 import { JournalTab } from "./src/views/JournalTab.jsx";
+import { useInbox } from "./src/hooks/useInbox.js";
 
 const noop = () => {};
 
@@ -163,17 +168,61 @@ const gameValue = {
   calendarIndex: 12,
 };
 
+/** Segundo consumidor de `useInbox` — faz de badge do Jornal no GameLayout. */
+// eslint-disable-next-line react-refresh/only-export-components -- harness, não app
+function BadgeProbe() {
+  const { unreadCount } = useInbox();
+  return (
+    <span data-testid="inbox-badge" className="font-black">
+      {unreadCount}
+    </span>
+  );
+}
+
+// Leituras guardadas de corridas anteriores tornariam a contagem inicial
+// imprevisível (o browser do teste pode reutilizar o perfil).
+try {
+  for (const k of Object.keys(window.localStorage)) {
+    if (k.startsWith("cashball_inbox_read:")) window.localStorage.removeItem(k);
+  }
+} catch {
+  /* sem armazenamento: o store arranca vazio de qualquer forma */
+}
+
 const root = createRoot(document.getElementById("root"));
 root.render(
   // Mimics the GameLayout mobile container: <main> > div.p-4 > tab content
   <GameContext.Provider value={gameValue}>
     <div className="min-h-screen bg-surface">
       <div className="p-4 lg:p-6">
+        <BadgeProbe />
         <JournalTab />
       </div>
     </div>
   </GameContext.Provider>,
 );
+
+const badgeText = () =>
+  Number(document.querySelector('[data-testid="inbox-badge"]')?.textContent);
+
+/** Abrir uma notícia no JournalTab tem de baixar o badge no outro consumidor. */
+async function checkSharedReads() {
+  const before = badgeText();
+  // Uma linha SEM bandeira vermelha (essas só saem da lista ao serem
+  // respondidas) — o título identifica-a no fixture.
+  const row = [...document.querySelectorAll("ol button")].find((b) =>
+    b.textContent.includes("Empréstimo Bancário"),
+  );
+  row?.click();
+  await new Promise((r) => setTimeout(r, 60));
+  const after = badgeText();
+  return {
+    before,
+    after,
+    clicked: !!row,
+    ok: !!row && before > 0 && after === before - 1,
+  };
+}
 
 function measure() {
   const vw = window.innerWidth;
@@ -219,8 +268,10 @@ function measure() {
   };
 }
 
-setTimeout(() => {
+setTimeout(async () => {
   const report = measure();
+  report.inboxBadge = await checkSharedReads();
+  if (!report.inboxBadge.ok) report.verdict = "FAIL";
   const el = document.getElementById("report");
   el.setAttribute("data-status", "done");
   el.textContent = "REPORT:" + JSON.stringify(report, null, 2);

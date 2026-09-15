@@ -113,9 +113,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // Soma de negócios activos (leilões a decorrer + mercado) para o badge do
   // botão "Transferências" na navegação mobile (onde Mercado e Leilões se unem).
   const transferBadgeCount = liveAuctionCount + marketListedCount;
-  // Destaque do Jornal: nº de bandeiras vermelhas (renovações/convites por
-  // responder) — o Jornal é a primeira entrada do menu.
-  const { redFlags: inboxRedFlags } = useInbox();
+  // Badge do Jornal: itens por ler na caixa de entrada (inclui as bandeiras
+  // vermelhas, que contam sempre). Mesmo badge do Mercado/Leilões.
+  const { unreadCount: inboxUnreadCount } = useInbox();
 
   // ── Voo do badge (mobile): ao abrir o fly-up, a soma vira badges individuais ──
   const transfIconRef = useRef(null); // âncora de origem no nav (wrapper do ícone TRANSF)
@@ -669,7 +669,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   : key === "market"
                     ? marketListedCount
                     : key === "jornal"
-                      ? inboxRedFlags
+                      ? inboxUnreadCount
                       : 0;
               const isActive = activeTab === key;
               return (
@@ -1003,9 +1003,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     <span className="material-symbols-outlined text-[22px] leading-none">
                       newspaper
                     </span>
-                    {inboxRedFlags > 0 && (
+                    {inboxUnreadCount > 0 && (
                       <span className="absolute -top-1 -right-2 flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none min-w-[18px] h-[18px] px-1 text-[10px]">
-                        {inboxRedFlags > 99 ? "99+" : inboxRedFlags}
+                        {inboxUnreadCount > 99 ? "99+" : inboxUnreadCount}
                       </span>
                     )}
                   </span>
