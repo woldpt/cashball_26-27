@@ -144,8 +144,8 @@ function newsArticle(n, { owner, related, seller, buyer } = {}) {
   const s = seller ? partTeam(seller) : related ? partTeam(related) : null;
   const value = amount || "um valor não divulgado";
   const transferVariant = newsVariant(n, 4);
-  let titleParts = [partText(n?.title || "Notícia")];
-  let bodyParts = [partText(description || n?.title || "Há novidades no clube.")];
+  let titleParts;
+  let bodyParts;
 
   if (type === "transfer_in" || type === "auction_won" || n?.source === "transfer") {
     titleParts =
@@ -265,15 +265,34 @@ function newsArticle(n, { owner, related, seller, buyer } = {}) {
       partText(` investiu ${value} na manutenção do estádio. `),
       partText("A bancada raramente vê este trabalho, mas sente a diferença quando a casa está pronta para receber mais uma jornada e proteger a receita do clube."),
     ];
-  } else if (type === "loan_interest" || type === "loan_principal") {
-    const label = type === "loan_interest" ? "juros" : "capital do empréstimo";
+  } else if (
+    type === "loan_interest" ||
+    type === "loan_principal" ||
+    type === "loan_take" ||
+    type === "loan_pay"
+  ) {
     titleParts = [partText("Contas bancárias: "), o];
-    bodyParts = [
-      o,
-      partText(` pagou ${value} em ${label}. `),
-      partText(description || "A dívida continua a pesar no orçamento semanal."),
-      partText(" A tesouraria ganha tempo, mas o compromisso fica registado e terá de ser acomodado nas próximas decisões."),
-    ];
+    bodyParts =
+      type === "loan_take"
+        ? [
+            o,
+            partText(` assegurou ${value} através de um novo empréstimo. `),
+            partText(description || "O dinheiro entra agora, mas a dívida passa a fazer parte do orçamento semanal."),
+            partText(" É oxigénio imediato para o clube, não dinheiro grátis: cada prestação futura vai condicionar a margem para investir no plantel."),
+          ]
+        : type === "loan_pay"
+          ? [
+              o,
+              partText(` reduziu a dívida em ${value}. `),
+              partText(description || "O pagamento devolve algum controlo à tesouraria."),
+              partText(" A factura ainda pode não estar fechada, mas o clube fica um passo mais perto de respirar sem a pressão do banco."),
+            ]
+          : [
+              o,
+              partText(` pagou ${value} em ${type === "loan_interest" ? "juros" : "capital do empréstimo"}. `),
+              partText(description || "A dívida continua a pesar no orçamento semanal."),
+              partText(" A tesouraria ganha tempo, mas o compromisso fica registado e terá de ser acomodado nas próximas decisões."),
+            ];
   } else if (type === "stadium_build") {
     titleParts = [partText("A casa cresce: "), o];
     bodyParts = [
@@ -334,10 +353,10 @@ function newsArticle(n, { owner, related, seller, buyer } = {}) {
       partText(description || "A sala está pronta, o plantel espera e a época começa agora."),
       partText(" Este é o primeiro capítulo de uma história que será escrita jornada a jornada, dentro e fora do campo."),
     ];
-  } else if (owner || player) {
+  } else {
     titleParts = player && owner ? [p, partText(" — "), o] : [partText(n?.title || "Notícia")];
     bodyParts = [
-      owner ? o : p,
+      owner ? o : player ? p : partText("O clube"),
       partText(description ? `: ${description}. ` : ". "),
       partText("O Jornal regista o acontecimento e deixa a próxima palavra entregue ao trabalho da equipa."),
     ];

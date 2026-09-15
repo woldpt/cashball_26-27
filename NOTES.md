@@ -6,7 +6,8 @@
 
 ## Jornal: corpos editoriais mais ricos (2026-09-15)
 
-- As notícias do Jornal passam a ter corpos mais desenvolvidos, com contexto e consequência para transferências, saídas, leilões, academia, finanças, estádio, prémios, renegociações e boas-vindas; as entidades continuam clicáveis nos segmentos originais.
+- As notícias do Jornal passam a ter corpos mais desenvolvidos, com contexto e consequência para transferências, saídas, leilões, academia, finanças, estádio, prémios, renegociações, empréstimos e boas-vindas; as entidades continuam clicáveis nos segmentos originais.
+- Notícias genéricas sem entidade associada (por exemplo, despensas de treinadores) também recebem contexto editorial, em vez de mostrarem apenas a descrição crua.
 - A variedade usa o identificador da notícia, mantendo o texto estável entre renders e reloads, sem aleatoriedade.
 - Checks: eslint/JSDoc, teste directo dos 16 tipos de notícia com corpo mínimo de 100 caracteres e `git diff --check`.
 
