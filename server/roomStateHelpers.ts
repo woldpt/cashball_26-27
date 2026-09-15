@@ -620,22 +620,17 @@ export function clearMatchCheckpoint(game: ActiveGame): void {
  */
 export function applyMatchCheckpoint(game: ActiveGame, cp: any): boolean {
   if (!cp || typeof cp !== "object" || !Array.isArray(cp.fixtures)) return false;
+  // Identidade obrigatória. Um checkpoint sem `season`/`calendarIndex` é de uma
+  // build anterior ao fix: as fixtures podem voltar a coincidir numa jornada
+  // mais tarde (o sorteio repete pares) e aceitá-lo reintroduzia o dilúvio de
+  // "minuto N já simulado". Preferimos recomeçar 0-0 a marcar uma jornada inteira.
+  if (!Number.isFinite(cp.season) || !Number.isFinite(cp.calendarIndex)) {
+    return false;
+  }
   const fixtures = game.currentFixtures || [];
   if (fixtures.length === 0 || cp.fixtures.length !== fixtures.length) return false;
-  if (
-    typeof cp.season === "number" &&
-    Number.isFinite(cp.season) &&
-    cp.season !== game.season
-  ) {
-    return false;
-  }
-  if (
-    typeof cp.calendarIndex === "number" &&
-    Number.isFinite(cp.calendarIndex) &&
-    cp.calendarIndex !== game.calendarIndex
-  ) {
-    return false;
-  }
+  if (cp.season !== game.season) return false;
+  if (cp.calendarIndex !== game.calendarIndex) return false;
   for (let i = 0; i < fixtures.length; i++) {
     const a: any = fixtures[i];
     const b = cp.fixtures[i];

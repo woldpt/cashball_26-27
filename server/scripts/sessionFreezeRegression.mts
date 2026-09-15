@@ -321,6 +321,21 @@ test("F9 — checkpoint de outra jornada/jogos é recusado", () => {
   assert.equal((game.currentFixtures[0] as any)._simulatedMinutes.size, 45);
   assert.equal(game.liveMinute, 45);
 
+  // Formato antigo (sem season/calendarIndex) é recusado mesmo com os jogos a
+  // coincidir: é o caso real do log em produção, e aceitá-lo reintroduzia o
+  // dilúvio quando o sorteio volta a dar o mesmo par noutra jornada.
+  const legacy: any = cpOf(1, 4);
+  delete legacy.season;
+  delete legacy.calendarIndex;
+  const fresh: any = makeGame({ calendarIndex: 4, season: 1 });
+  fresh.currentFixtures = [{ homeTeamId: HOME, awayTeamId: AWAY }];
+  assert.equal(applyMatchCheckpoint(fresh, legacy), false, "sem identidade: recusado");
+  assert.equal(
+    (fresh.currentFixtures[0] as any)._simulatedMinutes,
+    undefined,
+    "fixtures da sala ficam intocadas",
+  );
+
   // Lixo não rebenta.
   assert.equal(applyMatchCheckpoint(game, null), false);
   assert.equal(applyMatchCheckpoint(game, { fixtures: "nope" }), false);

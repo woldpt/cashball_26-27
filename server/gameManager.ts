@@ -601,14 +601,24 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
               tmp.prepare(`DELETE FROM cup_matches WHERE home_team_id IN (${ph}) OR away_team_id IN (${ph})`).run(...dropIds, ...dropIds);
               tmp.prepare(`DELETE FROM palmares WHERE team_id IN (${ph})`).run(...dropIds);
               tmp.prepare(`DELETE FROM team_training WHERE team_id IN (${ph})`).run(...dropIds);
-              try { tmp.prepare(`DELETE FROM player_tactic_history WHERE team_id IN (${ph})`).run(...dropIds); } catch (e) { console.warn(`[gameManager] player_tactic_history delete falhou:`, e); }
+              // Tabelas que o getGame cria mais tarde (um base.db antigo pode
+              // não as ter): só limpar se existirem — sem isto o DELETE atirava
+              // "no such table" e enchia o log com um stack trace que não é erro.
+              const hasTable = (t: string) =>
+                !!tmp
+                  .prepare(
+                    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+                  )
+                  .get(t);
+              if (hasTable("player_tactic_history"))
+                try { tmp.prepare(`DELETE FROM player_tactic_history WHERE team_id IN (${ph})`).run(...dropIds); } catch (e) { console.warn(`[gameManager] player_tactic_history delete falhou:`, e); }
               // club_news secundário por related_team_id
               try { tmp.prepare(`DELETE FROM club_news WHERE related_team_id IN (${ph})`).run(...dropIds); } catch (e) { console.warn(`[gameManager] club_news related delete falhou:`, e); }
               tmp.prepare(`DELETE FROM teams WHERE id IN (${ph})`).run(...dropIds);
               tmp.prepare(`DELETE FROM managers WHERE id NOT IN (SELECT manager_id FROM teams WHERE manager_id IS NOT NULL)`).run();
               tmp.prepare(`DELETE FROM player_skill_snapshots WHERE player_id NOT IN (SELECT id FROM players)`).run();
               // chat_messages após teams/managers: usa dropManagerIds directo (não órfãos antes do delete)
-              if (dropManagerIds.length) {
+              if (dropManagerIds.length && hasTable("chat_messages")) {
                 try {
                   const phMgr = dropManagerIds.map(() => "?").join(",");
                   tmp.prepare(`DELETE FROM chat_messages WHERE coach_name IN (SELECT name FROM managers WHERE id IN (${phMgr}))`).run(...dropManagerIds);
@@ -1254,7 +1264,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                     );
                   } else {
                     console.warn(
-                      `[gameManager] ⏱ Checkpoint descartado (room ${roomCode}): não é desta jornada/jogos (época ${cp?.season} slot ${cp?.calendarIndex} vs ${game.season}/${game.calendarIndex})`,
+                      `[gameManager] ⏱ Checkpoint descartado (room ${roomCode}): não é desta jornada/jogos (checkpoint época=${cp?.season ?? "—"} slot=${cp?.calendarIndex ?? "—"} vs sala ${game.season}/${game.calendarIndex})`,
                     );
                   }
                 } catch (cpErr: any) {
@@ -1263,6 +1273,20 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                     cpErr?.message,
                   );
                 }
+              }
+
+              // Sem jogo em curso o cursor não significa nada — e um 41 residual
+              // num lobby já enganou a retoma (era o valor que fazia
+              // `from = max(1, liveMinute+1)` saltar minutos).
+              if (
+                game.gamePhase === "lobby" &&
+                game.liveMinute != null &&
+                game.liveMinute !== 0
+              ) {
+                console.log(
+                  `[gameManager] liveMinute residual ${game.liveMinute} descartado (room ${roomCode}, fase lobby)`,
+                );
+                game.liveMinute = 0;
               }
 
               // lockedCoaches is NOT restored from this game_state key (transient).
@@ -1642,10 +1666,12 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                             // crash) são reaplicados antes de projetar assentos.
                             replayEventsSince(game, game.snapshotSeq, () => {
                               loadSeats(game, () => {
-                                console.log(
-                                  `[${roomCode}] 🪑 ${Object.keys(game.seats).length} assento(s) | eventSeq=${game.eventSeq}`,
-                                );
                                 backfillSeats(game, () => {
+                                  // Depois do backfill: o log tem de dizer quantos
+                                  // assentos a sala tem (dizia 0 e logo 2).
+                                  console.log(
+                                    `[${roomCode}] 🪑 ${Object.keys(game.seats).length} assento(s) | eventSeq=${game.eventSeq}`,
+                                  );
                                   game.initialized = true;
                                   if (onReady) onReady(game);
                                 });
