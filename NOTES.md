@@ -4,6 +4,13 @@
 - O golo próprio usa um wash verde mais forte e confete; o golo adversário usa wash/flash vermelho mais intenso com shake do artefacto.
 - Checks: ESLint dos ficheiros tocados, `check:types` e `git diff --check` OK.
 
+## Jornal: filtros e tópicos com cores por categoria (2026-09-15)
+
+- A coluna de tópicos ganhou um fundo ligeiramente mais claro para se separar do fundo da página.
+- Os filtros têm cores ténues próprias: neutro, âmbar (clube), azul (competições), verde (plantel) e violeta (mercado); as linhas da lista repetem a cor da categoria da notícia.
+- Notícias seleccionadas mantêm destaque e as bandeiras vermelhas continuam a ter prioridade visual.
+- Checks: eslint/JSDoc, `check:types`, build Vite, harness Jornal retrato `5/5`, paisagem `6/6`, desktop `1280x900` e screenshots 390/667/1280 revistos.
+
 ## Jornal: colunas desktop preenchem a altura disponível (2026-09-15)
 
 - A partir de `lg`, o Jornal usa a altura disponível abaixo do cabeçalho: as colunas de tópicos e corpo ficam esticadas, a lista ocupa o espaço livre e faz scroll interno quando necessário.

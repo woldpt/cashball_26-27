@@ -18,6 +18,38 @@ import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
 import { TeamCrest } from "../components/live/TeamCrest.jsx";
 
 const FILTERS = ["all", "club", "competitions", "squad", "market"];
+const FILTER_TONES = {
+  all: {
+    idle: "bg-surface-container-high/40 text-on-surface-variant hover:bg-surface-container-high",
+    active: "bg-surface-container-high text-on-surface",
+    row: "bg-surface-container/40 hover:bg-surface-container-high",
+    selected: "bg-surface-container-high/80 ring-1 ring-inset ring-outline-variant/50",
+  },
+  club: {
+    idle: "bg-amber-500/10 text-amber-300/80 hover:bg-amber-500/20",
+    active: "bg-amber-500/25 text-amber-200",
+    row: "bg-amber-500/10 hover:bg-amber-500/15",
+    selected: "bg-amber-500/20 ring-1 ring-inset ring-amber-400/40",
+  },
+  competitions: {
+    idle: "bg-sky-500/10 text-sky-300/80 hover:bg-sky-500/20",
+    active: "bg-sky-500/25 text-sky-200",
+    row: "bg-sky-500/10 hover:bg-sky-500/15",
+    selected: "bg-sky-500/20 ring-1 ring-inset ring-sky-400/40",
+  },
+  squad: {
+    idle: "bg-emerald-500/10 text-emerald-300/80 hover:bg-emerald-500/20",
+    active: "bg-emerald-500/25 text-emerald-200",
+    row: "bg-emerald-500/10 hover:bg-emerald-500/15",
+    selected: "bg-emerald-500/20 ring-1 ring-inset ring-emerald-400/40",
+  },
+  market: {
+    idle: "bg-violet-500/10 text-violet-300/80 hover:bg-violet-500/20",
+    active: "bg-violet-500/25 text-violet-200",
+    row: "bg-violet-500/10 hover:bg-violet-500/15",
+    selected: "bg-violet-500/20 ring-1 ring-inset ring-violet-400/40",
+  },
+};
 
 function teamFromRef(teams, ref) {
   return teams.find((team) => String(team.id) === String(ref?.id)) || ref;
@@ -239,21 +271,22 @@ export function JournalTab({
   const hasUnreadNonFlag = inbox.items.some(
     (item) => !item.redFlag && inbox.isUnread(item),
   );
-  const tabBtn = (id) => (
-    <button
-      key={id}
-      type="button"
-      onClick={() => setFilter(id)}
-      aria-pressed={filter === id}
-      className={`shrink-0 px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-colors ${
-        filter === id
-          ? "bg-primary text-on-primary"
-          : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high"
-      }`}
-    >
-      {labelOf(id)}
-    </button>
-  );
+  const tabBtn = (id) => {
+    const tone = FILTER_TONES[id] || FILTER_TONES.all;
+    return (
+      <button
+        key={id}
+        type="button"
+        onClick={() => setFilter(id)}
+        aria-pressed={filter === id}
+        className={`shrink-0 px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-colors ${
+          filter === id ? tone.active : tone.idle
+        }`}
+      >
+        {labelOf(id)}
+      </button>
+    );
+  };
 
   return (
     <div className="space-y-2 short:space-y-1.5 lg:flex lg:min-h-[calc(100dvh-var(--header-h)-3rem)] lg:flex-col">
@@ -305,7 +338,7 @@ export function JournalTab({
       </div>
 
       <div className="grid gap-2 lg:flex-1 lg:min-h-0 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-stretch">
-        <section aria-label="Tópicos" className="min-w-0 space-y-2 lg:flex lg:min-h-0 lg:flex-col">
+        <section aria-label="Tópicos" className="min-w-0 space-y-2 rounded-sm bg-surface-container/40 p-2 lg:flex lg:min-h-0 lg:flex-col">
           <div className="flex items-center justify-between rounded-sm bg-surface-container-high/50 px-2 py-1.5">
             <span className="text-[10px] font-black uppercase tracking-widest text-tertiary">
               Tópicos
@@ -331,6 +364,7 @@ export function JournalTab({
           {visible.map((it) => {
             const active = inbox.selected?.id === it.id;
             const unread = inbox.isUnread(it);
+            const tone = FILTER_TONES[it.cat] || FILTER_TONES.all;
             return (
               <li key={it.id}>
                 <button
@@ -339,10 +373,10 @@ export function JournalTab({
                   aria-current={active}
                   className={`flex w-full items-center gap-2 px-2 py-1.5 text-left transition-colors ${
                     active
-                      ? "bg-primary/15"
+                      ? `${tone.selected} ${it.redFlag ? "ring-error/70" : ""}`
                       : it.redFlag
                         ? "bg-error/10 hover:bg-error/15"
-                        : "hover:bg-surface-container-high"
+                        : tone.row
                   }`}
                 >
                   <span className="w-24 short:w-20 shrink-0 truncate text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
