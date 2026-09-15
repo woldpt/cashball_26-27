@@ -789,6 +789,26 @@ export function GameProvider({
 		setContractQueue((q) => [...q, dialog]);
 	}, []);
 
+	// Caixa de entrada: traz o pedido de renovação de um jogador para o ecrã
+	// (o GameDialog continua a ser a UI de resposta — Aceitar/Leilão).
+	// Se já estiver visível, não faz nada; senão troca com o atual (o atual
+	// volta à cabeça da fila, sem se perder).
+	const focusContractDialog = useCallback((playerId) => {
+		const pid = Number(playerId);
+		if (!Number.isFinite(pid)) return;
+		if (Number(gameDialogRef.current?.playerId) === pid) return;
+		const queued = (contractQueueRef.current || []).find(
+			(d) => Number(d.playerId) === pid,
+		);
+		if (!queued) return;
+		const cur = gameDialogRef.current;
+		setContractQueue((q) => {
+			const rest = q.filter((d) => Number(d.playerId) !== pid);
+			return cur?.kind === "contract" ? [cur, ...rest] : rest;
+		});
+		setGameDialog(queued);
+	}, []);
+
 	// ── Socket listeners ────────────────────────────────────────────────────
 	useSocketListeners(
 		{
@@ -1544,6 +1564,8 @@ export function GameProvider({
 		setRefereePopup,
 		gameDialog,
 		setGameDialog,
+		contractQueue,
+		focusContractDialog,
 		pendingRoomInvite,
 		setPendingRoomInvite,
 		onAcceptRoomInvite,

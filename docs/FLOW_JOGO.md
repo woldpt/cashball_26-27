@@ -40,6 +40,8 @@ O botão grande Jogar leva sempre para a preparação da jornada.
 
 As páginas estão agrupadas. Clube. Gestão: Finanças, Estádio, Plantel e Treino. Competição: Jornal, Classificações, Calendário e Taça. Transferências: Scout, Mercado e Leilões.
 
+O Jornal é a caixa de entrada do treinador, ao estilo do Championship Manager antigo. Tem separadores por tema: Todas, Mensagens, Competições, Lesões e Castigos, Contratos e Media, Transferências, Trabalhos e Recordes. Em cima está a lista de notícias, em baixo o detalhe da selecionada, com botões de Anterior, Seguinte e Próxima não lida.
+
 ## 5. Preparar a semana
 
 Cada semana começa na preparação. O objetivo é deixar tudo pronto e confirmar.
@@ -82,7 +84,7 @@ Quando acaba, recebe o resultado, os golos, as lesões e quem foi o melhor em ca
 
 A classificação, a forma das equipas e os golos dos avançados são atualizados. Recebe a bilheteira se jogou em casa e paga os salários da semana. O treino dessa semana é aplicado aos jogadores.
 
-Podem aparecer janelas por ordem. Humor dos adeptos e da direção. Sorteio da próxima ronda da taça. Pedidos de renovação de contrato dos jogadores, que pode aceitar, recusar ou negociar. Resumo de despedimentos e contratações de treinadores. Aviso da direção se o dinheiro está mau. Convite de outro clube se foi despedido ou se há vaga.
+As novidades chegam como linhas no Jornal, em vez de janelas. A reação dos adeptos, os avisos da direção (basta carregar Ok), o sorteio da próxima ronda da taça, as lesões e os castigos, e o resumo de despedimentos e contratações de treinadores. Os pedidos de renovação de contrato e os convites de outros clubes vêm marcados com bandeira vermelha e o botão Jogar fica bloqueado até responder.
 
 Depois volta tudo à preparação da semana seguinte.
 

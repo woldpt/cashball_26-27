@@ -5,17 +5,14 @@ import { useGame } from "./contexts/GameContext.jsx";
 import { computePostMatchFlow } from "./utils/postMatchFlow.js";
 import { TransferProposalModal } from "./components/modals/TransferProposalModal.jsx";
 import { SigningCelebrationModal } from "./components/modals/SigningCelebrationModal.jsx";
-import { PostMatchMoodModal } from "./components/modals/PostMatchMoodModal.jsx";
 import { GameDialog } from "./components/shared/GameDialog.jsx";
 import { InviteRoomModal } from "./components/modals/InviteRoomModal.jsx";
 import { PenaltySuspensePopup } from "./components/modals/PenaltySuspensePopup.jsx";
 import { PenaltyTakerPopup } from "./components/modals/PenaltyTakerPopup.jsx";
 import { CupDrawPopup } from "./components/modals/CupDrawPopup.jsx";
 import { PenaltyShootoutPopup } from "./components/modals/PenaltyShootoutPopup.jsx";
-import { BoardWarningModal } from "./components/modals/BoardWarningModal.jsx";
 import { WaitingCoachesModal } from "./components/modals/WaitingCoachesModal.jsx";
 import { DismissalModal } from "./components/modals/DismissalModal.jsx";
-import { JobOfferModal } from "./components/modals/JobOfferModal.jsx";
 import { CoachMarketModal } from "./components/modals/CoachMarketModal.jsx";
 import { SeasonEndModal } from "./components/modals/SeasonEndModal.jsx";
 import { PlayerHistoryModal } from "./components/modals/PlayerHistoryModal.jsx";
@@ -38,7 +35,6 @@ export function GameOverlays() {
     avatarSeed,
     awaitingCoaches,
     backendUrl,
-    boardWarning,
     buyPlayer,
     chatInput,
     chatMessagesRef,
@@ -65,7 +61,6 @@ export function GameOverlays() {
     isCupExtraTime,
     isCupMatch,
     isPlayingMatch,
-    jobOfferModal,
     isMatchActionPending,
     listPlayerAuction,
     listPlayerFixed,
@@ -85,7 +80,6 @@ export function GameOverlays() {
     penaltySuspense,
     playerHistoryModal,
     players,
-    postMatchMood,
     redCardedHalftimeIds,
     removeFromTransferList,
     renewPlayerContract,
@@ -96,7 +90,6 @@ export function GameOverlays() {
     season,
     seasonEndModal,
     setAdminPanelOpen,
-    setBoardWarning,
     setChatInput,
     setCoachMarketReport,
     setCupDrawRevealIdx,
@@ -104,9 +97,7 @@ export function GameOverlays() {
     setCupPenaltyPopup,
     setDismissalModal,
     setGameDialog,
-    setJobOfferModal,
     setPlayerHistoryModal,
-    setPostMatchMood,
     setRoomHubOpen,
     setSeasonEndModal,
     setShowCupDrawPopup,
@@ -134,10 +125,7 @@ export function GameOverlays() {
   const postMatchFlow = computePostMatchFlow({
     seasonEndModal,
     cupPenaltyPopup,
-    postMatchMood,
-    boardWarning,
     dismissalModal,
-    jobOfferModal,
     waitingWantsShow: halftimeWaitingWantsShow,
   });
 
@@ -184,14 +172,14 @@ export function GameOverlays() {
   // Qualquer modal que possa surgir no pós-jogo bloqueia o landing — não
   // só a sequência central (postMatchFlow) mas também agentes/contratos
   // (gameDialog), mercado de treinadores, propostas, celebrações e o
-  // sorteio da Taça. Os estados brutos (não os `show*` faseados) garantem
-  // que o landing espera pela fila inteira, não só pelo modal visível.
+  // sorteio da Taça. O humor pós-jogo, os avisos da direção e os convites
+  // vivem na caixa de entrada (Jornal, o próprio tab de aterragem), por
+  // isso não bloqueiam. Os estados brutos (não os `show*` faseados)
+  // garantem que o landing espera pela fila inteira, não só pelo modal
+  // visível.
   const anyPostMatchModal =
-    postMatchMood ||
     cupPenaltyPopup ||
-    boardWarning ||
     dismissalModal ||
-    jobOfferModal ||
     seasonEndModal ||
     postMatchFlow.showWaiting ||
     gameDialog ||
@@ -242,11 +230,6 @@ export function GameOverlays() {
         me={me}
       />
 
-      <PostMatchMoodModal
-        mood={postMatchFlow.showMood ? postMatchMood : null}
-        onClose={() => setPostMatchMood(null)}
-      />
-
       <GameDialog dialog={gameDialog} onClose={() => setGameDialog(null)} />
       <InviteRoomModal />
 
@@ -275,11 +258,6 @@ export function GameOverlays() {
         teams={teams}
         setCupPenaltyPopup={setCupPenaltyPopup}
         setCupPenaltyKickIdx={setCupPenaltyKickIdx}
-      />
-
-      <BoardWarningModal
-        boardWarning={postMatchFlow.showBoardWarning ? boardWarning : null}
-        onClose={() => setBoardWarning(null)}
       />
 
       {/* MatchPage — AnimatePresence mode="wait": abrir/fechar/trocar modo
@@ -330,11 +308,6 @@ export function GameOverlays() {
         onContinue={() => setDismissalModal(null)}
       />
 
-
-      <JobOfferModal
-        jobOfferModal={postMatchFlow.showJobOffer ? jobOfferModal : null}
-        setJobOfferModal={setJobOfferModal}
-      />
 
       <CoachMarketModal
         report={coachMarketReport}

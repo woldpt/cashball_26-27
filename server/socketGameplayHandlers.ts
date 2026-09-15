@@ -150,6 +150,27 @@ export function registerGameplaySocketHandlers(
               err.message,
             );
           } else {
+            // Caixa de entrada: renovações de contrato e convites de clubes
+            // (bandeira vermelha no Jornal) bloqueiam o Pronto — é preciso
+            // responder antes de seguir para o jogo. Vem do mesmo SELECT do
+            // plantel: sem query extra.
+            const pendingRenewals = (rows || []).filter(
+              (r: any) => r.contract_request_pending === 1,
+            );
+            const pendingJob = (game as any).pendingJobOffers?.[playerState.name];
+            if (pendingRenewals.length > 0 || pendingJob) {
+              const reason =
+                pendingRenewals.length > 0 && pendingJob
+                  ? "Tens renovações e um convite por responder no Jornal."
+                  : pendingRenewals.length > 0
+                    ? "Tens pedidos de renovação por responder no Jornal."
+                    : "Tens um convite de clube por responder no Jornal.";
+              console.warn(
+                `[${game.roomCode}] ⛔ ${playerState.name} ready recusado: inbox red flag`,
+              );
+              socket.emit("systemMessage", { text: `⛔ ${reason}` });
+              return;
+            }
             const check = checkLineupReady(
               (playerState.tactic as any)?.positions,
               rows || [],
