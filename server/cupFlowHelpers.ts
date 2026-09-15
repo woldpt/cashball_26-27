@@ -29,6 +29,7 @@ import { persistMoms } from "./momHelpers";
 import { computeMoms } from "./game/mom";
 import {
   appendRoomEvent,
+  clearMatchCheckpoint,
   computeAbsentees,
   logCalendarAdvance,
   waitForPresence,
@@ -1816,6 +1817,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 		// Advance calendar
 		game.calendarIndex += 1;
+		clearMatchCheckpoint(game);
 		logCalendarAdvance(game, io, "cup_round_finalized", "week_end");
 		game.lastPlayedAt = new Date().toISOString();
 		game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
@@ -2002,6 +2004,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 
 		game.calendarIndex += 1;
+		clearMatchCheckpoint(game);
 		logCalendarAdvance(game, io, "friendly_finalized", "week_end");
 		game.lastPlayedAt = new Date().toISOString();
 		game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;

@@ -42,8 +42,10 @@ import { generateAITactic } from "./game/matchCalculations";
 import { computeMoms } from "./game/mom";
 import {
   appendRoomEvent,
+  clearMatchCheckpoint,
   computeAbsentees,
   isSeatPresent,
+  lastSimulatedMinute,
   logCalendarAdvance,
   requiredTeamIds,
   saveMatchCheckpoint,
@@ -1055,7 +1057,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       return;
     }
 
-    const from = Math.max(1, (game.liveMinute ?? 0) + 1);
+    // Fallback pelo próprio estado: se o cursor `liveMinute` se perdeu, o
+    // último minuto marcado nas fixtures diz onde retomar. Sem isto começava
+    // em 1 com os minutos todos marcados — a partida não jogava nada.
+    const resumedFrom = game.liveMinute ?? lastSimulatedMinute(game);
+    const from = Math.max(1, resumedFrom + 1);
     const to =
       phase === "match_first_half" ? 45 : phase === "match_second_half" ? 90 : 120;
     segmentRunning[game.roomCode] = true;
@@ -1209,6 +1215,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           // Advance state
           game.calendarIndex += 1;
           game.matchweek += 1;
+          clearMatchCheckpoint(game);
           logCalendarAdvance(game, io, "league_finalized", "week_end");
           game.lastPlayedAt = new Date().toISOString();
           game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
@@ -1742,6 +1749,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       matchweek: game.matchweek,
       type: entry.type,
     });
+    // O checkpoint anterior é de outra jornada: não pode sobreviver para ser
+    // aplicado a estas fixtures diferentes.
+    clearMatchCheckpoint(game);
 
     try {
       await runMatchSegment(game, 1, 45);

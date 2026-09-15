@@ -7,6 +7,7 @@ import { currentEpoch, getSeasonEndMatchweek } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { getOfflineCoaches } from "./presenceHelpers";
 import {
+  applyMatchCheckpoint,
   backfillSeats,
   ensureRoomStateTables,
   loadEventSeq,
@@ -1240,51 +1241,20 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
 
               // Ponto de controlo do jogo em curso: repõe golos/eventos/lineups
               // e o estado transitório mínimo para o segmento retomar no minuto
-              // seguinte em vez de recomeçar 0-0.
-              if (st["matchCheckpoint"]) {
+              // seguinte em vez de recomeçar 0-0. Só se o checkpoint for desta
+              // jornada e destes jogos — um checkpoint velho aplicado às
+              // fixtures novas marcava minutos nunca jogados e a partida era
+              // ignorada minuto a minuto (ver roomStateHelpers.applyMatchCheckpoint).
+              if (st["matchCheckpoint"] && st["matchCheckpoint"] !== "null") {
                 try {
                   const cp = JSON.parse(st["matchCheckpoint"]);
-                  if (cp && typeof cp === "object") {
-                    game.matchCheckpoint = cp;
-                    if (cp.liveMinute != null)
-                      game.liveMinute = Number(cp.liveMinute);
-                    if (Array.isArray(cp.fixtures)) {
-                      for (let i = 0; i < game.currentFixtures.length; i++) {
-                        const saved = cp.fixtures[i];
-                        if (!saved) continue;
-                        const fx = game.currentFixtures[i];
-                        fx.finalHomeGoals = saved.finalHomeGoals ?? fx.finalHomeGoals ?? 0;
-                        fx.finalAwayGoals = saved.finalAwayGoals ?? fx.finalAwayGoals ?? 0;
-                        if (Array.isArray(saved.events) && saved.events.length)
-                          fx.events = saved.events;
-                        if (Array.isArray(saved.homeLineup) && saved.homeLineup.length)
-                          fx.homeLineup = saved.homeLineup;
-                        if (Array.isArray(saved.awayLineup) && saved.awayLineup.length)
-                          fx.awayLineup = saved.awayLineup;
-                        if (saved._t1) fx._t1 = saved._t1;
-                        if (saved._t2) fx._t2 = saved._t2;
-                        if (Array.isArray(saved._subbedOut))
-                          fx._subbedOut = new Set(saved._subbedOut);
-                        if (
-                          saved._yellowCards &&
-                          typeof saved._yellowCards === "object" &&
-                          !Array.isArray(saved._yellowCards)
-                        )
-                          fx._yellowCards = { ...saved._yellowCards };
-                        else if (Array.isArray(saved._yellowCards))
-                          fx._yellowCards = Object.fromEntries(
-                            saved._yellowCards.map((id: any) => [id, 1]),
-                          );
-                        if (typeof saved._homePossession === "number")
-                          fx._homePossession = saved._homePossession;
-                        if (typeof saved._awayPossession === "number")
-                          fx._awayPossession = saved._awayPossession;
-                        if (Array.isArray(saved._simulatedMinutes))
-                          fx._simulatedMinutes = new Set(saved._simulatedMinutes);
-                      }
-                    }
+                  if (applyMatchCheckpoint(game, cp)) {
                     console.log(
                       `[gameManager] ⏱ Checkpoint restaurado (room ${roomCode}): minuto=${cp.liveMinute} fase=${cp.phase}`,
+                    );
+                  } else {
+                    console.warn(
+                      `[gameManager] ⏱ Checkpoint descartado (room ${roomCode}): não é desta jornada/jogos (época ${cp?.season} slot ${cp?.calendarIndex} vs ${game.season}/${game.calendarIndex})`,
                     );
                   }
                 } catch (cpErr: any) {

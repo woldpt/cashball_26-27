@@ -15,6 +15,10 @@
  *   F6 — waitForPresence: bloqueia e resolve quando todos voltam
  *   F7 — room_events: append numerado + replay reconstrói fase/cursor
  *   F8 — saveMatchCheckpoint: golos/minuto sobrevivem ao round-trip
+ *   F9 — applyMatchCheckpoint: checkpoint de OUTRA jornada/jogos é recusado
+ *        (era este o bug do dilúvio de "minuto N já simulado": o checkpoint
+ *        velho era colado às fixtures novas e a partida não jogava nada)
+ *   F10 — lastSimulatedMinute: fallback do cursor de retoma
  *
  * Run: cd server && npm run test:session-freeze
  */
@@ -34,6 +38,8 @@ const {
   replayEventsSince,
   applyRoomEvent,
   saveMatchCheckpoint,
+  applyMatchCheckpoint,
+  lastSimulatedMinute,
   ensureRoomStateTables,
   PRESENCE_GRACE_MS,
 } = require("../roomStateHelpers.ts");
@@ -245,4 +251,72 @@ test("F8 — saveMatchCheckpoint guarda minuto/golos para retomar", async () => 
   assert.equal(cp.fixtures[0].events.length, 1);
   assert.equal(cp.fixtures[0]._t2.formation, "4-3-3");
   db.close();
+});
+
+// ── F9 ──────────────────────────────────────────────────────────────────────
+test("F9 — checkpoint de outra jornada/jogos é recusado", () => {
+  const cpOf = (season: number, slot: number) => ({
+    season,
+    calendarIndex: slot,
+    liveMinute: 45,
+    phase: "match_first_half",
+    fixtures: [
+      {
+        homeTeamId: HOME,
+        awayTeamId: AWAY,
+        finalHomeGoals: 2,
+        finalAwayGoals: 1,
+        events: [{ minute: 12, type: "goal" }],
+        _simulatedMinutes: Array.from({ length: 45 }, (_, i) => i + 1),
+      },
+    ],
+  });
+
+  // Jornada seguinte: fixtures novas (mesmo par, mas outro slot).
+  const game: any = makeGame({ calendarIndex: 4, season: 1 });
+  game.currentFixtures = [{ homeTeamId: HOME, awayTeamId: AWAY }];
+  assert.equal(
+    applyMatchCheckpoint(game, cpOf(1, 3)),
+    false,
+    "slot diferente não pode aplicar",
+  );
+  assert.equal(
+    (game.currentFixtures[0] as any)._simulatedMinutes,
+    undefined,
+    "minutos da jornada nova ficam limpos",
+  );
+  assert.equal(game.liveMinute, 27, "cursor da jornada nova intacto");
+
+  // Outra época.
+  assert.equal(applyMatchCheckpoint(game, cpOf(2, 4)), false);
+
+  // Jogos diferentes (troca de adversário) no mesmo slot.
+  const otherPair = cpOf(1, 4);
+  otherPair.fixtures[0].awayTeamId = 999;
+  assert.equal(applyMatchCheckpoint(game, otherPair), false);
+
+  // Checkpoint DESTA jornada e DESTES jogos: aplica.
+  assert.equal(applyMatchCheckpoint(game, cpOf(1, 4)), true);
+  assert.equal((game.currentFixtures[0] as any).finalHomeGoals, 2);
+  assert.equal((game.currentFixtures[0] as any)._simulatedMinutes.size, 45);
+  assert.equal(game.liveMinute, 45);
+
+  // Lixo não rebenta.
+  assert.equal(applyMatchCheckpoint(game, null), false);
+  assert.equal(applyMatchCheckpoint(game, { fixtures: "nope" }), false);
+});
+
+// ── F10 ─────────────────────────────────────────────────────────────────────
+test("F10 — lastSimulatedMinute alimenta o cursor de retoma", () => {
+  const game: any = makeGame({ liveMinute: null });
+  game.currentFixtures = [
+    { homeTeamId: HOME, awayTeamId: AWAY, _simulatedMinutes: new Set([1, 2, 3]) },
+    { homeTeamId: 30, awayTeamId: 40, _simulatedMinutes: new Set([1, 2, 3, 4, 5]) },
+    { homeTeamId: 50, awayTeamId: 60 },
+  ];
+  assert.equal(lastSimulatedMinute(game), 5);
+  // Retoma: nunca começa em 1 com o segmento todo marcado.
+  const from = Math.max(1, (game.liveMinute ?? lastSimulatedMinute(game)) + 1);
+  assert.equal(from, 6);
+  assert.equal(lastSimulatedMinute(makeGame()), 0);
 });

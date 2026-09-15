@@ -1,3 +1,15 @@
+## Dilúvio de "minuto N já simulado" (fix): checkpoint sem identidade
+
+- **Sintoma:** centenas de `⚠ minuto 1 já simulado nesta fixture — ignorado` durante o intervalo. A conta bate certo: **16 jogos × 45 minutos = 720 linhas** para UMA chamada de `runMatchSegment(1,45)` em que todos os minutos já estavam marcados — o jogo "jogava" 45 minutos em ~0 ms e fechava a jornada a 0-0.
+- **Causa (minha, do commit da retoma):** o `matchCheckpoint` era guardado/restaurado **sem identidade** e aplicado por posição no array. Um checkpoint de uma jornada anterior colava `_simulatedMinutes` (1..45) às fixtures NOVAS no load (`gamePhase` restaurado = `lobby`), e o `startWeekOnce` seguinte marcava tudo como já simulado. O cursor `liveMinute` em falta agravava: `from = max(1, 0+1) = 1`.
+- **Fix (3 guardas independentes):**
+  1. `saveMatchCheckpoint` grava `season` + `calendarIndex` + casa/fora de cada jogo; `applyMatchCheckpoint` (puro, testável) **recusa** o que não for desta jornada e destes jogos — e não toca nas fixtures quando recusa.
+  2. `clearMatchCheckpoint` no arranque de cada semana (`startWeekOnce`) e no fim de liga/taça/amigável: o checkpoint não sobrevive à substituição das fixtures.
+  3. Retoma com fallback: `from = max(1, (liveMinute ?? lastSimulatedMinute(game)) + 1)` — nunca recomeça em 1 com o segmento marcado.
+  Aviso do motor deduplicado por minuto/fixture e com o segmento (`segmento 1-45`) para identificar quem re-simula.
+- **Testes:** `test:session-freeze` 10/10 (F9 recusa checkpoint de outro slot/época/jogos; F10 fallback do cursor). `test:engine-unit` 19/19, `test:crash-recovery` ✅, `test:connect-smoke` ✅.
+- **Nota:** `saves/gonfig1/game_FGPQH6.db` (deste checkout) mostra o padrão `fase=lobby` com `minuto=41` residual — rooms escritos antes deste fix podem ter um checkpoint envenenado na DB; a partir daqui é recusado no load. Uma jornada já fechada a 0-0 por este bug não se recupera sozinha (os resultados ficaram gravados).
+
 ## Causa raiz do "não consigo entrar": identificador mal qualificado em index.ts (fix, meu)
 
 - **Bug (meu, produção):** no commit do congelamento adicionei `emitPresencePause,` aos deps de `registerAdminSocketHandlers`, mas o `const`/namespace ficou por qualificar (`roomState.emitPresencePause`). `server/index.ts` tem `// @ts-nocheck` na linha 1 → **nem `typecheck` nem `build` viram nada**. Em runtime, o callback de `connection` rebentava (`ReferenceError: emitPresencePause is not defined`) e o socket.io fechava a ligação: nenhum cliente entrava em sala nenhuma. Corrigido no `1489e51` (não por mim).

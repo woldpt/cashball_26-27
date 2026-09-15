@@ -551,6 +551,8 @@ export function applyRoomEvent(game: ActiveGame, evt: { type: string; payload: a
 export function saveMatchCheckpoint(game: ActiveGame): void {
   if (!game.currentFixtures || game.currentFixtures.length === 0) return;
   const checkpoint = {
+    season: game.season,
+    calendarIndex: game.calendarIndex,
     liveMinute: game.liveMinute ?? null,
     phase: game.gamePhase,
     fixtures: game.currentFixtures.map((f: any) => ({
@@ -565,7 +567,7 @@ export function saveMatchCheckpoint(game: ActiveGame): void {
       _t2: f._t2 || null,
       _minute: f._minute ?? null,
       _subbedOut: f._subbedOut ? [...f._subbedOut] : [],
-      _yellowCards: f._yellowCards ? { ...f._yellowCards } : {},
+      _yellowCards: f._yellowCards ? [...f._yellowCards] : [],
       _homePossession: f._homePossession ?? 50,
       _awayPossession: f._awayPossession ?? 50,
       _simulatedMinutes: f._simulatedMinutes ? [...f._simulatedMinutes] : [],
@@ -578,4 +580,83 @@ export function saveMatchCheckpoint(game: ActiveGame): void {
       if (err) console.error(`[roomState] saveMatchCheckpoint:`, err.message);
     },
   );
+}
+
+/** Apaga o checkpoint (fim de jornada / fixtures substituídas). */
+export function clearMatchCheckpoint(game: ActiveGame): void {
+  game.matchCheckpoint = null;
+  game.db.run(
+    "INSERT OR REPLACE INTO game_state (key, value) VALUES ('matchCheckpoint', 'null')",
+    () => {},
+  );
+}
+
+/**
+ * Aplica um checkpoint carregado da DB à projeção — mas só se for DESTA
+ * jornada e DESTES jogos. Devolve false (e ignora tudo) quando não bate certo:
+ * é o caso do checkpoint que ficou para trás e era colado às fixtures novas
+ * pela posição no array, marcando minutos nunca jogados.
+ */
+export function applyMatchCheckpoint(game: ActiveGame, cp: any): boolean {
+  if (!cp || typeof cp !== "object" || !Array.isArray(cp.fixtures)) return false;
+  const fixtures = game.currentFixtures || [];
+  if (fixtures.length === 0 || cp.fixtures.length !== fixtures.length) return false;
+  if (
+    typeof cp.season === "number" &&
+    Number.isFinite(cp.season) &&
+    cp.season !== game.season
+  ) {
+    return false;
+  }
+  if (
+    typeof cp.calendarIndex === "number" &&
+    Number.isFinite(cp.calendarIndex) &&
+    cp.calendarIndex !== game.calendarIndex
+  ) {
+    return false;
+  }
+  for (let i = 0; i < fixtures.length; i++) {
+    const a: any = fixtures[i];
+    const b = cp.fixtures[i];
+    if (!b) return false;
+    if (a.homeTeamId !== b.homeTeamId || a.awayTeamId !== b.awayTeamId) return false;
+  }
+
+  game.matchCheckpoint = cp;
+  if (cp.liveMinute != null) game.liveMinute = Number(cp.liveMinute);
+  for (let i = 0; i < fixtures.length; i++) {
+    const saved = cp.fixtures[i];
+    const fx: any = fixtures[i];
+    fx.finalHomeGoals = saved.finalHomeGoals ?? fx.finalHomeGoals ?? 0;
+    fx.finalAwayGoals = saved.finalAwayGoals ?? fx.finalAwayGoals ?? 0;
+    if (Array.isArray(saved.events) && saved.events.length) fx.events = saved.events;
+    if (Array.isArray(saved.homeLineup) && saved.homeLineup.length)
+      fx.homeLineup = saved.homeLineup;
+    if (Array.isArray(saved.awayLineup) && saved.awayLineup.length)
+      fx.awayLineup = saved.awayLineup;
+    if (saved._t1) fx._t1 = saved._t1;
+    if (saved._t2) fx._t2 = saved._t2;
+    if (Array.isArray(saved._subbedOut)) fx._subbedOut = new Set(saved._subbedOut);
+    if (Array.isArray(saved._yellowCards)) fx._yellowCards = new Set(saved._yellowCards);
+    if (typeof saved._homePossession === "number")
+      fx._homePossession = saved._homePossession;
+    if (typeof saved._awayPossession === "number")
+      fx._awayPossession = saved._awayPossession;
+    if (Array.isArray(saved._simulatedMinutes))
+      fx._simulatedMinutes = new Set(saved._simulatedMinutes);
+  }
+  return true;
+}
+
+/** Minuto mais alto já simulado nas fixtures em curso (fallback quando o
+ *  cursor `liveMinute` se perdeu) — sem isto a retoma recomeçava em 1 com os
+ *  minutos todos marcados e a partida não jogava nada. */
+export function lastSimulatedMinute(game: ActiveGame): number {
+  let max = 0;
+  for (const f of game.currentFixtures || []) {
+    const set = (f as any)?._simulatedMinutes;
+    if (!set || typeof set[Symbol.iterator] !== "function") continue;
+    for (const m of set) if (typeof m === "number" && m > max) max = m;
+  }
+  return max;
 }

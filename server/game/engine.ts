@@ -2238,9 +2238,16 @@ export async function simulateMatchSegment(
     // — `goalScoredThisMinute` só protege dentro de uma passagem.
     const alreadySimulated = fixture._simulatedMinutes?.has(minute);
     if (alreadySimulated) {
-      console.warn(
-        `[${game?.roomCode}] ⚠ minuto ${minute} já simulado nesta fixture — ignorado`,
-      );
+      // Aviso uma vez por minuto/fixture (um segmento inteiro já simulado são
+      // 45 linhas por jogo × N jogos e enchia o log). Inclui o segmento para
+      // identificar de imediato quem re-simulou.
+      const warned: Set<number> = (fixture._dupMinuteWarned ??= new Set<number>()) as Set<number>;
+      if (!warned.has(minute)) {
+        warned.add(minute);
+        console.warn(
+          `[${game?.roomCode}] ⚠ minuto ${minute} já simulado nesta fixture (segmento ${startMin}-${endMin}) — ignorado`,
+        );
+      }
     } else {
       (fixture._simulatedMinutes ??= new Set<number>()).add(minute);
       await processMatchMinute({
