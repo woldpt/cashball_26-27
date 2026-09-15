@@ -1,3 +1,9 @@
+## Jornal: reacções dos adeptos com conteúdo editorial (2026-09-15)
+
+- As notícias pós-jogo deixaram de mostrar apenas uma frase: cada uma das 9 variantes de humor tem agora dois parágrafos editoriais próprios, além do contexto do resultado, adversário, jornada/ronda, apito final e bilheteira.
+- O texto usa apenas dados reais disponíveis no resultado e mantém a variação determinística; as quebras de parágrafo são visíveis no detalhe do Jornal.
+- Checks: eslint/JSDoc, `check:types`, teste directo das 9 variantes (>500 caracteres), build Vite, harness Jornal retrato `5/5`, paisagem `6/6`, screenshots 390/667 revistos.
+
 ## Jornal: pesquisa rápida nos tópicos (2026-09-15)
 
 - O cabeçalho `Tópicos` foi substituído por uma pesquisa rápida que filtra imediatamente a lista enquanto se escreve.

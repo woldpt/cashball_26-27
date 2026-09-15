@@ -238,6 +238,27 @@ async function checkQuickSearch() {
   };
 }
 
+/** A reacção pós-jogo deve ter contexto editorial completo. */
+async function checkMoodArticle() {
+  const row = [...document.querySelectorAll("ol button")].find((b) =>
+    b.textContent.includes("Derrota Vergonhosa 0–3"),
+  );
+  row?.click();
+  await new Promise((r) => setTimeout(r, 60));
+  const body = document.querySelector(
+    'section[aria-label="Corpo da notícia"] p',
+  )?.textContent;
+  return {
+    bodyLength: body?.length || 0,
+    ok:
+      !!row &&
+      (body?.length || 0) > 500 &&
+      body?.includes("Associação Desportiva do Farol") &&
+      body?.includes("bilheteira") &&
+      body?.includes("apito final"),
+  };
+}
+
 /** Abrir uma notícia no JournalTab tem de baixar o badge no outro consumidor. */
 async function checkSharedReads() {
   const before = badgeText();
@@ -312,8 +333,14 @@ function measure() {
 setTimeout(async () => {
   const report = measure();
   report.quickSearch = await checkQuickSearch();
+  report.moodArticle = await checkMoodArticle();
   report.inboxBadge = await checkSharedReads();
-  if (!report.quickSearch.ok || !report.inboxBadge.ok) report.verdict = "FAIL";
+  if (
+    !report.quickSearch.ok ||
+    !report.moodArticle.ok ||
+    !report.inboxBadge.ok
+  )
+    report.verdict = "FAIL";
   const el = document.getElementById("report");
   el.setAttribute("data-status", "done");
   el.textContent = "REPORT:" + JSON.stringify(report, null, 2);

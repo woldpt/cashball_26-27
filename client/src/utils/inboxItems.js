@@ -32,6 +32,68 @@ export const MOOD_TITLES = {
   draw_bitter: "Empate Amargo",
 };
 
+const MOOD_COPY = {
+  win: [
+    "A vitória devolve tranquilidade à bancada e confirma que o grupo soube responder quando era preciso. Não foi apenas uma linha no resultado: foi uma noite em que o clube voltou a sentir que o trabalho da semana tem uma recompensa concreta.",
+    "Entre aplausos e comentários à saída, os adeptos deixam um pedido simples: mais noites assim. O triunfo dá margem para preparar a próxima jornada com confiança, sem apagar a exigência que acompanha cada camisola.",
+  ],
+  win_big: [
+    "A bancada recebeu o resultado como uma declaração de força. Vencer um adversário do topo transforma três pontos numa mensagem para toda a divisão e dá ao balneário uma memória capaz de alimentar a confiança durante várias jornadas.",
+    "A euforia não vem apenas do marcador: vem da sensação de que o clube esteve à altura de um teste grande. Os adeptos saem a discutir esta noite como uma possível viragem na época, embora saibam que a consistência será agora a prova seguinte.",
+  ],
+  win_upset: [
+    "Foi uma daquelas vitórias que fazem a cidade parar para olhar. O favoritismo estava do outro lado, mas a bancada encontrou razões para acreditar e acabou por festejar uma noite que pode ficar entre as melhores recordações desta época.",
+    "Os adeptos já transformaram o triunfo numa história para contar: um clube menos cotado bateu a porta grande e entrou sem pedir licença. A direção ganha entusiasmo, o balneário ganha crédito e a próxima jornada será disputada sob uma expectativa renovada.",
+  ],
+  loss: [
+    "A derrota deixa desilusão, mas não provoca uma rutura com a equipa. A bancada reconhece que o resultado ficou aquém do desejado e espera uma resposta rápida, sobretudo na forma como o grupo vai reagir ao primeiro obstáculo da próxima semana.",
+    "À saída do estádio, o ambiente é de silêncio e análise. Os adeptos não querem dramatizar uma noite isolada, mas também não escondem que a camisola exige mais: a próxima jornada terá de mostrar se este foi apenas um tropeção ou o início de um problema.",
+  ],
+  loss_shameful: [
+    "A bancada não esconde a revolta. Perder já seria difícil de aceitar; sair com este resultado frente a um adversário que estava ao alcance transforma a noite numa ferida aberta e aumenta a pressão sobre todos os que têm de explicar o que aconteceu.",
+    "Os assobios no final dizem mais do que qualquer comunicado. Os adeptos esperavam atitude, concentração e respeito pelo emblema, e agora exigem uma resposta à altura. O próximo jogo deixou de ser apenas mais uma jornada: tornou-se a primeira oportunidade para reparar a confiança perdida.",
+  ],
+  loss_expected: [
+    "A derrota custa, mas a bancada sabe reconhecer o tamanho do desafio. O adversário confirmou o seu estatuto e os adeptos não confundem um resultado difícil com falta de ambição: esperam antes que a equipa retire lições e volte a discutir pontos com os rivais directos.",
+    "O ambiente é de frustração controlada. Ninguém gosta de perder, mas a expectativa estava condicionada pela força do adversário. A exigência mantém-se intacta e passa agora por recuperar o foco, proteger a confiança do grupo e não deixar que uma noite complicada defina a época.",
+  ],
+  draw: [
+    "O empate deixa a bancada dividida entre o ponto conquistado e a sensação de que havia espaço para mais. A equipa evita a derrota, mas os adeptos querem ver maior coragem e clareza quando chegar a próxima oportunidade para fechar um jogo.",
+    "No final, as conversas prolongam-se porque o resultado não oferece uma resposta simples. Há motivos para aceitar o ponto, mas também a convicção de que o clube precisa de transformar boas intenções em vitórias se quiser subir na tabela.",
+  ],
+  draw_honorable: [
+    "A bancada recebe o empate com respeito. Travar um adversário de topo confirma que a equipa pode competir ao mais alto nível e dá aos adeptos uma razão séria para acreditar, mesmo que a vitória tenha escapado nos detalhes.",
+    "O ponto sabe a prova superada. Não há festa de vitória, mas há aplausos para uma equipa que não se escondeu perante um teste exigente. O desafio passa agora por repetir esta personalidade contra adversários de todas as dimensões.",
+  ],
+  draw_bitter: [
+    "O empate é recebido como uma oportunidade desperdiçada. Contra um adversário que a bancada esperava vergar, deixar escapar a vitória pesa quase como uma derrota e reacende a discussão sobre a capacidade do clube para assumir os jogos que tem obrigação de controlar.",
+    "As bancadas saem inquietas, não por falta de luta, mas porque o calendário oferecia uma ocasião importante. O ponto entra nas contas, mas não apaga a sensação de que a equipa precisava de mais e terá de provar isso já na próxima jornada.",
+  ],
+};
+
+/**
+ * Cria o corpo editorial da reação pós-jogo sem inventar estatísticas.
+ * @param {object} mood contexto final do jogo
+ * @returns {string}
+ */
+export function buildMoodNewsBody(mood) {
+  const variant = mood?.variant || mood?.outcome || "draw";
+  const copy = MOOD_COPY[variant] || MOOD_COPY.draw;
+  const score = `${mood?.myGoals ?? 0}–${mood?.oppGoals ?? 0}`;
+  const opponent = mood?.opponentName || "o adversário";
+  const round = mood?.roundLabel || "O último jogo";
+  const revenue =
+    mood?.ticketRevenue != null
+      ? ` A bilheteira rendeu ${formatCurrency(mood.ticketRevenue)}, uma ajuda concreta para preparar a próxima jornada.`
+      : " A tesouraria fica agora com a responsabilidade de transformar este resultado em margem para o trabalho da próxima jornada.";
+
+  return [
+    `${round} terminou com um ${score} frente a ${opponent}. ${copy[0]}`,
+    copy[1],
+    `O Jornal regista o estado de espírito da massa adepta depois do apito final. A reacção não desaparece com o fim do jogo: vai acompanhar os treinos, as decisões do treinador e a expectativa em torno do próximo desafio.${revenue}`,
+  ].join("\n\n");
+}
+
 /**
  * Categoria de uma linha do `globalNews` (club_news ou transfer_history).
  * @param {object} n linha com `source`/`type`
