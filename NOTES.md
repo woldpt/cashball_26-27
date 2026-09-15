@@ -1,3 +1,9 @@
+## Jogos de outras equipas sem eventos de chances (2026-09-15)
+
+- `LiveFixtureRow` deixa de mostrar eventos `chance` no resumo inferior dos jogos, mantendo golos, cartões, lesões e substituições.
+- A cronologia e os detalhes do jogo principal continuam a receber todos os eventos.
+- Checks: ESLint do ficheiro, `check:types` e `git diff --check` OK.
+
 ## Efeitos de golo sem texto extra (2026-09-15)
 
 - O overlay de golo mantém apenas `GOLO!` nos golos próprios; equipa, marcador e todos os textos do golo adversário foram removidos.

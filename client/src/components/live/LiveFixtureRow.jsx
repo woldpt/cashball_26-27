@@ -64,13 +64,13 @@ function LiveFixtureRowInner({
     return { homeGoals: home, awayGoals: away };
   }, [matchEvents, liveMinute]);
 
-  const { lastHomeEvent, lastAwayEvent } = useMemo(
-    () => ({
-      lastHomeEvent: getMatchLastEventText(matchEvents, liveMinute, "home"),
-      lastAwayEvent: getMatchLastEventText(matchEvents, liveMinute, "away"),
-    }),
-    [matchEvents, liveMinute],
-  );
+  const { lastHomeEvent, lastAwayEvent } = useMemo(() => {
+    const summaryEvents = matchEvents.filter((event) => event.type !== "chance");
+    return {
+      lastHomeEvent: getMatchLastEventText(summaryEvents, liveMinute, "home"),
+      lastAwayEvent: getMatchLastEventText(summaryEvents, liveMinute, "away"),
+    };
+  }, [matchEvents, liveMinute]);
 
   const homeFlashing = isFlashing(
     goalFlashRef,
