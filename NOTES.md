@@ -1,3 +1,7 @@
+## Briefing: mais altura no campo do adversário (fix)
+- Avançados cortados: linha ATA a 80% + marcador com ~70px transbordava do contentor (`h-64`/`lg:h-[280px]`). Só `OpponentFormation.jsx`: `h-72`/`lg:h-[320px]` (curtos `h-44`/`lg:h-[200px]`); relvado partilhado intacto.
+- Checks: `eslint` no ficheiro + `check:types` OK. Tweak de altura, sem mobile-resp-check.
+
 ## Jornal: notícias ricas, entidades e imagens
 
 - O `globalNews` passa a transportar `team_id`, `player_photo`/posição e os IDs vendedor/comprador; `inboxItems` cria artigos locais variados por tipo, com segmentos clicáveis para jogadores/equipas e media de foto/brasões.
