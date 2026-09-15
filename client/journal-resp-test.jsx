@@ -219,7 +219,7 @@ async function checkSharedReads() {
   // Uma linha SEM bandeira vermelha (essas só saem da lista ao serem
   // respondidas) — o título identifica-a no fixture.
   const row = [...document.querySelectorAll("ol button")].find((b) =>
-    b.textContent.includes("Empréstimo Bancário"),
+    b.textContent.includes("Contas bancárias"),
   );
   row?.click();
   await new Promise((r) => setTimeout(r, 60));

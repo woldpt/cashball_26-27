@@ -256,7 +256,7 @@ export function JournalTab({
   );
 
   return (
-    <div className="space-y-2 short:space-y-1.5">
+    <div className="space-y-2 short:space-y-1.5 lg:flex lg:min-h-[calc(100dvh-var(--header-h)-3rem)] lg:flex-col">
       {/* ── Barra de título ─────────────────────────────────────────── */}
       <div className="rounded-sm bg-surface-container border border-outline-variant/20 px-3 py-2 short:py-1.5 flex items-center justify-between gap-2">
         <h1 className="min-w-0 truncate font-headline text-base short:text-sm font-black uppercase tracking-tight text-tertiary">
@@ -304,8 +304,8 @@ export function JournalTab({
         </Button>
       </div>
 
-      <div className="grid gap-2 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
-        <section aria-label="Tópicos" className="min-w-0 space-y-2">
+      <div className="grid gap-2 lg:flex-1 lg:min-h-0 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-stretch">
+        <section aria-label="Tópicos" className="min-w-0 space-y-2 lg:flex lg:min-h-0 lg:flex-col">
           <div className="flex items-center justify-between rounded-sm bg-surface-container-high/50 px-2 py-1.5">
             <span className="text-[10px] font-black uppercase tracking-widest text-tertiary">
               Tópicos
@@ -327,7 +327,7 @@ export function JournalTab({
           }
         />
       ) : (
-        <ol className="max-h-64 short:max-h-44 overflow-y-auto rounded-sm border border-outline-variant/20 bg-surface-container-low divide-y divide-outline-variant/15">
+        <ol className="max-h-64 short:max-h-44 overflow-y-auto rounded-sm border border-outline-variant/20 bg-surface-container-low divide-y divide-outline-variant/15 lg:max-h-none lg:min-h-0 lg:flex-1">
           {visible.map((it) => {
             const active = inbox.selected?.id === it.id;
             const unread = inbox.isUnread(it);
@@ -383,12 +383,12 @@ export function JournalTab({
           </div>
         </section>
 
-        <section aria-label="Corpo da notícia" className="min-w-0 space-y-2">
+        <section aria-label="Corpo da notícia" className="min-w-0 space-y-2 lg:flex lg:min-h-0 lg:flex-col">
           {/* ── Detalhe ──────────────────────────────────────────────── */}
       {inbox.selected && (
         <section
           aria-live="polite"
-          className="rounded-sm border border-outline-variant/20 bg-surface-container px-3 py-2.5 short:py-2"
+          className="rounded-sm border border-outline-variant/20 bg-surface-container px-3 py-2.5 short:py-2 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col"
         >
           <h2 className="text-center font-headline text-base short:text-sm font-black tracking-tight text-tertiary">
             <RichNewsText

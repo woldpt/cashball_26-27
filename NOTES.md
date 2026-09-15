@@ -1,3 +1,10 @@
+## Jornal: colunas desktop preenchem a altura disponível (2026-09-15)
+
+- A partir de `lg`, o Jornal usa a altura disponível abaixo do cabeçalho: as colunas de tópicos e corpo ficam esticadas, a lista ocupa o espaço livre e faz scroll interno quando necessário.
+- Mobile mantém o layout empilhado e os limites de altura anteriores.
+- O harness passou a procurar o título actual `Contas bancárias` depois dos últimos commits editoriais do Jornal.
+- Checks: eslint/JSDoc, `check:types`, build Vite, harness Jornal retrato `5/5`, paisagem `6/6`, teste desktop `1280x900` e screenshots 390/667/1280 revistos.
+
 ## Amigáveis sem etiqueta de Taça no intervalo (2026-09-15)
 
 - O indicador técnico `isCupMatch` também cobre amigáveis, mas o `MatchPage` tratava-os como Taça na etiqueta e no botão de avançar; a ronda `0`/nome amigável passa a excluir esses ramos.
