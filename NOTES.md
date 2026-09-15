@@ -1,3 +1,9 @@
+## Jornal: mudança de clube cria contexto novo
+
+- `handleAcceptJobOffer` grava no novo `team_id` a notícia `welcome` “👋 Novo treinador no [Clube]”, com o nome do treinador e o texto editorial; após o insert emite `globalNewsUpdated`, o cliente troca o feed e a notícia fica não lida/seleccionada naturalmente.
+- O histórico antigo não é apagado: o filtro por clube deixa de o mostrar, preservando a BD.
+- Checks: server `typecheck` OK; `audit:socketio` 0 erros / 95 avisos pré-existentes.
+
 ## Jornal: notícia de boas-vindas em salas novas
 
 - Ao atribuir a primeira equipa ao fundador de uma sala recém-criada, é gravada uma notícia `welcome` persistente: “📰 Bem-vindo ao [Clube]”, sobre a bancada, o plantel e a época. Reentradas e treinadores convidados não criam duplicados.

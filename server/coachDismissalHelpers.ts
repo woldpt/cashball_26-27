@@ -900,6 +900,28 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     );
     if (!team) return;
 
+    // O clube novo recebe uma notícia de boas-vindas persistente. Fica ligada
+    // ao novo team_id, por isso o filtro do Jornal troca de contexto sem
+    // apagar o histórico antigo da sala.
+    game.db.run(
+      `INSERT INTO club_news (team_id, type, title, description, matchweek, year)
+       VALUES (?, 'welcome', ?, ?, ?, ?)`,
+      [
+        team.id,
+        `👋 Novo treinador no ${team.name}`,
+        `A direcção entrega o projecto a ${coachName}. O plantel aguarda novas ideias e a bancada quer resultados.`,
+        game.matchweek,
+        game.year,
+      ],
+      (newsErr: any) => {
+        if (newsErr) {
+          console.warn(`[${game.roomCode}] welcome news failed:`, newsErr.message);
+          return;
+        }
+        io.to(game.roomCode).emit("globalNewsUpdated");
+      },
+    );
+
     if (player.socketId) {
       getRoomCoaches(game.roomCode, coachName)
         .catch((): string[] => [])
