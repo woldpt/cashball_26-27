@@ -1265,8 +1265,16 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                         if (saved._t2) fx._t2 = saved._t2;
                         if (Array.isArray(saved._subbedOut))
                           fx._subbedOut = new Set(saved._subbedOut);
-                        if (Array.isArray(saved._yellowCards))
-                          fx._yellowCards = new Set(saved._yellowCards);
+                        if (
+                          saved._yellowCards &&
+                          typeof saved._yellowCards === "object" &&
+                          !Array.isArray(saved._yellowCards)
+                        )
+                          fx._yellowCards = { ...saved._yellowCards };
+                        else if (Array.isArray(saved._yellowCards))
+                          fx._yellowCards = Object.fromEntries(
+                            saved._yellowCards.map((id: any) => [id, 1]),
+                          );
                         if (typeof saved._homePossession === "number")
                           fx._homePossession = saved._homePossession;
                         if (typeof saved._awayPossession === "number")

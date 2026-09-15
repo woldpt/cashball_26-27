@@ -565,7 +565,7 @@ export function saveMatchCheckpoint(game: ActiveGame): void {
       _t2: f._t2 || null,
       _minute: f._minute ?? null,
       _subbedOut: f._subbedOut ? [...f._subbedOut] : [],
-      _yellowCards: f._yellowCards ? [...f._yellowCards] : [],
+      _yellowCards: f._yellowCards ? { ...f._yellowCards } : {},
       _homePossession: f._homePossession ?? 50,
       _awayPossession: f._awayPossession ?? 50,
       _simulatedMinutes: f._simulatedMinutes ? [...f._simulatedMinutes] : [],

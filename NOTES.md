@@ -14,6 +14,10 @@
 - **Aviso de ambiente (não é código):** existe um `tsx index.ts` **de ontem (set 14)** a ocupar `*:3000` no host, fora do docker — o container `cashball-backend-1` não publica a porta. Quem ligue a `localhost:3000` fala com esse processo de código antigo. `ss -ltnp | grep 3000` + `kill <pid>` quando não estiver a ser usado.
 - Checks: client `lint` (só os 2 pré-existentes) + `check:types` OK; `test:mobile` 155/155 + landscape 186/186; server `typecheck` OK.
 
+## Crash 1.ª parte: `_yellowCards is not iterable` (fix)
+- Causa: `saveMatchCheckpoint` (`roomStateHelpers.ts`) fazia `[...f._yellowCards]`, mas o engine guarda amarelos como objeto (`Record<number,number>`, não iterável) — crash em todos os jogos à primeira gravação do checkpoint. Escrita passa a `{ ...f._yellowCards }`; restauro (`gameManager.ts`) repõe objeto com tolerância ao formato array legado.
+- Checks: server `typecheck` OK; harness tsx roundtrip escrita→restauro OK (populado/vazio/legado). **Por ativar:** prod corre de `dist/` → `build` + restart.
+
 ## ClubTab: "Jornal do Clube" → "Histórico do Clube"
 - A secção do ClubTab fazia confusão com a página Jornal (`JournalTab.jsx`, tab global da bancada). Renomeado só o visível (título do Panel + comentários + texto do tutorial); props/variáveis (`clubNews`, `groupedNews`, `NewsRow`) intactas para diff mínimo.
 - Checks: `eslint` nos ficheiros tocados OK + `check:types` OK (`lint` global só os 2 erros pré-existentes).
