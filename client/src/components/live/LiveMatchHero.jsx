@@ -90,6 +90,8 @@ export function LiveMatchHero({
 
   const hInfo = teams.find((t) => t.id === myMatch.homeTeamId);
   const aInfo = teams.find((t) => t.id === myMatch.awayTeamId);
+  // Amigável (ronda 0): sem prefixo "Taça ·" nem estética de taça.
+  const isFriendly = /amigavel/i.test(cupMatchRoundName || "");
   const isCupFinal = isCupMatch && cupMatchRoundName === "Final";
   const stadiumName = isCupFinal ? CUP_FINAL_STADIUM : hInfo?.stadium_name;
   // Cores das equipas para a cenografia de luz (fallbacks estáveis).
@@ -199,19 +201,13 @@ export function LiveMatchHero({
         <div className="flex items-center justify-between w-full mb-4">
           <span className="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant/50 font-black">
             {isCupMatch
-              ? `Taça · ${cupMatchRoundName}`
+              ? isFriendly ? cupMatchRoundName : `Taça · ${cupMatchRoundName}`
               : `${DIVISION_NAMES[hInfo?.division] || ""} · Jornada ${matchResults?.matchweek ?? "—"}`}
           </span>
           <div className="flex items-center gap-2">
-            {isPlayingMatch && (
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm bg-red-600 text-white text-[9px] font-black uppercase tracking-[0.2em] shadow-[0_0_12px_rgba(239,68,68,0.6)]">
-                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                AO VIVO
-              </span>
-            )}
             {!isPlayingMatch && isCupMatch && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[9px] font-black uppercase tracking-widest">
-                🏆 {cupMatchRoundName}
+                {isFriendly ? "🤝" : "🏆"} {cupMatchRoundName}
               </span>
             )}
           </div>
