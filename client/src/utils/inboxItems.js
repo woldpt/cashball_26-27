@@ -77,6 +77,123 @@ function formatNewsDate(news, fallbackDate) {
     : fallbackDate || formatInboxDate();
 }
 
+const partText = (value) => ({ type: "text", value: String(value ?? "") });
+const partPlayer = (player) => ({ type: "player", ...player });
+const partTeam = (team) => ({ type: "team", ...team });
+
+function plainParts(parts) {
+  return parts
+    .map((part) => (part.type === "text" ? part.value : part.label))
+    .join("");
+}
+
+function newsPlayer(n) {
+  return n?.player_id && n.player_name
+    ? {
+        id: n.player_id,
+        label: n.player_name,
+        photo: n.player_photo || n.photo || null,
+        position: n.player_position || n.position || "ATA",
+      }
+    : null;
+}
+
+function newsTeam(id, name) {
+  return id && name ? { id, label: name } : null;
+}
+
+function uniqueTeams(...teams) {
+  return teams.filter(
+    (team, index, all) =>
+      team && all.findIndex((candidate) => candidate?.id === team.id) === index,
+  );
+}
+
+function newsVariant(n, count) {
+  const seed = Number(n?.id) || String(n?.title || "").length;
+  return Math.abs(seed) % count;
+}
+
+function makeArticle(titleParts, bodyParts, player, teams) {
+  return {
+    title: plainParts(titleParts),
+    body: plainParts(bodyParts),
+    titleParts,
+    bodyParts,
+    media: { player, teams: uniqueTeams(...teams) },
+  };
+}
+
+function newsArticle(n, { owner, related, seller, buyer } = {}) {
+  const player = newsPlayer(n);
+  const type = String(n?.type || "");
+  const amount = n?.amount ? formatCurrency(n.amount) : null;
+  const description = String(n?.description || "").trim();
+  const teams = [owner, related, seller, buyer];
+  const p = player ? partPlayer(player) : partText(n?.player_name || "O jogador");
+  const o = owner ? partTeam(owner) : partText(n?.team_name || "o clube");
+  const r = related ? partTeam(related) : partText(n?.related_team_name || "o novo clube");
+  const b = buyer ? partTeam(buyer) : owner ? partTeam(owner) : r;
+  const s = seller ? partTeam(seller) : related ? partTeam(related) : null;
+  const value = amount || "um valor não divulgado";
+  let titleParts = [partText(n?.title || "Notícia")];
+  let bodyParts = [partText(description || n?.title || "Há novidades no clube.")];
+
+  if (type === "transfer_in" || type === "auction_won" || n?.source === "transfer") {
+    titleParts = [p, partText(" reforça "), b];
+    bodyParts = newsVariant(n, 3) === 0
+      ? [p, partText(" chega a "), b, partText(" vindo de "), s || partText("outro clube"), partText(` por ${value}.`)]
+      : newsVariant(n, 3) === 1
+        ? [partText("O mercado mexeu: "), p, partText(" é a nova aposta de "), b, partText(` numa operação de ${value}.`)]
+        : [p, partText(" muda-se para "), b, partText(` e dá mais opções ao plantel${amount ? ` por ${value}` : ""}.` )];
+  } else if (type === "transfer_out") {
+    titleParts = [p, partText(" deixa "), o];
+    bodyParts = [p, partText(" segue para "), r, partText(` numa transferência de ${value}.`)];
+  } else if (type === "auction_failed") {
+    titleParts = [partText("Leilão sem negócio: "), p];
+    bodyParts = [partText("A licitação de "), p, partText(" terminou sem comprador. "), partText(description || "O jogador continua disponível para uma próxima oportunidade.")];
+  } else if (type === "ticket_revenue") {
+    titleParts = [partText("Bilheteira de "), o];
+    bodyParts = [o, partText(` abriu as portas e arrecadou ${value}. `), partText(description || "A receita ajuda a financiar a próxima jornada.")];
+  } else if (type === "weekly_income") {
+    titleParts = [partText("Rendimento de "), o];
+    bodyParts = [o, partText(` recebeu ${value} de rendimento base. `), partText("Uma almofada importante para a semana de trabalho.")];
+  } else if (type === "wages") {
+    titleParts = [partText("Folha salarial: "), o];
+    bodyParts = [partText("A semana fecha com "), o, partText(` a pagar ${value} em salários. `), partText("É hora de manter o balneário competitivo sem perder o controlo das contas.")];
+  } else if (type === "stadium_upkeep") {
+    titleParts = [partText("Manutenção em "), o];
+    bodyParts = [o, partText(` investiu ${value} na manutenção do estádio. `), partText("Uma casa cuidada recebe melhor os seus adeptos.")];
+  } else if (type === "loan_interest" || type === "loan_principal") {
+    const label = type === "loan_interest" ? "juros" : "capital do empréstimo";
+    titleParts = [partText("Contas bancárias: "), o];
+    bodyParts = [o, partText(` pagou ${value} em ${label}. `), partText(description || "A dívida continua a pesar no orçamento semanal.")];
+  } else if (type === "stadium_build") {
+    titleParts = [partText("A casa cresce: "), o];
+    bodyParts = [o, partText(` ganhou mais lugares com um investimento de ${value}. `), partText(description || "Mais bancadas significam mais margem para a receita de bilheteira.")];
+  } else if (type === "academy") {
+    titleParts = [partText("Nova aposta: "), p];
+    bodyParts = [p, partText(" sobe da academia de "), o, partText(` e chega com margem para crescer${amount ? ` após um investimento de ${value}` : ""}.` )];
+  } else if (type === "renegotiation") {
+    titleParts = [p, partText(" renova com "), o];
+    bodyParts = [p, partText(" prolonga a ligação a "), o, partText(". O agente conseguiu melhores condições para manter o jogador focado.")];
+  } else if (type === "cost_cut") {
+    titleParts = [partText("Corte no plantel: "), p];
+    bodyParts = [o, partText(" libertou "), p, partText(" para aliviar a folha salarial. "), partText(description || "A tesouraria falou mais alto.")];
+  } else if (type === "cup_upset") {
+    titleParts = [o, partText(" elimina "), r];
+    bodyParts = [o, partText(" assinou a surpresa da ronda frente a "), r, partText(description ? `. ${description}.` : ". O favoritismo ficou pelo caminho.")];
+  } else if (type === "prize") {
+    titleParts = [partText("Prémio para "), o];
+    bodyParts = [o, partText(` recebe ${value}. `), partText(description || "O mérito desportivo também se sente nas contas do clube.")];
+  } else if (owner || player) {
+    titleParts = player && owner ? [p, partText(" — "), o] : [partText(n?.title || "Notícia")];
+    bodyParts = [owner ? o : p, partText(description ? `: ${description}.` : ". Há novidades a acompanhar no Jornal.")];
+  }
+
+  return makeArticle(titleParts, bodyParts, player, teams);
+}
+
 /**
  * Converte linhas do `globalNews.news` em itens informativos (só leitura).
  * Negócios fundidos: transfer_in/transfer_out + linha do histórico global
@@ -114,15 +231,6 @@ export function newsRowsToItems(rows, fallbackDate) {
   return items;
 }
 
-/** Origem do negócio em linguagem de balneário. */
-const DEAL_SOURCE_LABEL = {
-  auction: "leilão",
-  fixed: "mercado",
-  market: "mercado",
-  proposal: "cláusula",
-  npc: "clube NPC",
-};
-
 /** Tipos de club_news que descrevem o MESMO negócio da linha de transfer_history. */
 const DEAL_CLUB_TYPES = new Set([
   "transfer_in",
@@ -151,42 +259,24 @@ function dealKey(n) {
  * @param {object} t linha com `source === "transfer"`
  * @returns {string}
  */
-function dealBody(t) {
-  const bits = [];
-  const profile = [
-    t.description,
-    t.skill != null ? `skill ${t.skill}` : null,
-    t.is_star ? "⭐" : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-  if (profile) bits.push(profile);
-  const route = [t.seller_team_name, t.buyer_team_name]
-    .filter(Boolean)
-    .join(" → ");
-  const price = t.amount ? formatCurrency(t.amount) : null;
-  const via = DEAL_SOURCE_LABEL[t.type] || t.type || null;
-  if (route && price) bits.push(`${route} por ${price}${via ? ` (${via})` : ""}`);
-  else if (route) bits.push(route);
-  else if (price) bits.push(price);
-  return bits.join(" — ");
-}
-
 /**
  * Item único de um negócio concluído.
  * @param {object} t linha com `source === "transfer"`
  */
 function dealToItem(t, fallbackDate) {
-  const buyer = t.buyer_team_name || t.related_team_name;
+  const buyer = newsTeam(t.buyer_team_id || t.related_team_id, t.buyer_team_name || t.related_team_name);
+  const seller = newsTeam(t.seller_team_id, t.seller_team_name);
+  const article = newsArticle(t, {
+    owner: buyer,
+    buyer,
+    seller,
+    related: seller,
+  });
   return {
     id: `deal-${t.player_id}-${t.matchweek}`,
     cat: "market",
     date: formatNewsDate(t, fallbackDate),
-    title:
-      t.player_name && buyer
-        ? `${t.player_name} reforça ${buyer}`
-        : t.title || "Negócio fechado",
-    body: dealBody(t) || t.title || "",
+    ...article,
     redFlag: false,
     kind: "info",
     ref: null,
@@ -199,20 +289,14 @@ function dealToItem(t, fallbackDate) {
  * @param {object} c linha de club_news
  */
 function clubDealToItem(c, fallbackDate) {
-  const t = String(c.type || "");
-  const other = c.related_team_name;
-  const price = c.amount ? formatCurrency(c.amount) : null;
-  let route = "";
-  if (t === "transfer_in" && (other || price))
-    route = `Chega do ${other || "?"}${price ? ` por ${price}` : ""}.`;
-  else if (t === "transfer_out" && (other || price))
-    route = `Ruma ao ${other || "?"}${price ? ` por ${price}` : ""}.`;
+  const owner = newsTeam(c.team_id, c.team_name);
+  const related = newsTeam(c.related_team_id, c.related_team_name);
+  const article = newsArticle(c, { owner, related });
   return {
     id: `news-${c.source || "club"}-${c.id}`,
     cat: "market",
     date: formatNewsDate(c, fallbackDate),
-    title: c.title || "Notícia",
-    body: route || richBody(c),
+    ...article,
     redFlag: false,
     kind: "info",
     ref: null,
@@ -220,28 +304,18 @@ function clubDealToItem(c, fallbackDate) {
 }
 
 /**
- * Descrição + valor formatado (sem repetir o que já lá está).
- * @param {object} n linha do globalNews
- * @returns {string}
- */
-function richBody(n) {
-  const desc = String(n.description || "").trim();
-  const amt = n.amount ? formatCurrency(n.amount) : null;
-  if (desc && amt && !desc.includes("€")) return `${desc} · ${amt}.`;
-  return desc || amt || "";
-}
-
-/**
  * Item genérico de notícia (só leitura, corpo enriquecido).
  * @param {object} n linha do globalNews
  */
 function rowToItem(n, fallbackDate) {
+  const owner = newsTeam(n.team_id, n.team_name);
+  const related = newsTeam(n.related_team_id, n.related_team_name);
+  const article = newsArticle(n, { owner, related });
   return {
     id: `news-${n.source || "club"}-${n.id}`,
     cat: newsCategory(n),
     date: formatNewsDate(n, fallbackDate),
-    title: n.title || "Notícia",
-    body: richBody(n),
+    ...article,
     redFlag: false,
     kind: "info",
     ref: null,

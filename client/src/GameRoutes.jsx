@@ -468,6 +468,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                         topScorers={topScorers}
                         teamForms={teamForms}
                         players={players}
+                        onOpenTeamSquad={handleOpenTeamSquad}
                         onOpenPlayerHistory={(player) =>
                           socket.emit("requestPlayerHistory", {
                             playerId: player.id,

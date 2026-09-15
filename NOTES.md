@@ -1,3 +1,9 @@
+## Jornal: notícias ricas, entidades e imagens
+
+- O `globalNews` passa a transportar `team_id`, `player_photo`/posição e os IDs vendedor/comprador; `inboxItems` cria artigos locais variados por tipo, com segmentos clicáveis para jogadores/equipas e media de foto/brasões.
+- O detalhe do Jornal usa o histórico do jogador e o plantel da equipa, com `PlayerAvatar`/`TeamCrest`; a lista mantém-se compacta.
+- Checks: lint dos ficheiros tocados, `check:types`, server `typecheck` e self-check dos modelos — OK. `npm run lint` global continua bloqueado pelos 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx`).
+
 ## Jornal: datas em semana/ano
 
 - As linhas do Jornal passam a mostrar `S<semana>/<ano>` (por exemplo, `S1/2026`), incluindo avisos locais; notícias históricas usam a semana/ano guardada e linhas incompletas usam a semana actual.

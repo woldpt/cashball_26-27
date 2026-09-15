@@ -36,12 +36,14 @@ export function registerNewsSocketHandlers(
       // ── Notícias da época: club_news + transfer_history (fundidos) ────
       game.db.all(
         `SELECT cn.id, cn.type, 'club' AS source, cn.title, cn.description,
-                cn.player_id, cn.player_name,
+                cn.team_id, cn.player_id, cn.player_name,
+                p.photo AS player_photo, p.position AS player_position,
                 cn.related_team_id, cn.related_team_name,
                 cn.amount, cn.matchweek, cn.year, cn.created_at,
                 t.name AS team_name, t.division
          FROM club_news cn
          LEFT JOIN teams t ON t.id = cn.team_id
+         LEFT JOIN players p ON p.id = cn.player_id
          WHERE cn.year = ?`,
         [year],
         (newsErr: Error | null, clubRows: any[] | null) => {
@@ -60,10 +62,12 @@ export function registerNewsSocketHandlers(
             `SELECT th.id, th.source AS type, 'transfer' AS source,
                     th.player_name || ' · ' || th.seller_team_name || ' → ' || th.buyer_team_name AS title,
                     th.position AS description,
-                    th.player_id, th.player_name, th.skill, th.is_star,
+                    th.player_id, th.player_name, th.photo AS player_photo,
+                    th.position AS player_position, th.skill, th.is_star,
                     th.seller_team_id, th.seller_team_name,
                     th.buyer_team_id AS related_team_id, th.buyer_team_name AS related_team_name,
-                    th.buyer_team_name AS buyer_team_name, th.amount, th.matchweek, th.year, th.created_at,
+                    th.buyer_team_id AS team_id, th.buyer_team_name AS buyer_team_name,
+                    th.amount, th.matchweek, th.year, th.created_at,
                     th.buyer_team_name AS team_name, NULL AS division
              FROM transfer_history th
              WHERE th.year = ?`,

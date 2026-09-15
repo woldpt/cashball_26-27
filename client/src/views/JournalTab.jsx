@@ -15,8 +15,104 @@ import { useInbox } from "../hooks/useInbox.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Button } from "../components/shared/Button.jsx";
+import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
+import { TeamCrest } from "../components/live/TeamCrest.jsx";
 
 const FILTERS = ["all", "club", "competitions", "squad", "market"];
+
+function teamFromRef(teams, ref) {
+  return teams.find((team) => String(team.id) === String(ref?.id)) || ref;
+}
+
+/**
+ * Texto de notícia com entidades clicáveis.
+ * @param {{ parts?: Array, fallback?: string, teams: Array, onOpenTeamSquad?: Function, onOpenPlayerHistory?: Function }} props
+ */
+function RichNewsText({
+  parts,
+  fallback = "",
+  teams,
+  onOpenTeamSquad,
+  onOpenPlayerHistory,
+}) {
+  if (!Array.isArray(parts)) return fallback;
+  return parts.map((part, index) => {
+    const key = `${part.type}-${part.id ?? index}`;
+    if (part.type === "player") {
+      const content = (
+        <button
+          type="button"
+          className="font-black text-primary underline decoration-primary/40 underline-offset-2 hover:text-on-surface"
+          onClick={() => onOpenPlayerHistory?.(part)}
+        >
+          {part.label}
+        </button>
+      );
+      return <span key={key}>{content}</span>;
+    }
+    if (part.type === "team") {
+      const team = teamFromRef(teams, part);
+      return (
+        <button
+          key={key}
+          type="button"
+          className="font-black text-primary underline decoration-primary/40 underline-offset-2 hover:text-on-surface"
+          onClick={() => team?.id && onOpenTeamSquad?.(team)}
+          disabled={!team?.id || !onOpenTeamSquad}
+        >
+          {part.label}
+        </button>
+      );
+    }
+    return <span key={key}>{part.value}</span>;
+  });
+}
+
+/**
+ * Imagens editoriais do artigo seleccionado.
+ * @param {{ media?: object, teams: Array, onOpenTeamSquad?: Function, onOpenPlayerHistory?: Function }} props
+ */
+function NewsMedia({ media, teams, onOpenTeamSquad, onOpenPlayerHistory }) {
+  if (!media?.player && !media?.teams?.length) return null;
+  return (
+    <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+      {media.player && (
+        <button
+          type="button"
+          className="flex items-center gap-2 rounded-sm border border-outline-variant/20 bg-surface-container-low px-2 py-1 text-left hover:bg-surface-container-high"
+          onClick={() => onOpenPlayerHistory?.(media.player)}
+        >
+          <PlayerAvatar
+            seed={media.player.id}
+            position={media.player.position}
+            photo={media.player.photo}
+            size="mdR"
+          />
+          <span className="max-w-32 truncate text-[10px] font-black text-primary">
+            {media.player.label}
+          </span>
+        </button>
+      )}
+      {media.teams?.map((ref) => {
+        const team = teamFromRef(teams, ref);
+        return (
+          <button
+            key={ref.id}
+            type="button"
+            className="flex items-center gap-2 rounded-sm border border-outline-variant/20 bg-surface-container-low px-2 py-1 text-left hover:bg-surface-container-high"
+            onClick={() => team?.id && onOpenTeamSquad?.(team)}
+            disabled={!team?.id || !onOpenTeamSquad}
+          >
+            <TeamCrest team={team} size="sm" />
+            <span className="max-w-32 truncate text-[10px] font-black text-primary">
+              {ref.label}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 /**
  * Botões de ação por tipo de notícia.
@@ -79,7 +175,11 @@ function InboxActions({ item, inbox }) {
   return null;
 }
 
-export function JournalTab() {
+export function JournalTab({
+  teams = [],
+  onOpenTeamSquad,
+  onOpenPlayerHistory,
+}) {
   const inbox = useInbox();
   const [filter, setFilter] = useState("all");
 
@@ -217,11 +317,29 @@ export function JournalTab() {
           className="rounded-sm border border-outline-variant/20 bg-surface-container px-3 py-2.5 short:py-2"
         >
           <h2 className="text-center font-headline text-base short:text-sm font-black uppercase tracking-tight text-tertiary">
-            {inbox.selected.title.replace(/^🚩\s*/, "")}
+            <RichNewsText
+              parts={inbox.selected.titleParts}
+              fallback={inbox.selected.title.replace(/^🚩\s*/, "")}
+              teams={teams}
+              onOpenTeamSquad={onOpenTeamSquad}
+              onOpenPlayerHistory={onOpenPlayerHistory}
+            />
           </h2>
+          <NewsMedia
+            media={inbox.selected.media}
+            teams={teams}
+            onOpenTeamSquad={onOpenTeamSquad}
+            onOpenPlayerHistory={onOpenPlayerHistory}
+          />
           {inbox.selected.body && (
             <p className="mt-1.5 text-center text-xs short:text-[11px] leading-relaxed text-on-surface">
-              {inbox.selected.body}
+              <RichNewsText
+                parts={inbox.selected.bodyParts}
+                fallback={inbox.selected.body}
+                teams={teams}
+                onOpenTeamSquad={onOpenTeamSquad}
+                onOpenPlayerHistory={onOpenPlayerHistory}
+              />
             </p>
           )}
           <div className="mt-2.5 flex justify-center">
