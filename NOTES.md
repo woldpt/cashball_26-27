@@ -4,6 +4,12 @@
 - O título do artigo deixou de forçar `uppercase`, mantendo nomes e frases em capitalização normal.
 - Checks: eslint/JSDoc, teste directo de quatro títulos distintos, harness Jornal retrato 5/5 + paisagem 6/6.
 
+## Jornal: corpos editoriais mais ricos (2026-09-15)
+
+- As notícias do Jornal passam a ter corpos mais desenvolvidos, com contexto e consequência para transferências, saídas, leilões, academia, finanças, estádio, prémios, renegociações e boas-vindas; as entidades continuam clicáveis nos segmentos originais.
+- A variedade usa o identificador da notícia, mantendo o texto estável entre renders e reloads, sem aleatoriedade.
+- Checks: eslint/JSDoc, teste directo dos 16 tipos de notícia com corpo mínimo de 100 caracteres e `git diff --check`.
+
 ## Jornal: leitura começa na notícia mais antiga (2026-09-15)
 
 - Ao abrir o Jornal, a selecção inicial é a notícia não lida mais antiga; o feed do servidor vem do mais recente para o mais antigo, por isso `Ler próxima` avança uma posição para cima nessa lista.

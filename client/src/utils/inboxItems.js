@@ -156,54 +156,191 @@ function newsArticle(n, { owner, related, seller, buyer } = {}) {
           : transferVariant === 2
             ? [p, partText(" chega ao "), b]
             : [partText("Novo rosto no "), b, partText(": "), p];
-    bodyParts = newsVariant(n, 3) === 0
-      ? [p, partText(" chega a "), b, partText(" vindo de "), s || partText("outro clube"), partText(` por ${value}.`)]
-      : newsVariant(n, 3) === 1
-        ? [partText("O mercado mexeu: "), p, partText(" é a nova aposta de "), b, partText(` numa operação de ${value}.`)]
-        : [p, partText(" muda-se para "), b, partText(` e dá mais opções ao plantel${amount ? ` por ${value}` : ""}.` )];
+    bodyParts =
+      transferVariant === 0
+        ? [
+            p,
+            partText(" chega a "),
+            b,
+            partText(" vindo de "),
+            s || partText("outro clube"),
+            partText(` por ${value}. `),
+            partText("A contratação acrescenta uma nova solução ao plantel e abre mais uma porta para o treinador mexer na equipa ao longo da época."),
+          ]
+        : transferVariant === 1
+          ? [
+              partText("O mercado mexeu: "),
+              p,
+              partText(" é a nova aposta de "),
+              b,
+              partText(` numa operação de ${value}. `),
+              partText("A direcção fechou o negócio a pensar no presente, mas também na margem de crescimento que o jogador pode trazer ao clube."),
+            ]
+          : transferVariant === 2
+            ? [
+                p,
+                partText(" muda-se para "),
+                b,
+                partText(` por ${value}. `),
+                partText("A chegada aumenta a concorrência interna e oferece ao treinador mais uma combinação para os jogos em que o calendário apertar."),
+              ]
+            : [
+                partText("O novo rosto de "),
+                b,
+                partText(" é "),
+                p,
+                partText(`, numa operação avaliada em ${value}. `),
+                partText("Agora começa a parte menos visível do negócio: adaptar-se ao balneário, conquistar minutos e transformar a expectativa em rendimento."),
+              ];
   } else if (type === "transfer_out") {
     titleParts = [p, partText(" deixa "), o];
-    bodyParts = [p, partText(" segue para "), r, partText(` numa transferência de ${value}.`)];
+    bodyParts =
+      newsVariant(n, 3) === 0
+        ? [
+            p,
+            partText(" segue para "),
+            r,
+            partText(` numa transferência de ${value}. `),
+            partText("A saída fecha um capítulo no clube e deixa espaço para o treinador reorganizar o plantel e redistribuir minutos."),
+          ]
+        : newsVariant(n, 3) === 1
+          ? [
+              partText("O ciclo de "),
+              p,
+              partText(" termina em "),
+              o,
+              partText(". O jogador junta-se a "),
+              r,
+              partText(` por ${value}, enquanto o clube transforma uma despedida numa oportunidade para abrir espaço a novas soluções.`),
+            ]
+          : [
+              p,
+              partText(" muda de camisola e passa a representar "),
+              r,
+              partText(`. A operação de ${value} fica registada nas contas e na história recente do plantel, que terá agora de encontrar o seu substituto.`),
+            ];
   } else if (type === "auction_failed") {
     titleParts = [partText("Leilão sem negócio: "), p];
-    bodyParts = [partText("A licitação de "), p, partText(" terminou sem comprador. "), partText(description || "O jogador continua disponível para uma próxima oportunidade.")];
+    bodyParts =
+      newsVariant(n, 2) === 0
+        ? [
+            partText("A licitação de "),
+            p,
+            partText(" terminou sem comprador. "),
+            partText(description || "O jogador continua disponível para uma próxima oportunidade."),
+            partText(" O mercado ainda pode voltar a abrir a porta, mas a próxima proposta terá de encontrar melhor resposta."),
+          ]
+        : [
+            partText("Houve interesse, mas não houve acordo por "),
+            p,
+            partText(". A ausência de uma proposta vencedora mantém o jogador no circuito e deixa o próximo movimento entregue ao mercado."),
+          ];
   } else if (type === "ticket_revenue") {
     titleParts = [partText("Bilheteira de "), o];
-    bodyParts = [o, partText(` abriu as portas e arrecadou ${value}. `), partText(description || "A receita ajuda a financiar a próxima jornada.")];
+    bodyParts = [
+      o,
+      partText(` abriu as portas e arrecadou ${value}. `),
+      partText(description || "A receita ajuda a financiar a próxima jornada."),
+      partText(" Cada jogo em casa é mais do que noventa minutos: é uma oportunidade para aproximar a bancada e dar fôlego à tesouraria."),
+    ];
   } else if (type === "weekly_income") {
     titleParts = [partText("Rendimento de "), o];
-    bodyParts = [o, partText(` recebeu ${value} de rendimento base. `), partText("Uma almofada importante para a semana de trabalho.")];
+    bodyParts = [
+      o,
+      partText(` recebeu ${value} de rendimento base. `),
+      partText("Não é uma manchete de mercado, mas é este fluxo regular que mantém o clube a trabalhar entre jornadas e dá margem para preparar o próximo desafio."),
+    ];
   } else if (type === "wages") {
     titleParts = [partText("Folha salarial: "), o];
-    bodyParts = [partText("A semana fecha com "), o, partText(` a pagar ${value} em salários. `), partText("É hora de manter o balneário competitivo sem perder o controlo das contas.")];
+    bodyParts = [
+      partText("A semana fecha com "),
+      o,
+      partText(` a pagar ${value} em salários. `),
+      partText("É o preço de manter um balneário competitivo, mas também um lembrete de que cada decisão no mercado tem consequências para as contas do clube."),
+    ];
   } else if (type === "stadium_upkeep") {
     titleParts = [partText("Manutenção em "), o];
-    bodyParts = [o, partText(` investiu ${value} na manutenção do estádio. `), partText("Uma casa cuidada recebe melhor os seus adeptos.")];
+    bodyParts = [
+      o,
+      partText(` investiu ${value} na manutenção do estádio. `),
+      partText("A bancada raramente vê este trabalho, mas sente a diferença quando a casa está pronta para receber mais uma jornada e proteger a receita do clube."),
+    ];
   } else if (type === "loan_interest" || type === "loan_principal") {
     const label = type === "loan_interest" ? "juros" : "capital do empréstimo";
     titleParts = [partText("Contas bancárias: "), o];
-    bodyParts = [o, partText(` pagou ${value} em ${label}. `), partText(description || "A dívida continua a pesar no orçamento semanal.")];
+    bodyParts = [
+      o,
+      partText(` pagou ${value} em ${label}. `),
+      partText(description || "A dívida continua a pesar no orçamento semanal."),
+      partText(" A tesouraria ganha tempo, mas o compromisso fica registado e terá de ser acomodado nas próximas decisões."),
+    ];
   } else if (type === "stadium_build") {
     titleParts = [partText("A casa cresce: "), o];
-    bodyParts = [o, partText(` ganhou mais lugares com um investimento de ${value}. `), partText(description || "Mais bancadas significam mais margem para a receita de bilheteira.")];
+    bodyParts = [
+      o,
+      partText(` ganhou mais lugares com um investimento de ${value}. `),
+      partText(description || "Mais bancadas significam mais margem para a receita de bilheteira."),
+      partText(" É uma aposta para os dias grandes, quando a ambição do clube precisar de mais vozes nas bancadas e de uma receita à altura."),
+    ];
   } else if (type === "academy") {
     titleParts = [partText("Nova aposta: "), p];
-    bodyParts = [p, partText(" sobe da academia de "), o, partText(` e chega com margem para crescer${amount ? ` após um investimento de ${value}` : ""}.` )];
+    bodyParts = [
+      p,
+      partText(" sobe da academia de "),
+      o,
+      partText(` e chega com margem para crescer${amount ? ` após um investimento de ${value}` : ""}. `),
+      partText("É o primeiro passo de um percurso que vai exigir paciência, minutos certos e espaço para o talento se transformar em rendimento pela equipa principal."),
+    ];
   } else if (type === "renegotiation") {
     titleParts = [p, partText(" renova com "), o];
-    bodyParts = [p, partText(" prolonga a ligação a "), o, partText(". O agente conseguiu melhores condições para manter o jogador focado.")];
+    bodyParts = [
+      p,
+      partText(" prolonga a ligação a "),
+      o,
+      partText(". O agente conseguiu melhores condições para manter o jogador focado e o clube protegeu uma peça que continua a fazer parte dos seus planos."),
+    ];
   } else if (type === "cost_cut") {
     titleParts = [partText("Corte no plantel: "), p];
-    bodyParts = [o, partText(" libertou "), p, partText(" para aliviar a folha salarial. "), partText(description || "A tesouraria falou mais alto.")];
+    bodyParts = [
+      o,
+      partText(" libertou "),
+      p,
+      partText(" para aliviar a folha salarial. "),
+      partText(description || "A tesouraria falou mais alto."),
+      partText(" É uma decisão fria, tomada para devolver margem de manobra ao clube antes que o desequilíbrio passe a pesar no balneário."),
+    ];
   } else if (type === "cup_upset") {
     titleParts = [o, partText(" elimina "), r];
-    bodyParts = [o, partText(" assinou a surpresa da ronda frente a "), r, partText(description ? `. ${description}.` : ". O favoritismo ficou pelo caminho.")];
+    bodyParts = [
+      o,
+      partText(" assinou a surpresa da ronda frente a "),
+      r,
+      partText(description ? `. ${description}. ` : ". O favoritismo ficou pelo caminho. "),
+      partText("Durante uma noite, a diferença de estatuto deixou de contar e a competição ganhou uma história que a bancada vai repetir durante muito tempo."),
+    ];
   } else if (type === "prize") {
     titleParts = [partText("Prémio para "), o];
-    bodyParts = [o, partText(` recebe ${value}. `), partText(description || "O mérito desportivo também se sente nas contas do clube.")];
+    bodyParts = [
+      o,
+      partText(` recebe ${value}. `),
+      partText(description || "O mérito desportivo também se sente nas contas do clube."),
+      partText(" A recompensa chega depois do trabalho feito e dá ao clube mais espaço para preparar o que vem a seguir."),
+    ];
+  } else if (type === "welcome") {
+    titleParts = [partText(n?.title || "Bem-vindo ao clube")];
+    bodyParts = [
+      o,
+      partText(" abre as portas ao novo treinador. "),
+      partText(description || "A sala está pronta, o plantel espera e a época começa agora."),
+      partText(" Este é o primeiro capítulo de uma história que será escrita jornada a jornada, dentro e fora do campo."),
+    ];
   } else if (owner || player) {
     titleParts = player && owner ? [p, partText(" — "), o] : [partText(n?.title || "Notícia")];
-    bodyParts = [owner ? o : p, partText(description ? `: ${description}.` : ". Há novidades a acompanhar no Jornal.")];
+    bodyParts = [
+      owner ? o : p,
+      partText(description ? `: ${description}. ` : ". "),
+      partText("O Jornal regista o acontecimento e deixa a próxima palavra entregue ao trabalho da equipa."),
+    ];
   }
 
   return makeArticle(titleParts, bodyParts, player, teams, transfer);
