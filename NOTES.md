@@ -1,3 +1,9 @@
+## Jornal: transferência com percurso visual (2026-09-15)
+
+- Notícias de negócios passam a apresentar a foto do jogador em cima e, por baixo, os emblemas da equipa de origem e da equipa de destino lado a lado, com seta vendedor → comprador. As restantes notícias mantêm a media genérica.
+- O harness do Jornal passou a incluir IDs de jogador/vendedor/comprador para cobrir este percurso no detalhe.
+- Checks: eslint dos ficheiros tocados, `check:types`, `test:inboxreads`, harness do Jornal retrato 5/5 e paisagem 6/6; screenshots revistos.
+
 ## Jornal: mudança de clube cria contexto novo
 
 - `handleAcceptJobOffer` grava no novo `team_id` a notícia `welcome` “👋 Novo treinador no [Clube]”, com o nome do treinador e o texto editorial; após o insert emite `globalNewsUpdated`, o cliente troca o feed e a notícia fica não lida/seleccionada naturalmente.

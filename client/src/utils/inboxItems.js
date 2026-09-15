@@ -114,13 +114,13 @@ function newsVariant(n, count) {
   return Math.abs(seed) % count;
 }
 
-function makeArticle(titleParts, bodyParts, player, teams) {
+function makeArticle(titleParts, bodyParts, player, teams, transfer) {
   return {
     title: plainParts(titleParts),
     body: plainParts(bodyParts),
     titleParts,
     bodyParts,
-    media: { player, teams: uniqueTeams(...teams) },
+    media: { player, teams: uniqueTeams(...teams), transfer },
   };
 }
 
@@ -130,6 +130,12 @@ function newsArticle(n, { owner, related, seller, buyer } = {}) {
   const amount = n?.amount ? formatCurrency(n.amount) : null;
   const description = String(n?.description || "").trim();
   const teams = [owner, related, seller, buyer];
+  const transfer =
+    type === "transfer_out"
+      ? { from: owner, to: related }
+      : type === "transfer_in" || type === "auction_won" || n?.source === "transfer"
+        ? { from: seller || related, to: buyer || owner || related }
+        : null;
   const p = player ? partPlayer(player) : partText(n?.player_name || "O jogador");
   const o = owner ? partTeam(owner) : partText(n?.team_name || "o clube");
   const r = related ? partTeam(related) : partText(n?.related_team_name || "o novo clube");
@@ -191,7 +197,7 @@ function newsArticle(n, { owner, related, seller, buyer } = {}) {
     bodyParts = [owner ? o : p, partText(description ? `: ${description}.` : ". Há novidades a acompanhar no Jornal.")];
   }
 
-  return makeArticle(titleParts, bodyParts, player, teams);
+  return makeArticle(titleParts, bodyParts, player, teams, transfer);
 }
 
 /**

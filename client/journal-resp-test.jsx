@@ -106,6 +106,13 @@ const globalNews = {
       id: 1,
       source: "transfer",
       type: "market",
+      player_id: 701,
+      player_name: "Joaquim Fernando Alves da Silva Camara Pereira",
+      player_position: "ATA",
+      seller_team_id: 101,
+      seller_team_name: "Real Desportivo Atlético de Santa Maria da Feira",
+      buyer_team_id: 202,
+      buyer_team_name: "Sporting Clube do Alentejo Central",
       title:
         "Joaquim Fernando Alves da Silva Camara Pereira · Real Desportivo Atlético de Santa Maria da Feira → Sporting Clube do Alentejo Central",
       description: "Avançado",

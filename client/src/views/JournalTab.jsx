@@ -74,8 +74,38 @@ function RichNewsText({
  */
 function NewsMedia({ media, teams, onOpenTeamSquad, onOpenPlayerHistory }) {
   if (!media?.player && !media?.teams?.length) return null;
+  const transferFrom = media.transfer?.from;
+  const transferTo = media.transfer?.to;
+  const isTransfer = Boolean(media.transfer);
+  const renderTransferTeam = (ref, label) => {
+    if (!ref) return null;
+    const team = teamFromRef(teams, ref);
+    return (
+      <button
+        key={`${label}-${ref.id}`}
+        type="button"
+        aria-label={`${label}: ${ref.label}`}
+        className="flex min-w-20 max-w-32 flex-col items-center gap-1 rounded-sm border border-outline-variant/20 bg-surface-container-low px-2 py-1 text-center hover:bg-surface-container-high"
+        onClick={() => team?.id && onOpenTeamSquad?.(team)}
+        disabled={!team?.id || !onOpenTeamSquad}
+      >
+        <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
+          {label}
+        </span>
+        <TeamCrest team={team} size="sm" />
+        <span className="w-full truncate text-[10px] font-black text-primary">
+          {ref.label}
+        </span>
+      </button>
+    );
+  };
+
   return (
-    <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+    <div
+      className={`mt-2 flex items-center justify-center ${
+        isTransfer ? "flex-col gap-2" : "flex-wrap gap-3"
+      }`}
+    >
       {media.player && (
         <button
           type="button"
@@ -93,23 +123,41 @@ function NewsMedia({ media, teams, onOpenTeamSquad, onOpenPlayerHistory }) {
           </span>
         </button>
       )}
-      {media.teams?.map((ref) => {
-        const team = teamFromRef(teams, ref);
-        return (
-          <button
-            key={ref.id}
-            type="button"
-            className="flex items-center gap-2 rounded-sm border border-outline-variant/20 bg-surface-container-low px-2 py-1 text-left hover:bg-surface-container-high"
-            onClick={() => team?.id && onOpenTeamSquad?.(team)}
-            disabled={!team?.id || !onOpenTeamSquad}
-          >
-            <TeamCrest team={team} size="sm" />
-            <span className="max-w-32 truncate text-[10px] font-black text-primary">
-              {ref.label}
+      {isTransfer ? (
+        <div
+          className="flex items-center justify-center gap-2"
+          aria-label="Percurso da transferência"
+        >
+          {renderTransferTeam(transferFrom, "Origem")}
+          {transferFrom && transferTo && (
+            <span
+              aria-hidden="true"
+              className="text-xl font-black leading-none text-tertiary"
+            >
+              →
             </span>
-          </button>
-        );
-      })}
+          )}
+          {renderTransferTeam(transferTo, "Destino")}
+        </div>
+      ) : (
+        media.teams?.map((ref) => {
+          const team = teamFromRef(teams, ref);
+          return (
+            <button
+              key={ref.id}
+              type="button"
+              className="flex items-center gap-2 rounded-sm border border-outline-variant/20 bg-surface-container-low px-2 py-1 text-left hover:bg-surface-container-high"
+              onClick={() => team?.id && onOpenTeamSquad?.(team)}
+              disabled={!team?.id || !onOpenTeamSquad}
+            >
+              <TeamCrest team={team} size="sm" />
+              <span className="max-w-32 truncate text-[10px] font-black text-primary">
+                {ref.label}
+              </span>
+            </button>
+          );
+        })
+      )}
     </div>
   );
 }
