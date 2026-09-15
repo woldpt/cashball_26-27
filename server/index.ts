@@ -1217,7 +1217,7 @@ io.on("connection", (socket) => {
 		deleteManager,
 		saveGameState,
 		emitPresence,
-		emitPresencePause,
+		emitPresencePause: roomState.emitPresencePause,
 	});
 
 	// Training handlers

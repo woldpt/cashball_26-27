@@ -1,3 +1,9 @@
+## Hotfix prod: emitPresencePause is not defined (crash à conexão)
+- **Causa:** `server/index.ts:1220` passava `emitPresencePause` como nome nu para o `registerAdminSocketHandlers`, mas o ficheiro só importa o namespace `roomState` — `ReferenceError` em cada conexão (vinha do `ecbdbde`). Fix de 1 token: `roomState.emitPresencePause`.
+- **Porque passou os checks:** `index.ts` tem `// @ts-nocheck` na linha 1 — `typecheck` e `build` nunca o verificam. Lição: toques no `index.ts` exigem prova de runtime. Também visto de caminho: o processo não sai após `listen EADDRINUSE` fatal (fica pendurado) e a `PORT` está hardcoded a 3000.
+- **Prova:** `build` OK + smoke local com cliente socket.io real → `serverStartTime` recebido, 0 exceções; `dist` reconstruído limpo (só `server/index.ts` no commit).
+- **Falta:** `git pull && docker compose up --build` na prod (o `dist` de lá tem de ser reconstruído).
+
 ## Audit ecbdbde+f8580c2 — coerência assento↔projeção (fix)
 - **Bug real (novo, do próprio ecbdbde):** `kickCoach` (`socketGameplayHandlers.ts`, lobby) nunca libertava o assento — `computeAbsentees` mantinha o expulso como ausente e a sala congelava para sempre (só `adminReleaseRoom` safava). Agora `releaseSeat(..., "kicked")` + `emitPresencePause`.
 - **Divergência ready:** disconnect em lobby limpava `playersByName.ready` sem tocar no assento (servidor contava pronto, UI mostrava por confirmar) — reset removido (flape não apaga ready; a ausência bloqueia via `computeAbsentees`). Barreira do 11 no arranque e `isSeatPresent` alinhados no mesmo sentido (`setSeatIntent ready:false` na falha de lineup; presença falsa para `status !== "member"`).
