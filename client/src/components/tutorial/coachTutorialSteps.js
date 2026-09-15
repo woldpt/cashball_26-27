@@ -26,6 +26,14 @@ export const COACH_TUTORIAL_STEPS = [
     text: "Aqui vês o emblema, a moral do plantel e o histórico do clube. É o teu quartel-general — volta cá quando precisares de rever o tutorial.",
   },
   {
+    id: "jornal",
+    tab: "jornal",
+    submenu: null,
+    targets: ['[data-tour="nav-jornal"]', '[data-tour="nav-jornal-mobile"]'],
+    title: "Jornal do Clube",
+    text: "A tua caixa de entrada: renovações, convites, direção, sorteio da taça e lesões. As linhas com 🚩 bloqueiam o Jogar até responderes.",
+  },
+  {
     id: "players",
     tab: "players",
     submenu: "gestao",

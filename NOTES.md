@@ -725,3 +725,7 @@ Plano C1+C2 (quando fizer):
 - `GameLayout.jsx`: botão direto mobile Clube→Jornal (ícone `newspaper`, `data-tour="nav-jornal-mobile"`, badge vermelho com as bandeiras por responder via `useInbox`); badge igual na sidebar desktop; botões desktop `py-2.5`→`py-2` e cabeçalhos `pt-3`→`pt-2` (~60px poupados em ecrãs curtos).
 - Tutorial: passo "club" passa a `submenu: "gestao"` + alvo `nav-club-sub` no mobile (o `nav-club-mobile` deixou de existir) — mesmo padrão dos passos de Plantel/Treino/Finanças.
 - Checks: eslint dos 5 ficheiros + `check:types` OK; mobile retrato 150/150 + paisagem 180/180 PASS; screenshot 390 confirma o H1. `docs/FLOW_JOGO.md` cap. 4 com a nova ordem.
+
+## Tutorial menciona o Jornal (2026-09-15)
+- Novo passo "jornal" em `coachTutorialSteps.js` logo após o Clube: aponta para `nav-jornal`/`nav-jornal-mobile`, explica a caixa de entrada e que as linhas 🚩 bloqueiam o Jogar. Overlay genérico (`length`), sem código novo.
+- Checks: eslint + `check:types` OK. Sem mobile-resp-check (só conteúdo, zero layout).
