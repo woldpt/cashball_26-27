@@ -12,6 +12,7 @@
     "seed": "node db/seed.js",
     "seed:real": "node db/seed.js --real",
     "audit:gamestate": "tsx scripts/gameStateAudit.ts",
+    "audit:session": "tsx scripts/sessionAudit.ts",
     "audit:socketio": "tsx scripts/socketioContractValidator.ts",
     "fetch:zerozero": "tsx scripts/fetchZerozeroSquads.ts",
     "fetch:tui": "tsx scripts/fetchZerozeroTUI.ts",
@@ -32,7 +33,8 @@
     "test:crash-recovery": "tsx scripts/crashRecoveryRegression.mts",
     "test:emergency-gk": "tsx scripts/emergencyGkRegression.mts",
     "test:engine-unit": "tsx --test scripts/engineUnitRegression.mts",
-    "test:segment-barrier": "tsx scripts/segmentBarrierSmoke.mts"
+    "test:segment-barrier": "tsx scripts/segmentBarrierSmoke.mts",
+    "test:session-freeze": "tsx --test scripts/sessionFreezeRegression.mts"
   },
   "keywords": [],
   "author": "",

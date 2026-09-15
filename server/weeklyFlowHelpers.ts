@@ -28,7 +28,6 @@ import {
   generateIntroEvents,
   generateSecondHalfIntroEvents,
   buildLineupSnapshot,
-  resetPartialMatchState,
   getMatchFatigueSnapshot,
   queueMatchDeltaWrites,
   createMinuteBarrier,
@@ -41,6 +40,15 @@ import {
 } from "./game/lineupReady";
 import { generateAITactic } from "./game/matchCalculations";
 import { computeMoms } from "./game/mom";
+import {
+  appendRoomEvent,
+  computeAbsentees,
+  isSeatPresent,
+  logCalendarAdvance,
+  requiredTeamIds,
+  saveMatchCheckpoint,
+  waitForPresence,
+} from "./roomStateHelpers";
 
 const MAX_NPC_HALFTIME_SUBS = 2;
 const NPC_FRESHNESS_SKILL_BUFFER = 2;
@@ -772,8 +780,17 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     const barrier = createMinuteBarrier(
       game.currentFixtures.length,
       async (minute) => {
+        // Congelamento: enquanto faltar um treinador com equipa em jogo, a
+        // sala não anda um minuto sequer. Espera aqui (rendezvous de todos os
+        // jogos) e retoma exatamente neste minuto quando ele voltar.
+        await waitForPresence(game, io);
+        if ((game.gamePhase as string) === "lobby") return;
+
         // Track current live minute for reconnection recovery
         game.liveMinute = minute;
+        // Ponto de controlo durável: um restart a meio retoma neste minuto em
+        // vez de recomeçar 0-0.
+        saveMatchCheckpoint(game);
 
         // Emit per-minute update so the client clock stays in sync
         io.to(game.roomCode).emit("matchMinuteUpdate", {
@@ -927,6 +944,15 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       );
       return;
     }
+    // Congelamento: a segunda parte não começa com um treinador da ronda ausente.
+    if (computeAbsentees(game).length > 0) {
+      void waitForPresence(game, io).then(() => {
+        advanceFromHalftime(game).catch((err) =>
+          console.error(`[${game.roomCode}] advanceFromHalftime (pós-pausa):`, err),
+        );
+      });
+      return;
+    }
     segmentRunning[game.roomCode] = true;
 
     // Cancel halftime safety timeout
@@ -976,6 +1002,71 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     // segmentRunning is now false; safe to auto-advance if all coaches were dismissed.
     if ((game.gamePhase as string) === "lobby") {
       checkAllReady(game);
+    }
+  }
+
+  // ─── RETOMA DE PARTIDA INTERROMPIDA (restart/deploy a meio) ──────────────
+  // Antes: a fase transitória voltava a lobby e o jogo recomeçava 0-0. Agora
+  // retoma no minuto persistido. A espera de presença no início garante que a
+  // retoma não joga um único minuto sem os treinadores da ronda.
+  async function resumeInterruptedMatch(game: ActiveGame): Promise<void> {
+    if (game._resumeHandled) return;
+    const phase: string = game.gamePhase;
+    const resumable = [
+      "match_first_half",
+      "match_second_half",
+      "match_extra_time",
+      "match_finalizing",
+    ];
+    if (!resumable.includes(phase)) return;
+    // Um segmento já a correr nesta memória significa que NÃO houve restart —
+    // é um reconnect normal e não se retoma nada (senão corria a dobrar).
+    if (segmentRunning[game.roomCode]) return;
+    game._resumeHandled = true;
+
+    const entry = game.currentEvent as CalendarEntry | null;
+    if (!entry) {
+      console.warn(
+        `[${game.roomCode}] ⚠ Retoma sem evento de calendário — volta a lobby`,
+      );
+      game.gamePhase = "lobby";
+      saveGameState(game);
+      return;
+    }
+    console.log(
+      `[${game.roomCode}] ⏯ Retoma de partida interrompida | fase=${phase} | minuto=${game.liveMinute}`,
+    );
+    appendRoomEvent(game, io, "match_resumed", {
+      phase,
+      liveMinute: game.liveMinute,
+    });
+
+    await waitForPresence(game, io);
+    if ((game.gamePhase as string) !== phase) return; // já resolvido por outro caminho
+
+    if (phase === "match_finalizing") {
+      if (entry.type === "cup") await finalizeCupRound(game);
+      else if (entry.type === "friendly") await finalizeFriendly(game);
+      else await finalizeLeagueEvent(game);
+      return;
+    }
+
+    const from = Math.max(1, (game.liveMinute ?? 0) + 1);
+    const to =
+      phase === "match_first_half" ? 45 : phase === "match_second_half" ? 90 : 120;
+    segmentRunning[game.roomCode] = true;
+    try {
+      if (from > to) {
+        // O segmento terminou mas a transição não chegou a ser gravada.
+        if (phase === "match_first_half") game.gamePhase = "match_halftime";
+        checkAllReady(game);
+        return;
+      }
+      await runMatchSegment(game, from, to);
+    } catch (resumeErr) {
+      console.error(`[${game.roomCode}] ❌ Retoma falhou:`, resumeErr);
+    } finally {
+      segmentRunning[game.roomCode] = false;
     }
   }
 
@@ -1114,6 +1205,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           // Advance state
           game.calendarIndex += 1;
           game.matchweek += 1;
+          logCalendarAdvance(game, io, "league_finalized", "week_end");
           game.lastPlayedAt = new Date().toISOString();
           game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
           game.currentFixtures = [];
@@ -1636,24 +1728,16 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
     saveGameState(game);
 
-    // Reinício a meio de um jogo anterior: as fixtures vêm da BD com golos,
-    // eventos e lineups da partida interrompida. Fase transitória volta a
-    // lobby e a semana recomeça — sem descartar o estado parcial, o segmento
-    // era re-simulado por cima (golos a dobrar, suplentes em campo,
-    // disponibilidade de banco já consumida). Jogo recomeça limpo, com aviso.
-    const discarded = game.currentFixtures.filter((fx) =>
-      resetPartialMatchState(fx),
-    ).length;
-    if (discarded > 0) {
-      game.liveMinute = null;
-      console.warn(
-        `[${game.roomCode}] ♻️ ${discarded} jogo(s) interrompido(s) — estado parcial descartado (recomeça a 0-0)`,
-      );
-      io.to(game.roomCode).emit("systemMessage", {
-        text: "♻️ O jogo anterior foi interrompido por um reinício do servidor — as partidas recomeçam de novo.",
-        broadcast: true,
-      });
-    }
+    // NOTA: o descarte do estado parcial (resetPartialMatchState) foi removido.
+    // Uma interrupção a meio já não recomeça 0-0: o `matchCheckpoint` repõe
+    // golos/eventos/lineups e `resumeInterruptedMatch` retoma no minuto
+    // seguinte. Aqui só se arranca uma semana nova a partir do lobby, com
+    // fixtures frescas (currentFixtures = [] no finalize).
+    appendRoomEvent(game, io, "week_started", {
+      calendarIndex: game.calendarIndex,
+      matchweek: game.matchweek,
+      type: entry.type,
+    });
 
     try {
       await runMatchSegment(game, 1, 45);
@@ -1741,6 +1825,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     );
     game.calendarIndex += 1;
     if (entry.type === "league") game.matchweek += 1;
+    logCalendarAdvance(game, io, "recover_finalized_slot", "crash_recovery");
     game.lastPlayedAt = new Date().toISOString();
     game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
     game.currentFixtures = [];
@@ -1785,84 +1870,54 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
   }
 
   async function checkAllReady(game: ActiveGame) {
-    // ── Standard readiness check (same for cup and league) ──────────────────
-    // O gate estrito (todos os coaches humanos online + ready) aplica-se APENAS
-    // no lobby (início de semana). A meio de um jogo (intervalo / porta de
-    // prolongamento) usa-se apenas os coaches conectados — um coach que se
-    // desconecta não deixa o jogo em curso preso; a próxima semana é que fica
-    // bloqueada até todos estarem presentes.
-    if (game.gamePhase === "lobby" && game.lockedCoaches.size >= 2) {
-      const readyStatus = [...game.lockedCoaches].map((name) => ({
-        name,
-        connected: !!game.playersByName[name]?.socketId,
-        ready: !!game.playersByName[name]?.ready,
-      }));
-      const allReady = readyStatus.every((s) => s.connected && s.ready);
-      if (!allReady) {
+    // ── Congelamento: um treinador da ronda ausente pára a sala inteira ────
+    // Antes, a ausência era simplesmente ignorada a meio do jogo (só contavam
+    // os ligados) e o jogo avançava sem ele — a jornada seguinte chegava-lhe
+    // já jogada. Agora espera-se, e re-despacha-se quando ele voltar.
+    if (computeAbsentees(game).length > 0) {
+      waitForPresence(game, io).then(() => {
+        checkAllReady(game).catch((err) =>
+          console.error(`[${game.roomCode}] checkAllReady (pós-pausa):`, err),
+        );
+      });
+      return;
+    }
+
+    // ── Prontidão por assento (todas as fases, mesma regra) ────────────────
+    // A fonte é o assento durável, não o socket: um flape não apaga o ready e
+    // um treinador que voltou a ligar mantém a intenção que já tinha dado.
+    // O prolongamento (Taça) só espera pelas equipas empatadas — eliminados e
+    // espectadores não bloqueiam.
+    const requiredTeams =
+      game.gamePhase === "match_et_gate"
+        ? new Set<number>(
+            game.currentFixtures
+              .filter((f) => f.finalHomeGoals === f.finalAwayGoals)
+              .flatMap((f) => [f.homeTeamId, f.awayTeamId]),
+          )
+        : requiredTeamIds(game);
+    const waitingSeats = Object.values(game.seats).filter(
+      (seat) =>
+        seat.status === "member" &&
+        seat.teamId != null &&
+        requiredTeams.has(seat.teamId),
+    );
+    if (waitingSeats.length === 0) {
+      // Ninguém humano nesta ronda (só NPCs) — não há nada a esperar.
+      console.log(
+        `[${game.roomCode}] ⏸ checkAllReady: sem treinadores humanos na ronda — a avançar`,
+      );
+    } else {
+      const notReady = waitingSeats.filter((seat) => !seat.intent.ready);
+      if (notReady.length > 0) {
         console.warn(
-          `[${game.roomCode}] ⏸ checkAllReady blocked: locked coaches not all ready: ${readyStatus.map((s) => `${s.name}(C:${s.connected} R:${s.ready})`).join(", ")}`,
+          `[${game.roomCode}] ⏸ checkAllReady blocked (${game.gamePhase}): ${notReady.map((s) => s.name).join(", ")}`,
         );
         return;
       }
       console.log(
-        `[${game.roomCode}] ✅ All locked coaches ready: ${readyStatus.map((s) => `${s.name}(${s.ready ? "R" : "-"})`).join(", ")}`,
+        `[${game.roomCode}] ✅ Todos os assentos da ronda prontos (${waitingSeats.length}): ${waitingSeats.map((s) => s.name).join(", ")}`,
       );
-    } else if (game.gamePhase === "match_et_gate") {
-      // ET gate (cup): ONLY coaches whose team is in a DRAWN fixture need to
-      // ready up before extra time. Observers / eliminated coaches must not
-      // block the round — they have no team to prepare for ET.
-      const drawnTeamIds = new Set(
-        game.currentFixtures
-          .filter((f) => f.finalHomeGoals === f.finalAwayGoals)
-          .flatMap((f) => [f.homeTeamId, f.awayTeamId]),
-      );
-      const etRelevantPlayers = getPlayerList(game).filter(
-        (p) => p.teamId !== null && drawnTeamIds.has(p.teamId),
-      );
-      if (etRelevantPlayers.length === 0) {
-        // No connected coach is in a drawn fixture — don't block; the safety
-        // timer / finalize path continues the round anyway.
-        console.warn(
-          `[${game.roomCode}] ⚠ ET gate with no relevant coaches — continuing`,
-        );
-      } else if (!etRelevantPlayers.every((player) => player.ready)) {
-        const notReady = etRelevantPlayers
-          .filter((p) => !p.ready)
-          .map((p) => p.name);
-        console.warn(
-          `[${game.roomCode}] ⏸ ET gate blocked: ${notReady.length} coach(es) in drawn fixtures not ready: ${notReady.join(", ")}`,
-        );
-        return;
-      } else {
-        console.log(
-          `[${game.roomCode}] ✅ All ${etRelevantPlayers.length} coach(es) in drawn fixtures ready`,
-        );
-      }
-    } else {
-      const connectedPlayers = getPlayerList(game).filter(
-        (p) => p.teamId !== null,
-      );
-      if (connectedPlayers.length === 0) {
-        // No active coaches connected — block the lobby so the game never
-        // auto-advances in single player. The game waits until a coach
-        // reconnects and presses "Pronto" (setReady).
-        console.log(
-          `[${game.roomCode}] ⏸ No active coaches connected in lobby — waiting (no auto-advance)`,
-        );
-        return;
-      } else if (!connectedPlayers.every((player) => player.ready)) {
-        const notReady = connectedPlayers
-          .filter((p) => !p.ready)
-          .map((p) => p.name);
-        console.warn(
-          `[${game.roomCode}] ⏸ checkAllReady blocked: ${notReady.length} connected player(s) not ready: ${notReady.join(", ")}`,
-        );
-        return;
-      } else {
-        console.log(
-          `[${game.roomCode}] ✅ All ${connectedPlayers.length} connected players ready`,
-        );
-      }
     }
 
     console.log(
@@ -2004,6 +2059,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
   return {
     checkAllReady,
     runMatchSegment,
+    resumeInterruptedMatch,
     // Superfície de teste (crashRecoveryRegression.mts): acesso direto às ações
     // críticas de idempotência — aplicação das finanças semanais e recovery de
     // slot já finalizado. Não usadas pelo fluxo normal (index.ts).

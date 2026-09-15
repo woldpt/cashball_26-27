@@ -10,7 +10,14 @@ import { GameProvider } from "./contexts/GameContext.jsx";
 import { TacticsProvider } from "./contexts/TacticsContext.jsx";
 import { GameLayout } from "./GameLayout.jsx";
 import { SEASON_LABEL } from "./constants/index.js";
-import { loadSavedSession } from "./utils/localStorage.js";
+import {
+	loadSavedSession,
+	clearSavedAuth,
+	clearSavedSession,
+	saveSavedAuth,
+	saveRoomPointer,
+	getDeviceId,
+} from "./utils/localStorage.js";
 import { checkCacheVersion } from "./utils/cacheVersion.js";
 import { initPushNotifications } from "./services/pushNotifications.js";
 import { AnimatePresence, motion } from "framer-motion";
@@ -92,11 +99,9 @@ function App() {
 			setJoining(false);
 			setMe(null);
 			if (isAuthError(msg)) {
-				try {
-					window.localStorage.removeItem("cashballSession");
-				} catch {
-					/* ignore */
-				}
+				// Só a credencial cai; o ponteiro da sala fica (é o que permite
+				// voltar ao jogo depois de reautenticar).
+				clearSavedAuth();
 			}
 			if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
 		};
@@ -112,18 +117,7 @@ function App() {
 			setMe((prev) => {
 				if (!prev) return null;
 				const updated = { ...prev, roomCode, roomName };
-				try {
-					window.localStorage.setItem(
-						"cashballSession",
-						JSON.stringify({
-							name: updated.name,
-							token: updated.token,
-							roomCode: updated.roomCode,
-						}),
-					);
-				} catch {
-					/* ignore */
-				}
+				saveRoomPointer(updated.name, updated.roomCode);
 				return updated;
 			});
 			setJoining(false);
@@ -175,6 +169,7 @@ function App() {
 				name: savedSession.name,
 				token: savedSession.token,
 				roomCode: savedSession.roomCode.toUpperCase(),
+				deviceId: getDeviceId(),
 			});
 
 			armJoinTimeout();
@@ -228,19 +223,9 @@ function App() {
 
 	// ── Persist session to localStorage ────────────────────────────────────
 	useEffect(() => {
-		if (!me?.name || !me?.token || !me?.roomCode) return;
-		try {
-			window.localStorage.setItem(
-				"cashballSession",
-				JSON.stringify({
-					name: me.name,
-					token: me.token,
-					roomCode: me.roomCode,
-				}),
-			);
-		} catch {
-			/* ignore */
-		}
+		if (!me?.name || !me?.token) return;
+		saveSavedAuth({ name: me.name, token: me.token });
+		if (me.roomCode) saveRoomPointer(me.name, me.roomCode);
 	}, [me]);
 
 	// ── Auth handlers ──────────────────────────────────────────────────────
@@ -300,14 +285,7 @@ function App() {
 			setJoinError("");
 			setIsNewAccount(mode === "register");
 			setAuthPhase("mode");
-			try {
-				window.localStorage.setItem(
-					"cashballSession",
-					JSON.stringify({ name: trimmedName, token: data.token, roomCode: "" }),
-				);
-			} catch {
-				/* ignore */
-			}
+			saveSavedAuth({ name: trimmedName, token: data.token });
 		} catch {
 			setAuthError("Sem ligação ao servidor. Tenta novamente.");
 		} finally {
@@ -329,11 +307,7 @@ function App() {
 		} catch {
 			/* ignore */
 		}
-		try {
-			window.localStorage.removeItem("cashballSession");
-		} catch {
-			/* ignore */
-		}
+		clearSavedSession();
 		window.location.reload();
 	};
 
@@ -368,6 +342,7 @@ function App() {
 			token,
 			roomCode: target,
 			joinMode: "saved-game",
+			deviceId: getDeviceId(),
 		});
 		setMe({ name, token, roomCode: "" });
 		armJoinTimeout();

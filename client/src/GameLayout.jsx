@@ -15,6 +15,7 @@ import { NAV_GROUPS, getGroupTabKeys, getGroupTabs } from "./constants/navigatio
 import { CoachTutorial } from "./components/tutorial/CoachTutorial.jsx";
 import { COACH_TUTORIAL_STEPS } from "./components/tutorial/coachTutorialSteps.js";
 import { OfflineBanner } from "./components/shared/OfflineBanner.jsx";
+import { RoomPauseBanner } from "./components/shared/RoomPauseBanner.jsx";
 import { GameRoutes } from "./GameRoutes.jsx";
 import { GameOverlays } from "./GameOverlays.jsx";
 
@@ -250,6 +251,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       {/* Atmosfera de fundo do interior (ver .ambient em index.css). Fica atrás
           de todo o conteúdo (isolate + -z-10) e não intercepta cliques. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 ambient" />
+      <RoomPauseBanner />
       <OfflineBanner />
       {renderError && (
         <div

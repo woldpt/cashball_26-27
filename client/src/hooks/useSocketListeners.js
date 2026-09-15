@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { socket, queueEmit, flushOutbox } from "../socket.js";
+import { getDeviceId } from "../utils/localStorage.js";
 import { loadTacticSnapshot } from "../utils/uiSnapshot.js";
 import { isSameTeamId } from "../utils/teamHelpers.js";
 import { seasonToYear } from "../utils/formatters.js";
@@ -1848,6 +1849,7 @@ export function useSocketListeners(handlers, refs) {
 					name: currentMe.name,
 					token: currentMe.token,
 					roomCode: currentMe.roomCode,
+					deviceId: getDeviceId(),
 				});
 			}
 		};

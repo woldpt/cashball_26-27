@@ -13,6 +13,7 @@ import {
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { upcomingMatchweek } from "./game/lineupReady";
+import { deleteSeat } from "./roomStateHelpers";
 
 type Db = any;
 type AnyRow = Record<string, any>;
@@ -149,6 +150,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     if (!opts?.force) game.dismissalsThisSeason.add(coachName);
     player.teamId = null;
     player.ready = false;
+    // Assento sem clube: deixa de ser obrigatório na ronda (a sala descongela
+    // sem ele). Volta a ser criado quando aceitar um novo emprego.
+    deleteSeat(game, coachName);
     game.dismissedCoachSince[coachName] = {
       matchweek: game.matchweek,
       division,

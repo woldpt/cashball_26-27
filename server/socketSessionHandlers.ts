@@ -9,6 +9,15 @@ import {
   listTeamMatchActions,
 } from "./game/engine";
 import { serializeActiveAuctions } from "./auctionHelpers";
+import {
+  claimSeat,
+  deleteSeat,
+  emitPresencePause,
+  markSeatSeen,
+  releaseSeat,
+  setSeatIntent,
+  setSeatTeamId,
+} from "./roomStateHelpers";
 
 type AnyRow = Record<string, any>;
 
@@ -87,6 +96,7 @@ interface SessionHandlerDeps {
 	emitAwaitingCoaches: (game: ActiveGame) => void;
 	emitPresence: (game: ActiveGame) => void;
 	checkAllReady: (game: ActiveGame) => void | Promise<void>;
+	resumeInterruptedMatch: (game: ActiveGame) => Promise<void>;
 	runAll: RunAll;
 	runGet: RunGet;
 	buildNextMatchSummary: (game: ActiveGame, teamId: number) => Promise<any>;
@@ -140,6 +150,46 @@ function safeParse<T>(json: string | null | undefined, fallback: T): T {
 // Derive old-style matchState/cupState from the new unified gamePhase.
 // Keeps the existing client working without changes.
 
+/**
+ * Payload único do `gameState` — usado no join/rejoin E no `requestResync`.
+ * Se divergirem, o cliente que perdeu eventos fica com um estado diferente do
+ * que recebeu ao ligar. Um só construtor resolve isso por construção.
+ */
+function buildGameStatePayload(game: ActiveGame, name: string) {
+	return {
+		// Sequência do log da sala: o cliente guarda-a e pede resync quando
+		// deteta um salto (evento perdido durante um flape).
+		seq: game.eventSeq || 0,
+		gamePhase: game.gamePhase,
+		calendarIndex: game.calendarIndex,
+		currentEvent: game.currentEvent,
+		liveMinute: game.liveMinute ?? null,
+		allMatchResults: game.allMatchResults || {},
+		matchweek: game.matchweek,
+		season: game.season,
+		matchState: legacyMatchState(game.gamePhase),
+		cupState: legacyCupState(game),
+		cupRound:
+			game.currentEvent?.type === "cup" ? (game.currentEvent as any).round : 0,
+		year: game.year,
+		// Em fase de lobby (entre jornadas), enviar posições limpas: a seleção
+		// do 11 inicial nunca deve persistir de uma ronda para a seguinte.
+		tactic: (() => {
+			const t = game.playersByName[name]?.tactic;
+			if (!t) return null;
+			if (game.gamePhase === "lobby") return { ...t, positions: {} };
+			return t;
+		})(),
+		lockedCoaches: [...game.lockedCoaches],
+		lastHalfTimePayload:
+			game.gamePhase === "match_halftime"
+				? game.lastHalftimePayload || null
+				: null,
+		roomCreator: game.roomCreator || "",
+		activeAuctions: serializeActiveAuctions(game),
+	};
+}
+
 function legacyMatchState(gamePhase: GamePhase): string {
 	switch (gamePhase) {
 		case "match_first_half":
@@ -188,6 +238,7 @@ export function registerSessionSocketHandlers(
 		ensurePhaseTimeout,
 		emitPresence,
 		checkAllReady,
+		resumeInterruptedMatch,
 		runAll,
 		runGet,
 		buildNextMatchSummary,
@@ -206,6 +257,7 @@ export function registerSessionSocketHandlers(
 		team: any,
 		roomCode: string,
 		isNew: boolean = true,
+		deviceId: string | null = null,
 	) {
 		console.log(
 			`[${roomCode}] 👤 assignPlayer: ${name} → team=${team.name ?? team.id} | isNew=${isNew} | phase=${game.gamePhase}`,
@@ -220,8 +272,17 @@ export function registerSessionSocketHandlers(
 				socketId: socket.id,
 			};
 		}
+		// O assento é a fonte da verdade: repõe equipa e intenção (ready/tática)
+		// que sobreviveram ao disconnect/restart — o rejoin já não perde o que o
+		// treinador tinha confirmado.
+		setSeatTeamId(game, name, team.id);
+		const previousDevice = game.seats[name]?.deviceId ?? null;
+		claimSeat(game, name, { teamId: team.id, deviceId });
 		const displacedSocketId = bindSocket(game, name, socket.id);
-		if (displacedSocketId) {
+		// Só é "sessão noutro dispositivo" quando o dispositivo é mesmo outro.
+		// Um reconnect do mesmo telemóvel (novo socket, mesmo device) não pode
+		// desligar o cliente — era isso que o deixava sem reconexão para sempre.
+		if (displacedSocketId && previousDevice && deviceId && previousDevice !== deviceId) {
 			io.to(displacedSocketId).emit("sessionDisplaced", {
 				reason: "another_device",
 			});
@@ -272,37 +333,7 @@ export function registerSessionSocketHandlers(
 		console.log(
 			`[${roomCode}] 🔌 assignPlayer reconnect | phase=${game.gamePhase} | coach=${name}`,
 		);
-		socket.emit("gameState", {
-			// ── New fields ──────────────────────────────────────────────────────────
-			gamePhase: game.gamePhase,
-			calendarIndex: game.calendarIndex,
-			currentEvent: game.currentEvent,
-			liveMinute: game.liveMinute ?? null,
-			allMatchResults: game.allMatchResults || {},
-			// ── Legacy compat fields (derived from new state machine) ────────────────
-			matchweek: game.matchweek,
-			season: game.season,
-			matchState: legacyMatchState(game.gamePhase),
-			cupState: legacyCupState(game),
-			cupRound:
-				game.currentEvent?.type === "cup" ? (game.currentEvent as any).round : 0,
-			year: game.year,
-			// Em fase de lobby (entre jornadas), enviar posições limpas: a seleção
-			// do 11 inicial nunca deve persistir de uma ronda para a seguinte.
-			tactic: (() => {
-				const t = game.playersByName[name]?.tactic;
-				if (!t) return null;
-				if (game.gamePhase === "lobby") return { ...t, positions: {} };
-				return t;
-			})(),
-			lockedCoaches: [...game.lockedCoaches],
-			lastHalfTimePayload:
-				game.gamePhase === "match_halftime"
-					? game.lastHalftimePayload || null
-					: null,
-			roomCreator: game.roomCreator || "",
-			activeAuctions: serializeActiveAuctions(game),
-		});
+		socket.emit("gameState", buildGameStatePayload(game, name));
 
 		emitCurrentPhaseToSocket(game, socket);
 		ensurePhaseTimeout(game);
@@ -353,6 +384,14 @@ export function registerSessionSocketHandlers(
 
 		emitPresence(game);
 		emitGlobalPlayerUpdate?.();
+
+		// Presença mudou: a sala pode descongelar.
+		emitPresencePause(game, io);
+		// Retoma de partida interrompida (restart/deploy a meio). No-op quando
+		// não há segmento por retomar nesta memória.
+		resumeInterruptedMatch(game).catch((err: any) =>
+			console.error(`[${roomCode}] resumeInterruptedMatch falhou:`, err),
+		);
 
 		// If halftime is already waiting and all coaches are now ready (e.g. safety
 		// timeout fired while this coach was offline), advance without waiting for
@@ -432,6 +471,7 @@ export function registerSessionSocketHandlers(
 		name: string,
 		roomCode: string,
 		managerId: number,
+		deviceId: string | null = null,
 	) {
 		const takenTeamIds = Object.values(game.playersByName)
 			.map((player) => player.teamId)
@@ -464,7 +504,7 @@ export function registerSessionSocketHandlers(
 					game.db.run(
 						"UPDATE teams SET manager_id = ? WHERE id = ?",
 						[managerId, team2.id],
-						() => assignPlayer(game, name, team2, roomCode),
+						() => assignPlayer(game, name, team2, roomCode, true, deviceId),
 					);
 				});
 				return;
@@ -472,13 +512,13 @@ export function registerSessionSocketHandlers(
 			game.db.run(
 				"UPDATE teams SET manager_id = ? WHERE id = ?",
 				[managerId, team.id],
-				() => assignPlayer(game, name, team, roomCode),
+				() => assignPlayer(game, name, team, roomCode, true, deviceId),
 			);
 		});
 	}
 
 	socket.on("joinGame", async (data) => {
-		const { name, token, roomCode: rawRoom, roomName, joinMode } = data;
+		const { name, token, roomCode: rawRoom, roomName, joinMode, deviceId } = data;
 
 		if (!name || typeof name !== "string" || name.trim().length === 0) {
 			return socket.emit("systemMessage", "Nome de treinador inválido.");
@@ -605,7 +645,7 @@ export function registerSessionSocketHandlers(
 								[row.id],
 								(_err2: any, team: any) => {
 									if (team) {
-										assignPlayer(game, trimmedName, team, finalRoomCode, false);
+										assignPlayer(game, trimmedName, team, finalRoomCode, false, deviceId ?? null);
 									} else if (game.dismissedCoachSince[trimmedName]) {
 										// Coach is dismissed and waiting for a new job — rebind socket
 										// without assigning a new team so their dismissed state is preserved.
@@ -694,7 +734,7 @@ export function registerSessionSocketHandlers(
 											`[${finalRoomCode}] 🔄 Dismissed coach ${trimmedName} reconnected — preserved dismissed state`,
 										);
 									} else {
-										generateRandomTeam(game, trimmedName, finalRoomCode, row.id);
+										generateRandomTeam(game, trimmedName, finalRoomCode, row.id, deviceId ?? null);
 									}
 								},
 							);
@@ -706,7 +746,7 @@ export function registerSessionSocketHandlers(
 								"INSERT INTO managers (name, is_human) VALUES (?, 1)",
 								[trimmedName],
 								function (_err2: any) {
-									generateRandomTeam(game, trimmedName, finalRoomCode, this.lastID);
+									generateRandomTeam(game, trimmedName, finalRoomCode, this.lastID, deviceId ?? null);
 								},
 							);
 						}
@@ -1297,8 +1337,9 @@ export function registerSessionSocketHandlers(
 		);
 
 		if (playerState) {
-			// Repor ready para lobby
+			// Repor ready para lobby (o assento é libertado abaixo)
 			playerState.ready = false;
+			setSeatIntent(game, playerState.name, { ready: false });
 
 			// Remover dos lockedCoaches
 			game.lockedCoaches.delete(playerState.name);
@@ -1321,6 +1362,10 @@ export function registerSessionSocketHandlers(
 
 			// Remover de playersByName — sessão activa limpa
 			delete game.playersByName[playerState.name];
+
+			// Libertamento explícito do assento: é a única forma de a sala
+			// descongelar sem o treinador — saída voluntária é consentimento.
+			releaseSeat(game, playerState.name, "left");
 		}
 
 		// Desvincular socket e sair da sala Socket.io
@@ -1333,12 +1378,80 @@ export function registerSessionSocketHandlers(
 			teamId: playerState?.teamId ?? null,
 		});
 		emitPresence(game);
+		emitPresencePause(game, io);
 
 		// Verificar se o jogo pode avançar sem este coach (ex: halftime a dois)
 		const activePhases = ["match_halftime", "match_et_gate"];
 		if (activePhases.includes(game.gamePhase)) {
 			checkAllReady(game);
 		}
+	});
+
+	// ─── requestResync ────────────────────────────────────────────────────────
+	// O cliente deteta um salto de `seq` (evento perdido num flape) e pede o
+	// estado completo. Responde com o mesmo payload do join — não há diff, porque
+	// a fonte é a mesma e uma snapshot é impossível de ficar dessincronizada.
+	socket.on("requestResync", () => {
+		const game = getGameBySocket(socket.id);
+		if (!game) return;
+		const playerState = getPlayerBySocket(game, socket.id);
+		if (!playerState) return;
+
+		markSeatSeen(game, playerState.name);
+		console.log(
+			`[${game.roomCode}] 🔄 requestResync: ${playerState.name} (seq=${game.eventSeq})`,
+		);
+		socket.emit("gameState", buildGameStatePayload(game, playerState.name));
+		emitCurrentPhaseToSocket(game, socket);
+		emitPresence(game);
+		emitPresencePause(game, io);
+		emitGlobalPlayerUpdate?.();
+
+		if (playerState.teamId != null) {
+			const teamId = playerState.teamId;
+			game.db.all(
+				"SELECT * FROM players WHERE team_id = ?",
+				[teamId],
+				(_err: any, squad: any[]) =>
+					socket.emit(
+						"mySquad",
+						ensureFullBench(
+							withJuniorGRs(squad || [], teamId, upcomingMatchweek(game)),
+							teamId,
+							upcomingMatchweek(game),
+						),
+					),
+			);
+			game.db.get(
+				"SELECT id, name, division, budget, points, wins, draws, losses, goals_for, goals_against, color_primary, color_secondary, crest, stadium_capacity, stadium_name FROM teams WHERE id = ?",
+				[teamId],
+				(_err: any, d: any) => {
+					if (!d) return;
+					socket.emit("teamAssigned", {
+						teamName: d.name,
+						teamId: d.id,
+						division: d.division ?? 4,
+						budget: d.budget ?? 0,
+						points: d.points ?? 0,
+						wins: d.wins ?? 0,
+						draws: d.draws ?? 0,
+						losses: d.losses ?? 0,
+						goalsFor: d.goals_for ?? 0,
+						goalsAgainst: d.goals_against ?? 0,
+						colorPrimary: d.color_primary ?? "#888888",
+						colorSecondary: d.color_secondary ?? "#ffffff",
+						crest: d.crest ?? null,
+						stadiumCapacity: d.stadium_capacity ?? 0,
+						stadiumName: d.stadium_name ?? "",
+						isNew: false,
+					});
+				},
+			);
+		}
+		game.db.all(
+			"SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20",
+			(_err3: any, scorers: any[]) => socket.emit("topScorers", scorers || []),
+		);
 	});
 
 	socket.on(

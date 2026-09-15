@@ -9,13 +9,18 @@ export const socket = io(import.meta.env.VITE_BACKEND_URL || undefined, {
   timeout: 20000,
 });
 
-// Detect server restarts: reload the page so the client picks up new assets.
+// Detect server restarts: pede uma resincronização em vez de recarregar a
+// página. O reload obrigava a um join novo na janela em que a auth/DB ainda
+// não está pronta — e um `joinError` aí apagava a sessão guardada (o jogo
+// "desaparecia"). O servidor responde com o estado completo.
 let _knownServerStartTime = null;
 socket.on("serverStartTime", (t) => {
   if (_knownServerStartTime === null) {
     _knownServerStartTime = t;
   } else if (_knownServerStartTime !== t) {
-    window.location.reload();
+    _knownServerStartTime = t;
+    console.log("[socket] servidor reiniciou — a ressincronizar estado");
+    socket.emit("requestResync");
   }
 });
 
@@ -31,11 +36,68 @@ socket.on("reconnect_failed", () => {
   console.error("[socket] reconnection failed");
 });
 
-socket.on("sessionDisplaced", () => {
-  // Desactivar reconexão automática antes de desligar para evitar ciclos
-  socket.io.opts.reconnection = false;
-  socket.disconnect();
+// A sessão foi reclamada noutro dispositivo. NÃO se desliga a reconexão: era
+// um interruptor de sentido único — um displacement falso (socket antigo a meio
+// de um flape, segunda tab) deixava o cliente sem reconectar até reload manual.
+// Quem decide é o servidor (só desloca com deviceId diferente).
+const displacedListeners = new Set();
+export function subscribeSessionDisplaced(cb) {
+  displacedListeners.add(cb);
+  return () => displacedListeners.delete(cb);
+}
+socket.on("sessionDisplaced", (info) => {
+  console.warn("[socket] sessionDisplaced", info);
+  for (const cb of displacedListeners) {
+    try {
+      cb(info || {});
+    } catch {
+      /* ignore */
+    }
+  }
 });
+
+// ── Pausa da sala (congelamento por treinador ausente) ───────────────────────
+// O servidor não decide nem avança por um treinador ausente: a sala pára. Estes
+// listeners alimentam o aviso global (RoomPauseBanner.jsx).
+const pauseListeners = new Set();
+export function subscribeRoomPause(cb) {
+  pauseListeners.add(cb);
+  return () => pauseListeners.delete(cb);
+}
+function notifyPause(state) {
+  for (const cb of pauseListeners) {
+    try {
+      cb(state);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+socket.on("roomPaused", (info) => notifyPause({ paused: true, ...(info || {}) }));
+socket.on("roomResumed", () => notifyPause({ paused: false }));
+
+// ── Sequência da sala: deteta eventos perdidos e pede resync ─────────────────
+// O servidor numera tudo o que muda estado (`roomEvent`, e o `seq` do
+// `gameState`). Se a sequência saltar, perdeu-se um evento a meio de um flape e
+// o cliente pede o estado completo — em vez de ficar com uma UI parcialmente
+// velha, que era o que acontecia com os one-shot sem garantia.
+let lastSeq = 0;
+socket.on("gameState", (data) => {
+  if (typeof data?.seq === "number") lastSeq = data.seq;
+});
+socket.on("roomEvent", (evt) => {
+  if (typeof evt?.seq !== "number") return;
+  if (lastSeq > 0 && evt.seq > lastSeq + 1) {
+    console.warn(
+      `[socket] salto de sequência ${lastSeq} → ${evt.seq} — a pedir resync`,
+    );
+    socket.emit("requestResync");
+  }
+  lastSeq = Math.max(lastSeq, evt.seq);
+});
+export function getRoomSeq() {
+  return lastSeq;
+}
 
 // ── Fila de saída resiliente (wifi → 5G → wifi) ────────────────────────────
 // Emits feitos sem rede perdiam-se em silêncio (o Pronto, a tática, o lance).

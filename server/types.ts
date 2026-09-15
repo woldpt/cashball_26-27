@@ -177,6 +177,26 @@ export interface PlayerSession {
 }
 
 /**
+ * Assento durável do treinador na sala (tabela `room_seats`). É a fonte da
+ * verdade de `teamId`/`ready`/tática — `playersByName` é apenas a projeção em
+ * memória. Sobrevive a disconnect, flape de rede e restart do servidor.
+ */
+export interface RoomSeat {
+  name: string;
+  teamId: number | null;
+  seatEpoch: number;
+  deviceId: string | null;
+  lastSeenAt: number;
+  intent: {
+    ready: boolean;
+    formation?: string;
+    style?: string;
+    positions?: Record<string, unknown>;
+  };
+  status: "member" | "kicked" | "dismissed" | "left";
+}
+
+/**
  * Evento do mercado de treinadores (despedimento / contratação) recolhido após
  * cada jornada para o modal semanal "Mercado de Treinadores".
  */
@@ -299,6 +319,18 @@ export interface ActiveGame {
 
   // ── Coaches expulso da sala pelo Admin (ban permanente, persistido) ──
   kickedCoaches: Set<string>; // coachName → expulso definitivamente da sala
+
+  // ── Assentos duráveis + presença por lease (ver roomStateHelpers.ts) ──
+  seats: Record<string, RoomSeat>;
+  // Último sinal de vida por treinador (ms). A presença é socket ligado OU
+  // lease dentro da grace — um flape de rede não conta como ausência.
+  seatSeenAt: Record<string, number>;
+  // Esperas que congelam a sala enquanto faltar um treinador da ronda.
+  pauseWaiters: Set<() => void>;
+  pausedSince: number | null;
+  // Sequência do log de eventos da sala (room_events) + seq do último snapshot.
+  eventSeq: number;
+  snapshotSeq: number;
 
   // ── Resumo semanal do mercado de treinadores (transiente, limpo após emissão) ──
   coachMarketEvents: CoachMarketEvent[];

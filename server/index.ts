@@ -4,6 +4,7 @@ require("dotenv").config();
 require("./sentry"); // Initializes Sentry if SENTRY_DSN is set (no-op otherwise)
 
 import type { ActiveGame } from "./types";
+import * as roomState from "./roomStateHelpers";
 
 type Db = any;
 type AnyRow = Record<string, any>;
@@ -862,6 +863,13 @@ const io = new Server(server, {
 		methods: ["GET", "POST"],
 		credentials: true,
 	},
+	// Recuperação nativa do Socket.io: uma queda curta (wifi → 5G, ecrã
+	// bloqueado) mantém a sala e reenvia os pacotes perdidos. Substitui parte
+	// da torre de outbox/sticky-intents do cliente.
+	connectionStateRecovery: {
+		maxDisconnectionDuration: 2 * 60 * 1000,
+		skipMiddlewares: false,
+	},
 });
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -1038,6 +1046,7 @@ const weeklyFlowHelpers = createWeeklyFlowHelpers({
 });
 
 const checkAllReady = weeklyFlowHelpers.checkAllReady;
+const resumeInterruptedMatch = weeklyFlowHelpers.resumeInterruptedMatch;
 
 /** Sala Socket.io dos coaches dentro de uma sala (presença/estado pós-join). */
 const GLOBAL_ROOM = "__global__";
@@ -1088,6 +1097,19 @@ function findOnlineCoachSocket(
 io.on("connection", (socket) => {
 	socket.emit("serverStartTime", SERVER_START_TIME);
 
+	// Lease de presença: qualquer evento de um socket ligado renova o sinal de
+	// vida do assento. Sem isto, a grace de presença só seria renovada no join.
+	socket.use((_packet: any, next: any) => {
+		try {
+			const g = getGameBySocket(socket.id);
+			const n = g ? g.socketToName[socket.id] : null;
+			if (g && n) roomState.markSeatSeen(g, n);
+		} catch {
+			/* nunca bloquear o pipeline de eventos */
+		}
+		next();
+	});
+
 	registerSessionSocketHandlers(socket, {
 		io,
 		verifySession,
@@ -1106,6 +1128,7 @@ io.on("connection", (socket) => {
 		emitAwaitingCoaches,
 		emitPresence,
 		checkAllReady,
+		resumeInterruptedMatch,
 		runAll,
 		runGet,
 		buildNextMatchSummary,
@@ -1194,6 +1217,7 @@ io.on("connection", (socket) => {
 		deleteManager,
 		saveGameState,
 		emitPresence,
+		emitPresencePause,
 	});
 
 	// Training handlers

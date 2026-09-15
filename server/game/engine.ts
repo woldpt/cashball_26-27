@@ -17,6 +17,11 @@ import {
   EMERGENCY_GK_SKILL,
   CUP_FINAL_SPECTATOR_MS_PER_MINUTE,
 } from "../gameConstants";
+import {
+  computeAbsentees,
+  isSeatPresent,
+  waitForPresence,
+} from "../roomStateHelpers";
 
 // Re-export so external files can still import from "./game/engine"
 export {
@@ -324,68 +329,6 @@ export function getMatchFatigueSnapshot(
   };
 }
 
-/**
- * Descarta o estado parcial de um jogo interrompido (crash/restart a meio):
- * volta a 0-0 e limpa eventos e lineups. A fase transitória do jogo volta a
- * lobby e a semana recomeça — sem isto o segmento era re-simulado por cima do
- * que já estava gravado (golos a dobrar, suplentes de um lineup obsoleto em
- * campo). Devolve true se havia progresso para descartar.
- */
-export function resetPartialMatchState(fixture: MatchFixture): boolean {
-  const hadProgress =
-    (fixture.finalHomeGoals || 0) > 0 ||
-    (fixture.finalAwayGoals || 0) > 0 ||
-    (fixture.events?.length ?? 0) > 0 ||
-    (fixture.homeLineup?.length ?? 0) > 0 ||
-    (fixture.awayLineup?.length ?? 0) > 0;
-  fixture.finalHomeGoals = 0;
-  fixture.finalAwayGoals = 0;
-  fixture.events = [];
-  fixture.homeLineup = [];
-  fixture.awayLineup = [];
-  // O jogo vai recomeçar do minuto 1: os minutos descartados têm de voltar a
-  // ser simuláveis (a guarda anti-duplo-minuto continua a valer para o run em
-  // curso, não para um jogo descartado).
-  fixture._simulatedMinutes = new Set<number>();
-  // Estado parcial restante do jogo descartado — sem isto, o replay herdava:
-  // deltas acumulados (golos/vermelhos/lesões contavam a dobrar no flush),
-  // _subbedOut/_yellowCards (banido/cartão do jogo velho), squads/rosters
-  // cacheados (onze com subs já aplicadas), moral e ledgers de fadiga.
-  delete fixture._deltas;
-  delete fixture._deltasQueued;
-  delete fixture._subbedOut;
-  delete fixture._yellowCards;
-  delete fixture._homeSquad;
-  delete fixture._awaySquad;
-  delete fixture._homeFullRoster;
-  delete fixture._awayFullRoster;
-  delete fixture._homeMorale;
-  delete fixture._awayMorale;
-  delete fixture._minutesPlayed;
-  delete fixture._fatigueLoss;
-  delete fixture._homePower;
-  delete fixture._awayPower;
-  delete fixture._homePowerV;
-  delete fixture._awayPowerV;
-  delete fixture._injuryLoadMult;
-  delete fixture._homeChances;
-  delete fixture._awayChances;
-  delete fixture._homePossession;
-  delete fixture._awayPossession;
-  delete fixture._weather;
-  // Flags de comentários já gerados: os events foram limpos, os comentários de
-  // introdução (weather/tática/intervalo/prolongamento) têm de poder nascer de novo.
-  delete fixture._firstHalfStartComment;
-  delete fixture._secondHalfStartComment;
-  delete fixture._extraTimeStartComment;
-  delete fixture._finalEndComment;
-  delete fixture._bettingIntroShown;
-  delete fixture._lineupIndex;
-  delete fixture._minute;
-  // _occupancy/_ticketPrice/attendance ficam: ambiente pré-jogo fixado na
-  // preparação da jornada (não é estado parcial do jogo interrompido).
-  return hadProgress;
-}
 
 /**
  * Snapshot de lineup (titulares + suplentes) para exibição no cliente — ÚNICA
@@ -753,7 +696,7 @@ export function listTeamMatchActions(
   return [...map.values()].filter((pa) => pa && pa.teamId === teamId);
 }
 
-function waitForMatchAction({
+async function waitForMatchAction({
   game,
   io,
   type,
@@ -772,28 +715,24 @@ function waitForMatchAction({
   fallback: () => MatchActionChoice;
   fixtureData?: Record<string, unknown>;
 }): Promise<{ choice: MatchActionChoice; source: string }> {
-  const humanCoach = getCurrentPlayerState(game, teamId);
+  const humanCoach = Object.values(game.playersByName).find(
+    (p) => p.teamId === teamId,
+  );
   if (!humanCoach) {
-    // Treinador conhecido mas sem socket (tab fechada/morta, telemóvel): a
-    // decisão é automática. Sem aviso isto ficava silencioso para quem volta
-    // depois — "o ecrã de escolha nunca apareceu". NPCs (sem registo em
-    // playersByName) não geram ruído.
-    const offlineCoach = Object.values(game.playersByName).find(
-      (p) => p.teamId === teamId,
-    );
-    if (offlineCoach) {
-      const label =
-        type === "injury"
-          ? "lesão"
-          : type === "penalty"
-            ? "penálti"
-            : "substituição";
-      io.to(game.roomCode).emit("systemMessage", {
-        text: `⏱️ ${offlineCoach.name} está offline — ${label} resolvida automaticamente.`,
-        broadcast: true,
-      });
-    }
+    // Equipa sem treinador humano (NPC): a decisão automática é o normal.
     return Promise.resolve({ choice: fallback(), source: "auto" });
+  }
+
+  // Treinador humano AUSENTE: a sala congela. Não se decide por ele — era
+  // exatamente isto que fazia o jogo avançar sozinho para a jornada seguinte
+  // enquanto o telemóvel estava sem rede. Nada anda até ele voltar (ou o
+  // assento ser libertado explicitamente: kick/despedida/`adminReleaseRoom`).
+  if (!isSeatPresent(game, humanCoach.name)) {
+    io.to(game.roomCode).emit("systemMessage", {
+      text: `⏸ Sala em pausa — à espera de ${humanCoach.name}.`,
+      broadcast: true,
+    });
+    await waitForPresence(game, io);
   }
 
   return new Promise<{ choice: MatchActionChoice; source: string }>((resolve) => {
@@ -824,10 +763,38 @@ function waitForMatchAction({
       resolve({ choice, source });
     };
 
-    const timer = setTimeout(() => {
-      finalize(fallback(), "auto");
-    }, timeoutMs);
+    // A janela só corre com o treinador presente. Se ele desaparecer a meio
+    // dela, o relógio reinicia quando voltar em vez de decidir por ele.
+    const arm = (): ReturnType<typeof setTimeout> => {
+      const t = setTimeout(async () => {
+        if (!isSeatPresent(game, humanCoach.name)) {
+          io.to(game.roomCode).emit("matchActionBlocked", {
+            actionId,
+            teamId,
+            type,
+            absent: computeAbsentees(game),
+          });
+          await waitForPresence(game, io);
+          const entry = getPendingMatchActions(game).get(actionId);
+          if (!entry) return; // foi consumida entretanto (leave/kick)
+          entry.expiresAt = Date.now() + timeoutMs;
+          entry.timer = arm();
+          io.to(game.roomCode).emit("matchActionRequired", {
+            actionId,
+            type,
+            teamId,
+            ...payload,
+            ...(fixtureData || {}),
+            expiresAt: entry.expiresAt,
+          });
+          return;
+        }
+        finalize(fallback(), "auto");
+      }, timeoutMs);
+      return t;
+    };
 
+    const timer = arm();
     const expiresAt = Date.now() + timeoutMs;
     getPendingMatchActions(game).set(actionId, {
       actionId,

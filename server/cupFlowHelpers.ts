@@ -27,6 +27,12 @@ import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { serializeActiveAuctions } from "./auctionHelpers";
 import { persistMoms } from "./momHelpers";
 import { computeMoms } from "./game/mom";
+import {
+  appendRoomEvent,
+  computeAbsentees,
+  logCalendarAdvance,
+  waitForPresence,
+} from "./roomStateHelpers";
 
 interface CupFlowDeps {
 	io: any;
@@ -1069,6 +1075,18 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 		game._etGateRunning = true;
 
+		// Congelamento: o prolongamento não começa com um treinador das equipas
+		// empatadas ausente.
+		if (computeAbsentees(game).length > 0) {
+			game._etGateRunning = false;
+			void waitForPresence(game, io).then(() => {
+				continueFromEtGate(game).catch((err: any) =>
+					console.error(`[${game.roomCode}] continueFromEtGate (pós-pausa):`, err),
+				);
+			});
+			return;
+		}
+
 		const entry = game.currentEvent as any;
 		const round = entry?.round;
 		const season = game.season;
@@ -1798,6 +1816,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 		// Advance calendar
 		game.calendarIndex += 1;
+		logCalendarAdvance(game, io, "cup_round_finalized", "week_end");
 		game.lastPlayedAt = new Date().toISOString();
 		game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
 		game.currentFixtures = [];
@@ -1983,6 +2002,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 
 		game.calendarIndex += 1;
+		logCalendarAdvance(game, io, "friendly_finalized", "week_end");
 		game.lastPlayedAt = new Date().toISOString();
 		game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
 		game.currentFixtures = [];

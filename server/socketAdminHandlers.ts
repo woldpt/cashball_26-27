@@ -8,6 +8,11 @@
 
 import type { ActiveGame } from "./types";
 import type { Server, Socket } from "socket.io";
+import {
+  computeAbsentees,
+  emitPresencePause,
+  releaseSeat,
+} from "./roomStateHelpers";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -37,6 +42,7 @@ interface AdminHandlerDeps {
   deleteManager: (name: string) => Promise<{ ok: boolean; error?: string }>;
   saveGameState?: (game: ActiveGame) => void;
   emitPresence?: (game: ActiveGame) => void;
+  emitPresencePause?: (game: ActiveGame, io: any) => void;
 }
 
 // ── Admin Guard ───────────────────────────────────────────────────────────────
@@ -238,6 +244,8 @@ export function registerAdminSocketHandlers(
 
             // Ban permanente: o coach expulso não pode reentrar na sala
             game.kickedCoaches.add(coachName);
+            // Assento libertado: a sala descongela sem ele.
+            releaseSeat(game, coachName, "kicked");
 
             // Libertar a equipa no DB e apagar o registo do manager
             game.db.run(
@@ -253,6 +261,7 @@ export function registerAdminSocketHandlers(
 
             saveGameState?.(game);
             emitPresence?.(game);
+            emitPresencePause?.(game, io);
 
             console.log(
               `[${game.roomCode}] 🚫 Admin removeu a sala de ${coachName} (online=${!!targetSocketId})`,
@@ -361,6 +370,53 @@ export function registerAdminSocketHandlers(
       // Bug 6 fix: only notify admin if operation actually succeeded
       if (result.ok) socket.emit("adminUsersUpdated");
       if (callback) callback(result);
+    },
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // adminReleaseRoom  { roomCode }
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Libertamento manual de uma sala congelada: liberta os assentos dos
+  // treinadores ausentes para que o jogo possa avançar sem eles. É a saída de
+  // emergência do congelamento (a outra é o próprio treinador voltar, ou ser
+  // expulso/despedido). Sem isto, uma sala cujo treinador desapareceu de vez
+  // ficaria parada para sempre.
+  socket.on(
+    "adminReleaseRoom",
+    (data: { roomCode: string }, callback?: (response: any) => void) => {
+      if (!guardAdmin(callback)) return;
+      const roomCode = (data?.roomCode || "").toUpperCase();
+      if (!roomCode) {
+        if (callback) callback({ ok: false, error: "Sala inválida." });
+        return;
+      }
+      const game = getGame(roomCode);
+      if (!game) {
+        if (callback) callback({ ok: false, error: "Sala não encontrada." });
+        return;
+      }
+      const absent = computeAbsentees(game);
+      if (absent.length === 0) {
+        if (callback)
+          callback({ ok: true, released: [], message: "Ninguém em falta." });
+        return;
+      }
+      for (const name of absent) {
+        delete game.playersByName[name];
+        game.lockedCoaches.delete(name);
+        releaseSeat(game, name, "left");
+      }
+      saveGameState?.(game);
+      emitPresence?.(game);
+      emitPresencePause(game, io);
+      io.to(game.roomCode).emit("systemMessage", {
+        text: `🔓 O Admin libertou a sala — a avançar sem: ${absent.join(", ")}.`,
+        broadcast: true,
+      });
+      console.log(
+        `[${game.roomCode}] 🔓 Admin libertou a sala congelada — libertação de: ${absent.join(", ")}`,
+      );
+      if (callback) callback({ ok: true, released: absent });
     },
   );
 }

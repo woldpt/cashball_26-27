@@ -26,6 +26,9 @@
 - **Máquina de fases:** `lobby` → `match_first_half` → `match_halftime` → `match_second_half` → `[match_et_gate → match_extra_time]` → `match_finalizing` → `lobby`. Fases transitórias resetam para `lobby` no restart (anti-deadlock).
 - **Memória vs BD:** `activeGames` em `gameManager.ts` é o estado runtime primário; sincronização com a BD é **seletiva** — stats/finanças persistem; minuto de jogo/lineups são transitórios.
 - **Coordenação de fase:** `phaseToken` (UUID) + `phaseAcks` (Set de nomes de coaches confirmados).
+- **Assentos & presença:** `roomStateHelpers.ts` — `room_seats` (equipa/`ready`/tática/`seat_epoch`/`deviceId`) é a fonte durável; `playersByName` é a projeção. Presença = socket ligado **ou** lease dentro da grace (`PRESENCE_GRACE_MS`), por isso um flape não conta como ausência.
+- **Congelamento (regra central):** com um treinador da ronda ausente, `computeAbsentees` > 0 e `waitForPresence` bloqueia o minuto, as janelas de decisão (`waitForMatchAction`), o intervalo, o prolongamento e o fecho da jornada. Não há fallback automático para humanos. Só `leaveRoom`/kick/despedida/`adminReleaseRoom` libertam o assento.
+- **Durabilidade:** `room_events` (append-only, `seq`) + `matchCheckpoint` por minuto → um restart retoma no mesmo minuto (`resumeInterruptedMatch`) em vez de recomeçar 0-0. Cliente: `seq` no `gameState` + `requestResync` quando deteta um salto.
 - **Segment guard:** `segmentRunning[roomCode]` impede dupla execução de segmento de jogo.
 
 ## 🧩 Sistemas transversais (1 linha cada)

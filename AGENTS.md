@@ -18,7 +18,8 @@
 | Seed | `cd server && npm run seed` |
 | Frontend dev · lint · JSDoc check | `cd client && npm run dev` · `npm run lint` · `npm run check:types` |
 | Mobile portrait + landscape (mudança estrutural de layout, ambas obrigatórias) | `cd client && npm run test:mobile` · `npm run test:mobile:landscape` |
-| Audit socket.io · audit de sala | `cd server && npm run audit:socketio` · `npm run audit:gamestate <ROOM_CODE>` |
+| Audit socket.io · audit de sala · audit de sessão | `cd server && npm run audit:socketio` · `npm run audit:gamestate <ROOM_CODE>` · `npm run audit:session <ROOM_CODE>` |
+| Congelamento/presença (assentos) | `cd server && npm run test:session-freeze` |
 | Repair job offer | `cd server && npm run repair:joboffer <ROOM_CODE> [--fix]` |
 | Crash-restart E2E (clona p/ `game_CRASHT.db`, limpa ao fim) | `cd server && npm run test:crash-recovery` (origem: `CRASHTEST_ROOM=XXXX`) |
 | Stack completa | `docker compose up --build` |
@@ -34,6 +35,7 @@
 - **ModalShell:** `visible={false}` **não** impede a avaliação dos `children` — guardar props nuláveis (ex. `data.teamName`) com early-return/short-circuit, senão `TypeError`.
 - **Progresso da época:** fonte da verdade `game.calendarIndex` — nunca `matchweek`.
 - **Contextos frontend:** `GameContext` = estado do jogo (players, finanças, fase); `TacticsContext` = UI de táticas (drag-and-drop/selection), consome `GameContext`; auth state vive em `App.jsx` e passa por props ao `GameLayout`.
+- **Sessão/presença:** o treinador é um **assento durável** (`room_seats`: equipa, `ready`, tática, `seat_epoch`, `deviceId`), não um `socketId`. Ausência de um treinador com equipa em jogo **congela a sala** — o servidor nunca decide (`source:"auto"`) nem avança por ele. Saídas explícitas: `leaveRoom`, kick, despedida, `adminReleaseRoom`.
 - **Não persistir `game.lockedCoaches` em BD.**
 
 ## 📏 Padrões obrigatórios

@@ -6,6 +6,16 @@ import { SEASON_CALENDAR, FRIENDLY_ROUND, fairWeeklyWage, signingWage, FANBASE_B
 import { currentEpoch, getSeasonEndMatchweek } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { getOfflineCoaches } from "./presenceHelpers";
+import {
+  backfillSeats,
+  ensureRoomStateTables,
+  loadEventSeq,
+  loadSeats,
+  markSeatSeen,
+  persistSeat,
+  replayEventsSince,
+  seatOf,
+} from "./roomStateHelpers";
 
 const sqlite = sqlite3.verbose();
 
@@ -724,6 +734,14 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
 
     // Retained fields
     lockedCoaches: new Set<string>(),
+
+    // Assentos duráveis + presença por lease + pausa
+    seats: {} as ActiveGame["seats"],
+    seatSeenAt: {} as ActiveGame["seatSeenAt"],
+    pauseWaiters: new Set<() => void>(),
+    pausedSince: null,
+    eventSeq: 0,
+    snapshotSeq: 0,
     globalMarket: [],
     auctions: {} as Record<string, unknown>,
     recentAuctions: [],
@@ -758,6 +776,10 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
   };
 
   activeGames[roomCode] = game;
+
+  // Assentos duráveis + log de eventos (idempotente — salas antigas ganham as
+  // tabelas no primeiro load depois desta versão).
+  ensureRoomStateTables(db);
 
   // Idempotência de eventos semanais: marca semanas já finalizadas/faturadas
   // para recuperar de crash/restart sem re-aplicar finanças ou classificações.
@@ -1127,33 +1149,25 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                 console.log(`[gameManager] Sala ${roomCode} migrada para calendario v2 (idx ${game.calendarIndex}, epoca ${game.season})`);
               }
 
-              // Game phase (new key first; derive from legacy if absent)
+              // Game phase (new key first; derive from legacy if absent).
+              // Fases transitórias JÁ NÃO voltam a lobby: a partida retoma no
+              // ponto em que ficou (`matchCheckpoint` + `resumeInterruptedMatch`).
+              // Recomeçar 0-0 era a perda que se via a meio de um deploy.
               if (st["gamePhase"]) {
-                const savedPhase = st["gamePhase"] as GamePhase;
-                const transientStates: GamePhase[] = [
-                  "match_first_half",
-                  "match_second_half",
-                  "match_extra_time",
-                  "match_finalizing",
-                  "match_et_gate",
-                ];
-                if (transientStates.includes(savedPhase)) {
-                  console.warn(
-                    `[gameManager] 🔄 Recovering stuck gamePhase '${savedPhase}' → 'lobby' for room ${roomCode}`,
-                  );
-                  game.gamePhase = "lobby";
-                } else {
-                  game.gamePhase = savedPhase;
-                  console.log(
-                    `[gameManager] Restored gamePhase='${savedPhase}' for room ${roomCode}`,
-                  );
-                }
+                game.gamePhase = st["gamePhase"] as GamePhase;
+                console.log(
+                  `[gameManager] Restored gamePhase='${game.gamePhase}' for room ${roomCode}`,
+                );
               } else {
                 game.gamePhase = deriveGamePhase(
                   st["matchState"] || "idle",
                   st["cupState"] || "idle",
                 );
               }
+
+              // Ponto de controlo do jogo em curso (retoma no mesmo minuto).
+              // Restaurado DEPOIS de currentFixtures (ver abaixo).
+
 
               // Halftime payload (for reconnect during match_halftime)
               if (game.gamePhase === "match_halftime") {
@@ -1181,6 +1195,8 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
 
               // Phase token
               if (st["phaseToken"]) game.phaseToken = st["phaseToken"];
+              if (st["snapshotSeq"])
+                game.snapshotSeq = parseInt(st["snapshotSeq"], 10) || 0;
 
               if (st["roomName"]) {
                 (game as any).roomName = st["roomName"];
@@ -1219,6 +1235,55 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                   game.liveMinute = Number.isFinite(parsedMinute)
                     ? parsedMinute
                     : null;
+                }
+              }
+
+              // Ponto de controlo do jogo em curso: repõe golos/eventos/lineups
+              // e o estado transitório mínimo para o segmento retomar no minuto
+              // seguinte em vez de recomeçar 0-0.
+              if (st["matchCheckpoint"]) {
+                try {
+                  const cp = JSON.parse(st["matchCheckpoint"]);
+                  if (cp && typeof cp === "object") {
+                    game.matchCheckpoint = cp;
+                    if (cp.liveMinute != null)
+                      game.liveMinute = Number(cp.liveMinute);
+                    if (Array.isArray(cp.fixtures)) {
+                      for (let i = 0; i < game.currentFixtures.length; i++) {
+                        const saved = cp.fixtures[i];
+                        if (!saved) continue;
+                        const fx = game.currentFixtures[i];
+                        fx.finalHomeGoals = saved.finalHomeGoals ?? fx.finalHomeGoals ?? 0;
+                        fx.finalAwayGoals = saved.finalAwayGoals ?? fx.finalAwayGoals ?? 0;
+                        if (Array.isArray(saved.events) && saved.events.length)
+                          fx.events = saved.events;
+                        if (Array.isArray(saved.homeLineup) && saved.homeLineup.length)
+                          fx.homeLineup = saved.homeLineup;
+                        if (Array.isArray(saved.awayLineup) && saved.awayLineup.length)
+                          fx.awayLineup = saved.awayLineup;
+                        if (saved._t1) fx._t1 = saved._t1;
+                        if (saved._t2) fx._t2 = saved._t2;
+                        if (Array.isArray(saved._subbedOut))
+                          fx._subbedOut = new Set(saved._subbedOut);
+                        if (Array.isArray(saved._yellowCards))
+                          fx._yellowCards = new Set(saved._yellowCards);
+                        if (typeof saved._homePossession === "number")
+                          fx._homePossession = saved._homePossession;
+                        if (typeof saved._awayPossession === "number")
+                          fx._awayPossession = saved._awayPossession;
+                        if (Array.isArray(saved._simulatedMinutes))
+                          fx._simulatedMinutes = new Set(saved._simulatedMinutes);
+                      }
+                    }
+                    console.log(
+                      `[gameManager] ⏱ Checkpoint restaurado (room ${roomCode}): minuto=${cp.liveMinute} fase=${cp.phase}`,
+                    );
+                  }
+                } catch (cpErr: any) {
+                  console.error(
+                    `[gameManager] matchCheckpoint ilegível (room ${roomCode}):`,
+                    cpErr?.message,
+                  );
                 }
               }
 
@@ -1590,8 +1655,25 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                               `[gameManager] Room ${roomCode} requires presence of ${game.lockedCoaches.size} human coach(es): ${[...game.lockedCoaches].join(", ")}`,
                             );
                           }
-                          game.initialized = true;
-                          if (onReady) onReady(game);
+                          // Assentos + numeração de eventos: carregar antes de
+                          // marcar inicializado — o primeiro join precisa dos
+                          // assentos para saber quem falta (a presença fica a
+                          // null, por isso uma retoma a meio começa em pausa).
+                          loadEventSeq(game, () => {
+                            // Eventos posteriores ao último snapshot (janela de
+                            // crash) são reaplicados antes de projetar assentos.
+                            replayEventsSince(game, game.snapshotSeq, () => {
+                              loadSeats(game, () => {
+                                console.log(
+                                  `[${roomCode}] 🪑 ${Object.keys(game.seats).length} assento(s) | eventSeq=${game.eventSeq}`,
+                                );
+                                backfillSeats(game, () => {
+                                  game.initialized = true;
+                                  if (onReady) onReady(game);
+                                });
+                              });
+                            });
+                          });
                         },
                       );
                     },
@@ -1663,6 +1745,10 @@ function saveGameState(game: ActiveGame): void {
   );
   upsert("gamePhase", game.gamePhase);
   upsert("phaseToken", game.phaseToken || "");
+  // Sequência do último snapshot: o log de eventos serve para re-sincronizar o
+  // cliente (seq) e para auditoria; a projeção do snapshot continua a mandar.
+  game.snapshotSeq = game.eventSeq || 0;
+  upsert("snapshotSeq", String(game.snapshotSeq));
   upsert("season", String(game.season || 1));
   upsert("year", String(game.year || 2026));
   if (game.lastPlayedAt) upsert("lastPlayedAt", String(game.lastPlayedAt));
@@ -1855,6 +1941,9 @@ function bindSocket(
   }
   game.socketToName[socketId] = name;
   socketRoomIndex[socketId] = game.roomCode;
+  // Lease de presença renovado no bind. O assento (epoch/deviceId) é reclamado
+  // pelo chamador (assignPlayer), que é quem conhece o deviceId do cliente.
+  markSeatSeen(game, name);
   return oldSocketId;
 }
 
@@ -1865,6 +1954,14 @@ function unbindSocket(game: ActiveGame, socketId: string): void {
   }
   delete game.socketToName[socketId];
   delete socketRoomIndex[socketId];
+  // NOTA: o assento NÃO é libertado aqui — equipa, ready e tática continuam a
+  // ser dele. Só `leaveRoom`/kick/despedimento/libertamento pelo admin o
+  // removem. A presença cai porque o lease (seatSeenAt) deixa de ser renovado.
+  if (name) {
+    const seat = seatOf(game, name);
+    seat.lastSeenAt = Date.now();
+    persistSeat(game, seat);
+  }
 }
 
 function getGameBySocket(socketId: string): ActiveGame | null {

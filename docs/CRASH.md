@@ -4,6 +4,7 @@
 
 ## Replay seguro pós-restart
 
+- **Jogo a meio:** já não se descarta. `matchCheckpoint` (gravado por minuto em `roomStateHelpers.saveMatchCheckpoint`) repõe golos/eventos/lineups/posse e `resumeInterruptedMatch` (`weeklyFlowHelpers`) retoma no minuto seguinte àquele em que caiu. A fase transitória **não** volta a `lobby` no load. `resetPartialMatchState` foi removido.
 - `applied_weeks` (em cada `game_*.db`) limita a aplicação por `(season, slot)`:
   - `weekly_finance` — rendimentos/salários/empréstimo aplicados no máximo 1×.
   - `finalized` — slot da liga/Taça já liquidado: o restart **avança o calendário** em vez de re-simular/re-cobrar (`recoverFinalizedSlot`).

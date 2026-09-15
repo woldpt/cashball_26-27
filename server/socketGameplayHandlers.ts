@@ -12,6 +12,12 @@ import {
   isLobbyStarter,
   upcomingMatchweek,
 } from "./game/lineupReady";
+import {
+  emitPresencePause,
+  isSeatPresent,
+  setSeatIntent,
+  waitForPresence,
+} from "./roomStateHelpers";
 
 interface GameplayHandlerDeps {
   io: any;
@@ -84,6 +90,12 @@ export function registerGameplaySocketHandlers(
     const playerState = getPlayerBySocket(game, socket.id);
     if (game && playerState) {
       playerState.tactic = tactic;
+      // A tática vive no assento: sobrevive a disconnect/restart.
+      setSeatIntent(game, playerState.name, {
+        formation: tactic.formation,
+        style: tactic.style,
+        positions: tactic.positions || {},
+      });
     }
   });
 
@@ -152,6 +164,7 @@ export function registerGameplaySocketHandlers(
             }
           }
           playerState.ready = true;
+          setSeatIntent(game, playerState.name, { ready: true });
           console.log(
             `[${game.roomCode}] 👤 ${playerState.name} setReady=true | phase=${game.gamePhase}`,
           );
@@ -162,6 +175,7 @@ export function registerGameplaySocketHandlers(
       return;
     }
     playerState.ready = ready;
+    setSeatIntent(game, playerState.name, { ready: !!ready });
     console.log(
       `[${game.roomCode}] 👤 ${playerState.name} setReady=${ready} | phase=${game.gamePhase}`,
     );
@@ -329,26 +343,11 @@ export function registerGameplaySocketHandlers(
         }
       }
 
-      // If the disconnected socket owned pending match actions, auto-resolve
-      // them all (uma equipa pode ter várias janelas em jogos diferentes).
-      for (const pendingAction of listTeamMatchActions(
-        game,
-        playerState.teamId,
-      )) {
-        takePendingMatchAction(game, pendingAction.actionId);
-        const fallbackValue = pendingAction.fallback
-          ? pendingAction.fallback()
-          : null;
-        try {
-          pendingAction.finalize(fallbackValue, "auto");
-        } catch (err) {
-          console.error(
-            "[disconnect] Error finalizing pending match action:",
-            err,
-          );
-        }
-      }
-
+      // NOTA: as pendingMatchActions deste treinador NÃO são resolvidas aqui.
+      // Era isto que fazia a lesão/substituição dele ser decidida sozinha
+      // enquanto o telemóvel estava sem rede. A janela fica bloqueada e a sala
+      // congela (barreira por minuto + waitForMatchAction) até ele voltar ou o
+      // assento ser libertado explicitamente (kick/despedida/adminReleaseRoom).
       // Emit coach disconnected notification to the room
       const disconnectingName = playerState.name;
       const disconnectingTeamId = playerState.teamId;
@@ -363,6 +362,9 @@ export function registerGameplaySocketHandlers(
     unbindSocket(game, socket.id);
     emitPresence(game);
     emitGlobalPlayerUpdate?.();
+
+    // Presença mudou: emitir o estado de pausa (agora bloqueado) e congelar.
+    emitPresencePause(game, io);
 
     // Clear phase timer to prevent stale timeouts after disconnect/reconnect
     if (game.phaseTimer) {
