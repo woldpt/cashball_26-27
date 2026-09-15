@@ -287,6 +287,27 @@ export function deleteSeat(game: ActiveGame, name: string): void {
   game.db.run("DELETE FROM room_seats WHERE coach_name = ? COLLATE NOCASE", [name], () => {});
 }
 
+/**
+ * Limpa o "pronto" de TODOS os assentos (intent + projeção).
+ *
+ * Usar SEMPRE que o ready tem de ser reconfirmado (fim de jornada, entrada no
+ * intervalo, gate do prolongamento, recuperação de crash, erro de fixtures).
+ * Como o `checkAllReady` lê `seat.intent.ready`, limpar só a projeção deixava
+ * um intent obsoleto a `true` e a sala avançava sem ninguém clicar Pronto — o
+ * bug já apanhado no intervalo (f162c1d) que existia em mais 6 sítios.
+ */
+export function resetAllReady(game: ActiveGame): void {
+  for (const seat of Object.values(game.seats)) {
+    if (seat.intent.ready) {
+      seat.intent.ready = false;
+      persistSeat(game, seat);
+    }
+  }
+  for (const player of Object.values(game.playersByName)) {
+    player.ready = false;
+  }
+}
+
 // ── Presença da ronda + pausa ────────────────────────────────────────────────
 
 /**

@@ -32,6 +32,7 @@ import {
   clearMatchCheckpoint,
   computeAbsentees,
   logCalendarAdvance,
+  resetAllReady,
   waitForPresence,
 } from "./roomStateHelpers";
 
@@ -1020,9 +1021,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				`[${game.roomCode}] ⏸ ET gate: waiting for coaches in drawn fixtures to ready up`,
 			);
 			// Reset ready states BEFORE changing phase
-			Object.values(game.playersByName).forEach((p: any) => {
-				p.ready = false;
-			});
+			resetAllReady(game);
 			game.gamePhase = "match_et_gate";
 			const etGatePayload = {
 				round,
@@ -1827,9 +1826,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		game._etSimCompleted = false;
 		game.cupResultsPayload = null;
 		game.gamePhase = "lobby";
-		Object.values(game.playersByName).forEach((p) => {
-			p.ready = false;
-		});
+		resetAllReady(game);
 		console.log(
 			`[${game.roomCode}] ↩ Cup round ${round} finalized → lobby | calendarIndex=${game.calendarIndex} | nextEvent=${game.currentEvent?.type ?? "none"}`,
 		);
@@ -2013,9 +2010,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		game.lastHalftimePayload = null;
 		game.cupResultsPayload = null;
 		game.gamePhase = "lobby";
-		Object.values(game.playersByName).forEach((p) => {
-			p.ready = false;
-		});
+		resetAllReady(game);
 		console.log(
 			`[${game.roomCode}] Friendly finalized, lobby | calendarIndex=${game.calendarIndex} | nextEvent=${game.currentEvent?.type ?? "none"}`,
 		);

@@ -46,6 +46,7 @@ import {
   computeAbsentees,
   isSeatPresent,
   lastSimulatedMinute,
+  resetAllReady,
   logCalendarAdvance,
   requiredTeamIds,
   saveMatchCheckpoint,
@@ -905,10 +906,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
       // Limpar o ready no assento e na projeção: sem isto um rejoin no
       // intervalo herdava o intent.ready obsoleto e avançava sem Pronto.
-      Object.keys(game.playersByName).forEach((coachName) => {
-        game.playersByName[coachName].ready = false;
-        setSeatIntent(game, coachName, { ready: false });
-      });
+      resetAllReady(game);
       emitPresence(game);
       saveGameState(game);
 
@@ -1208,9 +1206,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             results: fullTimeFixtures,
           });
 
-          Object.values(game.playersByName).forEach((p) => {
-            p.ready = false;
-          });
+          resetAllReady(game);
 
           // Advance state
           game.calendarIndex += 1;
@@ -1726,9 +1722,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       segmentRunning[game.roomCode] = false;
       saveGameState(game);
       // Reset ready states so coaches can retry
-      Object.values(game.playersByName).forEach((p) => {
-        p.ready = false;
-      });
+      resetAllReady(game);
       emitPresence(game);
       io.to(game.roomCode).emit("systemMessage", {
         text: "⚠ Erro ao gerar jogos. Tenta novamente.",
@@ -1846,9 +1840,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     game.phaseToken = makePhaseToken(game);
     game.gamePhase = "lobby";
     game.lastHalftimePayload = null;
-    Object.values(game.playersByName).forEach((p) => {
-      p.ready = false;
-    });
+    resetAllReady(game);
 
     if (game.currentEvent?.type === "league") {
       prepareLeagueFixtures(game, (game.currentEvent as any).matchweek).catch(

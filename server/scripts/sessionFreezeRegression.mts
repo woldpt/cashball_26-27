@@ -19,6 +19,8 @@
  *        (era este o bug do dilúvio de "minuto N já simulado": o checkpoint
  *        velho era colado às fixtures novas e a partida não jogava nada)
  *   F10 — lastSimulatedMinute: fallback do cursor de retoma
+ *   F11 — resetAllReady: limpa o intent do assento E a projeção (um intent
+ *        obsoleto a `true` fazia a sala avançar sem ninguém clicar Pronto)
  *
  * Run: cd server && npm run test:session-freeze
  */
@@ -40,6 +42,7 @@ const {
   saveMatchCheckpoint,
   applyMatchCheckpoint,
   lastSimulatedMinute,
+  resetAllReady,
   ensureRoomStateTables,
   PRESENCE_GRACE_MS,
 } = require("../roomStateHelpers.ts");
@@ -336,4 +339,37 @@ test("F10 — lastSimulatedMinute alimenta o cursor de retoma", () => {
   const from = Math.max(1, (game.liveMinute ?? lastSimulatedMinute(game)) + 1);
   assert.equal(from, 6);
   assert.equal(lastSimulatedMinute(makeGame()), 0);
+});
+
+// ── F11 ─────────────────────────────────────────────────────────────────────
+test("F11 — resetAllReady limpa assento e projeção", () => {
+  const writes: string[] = [];
+  const game: any = makeGame({
+    db: { run: (sql: string) => writes.push(sql) },
+  });
+  const a = seat("A", HOME);
+  a.intent = { ready: true, formation: "4-3-3" };
+  const b = seat("B", AWAY);
+  b.intent = { ready: false };
+  game.seats = { A: a, B: b };
+  game.playersByName = {
+    A: { name: "A", teamId: HOME, socketId: "s1", ready: true },
+    B: { name: "B", teamId: AWAY, socketId: "s2", ready: true },
+  };
+
+  resetAllReady(game);
+
+  assert.equal(game.seats.A.intent.ready, false, "intent do assento limpo");
+  assert.equal(game.seats.A.intent.formation, "4-3-3", "tática preservada");
+  assert.equal(game.playersByName.A.ready, false);
+  assert.equal(game.playersByName.B.ready, false);
+  // Só o assento que estava pronto é persistido.
+  assert.equal(writes.length, 1);
+
+  // Invariante: depois do reset nenhum membro pode aparecer pronto — é o que
+  // o checkAllReady (por assento) usa para decidir avançar.
+  assert.equal(
+    Object.values(game.seats).every((x: any) => !x.intent.ready),
+    true,
+  );
 });

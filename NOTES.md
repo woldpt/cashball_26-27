@@ -1,3 +1,10 @@
+## `resetAllReady`: o mesmo bug do intervalo existia em mais 6 sítios (fix)
+
+- **Padrão (bug real):** o `checkAllReady` lê `seat.intent.ready`, mas **sete** sítios limpavam só `playersByName[x].ready`. Um `intent.ready` obsoleto a `true` fazia a sala avançar **sem ninguém clicar Pronto**: fim de liga (`weeklyFlowHelpers` → arranque da jornada seguinte), erro de geração de fixtures, `recoverFinalizedSlot` (crash recovery), entrada no `match_et_gate` (prolongamento automático!), fim de taça e fim do amigável. O intervalo já tinha sido corrigido em `f162c1d` — a causa era a lógica duplicada à mão em cada sítio.
+- **Fix na raiz:** novo `resetAllReady(game)` em `roomStateHelpers.ts` (limpa o intent de todos os assentos + a projeção, persistindo só os que mudam) e os 7 sítios passam a chamá-lo — incl. o do intervalo, que assim usa a mesma implementação. Sítios que limpam a projeção e logo libertam/apagam o assento (`leaveRoom`, despedimento) ficam como estão; o gate do 11 já escrevia os dois.
+- **Teste:** `test:session-freeze` 11/11 (F11: limpa intent + projeção, preserva a tática, persiste só o alterado, e a invariante "nenhum membro pronto depois do reset").
+- Checks: server `typecheck` OK; `test:engine-unit` 19/19; `test:crash-recovery` ✅; `audit:socketio` 0 erros.
+
 ## Dilúvio de "minuto N já simulado" (fix): checkpoint sem identidade
 
 - **Sintoma:** centenas de `⚠ minuto 1 já simulado nesta fixture — ignorado` durante o intervalo. A conta bate certo: **16 jogos × 45 minutos = 720 linhas** para UMA chamada de `runMatchSegment(1,45)` em que todos os minutos já estavam marcados — o jogo "jogava" 45 minutos em ~0 ms e fechava a jornada a 0-0.
