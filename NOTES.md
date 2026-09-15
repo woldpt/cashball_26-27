@@ -1,3 +1,7 @@
+## ClubTab: "Jornal do Clube" → "Histórico do Clube"
+- A secção do ClubTab fazia confusão com a página Jornal (`JournalTab.jsx`, tab global da bancada). Renomeado só o visível (título do Panel + comentários + texto do tutorial); props/variáveis (`clubNews`, `groupedNews`, `NewsRow`) intactas para diff mínimo.
+- Checks: `eslint` nos ficheiros tocados OK + `check:types` OK (`lint` global só os 2 erros pré-existentes).
+
 ## Hotfix prod: emitPresencePause is not defined (crash à conexão)
 - **Causa:** `server/index.ts:1220` passava `emitPresencePause` como nome nu para o `registerAdminSocketHandlers`, mas o ficheiro só importa o namespace `roomState` — `ReferenceError` em cada conexão (vinha do `ecbdbde`). Fix de 1 token: `roomState.emitPresencePause`.
 - **Porque passou os checks:** `index.ts` tem `// @ts-nocheck` na linha 1 — `typecheck` e `build` nunca o verificam. Lição: toques no `index.ts` exigem prova de runtime. Também visto de caminho: o processo não sai após `listen EADDRINUSE` fatal (fica pendurado) e a `PORT` está hardcoded a 3000.

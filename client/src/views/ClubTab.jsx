@@ -122,7 +122,7 @@ export function ClubTab({
         ? "bg-amber-500"
         : "bg-error";
 
-  // ── Agrupamento do jornal por ano ──────────────────────────────────
+  // ── Agrupamento do histórico por ano ───────────────────────────────
   const groupedNews = useMemo(() => {
     const map = new Map();
     for (const n of clubNews || []) {
@@ -140,7 +140,7 @@ export function ClubTab({
   const [expandedYears, setExpandedYears] = useState(() => new Set([String(seasonYear)]));
   const [showAllYears, setShowAllYears] = useState(false);
 
-  // Quando o jornal ganha um novo ano (virada de época), expande-o automaticamente
+  // Quando o histórico ganha um novo ano (virada de época), expande-o automaticamente
   useEffect(() => {
     if (groupedNews.length === 0) return;
     const mostRecent = groupedNews[0][0];
@@ -458,9 +458,9 @@ export function ClubTab({
         </div>
       </div>
 
-      {/* ── ROW 3: JORNAL DO CLUBE (agregado por ano) ──────────────── */}
+      {/* ── ROW 3: HISTÓRICO DO CLUBE (agregado por ano) ───────────── */}
       <Panel
-        title="Jornal do Clube"
+        title="Histórico do Clube"
         icon="newspaper"
         meta={
           <div className="flex items-center gap-2">
