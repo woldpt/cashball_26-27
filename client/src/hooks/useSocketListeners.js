@@ -1022,7 +1022,7 @@ export function useSocketListeners(handlers, refs) {
 				handlers.setIsMatchActionPending(false);
 			}
 			// O join já está ligado no servidor: esvaziar a fila offline
-			// (tática, pronto, resoluções) + repor intenções sticky.
+			// (tática, resoluções) + repor intenções sticky.
 			flushOutbox();
 		});
 

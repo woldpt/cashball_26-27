@@ -230,6 +230,11 @@
 
 # NOTES.md — Estado corrente do projeto
 
+## Rejoin deixava de fabricar Pronto e avançar jogos sozinho (fix RKHWIS)
+- **Causa:** o `queueEmit("setReady", true)` ficava em `stickyIntents` (`socket.js`) e o `flushOutbox()` (no `teamAssigned` e no `gameState`) reenviava-o em cada rejoin — 2–3 emits no mesmo segundo. O comentário que o justificava ("o servidor faz reset do ready no disconnect") está desatualizado: o disconnect preserva `seat.intent.ready` de propósito e só as fronteiras (fim de jornada, intervalo) fazem reset. Resultado: um Pronto da jornada N valia como consentimento para a N+1 — cada flape arrancava um jogo (log 20:05:18) e o `week_end | absent=[]` mostra que a presença estava bem, o consentimento é que era fabricado.
+- **Fix:** `setReady` fora das stickies (novo `STICKY_EVENTS = {setTactic}`); cliques offline continuam na `outbox` one-shot e a tática continua sticky (durável, idempotente). Comentário do flush em `useSocketListeners` alinhado.
+- Checks: `eslint` nos 2 ficheiros + `check:types` OK. Sem mobile-resp-check (zero layout). **Prova funcional em falta:** repetir Pronto → fim de jogo → disconnect → reconnect e confirmar que o `checkAllReady` fica `blocked (lobby)` até ao clique real.
+
 > **Regra (1 ficheiro, nunca um por sessão):**
 > - Atualizar no fim de cada tarefa/funcionalidade — e antes de fechar a sessão.
 > - Bullets curtos em pt-PT. Blocos antigos (> ~2 semanas) já refletidos em commits: apagar.

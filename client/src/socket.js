@@ -129,12 +129,17 @@ export function getRoomSeq() {
 
 const outbox = [];
 const outboxListeners = new Set();
-// Última intenção enviada por evento coalescível (tática, pronto): reenviada
-// no (re)join para um flape não obrigar a reconfirmar (o servidor faz reset
-// do ready no disconnect — o reenvio repõe a intenção explícita do utilizador).
+// Última tática enviada: reenviada no (re)join para um flape não obrigar a
+// redefini-la (é preferência durável e idempotente no servidor).
+// O `setReady` está EXCLUÍDO de propósito: é consentimento por fase, e o
+// servidor já preserva o ready no disconnect (assento durável) e faz reset
+// nas fronteiras (fim de jornada, intervalo). Reenviá-lo fabricava um Pronto
+// de outra jornada e arrancava jogos sem ninguém clicar.
 const stickyIntents = new Map();
 // Eventos onde só a última intenção interessa (last-write-wins no servidor).
 const COALESCE_EVENTS = new Set(["setTactic", "setReady"]);
+// Subconjunto do COALESCE_EVENTS reenviado em cada (re)join (ver acima).
+const STICKY_EVENTS = new Set(["setTactic"]);
 
 function notifyOutbox() {
   const snapshot = { pending: outbox.length };
@@ -201,7 +206,7 @@ function enqueue(entry) {
  */
 export function queueEmit(event, payload) {
   const entry = { event, payload, needsAck: false };
-  if (COALESCE_EVENTS.has(event)) stickyIntents.set(event, payload);
+  if (STICKY_EVENTS.has(event)) stickyIntents.set(event, payload);
   if (socket.connected) {
     sendNow(entry);
     return;
