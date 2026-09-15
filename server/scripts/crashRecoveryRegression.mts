@@ -25,6 +25,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
+const { savesDirFor } = require("../db/roomPaths");
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const dbDir = path.join(scriptDir, "..", "db");
 const savesDir = savesDirFor(dbDir);
@@ -35,7 +36,8 @@ const dstPath = path.join(savesDir, `game_${TEST_ROOM}.db`);
 const { getGame, saveGameState, activeGames } = require("../gameManager") as any;
 const { generateFixturesForDivision, applyPostMatchQualityEvolution } =
   require("../game/engine") as any;
-const { SEASON_CALENDAR, LOAN_WEEKLY_INSTALLMENT } = require("../gameConstants") as any;
+const { SEASON_CALENDAR, LOAN_WEEKLY_INSTALLMENT, STADIUM_UPKEEP_PER_SEAT_WEEK } =
+  require("../gameConstants") as any;
 
 // Espelho de applyWeeklyFinancesOnce (weeklyFlowHelpers.ts): o delta da 1ª
 // aplicação deve bater EXATAMENTE com esta fórmula — se derivar no server, o
@@ -51,6 +53,7 @@ const expectedWeeklyDelta = () =>
        - CAST((loan_amount * 0.015) AS INTEGER)
        - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
        - MIN(${LOAN_WEEKLY_INSTALLMENT}, loan_amount)
+       - CAST((COALESCE(stadium_capacity, 0) * ${STADIUM_UPKEEP_PER_SEAT_WEEK}) AS INTEGER)
      ) AS delta FROM teams`,
   ).then((r) => r[0]?.delta ?? 0);
 const { createWeeklyFlowHelpers } = require("../weeklyFlowHelpers") as any;
