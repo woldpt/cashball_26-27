@@ -237,6 +237,9 @@ export function JournalTab({
       : inbox.items.filter((it) => it.cat === filter);
   const labelOf = (id) =>
     inbox.cats.find((c) => c.id === id)?.label || id;
+  const hasUnreadNonFlag = inbox.items.some(
+    (item) => !item.redFlag && inbox.isUnread(item),
+  );
   const tabBtn = (id) => (
     <button
       key={id}
@@ -275,6 +278,26 @@ export function JournalTab({
         </div>
       </div>
 
+      <section className="rounded-sm border border-primary/30 bg-primary/10 px-3 py-2.5 short:py-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] font-black uppercase tracking-widest text-primary">
+            Manchete da Semana
+          </span>
+          <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
+            {inbox.weeklyBriefing.date}
+          </span>
+        </div>
+        <h2 className="mt-1 font-headline text-base font-black tracking-tight text-on-surface">
+          {inbox.weeklyBriefing.title}
+        </h2>
+        <p className="mt-0.5 text-xs leading-relaxed text-on-surface">
+          {inbox.weeklyBriefing.body}
+        </p>
+        <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">
+          Resumo: {inbox.weeklyBriefing.summary}
+        </p>
+      </section>
+
       {inbox.redFlags > 0 && (
         <p className="rounded-sm border border-error/40 bg-error/10 px-3 py-1.5 text-[11px] font-bold text-error">
           🚩 Tens assuntos por resolver — o Pronto fica bloqueado até
@@ -289,6 +312,17 @@ export function JournalTab({
         className="flex gap-px overflow-x-auto rounded-sm bg-surface-container-low border border-outline-variant/20"
       >
         {FILTERS.map(tabBtn)}
+      </div>
+
+      <div className="flex justify-end">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => inbox.markAllRead()}
+          disabled={!hasUnreadNonFlag}
+        >
+          Marcar tudo como lido
+        </Button>
       </div>
 
       {/* ── Lista ───────────────────────────────────────────────────── */}

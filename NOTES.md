@@ -1,3 +1,9 @@
+## Jornal: Manchete da Semana e marcar como lido
+
+- O Jornal passa a mostrar uma Manchete da Semana com a reacção ao último resultado, contexto e resumo dos acontecimentos da jornada actual; a contagem exclui assuntos com bandeira vermelha.
+- O botão `Marcar tudo como lido` reutiliza `markAllRead` e marca apenas itens sem `redFlag`, deixando contratos/ofertas pendentes por ler.
+- Checks: eslint dos ficheiros tocados, `check:types`, `test:inboxreads`, harness Jornal retrato 5/5 + paisagem 6/6; screenshots 360 e 667 revistos. `npm run lint` global mantém os 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx`).
+
 ## Tutorial: balão com fundo claro
 
 - O balão e a seta do tutorial usam fundo branco, texto escuro e progresso vazio em cinzento claro para melhor leitura sobre o overlay escuro.

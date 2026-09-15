@@ -37,6 +37,7 @@ import {
  *   items: Array,
  *   unreadCount: number,
  *   redFlags: number,
+ *   weeklyBriefing: { date: string, title: string, body: string, summary: string },
  *   selected: object|null,
  *   select: (id: string) => void,
  *   selectNextUnread: () => void,
@@ -207,6 +208,45 @@ export function useInbox() {
     [items],
   );
 
+  const weeklyBriefing = useMemo(() => {
+    const weeklyItems = items.filter(
+      (it) => !it.redFlag && it.date === currentDate,
+    );
+    const moodItem = weeklyItems.find((it) => it.id.startsWith("mood-"));
+    const headlineItem =
+      moodItem ||
+      weeklyItems.find((it) => it.kind === "info") ||
+      weeklyItems[0];
+    const marketCount = weeklyItems.filter((it) => it.cat === "market").length;
+    const squadCount = weeklyItems.filter((it) => it.cat === "squad").length;
+    const moodTitle = postMatchMood
+      ? MOOD_TITLES[postMatchMood.variant] ||
+        MOOD_TITLES[postMatchMood.outcome] ||
+        "Resultado"
+      : null;
+    const score = postMatchMood
+      ? `${postMatchMood.myGoals ?? 0}–${postMatchMood.oppGoals ?? 0}`
+      : null;
+
+    return {
+      date: currentDate,
+      title: postMatchMood
+        ? postMatchMood.outcome === "win"
+          ? "A bancada celebra"
+          : postMatchMood.outcome === "loss"
+            ? "A bancada pede resposta"
+            : "Equilíbrio no fim da jornada"
+        : headlineItem?.title || "A semana ainda está a começar",
+      body: postMatchMood
+        ? `${moodTitle} ${score} frente a ${postMatchMood.opponentName || "um adversário"}.`
+        : headlineItem?.body || "Ainda não há acontecimentos para resumir.",
+      summary:
+        weeklyItems.length > 0
+          ? `${weeklyItems.length} acontecimento${weeklyItems.length === 1 ? "" : "s"}${marketCount ? ` · ${marketCount} de mercado` : ""}${squadCount ? ` · ${squadCount} do plantel` : ""}`
+          : "Sem acontecimentos novos nesta semana.",
+    };
+  }, [items, currentDate, postMatchMood]);
+
   const selected = useMemo(
     () =>
       items.find((it) => it.id === selectedId) ||
@@ -302,6 +342,7 @@ export function useInbox() {
     items,
     unreadCount,
     redFlags,
+    weeklyBriefing,
     selected,
     isUnread,
     select,
