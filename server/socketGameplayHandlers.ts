@@ -15,6 +15,7 @@ import {
 import {
   emitPresencePause,
   isSeatPresent,
+  releaseSeat,
   setSeatIntent,
   waitForPresence,
 } from "./roomStateHelpers";
@@ -279,6 +280,10 @@ export function registerGameplaySocketHandlers(
     // Ban permanente: o coach expulso não pode reentrar na sala
     game.kickedCoaches.add(targetName);
 
+    // Assento libertado: sem isto o assento ficava `member` e o
+    // `computeAbsentees` congelava a sala para sempre após um kick.
+    releaseSeat(game, targetName, "kicked");
+
     // Libertar a equipa no DB e apagar o registo do manager (também cobre
     // coaches offline/abandonados que já não têm sessão runtime).
     game.db.run(
@@ -295,6 +300,7 @@ export function registerGameplaySocketHandlers(
     saveGameState(game);
     emitPresence(game);
     emitGlobalPlayerUpdate?.();
+    emitPresencePause(game, io);
 
     // Se o expulso era o único bloqueio (estava offline), a semana pode avançar.
     if (game.gamePhase === "lobby") {
@@ -322,11 +328,10 @@ export function registerGameplaySocketHandlers(
     }
 
     if (playerState) {
-      // In lobby: reset ready state so a refreshing coach must re-confirm their tactic.
-      // This prevents a disconnect from triggering an auto-advance into the match.
-      if (game.gamePhase === "lobby") {
-        playerState.ready = false;
-      }
+      // NOTA: o `ready`/tática NÃO são limpos aqui — vivem no assento durável
+      // e um flape não os apaga. A ausência bloqueia via `computeAbsentees`
+      // (a sala congela), por isso o reset antigo só criava divergência
+      // entre o assento e a projeção.
 
       // NOTA: o coach NÃO é removido de lockedCoaches ao desconectar.
       // Salas com 2+ coaches humanos ficam bloqueadas no início da semana

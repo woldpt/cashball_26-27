@@ -1,3 +1,10 @@
+## Audit ecbdbde+f8580c2 — coerência assento↔projeção (fix)
+- **Bug real (novo, do próprio ecbdbde):** `kickCoach` (`socketGameplayHandlers.ts`, lobby) nunca libertava o assento — `computeAbsentees` mantinha o expulso como ausente e a sala congelava para sempre (só `adminReleaseRoom` safava). Agora `releaseSeat(..., "kicked")` + `emitPresencePause`.
+- **Divergência ready:** disconnect em lobby limpava `playersByName.ready` sem tocar no assento (servidor contava pronto, UI mostrava por confirmar) — reset removido (flape não apaga ready; a ausência bloqueia via `computeAbsentees`). Barreira do 11 no arranque e `isSeatPresent` alinhados no mesmo sentido (`setSeatIntent ready:false` na falha de lineup; presença falsa para `status !== "member"`).
+- **Admin remove:** janelas pendentes (lesão/substituição) do removido resolvem com fallback como no `leaveRoom` (antes bloqueavam até ao timeout). `kickCoach` é só-lobby, sem pendentes possíveis.
+- **Cliente:** `useSocketListeners` passa a usar `subscribeSessionDisplaced` (o pub/sub do `socket.js` estava sem subscritores).
+- Checks: server `typecheck` OK; `test:session-freeze` 8/8; `test:engine-unit` 19/19; `audit:socketio` 0 erros; client `eslint` + `check:types` OK; `roompause-resp-test` portrait 5/5 + landscape 6/6 com screenshots 360 e 667 verificados.
+
 ## Sessão/estado de sala reescritos: assentos duráveis + congelamento (novo)
 
 - **Bug real:** com um cliente offline, o jogo **avançava sozinho para a jornada seguinte** e as decisões dele eram tomadas pelo servidor. Duas causas, ambas explícitas no código: `engine.ts` `waitForMatchAction` fazia `return fallback()` para "treinador conhecido mas sem socket" (`source:"auto"`); e `checkAllReady` contava só os **ligados** (`getPlayerList`), pelo que o intervalo/fecho da jornada avançava sem o ausente.

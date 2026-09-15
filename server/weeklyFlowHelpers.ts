@@ -47,6 +47,7 @@ import {
   logCalendarAdvance,
   requiredTeamIds,
   saveMatchCheckpoint,
+  setSeatIntent,
   waitForPresence,
 } from "./roomStateHelpers";
 
@@ -1967,6 +1968,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           );
           if (!check.ok) {
             p.ready = false;
+            setSeatIntent(game, p.name, { ready: false });
             blockers.push(`${p.name}: ${check.reason}`);
             if (p.socketId) {
               io.to(p.socketId).emit("systemMessage", {

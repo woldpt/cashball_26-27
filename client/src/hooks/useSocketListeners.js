@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { socket, queueEmit, flushOutbox } from "../socket.js";
+import { socket, queueEmit, flushOutbox, subscribeSessionDisplaced } from "../socket.js";
 import { getDeviceId } from "../utils/localStorage.js";
 import { loadTacticSnapshot } from "../utils/uiSnapshot.js";
 import { isSameTeamId } from "../utils/teamHelpers.js";
@@ -1857,7 +1857,7 @@ export function useSocketListeners(handlers, refs) {
 
 		socket.on("connect", onConnect);
 		socket.on("disconnect", onDisconnect);
-		socket.on("sessionDisplaced", () => handlers.setSessionDisplaced(true));
+		const unsubDisplaced = subscribeSessionDisplaced(() => handlers.setSessionDisplaced(true));
 		socket.on("kicked", ({ reason } = {}) => {
 			// Notificar o coach expulso e forçar saída da sala
 			handlers.setGameDialog({
@@ -1950,7 +1950,7 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("roomInvite");
 			socket.off("connect", onConnect);
 			socket.off("disconnect", onDisconnect);
-			socket.off("sessionDisplaced");
+			unsubDisplaced();
 			socket.off("kicked");
 		};
 	}, []); // eslint-disable-line react-hooks/exhaustive-deps

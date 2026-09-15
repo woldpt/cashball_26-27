@@ -9,6 +9,10 @@
 import type { ActiveGame } from "./types";
 import type { Server, Socket } from "socket.io";
 import {
+  listTeamMatchActions,
+  takePendingMatchAction,
+} from "./game/engine";
+import {
   computeAbsentees,
   emitPresencePause,
   releaseSeat,
@@ -234,6 +238,23 @@ export function registerAdminSocketHandlers(
               io.to(targetSocketId).emit("kicked", {
                 reason: "Foste removido da sala pelo Admin.",
               });
+            }
+
+            // Janelas de decisão pendentes deste coach (lesão/substituição a
+            // meio de jogo): resolvem com fallback como no leaveRoom — senão
+            // ficavam a bloquear a sala até ao timeout.
+            if (target?.teamId != null) {
+              for (const pendingAction of listTeamMatchActions(game, target.teamId)) {
+                takePendingMatchAction(game, pendingAction.actionId);
+                try {
+                  pendingAction.finalize(pendingAction.fallback?.(), "auto");
+                } catch (err) {
+                  console.error(
+                    `[${game.roomCode}] adminRemove: erro ao finalizar pendingMatchAction:`,
+                    err,
+                  );
+                }
+              }
             }
 
             // Remover coach da sala (sessão runtime + presença exigida)

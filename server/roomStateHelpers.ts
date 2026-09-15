@@ -238,6 +238,10 @@ export function markSeatSeen(game: ActiveGame, name: string): void {
 }
 
 export function isSeatPresent(game: ActiveGame, name: string): boolean {
+  // Assento libertado (leave/kick/despedida) nunca conta como presente, mesmo
+  // com lease fresco em memória — senão um kick deixava janelas pendentes a
+  // resolverem sozinhas durante a grace em vez de caírem de imediato.
+  if (game.seats[name] && game.seats[name].status !== "member") return false;
   const player = game.playersByName[name];
   if (player && player.socketId) return true;
   const seen = game.seatSeenAt[name];
