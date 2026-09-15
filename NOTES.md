@@ -1,3 +1,9 @@
+## Submenu mobile fechado ao sair do tutorial (2026-09-15)
+
+- Após o `WelcomeModal` de conta nova, o tutorial abre sozinho o fly-up (`gestao` no passo 1) e o overlay de ecrã cheio bloqueia o dedo até o submenu ser enrolado; `skipTutorial`/`finishTutorial` nunca limpavam o `mobileSubMenu`, por isso saltar o tutorial deixava o submenu estendido a bloquear a navegação.
+- Fix só em `GameLayout.jsx`: `onSkip` e o ramo final do `onNext` fazem `setMobileSubMenu(null)` antes de fechar o tutorial; passos intermédios intactos (o `onNavigate` continua a abrir o submenu de cada passo).
+- Checks: eslint do ficheiro, `check:types`, mobile portrait `150/150` e landscape `180/180`; screenshots 390 (welcome) e 667 (landscape) revistos.
+
 ## Jornal: reacções dos adeptos com conteúdo editorial (2026-09-15)
 
 - As notícias pós-jogo deixaram de mostrar apenas uma frase: cada uma das 9 variantes de humor tem agora dois parágrafos editoriais próprios, além do contexto do resultado, adversário, jornada/ronda, apito final e bilheteira.

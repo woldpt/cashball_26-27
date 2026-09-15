@@ -1328,13 +1328,21 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         <CoachTutorial
           stepIndex={tutorial.index}
           onNavigate={handleTutorialNavigate}
-          onNext={() =>
-            tutorial.index >= COACH_TUTORIAL_STEPS.length - 1
-              ? finishTutorial()
-              : nextStep()
-          }
+          onNext={() => {
+            if (tutorial.index >= COACH_TUTORIAL_STEPS.length - 1) {
+              // Fim do tutorial: fecha o fly-up para não bloquear o dedo no ecrã.
+              setMobileSubMenu(null);
+              finishTutorial();
+            } else {
+              nextStep();
+            }
+          }}
           onBack={prevStep}
-          onSkip={skipTutorial}
+          onSkip={() => {
+            // Saltar: fecha o fly-up que o passo atual possa ter aberto.
+            setMobileSubMenu(null);
+            skipTutorial();
+          }}
         />
       )}
 
