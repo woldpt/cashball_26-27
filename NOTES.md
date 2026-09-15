@@ -1,3 +1,8 @@
+## Jornal: leituras sobrevivem ao restart
+
+- `checkCacheVersion` limpava o `localStorage` quando o servidor reiniciava, mas tratava as leituras (`cashball_inbox_read:*`) como cache descartável. Os prefixos das leituras passam a ser preservados, mantendo notícias já lidas ao voltar à sala.
+- Checks: self-check de preservação, `npx eslint src/utils/cacheVersion.js` e `npm run check:types` OK.
+
 ## Jornal: filtrar pela equipa do treinador
 
 - `getGlobalNews` identifica a equipa pelo `socket.id` e filtra `club_news` por `team_id`; `transfer_history` fica limitado a compras/vendas da mesma equipa. Sem sessão com equipa, devolve Jornal vazio em vez de expor notícias globais.

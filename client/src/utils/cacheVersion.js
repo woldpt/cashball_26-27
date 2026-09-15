@@ -4,13 +4,20 @@ const PRESERVED_LOCAL_KEYS = [
   "cashballAdminSession",
   CACHE_VERSION_KEY,
 ];
+const PRESERVED_LOCAL_PREFIXES = ["cashball_inbox_read:"];
 
 function preserveLocalStorageKeys(keys) {
   const preserved = new Map();
-  keys.forEach((key) => {
-    const value = localStorage.getItem(key);
-    if (value !== null) preserved.set(key, value);
-  });
+  for (let i = 0; i < localStorage.length; i += 1) {
+    const key = localStorage.key(i);
+    if (
+      key &&
+      (keys.includes(key) ||
+        PRESERVED_LOCAL_PREFIXES.some((prefix) => key.startsWith(prefix)))
+    ) {
+      preserved.set(key, localStorage.getItem(key));
+    }
+  }
   return preserved;
 }
 
