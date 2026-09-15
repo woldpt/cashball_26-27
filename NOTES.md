@@ -3,10 +3,11 @@
 - Em desktop, o Jornal organiza os tópicos/notícias numa coluna esquerda e o corpo da notícia seleccionada numa coluna direita; cabeçalho, manchete, avisos e filtros continuam em largura total. Em mobile mantém-se empilhado.
 - Checks: eslint de `JournalTab.jsx`, `check:types`, harness Jornal retrato 5/5 + paisagem 6/6, screenshot desktop revisto e build Vite OK.
 
-## Jornal: Manchete da Semana e marcar como lido
+## Jornal: marcar como lido e boas-vindas no clube
 
-- O Jornal passa a mostrar uma Manchete da Semana com a reacção ao último resultado, contexto e resumo dos acontecimentos da jornada actual; a contagem exclui assuntos com bandeira vermelha.
 - O botão `Marcar tudo como lido` reutiliza `markAllRead` e marca apenas itens sem `redFlag`, deixando contratos/ofertas pendentes por ler.
+- Notícias `welcome` passam a ficar em **O Meu Clube**, em vez de **Competições**.
+- A Manchete da Semana foi anulada a pedido; o Jornal mantém o layout recente de tópicos/detalhe.
 - Checks: eslint dos ficheiros tocados, `check:types`, `test:inboxreads`, harness Jornal retrato 5/5 + paisagem 6/6; screenshots 360 e 667 revistos. `npm run lint` global mantém os 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx`).
 
 ## Tutorial: balão com fundo claro

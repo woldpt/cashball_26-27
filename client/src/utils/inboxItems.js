@@ -51,6 +51,7 @@ export function newsCategory(n) {
   )
     return "market";
   if (
+    t === "welcome" ||
     t === "renegotiation" ||
     t === "ticket_revenue" ||
     t === "stadium_build" ||
