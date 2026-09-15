@@ -43,6 +43,7 @@ export function GameOverlays() {
     cupDraw,
     cupDrawRevealIdx,
     cupMatchRoundName,
+    currentCupRound,
     cupPenaltyKickIdx,
     cupPenaltyPopup,
     cupPreMatch,
@@ -272,6 +273,7 @@ export function GameOverlays() {
             teams={teams}
             isCupMatch={isCupMatch}
             cupMatchRoundName={cupMatchRoundName}
+            currentCupRound={currentCupRound}
             currentJornada={currentJornada}
             isPlayingMatch={isPlayingMatch}
             sidebarCollapsed={sidebarCollapsed}

@@ -42,6 +42,7 @@ export function MatchPage({
 	matchResults,
 	isCupExtraTime,
 	cupRoundResults,
+	currentCupRound,
 }) {
 	// ── Tactic state & handlers from context ─────────────────────────────────
 	const {
@@ -219,6 +220,8 @@ export function MatchPage({
 	const awayTeam = teams.find((t) => t.id === fixture?.awayTeamId);
 	const hColor = homeTeam?.color_primary || "#6366f1";
 	const aColor = awayTeam?.color_primary || "#f43f5e";
+	const isFriendly =
+		currentCupRound === 0 || /amigável/i.test(cupMatchRoundName || "");
 	const isCupContext = isCupMatch || cupPreMatch;
 	const canContinue = !isCupContext || myTeamInCup;
 	// Jogos de clubes terceiros (nenhuma equipa é minha) → esconder badges de fadiga no pitch
@@ -277,7 +280,7 @@ export function MatchPage({
 						className="w-1.5 h-8 rounded-full shrink-0 shadow-sm"
 						style={{ background: aColor, boxShadow: `0 0 8px ${aColor}60` }}
 					/>
-					{isCupMatch && (
+					{isCupMatch && !isFriendly && (
 						<span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30">
 							{cupMatchRoundName || "Taça"}
 						</span>
@@ -331,6 +334,7 @@ export function MatchPage({
 						teams={teams}
 						myTeamId={myTeamId}
 						isCupMatch={isCupMatch}
+						isFriendly={isFriendly}
 						isCupExtraTime={isCupExtraTime}
 						matchAction={matchAction}
 						injuryCountdown={injuryCountdown}
@@ -415,14 +419,14 @@ export function MatchPage({
 					}`}
 				>
 					{!canContinue
-						? "⏳ A AGUARDAR JOGO DA TAÇA..."
+						? `⏳ A AGUARDAR ${isFriendly ? "JOGO AMIGÁVEL" : "JOGO DA TAÇA"}...`
 						: isReady
 							? "⏳ A AGUARDAR OUTRO TREINADOR..."
 							: cupPreMatch
-								? "▶ INICIAR JOGO — TAÇA"
-								: isCupMatch && (liveMinute ?? 0) >= 90 && !isCupExtraTime
+								? `▶ INICIAR JOGO — ${isFriendly ? "AMIGÁVEL" : "TAÇA"}`
+								: isCupMatch && !isFriendly && (liveMinute ?? 0) >= 90 && !isCupExtraTime
 									? "▶ INICIAR PROLONGAMENTO"
-									: isCupMatch
+									: isCupMatch && !isFriendly
 										? "▶ 2ª PARTE — TAÇA"
 										: "▶ INICIAR 2ª PARTE"}
 				</button>

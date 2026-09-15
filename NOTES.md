@@ -1,3 +1,9 @@
+## Amigáveis sem etiqueta de Taça no intervalo (2026-09-15)
+
+- O indicador técnico `isCupMatch` também cobre amigáveis, mas o `MatchPage` tratava-os como Taça na etiqueta e no botão de avançar; a ronda `0`/nome amigável passa a excluir esses ramos.
+- `IntervencaoView` deixa de preparar prolongamento para amigáveis; a lógica de Taça mantém-se nos jogos eliminatórios.
+- Checks: `check:types` OK; ESLint dos 3 ficheiros tocados OK. `npm run lint` global mantém os 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx`).
+
 ## Jornal: títulos de transferências variados e normais (2026-09-15)
 
 - As entradas de mercado deixam de usar sempre `reforça`: quatro títulos editoriais determinísticos alternam entre chegada, aposta, novo rosto e reforço.

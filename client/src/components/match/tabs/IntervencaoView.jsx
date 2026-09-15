@@ -34,6 +34,7 @@ export function IntervencaoView({
   teams,
   myTeamId,
   isCupMatch,
+  isFriendly = false,
   isCupExtraTime,
   matchAction,
   injuryCountdown,
@@ -90,7 +91,11 @@ export function IntervencaoView({
 
   /* ── Mode booleans ────────────────────────────────────────────── */
   const isPreExtraTime =
-    isHalftime && isCupMatch && (liveMinute ?? 0) >= 90 && !isCupExtraTime;
+    isHalftime &&
+    isCupMatch &&
+    !isFriendly &&
+    (liveMinute ?? 0) >= 90 &&
+    !isCupExtraTime;
   const actionType = matchAction?.type || null;
   const isEmergencyGk = actionType === "emergency_gk";
   const isForcedSwap =
