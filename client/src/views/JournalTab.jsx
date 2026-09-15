@@ -18,6 +18,14 @@ import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
 import { TeamCrest } from "../components/live/TeamCrest.jsx";
 
 const FILTERS = ["all", "club", "competitions", "squad", "market"];
+
+function searchText(value = "") {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 const FILTER_TONES = {
   all: {
     idle: "bg-surface-container-high/40 text-on-surface-variant hover:bg-surface-container-high",
@@ -263,6 +271,7 @@ export function JournalTab({
   const { selected, isUnread, select } = inbox;
   const initialReadRef = useRef(false);
   const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (initialReadRef.current || !selected) return;
@@ -272,10 +281,16 @@ export function JournalTab({
     }
   }, [isUnread, select, selected]);
 
-  const visible =
+  const categoryItems =
     filter === "all"
       ? inbox.items
       : inbox.items.filter((it) => it.cat === filter);
+  const query = searchText(search.trim());
+  const visible = query
+    ? categoryItems.filter((item) =>
+        searchText(`${item.title} ${item.body}`).includes(query),
+      )
+    : categoryItems;
   const labelOf = (id) =>
     inbox.cats.find((c) => c.id === id)?.label || id;
   const hasUnreadNonFlag = inbox.items.some(
@@ -287,7 +302,10 @@ export function JournalTab({
       <button
         key={id}
         type="button"
-        onClick={() => setFilter(id)}
+        onClick={() => {
+          setFilter(id);
+          setSearch("");
+        }}
         aria-pressed={filter === id}
         className={`shrink-0 px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-colors ${
           filter === id ? tone.active : tone.idle
@@ -338,24 +356,31 @@ export function JournalTab({
 
       <div className="grid gap-2 lg:flex-1 lg:min-h-0 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-stretch">
         <section aria-label="Tópicos" className="min-w-0 space-y-2 rounded-sm bg-surface-container/40 p-2 lg:flex lg:min-h-0 lg:flex-col">
-          <div className="flex items-center justify-between rounded-sm bg-surface-container-high/50 px-2 py-1.5">
-            <span className="text-[10px] font-black uppercase tracking-widest text-tertiary">
-              Tópicos
-            </span>
-            <span className="text-[10px] font-bold tabular-nums text-on-surface-variant">
-              {visible.length}
-            </span>
+          <div className="rounded-sm bg-surface-container-high/50 px-2 py-1.5">
+            <label htmlFor="journal-topic-search" className="sr-only">
+              Pesquisar notícias
+            </label>
+            <input
+              id="journal-topic-search"
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Pesquisar notícias..."
+              className="w-full bg-transparent text-xs font-bold text-on-surface outline-none placeholder:text-on-surface-variant/70"
+            />
           </div>
 
           {/* ── Lista ───────────────────────────────────────────────── */}
           {visible.length === 0 ? (
         <EmptyState
           emoji="📰"
-          title="Sem notícias"
+          title={query ? "Nenhuma notícia encontrada" : "Sem notícias"}
           description={
-            filter === "all"
-              ? "Ainda não há notícias nesta época."
-              : `Nada em ${labelOf(filter)}.`
+            query
+              ? "Tenta outro termo de pesquisa."
+              : filter === "all"
+                ? "Ainda não há notícias nesta época."
+                : `Nada em ${labelOf(filter)}.`
           }
         />
       ) : (

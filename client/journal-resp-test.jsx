@@ -213,6 +213,31 @@ root.render(
 const badgeText = () =>
   Number(document.querySelector('[data-testid="inbox-badge"]')?.textContent);
 
+/** A pesquisa deve filtrar a lista enquanto se escreve. */
+async function checkQuickSearch() {
+  const input = document.querySelector("#journal-topic-search");
+  const setValue = Object.getOwnPropertyDescriptor(
+    HTMLInputElement.prototype,
+    "value",
+  ).set;
+  const initialCount = document.querySelectorAll("ol button").length;
+  setValue.call(input, "Contas bancárias");
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 60));
+  const filteredRows = [...document.querySelectorAll("ol button")];
+  const filtered =
+    filteredRows.length === 1 &&
+    filteredRows[0].textContent.includes("Contas bancárias");
+  setValue.call(input, "");
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 60));
+  return {
+    initialCount,
+    filteredCount: filteredRows.length,
+    ok: !!input && initialCount > 1 && filtered,
+  };
+}
+
 /** Abrir uma notícia no JournalTab tem de baixar o badge no outro consumidor. */
 async function checkSharedReads() {
   const before = badgeText();
@@ -286,8 +311,9 @@ function measure() {
 
 setTimeout(async () => {
   const report = measure();
+  report.quickSearch = await checkQuickSearch();
   report.inboxBadge = await checkSharedReads();
-  if (!report.inboxBadge.ok) report.verdict = "FAIL";
+  if (!report.quickSearch.ok || !report.inboxBadge.ok) report.verdict = "FAIL";
   const el = document.getElementById("report");
   el.setAttribute("data-status", "done");
   el.textContent = "REPORT:" + JSON.stringify(report, null, 2);

@@ -1,3 +1,10 @@
+## Jornal: pesquisa rápida nos tópicos (2026-09-15)
+
+- O cabeçalho `Tópicos` foi substituído por uma pesquisa rápida que filtra imediatamente a lista enquanto se escreve.
+- A pesquisa ignora maiúsculas/minúsculas e acentos, procura no título e corpo da notícia e é limpa ao mudar de categoria.
+- O harness confirma que um termo reduz a lista à notícia correspondente.
+- Checks: eslint/JSDoc, `check:types`, build Vite, harness Jornal retrato `5/5`, paisagem `6/6`, screenshots 390/667 revistos.
+
 ## Jornal: acções juntas no rodapé dos tópicos (2026-09-15)
 
 - Os botões `Marcar tudo como lido` e `Ler próxima` ficam juntos no rodapé da coluna Tópicos, em vez de ocuparem linhas separadas.
