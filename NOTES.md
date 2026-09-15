@@ -1,3 +1,9 @@
+## Efeitos de golo sem texto extra (2026-09-15)
+
+- O overlay de golo mantém apenas `GOLO!` nos golos próprios; equipa, marcador e todos os textos do golo adversário foram removidos.
+- O golo próprio usa um wash verde mais forte e confete; o golo adversário usa wash/flash vermelho mais intenso com shake do artefacto.
+- Checks: ESLint dos ficheiros tocados, `check:types` e `git diff --check` OK.
+
 ## Jornal: colunas desktop preenchem a altura disponível (2026-09-15)
 
 - A partir de `lg`, o Jornal usa a altura disponível abaixo do cabeçalho: as colunas de tópicos e corpo ficam esticadas, a lista ocupa o espaço livre e faz scroll interno quando necessário.

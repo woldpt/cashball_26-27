@@ -475,12 +475,6 @@ export function LiveMatchHero({
         homeIsMine={homeIsMine}
         awayIsMine={awayIsMine}
         isPlayingMatch={isPlayingMatch}
-        hColor={hInfo?.color_primary || "#6366f1"}
-        aColor={aInfo?.color_primary || "#f43f5e"}
-        hName={hInfo?.name || "Casa"}
-        aName={aInfo?.name || "Fora"}
-        homeGoals={homeGoals.length}
-        awayGoals={awayGoals.length}
       />
     </div>
   );

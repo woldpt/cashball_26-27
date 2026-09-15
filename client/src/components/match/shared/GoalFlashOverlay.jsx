@@ -29,12 +29,6 @@ import { CelebrationBurst } from "../../shared/CelebrationBurst.jsx";
  * @param {boolean} props.homeIsMine
  * @param {boolean} props.awayIsMine
  * @param {boolean} props.isPlayingMatch
- * @param {string} [props.hColor]  Cor primária da casa.
- * @param {string} [props.aColor]  Cor primária da fora.
- * @param {string} [props.hName]   Nome da equipa da casa.
- * @param {string} [props.aName]   Nome da equipa de fora.
- * @param {number} [props.homeGoals] Marcador atual (casa), até liveMinute.
- * @param {number} [props.awayGoals] Marcador atual (fora), até liveMinute.
  */
 export function GoalFlashOverlay({
   goalFlashRef,
@@ -43,12 +37,6 @@ export function GoalFlashOverlay({
   homeIsMine,
   awayIsMine,
   isPlayingMatch,
-  hColor = "#6366f1",
-  aColor = "#f43f5e",
-  hName = "Casa",
-  aName = "Fora",
-  homeGoals = 0,
-  awayGoals = 0,
 }) {
   const [moment, setMoment] = useState(null); // { mine, side, ts }
   const lastTsRef = useRef(0);
@@ -104,8 +92,7 @@ export function GoalFlashOverlay({
   if (!moment || !isPlayingMatch) return null;
 
   const mine = moment.mine;
-  const color = moment.side === "home" ? hColor : aColor;
-  const teamName = moment.side === "home" ? hName : aName;
+  const color = mine ? "#22c55e" : "#ef4444";
 
   const overlay = (
     // `key` no flash: cada golo remonta a árvore inteira do zero, mesmo que o
@@ -116,24 +103,24 @@ export function GoalFlashOverlay({
       key={`${moment.side}-${moment.ts}`}
       className="fixed inset-0 z-[200] pointer-events-none overflow-hidden"
     >
-      {/* wash de cor radial (equipa que marcou) */}
+      {/* Wash forte da cor do momento: verde nosso, vermelho adversário. */}
       <motion.div
         className="absolute inset-0"
         style={{
-          background: `radial-gradient(ellipse 75% 75% at 50% 42%, ${color}${mine ? "59" : "22"} 0%, rgba(0,0,0,0) 70%)`,
+          background: `radial-gradient(ellipse 75% 75% at 50% 42%, ${color}${mine ? "99" : "88"} 0%, rgba(0,0,0,0) 70%)`,
         }}
         initial={{ opacity: 0 }}
         animate={{ opacity: [0, 1, 0] }}
         transition={{ duration: 1.9, times: [0, 0.28, 1], ease: "easeOut" }}
       />
 
-      {/* Vinheta escura extra no golo adversário (sóbrio) */}
+      {/* Flash e shake vermelho do golo adversário. */}
       {!mine && (
         <motion.div
-          className="absolute inset-0 bg-red-950/30"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 0.9, 0] }}
-          transition={{ duration: 1.9, times: [0, 0.2, 1] }}
+          className="absolute inset-0 bg-red-950/70"
+          initial={{ opacity: 0, x: 0 }}
+          animate={{ opacity: [0, 1, 1, 0], x: [0, -8, 8, -5, 5, 0] }}
+          transition={{ duration: 1.9, times: [0, 0.2, 0.8, 1] }}
         />
       )}
 
@@ -149,61 +136,24 @@ export function GoalFlashOverlay({
         </motion.div>
       )}
 
-      {/* Núcleo do texto */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 px-4">
-        <motion.span
-          className="font-headline font-black uppercase tracking-tight leading-none text-center"
-          style={{
-            fontSize: mine ? "clamp(3rem, 14vw, 6rem)" : "clamp(1.4rem, 6vw, 2.4rem)",
-            color: mine ? color : "#ff6b6b",
-            textShadow: mine
-              ? `0 0 30px ${color}`
-              : "0 0 18px rgba(255, 80, 80, 0.55)",
-          }}
-          initial={{ opacity: 0, scale: 0.5, y: mine ? 6 : 0 }}
-          animate={
-            mine
-              ? { opacity: [0, 1, 1, 0], scale: [0.5, 1.18, 1.02, 1.1], y: [6, 0, 0, -4] }
-              : {
-                  opacity: [0, 1, 1, 0],
-                  x: [0, -6, 6, -4, 4, 0], // shake subtil
-                }
-          }
-          transition={{ duration: 1.9, times: [0, 0.16, 0.8, 1] }}
-        >
-          {mine ? "GOLO!" : "GOLO DO ADVERSÁRIO"}
-        </motion.span>
-
-        {mine ? (
-          <motion.div
-            className="flex flex-col items-center"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: [0, 1, 1, 0], y: [8, 0, 0, -6] }}
-            transition={{ duration: 1.9, times: [0, 0.2, 0.8, 1] }}
-          >
-            <span
-              className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em]"
-              style={{ color }}
-            >
-              {teamName}
-            </span>
-            <span className="text-2xl sm:text-4xl font-black font-headline tabular-nums mt-1 text-on-surface">
-              {homeGoals}
-              <span className="text-on-surface/25 text-lg sm:text-2xl mx-1.5">–</span>
-              {awayGoals}
-            </span>
-          </motion.div>
-        ) : (
+      {/* Só o golo nosso mantém a palavra de celebração; o adversário fica em artefactos. */}
+      {mine && (
+        <div className="absolute inset-0 flex items-center justify-center px-4">
           <motion.span
-            className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.25em] text-red-300/80 text-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 1, 1, 0] }}
-            transition={{ duration: 1.9, times: [0, 0.2, 0.8, 1] }}
+            className="font-headline font-black uppercase tracking-tight leading-none text-center"
+            style={{
+              fontSize: "clamp(3rem, 14vw, 6rem)",
+              color,
+              textShadow: `0 0 30px ${color}`,
+            }}
+            initial={{ opacity: 0, scale: 0.5, y: 6 }}
+            animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1.18, 1.02, 1.1], y: [6, 0, 0, -4] }}
+            transition={{ duration: 1.9, times: [0, 0.16, 0.8, 1] }}
           >
-            ⚠ o adversário marcou
+            GOLO!
           </motion.span>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 
