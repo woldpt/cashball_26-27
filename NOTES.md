@@ -1,3 +1,9 @@
+## Jornal: acções juntas no rodapé dos tópicos (2026-09-15)
+
+- Os botões `Marcar tudo como lido` e `Ler próxima` ficam juntos no rodapé da coluna Tópicos, em vez de ocuparem linhas separadas.
+- Mantêm os mesmos estados, acções e comportamento responsivo.
+- Checks: eslint/JSDoc, `check:types`, build Vite, harness Jornal retrato `5/5`, paisagem `6/6`, screenshots 390/667 revistos.
+
 ## Jogos de outras equipas sem eventos de chances (2026-09-15)
 
 - `LiveFixtureRow` deixa de mostrar eventos `chance` no resumo inferior dos jogos, mantendo golos, cartões, lesões e substituições.

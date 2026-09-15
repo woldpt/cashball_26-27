@@ -336,17 +336,6 @@ export function JournalTab({
         {FILTERS.map(tabBtn)}
       </div>
 
-      <div className="flex justify-end">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => inbox.markAllRead()}
-          disabled={!hasUnreadNonFlag}
-        >
-          Marcar tudo como lido
-        </Button>
-      </div>
-
       <div className="grid gap-2 lg:flex-1 lg:min-h-0 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-stretch">
         <section aria-label="Tópicos" className="min-w-0 space-y-2 rounded-sm bg-surface-container/40 p-2 lg:flex lg:min-h-0 lg:flex-col">
           <div className="flex items-center justify-between rounded-sm bg-surface-container-high/50 px-2 py-1.5">
@@ -415,7 +404,15 @@ export function JournalTab({
       )}
 
       {/* ── Próxima notícia por ler ─────────────────────────────────── */}
-          <div className="flex justify-end">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => inbox.markAllRead()}
+              disabled={!hasUnreadNonFlag}
+            >
+              Marcar tudo como lido
+            </Button>
             <Button
               variant="secondary"
               size="sm"
