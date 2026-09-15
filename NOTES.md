@@ -748,3 +748,9 @@ Plano C1+C2 (quando fizer):
 ## Tutorial menciona o Jornal (2026-09-15)
 - Novo passo "jornal" em `coachTutorialSteps.js` logo após o Clube: aponta para `nav-jornal`/`nav-jornal-mobile`, explica a caixa de entrada e que as linhas 🚩 bloqueiam o Jogar. Overlay genérico (`length`), sem código novo.
 - Checks: eslint + `check:types` OK. Sem mobile-resp-check (só conteúdo, zero layout).
+
+## Jornal: filtros O Meu Clube, 1 notícia por negócio, corpos ricos (2026-09-15)
+- Filtros: uma só linha — Todas, O Meu Clube (renovações, convites, direção, humor), Competições (sorteio, tomba-gigantes, prémios, mexidas de treinadores), Plantel (lesões, castigos, academia), Mercado (negócios). `JournalTab` sem segunda faixa; `newsCategory` remapeado.
+- Leilões: cada negócio funde transfer_in/transfer_out + histórico global num item ("X reforça Y") por jogador+jornada (`dealKey` em `inboxItems.js`); servidor cortou os 3 `systemMessage` do leilão (falhado, bloqueado por contrato, vendido) — o bloqueio por contrato agora grava `auction_failed` ("retirado do leilão") para nenhum evento ficar silencioso.
+- Corpos: negócio = posição + skill + ⭐ + rota + valor + via (leilão/mercado/cláusula/clube NPC); genéricos = descrição + valor formatado sem duplicar "€"; lesões/castigos com posição + skill. Servidor passa `skill/is_star/vendedor` no SELECT de transfer_history.
+- Checks: server typecheck OK, eslint + `check:types` OK, mobile retrato 150/150 + paisagem 180/180, harness 5/5 com screenshot visto.

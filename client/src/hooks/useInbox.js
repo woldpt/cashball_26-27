@@ -7,11 +7,13 @@
  * acionáveis reutilizam os fluxos existentes (GameDialog de contratos,
  * emits de convite) — o hub só os revela e ordena.
  *
- * Lido/não lido persiste em localStorage por treinador+sala. Itens com
- * bandeira vermelha contam sempre como não lidos até serem resolvidos
- * (nessa altura desaparecem da lista) e bloqueiam o Pronto.
+ * Lido/não lido persiste em localStorage por treinador+sala e é partilhado por
+ * todas as instâncias (ver `inboxReadStore`), para que o badge do Jornal no
+ * `GameLayout` acompanhe o que se abre no `JournalTab`. Itens com bandeira
+ * vermelha contam sempre como não lidos até serem resolvidos (nessa altura
+ * desaparecem da lista) e bloqueiam o Pronto.
  */
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { useGame } from "../contexts/GameContext.jsx";
 import { queueEmit } from "../socket.js";
 import {
@@ -20,20 +22,13 @@ import {
   newsRowsToItems,
   squadToMedicalItems,
 } from "../utils/inboxItems.js";
-
-function readStoreKey(roomCode, coachName) {
-  return `cashball_inbox_read:${roomCode || "?"}:${coachName || "?"}`;
-}
-
-function loadRead(key) {
-  try {
-    const raw = window.localStorage.getItem(key);
-    const arr = raw ? JSON.parse(raw) : [];
-    return new Set(Array.isArray(arr) ? arr : []);
-  } catch {
-    return new Set();
-  }
-}
+import {
+  inboxReadKey,
+  markInboxRead,
+  markInboxReadMany,
+  readIdsFor,
+  subscribeInboxReads,
+} from "../utils/inboxReadStore.js";
 
 /**
  * @returns {{
@@ -72,31 +67,15 @@ export function useInbox() {
     calendarIndex,
   } = useGame();
 
-  const storeKey = readStoreKey(me?.roomCode, me?.name);
-  const [readIds, setReadIds] = useState(() => loadRead(storeKey));
+  const storeKey = inboxReadKey(me?.roomCode, me?.name);
+  const readIds = useSyncExternalStore(subscribeInboxReads, () =>
+    readIdsFor(storeKey),
+  );
   const [selectedId, setSelectedId] = useState(null);
 
   const markRead = useCallback(
     (id) => {
-      if (!id) return;
-      setReadIds((prev) => {
-        if (prev.has(id)) return prev;
-        const next = new Set(prev);
-        next.add(id);
-        if (next.size > 400) {
-          // Teto barato: apaga os mais antigos (ordem de inserção do Set).
-          for (const old of next) {
-            if (next.size <= 400) break;
-            next.delete(old);
-          }
-        }
-        try {
-          window.localStorage.setItem(storeKey, JSON.stringify([...next]));
-        } catch {
-          /* armazenamento cheio/bloqueado: segue sem persistir */
-        }
-        return next;
-      });
+      markInboxRead(storeKey, id);
     },
     [storeKey],
   );
@@ -108,7 +87,7 @@ export function useInbox() {
     for (const d of contractQueue || []) {
       list.push({
         id: `contract-${d.playerId}`,
-        cat: "contracts",
+        cat: "club",
         date: "Agente",
         title: `🚩 ${d.title || "Pedido de renovação"}`,
         body: d.description || "",
@@ -122,7 +101,7 @@ export function useInbox() {
       const to = jobOfferModal.toTeam;
       list.push({
         id: `job-${to.id}`,
-        cat: "jobs",
+        cat: "club",
         date: "Convite",
         title: `🚩 Convite: ${to.name}`,
         body: "Um clube quer-te como treinador. Responde antes do próximo jogo.",
@@ -141,7 +120,7 @@ export function useInbox() {
       const final = boardWarning.level === 3;
       list.push({
         id: `board-${boardWarning.level}-${boardWarning.streak ?? 1}`,
-        cat: "messages",
+        cat: "club",
         date: "Direção",
         title: final ? "⚠️ Último aviso da direção" : "⚠️ Aviso da direção",
         body: "Orçamento negativo — carrega em Ok para confirmar leitura.",
@@ -183,7 +162,7 @@ export function useInbox() {
         "Resultado";
       list.push({
         id: `mood-${postMatchMood.key || "jogo"}`,
-        cat: "messages",
+        cat: "club",
         date: postMatchMood.roundLabel || "Pós-jogo",
         title: `${title} ${postMatchMood.myGoals ?? ""}–${postMatchMood.oppGoals ?? ""} ${postMatchMood.opponentName || ""}`.trim(),
         body: "Reação dos adeptos ao último jogo.",
@@ -281,9 +260,12 @@ export function useInbox() {
         filter === "all"
           ? items
           : items.filter((it) => it.cat === filter);
-      for (const it of pool) if (!it.redFlag) markRead(it.id);
+      markInboxReadMany(
+        storeKey,
+        pool.filter((it) => !it.redFlag).map((it) => it.id),
+      );
     },
-    [items, markRead],
+    [items, storeKey],
   );
 
   // ── Ações (reutilizam os fluxos existentes) ─────────────────────────────

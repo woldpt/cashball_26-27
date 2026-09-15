@@ -1,10 +1,10 @@
 /**
  * JournalTab — a caixa de entrada do treinador (hub estilo CM2001).
  *
- * Lista em cima (data + título), detalhe em baixo, separadores por tema:
- * Todas, Mensagens, Competições, Lesões e Castigos, Contratos e Media,
- * Transferências, Trabalhos, Recordes. Botões de Anterior/Seguinte e
- * «Próxima não lida», como na janela de notícias do Championship Manager.
+ * Lista em cima (data + título), detalhe em baixo, uma só linha de filtros:
+ * Todas, O Meu Clube, Competições, Plantel, Mercado. Botões de
+ * Anterior/Seguinte e «Próxima não lida», como na janela de notícias do
+ * Championship Manager.
  *
  * Os pedidos de renovação e os convites de clubes entram como linhas com
  * bandeira vermelha 🚩 e bloqueiam o Pronto até serem respondidos. As
@@ -16,8 +16,7 @@ import { formatCurrency } from "../utils/formatters.js";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Button } from "../components/shared/Button.jsx";
 
-const TOP_TABS = ["all", "messages", "competitions", "injuries"];
-const BOTTOM_TABS = ["contracts", "transfers", "jobs", "records"];
+const FILTERS = ["all", "club", "competitions", "squad", "market"];
 
 /**
  * Botões de ação por tipo de notícia.
@@ -135,13 +134,13 @@ export function JournalTab() {
         </p>
       )}
 
-      {/* ── Separadores de cima ─────────────────────────────────────── */}
+      {/* ── Filtros (uma só linha) ──────────────────────────────────── */}
       <div
         role="tablist"
         aria-label="Filtrar notícias"
         className="flex gap-px overflow-x-auto rounded-sm bg-surface-container-low border border-outline-variant/20"
       >
-        {TOP_TABS.map(tabBtn)}
+        {FILTERS.map(tabBtn)}
       </div>
 
       {/* ── Lista ───────────────────────────────────────────────────── */}
@@ -230,15 +229,6 @@ export function JournalTab() {
           </div>
         </section>
       )}
-
-      {/* ── Separadores de baixo ────────────────────────────────────── */}
-      <div
-        role="tablist"
-        aria-label="Filtrar por tema"
-        className="flex gap-px overflow-x-auto rounded-sm bg-surface-container-low border border-outline-variant/20"
-      >
-        {BOTTOM_TABS.map(tabBtn)}
-      </div>
 
       {/* ── Anterior / Seguinte ─────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-px rounded-sm overflow-hidden border border-outline-variant/20">

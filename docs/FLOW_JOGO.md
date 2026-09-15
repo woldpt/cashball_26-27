@@ -28,7 +28,7 @@ Ao entrar numa sala nova, o jogo atribui-lhe um clube e mostra uma carta de boas
 
 Se voltar a uma sala antiga, a carta mostra como está a equipa: pontos, vitórias, empates, derrotas, golos e orçamento.
 
-Nas contas novas aparece um pequeno guia. Leva-o ao Clube, ao Plantel, ao Treino, às Finanças, ao Mercado, à montagem do 11 e ao botão de confirmar a jornada.
+Nas contas novas aparece um pequeno guia. Leva-o ao Clube, ao Jornal, ao Plantel, ao Treino, às Finanças, ao Mercado, à montagem do 11 e ao botão de confirmar a jornada.
 
 ## 4. A base: o ecrã principal
 
@@ -40,7 +40,7 @@ O botão grande Jogar leva sempre para a preparação da jornada.
 
 As páginas estão agrupadas. Jornal em primeiro, com as notícias e os assuntos por resolver. Gestão: Clube, Finanças, Estádio, Plantel e Treino. Competição: Classificações, Calendário e Taça. Transferências: Scout, Mercado e Leilões.
 
-O Jornal é a caixa de entrada do treinador, ao estilo do Championship Manager antigo. Tem separadores por tema: Todas, Mensagens, Competições, Lesões e Castigos, Contratos e Media, Transferências, Trabalhos e Recordes. Em cima está a lista de notícias, em baixo o detalhe da selecionada, com botões de Anterior, Seguinte e Próxima não lida.
+O Jornal é a caixa de entrada do treinador, ao estilo do Championship Manager antigo. Tem uma só linha de filtros: Todas, O Meu Clube, Competições, Plantel e Mercado. Cada negócio (leilão, mercado, cláusula) sai uma única vez, com rota, valor e origem; os eventos de leilão deixaram de mandar toast. Em cima está a lista de notícias, em baixo o detalhe da selecionada, com botões de Anterior, Seguinte e Próxima não lida.
 
 ## 5. Preparar a semana
 

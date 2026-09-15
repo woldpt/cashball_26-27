@@ -269,16 +269,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
             "UPDATE players SET transfer_status = 'none', transfer_price = 0 WHERE id = ?",
             [playerId],
             () => {
-              const seller = (
-                Object.values(game.playersByName) as PlayerSession[]
-              ).find((p) => p.teamId === auction.sellerTeamId && p.socketId);
-              if (seller) {
-                io.to(seller.socketId as string).emit(
-                  "systemMessage",
-                  `${player.name} não recebeu lances e saiu do leilão.`,
-                );
-              }
-
+              // Sem toast: o Jornal regista uma notícia por evento.
               // Log club news for failed auction
               logClubNews(
                 game,
@@ -328,15 +319,20 @@ export function createAuctionHelpers(deps: AuctionDeps) {
             "UPDATE players SET transfer_status = 'none', transfer_price = 0 WHERE id = ?",
             [playerId],
             () => {
-              const seller = (
-                Object.values(game.playersByName) as PlayerSession[]
-              ).find((p) => p.teamId === auction.sellerTeamId && p.socketId);
-              if (seller) {
-                io.to(seller.socketId as string).emit(
-                  "systemMessage",
-                  `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até ${seasonToYear(end.season)}, Jornada ${end.matchweek}. Não vai para o leilão.`,
-                );
-              }
+              // Sem toast: o bloqueio do agente fica registado no Jornal.
+              logClubNews(
+                game,
+                "auction_failed",
+                `${player.name} retirado do leilão`,
+                auction.sellerTeamId,
+                {
+                  player_name: player.name,
+                  player_id: playerId,
+                  description: `${getAgentName(player.id)} bloqueou: contrato até ${seasonToYear(end.season)}, jornada ${end.matchweek}.`,
+                },
+                io,
+                { isAuction: true },
+              );
               recordRecentAuction(game, {
                 playerId,
                 name: player.name,
@@ -391,12 +387,6 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                         const buyerCoach = (
                           Object.values(game.playersByName) as PlayerSession[]
                         ).find((p) => p.teamId === buyerTeamId && p.socketId);
-                        const sellerCoach = (
-                          Object.values(game.playersByName) as PlayerSession[]
-                        ).find(
-                          (p) =>
-                            p.teamId === auction.sellerTeamId && p.socketId,
-                        );
                         if (buyerCoach) {
                           io.to(buyerCoach.socketId as string).emit(
                             "playerSigned",
@@ -413,13 +403,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
                             },
                           );
                         }
-                        if (sellerCoach) {
-                          io.to(sellerCoach.socketId as string).emit(
-                            "systemMessage",
-                            `${player.name} foi vendido em leilão por €${finalBid}.`,
-                          );
-                        }
-
+                        // Sem toast ao vendedor: o negócio aparece uma vez no Jornal.
                         // Log club news for buyer (transfer_in)
                         logClubNews(
                           game,

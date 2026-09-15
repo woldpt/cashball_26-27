@@ -60,9 +60,10 @@ export function registerNewsSocketHandlers(
             `SELECT th.id, th.source AS type, 'transfer' AS source,
                     th.player_name || ' · ' || th.seller_team_name || ' → ' || th.buyer_team_name AS title,
                     th.position AS description,
-                    th.player_id, th.player_name,
+                    th.player_id, th.player_name, th.skill, th.is_star,
+                    th.seller_team_id, th.seller_team_name,
                     th.buyer_team_id AS related_team_id, th.buyer_team_name AS related_team_name,
-                    th.amount, th.matchweek, th.year, th.created_at,
+                    th.buyer_team_name AS buyer_team_name, th.amount, th.matchweek, th.year, th.created_at,
                     th.buyer_team_name AS team_name, NULL AS division
              FROM transfer_history th
              WHERE th.year = ?`,

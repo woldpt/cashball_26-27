@@ -4,18 +4,19 @@
  * Sem estado nem JSX: recebe linhas de notícias + estados locais e devolve
  * itens `{ id, cat, date, title, body, redFlag, kind, ref }`. As ações
  * (responder, aceitar, …) vivem no hook `useInbox`, que interpreta `kind`.
+ *
+ * Um evento = uma notícia: as linhas gémeas de um negócio (transfer_in /
+ * transfer_out + histórico global) fundem-se num só item de Mercado.
  */
+import { formatCurrency } from "./formatters.js";
 
-/** Separadores da janela, como no CM2001 (cima + baixo fundidos em lista). */
+/** Separadores da janela, centrados no treinador (tudo numa só linha). */
 export const INBOX_CATS = [
   { id: "all", label: "Todas" },
-  { id: "messages", label: "Mensagens" },
+  { id: "club", label: "O Meu Clube" },
   { id: "competitions", label: "Competições" },
-  { id: "injuries", label: "Lesões e Castigos" },
-  { id: "contracts", label: "Contratos e Media" },
-  { id: "transfers", label: "Transferências" },
-  { id: "jobs", label: "Trabalhos" },
-  { id: "records", label: "Recordes" },
+  { id: "squad", label: "Plantel" },
+  { id: "market", label: "Mercado" },
 ];
 
 /** Títulos do humor pós-jogo (espelho mínimo do antigo modal de adeptos). */
@@ -37,42 +38,197 @@ export const MOOD_TITLES = {
  * @returns {string} id de categoria
  */
 export function newsCategory(n) {
-  if (!n) return "messages";
-  if (n.source === "transfer") return "transfers";
+  if (!n) return "competitions";
+  if (n.source === "transfer") return "market";
   const t = String(n.type || "");
-  if (t === "cup_upset") return "competitions";
-  if (t === "prize") return "records";
-  if (t === "manager_dismissed" || t === "manager_hired")
-    return "jobs";
   if (
     t === "transfer_in" ||
     t === "transfer_out" ||
     t === "auction_won" ||
+    t === "auction_failed" ||
     t.includes("transfer") ||
     t.includes("auction")
   )
-    return "transfers";
-  if (t === "renegotiation") return "contracts";
-  return "messages";
+    return "market";
+  if (
+    t === "renegotiation" ||
+    t === "ticket_revenue" ||
+    t === "stadium_build" ||
+    t === "cost_cut"
+  )
+    return "club";
+  if (t === "academy") return "squad";
+  return "competitions";
 }
 
 /**
  * Converte linhas do `globalNews.news` em itens informativos (só leitura).
+ * Negócios fundidos: transfer_in/transfer_out + linha do histórico global
+ * com o mesmo jogador e jornada viram UM item de Mercado (um evento =
+ * uma notícia). A ordem do servidor é preservada.
  * @param {Array} rows linhas `{id, source, type, title, description, amount, matchweek}`
  * @returns {Array} itens de inbox
  */
 export function newsRowsToItems(rows) {
-  return (Array.isArray(rows) ? rows : []).map((n) => ({
-    id: `news-${n.source || "club"}-${n.id}`,
-    cat: newsCategory(n),
-    date:
-      n.matchweek != null ? `Jornada ${n.matchweek}` : "Direção",
-    title: n.title || "Notícia",
-    body: n.description || "",
+  const list = Array.isArray(rows) ? rows : [];
+  const groups = new Map();
+  for (const n of list) {
+    const key = dealKey(n);
+    if (!key) continue;
+    const g = groups.get(key) || { transfer: null, clubs: [] };
+    if (n.source === "transfer") g.transfer = n;
+    else g.clubs.push(n);
+    groups.set(key, g);
+  }
+  const done = new Set();
+  const items = [];
+  for (const n of list) {
+    const key = dealKey(n);
+    if (key) {
+      if (done.has(key)) continue;
+      done.add(key);
+      const g = groups.get(key);
+      if (g.transfer) items.push(dealToItem(g.transfer));
+      else for (const c of g.clubs) items.push(clubDealToItem(c));
+    } else {
+      items.push(rowToItem(n));
+    }
+  }
+  return items;
+}
+
+/** Origem do negócio em linguagem de balneário. */
+const DEAL_SOURCE_LABEL = {
+  auction: "leilão",
+  fixed: "mercado",
+  market: "mercado",
+  proposal: "cláusula",
+  npc: "clube NPC",
+};
+
+/** Tipos de club_news que descrevem o MESMO negócio da linha de transfer_history. */
+const DEAL_CLUB_TYPES = new Set([
+  "transfer_in",
+  "transfer_out",
+  "auction_won",
+]);
+
+/**
+ * Chave de desduplicação de um negócio (jogador + jornada) ou null.
+ * @param {object} n linha do globalNews
+ * @returns {string|null}
+ */
+function dealKey(n) {
+  if (!n) return null;
+  const isDeal =
+    n.source === "transfer" ||
+    DEAL_CLUB_TYPES.has(String(n.type || ""));
+  if (!isDeal) return null;
+  if (n.player_id == null || n.matchweek == null) return null;
+  return `${n.player_id}|${n.matchweek}`;
+}
+
+/**
+ * Corpo rico de um negócio a partir da linha de transfer_history:
+ * perfil + rota + valor + via.
+ * @param {object} t linha com `source === "transfer"`
+ * @returns {string}
+ */
+function dealBody(t) {
+  const bits = [];
+  const profile = [
+    t.description,
+    t.skill != null ? `skill ${t.skill}` : null,
+    t.is_star ? "⭐" : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  if (profile) bits.push(profile);
+  const route = [t.seller_team_name, t.buyer_team_name]
+    .filter(Boolean)
+    .join(" → ");
+  const price = t.amount ? formatCurrency(t.amount) : null;
+  const via = DEAL_SOURCE_LABEL[t.type] || t.type || null;
+  if (route && price) bits.push(`${route} por ${price}${via ? ` (${via})` : ""}`);
+  else if (route) bits.push(route);
+  else if (price) bits.push(price);
+  return bits.join(" — ");
+}
+
+/**
+ * Item único de um negócio concluído.
+ * @param {object} t linha com `source === "transfer"`
+ */
+function dealToItem(t) {
+  const buyer = t.buyer_team_name || t.related_team_name;
+  return {
+    id: `deal-${t.player_id}-${t.matchweek}`,
+    cat: "market",
+    date: t.matchweek != null ? `Jornada ${t.matchweek}` : "Mercado",
+    title:
+      t.player_name && buyer
+        ? `${t.player_name} reforça ${buyer}`
+        : t.title || "Negócio fechado",
+    body: dealBody(t) || t.title || "",
     redFlag: false,
     kind: "info",
     ref: null,
-  }));
+  };
+}
+
+/**
+ * Linha órfã de negócio (transfer_in/out sem par no histórico): corpo
+ * reconstruído da rota + valor em vez da descrição crua.
+ * @param {object} c linha de club_news
+ */
+function clubDealToItem(c) {
+  const t = String(c.type || "");
+  const other = c.related_team_name;
+  const price = c.amount ? formatCurrency(c.amount) : null;
+  let route = "";
+  if (t === "transfer_in" && (other || price))
+    route = `Chega do ${other || "?"}${price ? ` por ${price}` : ""}.`;
+  else if (t === "transfer_out" && (other || price))
+    route = `Ruma ao ${other || "?"}${price ? ` por ${price}` : ""}.`;
+  return {
+    id: `news-${c.source || "club"}-${c.id}`,
+    cat: "market",
+    date: c.matchweek != null ? `Jornada ${c.matchweek}` : "Direção",
+    title: c.title || "Notícia",
+    body: route || richBody(c),
+    redFlag: false,
+    kind: "info",
+    ref: null,
+  };
+}
+
+/**
+ * Descrição + valor formatado (sem repetir o que já lá está).
+ * @param {object} n linha do globalNews
+ * @returns {string}
+ */
+function richBody(n) {
+  const desc = String(n.description || "").trim();
+  const amt = n.amount ? formatCurrency(n.amount) : null;
+  if (desc && amt && !desc.includes("€")) return `${desc} · ${amt}.`;
+  return desc || amt || "";
+}
+
+/**
+ * Item genérico de notícia (só leitura, corpo enriquecido).
+ * @param {object} n linha do globalNews
+ */
+function rowToItem(n) {
+  return {
+    id: `news-${n.source || "club"}-${n.id}`,
+    cat: newsCategory(n),
+    date: n.matchweek != null ? `Jornada ${n.matchweek}` : "Direção",
+    title: n.title || "Notícia",
+    body: richBody(n),
+    redFlag: false,
+    kind: "info",
+    ref: null,
+  };
 }
 
 /**
@@ -86,13 +242,17 @@ export function squadToMedicalItems(squad, nowIdx) {
   for (const p of Array.isArray(squad) ? squad : []) {
     const inj = Number(p?.injury_until_matchweek) || 0;
     const sus = Number(p?.suspension_until_matchweek) || 0;
+    const profile = [p?.position, p?.skill != null ? `skill ${p.skill}` : null]
+      .filter(Boolean)
+      .join(" · ");
+    const lead = profile ? `${profile} — ` : "";
     if (inj > nowIdx) {
       items.push({
         id: `inj-${p.id}-${inj}`,
-        cat: "injuries",
+        cat: "squad",
         date: "Departamento médico",
         title: `🩹 ${p.name} lesionado`,
-        body: `De fora até à jornada ${inj + 1}.`,
+        body: `${lead}de fora até à jornada ${inj + 1}.`,
         redFlag: false,
         kind: "info",
         ref: null,
@@ -101,10 +261,10 @@ export function squadToMedicalItems(squad, nowIdx) {
     if (sus > nowIdx) {
       items.push({
         id: `sus-${p.id}-${sus}`,
-        cat: "injuries",
+        cat: "squad",
         date: "Castigos",
         title: `🟥 ${p.name} castigado`,
-        body: `Suspenso até à jornada ${sus + 1}.`,
+        body: `${lead}suspenso até à jornada ${sus + 1}.`,
         redFlag: false,
         kind: "info",
         ref: null,
