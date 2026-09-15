@@ -9,6 +9,11 @@
 - O balão e a seta do tutorial usam fundo branco, texto escuro e progresso vazio em cinzento claro para melhor leitura sobre o overlay escuro.
 - Checks: `npx eslint src/components/tutorial/CoachTutorial.jsx` e `npm run check:types` OK.
 
+## Jornal: equipa própria abre gestão do plantel (2026-09-15)
+
+- Os nomes e emblemas da própria equipa nas notícias do Jornal passam a abrir `players` (Gestão → Plantel), em vez de consultar `TeamSquadView`/História. As equipas adversárias continuam a abrir a consulta do plantel em `TeamSquadView`.
+- Checks: eslint de `GameRoutes.jsx`, `check:types`, `test:squadnav` e build Vite OK.
+
 ## Jornal: transferência com percurso visual (2026-09-15)
 
 - Notícias de negócios passam a apresentar a foto do jogador em cima e, por baixo, os emblemas da equipa de origem e da equipa de destino lado a lado, com seta vendedor → comprador. As restantes notícias mantêm a media genérica.
