@@ -62,14 +62,31 @@ export function newsCategory(n) {
 }
 
 /**
+ * Formata o marcador temporal usado nas linhas do Jornal.
+ * @param {number} week semana do item
+ * @param {number} year ano da época
+ * @returns {string}
+ */
+export function formatInboxDate(week, year) {
+  return `S${Math.max(1, Number(week) || 1)}/${Number(year) || 2026}`;
+}
+
+function formatNewsDate(news, fallbackDate) {
+  return news?.matchweek != null && Number(news.year) > 0
+    ? formatInboxDate(news.matchweek, news.year)
+    : fallbackDate || formatInboxDate();
+}
+
+/**
  * Converte linhas do `globalNews.news` em itens informativos (só leitura).
  * Negócios fundidos: transfer_in/transfer_out + linha do histórico global
  * com o mesmo jogador e jornada viram UM item de Mercado (um evento =
  * uma notícia). A ordem do servidor é preservada.
  * @param {Array} rows linhas `{id, source, type, title, description, amount, matchweek}`
+ * @param {string} fallbackDate data da semana actual para linhas antigas/incompletas
  * @returns {Array} itens de inbox
  */
-export function newsRowsToItems(rows) {
+export function newsRowsToItems(rows, fallbackDate) {
   const list = Array.isArray(rows) ? rows : [];
   const groups = new Map();
   for (const n of list) {
@@ -88,10 +105,10 @@ export function newsRowsToItems(rows) {
       if (done.has(key)) continue;
       done.add(key);
       const g = groups.get(key);
-      if (g.transfer) items.push(dealToItem(g.transfer));
-      else for (const c of g.clubs) items.push(clubDealToItem(c));
+      if (g.transfer) items.push(dealToItem(g.transfer, fallbackDate));
+      else for (const c of g.clubs) items.push(clubDealToItem(c, fallbackDate));
     } else {
-      items.push(rowToItem(n));
+      items.push(rowToItem(n, fallbackDate));
     }
   }
   return items;
@@ -159,12 +176,12 @@ function dealBody(t) {
  * Item único de um negócio concluído.
  * @param {object} t linha com `source === "transfer"`
  */
-function dealToItem(t) {
+function dealToItem(t, fallbackDate) {
   const buyer = t.buyer_team_name || t.related_team_name;
   return {
     id: `deal-${t.player_id}-${t.matchweek}`,
     cat: "market",
-    date: t.matchweek != null ? `Jornada ${t.matchweek}` : "Mercado",
+    date: formatNewsDate(t, fallbackDate),
     title:
       t.player_name && buyer
         ? `${t.player_name} reforça ${buyer}`
@@ -181,7 +198,7 @@ function dealToItem(t) {
  * reconstruído da rota + valor em vez da descrição crua.
  * @param {object} c linha de club_news
  */
-function clubDealToItem(c) {
+function clubDealToItem(c, fallbackDate) {
   const t = String(c.type || "");
   const other = c.related_team_name;
   const price = c.amount ? formatCurrency(c.amount) : null;
@@ -193,7 +210,7 @@ function clubDealToItem(c) {
   return {
     id: `news-${c.source || "club"}-${c.id}`,
     cat: "market",
-    date: c.matchweek != null ? `Jornada ${c.matchweek}` : "Direção",
+    date: formatNewsDate(c, fallbackDate),
     title: c.title || "Notícia",
     body: route || richBody(c),
     redFlag: false,
@@ -218,11 +235,11 @@ function richBody(n) {
  * Item genérico de notícia (só leitura, corpo enriquecido).
  * @param {object} n linha do globalNews
  */
-function rowToItem(n) {
+function rowToItem(n, fallbackDate) {
   return {
     id: `news-${n.source || "club"}-${n.id}`,
     cat: newsCategory(n),
-    date: n.matchweek != null ? `Jornada ${n.matchweek}` : "Direção",
+    date: formatNewsDate(n, fallbackDate),
     title: n.title || "Notícia",
     body: richBody(n),
     redFlag: false,
@@ -235,9 +252,10 @@ function rowToItem(n) {
  * Itens de lesões e castigos a partir do plantel do treinador.
  * @param {Array} squad jogadores com `injury_until_matchweek` / `suspension_until_matchweek`
  * @param {number} nowIdx relógio atual (calendarIndex)
+ * @param {string} dateLabel data da semana actual
  * @returns {Array} itens de inbox
  */
-export function squadToMedicalItems(squad, nowIdx) {
+export function squadToMedicalItems(squad, nowIdx, dateLabel) {
   const items = [];
   for (const p of Array.isArray(squad) ? squad : []) {
     const inj = Number(p?.injury_until_matchweek) || 0;
@@ -250,7 +268,7 @@ export function squadToMedicalItems(squad, nowIdx) {
       items.push({
         id: `inj-${p.id}-${inj}`,
         cat: "squad",
-        date: "Departamento médico",
+        date: dateLabel,
         title: `🩹 ${p.name} lesionado`,
         body: `${lead}de fora até à jornada ${inj + 1}.`,
         redFlag: false,
@@ -262,7 +280,7 @@ export function squadToMedicalItems(squad, nowIdx) {
       items.push({
         id: `sus-${p.id}-${sus}`,
         cat: "squad",
-        date: "Castigos",
+        date: dateLabel,
         title: `🟥 ${p.name} castigado`,
         body: `${lead}suspenso até à jornada ${sus + 1}.`,
         redFlag: false,

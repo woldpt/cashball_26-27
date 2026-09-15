@@ -19,6 +19,7 @@ import { queueEmit } from "../socket.js";
 import {
   INBOX_CATS,
   MOOD_TITLES,
+  formatInboxDate,
   newsRowsToItems,
   squadToMedicalItems,
 } from "../utils/inboxItems.js";
@@ -65,6 +66,7 @@ export function useInbox() {
     mySquad,
     me,
     calendarIndex,
+    seasonYear,
   } = useGame();
 
   const storeKey = inboxReadKey(me?.roomCode, me?.name);
@@ -80,6 +82,8 @@ export function useInbox() {
     [storeKey],
   );
 
+  const currentDate = formatInboxDate((calendarIndex ?? 0) + 1, seasonYear);
+
   // ── Construção da lista (acionáveis primeiro, resto por ordem) ──────────
   const items = useMemo(() => {
     const list = [];
@@ -88,7 +92,7 @@ export function useInbox() {
       list.push({
         id: `contract-${d.playerId}`,
         cat: "club",
-        date: "Agente",
+        date: currentDate,
         title: `🚩 ${d.title || "Pedido de renovação"}`,
         body: d.description || "",
         redFlag: true,
@@ -102,7 +106,7 @@ export function useInbox() {
       list.push({
         id: `job-${to.id}`,
         cat: "club",
-        date: "Convite",
+        date: currentDate,
         title: `🚩 Convite: ${to.name}`,
         body: "Um clube quer-te como treinador. Responde antes do próximo jogo.",
         redFlag: true,
@@ -121,7 +125,7 @@ export function useInbox() {
       list.push({
         id: `board-${boardWarning.level}-${boardWarning.streak ?? 1}`,
         cat: "club",
-        date: "Direção",
+        date: currentDate,
         title: final ? "⚠️ Último aviso da direção" : "⚠️ Aviso da direção",
         body: "Orçamento negativo — carrega em Ok para confirmar leitura.",
         redFlag: false,
@@ -146,7 +150,7 @@ export function useInbox() {
       list.push({
         id: `cupdraw-${cupDraw.season || "?"}-${cupDraw.roundName || "sorteio"}`,
         cat: "competitions",
-        date: cupDraw.roundName || "Taça",
+        date: currentDate,
         title: `🏆 Sorteio: ${cupDraw.roundName || "Taça"}`,
         body: label,
         redFlag: false,
@@ -163,7 +167,7 @@ export function useInbox() {
       list.push({
         id: `mood-${postMatchMood.key || "jogo"}`,
         cat: "club",
-        date: postMatchMood.roundLabel || "Pós-jogo",
+        date: currentDate,
         title: `${title} ${postMatchMood.myGoals ?? ""}–${postMatchMood.oppGoals ?? ""} ${postMatchMood.opponentName || ""}`.trim(),
         body: "Reação dos adeptos ao último jogo.",
         redFlag: false,
@@ -172,8 +176,8 @@ export function useInbox() {
       });
     }
 
-    list.push(...squadToMedicalItems(mySquad, calendarIndex ?? 0));
-    list.push(...newsRowsToItems(globalNews?.news));
+    list.push(...squadToMedicalItems(mySquad, calendarIndex ?? 0, currentDate));
+    list.push(...newsRowsToItems(globalNews?.news, currentDate));
 
     return list;
   }, [
@@ -185,6 +189,7 @@ export function useInbox() {
     mySquad,
     globalNews,
     calendarIndex,
+    currentDate,
     me?.teamId,
   ]);
 

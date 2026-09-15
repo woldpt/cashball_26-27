@@ -1,3 +1,8 @@
+## Jornal: datas em semana/ano
+
+- As linhas do Jornal passam a mostrar `S<semana>/<ano>` (por exemplo, `S1/2026`), incluindo avisos locais; notícias históricas usam a semana/ano guardada e linhas incompletas usam a semana actual.
+- Checks: `npx eslint src/hooks/useInbox.js src/utils/inboxItems.js`; `npm run check:types`; self-check de formatação — todos OK.
+
 ## Rejoin mobile não desmonta a sessão (novo)
 
 - **Causa:** `joinError` fazia `setMe(null)` para qualquer erro e o timeout armado no `joinGameSuccess` nunca era cancelado no `teamAssigned`; um flape móvel podia desmontar o jogo e repetir joins até ao rate-limit, parecendo logout.
