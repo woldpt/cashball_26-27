@@ -46,7 +46,7 @@ Cada semana começa na preparação. O objetivo é deixar tudo pronto e confirma
 
 No briefing vê o próximo adversário, a forma das equipas, o estádio, o árbitro e o tempo.
 
-No Plantel vê os jogadores, a posição, a qualidade, a moral e o cansaço. Tocar num jogador mostra o passado dele.
+No Plantel vê os jogadores, a posição, a qualidade, a agressividade, a resistência, a forma, os golos, as lesões, o salário e o valor. Tocar num jogador mostra o passado dele. A moral é da equipa e vê-se no Clube e no briefing. O cansaço só aparece durante o jogo ao vivo.
 
 No Treino escolhe o foco da semana. Pode ser Forma, Resistência ou um setor: guarda-redes, defesas, médios ou avançados. Conta antes da jornada. Se não escolher, repete o último foco.
 
@@ -74,7 +74,7 @@ Na liga, o jogo acaba aqui. Na taça, se estiver empatado, há prolongamento e d
 
 A final da taça tem um ecrã especial de gala, jogue ou não.
 
-Durante o jogo vê o seu jogo em grande, os outros jogos da divisão, a classificação a mexer e o marcador dos melhores marcadores. Tocar no resultado abre o detalhe. Se for preciso decidir algo urgente, como uma lesão, aparece um pedido para escolher. Se não responder a tempo, o jogo decide sozinho.
+Durante o jogo vê o seu jogo em grande, os outros jogos da divisão e a classificação a mexer. Os melhores marcadores não aparecem aqui; estão nas Classificações e no Jornal. Tocar no resultado abre o detalhe. Se for preciso decidir algo urgente, como uma lesão, aparece um pedido para escolher. Se não responder a tempo, o jogo decide sozinho.
 
 ## 7. Depois do apito final
 
