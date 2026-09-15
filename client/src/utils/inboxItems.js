@@ -143,11 +143,19 @@ function newsArticle(n, { owner, related, seller, buyer } = {}) {
   const b = buyer ? partTeam(buyer) : owner ? partTeam(owner) : r;
   const s = seller ? partTeam(seller) : related ? partTeam(related) : null;
   const value = amount || "um valor não divulgado";
+  const transferVariant = newsVariant(n, 4);
   let titleParts = [partText(n?.title || "Notícia")];
   let bodyParts = [partText(description || n?.title || "Há novidades no clube.")];
 
   if (type === "transfer_in" || type === "auction_won" || n?.source === "transfer") {
-    titleParts = [p, partText(" reforça "), b];
+    titleParts =
+      transferVariant === 0
+        ? [p, partText(" reforça "), b]
+        : transferVariant === 1
+          ? [b, partText(" aposta em "), p]
+          : transferVariant === 2
+            ? [p, partText(" chega ao "), b]
+            : [partText("Novo rosto no "), b, partText(": "), p];
     bodyParts = newsVariant(n, 3) === 0
       ? [p, partText(" chega a "), b, partText(" vindo de "), s || partText("outro clube"), partText(` por ${value}.`)]
       : newsVariant(n, 3) === 1

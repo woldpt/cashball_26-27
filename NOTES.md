@@ -1,3 +1,9 @@
+## Jornal: títulos de transferências variados e normais (2026-09-15)
+
+- As entradas de mercado deixam de usar sempre `reforça`: quatro títulos editoriais determinísticos alternam entre chegada, aposta, novo rosto e reforço.
+- O título do artigo deixou de forçar `uppercase`, mantendo nomes e frases em capitalização normal.
+- Checks: eslint/JSDoc, teste directo de quatro títulos distintos, harness Jornal retrato 5/5 + paisagem 6/6.
+
 ## Jornal: rescaldo inclui bilheteira sem ruído financeiro (2026-09-15)
 
 - O Jornal deixa de receber linhas de `Rendimento Semanal`, `Folha Salarial`, `Manutenção do Estádio` e `Bilheteiras`; as contas continuam a ser aplicadas, mas as linhas antigas também são filtradas do feed.

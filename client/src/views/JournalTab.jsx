@@ -391,7 +391,7 @@ export function JournalTab({
           aria-live="polite"
           className="rounded-sm border border-outline-variant/20 bg-surface-container px-3 py-2.5 short:py-2"
         >
-          <h2 className="text-center font-headline text-base short:text-sm font-black uppercase tracking-tight text-tertiary">
+          <h2 className="text-center font-headline text-base short:text-sm font-black tracking-tight text-tertiary">
             <RichNewsText
               parts={inbox.selected.titleParts}
               fallback={inbox.selected.title.replace(/^🚩\s*/, "")}
