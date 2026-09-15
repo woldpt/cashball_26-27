@@ -27,7 +27,6 @@ const QUICK_MESSAGES = ["👍", "🖕", "Vamos!", "Boa sorte", "⚽", "😂"];
  *   coachAvatars: object, {nome do coach: versão da imagem carregada}
  *   backendUrl: string,
  *   chatMessagesRef: object,
- *   addToast: function,
  *   awaitingCoaches: Array,
  *   chatOpenRef: object,
  *   activeChatTabRef: object,
@@ -51,17 +50,25 @@ export function RoomHub({
   coachAvatars = {},
   backendUrl = "",
   chatMessagesRef,
-  addToast,
   awaitingCoaches,
   chatOpenRef,
   activeChatTabRef,
 }) {
   const [chatSubTab, setChatSubTab] = useState("room");
   const [systemMessages, setSystemMessages] = useState([]);
-  const meNameRef = useRef(me?.name);
-  useEffect(() => {
-    meNameRef.current = me?.name;
-  }, [me?.name]);
+  const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef(null);
+
+  const copyRoomCode = () => {
+    navigator.clipboard
+      .writeText(me?.roomCode?.toUpperCase() || "")
+      .then(() => {
+        setCopied(true);
+        clearTimeout(copiedTimer.current);
+        copiedTimer.current = setTimeout(() => setCopied(false), 1500);
+      })
+      .catch(() => {});
+  };
 
   // Sync RoomHub state → parent refs for unread logic
   useEffect(() => {
@@ -96,23 +103,6 @@ export function RoomHub({
     if (!roomHubOpen) return;
     socket.emit("getChatHistory", { channel: chatSubTab });
   }, [roomHubOpen, chatSubTab]);
-
-  useEffect(() => {
-    const onChatMessage = (msg) => {
-      if (!msg || msg.coachName === meNameRef.current) return;
-      if (chatOpenRef.current && activeChatTabRef.current === msg.channel)
-        return;
-      const preview =
-        msg.message.length > 80 ? msg.message.slice(0, 80) + "…" : msg.message;
-      addToast(`${msg.coachName}: ${preview}`);
-    };
-
-    socket.on("chatMessage", onChatMessage);
-
-    return () => {
-      socket.off("chatMessage", onChatMessage);
-    };
-  }, [addToast, chatOpenRef, activeChatTabRef]);
 
   const activeMessages = chatSubTab === "room" ? roomMessages : globalMessages;
 
@@ -211,16 +201,11 @@ export function RoomHub({
                   {me.roomCode?.toUpperCase()}
                 </span>
                 <button
-                  onClick={() => {
-                    navigator.clipboard
-                      .writeText(me.roomCode?.toUpperCase() || "")
-                      .then(() => addToast("Código copiado!"))
-                      .catch(() => {});
-                  }}
+                  onClick={copyRoomCode}
                   className="text-[8px] font-black uppercase tracking-widest text-zinc-500 hover:text-primary transition-colors px-1.5 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700"
                   title="Copiar código de convite"
                 >
-                  Copiar
+                  {copied ? "Copiado ✓" : "Copiar"}
                 </button>
               </div>
             </div>

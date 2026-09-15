@@ -30,7 +30,6 @@ export function GameOverlays() {
   const {
     activeChatTabRef,
     activeTab,
-    addToast,
     adminPanelOpen,
     avatarSeed,
     awaitingCoaches,
@@ -362,7 +361,6 @@ export function GameOverlays() {
         coachAvatars={coachAvatars}
         backendUrl={backendUrl}
         chatMessagesRef={chatMessagesRef}
-        addToast={addToast}
         awaitingCoaches={awaitingCoaches}
         chatOpenRef={chatOpenRef}
         activeChatTabRef={activeChatTabRef}

@@ -64,6 +64,8 @@ export function GameProvider({
 	const [disconnected, setDisconnected] = useState(false);
 	const [sessionDisplaced, setSessionDisplaced] = useState(false);
 	const [toasts, setToasts] = useState([]);
+	// Balão de chat (última mensagem não-lida) e flash de reconnect —
+	// transientes com auto-limpeza, como os toasts.
 	const [lockedCoaches, setLockedCoaches] = useState([]);
 	const [awaitingCoaches, setAwaitingCoaches] = useState([]);
 	const [roomCreator, setRoomCreator] = useState("");
@@ -263,6 +265,28 @@ export function GameProvider({
 
 	const dismissToast = useCallback((id) => {
 		setToasts((prev) => prev.filter((t) => t.id !== id));
+	}, []);
+
+	const [chatPeek, setChatPeekState] = useState(null);
+	const setChatPeek = useCallback((peek) => {
+		setChatPeekState(peek);
+		if (!peek) return;
+		const id = peek.id;
+		setTimeout(
+			() => setChatPeekState((prev) => (prev?.id === id ? null : prev)),
+			6000,
+		);
+	}, []);
+
+	const [reconnectFlash, setReconnectFlashState] = useState(null);
+	const flashReconnect = useCallback(() => {
+		const id = Date.now();
+		setReconnectFlashState({ id });
+		setTimeout(
+			() =>
+				setReconnectFlashState((prev) => (prev?.id === id ? null : prev)),
+			3000,
+		);
 	}, []);
 
 	// ── Avatar seed fetch ───────────────────────────────────────────────────
@@ -734,6 +758,7 @@ export function GameProvider({
 		startTransition(() => {
 			setUnreadRoom(0);
 			setUnreadGlobal(0);
+			setChatPeekState(null);
 		});
 	}, [roomHubOpen]);
 
@@ -904,6 +929,8 @@ export function GameProvider({
 			setGlobalPlayers,
 			setUnreadRoom,
 			setUnreadGlobal,
+			setChatPeek,
+			flashReconnect,
 			addToast,
 			setSubstitutionPause,
 			setTacticFamiliarity,
@@ -1527,6 +1554,8 @@ export function GameProvider({
 		sessionDisplaced,
 		setSessionDisplaced,
 		toasts,
+		chatPeek,
+		reconnectFlash,
 		lockedCoaches,
 		awaitingCoaches,
 		roomCreator,

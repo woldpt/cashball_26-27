@@ -1697,33 +1697,16 @@ export function useSocketListeners(handlers, refs) {
 			);
 		});
 
-		// Treinador esgotou as 3 substituições permitidas na partida (4ª tentativa
-		// ou lesão sem reposição): avisa só o treinador da equipa envolvida.
-		socket.on("substitutionCapReached", ({ teamId }) => {
-			const myTeamId = refs.meRef.current?.teamId;
-			if (!myTeamId || myTeamId !== teamId) return;
-			handlers.addToast(
-				"Esgotaste as 3 substituições permitidas na partida.",
-			);
-		});
-
 		socket.on("coachDisconnected", () => {
 			if (!inRoom()) return;
 		});
 
-		socket.on("matchActionExpired", ({ type }) => {
+		socket.on("matchActionExpired", () => {
 			handlers.setIsMatchActionPending(false);
 			clearInterval(refs.injuryCountdownRef.current);
 			refs.injuryCountdownRef.current = null;
 			handlers.setInjuryCountdown(null);
 			handlers.setMatchAction(null);
-			handlers.addToast(
-				type === "user_substitution"
-					? "Substituição expirada — decisão automática aplicada"
-					: type === "injury"
-						? "Lesão sem substituição — decisão automática aplicada"
-						: "Decisão expirada — ação automática aplicada",
-			);
 		});
 
 		// BUG-11 FIX: matchResults clears showHalftimePanel (2nd half replay)
@@ -1803,26 +1786,30 @@ export function useSocketListeners(handlers, refs) {
 
 		socket.on("chatMessage", (msg) => {
 			const isOwn = msg.coachName === refs.meRef.current?.name;
+			const viewing =
+				refs.chatOpenRef?.current &&
+				refs.activeChatTabRef?.current === msg.channel;
 			if (msg.channel === "room") {
 				handlers.setRoomMessages((prev) => [...prev.slice(-199), msg]);
 				if (!isOwn) {
-					handlers.setUnreadRoom((prev) =>
-						refs.chatOpenRef?.current &&
-						refs.activeChatTabRef?.current === "room"
-							? 0
-							: prev + 1,
-					);
+					handlers.setUnreadRoom((prev) => (viewing ? 0 : prev + 1));
 				}
 			} else if (msg.channel === "global") {
 				handlers.setGlobalMessages((prev) => [...prev.slice(-199), msg]);
 				if (!isOwn) {
-					handlers.setUnreadGlobal((prev) =>
-						refs.chatOpenRef?.current &&
-						refs.activeChatTabRef?.current === "global"
-							? 0
-							: prev + 1,
-					);
+					handlers.setUnreadGlobal((prev) => (viewing ? 0 : prev + 1));
 				}
+			}
+			// Balão de banda desenhada junto ao botão do chat (substitui o toast).
+			if (!isOwn && !viewing) {
+				const preview =
+					msg.message.length > 80 ? msg.message.slice(0, 80) + "…" : msg.message;
+				handlers.setChatPeek({
+					id: msg.id ?? Date.now(),
+					coachName: msg.coachName,
+					preview,
+					channel: msg.channel,
+				});
 			}
 		});
 
@@ -1861,7 +1848,7 @@ export function useSocketListeners(handlers, refs) {
 			) {
 				// Feedback imediato: o rejoin + flush se dão no gameState/
 				// teamAssigned que se seguem.
-				handlers.addToast("Ligação restabelecida — a sincronizar…");
+				handlers.flashReconnect();
 				socket.emit("joinGame", {
 					name: currentMe.name,
 					token: currentMe.token,

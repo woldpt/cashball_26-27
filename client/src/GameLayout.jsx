@@ -52,6 +52,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     roomHubOpen,
     unreadRoom,
     unreadGlobal,
+    chatPeek,
+    reconnectFlash,
     mobileSubMenu,
     setMobileSubMenu,
     sidebarCollapsed,
@@ -259,6 +261,33 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       <RoomPauseBanner />
       <OfflineBanner />
       <ServerRestartBanner />
+      {/* Flash de reconnect (ex-toast 5): modal que desvanece sozinho. */}
+      <AnimatePresence initial={false}>
+        {reconnectFlash && (
+          <motion.div
+            key={reconnectFlash.id}
+            role="status"
+            aria-live="polite"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="pointer-events-none fixed inset-0 z-[99998] flex items-center justify-center px-4"
+          >
+            <div className="rounded-2xl border border-outline-variant/40 bg-surface-container px-6 py-4 text-center shadow-2xl">
+              <span
+                aria-hidden
+                className="material-symbols-outlined animate-spin text-2xl leading-none text-primary"
+              >
+                sync
+              </span>
+              <p className="mt-1 text-sm font-bold text-on-surface">
+                Ligação restabelecida — a sincronizar…
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {renderError && (
         <div
           style={{ position: "fixed", inset: 0, zIndex: 99999 }}
@@ -400,6 +429,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           {/* Right: user menu + chat */}
           <div className="flex items-center gap-1">
             {/* RoomHub button — unified: Coaches + Chat */}
+            <div className="relative">
             <button
               onMouseUp={(e) => e.stopPropagation()}
               onClick={() => setRoomHubOpen((v) => !v)}
@@ -429,6 +459,34 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 </span>
               )}
             </button>
+            {/* Balão de banda desenhada (ex-toast 6): última msg não-lida. */}
+            <AnimatePresence initial={false}>
+              {chatPeek && !roomHubOpen && (
+                <motion.button
+                  type="button"
+                  onMouseUp={(e) => e.stopPropagation()}
+                  onClick={() => setRoomHubOpen(true)}
+                  aria-label={`Nova mensagem de ${chatPeek.coachName}: abrir chat`}
+                  initial={{ opacity: 0, y: -6, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="absolute top-full right-0 mt-3 w-64 max-w-[70vw] rounded-2xl border-2 border-black bg-white text-left text-zinc-900 shadow-2xl"
+                >
+                  <span
+                    aria-hidden
+                    className="absolute -top-[7px] right-3 h-3 w-3 rotate-45 border-t-2 border-l-2 border-black bg-white"
+                  />
+                  <span className="block px-3 pt-2 text-[11px] font-black tracking-widest text-emerald-700 uppercase">
+                    {chatPeek.coachName}
+                  </span>
+                  <span className="block px-3 pb-2.5 text-sm leading-snug break-words">
+                    {chatPeek.preview}
+                  </span>
+                </motion.button>
+              )}
+            </AnimatePresence>
+            </div>
 
             {/* User dropdown — disabled during live match */}
             <div className="relative">

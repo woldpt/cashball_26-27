@@ -232,6 +232,13 @@
 - Pendente (dificuldade): alavancas anti-bola-de-neve A+B+C (evolução vs desempenho, inflação económica anual, custo de estádio) — diagnóstico feito, utilizador ainda não escolheu.
 > - Ao iniciar uma sessão nova: ler este ficheiro + `git log --oneline -10`.
 
+## Toasts 3/4/5/7 removidos; 6 virou balão, 5 virou flash (novo)
+- **Eliminados (silenciosos):** 3 (`substitutionCapReached` — handler cliente removido, servidor continua a emitir sem efeito), 4 (`matchActionExpired` — só saiu o `addToast`, limpeza de estado intacta), 7 (`"Código copiado!"` — botão passa a `"Copiado ✓"` 1,5s via estado local).
+- **6 → balão de banda desenhada:** `chatPeek` no `GameContext` (auto-limpa 6s, limpa ao abrir o hub), exposto pelo `chatMessage` do `useSocketListeners` (só quando não se está a ver o canal); render no `GameLayout` ancorado ao botão chat (cauda, clique abre o hub); listener de toast do `RoomHub` removido; badge rose de não-lidas mantém-se.
+- **5 → flash modal:** `flashReconnect()` no `onConnect`; overlay centrado não-bloqueante (`pointer-events-none`, `role=status`, ícone sync) que desvanece em 3s. `GameDialog` não serve (é prompt/confirm com botões).
+- **Prop `addToast` removida** do `RoomHub` + `GameOverlays`; o `addToast` em si fica (systemMessage, transferProposalResult, admin).
+- Checks: `eslint` só o erro pré-existente (`GameContext.jsx` fast-refresh); `check:types` OK; `test:mobile` 150/150 + landscape 180/180; esbuild compila os 5 ficheiros (harnesses não montam o `GameLayout` real — estados transitórios sem cobertura visual).
+
 ## Engine: chances discretas estilo hatrick (novo)
 
 - O engine deixou de jogar por **probabilidade contínua de golo por minuto** e passa a **chances discretas** (modelo hatrick.org): (1) **posse** fixada 1× no início do 1.º segmento — `computePossession(midHome, midAway, estiloA, estiloB)` em `matchCalculations.ts`: `clamp(0.30, 0.70, 0.5 + Δmed×0.0075 + tilt estilo)`, guardado em `_homePossession`/`_awayPossession` (+ totais `_homeChances`/`_awayChances` = `chancesTotal × posse`); (2) **chances por minuto**: `binomial(nChances, taxaChance(minuto))` com a curva de tempo existente (`getGoalTimeMultiplier`); (3) cada chance resolve `pGoal = clamp(0.06, 0.32, 0.175 × ATA/(ATA + 1.2×DEFGR))` — `computeChanceGoalProbability`.
