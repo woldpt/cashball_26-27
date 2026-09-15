@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { socket, queueEmit, flushOutbox, subscribeSessionDisplaced } from "../socket.js";
-import { getDeviceId } from "../utils/localStorage.js";
+import { getDeviceId, loadSavedSession } from "../utils/localStorage.js";
 import { loadTacticSnapshot } from "../utils/uiSnapshot.js";
 import { isSameTeamId } from "../utils/teamHelpers.js";
 import { seasonToYear } from "../utils/formatters.js";
@@ -885,14 +885,25 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setSigningCelebration(data);
 		});
 		socket.on("teamAssigned", (data) => {
-			const currentMe = refs.meRef.current;
+			// Fallback à sessão guardada: se `me` caiu (ou o ref ainda não foi
+			// sincronizado), o `teamAssigned` era descartado e o cliente ficava
+			// em "A entrar na sala..." para sempre, a repetir o join.
+			const saved = loadSavedSession();
+			const currentMe =
+				refs.meRef.current ||
+				(saved ? { name: saved.name, token: saved.token } : null);
 			// Só precisamos do name — o joinGame já foi emitido por este socket.
 			// O roomCode pode ainda não estar atualizado no ref porque o React
 			// não processou a atualização do handleJoinSuccess (mesmo event loop).
 			if (!currentMe?.name) return;
-			handlers.setMe((prev) =>
-				prev ? { ...prev, teamId: data.teamId } : prev,
-			);
+			handlers.setMe((prev) => ({
+				...(prev || {
+					name: currentMe.name,
+					token: currentMe.token,
+					roomCode: currentMe.roomCode,
+				}),
+				teamId: data.teamId,
+			}));
 			// Merge das versões de avatar dos coaches da sala (exibição em listas/chat)
 			if (data.coachAvatars && typeof data.coachAvatars === "object") {
 				handlers.setCoachAvatars((prev) => ({

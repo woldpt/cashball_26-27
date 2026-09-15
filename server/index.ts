@@ -1487,7 +1487,7 @@ try {
 	console.error("[migração] Falha na migração das salas:", err.message);
 }
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 server.listen(PORT, () => {
 	const portMsg = `Listening on port ${PORT}`;
 	const pad = " ".repeat(Math.max(0, 35 - portMsg.length));

@@ -1,3 +1,12 @@
+## Join auto-recuperável: fim da espiral de timeout (fix)
+
+- **Reportado:** depois de reiniciar o servidor, "já não consigo entrar" com "Sem resposta do servidor". Logs do backend mostravam `assignPlayer reconnect` + `emitCurrentPhaseToSocket` (o servidor respondia) e o cliente a repetir o join em ciclo (~10s).
+- **Causa (cliente):** `armJoinTimeout` fazia `setMe(prev => prev && !prev.teamId ? null : prev)`. Com `me` a null, o `handleJoinSuccess` (`if (!prev) return null`) e o `teamAssigned` (`if (!currentMe?.name) return`) eram **descartados**; o efeito de auto-join re-corria (dep `me?.teamId`) e repetia o ciclo — um único `teamAssigned` perdido bloqueava o cliente **para sempre**.
+- **Fix:** o timeout já não limpa `me`; reenvia o último payload de join (`lastJoinRef`) com contador (máx. 5) e mensagem de progresso. `joinGameSuccess`/`teamAssigned` reconstroem `me` a partir da sessão guardada (`savedSessionRef`/`loadSavedSession()`) em vez de descartar. `joinRetryRef` é reposto em cada `joinGameSuccess`.
+- **Verificação servidor:** instância própria em `PORT=3111` (`process.env.PORT`, antes hardcoded) — sala nova, restart do processo, e 3 reentradas seguidas no mesmo código (incl. `deviceId` diferente): `teamAssigned` recebido nas 3, sem `joinError`.
+- **Aviso de ambiente (não é código):** existe um `tsx index.ts` **de ontem (set 14)** a ocupar `*:3000` no host, fora do docker — o container `cashball-backend-1` não publica a porta. Quem ligue a `localhost:3000` fala com esse processo de código antigo. `ss -ltnp | grep 3000` + `kill <pid>` quando não estiver a ser usado.
+- Checks: client `lint` (só os 2 pré-existentes) + `check:types` OK; `test:mobile` 155/155 + landscape 186/186; server `typecheck` OK.
+
 ## ClubTab: "Jornal do Clube" → "Histórico do Clube"
 - A secção do ClubTab fazia confusão com a página Jornal (`JournalTab.jsx`, tab global da bancada). Renomeado só o visível (título do Panel + comentários + texto do tutorial); props/variáveis (`clubNews`, `groupedNews`, `NewsRow`) intactas para diff mínimo.
 - Checks: `eslint` nos ficheiros tocados OK + `check:types` OK (`lint` global só os 2 erros pré-existentes).

@@ -57,8 +57,13 @@ function App() {
 	const [joinError, setJoinError] = useState("");
 
 	const meRef = React.useRef(null);
+	const savedSessionRef = React.useRef(null);
 	const roomCodeRef = React.useRef("");
 	const joinTimerRef = React.useRef(null);
+	const joinRetryRef = React.useRef(0);
+	// Último payload de join emitido: a re-tentativa reenvia-o sem depender de
+	// estado (evita dependências novas nos efeitos e payloads obsoletos).
+	const lastJoinRef = React.useRef(null);
 
 	const backendUrl =
 		(typeof import.meta !== "undefined" && import.meta.env?.VITE_BACKEND_URL) ||
@@ -78,15 +83,29 @@ function App() {
 		);
 	};
 
-	// Rede de segurança do join: se o teamId não chegar dentro de 10s, mostra
-	// erro e limpa o estado (a sessão guardada em localStorage sobrevive e o
-	// reload/re-tentar recupera). Re-armada também após o joinGameSuccess, para
-	// cobrir a janela em que o teamAssigned ainda não chegou.
+	// Rede de segurança do join: se o teamId não chegar dentro de 10s, re-tenta o
+	// join (com a sessão guardada) em vez de limpar o estado.
+	//
+	// NÃO limpar `me` aqui: era isso que transformava um único `teamAssigned`
+	// perdido num bloqueio permanente. `me` ficava null → o `teamAssigned`
+	// seguinte era ignorado (`if (!currentMe?.name) return`) → novo join → nova
+	// espera, em ciclo; o cliente nunca mais entrava na sala.
 	const armJoinTimeout = () => {
 		if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
 		joinTimerRef.current = setTimeout(() => {
-			setMe((prev) => (prev && !prev.teamId ? null : prev));
 			setJoining(false);
+			const payload = lastJoinRef.current;
+			if (payload && joinRetryRef.current < 5) {
+				joinRetryRef.current += 1;
+				console.warn(
+					"[App] sem teamAssigned — a re-tentar o join (%d/5)",
+					joinRetryRef.current,
+				);
+				setJoinError("A ligar à sala… (tentativa " + joinRetryRef.current + "/5)");
+				socket.emit("joinGame", payload);
+				armJoinTimeout();
+				return;
+			}
 			setJoinError(
 				"Sem resposta do servidor. Certifica-te que o servidor está ligado.",
 			);
@@ -115,11 +134,17 @@ function App() {
 			roomCodeRef.current = roomCode;
 			setRoomCode(roomCode);
 			setMe((prev) => {
-				if (!prev) return null;
-				const updated = { ...prev, roomCode, roomName };
+				// Reconstruir da sessão guardada se `me` tiver caído entretanto: um
+				// joinGameSuccess atrasado não pode perder-se por causa disso.
+				const saved = savedSessionRef.current;
+				const base =
+					prev || (saved ? { name: saved.name, token: saved.token } : null);
+				if (!base) return prev;
+				const updated = { ...base, roomCode, roomName };
 				saveRoomPointer(updated.name, updated.roomCode);
 				return updated;
 			});
+			joinRetryRef.current = 0;
 			setJoining(false);
 			setJoinError("");
 			// Re-armar a rede de segurança: o teamAssigned ainda pode demorar ou
@@ -135,6 +160,8 @@ function App() {
 			socket.off("joinGameSuccess", handleJoinSuccess);
 			socket.off("joinError", handleJoinError);
 		};
+		// armJoinTimeout só usa refs/setters — estável de propósito.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	// ── Load saved session after cache check ───────────────────────────────
@@ -165,12 +192,14 @@ function App() {
 				"[App] Auto-join attempt, socket.connected:",
 				socket.connected,
 			);
-			socket.emit("joinGame", {
+			const payload = {
 				name: savedSession.name,
 				token: savedSession.token,
 				roomCode: savedSession.roomCode.toUpperCase(),
 				deviceId: getDeviceId(),
-			});
+			};
+			lastJoinRef.current = payload;
+			socket.emit("joinGame", payload);
 
 			armJoinTimeout();
 		};
@@ -190,6 +219,7 @@ function App() {
 				if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
 			};
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [savedSession, me?.teamId]);
 
 	// ── Re-fetch saved rooms for this coach ────────────────────────────────
@@ -217,6 +247,9 @@ function App() {
 	useEffect(() => {
 		meRef.current = me;
 	}, [me]);
+	useEffect(() => {
+		savedSessionRef.current = savedSession;
+	}, [savedSession]);
 	useEffect(() => {
 		roomCodeRef.current = me?.roomCode || "";
 	}, [me?.roomCode]);
@@ -337,13 +370,15 @@ function App() {
 		if (me?.roomCode) socket.emit("leaveRoom");
 		setJoinError("");
 		setJoining(true);
-		socket.emit("joinGame", {
+		const payload = {
 			name,
 			token,
 			roomCode: target,
 			joinMode: "saved-game",
 			deviceId: getDeviceId(),
-		});
+		};
+		lastJoinRef.current = payload;
+		socket.emit("joinGame", payload);
 		setMe({ name, token, roomCode: "" });
 		armJoinTimeout();
 	};
