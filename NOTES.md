@@ -4,6 +4,12 @@
 - O texto usa apenas dados reais disponíveis no resultado e mantém a variação determinística; as quebras de parágrafo são visíveis no detalhe do Jornal.
 - Checks: eslint/JSDoc, `check:types`, teste directo das 9 variantes (>500 caracteres), build Vite, harness Jornal retrato `5/5`, paisagem `6/6`, screenshots 390/667 revistos.
 
+## Jornal fixo no topo da barra desktop (2026-09-15)
+
+- O grupo do Jornal na sidebar desktop fica `sticky` no topo do contentor de navegação, mantendo o acesso visível enquanto os restantes itens fazem scroll.
+- Mobile e a ordem dos grupos permanecem inalterados.
+- Checks: ESLint, `check:types`, `git diff --check`, mobile portrait `150/150` e landscape `180/180`; screenshots portrait/landscape revistos.
+
 ## Jornal: pesquisa rápida nos tópicos (2026-09-15)
 
 - O cabeçalho `Tópicos` foi substituído por uma pesquisa rápida que filtra imediatamente a lista enquanto se escreve.

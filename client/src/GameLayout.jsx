@@ -701,6 +701,11 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             {NAV_GROUPS.map((group, gi) => (
               <motion.div
                 key={group.id}
+                className={
+                  gi === 0
+                    ? "sticky top-0 z-10 -mx-2 px-2 py-2 bg-surface-container-high"
+                    : undefined
+                }
                 variants={{
                   hidden: {},
                   visible: { transition: { staggerChildren: 0.055 } },
