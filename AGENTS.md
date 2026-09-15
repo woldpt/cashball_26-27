@@ -20,6 +20,7 @@
 | Mobile portrait + landscape (mudança estrutural de layout, ambas obrigatórias) | `cd client && npm run test:mobile` · `npm run test:mobile:landscape` |
 | Audit socket.io · audit de sala · audit de sessão | `cd server && npm run audit:socketio` · `npm run audit:gamestate <ROOM_CODE>` · `npm run audit:session <ROOM_CODE>` |
 | Congelamento/presença (assentos) | `cd server && npm run test:session-freeze` |
+| Smoke de ligação (handlers registados) | `cd server && npm run test:connect-smoke` |
 | Repair job offer | `cd server && npm run repair:joboffer <ROOM_CODE> [--fix]` |
 | Crash-restart E2E (clona p/ `game_CRASHT.db`, limpa ao fim) | `cd server && npm run test:crash-recovery` (origem: `CRASHTEST_ROOM=XXXX`) |
 | Stack completa | `docker compose up --build` |
@@ -47,7 +48,7 @@
 
 ## ✅ Antes de "feito" / commit
 
-- Checks verdes aplicáveis: server `npm run typecheck` · client `npm run lint` + `npm run check:types` · layout/estilo → `npm run test:mobile`. **Nunca reportar sucesso sem saída verificada.**
+- Checks verdes aplicáveis: server `npm run typecheck` · client `npm run lint` + `npm run check:types` · layout/estilo → `npm run test:mobile`. **Nunca reportar sucesso sem saída verificada.** `server/index.ts` tem `// @ts-nocheck` — o `typecheck` não vê identificadores inexistentes lá dentro; mudanças nesse ficheiro exigem `test:connect-smoke` (arranca o servidor e liga-lhe um socket).
 - Alterou lógica de jogo/comunicações → correr `audit:gamestate <ROOM>` (budgets vs salários, squad mínimo, jogadores duplicados, fases) e `audit:socketio` (orphaned/duplicate handlers).
 - Debug por evidência: reproduzir → isolar causa → só então fixar. Nunca corrigir por hipótese (ex.: `min-w-0` "porque costuma resolver").
 

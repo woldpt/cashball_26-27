@@ -34,7 +34,8 @@
     "test:emergency-gk": "tsx scripts/emergencyGkRegression.mts",
     "test:engine-unit": "tsx --test scripts/engineUnitRegression.mts",
     "test:segment-barrier": "tsx scripts/segmentBarrierSmoke.mts",
-    "test:session-freeze": "tsx --test scripts/sessionFreezeRegression.mts"
+    "test:session-freeze": "tsx --test scripts/sessionFreezeRegression.mts",
+    "test:connect-smoke": "tsx scripts/connectSmoke.mts"
   },
   "keywords": [],
   "author": "",

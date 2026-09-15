@@ -1,3 +1,10 @@
+## Causa raiz do "não consigo entrar": identificador mal qualificado em index.ts (fix, meu)
+
+- **Bug (meu, produção):** no commit do congelamento adicionei `emitPresencePause,` aos deps de `registerAdminSocketHandlers`, mas o `const`/namespace ficou por qualificar (`roomState.emitPresencePause`). `server/index.ts` tem `// @ts-nocheck` na linha 1 → **nem `typecheck` nem `build` viram nada**. Em runtime, o callback de `connection` rebentava (`ReferenceError: emitPresencePause is not defined`) e o socket.io fechava a ligação: nenhum cliente entrava em sala nenhuma. Corrigido no `1489e51` (não por mim).
+- **Porque não reproduzi:** o tree já tinha esse fix quando testei, e `git status` limpo fez-me assumir que não havia nada de novo entre o meu commit e o teste.
+- **Guarda nova (`test:connect-smoke`):** arranca o servidor numa porta livre (SO), liga um socket de verdade, faz `joinGame` com token inválido (exige `joinError`) e pergunta a um handler registado **depois** do admin (`getTrainingFocus`) — se o registo de handlers for interrompido a meio, a resposta nunca chega. Processo morto por grupo (`detached`), porta por corrida: uma porta fixa deixava um servidor órfão a dar **falso PASS**. Provado nos dois sentidos: código bom → exit 0; bug reintroduzido de propósito → exit 1.
+- **Regra:** mudanças em `server/index.ts` (ou em qualquer ficheiro com `@ts-nocheck`) exigem `npm run test:connect-smoke` antes de "feito".
+
 ## Join auto-recuperável: fim da espiral de timeout (fix)
 
 - **Reportado:** depois de reiniciar o servidor, "já não consigo entrar" com "Sem resposta do servidor". Logs do backend mostravam `assignPlayer reconnect` + `emitCurrentPhaseToSocket` (o servidor respondia) e o cliente a repetir o join em ciclo (~10s).
