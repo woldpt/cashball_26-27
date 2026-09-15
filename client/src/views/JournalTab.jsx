@@ -11,10 +11,10 @@
  * respostas reutilizam os fluxos existentes (diálogo do agente, emits).
  */
 import { useState } from "react";
-import { useGame } from "../contexts/GameContext.jsx";
 import { useInbox } from "../hooks/useInbox.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
+import { Button } from "../components/shared/Button.jsx";
 
 const TOP_TABS = ["all", "messages", "competitions", "injuries"];
 const BOTTOM_TABS = ["contracts", "transfers", "jobs", "records"];
@@ -27,13 +27,13 @@ function InboxActions({ item, inbox }) {
   if (!item) return null;
   if (item.kind === "contract") {
     return (
-      <button
-        type="button"
+      <Button
+        variant="danger"
+        size="sm"
         onClick={() => inbox.answerContract(item.ref)}
-        className="px-4 py-2 rounded-sm bg-red-700 text-white text-xs font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all"
       >
         Responder ao agente
-      </button>
+      </Button>
     );
   }
   if (item.kind === "job") {
@@ -45,20 +45,12 @@ function InboxActions({ item, inbox }) {
             {item.extra.record}
           </p>
         )}
-        <button
-          type="button"
-          onClick={() => inbox.answerJobOffer(true)}
-          className="px-4 py-2 rounded-sm bg-tertiary text-zinc-950 text-xs font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all"
-        >
+        <Button variant="success" size="sm" onClick={() => inbox.answerJobOffer(true)}>
           Aceitar
-        </button>
-        <button
-          type="button"
-          onClick={() => inbox.answerJobOffer(false)}
-          className="px-4 py-2 rounded-sm bg-surface-container-high border border-outline-variant/30 text-on-surface text-xs font-black uppercase tracking-widest hover:bg-surface-bright active:scale-95 transition-all"
-        >
+        </Button>
+        <Button variant="secondary" size="sm" onClick={() => inbox.answerJobOffer(false)}>
           Recusar
-        </button>
+        </Button>
       </div>
     );
   }
@@ -72,32 +64,23 @@ function InboxActions({ item, inbox }) {
             {item.extra.streak === 1 ? "" : "s"} no vermelho
           </p>
         )}
-        <button
-          type="button"
-          onClick={inbox.ackBoard}
-          className="px-4 py-2 rounded-sm bg-primary text-zinc-950 text-xs font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all"
-        >
+        <Button variant="primary" size="sm" onClick={inbox.ackBoard}>
           Ok, lido
-        </button>
+        </Button>
       </div>
     );
   }
   if (item.kind === "cupdraw") {
     return (
-      <button
-        type="button"
-        onClick={inbox.openCupDraw}
-        className="px-4 py-2 rounded-sm bg-amber-500 text-zinc-950 text-xs font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all"
-      >
+      <Button variant="accent" size="sm" onClick={inbox.openCupDraw}>
         Ver sorteio
-      </button>
+      </Button>
     );
   }
   return null;
 }
 
 export function JournalTab() {
-  const { me } = useGame();
   const inbox = useInbox();
   const [filter, setFilter] = useState("all");
 
@@ -115,7 +98,7 @@ export function JournalTab() {
       aria-pressed={filter === id}
       className={`shrink-0 px-3 py-2 text-[11px] font-black uppercase tracking-widest transition-colors ${
         filter === id
-          ? "bg-primary text-zinc-950"
+          ? "bg-primary text-on-primary"
           : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high"
       }`}
     >
@@ -123,23 +106,21 @@ export function JournalTab() {
     </button>
   );
 
-  const coachName = me?.name || "Treinador";
-
   return (
     <div className="space-y-2 short:space-y-1.5">
       {/* ── Barra de título ─────────────────────────────────────────── */}
-      <div className="rounded-sm bg-blue-800 px-3 py-2.5 short:py-1.5 flex items-center justify-between gap-2">
-        <h1 className="min-w-0 truncate text-lg short:text-base font-black text-white tracking-tight">
-          {coachName} News
+      <div className="rounded-sm bg-surface-container border border-outline-variant/20 px-3 py-2 short:py-1.5 flex items-center justify-between gap-2">
+        <h1 className="min-w-0 truncate font-headline text-base short:text-sm font-black uppercase tracking-tight text-tertiary">
+          Notícias
         </h1>
         <div className="flex shrink-0 items-center gap-1.5">
           {inbox.redFlags > 0 && (
-            <span className="rounded-sm bg-error px-1.5 py-0.5 text-[10px] font-black text-white uppercase tracking-widest">
+            <span className="rounded-sm bg-error-container px-1.5 py-0.5 text-[10px] font-black text-on-error-container uppercase tracking-widest">
               🚩 {inbox.redFlags}
             </span>
           )}
           {inbox.unreadCount > 0 && (
-            <span className="rounded-sm bg-white/20 px-1.5 py-0.5 text-[10px] font-black text-white uppercase tracking-widest">
+            <span className="rounded-sm bg-surface-container-high border border-outline-variant/25 px-1.5 py-0.5 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">
               {inbox.unreadCount} nova
               {inbox.unreadCount === 1 ? "" : "s"}
             </span>
@@ -158,7 +139,7 @@ export function JournalTab() {
       <div
         role="tablist"
         aria-label="Filtrar notícias"
-        className="flex gap-px overflow-x-auto rounded-sm bg-indigo-950 border border-outline-variant/20"
+        className="flex gap-px overflow-x-auto rounded-sm bg-surface-container-low border border-outline-variant/20"
       >
         {TOP_TABS.map(tabBtn)}
       </div>
@@ -187,9 +168,9 @@ export function JournalTab() {
                   aria-current={active}
                   className={`flex w-full items-center gap-2 px-2 py-1.5 text-left transition-colors ${
                     active
-                      ? "bg-red-800/80"
+                      ? "bg-primary/15"
                       : it.redFlag
-                        ? "bg-error/10 hover:bg-error/20"
+                        ? "bg-error/10 hover:bg-error/15"
                         : "hover:bg-surface-container-high"
                   }`}
                 >
@@ -220,14 +201,14 @@ export function JournalTab() {
 
       {/* ── Próxima não lida ────────────────────────────────────────── */}
       <div className="flex justify-end">
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => inbox.selectNextUnread(filter)}
           disabled={inbox.unreadCount === 0}
-          className="rounded-sm bg-surface-container-high border border-outline-variant/30 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface disabled:opacity-40 transition-all"
         >
           Próxima não lida
-        </button>
+        </Button>
       </div>
 
       {/* ── Detalhe ─────────────────────────────────────────────────── */}
@@ -236,7 +217,7 @@ export function JournalTab() {
           aria-live="polite"
           className="rounded-sm border border-outline-variant/20 bg-surface-container px-3 py-2.5 short:py-2"
         >
-          <h2 className="text-center text-base short:text-sm font-black text-amber-400">
+          <h2 className="text-center font-headline text-base short:text-sm font-black uppercase tracking-tight text-tertiary">
             {inbox.selected.title.replace(/^🚩\s*/, "")}
           </h2>
           {inbox.selected.body && (
@@ -254,7 +235,7 @@ export function JournalTab() {
       <div
         role="tablist"
         aria-label="Filtrar por tema"
-        className="flex gap-px overflow-x-auto rounded-sm bg-indigo-950 border border-outline-variant/20"
+        className="flex gap-px overflow-x-auto rounded-sm bg-surface-container-low border border-outline-variant/20"
       >
         {BOTTOM_TABS.map(tabBtn)}
       </div>
