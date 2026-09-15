@@ -32,6 +32,13 @@ const REQUIRED_TABLES = [
   "matches",
   "game_state",
   "player_skill_snapshots",
+  // Estado da sala + histórico: um template sem estas ficava atrás do schema e
+  // só era compensado em runtime pelo getGame/ensureRoomStateTables.
+  "room_seats",
+  "room_events",
+  "chat_messages",
+  "player_tactic_history",
+  "applied_weeks",
 ];
 
 function templateHash() {

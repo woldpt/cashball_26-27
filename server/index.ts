@@ -18,6 +18,7 @@ const path = require("path");
 const rateLimit = require("express-rate-limit");
 const {
 	getGame,
+	purgeGame,
 	getGameBySocket,
 	saveGameState,
 	getPlayerBySocket,
@@ -531,7 +532,9 @@ app.delete("/saves/:roomCode", apiLimiter, async (req, res) => {
 			});
 		}
 
-		const activeGame = getGame(roomCode);
+		// `activeGames` em vez de `getGame`: só interessa quem está ligado, e o
+		// `getGame` criava a sala do zero quando o ficheiro já não existia.
+		const activeGame = (activeGames as Record<string, any>)[roomCode];
 		if (activeGame) {
 			const connected = Object.values(activeGame.playersByName).filter(
 				(p: any) => p.socketId,
@@ -551,6 +554,10 @@ app.delete("/saves/:roomCode", apiLimiter, async (req, res) => {
 				if (fs.existsSync(sidecar)) fs.unlinkSync(sidecar);
 			}
 		}
+
+		// Fechar também em memória: sem isto a sala continuava viva (timers da
+		// semana, escritas para um ficheiro já apagado) até ao restart.
+		purgeGame(roomCode);
 
 		await deleteRoomAccess(roomCode);
 		console.log(

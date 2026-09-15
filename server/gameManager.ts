@@ -2035,8 +2035,48 @@ function closeAllDatabases(): Promise<void> {
   return Promise.all(closes).then(() => undefined);
 }
 
+/**
+ * Fecha uma sala em memória (usado quando a sala é apagada em /saves).
+ *
+ * Sem isto o objeto continuava em `activeGames` depois de o ficheiro ser
+ * apagado: os timers da semana/leilões continuavam a correr, `saveGameState`
+ * escrevia para um inode já desligado e `generateUniqueRoomCode` (que só olha
+ * a ficheiros) podia devolver o mesmo código e receber a sala antiga de
+ * memória em vez de uma nova.
+ */
+function purgeGame(roomCode: string): boolean {
+  const game = activeGames[roomCode];
+  if (!game) return false;
+  // Marcar como terminada primeiro: um segmento em curso sai no próximo tick
+  // (o loop faz `return` quando a fase deixa de ser de jogo).
+  game.gamePhase = "lobby";
+  if (game.phaseTimer) {
+    clearTimeout(game.phaseTimer);
+    game.phaseTimer = null;
+  }
+  for (const action of game.pendingMatchActions?.values?.() ?? []) {
+    if (action?.timer) clearTimeout(action.timer);
+  }
+  game.pendingMatchActions?.clear?.();
+  for (const resolve of [...(game.pauseWaiters || [])]) resolve();
+  game.pauseWaiters = new Set();
+  game.pausedSince = null;
+  for (const [socketId, code] of Object.entries(socketRoomIndex)) {
+    if (code === roomCode) delete socketRoomIndex[socketId];
+  }
+  delete activeGames[roomCode];
+  try {
+    game.db.close(() => {});
+  } catch (err: any) {
+    console.warn(`[gameManager] purge ${roomCode}: DB close falhou:`, err?.message);
+  }
+  console.log(`[gameManager] 🗑 Sala ${roomCode} fechada em memória`);
+  return true;
+}
+
 module.exports = {
   getGame,
+  purgeGame,
   getGameBySocket,
   saveGameState,
   getPlayerBySocket,

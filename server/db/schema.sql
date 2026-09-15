@@ -276,3 +276,54 @@ CREATE TABLE IF NOT EXISTS match_moms (
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_match_moms_unique ON match_moms(season, competition, matchweek, round, team_id);
 CREATE INDEX IF NOT EXISTS idx_match_moms_season ON match_moms(season, competition);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Estado da sala (assentos duráveis, log de eventos) + tabelas de histórico
+-- que antes só existiam como CREATE TABLE IF NOT EXISTS no getGame/roomState.
+-- Sem elas aqui, o template base.db ficava atrás do schema e um DELETE de
+-- limpeza (pool sampling) rebentava com "no such table" em cada sala nova.
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS room_seats (
+  coach_name TEXT PRIMARY KEY COLLATE NOCASE,
+  team_id INTEGER,
+  seat_epoch INTEGER NOT NULL DEFAULT 0,
+  device_id TEXT,
+  last_seen_at INTEGER NOT NULL DEFAULT 0,
+  intent TEXT NOT NULL DEFAULT '{}',
+  status TEXT NOT NULL DEFAULT 'member'
+);
+
+CREATE TABLE IF NOT EXISTS room_events (
+  seq INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL,
+  payload TEXT NOT NULL DEFAULT '{}',
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_room_events_created_at ON room_events(created_at);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  coach_name TEXT NOT NULL,
+  message TEXT NOT NULL,
+  timestamp INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS player_tactic_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  team_id INTEGER NOT NULL,
+  player_name TEXT NOT NULL,
+  formation TEXT NOT NULL,
+  style TEXT NOT NULL,
+  matchweek INTEGER NOT NULL,
+  competition TEXT DEFAULT 'league',
+  result TEXT,
+  FOREIGN KEY(team_id) REFERENCES teams(id)
+);
+
+CREATE TABLE IF NOT EXISTS applied_weeks (
+  season INTEGER NOT NULL,
+  slot INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  PRIMARY KEY (season, slot, kind)
+);

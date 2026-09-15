@@ -150,6 +150,17 @@ async function checkConnection(): Promise<void> {
 
 await waitForHealth();
 console.log(`ok   — servidor de pé em ${BASE}`);
+
+// `index.ts` é @ts-nocheck e chama `purgeGame` no DELETE /saves: um export
+// renomeado só rebentava no dia em que alguém apagasse uma sala.
+const gameManager = createRequire(import.meta.url)(
+  path.join(serverDir, "gameManager.ts"),
+);
+if (typeof gameManager.purgeGame !== "function") {
+  fail("gameManager.purgeGame não é uma função (DELETE /saves rebentaria)");
+}
+console.log("ok   — gameManager expõe purgeGame");
+
 await checkConnection();
 // Dar tempo ao stdout do servidor antes de o varrer.
 await new Promise((r) => setTimeout(r, 800));
