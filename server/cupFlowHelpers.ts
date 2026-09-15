@@ -1483,12 +1483,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				await new Promise<void>((resolve) => {
 					game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [cupRevenue, fixture.homeTeamId], () => resolve());
 				});
-				logClubNews(game, "ticket_revenue", "Bilheteiras", fixture.homeTeamId, {
-					amount: cupRevenue,
-					description: `Receita de bilheteiras — Taça ${roundName}`,
-					related_team_id: fixture.awayTeamId,
-					related_team_name: (fixture.awayTeam as any)?.name || null,
-				});
 			}
 			// Persiste attendance + receita faturada mesmo quando 0 (auditoria e finances)
 			await new Promise<void>((resolve) => {
@@ -1653,6 +1647,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				homeTeam: fixture.homeTeam || null,
 				awayTeam: fixture.awayTeam || null,
 				homeGoals: fixture.finalHomeGoals,
+				homeTicketRevenue: cupRevenue,
+				awayTicketRevenue: 0,
 				awayGoals: fixture.finalAwayGoals,
 				winnerId,
 				wentToET:
@@ -1893,22 +1889,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					await new Promise<void>((resolve) => {
 						game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [homeShare, fixture.homeTeamId], () => resolve());
 					});
-					logClubNews(game, "ticket_revenue", "Bilheteiras", fixture.homeTeamId, {
-						amount: homeShare,
-						description: `Receita de bilheteira - ${FRIENDLY_ROUND_NAME} (meio a meio)`,
-						related_team_id: fixture.awayTeamId,
-						related_team_name: (fixture.awayTeam as any)?.name || null,
-					});
 				}
 				if (awayShare > 0) {
 					await new Promise<void>((resolve) => {
 						game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [awayShare, fixture.awayTeamId], () => resolve());
-					});
-					logClubNews(game, "ticket_revenue", "Bilheteiras", fixture.awayTeamId, {
-						amount: awayShare,
-						description: `Receita de bilheteira - ${FRIENDLY_ROUND_NAME} (meio a meio)`,
-						related_team_id: fixture.homeTeamId,
-						related_team_name: (fixture.homeTeam as any)?.name || null,
 					});
 				}
 				await new Promise<void>((resolve) => {
@@ -1927,6 +1911,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					awayTeam: fixture.awayTeam || null,
 					homeGoals: hG,
 					awayGoals: aG,
+					homeTicketRevenue: homeShare,
+					awayTicketRevenue: awayShare,
 					winnerId: hG > aG ? fixture.homeTeamId : aG > hG ? fixture.awayTeamId : null,
 					wentToET: false,
 					decidedByPenalties: false,

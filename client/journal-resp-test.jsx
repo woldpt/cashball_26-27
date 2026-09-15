@@ -92,6 +92,7 @@ const postMatchMood = {
   oppGoals: 3,
   source: "league",
   roundLabel: "Liga · Jornada 12",
+  ticketRevenue: 123456,
 };
 
 const mySquad = [

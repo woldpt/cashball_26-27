@@ -1157,10 +1157,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               revenue,
               match.homeTeamId,
             ]);
-            logClubNews(game, "ticket_revenue", "Bilheteiras", match.homeTeamId, {
-              amount: revenue,
-              description: `Receita de bilheteiras — J${completedMatchweek}`,
-            });
           }
         }
 
@@ -1194,6 +1190,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           // Emit match results
           const fullTimeFixtures = fixtures.map((fixture) => ({
             ...fixture,
+            homeTicketRevenue:
+              (fixture.attendance || 0) * ((fixture as any)._ticketPrice || 15),
+            awayTicketRevenue: 0,
             mom: computeMoms(
               fixture.events || [],
               fixture.homeLineup || [],
@@ -1529,8 +1528,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
             // We read the pre-update loan amounts first. Each statement below is queued
             // only after the previous step's callback ran, so ordering is guaranteed:
-            // this SELECT fills preLoan before the UPDATE executes, and the journal
-            // (and marker+COMMIT) run strictly after it.
+            // this SELECT fills preLoan before the UPDATE executes, and the marker +
+            // COMMIT run strictly after the financial updates.
             const preLoan: Record<number, number> = {};
             game.db.all(
               `SELECT id, loan_amount FROM teams`,
@@ -1561,13 +1560,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                       return;
                     }
 
-                    // Financial journal: log the weekly base income, wages, loan interest
-                    // and principal installment that were just applied, so the balance
-                    // history chart can reconstruct the season's budget evolution.
                     game.db.all(
-                      `SELECT t.id, t.division, t.stadium_capacity,
-                              COALESCE((SELECT SUM(wage) FROM players WHERE players.team_id = t.id), 0) AS wage_sum
-                       FROM teams t`,
+                      `SELECT id FROM teams`,
                       (logErr: any, teams: any[]) => {
                         if (logErr) {
                           console.error(
@@ -1579,26 +1573,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                         }
                         for (const team of teams || []) {
                           const oldLoan = preLoan[team.id] || 0;
-                          const income = WEEKLY_BASE_INCOME[team.division] || 0;
-                          const wages = team.wage_sum || 0;
                           const interest = Math.floor(oldLoan * 0.015);
                           const installment = Math.min(LOAN_WEEKLY_INSTALLMENT, oldLoan);
-                          const upkeep = Math.floor((team.stadium_capacity || 0) * STADIUM_UPKEEP_PER_SEAT_WEEK);
-                          if (income > 0)
-                            logClubNews(game, "weekly_income", "Rendimento Semanal", team.id, {
-                              amount: income,
-                              description: "Rendimento base semanal",
-                            });
-                          if (wages > 0)
-                            logClubNews(game, "wages", "Folha Salarial", team.id, {
-                              amount: wages,
-                              description: "Salários pagos na semana",
-                            });
-                          if (upkeep > 0)
-                            logClubNews(game, "stadium_upkeep", "Manutenção do Estádio", team.id, {
-                              amount: upkeep,
-                              description: "Conservação do estádio (proporcional à capacidade)",
-                            });
                           if (interest > 0)
                             logClubNews(game, "loan_interest", "Juros Bancários", team.id, {
                               amount: interest,

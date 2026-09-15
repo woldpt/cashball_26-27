@@ -50,7 +50,8 @@ export function registerNewsSocketHandlers(
          FROM club_news cn
          LEFT JOIN teams t ON t.id = cn.team_id
          LEFT JOIN players p ON p.id = cn.player_id
-         WHERE cn.year = ? AND cn.team_id = ?`,
+         WHERE cn.year = ? AND cn.team_id = ?
+           AND cn.type NOT IN ('weekly_income', 'wages', 'stadium_upkeep', 'ticket_revenue')`,
         [year, teamId],
         (newsErr: Error | null, clubRows: any[] | null) => {
           if (newsErr || !clubRows) {

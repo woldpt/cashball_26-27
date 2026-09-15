@@ -1,3 +1,9 @@
+## Jornal: rescaldo inclui bilheteira sem ruído financeiro (2026-09-15)
+
+- O Jornal deixa de receber linhas de `Rendimento Semanal`, `Folha Salarial`, `Manutenção do Estádio` e `Bilheteiras`; as contas continuam a ser aplicadas, mas as linhas antigas também são filtradas do feed.
+- O rescaldo pós-jogo passa a mostrar a receita exacta da bilheteira, incluindo Liga, Taça e amigáveis; a divisão do amigável respeita a parte recebida por cada equipa.
+- Checks: server `typecheck`, crash-recovery E2E, `audit:gamestate TST148` (0 erros/avisos), `audit:socketio` (0 erros/95 avisos pré-existentes), regressão de bilheteira, eslint/JSDoc/build client e harness Jornal retrato 5/5.
+
 ## Jornal: duas colunas no desktop (2026-09-15)
 
 - Em desktop, o Jornal organiza os tópicos/notícias numa coluna esquerda e o corpo da notícia seleccionada numa coluna direita; cabeçalho, manchete, avisos e filtros continuam em largura total. Em mobile mantém-se empilhado.

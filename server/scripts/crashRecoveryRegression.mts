@@ -264,6 +264,9 @@ async function main(): Promise<void> {
     ok(game.calendarIndex === 2, "sala carrega em calendarIndex=2");
     const B0 = await sumBudget();
     const news0 = await newsCount("weekly_income");
+    const wagesNews0 = await newsCount("wages");
+    const upkeepNews0 = await newsCount("stadium_upkeep");
+    const ticketNews0 = await newsCount("ticket_revenue");
     const expDelta = await expectedWeeklyDelta();
     const r1 = await helpers.applyWeeklyFinancesOnce(game);
     ok(r1 === true, "1ª aplicação devolve true");
@@ -273,8 +276,20 @@ async function main(): Promise<void> {
       `finanças exatas de 1 semana (Δ esperado ${expDelta}, obtido ${B1 - B0})`,
     );
     ok(
-      (await newsCount("weekly_income")) - news0 === teamsN,
-      "journal: exatamente 1 linha 'weekly_income' por equipa",
+      (await newsCount("weekly_income")) === news0,
+      "journal: sem linhas 'weekly_income'",
+    );
+    ok(
+      (await newsCount("wages")) === wagesNews0,
+      "journal: sem linhas 'wages'",
+    );
+    ok(
+      (await newsCount("stadium_upkeep")) === upkeepNews0,
+      "journal: sem linhas 'stadium_upkeep'",
+    );
+    ok(
+      (await newsCount("ticket_revenue")) === ticketNews0,
+      "journal: sem linhas 'ticket_revenue'",
     );
     ok(
       (await markerRows(season, 2, "weekly_finance")) === 1,
@@ -287,8 +302,8 @@ async function main(): Promise<void> {
     ok(r2 === true, "reaplicação após restart devolve true (no-op)");
     ok((await sumBudget()) === B1, "SEM re-cobrança de rendimentos/salários");
     ok(
-      (await newsCount("weekly_income")) === news0 + teamsN,
-      "sem linhas de journal duplicadas",
+      (await newsCount("weekly_income")) === news0,
+      "sem linhas de journal financeiras após restart",
     );
     ok(
       (await markerRows(season, 2, "weekly_finance")) === 1,

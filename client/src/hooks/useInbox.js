@@ -16,6 +16,7 @@
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { useGame } from "../contexts/GameContext.jsx";
 import { queueEmit } from "../socket.js";
+import { formatCurrency } from "../utils/formatters.js";
 import {
   INBOX_CATS,
   MOOD_TITLES,
@@ -169,7 +170,10 @@ export function useInbox() {
         cat: "club",
         date: currentDate,
         title: `${title} ${postMatchMood.myGoals ?? ""}–${postMatchMood.oppGoals ?? ""} ${postMatchMood.opponentName || ""}`.trim(),
-        body: "Reação dos adeptos ao último jogo.",
+        body:
+          postMatchMood.ticketRevenue != null
+            ? `Reação dos adeptos ao último jogo. Bilheteira: ${formatCurrency(postMatchMood.ticketRevenue)}.`
+            : "Reação dos adeptos ao último jogo.",
         redFlag: false,
         kind: "info",
         ref: null,

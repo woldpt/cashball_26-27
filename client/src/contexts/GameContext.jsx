@@ -556,7 +556,21 @@ export function GameProvider({
 		const myId = me?.teamId;
 		if (myId == null) return;
 
-		const buildMood = (outcome, oppId, myGoals, oppGoals, source, roundLabel, key) => {
+		const ticketRevenueFor = (match, isHome) =>
+			isHome
+				? (match.homeTicketRevenue ?? match.ticketRevenue ?? 0)
+				: (match.awayTicketRevenue ?? 0);
+
+		const buildMood = (
+			outcome,
+			oppId,
+			myGoals,
+			oppGoals,
+			source,
+			roundLabel,
+			key,
+			ticketRevenue,
+		) => {
 			const oppTeam = teams.find((t) => Number(t.id) === Number(oppId));
 			const myTeam = teams.find((t) => Number(t.id) === Number(myId));
 			const oppDivision = oppTeam?.division;
@@ -590,6 +604,7 @@ export function GameProvider({
 				source,
 				roundLabel,
 				key,
+				ticketRevenue,
 			};
 		};
 
@@ -632,6 +647,7 @@ export function GameProvider({
 							"league",
 							`Jornada ${matchResults.matchweek}`,
 							key,
+							ticketRevenueFor(myMatch, isHome),
 						),
 					);
 				}
@@ -664,6 +680,7 @@ export function GameProvider({
 							"cup",
 							cupRoundResults.roundName || `Taça R${cupRoundResults.round}`,
 							key,
+							ticketRevenueFor(myMatch, isHome),
 						),
 					);
 				}
