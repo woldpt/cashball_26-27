@@ -325,8 +325,19 @@ export function JournalTab({
         </Button>
       </div>
 
-      {/* ── Lista ───────────────────────────────────────────────────── */}
-      {visible.length === 0 ? (
+      <div className="grid gap-2 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start">
+        <section aria-label="Tópicos" className="min-w-0 space-y-2">
+          <div className="flex items-center justify-between rounded-sm bg-surface-container-high/50 px-2 py-1.5">
+            <span className="text-[10px] font-black uppercase tracking-widest text-tertiary">
+              Tópicos
+            </span>
+            <span className="text-[10px] font-bold tabular-nums text-on-surface-variant">
+              {visible.length}
+            </span>
+          </div>
+
+          {/* ── Lista ───────────────────────────────────────────────── */}
+          {visible.length === 0 ? (
         <EmptyState
           emoji="📰"
           title="Sem notícias"
@@ -381,18 +392,20 @@ export function JournalTab({
       )}
 
       {/* ── Próxima não lida ────────────────────────────────────────── */}
-      <div className="flex justify-end">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => inbox.selectNextUnread(filter)}
-          disabled={inbox.unreadCount === 0}
-        >
-          Próxima não lida
-        </Button>
-      </div>
+          <div className="flex justify-end">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => inbox.selectNextUnread(filter)}
+              disabled={inbox.unreadCount === 0}
+            >
+              Próxima não lida
+            </Button>
+          </div>
+        </section>
 
-      {/* ── Detalhe ─────────────────────────────────────────────────── */}
+        <section aria-label="Corpo da notícia" className="min-w-0 space-y-2">
+          {/* ── Detalhe ──────────────────────────────────────────────── */}
       {inbox.selected && (
         <section
           aria-live="polite"
@@ -431,21 +444,23 @@ export function JournalTab({
       )}
 
       {/* ── Anterior / Seguinte ─────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-px rounded-sm overflow-hidden border border-outline-variant/20">
-        <button
-          type="button"
-          onClick={() => inbox.stepSelection(-1, filter)}
-          className="bg-surface-container-high px-3 py-2 text-xs font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors"
-        >
-          ← Anterior
-        </button>
-        <button
-          type="button"
-          onClick={() => inbox.stepSelection(1, filter)}
-          className="bg-surface-container-high px-3 py-2 text-xs font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors"
-        >
-          Seguinte →
-        </button>
+          <div className="grid grid-cols-2 gap-px rounded-sm overflow-hidden border border-outline-variant/20">
+            <button
+              type="button"
+              onClick={() => inbox.stepSelection(-1, filter)}
+              className="bg-surface-container-high px-3 py-2 text-xs font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors"
+            >
+              ← Anterior
+            </button>
+            <button
+              type="button"
+              onClick={() => inbox.stepSelection(1, filter)}
+              className="bg-surface-container-high px-3 py-2 text-xs font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors"
+            >
+              Seguinte →
+            </button>
+          </div>
+        </section>
       </div>
     </div>
   );

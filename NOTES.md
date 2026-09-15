@@ -1,3 +1,8 @@
+## Jornal: duas colunas no desktop (2026-09-15)
+
+- Em desktop, o Jornal organiza os tópicos/notícias numa coluna esquerda e o corpo da notícia seleccionada numa coluna direita; cabeçalho, manchete, avisos e filtros continuam em largura total. Em mobile mantém-se empilhado.
+- Checks: eslint de `JournalTab.jsx`, `check:types`, harness Jornal retrato 5/5 + paisagem 6/6, screenshot desktop revisto e build Vite OK.
+
 ## Jornal: Manchete da Semana e marcar como lido
 
 - O Jornal passa a mostrar uma Manchete da Semana com a reacção ao último resultado, contexto e resumo dos acontecimentos da jornada actual; a contagem exclui assuntos com bandeira vermelha.
