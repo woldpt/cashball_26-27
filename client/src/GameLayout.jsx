@@ -10,6 +10,7 @@ import { WelcomeModal } from "./components/modals/WelcomeModal.jsx";
 import { isAdminCoach } from "./components/admin/adminApi.js";
 import { isSameTeamId } from "./utils/teamHelpers.js";
 import { useMobileLandscape } from "./hooks/useIsMobile.js";
+import { useInbox } from "./hooks/useInbox.js";
 import { useCoachTutorial } from "./hooks/useCoachTutorial.js";
 import { NAV_GROUPS, getGroupTabKeys, getGroupTabs } from "./constants/navigation.js";
 import { CoachTutorial } from "./components/tutorial/CoachTutorial.jsx";
@@ -112,6 +113,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // Soma de negócios activos (leilões a decorrer + mercado) para o badge do
   // botão "Transferências" na navegação mobile (onde Mercado e Leilões se unem).
   const transferBadgeCount = liveAuctionCount + marketListedCount;
+  // Destaque do Jornal: nº de bandeiras vermelhas (renovações/convites por
+  // responder) — o Jornal é a primeira entrada do menu.
+  const { redFlags: inboxRedFlags } = useInbox();
 
   // ── Voo do badge (mobile): ao abrir o fly-up, a soma vira badges individuais ──
   const transfIconRef = useRef(null); // âncora de origem no nav (wrapper do ícone TRANSF)
@@ -647,7 +651,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 {gi > 0 && !sidebarCollapsed && (
                   <p
                     aria-hidden
-                    className="px-3 pt-3 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/50"
+                    className="px-3 pt-2 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/50"
                   >
                     {group.label}
                   </p>
@@ -664,7 +668,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   ? liveAuctionCount
                   : key === "market"
                     ? marketListedCount
-                    : 0;
+                    : key === "jornal"
+                      ? inboxRedFlags
+                      : 0;
               const isActive = activeTab === key;
               return (
               <motion.button
@@ -687,7 +693,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 title={sidebarCollapsed ? label : undefined}
                 aria-current={isActive ? "page" : undefined}
                 aria-disabled={isMatchInProgress || undefined}
-                className={`relative w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold rounded-lg transition-all text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${sidebarCollapsed ? "justify-center" : ""} ${
+                className={`relative w-full flex items-center gap-3 px-3 py-2 text-sm font-bold rounded-lg transition-all text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${sidebarCollapsed ? "justify-center" : ""} ${
                   isMatchInProgress
                     ? "text-on-surface-variant/25 cursor-not-allowed"
                     : isActive
@@ -970,15 +976,15 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 : "lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-high/95 backdrop-blur-sm border-t border-outline-variant/30 z-40 flex items-stretch pb-[env(safe-area-inset-bottom)]"
             }
           >
-            {/* Clube */}
+            {/* Jornal (caixa de entrada — primeira entrada do menu) */}
             {(() => {
-              const isActive = activeTab === "club";
+              const isActive = activeTab === "jornal";
               return (
                 <motion.button
                   whileTap={{ scale: 0.88 }}
-                  data-tour="nav-club-mobile"
+                  data-tour="nav-jornal-mobile"
                   onClick={() => {
-                    navigateTab("club");
+                    navigateTab("jornal");
                     setMobileSubMenu(null);
                     contentRef.current?.scrollTo(0, 0);
                   }}
@@ -993,10 +999,17 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                       transition={SPRING.indicator}
                     />
                   )}
-                  <span className="material-symbols-outlined text-[22px] leading-none">
-                    groups_3
+                  <span className="relative inline-block">
+                    <span className="material-symbols-outlined text-[22px] leading-none">
+                      newspaper
+                    </span>
+                    {inboxRedFlags > 0 && (
+                      <span className="absolute -top-1 -right-2 flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none min-w-[18px] h-[18px] px-1 text-[10px]">
+                        {inboxRedFlags > 99 ? "99+" : inboxRedFlags}
+                      </span>
+                    )}
                   </span>
-                  <span>Clube</span>
+                  <span>Jornal</span>
                 </motion.button>
               );
             })()}

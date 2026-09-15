@@ -718,3 +718,10 @@ Plano C1+C2 (quando fizer):
 ## Jornal em sintonia Cashball (2026-09-15)
 - Título passa a só "Notícias" (caiu o "{nome} News"); azuis do CM (`bg-blue-800`, `bg-indigo-950`, seleção `bg-red-800`) trocados por tokens (`surface-container`, `surface-container-low`, seleção `bg-primary/15`, título do detalhe `text-tertiary`); ações passam ao `Button` partilhado (`danger`/`success`/`secondary`/`primary`/`accent`, `sm`) — corrige ainda o contraste fraco do botão de resposta.
 - Checks: eslint do ficheiro + `check:types` OK; harness `journal-resp-test` 5/5 PASS com screenshot 390 verificado. Sem mobile completo (só cores/texto/componente partilhado, sem estrutura).
+
+## Jornal primeiro no menu + sidebar compacta (2026-09-15)
+- Título da página passa a "Jornal do Clube" (no menu continua "Jornal", curto).
+- `constants/navigation.js`: primeiro grupo passa a Jornal (tab única, sem cabeçalho como antes); Clube entra como primeira tab de Gestão; Competição perde o Jornal. Fly-ups/destaques mobile atualizam sozinhos (`getGroupTabs`/`getGroupTabKeys`); ninguém referenciava o id de grupo "clube".
+- `GameLayout.jsx`: botão direto mobile Clube→Jornal (ícone `newspaper`, `data-tour="nav-jornal-mobile"`, badge vermelho com as bandeiras por responder via `useInbox`); badge igual na sidebar desktop; botões desktop `py-2.5`→`py-2` e cabeçalhos `pt-3`→`pt-2` (~60px poupados em ecrãs curtos).
+- Tutorial: passo "club" passa a `submenu: "gestao"` + alvo `nav-club-sub` no mobile (o `nav-club-mobile` deixou de existir) — mesmo padrão dos passos de Plantel/Treino/Finanças.
+- Checks: eslint dos 5 ficheiros + `check:types` OK; mobile retrato 150/150 + paisagem 180/180 PASS; screenshot 390 confirma o H1. `docs/FLOW_JOGO.md` cap. 4 com a nova ordem.

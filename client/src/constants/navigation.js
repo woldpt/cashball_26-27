@@ -2,7 +2,7 @@
  * navigation.js — fonte única dos grupos de navegação do shell do jogo.
  *
  * A sidebar desktop e o bottom-nav mobile partilham a mesma taxonomia
- * (Clube / Gestão / Competição / Transferências). Antes, cada superfície
+ * (Jornal / Gestão / Competição / Transferências). Antes, cada superfície
  * repetia os seus arrays inline — o destaque mobile de "Gestão" só acendia
  * para Finanças+Plantel e o de "Competição" excluía a Taça, porque as listas
  * de `isChildActive` estavam dessincronizadas dos fly-ups.
@@ -26,14 +26,15 @@
 /** @type {NavGroup[]} Grupos de navegação na ordem de apresentação. */
 export const NAV_GROUPS = [
   {
-    id: "clube",
-    label: "Clube",
-    tabs: [{ key: "club", label: "Clube", shortLabel: "Clube", icon: "groups_3" }],
+    id: "jornal",
+    label: "Jornal",
+    tabs: [{ key: "jornal", label: "Jornal", shortLabel: "Jornal", icon: "newspaper" }],
   },
   {
     id: "gestao",
     label: "Gestão",
     tabs: [
+      { key: "club", label: "Clube", shortLabel: "Clube", icon: "groups_3" },
       { key: "finances", label: "Finanças", shortLabel: "Finanças", icon: "payments" },
       { key: "stadium", label: "Estádio", shortLabel: "Estádio", icon: "stadium" },
       { key: "players", label: "Plantel", shortLabel: "Plantel", icon: "group" },
@@ -44,7 +45,6 @@ export const NAV_GROUPS = [
     id: "competicao",
     label: "Competição",
     tabs: [
-      { key: "jornal", label: "Jornal", shortLabel: "Jornal", icon: "newspaper" },
       { key: "standings", label: "Classificações", shortLabel: "Classif.", icon: "leaderboard" },
       { key: "calendario", label: "Calendário", shortLabel: "Calendário", icon: "calendar_month" },
       { key: "bracket", label: "Taça", shortLabel: "Taça", icon: "emoji_events", cupBracket: true },

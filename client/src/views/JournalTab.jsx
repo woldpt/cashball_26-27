@@ -111,7 +111,7 @@ export function JournalTab() {
       {/* ── Barra de título ─────────────────────────────────────────── */}
       <div className="rounded-sm bg-surface-container border border-outline-variant/20 px-3 py-2 short:py-1.5 flex items-center justify-between gap-2">
         <h1 className="min-w-0 truncate font-headline text-base short:text-sm font-black uppercase tracking-tight text-tertiary">
-          Notícias
+          Jornal do Clube
         </h1>
         <div className="flex shrink-0 items-center gap-1.5">
           {inbox.redFlags > 0 && (

@@ -20,8 +20,8 @@ export const COACH_TUTORIAL_STEPS = [
   {
     id: "club",
     tab: "club",
-    submenu: null,
-    targets: ['[data-tour="nav-club"]', '[data-tour="nav-club-mobile"]'],
+    submenu: "gestao",
+    targets: ['[data-tour="nav-club"]', '[data-tour="nav-club-sub"]'],
     title: "O teu Clube",
     text: "Aqui vês o emblema, a moral do plantel e o histórico do clube. É o teu quartel-general — volta cá quando precisares de rever o tutorial.",
   },

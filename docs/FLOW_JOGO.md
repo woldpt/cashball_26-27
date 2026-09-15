@@ -38,7 +38,7 @@ Em cima vê o ano, a semana da época de 1 a 20 e o nome da sala. Tem o relógio
 
 O botão grande Jogar leva sempre para a preparação da jornada.
 
-As páginas estão agrupadas. Clube. Gestão: Finanças, Estádio, Plantel e Treino. Competição: Jornal, Classificações, Calendário e Taça. Transferências: Scout, Mercado e Leilões.
+As páginas estão agrupadas. Jornal em primeiro, com as notícias e os assuntos por resolver. Gestão: Clube, Finanças, Estádio, Plantel e Treino. Competição: Classificações, Calendário e Taça. Transferências: Scout, Mercado e Leilões.
 
 O Jornal é a caixa de entrada do treinador, ao estilo do Championship Manager antigo. Tem separadores por tema: Todas, Mensagens, Competições, Lesões e Castigos, Contratos e Media, Transferências, Trabalhos e Recordes. Em cima está a lista de notícias, em baixo o detalhe da selecionada, com botões de Anterior, Seguinte e Próxima não lida.
 
