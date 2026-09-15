@@ -307,7 +307,7 @@ export function registerSessionSocketHandlers(
 		game.db.all(
 			"SELECT * FROM players WHERE team_id = ?",
 			[team.id],
-			(_err: any, squad: any[]) =>
+			(_err: any, squad: any[]) => {
 				socket.emit(
 					"mySquad",
 					ensureFullBench(
@@ -315,90 +315,87 @@ export function registerSessionSocketHandlers(
 						team.id,
 						upcomingMatchweek(game),
 					),
-				),
-		);
-
-		// Re-mostra pedidos de contrato pendentes ao treinador que (re)ligou —
-		// um jogador só pode sair depois da decisão no modal.
-		if (resendPendingContractRequests) {
-			resendPendingContractRequests(game).catch(() => {});
-		}
-
-		socket.emit("marketUpdate", game.globalMarket);
-
-		// Emite o estado actual ao coach que se reconectou (refresh do browser).
-		// NOTA: o gameManager já reset fases transientes → 'lobby' ao carregar da DB
-		// após reinício do servidor. Aqui NUNCA forçamos reset — um refresh isolado
-		// não deve interromper o jogo em curso para os restantes coaches.
-		console.log(
-			`[${roomCode}] 🔌 assignPlayer reconnect | phase=${game.gamePhase} | coach=${name}`,
-		);
-		socket.emit("gameState", buildGameStatePayload(game, name));
-
-		emitCurrentPhaseToSocket(game, socket);
-		ensurePhaseTimeout(game);
-
-		// Ações pendentes da equipa que sobreviveram ao disconnect (flape rápido:
-		// o join novo fez bind antes do disconnect do socket velho, que por isso
-		// já não auto-resolveu). Re-emitir o `matchActionRequired` REAL com o
-		// tempo restante — o cliente reconstrói o modal em vez de ficar preso
-		// até ao fallback. Só restos com deadline passada recebem
-		// `matchActionExpired` (o timer dispara de seguida na mesma).
-		// TEM de vir DEPOIS de emitCurrentPhaseToSocket: o `matchReplay` desse
-		// payload limpa o estado de ação no cliente e apagava a janela reaberta
-		// (lesão/substituição "nunca apareceu" ao voltar de uma tab morta).
-		for (const pendingAction of listTeamMatchActions(game, team.id)) {
-			const now = Date.now();
-			const live =
-				typeof pendingAction.expiresAt !== "number" ||
-				pendingAction.expiresAt > now;
-			if (live) {
-				// Sem flag: cada rejoin re-emite (idempotente no cliente pelo
-				// actionId) para cobrir tab morta e reaberta a meio da janela.
-				console.log(
-					`[${roomCode}] 🔁 Reenviando ação pendente a ${name} (actionId=${pendingAction.actionId}, type=${pendingAction.type})`,
 				);
-				socket.emit("matchActionRequired", {
-					actionId: pendingAction.actionId,
-					type: pendingAction.type,
-					teamId: team.id,
-					...(pendingAction.payload || {}),
-					expiresAt: pendingAction.expiresAt ?? now + 60000,
-				});
-			} else {
-				// Resto com deadline passada: notificar uma vez (o timer de
-				// fallback dispara de seguida na mesma).
-				if (pendingAction.expiredNotified) continue;
-				pendingAction.expiredNotified = true;
+				// O plantel (query async) TEM de chegar antes do gameState e da
+				// fase (síncronos): o painel do intervalo abria com zero
+				// jogadores quando o halfTimeResults ganhava a corrida.
+				socket.emit("marketUpdate", game.globalMarket);
+
+				// Emite o estado actual ao coach que se reconectou (refresh do browser).
+				// NOTA: o gameManager já reset fases transientes → 'lobby' ao carregar da DB
+				// após reinício do servidor. Aqui NUNCA forçamos reset — um refresh isolado
+				// não deve interromper o jogo em curso para os restantes coaches.
 				console.log(
-					`[${roomCode}] ⚠ Reconnecting coach ${name} had pending action (actionId=${pendingAction.actionId}) that was already resolved`,
+					`[${roomCode}] 🔌 assignPlayer reconnect | phase=${game.gamePhase} | coach=${name}`,
 				);
-				socket.emit("matchActionExpired", {
-					actionId: pendingAction.actionId,
-					type: pendingAction.type,
-					teamId: team.id,
-					reason: "coach_disconnected",
-				});
+				socket.emit("gameState", buildGameStatePayload(game, name));
+
+				emitCurrentPhaseToSocket(game, socket);
+				ensurePhaseTimeout(game);
+
+			// Ações pendentes da equipa que sobreviveram ao disconnect (flape rápido:
+			// o join novo fez bind antes do disconnect do socket velho, que por isso
+			// já não auto-resolveu). Re-emitir o `matchActionRequired` REAL com o
+			// tempo restante — o cliente reconstrói o modal em vez de ficar preso
+			// até ao fallback. Só restos com deadline passada recebem
+			// `matchActionExpired` (o timer dispara de seguida na mesma).
+			// TEM de vir DEPOIS de emitCurrentPhaseToSocket: o `matchReplay` desse
+			// payload limpa o estado de ação no cliente e apagava a janela reaberta
+			// (lesão/substituição "nunca apareceu" ao voltar de uma tab morta).
+			for (const pendingAction of listTeamMatchActions(game, team.id)) {
+				const now = Date.now();
+				const live =
+					typeof pendingAction.expiresAt !== "number" ||
+					pendingAction.expiresAt > now;
+				if (live) {
+					// Sem flag: cada rejoin re-emite (idempotente no cliente pelo
+					// actionId) para cobrir tab morta e reaberta a meio da janela.
+					console.log(
+						`[${roomCode}] 🔁 Reenviando ação pendente a ${name} (actionId=${pendingAction.actionId}, type=${pendingAction.type})`,
+					);
+					socket.emit("matchActionRequired", {
+						actionId: pendingAction.actionId,
+						type: pendingAction.type,
+						teamId: team.id,
+						...(pendingAction.payload || {}),
+						expiresAt: pendingAction.expiresAt ?? now + 60000,
+					});
+				} else {
+					// Resto com deadline passada: notificar uma vez (o timer de
+					// fallback dispara de seguida na mesma).
+					if (pendingAction.expiredNotified) continue;
+					pendingAction.expiredNotified = true;
+					console.log(
+						`[${roomCode}] ⚠ Reconnecting coach ${name} had pending action (actionId=${pendingAction.actionId}) that was already resolved`,
+					);
+					socket.emit("matchActionExpired", {
+						actionId: pendingAction.actionId,
+						type: pendingAction.type,
+						teamId: team.id,
+						reason: "coach_disconnected",
+					});
+				}
 			}
-		}
 
-		emitPresence(game);
-		emitGlobalPlayerUpdate?.();
+			emitPresence(game);
+			emitGlobalPlayerUpdate?.();
 
-		// Presença mudou: a sala pode descongelar.
-		emitPresencePause(game, io);
-		// Retoma de partida interrompida (restart/deploy a meio). No-op quando
-		// não há segmento por retomar nesta memória.
-		resumeInterruptedMatch(game).catch((err: any) =>
-			console.error(`[${roomCode}] resumeInterruptedMatch falhou:`, err),
+			// Presença mudou: a sala pode descongelar.
+			emitPresencePause(game, io);
+			// Retoma de partida interrompida (restart/deploy a meio). No-op quando
+			// não há segmento por retomar nesta memória.
+			resumeInterruptedMatch(game).catch((err: any) =>
+				console.error(`[${roomCode}] resumeInterruptedMatch falhou:`, err),
+			);
+
+			// If halftime is already waiting and all coaches are now ready (e.g. safety
+			// timeout fired while this coach was offline), advance without waiting for
+			// another setReady — otherwise the button stays permanently disabled.
+			if (game.gamePhase === "match_halftime") {
+				checkAllReady(game);
+			}
+			},
 		);
-
-		// If halftime is already waiting and all coaches are now ready (e.g. safety
-		// timeout fired while this coach was offline), advance without waiting for
-		// another setReady — otherwise the button stays permanently disabled.
-		if (game.gamePhase === "match_halftime") {
-			checkAllReady(game);
-		}
 
 		game.db.all(
 			"SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20",
@@ -1401,18 +1398,12 @@ export function registerSessionSocketHandlers(
 		console.log(
 			`[${game.roomCode}] 🔄 requestResync: ${playerState.name} (seq=${game.eventSeq})`,
 		);
-		socket.emit("gameState", buildGameStatePayload(game, playerState.name));
-		emitCurrentPhaseToSocket(game, socket);
-		emitPresence(game);
-		emitPresencePause(game, io);
-		emitGlobalPlayerUpdate?.();
-
 		if (playerState.teamId != null) {
 			const teamId = playerState.teamId;
 			game.db.all(
 				"SELECT * FROM players WHERE team_id = ?",
 				[teamId],
-				(_err: any, squad: any[]) =>
+				(_err: any, squad: any[]) => {
 					socket.emit(
 						"mySquad",
 						ensureFullBench(
@@ -1420,7 +1411,15 @@ export function registerSessionSocketHandlers(
 							teamId,
 							upcomingMatchweek(game),
 						),
-					),
+					);
+					// Mesmo ordenamento do join: o plantel chega antes do
+					// estado/fase para o painel do intervalo não abrir vazio.
+					socket.emit("gameState", buildGameStatePayload(game, playerState.name));
+					emitCurrentPhaseToSocket(game, socket);
+					emitPresence(game);
+					emitPresencePause(game, io);
+					emitGlobalPlayerUpdate?.();
+				},
 			);
 			game.db.get(
 				"SELECT id, name, division, budget, points, wins, draws, losses, goals_for, goals_against, color_primary, color_secondary, crest, stadium_capacity, stadium_name FROM teams WHERE id = ?",
@@ -1447,6 +1446,13 @@ export function registerSessionSocketHandlers(
 					});
 				},
 			);
+		} else {
+			// Sem equipa (ex. despedido): sem plantel para ordenar.
+			socket.emit("gameState", buildGameStatePayload(game, playerState.name));
+			emitCurrentPhaseToSocket(game, socket);
+			emitPresence(game);
+			emitPresencePause(game, io);
+			emitGlobalPlayerUpdate?.();
 		}
 		game.db.all(
 			"SELECT p.id, p.name, p.position, p.goals, p.team_id, t.name as team_name, t.color_primary, t.color_secondary FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.goals > 0 ORDER BY p.goals DESC, p.skill DESC LIMIT 20",

@@ -14,6 +14,11 @@
 - **Aviso de ambiente (não é código):** existe um `tsx index.ts` **de ontem (set 14)** a ocupar `*:3000` no host, fora do docker — o container `cashball-backend-1` não publica a porta. Quem ligue a `localhost:3000` fala com esse processo de código antigo. `ss -ltnp | grep 3000` + `kill <pid>` quando não estiver a ser usado.
 - Checks: client `lint` (só os 2 pré-existentes) + `check:types` OK; `test:mobile` 155/155 + landscape 186/186; server `typecheck` OK.
 
+## Intervalo vazio após refresh + avanço sem Pronto (fix YX5CZE)
+- Painel vazio: no (re)join o `mySquad` (query async) perdia sempre a corrida contra `gameState`/`halfTimeResults` (síncronos) — o painel abria com o plantel por chegar (adversário vinha no payload, por isso OK). Com o event loop ocupado a simular, eram segundos de painel vazio. Fix: `gameState` + fase + presença + ações pendentes só emitem dentro do callback do `mySquad` (`assignPlayer` e `requestResync`; este com ramo `else` para sem-equipa).
+- Avanço sem Pronto: a entrada no intervalo só limpava `playersByName.ready`, não o `intent.ready` do assento — o rejoin herdava ready obsoleto e o `checkAllReady` do join avançava no mesmo segundo (log 12:21:33). Fix: limpa ambos, igual ao precedente do lobby.
+- Checks: server `typecheck` OK; `audit:socketio` 0 erros. **Por ativar:** prod corre de `dist/` → `build` + restart.
+
 ## Crash 1.ª parte: `_yellowCards is not iterable` (fix)
 - Causa: `saveMatchCheckpoint` (`roomStateHelpers.ts`) fazia `[...f._yellowCards]`, mas o engine guarda amarelos como objeto (`Record<number,number>`, não iterável) — crash em todos os jogos à primeira gravação do checkpoint. Escrita passa a `{ ...f._yellowCards }`; restauro (`gameManager.ts`) repõe objeto com tolerância ao formato array legado.
 - Checks: server `typecheck` OK; harness tsx roundtrip escrita→restauro OK (populado/vazio/legado). **Por ativar:** prod corre de `dist/` → `build` + restart.

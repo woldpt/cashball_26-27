@@ -901,8 +901,11 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         io.to(game.roomCode).emit("halfTimeResults", halftimePayload);
       }
 
-      Object.values(game.playersByName).forEach((p) => {
-        p.ready = false;
+      // Limpar o ready no assento e na projeção: sem isto um rejoin no
+      // intervalo herdava o intent.ready obsoleto e avançava sem Pronto.
+      Object.keys(game.playersByName).forEach((coachName) => {
+        game.playersByName[coachName].ready = false;
+        setSeatIntent(game, coachName, { ready: false });
       });
       emitPresence(game);
       saveGameState(game);
