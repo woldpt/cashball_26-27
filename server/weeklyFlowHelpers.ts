@@ -788,6 +788,13 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         // sala não anda um minuto sequer. Espera aqui (rendezvous de todos os
         // jogos) e retoma exatamente neste minuto quando ele voltar.
         await waitForPresence(game, io);
+        // Sala apagada a meio do jogo: abortar a barreira. Sem isto o
+        // `return` nu saltava o sleep e os minutos corriam fantasma até
+        // ao fim, com a transição HALFTIME a escrever na BD já fechada.
+        if (game.purged) {
+          barrier.abort();
+          return;
+        }
         if ((game.gamePhase as string) === "lobby") return;
 
         // Track current live minute for reconnection recovery
@@ -842,6 +849,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       }),
     );
 
+    // Sala apagada durante o segmento: não transitar (HALFTIME/FULLTIME),
+    // não gravar, não finalizar — a sala já não existe e a BD está fechada.
+    if (game.purged) return;
     game._lastCompletedSegment = segmentKey;
     console.log(
       `[${game.roomCode}] ✓ Segment ${startMin}-${endMin} completed | phase=${game.gamePhase}`,

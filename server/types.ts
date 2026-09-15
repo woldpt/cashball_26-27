@@ -268,6 +268,9 @@ export interface ActiveGame {
 
   // ── Room owner ──
   roomCreator: string; // nome do coach que criou a sala (badge Admin + poder de kick)
+  // Sala apagada em /saves (purgeGame): loops async em curso (segmentos,
+  // barreiras de minutos) abortam no próximo tick; escritas na BD ignoradas.
+  purged?: boolean;
 
   // ── Retained fields ──
   lockedCoaches: Set<string>;

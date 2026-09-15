@@ -76,6 +76,7 @@ function parseIntent(raw: any): RoomSeat["intent"] {
 
 /** Escreve um assento na DB (best-effort, como o resto do ficheiro). */
 export function persistSeat(game: ActiveGame, seat: RoomSeat): void {
+  if (game.purged) return;
   game.db.run(
     `INSERT INTO room_seats (coach_name, team_id, seat_epoch, device_id, last_seen_at, intent, status)
      VALUES (?, ?, ?, ?, ?, ?, ?)

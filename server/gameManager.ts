@@ -1727,6 +1727,9 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
 }
 
 function saveGameState(game: ActiveGame): void {
+  // Sala apagada: a BD está fechada; ignorar em silêncio (evita a inundação
+  // SQLITE_MISUSE de segmentos fantasmas ainda a terminar).
+  if (game.purged) return;
   console.log(
     `[${game.roomCode}] 💾 saveGameState | phase=${game.gamePhase} | calIdx=${game.calendarIndex} | mw=${game.matchweek} | season=${game.season}`,
   );
@@ -2047,8 +2050,10 @@ function closeAllDatabases(): Promise<void> {
 function purgeGame(roomCode: string): boolean {
   const game = activeGames[roomCode];
   if (!game) return false;
-  // Marcar como terminada primeiro: um segmento em curso sai no próximo tick
-  // (o loop faz `return` quando a fase deixa de ser de jogo).
+  // Sala morta primeiro: antes de acordar os pauseWaiters — um segmento
+  // congelado acorda e aborta no próximo tick em vez de correr fantasma
+  // até ao fim na BD já fechada (SQLITE_MISUSE).
+  game.purged = true;
   game.gamePhase = "lobby";
   if (game.phaseTimer) {
     clearTimeout(game.phaseTimer);
