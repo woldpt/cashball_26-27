@@ -567,7 +567,7 @@ export function saveMatchCheckpoint(game: ActiveGame): void {
       _t2: f._t2 || null,
       _minute: f._minute ?? null,
       _subbedOut: f._subbedOut ? [...f._subbedOut] : [],
-      _yellowCards: f._yellowCards ? [...f._yellowCards] : [],
+      _yellowCards: f._yellowCards ? { ...f._yellowCards } : {},
       _homePossession: f._homePossession ?? 50,
       _awayPossession: f._awayPossession ?? 50,
       _simulatedMinutes: f._simulatedMinutes ? [...f._simulatedMinutes] : [],
@@ -637,7 +637,19 @@ export function applyMatchCheckpoint(game: ActiveGame, cp: any): boolean {
     if (saved._t1) fx._t1 = saved._t1;
     if (saved._t2) fx._t2 = saved._t2;
     if (Array.isArray(saved._subbedOut)) fx._subbedOut = new Set(saved._subbedOut);
-    if (Array.isArray(saved._yellowCards)) fx._yellowCards = new Set(saved._yellowCards);
+    // Amarelos são objeto (`Record<number, number>`) no engine — nunca iterar
+    // como Set. Tolerante ao formato array legado.
+    if (
+      saved._yellowCards &&
+      typeof saved._yellowCards === "object" &&
+      !Array.isArray(saved._yellowCards)
+    ) {
+      fx._yellowCards = { ...saved._yellowCards };
+    } else if (Array.isArray(saved._yellowCards)) {
+      fx._yellowCards = Object.fromEntries(
+        saved._yellowCards.map((id: any) => [id, 1]),
+      );
+    }
     if (typeof saved._homePossession === "number")
       fx._homePossession = saved._homePossession;
     if (typeof saved._awayPossession === "number")

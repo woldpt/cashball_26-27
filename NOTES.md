@@ -7,6 +7,7 @@
   2. `clearMatchCheckpoint` no arranque de cada semana (`startWeekOnce`) e no fim de liga/taça/amigável: o checkpoint não sobrevive à substituição das fixtures.
   3. Retoma com fallback: `from = max(1, (liveMinute ?? lastSimulatedMinute(game)) + 1)` — nunca recomeça em 1 com o segmento marcado.
   Aviso do motor deduplicado por minuto/fixture e com o segmento (`segmento 1-45`) para identificar quem re-simula.
+- **Regressão evitada:** ao reescrever `saveMatchCheckpoint` revertei sem dar por isso o fix `bf88da0` (`_yellowCards` é objeto no engine, não Set) — `[...f._yellowCards]` rebentava em todos os jogos. Restaurado (`{...}` na escrita; leitura tolerante a objeto/array legado) e **F8 passou a testar os dois formatos reais** (`_yellowCards` objeto, `_subbedOut` Set).
 - **Testes:** `test:session-freeze` 10/10 (F9 recusa checkpoint de outro slot/época/jogos; F10 fallback do cursor). `test:engine-unit` 19/19, `test:crash-recovery` ✅, `test:connect-smoke` ✅.
 - **Nota:** `saves/gonfig1/game_FGPQH6.db` (deste checkout) mostra o padrão `fase=lobby` com `minuto=41` residual — rooms escritos antes deste fix podem ter um checkpoint envenenado na DB; a partir daqui é recusado no load. Uma jornada já fechada a 0-0 por este bug não se recupera sozinha (os resultados ficaram gravados).
 

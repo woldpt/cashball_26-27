@@ -236,6 +236,11 @@ test("F8 — saveMatchCheckpoint guarda minuto/golos para retomar", async () => 
       awayLineup: [{ id: 2 }],
       _t1: { formation: "4-4-2" },
       _t2: { formation: "4-3-3" },
+      // Formatos REAIS do engine: amarelos são objeto, expulsos são Set.
+      // Trocar isto rebenta a gravação (`_yellowCards is not iterable`).
+      _yellowCards: { 1: 1, 7: 2 },
+      _subbedOut: new Set([3, 4]),
+      _simulatedMinutes: new Set([1, 2, 3]),
     },
   ];
   game.liveMinute = 27;
@@ -250,6 +255,18 @@ test("F8 — saveMatchCheckpoint guarda minuto/golos para retomar", async () => 
   assert.equal(cp.fixtures[0].finalHomeGoals, 2);
   assert.equal(cp.fixtures[0].events.length, 1);
   assert.equal(cp.fixtures[0]._t2.formation, "4-3-3");
+  assert.deepEqual(cp.fixtures[0]._yellowCards, { 1: 1, 7: 2 });
+  assert.deepEqual(cp.fixtures[0]._subbedOut, [3, 4]);
+
+  // Round-trip: o checkpoint gravado aplica-se à mesma jornada sem rebentar.
+  const reloaded: any = makeGame({ db, calendarIndex: game.calendarIndex });
+  reloaded.currentFixtures = [
+    { homeTeamId: HOME, awayTeamId: AWAY },
+  ];
+  assert.equal(applyMatchCheckpoint(reloaded, cp), true);
+  assert.deepEqual(reloaded.currentFixtures[0]._yellowCards, { 1: 1, 7: 2 });
+  assert.equal(reloaded.currentFixtures[0]._subbedOut.has(4), true);
+  assert.equal(reloaded.currentFixtures[0]._simulatedMinutes.has(3), true);
   db.close();
 });
 
