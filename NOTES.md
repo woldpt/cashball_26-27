@@ -673,3 +673,9 @@ Plano C1+C2 (quando fizer):
 
 ## Audit MatchBriefing (2026-09-12)
 - 4 ajustes menores: `nextMatchSummary` agora vem direto de `useGame()` (elimina indirection); `BriefingSkeleton` completado com faixa amigável e grelha de confronto; `console.warn` no guard `!vm` para detetar inconsistências de dados; `DifficultyGauge` verificado (já alinhado, não era bug). Checks: client `lint` + `check:types` OK.
+
+## Táticas ≈ Briefing — tokens + faixa de fase (2026-09-15)
+- `TacticsView.jsx` (único ficheiro): hex próprios (`bg-[#111]`, `border-[#1e1e1e]`, `border-[#1a1a1a]`, `bg-[#161616]`/`bg-[#1a1a1a]`) → tokens do briefing (`bg-surface-container`, `border-outline-variant/25`, divisores `/15`, interiores `bg-surface-container-low/60`); cabeçalhos de secção `font-bold`→`font-black` e `py-2.5`→`py-2` (Moral/Mentalidade/Formação mobile + Formação/Mentalidade/Titulares/Suplentes desktop).
+- Botão solto "Voltar ao Briefing" → faixa de fase estilo herói do briefing (rótulo `🎯 Tática · Taça|Jornada N` + `PrepStepper current="tactics"` reutilizado, sem código novo) com o voltar integrado.
+- Intocados (acordado): relvado, botão Jogar/FAB, `PlayerRow`, `FamiliarityStars`, drag-and-drop e lógica.
+- Checks: `check:types` OK; `lint` só com os 2 erros pré-existentes (`GameContext.jsx`, `landing-resp-test.jsx` — confirmados com stash). Sem mobile-resp-check (só classes cosméticas + faixa com padrão existente).

@@ -4,6 +4,7 @@ import { useGame } from "../contexts/GameContext.jsx";
 import { PlayerLink } from "../components/shared/PlayerLink.jsx";
 import { MatchIcon } from "../components/match/shared/MatchIcon.jsx";
 import { MatchBriefing } from "../components/live/MatchBriefing.jsx";
+import { PrepStepper } from "../components/live/briefing/index.js";
 import { WaitingCoachesModal } from "../components/modals/WaitingCoachesModal.jsx";
 import { socket, queueEmit } from "../socket.js";
 import { TACTIC_FORMATIONS, MAX_BENCH_SIZE } from "../constants/index.js";
@@ -323,7 +324,7 @@ function StatusPicker({
   const posFull = posCount >= 5;
   return (
     <div
-      className={`absolute right-0 ${above ? "bottom-full mb-1" : "top-full mt-1"} z-50 bg-[#111] border border-[#222] rounded-2xl shadow-2xl p-1.5 flex flex-col gap-0.5 min-w-38.75`}
+      className={`absolute right-0 ${above ? "bottom-full mb-1" : "top-full mt-1"} z-50 bg-surface-container border border-outline-variant/25 rounded-2xl shadow-2xl p-1.5 flex flex-col gap-0.5 min-w-38.75`}
       onClick={(e) => e.stopPropagation()}
     >
       {[
@@ -474,19 +475,32 @@ export function TacticsView() {
       {showBriefing && <MatchBriefing />}
 
       {showBackToBriefing && (
-        <button
-          onClick={() => setPrepPhase("briefing")}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 bg-[#111] border border-[#1e1e1e] hover:text-white hover:border-[#333] transition-colors"
-        >
-          <span className="text-sm leading-none">←</span> Voltar ao Briefing
-        </button>
+        <div className="bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+          <div className="flex items-center justify-between gap-2 px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
+            <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
+              <span aria-hidden>🎯</span> Tática ·{" "}
+              {nextMatchSummary?.isCup
+                ? (nextMatchSummary?.cupRoundName ?? "Taça")
+                : `Jornada ${nextMatchSummary?.matchweek ?? "—"}`}
+            </span>
+            <PrepStepper current="tactics" />
+          </div>
+          <div className="px-4 short:px-3 py-2 short:py-1">
+            <button
+              onClick={() => setPrepPhase("briefing")}
+              className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition-colors"
+            >
+              <span className="text-sm leading-none">←</span> Voltar ao Briefing
+            </button>
+          </div>
+        </div>
       )}
 
       {!showBriefing &&
         (nextMatchSummary?.isCup && !nextMatchOpponent ? (
-        <div className="bg-[#111] border border-[#1e1e1e] rounded-2xl flex flex-col items-center gap-4 py-10 text-center px-6">
+        <div className="bg-surface-container border border-outline-variant/25 rounded-2xl flex flex-col items-center gap-4 py-10 text-center px-6">
           <p className="text-5xl">🏆</p>
-          <p className="text-[#666] font-bold text-sm leading-relaxed">
+          <p className="text-gray-300 font-bold text-sm leading-relaxed">
             Já foste eliminado desta ronda da Taça.
             <br />
             Avança para observar os jogos e seguir em frente.
@@ -494,7 +508,7 @@ export function TacticsView() {
           <button
             onClick={handleReady}
             disabled={!!myReady}
-            className={`mt-2 px-10 py-3.5 font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-95 ${myReady ? "bg-[#1a1a1a] text-[#444] cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
+            className={`mt-2 px-10 py-3.5 font-black rounded-2xl text-sm uppercase tracking-widest transition-all active:scale-95 ${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
             style={
               myReady
                 ? {}
@@ -511,7 +525,7 @@ export function TacticsView() {
             {/* Proximo jogo — mobile: moral + mentality side by side */}
             <div className="flex gap-2 xl:hidden">
               {nextMatchSummary && (
-                <div className="flex-1 min-w-0 flex flex-col bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+                <div className="flex-1 min-w-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
                   {(() => {
                     const morale = teamInfo?.morale ?? 50;
                     const fillColor =
@@ -529,8 +543,8 @@ export function TacticsView() {
                     const label = getMoraleLabel(morale);
                     return (
                       <>
-                        <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-[#1a1a1a]">
-                          <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+                        <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-outline-variant/15">
+                          <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
                             Moral
                           </span>
                           <span
@@ -546,7 +560,7 @@ export function TacticsView() {
                           >
                             {label}
                           </span>
-                          <div className="h-2 w-full bg-[#1a1a1a] rounded-full overflow-hidden">
+                          <div className="h-2 w-full bg-surface-container-low/60 rounded-full overflow-hidden">
                             <div
                               className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
                               style={{ width: `${morale}%` }}
@@ -558,9 +572,9 @@ export function TacticsView() {
                   })()}
                 </div>
               )}
-              <div className="flex-1 bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden flex flex-col">
-                <div className="shrink-0 px-3 py-2 border-b border-[#1a1a1a]">
-                  <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+              <div className="flex-1 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden flex flex-col">
+                <div className="shrink-0 px-3 py-2 border-b border-outline-variant/15">
+                  <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
                     Mentalidade
                   </span>
                 </div>
@@ -590,7 +604,7 @@ export function TacticsView() {
                           <button
                             key={val}
                             onClick={() => updateTactic({ style: val })}
-                            className={`flex flex-1 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border px-0.5 py-1.5 transition-all active:scale-95 ${isActive ? ACTIVE_STYLES[val] : "border-transparent bg-[#161616] text-gray-500 hover:text-gray-300"}`}
+                            className={`flex flex-1 min-w-0 flex-col items-center justify-center gap-1 rounded-lg border px-0.5 py-1.5 transition-all active:scale-95 ${isActive ? ACTIVE_STYLES[val] : "border-transparent bg-surface-container-low/60 text-gray-500 hover:text-gray-300"}`}
                           >
                             <MatchIcon
                               name={ICONS[val]}
@@ -609,9 +623,9 @@ export function TacticsView() {
             </div>
 
             {/* Formação mobile — chips horizontais */}
-            <div className={`xl:hidden bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden ${!isLineupComplete && !myReady ? "animate-heartbeat-border" : ""}`}>
-              <div className="flex items-center justify-between px-3 py-2 border-b border-[#1a1a1a]">
-                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+            <div className={`xl:hidden bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden ${!isLineupComplete && !myReady ? "animate-heartbeat-border" : ""}`}>
+              <div className="flex items-center justify-between px-3 py-2 border-b border-outline-variant/15">
+                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
                   Formação
                 </span>
                 <button
@@ -635,10 +649,10 @@ export function TacticsView() {
                       onClick={() => isAvailable && handleAutoPick(value)}
                       className={`w-full px-1 py-1.5 text-[11px] font-black rounded-xl transition-all active:scale-95 ${
                         !isAvailable
-                          ? "bg-[#161616] text-gray-700 cursor-not-allowed"
+                          ? "bg-surface-container-low/60 text-gray-700 cursor-not-allowed"
                           : isActive
                             ? "text-[#0a1a0a] shadow-lg shadow-green-500/20"
-                            : "bg-[#1a1a1a] text-gray-300 hover:bg-[#222]"
+                            : "bg-surface-container-low/60 text-gray-300 hover:bg-white/5"
                       }`}
                       style={
                         isActive
@@ -661,7 +675,7 @@ export function TacticsView() {
 
             {/* Proximo jogo — desktop only */}
             {nextMatchSummary && (
-              <div className="hidden xl:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
+              <div className="hidden xl:block bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
                 {(() => {
                   const morale = teamInfo?.morale ?? 50;
                   const fillColor =
@@ -689,7 +703,7 @@ export function TacticsView() {
                           {label}
                         </span>
                       </div>
-                      <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-surface-container-low/60 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
                           style={{ width: `${morale}%` }}
@@ -702,9 +716,9 @@ export function TacticsView() {
             )}
 
             {/* Formação — desktop only */}
-            <div className="hidden xl:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-4 short:px-3 py-2.5 short:py-1.5 border-b border-[#1a1a1a]">
-                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+            <div className="hidden xl:block bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
+                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
                   Formação
                 </span>
                 <button
@@ -736,10 +750,10 @@ export function TacticsView() {
                         className={`shrink-0 w-21 px-2 py-1.5 text-[11px] font-black rounded-xl text-center transition-all active:scale-95
 ${
   !isAvailable
-    ? "bg-[#161616] text-gray-700 cursor-not-allowed"
+    ? "bg-surface-container-low/60 text-gray-700 cursor-not-allowed"
     : isActive
       ? "text-[#0a1a0a] shadow-lg shadow-green-500/20"
-      : "bg-[#1a1a1a] text-gray-300 hover:bg-[#222] hover:text-white"
+      : "bg-surface-container-low/60 text-gray-300 hover:bg-white/5 hover:text-white"
 }`}
                         style={
                           isActive
@@ -752,7 +766,7 @@ ${
                       >
                         {label}
                       </button>
-                      <div className="flex-1 flex items-center px-2.5 py-2 rounded-xl bg-[#161616]/60">
+                      <div className="flex-1 flex items-center px-2.5 py-2 rounded-xl bg-surface-container-low/60">
                         <FamiliarityStars stars={best?.stars ?? 0} fill />
                       </div>
                     </div>
@@ -762,9 +776,9 @@ ${
             </div>
 
             {/* Mentalidade — desktop only */}
-            <div className="hidden xl:block bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden">
-              <div className="px-4 short:px-3 py-2.5 short:py-1.5 border-b border-[#1a1a1a]">
-                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+            <div className="hidden xl:block bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+              <div className="px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
+                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
                   Mentalidade
                 </span>
               </div>
@@ -795,7 +809,7 @@ ${
                   const safeIdx = idx < 0 ? 1 : idx;
                   const activeStyle = tactic.style ?? "Balanced";
                   return (
-                    <div className="relative flex bg-[#161616] rounded-full p-0.5">
+                    <div className="relative flex bg-surface-container-low/60 rounded-full p-0.5">
                       {/* Pill deslizante */}
                       <div
                         className="absolute inset-y-0.5 rounded-full transition-all duration-200 pointer-events-none"
@@ -830,7 +844,7 @@ ${
           <div className="flex-1 flex flex-col md:flex-row gap-2 short:gap-1.5 min-w-0">
             {/* Titulares */}
             <div
-              className={`flex-1 min-w-0 bg-[#111] border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/30 bg-[#4ade80]/2" : "border-[#1e1e1e]"}`}
+              className={`flex-1 min-w-0 bg-surface-container border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Titular" ? "border-[#4ade80]/30 bg-[#4ade80]/2" : "border-outline-variant/25"}`}
               onDragOver={(e) => {
                 e.preventDefault();
                 if (dragPlayerId) setDragOverSection("Titular");
@@ -845,8 +859,8 @@ ${
                 setDragOverSection(null);
               }}
             >
-              <div className="flex items-center justify-between px-4 short:px-3 py-2.5 short:py-1.5 border-b border-[#1a1a1a]">
-                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+              <div className="flex items-center justify-between px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
+                <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
                   Titulares
                 </span>
                 <span className="text-[10px] font-black">
@@ -921,7 +935,7 @@ ${
             <div className="flex-1 min-w-0 flex flex-col gap-2 short:gap-1.5">
               {/* Suplentes */}
               <div
-                className={`bg-[#111] border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Suplente" ? "border-yellow-500/30 bg-yellow-500/2" : "border-[#1e1e1e]"}`}
+                className={`bg-surface-container border rounded-2xl overflow-hidden transition-colors ${dragOverSection === "Suplente" ? "border-yellow-500/30 bg-yellow-500/2" : "border-outline-variant/25"}`}
                 onDragOver={(e) => {
                   e.preventDefault();
                   if (dragPlayerId) setDragOverSection("Suplente");
@@ -937,8 +951,8 @@ ${
                   setDragOverSection(null);
                 }}
               >
-                <div className="flex items-center justify-between px-4 short:px-3 py-2.5 short:py-1.5 border-b border-[#1a1a1a]">
-                  <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
+                <div className="flex items-center justify-between px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
+                  <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
                     Suplentes
                   </span>
                   <span className="text-[10px] font-black">
@@ -1021,7 +1035,7 @@ ${
                         handleDropToSection(dragPlayerId, "Excluído");
                       setDragOverSection(null);
                     }}
-                    className={`border-t transition-colors ${dragOverSection === "Excluído" ? "border-gray-500/30" : "border-[#1a1a1a]"}`}
+                    className={`border-t transition-colors ${dragOverSection === "Excluído" ? "border-gray-500/30" : "border-outline-variant/15"}`}
                   >
                     <div className="px-4 py-2">
                       <span className="text-[9px] uppercase tracking-widest text-gray-700 font-bold">
@@ -1100,7 +1114,7 @@ ${
                 onClick={isHalftime ? handleHalftimeReady : handleReady}
                 disabled={myReady || !canPlay}
                 className={`w-full py-4 short:py-2.5 font-black rounded-2xl text-sm short:text-xs uppercase tracking-widest transition-all active:scale-95 relative overflow-hidden ${canPlay && !myReady ? "animate-heartbeat" : ""}
-${myReady ? "bg-[#161616] text-[#333] cursor-not-allowed" : !canPlay ? "bg-[#161616] text-gray-700 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
+${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !canPlay ? "bg-surface-container-low/60 text-gray-700 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
                 style={
                   myReady || !canPlay
                     ? {}
