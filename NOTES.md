@@ -1,3 +1,8 @@
+## Jornal: notícia de boas-vindas em salas novas
+
+- Ao atribuir a primeira equipa ao fundador de uma sala recém-criada, é gravada uma notícia `welcome` persistente: “📰 Bem-vindo ao [Clube]”, sobre a bancada, o plantel e a época. Reentradas e treinadores convidados não criam duplicados.
+- Checks: server `typecheck` OK; `audit:socketio` 0 erros / 95 avisos pré-existentes.
+
 ## Jornal: leituras sobrevivem ao restart
 
 - `checkCacheVersion` limpava o `localStorage` quando o servidor reiniciava, mas tratava as leituras (`cashball_inbox_read:*`) como cache descartável. Os prefixos das leituras passam a ser preservados, mantendo notícias já lidas ao voltar à sala.

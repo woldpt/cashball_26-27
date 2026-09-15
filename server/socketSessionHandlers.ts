@@ -1,5 +1,5 @@
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
-import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory } from "./coreHelpers";
+import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory, logClubNews } from "./coreHelpers";
 import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES, SEASON_CALENDAR } from "./gameConstants";
 import { getGlobalMessages, CHAT_RETENTION_MS } from "./db/globalDatabase";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
@@ -279,6 +279,24 @@ export function registerSessionSocketHandlers(
 		const previousDevice = game.seats[name]?.deviceId ?? null;
 		claimSeat(game, name, { teamId: team.id, deviceId });
 		const displacedSocketId = bindSocket(game, name, socket.id);
+
+		// Uma sala nova começa com uma peça editorial no Jornal — só para o
+		// treinador fundador, nunca em reentradas ou convites posteriores.
+		if (isNew && game.calendarIndex === 0 && game.roomCreator === name) {
+			logClubNews(
+				game,
+				"welcome",
+				`📰 Bem-vindo ao ${team.name}`,
+				team.id,
+				{
+					description:
+						"As portas da sala acabam de abrir. Há uma bancada para conquistar, um plantel para moldar e uma época inteira para escrever.",
+					matchweek: game.matchweek,
+					year: game.year,
+				},
+				io,
+			);
+		}
 		// Só é "sessão noutro dispositivo" quando o dispositivo é mesmo outro.
 		// Um reconnect do mesmo telemóvel (novo socket, mesmo device) não pode
 		// desligar o cliente — era isso que o deixava sem reconexão para sempre.
