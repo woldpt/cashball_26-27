@@ -203,13 +203,6 @@ export function GameProvider({
 	const [unreadGlobal, setUnreadGlobal] = useState(0);
 	const [chatInput, setChatInput] = useState("");
 	const [mobileSubMenu, setMobileSubMenu] = useState(null);
-	const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-		try {
-			return localStorage.getItem("sidebarCollapsed") === "true";
-		} catch {
-			return false;
-		}
-	});
 	const [avatarSeed, setAvatarSeed] = useState("");
 	// Versões das imagens de avatar carregadas pelos coaches: {nome: timestamp}
 	// (atualizado por teamAssigned + fetch inicial do próprio coach)
@@ -221,7 +214,6 @@ export function GameProvider({
 	const roomHubRef = useRef(null);
 	const chatOpenRef = useRef(false);
 	const activeChatTabRef = useRef("room");
-	const sidebarUserPrefRef = useRef(sidebarCollapsed);
 	const isPlayingMatchRef = useRef(false);
 	const showHalftimePanelRef = useRef(false);
 	const matchActionRef = useRef(null);
@@ -413,21 +405,11 @@ export function GameProvider({
 		}
 	}, [players, me, setMe, setJoining, setJoinError, joinTimerRef]);
 
-	// ── Auto-collapse sidebar during Live ───────────────────────────────────
+	// ── Match state ─────────────────────────────────────────────────────────
 	const isMatchInProgress = useMemo(
 		() => isPlayingMatch || showHalftimePanel || !!matchAction,
 		[isPlayingMatch, showHalftimePanel, matchAction],
 	);
-
-	useEffect(() => {
-		if (isMatchInProgress) {
-			sidebarUserPrefRef.current = sidebarCollapsed;
-			startTransition(() => setSidebarCollapsed(true));
-		} else {
-			startTransition(() => setSidebarCollapsed(sidebarUserPrefRef.current));
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [isMatchInProgress]);
 
 	// ── Match clock effect ──────────────────────────────────────────────────
 	useEffect(() => {
@@ -1732,8 +1714,6 @@ export function GameProvider({
 		setChatInput,
 		mobileSubMenu,
 		setMobileSubMenu,
-		sidebarCollapsed,
-		setSidebarCollapsed,
 		avatarSeed,
 		setAvatarSeed,
 		coachAvatars,
@@ -1744,7 +1724,6 @@ export function GameProvider({
 		roomHubRef,
 		chatOpenRef,
 		activeChatTabRef,
-		sidebarUserPrefRef,
 		// Auth bridge (re-exposed)
 		me,
 		setMe,

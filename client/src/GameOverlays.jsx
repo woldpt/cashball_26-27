@@ -105,7 +105,6 @@ export function GameOverlays() {
     setTransferProposalModal,
     showCupDrawPopup,
     showHalftimePanel,
-    sidebarCollapsed,
     signingCelebration,
     teamInfo,
     teams,
@@ -276,7 +275,6 @@ export function GameOverlays() {
             currentCupRound={currentCupRound}
             currentJornada={currentJornada}
             isPlayingMatch={isPlayingMatch}
-            sidebarCollapsed={sidebarCollapsed}
             onReady={handleHalftimeReady}
             isReady={panelIsReady}
             cupPreMatch={cupPreMatch}

@@ -38,7 +38,6 @@ export function MatchPage({
 	matchAction,
 	injuryCountdown,
 	onResolveAction,
-	sidebarCollapsed,
 	matchResults,
 	isCupExtraTime,
 	cupRoundResults,
@@ -229,7 +228,7 @@ export function MatchPage({
 		!!fixture &&
 		Number(fixture.homeTeamId) !== Number(myTeamId) &&
 		Number(fixture.awayTeamId) !== Number(myTeamId);
-	const sidebarLeft = sidebarCollapsed ? "lg:left-[var(--sidebar-w-collapsed)]" : "lg:left-[var(--sidebar-w)]";
+	const sidebarLeft = "lg:left-[var(--sidebar-w)]";
 
 	// ── Mode-based rendering ──────────────────────────────────────────────
 	const isIntervencao = mode === "halftime" || mode === "action";

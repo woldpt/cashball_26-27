@@ -4,6 +4,13 @@
 - O texto usa apenas dados reais disponíveis no resultado e mantém a variação determinística; as quebras de parágrafo são visíveis no detalhe do Jornal.
 - Checks: eslint/JSDoc, `check:types`, teste directo das 9 variantes (>500 caracteres), build Vite, harness Jornal retrato `5/5`, paisagem `6/6`, screenshots 390/667 revistos.
 
+## Sidebar desktop fixa com Jornal no topo (2026-09-15)
+
+- Removido o botão/estado de recolha da sidebar desktop; fica sempre expandida, agora com `14rem` para aproveitar melhor o espaço.
+- O Jornal saiu da zona com scroll e ocupa um bloco fixo no topo; os restantes grupos continuam a percorrer apenas a área inferior.
+- Offsets do conteúdo e do `MatchPage` usam sempre a largura fixa, incluindo durante o direto.
+- Checks: ESLint dos ficheiros tocados (o erro Fast Refresh de `GameContext.jsx` é pré-existente), `check:types`, `git diff --check`, mobile portrait `150/150` e landscape `180/180`; screenshots portrait/landscape revistos.
+
 ## Jornal fixo no topo da barra desktop (2026-09-15)
 
 - O grupo do Jornal na sidebar desktop fica `sticky` no topo do contentor de navegação, mantendo o acesso visível enquanto os restantes itens fazem scroll.

@@ -56,8 +56,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     reconnectFlash,
     mobileSubMenu,
     setMobileSubMenu,
-    sidebarCollapsed,
-    setSidebarCollapsed,
     avatarSeed,
     coachAvatars,
     // Refs
@@ -76,7 +74,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     panelMode,
     calendarIndex,
     // Additional state needed by JSX
-    sidebarUserPrefRef,
     setAdminPanelOpen,
     userDropdownOpen,
     setUserDropdownOpen,
@@ -252,6 +249,67 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // → avisos/renovações → fim de época (seasonEnd POR ÚLTIMO). Decide quais
   // estão visíveis em cada render para nunca se sobreporem; os restantes
   // aguardam o fecho do atual (os dados continuam guardados).
+
+  const renderSidebarTab = ({ key, label, icon, cupBracket }) => {
+    const badgeCount =
+      key === "leiloes"
+        ? liveAuctionCount
+        : key === "market"
+          ? marketListedCount
+          : key === "jornal"
+            ? inboxUnreadCount
+            : 0;
+    const isActive = activeTab === key;
+    return (
+      <motion.button
+        key={key}
+        data-tour={`nav-${key}`}
+        variants={{
+          hidden: { opacity: 0, x: -12 },
+          visible: {
+            opacity: 1,
+            x: 0,
+            transition: { duration: 0.2 },
+          },
+        }}
+        onClick={() => {
+          if (isMatchInProgress) return;
+          navigateTab(key);
+          if (cupBracket) socket.emit("requestCupBracket");
+          contentRef.current?.scrollTo(0, 0);
+        }}
+        aria-current={isActive ? "page" : undefined}
+        aria-disabled={isMatchInProgress || undefined}
+        className={`relative w-full flex items-center gap-3 px-3 py-2 text-sm font-bold rounded-lg transition-all text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${
+          isMatchInProgress
+            ? "text-on-surface-variant/25 cursor-not-allowed"
+            : isActive
+              ? "text-primary"
+              : "text-on-surface-variant hover:bg-surface-bright hover:text-on-surface"
+        }`}
+      >
+        {isActive && (
+          <motion.span
+            layoutId="sidebarTabIndicator"
+            className="absolute inset-0 rounded-lg bg-primary-container/25 ring-1 ring-inset ring-primary/20"
+            transition={SPRING.indicator}
+          />
+        )}
+        <span aria-hidden className="relative material-symbols-outlined text-[20px] shrink-0 leading-none">
+          {icon}
+        </span>
+        <span className="relative">{label}</span>
+        {badgeCount > 0 && (
+          <span
+            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none tabular-nums min-w-5 h-5 px-1.5 text-[10px]"
+            title={label}
+          >
+            {badgeCount > 99 ? "99+" : badgeCount}
+          </span>
+        )}
+      </motion.button>
+    );
+  };
 
   return (
     <div className="h-dvh overflow-hidden bg-surface text-on-surface font-body tracking-tight flex flex-col relative isolate">
@@ -668,27 +726,21 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
       <nav
         aria-label="Navegação principal"
-        className={`hidden lg:flex fixed left-0 top-[var(--header-h)] bottom-0 flex-col z-10 transition-all duration-200 bg-surface-container-high border-r border-outline-variant/15 ${sidebarCollapsed ? "w-[var(--sidebar-w-collapsed)]" : "w-[var(--sidebar-w)]"}`}
+        className="hidden lg:flex fixed left-0 top-[var(--header-h)] bottom-0 w-[var(--sidebar-w)] flex-col z-10 bg-surface-container-high border-r border-outline-variant/15"
       >
-        {/* Toggle button */}
-        <button
-          onClick={() => {
-            const next = !sidebarCollapsed;
-            setSidebarCollapsed(next);
-            sidebarUserPrefRef.current = next;
-            try {
-              localStorage.setItem("sidebarCollapsed", String(next));
-            } catch {
-              /* ignore */
-            }
-          }}
-          title={sidebarCollapsed ? "Expandir sidebar" : "Recolher sidebar"}
-          className="shrink-0 flex items-center justify-center h-10 border-b border-outline-variant/20 text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-colors"
-        >
-          <span className="material-symbols-outlined text-[18px] leading-none">
-            {sidebarCollapsed ? "chevron_right" : "chevron_left"}
-          </span>
-        </button>
+        {/* Jornal fica fora do scroller para nunca ficar escondido. */}
+        <div className="shrink-0 px-2 pt-2 border-b border-outline-variant/20">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: { transition: { staggerChildren: 0.055 } },
+            }}
+          >
+            {NAV_GROUPS[0].tabs.map(renderSidebarTab)}
+          </motion.div>
+        </div>
         <div className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto overflow-x-hidden scrollbar-hide">
           <motion.div
             initial="hidden"
@@ -698,100 +750,21 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               visible: { transition: { staggerChildren: 0.055 } },
             }}
           >
-            {NAV_GROUPS.map((group, gi) => (
+            {NAV_GROUPS.slice(1).map((group) => (
               <motion.div
                 key={group.id}
-                className={
-                  gi === 0
-                    ? "sticky top-0 z-10 -mx-2 px-2 py-2 bg-surface-container-high"
-                    : undefined
-                }
                 variants={{
                   hidden: {},
                   visible: { transition: { staggerChildren: 0.055 } },
                 }}
               >
-                {gi > 0 && !sidebarCollapsed && (
-                  <p
-                    aria-hidden
-                    className="px-3 pt-2 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/50"
-                  >
-                    {group.label}
-                  </p>
-                )}
-                {gi > 0 && sidebarCollapsed && (
-                  <div
-                    aria-hidden
-                    className="mx-auto my-2 w-6 border-t border-outline-variant/25"
-                  />
-                )}
-                {group.tabs.map(({ key, label, icon, cupBracket }) => {
-              const badgeCount =
-                key === "leiloes"
-                  ? liveAuctionCount
-                  : key === "market"
-                    ? marketListedCount
-                    : key === "jornal"
-                      ? inboxUnreadCount
-                      : 0;
-              const isActive = activeTab === key;
-              return (
-              <motion.button
-                key={key}
-                data-tour={`nav-${key}`}
-                variants={{
-                  hidden: { opacity: 0, x: -12 },
-                  visible: {
-                    opacity: 1,
-                    x: 0,
-                    transition: { duration: 0.2 },
-                  },
-                }}
-                onClick={() => {
-                  if (isMatchInProgress) return;
-                  navigateTab(key);
-                  if (cupBracket) socket.emit("requestCupBracket");
-                  contentRef.current?.scrollTo(0, 0);
-                }}
-                title={sidebarCollapsed ? label : undefined}
-                aria-current={isActive ? "page" : undefined}
-                aria-disabled={isMatchInProgress || undefined}
-                className={`relative w-full flex items-center gap-3 px-3 py-2 text-sm font-bold rounded-lg transition-all text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${sidebarCollapsed ? "justify-center" : ""} ${
-                  isMatchInProgress
-                    ? "text-on-surface-variant/25 cursor-not-allowed"
-                    : isActive
-                      ? "text-primary"
-                      : "text-on-surface-variant hover:bg-surface-bright hover:text-on-surface"
-                }`}
-              >
-                {isActive && (
-                  <motion.span
-                    layoutId="sidebarTabIndicator"
-                    className="absolute inset-0 rounded-lg bg-primary-container/25 ring-1 ring-inset ring-primary/20"
-                    transition={SPRING.indicator}
-                  />
-                )}
-                <span aria-hidden className="relative material-symbols-outlined text-[20px] shrink-0 leading-none">
-                  {icon}
-                </span>
-                {!sidebarCollapsed && (
-                  <span className="relative">{label}</span>
-                )}
-                {badgeCount > 0 && (
-                  <span
-                    className={`absolute flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none tabular-nums ${
-                      sidebarCollapsed
-                        ? "-top-1 -right-1 min-w-[18px] h-[18px] px-1 text-[10px]"
-                        : "right-2 top-1/2 -translate-y-1/2 min-w-5 h-5 px-1.5 text-[10px]"
-                    }`}
-                    title={sidebarCollapsed ? label : undefined}
-                  >
-                    {badgeCount > 99 ? "99+" : badgeCount}
-                  </span>
-                )}
-              </motion.button>
-              );
-            })}
+                <p
+                  aria-hidden
+                  className="px-3 pt-2 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/50"
+                >
+                  {group.label}
+                </p>
+                {group.tabs.map(renderSidebarTab)}
               </motion.div>
             ))}
           </motion.div>
@@ -819,16 +792,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 socket.emit("requestAllTacticFamiliarity");
               }
             }}
-            title={
-              sidebarCollapsed
-                ? isMatchInProgress
-                  ? "AO VIVO"
-                  : "JOGAR"
-                : undefined
-            }
-            className={`relative w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest rounded-lg overflow-hidden ${
-              sidebarCollapsed ? "justify-center" : ""
-            } ${!isMatchInProgress && activeTab !== "tactic" && !myReady ? "animate-heartbeat" : ""} ${
+            className={`relative w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest rounded-lg overflow-hidden ${!isMatchInProgress && activeTab !== "tactic" && !myReady ? "animate-heartbeat" : ""} ${
               isMatchInProgress
                 ? "bg-red-500/15 text-red-400 border border-red-500/30 cursor-not-allowed"
                 : activeTab === "tactic"
@@ -839,33 +803,31 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             <span aria-hidden className="material-symbols-outlined text-[20px] shrink-0 leading-none relative z-10">
               {isMatchInProgress ? "sensors" : "strategy"}
             </span>
-            {!sidebarCollapsed && (
-              <>
-                <span className="flex-1 text-left relative z-10">
-                  {isMatchInProgress ? "AO VIVO" : "JOGAR"}
-                </span>
-                <span className="relative flex h-2 w-2 shrink-0 z-10">
-                  <span
-                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                      isMatchInProgress
-                        ? "bg-red-500"
-                        : activeTab === "tactic"
-                          ? "bg-on-primary/40"
-                          : "bg-primary"
-                    }`}
-                  />
-                  <span
-                    className={`relative inline-flex rounded-full h-2 w-2 ${
-                      isMatchInProgress
-                        ? "bg-red-500"
-                        : activeTab === "tactic"
-                          ? "bg-on-primary/60"
-                          : "bg-primary"
-                    }`}
-                  />
-                </span>
-              </>
-            )}
+            <>
+              <span className="flex-1 text-left relative z-10">
+                {isMatchInProgress ? "AO VIVO" : "JOGAR"}
+              </span>
+              <span className="relative flex h-2 w-2 shrink-0 z-10">
+                <span
+                  className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                    isMatchInProgress
+                      ? "bg-red-500"
+                      : activeTab === "tactic"
+                        ? "bg-on-primary/40"
+                        : "bg-primary"
+                  }`}
+                />
+                <span
+                  className={`relative inline-flex rounded-full h-2 w-2 ${
+                    isMatchInProgress
+                      ? "bg-red-500"
+                      : activeTab === "tactic"
+                        ? "bg-on-primary/60"
+                        : "bg-primary"
+                  }`}
+                />
+              </span>
+            </>
           </button>
         </div>
       </nav>
@@ -1290,7 +1252,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               // conteúdo; reservamos pb-16 (igual ao retrato) para o conteúdo
               // não ser coberto, em vez de pb-3.
               ? `transition-all duration-200 pt-[var(--header-h)] ${isMatchInProgress ? "pb-16 ml-0" : "pb-3 ml-[var(--rail-w)]"}`
-              : `pt-[var(--header-h)] pb-16 lg:pb-0 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-[var(--sidebar-w-collapsed)]" : "lg:ml-[var(--sidebar-w)]"}`
+              : "pt-[var(--header-h)] pb-16 lg:pb-0 transition-all duration-200 lg:ml-[var(--sidebar-w)]"
           }`}
         >
           {/* Wrapper de scroll: a maioria das tabs rola aqui (mesma UX de antes,
