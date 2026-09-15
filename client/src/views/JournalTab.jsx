@@ -1,10 +1,9 @@
 /**
  * JournalTab — a caixa de entrada do treinador (hub estilo CM2001).
  *
- * Lista em cima (data + título), detalhe em baixo, uma só linha de filtros:
- * Todas, O Meu Clube, Competições, Plantel, Mercado. Botões de
- * Anterior/Seguinte e «Próxima não lida», como na janela de notícias do
- * Championship Manager.
+ * Tópicos à esquerda e detalhe à direita no desktop, uma só linha de filtros:
+ * Todas, O Meu Clube, Competições, Plantel, Mercado. A notícia mais antiga
+ * por ler fica seleccionada e a lista tem «Ler próxima».
  *
  * Os pedidos de renovação e os convites de clubes entram como linhas com
  * bandeira vermelha 🚩 e bloqueiam o Pronto até serem respondidos. As
@@ -371,15 +370,15 @@ export function JournalTab({
         </ol>
       )}
 
-      {/* ── Próxima não lida ────────────────────────────────────────── */}
+      {/* ── Próxima notícia por ler ─────────────────────────────────── */}
           <div className="flex justify-end">
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => inbox.selectNextUnread(filter)}
-              disabled={inbox.unreadCount === 0}
+              onClick={inbox.selectNextUnread}
+              disabled={!inbox.hasNextUnread}
             >
-              Próxima não lida
+              Ler próxima
             </Button>
           </div>
         </section>
@@ -423,23 +422,6 @@ export function JournalTab({
         </section>
       )}
 
-      {/* ── Anterior / Seguinte ─────────────────────────────────────── */}
-          <div className="grid grid-cols-2 gap-px rounded-sm overflow-hidden border border-outline-variant/20">
-            <button
-              type="button"
-              onClick={() => inbox.stepSelection(-1, filter)}
-              className="bg-surface-container-high px-3 py-2 text-xs font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors"
-            >
-              ← Anterior
-            </button>
-            <button
-              type="button"
-              onClick={() => inbox.stepSelection(1, filter)}
-              className="bg-surface-container-high px-3 py-2 text-xs font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-colors"
-            >
-              Seguinte →
-            </button>
-          </div>
         </section>
       </div>
     </div>

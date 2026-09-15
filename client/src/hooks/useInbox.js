@@ -41,7 +41,7 @@ import {
  *   selected: object|null,
  *   select: (id: string) => void,
  *   selectNextUnread: () => void,
- *   stepSelection: (dir: 1|-1) => void,
+ *   hasNextUnread: boolean,
  *   markAllRead: () => void,
  *   answerContract: (playerId: number) => void,
  *   answerJobOffer: (accepted: boolean) => void,
@@ -214,7 +214,7 @@ export function useInbox() {
   const selected = useMemo(
     () =>
       items.find((it) => it.id === selectedId) ||
-      items.find(isUnread) ||
+      items.slice().reverse().find(isUnread) ||
       items[0] ||
       null,
     [items, selectedId, isUnread],
@@ -230,38 +230,25 @@ export function useInbox() {
     [items, markRead],
   );
 
-  const visibleIds = useCallback(
-    (filter) =>
-      (filter === "all"
-        ? items
-        : items.filter((it) => it.cat === filter)
-      ).map((it) => it.id),
-    [items],
-  );
+  const nextUnread = useMemo(() => {
+    const unread = items.filter(isUnread);
+    const currentIndex = selected
+      ? unread.findIndex((item) => item.id === selected.id)
+      : -1;
+    // O servidor entrega as notícias da mais recente para a mais antiga;
+    // depois de abrir a mais antiga, sobe-se uma posição para ler a seguinte.
+    return (
+      unread[currentIndex >= 0 ? currentIndex - 1 : unread.length - 1] || null
+    );
+  }, [items, isUnread, selected]);
 
-  const selectNextUnread = useCallback(
-    (filter = "all") => {
-      const pool =
-        filter === "all"
-          ? items
-          : items.filter((it) => it.cat === filter);
-      const next = pool.find(isUnread);
-      if (next) select(next.id);
-    },
-    [items, isUnread, select],
-  );
-
-  const stepSelection = useCallback(
-    (dir, filter = "all") => {
-      const ids = visibleIds(filter);
-      if (ids.length === 0) return;
-      const cur = selected?.id;
-      const i = ids.indexOf(cur);
-      const next = ids[(i + dir + ids.length) % ids.length];
-      select(next);
-    },
-    [visibleIds, selected, select],
-  );
+  const selectNextUnread = useCallback(() => {
+    if (!nextUnread) return;
+    if (selected && isUnread(selected) && !selected.redFlag) {
+      markRead(selected.id);
+    }
+    select(nextUnread.id);
+  }, [isUnread, markRead, nextUnread, select, selected]);
 
   const markAllRead = useCallback(
     (filter = "all") => {
@@ -310,7 +297,7 @@ export function useInbox() {
     isUnread,
     select,
     selectNextUnread,
-    stepSelection,
+    hasNextUnread: Boolean(nextUnread),
     markAllRead,
     answerContract,
     answerJobOffer,

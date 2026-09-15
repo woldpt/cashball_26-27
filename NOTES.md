@@ -4,6 +4,12 @@
 - O título do artigo deixou de forçar `uppercase`, mantendo nomes e frases em capitalização normal.
 - Checks: eslint/JSDoc, teste directo de quatro títulos distintos, harness Jornal retrato 5/5 + paisagem 6/6.
 
+## Jornal: leitura começa na notícia mais antiga (2026-09-15)
+
+- Ao abrir o Jornal, a selecção inicial é a notícia não lida mais antiga; o feed do servidor vem do mais recente para o mais antigo, por isso `Ler próxima` avança uma posição para cima nessa lista.
+- Foram removidos os botões `Anterior` e `Seguinte` do corpo; `Ler próxima` fica no fundo da coluna de tópicos e desactiva quando não há outra notícia por ler.
+- Checks: eslint dos ficheiros tocados, `check:types`, harness Jornal retrato `5/5`, paisagem `6/6`, screenshots 390/667 revistos e avanço automático testado no browser.
+
 ## Jornal: rescaldo inclui bilheteira sem ruído financeiro (2026-09-15)
 
 - O Jornal deixa de receber linhas de `Rendimento Semanal`, `Folha Salarial`, `Manutenção do Estádio` e `Bilheteiras`; as contas continuam a ser aplicadas, mas as linhas antigas também são filtradas do feed.
