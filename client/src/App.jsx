@@ -14,6 +14,7 @@ import {
 	loadSavedSession,
 	clearSavedAuth,
 	clearSavedSession,
+	clearRoomPointer,
 	saveSavedAuth,
 	saveRoomPointer,
 	getDeviceId,
@@ -76,10 +77,18 @@ function App() {
 		const lowered = (msg || "").toLowerCase();
 		return (
 			lowered.includes("palavra-passe") ||
-			lowered.includes("sess") ||
 			lowered.includes("credenciais") ||
-			lowered.includes("conta") ||
-			lowered.includes("limite de novos jogos")
+			lowered.includes("sessão inválida") ||
+			lowered.includes("sessão expirada")
+		);
+	};
+
+	const isRoomUnavailable = (msg) => {
+		const lowered = (msg || "").toLowerCase();
+		return (
+			lowered.includes("sala não encontrada") ||
+			lowered.includes("a sala já não existe") ||
+			lowered.includes("foste expulso desta sala")
 		);
 	};
 
@@ -116,13 +125,39 @@ function App() {
 		const handleJoinError = (msg) => {
 			setJoinError(msg);
 			setJoining(false);
-			setMe(null);
-			if (isAuthError(msg)) {
-				// Só a credencial cai; o ponteiro da sala fica (é o que permite
-				// voltar ao jogo depois de reautenticar).
-				clearSavedAuth();
+			if (joinTimerRef.current) {
+				clearTimeout(joinTimerRef.current);
+				joinTimerRef.current = null;
 			}
-			if (joinTimerRef.current) clearTimeout(joinTimerRef.current);
+
+			if (isAuthError(msg)) {
+				// Só uma credencial inválida termina a sessão. Um erro de rede,
+				// rate-limit ou carregamento da sala não pode desmontar o jogo.
+				clearSavedAuth();
+				setSavedSession(null);
+				setToken(null);
+				setMe(null);
+				return;
+			}
+
+			if (isRoomUnavailable(msg)) {
+				// A conta continua válida; apenas esta sala deixou de ser uma opção.
+				clearRoomPointer(meRef.current?.name || name);
+				setSavedSession(null);
+				setAuthPhase("mode");
+				setMe(null);
+				return;
+			}
+
+			// Durante um rejoin, manter o jogo montado permite ao socket recuperar
+			// sem transformar um erro transitório num logout aparente. No primeiro
+			// join manual, voltar à seleção é a resposta correcta.
+			const canRecover = Boolean(
+				savedSessionRef.current?.roomCode ||
+				meRef.current?.teamId ||
+				meRef.current?.roomCode,
+			);
+			if (!canRecover) setMe(null);
 		};
 
 		const handleJoinSuccess = (data) => {
@@ -132,6 +167,16 @@ function App() {
 			// iniciais — caso contrário roomCreator (e o botão Kick do admin)
 			// são descartados e nunca chegam ao client.
 			roomCodeRef.current = roomCode;
+			// Depois do sucesso, futuras tentativas devem reentrar nesta sala —
+			// nunca repetir `new-game` e criar outra sala.
+			if (lastJoinRef.current) {
+				lastJoinRef.current = {
+					...lastJoinRef.current,
+					roomCode,
+					roomName: "",
+					joinMode: "saved-game",
+				};
+			}
 			setRoomCode(roomCode);
 			setMe((prev) => {
 				// Reconstruir da sessão guardada se `me` tiver caído entretanto: um
@@ -349,13 +394,16 @@ function App() {
 			if (me?.roomCode) socket.emit("leaveRoom");
 			setJoinError("");
 			setJoining(true);
-			socket.emit("joinGame", {
+			const payload = {
 				name,
 				token,
 				roomCode: joinMode === "new-game" ? "" : roomCode.toUpperCase(),
 				roomName: joinMode === "new-game" ? roomCode.toUpperCase() : "",
 				joinMode,
-			});
+				deviceId: getDeviceId(),
+			};
+			lastJoinRef.current = payload;
+			socket.emit("joinGame", payload);
 			setMe({ name, token, roomCode: "" });
 			armJoinTimeout();
 		}

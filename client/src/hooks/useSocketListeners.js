@@ -885,6 +885,12 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setSigningCelebration(data);
 		});
 		socket.on("teamAssigned", (data) => {
+			// O teamAssigned confirma que o join terminou; sem cancelar este
+			// timeout, o cliente repetia o join a cada 10 segundos.
+			if (refs.joinTimerRef?.current) {
+				clearTimeout(refs.joinTimerRef.current);
+				refs.joinTimerRef.current = null;
+			}
 			// Fallback à sessão guardada: se `me` caiu (ou o ref ainda não foi
 			// sincronizado), o `teamAssigned` era descartado e o cliente ficava
 			// em "A entrar na sala..." para sempre, a repetir o join.

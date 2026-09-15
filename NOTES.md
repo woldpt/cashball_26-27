@@ -1,3 +1,9 @@
+## Rejoin mobile não desmonta a sessão (novo)
+
+- **Causa:** `joinError` fazia `setMe(null)` para qualquer erro e o timeout armado no `joinGameSuccess` nunca era cancelado no `teamAssigned`; um flape móvel podia desmontar o jogo e repetir joins até ao rate-limit, parecendo logout.
+- **Fix:** erros transitórios preservam o jogo durante rejoin; só credencial inválida/expirada termina a sessão; sala apagada/expulsão limpa apenas o ponteiro da sala. `teamAssigned` cancela o timeout, e o join manual guarda `deviceId` + payload; retries de uma sala nova passam a reentrar na sala criada, sem criar outra.
+- **Checks:** `npx eslint src/App.jsx src/hooks/useSocketListeners.js` OK; `check:types` OK; `test:mobile` 150/150; `test:mobile:landscape` 180/180. `npm run lint` global continua nos 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx`).
+
 ## Badge do Jornal = itens por ler (não só as 🚩)
 
 - O botão Jornal (sidebar + nav mobile) mostrava só as **bandeiras vermelhas** (`inboxRedFlags`): uma caixa de entrada com notícias por ler ficava sem badge nenhum. Passa a mostrar **`unreadCount`** (tudo o que está por ler, bandeiras incluídas) — o mesmo número do cabeçalho do Jornal ("N novas") e o mesmo badge do Mercado (pill `bg-red-500`, teto `99+`).
