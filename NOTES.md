@@ -1,3 +1,8 @@
+## Jornal: filtrar pela equipa do treinador
+
+- `getGlobalNews` identifica a equipa pelo `socket.id` e filtra `club_news` por `team_id`; `transfer_history` fica limitado a compras/vendas da mesma equipa. Sem sessão com equipa, devolve Jornal vazio em vez de expor notícias globais.
+- Checks: server `typecheck` OK; `audit:socketio` 0 erros / 95 avisos pré-existentes.
+
 ## Briefing: mais altura no campo do adversário (fix)
 - Avançados cortados: linha ATA a 80% + marcador com ~70px transbordava do contentor (`h-64`/`lg:h-[280px]`). Só `OpponentFormation.jsx`: `h-72`/`lg:h-[320px]` (curtos `h-44`/`lg:h-[200px]`); relvado partilhado intacto.
 - Checks: `eslint` no ficheiro + `check:types` OK. Tweak de altura, sem mobile-resp-check.

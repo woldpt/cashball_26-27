@@ -1,9 +1,10 @@
 /**
  * Jornal Global — socket handlers.
  *
- * `getGlobalNews` devolve o agregado da época atual para a tab "Jornal":
- *   - news:    club_news de todos os clubes + transfer_history da época,
- *              fundidos e ordenados (jornada desc, created_at desc, id desc), cap 200.
+ * `getGlobalNews` devolve as notícias da equipa do treinador actual para a tab
+ * "Jornal":
+ *   - news:    club_news da equipa + transferências em que ela participa,
+ *              fundidas e ordenadas (jornada desc, created_at desc, id desc), cap 200.
  *   - results: todas as partidas jogadas da época (Liga + Taça) com o MOM
  *              de cada equipa (match_moms).
  *
@@ -31,9 +32,14 @@ export function registerNewsSocketHandlers(
     const year = game.year || 0;
 
     const fail = () => socket.emit("globalNews", { news: [], results: [] });
+    const coach = Object.values(game.playersByName || {}).find(
+      (player: any) => player.socketId === socket.id,
+    ) as any;
+    const teamId = coach?.teamId;
+    if (teamId == null) return fail();
 
     try {
-      // ── Notícias da época: club_news + transfer_history (fundidos) ────
+      // ── Notícias da época da equipa: club_news + transfer_history ─────
       game.db.all(
         `SELECT cn.id, cn.type, 'club' AS source, cn.title, cn.description,
                 cn.team_id, cn.player_id, cn.player_name,
@@ -44,8 +50,8 @@ export function registerNewsSocketHandlers(
          FROM club_news cn
          LEFT JOIN teams t ON t.id = cn.team_id
          LEFT JOIN players p ON p.id = cn.player_id
-         WHERE cn.year = ?`,
-        [year],
+         WHERE cn.year = ? AND cn.team_id = ?`,
+        [year, teamId],
         (newsErr: Error | null, clubRows: any[] | null) => {
           if (newsErr || !clubRows) {
             if (newsErr)
@@ -70,8 +76,8 @@ export function registerNewsSocketHandlers(
                     th.amount, th.matchweek, th.year, th.created_at,
                     th.buyer_team_name AS team_name, NULL AS division
              FROM transfer_history th
-             WHERE th.year = ?`,
-            [year],
+             WHERE th.year = ? AND (th.seller_team_id = ? OR th.buyer_team_id = ?)`,
+            [year, teamId, teamId],
             (trErr: Error | null, transferRows: any[] | null) => {
               if (trErr) {
                 console.warn(
