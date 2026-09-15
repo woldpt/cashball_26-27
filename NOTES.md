@@ -10,6 +10,13 @@
 - O golo próprio usa um wash verde mais forte e confete; o golo adversário usa wash/flash vermelho mais intenso com shake do artefacto.
 - Checks: ESLint dos ficheiros tocados, `check:types` e `git diff --check` OK.
 
+## Jornal: notícia inicial fica logo lida (2026-09-15)
+
+- Ao abrir o Jornal, a notícia não lida mais antiga continua seleccionada e passa imediatamente a lida; o contador/badge baixa sem exigir um segundo clique.
+- A excepção mantém-se para bandeiras vermelhas, que continuam não lidas até serem respondidas.
+- O harness verifica a leitura inicial e depois a sincronização da leitura de uma segunda notícia entre Jornal e badge.
+- Checks: eslint/JSDoc, `check:types`, harness Jornal retrato `5/5` e paisagem `6/6`, screenshots 390/667 revistos.
+
 ## Jornal: filtros e tópicos com cores por categoria (2026-09-15)
 
 - A coluna de tópicos ganhou um fundo ligeiramente mais claro para se separar do fundo da página.

@@ -216,10 +216,17 @@ const badgeText = () =>
 /** Abrir uma notícia no JournalTab tem de baixar o badge no outro consumidor. */
 async function checkSharedReads() {
   const before = badgeText();
-  // Uma linha SEM bandeira vermelha (essas só saem da lista ao serem
-  // respondidas) — o título identifica-a no fixture.
-  const row = [...document.querySelectorAll("ol button")].find((b) =>
+  const initialRow = [...document.querySelectorAll("ol button")].find((b) =>
     b.textContent.includes("Contas bancárias"),
+  );
+  // A notícia mais antiga começa seleccionada e já deve estar lida.
+  const initialWasRead = initialRow
+    ?.querySelector("span.min-w-0")
+    ?.className.includes("font-medium");
+  // Uma linha seguinte sem bandeira vermelha — clicar nela deve baixar o
+  // badge partilhado entre o Jornal e o GameLayout.
+  const row = [...document.querySelectorAll("ol button")].find((b) =>
+    b.textContent.includes("Clube Desportivo do Litoral despediu"),
   );
   row?.click();
   await new Promise((r) => setTimeout(r, 60));
@@ -227,8 +234,9 @@ async function checkSharedReads() {
   return {
     before,
     after,
+    initialWasRead,
     clicked: !!row,
-    ok: !!row && before > 0 && after === before - 1,
+    ok: initialWasRead && !!row && before > 0 && after === before - 1,
   };
 }
 

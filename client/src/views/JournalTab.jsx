@@ -9,7 +9,7 @@
  * bandeira vermelha 🚩 e bloqueiam o Pronto até serem respondidos. As
  * respostas reutilizam os fluxos existentes (diálogo do agente, emits).
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useInbox } from "../hooks/useInbox.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
@@ -260,7 +260,17 @@ export function JournalTab({
   onOpenPlayerHistory,
 }) {
   const inbox = useInbox();
+  const { selected, isUnread, select } = inbox;
+  const initialReadRef = useRef(false);
   const [filter, setFilter] = useState("all");
+
+  useEffect(() => {
+    if (initialReadRef.current || !selected) return;
+    initialReadRef.current = true;
+    if (!selected.redFlag && isUnread(selected)) {
+      select(selected.id);
+    }
+  }, [isUnread, select, selected]);
 
   const visible =
     filter === "all"
