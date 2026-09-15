@@ -14,6 +14,25 @@ export const socket = io(import.meta.env.VITE_BACKEND_URL || undefined, {
 // não está pronta — e um `joinError` aí apagava a sessão guardada (o jogo
 // "desaparecia"). O servidor responde com o estado completo.
 let _knownServerStartTime = null;
+
+// Banner de reload manual após restart (ver ServerRestartBanner.jsx). O reload
+// automático foi removido de propósito: o resync automático continua e o
+// utilizador escolhe quando recarregar.
+const restartListeners = new Set();
+export function subscribeServerRestart(cb) {
+  restartListeners.add(cb);
+  return () => restartListeners.delete(cb);
+}
+function notifyRestart() {
+  for (const cb of restartListeners) {
+    try {
+      cb();
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 socket.on("serverStartTime", (t) => {
   if (_knownServerStartTime === null) {
     _knownServerStartTime = t;
@@ -21,6 +40,7 @@ socket.on("serverStartTime", (t) => {
     _knownServerStartTime = t;
     console.log("[socket] servidor reiniciou — a ressincronizar estado");
     socket.emit("requestResync");
+    notifyRestart();
   }
 });
 
