@@ -1,3 +1,8 @@
+## Corpo das notícias maior com serif de imprensa (2026-09-16)
+
+- O corpo da notícia no `JournalTab.jsx` subiu um degrau (`text-xs` → `text-sm`, `short:text-xs`) e passou a `font-serif` (Georgia/sistema, sem nova fonte).
+- Checks: eslint do ficheiro, `check:types`, build Vite, harness Jornal retrato `5/5` e paisagem `6/6`, screenshots 390/667 revistos.
+
 ## Gestão contratual entre cabeçalho e atributos (2026-09-16)
 
 - A «Gestão Contratual» do `PlayerHistoryModal.jsx` saiu do fundo da coluna esquerda para uma faixa de largura total logo abaixo do cabeçalho (só o bloco contratual; «Mercado» fica onde estava). Empilha no telemóvel, horizontal (`flex-row`, botões `flex-1`) em desktop; lógica/handlers inalterados.
