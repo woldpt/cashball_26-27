@@ -989,3 +989,8 @@ Plano C1+C2 (quando fizer):
 - `finalizeFriendly` (`server/cupFlowHelpers.ts`) descarta `fixture._deltas` antes do flush: golos do amigável deixam de tocar `players.goals` (época → Melhores Marcadores + historial) e `career_goals` (carreira). Presenças/vermelhos/lesões já estavam excluídos (guard `calendarIndex > 0` + `isFriendly` na engine).
 - Relato, eventos, jornal e resultado do amigável intactos — só os contadores de jogador ficam de fora. Só futuros (sem correção retroativa, decisão do utilizador).
 - Checks: server typecheck OK.
+
+## Imagens para WebP: players + logos + coaches (2026-09-16)
+- Novo `scripts/compress-images.mjs` (`npm run compress:images`, dep `sharp`): fotos q82 / logos lossless, flags `--dry-run --keep-originals --skip-fixtures --migrate-rooms`, lotes de 16 em paralelo. Corrida única: 1370 imagens, 143 MB → ~31 MB (−79%). Originais PNG/JPG apagados.
+- `all_teams.json` com 1370 refs reescritas para `.webp`; `base.db` regenera-se sozinha no próximo arranque (hash das fixtures em `ensureSeeded.js`). Sem salas `game_*.db` ativas para migrar (só WAL/SHM órfãos de salas apagadas — deixados intactos).
+- Verificado: dry-run idempotente (0 ficheiros), foto e logo abertos visualmente OK, `node --check` OK. `dist/`/android/ios têm cópias antigas mas regeneram-se no build.
