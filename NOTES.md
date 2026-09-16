@@ -1,3 +1,9 @@
+## Fundo fotográfico por grupo de navegação (2026-09-16)
+
+- Uma foto livre (Unsplash, WebP 41–185 KB em `client/public/backgrounds/`) por grupo — jornal (noite/holofotes), gestão (Bernabéu), competição (estádio à noite), transferências (linha de relva) — montada no `GameLayout.jsx` atrás do `.ambient` via novo `GroupBackdrop.jsx` (escolha por `getTabGroupId`, `tactic`/`squad` caem em competição, escondido no jogo ao vivo).
+- Tratamento escuro + desfocado só em CSS (`brightness(0.32) + blur(3px)` e overlay em tokens, crossfade por opacidade, sem transição com `prefers-reduced-motion`).
+- Checks: `check:types` OK, eslint só com os 2 erros pré-existentes noutros ficheiros, mobile portrait `150/150` e landscape `180/180`, screenshots 390/667 revistos, build Vite OK com imagens no `dist`.
+
 ## Sidebar desktop volta a encolher com bola na linha direita (2026-09-16)
 
 - A barra lateral desktop (`lg`) volta a colapsar para `3.5rem` (só ícones centrados, etiquetas e cabeçalhos escondidos → divisores, badges em canto, JOGAR só com ícone); o comando é uma bola (`h-6 w-6`, `chevron_left/right`) sobreposta ao centro da linha direita (`-right-3 top-1/2`). O bloco fixo do Jornal no topo foi mantido (só colapsa para ícone) em vez de voltar ao scroller.
