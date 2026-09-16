@@ -219,7 +219,11 @@ export function useInbox() {
       list.push({
         id: `cupdraw-${cupDraw.season || "?"}-${cupDraw.roundName || "sorteio"}`,
         cat: "competitions",
-        date: currentDate,
+        // Data do sorteio, não da semana atual (senão "muda" de semana).
+        date: formatInboxDate(
+          (cupDraw.drawWeek ?? calendarIndex ?? 0) + 1,
+          cupDraw.year ?? seasonYear,
+        ),
         title,
         body: label,
         titleParts:
@@ -250,7 +254,11 @@ export function useInbox() {
       list.push({
         id: `mood-${postMatchMood.key || "jogo"}`,
         cat: "club",
-        date: currentDate,
+        // Data do jogo, não da semana atual (senão "muda" de semana).
+        date: formatInboxDate(
+          (postMatchMood.weekIdx ?? calendarIndex ?? 0) + 1,
+          postMatchMood.year ?? seasonYear,
+        ),
         ...article,
         redFlag: false,
         kind: "info",

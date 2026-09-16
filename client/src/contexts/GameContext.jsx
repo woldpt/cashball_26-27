@@ -616,6 +616,8 @@ export function GameProvider({
 				variant,
 				opponentTeamId: oppId,
 				opponentName: oppTeam?.name || "—",
+weekIdx: calendarIndex,
+year: seasonYear,
 				myGoals,
 				oppGoals,
 				source,
@@ -703,7 +705,7 @@ export function GameProvider({
 				}
 			}
 		}
-	}, [matchResults, cupRoundResults, me?.teamId, teams, season]);
+	}, [matchResults, cupRoundResults, me?.teamId, teams, season, calendarIndex, seasonYear]);
 
 	// ── Cup draw reveal animation ───────────────────────────────────────────
 	useEffect(() => {

@@ -8,6 +8,11 @@
 - O corpo da notícia no `JournalTab.jsx` subiu mais um degrau (`text-sm` → `text-base`, `short:text-sm`); serif e restante estilo mantidos.
 - Checks: eslint do ficheiro, `check:types`, build Vite, harness Jornal retrato `5/5` e paisagem `6/6`, screenshots 390/667 revistos.
 
+## Sorteio e humor com data do evento, não da semana atual (2026-09-16)
+
+- O sorteio da Taça (e o humor pós-jogo transitório) eram datados com a semana atual, por isso «mudavam» de semana ao avançar. O servidor carimba `drawWeek`/`drawMatchweek`/`year` no payload do sorteio e o cliente carimba `weekIdx`/`year` no humor; o `useInbox` data os itens por esses carimbos.
+- Checks: typecheck servidor, eslint (só o erro Fast Refresh pré-existente do `GameContext.jsx`), `check:types`, regressões inbox, build Vite, harness Jornal retrato `5/5` e paisagem `6/6` (com assert S5/2026 no sorteio), screenshots 390/667 revistos.
+
 ## Rescaldos guardados no histórico da época (2026-09-16)
 
 - O rescaldo pós-jogo era só estado transitório e cada jogo apagava o anterior. Agora cada jogo da equipa (liga, taça, amigáveis) grava uma linha `postmatch` em `club_news` na finalização, com factos + foto do contexto em JSON; o cliente reconstrói o editorial exacto (variante incluída) e o item transitório esconde-se quando chega a linha gravada.

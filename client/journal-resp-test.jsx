@@ -70,6 +70,11 @@ const boardWarning = { level: 3, budget: -1250000, streak: 3 };
 const cupDraw = {
   season: 2026,
   roundName: "Oitavos de final",
+  // Sorteio foi na semana 5 (a semana atual da fixture é a 13): a data do
+  // item tem de ficar na semana do sorteio, não na atual.
+  drawWeek: 4,
+  drawMatchweek: 5,
+  year: 2026,
   humanInCup: true,
   fixtures: [
     {
@@ -305,6 +310,15 @@ async function checkMoodArticle() {
   };
 }
 
+/** O sorteio mostra a semana em que saiu, não a semana atual. */
+async function checkDrawDate() {
+  const row = [...document.querySelectorAll("ol button")].find((b) =>
+    b.textContent.includes("Sorteio:"),
+  );
+  const date = row?.querySelector("span")?.textContent;
+  return { date: date || null, ok: !!row && date === "S5/2026" };
+}
+
 /** Abrir uma notícia no JournalTab tem de baixar o badge no outro consumidor. */
 async function checkSharedReads() {
   const before = badgeText();
@@ -380,10 +394,12 @@ setTimeout(async () => {
   const report = measure();
   report.quickSearch = await checkQuickSearch();
   report.moodArticle = await checkMoodArticle();
+  report.drawDate = await checkDrawDate();
   report.inboxBadge = await checkSharedReads();
   if (
     !report.quickSearch.ok ||
     !report.moodArticle.ok ||
+    !report.drawDate.ok ||
     !report.inboxBadge.ok
   )
     report.verdict = "FAIL";

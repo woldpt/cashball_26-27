@@ -970,6 +970,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			})),
 			humanInCup,
 			season: game.season,
+			// Semana do sorteio: o Jornal data o item por ela, não pela atual.
+			drawWeek: game.calendarIndex,
+			drawMatchweek: game.matchweek,
+				year: game.year,
 		};
 
 		// Emit draw so clients can show the animation in the lobby
@@ -2199,6 +2203,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				})),
 				humanInCup,
 				season: game.season,
+				drawWeek: game.calendarIndex,
+				drawMatchweek: game.matchweek,
+				year: game.year,
 			});
 			if (coachName) {
 				game.cupDrawSeenBy.add(coachName);
