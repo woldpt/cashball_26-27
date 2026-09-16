@@ -229,10 +229,13 @@ export function MatchPage({
 		!!fixture &&
 		Number(fixture.homeTeamId) !== Number(myTeamId) &&
 		Number(fixture.awayTeamId) !== Number(myTeamId);
-	const { sidebarCollapsed } = useGame();
-	const sidebarLeft = sidebarCollapsed
-		? "lg:left-[var(--sidebar-w-collapsed)]"
-		: "lg:left-[var(--sidebar-w)]";
+	const { sidebarCollapsed, isMatchInProgress } = useGame();
+	// Durante o jogo a sidebar está oculta — o painel ocupa a largura toda.
+	const sidebarLeft = isMatchInProgress
+		? "lg:left-0"
+		: sidebarCollapsed
+			? "lg:left-[var(--sidebar-w-collapsed)]"
+			: "lg:left-[var(--sidebar-w)]";
 
 	// ── Mode-based rendering ──────────────────────────────────────────────
 	const isIntervencao = mode === "halftime" || mode === "action";

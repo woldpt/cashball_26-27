@@ -221,7 +221,6 @@ export function GameProvider({
 	const roomHubRef = useRef(null);
 	const chatOpenRef = useRef(false);
 	const activeChatTabRef = useRef("room");
-	const sidebarUserPrefRef = useRef(sidebarCollapsed);
 	const isPlayingMatchRef = useRef(false);
 	const showHalftimePanelRef = useRef(false);
 	const matchActionRef = useRef(null);
@@ -423,19 +422,6 @@ export function GameProvider({
 		() => isPlayingMatch || showHalftimePanel || !!matchAction,
 		[isPlayingMatch, showHalftimePanel, matchAction],
 	);
-
-	// ── Auto-collapse sidebar during Live ───────────────────────────────────
-	// Encolhe durante o jogo e repõe a preferência ao sair. A preferência
-	// (`sidebarUserPrefRef`) só muda no clique da bola — nunca aqui — senão um
-	// restauro adiado (`startTransition`) ainda por aplicar era re-guardado como
-	// preferência no ciclo seguinte e a barra ficava presa no estado transitório.
-	useEffect(() => {
-		if (isMatchInProgress) {
-			startTransition(() => setSidebarCollapsed(true));
-		} else {
-			startTransition(() => setSidebarCollapsed(sidebarUserPrefRef.current));
-		}
-	}, [isMatchInProgress]);
 
 	// ── Match clock effect ──────────────────────────────────────────────────
 	useEffect(() => {
@@ -1775,7 +1761,6 @@ export function GameProvider({
 		roomHubRef,
 		chatOpenRef,
 		activeChatTabRef,
-		sidebarUserPrefRef,
 		// Auth bridge (re-exposed)
 		me,
 		setMe,

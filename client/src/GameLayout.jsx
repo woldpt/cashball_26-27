@@ -77,7 +77,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     panelMode,
     calendarIndex,
     // Additional state needed by JSX
-    sidebarUserPrefRef,
     setAdminPanelOpen,
     userDropdownOpen,
     setUserDropdownOpen,
@@ -736,6 +735,9 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       </header>
 
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
+      {/* Oculta por completo durante o jogo (o painel de jogo ocupa a largura
+          toda); `contents` evita remontar a nav e repetir a animação de entrada. */}
+      <div className={isMatchInProgress ? "hidden" : "contents"}>
       <nav
         aria-label="Navegação principal"
         className={`hidden lg:flex fixed left-0 top-[var(--header-h)] bottom-0 flex-col z-10 transition-all duration-200 bg-surface-container-high border-r border-outline-variant/15 ${sidebarCollapsed ? "w-[var(--sidebar-w-collapsed)]" : "w-[var(--sidebar-w)]"}`}
@@ -746,7 +748,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             if (isMatchInProgress) return;
             const next = !sidebarCollapsed;
             setSidebarCollapsed(next);
-            sidebarUserPrefRef.current = next;
             try {
               localStorage.setItem("sidebarCollapsed", String(next));
             } catch {
@@ -899,6 +900,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           </button>
         </div>
       </nav>
+      </div>
 
       {/* ── MOBILE BOTTOM NAV ────────────────────────────────────────────── */}
       {/* ── Mobile bottom nav (< lg) ─────────────────────────────── */}
@@ -1320,7 +1322,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               // conteúdo; reservamos pb-16 (igual ao retrato) para o conteúdo
               // não ser coberto, em vez de pb-3.
               ? `transition-all duration-200 pt-[var(--header-h)] ${isMatchInProgress ? "pb-16 ml-0" : "pb-3 ml-[var(--rail-w)]"}`
-              : `pt-[var(--header-h)] pb-16 lg:pb-0 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-[var(--sidebar-w-collapsed)]" : "lg:ml-[var(--sidebar-w)]"}`
+              : `pt-[var(--header-h)] pb-16 lg:pb-0 transition-all duration-200 ${isMatchInProgress ? "lg:ml-0" : sidebarCollapsed ? "lg:ml-[var(--sidebar-w-collapsed)]" : "lg:ml-[var(--sidebar-w)]"}`
           }`}
         >
           {/* Wrapper de scroll: a maioria das tabs rola aqui (mesma UX de antes,
