@@ -91,7 +91,7 @@ export function LiveMatchHero({
   const hInfo = teams.find((t) => t.id === myMatch.homeTeamId);
   const aInfo = teams.find((t) => t.id === myMatch.awayTeamId);
   // Amigável (ronda 0): sem prefixo "Taça ·" nem estética de taça.
-  const isFriendly = /amigavel/i.test(cupMatchRoundName || "");
+  const isFriendly = /amigável/i.test(cupMatchRoundName || "");
   const isCupFinal = isCupMatch && cupMatchRoundName === "Final";
   const stadiumName = isCupFinal ? CUP_FINAL_STADIUM : hInfo?.stadium_name;
   // Cores das equipas para a cenografia de luz (fallbacks estáveis).
