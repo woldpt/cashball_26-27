@@ -1,3 +1,9 @@
+## Jornal: links em todas as notícias (2026-09-16)
+
+- Renovação, convite, direção, sorteio, adeptos e lesão/castigo chegavam ao Jornal só com `title`/`body` em texto puro, por isso o `RichNewsText` não tinha entidades para ligar. Passam a trazer `titleParts`/`bodyParts`/`media`: jogador da renovação (via plantel, com recurso ao nome no título), equipa do convite, equipa própria no aviso da direção, ambas as equipas do jogo do treinador no sorteio, adversário na reação dos adeptos e jogador na lesão/castigo.
+- Novo `linkFirstMention` (primeira menção vira entidade clicável, resto fica texto) e `buildMoodNewsArticle`; textos visíveis e pesquisa do Jornal inalterados (o corpo do convite passa a nomear o clube em vez de "Um clube"). Sem mexer no `JournalTab` — equipa própria continua a abrir a gestão do plantel.
+- Checks: eslint dos 2 ficheiros, `check:types`, prova funcional dos 6 tipos (entidades presentes, texto intacto, sem crash sem entidade). Sem mudança de layout → sem mobile-resp-check.
+
 ## Submenu mobile fechado ao sair do tutorial (2026-09-15)
 
 - Após o `WelcomeModal` de conta nova, o tutorial abre sozinho o fly-up (`gestao` no passo 1) e o overlay de ecrã cheio bloqueia o dedo até o submenu ser enrolado; `skipTutorial`/`finishTutorial` nunca limpavam o `mobileSubMenu`, por isso saltar o tutorial deixava o submenu estendido a bloquear a navegação.

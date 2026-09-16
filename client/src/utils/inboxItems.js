@@ -95,6 +95,54 @@ export function buildMoodNewsBody(mood) {
 }
 
 /**
+ * Divide um texto na primeira menção de uma entidade, para a tornar clicável.
+ * @param {string} text texto corrido
+ * @param {object} entityPart parte `player`/`team` já construída
+ * @returns {Array} partes (texto puro se a etiqueta não ocorrer)
+ */
+export function linkFirstMention(text, entityPart) {
+  const value = String(text ?? "");
+  const label = entityPart?.label;
+  const idx = label ? value.indexOf(label) : -1;
+  if (idx < 0) return [partText(value)];
+  return [
+    ...(idx > 0 ? [partText(value.slice(0, idx))] : []),
+    entityPart,
+    ...(idx + label.length < value.length
+      ? [partText(value.slice(idx + label.length))]
+      : []),
+  ];
+}
+
+/**
+ * Artigo da reação pós-jogo com o adversário clicável (título e corpo).
+ * @param {object} mood contexto final do jogo
+ * @returns {object} `{ title, body, titleParts, bodyParts, media }`
+ */
+export function buildMoodNewsArticle(mood) {
+  const headline =
+    MOOD_TITLES[mood?.variant] || MOOD_TITLES[mood?.outcome] || "Resultado";
+  const score = `${mood?.myGoals ?? ""}–${mood?.oppGoals ?? ""}`;
+  const title = `${headline} ${score} ${mood?.opponentName || ""}`.trim();
+  const body = buildMoodNewsBody(mood);
+  const opponent =
+    mood?.opponentTeamId != null && mood?.opponentName
+      ? { id: mood.opponentTeamId, label: mood.opponentName }
+      : null;
+  return {
+    title,
+    body,
+    titleParts: opponent
+      ? linkFirstMention(title, partTeam(opponent))
+      : [partText(title)],
+    bodyParts: opponent
+      ? linkFirstMention(body, partTeam(opponent))
+      : [partText(body)],
+    media: { player: null, teams: opponent ? [opponent] : [] },
+  };
+}
+
+/**
  * Categoria de uma linha do `globalNews` (club_news ou transfer_history).
  * @param {object} n linha com `source`/`type`
  * @returns {string} id de categoria
@@ -140,9 +188,9 @@ function formatNewsDate(news, fallbackDate) {
     : fallbackDate || formatInboxDate();
 }
 
-const partText = (value) => ({ type: "text", value: String(value ?? "") });
-const partPlayer = (player) => ({ type: "player", ...player });
-const partTeam = (team) => ({ type: "team", ...team });
+export const partText = (value) => ({ type: "text", value: String(value ?? "") });
+export const partPlayer = (player) => ({ type: "player", ...player });
+export const partTeam = (team) => ({ type: "team", ...team });
 
 function plainParts(parts) {
   return parts
@@ -570,26 +618,42 @@ export function squadToMedicalItems(squad, nowIdx, dateLabel) {
     const profile = [p?.position, p?.skill != null ? `skill ${p.skill}` : null]
       .filter(Boolean)
       .join(" · ");
-    const lead = profile ? `${profile} — ` : "";
+    const detail = profile ? ` (${profile})` : "";
+    const player = {
+      id: p.id,
+      label: p.name,
+      photo: p.photo ?? null,
+      position: p.position,
+    };
     if (inj > nowIdx) {
+      const title = `🩹 ${p.name} lesionado`;
+      const body = `${p.name}${detail} de fora até à jornada ${inj + 1}.`;
       items.push({
         id: `inj-${p.id}-${inj}`,
         cat: "squad",
         date: dateLabel,
-        title: `🩹 ${p.name} lesionado`,
-        body: `${lead}de fora até à jornada ${inj + 1}.`,
+        title,
+        body,
+        titleParts: linkFirstMention(title, partPlayer(player)),
+        bodyParts: linkFirstMention(body, partPlayer(player)),
+        media: { player, teams: [] },
         redFlag: false,
         kind: "info",
         ref: null,
       });
     }
     if (sus > nowIdx) {
+      const title = `🟥 ${p.name} castigado`;
+      const body = `${p.name}${detail} suspenso até à jornada ${sus + 1}.`;
       items.push({
         id: `sus-${p.id}-${sus}`,
         cat: "squad",
         date: dateLabel,
-        title: `🟥 ${p.name} castigado`,
-        body: `${lead}suspenso até à jornada ${sus + 1}.`,
+        title,
+        body,
+        titleParts: linkFirstMention(title, partPlayer(player)),
+        bodyParts: linkFirstMention(body, partPlayer(player)),
+        media: { player, teams: [] },
         redFlag: false,
         kind: "info",
         ref: null,

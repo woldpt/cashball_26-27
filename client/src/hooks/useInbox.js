@@ -18,10 +18,13 @@ import { useGame } from "../contexts/GameContext.jsx";
 import { queueEmit } from "../socket.js";
 import {
   INBOX_CATS,
-  MOOD_TITLES,
-  buildMoodNewsBody,
+  buildMoodNewsArticle,
   formatInboxDate,
+  linkFirstMention,
   newsRowsToItems,
+  partPlayer,
+  partTeam,
+  partText,
   squadToMedicalItems,
 } from "../utils/inboxItems.js";
 import {
@@ -90,12 +93,30 @@ export function useInbox() {
     const list = [];
 
     for (const d of contractQueue || []) {
+      const squadPlayer = (mySquad || []).find(
+        (p) => Number(p?.id) === Number(d.playerId),
+      );
+      const label =
+        squadPlayer?.name ||
+        String(d.title || "").split("—").pop().trim() ||
+        "O jogador";
+      const player = {
+        id: d.playerId,
+        label,
+        photo: squadPlayer?.photo ?? null,
+        position: squadPlayer?.position || "ATA",
+      };
+      const title = `🚩 ${d.title || "Pedido de renovação"}`;
+      const body = d.description || "";
       list.push({
         id: `contract-${d.playerId}`,
         cat: "club",
         date: currentDate,
-        title: `🚩 ${d.title || "Pedido de renovação"}`,
-        body: d.description || "",
+        title,
+        body,
+        titleParts: linkFirstMention(title, partPlayer(player)),
+        bodyParts: linkFirstMention(body, partPlayer(player)),
+        media: { player, teams: [] },
         redFlag: true,
         kind: "contract",
         ref: d.playerId,
@@ -104,12 +125,24 @@ export function useInbox() {
 
     if (jobOfferModal?.toTeam) {
       const to = jobOfferModal.toTeam;
+      const from = jobOfferModal.fromTeam;
+      const team = { id: to.id, label: to.name };
+      const body = `${to.name} quer-te como treinador. Responde antes do próximo jogo.`;
       list.push({
         id: `job-${to.id}`,
         cat: "club",
         date: currentDate,
         title: `🚩 Convite: ${to.name}`,
-        body: "Um clube quer-te como treinador. Responde antes do próximo jogo.",
+        body,
+        titleParts: [partText("🚩 Convite: "), partTeam(team)],
+        bodyParts: linkFirstMention(body, partTeam(team)),
+        media: {
+          player: null,
+          teams:
+            from?.id != null
+              ? [team, { id: from.id, label: from.name }]
+              : [team],
+        },
         redFlag: true,
         kind: "job",
         ref: null,
@@ -123,12 +156,31 @@ export function useInbox() {
 
     if (boardWarning) {
       const final = boardWarning.level === 3;
+      const title = final ? "⚠️ Último aviso da direção" : "⚠️ Aviso da direção";
+      const team =
+        boardWarning.teamId != null
+          ? {
+              id: boardWarning.teamId,
+              label: boardWarning.teamName || "O teu clube",
+            }
+          : null;
+      const body = "Orçamento negativo — carrega em Ok para confirmar leitura.";
       list.push({
         id: `board-${boardWarning.level}-${boardWarning.streak ?? 1}`,
         cat: "club",
         date: currentDate,
-        title: final ? "⚠️ Último aviso da direção" : "⚠️ Aviso da direção",
-        body: "Orçamento negativo — carrega em Ok para confirmar leitura.",
+        title,
+        body,
+        titleParts: team
+          ? [partText(`${title} — `), partTeam(team)]
+          : [partText(title)],
+        bodyParts: team
+          ? [
+              partTeam(team),
+              partText(`: ${body.charAt(0).toLowerCase()}${body.slice(1)}`),
+            ]
+          : [partText(body)],
+        media: { player: null, teams: team ? [team] : [] },
         redFlag: false,
         kind: "board",
         ref: null,
@@ -148,12 +200,35 @@ export function useInbox() {
       const label = mine
         ? `${mine.homeTeam?.name || "?"} – ${mine.awayTeam?.name || "?"}`
         : `${(cupDraw.fixtures || []).length} eliminatórias`;
+      const title = `🏆 Sorteio: ${cupDraw.roundName || "Taça"}`;
+      const home =
+        mine?.homeTeam?.id != null
+          ? { id: mine.homeTeam.id, label: mine.homeTeam.name || "?" }
+          : null;
+      const away =
+        mine?.awayTeam?.id != null
+          ? { id: mine.awayTeam.id, label: mine.awayTeam.name || "?" }
+          : null;
       list.push({
         id: `cupdraw-${cupDraw.season || "?"}-${cupDraw.roundName || "sorteio"}`,
         cat: "competitions",
         date: currentDate,
-        title: `🏆 Sorteio: ${cupDraw.roundName || "Taça"}`,
+        title,
         body: label,
+        titleParts:
+          home && away
+            ? [
+                partText(`${title} — `),
+                partTeam(home),
+                partText(" – "),
+                partTeam(away),
+              ]
+            : [partText(title)],
+        bodyParts:
+          home && away
+            ? [partTeam(home), partText(" – "), partTeam(away)]
+            : [partText(label)],
+        media: { player: null, teams: home && away ? [home, away] : [] },
         redFlag: false,
         kind: "cupdraw",
         ref: null,
@@ -161,16 +236,12 @@ export function useInbox() {
     }
 
     if (postMatchMood) {
-      const title =
-        MOOD_TITLES[postMatchMood.variant] ||
-        MOOD_TITLES[postMatchMood.outcome] ||
-        "Resultado";
+      const article = buildMoodNewsArticle(postMatchMood);
       list.push({
         id: `mood-${postMatchMood.key || "jogo"}`,
         cat: "club",
         date: currentDate,
-        title: `${title} ${postMatchMood.myGoals ?? ""}–${postMatchMood.oppGoals ?? ""} ${postMatchMood.opponentName || ""}`.trim(),
-        body: buildMoodNewsBody(postMatchMood),
+        ...article,
         redFlag: false,
         kind: "info",
         ref: null,
