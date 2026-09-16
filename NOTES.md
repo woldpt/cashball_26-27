@@ -1,3 +1,8 @@
+## Gestão contratual entre cabeçalho e atributos (2026-09-16)
+
+- A «Gestão Contratual» do `PlayerHistoryModal.jsx` saiu do fundo da coluna esquerda para uma faixa de largura total logo abaixo do cabeçalho (só o bloco contratual; «Mercado» fica onde estava). Empilha no telemóvel, horizontal (`flex-row`, botões `flex-1`) em desktop; lógica/handlers inalterados.
+- Checks: eslint do ficheiro OK (2 erros do `lint` global são pré-existentes noutros ficheiros), `check:types` OK, mobile portrait `150/150` e landscape `180/180`.
+
 ## Fundo fotográfico por grupo de navegação (2026-09-16)
 
 - Uma foto livre (Unsplash, WebP 41–185 KB em `client/public/backgrounds/`) por grupo — jornal (noite/holofotes), gestão (Bernabéu), competição (estádio à noite), transferências (linha de relva) — montada no `GameLayout.jsx` atrás do `.ambient` via novo `GroupBackdrop.jsx` (escolha por `getTabGroupId`, `tactic`/`squad` caem em competição, escondido no jogo ao vivo).
