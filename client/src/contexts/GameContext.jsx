@@ -681,13 +681,20 @@ year: seasonYear,
 					Number(r.awayTeamId) === Number(myId),
 			);
 			if (myMatch) {
+				// Ronda 0 = amigável de pré-época (viaja no fio da Taça, mas sem
+				// winnerId nos empates): resultado pelos golos, fonte friendly e
+				// chave igual à do rescaldo persistido (matchweek 1).
+				const isFriendly = Number(cupRoundResults.round) === 0;
 				const isHome = Number(myMatch.homeTeamId) === Number(myId);
 				const myGoals = isHome ? myMatch.homeGoals : myMatch.awayGoals;
 				const oppGoals = isHome ? myMatch.awayGoals : myMatch.homeGoals;
 				const oppId = isHome ? myMatch.awayTeamId : myMatch.homeTeamId;
-				const outcome =
-					Number(myMatch.winnerId) === Number(myId) ? "win" : "loss";
-				const key = `cup:${cupRoundResults.season}:${cupRoundResults.round}`;
+				const outcome = isFriendly
+					? (myGoals > oppGoals ? "win" : myGoals < oppGoals ? "loss" : "draw")
+					: (Number(myMatch.winnerId) === Number(myId) ? "win" : "loss");
+				const key = isFriendly
+					? `friendly:${cupRoundResults.season}:1`
+					: `cup:${cupRoundResults.season}:${cupRoundResults.round}`;
 				if (ackedPostMatchKeysRef.current.cup !== key) {
 					ackedPostMatchKeysRef.current.cup = key;
 					setPostMatchMood(
@@ -696,7 +703,7 @@ year: seasonYear,
 							oppId,
 							myGoals,
 							oppGoals,
-							"cup",
+							isFriendly ? "friendly" : "cup",
 							cupRoundResults.roundName || `Taça R${cupRoundResults.round}`,
 							key,
 							ticketRevenueFor(myMatch, isHome),

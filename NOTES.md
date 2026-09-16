@@ -1,3 +1,9 @@
+## Amigável 0–0 contado como «Derrota Esperada» no Jornal (2026-09-16)
+
+- O amigável de pré-época (ronda 0) viaja no fio da Taça (`cupRoundResults`), e o bloco da Taça no `GameContext.jsx` tratava tudo como eliminatória: `outcome` só por `winnerId` (sem ramo de empate) e `source: "cup"`. Num 0–0 sem `winnerId` saía sempre `loss` + `loss_expected` (adversário de escalão superior) — título de derrota com marcador de empate — e a chave `cup:época:0` não fundia com o rescaldo persistido `friendly:época:1`, duplicando a notícia.
+- Fix só no cliente: ronda 0 → `outcome` pelos golos, `source: "friendly"`, chave `friendly:época:1` (igual à do servidor, `game.matchweek = 1` no slot 0). O transitório passa a «Empate» e esconde-se quando chega o persistido.
+- Checks: eslint (só o erro Fast Refresh pré-existente do `GameContext.jsx`), `check:types` OK, build Vite OK, ramo verificado em node (amigável 0–0 → `draw`, taça 0–0 perdida vs superior → `loss_expected`). Lógica de cliente — sem `audit:gamestate`/`audit:socketio`, sem disparo de `test:mobile`.
+
 ## Cronologia: fundo ténue por equipa do evento (2026-09-16)
 
 - No separador Cronologia (Intervenções), as chances/eventos eram todos neutros. O `EventCard` ganhou a prop opcional `tint`: com `accent` definido, aplica um gradiente subtil `linear-gradient(90deg, ${accent}14, ${accent}05)` sobre o fundo — cor tenue, não viva.
