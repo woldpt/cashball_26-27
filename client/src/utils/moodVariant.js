@@ -29,6 +29,9 @@ export function computeMoodVariant({
   opponentRank,
   opponentTeamCount,
 }) {
+  // ── Amigável: sem contexto competitivo, o resultado fala por si ─────────
+  if (source === "friendly") return outcome;
+
   // ── Taça: knockout sem empates; o fator é a diferença de escalão ──────
   if (source === "cup") {
     const oppHigher =

@@ -9,6 +9,7 @@
  * transfer_out + histórico global) fundem-se num só item de Mercado.
  */
 import { formatCurrency } from "./formatters.js";
+import { computeMoodVariant } from "./moodVariant.js";
 
 /** Separadores da janela, centrados no treinador (tudo numa só linha). */
 export const INBOX_CATS = [
@@ -128,6 +129,56 @@ export function linkFirstMention(text, entityPart) {
 }
 
 /**
+ * Lê um rescaldo persistido (`club_news` tipo `postmatch`, factos em JSON)
+ * e reconstrói o contexto do apito final, com a variante recalculada da
+ * foto guardada — igual à que o cliente calculou no momento do jogo.
+ * @param {object} n linha do globalNews
+ * @returns {{ mood: object, key: string }|null}
+ */
+export function parsePostMatchRecap(n) {
+  try {
+    const r = JSON.parse(String(n?.description || ""));
+    if (!r || r.v !== 1 || !r.key || !r.outcome) return null;
+    const mood = {
+      variant: computeMoodVariant({
+        outcome: r.outcome,
+        source: r.source,
+        myDivision: r.myDivision,
+        opponentDivision: r.opponentDivision,
+        opponentRank: r.opponentRank,
+        opponentTeamCount: r.opponentTeamCount,
+      }),
+      outcome: r.outcome,
+      opponentTeamId: r.opponentTeamId,
+      opponentName: r.opponentName,
+      myGoals: r.myGoals,
+      oppGoals: r.oppGoals,
+      roundLabel: r.roundLabel,
+      ticketRevenue: r.ticketRevenue,
+    };
+    return { mood, key: r.key };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Chaves dos rescaldos já persistidos (para esconder o item transitório
+ * duplicado do último jogo).
+ * @param {Array} rows linhas do globalNews
+ * @returns {Set<string>}
+ */
+export function persistedMoodKeys(rows) {
+  const keys = new Set();
+  for (const n of Array.isArray(rows) ? rows : []) {
+    if (String(n?.type || "") !== "postmatch") continue;
+    const parsed = parsePostMatchRecap(n);
+    if (parsed) keys.add(parsed.key);
+  }
+  return keys;
+}
+
+/**
  * Artigo da reação pós-jogo com o adversário clicável (título e corpo).
  * @param {object} mood contexto final do jogo
  * @returns {object} `{ title, body, titleParts, bodyParts, media }`
@@ -178,7 +229,8 @@ export function newsCategory(n) {
     t === "renegotiation" ||
     t === "ticket_revenue" ||
     t === "stadium_build" ||
-    t === "cost_cut"
+    t === "cost_cut" ||
+    t === "postmatch"
   )
     return "club";
   if (t === "academy") return "squad";
@@ -248,7 +300,27 @@ function makeArticle(titleParts, bodyParts, player, teams, transfer) {
   };
 }
 
+/**
+ * Artigo de um rescaldo persistido: editorial reconstruído do JSON ou
+ * corpo genérico se os factos vierem estragados.
+ * @param {object} n linha do globalNews com `type === "postmatch"`
+ */
+function postmatchArticle(n) {
+  const parsed = parsePostMatchRecap(n);
+  if (parsed) return buildMoodNewsArticle(parsed.mood);
+  const owner = newsTeam(n?.team_id, n?.team_name);
+  const related = newsTeam(n?.related_team_id, n?.related_team_name);
+  return makeArticle(
+    [partText(n?.title || "Rescaldo")],
+    [partText(String(n?.description || ""))],
+    null,
+    [owner, related],
+    null,
+  );
+}
+
 function newsArticle(n, { owner, related, seller, buyer } = {}) {
+  if (String(n?.type || "") === "postmatch") return postmatchArticle(n);
   const player = newsPlayer(n);
   const type = String(n?.type || "");
   const amount = n?.amount ? formatCurrency(n.amount) : null;

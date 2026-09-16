@@ -4,7 +4,7 @@ import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { persistMoms } from "./momHelpers";
 import { computeMatchOdds } from "./game/commentary";
 import { getWeatherForFixture } from "./game/matchCalculations";
-import { explainAttendance } from "./coreHelpers";
+import { explainAttendance, logPostMatchRecap } from "./coreHelpers";
 import {
   isPlayerAvailable,
   withJuniorGRs,
@@ -1053,6 +1053,41 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       return;
     }
 
+    // Foto da classificação ANTES deste bloco: o contexto (divisão/rank do
+    // adversário) viaja no rescaldo para a variante sair igual à do apito
+    // final, mesmo quando lida semanas depois.
+    game.db.all(
+      "SELECT id, name, division, points, goals_for, goals_against FROM teams",
+      [],
+      (_teamsErr: any, teamRows: any[] | undefined) => {
+        const byId = new Map<number, any>();
+        const byDiv = new Map<number, any[]>();
+        for (const t of teamRows || []) {
+          byId.set(Number(t.id), t);
+          const list = byDiv.get(Number(t.division)) || [];
+          list.push(t);
+          byDiv.set(Number(t.division), list);
+        }
+        const rankOf = new Map<number, number>();
+        const sizeOf = new Map<number, number>();
+        for (const [div, list] of byDiv) {
+          const ranked = getStandingsRows(list);
+          sizeOf.set(div, ranked.length);
+          ranked.forEach((t: any, idx: number) =>
+            rankOf.set(Number(t.id), idx + 1),
+          );
+        }
+        const snapshot = (teamId: number) => {
+          const t = byId.get(Number(teamId));
+          const div = t ? Number(t.division) : NaN;
+          return {
+            name: (t?.name as string) || null,
+            division: Number.isFinite(div) ? div : null,
+            rank: rankOf.get(Number(teamId)) ?? null,
+            count: Number.isFinite(div) ? (sizeOf.get(div) ?? null) : null,
+          };
+        };
+
     game.db.serialize(() => {
       fixtures.forEach((match) => {
         game.db.run(
@@ -1151,6 +1186,60 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                   );
                 }
 
+                // Rescaldo persistente do Jornal, um por equipa (replay seguro:
+                // o helper substitui a linha do mesmo jogo).
+                try {
+                  const hG = match.finalHomeGoals ?? 0;
+                  const aG = match.finalAwayGoals ?? 0;
+                  const home = snapshot(match.homeTeamId);
+                  const away = snapshot(match.awayTeamId);
+                  const homeRevenue =
+                    (match.attendance || 0) * ((match as any)._ticketPrice || 15);
+                  const key = `league:${game.season}:${matchweek}`;
+                  const roundLabel = `Jornada ${matchweek}`;
+                  logPostMatchRecap(game, {
+                    teamId: match.homeTeamId,
+                    teamName: home.name,
+                    opponentId: match.awayTeamId,
+                    opponentName: away.name,
+                    myGoals: hG,
+                    oppGoals: aG,
+                    outcome: hG > aG ? "win" : hG < aG ? "loss" : "draw",
+                    source: "league",
+                    roundLabel,
+                    key,
+                    ticketRevenue: homeRevenue,
+                    myDivision: home.division,
+                    opponentDivision: away.division,
+                    opponentRank: away.rank,
+                    opponentTeamCount: away.count,
+                    matchweek,
+                  });
+                  logPostMatchRecap(game, {
+                    teamId: match.awayTeamId,
+                    teamName: away.name,
+                    opponentId: match.homeTeamId,
+                    opponentName: home.name,
+                    myGoals: aG,
+                    oppGoals: hG,
+                    outcome: aG > hG ? "win" : aG < hG ? "loss" : "draw",
+                    source: "league",
+                    roundLabel,
+                    key,
+                    ticketRevenue: 0,
+                    myDivision: away.division,
+                    opponentDivision: home.division,
+                    opponentRank: home.rank,
+                    opponentTeamCount: home.count,
+                    matchweek,
+                  });
+                } catch (recapErr: any) {
+                  console.warn(
+                    `[persistMatchResults] recap failed (matchweek ${matchweek}):`,
+                    recapErr?.message,
+                  );
+                }
+
                 remaining -= 1;
                 if (remaining === 0 && onDone) onDone();
               },
@@ -1159,6 +1248,8 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
         );
       });
     });
+      },
+    );
   }
 
   return {

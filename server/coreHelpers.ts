@@ -667,6 +667,69 @@ export function logClubNews(
   );
 }
 
+export interface PostMatchRecap {
+  teamId: number;
+  teamName?: string | null;
+  opponentId: number;
+  opponentName?: string | null;
+  myGoals: number;
+  oppGoals: number;
+  outcome: "win" | "loss" | "draw";
+  source: "league" | "cup" | "friendly";
+  roundLabel: string;
+  key: string;
+  ticketRevenue: number;
+  myDivision?: number | null;
+  opponentDivision?: number | null;
+  opponentRank?: number | null;
+  opponentTeamCount?: number | null;
+  matchweek: number;
+  year?: number;
+}
+
+/**
+ * logPostMatchRecap — rescaldo persistente do Jornal (um por equipa e jogo).
+ *
+ * O humor pós-jogo era só estado transitório do cliente: cada jogo apagava o
+ * anterior. Aqui viajam os factos + a foto do contexto (divisão/rank do
+ * adversário) para o cliente reconstruir o editorial exacto semanas depois.
+ * Idempotente: apaga a linha do mesmo jogo antes de inserir (replay seguro).
+ */
+export function logPostMatchRecap(game: ActiveGame, recap: PostMatchRecap) {
+  const year = (recap.year ?? game.year) || 0;
+  const payload = {
+    v: 1,
+    key: recap.key,
+    source: recap.source,
+    outcome: recap.outcome,
+    myGoals: recap.myGoals,
+    oppGoals: recap.oppGoals,
+    opponentTeamId: recap.opponentId,
+    opponentName: recap.opponentName || "—",
+    roundLabel: recap.roundLabel,
+    ticketRevenue: recap.ticketRevenue || 0,
+    myDivision: recap.myDivision ?? null,
+    opponentDivision: recap.opponentDivision ?? null,
+    opponentRank: recap.opponentRank ?? null,
+    opponentTeamCount: recap.opponentTeamCount ?? null,
+  };
+  const title =
+    `Rescaldo: ${recap.teamName || "A equipa"} ${recap.myGoals}–${recap.oppGoals} ${recap.opponentName || ""}`.trim();
+  game.db.run(
+    `DELETE FROM club_news WHERE team_id = ? AND type = 'postmatch' AND matchweek = ? AND year = ? AND related_team_id = ?`,
+    [recap.teamId, recap.matchweek, year, recap.opponentId],
+    () =>
+      logClubNews(game, "postmatch", title, recap.teamId, {
+        related_team_id: recap.opponentId,
+        related_team_name: recap.opponentName,
+        amount: recap.ticketRevenue || null,
+        description: JSON.stringify(payload),
+        matchweek: recap.matchweek,
+        year: recap.year,
+      }),
+  );
+}
+
 /**
  * Grava o saldo real de todas as equipas para um slot do calendário
  * (tabela team_balance_history, upsert por season/slot/team_id).

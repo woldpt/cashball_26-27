@@ -22,7 +22,7 @@ import {
 import { clearPhaseTimer } from "./matchFlowHelpers";
 import { generateAITactic } from "./game/matchCalculations";
 import { getEffectiveSkill, getMatchFatigueSnapshot, queueMatchDeltaWrites } from "./game/engine";
-import { getTeamsWithCoachNames, logClubNews, snapshotBalanceHistory } from "./coreHelpers";
+import { getTeamsWithCoachNames, logClubNews, logPostMatchRecap, snapshotBalanceHistory } from "./coreHelpers";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { serializeActiveAuctions } from "./auctionHelpers";
 import { persistMoms } from "./momHelpers";
@@ -1474,6 +1474,15 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		// pela engine — comitados atomicamente com o resto (janela de crash fechada).
 		queueMatchDeltaWrites(game.db, setups.map((s) => s.fixture));
 		let cupTxFailed = false;
+		// Divisões para o contexto do rescaldo do Jornal (só escalão na Taça).
+		const cupDivOf = new Map<number, { name: string; division: number }>();
+		try {
+			const cupTeams = await getTeamsWithCoachNames(game.db);
+			for (const t of cupTeams || [])
+				cupDivOf.set(Number(t.id), { name: t.name, division: Number(t.division) });
+		} catch {
+			/* sem foto de divisões: o rescaldo sai com variante simples */
+		}
 		try {
 		for (const { fixture, t1, t2, goals90Home, goals90Away } of setups) {
 			// ── Bilheteira da Taça (tarifa da equipa da casa, como na liga)
@@ -1639,6 +1648,50 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						related_team_name: loserName,
 					},
 				);
+			}
+
+			// Rescaldo persistente do Jornal, um por equipa (replay seguro:
+			// o helper substitui a linha do mesmo jogo).
+			try {
+				const cHG = fixture.finalHomeGoals ?? 0;
+				const cAG = fixture.finalAwayGoals ?? 0;
+				const cHome = cupDivOf.get(Number(fixture.homeTeamId));
+				const cAway = cupDivOf.get(Number(fixture.awayTeamId));
+				const cupKey = `cup:${season}:${round}`;
+				logPostMatchRecap(game, {
+					teamId: fixture.homeTeamId,
+					teamName: cHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
+					opponentId: fixture.awayTeamId,
+					opponentName: cAway?.name ?? (fixture.awayTeam as any)?.name ?? null,
+					myGoals: cHG,
+					oppGoals: cAG,
+					outcome: winnerId === fixture.homeTeamId ? "win" : "loss",
+					source: "cup",
+					roundLabel,
+					key: cupKey,
+					ticketRevenue: cupRevenue,
+					myDivision: cHome?.division ?? null,
+					opponentDivision: cAway?.division ?? null,
+					matchweek: game.matchweek,
+				});
+				logPostMatchRecap(game, {
+					teamId: fixture.awayTeamId,
+					teamName: cAway?.name ?? (fixture.awayTeam as any)?.name ?? null,
+					opponentId: fixture.homeTeamId,
+					opponentName: cHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
+					myGoals: cAG,
+					oppGoals: cHG,
+					outcome: winnerId === fixture.awayTeamId ? "win" : "loss",
+					source: "cup",
+					roundLabel,
+					key: cupKey,
+					ticketRevenue: 0,
+					myDivision: cAway?.division ?? null,
+					opponentDivision: cHome?.division ?? null,
+					matchweek: game.matchweek,
+				});
+			} catch (cupRecapErr: any) {
+				console.warn(`[continueFromEtGate] recap failed (round ${round}):`, cupRecapErr?.message);
 			}
 
 			results.push({
@@ -1873,6 +1926,15 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		console.log(
 			`[${game.roomCode}] finalizeFriendly | fixtures=${fixtures.length}`,
 		);
+		// Nomes/divisões para o rescaldo do Jornal (variante simples: sem rank).
+		const friendlyTeamOf = new Map<number, { name: string; division: number }>();
+		try {
+			const friendlyTeams = await getTeamsWithCoachNames(game.db);
+			for (const t of friendlyTeams || [])
+				friendlyTeamOf.set(Number(t.id), { name: t.name, division: Number(t.division) });
+		} catch {
+			/* sem foto: o rescaldo sai com variante simples */
+		}
 
 		await new Promise<void>((resolve) => game.db.run("BEGIN TRANSACTION", () => resolve()));
 		// Amigavel nao conta para estatisticas de jogador (nem epoca nem
@@ -1904,6 +1966,49 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						() => resolve(),
 					);
 				});
+				// Rescaldo persistente do Jornal, um por equipa (replay seguro:
+				// o helper substitui a linha do mesmo jogo).
+				try {
+					const fHG = fixture.finalHomeGoals ?? 0;
+					const fAG = fixture.finalAwayGoals ?? 0;
+					const fHome = friendlyTeamOf.get(Number(fixture.homeTeamId));
+					const fAway = friendlyTeamOf.get(Number(fixture.awayTeamId));
+					const friendlyKey = `friendly:${season}:${game.matchweek}`;
+					logPostMatchRecap(game, {
+						teamId: fixture.homeTeamId,
+						teamName: fHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
+						opponentId: fixture.awayTeamId,
+						opponentName: fAway?.name ?? (fixture.awayTeam as any)?.name ?? null,
+						myGoals: fHG,
+						oppGoals: fAG,
+						outcome: fHG > fAG ? "win" : fHG < fAG ? "loss" : "draw",
+						source: "friendly",
+						roundLabel: "Amigável",
+						key: friendlyKey,
+						ticketRevenue: homeShare,
+						myDivision: fHome?.division ?? null,
+						opponentDivision: fAway?.division ?? null,
+						matchweek: game.matchweek,
+					});
+					logPostMatchRecap(game, {
+						teamId: fixture.awayTeamId,
+						teamName: fAway?.name ?? (fixture.awayTeam as any)?.name ?? null,
+						opponentId: fixture.homeTeamId,
+						opponentName: fHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
+						myGoals: fAG,
+						oppGoals: fHG,
+						outcome: fAG > fHG ? "win" : fAG < fHG ? "loss" : "draw",
+						source: "friendly",
+						roundLabel: "Amigável",
+						key: friendlyKey,
+						ticketRevenue: awayShare,
+						myDivision: fAway?.division ?? null,
+						opponentDivision: fHome?.division ?? null,
+						matchweek: game.matchweek,
+					});
+				} catch (friendlyRecapErr: any) {
+					console.warn(`[finalizeFriendly] recap failed:`, friendlyRecapErr?.message);
+				}
 				const hG = fixture.finalHomeGoals ?? 0;
 				const aG = fixture.finalAwayGoals ?? 0;
 				results.push({

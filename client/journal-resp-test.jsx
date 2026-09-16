@@ -148,6 +148,35 @@ const globalNews = {
       matchweek: 11,
     },
     {
+      id: 9,
+      source: "club",
+      type: "postmatch",
+      team_id: 1,
+      team_name: "União Desportiva do Vale",
+      title: "Rescaldo: União Desportiva do Vale 2–1 F.C. Atlântico Norte",
+      description: JSON.stringify({
+        v: 1,
+        key: "league:2026:11",
+        source: "league",
+        outcome: "win",
+        myGoals: 2,
+        oppGoals: 1,
+        opponentTeamId: 4,
+        opponentName: "F.C. Atlântico Norte",
+        roundLabel: "Liga · Jornada 11",
+        ticketRevenue: 98765,
+        myDivision: 2,
+        opponentDivision: 2,
+        opponentRank: 5,
+        opponentTeamCount: 8,
+      }),
+      related_team_id: 4,
+      related_team_name: "F.C. Atlântico Norte",
+      amount: 98765,
+      matchweek: 11,
+      year: 2026,
+    },
+    {
       id: 8,
       source: "club",
       type: "loan_take",
@@ -248,14 +277,31 @@ async function checkMoodArticle() {
   const body = document.querySelector(
     'section[aria-label="Corpo da notícia"] p',
   )?.textContent;
+  const transientOk =
+    !!row &&
+    (body?.length || 0) > 500 &&
+    body?.includes("Associação Desportiva do Farol") &&
+    body?.includes("bilheteira") &&
+    body?.includes("apito final");
+  // Rescaldo persistido de jogo anterior: tem de aparecer na lista com o
+  // editorial reconstruído (o histórico já não se apaga a cada jogo).
+  const savedRow = [...document.querySelectorAll("ol button")].find((b) =>
+    b.textContent.includes("Vitória! 2–1"),
+  );
+  savedRow?.click();
+  await new Promise((r) => setTimeout(r, 60));
+  const savedBody = document.querySelector(
+    'section[aria-label="Corpo da notícia"] p',
+  )?.textContent;
+  const savedOk =
+    !!savedRow &&
+    (savedBody?.length || 0) > 500 &&
+    savedBody?.includes("F.C. Atlântico Norte") &&
+    savedBody?.includes("Jornada 11");
   return {
     bodyLength: body?.length || 0,
-    ok:
-      !!row &&
-      (body?.length || 0) > 500 &&
-      body?.includes("Associação Desportiva do Farol") &&
-      body?.includes("bilheteira") &&
-      body?.includes("apito final"),
+    savedBodyLength: savedBody?.length || 0,
+    ok: transientOk && savedOk,
   };
 }
 

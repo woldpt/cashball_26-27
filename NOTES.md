@@ -8,6 +8,12 @@
 - O corpo da notícia no `JournalTab.jsx` subiu mais um degrau (`text-sm` → `text-base`, `short:text-sm`); serif e restante estilo mantidos.
 - Checks: eslint do ficheiro, `check:types`, build Vite, harness Jornal retrato `5/5` e paisagem `6/6`, screenshots 390/667 revistos.
 
+## Rescaldos guardados no histórico da época (2026-09-16)
+
+- O rescaldo pós-jogo era só estado transitório e cada jogo apagava o anterior. Agora cada jogo da equipa (liga, taça, amigáveis) grava uma linha `postmatch` em `club_news` na finalização, com factos + foto do contexto em JSON; o cliente reconstrói o editorial exacto (variante incluída) e o item transitório esconde-se quando chega a linha gravada.
+- Idempotente (`DELETE` do mesmo jogo antes de inserir, como os resultados); só a época atual, só a perspetiva da própria equipa.
+- Checks: typecheck servidor, eslint, `check:types`, build Vite, harness Jornal retrato `5/5` e paisagem `6/6` (com nova fixture/assert de rescaldo persistido), screenshots 390/667 revistos.
+
 ## Aviso da direção repetido já não herda o «lido» (2026-09-16)
 
 - O id do aviso era `board-<nível>-<semanas>` e repetia-se quando o orçamento voltava ao vermelho: o aviso novo chegava já lido. Passou a `board-<época>-<semana>-<nível>-<semanas>` via novo `boardNewsId()` em `inboxItems.js`, usado pelo `useInbox.js`.

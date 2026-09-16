@@ -24,6 +24,7 @@ import {
   linkFirstMention,
   newsRowsToItems,
   partPlayer,
+  persistedMoodKeys,
   partTeam,
   partText,
   squadToMedicalItems,
@@ -241,7 +242,10 @@ export function useInbox() {
       });
     }
 
-    if (postMatchMood) {
+    // O rescaldo transitório esconde-se quando a linha persistida do mesmo
+    // jogo já chegou (evita o último jogo em duplicado no Jornal).
+    const savedMoodKeys = persistedMoodKeys(globalNews?.news);
+    if (postMatchMood && !savedMoodKeys.has(postMatchMood.key)) {
       const article = buildMoodNewsArticle(postMatchMood);
       list.push({
         id: `mood-${postMatchMood.key || "jogo"}`,

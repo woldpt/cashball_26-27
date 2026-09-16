@@ -84,7 +84,7 @@ Quando acaba, recebe o resultado, os golos, as lesões e quem foi o melhor em ca
 
 A classificação, a forma das equipas e os golos dos avançados são atualizados. Recebe a bilheteira se jogou em casa e paga os salários da semana. O treino dessa semana é aplicado aos jogadores.
 
-As novidades chegam como linhas no Jornal, em vez de janelas. A reação dos adeptos, os avisos da direção (basta carregar Ok), o sorteio da próxima ronda da taça, as lesões e os castigos, e o resumo de despedimentos e contratações de treinadores. Os pedidos de renovação de contrato e os convites de outros clubes vêm marcados com bandeira vermelha e o botão Jogar fica bloqueado até responder.
+As novidades chegam como linhas no Jornal, em vez de janelas. A reação dos adeptos a cada jogo fica guardada como rescaldo da jornada (os anteriores continuam visíveis no histórico da época), os avisos da direção (basta carregar Ok), o sorteio da próxima ronda da taça, as lesões e os castigos, e o resumo de despedimentos e contratações de treinadores. Os pedidos de renovação de contrato e os convites de outros clubes vêm marcados com bandeira vermelha e o botão Jogar fica bloqueado até responder.
 
 Depois volta tudo à preparação da semana seguinte.
 
