@@ -8,7 +8,7 @@ import {
 } from "../../shared/index.js";
 import { TeamCrest } from "../../../live/TeamCrest.jsx";
 
-function EventList({ events }) {
+function EventList({ events, hInfo, aInfo }) {
   if (events.length === 0) {
     return (
       <div className="rounded-md border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
@@ -21,9 +21,19 @@ function EventList({ events }) {
   }
   return (
     <div className="space-y-2">
-      {events.map((e, i) => (
-        <EventCard key={i} event={e} showTeamBadge={false} />
-      ))}
+      {events.map((e, i) => {
+        // Cor de fundo/aresta por equipa do evento; eventos sem equipa
+        // (clima, fases) ficam neutros.
+        const accent =
+          e.team === "home"
+            ? hInfo?.color_primary
+            : e.team === "away"
+              ? aInfo?.color_primary
+              : undefined;
+        return (
+          <EventCard key={i} event={e} showTeamBadge={false} accent={accent} tint />
+        );
+      })}
     </div>
   );
 }
@@ -53,7 +63,7 @@ export function CronologiaPanel({
           weatherEvent={weatherEvent}
           className="text-[10px]"
         />
-        <EventList events={visibleEvts} />
+        <EventList events={visibleEvts} hInfo={hInfo} aInfo={aInfo} />
       </div>
     </div>
   );

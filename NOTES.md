@@ -1,3 +1,9 @@
+## Cronologia: fundo ténue por equipa do evento (2026-09-16)
+
+- No separador Cronologia (Intervenções), as chances/eventos eram todos neutros. O `EventCard` ganhou a prop opcional `tint`: com `accent` definido, aplica um gradiente subtil `linear-gradient(90deg, ${accent}14, ${accent}05)` sobre o fundo — cor tenue, não viva.
+- `EventList` (Panels.jsx) deriva `accent` de `e.team` (home → `hInfo.color_primary`, away → `aInfo.color_primary`); eventos sem equipa (clima, fases) ficam neutros. O uso do `EventCard` no `MatchView` ficou inalterado.
+- Checks: eslint dos ficheiros (limpo; os 2 erros globais são pré-existentes em `landing-resp-test.jsx`/`GameContext.jsx`), `check:types` OK. Tweak de cor → sem mobile-resp-check.
+
 ## Balão de mensagem com avatar do remetente (2026-09-16)
 
 - O balão de banda desenhada da última mensagem não-lida (`chatPeek` no `GameLayout.jsx`) mostrava só nome + excerto. O cabeçalho passa a linha `avatar + nome` com o `CoachAvatar` do remetente (seed via `coachAvatarSeed`, mesma convenção do `RoomHub.jsx`; foto carregada com fallback procedural).

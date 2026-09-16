@@ -6,7 +6,7 @@ import { getEventIconStyle } from "../matchConstants.js";
  * Passive display card. No hover elevation (only the embedded PlayerLink is
  * interactive). Icons are rendered as inline SVGs via MatchIcon, replacing
  * the old emoji chain (⚽, ⚽🔙, 🟨, 🟥, 🤕, 🔄). */
-export function EventCard({ event, accent, showTeamBadge, showIcon = true, teamName }) {
+export function EventCard({ event, accent, showTeamBadge, showIcon = true, teamName, tint }) {
   const iconStyle = getEventIconStyle(event.type);
   // Custom events can still ship their own emoji via `event.emoji`.
   const customEmoji = event.emoji && !iconStyle ? event.emoji : null;
@@ -40,7 +40,14 @@ export function EventCard({ event, accent, showTeamBadge, showIcon = true, teamN
           .trim()
       : null;
   return (
-    <div className={`relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-surface-container/50 shadow-sm shadow-black/30 ${isMinor ? "opacity-60" : ""}`}>
+    <div
+      className={`relative group flex items-stretch rounded-md overflow-hidden border border-outline-variant/25 bg-surface-container/50 shadow-sm shadow-black/30 ${isMinor ? "opacity-60" : ""}`}
+      style={
+        tint && accent
+          ? { backgroundImage: `linear-gradient(90deg, ${accent}14, ${accent}05)` }
+          : undefined
+      }
+    >
       {accent && (
         <div className="shrink-0 w-1" style={{ background: `linear-gradient(to bottom, ${accent}99, ${accent})` }} />
       )}
