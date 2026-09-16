@@ -743,6 +743,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         {/* Bola de encolher — sobreposta ao centro da linha direita da barra. */}
         <button
           onClick={() => {
+            if (isMatchInProgress) return;
             const next = !sidebarCollapsed;
             setSidebarCollapsed(next);
             sidebarUserPrefRef.current = next;
@@ -752,10 +753,28 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               /* ignorar */
             }
           }}
-          title={sidebarCollapsed ? "Expandir menu" : "Encolher menu"}
-          aria-label={sidebarCollapsed ? "Expandir menu" : "Encolher menu"}
+          disabled={isMatchInProgress}
+          title={
+            isMatchInProgress
+              ? "Indisponível durante o jogo"
+              : sidebarCollapsed
+                ? "Expandir menu"
+                : "Encolher menu"
+          }
+          aria-label={
+            isMatchInProgress
+              ? "Encolher menu (indisponível durante o jogo)"
+              : sidebarCollapsed
+                ? "Expandir menu"
+                : "Encolher menu"
+          }
           aria-expanded={!sidebarCollapsed}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-surface-container-highest border border-outline-variant/40 text-on-surface-variant shadow-lg hover:text-on-surface hover:border-primary/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
+          aria-disabled={isMatchInProgress || undefined}
+          className={`absolute -right-3 top-1/2 -translate-y-1/2 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-surface-container-highest border border-outline-variant/40 text-on-surface-variant shadow-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${
+            isMatchInProgress
+              ? "opacity-40 cursor-not-allowed"
+              : "hover:text-on-surface hover:border-primary/50"
+          }`}
         >
           <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">
             {sidebarCollapsed ? "chevron_right" : "chevron_left"}
