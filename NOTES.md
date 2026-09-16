@@ -8,6 +8,13 @@
 - A «Gestão Contratual» do `PlayerHistoryModal.jsx` saiu do fundo da coluna esquerda para uma faixa de largura total logo abaixo do cabeçalho (só o bloco contratual; «Mercado» fica onde estava). Empilha no telemóvel, horizontal (`flex-row`, botões `flex-1`) em desktop; lógica/handlers inalterados.
 - Checks: eslint do ficheiro OK (2 erros do `lint` global são pré-existentes noutros ficheiros), `check:types` OK, mobile portrait `150/150` e landscape `180/180`.
 
+## Fundo próprio por tab (17 fotos, 2026-09-16)
+
+- Cada tab tem a sua foto (`TAB_BG` no `GroupBackdrop.jsx`, fallback por grupo); as 4 anteriores foram remapeadas (gestao→club, competicao→live, transferencias→tactic) e entraram 13 novas (22–185 KB cada, ~1,3 MB no total mas lazy por visita).
+- 6 das primeiras escolhas saíram erradas ao rever visualmente (futebol americano no plantel/squad, prédio industrial na taça, menorá nas classificações, hall no bracket, pernas/bola no estádio) e foram trocadas por futebol a sério (plantel em linha à noite, equipa de braços dados, holofotes, troféus Champions/Mundial, Wembley com FA Cup).
+- Com 17 fotos a pilha pré-carregada virou uma só `<img>` com fade-in na troca (`key`); fundo sempre visível, inclusive no direto (saiu a prop `hidden`).
+- Checks: eslint dos ficheiros, `check:types` OK, build OK (17 no `dist`), mobile portrait `150/150` e landscape `180/180`.
+
 ## Fundo fotográfico por grupo de navegação (2026-09-16)
 
 - Uma foto livre (Unsplash, WebP 41–185 KB em `client/public/backgrounds/`) por grupo — jornal (noite/holofotes), gestão (Bernabéu), competição (estádio à noite), transferências (linha de relva) — montada no `GameLayout.jsx` atrás do `.ambient` via novo `GroupBackdrop.jsx` (escolha por `getTabGroupId`, `tactic`/`squad` caem em competição, escondido no jogo ao vivo).
