@@ -1,3 +1,8 @@
+## Cabeçalho na História da equipa (2026-09-16)
+
+- O `TeamHistoryView.jsx` arrancava logo nas secções, sem cabeçalho. Nova faixa no topo nas cores do clube (gradiente `color_primary`/`color_secondary`, como o header do `TeamSquadView`): emblema com fallback de monograma, nome, divisão e 3 contadores (Épocas, Melhor posição, Troféus) em pastilhas escuras para contraste.
+- Checks: eslint do ficheiro, `check:types`, mobile portrait `150/150` e landscape `180/180`.
+
 ## Juniores sem caps nas listas de jogadores (2026-09-16)
 
 - O `PlayerRow.jsx` (listas de Jogadores e Táticas) aplicava `uppercase` a todos os nomes (regra do STYLE.md). A pedido do utilizador, os nomes de juniores (`player.isJunior`) agora saem em case mista; os restantes mantêm caps. Exceção documentada em `STYLE.md`.

@@ -1,3 +1,4 @@
+import { DIVISION_NAMES } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
 
 const EVENT_META = {
@@ -81,6 +82,87 @@ export function TeamHistoryView({ selectedTeam, clubHistory, clubHistoryTeamId }
 
   return (
     <div className="flex flex-col gap-6 p-6">
+      {/* ── CABEÇALHO ────────────────────────────────────────── */}
+      <header
+        className="relative overflow-hidden rounded-lg border border-outline-variant/10 px-4 py-4 sm:px-5"
+        style={{
+          background: selectedTeam?.color_primary || "#18181b",
+        }}
+      >
+        {/* Brilho ambiente */}
+        <div
+          className="pointer-events-none absolute -top-16 -left-16 w-80 h-80 rounded-full blur-[100px] opacity-15"
+          style={{ background: selectedTeam?.color_secondary || "#e9c349" }}
+        />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: selectedTeam?.color_primary
+              ? `linear-gradient(to right, ${selectedTeam.color_primary}40, transparent 70%)`
+              : "linear-gradient(to right, #2d6a4f40, transparent 70%)",
+          }}
+        />
+        <div className="relative flex items-center gap-3 sm:gap-4">
+          {selectedTeam?.crest ? (
+            <img
+              src={selectedTeam.crest}
+              alt={selectedTeam.name}
+              onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-contain bg-white p-1.5 shrink-0 shadow-lg border border-white/10"
+              loading="lazy"
+            />
+          ) : null}
+          <div
+            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl items-center justify-center text-xl sm:text-2xl font-black shrink-0 shadow-lg border border-white/10 ${selectedTeam?.crest ? "hidden" : "flex"}`}
+            style={{
+              background: selectedTeam?.color_secondary || "#201f1f",
+              color: selectedTeam?.color_primary || "#fff",
+            }}
+          >
+            {selectedTeam?.name?.[0] || "?"}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p
+              className="text-[10px] uppercase tracking-widest font-black mb-0.5 truncate"
+              style={{ color: selectedTeam?.color_secondary || "#fff" }}
+            >
+              {selectedTeam?.division != null
+                ? DIVISION_NAMES[selectedTeam.division] || `Divisão ${selectedTeam.division}`
+                : "História do Clube"}
+            </p>
+            <h2 className="font-headline text-xl sm:text-2xl font-black tracking-tighter leading-none truncate text-white [text-shadow:0_1px_8px_rgba(0,0,0,0.9)]">
+              {selectedTeam?.name}
+            </h2>
+          </div>
+        </div>
+        <dl className="relative grid grid-cols-3 gap-2 mt-3">
+          <div className="rounded-md bg-black/55 backdrop-blur-sm border border-white/10 px-2.5 py-2 text-center">
+            <dt className="text-[8px] font-black uppercase tracking-widest text-white/60">
+              Épocas
+            </dt>
+            <dd className="font-headline text-lg sm:text-xl font-black tabular-nums text-white leading-tight">
+              {seasonRecords.length}
+            </dd>
+          </div>
+          <div className="rounded-md bg-black/55 backdrop-blur-sm border border-white/10 px-2.5 py-2 text-center">
+            <dt className="text-[8px] font-black uppercase tracking-widest text-white/60">
+              Melhor
+            </dt>
+            <dd className="font-headline text-lg sm:text-xl font-black tabular-nums text-amber-300 leading-tight">
+              {bestSeason ? `${bestSeason.position}º` : "—"}
+            </dd>
+          </div>
+          <div className="rounded-md bg-black/55 backdrop-blur-sm border border-white/10 px-2.5 py-2 text-center">
+            <dt className="text-[8px] font-black uppercase tracking-widest text-white/60">
+              Troféus
+            </dt>
+            <dd className="font-headline text-lg sm:text-xl font-black tabular-nums text-white leading-tight">
+              {trophies.length}
+            </dd>
+          </div>
+        </dl>
+      </header>
+
       {/* ── ÉPOCA A ÉPOCA ─────────────────────────────────────── */}
       {seasonRecords.length > 0 && (
         <section>
