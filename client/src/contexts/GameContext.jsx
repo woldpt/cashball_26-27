@@ -203,6 +203,13 @@ export function GameProvider({
 	const [unreadGlobal, setUnreadGlobal] = useState(0);
 	const [chatInput, setChatInput] = useState("");
 	const [mobileSubMenu, setMobileSubMenu] = useState(null);
+	const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+		try {
+			return localStorage.getItem("sidebarCollapsed") === "true";
+		} catch {
+			return false;
+		}
+	});
 	const [avatarSeed, setAvatarSeed] = useState("");
 	// Versões das imagens de avatar carregadas pelos coaches: {nome: timestamp}
 	// (atualizado por teamAssigned + fetch inicial do próprio coach)
@@ -214,6 +221,7 @@ export function GameProvider({
 	const roomHubRef = useRef(null);
 	const chatOpenRef = useRef(false);
 	const activeChatTabRef = useRef("room");
+	const sidebarUserPrefRef = useRef(sidebarCollapsed);
 	const isPlayingMatchRef = useRef(false);
 	const showHalftimePanelRef = useRef(false);
 	const matchActionRef = useRef(null);
@@ -247,6 +255,11 @@ export function GameProvider({
 	const gameDialogRef = useRef(null);
 	const contractQueueRef = useRef([]);
 	const goalFlashRefSetter = useRef(setGoalFlashRef);
+	// Chaves de eventos já notificados (som/flash) no `liveMinute` corrente —
+	// evita repetir a notificação quando `matchResults` volta a mudar no mesmo
+	// minuto (reveal do VAR, adds atómicos do suspense). Limpo a cada minuto.
+	const notifiedGoalKeysRef = useRef(new Set());
+	const notifiedMinuteRef = useRef(0);
 
 	// ── Helpers ──────────────────────────────────────────────────────────────
 	const addToast = useCallback((msg) => {
@@ -411,6 +424,18 @@ export function GameProvider({
 		[isPlayingMatch, showHalftimePanel, matchAction],
 	);
 
+	// ── Auto-collapse sidebar during Live ───────────────────────────────────
+	// Guarda a preferência do utilizador, encolhe durante o jogo e repõe ao sair.
+	useEffect(() => {
+		if (isMatchInProgress) {
+			sidebarUserPrefRef.current = sidebarCollapsed;
+			startTransition(() => setSidebarCollapsed(true));
+		} else {
+			startTransition(() => setSidebarCollapsed(sidebarUserPrefRef.current));
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isMatchInProgress]);
+
 	// ── Match clock effect ──────────────────────────────────────────────────
 	useEffect(() => {
 		if (isPlayingMatch) {
@@ -495,18 +520,42 @@ export function GameProvider({
 	}, [standingsStale]);
 
 	// ── Goal flash per-minute effect ───────────────────────────────────────
+	// Fonte única de som/flash para golos normais. Penáltis com suspense
+	// (`e.penaltySuspense`) são revelados pelo timeout de 3s em
+	// useSocketListeners — som + flash vivem lá, aqui são excluídos para um
+	// golo valer uma notificação. O guard `notifiedGoalKeysRef` (limpo a cada
+	// minuto) evita repetir som/flash quando `matchResults` volta a mudar no
+	// mesmo `liveMinute` (reveal do VAR, adds atómicos do suspense).
 	useLayoutEffect(() => {
 		if (!isPlayingMatch || !matchResults?.results || liveMinute < 1) return;
+		if (notifiedMinuteRef.current !== liveMinute) {
+			notifiedGoalKeysRef.current.clear();
+			notifiedMinuteRef.current = liveMinute;
+		}
+		const goalTypes = ["goal", "penalty_goal", "own_goal", "var_goal_pending"];
+		const keyOf = (match, e) =>
+			`${liveMinute}_${match.homeTeamId}_${match.awayTeamId}_${e.type}_${e.team}_${e.playerId ?? "?"}`;
+		// Devolve true uma única vez por evento (marca como notificado).
+		const takeFresh = (match, e) => {
+			const k = keyOf(match, e);
+			if (notifiedGoalKeysRef.current.has(k)) return false;
+			notifiedGoalKeysRef.current.add(k);
+			return true;
+		};
 		matchResults.results.forEach((match) => {
 			const events = (match.events || []).filter((e) => e.minute === liveMinute);
 			if (!events.length) return;
-			events.forEach((e) => {
-				if (["goal", "penalty_goal", "own_goal", "var_goal_pending"].includes(e.type)) {
-					setGoalFlashRef((prev) => {
-						const key2 = `${match.homeTeamId}_${match.awayTeamId}_${e.team}`;
-						return { ...prev, [key2]: Date.now() };
-					});
-				}
+			const newGoals = events.filter(
+				(e) =>
+					goalTypes.includes(e.type) &&
+					!e.penaltySuspense &&
+					takeFresh(match, e),
+			);
+			newGoals.forEach((e) => {
+				setGoalFlashRef((prev) => {
+					const key2 = `${match.homeTeamId}_${match.awayTeamId}_${e.team}`;
+					return { ...prev, [key2]: Date.now() };
+				});
 			});
 			const isMyMatch =
 				me?.teamId != null &&
@@ -515,16 +564,15 @@ export function GameProvider({
 				(p) => p.teamId === match.homeTeamId || p.teamId === match.awayTeamId,
 			);
 			if (isMyMatch || isHumanMatch) {
-				const hasGoal = events.some((e) =>
-					["goal", "penalty_goal", "own_goal", "var_goal_pending"].includes(e.type),
+				const newVar = events.filter(
+					(e) => e.type === "var_disallowed" && takeFresh(match, e),
 				);
-				const hasVar = events.some((e) => e.type === "var_disallowed");
-				const hasOtherEvent = events.some((e) =>
-					["red", "injury"].includes(e.type),
+				const newOther = events.filter(
+					(e) => ["red", "injury"].includes(e.type) && takeFresh(match, e),
 				);
-				if (hasGoal) playGoalSound();
-				else if (hasVar) playVarSound();
-				else if (hasOtherEvent) playNotification();
+				if (newGoals.length) playGoalSound();
+				else if (newVar.length) playVarSound();
+				else if (newOther.length) playNotification();
 			}
 		});
 	}, [liveMinute, matchResults, me?.teamId, players]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1714,6 +1762,8 @@ export function GameProvider({
 		setChatInput,
 		mobileSubMenu,
 		setMobileSubMenu,
+		sidebarCollapsed,
+		setSidebarCollapsed,
 		avatarSeed,
 		setAvatarSeed,
 		coachAvatars,
@@ -1724,6 +1774,7 @@ export function GameProvider({
 		roomHubRef,
 		chatOpenRef,
 		activeChatTabRef,
+		sidebarUserPrefRef,
 		// Auth bridge (re-exposed)
 		me,
 		setMe,

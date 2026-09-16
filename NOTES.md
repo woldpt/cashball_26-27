@@ -1,3 +1,9 @@
+## Golos com notificação dupla (2026-09-16)
+
+- Penáltis com suspense tocavam som + flash duas vezes: no reveal de 3s (`useSocketListeners.js`) e de novo no efeito genérico por minuto (`GameContext.jsx`) ao adicionar os eventos ao `matchResults`. O efeito ainda repetia som/flash de golos já notificados sempre que `matchResults` mudava no mesmo `liveMinute` (reveal do VAR, adds atómicos).
+- Fix só no efeito: ignora eventos com `penaltySuspense` (reveal de 3s é o dono) e guard de chaves já notificadas (`minuto+fixture+tipo+lado+jogador`, limpo a cada minuto) para golo, VAR e outros eventos. VAR anulado mantém golo + VAR, por decisão do utilizador.
+- Checks: eslint do ficheiro (só o erro Fast Refresh pré-existente), `check:types` OK, simulação das 4 sequências (golo normal, suspense, VAR, updates repetidos) 7/7. Sem mudança de layout → sem mobile-resp-check.
+
 ## Jornal: links em todas as notícias (2026-09-16)
 
 - Renovação, convite, direção, sorteio, adeptos e lesão/castigo chegavam ao Jornal só com `title`/`body` em texto puro, por isso o `RichNewsText` não tinha entidades para ligar. Passam a trazer `titleParts`/`bodyParts`/`media`: jogador da renovação (via plantel, com recurso ao nome no título), equipa do convite, equipa própria no aviso da direção, ambas as equipas do jogo do treinador no sorteio, adversário na reação dos adeptos e jogador na lesão/castigo.
