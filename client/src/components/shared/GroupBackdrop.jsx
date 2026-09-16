@@ -1,44 +1,61 @@
 import { getTabGroupId } from "../../constants/navigation.js";
 
-/* Fotos livres (Unsplash, licença gratuita): noite/holofotes (jornal),
-   Bernabéu de dia (gestao), estádio à noite (competicao), linha de
-   relva (transferencias). Servidas de /backgrounds em WebP leve. */
-const GROUP_BG = {
+/* Uma foto livre (Unsplash) por tab, servida de /backgrounds em WebP leve.
+   Carregada só ao visitar a tab (o navegador guarda em cache); ver
+   `.group-backdrop` em index.css para o tratamento escuro + desfocado. */
+const TAB_BG = {
+  live: "/backgrounds/live.webp",
+  standings: "/backgrounds/standings.webp",
+  bracket: "/backgrounds/bracket.webp",
+  cup: "/backgrounds/cup.webp",
+  calendario: "/backgrounds/calendario.webp",
+  club: "/backgrounds/club.webp",
   jornal: "/backgrounds/jornal.webp",
-  gestao: "/backgrounds/gestao.webp",
-  competicao: "/backgrounds/competicao.webp",
-  transferencias: "/backgrounds/transferencias.webp",
+  finances: "/backgrounds/finances.webp",
+  stadium: "/backgrounds/stadium.webp",
+  players: "/backgrounds/players.webp",
+  squad: "/backgrounds/squad.webp",
+  training: "/backgrounds/training.webp",
+  tactic: "/backgrounds/tactic.webp",
+  market: "/backgrounds/market.webp",
+  leiloes: "/backgrounds/leiloes.webp",
+  scout: "/backgrounds/scout.webp",
+  user_settings: "/backgrounds/user_settings.webp",
 };
 
-// Tabs sem grupo (pré-jogo) usam o fundo de competição.
-const TAB_OVERRIDE = { tactic: "competicao", squad: "competicao" };
+// Recurso para tabs sem foto própria (não deve acontecer — o mapa cobre
+// todas as de `GameRoutes`, mas o custo é uma linha).
+const GROUP_FALLBACK = {
+  jornal: "jornal",
+  gestao: "club",
+  competicao: "live",
+  transferencias: "market",
+};
 
 /**
- * Fundo fotográfico por grupo de navegação: escuro e ligeiramente
- * desfocado (ver `.group-backdrop` em index.css) para embelezar sem
- * tirar leitura ao conteúdo. Puramente visual — `aria-hidden` e sem
- * interceção de cliques. Escondido no jogo ao vivo (`hidden`).
+ * Fundo fotográfico da tab ativa: escuro e ligeiramente desfocado para
+ * embelezar sem tirar leitura ao conteúdo. Puramente visual —
+ * `aria-hidden` e sem interceção de cliques.
  *
- * @param {{ tabKey?: string|null, hidden?: boolean }} props
+ * @param {{ tabKey?: string|null }} props
  */
-export function GroupBackdrop({ tabKey, hidden = false }) {
-  if (hidden) return null;
-  const group = TAB_OVERRIDE[tabKey] ?? getTabGroupId(tabKey) ?? "gestao";
+export function GroupBackdrop({ tabKey }) {
+  const key =
+    TAB_BG[tabKey] != null
+      ? tabKey
+      : (GROUP_FALLBACK[getTabGroupId(tabKey)] ?? "club");
   return (
     <div
       aria-hidden
       className="group-backdrop pointer-events-none absolute inset-0 -z-20"
     >
-      {Object.entries(GROUP_BG).map(([id, src]) => (
-        <img
-          key={id}
-          src={src}
-          alt=""
-          loading="lazy"
-          draggable={false}
-          className={id === group ? "is-active" : undefined}
-        />
-      ))}
+      <img
+        key={key}
+        src={TAB_BG[key]}
+        alt=""
+        loading="lazy"
+        draggable={false}
+      />
     </div>
   );
 }
