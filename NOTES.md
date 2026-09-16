@@ -1,3 +1,8 @@
+## Label «Taça» sobre o score no amigável (2026-09-16)
+
+- O hero live (`LiveMatchHero.jsx`) testava o amigável com `/amigavel/i` (sem acento), que nunca casa com o nome canónico do servidor `Amigável de pré-época` (`FRIENDLY_ROUND_NAME`): `isFriendly` ficava `false` e a meta strip mostrava «Taça · Amigável de pré-época» acima do marcador (e 🏆 em vez de 🤝). Corrigida a regex para `/amigável/i` — é o único sítio com a variante des-acentuada; `MatchPage.jsx` já fazia bem.
+- Checks: eslint (só os 2 erros pré-existentes `GameContext.jsx`/`landing-resp-test.jsx`), `check:types`. Tweaks de 1 char — sem disparo de `test:mobile`.
+
 ## Cabeçalho na História da equipa (2026-09-16)
 
 - O `TeamHistoryView.jsx` arrancava logo nas secções, sem cabeçalho. Nova faixa no topo nas cores do clube (gradiente `color_primary`/`color_secondary`, como o header do `TeamSquadView`): emblema com fallback de monograma, nome, divisão e 3 contadores (Épocas, Melhor posição, Troféus) em pastilhas escuras para contraste.
