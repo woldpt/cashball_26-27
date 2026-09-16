@@ -425,15 +425,16 @@ export function GameProvider({
 	);
 
 	// ── Auto-collapse sidebar during Live ───────────────────────────────────
-	// Guarda a preferência do utilizador, encolhe durante o jogo e repõe ao sair.
+	// Encolhe durante o jogo e repõe a preferência ao sair. A preferência
+	// (`sidebarUserPrefRef`) só muda no clique da bola — nunca aqui — senão um
+	// restauro adiado (`startTransition`) ainda por aplicar era re-guardado como
+	// preferência no ciclo seguinte e a barra ficava presa no estado transitório.
 	useEffect(() => {
 		if (isMatchInProgress) {
-			sidebarUserPrefRef.current = sidebarCollapsed;
 			startTransition(() => setSidebarCollapsed(true));
 		} else {
 			startTransition(() => setSidebarCollapsed(sidebarUserPrefRef.current));
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isMatchInProgress]);
 
 	// ── Match clock effect ──────────────────────────────────────────────────

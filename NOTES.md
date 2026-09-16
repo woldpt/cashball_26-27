@@ -12,7 +12,7 @@
 ## Sidebar desktop volta a encolher com bola na linha direita (2026-09-16)
 
 - A barra lateral desktop (`lg`) volta a colapsar para `3.5rem` (só ícones centrados, etiquetas e cabeçalhos escondidos → divisores, badges em canto, JOGAR só com ícone); o comando é uma bola (`h-6 w-6`, `chevron_left/right`) sobreposta ao centro da linha direita (`-right-3 top-1/2`). O bloco fixo do Jornal no topo foi mantido (só colapsa para ícone) em vez de voltar ao scroller.
-- Estado `sidebarCollapsed` + preferência em `localStorage` + auto-encolher durante o direto (guarda a preferência, repõe ao sair); offsets do conteúdo e do `MatchPage` acompanham a largura real. A bola fica inativa durante o jogo (`disabled` + `aria-disabled`, como os restantes botões da barra).
+- Estado `sidebarCollapsed` + preferência em `localStorage` + auto-encolher durante o direto (guarda a preferência, repõe ao sair); offsets do conteúdo e do `MatchPage` acompanham a largura real. A bola fica inativa durante o jogo (`disabled` + `aria-disabled`, como os restantes botões da barra). A preferência só muda no clique da bola: o efeito de auto-encolher deixou de a re-guardar à entrada do jogo, senão um restauro adiado (`startTransition`) ainda por aplicar era gravado como preferência no ciclo seguinte (oscilações de fim de jogo com penáltis/VAR) e a barra ficava presa no estado transitório.
 - Checks: eslint dos ficheiros (só o erro Fast Refresh pré-existente do `GameContext.jsx`), `check:types`, `git diff --check`, mobile portrait `150/150` e landscape `180/180`.
 
 ## Golos com notificação dupla (2026-09-16)
