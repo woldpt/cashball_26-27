@@ -472,7 +472,7 @@ export function JournalTab({
             onOpenPlayerHistory={onOpenPlayerHistory}
           />
           {inbox.selected.body && (
-            <p className="mt-1.5 whitespace-pre-line text-center font-serif text-sm short:text-xs leading-relaxed text-on-surface">
+            <p className="mt-1.5 whitespace-pre-line text-center font-serif text-base short:text-sm leading-relaxed text-on-surface">
               <RichNewsText
                 parts={inbox.selected.bodyParts}
                 fallback={inbox.selected.body}
