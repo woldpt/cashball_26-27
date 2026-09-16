@@ -1,3 +1,8 @@
+## StadiumTab compacto em duas colunas no desktop (2026-09-16)
+
+- O `StadiumTab.jsx` passou a duas colunas em `lg` (esquerda: ocupação + mood + bilhetes; direita: expansão); hero `sm:h-56` → `sm:h-40 lg:h-44`, valores `sm:text-2xl` → `lg:text-xl`, paddings `sm:p-5` → `md:p-4` (STYLE.md), botão Expandir `lg` → `md`, cartões custo/ganho em `grid-cols-2` fixa. Mobile intacto (tudo com prefixo `lg:`/inalterado).
+- Checks: eslint do ficheiro, `check:types`, mobile portrait `150/150` e landscape `180/180`.
+
 ## Corpo das notícias maior com serif de imprensa (2026-09-16)
 
 - O corpo da notícia no `JournalTab.jsx` subiu um degrau (`text-xs` → `text-sm`, `short:text-xs`) e passou a `font-serif` (Georgia/sistema, sem nova fonte).

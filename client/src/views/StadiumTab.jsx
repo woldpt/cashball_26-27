@@ -65,7 +65,7 @@ export function StadiumTab({
     <div className="space-y-4 short:space-y-2">
       {/* ── HERO: ESTÁDIO ─────────────────────────────────────────── */}
       <div className="rounded-lg border border-outline-variant/25 overflow-hidden relative bg-surface-container">
-        <div className="h-32 sm:h-56 short:h-20 relative flex items-end overflow-hidden">
+        <div className="h-28 sm:h-40 lg:h-44 short:h-20 relative flex items-end overflow-hidden">
           <StadiumIllustration
             capacity={stadiumCapacity}
             primary={teamInfo?.color_primary}
@@ -73,14 +73,14 @@ export function StadiumTab({
             className="absolute inset-0 h-full w-full"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-          <div className="relative px-5 short:px-3 pb-4 short:pb-2 w-full">
+          <div className="relative px-4 short:px-3 pb-3 short:pb-2 w-full">
             <p
               className="text-[10px] font-black uppercase tracking-widest mb-1 drop-shadow"
               style={{ color: teamInfo?.color_primary || "#4ade80" }}
             >
               Recinto Principal
             </p>
-            <h2 className="font-headline text-lg sm:text-2xl short:text-base font-black text-white leading-tight drop-shadow">
+            <h2 className="font-headline text-lg sm:text-xl short:text-base font-black text-white leading-tight drop-shadow">
               {teamInfo?.stadium_name || "Estádio Municipal"}
             </h2>
             <p className="text-[11px] text-white/70 font-bold mt-1 drop-shadow">
@@ -92,20 +92,20 @@ export function StadiumTab({
       </div>
 
       {/* ── ROW: STATS ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 short:gap-2">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 short:gap-2">
         <SummaryWidget
           label="Capacidade Actual"
           value={stadiumCapacity.toLocaleString("pt-PT")}
           sub="lugares"
           compactMobile
-          valueClass="text-lg sm:text-2xl"
+          valueClass="text-lg lg:text-xl"
         />
         <SummaryWidget
           label="Receita máx. / jogo"
           value={formatCurrency(capacityRevPerGame)}
           sub={`${ticketPrice}€ × lotação`}
           compactMobile
-          valueClass="text-lg sm:text-2xl"
+          valueClass="text-lg lg:text-xl"
           accentClass="border-tertiary"
           valueColorClass="text-tertiary"
         />
@@ -118,11 +118,14 @@ export function StadiumTab({
           }
           sub={`${homeMatches} jogo(s) em casa`}
           compactMobile
-          valueClass="text-lg sm:text-2xl"
+          valueClass="text-lg lg:text-xl"
           accentClass="border-amber-400"
         />
       </div>
 
+      {/* ── DUAS COLUNAS (desktop) ────────────────────────────────── */}
+      <div className="grid gap-4 short:gap-2 lg:grid-cols-2 lg:items-start">
+        <div className="space-y-4 short:space-y-2">
       {/* ── OCUPAÇÃO MÉDIA ──────────────────────────────────────── */}
       {occupancyPct != null && (
         <div className="rounded-md bg-surface-container-low px-4 py-3 short:px-3 short:py-2">
@@ -199,14 +202,14 @@ export function StadiumTab({
 
       {/* ── BILHETES ──────────────────────────────────────────────── */}
       <Panel title="Preço do Bilhete" icon="confirmation_number" padded={false}>
-        <div className="p-3 sm:p-5 short:p-2.5">
+        <div className="p-3 md:p-4 short:p-2.5">
           <div className="grid grid-cols-5 gap-1.5 short:gap-1">
             {[10, 15, 20, 25, 30].map((price) => (
               <button
                 key={price}
                 type="button"
                 onClick={() => socket.emit("setTicketPrice", price)}
-                className={`rounded-md border px-1 py-2 text-center transition-all active:scale-95 ${
+                className={`rounded-md border px-1 py-1.5 text-center transition-all active:scale-95 ${
                   price === ticketPrice
                     ? "border-tertiary bg-tertiary/15 text-tertiary"
                     : "border-outline-variant/15 bg-surface text-on-surface-variant hover:border-tertiary/40"
@@ -229,7 +232,8 @@ export function StadiumTab({
           </p>
         </div>
       </Panel>
-
+        </div>
+        <div className="space-y-4 short:space-y-2">
       {/* ── EXPANSÃO ──────────────────────────────────────────────── */}
       <Panel
         title="Expansão do Estádio"
@@ -237,7 +241,7 @@ export function StadiumTab({
         meta={atMaxCapacity ? "Obra concluída" : "Estaleiro aberto"}
         padded={false}
       >
-        <div className="p-3 sm:p-5 short:p-2.5">
+        <div className="p-3 md:p-4 short:p-2.5">
           {/* Fita de sinalização do estaleiro */}
           <div
             aria-hidden
@@ -278,23 +282,23 @@ export function StadiumTab({
               </p>
             )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 short:gap-2 mb-4 sm:mb-5 short:mb-3">
-            <div className="bg-surface rounded-md border border-dashed border-amber-400/40 p-3 sm:p-4 short:p-2.5 flex flex-col gap-1 short:gap-0.5">
+          <div className="grid grid-cols-2 gap-2 md:gap-3 mb-4 short:mb-3">
+            <div className="bg-surface rounded-md border border-dashed border-amber-400/40 p-3 short:p-2.5 flex flex-col gap-1 short:gap-0.5">
               <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
                 🧾 Custo por Obra
               </span>
-              <span className="text-tertiary font-headline font-bold text-xl short:text-base tabular-nums">
+              <span className="text-tertiary font-headline font-bold text-lg lg:text-xl short:text-base tabular-nums">
                 {formatCurrency(EXPANSION_COST)}
               </span>
               <span className="text-on-surface-variant text-[10px]">
                 +{SEATS_PER_BUILD.toLocaleString("pt-PT")} lugares
               </span>
             </div>
-            <div className="bg-surface rounded-md border border-dashed border-amber-400/40 p-3 sm:p-4 short:p-2.5 flex flex-col gap-1 short:gap-0.5">
+            <div className="bg-surface rounded-md border border-dashed border-amber-400/40 p-3 short:p-2.5 flex flex-col gap-1 short:gap-0.5">
               <span className="text-on-surface-variant text-[10px] font-black uppercase tracking-wider">
                 🧱 Ganho Receita / Obra
               </span>
-              <span className="text-primary font-headline font-bold text-xl short:text-base tabular-nums">
+              <span className="text-primary font-headline font-bold text-lg lg:text-xl short:text-base tabular-nums">
                 {formatCurrency(SEATS_PER_BUILD * ticketPrice)}
               </span>
               <span className="text-on-surface-variant text-[10px]">
@@ -305,7 +309,7 @@ export function StadiumTab({
 
           <Button
             variant="accent"
-            size="lg"
+            size="md"
             full
             disabled={atMaxCapacity || currentBudget < EXPANSION_COST}
             onClick={() => {
@@ -335,6 +339,8 @@ export function StadiumTab({
           ) : null}
         </div>
     </Panel>
+        </div>
+      </div>
     </div>
   );
 }
