@@ -1,3 +1,8 @@
+## Juniores sem caps nas listas de jogadores (2026-09-16)
+
+- O `PlayerRow.jsx` (listas de Jogadores e Táticas) aplicava `uppercase` a todos os nomes (regra do STYLE.md). A pedido do utilizador, os nomes de juniores (`player.isJunior`) agora saem em case mista; os restantes mantêm caps. Exceção documentada em `STYLE.md`.
+- Checks: eslint do ficheiro (limpo; só os 2 erros pré-existentes de `landing-resp-test.jsx`/`GameContext.jsx`), `check:types`. Tweaks de `className` — sem disparo de `test:mobile`.
+
 ## StadiumTab compacto em duas colunas no desktop (2026-09-16)
 
 - O `StadiumTab.jsx` passou a duas colunas em `lg` (esquerda: ocupação + mood + bilhetes; direita: expansão); hero `sm:h-56` → `sm:h-40 lg:h-44`, valores `sm:text-2xl` → `lg:text-xl`, paddings `sm:p-5` → `md:p-4` (STYLE.md), botão Expandir `lg` → `md`, cartões custo/ganho em `grid-cols-2` fixa. Mobile intacto (tudo com prefixo `lg:`/inalterado).

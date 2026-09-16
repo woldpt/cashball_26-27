@@ -30,7 +30,7 @@ Sempre tokens, nunca hex hardcoded (exceto paleta de posição §10). Nota: `out
 |---|---|
 | Valores grandes (orçamento, skill) | `text-3xl`/`text-2xl` + `font-headline font-black` |
 | Títulos de secção | `text-base font-black font-headline tracking-tight` |
-| Nomes de jogador | `text-sm uppercase tracking-tight` |
+| Nomes de jogador | `text-sm uppercase tracking-tight` (exceção: nomes de juniores em case mista) |
 | Labels de coluna / metadados | `text-[10px]` / `text-[8px]` |
 | Badges inline | `text-[9px]` |
 | Números | `tabular-nums` sempre |

@@ -128,7 +128,7 @@ export function PlayerRow({
           >
             {player.nationality || "—"}
           </span>
-          <p className="font-black font-headline text-sm leading-tight uppercase tracking-tight text-on-surface truncate">
+          <p className={`font-black font-headline text-sm leading-tight ${player.isJunior ? "" : "uppercase"} tracking-tight text-on-surface truncate`}>
             <PlayerLink playerId={player.id}>{player.name}</PlayerLink>
             {star && <StarMark />}
           </p>
