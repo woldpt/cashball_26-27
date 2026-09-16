@@ -961,3 +961,8 @@ Plano C1+C2 (quando fizer):
 - `LiveMatchHero.jsx`: `isFriendly` via `/amigavel/i` no `cupMatchRoundName` (ronda 0 chega como "Amigável de pré-época" pelo mesmo canal da taça) — meta strip mostra só o nome da ronda, sem prefixo "Taça ·"; pill pré-jogo passa de 🏆 a 🤝 no amigável. Badge vermelho AO VIVO eliminado em todos os jogos (liga/taça incluído, decisão do utilizador).
 - Intocado: `MatchPage.jsx` (chip/título "Outros jogos" já sem prefixo), pill inferior AO VIVO e relógio do header no `GameLayout.jsx`.
 - Checks: eslint do ficheiro + `check:types` OK; `lint` global só com os 2 erros pré-existentes. Sem mobile-resp-check (remoção pontual, sem estrutura).
+
+## Amigável fora das estatísticas de jogador (2026-09-16)
+- `finalizeFriendly` (`server/cupFlowHelpers.ts`) descarta `fixture._deltas` antes do flush: golos do amigável deixam de tocar `players.goals` (época → Melhores Marcadores + historial) e `career_goals` (carreira). Presenças/vermelhos/lesões já estavam excluídos (guard `calendarIndex > 0` + `isFriendly` na engine).
+- Relato, eventos, jornal e resultado do amigável intactos — só os contadores de jogador ficam de fora. Só futuros (sem correção retroativa, decisão do utilizador).
+- Checks: server typecheck OK.

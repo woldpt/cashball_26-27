@@ -1875,8 +1875,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		);
 
 		await new Promise<void>((resolve) => game.db.run("BEGIN TRANSACTION", () => resolve()));
-		// Deltas do jogo acumulados em memoria pela engine - sem cartoes nem
-		// lesoes no amigavel, o flush so carrega golos/presencas.
+		// Amigavel nao conta para estatisticas de jogador (nem epoca nem
+		// carreira): golos, presencas, cartoes e lesoes ficam de fora. Os
+		// eventos do jogo (relato, jornal, resultado) mantem-se intactos.
+		for (const fixture of fixtures) fixture._deltas = undefined;
 		queueMatchDeltaWrites(game.db, fixtures);
 		let friendlyTxFailed = false;
 		try {
