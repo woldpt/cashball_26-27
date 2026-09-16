@@ -1,3 +1,8 @@
+## Balão de mensagem com avatar do remetente (2026-09-16)
+
+- O balão de banda desenhada da última mensagem não-lida (`chatPeek` no `GameLayout.jsx`) mostrava só nome + excerto. O cabeçalho passa a linha `avatar + nome` com o `CoachAvatar` do remetente (seed via `coachAvatarSeed`, mesma convenção do `RoomHub.jsx`; foto carregada com fallback procedural).
+- Checks: eslint do ficheiro, `check:types`. Retoque pontual — sem disparo de `test:mobile`.
+
 ## Label «Taça» sobre o score no amigável (2026-09-16)
 
 - O hero live (`LiveMatchHero.jsx`) testava o amigável com `/amigavel/i` (sem acento), que nunca casa com o nome canónico do servidor `Amigável de pré-época` (`FRIENDLY_ROUND_NAME`): `isFriendly` ficava `false` e a meta strip mostrava «Taça · Amigável de pré-época» acima do marcador (e 🏆 em vez de 🤝). Corrigida a regex para `/amigável/i` — é o único sítio com a variante des-acentuada; `MatchPage.jsx` já fazia bem.

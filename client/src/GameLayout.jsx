@@ -5,6 +5,7 @@ import { socket } from "./socket.js";
 import { useGame } from "./contexts/GameContext.jsx";
 import { useTactics } from "./contexts/TacticsContext.jsx";
 import { CoachAvatar } from "./components/shared/CoachAvatar.jsx";
+import { coachAvatarSeed } from "./utils/coachAvatar.js";
 import { LiveClock } from "./components/shared/LiveClock.jsx";
 import { WelcomeModal } from "./components/modals/WelcomeModal.jsx";
 import { isAdminCoach } from "./components/admin/adminApi.js";
@@ -546,8 +547,21 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                     aria-hidden
                     className="absolute -top-[7px] right-3 h-3 w-3 rotate-45 border-t-2 border-l-2 border-black bg-white"
                   />
-                  <span className="block px-3 pt-2 text-[11px] font-black tracking-widest text-emerald-700 uppercase">
-                    {chatPeek.coachName}
+                  <span className="flex items-center gap-1.5 px-3 pt-2">
+                    <CoachAvatar
+                      name={chatPeek.coachName}
+                      seed={coachAvatarSeed(
+                        chatPeek.coachName,
+                        me.name,
+                        avatarSeed,
+                      )}
+                      size="w-6 h-6"
+                      coachAvatars={coachAvatars}
+                      backendUrl={backendUrl}
+                    />
+                    <span className="block text-[11px] font-black tracking-widest text-emerald-700 uppercase truncate">
+                      {chatPeek.coachName}
+                    </span>
                   </span>
                   <span className="block px-3 pb-2.5 text-sm leading-snug break-words">
                     {chatPeek.preview}
