@@ -16,7 +16,8 @@
 :root {
   --header-h: calc(3.5rem + env(safe-area-inset-top, 0px)); /* header fixo no topo (h-14: desktop e portrait) + notch em PWA */
   --rail-w: 4rem; /* reserva lateral esquerda (w-16, apenas landscape) */
-  --sidebar-w: 14rem; /* sidebar desktop fixa (w-56) */
+  --sidebar-w: 14rem; /* sidebar desktop expandida (w-56) */
+  --sidebar-w-collapsed: 3.5rem; /* sidebar desktop encolhida (w-14, só ícones) */
 }
 @media (orientation: landscape) and (max-width: 1023px) {
   :root {

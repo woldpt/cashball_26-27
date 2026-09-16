@@ -56,6 +56,8 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     reconnectFlash,
     mobileSubMenu,
     setMobileSubMenu,
+    sidebarCollapsed,
+    setSidebarCollapsed,
     avatarSeed,
     coachAvatars,
     // Refs
@@ -74,6 +76,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     panelMode,
     calendarIndex,
     // Additional state needed by JSX
+    sidebarUserPrefRef,
     setAdminPanelOpen,
     userDropdownOpen,
     setUserDropdownOpen,
@@ -278,9 +281,10 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
           if (cupBracket) socket.emit("requestCupBracket");
           contentRef.current?.scrollTo(0, 0);
         }}
+        title={sidebarCollapsed ? label : undefined}
         aria-current={isActive ? "page" : undefined}
         aria-disabled={isMatchInProgress || undefined}
-        className={`relative w-full flex items-center gap-3 px-3 py-2 text-sm font-bold rounded-lg transition-all text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${
+        className={`relative w-full flex items-center gap-3 px-3 py-2 text-sm font-bold rounded-lg transition-all text-left focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary ${sidebarCollapsed ? "justify-center" : ""} ${
           isMatchInProgress
             ? "text-on-surface-variant/25 cursor-not-allowed"
             : isActive
@@ -298,10 +302,14 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
         <span aria-hidden className="relative material-symbols-outlined text-[20px] shrink-0 leading-none">
           {icon}
         </span>
-        <span className="relative">{label}</span>
+        {!sidebarCollapsed && <span className="relative">{label}</span>}
         {badgeCount > 0 && (
           <span
-            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none tabular-nums min-w-5 h-5 px-1.5 text-[10px]"
+            className={`absolute flex items-center justify-center rounded-full bg-red-500 text-white font-black leading-none tabular-nums ${
+              sidebarCollapsed
+                ? "-top-1 -right-1 min-w-[18px] h-[18px] px-1 text-[10px]"
+                : "right-2 top-1/2 -translate-y-1/2 min-w-5 h-5 px-1.5 text-[10px]"
+            }`}
             title={label}
           >
             {badgeCount > 99 ? "99+" : badgeCount}
@@ -726,8 +734,29 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       {/* ── LEFT SIDEBAR ─────────────────────────────────────────────────── */}
       <nav
         aria-label="Navegação principal"
-        className="hidden lg:flex fixed left-0 top-[var(--header-h)] bottom-0 w-[var(--sidebar-w)] flex-col z-10 bg-surface-container-high border-r border-outline-variant/15"
+        className={`hidden lg:flex fixed left-0 top-[var(--header-h)] bottom-0 flex-col z-10 transition-all duration-200 bg-surface-container-high border-r border-outline-variant/15 ${sidebarCollapsed ? "w-[var(--sidebar-w-collapsed)]" : "w-[var(--sidebar-w)]"}`}
       >
+        {/* Bola de encolher — sobreposta ao centro da linha direita da barra. */}
+        <button
+          onClick={() => {
+            const next = !sidebarCollapsed;
+            setSidebarCollapsed(next);
+            sidebarUserPrefRef.current = next;
+            try {
+              localStorage.setItem("sidebarCollapsed", String(next));
+            } catch {
+              /* ignorar */
+            }
+          }}
+          title={sidebarCollapsed ? "Expandir menu" : "Encolher menu"}
+          aria-label={sidebarCollapsed ? "Expandir menu" : "Encolher menu"}
+          aria-expanded={!sidebarCollapsed}
+          className="absolute -right-3 top-1/2 -translate-y-1/2 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-surface-container-highest border border-outline-variant/40 text-on-surface-variant shadow-lg hover:text-on-surface hover:border-primary/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary"
+        >
+          <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">
+            {sidebarCollapsed ? "chevron_right" : "chevron_left"}
+          </span>
+        </button>
         {/* Jornal fica fora do scroller para nunca ficar escondido. */}
         <div className="shrink-0 px-2 pt-2 border-b border-outline-variant/20">
           <motion.div
@@ -758,12 +787,19 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                   visible: { transition: { staggerChildren: 0.055 } },
                 }}
               >
-                <p
-                  aria-hidden
-                  className="px-3 pt-2 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/50"
-                >
-                  {group.label}
-                </p>
+                {sidebarCollapsed ? (
+                  <div
+                    aria-hidden
+                    className="mx-auto my-2 w-6 border-t border-outline-variant/25"
+                  />
+                ) : (
+                  <p
+                    aria-hidden
+                    className="px-3 pt-2 pb-1 text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant/50"
+                  >
+                    {group.label}
+                  </p>
+                )}
                 {group.tabs.map(renderSidebarTab)}
               </motion.div>
             ))}
@@ -792,7 +828,14 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
                 socket.emit("requestAllTacticFamiliarity");
               }
             }}
-            className={`relative w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest rounded-lg overflow-hidden ${!isMatchInProgress && activeTab !== "tactic" && !myReady ? "animate-heartbeat" : ""} ${
+            title={
+              sidebarCollapsed
+                ? isMatchInProgress
+                  ? "AO VIVO"
+                  : "JOGAR"
+                : undefined
+            }
+            className={`relative w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest rounded-lg overflow-hidden ${sidebarCollapsed ? "justify-center" : ""} ${!isMatchInProgress && activeTab !== "tactic" && !myReady ? "animate-heartbeat" : ""} ${
               isMatchInProgress
                 ? "bg-red-500/15 text-red-400 border border-red-500/30 cursor-not-allowed"
                 : activeTab === "tactic"
@@ -803,31 +846,33 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
             <span aria-hidden className="material-symbols-outlined text-[20px] shrink-0 leading-none relative z-10">
               {isMatchInProgress ? "sensors" : "strategy"}
             </span>
-            <>
-              <span className="flex-1 text-left relative z-10">
-                {isMatchInProgress ? "AO VIVO" : "JOGAR"}
-              </span>
-              <span className="relative flex h-2 w-2 shrink-0 z-10">
-                <span
-                  className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                    isMatchInProgress
-                      ? "bg-red-500"
-                      : activeTab === "tactic"
-                        ? "bg-on-primary/40"
-                        : "bg-primary"
-                  }`}
-                />
-                <span
-                  className={`relative inline-flex rounded-full h-2 w-2 ${
-                    isMatchInProgress
-                      ? "bg-red-500"
-                      : activeTab === "tactic"
-                        ? "bg-on-primary/60"
-                        : "bg-primary"
-                  }`}
-                />
-              </span>
-            </>
+            {!sidebarCollapsed && (
+              <>
+                <span className="flex-1 text-left relative z-10">
+                  {isMatchInProgress ? "AO VIVO" : "JOGAR"}
+                </span>
+                <span className="relative flex h-2 w-2 shrink-0 z-10">
+                  <span
+                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                      isMatchInProgress
+                        ? "bg-red-500"
+                        : activeTab === "tactic"
+                          ? "bg-on-primary/40"
+                          : "bg-primary"
+                    }`}
+                  />
+                  <span
+                    className={`relative inline-flex rounded-full h-2 w-2 ${
+                      isMatchInProgress
+                        ? "bg-red-500"
+                        : activeTab === "tactic"
+                          ? "bg-on-primary/60"
+                          : "bg-primary"
+                    }`}
+                  />
+                </span>
+              </>
+            )}
           </button>
         </div>
       </nav>
@@ -1252,7 +1297,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               // conteúdo; reservamos pb-16 (igual ao retrato) para o conteúdo
               // não ser coberto, em vez de pb-3.
               ? `transition-all duration-200 pt-[var(--header-h)] ${isMatchInProgress ? "pb-16 ml-0" : "pb-3 ml-[var(--rail-w)]"}`
-              : "pt-[var(--header-h)] pb-16 lg:pb-0 transition-all duration-200 lg:ml-[var(--sidebar-w)]"
+              : `pt-[var(--header-h)] pb-16 lg:pb-0 transition-all duration-200 ${sidebarCollapsed ? "lg:ml-[var(--sidebar-w-collapsed)]" : "lg:ml-[var(--sidebar-w)]"}`
           }`}
         >
           {/* Wrapper de scroll: a maioria das tabs rola aqui (mesma UX de antes,

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { takeover } from "../../motion.js";
 import { MatchView, IntervencaoView } from "./MatchTabs.jsx";
 import { useTactics } from "../../contexts/TacticsContext.jsx";
+import { useGame } from "../../contexts/GameContext.jsx";
 import { generateLeagueFixtures } from "../../utils/fixtures.js";
 import { DIVISION_NAMES } from "../../constants/index.js";
 import {
@@ -228,7 +229,10 @@ export function MatchPage({
 		!!fixture &&
 		Number(fixture.homeTeamId) !== Number(myTeamId) &&
 		Number(fixture.awayTeamId) !== Number(myTeamId);
-	const sidebarLeft = "lg:left-[var(--sidebar-w)]";
+	const { sidebarCollapsed } = useGame();
+	const sidebarLeft = sidebarCollapsed
+		? "lg:left-[var(--sidebar-w-collapsed)]"
+		: "lg:left-[var(--sidebar-w)]";
 
 	// ── Mode-based rendering ──────────────────────────────────────────────
 	const isIntervencao = mode === "halftime" || mode === "action";
