@@ -19,6 +19,19 @@ export const INBOX_CATS = [
   { id: "market", label: "Mercado" },
 ];
 
+/**
+ * Id do aviso da direção: inclui época + semana para que um aviso novo não
+ * herde o «lido» de outro com o mesmo nível/sequência noutra altura da época.
+ * @param {number|string} seasonYear época (ex. 2026)
+ * @param {number|string} weekIdx índice da semana (calendarIndex)
+ * @param {number} level nível do aviso
+ * @param {number} streak semanas seguidas no vermelho
+ * @returns {string}
+ */
+export function boardNewsId(seasonYear, weekIdx, level, streak) {
+  return `board-${seasonYear ?? "?"}-${weekIdx ?? "?"}-${level}-${streak ?? 1}`;
+}
+
 /** Títulos do humor pós-jogo (espelho mínimo do antigo modal de adeptos). */
 export const MOOD_TITLES = {
   win: "Vitória!",

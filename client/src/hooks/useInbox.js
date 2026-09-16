@@ -18,6 +18,7 @@ import { useGame } from "../contexts/GameContext.jsx";
 import { queueEmit } from "../socket.js";
 import {
   INBOX_CATS,
+  boardNewsId,
   buildMoodNewsArticle,
   formatInboxDate,
   linkFirstMention,
@@ -166,7 +167,12 @@ export function useInbox() {
           : null;
       const body = "Orçamento negativo — carrega em Ok para confirmar leitura.";
       list.push({
-        id: `board-${boardWarning.level}-${boardWarning.streak ?? 1}`,
+        id: boardNewsId(
+          seasonYear,
+          calendarIndex,
+          boardWarning.level,
+          boardWarning.streak,
+        ),
         cat: "club",
         date: currentDate,
         title,
@@ -261,6 +267,7 @@ export function useInbox() {
     mySquad,
     globalNews,
     calendarIndex,
+    seasonYear,
     currentDate,
     me?.teamId,
   ]);
