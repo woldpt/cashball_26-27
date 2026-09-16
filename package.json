@@ -1,13 +1,9 @@
 {
-  "dependencies": {
-    "@juicesharp/rpiv-btw": "^2.9.0",
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "pi-lens": "^4.1.6"
-  },
+  "dependencies": {},
   "name": "cashball",
   "version": "1.0.0",
   "description": "Jogo de gestão de futebol baseado em texto/dados, inspirado no **Elifoot 98**, a correr no browser com suporte a **multiplayer assíncrono**. 1 a 8 treinadores humanos submetem tácticas quando podem; a simulação corre em directo quando todos confirmam \"Pronto\". Sem horários fixos — o ritmo é ditado pelos jogadores.",
-  "main": "mcp-proxy.js",
+  "main": "server/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "compress:images": "node scripts/compress-images.mjs"
