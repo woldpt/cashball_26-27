@@ -288,9 +288,98 @@ export function PlayerHistoryModal({
         </div>
 
         {/* ── SCROLLABLE BODY ── */}
-        <div className="overflow-y-auto flex-1">          {/* ── 2-COLUMN LAYOUT (md+) ── */}
+        <div className="overflow-y-auto flex-1">
+          {/* ── GESTÃO CONTRATUAL (faixa total, entre cabeçalho e atributos) ── */}
+          {isMyPlayer && (
+            <div className="px-6 py-4 border-b border-outline-variant/10">
+              <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-3">
+                Gestão Contratual
+              </p>
+              {isLocked && (
+                <p className="text-[11px] text-amber-400/90 font-bold mb-2">
+                  🔒 Contrato em vigor até {contractEndYear}, {contractEndLabel} — não pode ser transferido.
+                </p>
+              )}
+              <div className="flex flex-col gap-2 md:flex-row">
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  disabled={matchInProgress}
+                  title={
+                    matchInProgress
+                      ? "Disponível após as partidas"
+                      : "Renovar Contrato"
+                  }
+                  onClick={() => {
+                    renewPlayerContract?.(player);
+                    closeModal();
+                  }}
+                >
+                  📝 Renovar Contrato
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  disabled={matchInProgress || alreadyAuctionedThisWeek || isLocked}
+                  title={
+                    matchInProgress
+                      ? "Disponível após as partidas"
+                      : isLocked
+                        ? `Contrato até ${contractEndYear}, ${contractEndLabel}`
+                        : alreadyAuctionedThisWeek
+                          ? "Já foi a leilão nesta semana"
+                          : "Vender em Leilão"
+                  }
+                  onClick={() => {
+                    listPlayerAuction?.(player);
+                    closeModal();
+                  }}
+                >
+                  🔨 Vender em Leilão
+                </Button>
+                {player.transfer_status === "fixed" ? (
+                  <Button
+                    variant="danger"
+                    className="flex-1"
+                    disabled={matchInProgress}
+                    title={
+                      matchInProgress
+                        ? "Disponível após as partidas"
+                        : "Retirar da Lista"
+                    }
+                    onClick={() => {
+                      removeFromTransferList?.(player);
+                      closeModal();
+                    }}
+                  >
+                    ✕ Retirar da Lista
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    className="flex-1"
+                    disabled={matchInProgress || isLocked}
+                    title={
+                      matchInProgress
+                        ? "Disponível após as partidas"
+                        : isLocked
+                          ? `Contrato até ${contractEndYear}, ${contractEndLabel}`
+                          : "Listar para Transferência"
+                    }
+                    onClick={() => {
+                      listPlayerFixed?.(player);
+                      closeModal();
+                    }}
+                  >
+                    🏷️ Listar para Transferência
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+          {/* ── 2-COLUMN LAYOUT (md+) ── */}
           <div className="md:grid md:grid-cols-2 md:divide-x md:divide-outline-variant/10">
-            {/* LEFT COLUMN: Attributes + Financial + Contract */}
+            {/* LEFT COLUMN: Attributes + Financial */}
             <div className="flex flex-col">
               {/* ── ATRIBUTOS ── */}
               <div className="px-6 py-5 border-b border-outline-variant/10">
@@ -410,94 +499,6 @@ export function PlayerHistoryModal({
                 </div>
               )}
 
-              {/* Contract management */}
-              {isMyPlayer && (
-                <div className="px-6 py-5 border-b border-outline-variant/10 md:border-b-0 flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-3">
-                    Gestão Contratual
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {isLocked && (
-                      <p className="text-[11px] text-amber-400/90 font-bold">
-                        🔒 Contrato em vigor até {contractEndYear}, {contractEndLabel} — não pode ser transferido.
-                      </p>
-                    )}
-                    <Button
-                      variant="primary"
-                      full
-                      disabled={matchInProgress}
-                      title={
-                        matchInProgress
-                          ? "Disponível após as partidas"
-                          : "Renovar Contrato"
-                      }
-                      onClick={() => {
-                        renewPlayerContract?.(player);
-                        closeModal();
-                      }}
-                    >
-                      📝 Renovar Contrato
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      full
-                      disabled={matchInProgress || alreadyAuctionedThisWeek || isLocked}
-                      title={
-                        matchInProgress
-                          ? "Disponível após as partidas"
-                          : isLocked
-                            ? `Contrato até ${contractEndYear}, ${contractEndLabel}`
-                            : alreadyAuctionedThisWeek
-                              ? "Já foi a leilão nesta semana"
-                              : "Vender em Leilão"
-                      }
-                      onClick={() => {
-                        listPlayerAuction?.(player);
-                        closeModal();
-                      }}
-                    >
-                      🔨 Vender em Leilão
-                    </Button>
-                    {player.transfer_status === "fixed" ? (
-                      <Button
-                        variant="danger"
-                        full
-                        disabled={matchInProgress}
-                        title={
-                          matchInProgress
-                            ? "Disponível após as partidas"
-                            : "Retirar da Lista"
-                        }
-                        onClick={() => {
-                          removeFromTransferList?.(player);
-                          closeModal();
-                        }}
-                      >
-                        ✕ Retirar da Lista
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="secondary"
-                        full
-                        disabled={matchInProgress || isLocked}
-                        title={
-                          matchInProgress
-                            ? "Disponível após as partidas"
-                            : isLocked
-                              ? `Contrato até ${contractEndYear}, ${contractEndLabel}`
-                              : "Listar para Transferência"
-                        }
-                        onClick={() => {
-                          listPlayerFixed?.(player);
-                          closeModal();
-                        }}
-                      >
-                        🏷️ Listar para Transferência
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* RIGHT COLUMN: Performance */}
