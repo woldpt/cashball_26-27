@@ -986,6 +986,8 @@ const coachDismissalHelpers = createCoachDismissalHelpers({
 const processCoachEvents = coachDismissalHelpers.processCoachEvents;
 const handleAcceptJobOffer = coachDismissalHelpers.handleAcceptJobOffer;
 const handleDeclineJobOffer = coachDismissalHelpers.handleDeclineJobOffer;
+const resendPendingJobOffer = coachDismissalHelpers.resendPendingJobOffer;
+const resendBoardWarning = coachDismissalHelpers.resendBoardWarning;
 
 const cupFlowHelpers = createCupFlowHelpers({
 	io,
@@ -1146,6 +1148,8 @@ io.on("connection", (socket) => {
 		findOnlineCoachSocket,
 		presenceRoom: PRESENCE_ROOM,
 		resendPendingContractRequests,
+		resendPendingJobOffer,
+		resendBoardWarning,
 	});
 
 	registerCupSocketHandlers(socket, {

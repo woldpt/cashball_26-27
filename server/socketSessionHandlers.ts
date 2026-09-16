@@ -110,6 +110,8 @@ interface SessionHandlerDeps {
 	) => { roomCode: string; socketId: string } | null;
 	presenceRoom?: string;
 	resendPendingContractRequests?: (game: ActiveGame) => Promise<void>;
+	resendPendingJobOffer?: (game: ActiveGame, toSocket: any, coachName: string) => Promise<boolean>;
+	resendBoardWarning?: (game: ActiveGame, toSocket: any, teamId: number) => Promise<boolean>;
 }
 
 // ── Convites de sala entre coaches (pre-join → in-game) ─────────────────────
@@ -249,6 +251,8 @@ export function registerSessionSocketHandlers(
 		findOnlineCoachSocket,
 		presenceRoom,
 		resendPendingContractRequests,
+		resendPendingJobOffer,
+		resendBoardWarning,
 	} = deps;
 
 	function assignPlayer(
@@ -349,6 +353,12 @@ export function registerSessionSocketHandlers(
 				socket.emit("gameState", buildGameStatePayload(game, name));
 
 				emitCurrentPhaseToSocket(game, socket);
+				// Convite de clube e aviso da direção sobrevivem ao refresh: o
+				// estado do cliente morreu mas o pendente continua no servidor.
+				// Re-emitir traz os itens de volta ao Jornal (mesmos ids: o
+				// «lido» do localStorage vale e nada duplica).
+				resendPendingJobOffer?.(game, socket, name)?.catch(() => {});
+				resendBoardWarning?.(game, socket, team.id)?.catch(() => {});
 				ensurePhaseTimeout(game);
 
 			// Ações pendentes da equipa que sobreviveram ao disconnect (flape rápido:

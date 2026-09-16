@@ -8,6 +8,11 @@
 - O corpo da notícia no `JournalTab.jsx` subiu mais um degrau (`text-sm` → `text-base`, `short:text-sm`); serif e restante estilo mantidos.
 - Checks: eslint do ficheiro, `check:types`, build Vite, harness Jornal retrato `5/5` e paisagem `6/6`, screenshots 390/667 revistos.
 
+## Convite e aviso da direção sobrevivem ao refresh (2026-09-16)
+
+- Eram os únicos itens do Jornal sem durabilidade: com refresh/reconnect sumiam (o convite bloqueando o Pronto sem se mostrar; o aviso sem voltar). O servidor reenvia ambos no reconnect com o mesmo payload/ids — voltam ao Jornal, o «lido» do localStorage vale e nada duplica; o aviso só volta se o orçamento continuar no vermelho.
+- Checks: typecheck servidor, `audit:socketio` (0 erros), `test:connect-smoke`, cliente intocado.
+
 ## Sorteio e humor com data do evento, não da semana atual (2026-09-16)
 
 - O sorteio da Taça (e o humor pós-jogo transitório) eram datados com a semana atual, por isso «mudavam» de semana ao avançar. O servidor carimba `drawWeek`/`drawMatchweek`/`year` no payload do sorteio e o cliente carimba `weekIdx`/`year` no humor; o `useInbox` data os itens por esses carimbos.

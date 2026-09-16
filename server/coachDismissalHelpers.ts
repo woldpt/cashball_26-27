@@ -318,21 +318,11 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     await hireNpcManager(game, team, coachName);
   }
 
-  async function offerJobToCoach(
+  async function buildJobOfferPayload(
     game: ActiveGame,
-    coachName: string,
-    fromTeamId: number,
-    toTeam: AnyRow,
     fromTeam: AnyRow,
-  ): Promise<void> {
-    const player = game.playersByName[coachName];
-    if (!player || !player.socketId) return;
-
-    game.pendingJobOffers[coachName] = {
-      fromTeamId,
-      toTeamId: toTeam.id,
-    };
-
+    toTeam: AnyRow,
+  ) {
     // Query squad for toTeam
     const squad = await runAll<AnyRow>(game.db,
       "SELECT * FROM players WHERE team_id = ? ORDER BY position, skill DESC, name",
@@ -357,7 +347,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     });
     const divisionPosition = sorted.findIndex((t: AnyRow) => t.id === toTeam.id) + 1;
 
-    io.to(player.socketId).emit("jobOffer", {
+    return {
       fromTeam: {
         id: fromTeam.id,
         name: fromTeam.name,
@@ -376,7 +366,90 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       },
       toTeamDivisionPosition: divisionPosition,
       toTeamSquad: fullSquad,
+    };
+  }
+
+  async function offerJobToCoach(
+    game: ActiveGame,
+    coachName: string,
+    fromTeamId: number,
+    toTeam: AnyRow,
+    fromTeam: AnyRow,
+  ): Promise<void> {
+    const player = game.playersByName[coachName];
+    if (!player || !player.socketId) return;
+
+    game.pendingJobOffers[coachName] = {
+      fromTeamId,
+      toTeamId: toTeam.id,
+    };
+
+    io.to(player.socketId).emit(
+      "jobOffer",
+      await buildJobOfferPayload(game, fromTeam, toTeam),
+    );
+  }
+
+  /**
+   * resendPendingJobOffer — o convite sobrevive ao refresh: o estado do
+   * cliente morreu mas o pendente continua no servidor. Re-emite o mesmo
+   * payload (mesmos ids → o «lido» do Jornal vale e não duplica).
+   */
+  async function resendPendingJobOffer(
+    game: ActiveGame,
+    toSocket: any,
+    coachName: string,
+  ): Promise<boolean> {
+    const pending = game.pendingJobOffers[coachName];
+    if (!pending) return false;
+    const toTeam = await runGet<AnyRow>(
+      game.db,
+      "SELECT * FROM teams WHERE id = ?",
+      [pending.toTeamId],
+    );
+    const fromTeam = await runGet<AnyRow>(
+      game.db,
+      "SELECT * FROM teams WHERE id = ?",
+      [pending.fromTeamId],
+    );
+    if (!toTeam || !fromTeam) return false;
+    toSocket.emit(
+      "jobOffer",
+      await buildJobOfferPayload(game, fromTeam, toTeam),
+    );
+    return true;
+  }
+
+  /**
+   * resendBoardWarning — o aviso da direção sobrevive ao refresh enquanto o
+   * orçamento continuar no vermelho. Se já recuperou, não volta (assunto
+   * encerrado). Mesmos ids → o «lido» do Jornal vale e não duplica.
+   */
+  async function resendBoardWarning(
+    game: ActiveGame,
+    toSocket: any,
+    teamId: number,
+  ): Promise<boolean> {
+    const level = game.boardBudgetWarned[teamId] ?? 0;
+    if (level <= 0) return false;
+    const team = await runGet<AnyRow>(
+      game.db,
+      "SELECT * FROM teams WHERE id = ?",
+      [teamId],
+    );
+    if (!team || (team.budget ?? 0) >= 0) return false;
+    toSocket.emit("boardBudgetWarning", {
+      level,
+      budget: team.budget,
+      streak: game.negativeBudgetStreak[teamId] ?? 1,
+      teamId: team.id,
+      teamName: team.name,
+      division: team.division,
+      crest: team.crest ?? null,
+      colorPrimary: team.color_primary,
+      colorSecondary: team.color_secondary,
     });
+    return true;
   }
 
   async function autoAssignDismissedCoach(
@@ -989,5 +1062,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     processRelegatedHumanCoaches,
     handleAcceptJobOffer,
     handleDeclineJobOffer,
+    resendPendingJobOffer,
+    resendBoardWarning,
   };
 }
