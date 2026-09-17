@@ -15,6 +15,7 @@ import {
   markSeatSeen,
   persistSeat,
   replayEventsSince,
+  resetAllReady,
   seatOf,
 } from "./roomStateHelpers";
 
@@ -1667,6 +1668,12 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                             replayEventsSince(game, game.snapshotSeq, () => {
                               loadSeats(game, () => {
                                 backfillSeats(game, () => {
+                                  // Pronto pré-crash não vale em lobby: o 11 passa a
+                                  // sobreviver ao restart e o treinador reconfirma-o
+                                  // com um clique (gate do 11+7). Sem isto, o jogo
+                                  // arrancava com positions vazias e o intervalo
+                                  // ficava sem listas.
+                                  if (game.gamePhase === "lobby") resetAllReady(game);
                                   // Depois do backfill: o log tem de dizer quantos
                                   // assentos a sala tem (dizia 0 e logo 2).
                                   console.log(

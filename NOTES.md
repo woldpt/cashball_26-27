@@ -1,3 +1,9 @@
+## Intervalo vazio após crash no lobby-wait (2026-09-17)
+
+- O `gameState` em lobby apagava as `positions` da tática (`positions: {}`); o `ready` sobrevivia no assento, por isso após um restart o jogo arrancava e o painel de intervalo (`IntervencaoView`, que filtra Titulares/Suplentes por `tactic.positions`) ficava vazio com o plantel intacto.
+- Fix: a tática viaja tal como está em qualquer fase (`buildGameStatePayload`); novo `clearSeatPositions()` (`roomStateHelpers.ts`) limpa o 11 só em fronteira de ronda (finalize liga/taça/amigável + `recoverFinalizedSlot`); no load em fase lobby, `resetAllReady` invalida o Pronto pré-crash — o treinador reconfirma o 11 (gate do 11+7) com um clique. Intervalo e gate do prolongamento intocados (precisam das positions).
+- Checks: server `typecheck`, `test:session-freeze` 11/11, `test:connect-smoke`, `audit:socketio` 0 erros (96 avisos, sem eventos novos). Sem toque no cliente → sem lint/mobile-resp-check. Sala do reporte apagada — `audit:gamestate` fica para a próxima sala.
+
 ## Calendário sem Invencibilidade nem Próximo Jogo (2026-09-17)
 
 - O `CalendarioTab.jsx` perdeu os dois cartões de topo (`SummaryWidget` «Invencibilidade» e «Próximo Jogo»); fica só cabeçalho + filtros + timeline de jogos.

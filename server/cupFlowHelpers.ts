@@ -30,6 +30,7 @@ import { computeMoms } from "./game/mom";
 import {
   appendRoomEvent,
   clearMatchCheckpoint,
+  clearSeatPositions,
   computeAbsentees,
   logCalendarAdvance,
   resetAllReady,
@@ -1910,6 +1911,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		game.cupResultsPayload = null;
 		game.gamePhase = "lobby";
 		resetAllReady(game);
+		clearSeatPositions(game);
 		console.log(
 			`[${game.roomCode}] ↩ Cup round ${round} finalized → lobby | calendarIndex=${game.calendarIndex} | nextEvent=${game.currentEvent?.type ?? "none"}`,
 		);
@@ -2142,6 +2144,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		game.cupResultsPayload = null;
 		game.gamePhase = "lobby";
 		resetAllReady(game);
+		clearSeatPositions(game);
 		console.log(
 			`[${game.roomCode}] Friendly finalized, lobby | calendarIndex=${game.calendarIndex} | nextEvent=${game.currentEvent?.type ?? "none"}`,
 		);

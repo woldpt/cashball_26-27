@@ -320,6 +320,25 @@ export function resetAllReady(game: ActiveGame): void {
   }
 }
 
+/**
+ * Limpa a seleção do 11 (`positions`) de TODOS os assentos em fronteira de
+ * ronda (finalize/recovery). Só aqui — nunca a meio da ronda (intervalo,
+ * gate do prolongamento) nem no `gameState` de lobby: apagar as posições
+ * com o `ready` vivo deixava o jogo arrancar sem 11 local e o painel de
+ * intervalo vazio após um restart.
+ */
+export function clearSeatPositions(game: ActiveGame): void {
+  for (const seat of Object.values(game.seats)) {
+    if (seat.intent.positions && Object.keys(seat.intent.positions).length > 0) {
+      seat.intent.positions = {};
+      persistSeat(game, seat);
+    }
+  }
+  for (const player of Object.values(game.playersByName)) {
+    if (player.tactic) player.tactic.positions = {};
+  }
+}
+
 // ── Presença da ronda + pausa ────────────────────────────────────────────────
 
 /**

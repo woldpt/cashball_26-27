@@ -174,14 +174,12 @@ function buildGameStatePayload(game: ActiveGame, name: string) {
 		cupRound:
 			game.currentEvent?.type === "cup" ? (game.currentEvent as any).round : 0,
 		year: game.year,
-		// Em fase de lobby (entre jornadas), enviar posições limpas: a seleção
-		// do 11 inicial nunca deve persistir de uma ronda para a seguinte.
-		tactic: (() => {
-			const t = game.playersByName[name]?.tactic;
-			if (!t) return null;
-			if (game.gamePhase === "lobby") return { ...t, positions: {} };
-			return t;
-		})(),
+		// A tática do assento viaja tal como está em qualquer fase. Apagar as
+		// posições no lobby destruía o 11 já confirmado após um restart (o
+		// `ready` sobrevivia no assento e o jogo arrancava com o painel de
+		// intervalo vazio). A limpeza entre rondas faz-se no finalize
+		// (`clearSeatPositions`), nunca aqui.
+		tactic: game.playersByName[name]?.tactic ?? null,
 		lockedCoaches: [...game.lockedCoaches],
 		lastHalfTimePayload:
 			game.gamePhase === "match_halftime"

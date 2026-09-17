@@ -37,6 +37,7 @@ import { computeMoms } from "./game/mom";
 import {
   appendRoomEvent,
   clearMatchCheckpoint,
+  clearSeatPositions,
   computeAbsentees,
   isSeatPresent,
   lastSimulatedMinute,
@@ -1209,6 +1210,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           });
 
           resetAllReady(game);
+          clearSeatPositions(game);
 
           // Advance state
           game.calendarIndex += 1;
@@ -1820,6 +1822,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     game.gamePhase = "lobby";
     game.lastHalftimePayload = null;
     resetAllReady(game);
+    clearSeatPositions(game);
 
     if (game.currentEvent?.type === "league") {
       prepareLeagueFixtures(game, (game.currentEvent as any).matchweek).catch(
