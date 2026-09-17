@@ -359,15 +359,18 @@ export const SEASON_CALENDAR = [
 	{ type: "cup", round: 5, roundName: "Final", calendarIndex: 19 },
 ];
 
+// Perfil editorial de cada formação (selo + frase + pendor). O pendor
+// (`edge`) deriva dos pesos reais em server/game/matchCalculations.ts:
+// ataque > 1 → "attack", defesa > 1 → "defense", senão "balanced".
 export const TACTIC_FORMATIONS = [
-	{ value: "4-4-2", label: "4-4-2" },
-	{ value: "4-3-3", label: "4-3-3" },
-	{ value: "3-5-2", label: "3-5-2" },
-	{ value: "5-3-2", label: "5-3-2" },
-	{ value: "4-5-1", label: "4-5-1" },
-	{ value: "3-4-3", label: "3-4-3" },
-	{ value: "4-2-4", label: "4-2-4" },
-	{ value: "5-4-1", label: "5-4-1" },
+  { value: "4-4-2", label: "4-4-2", badge: "Clássica", blurb: "Equilíbrio total, sem truques.", edge: "balanced" },
+  { value: "4-3-3", label: "4-3-3", badge: "Asas Abertas", blurb: "Pressão alta pelos corredores; espaço nas costas.", edge: "attack" },
+  { value: "3-5-2", label: "3-5-2", badge: "Meio Cheio", blurb: "Dona do centro; alas expostas.", edge: "attack" },
+  { value: "5-3-2", label: "5-3-2", badge: "Muralha", blurb: "Porta fechada, saída em transição.", edge: "defense" },
+  { value: "4-5-1", label: "4-5-1", badge: "Teia", blurb: "Meio entupido, um homem na frente.", edge: "defense" },
+  { value: "3-4-3", label: "3-4-3", badge: "Avalanche", blurb: "Três na frente; tudo ou nada.", edge: "attack" },
+  { value: "4-2-4", label: "4-2-4", badge: "All-in", blurb: "Quatro avançados, defesa despida.", edge: "attack" },
+  { value: "5-4-1", label: "5-4-1", badge: "Autocarro", blurb: "Onze atrás da linha da bola.", edge: "defense" },
 ];
 
 export const DEFAULT_TACTIC = {

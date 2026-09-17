@@ -49,6 +49,13 @@ const POS_COLORS = {
 };
 
 
+/** Cor do selo de cada pendor tático (attack/defense/balanced). */
+const FORMATION_EDGE_TEXT = {
+  attack: "text-rose-400",
+  defense: "text-blue-400",
+  balanced: "text-gray-500",
+};
+
 /**
  * Familiaridade táctica — 5 estrelas SVG com contorno.
  * @param {Object} props
@@ -608,7 +615,7 @@ export function TacticsView() {
                 </button>
               </div>
               <div className="p-2 short:p-1.5 grid grid-cols-4 gap-1.5 short:gap-1">
-                {TACTIC_FORMATIONS.map(({ value, label }) => {
+                {TACTIC_FORMATIONS.map(({ value, label, badge, edge }) => {
                   const isAvailable =
                     formationAvailabilityByValue[value] === true;
                   const isActive =
@@ -637,6 +644,11 @@ export function TacticsView() {
                     >
                       <span className="flex flex-col items-center gap-0.5">
                         {label}
+                        <span
+                          className={`text-[8px] font-black uppercase tracking-widest leading-none ${isActive ? "text-green-950/70" : (FORMATION_EDGE_TEXT[edge] ?? "text-gray-500")}`}
+                        >
+                          {badge}
+                        </span>
                         <FamiliarityStars stars={best?.stars ?? 0} fill />
                       </span>
                     </button>
@@ -689,10 +701,26 @@ export function TacticsView() {
                   Limpar
                 </button>
               </div>
+              {titulares.length > 0 &&
+                (() => {
+                  const activeProfile = TACTIC_FORMATIONS.find(
+                    (f) => f.value === tactic.formation,
+                  );
+                  if (!activeProfile) return null;
+                  return (
+                    <p className="px-4 short:px-3 pt-2 text-[9px] text-gray-500 font-semibold leading-snug">
+                      <span
+                        className={`uppercase tracking-widest font-black ${FORMATION_EDGE_TEXT[activeProfile.edge] ?? "text-gray-400"}`}
+                      >
+                        {activeProfile.badge}
+                      </span>{" "}— {activeProfile.blurb}
+                    </p>
+                  );
+                })()}
 
               {/* Lista formacoes */}
               <div className="px-3 short:px-2 py-2.5 short:py-1.5 space-y-1 short:space-y-0.5">
-                {TACTIC_FORMATIONS.map(({ value, label }) => {
+                {TACTIC_FORMATIONS.map(({ value, label, badge, edge }) => {
                   const isAvailable =
                     formationAvailabilityByValue[value] === true;
                   const isActive =
@@ -725,7 +753,14 @@ ${
                             : {}
                         }
                       >
-                        {label}
+                        <span className="flex flex-col items-center leading-tight">
+                          {label}
+                          <span
+                            className={`text-[8px] font-black uppercase tracking-widest ${isActive ? "text-green-950/70" : (FORMATION_EDGE_TEXT[edge] ?? "text-gray-500")}`}
+                          >
+                            {badge}
+                          </span>
+                        </span>
                       </button>
                       <div className="flex-1 flex items-center px-2.5 py-2 rounded-xl bg-surface-container-low/60">
                         <FamiliarityStars stars={best?.stars ?? 0} fill />

@@ -294,26 +294,30 @@ export async function generateAITactic(
 // ── Força da equipa (extraído do closure getPower do engine) ─────────────────
 // Tabelas a nível de módulo: antes eram recriadas a cada chamada de
 // simulateMatchSegment (e o STYLE duplicado a cada minuto de jogo).
+// Distâncias ao neutro alargadas ~1.4x (2026-09: as formações separam-se
+// pouco — 4-2-4 vs 5-4-1 diferiam ~1.5pp por chance). O produto
+// ataque×defesa de cada formação é preservado (≈0.87–1.02, como antes),
+// por isso o total de golos da liga não se move — só os extremos.
 export const FORMATION_ATTACK_FACTORS: Record<string, number> = {
-  "4-2-4": 1.15,
-  "3-4-3": 1.12,
-  "4-3-3": 1.08,
-  "3-5-2": 1.05,
+  "4-2-4": 1.22,
+  "3-4-3": 1.17,
+  "4-3-3": 1.12,
+  "3-5-2": 1.07,
   "4-4-2": 1.0,
-  "4-5-1": 0.9,
-  "5-3-2": 0.85,
-  "5-4-1": 0.8,
+  "4-5-1": 0.86,
+  "5-3-2": 0.78,
+  "5-4-1": 0.71,
 };
 
 export const FORMATION_DEFENSE_FACTORS: Record<string, number> = {
-  "5-4-1": 1.25,
-  "5-3-2": 1.2,
-  "4-5-1": 1.1,
+  "5-4-1": 1.41,
+  "5-3-2": 1.31,
+  "4-5-1": 1.15,
   "4-4-2": 1.0,
-  "3-5-2": 0.95,
-  "4-3-3": 0.9,
-  "3-4-3": 0.85,
-  "4-2-4": 0.75,
+  "3-5-2": 0.93,
+  "4-3-3": 0.87,
+  "3-4-3": 0.81,
+  "4-2-4": 0.71,
 };
 
 export const STYLE_ATTACK_FACTORS: Record<string, number> = {

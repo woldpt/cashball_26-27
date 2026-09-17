@@ -1,3 +1,10 @@
+## Táticas com cara própria: selos + pesos alargados (2026-09-17)
+
+- Queixa: as 8 formações pareciam todas iguais. Sonda sintética confirmou: 4-2-4 vs 5-4-1 diferiam só ~1.5pp em golos pró e ~2.2pp contra por chance; o meio colado ao 4-4-2 (7.95%/7.95%).
+- Pesos (`server/game/matchCalculations.ts`, fonte única): distâncias ao neutro alargadas ~1.4x, produto ataque×defesa preservado por formação (0.87–1.02, como antes) — total de golos estável por construção. Extremos agora: 4-2-4 8.82%/9.45% vs 5-4-1 6.51%/6.50% (diferença pró +48%, contra +33%); 4-4-2 intacto. `FORMATION_WEIGHTS` da IA intocado (escolhe pelo plantel, continua válido).
+- Identidade (`client/src/constants/index.js` + `TacticsView.jsx`): cada formação ganha selo + frase + pendor (`edge` deriva dos pesos reais); selo sob o número no mobile e no desktop (cor por pendor: ataque rosa, defesa azul, equilibrado cinzento; ativa usa verde-escuro sobre o fundo verde), frase da formação ativa sob o cabeçalho no desktop. Sem mudança estrutural de grelha.
+- Checks: server `typecheck` OK, eslint dos ficheiros + `check:types` OK, `test:engine-unit` 19/19, `audit:socketio` 0 erros (96 avisos pré-existentes), `audit:gamestate TST148` 0/0/0, mobile portrait `150/150` + landscape `180/180`. Sonda de medição era temporária em /tmp (removida).
+
 ## Briefing: herói span-2 + cartão de ação na 3ª coluna (2026-09-17)
 
 - Pedido (nova maqueta): herói só no topo das duas primeiras colunas; botão «Avançar para a Tática» sobe para cima da terceira coluna. Decisões: stepper passa para o cartão do botão; no mobile o CTA fica logo após o herói; sem adversário não há herói (só ação + jogos da ronda).
