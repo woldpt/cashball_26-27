@@ -1,3 +1,11 @@
+## GoalFlashOverlay: um festejo por golo, mesmo no mesmo minuto (2026-09-17)
+
+- Sintoma: overlay nem sempre renderizava no próprio jogo, jornada normal da liga.
+- Causa (confirmada por reprodução e2e com Playwright + sonda temporária, já removida): o produtor colapsava golos do mesmo lado na mesma chave `goalFlashRef[fixture_lado]` (só timestamp) e o overlay consumia só o `bestTs` máximo — 2 golos no mesmo minuto, de qualquer combinação de lados, davam 1 festejo. Medido antes: A(1 golo)=1, B(casa+fora)=1, C(2 do mesmo lado)=1 episódios no DOM.
+- Fix: valor `{ ts, n }` por chave (contador monótono; `readGoalFlashEntry` normaliza o formato legado); overlay drena fila via `freshGoalFlashes()` (um momento por golo, ~2s cada, ordem por ts); reveal do suspense de penálti num timeout único por fixture que festeja penálti + golos retidos do mesmo minuto (antes o golo aberto entrava em silêncio, sem flash nem som). `isFlashing` (placar) aceita os dois formatos.
+- Por desenho (inalterado): sem festejo fora do tab Jogo (frescura 2200ms), em final neutra, ou com `isPlayingMatch` falso.
+- Checks: e2e A=1 B=2 C=2; `test:goalflash` (novo, 12/12); client lint só os 2 erros pré-existentes; `check:types` OK; `audit:socketio` 0 erros. Sem mudança estrutural de layout → sem mobile-resp-check. Salas/contas probe apagadas.
+
 ## Intervalo vazio após crash no lobby-wait (2026-09-17)
 
 - O `gameState` em lobby apagava as `positions` da tática (`positions: {}`); o `ready` sobrevivia no assento, por isso após um restart o jogo arrancava e o painel de intervalo (`IntervencaoView`, que filtra Titulares/Suplentes por `tactic.positions`) ficava vazio com o plantel intacto.

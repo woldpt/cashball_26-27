@@ -30,6 +30,7 @@ import {
 } from "../utils/audio.js";
 import { computeMoodVariant } from "../utils/moodVariant.js";
 import { rankStandings } from "../utils/standingsRank.js";
+import { readGoalFlashEntry } from "../components/live/liveHelpers.js";
 import { saveTacticSnapshot } from "../utils/uiSnapshot.js";
 import { useSocketListeners } from "../hooks/useSocketListeners.js";
 
@@ -541,7 +542,11 @@ export function GameProvider({
 			newGoals.forEach((e) => {
 				setGoalFlashRef((prev) => {
 					const key2 = `${match.homeTeamId}_${match.awayTeamId}_${e.team}`;
-					return { ...prev, [key2]: Date.now() };
+					// Contador por (fixture, lado): dois golos no mesmo minuto
+					// partilham a chave e o `Date.now()` pode nem os distinguir —
+					// sem o `n`, o 2º golo colapsava no 1º e nunca festejava.
+					const prevN = readGoalFlashEntry(prev[key2]).n;
+					return { ...prev, [key2]: { ts: Date.now(), n: prevN + 1 } };
 				});
 			});
 			const isMyMatch =

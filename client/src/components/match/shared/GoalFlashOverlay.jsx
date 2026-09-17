@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { CelebrationBurst } from "../../shared/CelebrationBurst.jsx";
+import { freshGoalFlashes } from "../../live/liveHelpers.js";
 
 /* ── GoalFlashOverlay — momento de golo ao vivo ─────────────────────────
  *
@@ -13,7 +14,7 @@ import { CelebrationBurst } from "../../shared/CelebrationBurst.jsx";
  *   - golo ADVERSÁRIO (e és participante) → flash sóbrio vermelho + shake,
  *     sem festejo — o teu marcador não celebra.
  *
- * É alimentado pelo `goalFlashRef` do GameContext (timestamp por fixture+lado,
+ * É alimentado pelo `goalFlashRef` do GameContext ({ ts, n } por fixture+lado,
  * apenas atualizado durante isPlayingMatch), o MESMO sinal que já faz o flash
  * vermelho dos números. Só dispara em direto e para jogos onde és participante.
  *
@@ -38,43 +39,28 @@ export function GoalFlashOverlay({
   awayIsMine,
   isPlayingMatch,
 }) {
-  const [moment, setMoment] = useState(null); // { mine, side, ts }
-  const lastTsRef = useRef(0);
-  const timerRef = useRef(null);
+  // Fila de momentos (um por golo) + o que está no ecrã é sempre a cabeça.
+  // Sem fila, dois golos no mesmo minuto colapsavam num só festejo: o
+  // efeito só via o timestamp máximo (`bestTs`) e consumia-o de vez.
+  const [moments, setMoments] = useState([]); // [{ mine, side, ts, seq }]
+  const consumedRef = useRef({ home: { ts: 0, n: 0 }, away: { ts: 0, n: 0 } });
+  const seqRef = useRef(0);
 
   useEffect(() => {
     if (!isPlayingMatch) return; // nunca celebrar fora de direto / replay
-    // Timestamps mais recentes (e ainda frescos) para cada lado desta fixture.
-    let bestTs = 0;
-    let bestSide = null;
-    const entries = [
-      { side: "home", ts: goalFlashRef?.[`${homeId}_${awayId}_home`] },
-      { side: "away", ts: goalFlashRef?.[`${homeId}_${awayId}_away`] },
-    ];
-    for (const e of entries) {
-      const ts = typeof e.ts === "number" ? e.ts : 0;
-      if (ts > bestTs) {
-        bestTs = ts;
-        bestSide = e.side;
-      }
-    }
-    // Ignora flashes antigos/em cache (mais de 2.2s) e os já tratados.
-    if (!bestSide || bestTs < Date.now() - 2200 || bestTs <= lastTsRef.current) {
-      return;
-    }
-    const mine =
-      (bestSide === "home" && homeIsMine) || (bestSide === "away" && awayIsMine);
     // Só celebramos em jogos onde somos participante.
     if (!homeIsMine && !awayIsMine) return;
-
-    lastTsRef.current = bestTs;
-    // Agenda o reveal num callback (regra react-hooks/set-state-in-effect).
-    const raf = window.setTimeout(() => {
-      if (timerRef.current) window.clearTimeout(timerRef.current);
-      setMoment({ mine, side: bestSide, ts: bestTs });
-      timerRef.current = window.setTimeout(() => setMoment(null), 1950);
-    }, 0);
-    return () => window.clearTimeout(raf);
+    const fresh = freshGoalFlashes(goalFlashRef, homeId, awayId, consumedRef.current);
+    if (!fresh.length) return;
+    setMoments((q) => [
+      ...q,
+      ...fresh.map(({ side, ts }) => ({
+        mine: (side === "home" && homeIsMine) || (side === "away" && awayIsMine),
+        side,
+        ts,
+        seq: ++seqRef.current,
+      })),
+    ]);
   }, [
     goalFlashRef,
     homeId,
@@ -84,23 +70,25 @@ export function GoalFlashOverlay({
     isPlayingMatch,
   ]);
 
-  // Limpa o timer de auto-dismiss ao desmontar.
-  useEffect(() => () => {
-    if (timerRef.current) window.clearTimeout(timerRef.current);
-  }, []);
+  // Auto-dismiss da cabeça da fila (~2s por golo).
+  useEffect(() => {
+    if (!moments.length) return;
+    const t = window.setTimeout(() => setMoments((q) => q.slice(1)), 1950);
+    return () => window.clearTimeout(t);
+  }, [moments]);
 
+  const moment = moments[0] || null;
   if (!moment || !isPlayingMatch) return null;
 
   const mine = moment.mine;
   const color = mine ? "#22c55e" : "#ef4444";
 
   const overlay = (
-    // `key` no flash: cada golo remonta a árvore inteira do zero, mesmo que o
-    // overlay anterior ainda esteja montado (golos seguidos na simulação em
-    // direto). Sem isto, os containers framer terminam em opacity:0 e não
-    // recomeçam — o 2º golo em diante ficaria invisível.
+    // `key` no flash: cada golo remonta a árvore inteira do zero. Sem isto,
+    // os containers framer terminam em opacity:0 e não recomeçam — o golo
+    // seguinte ficaria invisível.
     <div
-      key={`${moment.side}-${moment.ts}`}
+      key={`${moment.side}-${moment.ts}-${moment.seq}`}
       className="fixed inset-0 z-[200] pointer-events-none overflow-hidden"
     >
       {/* Wash forte da cor do momento: verde nosso, vermelho adversário. */}
@@ -132,7 +120,7 @@ export function GoalFlashOverlay({
           animate={{ opacity: [0, 1, 1, 0] }}
           transition={{ duration: 1.95, times: [0, 0.15, 0.82, 1] }}
         >
-          <CelebrationBurst seed={`${moment.side}-${moment.ts}`} />
+          <CelebrationBurst seed={`${moment.side}-${moment.ts}-${moment.seq}`} />
         </motion.div>
       )}
 

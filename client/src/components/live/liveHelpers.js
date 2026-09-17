@@ -78,8 +78,49 @@ export function parseOdds(text) {
 
 /** Flash boolean de uma equipa com base no goalFlashRef e no timestamp. */
 export function isFlashing(flashRef, homeId, awayId, side, now = Date.now()) {
-  const ts = flashRef?.[`${homeId}_${awayId}_${side}`];
+  const { ts } = readGoalFlashEntry(flashRef?.[`${homeId}_${awayId}_${side}`]);
   return !!ts && now - ts < 1500;
+}
+
+/**
+ * Lê uma entrada do goalFlashRef nos dois formatos: número legado (só
+ * timestamp) ou objeto `{ ts, n }` (timestamp + contador de golos).
+ *
+ * @param {number|{ts:number,n:number}|null|undefined} raw
+ * @returns {{ts:number,n:number}}
+ */
+export function readGoalFlashEntry(raw) {
+  if (typeof raw === "number") return { ts: raw, n: 1 };
+  return { ts: raw?.ts ?? 0, n: raw?.n ?? 0 };
+}
+
+/**
+ * Golos ainda não consumidos pelo GoalFlashOverlay, um por golo (não um por
+ * lado): dois golos no mesmo minuto — mesmo do mesmo lado — geram dois
+ * momentos. `consumed` é o mapa mutável `{ home: {ts,n}, away: {ts,n} }`
+ * do overlay; é atualizado aqui para a mesma batch nunca se repetir.
+ *
+ * @param {Object} flashRef - mapa goalFlashRef
+ * @param {number|string} homeId
+ * @param {number|string} awayId
+ * @param {{home:{ts:number,n:number},away:{ts:number,n:number}}} consumed
+ * @param {number} [now] - Date.now()
+ * @param {number} [maxAgeMs] - validade do flash (2200ms)
+ * @returns {Array<{side:string,ts:number}>} momentos novos, ordenados por ts
+ */
+export function freshGoalFlashes(flashRef, homeId, awayId, consumed, now = Date.now(), maxAgeMs = 2200) {
+  const fresh = [];
+  for (const side of ["home", "away"]) {
+    const { ts, n } = readGoalFlashEntry(flashRef?.[`${homeId}_${awayId}_${side}`]);
+    const last = consumed[side] || { ts: 0, n: 0 };
+    if (!ts || ts < now - maxAgeMs) continue;
+    if (ts < last.ts || (ts === last.ts && n <= last.n)) continue;
+    const count = ts > last.ts ? Math.max(1, n - last.n) : n - last.n;
+    consumed[side] = { ts, n };
+    for (let i = 0; i < count; i++) fresh.push({ side, ts });
+  }
+  fresh.sort((a, b) => a.ts - b.ts);
+  return fresh;
 }
 
 /**

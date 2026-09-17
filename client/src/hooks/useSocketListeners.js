@@ -6,6 +6,7 @@ import { isSameTeamId } from "../utils/teamHelpers.js";
 import { seasonToYear } from "../utils/formatters.js";
 import { slotLabel } from "../utils/slotLabel.js";
 import { playGoalSound, playVarSound, playSigningSound, playBooSound } from "../utils/audio.js";
+import { readGoalFlashEntry, isGoalType } from "../components/live/liveHelpers.js";
 import {
   MAX_MATCH_SUBS,
   POSITION_SHORT_LABELS,
@@ -1217,60 +1218,67 @@ export function useSocketListeners(handlers, refs) {
 					myTeamId != null &&
 					(f.homeTeamId === myTeamId || f.awayTeamId === myTeamId);
 				if (!isMyFixture) continue;
-				for (const e of f.minuteEvents || []) {
-					if (e.penaltySuspense) {
-						myFixtureWithSuspense = f;
-						handlers.setPenaltySuspense({
-							playerName: e.playerName,
-							result: e.penaltyResult,
-							team: e.team,
-						});
-						// After suspense, update the score AND add the held-back event
-						setTimeout(() => {
-							handlers.setPenaltySuspense(null);
-							// Play goal sound and flash for scored penalty
-							if (e.type === "penalty_goal") {
-								playGoalSound();
-								const flashKey = `${f.homeTeamId}_${f.awayTeamId}_${e.team}`;
-								refs.setGoalFlashRef((prev) => ({
-									...prev,
-									[flashKey]: Date.now(),
-								}));
-							}
-							handlers.setMatchResults((prev) => {
-								if (!prev) return prev;
-								const updatedResults = (prev.results || []).map((r) => {
-									if (
-										r.homeTeamId !== f.homeTeamId ||
-										r.awayTeamId !== f.awayTeamId
-									)
-										return r;
-									// Revelacao atomica: adicionar tudo o que ficou retido deste minuto -
-									// o evento de penalti E os restantes eventos do mesmo minuto (ex.: um golo
-									// aberto do adversario). Sem isto, o golo do adversario aparecia no painel
-									// ANTES da revelacao do penalty (sensacao de ter sido marcado antes).
-									const existingEvents = r.events || [];
-									const toAdd = (f.minuteEvents || []).filter(
-										(ne) =>
-											!existingEvents.some(
-												(ee) =>
-													ee.minute === ne.minute &&
-													ee.type === ne.type &&
-													ee.playerId === ne.playerId,
-												),
-										);
-									return {
-										...r,
-										finalHomeGoals: Math.max(r.finalHomeGoals || 0, f.homeGoals),
-										finalAwayGoals: Math.max(r.finalAwayGoals || 0, f.awayGoals),
-										events: [...existingEvents, ...toAdd],
-									};
-								});
-								return { ...prev, results: updatedResults };
-							});
-						}, 3000);
-					}
+				const suspenseEvents = (f.minuteEvents || []).filter((e) => e.penaltySuspense);
+				if (!suspenseEvents.length) continue;
+				myFixtureWithSuspense = f;
+				for (const e of suspenseEvents) {
+					handlers.setPenaltySuspense({
+						playerName: e.playerName,
+						result: e.penaltyResult,
+						team: e.team,
+					});
 				}
+				// After suspense, update the score AND add the held-back events.
+				// Um timeout por fixture: revela tudo de uma vez e festeja cada
+				// golo revelado (penálti + retidos do mesmo minuto) uma só vez —
+				// sem isto, um golo aberto no mesmo minuto do penálti entrava
+				// em silêncio, sem flash nem overlay.
+				setTimeout(() => {
+					handlers.setPenaltySuspense(null);
+					const revealedGoals = (f.minuteEvents || []).filter((ne) => ne && isGoalType(ne.type));
+					if (revealedGoals.length) {
+						playGoalSound();
+						refs.setGoalFlashRef((prev) => {
+							const next = { ...prev };
+							for (const g of revealedGoals) {
+								const flashKey = `${f.homeTeamId}_${f.awayTeamId}_${g.team}`;
+								next[flashKey] = { ts: Date.now(), n: readGoalFlashEntry(next[flashKey]).n + 1 };
+							}
+							return next;
+						});
+					}
+					handlers.setMatchResults((prev) => {
+						if (!prev) return prev;
+						const updatedResults = (prev.results || []).map((r) => {
+							if (
+								r.homeTeamId !== f.homeTeamId ||
+								r.awayTeamId !== f.awayTeamId
+							)
+								return r;
+							// Revelacao atomica: adicionar tudo o que ficou retido deste minuto -
+							// o evento de penalti E os restantes eventos do mesmo minuto (ex.: um golo
+							// aberto do adversario). Sem isto, o golo do adversario aparecia no painel
+							// ANTES da revelacao do penalty (sensacao de ter sido marcado antes).
+							const existingEvents = r.events || [];
+							const toAdd = (f.minuteEvents || []).filter(
+								(ne) =>
+									!existingEvents.some(
+										(ee) =>
+											ee.minute === ne.minute &&
+											ee.type === ne.type &&
+											ee.playerId === ne.playerId,
+										),
+								);
+							return {
+								...r,
+								finalHomeGoals: Math.max(r.finalHomeGoals || 0, f.homeGoals),
+								finalAwayGoals: Math.max(r.finalAwayGoals || 0, f.awayGoals),
+								events: [...existingEvents, ...toAdd],
+							};
+						});
+						return { ...prev, results: updatedResults };
+					});
+				}, 3000);
 			}
 			// Penalty suspense para fixtures onde NÃO somos participantes — sem popup,
 			// apenas flash e atualização de score após o mesmo delay de 3s.
@@ -1290,7 +1298,7 @@ export function useSocketListeners(handlers, refs) {
 								const flashKey = `${f.homeTeamId}_${f.awayTeamId}_${e.team}`;
 								refs.setGoalFlashRef((prev) => ({
 									...prev,
-									[flashKey]: Date.now(),
+									[flashKey]: { ts: Date.now(), n: readGoalFlashEntry(prev[flashKey]).n + 1 },
 								}));
 							}
 							handlers.setMatchResults((prev) => {
