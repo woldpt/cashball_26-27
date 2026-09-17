@@ -1,3 +1,10 @@
+## Estrelas de familiaridade com centro dourado sólido (2026-09-17)
+
+- Sintoma: as estrelas cheias da familiaridade tática mostravam só o contorno dourado, sem preenchimento ao centro.
+- Causa: o `fill="url(#famStarGrad)"` no `<svg>` apontava para um gradiente dentro de um `<svg width="0" height="0">` com `id` duplicado (uma instância por formação) — referência frágil que falha e deixa o centro vazio, restando só o `stroke` dourado.
+- Fix: `fill="#fbbf24"` sólido diretamente no `<path>` da estrela cheia (mantém `stroke="#fde68a"` + `drop-shadow`); removido o `<svg>` de 0px com `<defs>` (~9 linhas). Só `client/src/views/TacticsView.jsx` (`FamiliarityStars`).
+- Checks: eslint do ficheiro limpo (`lint` global só os 2 erros pré-existentes em `GameContext.jsx`, confirmados com a alteração em stash), `check:types` OK. Só apresentação → sem audits, sem mobile-resp-check.
+
 ## Festejo de golo nos cards de jogos com humano (2026-09-17)
 
 - Pedido: levar «esse tipo de efeito» (festejo de golo) aos cards de jogos com treinador humano. Decisões do utilizador: festejo dentro do card, para qualquer golo do jogo, sempre em direto (mesmo durante o próprio jogo).

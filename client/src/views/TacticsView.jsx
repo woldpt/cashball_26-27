@@ -70,15 +70,6 @@ function FamiliarityStars({ stars, fill = false }) {
           : `${value}/5 estrelas de familiaridade táctica`
       }
     >
-      <svg width="0" height="0" className="absolute" aria-hidden="true">
-        <defs>
-          <linearGradient id="famStarGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fcd34d" />
-            <stop offset="55%" stopColor="#fbbf24" />
-            <stop offset="100%" stopColor="#f59e0b" />
-          </linearGradient>
-        </defs>
-      </svg>
       <div className="flex justify-center gap-0.5">
         {[1, 2, 3, 4, 5].map((i) =>
           i <= value ? (
@@ -86,13 +77,12 @@ function FamiliarityStars({ stars, fill = false }) {
               key={i}
               viewBox="0 0 24 24"
               className="h-3.5 flex-1 max-w-4 transition-all duration-300"
-              fill="url(#famStarGrad)"
               stroke="#fde68a"
               strokeWidth="1"
               strokeLinejoin="round"
               style={{ filter: "drop-shadow(0 0 3px rgba(251,191,36,0.45))" }}
             >
-              <path d="M12 2.5l2.9 6.3 6.6.6-5 4.4 1.5 6.5L12 16.9 6 20.3l1.5-6.5-5-4.4 6.6-.6z" />
+              <path d="M12 2.5l2.9 6.3 6.6.6-5 4.4 1.5 6.5L12 16.9 6 20.3l1.5-6.5-5-4.4 6.6-.6z" fill="#fbbf24" />
             </svg>
           ) : (
             <svg
@@ -392,7 +382,6 @@ export function TacticsView() {
     activeTab,
     showHalftimePanel,
     isPlayingMatch,
-    disconnected,
     isCupMatch,
     prepPhase,
     setPrepPhase,
@@ -466,12 +455,6 @@ export function TacticsView() {
 
   return (
     <div className="space-y-3 short:space-y-1.5 pb-20 short:pb-4 xl:pb-0">
-      {disconnected && (
-        <div className="px-4 py-2 text-red-400 text-[10px] font-bold text-center bg-red-500/10 border border-red-500/20 rounded-2xl">
-          ⚠️ Desligado — a reconectar...
-        </div>
-      )}
-
       {showBriefing && <MatchBriefing />}
 
       {showBackToBriefing && (
