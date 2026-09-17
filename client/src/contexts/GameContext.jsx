@@ -12,6 +12,7 @@ import {
 import { socket, queueEmit } from "../socket";
 import {
   DEFAULT_TACTIC,
+  DEFAULT_SIM_SPEED,
   LOAN_INTEREST_RATE,
   MAX_MATCH_SUBS,
   TRANSFER_LISTED_PRICE_MULT,
@@ -70,6 +71,7 @@ export function GameProvider({
 	const [lockedCoaches, setLockedCoaches] = useState([]);
 	const [awaitingCoaches, setAwaitingCoaches] = useState([]);
 	const [roomCreator, setRoomCreator] = useState("");
+	const [simSpeed, setSimSpeed] = useState(DEFAULT_SIM_SPEED);
 	const [matchResults, setMatchResults] = useState(null);
 	const [allMatchResults, setAllMatchResults] = useState({});
 	const [matchweekCount, setMatchweekCount] = useState(0);
@@ -197,6 +199,7 @@ export function GameProvider({
 	const [showMatchDetail, setShowMatchDetail] = useState(false);
 	const [matchDetailFixture, setMatchDetailFixture] = useState(null);
 	const [roomHubOpen, setRoomHubOpen] = useState(false);
+	const [roomSettingsOpen, setRoomSettingsOpen] = useState(false);
 	const [roomMessages, setRoomMessages] = useState([]);
 	const [globalMessages, setGlobalMessages] = useState([]);
 	const [globalPlayers, setGlobalPlayers] = useState([]);
@@ -951,6 +954,7 @@ year: seasonYear,
 			setLockedCoaches,
 			setAwaitingCoaches,
 			setRoomCreator,
+			setSimSpeed,
 			setRefereePopup,
 			setGameDialog,
 			queueContractDialog,
@@ -1506,6 +1510,7 @@ year: seasonYear,
 		setLockedCoaches([]);
 		setAwaitingCoaches([]);
 		setRoomCreator("");
+		setSimSpeed(DEFAULT_SIM_SPEED);
 		setNextMatchSummary(null);
 		setNextMatchSummaryLoading(false);
 		setIsPlayingMatch(false);
@@ -1607,6 +1612,7 @@ year: seasonYear,
 		lockedCoaches,
 		awaitingCoaches,
 		roomCreator,
+		simSpeed,
 		matchResults,
 		allMatchResults,
 		matchweekCount,
@@ -1752,6 +1758,8 @@ year: seasonYear,
 		setMatchDetailFixture,
 		roomHubOpen,
 		setRoomHubOpen,
+		roomSettingsOpen,
+		setRoomSettingsOpen,
 		roomMessages,
 		setRoomMessages,
 		globalMessages,

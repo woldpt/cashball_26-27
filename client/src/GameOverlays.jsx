@@ -18,6 +18,7 @@ import { SeasonEndModal } from "./components/modals/SeasonEndModal.jsx";
 import { PlayerHistoryModal } from "./components/modals/PlayerHistoryModal.jsx";
 import { MatchPage } from "./components/match/MatchPage.jsx";
 import { RoomHub } from "./components/chat/RoomHub.jsx";
+import { RoomSettings } from "./components/room/RoomSettings.jsx";
 import { AdminPanel } from "./components/admin/AdminPanel.jsx";
 
 /**
@@ -87,6 +88,8 @@ export function GameOverlays() {
     roomHubOpen,
     roomHubRef,
     roomMessages,
+    roomSettingsOpen,
+    simSpeed,
     season,
     seasonEndModal,
     setAdminPanelOpen,
@@ -99,6 +102,7 @@ export function GameOverlays() {
     setGameDialog,
     setPlayerHistoryModal,
     setRoomHubOpen,
+    setRoomSettingsOpen,
     setSeasonEndModal,
     setShowCupDrawPopup,
     setSigningCelebration,
@@ -369,6 +373,14 @@ export function GameOverlays() {
       <AdminPanel
         open={adminPanelOpen}
         onClose={() => setAdminPanelOpen(false)}
+      />
+
+      <RoomSettings
+        open={roomSettingsOpen}
+        onClose={() => setRoomSettingsOpen(false)}
+        me={me}
+        roomCreator={roomCreator}
+        simSpeed={simSpeed}
       />
     </>
   );

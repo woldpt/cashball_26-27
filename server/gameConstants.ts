@@ -17,6 +17,19 @@ export const ECON_FORM_REF = 100 / 90;
  * para se acompanhar como espetador — ritmo de gala. */
 export const CUP_FINAL_SPECTATOR_MS_PER_MINUTE = 500;
 
+/**
+ * Ritmo da simulação ao vivo, por sala (o admin escolhe o preset).
+ * Chave canónica: o cliente envia a chave, o servidor valida e guarda os ms.
+ */
+export const SIM_SPEED_PRESETS = {
+  calm: 3000, // Calmo — 1 min de jogo = 3s reais
+  normal: 2000, // Normal — 1 min de jogo = 2s reais
+  fast: 1000, // Rápido — 1 min de jogo = 1s real
+} as const;
+export type SimSpeedKey = keyof typeof SIM_SPEED_PRESETS;
+export const DEFAULT_SIM_SPEED: SimSpeedKey = "normal";
+export const DEFAULT_MS_PER_MINUTE: number = SIM_SPEED_PRESETS[DEFAULT_SIM_SPEED];
+
 export const DIVISION_NAMES: Record<number, string> = {
   1: "Primeira Liga",
   2: "Segunda Liga",

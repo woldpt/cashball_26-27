@@ -1,3 +1,10 @@
+## Ritmo da simulação escolhido pelo admin da sala (2026-09-17)
+
+- Pedido: o admin da sala escolhe o tempo de jogo nas settings. Decisões: painel de definições novo, presets (Calmo 3s / Normal 2s / Rápido 1s por minuto), vale do próximo jogo em diante.
+- Servidor: `SIM_SPEED_PRESETS` + default em `server/gameConstants.ts`; `msPerMinute` no `ActiveGame` (`types.ts`, load/save `game_state` em `gameManager.ts`, salas antigas caem no default); `runMatchSegment` (`weeklyFlowHelpers.ts`) e prolongamento (`engine.ts`) leem `game.msPerMinute`; evento `setSimSpeed` com guard de `roomCreator` (`socketGameplayHandlers.ts`) + broadcast `simSpeedUpdated`; `msPerMinute` nos dois payloads de `gameState` (`socketSessionHandlers.ts`).
+- Cliente: presets espelhados em `constants/index.js`; `simSpeed` + `roomSettingsOpen` no `GameContext`; `useSocketListeners` hidrata do `gameState` e ouve `simSpeedUpdated`; novo `RoomSettings.jsx` (props como o `RoomHub`, ModalShell card — todos veem, só o admin edita) montado no `GameOverlays` + botão `speed` no header (`GameLayout.jsx`); harness novo `room-settings-resp-test` (mede vista admin + não-admin).
+- Checks: server `typecheck` OK, `audit:socketio` 0 erros (1 aviso novo benigno `setSimSpeed` "ouvido mas nunca emitido" — a audit não vê emits do cliente, igual ao `kickCoach`), client `lint` só os 2 erros pré-existentes, `check:types` OK, portrait `155/155`, landscape `186/186`, screenshots 390/667 revistos. `audit:gamestate` fica para a próxima sala com jogo (sem sala viva; mudança aditiva com default).
+
 ## Ritmo da simulação: 1 min de jogo = 2s reais (2026-09-17)
 
 - Pedido: abrandar o direto (estava 1 min = 1s real). Decisão: 2s/min só em jogos com humanos; só-NPC (100ms) e final-espetador (500ms) intactos.

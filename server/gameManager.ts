@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
-import { SEASON_CALENDAR, FRIENDLY_ROUND, fairWeeklyWage, signingWage, FANBASE_BY_DIVISION } from "./gameConstants";
+import { SEASON_CALENDAR, FRIENDLY_ROUND, fairWeeklyWage, signingWage, FANBASE_BY_DIVISION, DEFAULT_MS_PER_MINUTE, SIM_SPEED_PRESETS } from "./gameConstants";
 import { currentEpoch, getSeasonEndMatchweek } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { getOfflineCoaches } from "./presenceHelpers";
@@ -743,6 +743,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
 
     // Room owner
     roomCreator: "",
+    msPerMinute: DEFAULT_MS_PER_MINUTE,
 
     // Retained fields
     lockedCoaches: new Set<string>(),
@@ -1300,6 +1301,12 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                 game.roomCreator = String(st["roomCreator"]);
               }
 
+              // Ritmo da simulação (preset do admin; salas antigas ficam no default)
+              const savedMs = Number(st["msPerMinute"]);
+              game.msPerMinute = (Object.values(SIM_SPEED_PRESETS) as number[]).includes(savedMs)
+                ? savedMs
+                : DEFAULT_MS_PER_MINUTE;
+
               // Coach dismissal persistence (transient: pendingJobOffers is never persisted)
               game.pendingJobOffers = {};
               if (st["negativeBudgetStreak"]) {
@@ -1791,6 +1798,7 @@ function saveGameState(game: ActiveGame): void {
   // See restore path above for the rationale.
   upsert("roomName", (game as any).roomName || "");
   upsert("roomCreator", game.roomCreator || "");
+  upsert("msPerMinute", String(game.msPerMinute ?? DEFAULT_MS_PER_MINUTE));
   upsert(
     "negativeBudgetStreak",
     JSON.stringify(game.negativeBudgetStreak || {}),

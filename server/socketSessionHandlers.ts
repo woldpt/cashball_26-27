@@ -186,6 +186,7 @@ function buildGameStatePayload(game: ActiveGame, name: string) {
 				? game.lastHalftimePayload || null
 				: null,
 		roomCreator: game.roomCreator || "",
+		msPerMinute: game.msPerMinute ?? null,
 		activeAuctions: serializeActiveAuctions(game),
 	};
 }
@@ -730,6 +731,7 @@ export function registerSessionSocketHandlers(
 											lockedCoaches: [...game.lockedCoaches],
 											lastHalfTimePayload: null,
 											roomCreator: game.roomCreator || "",
+											msPerMinute: game.msPerMinute ?? null,
 											activeAuctions: serializeActiveAuctions(game),
 										});
 

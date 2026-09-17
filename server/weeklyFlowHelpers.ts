@@ -6,6 +6,7 @@ import {
   STADIUM_UPKEEP_PER_SEAT_WEEK,
   WEEKLY_BASE_INCOME,
   CUP_FINAL_SPECTATOR_MS_PER_MINUTE,
+  DEFAULT_MS_PER_MINUTE,
   remainingSubstitutions,
   incrementSubCount,
 } from "./gameConstants";
@@ -281,7 +282,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
   // Handles both league and cup first/second halves.
   // Uses game.currentFixtures populated by the caller.
 
-  const MS_PER_GAME_MINUTE = 2000;
+  const MS_PER_GAME_MINUTE = DEFAULT_MS_PER_MINUTE;
 
   async function runMatchSegment(
     game: ActiveGame,
@@ -378,7 +379,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
       ),
     );
     const effectiveMsPerMinute = humanInFixtures
-      ? MS_PER_GAME_MINUTE
+      ? (game.msPerMinute ?? MS_PER_GAME_MINUTE)
       : entry?.type === "cup" && (entry as any)?.roundName === "Final"
         ? CUP_FINAL_SPECTATOR_MS_PER_MINUTE
         : 100;

@@ -428,6 +428,15 @@ export const STADIUM_EXPANSION_COST = 300000;
 export const SEASON_LABEL = "26/27";
 /** Total de jornadas de liga por época. */
 export const SEASON_JORNADAS = 14;
+
+// ── RITMO DA SIMULAÇÃO (espelha SIM_SPEED_PRESETS do servidor) ─────────────
+/** Presets de ritmo do direto, escolhidos pelo admin da sala (ms por minuto). */
+export const SIM_SPEED_PRESETS = {
+  calm: { ms: 3000, label: "Calmo", hint: "1 min de jogo = 3s reais" },
+  normal: { ms: 2000, label: "Normal", hint: "1 min de jogo = 2s reais" },
+  fast: { ms: 1000, label: "Rápido", hint: "1 min de jogo = 1s real" },
+};
+export const DEFAULT_SIM_SPEED = "normal";
 /** Total de semanas (slots do relógio único) por época — escala dos contratos. */
 export const SEASON_WEEKS = 20;
 /** Jogos em casa por época (metade das jornadas). */

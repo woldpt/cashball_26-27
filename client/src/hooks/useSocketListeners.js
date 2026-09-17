@@ -11,6 +11,8 @@ import {
   MAX_MATCH_SUBS,
   POSITION_SHORT_LABELS,
   POSITION_TEXT_CLASS,
+  SIM_SPEED_PRESETS,
+  DEFAULT_SIM_SPEED,
 } from "../constants/index.js";
 
 /**
@@ -178,6 +180,12 @@ export function useSocketListeners(handlers, refs) {
 				if (typeof data.roomCreator === "string") {
 					handlers.setRoomCreator(data.roomCreator);
 				}
+			}
+		});
+		socket.on("simSpeedUpdated", (data) => {
+			if (!inRoom()) return;
+			if (data && typeof data.speed === "string" && SIM_SPEED_PRESETS[data.speed]) {
+				handlers.setSimSpeed(data.speed);
 			}
 		});
 		socket.on("mySquad", (data) => {
@@ -990,6 +998,12 @@ export function useSocketListeners(handlers, refs) {
 			}
 			if (typeof data.roomCreator === "string") {
 				handlers.setRoomCreator(data.roomCreator);
+			}
+			if (typeof data.msPerMinute === "number") {
+				const key = Object.keys(SIM_SPEED_PRESETS).find(
+					(k) => SIM_SPEED_PRESETS[k].ms === data.msPerMinute,
+				);
+				handlers.setSimSpeed(key || DEFAULT_SIM_SPEED);
 			}
 			// Hidratar leilões ativos em join/reconnect — o evento one-shot
 			// auctionStarted só chega a quem está ligado no momento do broadcast.
@@ -1897,6 +1911,7 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("teamsData");
 			socket.off("teamForms");
 			socket.off("playerListUpdate");
+			socket.off("simSpeedUpdated");
 			socket.off("mySquad");
 			socket.off("marketUpdate");
 			socket.off("transferHistory");

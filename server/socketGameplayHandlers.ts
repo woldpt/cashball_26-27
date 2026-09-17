@@ -5,7 +5,8 @@ import {
   takePendingMatchAction,
   listTeamMatchActions,
 } from "./game/engine";
-import { MAX_BENCH_SIZE } from "./gameConstants";
+import { MAX_BENCH_SIZE, SIM_SPEED_PRESETS } from "./gameConstants";
+import type { SimSpeedKey } from "./gameConstants";
 import { getTacticFamiliarity, getAllTacticFamiliarity } from "./game/tacticFamiliarity";
 import {
   checkLineupReady,
@@ -330,6 +331,21 @@ export function registerGameplaySocketHandlers(
 
     console.log(
       `[${game.roomCode}] 🚫 Admin ${requesterName} expulsou ${targetName} (online=${!!targetSocketId})`,
+    );
+  });
+
+  // Ritmo da simulação (apenas Admin da sala; vale do próximo jogo em diante)
+  socket.on("setSimSpeed", ({ speed }: { speed: SimSpeedKey }) => {
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    const requesterName = game.socketToName[socket.id];
+    if (!requesterName || requesterName !== game.roomCreator) return;
+    if (!speed || !(speed in SIM_SPEED_PRESETS)) return;
+    game.msPerMinute = SIM_SPEED_PRESETS[speed];
+    saveGameState(game);
+    io.to(game.roomCode).emit("simSpeedUpdated", { speed, msPerMinute: game.msPerMinute });
+    console.log(
+      `[${game.roomCode}] ⚙️ Admin ${requesterName} definiu o ritmo: ${speed} (${game.msPerMinute}ms/min)`,
     );
   });
 

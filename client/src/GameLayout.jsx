@@ -51,6 +51,7 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     renderError,
     setRoomHubOpen,
     roomHubOpen,
+    setRoomSettingsOpen,
     unreadRoom,
     unreadGlobal,
     chatPeek,
@@ -568,6 +569,23 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
               )}
             </AnimatePresence>
             </div>
+
+            {/* Room settings — ritmo da simulação (todos veem, só o admin muda) */}
+            <button
+              onClick={() => setRoomSettingsOpen(true)}
+              title="Definições da sala"
+              aria-label="Definições da sala"
+              className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-white/10 transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-white/70"
+            >
+              <span
+                className="material-symbols-outlined text-[20px] leading-none"
+                style={{
+                  color: teamInfo?.color_secondary || "var(--color-on-surface)",
+                }}
+              >
+                speed
+              </span>
+            </button>
 
             {/* User dropdown — disabled during live match */}
             <div className="relative">

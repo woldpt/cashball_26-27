@@ -16,6 +16,7 @@ import {
   RES_NEUTRAL,
   EMERGENCY_GK_SKILL,
   CUP_FINAL_SPECTATOR_MS_PER_MINUTE,
+  DEFAULT_MS_PER_MINUTE,
 } from "../gameConstants";
 import {
   computeAbsentees,
@@ -3640,7 +3641,7 @@ export async function simulateExtraTime(
           (p.teamId === fixture.homeTeamId || p.teamId === fixture.awayTeamId),
       ));
   const msPerMinute = anyHumanInET
-    ? 2000
+    ? ((context.game as any)?.msPerMinute ?? DEFAULT_MS_PER_MINUTE)
     : context.cupFinalSpectator
       ? CUP_FINAL_SPECTATOR_MS_PER_MINUTE
       : 100;
