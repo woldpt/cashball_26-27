@@ -31,13 +31,7 @@ import {
   getMatchFatigueSnapshot,
   queueMatchDeltaWrites,
   createMinuteBarrier,
-  dbAllAsync,
 } from "./game/engine";
-import {
-  checkLineupReady,
-  isLobbyStarter,
-  upcomingMatchweek,
-} from "./game/lineupReady";
 import { generateAITactic } from "./game/matchCalculations";
 import { computeMoms } from "./game/mom";
 import {
@@ -50,7 +44,6 @@ import {
   logCalendarAdvance,
   requiredTeamIds,
   saveMatchCheckpoint,
-  setSeatIntent,
   waitForPresence,
 } from "./roomStateHelpers";
 
@@ -1918,8 +1911,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
     // ── Lobby → start match (league OR cup, identical) ──────────────────────
     if (game.gamePhase === "lobby") {
-      // Single-flight do arranque de semana: a barreira do 11 (com awaits) e o
-      // callback do db.get abaixo criam uma janela onde um segundo dispatch
+      // Single-flight do arranque de semana: o callback do db.get abaixo cria
+      // uma janela onde um segundo dispatch
       // (dois "Pronto" quase simultâneos) entrava em startWeekOnce em paralelo
       // e o segundo BEGIN das finanças falhava dentro da transação do primeiro
       // (SQLITE_ERROR: cannot start a transaction within a transaction).
@@ -1934,48 +1927,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         return;
       }
       segmentRunning[game.roomCode] = true;
-      // Barreira do 11 no pontapé de saída: a tática pode ter mudado depois
-      // do ready (ex. desmarcou um titular). Sem 11 + banco completo o jogo
-      // não arranca; o treinador em falta perde o ready (volta a clicar
-      // depois de corrigir) e é avisado. Espectadores sem jogo na ronda
-      // passam sempre; sem fixtures conhecidas, fail-open (não bloqueia).
-      const lobbyFixtures = (game as any).currentFixtures;
-      if (lobbyFixtures && lobbyFixtures.length > 0) {
-        const blockers: string[] = [];
-        const involved = getPlayerList(game).filter(
-          (p) => p.teamId != null && isLobbyStarter(lobbyFixtures, p.teamId),
-        );
-        for (const p of involved) {
-          const rows = await dbAllAsync(game.db,
-            "SELECT * FROM players WHERE team_id = ?",
-            [p.teamId],
-          ).catch(() => null);
-          if (!rows) continue;
-          const check = checkLineupReady(
-            (p.tactic as any)?.positions,
-            rows,
-            p.teamId as number,
-            upcomingMatchweek(game),
-          );
-          if (!check.ok) {
-            p.ready = false;
-            setSeatIntent(game, p.name, { ready: false });
-            blockers.push(`${p.name}: ${check.reason}`);
-            if (p.socketId) {
-              io.to(p.socketId).emit("systemMessage", {
-                text: `⛔ Arranque travado — ${check.reason}`,
-              });
-            }
-          }
-        }
-        if (blockers.length > 0) {
-          console.warn(
-            `[${game.roomCode}] ⛔ Lobby→match bloqueado: 11/banco incompleto: ${blockers.join(" | ")}`,
-          );
-          segmentRunning[game.roomCode] = false;
-          return;
-        }
-      }
+      // Gate único do 11+7 no setReady (socketGameplayHandlers): quem chega
+      // aqui já validou o 11 + banco ao clicar "Ir a jogo". Sem revalidação —
+      // só quórum de readys.
       const entry = SEASON_CALENDAR[game.calendarIndex];
       if (!entry) {
         console.warn(

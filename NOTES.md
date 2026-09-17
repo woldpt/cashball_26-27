@@ -1,3 +1,9 @@
+## Gate único do 11+7 no setReady; checkAllReady só conta readys (2026-09-17)
+
+- O avanço tinha duas validações do 11+7: o gate do `setReady` (`socketGameplayHandlers.ts`, recusa com `systemMessage` sem marcar ready) e uma 2.ª barreira no ramo lobby do `checkAllReady` (`weeklyFlowHelpers.ts`) que revalidava todos no arranque e **retirava** readys já dados — o `ready` deixava de significar "cliquei Ir a jogo e validei".
+- Fix: removida a 2.ª barreira (query por equipa + `checkLineupReady` + strip de ready + aviso de arranque) e os imports mortos (`lineupReady`, `dbAllAsync`, `setSeatIntent`); o `checkAllReady` fica só com congelamento/quórum/single-flight/recovery/arranque. Inbox por responder e espetadores livres continuam no gate único, como decidido.
+- Checks: server `typecheck` limpo, `audit:socketio` (0 erros / 95 avisos pré-existentes), `test:session-freeze` 11/11. Sem toque no cliente → sem `check:types`/lint/mobile-resp-check. `audit:gamestate` fica para quando houver código de sala.
+
 ## Convite aceite deixava Jornal e briefing no clube antigo (2026-09-17)
 
 - O `handleAcceptJobOffer` (`coachDismissalHelpers.ts`) atualizava a BD (`manager_id`) e a memória (`player.teamId`), mas nunca o assento (`room_seats`): após restart o `loadSeats` ressuscitava o treinador no clube antigo. E o rejoin (`assignPlayer`) só criava a entrada de `playersByName`, nunca reconciliava — com a memória obsoleta, `getGlobalNews`, `requestNextMatchSummary` (memória ganha ao pedido) e `requestResync` devolviam o clube antigo, imunes a refresh.
