@@ -63,7 +63,7 @@ function bonusForStars(stars: number): number {
 }
 
 /**
- * Regista a formação usada num jogo (liga ou Taça): +1 estrela para essa
+ * Regista a formação usada num jogo (liga, Taça ou amigável): +1 estrela para essa
  * formação, mantendo a janela das últimas 5 formações.
  * Síncrono; apenas altera o estado em memória do jogo.
  */

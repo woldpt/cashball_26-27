@@ -2051,6 +2051,23 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				} catch {}
 				const hG = fixture.finalHomeGoals ?? 0;
 				const aG = fixture.finalAwayGoals ?? 0;
+				// Memória táctica: o amigável conta como liga/Taça (+1 estrela por jogo).
+				const recordFriendlyFamiliarity = (teamId: number, tactic: any, result: string) => {
+					if (!tactic?.formation || !tactic?.style) return;
+					updateTacticFamiliarity(game, teamId, tactic, game.matchweek, result);
+					const playerState = Object.values(game.playersByName).find(
+						(p: any) => p.teamId === teamId && p.socketId,
+					);
+					if (!playerState) return;
+					game.db.run(
+						"INSERT INTO player_tactic_history (team_id, player_name, formation, style, matchweek, competition, result) VALUES (?, ?, ?, ?, ?, ?, ?)",
+						[teamId, playerState.name, tactic.formation, tactic.style, game.matchweek, "friendly", result],
+					);
+				};
+				const fHomeRes = hG > aG ? "V" : hG < aG ? "D" : "E";
+				const fAwayRes = aG > hG ? "V" : aG < hG ? "D" : "E";
+				recordFriendlyFamiliarity(fixture.homeTeamId, (fixture as any)._t1, fHomeRes);
+				recordFriendlyFamiliarity(fixture.awayTeamId, (fixture as any)._t2, fAwayRes);
 				results.push({
 					homeTeamId: fixture.homeTeamId,
 					awayTeamId: fixture.awayTeamId,

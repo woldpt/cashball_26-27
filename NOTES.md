@@ -1,3 +1,9 @@
+## Amigável conta para a familiaridade tática (2026-09-17)
+
+- O `finalizeFriendly` (`server/cupFlowHelpers.ts`) não tocava na memória tática: o amigável dava ritmo mas zero estrelas, enquanto liga (`matchSummaryHelpers.ts`) e Taça (`finalizeCupRound`) dão +1 por jogo.
+- Fix: bloco `recordFriendlyFamiliarity` no loop do amigável — `updateTacticFamiliarity` com `fixture._t1/_t2` (preenchidos pelo `runMatchSegment`, como na liga/Taça) para todas as equipas incl. NPCs, e linha de auditoria em `player_tactic_history` só para humanos com `socketId` (`competition='friendly'`, resultado `V/E/D` pois o amigável admite empate). Comentário do helper atualizado («liga, Taça ou amigável»). Sem retroativo: só próximos amigáveis.
+- Checks: server `typecheck` OK, `audit:socketio` 0 erros (96 avisos pré-existentes). Sem toque no cliente → sem lint/mobile-resp-check. `audit:gamestate` fica para a próxima sala com amigável.
+
 ## Boas-vindas para cada treinador que entra na sala (2026-09-17)
 
 - Sintoma: a notícia de boas-vindas só aparecia ao fundador — os outros jogadores entravam e o Jornal vinha vazio até surgirem eventos próprios.
