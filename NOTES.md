@@ -1,3 +1,9 @@
+## Convite aceite deixava Jornal e briefing no clube antigo (2026-09-17)
+
+- O `handleAcceptJobOffer` (`coachDismissalHelpers.ts`) atualizava a BD (`manager_id`) e a memória (`player.teamId`), mas nunca o assento (`room_seats`): após restart o `loadSeats` ressuscitava o treinador no clube antigo. E o rejoin (`assignPlayer`) só criava a entrada de `playersByName`, nunca reconciliava — com a memória obsoleta, `getGlobalNews`, `requestNextMatchSummary` (memória ganha ao pedido) e `requestResync` devolviam o clube antigo, imunes a refresh.
+- Fix: `setSeatTeamId` no aceite; `assignPlayer` reconcilia `teamId` com a BD (via `managers`, cura salas já partidas no próximo join); `warn` nos `return` silenciosos do aceite (sem convite/sessão/manager). Cliente: no `teamAssigned` com clube diferente (via `meRef`), limpa `nextMatchSummary` e emite `getGlobalNews` — o refetch do briefing segue pelo `me.teamId`.
+- Checks: server `typecheck`, `audit:socketio` (0 erros / 95 avisos pré-existentes), `test:connect-smoke`, `test:session-freeze` 11/11, `build`; client eslint do ficheiro + `check:types`. Sem mudança de layout → sem mobile-resp-check. Sem acesso à sala do reporte — `audit:gamestate` fica para quando houver código.
+
 ## Amigável 0–0 contado como «Derrota Esperada» no Jornal (2026-09-16)
 
 - O amigável de pré-época (ronda 0) viaja no fio da Taça (`cupRoundResults`), e o bloco da Taça no `GameContext.jsx` tratava tudo como eliminatória: `outcome` só por `winnerId` (sem ramo de empate) e `source: "cup"`. Num 0–0 sem `winnerId` saía sempre `loss` + `loss_expected` (adversário de escalão superior) — título de derrota com marcador de empate — e a chave `cup:época:0` não fundia com o rescaldo persistido `friendly:época:1`, duplicando a notícia.

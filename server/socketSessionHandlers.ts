@@ -275,6 +275,14 @@ export function registerSessionSocketHandlers(
 				tactic: { formation: "4-4-2", style: "Balanced" },
 				socketId: socket.id,
 			};
+		} else if (game.playersByName[name].teamId !== team.id) {
+			// Reconciliação: o clube mudou fora do join (convite aceite) e a
+			// projeção ficou obsoleta — a BD (via managers) manda. Sem isto,
+			// Jornal e briefing do clube antigo sobreviviam a refreshes.
+			console.log(
+				`[${roomCode}] 🔄 assignPlayer reconcilia equipa: ${name} ${game.playersByName[name].teamId} → ${team.id}`,
+			);
+			game.playersByName[name].teamId = team.id;
 		}
 		// O assento é a fonte da verdade: repõe equipa e intenção (ready/tática)
 		// que sobreviveram ao disconnect/restart — o rejoin já não perde o que o

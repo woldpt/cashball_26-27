@@ -910,6 +910,14 @@ export function useSocketListeners(handlers, refs) {
 				}),
 				teamId: data.teamId,
 			}));
+			// Troca de clube (convite aceite): largar o briefing do clube antigo
+			// e pedir o Jornal do novo — sem isto, ambos ficavam obsoletos até
+			// ao próximo broadcast (o refetch do briefing segue via me.teamId).
+			// O meRef ainda tem o clube anterior (o setMe acima é assíncrono).
+			if (refs.meRef.current?.teamId !== data.teamId) {
+				handlers.setNextMatchSummary(null);
+				socket.emit("getGlobalNews");
+			}
 			// Merge das versões de avatar dos coaches da sala (exibição em listas/chat)
 			if (data.coachAvatars && typeof data.coachAvatars === "object") {
 				handlers.setCoachAvatars((prev) => ({

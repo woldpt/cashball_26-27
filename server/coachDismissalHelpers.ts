@@ -13,7 +13,7 @@ import {
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { upcomingMatchweek } from "./game/lineupReady";
-import { deleteSeat } from "./roomStateHelpers";
+import { deleteSeat, setSeatTeamId } from "./roomStateHelpers";
 
 type Db = any;
 type AnyRow = Record<string, any>;
@@ -914,10 +914,16 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     coachName: string,
   ): Promise<void> => {
     const offer = game.pendingJobOffers[coachName];
-    if (!offer) return;
+    if (!offer) {
+      console.warn(`[${game.roomCode}] acceptJobOffer sem convite pendente: ${coachName}`);
+      return;
+    }
 
     const player = game.playersByName[coachName];
-    if (!player) return;
+    if (!player) {
+      console.warn(`[${game.roomCode}] acceptJobOffer sem sessão em memória: ${coachName}`);
+      return;
+    }
 
     const { fromTeamId, toTeamId } = offer;
 
@@ -943,7 +949,10 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       "SELECT id FROM managers WHERE name = ?",
       [coachName],
     );
-    if (!mgr) return;
+    if (!mgr) {
+      console.warn(`[${game.roomCode}] acceptJobOffer sem registo em managers: ${coachName}`);
+      return;
+    }
 
     // Update DB
     game.db.run("UPDATE teams SET manager_id = ? WHERE id = ?", [
@@ -956,6 +965,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
 
     // Update in-memory state
     player.teamId = toTeamId;
+    // O assento é a fonte durável (loadSeats pós-restart): sem isto o treinador
+    // ressuscitava no clube antigo e Jornal/briefing ficavam obsoletos ao refresh.
+    setSeatTeamId(game, coachName, toTeamId);
     delete game.pendingJobOffers[coachName];
 
     // Novo clube: reiniciar carência, streak de orçamento e aviso da direcção.
