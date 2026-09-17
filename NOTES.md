@@ -1,3 +1,10 @@
+## Boas-vindas para cada treinador que entra na sala (2026-09-17)
+
+- Sintoma: a notícia de boas-vindas só aparecia ao fundador — os outros jogadores entravam e o Jornal vinha vazio até surgirem eventos próprios.
+- Causa: o `assignPlayer` (`server/socketSessionHandlers.ts`) só gravava a `welcome` com `isNew && calendarIndex === 0 && roomCreator === name`, e o `getGlobalNews` filtra por `team_id` — cada equipa só vê o seu Jornal.
+- Fix: guard passa a `if (isNew)` — cada treinador recebe a sua `welcome` do seu clube ao assumir equipa pela primeira vez, em qualquer altura da época. Reentradas (`isNew=false`) não duplicam; convites aceites mantêm a via própria («Novo treinador»). Descrição neutralizada (antes falava em «as portas da sala acabam de abrir»).
+- Checks: server `typecheck` OK, `audit:socketio` 0 erros (96 avisos pré-existentes). Sem toque no cliente → sem lint/mobile-resp-check.
+
 ## Reconexão em popup central + reload automático pós-restart (2026-09-17)
 
 - O `OfflineBanner` deixou de ser faixa de topo: agora é popup centrado (`ModalShell` card, `z=99998`, não dispensável) com o mesmo texto/condições («Sem ligação» / «A reconectar…» + `N em fila`) e o botão «Tentar agora» só quando o browser está online.

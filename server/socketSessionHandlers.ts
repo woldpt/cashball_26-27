@@ -290,9 +290,9 @@ export function registerSessionSocketHandlers(
 		claimSeat(game, name, { teamId: team.id, deviceId });
 		const displacedSocketId = bindSocket(game, name, socket.id);
 
-		// Uma sala nova começa com uma peça editorial no Jornal — só para o
-		// treinador fundador, nunca em reentradas ou convites posteriores.
-		if (isNew && game.calendarIndex === 0 && game.roomCreator === name) {
+		// Cada treinador recebe a sua peça de boas-vindas no Jornal da sua
+		// equipa — reentradas (isNew=false) e convites (via própria) não duplicam.
+		if (isNew) {
 			logClubNews(
 				game,
 				"welcome",
@@ -300,7 +300,7 @@ export function registerSessionSocketHandlers(
 				team.id,
 				{
 					description:
-						"As portas da sala acabam de abrir. Há uma bancada para conquistar, um plantel para moldar e uma época inteira para escrever.",
+						"Há uma bancada para conquistar, um plantel para moldar e uma época para escrever.",
 					matchweek: game.matchweek,
 					year: game.year,
 				},
