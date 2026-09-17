@@ -1,3 +1,10 @@
+## Festejo de golo nos cards de jogos com humano (2026-09-17)
+
+- Pedido: levar «esse tipo de efeito» (festejo de golo) aos cards de jogos com treinador humano. Decisões do utilizador: festejo dentro do card, para qualquer golo do jogo, sempre em direto (mesmo durante o próprio jogo).
+- Implementação: `GoalFlashOverlay` ganhou `variant="card"` — reutiliza a fila `{ ts, n }` já provada, mas renderiza inline (`absolute inset-0`, sem portal) e em ponto pequeno: wash verde + carimbo «GOLO!» quando marca o lado do humano, variante sóbria vermelha quando marca o NPC (humano vs humano: ambos festejam). Sem confete (`CelebrationBurst` voa 90–210px, grande para um card de ~60px). `LiveFixtureRow` monta-o só com `isHumanMatch` (+ `relative` no botão para o conter; sem mudança de layout) e `GameRoutes` passa `isPlayingMatch` nos dois sítios.
+- Checks: e2e com dois treinadores (sala + sonda temporária, removidas): golo do humano → 1 flash `GOLO!`; golo do NPC → 1 variante sóbria; par no mesmo minuto → 2 momentos; screenshot revisto sem quebra de layout. Client lint só os 2 erros pré-existentes, `check:types` OK, `test:goalflash` OK. Sem mudança estrutural → sem mobile-resp-check.
+- Nota lateral (pré-existente, fora de âmbito): `TeamEvents` (`LiveMatchHero.jsx`) mete `[nameEl, icon, minuteEl]` em array sem `key` — warning no console.
+
 ## GoalFlashOverlay: um festejo por golo, mesmo no mesmo minuto (2026-09-17)
 
 - Sintoma: overlay nem sempre renderizava no próprio jogo, jornada normal da liga.

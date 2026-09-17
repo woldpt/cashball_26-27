@@ -21,6 +21,12 @@ import { freshGoalFlashes } from "../../live/liveHelpers.js";
  * Regras de jogo: transform/opacity apenas (GPU), auto-dismiss, pointer-events
  * none (nunca bloqueia input). Animações via framer → reduced-motion é
  * respeitado globalmente (MotionConfig reducedMotion="user").
+ *
+ * Variante `card` (cards de jogos com treinador humano no `LiveFixtureRow`):
+ * a mesma fila, mas renderizada inline (`absolute inset-0`, sem portal) e em
+ * ponto pequeno — wash + carimbo "GOLO!" quando marca o lado do humano,
+ * variante sóbria vermelha quando marca o NPC. Sem confete: o
+ * `CelebrationBurst` voa 90–210px, grande demais para um card de ~60px.
  * ─────────────────────────────────────────────────────────────────────────
  *
  * @param {Object} props
@@ -30,6 +36,7 @@ import { freshGoalFlashes } from "../../live/liveHelpers.js";
  * @param {boolean} props.homeIsMine
  * @param {boolean} props.awayIsMine
  * @param {boolean} props.isPlayingMatch
+ * @param {"page"|"card"} [props.variant="page"]
  */
 export function GoalFlashOverlay({
   goalFlashRef,
@@ -38,6 +45,7 @@ export function GoalFlashOverlay({
   homeIsMine,
   awayIsMine,
   isPlayingMatch,
+  variant = "page",
 }) {
   // Fila de momentos (um por golo) + o que está no ecrã é sempre a cabeça.
   // Sem fila, dois golos no mesmo minuto colapsavam num só festejo: o
@@ -82,6 +90,51 @@ export function GoalFlashOverlay({
 
   const mine = moment.mine;
   const color = mine ? "#22c55e" : "#ef4444";
+
+  // Variante card: festejo contido no card (sem portal, sem confete).
+  if (variant === "card") {
+    return (
+      <div
+        key={`${moment.side}-${moment.ts}-${moment.seq}`}
+        data-testid="card-goal-flash"
+        data-mine={mine ? "true" : "false"}
+        className="absolute inset-0 z-10 pointer-events-none overflow-hidden flex items-center justify-center"
+      >
+        <motion.div
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(ellipse 90% 130% at 50% 50%, ${color}${mine ? "55" : "44"} 0%, rgba(0,0,0,0) 70%)`,
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 0] }}
+          transition={{ duration: 1.9, times: [0, 0.28, 1], ease: "easeOut" }}
+        />
+        {!mine && (
+          <motion.div
+            className="absolute inset-0 bg-red-950/60"
+            initial={{ opacity: 0, x: 0 }}
+            animate={{ opacity: [0, 1, 1, 0], x: [0, -4, 4, -3, 3, 0] }}
+            transition={{ duration: 1.9, times: [0, 0.2, 0.8, 1] }}
+          />
+        )}
+        {mine && (
+          <motion.span
+            className="relative font-headline font-black uppercase tracking-tight leading-none"
+            style={{
+              fontSize: "clamp(1rem, 4vw, 1.4rem)",
+              color,
+              textShadow: `0 0 14px ${color}`,
+            }}
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1.15, 1, 1.08] }}
+            transition={{ duration: 1.9, times: [0, 0.16, 0.8, 1] }}
+          >
+            GOLO!
+          </motion.span>
+        )}
+      </div>
+    );
+  }
 
   const overlay = (
     // `key` no flash: cada golo remonta a árvore inteira do zero. Sem isto,

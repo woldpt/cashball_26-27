@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import { getMatchLastEventText } from "../../utils/playerHelpers.js";
 import { FLASH_COLOR, isFlashing, isGoalType } from "./liveHelpers.js";
+import { GoalFlashOverlay } from "../match/shared/GoalFlashOverlay.jsx";
 
 /* ── LiveFixtureRow — card de jogo ao vivo (3 contextos: divisão, outras
  *    divisões, taça) ─────────────────────────────────────────────────────
@@ -18,6 +19,7 @@ import { FLASH_COLOR, isFlashing, isGoalType } from "./liveHelpers.js";
  * @param {Array} props.players - treinadores humanos
  * @param {number} props.liveMinute
  * @param {Object} props.goalFlashRef
+ * @param {boolean} props.isPlayingMatch
  * @param {Function} props.onOpenDetail
  */
 function LiveFixtureRowInner({
@@ -26,6 +28,7 @@ function LiveFixtureRowInner({
   players,
   liveMinute,
   goalFlashRef,
+  isPlayingMatch,
   onOpenDetail,
 }) {
   const homeTeamId = match.homeTeamId;
@@ -97,12 +100,24 @@ function LiveFixtureRowInner({
       type="button"
       onClick={onOpenDetail}
       aria-label={`Ver detalhes: ${homeName} ${homeGoals}-${awayGoals} ${awayName}`}
-      className={`group w-full text-left rounded-lg overflow-hidden transition-colors border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 ${
+      className={`group w-full text-left rounded-lg overflow-hidden transition-colors border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400 relative ${
         isHumanMatch
           ? "bg-gradient-to-b from-amber-500/10 via-surface-container to-surface-container border-l-2 border-amber-400/80 shadow-[0_0_16px_rgba(251,191,36,0.08)] hover:shadow-[0_0_20px_rgba(251,191,36,0.16)]"
           : "bg-surface-container hover:bg-surface-bright border-outline-variant/15"
       }`}
     >
+      {/* Festejo de golo contido no card (só jogos com humano) */}
+      {isHumanMatch && (
+        <GoalFlashOverlay
+          variant="card"
+          goalFlashRef={goalFlashRef}
+          homeId={homeTeamId}
+          awayId={awayTeamId}
+          homeIsMine={homeCoach != null}
+          awayIsMine={awayCoach != null}
+          isPlayingMatch={isPlayingMatch}
+        />
+      )}
       {/* Faixa única do treinador humano (o nome já não se repete por equipa) */}
       {isHumanMatch && (
         <div className="flex items-center justify-between gap-2 px-3 py-1 bg-amber-500/10 border-b border-amber-400/20">

@@ -346,6 +346,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                                               players={players}
                                               liveMinute={liveMinute}
                                               goalFlashRef={goalFlashRef}
+                                              isPlayingMatch={isPlayingMatch}
                                               onOpenDetail={() => {
                                                 setMatchDetailFixture(match);
                                                 setShowMatchDetail(true);
@@ -384,6 +385,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                                   players={players}
                                   liveMinute={liveMinute}
                                   goalFlashRef={goalFlashRef}
+                                  isPlayingMatch={isPlayingMatch}
                                   onOpenDetail={() => {
                                     setMatchDetailFixture(match);
                                     setShowMatchDetail(true);
