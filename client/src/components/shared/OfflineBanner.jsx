@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { socket, subscribeOutbox, getOutboxPending } from "../../socket.js";
+import { ModalShell } from "./ModalShell.jsx";
 
 /**
- * Global banner shown when the app is offline or the socket is disconnected.
+ * Popup global quando a app está offline ou o socket desligou.
  * Subscribes to navigator online/offline events and socket connect/disconnect.
  * Mostra ainda as ações em fila (tática, pronto, lances) e um botão para
  * forçar a reconexão — sem esperar pelo backoff automático.
@@ -33,34 +34,38 @@ export function OfflineBanner() {
     };
   }, []);
 
-  const showBanner = !browserOnline || !socketConnected;
-
-  if (!showBanner) return null;
-
+  const showPopup = !browserOnline || !socketConnected;
   const isBrowserOffline = !browserOnline;
-  const pendingLabel =
-    pending > 0 ? ` · ${pending} em fila` : "";
+  const pendingLabel = pending > 0 ? ` · ${pending} em fila` : "";
 
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="fixed top-0 left-0 right-0 z-[99998] bg-amber-500 text-black text-center text-xs font-semibold py-1.5 px-3 tracking-wide flex items-center justify-center gap-2"
-    >
-      <span>
-        {isBrowserOffline
-          ? `📡 Sem ligação${pendingLabel}`
-          : `🔄 A reconectar…${pendingLabel}`}
-      </span>
-      {!isBrowserOffline && (
-        <button
-          type="button"
-          onClick={() => socket.connect()}
-          className="underline underline-offset-2 font-bold"
+    <ModalShell visible={showPopup} z={99998} variant="card">
+      <div
+        role="status"
+        aria-live="polite"
+        className="px-6 py-5 text-center"
+      >
+        <span
+          aria-hidden
+          className="material-symbols-outlined animate-spin text-2xl leading-none text-primary"
         >
-          Tentar agora
-        </button>
-      )}
-    </div>
+          sync
+        </span>
+        <p className="mt-1 text-sm font-bold text-on-surface">
+          {isBrowserOffline
+            ? `📡 Sem ligação${pendingLabel}`
+            : `🔄 A reconectar…${pendingLabel}`}
+        </p>
+        {!isBrowserOffline && (
+          <button
+            type="button"
+            onClick={() => socket.connect()}
+            className="mt-2 underline underline-offset-2 font-bold text-primary"
+          >
+            Tentar agora
+          </button>
+        )}
+      </div>
+    </ModalShell>
   );
 }

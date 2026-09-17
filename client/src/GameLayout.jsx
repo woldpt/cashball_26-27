@@ -17,7 +17,6 @@ import { NAV_GROUPS, getGroupTabKeys, getGroupTabs } from "./constants/navigatio
 import { CoachTutorial } from "./components/tutorial/CoachTutorial.jsx";
 import { COACH_TUTORIAL_STEPS } from "./components/tutorial/coachTutorialSteps.js";
 import { OfflineBanner } from "./components/shared/OfflineBanner.jsx";
-import { ServerRestartBanner } from "./components/shared/ServerRestartBanner.jsx";
 import { RoomPauseBanner } from "./components/shared/RoomPauseBanner.jsx";
 import { GameRoutes } from "./GameRoutes.jsx";
 import { GameOverlays } from "./GameOverlays.jsx";
@@ -330,7 +329,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 ambient" />
       <RoomPauseBanner />
       <OfflineBanner />
-      <ServerRestartBanner />
       {/* Flash de reconnect (ex-toast 5): modal que desvanece sozinho. */}
       <AnimatePresence initial={false}>
         {reconnectFlash && (

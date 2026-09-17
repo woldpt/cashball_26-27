@@ -1,3 +1,10 @@
+## Reconexão em popup central + reload automático pós-restart (2026-09-17)
+
+- O `OfflineBanner` deixou de ser faixa de topo: agora é popup centrado (`ModalShell` card, `z=99998`, não dispensável) com o mesmo texto/condições («Sem ligação» / «A reconectar…» + `N em fila`) e o botão «Tentar agora» só quando o browser está online.
+- O aviso inline «Desligado — a reconectar...» saiu da `TacticsView` (mensagem dupla com o popup global); o `disconnected` do contexto continua a alimentar a landing.
+- O restart do servidor voltou ao automático com guarda anti-corrida: `socket.js` marca `_pendingRestartReload` no `serverStartTime` novo e só faz `location.reload()` no `gameState` seguinte (prova de auth/DB pronta), em vez do reload imediato que gerava `joinError` e apagava a sessão. O `ServerRestartBanner.jsx` (manual) foi removido e saiu da montagem do `GameLayout`.
+- Checks: `lint` só os 2 erros pré-existentes, `check:types` OK, mobile portrait `150/150` e landscape `180/180`.
+
 ## Estrelas de familiaridade com centro dourado sólido (2026-09-17)
 
 - Sintoma: as estrelas cheias da familiaridade tática mostravam só o contorno dourado, sem preenchimento ao centro.

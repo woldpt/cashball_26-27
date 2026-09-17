@@ -9,29 +9,11 @@ export const socket = io(import.meta.env.VITE_BACKEND_URL || undefined, {
   timeout: 20000,
 });
 
-// Detect server restarts: pede uma resincronização em vez de recarregar a
-// página. O reload obrigava a um join novo na janela em que a auth/DB ainda
-// não está pronta — e um `joinError` aí apagava a sessão guardada (o jogo
-// "desaparecia"). O servidor responde com o estado completo.
+// Restart do servidor: ressincroniza e recarrega sozinho quando o servidor
+// provar que está pronto (próximo gameState). Recarregar de imediato caía na
+// janela sem auth/DB e um `joinError` apagava a sessão guardada.
 let _knownServerStartTime = null;
-
-// Banner de reload manual após restart (ver ServerRestartBanner.jsx). O reload
-// automático foi removido de propósito: o resync automático continua e o
-// utilizador escolhe quando recarregar.
-const restartListeners = new Set();
-export function subscribeServerRestart(cb) {
-  restartListeners.add(cb);
-  return () => restartListeners.delete(cb);
-}
-function notifyRestart() {
-  for (const cb of restartListeners) {
-    try {
-      cb();
-    } catch {
-      /* ignore */
-    }
-  }
-}
+let _pendingRestartReload = false;
 
 socket.on("serverStartTime", (t) => {
   if (_knownServerStartTime === null) {
@@ -39,8 +21,8 @@ socket.on("serverStartTime", (t) => {
   } else if (_knownServerStartTime !== t) {
     _knownServerStartTime = t;
     console.log("[socket] servidor reiniciou — a ressincronizar estado");
+    _pendingRestartReload = true;
     socket.emit("requestResync");
-    notifyRestart();
   }
 });
 
@@ -104,6 +86,11 @@ socket.on("roomResumed", () => notifyPause({ paused: false }));
 let lastSeq = 0;
 socket.on("gameState", (data) => {
   if (typeof data?.seq === "number") lastSeq = data.seq;
+  if (_pendingRestartReload) {
+    _pendingRestartReload = false;
+    console.log("[socket] estado reposto após restart — a recarregar");
+    window.location.reload();
+  }
 });
 socket.on("roomEvent", (evt) => {
   if (typeof evt?.seq !== "number") return;
