@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { StadiumIllustration } from "../components/shared/StadiumIllustration.jsx";
 import { DIVISION_NAMES } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
-import { getMoraleLabel } from "../utils/morale.js";
+import { getMoraleLabel, getMoraleClasses } from "../utils/morale.js";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
@@ -109,18 +109,9 @@ export function ClubTab({
 }) {
   const morale = teamInfo?.morale ?? 50;
   const moraleLabel = getMoraleLabel(morale).toUpperCase();
-  const moraleTextColor =
-    morale >= 70
-      ? "text-emerald-400"
-      : morale >= 40
-        ? "text-amber-400"
-        : "text-error";
-  const moraleBarColor =
-    morale >= 70
-      ? "bg-emerald-500"
-      : morale >= 40
-        ? "bg-amber-500"
-        : "bg-error";
+  const moraleTone = getMoraleClasses(morale);
+  const moraleTextColor = moraleTone.text;
+  const moraleBarColor = moraleTone.bar;
 
   // ── Agrupamento do histórico por ano ───────────────────────────────
   const groupedNews = useMemo(() => {

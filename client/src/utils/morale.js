@@ -16,15 +16,39 @@ export function getMoraleLabel(morale) {
 }
 
 /**
- * Cor semântica da moral do plantel (mesmos limiares do TacticsView).
+ * Tom semântico da moral — mesmos limiares do getMoraleLabel (7 níveis),
+ * para a etiqueta nunca vestir cor de outro escalão (ex. "Animados" de vermelho).
  * @param {number} morale Valor 0–100 (qualquer número é limitado à escala)
- * @returns {string} chave de cor ("green"|"amber"|"red") para mapear para classes
+ * @returns {string} tom ("red"|"orange"|"amber"|"yellow"|"lime"|"green"|"emerald")
  */
 export function getMoraleColor(morale) {
   const v = Math.max(0, Math.min(100, Number(morale) || 0));
-  if (v > 75) return "green";
-  if (v >= 50) return "amber";
-  return "red";
+  if (v < 15) return "red";
+  if (v < 30) return "orange";
+  if (v < 45) return "amber";
+  if (v < 60) return "yellow";
+  if (v < 75) return "lime";
+  if (v < 90) return "green";
+  return "emerald";
+}
+
+const MORALE_TONE_CLASSES = {
+  red: { text: "text-red-400", bar: "bg-red-500", dot: "bg-red-400" },
+  orange: { text: "text-orange-400", bar: "bg-orange-500", dot: "bg-orange-400" },
+  amber: { text: "text-amber-400", bar: "bg-amber-500", dot: "bg-amber-400" },
+  yellow: { text: "text-yellow-300", bar: "bg-yellow-400", dot: "bg-yellow-300" },
+  lime: { text: "text-lime-400", bar: "bg-lime-500", dot: "bg-lime-400" },
+  green: { text: "text-green-400", bar: "bg-green-500", dot: "bg-green-400" },
+  emerald: { text: "text-emerald-400", bar: "bg-emerald-500", dot: "bg-emerald-400" },
+};
+
+/**
+ * Classes Tailwind do tom da moral (texto, barra e dot partilham o tom).
+ * @param {number} morale Valor 0–100
+ * @returns {{ text: string, bar: string, dot: string }} classes do tom
+ */
+export function getMoraleClasses(morale) {
+  return MORALE_TONE_CLASSES[getMoraleColor(morale)] ?? MORALE_TONE_CLASSES.amber;
 }
 
 /**

@@ -8,7 +8,7 @@ import { PrepStepper } from "../components/live/briefing/index.js";
 import { WaitingCoachesModal } from "../components/modals/WaitingCoachesModal.jsx";
 import { socket, queueEmit } from "../socket.js";
 import { TACTIC_FORMATIONS, MAX_BENCH_SIZE } from "../constants/index.js";
-import { getMoraleLabel } from "../utils/morale.js";
+import { getMoraleLabel, getMoraleClasses } from "../utils/morale.js";
 import { isPostMatchQueueActive } from "../utils/postMatchFlow.js";
 import { PlayerAvatar as PlayerAvatarSVG } from "../components/shared/PlayerAvatar.jsx";
 
@@ -528,18 +528,7 @@ export function TacticsView() {
                 <div className="flex-1 min-w-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
                   {(() => {
                     const morale = teamInfo?.morale ?? 50;
-                    const fillColor =
-                      morale > 75
-                        ? "bg-green-500"
-                        : morale >= 50
-                          ? "bg-yellow-500"
-                          : "bg-red-500";
-                    const textColor =
-                      morale > 75
-                        ? "text-green-400"
-                        : morale >= 50
-                          ? "text-yellow-400"
-                          : "text-red-400";
+                    const { text: textColor, bar: fillColor } = getMoraleClasses(morale);
                     const label = getMoraleLabel(morale);
                     return (
                       <>
@@ -678,18 +667,7 @@ export function TacticsView() {
               <div className="hidden xl:block bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
                 {(() => {
                   const morale = teamInfo?.morale ?? 50;
-                  const fillColor =
-                    morale > 75
-                      ? "bg-green-500"
-                      : morale >= 50
-                        ? "bg-yellow-500"
-                        : "bg-red-500";
-                  const textColor =
-                    morale > 75
-                      ? "text-green-400"
-                      : morale >= 50
-                        ? "text-yellow-400"
-                        : "text-red-400";
+                  const { text: textColor, bar: fillColor } = getMoraleClasses(morale);
                   const label = getMoraleLabel(morale);
                   return (
                     <div className="px-4 short:px-3 py-2.5 short:py-1.5">

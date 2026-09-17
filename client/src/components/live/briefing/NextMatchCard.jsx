@@ -4,12 +4,8 @@ import { VersusHero } from "./VersusHero.jsx";
 import { FormChips } from "./FormChips.jsx";
 import { RecordText } from "./RecordText.jsx";
 
-/* Dots de moral por chave semântica (getMoraleColor). */
-const MORALE_DOT = {
-  green: "bg-green-400",
-  amber: "bg-amber-400",
-  red: "bg-red-400",
-};
+/* Dots de moral por tom semântico (getMoraleClasses). */
+import { getMoraleClasses } from "../../../utils/morale.js";
 
 /**
  * Moral "eu vs adversário" com dot colorido + rótulo + valor em tooltip.
@@ -24,7 +20,7 @@ const MoraleValue = memo(function MoraleValue({ morale }) {
     >
       <span
         aria-hidden
-        className={`w-1.5 h-1.5 rounded-full shrink-0 ${MORALE_DOT[morale.color] ?? MORALE_DOT.amber}`}
+        className={`w-1.5 h-1.5 rounded-full shrink-0 ${getMoraleClasses(morale.value).dot}`}
       />
       <span className="truncate">{morale.label}</span>
     </span>
