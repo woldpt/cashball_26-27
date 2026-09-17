@@ -3640,7 +3640,7 @@ export async function simulateExtraTime(
           (p.teamId === fixture.homeTeamId || p.teamId === fixture.awayTeamId),
       ));
   const msPerMinute = anyHumanInET
-    ? 1000
+    ? 2000
     : context.cupFinalSpectator
       ? CUP_FINAL_SPECTATOR_MS_PER_MINUTE
       : 100;

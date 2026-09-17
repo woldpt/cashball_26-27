@@ -1,3 +1,9 @@
+## Ritmo da simulação: 1 min de jogo = 2s reais (2026-09-17)
+
+- Pedido: abrandar o direto (estava 1 min = 1s real). Decisão: 2s/min só em jogos com humanos; só-NPC (100ms) e final-espetador (500ms) intactos.
+- Fix: `MS_PER_GAME_MINUTE` 1000 → 2000 (`server/weeklyFlowHelpers.ts`, tempo regulamentar) + ramo `anyHumanInET` 1000 → 2000 (`server/game/engine.ts`, prolongamento) + comentário do ritmo em `server/gameConstants.ts`. Cliente intocado (só reage a `matchMinuteUpdate`).
+- Checks: server `typecheck` OK, `audit:socketio` 0 erros (96 avisos pré-existentes).
+
 ## Guia da engine do Hattrick (2026-09-17)
 
 - Adiado o motor de flancos para futuro próximo; a pedido, pesquisa web sobre os segredos do Hattrick.org guardada em `docs/HATTRICK_ENGINE.md` (pt-PT): duelos espelhados por setor, pipeline posse→chances→conversão (5 exclusivas + abertas), 6 táticas com preço visível, ordens individuais, matriz de contribuição, HatStats, eventos especiais, meteorologia (espírito/confiança/forma/resistência/confusão/clima) + secção "o que roubar" ordenada por custo/benefício p/ o CashBall. Wiki bloqueou fetch direto (403) — conteúdo via sínteses de pesquisa + fontes linkadas; fórmulas exatas marcadas como estimativas da comunidade.

@@ -281,7 +281,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
   // Handles both league and cup first/second halves.
   // Uses game.currentFixtures populated by the caller.
 
-  const MS_PER_GAME_MINUTE = 1000;
+  const MS_PER_GAME_MINUTE = 2000;
 
   async function runMatchSegment(
     game: ActiveGame,
