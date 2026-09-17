@@ -230,10 +230,14 @@ export function newsCategory(n) {
     t === "ticket_revenue" ||
     t === "stadium_build" ||
     t === "cost_cut" ||
-    t === "postmatch"
+    t === "postmatch" ||
+    t === "contract_request" ||
+    t === "job_offer" ||
+    t === "board_warning"
   )
     return "club";
-  if (t === "academy") return "squad";
+  if (t === "cup_draw") return "competitions";
+  if (t === "academy" || t === "injury" || t === "suspension") return "squad";
   return "competitions";
 }
 
@@ -319,8 +323,185 @@ function postmatchArticle(n) {
   );
 }
 
-function newsArticle(n, { owner, related, seller, buyer } = {}) {
+/**
+ * Factos de uma notícia persistida nova (JSON `v: 1` na descrição).
+ * @param {object} n linha do globalNews
+ * @returns {object|null}
+ */
+export function parseNewsFacts(n) {
+  try {
+    const r = JSON.parse(String(n?.description || ""));
+    return r && r.v === 1 ? r : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Artigo de um pedido de renovação persistido (factos em JSON).
+ * @param {object} n linha `contract_request`
+ */
+function contractRequestArticle(n) {
+  const facts = parseNewsFacts(n) || {};
+  const player = newsPlayer(n) || {
+    id: n?.player_id,
+    label: n?.player_name || "O jogador",
+    photo: n?.player_photo || null,
+    position: facts.position || "ATA",
+  };
+  const p = partPlayer(player);
+  const demand =
+    facts.requestedWage != null
+      ? formatCurrency(facts.requestedWage)
+      : "um valor não divulgado";
+  const title = `Agente do Jogador — ${player.label}`;
+  const end = facts.contractEndLabel ? ` Contrato até ${facts.contractEndLabel}.` : "";
+  const body = facts.isRenegotiation
+    ? `${facts.agent || "O agente"} viu o plantel no Excel: ${player.label} vale muito mais do que recebe. Exige ${demand}/sem.${end} A direção espera uma resposta antes que as conversas com outros clubes avancem.`
+    : `${facts.agent || "O agente"} ligou em pânico: ${player.label} anda a olhar para vitrinas de troféus que não são as tuas. Exige ${demand}/sem.${end} Responde antes do próximo jogo.`;
+  return {
+    ...makeArticle([partText("Agente do Jogador — "), p], linkFirstMention(body, p), player, [], null),
+    title,
+    facts,
+  };
+}
+
+/**
+ * Artigo de um convite de clube persistido (factos em JSON).
+ * @param {object} n linha `job_offer`
+ */
+function jobOfferArticle(n) {
+  const facts = parseNewsFacts(n) || {};
+  const to = newsTeam(n?.related_team_id, n?.related_team_name) || {
+    id: n?.related_team_id,
+    label: n?.related_team_name || "Um clube",
+  };
+  const from = newsTeam(n?.team_id, n?.team_name);
+  const record = `${facts.wins ?? 0}V ${facts.draws ?? 0}E ${facts.losses ?? 0}D`;
+  const title = `Convite: ${to.label}`;
+  const body = `${to.label} quer-te como treinador. Responde antes do próximo jogo.`;
+  return {
+    ...makeArticle(
+      [partText("Convite: "), partTeam(to)],
+      linkFirstMention(body, partTeam(to)),
+      null,
+      [to, from],
+      null,
+    ),
+    title,
+    facts: { ...facts, record },
+  };
+}
+
+/**
+ * Artigo de um aviso da direção persistido (factos em JSON).
+ * @param {object} n linha `board_warning`
+ */
+function boardWarningArticle(n) {
+  const facts = parseNewsFacts(n) || {};
+  const final = Number(facts.level) === 3;
+  const title = final ? "Último aviso da direção" : "Aviso da direção";
+  const owner = newsTeam(n?.team_id, n?.team_name);
+  const body = `Orçamento negativo (${formatCurrency(facts.budget ?? 0)}): ${facts.streak ?? 1} semana${facts.streak === 1 ? "" : "s"} no vermelho. Carrega em Ok para confirmar leitura.`;
+  return {
+    ...makeArticle(
+      [partText(title)],
+      owner ? [partTeam(owner), partText(`: ${body.charAt(0).toLowerCase()}${body.slice(1)}`)] : [partText(body)],
+      null,
+      owner ? [owner] : [],
+      null,
+    ),
+    title,
+    facts: { ...facts, final },
+  };
+}
+
+/**
+ * Artigo de um sorteio da Taça persistido (pares em JSON).
+ * @param {object} n linha `cup_draw`
+ * @param {number|string|null} viewerTeamId equipa do treinador
+ */
+function cupDrawArticle(n, viewerTeamId) {
+  const facts = parseNewsFacts(n) || {};
+  const fixtures = Array.isArray(facts.fixtures) ? facts.fixtures : [];
+  const mine = fixtures.find(
+    (f) =>
+      String(f.homeTeamId) === String(viewerTeamId) ||
+      String(f.awayTeamId) === String(viewerTeamId),
+  );
+  const roundName = facts.roundName || "Taça";
+  const title = `🏆 Sorteio: ${roundName}`;
+  const label = mine
+    ? `${mine.homeName || "?"} – ${mine.awayName || "?"}`
+    : `${fixtures.length} eliminatórias`;
+  const home =
+    mine?.homeTeamId != null ? { id: mine.homeTeamId, label: mine.homeName || "?" } : null;
+  const away =
+    mine?.awayTeamId != null ? { id: mine.awayTeamId, label: mine.awayName || "?" } : null;
+  return {
+    ...makeArticle(
+      home && away
+        ? [partText(`${title} — `), partTeam(home), partText(" – "), partTeam(away)]
+        : [partText(title)],
+      home && away
+        ? [partTeam(home), partText(" – "), partTeam(away)]
+        : [partText(label)],
+      null,
+      home && away ? [home, away] : [],
+      null,
+    ),
+    title,
+    body: label,
+    facts,
+  };
+}
+
+/**
+ * Artigo de lesão/castigo persistido (factos em JSON, `amount` = until).
+ * @param {object} n linha `injury`/`suspension`
+ */
+function medicalArticle(n) {
+  const facts = parseNewsFacts(n) || {};
+  const until = Number(n?.amount ?? facts.until) || 0;
+  const kind = String(n?.type || "") === "suspension" ? "suspension" : "injury";
+  const player = newsPlayer(n) || {
+    id: n?.player_id,
+    label: n?.player_name || "O jogador",
+    photo: n?.player_photo || null,
+    position: facts.position || "ATA",
+  };
+  const p = partPlayer(player);
+  const profile = [facts.position || player.position, facts.skill != null ? `skill ${facts.skill}` : null]
+    .filter(Boolean)
+    .join(" · ");
+  const detail = profile ? ` (${profile})` : "";
+  const title =
+    kind === "injury" ? `🩹 ${player.label} lesionado` : `🟥 ${player.label} castigado`;
+  const body =
+    kind === "injury"
+      ? `${player.label}${detail} de fora até à jornada ${until + 1}. O departamento médico acompanha a recuperação e o treinador terá de reorganizar o plantel.`
+      : `${player.label}${detail} suspenso até à jornada ${until + 1}. O castigo obriga o treinador a mexer nas contas da próxima convocatória.`;
+  return {
+    ...makeArticle(
+      linkFirstMention(title, p),
+      linkFirstMention(body, p),
+      player,
+      [],
+      null,
+    ),
+    title,
+    facts: { ...facts, until },
+  };
+}
+
+function newsArticle(n, { owner, related, seller, buyer, viewerTeamId } = {}) {
   if (String(n?.type || "") === "postmatch") return postmatchArticle(n);
+  if (String(n?.type || "") === "contract_request") return contractRequestArticle(n);
+  if (String(n?.type || "") === "job_offer") return jobOfferArticle(n);
+  if (String(n?.type || "") === "board_warning") return boardWarningArticle(n);
+  if (String(n?.type || "") === "cup_draw") return cupDrawArticle(n, viewerTeamId);
+  if (String(n?.type || "") === "injury" || String(n?.type || "") === "suspension")
+    return medicalArticle(n);
   const player = newsPlayer(n);
   const type = String(n?.type || "");
   const amount = n?.amount ? formatCurrency(n.amount) : null;
@@ -569,7 +750,49 @@ function newsArticle(n, { owner, related, seller, buyer } = {}) {
  * @param {string} fallbackDate data da semana actual para linhas antigas/incompletas
  * @returns {Array} itens de inbox
  */
-export function newsRowsToItems(rows, fallbackDate) {
+/**
+ * Diz se um item transitório já tem par persistido (para o esconder e
+ * mostrar só a linha da BD, com data fixa). Cobertura, não leitura.
+ */
+export function contractCovered(rows, playerId) {
+  return (Array.isArray(rows) ? rows : []).some(
+    (n) =>
+      String(n?.type || "") === "contract_request" &&
+      Number(n?.player_id) === Number(playerId),
+  );
+}
+export function jobCovered(rows, toTeamId) {
+  return (Array.isArray(rows) ? rows : []).some(
+    (n) =>
+      String(n?.type || "") === "job_offer" &&
+      String(n?.related_team_id) === String(toTeamId),
+  );
+}
+export function boardCovered(rows, teamId, level, streak) {
+  return (Array.isArray(rows) ? rows : []).some((n) => {
+    if (String(n?.type || "") !== "board_warning") return false;
+    if (String(n?.team_id) !== String(teamId)) return false;
+    const f = parseNewsFacts(n);
+    return Number(f?.level) === Number(level) && Number(f?.streak) === Number(streak);
+  });
+}
+export function cupDrawCovered(rows, season, round) {
+  return (Array.isArray(rows) ? rows : []).some((n) => {
+    if (String(n?.type || "") !== "cup_draw") return false;
+    const f = parseNewsFacts(n);
+    return Number(f?.season) === Number(season) && Number(f?.round) === Number(round);
+  });
+}
+export function medicalCovered(rows, kind, playerId, until) {
+  return (Array.isArray(rows) ? rows : []).some(
+    (n) =>
+      String(n?.type || "") === kind &&
+      Number(n?.player_id) === Number(playerId) &&
+      Number(n?.amount) === Number(until),
+  );
+}
+
+export function newsRowsToItems(rows, fallbackDate, viewerTeamId = null) {
   const list = Array.isArray(rows) ? rows : [];
   const groups = new Map();
   for (const n of list) {
@@ -591,7 +814,7 @@ export function newsRowsToItems(rows, fallbackDate) {
       if (g.transfer) items.push(dealToItem(g.transfer, fallbackDate));
       else for (const c of g.clubs) items.push(clubDealToItem(c, fallbackDate));
     } else {
-      items.push(rowToItem(n, fallbackDate));
+      items.push(rowToItem(n, fallbackDate, viewerTeamId));
     }
   }
   return items;
@@ -673,15 +896,16 @@ function clubDealToItem(c, fallbackDate) {
  * Item genérico de notícia (só leitura, corpo enriquecido).
  * @param {object} n linha do globalNews
  */
-function rowToItem(n, fallbackDate) {
+function rowToItem(n, fallbackDate, viewerTeamId = null) {
   const owner = newsTeam(n.team_id, n.team_name);
   const related = newsTeam(n.related_team_id, n.related_team_name);
-  const article = newsArticle(n, { owner, related });
+  const article = newsArticle(n, { owner, related, viewerTeamId });
   return {
     id: `news-${n.source || "club"}-${n.id}`,
     cat: newsCategory(n),
     date: formatNewsDate(n, fallbackDate),
     ...article,
+    newsType: n?.type || null,
     redFlag: false,
     kind: "info",
     ref: null,

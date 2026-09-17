@@ -20,6 +20,7 @@ import {
   contractEndInfo,
   getAllTeamForms,
   logClubNews,
+  logClubNewsOnce,
 } from "./coreHelpers";
 import { JUNIOR_FIRST_NAMES, JUNIOR_LAST_NAMES } from "./game/playerUtils";
 
@@ -134,6 +135,31 @@ export function createContractHelpers(deps: ContractDeps) {
         "UPDATE players SET contract_request_pending = 1, contract_requested_wage = ?, contract_request_is_renegotiation = ? WHERE id = ?",
         [requestedWage, isRenegotiation ? 1 : 0, player.id],
         () => {
+          // Espelho no Jornal com data fixa (a semana do pedido, online ou
+          // não): o item transitório do cliente passa a ter par persistido.
+          try {
+            logClubNewsOnce(
+              game,
+              "contract_request",
+              `Pedido de renovação: ${player.name}`,
+              player.team_id,
+              {
+                player_id: player.id,
+                player_name: player.name,
+                description: JSON.stringify({
+                  v: 1,
+                  wage,
+                  requestedWage,
+                  agent: getAgentName(player.id),
+                  position: player.position ?? null,
+                  skill: player.skill ?? null,
+                  contractEndLabel: end.label,
+                  isRenegotiation: !!isRenegotiation,
+                }),
+              },
+              io,
+            );
+          } catch {}
           const coach = (
             Object.values(game.playersByName) as PlayerSession[]
           ).find((p) => p.teamId === player.team_id && p.socketId);
@@ -142,7 +168,6 @@ export function createContractHelpers(deps: ContractDeps) {
             resolve();
             return;
           }
-
           io.to(coach.socketId as string).emit("contractRequest", {
             playerId: player.id,
             playerName: player.name,

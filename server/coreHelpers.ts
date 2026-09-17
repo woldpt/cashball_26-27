@@ -662,6 +662,129 @@ export function logClubNews(
           playerName: data.player_name || null,
           ...extra,
         });
+        // O Jornal filtra por equipa mas vive do mesmo feed: cada linha nova
+        // refresca-o (antes só alguns fluxos emitiam globalNewsUpdated).
+        io.to(game.roomCode).emit("globalNewsUpdated");
+      }
+    },
+  );
+}
+
+/**
+ * logClubNewsOnce — como logClubNews mas idempotente por semana: se já
+ * existir linha do mesmo tipo/equipa nesta jornada e época, não insere.
+ * Para eventos que podem re-emitir (aviso da direção após crash, sorteios).
+ */
+export function logClubNewsOnce(
+  game: ActiveGame,
+  type: string,
+  title: string,
+  teamId: number,
+  data: {
+    player_name?: string;
+    player_id?: number;
+    related_team_name?: string;
+    related_team_id?: number;
+    amount?: number;
+    description?: string;
+    year?: number;
+    matchweek?: number;
+  },
+  io?: any,
+  extra?: Record<string, any>,
+) {
+  const matchweek = data.matchweek ?? game.matchweek;
+  const year = (data.year ?? game.year) || 0;
+  game.db.get(
+    `SELECT id FROM club_news WHERE team_id = ? AND type = ? AND matchweek = ? AND year = ? LIMIT 1`,
+    [teamId, type, matchweek, year],
+    (err: any, row: any) => {
+      if (err || row) return;
+      logClubNews(game, type, title, teamId, data, io, extra);
+    },
+  );
+}
+
+/**
+ * logMedicalNews — notícia de lesão/castigo com data fixa (a jornada do jogo
+ * em que aconteceu). Idempotente por (jogador, fim da ausência): a
+ * finalização pode re-correr e a ausência prolongada não gera nova linha.
+ * O `amount` guarda o until (base calendarIndex, como o cliente compara).
+ */
+export function logMedicalNews(
+  game: ActiveGame,
+  teamId: number,
+  kind: "injury" | "suspension",
+  player: { id: number; name: string; position?: string | null; skill?: number | null },
+  until: number,
+  matchweek: number,
+  year?: number,
+  io?: any,
+) {
+  game.db.get(
+    `SELECT id FROM club_news WHERE team_id = ? AND type = ? AND player_id = ? AND amount = ? LIMIT 1`,
+    [teamId, kind, player.id, until],
+    (err: any, row: any) => {
+      if (err || row) return;
+      const title =
+        kind === "injury"
+          ? `🩹 ${player.name} lesionado`
+          : `🟥 ${player.name} castigado`;
+      logClubNews(game, kind, title, teamId, {
+        player_id: player.id,
+        player_name: player.name,
+        amount: until,
+        description: JSON.stringify({
+          v: 1,
+          until,
+          position: player.position ?? null,
+          skill: player.skill ?? null,
+        }),
+        matchweek,
+        year,
+      }, io);
+    },
+  );
+}
+
+/**
+ * logMatchMedicalNews — uma linha de lesão/castigo por ausência nova de uma
+ * equipa após um jogo (data fixa: a jornada do jogo). Só ausências ainda
+ * ativas e ainda sem linha para (jogador, until): ausências prolongadas e
+ * replays da finalização não duplicam.
+ */
+export function logMatchMedicalNews(
+  game: ActiveGame,
+  teamId: number,
+  matchweek: number,
+  io?: any,
+) {
+  game.db.all(
+    `SELECT id, name, position, skill, injury_until_matchweek, suspension_until_matchweek
+     FROM players WHERE team_id = ?`,
+    [teamId],
+    (err: any, rows: any[]) => {
+      if (err || !rows) return;
+      const nowIdx = game.calendarIndex ?? 0;
+      for (const p of rows) {
+        const inj = Number(p?.injury_until_matchweek) || 0;
+        const sus = Number(p?.suspension_until_matchweek) || 0;
+        if (inj > nowIdx) {
+          logMedicalNews(game, teamId, "injury", {
+            id: p.id,
+            name: p.name,
+            position: p.position ?? null,
+            skill: p.skill ?? null,
+          }, inj, matchweek, undefined, io);
+        }
+        if (sus > nowIdx) {
+          logMedicalNews(game, teamId, "suspension", {
+            id: p.id,
+            name: p.name,
+            position: p.position ?? null,
+            skill: p.skill ?? null,
+          }, sus, matchweek, undefined, io);
+        }
       }
     },
   );

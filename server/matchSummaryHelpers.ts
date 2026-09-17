@@ -4,7 +4,7 @@ import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { persistMoms } from "./momHelpers";
 import { computeMatchOdds } from "./game/commentary";
 import { getWeatherForFixture } from "./game/matchCalculations";
-import { explainAttendance, logPostMatchRecap } from "./coreHelpers";
+import { explainAttendance, logMatchMedicalNews, logPostMatchRecap } from "./coreHelpers";
 import {
   isPlayerAvailable,
   withJuniorGRs,
@@ -1237,6 +1237,16 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                   console.warn(
                     `[persistMatchResults] recap failed (matchweek ${matchweek}):`,
                     recapErr?.message,
+                  );
+                }
+                // Lesões/castigos novos com data fixa (a jornada do jogo).
+                try {
+                  logMatchMedicalNews(game, match.homeTeamId, matchweek);
+                  logMatchMedicalNews(game, match.awayTeamId, matchweek);
+                } catch (medErr: any) {
+                  console.warn(
+                    `[persistMatchResults] medical failed (matchweek ${matchweek}):`,
+                    medErr?.message,
                   );
                 }
 

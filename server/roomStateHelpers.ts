@@ -34,6 +34,14 @@ const TABLE_EVENTS = `CREATE TABLE IF NOT EXISTS room_events (
   created_at INTEGER NOT NULL
 )`;
 
+const TABLE_INBOX_READS = `CREATE TABLE IF NOT EXISTS inbox_reads (
+  room_code TEXT NOT NULL,
+  coach_name TEXT NOT NULL,
+  news_key TEXT NOT NULL,
+  read_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (room_code, coach_name, news_key)
+)`;
+
 /** Criação idempotente nas salas existentes (o schema.sql só cobre salas novas). */
 export function ensureRoomStateTables(db: any): void {
   db.run(TABLE_SEATS, (err: Error | null) => {
@@ -46,6 +54,9 @@ export function ensureRoomStateTables(db: any): void {
     "CREATE INDEX IF NOT EXISTS idx_room_events_created_at ON room_events(created_at)",
     () => {},
   );
+  db.run(TABLE_INBOX_READS, (err: Error | null) => {
+    if (err) console.error("[roomState] inbox_reads:", err.message);
+  });
 }
 
 function emptySeat(name: string): RoomSeat {

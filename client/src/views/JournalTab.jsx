@@ -254,7 +254,7 @@ function InboxActions({ item, inbox }) {
   }
   if (item.kind === "cupdraw") {
     return (
-      <Button variant="accent" size="sm" onClick={inbox.openCupDraw}>
+      <Button variant="accent" size="sm" onClick={() => inbox.openCupDraw(item)}>
         Ver sorteio
       </Button>
     );

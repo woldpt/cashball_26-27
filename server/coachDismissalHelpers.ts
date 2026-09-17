@@ -9,6 +9,7 @@ import {
   getAllTeamForms,
   getStandingsRows,
   logClubNews,
+  logClubNewsOnce,
   getTeamsWithCoachNames,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
@@ -384,10 +385,32 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       toTeamId: toTeam.id,
     };
 
-    io.to(player.socketId).emit(
-      "jobOffer",
-      await buildJobOfferPayload(game, fromTeam, toTeam),
-    );
+    const payload = await buildJobOfferPayload(game, fromTeam, toTeam);
+    // Espelho no Jornal com data fixa (a semana do convite).
+    try {
+      logClubNewsOnce(
+        game,
+        "job_offer",
+        `Convite: ${toTeam.name}`,
+        fromTeam.id,
+        {
+          related_team_id: toTeam.id,
+          related_team_name: toTeam.name,
+          description: JSON.stringify({
+            v: 1,
+            fromTeamId: fromTeam.id,
+            fromTeamName: fromTeam.name,
+            position: payload.toTeamDivisionPosition ?? null,
+            points: toTeam.points ?? null,
+            wins: toTeam.wins ?? 0,
+            draws: toTeam.draws ?? 0,
+            losses: toTeam.losses ?? 0,
+          }),
+        },
+        io,
+      );
+    } catch {}
+    io.to(player.socketId).emit("jobOffer", payload);
   }
 
   /**
@@ -739,6 +762,24 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
             colorPrimary: team.color_primary,
             colorSecondary: team.color_secondary,
           });
+          // Espelho no Jornal com data fixa (a semana do aviso).
+          try {
+            logClubNewsOnce(
+              game,
+              "board_warning",
+              level === 3 ? "Último aviso da direção" : "Aviso da direção",
+              team.id,
+              {
+                description: JSON.stringify({
+                  v: 1,
+                  level,
+                  budget,
+                  streak,
+                }),
+              },
+              io,
+            );
+          } catch {}
         };
         if (warned < 1 && streak >= 1) {
           game.boardBudgetWarned[teamId] = 1;

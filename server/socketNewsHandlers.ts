@@ -37,6 +37,11 @@ export function registerNewsSocketHandlers(
     ) as any;
     const teamId = coach?.teamId;
     if (teamId == null) return fail();
+    const coachEntry = Object.entries(game.playersByName || {}).find(
+      ([, player]: [string, any]) => player.socketId === socket.id,
+    );
+    const coachName =
+      (coachEntry && coachEntry[0]) || (coach && coach.name) || null;
 
     try {
       // ── Notícias da época da equipa: club_news + transfer_history ─────
@@ -213,16 +218,33 @@ export function registerNewsSocketHandlers(
                                 momAway: momsByKey[awayKey] ?? null,
                               };
                             });
-                          socket.emit("globalNews", {
-                            news: newsRows.slice(0, NEWS_LIMIT),
-                            results: mkResults([
-                              ...(leagueRows || []),
-                              ...(cupRows || []),
-                              ...(friRows || []),
-                            ]),
-                            year,
-                            season,
-                          });
+                          // Leituras do treinador (fonte da verdade na BD;
+                          // o cliente usa-as para hidratar a cache local).
+                          const sendNews = (reads: string[]) =>
+                            socket.emit("globalNews", {
+                              news: newsRows.slice(0, NEWS_LIMIT),
+                              results: mkResults([
+                                ...(leagueRows || []),
+                                ...(cupRows || []),
+                                ...(friRows || []),
+                              ]),
+                              reads,
+                              year,
+                              season,
+                            });
+                          if (!coachName) return sendNews([]);
+                          game.db.all(
+                            `SELECT news_key FROM inbox_reads WHERE room_code = ? AND coach_name = ?`,
+                            [game.roomCode, coachName],
+                            (readErr: Error | null, readRows: any[] | null) => {
+                              if (readErr || !readRows) return sendNews([]);
+                              sendNews(
+                                readRows
+                                  .map((r) => r.news_key)
+                                  .filter((k) => typeof k === "string"),
+                              );
+                            },
+                          );
                         },
                       );
                     },
@@ -235,6 +257,27 @@ export function registerNewsSocketHandlers(
     } catch (err: any) {
       console.error(`[getGlobalNews] unexpected error (${game.roomCode}):`, err);
       fail();
+    }
+  });
+
+  socket.on("markInboxRead", (data: any) => {
+    const game = getGameBySocket(socket.id);
+    if (!game) return;
+    const keys = Array.isArray(data?.keys)
+      ? data.keys.filter((k: any) => typeof k === "string").slice(0, 400)
+      : [];
+    if (keys.length === 0) return;
+    const entry = Object.entries(game.playersByName || {}).find(
+      ([, player]: [string, any]) => player.socketId === socket.id,
+    );
+    const coachName = (entry && entry[0]) || null;
+    if (!coachName) return;
+    for (const key of keys) {
+      game.db.run(
+        `INSERT OR IGNORE INTO inbox_reads (room_code, coach_name, news_key) VALUES (?, ?, ?)`,
+        [game.roomCode, coachName, key],
+        () => {},
+      );
     }
   });
 }

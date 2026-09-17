@@ -13,15 +13,19 @@
  * vermelha contam sempre como não lidos até serem resolvidos (nessa altura
  * desaparecem da lista) e bloqueiam o Pronto.
  */
-import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useGame } from "../contexts/GameContext.jsx";
 import { queueEmit } from "../socket.js";
 import {
   INBOX_CATS,
-  boardNewsId,
+  boardCovered,
   buildMoodNewsArticle,
+  contractCovered,
+  cupDrawCovered,
   formatInboxDate,
+  jobCovered,
   linkFirstMention,
+  medicalCovered,
   newsRowsToItems,
   partPlayer,
   persistedMoodKeys,
@@ -66,6 +70,8 @@ export function useInbox() {
     boardWarning,
     setBoardWarning,
     cupDraw,
+    setCupDraw,
+    setCupDrawRevealIdx,
     setShowCupDrawPopup,
     postMatchMood,
     globalNews,
@@ -80,21 +86,49 @@ export function useInbox() {
     readIdsFor(storeKey),
   );
   const [selectedId, setSelectedId] = useState(null);
+  const uploadOnceRef = useRef(null);
+
+  // Leituras vindas do servidor (fonte da verdade): união silenciosa com a
+  // cache local (sem re-emitir — já estão gravadas).
+  const serverReads = globalNews?.reads;
+  useEffect(() => {
+    if (Array.isArray(serverReads) && serverReads.length > 0) {
+      markInboxReadMany(storeKey, serverReads);
+    }
+  }, [storeKey, serverReads]);
+
+  // Migração única: leituras antigas do localStorage sobem para a BD.
+  useEffect(() => {
+    if (uploadOnceRef.current === storeKey) return;
+    uploadOnceRef.current = storeKey;
+    const local = [...readIdsFor(storeKey)];
+    if (local.length > 0) queueEmit("markInboxRead", { keys: local });
+  }, [storeKey]);
+
+  const emitMark = useCallback((ids) => {
+    const keys = (Array.isArray(ids) ? ids : [ids]).filter(Boolean);
+    if (keys.length > 0) queueEmit("markInboxRead", { keys });
+  }, []);
 
   const markRead = useCallback(
     (id) => {
       markInboxRead(storeKey, id);
+      emitMark(id);
     },
-    [storeKey],
+    [storeKey, emitMark],
   );
 
   const currentDate = formatInboxDate((calendarIndex ?? 0) + 1, seasonYear);
 
   // ── Construção da lista (acionáveis primeiro, resto por ordem) ──────────
+  // As linhas persistidas (BD, data fixa) são a fonte; os transitórios só
+  // aparecem sem par gravado (pendências anteriores a esta versão).
   const items = useMemo(() => {
     const list = [];
+    const newsRows = globalNews?.news;
 
     for (const d of contractQueue || []) {
+      if (contractCovered(newsRows, d.playerId)) continue;
       const squadPlayer = (mySquad || []).find(
         (p) => Number(p?.id) === Number(d.playerId),
       );
@@ -125,7 +159,7 @@ export function useInbox() {
       });
     }
 
-    if (jobOfferModal?.toTeam) {
+    if (jobOfferModal?.toTeam && !jobCovered(newsRows, jobOfferModal.toTeam.id)) {
       const to = jobOfferModal.toTeam;
       const from = jobOfferModal.fromTeam;
       const team = { id: to.id, label: to.name };
@@ -156,7 +190,10 @@ export function useInbox() {
       });
     }
 
-    if (boardWarning) {
+    if (
+      boardWarning &&
+      !boardCovered(newsRows, boardWarning.teamId, boardWarning.level, boardWarning.streak)
+    ) {
       const final = boardWarning.level === 3;
       const title = final ? "⚠️ Último aviso da direção" : "⚠️ Aviso da direção";
       const team =
@@ -168,12 +205,9 @@ export function useInbox() {
           : null;
       const body = "Orçamento negativo — carrega em Ok para confirmar leitura.";
       list.push({
-        id: boardNewsId(
-          seasonYear,
-          calendarIndex,
-          boardWarning.level,
-          boardWarning.streak,
-        ),
+        // Transitório sem par gravado: id estável por nível/sequência
+        // (o id antigo recalculava-se com a semana atual e «deslia»).
+        id: `board-live-${boardWarning.level}-${boardWarning.streak}`,
         cat: "club",
         date: currentDate,
         title,
@@ -199,7 +233,10 @@ export function useInbox() {
       });
     }
 
-    if (cupDraw?.fixtures) {
+    if (
+      cupDraw?.fixtures &&
+      !cupDrawCovered(newsRows, cupDraw.season, cupDraw.round)
+    ) {
       const mine = (cupDraw.fixtures || []).find(
         (f) =>
           f.homeTeam?.id === me?.teamId || f.awayTeam?.id === me?.teamId,
@@ -266,8 +303,71 @@ export function useInbox() {
       });
     }
 
-    list.push(...squadToMedicalItems(mySquad, calendarIndex ?? 0, currentDate));
-    list.push(...newsRowsToItems(globalNews?.news, currentDate));
+    for (const mi of squadToMedicalItems(mySquad, calendarIndex ?? 0, currentDate)) {
+      const m = String(mi.id).match(/^(inj|sus)-(-?\d+)-(\d+)$/);
+      if (
+        m &&
+        medicalCovered(
+          newsRows,
+          m[1] === "inj" ? "injury" : "suspension",
+          Number(m[2]),
+          Number(m[3]),
+        )
+      )
+        continue;
+      list.push(mi);
+    }
+    list.push(...newsRowsToItems(newsRows, currentDate, me?.teamId));
+
+    // Linhas persistidas acionáveis: identidade e data da BD, pendência e
+    // ação do estado vivo (fila de renovações, modal de convite/aviso).
+    const pendingContractIds = new Set(
+      (contractQueue || []).map((d) => Number(d.playerId)),
+    );
+    const pendingJobToId =
+      jobOfferModal?.toTeam?.id != null ? String(jobOfferModal.toTeam.id) : null;
+    for (const it of list) {
+      if (!it.facts || !it.newsType) continue;
+      if (it.newsType === "contract_request") {
+        const pid = it.media?.player?.id;
+        const pending = pid != null && pendingContractIds.has(Number(pid));
+        it.redFlag = pending;
+        it.kind = pending ? "contract" : "info";
+        it.ref = pid ?? null;
+        if (pending) {
+          it.title = `🚩 ${it.title}`;
+          it.titleParts = [partText("🚩 "), ...(it.titleParts || [])];
+        }
+      } else if (it.newsType === "job_offer") {
+        const toId = it.media?.teams?.[0]?.id;
+        const pending =
+          pendingJobToId != null && toId != null && String(toId) === pendingJobToId;
+        it.redFlag = pending;
+        it.kind = pending ? "job" : "info";
+        it.extra = {
+          position: it.facts.position ?? "?",
+          points: it.facts.points ?? "?",
+          record: it.facts.record ?? "",
+        };
+        if (pending) {
+          it.title = `🚩 ${it.title}`;
+          it.titleParts = [partText("🚩 "), ...(it.titleParts || [])];
+        }
+      } else if (it.newsType === "board_warning") {
+        const active =
+          boardWarning != null &&
+          Number(boardWarning.level) === Number(it.facts.level) &&
+          Number(boardWarning.streak) === Number(it.facts.streak);
+        it.kind = active ? "board" : "info";
+        it.extra = {
+          budget: it.facts.budget ?? 0,
+          streak: it.facts.streak ?? 1,
+          final: !!it.facts.final,
+        };
+      } else if (it.newsType === "cup_draw") {
+        it.kind = "cupdraw";
+      }
+    }
 
     return list;
   }, [
@@ -310,11 +410,12 @@ export function useInbox() {
   const select = useCallback(
     (id) => {
       setSelectedId(id);
-      const it = items.find((i) => i.id === id);
-      // Bandeira vermelha só sai da lista ao responder — ler não chega.
-      if (it && !it.redFlag) markRead(id);
+      // Marca sempre (servidor + cache): a bandeira vermelha continua a
+      // contar como não lida via isUnread até ser respondida, mas ao
+      // resolver já está lida e não reaparece como novidade.
+      markRead(id);
     },
-    [items, markRead],
+    [markRead],
   );
 
   const nextUnread = useMemo(() => {
@@ -331,7 +432,7 @@ export function useInbox() {
 
   const selectNextUnread = useCallback(() => {
     if (!nextUnread) return;
-    if (selected && isUnread(selected) && !selected.redFlag) {
+    if (selected && isUnread(selected)) {
       markRead(selected.id);
     }
     select(nextUnread.id);
@@ -343,12 +444,11 @@ export function useInbox() {
         filter === "all"
           ? items
           : items.filter((it) => it.cat === filter);
-      markInboxReadMany(
-        storeKey,
-        pool.filter((it) => !it.redFlag).map((it) => it.id),
-      );
+      const ids = pool.filter((it) => !it.redFlag).map((it) => it.id);
+      markInboxReadMany(storeKey, ids);
+      emitMark(ids);
     },
-    [items, storeKey],
+    [items, storeKey, emitMark],
   );
 
   // ── Ações (reutilizam os fluxos existentes) ─────────────────────────────
@@ -371,9 +471,27 @@ export function useInbox() {
     setBoardWarning(null);
   }, [setBoardWarning]);
 
-  const openCupDraw = useCallback(() => {
-    setShowCupDrawPopup(true);
-  }, [setShowCupDrawPopup]);
+  const openCupDraw = useCallback(
+    (item) => {
+      // A linha persistida traz os pares: o sorteio abre sem estado vivo.
+      const fixtures = item?.facts?.fixtures;
+      if (Array.isArray(fixtures) && fixtures.length > 0) {
+        setCupDraw({
+          round: item.facts.round ?? null,
+          roundName: item.facts.roundName || "Taça",
+          fixtures: fixtures.map((f) => ({
+            homeTeam: { id: f.homeTeamId, name: f.homeName },
+            awayTeam: { id: f.awayTeamId, name: f.awayName },
+          })),
+          humanInCup: true,
+          season: item.facts.season ?? null,
+        });
+        setCupDrawRevealIdx(0);
+      }
+      setShowCupDrawPopup(true);
+    },
+    [setCupDraw, setCupDrawRevealIdx, setShowCupDrawPopup],
+  );
 
   return {
     cats: INBOX_CATS,

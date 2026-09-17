@@ -22,7 +22,7 @@ import {
 import { clearPhaseTimer } from "./matchFlowHelpers";
 import { generateAITactic } from "./game/matchCalculations";
 import { getEffectiveSkill, getMatchFatigueSnapshot, queueMatchDeltaWrites } from "./game/engine";
-import { getTeamsWithCoachNames, logClubNews, logPostMatchRecap, snapshotBalanceHistory } from "./coreHelpers";
+import { getTeamsWithCoachNames, logClubNews, logClubNewsOnce, logMatchMedicalNews, logPostMatchRecap, snapshotBalanceHistory } from "./coreHelpers";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { serializeActiveAuctions } from "./auctionHelpers";
 import { persistMoms } from "./momHelpers";
@@ -976,6 +976,32 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				year: game.year,
 		};
 
+		// Espelho no Jornal com data fixa (a semana do sorteio): uma linha
+		// por equipa da Taça, com os pares em JSON para o «Ver sorteio».
+		try {
+			const drawRoundName = CUP_ROUND_NAMES[round] || ("Ronda " + round);
+			const facts = JSON.stringify({
+				v: 1,
+				round,
+				roundName: drawRoundName,
+				season: game.season,
+				fixtures: enrichedFixtures.map((f) => ({
+					homeTeamId: (f.homeTeam && f.homeTeam.id) || null,
+					homeName: (f.homeTeam && f.homeTeam.name) || "?",
+					awayTeamId: (f.awayTeam && f.awayTeam.id) || null,
+					awayName: (f.awayTeam && f.awayTeam.name) || "?",
+				})),
+				drawWeek: game.calendarIndex,
+				drawMatchweek: game.matchweek,
+				year: game.year,
+			});
+			for (const tid of game.cupTeamIds || []) {
+				logClubNewsOnce(game, "cup_draw", ("Sorteio: " + drawRoundName), tid, {
+					description: facts,
+				}, io);
+			}
+		} catch {}
+
 		// Emit draw so clients can show the animation in the lobby
 		io.to(game.roomCode).emit("cupDrawStart", drawPayload);
 
@@ -1697,6 +1723,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			} catch (cupRecapErr: any) {
 				console.warn(`[continueFromEtGate] recap failed (round ${round}):`, cupRecapErr?.message);
 			}
+			try {
+				logMatchMedicalNews(game, fixture.homeTeamId, game.matchweek);
+				logMatchMedicalNews(game, fixture.awayTeamId, game.matchweek);
+			} catch {}
 
 			results.push({
 				homeTeamId: fixture.homeTeamId,
@@ -2013,6 +2043,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				} catch (friendlyRecapErr: any) {
 					console.warn(`[finalizeFriendly] recap failed:`, friendlyRecapErr?.message);
 				}
+				try {
+					logMatchMedicalNews(game, fixture.homeTeamId, game.matchweek);
+					logMatchMedicalNews(game, fixture.awayTeamId, game.matchweek);
+				} catch {}
 				const hG = fixture.finalHomeGoals ?? 0;
 				const aG = fixture.finalAwayGoals ?? 0;
 				results.push({

@@ -39,6 +39,7 @@ const REQUIRED_TABLES = [
   "chat_messages",
   "player_tactic_history",
   "applied_weeks",
+  "inbox_reads",
 ];
 
 function templateHash() {
