@@ -1,7 +1,6 @@
 import { SEASON_CALENDAR, CUP_FINAL_STADIUM } from "../constants/index.js";
 import { generateLeagueFixtures } from "../utils/fixtures.js";
 import { TabBar } from "../components/shared/TabBar.jsx";
-import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 
 export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, setCalFilter, handleOpenTeamSquad }) {
   const cal = calendarData;
@@ -273,26 +272,6 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
     })
     .filter(Boolean);
 
-  // ── STATS ─────────────────────────────────────────────
-  // Unbeaten run: count from end of list until first loss
-  const playedAll = calEntries.filter(
-    (e) => e.status === "done" && e.myScore !== null,
-  );
-  let unbeatenRun = 0;
-  for (let i = playedAll.length - 1; i >= 0; i--) {
-    const e = playedAll[i];
-    if (e.won === false && e.drew !== true) break;
-    unbeatenRun++;
-  }
-  // Next game (home or away)
-  const nextGame = calEntries.find(
-    (e) => e.status !== "done" && !e.eliminated,
-  );
-  const nextGameOpponent = nextGame?.opponent;
-  const nextGameVenue =
-    nextGame?.stadiumTeam?.stadium_name ?? null;
-  const nextGameIsHome = nextGame?.imHome;
-
   // Team logo — crest com fallback para inicial
   const TeamCircle = ({ team, size = "lg" }) => {
     const sz =
@@ -370,38 +349,6 @@ export function CalendarioTab({ calendarData, me, teams, seasonYear, calFilter, 
           <p className="text-on-surface-variant font-bold text-sm">
             A carregar calendário…
           </p>
-        </div>
-      )}
-
-      {/* ── SEASON STATS ──────────────────────────────────── */}
-      {cal && (
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 short:gap-2">
-          {/* Unbeaten run */}
-          <SummaryWidget
-            label="Invencibilidade"
-            value={String(unbeatenRun).padStart(2, "0")}
-            compactMobile
-            valueClass="text-xl sm:text-3xl short:!text-base"
-            sub={`${unbeatenRun === 1 ? "1 jogo" : `${unbeatenRun} jogos`} sem derrota`}
-            subClass="text-on-surface-variant/60 tracking-wide"
-          />
-          {/* Next game */}
-          <SummaryWidget
-            label="Próximo Jogo"
-            value={nextGameOpponent?.name ?? "—"}
-            compactMobile
-            valueClass="text-base short:!text-sm leading-tight truncate"
-            sub={
-              nextGameVenue ??
-              (nextGameIsHome
-                ? "Casa"
-                : nextGameIsHome === false
-                  ? "Deslocação"
-                  : "—")
-            }
-            subClass="text-on-surface-variant/60 tracking-wide"
-            accentClass="border-tertiary"
-          />
         </div>
       )}
 

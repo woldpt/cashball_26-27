@@ -1,3 +1,10 @@
+## Calendário sem Invencibilidade nem Próximo Jogo (2026-09-17)
+
+- O `CalendarioTab.jsx` perdeu os dois cartões de topo (`SummaryWidget` «Invencibilidade» e «Próximo Jogo»); fica só cabeçalho + filtros + timeline de jogos.
+- Saiu também a lógica órfã (série sem derrota, próximo jogo/adversário/recinto) e o import do `SummaryWidget`.
+- Nota: a etiqueta «Próximo Jogo» dentro da linha da jornada atual (VS · Ativo) mantém-se — faz parte da timeline, não era um dos cartões.
+- Checks: eslint do ficheiro limpo (`lint` global só os 2 erros pré-existentes), `check:types` OK. Remoção de secção sem alterar grelha → sem mobile-resp-check.
+
 ## Jornal 100% em BD: data fixa, lido no servidor, sem reaparecer (2026-09-17)
 
 - Todas as notícias passam a viver em `club_news` com `matchweek/year` do evento: `contract_request` (no trigger, online ou não), `job_offer` (na oferta, equipa de origem), `board_warning` (na emissão, idempotente por semana via `logClubNewsOnce`), `cup_draw` (uma linha por equipa da Taça com os pares em JSON), `injury`/`suspension` (na finalização liga/taça/amigável via `logMatchMedicalNews`, idempotente por jogador+until no `amount`). O `logClubNews` com `io` passa a emitir também `globalNewsUpdated`, por isso cada linha nova refresca o Jornal.
