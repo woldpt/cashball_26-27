@@ -1,3 +1,7 @@
+## Guia da engine do Hattrick (2026-09-17)
+
+- Adiado o motor de flancos para futuro próximo; a pedido, pesquisa web sobre os segredos do Hattrick.org guardada em `docs/HATTRICK_ENGINE.md` (pt-PT): duelos espelhados por setor, pipeline posse→chances→conversão (5 exclusivas + abertas), 6 táticas com preço visível, ordens individuais, matriz de contribuição, HatStats, eventos especiais, meteorologia (espírito/confiança/forma/resistência/confusão/clima) + secção "o que roubar" ordenada por custo/benefício p/ o CashBall. Wiki bloqueou fetch direto (403) — conteúdo via sínteses de pesquisa + fontes linkadas; fórmulas exatas marcadas como estimativas da comunidade.
+
 ## Táticas com cara própria: selos + pesos alargados (2026-09-17)
 
 - Queixa: as 8 formações pareciam todas iguais. Sonda sintética confirmou: 4-2-4 vs 5-4-1 diferiam só ~1.5pp em golos pró e ~2.2pp contra por chance; o meio colado ao 4-4-2 (7.95%/7.95%).
