@@ -203,9 +203,9 @@ function NewsMedia({ media, teams, onOpenTeamSquad, onOpenPlayerHistory }) {
 
 /**
  * Botões de ação por tipo de notícia.
- * @param {{ item: object, inbox: object }} props
+ * @param {{ item: object, inbox: object, onOpenCupBracket?: Function }} props
  */
-function InboxActions({ item, inbox }) {
+function InboxActions({ item, inbox, onOpenCupBracket }) {
   if (!item) return null;
   if (item.kind === "contract") {
     return (
@@ -254,8 +254,8 @@ function InboxActions({ item, inbox }) {
   }
   if (item.kind === "cupdraw") {
     return (
-      <Button variant="accent" size="sm" onClick={() => inbox.openCupDraw(item)}>
-        Ver sorteio
+      <Button variant="accent" size="sm" onClick={() => onOpenCupBracket?.()}>
+        Ver quadro da Taça
       </Button>
     );
   }
@@ -266,6 +266,7 @@ export function JournalTab({
   teams = [],
   onOpenTeamSquad,
   onOpenPlayerHistory,
+  onOpenCupBracket,
 }) {
   const inbox = useInbox();
   const { selected, isUnread, select } = inbox;
@@ -483,7 +484,7 @@ export function JournalTab({
             </p>
           )}
           <div className="mt-2.5 flex justify-center">
-            <InboxActions item={inbox.selected} inbox={inbox} />
+            <InboxActions item={inbox.selected} inbox={inbox} onOpenCupBracket={onOpenCupBracket} />
           </div>
         </section>
       )}

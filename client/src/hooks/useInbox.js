@@ -22,6 +22,7 @@ import {
   buildMoodNewsArticle,
   contractCovered,
   cupDrawCovered,
+  cupDrawListParts,
   formatInboxDate,
   jobCovered,
   linkFirstMention,
@@ -55,7 +56,6 @@ import {
  *   answerContract: (playerId: number) => void,
  *   answerJobOffer: (accepted: boolean) => void,
  *   ackBoard: () => void,
- *   openCupDraw: () => void,
  *   jobOffer: object|null,
  *   board: object|null,
  *   draw: object|null,
@@ -70,9 +70,6 @@ export function useInbox() {
     boardWarning,
     setBoardWarning,
     cupDraw,
-    setCupDraw,
-    setCupDrawRevealIdx,
-    setShowCupDrawPopup,
     postMatchMood,
     globalNews,
     mySquad,
@@ -237,22 +234,20 @@ export function useInbox() {
       cupDraw?.fixtures &&
       !cupDrawCovered(newsRows, cupDraw.season, cupDraw.round)
     ) {
-      const mine = (cupDraw.fixtures || []).find(
-        (f) =>
-          f.homeTeam?.id === me?.teamId || f.awayTeam?.id === me?.teamId,
+      const { mine, body, bodyParts } = cupDrawListParts(
+        (cupDraw.fixtures || []).map((f) => ({
+          homeId: f.homeTeam?.id,
+          homeName: f.homeTeam?.name,
+          awayId: f.awayTeam?.id,
+          awayName: f.awayTeam?.name,
+        })),
+        me?.teamId,
       );
-      const label = mine
-        ? `${mine.homeTeam?.name || "?"} – ${mine.awayTeam?.name || "?"}`
-        : `${(cupDraw.fixtures || []).length} eliminatórias`;
       const title = `🏆 Sorteio: ${cupDraw.roundName || "Taça"}`;
       const home =
-        mine?.homeTeam?.id != null
-          ? { id: mine.homeTeam.id, label: mine.homeTeam.name || "?" }
-          : null;
+        mine ? { id: mine.homeId, label: mine.homeName || "?" } : null;
       const away =
-        mine?.awayTeam?.id != null
-          ? { id: mine.awayTeam.id, label: mine.awayTeam.name || "?" }
-          : null;
+        mine ? { id: mine.awayId, label: mine.awayName || "?" } : null;
       list.push({
         id: `cupdraw-${cupDraw.season || "?"}-${cupDraw.roundName || "sorteio"}`,
         cat: "competitions",
@@ -262,7 +257,7 @@ export function useInbox() {
           cupDraw.year ?? seasonYear,
         ),
         title,
-        body: label,
+        body,
         titleParts:
           home && away
             ? [
@@ -272,10 +267,7 @@ export function useInbox() {
                 partTeam(away),
               ]
             : [partText(title)],
-        bodyParts:
-          home && away
-            ? [partTeam(home), partText(" – "), partTeam(away)]
-            : [partText(label)],
+        bodyParts,
         media: { player: null, teams: home && away ? [home, away] : [] },
         redFlag: false,
         kind: "cupdraw",
@@ -471,28 +463,6 @@ export function useInbox() {
     setBoardWarning(null);
   }, [setBoardWarning]);
 
-  const openCupDraw = useCallback(
-    (item) => {
-      // A linha persistida traz os pares: o sorteio abre sem estado vivo.
-      const fixtures = item?.facts?.fixtures;
-      if (Array.isArray(fixtures) && fixtures.length > 0) {
-        setCupDraw({
-          round: item.facts.round ?? null,
-          roundName: item.facts.roundName || "Taça",
-          fixtures: fixtures.map((f) => ({
-            homeTeam: { id: f.homeTeamId, name: f.homeName },
-            awayTeam: { id: f.awayTeamId, name: f.awayName },
-          })),
-          humanInCup: true,
-          season: item.facts.season ?? null,
-        });
-        setCupDrawRevealIdx(0);
-      }
-      setShowCupDrawPopup(true);
-    },
-    [setCupDraw, setCupDrawRevealIdx, setShowCupDrawPopup],
-  );
-
   return {
     cats: INBOX_CATS,
     items,
@@ -507,7 +477,6 @@ export function useInbox() {
     answerContract,
     answerJobOffer,
     ackBoard,
-    openCupDraw,
     jobOffer: jobOfferModal,
     board: boardWarning,
     draw: cupDraw,

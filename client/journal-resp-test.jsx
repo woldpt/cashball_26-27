@@ -310,13 +310,26 @@ async function checkMoodArticle() {
   };
 }
 
-/** O sorteio mostra a semana em que saiu, não a semana atual. */
+/** O sorteio mostra a semana em que saiu + a listagem de todos os pares. */
 async function checkDrawDate() {
   const row = [...document.querySelectorAll("ol button")].find((b) =>
     b.textContent.includes("Sorteio:"),
   );
   const date = row?.querySelector("span")?.textContent;
-  return { date: date || null, ok: !!row && date === "S5/2026" };
+  row?.click();
+  await new Promise((r) => setTimeout(r, 60));
+  const body = document.querySelector(
+    'section[aria-label="Corpo da notícia"] p',
+  )?.textContent;
+  const listsAll =
+    (body || "").includes("O seu jogo:") &&
+    (body || "").includes("Sporting Clube do Alentejo Central") &&
+    (body || "").includes("Clube Desportivo do Litoral");
+  return {
+    date: date || null,
+    listsAll,
+    ok: !!row && date === "S5/2026" && listsAll,
+  };
 }
 
 /** Abrir uma notícia no JournalTab tem de baixar o badge no outro consumidor. */

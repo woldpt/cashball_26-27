@@ -5,6 +5,13 @@
 - Nota: a etiqueta «Próximo Jogo» dentro da linha da jornada atual (VS · Ativo) mantém-se — faz parte da timeline, não era um dos cartões.
 - Checks: eslint do ficheiro limpo (`lint` global só os 2 erros pré-existentes), `check:types` OK. Remoção de secção sem alterar grelha → sem mobile-resp-check.
 
+## Notícia do sorteio lista todos os pares; botão abre o Quadro da Taça (2026-09-17)
+
+- A notícia `cup_draw` mostrava só o jogo do treinador (ou «N eliminatórias»). Novo `cupDrawListParts()` em `inboxItems.js`: o jogo do treinador em destaque no topo («O seu jogo: Casa – Fora») e todos os pares por ordem do sorteio, cada equipa clicável; o item transitório do `useInbox` usa o mesmo helper.
+- O botão deixou de abrir o popup (`openCupDraw` removido do `useInbox` e dos setters só dele): agora é «Ver quadro da Taça» via prop `onOpenCupBracket` (`JournalTab` → `GameRoutes`: `navigateTab("bracket")` + `requestCupBracket`, igual à sidebar). O popup ao vivo do `cupDrawStart` fica intacto.
+- Sem toque no servidor: os pares completos já viajavam no JSON da linha. A pesquisa do Jornal passa a encontrar qualquer equipa do sorteio (ganho lateral).
+- Checks: eslint dos ficheiros + `check:types` OK, `test:journaldb` (assert atualizado para listagem), `test:inboxreads`, `test:boardnewsid`, `build` Vite, harness Jornal retrato `5/5` e paisagem `6/6` (assert da listagem no `checkDrawDate`).
+
 ## Jornal 100% em BD: data fixa, lido no servidor, sem reaparecer (2026-09-17)
 
 - Todas as notícias passam a viver em `club_news` com `matchweek/year` do evento: `contract_request` (no trigger, online ou não), `job_offer` (na oferta, equipa de origem), `board_warning` (na emissão, idempotente por semana via `logClubNewsOnce`), `cup_draw` (uma linha por equipa da Taça com os pares em JSON), `injury`/`suspension` (na finalização liga/taça/amigável via `logMatchMedicalNews`, idempotente por jogador+until no `amount`). O `logClubNews` com `io` passa a emitir também `globalNewsUpdated`, por isso cada linha nova refresca o Jornal.

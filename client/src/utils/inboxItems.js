@@ -417,6 +417,36 @@ function boardWarningArticle(n) {
 }
 
 /**
+ * Listagem do sorteio: o jogo do treinador em destaque no topo, os
+ * restantes pares por ordem do sorteio (cada equipa clicável).
+ * @param {Array} pairs pares `{ homeId, homeName, awayId, awayName }`
+ * @param {number|string|null} viewerTeamId equipa do treinador
+ * @returns {{ mine: object|null, body: string, bodyParts: Array }} 
+ */
+export function cupDrawListParts(pairs, viewerTeamId) {
+  const list = Array.isArray(pairs) ? pairs : [];
+  const mine =
+    viewerTeamId != null
+      ? list.find(
+          (f) =>
+            String(f.homeId) === String(viewerTeamId) ||
+            String(f.awayId) === String(viewerTeamId),
+        ) || null
+      : null;
+  const ordered = mine ? [mine, ...list.filter((f) => f !== mine)] : list;
+  const bodyParts = [];
+  ordered.forEach((f, idx) => {
+    const home = { id: f.homeId, label: f.homeName || "?" };
+    const away = { id: f.awayId, label: f.awayName || "?" };
+    if (idx > 0) bodyParts.push(partText("\n"));
+    if (idx === 0 && mine) bodyParts.push(partText("O seu jogo: "));
+    bodyParts.push(partTeam(home), partText(" – "), partTeam(away));
+  });
+  if (ordered.length === 0) bodyParts.push(partText("Sorteio por anunciar."));
+  return { mine, body: plainParts(bodyParts), bodyParts };
+}
+
+/**
  * Artigo de um sorteio da Taça persistido (pares em JSON).
  * @param {object} n linha `cup_draw`
  * @param {number|string|null} viewerTeamId equipa do treinador
@@ -424,34 +454,33 @@ function boardWarningArticle(n) {
 function cupDrawArticle(n, viewerTeamId) {
   const facts = parseNewsFacts(n) || {};
   const fixtures = Array.isArray(facts.fixtures) ? facts.fixtures : [];
-  const mine = fixtures.find(
-    (f) =>
-      String(f.homeTeamId) === String(viewerTeamId) ||
-      String(f.awayTeamId) === String(viewerTeamId),
+  const { mine, body, bodyParts } = cupDrawListParts(
+    fixtures.map((f) => ({
+      homeId: f.homeTeamId,
+      homeName: f.homeName,
+      awayId: f.awayTeamId,
+      awayName: f.awayName,
+    })),
+    viewerTeamId,
   );
   const roundName = facts.roundName || "Taça";
   const title = `🏆 Sorteio: ${roundName}`;
-  const label = mine
-    ? `${mine.homeName || "?"} – ${mine.awayName || "?"}`
-    : `${fixtures.length} eliminatórias`;
   const home =
-    mine?.homeTeamId != null ? { id: mine.homeTeamId, label: mine.homeName || "?" } : null;
+    mine ? { id: mine.homeId, label: mine.homeName || "?" } : null;
   const away =
-    mine?.awayTeamId != null ? { id: mine.awayTeamId, label: mine.awayName || "?" } : null;
+    mine ? { id: mine.awayId, label: mine.awayName || "?" } : null;
   return {
     ...makeArticle(
       home && away
         ? [partText(`${title} — `), partTeam(home), partText(" – "), partTeam(away)]
         : [partText(title)],
-      home && away
-        ? [partTeam(home), partText(" – "), partTeam(away)]
-        : [partText(label)],
+      bodyParts,
       null,
       home && away ? [home, away] : [],
       null,
     ),
     title,
-    body: label,
+    body,
     facts,
   };
 }

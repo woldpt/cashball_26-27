@@ -478,6 +478,10 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                             playerId: player.id,
                           })
                         }
+                        onOpenCupBracket={() => {
+                          navigateTab("bracket");
+                          socket.emit("requestCupBracket");
+                        }}
                       />
                     )}
 

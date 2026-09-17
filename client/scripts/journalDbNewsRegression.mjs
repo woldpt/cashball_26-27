@@ -129,9 +129,17 @@ console.log("R4 sorteio: o jogo do treinador com ambas as equipas");
   check(mine.title === "🏆 Sorteio: Oitavos", `título (${mine.title})`);
   check(mine.body.includes("Rival"), "corpo com o meu jogo");
   check((mine.media?.teams || []).length === 2, "duas equipas na media");
-  check(mine.facts?.fixtures?.length === 2, "pares para o «Ver sorteio»");
+  check(mine.facts?.fixtures?.length === 2, "pares nos factos");
+  check(mine.body.includes("O seu jogo:"), "destaque do meu jogo");
+  check(mine.body.includes("Outro A"), "corpo lista os restantes pares");
   const [other] = newsRowsToItems([draw], FALLBACK, 99);
-  check(other.body === "2 eliminatórias", "sem o meu jogo: contagem");
+  check(
+    other.body.includes("Outro A") &&
+      other.body.includes("Outro B") &&
+      other.body.includes("Meu Clube") &&
+      !other.body.includes("O seu jogo:"),
+    "sem o meu jogo: listagem completa sem destaque",
+  );
 }
 
 console.log("R5 lesão/castigo com until e jornada de regresso");
