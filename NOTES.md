@@ -1,3 +1,9 @@
+## Briefing estilo emissão em 3 colunas (2026-09-17)
+
+- Pedido: aproximar o `MatchBriefing` da maqueta broadcast (herói de duelo + radar + campo + scout + CTA). Decisões do utilizador: só dados reais do view-model (1A), aspeto rico também no mobile (2B), herói novo substitui o atual (3A), evoluir a formação existente (4A).
+- Implementação: novo `DuelHero.jsx` (etiquetas + nomes gigantes casa/fora + VS + dificuldade/stepper + linha flash com manchete/contexto real); novo `CompareRadar.jsx` (barras duplas ataque/defesa/moral/qualidade derivadas de golos/moral/avgSkill + forma + registo + último confronto + ambiente); novo `ScoutMarket.jsx` (reutiliza `ThreatGrid` + conselho do adjunto em template fixo preenchido com a ameaça real + mercado 1X2 + árbitro); `OddsTiles.jsx` extraído; `OpponentFormation` com cabeçalho «Confronto tático em campo» + rodapé árbitro/tempo; `MatchBriefing` recomposto em grelha 3 colunas + rodapé CTA. Apagados `NextMatchCard.jsx`, `VersusHero.jsx` e `CompareStat` (órfãos). Sem countdown/hot-zone/cards de árbitro — não existem no servidor.
+- Checks: eslint limpo nos ficheiros tocados (`lint` global só os 2 erros pré-existentes), `check:types` OK, portrait `150/150`, landscape `180/180`, screenshots 390/844 revistos. Harness `briefing-resp-test.jsx` atualizado para a nova composição. View-model e servidor intocados → sem regressão nem audits.
+
 ## Amigável conta para a familiaridade tática (2026-09-17)
 
 - O `finalizeFriendly` (`server/cupFlowHelpers.ts`) não tocava na memória tática: o amigável dava ritmo mas zero estrelas, enquanto liga (`matchSummaryHelpers.ts`) e Taça (`finalizeCupRound`) dão +1 por jogo.

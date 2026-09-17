@@ -9,12 +9,11 @@ import "./src/index.css";
 import { PrimaryCTA } from "./src/components/shared/PrimaryCTA.jsx";
 import {
   buildBriefingViewModel,
-  NextMatchCard,
-  DifficultyGauge,
+  DuelHero,
+  CompareRadar,
+  ScoutMarket,
   StadiumCard,
   OpponentFormation,
-  ThreatGrid,
-  PrepStepper,
 } from "./src/components/live/briefing/index.js";
 
 const noop = () => {};
@@ -113,45 +112,31 @@ const vm = buildBriefingViewModel(summaryFixture, teamInfoFixture);
 
 createRoot(document.getElementById("root")).render(
   <div className="min-h-screen bg-surface p-4">
-    {/* Mesma composição do MatchBriefing (herói + confronto + scouting) */}
+    {/* Mesma composição do MatchBriefing (herói + radar + campo + scout) */}
     <div className="space-y-3">
-      <div className="bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
-        <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-outline-variant/15">
-          <span className="text-[9px] font-black uppercase tracking-widest text-gray-500">
-            📋 Briefing da Jornada
-          </span>
-          <PrepStepper current="briefing" />
-        </div>
-        <div className="px-4 py-3 flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm lg:text-base font-bold text-white leading-snug line-clamp-4 lg:line-clamp-2">
-              {vm.headline}
-            </p>
-            {vm.stakes && (
-              <span className="mt-1.5 inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/5 border border-outline-variant/25 text-gray-300">
-                🎯 {vm.stakes}
-              </span>
-            )}
-          </div>
-          <div className="lg:w-44 shrink-0">
-            <DifficultyGauge score={vm.difficulty.score} label={vm.difficulty.label} />
-          </div>
-          <div className="flex flex-col items-center gap-1">
-            <PrimaryCTA onClick={noop}>Avançar para a Tática</PrimaryCTA>
-            <span className="text-[9px] text-gray-600 font-bold">
-              Podes voltar atrás a qualquer momento
-            </span>
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:flex-1">
-        <div className="flex-1 min-w-0 lg:flex lg:flex-col">
-          <NextMatchCard vm={vm} onOpenTeamSquad={noop} />
-        </div>
-        <div className="lg:w-72 shrink-0 flex flex-col gap-3 lg:h-full">
+      <DuelHero vm={vm} onOpenTeamSquad={noop} />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
+        <CompareRadar vm={vm} onOpenTeamSquad={noop} />
+        <div className="min-w-0 flex flex-col gap-3">
+          <OpponentFormation
+            formation={vm.formation}
+            teamColor={vm.opponentColor}
+            referee={vm.referee}
+            weather={vm.weather}
+          />
           <StadiumCard stadium={vm.stadium} />
-          <OpponentFormation formation={vm.formation} teamColor={vm.opponentColor} />
-          <ThreatGrid threats={vm.threats} />
+        </div>
+        <ScoutMarket vm={vm} />
+      </div>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 rounded-2xl border border-outline-variant/25 bg-surface-container px-4 py-3">
+        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+          Briefing concluído
+        </p>
+        <div className="flex flex-col items-center gap-1">
+          <PrimaryCTA onClick={noop}>Avançar para a Tática</PrimaryCTA>
+          <span className="text-[9px] text-gray-600 font-bold">
+            Podes voltar atrás a qualquer momento
+          </span>
         </div>
       </div>
     </div>

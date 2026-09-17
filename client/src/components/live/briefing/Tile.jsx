@@ -19,25 +19,3 @@ export const Tile = memo(function Tile({ label, children, className = "" }) {
     </div>
   );
 });
-
-/**
- * CompareStat — tile comparativo "eu vs adversário" (mine à esquerda em
- * casa, ordem já resolvida pelo `orderedPair` no view-model).
- * @param {{ label: string, left: import("react").ReactNode, right: import("react").ReactNode }} props
- * @returns {JSX.Element}
- */
-export const CompareStat = memo(function CompareStat({ label, left, right }) {
-  return (
-    <Tile label={label}>
-      <div className="flex items-center justify-center gap-1.5 w-full">
-        <span className="text-sm short:text-xs font-black tabular-nums text-white leading-none truncate">
-          {left}
-        </span>
-        <span aria-hidden className="w-px h-4 bg-outline-variant/25 shrink-0" />
-        <span className="text-sm short:text-xs font-black tabular-nums text-gray-400 leading-none truncate">
-          {right}
-        </span>
-      </div>
-    </Tile>
-  );
-});

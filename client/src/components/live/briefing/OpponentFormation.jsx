@@ -8,12 +8,14 @@ import { PITCH_POS_COLORS } from "../../match/matchConstants.js";
  * Diagnóstico: se a formação chega sem jogadores renderizáveis (payload
  * inesperado), regista a forma do payload na consola e mostra um fallback
  * visível em vez de um relvado vazio.
- * @param {{ formation?: { formation?: string, players?: Array<{ name: string, position: string, skill: number, isJunior?: boolean }> } | null, teamColor?: string|null }} props
+ * @param {{ formation?: { formation?: string, players?: Array<{ name: string, position: string, skill: number, isJunior?: boolean }> } | null, teamColor?: string|null, referee?: { name: string }|null, weather?: { emoji: string, label: string }|null }} props
  * @returns {JSX.Element|null}
  */
 export const OpponentFormation = memo(function OpponentFormation({
   formation,
   teamColor,
+  referee,
+  weather,
 }) {
   if (!formation || !formation.formation) return null;
   const rows = { ATA: [], MED: [], DEF: [], GR: [] };
@@ -39,10 +41,10 @@ export const OpponentFormation = memo(function OpponentFormation({
     <div className="min-w-0 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden lg:flex-1 lg:flex lg:flex-col">
       <div className="flex items-center justify-between px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15 lg:shrink-0">
         <span className="text-[9px] uppercase tracking-widest text-gray-500 font-bold">
-          <span aria-hidden>🔎</span> Formação provável
+          <span aria-hidden>♟️</span> Confronto tático em campo
         </span>
-        <span className="text-[10px] font-black text-white tabular-nums">
-          {formation.formation}
+        <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400">
+          {formation.formation} adversário
         </span>
       </div>
       {placed > 0 ? (
@@ -58,6 +60,18 @@ export const OpponentFormation = memo(function OpponentFormation({
         <p className="px-4 py-3 text-[11px] font-bold italic text-gray-600">
           11 provável indisponível de momento.
         </p>
+      )}
+      {(referee || weather) && (
+        <div className="flex items-center justify-between gap-2 px-4 short:px-3 py-2 short:py-1.5 border-t border-outline-variant/15 lg:shrink-0">
+          <span className="min-w-0 text-[9px] font-bold text-gray-500 truncate">
+            {referee ? `Apita ${referee.name}` : ""}
+          </span>
+          {weather && (
+            <span className="shrink-0 text-[9px] font-bold text-gray-500">
+              <span aria-hidden>{weather.emoji}</span> {weather.label}
+            </span>
+          )}
+        </div>
       )}
     </div>
   );
