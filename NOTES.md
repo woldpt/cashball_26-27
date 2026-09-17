@@ -1,3 +1,8 @@
+## Opções da sala no dropdown do utilizador (2026-09-17)
+
+- O botão `speed` no header não agradou: saiu da barra e as definições da sala passaram a um item «Opções» no dropdown do utilizador (`GameLayout.jsx`, a seguir a «A minha conta», abre o mesmo `RoomSettings`). Efeito lateral: o dropdown bloqueia durante o direto, por isso o ritmo só se muda fora de jogo — coerente com "vale do próximo jogo em diante".
+- Checks: eslint dos ficheiros limpo, `check:types` OK, portrait `155/155`, landscape `186/186`.
+
 ## Ritmo da simulação escolhido pelo admin da sala (2026-09-17)
 
 - Pedido: o admin da sala escolhe o tempo de jogo nas settings. Decisões: painel de definições novo, presets (Calmo 3s / Normal 2s / Rápido 1s por minuto), vale do próximo jogo em diante.
