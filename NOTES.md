@@ -1,3 +1,10 @@
+## Briefing: herói span-2 + cartão de ação na 3ª coluna (2026-09-17)
+
+- Pedido (nova maqueta): herói só no topo das duas primeiras colunas; botão «Avançar para a Tática» sobe para cima da terceira coluna. Decisões: stepper passa para o cartão do botão; no mobile o CTA fica logo após o herói; sem adversário não há herói (só ação + jogos da ronda).
+- Implementação: novo `PrepCtaCard.jsx` («Briefing concluído» + `PrepStepper` + «Prepara a estratégia» + `PrimaryCTA` em largura cheia); `DuelHero` sem stepper; `MatchBriefing` em `grid lg:grid-cols-3` (herói `lg:col-span-2` + CTA; radar + campo + scout por baixo), sem rodapé; harness atualizado.
+- Peripécia: `PrepCtaCard` importou `../shared/PrimaryCTA` (aponta para `live/shared`, inexistente) em vez de `../../shared` — partiu os harnesses briefing + tactics (ambos importam o barrel) com timeout no `waitForSelector`. Fix de uma linha.
+- Checks: eslint limpo, `check:types` OK, portrait `150/150`, landscape `180/180`, screenshots 390/1023 revistos.
+
 ## Briefing estilo emissão em 3 colunas (2026-09-17)
 
 - Pedido: aproximar o `MatchBriefing` da maqueta broadcast (herói de duelo + radar + campo + scout + CTA). Decisões do utilizador: só dados reais do view-model (1A), aspeto rico também no mobile (2B), herói novo substitui o atual (3A), evoluir a formação existente (4A).

@@ -16,3 +16,4 @@ export { OpponentFormation } from "./OpponentFormation.jsx";
 export { ThreatGrid } from "./ThreatGrid.jsx";
 export { BriefingSkeleton } from "./BriefingSkeleton.jsx";
 export { PrepStepper } from "./PrepStepper.jsx";
+export { PrepCtaCard } from "./PrepCtaCard.jsx";

@@ -1,7 +1,6 @@
 import { memo } from "react";
 import { TeamCrest } from "../TeamCrest.jsx";
 import { DifficultyGauge } from "./DifficultyGauge.jsx";
-import { PrepStepper } from "./PrepStepper.jsx";
 
 /**
  * Slot de equipa no duelo (emblema grande + posição + nome + estatuto).
@@ -109,7 +108,6 @@ export const DuelHero = memo(function DuelHero({ vm, onOpenTeamSquad }) {
           <div className="hidden sm:block w-32 lg:w-40">
             <DifficultyGauge score={vm.difficulty.score} label={vm.difficulty.label} />
           </div>
-          <PrepStepper current="briefing" />
         </div>
       </div>
 

@@ -6,10 +6,10 @@
 // (see .pi/skills/mobile-resp-check).
 import { createRoot } from "react-dom/client";
 import "./src/index.css";
-import { PrimaryCTA } from "./src/components/shared/PrimaryCTA.jsx";
 import {
   buildBriefingViewModel,
   DuelHero,
+  PrepCtaCard,
   CompareRadar,
   ScoutMarket,
   StadiumCard,
@@ -112,33 +112,23 @@ const vm = buildBriefingViewModel(summaryFixture, teamInfoFixture);
 
 createRoot(document.getElementById("root")).render(
   <div className="min-h-screen bg-surface p-4">
-    {/* Mesma composição do MatchBriefing (herói + radar + campo + scout) */}
-    <div className="space-y-3">
-      <DuelHero vm={vm} onOpenTeamSquad={noop} />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
-        <CompareRadar vm={vm} onOpenTeamSquad={noop} />
-        <div className="min-w-0 flex flex-col gap-3">
-          <OpponentFormation
-            formation={vm.formation}
-            teamColor={vm.opponentColor}
-            referee={vm.referee}
-            weather={vm.weather}
-          />
-          <StadiumCard stadium={vm.stadium} />
-        </div>
-        <ScoutMarket vm={vm} />
+    {/* Mesma composição do MatchBriefing (herói span-2 + CTA + radar + campo + scout) */}
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
+      <div className="min-w-0 lg:col-span-2">
+        <DuelHero vm={vm} onOpenTeamSquad={noop} />
       </div>
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 rounded-2xl border border-outline-variant/25 bg-surface-container px-4 py-3">
-        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-          Briefing concluído
-        </p>
-        <div className="flex flex-col items-center gap-1">
-          <PrimaryCTA onClick={noop}>Avançar para a Tática</PrimaryCTA>
-          <span className="text-[9px] text-gray-600 font-bold">
-            Podes voltar atrás a qualquer momento
-          </span>
-        </div>
+      <PrepCtaCard onAdvance={noop} />
+      <CompareRadar vm={vm} onOpenTeamSquad={noop} />
+      <div className="min-w-0 flex flex-col gap-3">
+        <OpponentFormation
+          formation={vm.formation}
+          teamColor={vm.opponentColor}
+          referee={vm.referee}
+          weather={vm.weather}
+        />
+        <StadiumCard stadium={vm.stadium} />
       </div>
+      <ScoutMarket vm={vm} />
     </div>
   </div>,
 );

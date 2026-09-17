@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import { useTactics } from "../../contexts/TacticsContext.jsx";
 import { useGame } from "../../contexts/GameContext.jsx";
-import { PrimaryCTA } from "../shared/PrimaryCTA.jsx";
 import { EmptyState } from "../shared/EmptyState.jsx";
 import {
   buildBriefingViewModel,
   DuelHero,
+  PrepCtaCard,
   CompareRadar,
   ScoutMarket,
   StadiumCard,
@@ -23,9 +23,10 @@ import {
  * subcomponentes. Só se apresentam dados reais do view-model — sem
  * countdowns, hot-zones ou conselhos inventados.
  *
- * Desktop (lg+): herói de duelo seguido de grelha de três colunas (radar +
- * campo + scout) e rodapé com o CTA. Mobile/tablet: os mesmos blocos
- * empilhados, sem colunas escondidas.
+ * Desktop (lg+): herói de duelo nas duas primeiras colunas com o cartão de
+ * ação ao lado, seguidos de radar + campo + scout. Mobile/tablet: os mesmos
+ * blocos empilhados (herói → ação → radar → campo → scout). Sem adversário
+ * não há duelo: mostra só a ação e os jogos da ronda.
  *
  * @returns {JSX.Element|null}
  */
@@ -55,10 +56,10 @@ export function MatchBriefing() {
     return null;
   }
 
+  const advance = () => setPrepPhase("tactics");
+
   return (
     <div className="space-y-3 short:space-y-1.5 lg:space-y-4 short:lg:space-y-2">
-      <DuelHero vm={vm} onOpenTeamSquad={handleOpenTeamSquad} />
-
       {/* Faixa do amigável: só para testar */}
       {vm.cupRound === 0 && (
         <div className="flex items-center gap-2 rounded-2xl border border-outline-variant/25 bg-surface-container px-4 short:px-3 py-2.5 short:py-2">
@@ -69,10 +70,13 @@ export function MatchBriefing() {
         </div>
       )}
 
-      {/* Radar + campo + scout (ou espião sem adversário) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 short:gap-1.5 items-stretch">
         {vm.hasOpponent ? (
           <>
+            <div className="min-w-0 lg:col-span-2">
+              <DuelHero vm={vm} onOpenTeamSquad={handleOpenTeamSquad} />
+            </div>
+            <PrepCtaCard onAdvance={advance} />
             <CompareRadar vm={vm} onOpenTeamSquad={handleOpenTeamSquad} />
             <div className="min-w-0 flex flex-col gap-3 short:gap-1.5">
               {vm.formation ? (
@@ -102,45 +106,34 @@ export function MatchBriefing() {
             </div>
             <ScoutMarket vm={vm} />
           </>
-        ) : vm.spyGames.length > 0 ? (
-          <div className="lg:col-span-3 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
-            <div className="px-4 short:px-3 py-2 short:py-1.5 border-b border-outline-variant/15">
-              <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
-                <span aria-hidden>🔭</span> Jogos da ronda
-              </span>
+        ) : (
+          <>
+            <div className="min-w-0 lg:col-span-1">
+              <PrepCtaCard onAdvance={advance} />
             </div>
-            <ul className="px-3 short:px-2 py-2 short:py-1.5 grid grid-cols-1 sm:grid-cols-2 gap-1.5 short:gap-1">
-              {vm.spyGames.map((g, i) => (
-                <li
-                  key={`${g.homeTeamId}-${g.awayTeamId}-${i}`}
-                  className="min-w-0 bg-surface-container-low/60 border border-outline-variant/25 rounded-xl px-2.5 py-2 flex items-center gap-2 text-[11px] font-black text-white"
-                >
-                  <span className="flex-1 min-w-0 truncate text-right">{g.homeName}</span>
-                  <span aria-hidden className="shrink-0 text-gray-600 text-[9px]">VS</span>
-                  <span className="flex-1 min-w-0 truncate">{g.awayName}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </div>
-
-      {/* Rodapé: briefing concluído + CTA */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 rounded-2xl border border-outline-variant/25 bg-surface-container px-4 short:px-3 py-3 short:py-2">
-        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-          Briefing concluído{" "}
-          <span className="block sm:inline text-[9px] text-gray-600 font-bold normal-case tracking-normal">
-            Prepara o onze e a postura em campo
-          </span>
-        </p>
-        <div className="flex flex-col items-center gap-1">
-          <PrimaryCTA onClick={() => setPrepPhase("tactics")}>
-            Avançar para a Tática
-          </PrimaryCTA>
-          <span className="text-[9px] text-gray-600 font-bold">
-            Podes voltar atrás a qualquer momento
-          </span>
-        </div>
+            {vm.spyGames.length > 0 && (
+              <div className="min-w-0 lg:col-span-2 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+                <div className="px-4 short:px-3 py-2 short:py-1.5 border-b border-outline-variant/15">
+                  <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
+                    <span aria-hidden>🔭</span> Jogos da ronda
+                  </span>
+                </div>
+                <ul className="px-3 short:px-2 py-2 short:py-1.5 grid grid-cols-1 sm:grid-cols-2 gap-1.5 short:gap-1">
+                  {vm.spyGames.map((g, i) => (
+                    <li
+                      key={`${g.homeTeamId}-${g.awayTeamId}-${i}`}
+                      className="min-w-0 bg-surface-container-low/60 border border-outline-variant/25 rounded-xl px-2.5 py-2 flex items-center gap-2 text-[11px] font-black text-white"
+                    >
+                      <span className="flex-1 min-w-0 truncate text-right">{g.homeName}</span>
+                      <span aria-hidden className="shrink-0 text-gray-600 text-[9px]">VS</span>
+                      <span className="flex-1 min-w-0 truncate">{g.awayName}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
