@@ -1630,35 +1630,40 @@ export function registerSessionSocketHandlers(
 
 				// ── Balance history ──────────────────────────────────────────────
 				// Saldo real de fim de semana, gravado em team_balance_history
-				// (um ponto por slot do calendário). Só há pontos a partir da
-				// ativação desta feature — salas em curso preenchem o gráfico
-				// semana a semana. Cada ponto tem um índice global `x`
-				// (contínuo entre épocas) para o eixo X do gráfico.
-				const SEASON_SPAN = SEASON_CALENDAR.length;
+				// (um ponto por slot do calendário). Só se envia a época atual
+				// (máx. 20 pontos: 1 amigável + 14 liga + 5 taça). Cada ponto tem
+				// um `label` para o eixo X do gráfico e `x` = slot do calendário.
 				let balanceHistory: Array<{
 					x: number;
 					year: number;
 					matchweek: number;
 					balance: number;
+					label: string;
 				}> = [];
 				try {
 					const histRows = await runAll(
 						game.db,
-						`SELECT season, slot, matchweek, year, balance FROM team_balance_history
-						 WHERE team_id = ? AND season IN (?, ?)
-						 ORDER BY season ASC, slot ASC`,
-						[teamId, game.season - 1, game.season],
+						`SELECT slot, matchweek, year, balance FROM team_balance_history
+						 WHERE team_id = ? AND season = ?
+						 ORDER BY slot ASC`,
+						[teamId, game.season],
 					);
-					const seasons = [...new Set((histRows || []).map((r) => r.season))].sort(
-						(a, b) => a - b,
-					);
-					const seasonIndex = new Map(seasons.map((s, i) => [s, i]));
-					balanceHistory = (histRows || []).map((r) => ({
-						x: (seasonIndex.get(r.season) ?? 0) * SEASON_SPAN + (r.slot ?? 0),
-						year: r.year ?? 0,
-						matchweek: r.matchweek ?? 0,
-						balance: Math.round(r.balance ?? 0),
-					}));
+					const cupTick = ["", "16 avos", "Oitavos", "Quartos", "Meias", "Final"];
+					balanceHistory = (histRows || []).map((r) => {
+						const entry = SEASON_CALENDAR[r.slot ?? 0];
+						return {
+							x: r.slot ?? 0,
+							year: r.year ?? 0,
+							matchweek: r.matchweek ?? 0,
+							balance: Math.round(r.balance ?? 0),
+							label:
+								entry?.type === "league"
+									? `J${r.matchweek ?? (entry as any).matchweek}`
+									: entry?.type === "friendly"
+										? "Amigável"
+										: cupTick[(entry as any)?.round ?? 0] || "",
+						};
+					});
 				} catch (histErr: any) {
 					// Sala antiga sem a tabela — o gráfico começa vazio.
 					if (!String(histErr?.message || "").includes("no such table")) throw histErr;

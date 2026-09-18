@@ -1226,3 +1226,8 @@ Plano C1+C2 (quando fizer):
 - Novo `scripts/compress-images.mjs` (`npm run compress:images`, dep `sharp`): fotos q82 / logos lossless, flags `--dry-run --keep-originals --skip-fixtures --migrate-rooms`, lotes de 16 em paralelo. Corrida única: 1370 imagens, 143 MB → ~31 MB (−79%). Originais PNG/JPG apagados.
 - `all_teams.json` com 1370 refs reescritas para `.webp`; `base.db` regenera-se sozinha no próximo arranque (hash das fixtures em `ensureSeeded.js`). Sem salas `game_*.db` ativas para migrar (só WAL/SHM órfãos de salas apagadas — deixados intactos).
 - Verificado: dry-run idempotente (0 ficheiros), foto e logo abertos visualmente OK, `node --check` OK. `dist/`/android/ios têm cópias antigas mas regeneram-se no build.
+
+## Gráfico de saldo: eixo X = época completa, 20 pontos (2026-09-18)
+- `financeData.balanceHistory`: agora só a época atual (máx. 20 pontos = calendário completo: 1 amigável + 14 liga + 5 taça), antes eram 2 épocas (até 40). `x` = slot do calendário (0..19); cada ponto tem `label` de `SEASON_CALENDAR[slot]`: `J1`…`J14`, `Amigável`, `16 avos`/`Oitavos`/`Quartos`/`Meias`/`Final` (antes a taça aparecia rotulada pela matchweek anterior — enganador).
+- `BalanceLineChart.jsx`: ticks do eixo X e tooltip usam `p.label` (fallback `matchweek` para dados sem label); lógica de fronteira de ano eliminada (só 1 época). Gravação em BD inalterada — só o payload.
+- Checks: server typecheck OK; client `check:types` OK; `lint` só com os 2 erros pré-existentes (verificados via stash). Sem mobile-resp-check (sem mudança estrutural de layout).

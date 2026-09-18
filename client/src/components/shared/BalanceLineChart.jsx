@@ -27,7 +27,7 @@ function compactCurrency(value) {
  * O eixo Y faz zoom à amplitude dos dados, a linha muda de cor conforme o
  * saldo é positivo (primary) ou negativo (error) e a área preenche até à
  * baseline zero (ou ao bordo do gráfico quando o zero está fora do domínio).
- * @param {{ data: Array<{x?: number, year?: number, matchweek: number, balance: number}> }} props
+ * @param {{ data: Array<{x?: number, year?: number, matchweek: number, balance: number, label?: string}> }} props
  */
 export function BalanceLineChart({ data = [] }) {
   const [hoveredIdx, setHoveredIdx] = useState(null);
@@ -159,10 +159,10 @@ export function BalanceLineChart({ data = [] }) {
   const tooltipBelow = hovered ? getY(hovered.balance) < 64 : false;
   const lastIdx = pointCount - 1;
   const hoveredLabel = hovered
-    ? hovered.year != null
-      ? hovered.matchweek === 0
-        ? `Início da época ${hovered.year}`
-        : `Fim da Jornada ${hovered.matchweek} · ${hovered.year}`
+    ? hovered.label
+      ? hovered.year != null
+        ? `${hovered.label} · ${hovered.year}`
+        : hovered.label
       : hovered.matchweek === 0
         ? "Início de época"
         : `Fim da Jornada ${hovered.matchweek}`
@@ -280,15 +280,13 @@ export function BalanceLineChart({ data = [] }) {
 
         {/* Rótulos X */}
         {clean.map((p, i) => {
-          const isBoundary = i > 0 && clean[i - 1].year !== p.year;
           const every = pointCount > 16 ? Math.ceil(pointCount / 8) : 1;
-          if (i % every !== 0 && i !== lastIdx && !isBoundary) return null;
+          if (i % every !== 0 && i !== lastIdx) return null;
           const label =
-            i === 0
+            p.label ||
+            (p.matchweek === 0
               ? "Início"
-              : isBoundary
-                ? String(p.year)
-                : `J${p.matchweek}`;
+              : `J${p.matchweek}`);
           return (
             <text
               key={`${px(p)}-${i}`}
