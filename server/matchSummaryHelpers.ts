@@ -552,9 +552,19 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       (e) => e.type === "cup" && e.round === cupRow.round,
     ) as Extract<(typeof SEASON_CALENDAR)[number], { type: "cup" }> | undefined;
 
-    const hasEt = cupRow.home_et_score != null && cupRow.away_et_score != null;
+    // As colunas ET/penáltis têm DEFAULT 0 (nunca NULL): `!= null` vinha
+    // sempre true e colava "(g.p. 0–0)" a jogos decididos nos 90' — além de
+    // forçar o `result` para "D" pelo ramo dos penáltis. Só houve
+    // prolongamento se empate nos 90', e só houve penáltis se empate após
+    // prolongamento com vencedor no shootout (desempate real nunca é 0–0).
+    const score90Home = cupRow.home_score ?? 0;
+    const score90Away = cupRow.away_score ?? 0;
+    const hasEt = score90Home === score90Away;
     const hasPen =
-      cupRow.home_penalties != null && cupRow.away_penalties != null;
+      hasEt &&
+      score90Home + (cupRow.home_et_score ?? 0) ===
+        score90Away + (cupRow.away_et_score ?? 0) &&
+      (cupRow.home_penalties ?? 0) !== (cupRow.away_penalties ?? 0);
 
     // Determine result including ET/penalties for cup ties.
     let result: "V" | "E" | "D";

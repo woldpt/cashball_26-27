@@ -1260,3 +1260,9 @@ Plano C1+C2 (quando fizer):
 - `financeData.balanceHistory`: agora só a época atual (máx. 20 pontos = calendário completo: 1 amigável + 14 liga + 5 taça), antes eram 2 épocas (até 40). `x` = slot do calendário (0..19); cada ponto tem `label` de `SEASON_CALENDAR[slot]`: `J1`…`J14`, `Amigável`, `16 avos`/`Oitavos`/`Quartos`/`Meias`/`Final` (antes a taça aparecia rotulada pela matchweek anterior — enganador).
 - `BalanceLineChart.jsx`: ticks do eixo X e tooltip usam `p.label` (fallback `matchweek` para dados sem label); lógica de fronteira de ano eliminada (só 1 época). Gravação em BD inalterada — só o payload.
 - Checks: server typecheck OK; client `check:types` OK; `lint` só com os 2 erros pré-existentes (verificados via stash). Sem mobile-resp-check (sem mudança estrutural de layout).
+
+## Último confronto da Taça sem "(g.p. 0–0)" fantasma (2026-09-18)
+- `getLastConfrontation` (`server/matchSummaryHelpers.ts`): `hasEt`/`hasPen` vinham de `!= null`, mas as colunas têm `DEFAULT 0` — logo todo o jogo da taça mostrava sufixo de penáltis (ex. briefing Malveira × Portimonense: "1–2 (g.p. 0–0)") e o `result` era decidido pelos penáltis (0–0 → sempre "D", vitórias nos 90' viravam "Derrota").
+- Agora: `hasEt` só se empate nos 90'; `hasPen` só se empate após prolongamento + penáltis desiguais (shootout real nunca é 0–0). Sem migração de esquema.
+- Caso que motivou: sala E3AQ4G — último confronto real era Portimonense 2–1 Malveira (90', época 1); o "0–0 após prolongamento" era a ficha do próximo jogo (época 2, `played=0`), não um resultado.
+- Checks: server typecheck OK (exit 0); predicados validados por SQL em todas as salas — 0 jogos decididos nos 90' com g.p. restante, 0 shootouts reais sem sufixo.
