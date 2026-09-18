@@ -14,6 +14,7 @@ import {
   StadiumCard,
   OpponentFormation,
   ThreatGrid,
+  MarketPanel,
 } from "./src/components/live/briefing/index.js";
 
 const noop = () => {};
@@ -129,6 +130,7 @@ createRoot(document.getElementById("root")).render(
       <div className="min-w-0 flex flex-col gap-3">
         <StadiumCard stadium={vm.stadium} />
         <ThreatGrid threats={vm.threats} />
+        <MarketPanel odds={vm.odds} referee={vm.referee} />
       </div>
     </div>
   </div>,

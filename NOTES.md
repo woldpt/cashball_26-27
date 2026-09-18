@@ -27,6 +27,12 @@
 - Identidade (`client/src/constants/index.js` + `TacticsView.jsx`): cada formação ganha selo + frase + pendor (`edge` deriva dos pesos reais); selo sob o número no mobile e no desktop (cor por pendor: ataque rosa, defesa azul, equilibrado cinzento; ativa usa verde-escuro sobre o fundo verde), frase da formação ativa sob o cabeçalho no desktop. Sem mudança estrutural de grelha.
 - Checks: server `typecheck` OK, eslint dos ficheiros + `check:types` OK, `test:engine-unit` 19/19, `audit:socketio` 0 erros (96 avisos pré-existentes), `audit:gamestate TST148` 0/0/0, mobile portrait `150/150` + landscape `180/180`. Sonda de medição era temporária em /tmp (removida).
 
+## Briefing: mercado na 3ª coluna e relvado flexível (2026-09-17)
+
+- Pedido (screenshot anotado): mercado 1X2 + árbitro para a 3ª coluna; vazio sob o relvado eliminado a esticar o campo. Decisões via pergunta: destino «na 3ª coluna», vazio «esticar o relvado».
+- Implementação: novo `MarketPanel.jsx` (mercado + árbitro) no fundo da 3ª coluna (estádio → ameaças → mercado → árbitro); `CompareRadar` sem esses tiles; `OpponentFormation` com pitch `flex-1` + altura mínima (enche o cartão em desktop, mínimos iguais em mobile).
+- Checks: eslint limpo, `check:types` OK, portrait `155/155`, landscape `186/186`, screenshots 390/1023/1280 revistos (skills dos avançados todas visíveis).
+
 ## Briefing: estádio sob o CTA, fora adjunto, odds na col 1, relvado alto (2026-09-17)
 
 - Pedido (screenshot anotado): lotação prevista para baixo do botão Avançar; eliminar conselho do adjunto; odds + árbitro para baixo da Forma; forma em duas colunas; relvado mais alto (skill dos avançados cortada).

@@ -9,6 +9,7 @@ export { RecordText } from "./RecordText.jsx";
 export { DuelHero } from "./DuelHero.jsx";
 export { CompareRadar } from "./CompareRadar.jsx";
 export { OddsTiles } from "./OddsTiles.jsx";
+export { MarketPanel } from "./MarketPanel.jsx";
 export { DifficultyGauge } from "./DifficultyGauge.jsx";
 export { StadiumCard } from "./StadiumCard.jsx";
 export { OpponentFormation } from "./OpponentFormation.jsx";

@@ -3,7 +3,6 @@ import { getMoraleClasses } from "../../../utils/morale.js";
 import { Tile } from "./Tile.jsx";
 import { FormChips } from "./FormChips.jsx";
 import { RecordText } from "./RecordText.jsx";
-import { OddsTiles } from "./OddsTiles.jsx";
 
 /**
  * Extrai golos marcados/sofridos "M:S" do par ordenado por local do jogo.
@@ -178,30 +177,6 @@ export const CompareRadar = memo(function CompareRadar({ vm, onOpenTeamSquad }) 
             />
           </div>
         </div>
-
-        <Tile
-          label={
-            <span className="inline-flex items-center gap-1">
-              Mercado 1X2
-              <span
-                className="normal-case font-bold text-gray-700 cursor-help"
-                title="Calculadas pelo servidor — iguais às das apostas em jogo"
-              >
-                ⓘ
-              </span>
-            </span>
-          }
-        >
-          <OddsTiles odds={vm.odds} />
-        </Tile>
-
-        {vm.referee && (
-          <Tile label="Árbitro">
-            <span className="text-[10px] font-bold text-gray-400 truncate block">
-              {vm.referee.name}
-            </span>
-          </Tile>
-        )}
 
         <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-1.5">
           <Tile label="Último confronto" className="flex-1">

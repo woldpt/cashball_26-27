@@ -10,6 +10,7 @@ import {
   StadiumCard,
   OpponentFormation,
   ThreatGrid,
+  MarketPanel,
   BriefingSkeleton,
 } from "./briefing/index.js";
 
@@ -118,6 +119,7 @@ export function MatchBriefing() {
                 </div>
               ) : null}
               <ThreatGrid threats={vm.threats} />
+              <MarketPanel odds={vm.odds} referee={vm.referee} />
             </div>
           </>
         ) : (
