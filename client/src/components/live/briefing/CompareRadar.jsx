@@ -3,6 +3,7 @@ import { getMoraleClasses } from "../../../utils/morale.js";
 import { Tile } from "./Tile.jsx";
 import { FormChips } from "./FormChips.jsx";
 import { RecordText } from "./RecordText.jsx";
+import { OddsTiles } from "./OddsTiles.jsx";
 
 /**
  * Extrai golos marcados/sofridos "M:S" do par ordenado por local do jogo.
@@ -76,25 +77,23 @@ const DualBar = memo(function DualBar({
 });
 
 /**
- * Linha de forma recente (nome clicável + chips + registo V/E/D).
+ * Bloco de forma recente de uma equipa (nome clicável + chips + registo).
  * @param {{ name: string, last5: string, team: Object|null, record: { v: number, e: number, d: number }, onOpenTeamSquad?: (team: Object) => void }} props
  * @returns {JSX.Element}
  */
-const FormRow = memo(function FormRow({ name, last5, team, record, onOpenTeamSquad }) {
+const FormBlock = memo(function FormBlock({ name, last5, team, record, onOpenTeamSquad }) {
   return (
-    <div className="flex w-full items-center justify-between gap-1.5 min-w-0">
-      <div className="min-w-0 flex flex-col">
-        <button
-          type="button"
-          onClick={() => team && onOpenTeamSquad?.(team)}
-          className="min-w-0 text-left text-[10px] font-black text-white truncate hover:text-emerald-400 hover:underline transition-colors"
-          aria-label={`Ver plantel de ${name}`}
-        >
-          {name}
-        </button>
-        <RecordText v={record.v} e={record.e} d={record.d} />
-      </div>
+    <div className="flex flex-col gap-1 min-w-0">
+      <button
+        type="button"
+        onClick={() => team && onOpenTeamSquad?.(team)}
+        className="min-w-0 text-left text-[10px] font-black text-white truncate hover:text-emerald-400 hover:underline transition-colors"
+        aria-label={`Ver plantel de ${name}`}
+      >
+        {name}
+      </button>
       <FormChips last5={last5} />
+      <RecordText v={record.v} e={record.e} d={record.d} />
     </div>
   );
 });
@@ -162,15 +161,15 @@ export const CompareRadar = memo(function CompareRadar({ vm, onOpenTeamSquad }) 
           <span className="text-[8px] uppercase tracking-widest text-gray-600 font-black">
             Forma recente (últimos 5)
           </span>
-          <div className="mt-1 flex flex-col gap-1.5">
-            <FormRow
+          <div className="mt-1 grid grid-cols-2 gap-2">
+            <FormBlock
               name={vm.form.mine.name}
               last5={vm.form.mine.last5}
               team={vm.form.mine.team}
               record={vm.record.mine}
               onOpenTeamSquad={onOpenTeamSquad}
             />
-            <FormRow
+            <FormBlock
               name={vm.form.theirs.name}
               last5={vm.form.theirs.last5}
               team={vm.form.theirs.team}
@@ -179,6 +178,30 @@ export const CompareRadar = memo(function CompareRadar({ vm, onOpenTeamSquad }) 
             />
           </div>
         </div>
+
+        <Tile
+          label={
+            <span className="inline-flex items-center gap-1">
+              Mercado 1X2
+              <span
+                className="normal-case font-bold text-gray-700 cursor-help"
+                title="Calculadas pelo servidor — iguais às das apostas em jogo"
+              >
+                ⓘ
+              </span>
+            </span>
+          }
+        >
+          <OddsTiles odds={vm.odds} />
+        </Tile>
+
+        {vm.referee && (
+          <Tile label="Árbitro">
+            <span className="text-[10px] font-bold text-gray-400 truncate block">
+              {vm.referee.name}
+            </span>
+          </Tile>
+        )}
 
         <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-1.5">
           <Tile label="Último confronto" className="flex-1">

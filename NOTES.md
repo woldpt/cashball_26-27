@@ -27,6 +27,12 @@
 - Identidade (`client/src/constants/index.js` + `TacticsView.jsx`): cada formação ganha selo + frase + pendor (`edge` deriva dos pesos reais); selo sob o número no mobile e no desktop (cor por pendor: ataque rosa, defesa azul, equilibrado cinzento; ativa usa verde-escuro sobre o fundo verde), frase da formação ativa sob o cabeçalho no desktop. Sem mudança estrutural de grelha.
 - Checks: server `typecheck` OK, eslint dos ficheiros + `check:types` OK, `test:engine-unit` 19/19, `audit:socketio` 0 erros (96 avisos pré-existentes), `audit:gamestate TST148` 0/0/0, mobile portrait `150/150` + landscape `180/180`. Sonda de medição era temporária em /tmp (removida).
 
+## Briefing: estádio sob o CTA, fora adjunto, odds na col 1, relvado alto (2026-09-17)
+
+- Pedido (screenshot anotado): lotação prevista para baixo do botão Avançar; eliminar conselho do adjunto; odds + árbitro para baixo da Forma; forma em duas colunas; relvado mais alto (skill dos avançados cortada).
+- Implementação: `StadiumCard` para a 3ª coluna (sob o CTA); `ScoutMarket.jsx` dissolvido — `ThreatGrid` direto (fora `AssistantAdvice`); `CompareRadar` com `FormBlock` vertical em `grid-cols-2` + tiles mercado 1X2 e árbitro por baixo da forma; `OpponentFormation` `h-72→h-80` / `lg 320→360px` e rodapé só com tempo (árbitro agora na col 1, sem duplicar).
+- Checks: eslint limpo, `check:types` OK, portrait `155/155`, landscape `186/186`, screenshots 390/1023 revistos.
+
 ## Briefing: herói span-2 + cartão de ação na 3ª coluna (2026-09-17)
 
 - Pedido (nova maqueta): herói só no topo das duas primeiras colunas; botão «Avançar para a Tática» sobe para cima da terceira coluna. Decisões: stepper passa para o cartão do botão; no mobile o CTA fica logo após o herói; sem adversário não há herói (só ação + jogos da ronda).

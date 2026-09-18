@@ -8,7 +8,6 @@ export { FormChips } from "./FormChips.jsx";
 export { RecordText } from "./RecordText.jsx";
 export { DuelHero } from "./DuelHero.jsx";
 export { CompareRadar } from "./CompareRadar.jsx";
-export { ScoutMarket } from "./ScoutMarket.jsx";
 export { OddsTiles } from "./OddsTiles.jsx";
 export { DifficultyGauge } from "./DifficultyGauge.jsx";
 export { StadiumCard } from "./StadiumCard.jsx";

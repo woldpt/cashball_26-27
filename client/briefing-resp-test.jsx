@@ -11,9 +11,9 @@ import {
   DuelHero,
   PrepCtaCard,
   CompareRadar,
-  ScoutMarket,
   StadiumCard,
   OpponentFormation,
+  ThreatGrid,
 } from "./src/components/live/briefing/index.js";
 
 const noop = () => {};
@@ -123,12 +123,13 @@ createRoot(document.getElementById("root")).render(
         <OpponentFormation
           formation={vm.formation}
           teamColor={vm.opponentColor}
-          referee={vm.referee}
           weather={vm.weather}
         />
-        <StadiumCard stadium={vm.stadium} />
       </div>
-      <ScoutMarket vm={vm} />
+      <div className="min-w-0 flex flex-col gap-3">
+        <StadiumCard stadium={vm.stadium} />
+        <ThreatGrid threats={vm.threats} />
+      </div>
     </div>
   </div>,
 );

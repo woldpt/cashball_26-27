@@ -8,13 +8,12 @@ import { PITCH_POS_COLORS } from "../../match/matchConstants.js";
  * Diagnóstico: se a formação chega sem jogadores renderizáveis (payload
  * inesperado), regista a forma do payload na consola e mostra um fallback
  * visível em vez de um relvado vazio.
- * @param {{ formation?: { formation?: string, players?: Array<{ name: string, position: string, skill: number, isJunior?: boolean }> } | null, teamColor?: string|null, referee?: { name: string }|null, weather?: { emoji: string, label: string }|null }} props
+ * @param {{ formation?: { formation?: string, players?: Array<{ name: string, position: string, skill: number, isJunior?: boolean }> } | null, teamColor?: string|null, weather?: { emoji: string, label: string }|null }} props
  * @returns {JSX.Element|null}
  */
 export const OpponentFormation = memo(function OpponentFormation({
   formation,
   teamColor,
-  referee,
   weather,
 }) {
   if (!formation || !formation.formation) return null;
@@ -48,7 +47,7 @@ export const OpponentFormation = memo(function OpponentFormation({
         </span>
       </div>
       {placed > 0 ? (
-        <div className="relative w-full h-72 short:h-44 lg:h-[320px] short:lg:h-[200px]">
+        <div className="relative w-full h-80 short:h-56 lg:h-[360px] short:lg:h-[240px]">
           <PitchFormation
             rows={rows}
             posColors={PITCH_POS_COLORS}
@@ -61,16 +60,11 @@ export const OpponentFormation = memo(function OpponentFormation({
           11 provável indisponível de momento.
         </p>
       )}
-      {(referee || weather) && (
-        <div className="flex items-center justify-between gap-2 px-4 short:px-3 py-2 short:py-1.5 border-t border-outline-variant/15 lg:shrink-0">
-          <span className="min-w-0 text-[9px] font-bold text-gray-500 truncate">
-            {referee ? `Apita ${referee.name}` : ""}
+      {weather && (
+        <div className="flex items-center justify-end gap-2 px-4 short:px-3 py-2 short:py-1.5 border-t border-outline-variant/15 lg:shrink-0">
+          <span className="shrink-0 text-[9px] font-bold text-gray-500">
+            <span aria-hidden>{weather.emoji}</span> {weather.label}
           </span>
-          {weather && (
-            <span className="shrink-0 text-[9px] font-bold text-gray-500">
-              <span aria-hidden>{weather.emoji}</span> {weather.label}
-            </span>
-          )}
         </div>
       )}
     </div>
