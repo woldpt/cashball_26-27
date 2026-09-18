@@ -15,35 +15,41 @@ const INCOME_TYPES = new Set([
   "prize",
 ]);
 
+const WAGE_CAP = 500000;
+
+const NEWS_ICONS = {
+  transfer_in: {
+    bg: "bg-emerald-500/15",
+    text: "text-emerald-400",
+    icon: "trending_up",
+  },
+  transfer_out: {
+    bg: "bg-error/15",
+    text: "text-error",
+    icon: "trending_down",
+  },
+  default: {
+    bg: "bg-surface-container-high",
+    text: "text-on-surface-variant",
+    icon: "info",
+  },
+};
+
 function NewsRow({ news }) {
   return (
     <div className="px-4 short:px-3 py-3 short:py-1.5 flex items-center gap-3 short:gap-2 hover:bg-white/[0.03] transition-colors">
       {/* Icon */}
-      <div
-        className={`w-8 h-8 short:w-6 short:h-6 rounded flex items-center justify-center shrink-0 ${
-          news.type === "transfer_in"
-            ? "bg-emerald-500/15"
-            : news.type === "transfer_out"
-              ? "bg-error/15"
-              : "bg-surface-container-high"
-        }`}
-      >
-        <span
-          className={`material-symbols-outlined text-sm ${
-            news.type === "transfer_in"
-              ? "text-emerald-400"
-              : news.type === "transfer_out"
-                ? "text-error"
-                : "text-on-surface-variant"
-          }`}
-        >
-          {news.type === "transfer_in"
-            ? "trending_up"
-            : news.type === "transfer_out"
-              ? "trending_down"
-              : "info"}
-        </span>
-      </div>
+      {(() => {
+        const { bg, text, icon } =
+          NEWS_ICONS[news.type] ?? NEWS_ICONS.default;
+        return (
+          <div className={`w-8 h-8 short:w-6 short:h-6 rounded flex items-center justify-center shrink-0 ${bg}`}>
+            <span className={`material-symbols-outlined text-sm ${text}`}>
+              {icon}
+            </span>
+          </div>
+        );
+      })()}
 
       {/* Content */}
       <div className="flex-1 min-w-0">
@@ -107,6 +113,8 @@ export function ClubTab({
   palmares,
   clubNews,
 }) {
+  const [crestFailed, setCrestFailed] = useState(false);
+
   const morale = teamInfo?.morale ?? 50;
   const moraleLabel = getMoraleLabel(morale).toUpperCase();
   const moraleTone = getMoraleClasses(morale);
@@ -169,8 +177,12 @@ export function ClubTab({
   };
 
   // Detecta se há transferências para o badge "Foco em Transferências"
-  const hasTransfers = clubNews?.some(
-    (n) => n.type === "transfer_in" || n.type === "transfer_out",
+  const hasTransfers = useMemo(
+    () =>
+      clubNews?.some(
+        (n) => n.type === "transfer_in" || n.type === "transfer_out",
+      ) ?? false,
+    [clubNews],
   );
 
   return (
@@ -196,17 +208,20 @@ export function ClubTab({
               <img
                 src={teamInfo.crest}
                 alt={teamInfo?.name || "crest"}
-                onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
-                className="w-12 h-12 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg object-contain bg-white p-1.5 short:p-1 shrink-0 border border-white/10"
+                onError={() => setCrestFailed(true)}
+                className={`w-12 h-12 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg object-contain bg-white p-1.5 short:p-1 shrink-0 border border-white/10 ${
+                  crestFailed ? "hidden" : "inline"
+                }`}
                 loading="lazy"
               />
             ) : null}
             <div
-              className="w-12 h-12 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg flex items-center justify-center text-xl sm:text-2xl short:text-base font-black shrink-0 border border-white/10"
+              className={`w-12 h-12 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg flex items-center justify-center text-xl sm:text-2xl short:text-base font-black shrink-0 border border-white/10 ${
+                !teamInfo?.crest || crestFailed ? "flex" : "hidden"
+              }`}
               style={{
                 background: teamInfo?.color_primary || "#2a2a2a",
                 color: teamInfo?.color_secondary || "#fff",
-                display: teamInfo?.crest ? "none" : "flex",
               }}
             >
               {teamInfo?.name?.[0] || "?"}
@@ -249,7 +264,7 @@ export function ClubTab({
               </div>
 
               {/* Morale bar */}
-              <div className="max-w-xs">
+              <div className="max-w-xs sm:max-w-sm">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
                     Moral do Plantel
@@ -311,7 +326,7 @@ export function ClubTab({
               <div
                 className="h-full rounded-full"
                 style={{
-                  width: `${Math.min(100, (totalWeeklyWage / 500000) * 100)}%`,
+                  width: `${Math.min(100, (totalWeeklyWage / WAGE_CAP) * 100)}%`,
                   background: teamInfo?.color_primary || "#4ade80",
                 }}
               />
