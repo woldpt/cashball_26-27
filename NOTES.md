@@ -27,6 +27,11 @@
 - Identidade (`client/src/constants/index.js` + `TacticsView.jsx`): cada formação ganha selo + frase + pendor (`edge` deriva dos pesos reais); selo sob o número no mobile e no desktop (cor por pendor: ataque rosa, defesa azul, equilibrado cinzento; ativa usa verde-escuro sobre o fundo verde), frase da formação ativa sob o cabeçalho no desktop. Sem mudança estrutural de grelha.
 - Checks: server `typecheck` OK, eslint dos ficheiros + `check:types` OK, `test:engine-unit` 19/19, `audit:socketio` 0 erros (96 avisos pré-existentes), `audit:gamestate TST148` 0/0/0, mobile portrait `150/150` + landscape `180/180`. Sonda de medição era temporária em /tmp (removida).
 
+## Briefing: tempo fora do relvado (2026-09-17)
+
+- Pedido direto: retirar a previsão meteorológica do `OpponentFormation` (rodapé + prop `weather` + chamadas no `MatchBriefing` e no harness). O tempo continua na linha flash do herói (`DuelHero`).
+- Checks: eslint limpo, `check:types` OK, harness do briefing `5/5`. Tweak pontual → sem passagens mobile completas.
+
 ## Briefing: mercado na 3ª coluna e relvado flexível (2026-09-17)
 
 - Pedido (screenshot anotado): mercado 1X2 + árbitro para a 3ª coluna; vazio sob o relvado eliminado a esticar o campo. Decisões via pergunta: destino «na 3ª coluna», vazio «esticar o relvado».

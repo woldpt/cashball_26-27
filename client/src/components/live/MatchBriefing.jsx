@@ -84,7 +84,6 @@ export function MatchBriefing() {
                 <OpponentFormation
                   formation={vm.formation}
                   teamColor={vm.opponentColor}
-                  weather={vm.weather}
                 />
               ) : (
                 <div className="min-w-0 bg-surface-container border border-outline-variant/25 rounded-2xl px-4 py-2.5 flex items-center justify-between">

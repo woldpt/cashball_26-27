@@ -8,13 +8,12 @@ import { PITCH_POS_COLORS } from "../../match/matchConstants.js";
  * Diagnóstico: se a formação chega sem jogadores renderizáveis (payload
  * inesperado), regista a forma do payload na consola e mostra um fallback
  * visível em vez de um relvado vazio.
- * @param {{ formation?: { formation?: string, players?: Array<{ name: string, position: string, skill: number, isJunior?: boolean }> } | null, teamColor?: string|null, weather?: { emoji: string, label: string }|null }} props
+ * @param {{ formation?: { formation?: string, players?: Array<{ name: string, position: string, skill: number, isJunior?: boolean }> } | null, teamColor?: string|null }} props
  * @returns {JSX.Element|null}
  */
 export const OpponentFormation = memo(function OpponentFormation({
   formation,
   teamColor,
-  weather,
 }) {
   if (!formation || !formation.formation) return null;
   const rows = { ATA: [], MED: [], DEF: [], GR: [] };
@@ -59,13 +58,6 @@ export const OpponentFormation = memo(function OpponentFormation({
         <p className="px-4 py-3 text-[11px] font-bold italic text-gray-600">
           11 provável indisponível de momento.
         </p>
-      )}
-      {weather && (
-        <div className="flex items-center justify-end gap-2 px-4 short:px-3 py-2 short:py-1.5 border-t border-outline-variant/15 lg:shrink-0">
-          <span className="shrink-0 text-[9px] font-bold text-gray-500">
-            <span aria-hidden>{weather.emoji}</span> {weather.label}
-          </span>
-        </div>
       )}
     </div>
   );

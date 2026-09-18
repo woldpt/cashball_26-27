@@ -124,7 +124,6 @@ createRoot(document.getElementById("root")).render(
         <OpponentFormation
           formation={vm.formation}
           teamColor={vm.opponentColor}
-          weather={vm.weather}
         />
       </div>
       <div className="min-w-0 flex flex-col gap-3">
