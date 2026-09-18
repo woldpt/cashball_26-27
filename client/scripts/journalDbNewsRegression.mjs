@@ -201,6 +201,40 @@ console.log("R7 factos estragados não partem o artigo");
   check(typeof it.title === "string" && typeof it.body === "string", "artigo genérico intacto");
 }
 
+console.log("R8 classificação final: tabela da divisão pesquisável");
+{
+  const table = row({
+    id: 31,
+    type: "league_final",
+    team_id: 10,
+    matchweek: 14,
+    description: JSON.stringify({
+      v: 1,
+      season: 19,
+      year: 2026,
+      matchweek: 14,
+      divId: 2,
+      divName: "Segunda Liga",
+      champion: "Meu Clube",
+      rows: [
+        { pos: 1, id: 10, name: "Meu Clube", p: 32, j: 14, v: 10, e: 2, d: 2, gf: 28, gs: 12 },
+        { pos: 2, id: 20, name: "Rival", p: 28, j: 14, v: 9, e: 1, d: 4, gf: 24, gs: 16 },
+      ],
+    }),
+  });
+  const [it] = newsRowsToItems([table], FALLBACK, 10);
+  check(it.date === "S14/2026", `data da última jornada (${it.date})`);
+  check(it.title === "📊 Classificação final — Segunda Liga", `título (${it.title})`);
+  check(newsCategory(table) === "competitions", "tabela → competitions");
+  check(it.body.includes("Meu Clube") && it.body.includes("Rival"), "corpo lista a tabela");
+  check(it.facts?.rows?.length === 2, "linhas nos factos para a tabela");
+  check(
+    (it.bodyParts || []).some((p) => p.type === "team" && p.id === 10),
+    "campeão clicável",
+  );
+  check(it.newsType === "league_final", "tipo anexado");
+}
+
 if (failures > 0) {
   console.error(`\n${failures} falha(s)`);
   process.exit(1);

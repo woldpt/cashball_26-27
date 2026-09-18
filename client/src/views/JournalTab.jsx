@@ -202,6 +202,62 @@ function NewsMedia({ media, teams, onOpenTeamSquad, onOpenPlayerHistory }) {
 }
 
 /**
+ * Tabela da classificação final (notícia `league_final`, linhas em `rows`).
+ * Nomes clicáveis com o mesmo comportamento das entidades do corpo.
+ * @param {{ rows?: Array, teams: Array, onOpenTeamSquad?: Function }} props
+ * @returns {JSX.Element|null}
+ */
+function LeagueFinalTable({ rows, teams, onOpenTeamSquad }) {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  return (
+    <div className="mt-2 overflow-x-auto">
+      <table className="mx-auto w-full max-w-md border-collapse text-sm text-on-surface">
+        <thead>
+          <tr className="text-[11px] uppercase tracking-wider text-on-surface-variant">
+            <th className="px-1 py-1 text-right">#</th>
+            <th className="px-1 py-1 text-left">Equipa</th>
+            <th className="px-1 py-1 text-right">J</th>
+            <th className="px-1 py-1 text-right">V</th>
+            <th className="px-1 py-1 text-right">E</th>
+            <th className="px-1 py-1 text-right">D</th>
+            <th className="px-1 py-1 text-right">GM</th>
+            <th className="px-1 py-1 text-right">GS</th>
+            <th className="px-1 py-1 text-right">Pts</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => {
+            const team = teamFromRef(teams, { id: r.id, label: r.name });
+            return (
+              <tr key={r.id ?? r.pos} className="border-t border-outline-variant/15">
+                <td className="px-1 py-0.5 text-right text-on-surface-variant">{r.pos}</td>
+                <td className="px-1 py-0.5 text-left">
+                  <button
+                    type="button"
+                    className="font-black text-primary underline decoration-primary/40 underline-offset-2 hover:text-on-surface"
+                    onClick={() => team?.id && onOpenTeamSquad?.(team)}
+                    disabled={!team?.id || !onOpenTeamSquad}
+                  >
+                    {r.name}
+                  </button>
+                </td>
+                <td className="px-1 py-0.5 text-right">{r.j}</td>
+                <td className="px-1 py-0.5 text-right">{r.v}</td>
+                <td className="px-1 py-0.5 text-right">{r.e}</td>
+                <td className="px-1 py-0.5 text-right">{r.d}</td>
+                <td className="px-1 py-0.5 text-right">{r.gf}</td>
+                <td className="px-1 py-0.5 text-right">{r.gs}</td>
+                <td className="px-1 py-0.5 text-right font-black">{r.p}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
  * Botões de ação por tipo de notícia.
  * @param {{ item: object, inbox: object, onOpenCupBracket?: Function }} props
  */
@@ -493,6 +549,13 @@ export function JournalTab({
                 onOpenPlayerHistory={onOpenPlayerHistory}
               />
             </p>
+          )}
+          {inbox.selected.newsType === "league_final" && (
+            <LeagueFinalTable
+              rows={inbox.selected.facts?.rows}
+              teams={teams}
+              onOpenTeamSquad={onOpenTeamSquad}
+            />
           )}
           <div className="mt-2.5 flex justify-center">
             <InboxActions item={inbox.selected} inbox={inbox} onOpenCupBracket={onOpenCupBracket} />

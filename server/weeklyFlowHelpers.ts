@@ -2,6 +2,7 @@ import type { ActiveGame, PlayerSession, Tactic } from "./types";
 import type { CalendarEntry } from "./gameConstants";
 import {
   SEASON_CALENDAR,
+  DIVISION_NAMES,
   LOAN_WEEKLY_INSTALLMENT,
   STADIUM_UPKEEP_PER_SEAT_WEEK,
   WEEKLY_BASE_INCOME,
@@ -15,6 +16,7 @@ import {
   getStandingsRows,
   getTeamsWithCoachNames,
   logClubNews,
+  logClubNewsOnce,
   snapshotBalanceHistory,
 } from "./coreHelpers";
 import {
@@ -1083,6 +1085,64 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     }
   }
 
+  // ─── CLASSIFICAÇÃO FINAL NO JORNAL ─────────────────────────────────────────
+  // Última jornada da liga (a seguir vem a final da Taça): congela a tabela
+  // final por divisão no Jornal — o fim de época faz reset aos pontos e a
+  // classificação desapareceria sem rasto. Uma linha por equipa (o Jornal
+  // filtra por team_id); idempotente via logClubNewsOnce (equipa+tipo+semana+ano).
+  async function logLeagueFinalStandings(
+    game: ActiveGame,
+    completedMatchweek: number,
+  ): Promise<void> {
+    const teams = (await getTeamsWithCoachNames(game.db)) || [];
+    const byDiv = new Map<number, any[]>();
+    for (const t of teams) {
+      const div = Number((t as any).division) || 0;
+      if (!byDiv.has(div)) byDiv.set(div, []);
+      byDiv.get(div)!.push(t);
+    }
+    for (const [div, rows] of byDiv) {
+      const ordered = getStandingsRows(rows);
+      const divName = DIVISION_NAMES[div] || `Divisão ${div}`;
+      const table = ordered.map((t: any, i: number) => ({
+        pos: i + 1,
+        id: t.id,
+        name: t.name,
+        p: t.points || 0,
+        j: (t.wins || 0) + (t.draws || 0) + (t.losses || 0),
+        v: t.wins || 0,
+        e: t.draws || 0,
+        d: t.losses || 0,
+        gf: t.goals_for || 0,
+        gs: t.goals_against || 0,
+      }));
+      const facts = JSON.stringify({
+        v: 1,
+        season: game.season,
+        year: game.year,
+        matchweek: completedMatchweek,
+        divId: div,
+        divName,
+        champion: table[0]?.name || "?",
+        rows: table,
+      });
+      for (const t of rows) {
+        logClubNewsOnce(
+          game,
+          "league_final",
+          `📊 Classificação final — ${divName}`,
+          (t as any).id,
+          {
+            description: facts,
+            matchweek: completedMatchweek,
+            year: game.year || 0,
+          },
+          io,
+        );
+      }
+    }
+  }
+
   // ─── LEAGUE EVENT FINALIZATION ───────────────────────────────────────────────
 
   async function finalizeLeagueEvent(game: ActiveGame): Promise<void> {
@@ -1220,6 +1280,22 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           logCalendarAdvance(game, io, "league_finalized", "week_end");
           game.lastPlayedAt = new Date().toISOString();
           game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
+          // Última jornada da liga (a seguir vem a final da Taça): congela a
+          // tabela final no Jornal antes de a final poder correr e o fim de
+          // época fazer reset aos pontos. Fire-and-forget: a linha é
+          // idempotente (logClubNewsOnce) e o pós-jogo não depende dela.
+          if (
+            entry?.type === "league" &&
+            (game.currentEvent as any)?.type === "cup" &&
+            (game.currentEvent as any)?.round === 5
+          ) {
+            logLeagueFinalStandings(game, completedMatchweek).catch((standErr: any) =>
+              console.error(
+                `[${game.roomCode}] League-final standings news failed:`,
+                standErr?.message || standErr,
+              ),
+            );
+          }
           game.currentFixtures = [];
           game.gamePhase = "lobby";
           game.lastHalftimePayload = null;

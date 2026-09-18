@@ -486,6 +486,39 @@ function cupDrawArticle(n, viewerTeamId) {
 }
 
 /**
+ * Artigo da classificação final da liga (tabela em JSON nos factos).
+ * A tabela secca desenha-se no detalhe do Jornal; aqui ficam título, corpo
+ * pesquisável e o campeão clicável.
+ * @param {object} n linha `league_final`
+ */
+function leagueFinalArticle(n) {
+  const facts = parseNewsFacts(n) || {};
+  const rows = Array.isArray(facts.rows) ? facts.rows : [];
+  const divName = facts.divName || "liga";
+  const champion = facts.champion || rows[0]?.name || "?";
+  const title = `📊 Classificação final — ${divName}`;
+  const lines = rows.map(
+    (r) => `${r.pos}.º ${r.name} — ${r.p} pts (${r.v}V ${r.e}E ${r.d}D)`,
+  );
+  const body =
+    `A liga terminou e ${champion} sagrou-se campeão da ${divName}. ` +
+    `A tabela final fica registada nesta edição para consulta futura, mesmo depois do arranque da nova época.\n` +
+    lines.join("\n");
+  const champ = rows[0] ? { id: rows[0].id, label: rows[0].name } : null;
+  return {
+    ...makeArticle(
+      [partText(title)],
+      champ ? linkFirstMention(body, partTeam(champ)) : [partText(body)],
+      null,
+      champ ? [champ] : [],
+      null,
+    ),
+    title,
+    body,
+    facts,
+  };
+}
+/**
  * Artigo de lesão/castigo persistido (factos em JSON, `amount` = until).
  * @param {object} n linha `injury`/`suspension`
  */
@@ -529,6 +562,7 @@ function newsArticle(n, { owner, related, seller, buyer, viewerTeamId } = {}) {
   if (String(n?.type || "") === "job_offer") return jobOfferArticle(n);
   if (String(n?.type || "") === "board_warning") return boardWarningArticle(n);
   if (String(n?.type || "") === "cup_draw") return cupDrawArticle(n, viewerTeamId);
+  if (String(n?.type || "") === "league_final") return leagueFinalArticle(n);
   if (String(n?.type || "") === "injury" || String(n?.type || "") === "suspension")
     return medicalArticle(n);
   const player = newsPlayer(n);
