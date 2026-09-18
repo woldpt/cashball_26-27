@@ -27,6 +27,12 @@
 - Identidade (`client/src/constants/index.js` + `TacticsView.jsx`): cada formação ganha selo + frase + pendor (`edge` deriva dos pesos reais); selo sob o número no mobile e no desktop (cor por pendor: ataque rosa, defesa azul, equilibrado cinzento; ativa usa verde-escuro sobre o fundo verde), frase da formação ativa sob o cabeçalho no desktop. Sem mudança estrutural de grelha.
 - Checks: server `typecheck` OK, eslint dos ficheiros + `check:types` OK, `test:engine-unit` 19/19, `audit:socketio` 0 erros (96 avisos pré-existentes), `audit:gamestate TST148` 0/0/0, mobile portrait `150/150` + landscape `180/180`. Sonda de medição era temporária em /tmp (removida).
 
+## Briefing: forma recente redesenhada (2026-09-17)
+
+- Pedido: o bloco «Forma recente (últimos 5)» estava feio. Cada equipa tem agora um mini-cartão: emblema + nome + rótulo do momento derivado dos resultados (`Invencível`/`Sem vencer`/`Irregular` com contagens) + chips maiores com borda + registo colorido. `FormChips` maiores só vivem no briefing.
+- Correção: a 320/360px chips + registo não cabiam lado a lado na meia-coluna (clip +24px) — linha com `flex-wrap`.
+- Checks: eslint limpo, `check:types` OK, briefing portrait `5/5` + landscape `6/6`, screenshot 390 revisto.
+
 ## Briefing: tempo fora do relvado (2026-09-17)
 
 - Pedido direto: retirar a previsão meteorológica do `OpponentFormation` (rodapé + prop `weather` + chamadas no `MatchBriefing` e no harness). O tempo continua na linha flash do herói (`DuelHero`).

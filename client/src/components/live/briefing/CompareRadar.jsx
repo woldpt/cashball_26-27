@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { getMoraleClasses } from "../../../utils/morale.js";
 import { Tile } from "./Tile.jsx";
+import { TeamCrest } from "../TeamCrest.jsx";
 import { FormChips } from "./FormChips.jsx";
 import { RecordText } from "./RecordText.jsx";
 
@@ -76,23 +77,54 @@ const DualBar = memo(function DualBar({
 });
 
 /**
- * Bloco de forma recente de uma equipa (nome clicável + chips + registo).
- * @param {{ name: string, last5: string, team: Object|null, record: { v: number, e: number, d: number }, onOpenTeamSquad?: (team: Object) => void }} props
+ * Rótulo do momento a partir dos últimos resultados (dados reais).
+ * @param {string} last5 sequência V/E/D
+ * @returns {{ label: string, detail: string, cls: string }|null}
+ */
+function formStatus(last5) {
+  const results = String(last5 ?? "").split("").filter(Boolean);
+  if (results.length === 0) return null;
+  const v = results.filter((r) => r === "V").length;
+  const d = results.filter((r) => r === "D").length;
+  const e = results.length - v - d;
+  if (d === 0)
+    return { label: "Invencível", detail: `${v}V · ${e}E`, cls: "text-emerald-400" };
+  if (v === 0)
+    return { label: "Sem vencer", detail: `${e}E · ${d}D`, cls: "text-red-400" };
+  return { label: "Irregular", detail: `${v}V · ${e}E · ${d}D`, cls: "text-gray-400" };
+}
+
+/**
+ * Cartão de forma de uma equipa (emblema + nome + momento + chips + registo).
+ * @param {{ name: string, last5: string, team: Object|null, record: { v: number, e: number, d: number }, isMine?: boolean, onOpenTeamSquad?: (team: Object) => void }} props
  * @returns {JSX.Element}
  */
-const FormBlock = memo(function FormBlock({ name, last5, team, record, onOpenTeamSquad }) {
+const FormBlock = memo(function FormBlock({ name, last5, team, record, isMine = false, onOpenTeamSquad }) {
+  const status = formStatus(last5);
   return (
-    <div className="flex flex-col gap-1 min-w-0">
-      <button
-        type="button"
-        onClick={() => team && onOpenTeamSquad?.(team)}
-        className="min-w-0 text-left text-[10px] font-black text-white truncate hover:text-emerald-400 hover:underline transition-colors"
-        aria-label={`Ver plantel de ${name}`}
-      >
-        {name}
-      </button>
-      <FormChips last5={last5} />
-      <RecordText v={record.v} e={record.e} d={record.d} />
+    <div className="min-w-0 rounded-xl border border-outline-variant/25 bg-surface-container-low/60 px-2.5 py-2 flex flex-col gap-1.5">
+      <div className="flex items-center gap-1.5 min-w-0">
+        {team && <TeamCrest team={team} size="sm" isMine={isMine} />}
+        <div className="flex-1 min-w-0">
+          <button
+            type="button"
+            onClick={() => team && onOpenTeamSquad?.(team)}
+            className="block w-full min-w-0 text-left text-[10px] font-black text-white truncate hover:text-emerald-400 hover:underline transition-colors"
+            aria-label={`Ver plantel de ${name}`}
+          >
+            {name}
+          </button>
+          {status && (
+            <span className={`block text-[8px] font-bold tabular-nums truncate ${status.cls}`}>
+              {status.label} <span className="text-gray-600">({status.detail})</span>
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-1">
+        <FormChips last5={last5} />
+        <RecordText v={record.v} e={record.e} d={record.d} />
+      </div>
     </div>
   );
 });
@@ -166,6 +198,7 @@ export const CompareRadar = memo(function CompareRadar({ vm, onOpenTeamSquad }) 
               last5={vm.form.mine.last5}
               team={vm.form.mine.team}
               record={vm.record.mine}
+              isMine
               onOpenTeamSquad={onOpenTeamSquad}
             />
             <FormBlock
