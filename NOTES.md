@@ -6,6 +6,15 @@
 - Sem mobile-resp-check: sem view/tab/modal nem componente partilhado novo (tabela contida no detalhe com `overflow-x-auto`).
 - Checks: server `typecheck` OK, `audit:socketio` 0 erros (97 avisos pré-existentes), `audit:gamestate TST148` 0/0/0, `test:session-freeze` 11/11; client `lint` só os 2 erros pré-existentes, `check:types` OK, `test:journaldb` (R8 novo, 7/7), `test:inboxreads`, `test:boardnewsid`, build Vite OK.
 
+## Renovação responde-se na notícia, sem modal de apresentação (2026-09-18)
+
+- Pedido: sem modal a saltar ao ecrã; só a notícia com 🚩 no título e botões Aceitar/Recusar no corpo; a festa/contra-proposta continuam em modal.
+- `useSocketListeners`: evento `contractRequest` ignorado (a fila serve só desfechos); a linha `contract_request` chega pelo `globalNewsUpdated` do log.
+- `useInbox`: pendência via `contract_request_pending` do plantel (antes: fila de modais); `answerContract(ref, accepted)` emite `renewContract`/`declineContractRequest` com `requestedWage` dos factos; transitórios só para BDs sem linha gravada.
+- `GameContext`: novo `respondContractRequest` + `contractAnswering` (botões desativam com «A falar com o agente…» — o aceitar do servidor não tem guarda anti-duplo; poda quando o pendente sai do plantel); removido `focusContractDialog`.
+- `JournalTab`: Aceitar/Recusar (recusar → leilão, com tooltip); `TacticsContext`: gate do Pronto passa da fila para o pendente do plantel.
+- Checks: eslint limpo (1 erro pré-existente `react-refresh` no GameContext), `check:types` OK, `audit:socketio` 0 erros/97 avisos (igual), `test:inboxreads`/`test:journaldb` OK; prova: linha `contract_request` expõe `newsType`+`requestedWage`+jogador para os botões.
+
 ## Jornal com histórico entre épocas, paginado por época (2026-09-18)
 
 - Queixa: ao mudar de época o Jornal esvaziava. Causa: a BD guarda tudo, mas o `getGlobalNews` (`server/socketNewsHandlers.ts`) filtrava `cn.year`/`th.year` do ano corrente — parecia eliminação, era filtro.

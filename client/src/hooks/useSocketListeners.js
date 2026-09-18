@@ -746,66 +746,10 @@ export function useSocketListeners(handlers, refs) {
 				showContractOutcome(handlers, refs, playerId, counter);
 			},
 		);
-		socket.on(
-			"contractRequest",
-			({
-				playerId,
-				playerName,
-				position,
-				skill,
-				wage,
-				requestedWage,
-				agent,
-				contractEndMatchweek,
-				contractEndSeason,
-				contractEndLabel,
-				isRenegotiation,
-			}) => {
-				if (!inRoom()) return;
-				const endText =
-					contractEndMatchweek && contractEndSeason
-						? ` Contrato até ${seasonToYear(contractEndSeason)}, ${contractEndLabel || `Jornada ${contractEndMatchweek}`}.`
-						: "";
-				const headline = isRenegotiation
-					? `📈 ${agent} viu o teu plantel no Excel: ${playerName} vale muito mais do que recebe. Exige €${requestedWage.toLocaleString("pt-PT")}/sem ou ameaça "conversas com outros clubes".${endText}`
-					: `📞 ${agent} ligou em pânico: ${playerName} anda a olhar para vitrinas de troféus que não são as tuas! Exige €${requestedWage.toLocaleString("pt-PT")}/sem.${endText}`;
-				const waitingText = `A falar com ${agent}…`;
-				const proposal = {
-					mode: "confirm",
-					kind: "contract",
-					playerId,
-					awaitServer: true,
-					phase: "proposal",
-					title: `Agente do Jogador — ${playerName}`,
-					description: headline,
-					stats: buildPlayerStats({
-						position,
-						skill,
-						wage,
-						requestedWage,
-						contractEndMatchweek,
-						contractEndSeason,
-					}),
-					peerPositionLabel: POSITION_SHORT_LABELS[position] ?? position,
-					positionPeers: buildPositionPeers(refs, position, playerId),
-					confirmLabel: "Aceitar",
-					cancelLabel: "Leilão",
-					cancelDanger: true,
-					onConfirm: () => {
-						queueEmit("renewContract", {
-							playerId,
-							offeredWage: requestedWage,
-						});
-						handlers.setGameDialog({ ...proposal, phase: "waiting", waitingText });
-					},
-					onCancel: () => {
-						queueEmit("declineContractRequest", { playerId });
-						handlers.setGameDialog({ ...proposal, phase: "waiting", waitingText });
-					},
-				};
-				handlers.queueContractDialog(proposal);
-			},
-		);
+		// Pedidos de renovação respondem-se na notícia do Jornal (sem modal de
+		// apresentação): a pendência vive no plantel (`contract_request_pending`)
+		// e a linha `contract_request` chega pelo `globalNewsUpdated` do log.
+		// O evento `contractRequest` do servidor é ignorado de propósito.
 		socket.on(
 			"contractRenewed",
 			({
@@ -1928,7 +1872,6 @@ export function useSocketListeners(handlers, refs) {
 			socket.off("transferProposalResult");
 			socket.off("playerSigned");
 			socket.off("renewContractCounterOffer");
-			socket.off("contractRequest");
 			socket.off("contractRenewed");
 			socket.off("contractDeclined");
 			socket.off("teamAssigned");

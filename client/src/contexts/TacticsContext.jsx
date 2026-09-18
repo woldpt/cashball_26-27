@@ -49,7 +49,6 @@ export function TacticsProvider({ children }) {
     players,
     me,
     teamInfo,
-    contractQueue,
     jobOfferModal,
     setActiveTab,
     disconnected,
@@ -551,12 +550,15 @@ export function TacticsProvider({ children }) {
     // Caixa de entrada: bandeira vermelha (renovação/convite por responder)
     // bloqueia o Pronto — desvia para o Jornal em vez de emitir. O servidor
     // recusa na mesma (fail-closed); ao intervalo não há gate.
-    if (!isReady && ((contractQueue?.length ?? 0) > 0 || jobOfferModal)) {
+    const pendingContracts = (mySquad || []).some(
+      (p) => p?.contract_request_pending,
+    );
+    if (!isReady && (pendingContracts || jobOfferModal)) {
       setActiveTab("jornal");
       return;
     }
     queueEmit("setReady", !isReady);
-  }, [players, me, contractQueue, jobOfferModal, setActiveTab]);
+  }, [players, me, mySquad, jobOfferModal, setActiveTab]);
 
   const handleHalftimeReady = useCallback(() => {
     queueEmit("setReady", true);

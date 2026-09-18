@@ -264,14 +264,32 @@ function LeagueFinalTable({ rows, teams, onOpenTeamSquad }) {
 function InboxActions({ item, inbox, onOpenCupBracket }) {
   if (!item) return null;
   if (item.kind === "contract") {
+    const busy = !!item.extra?.answering;
     return (
-      <Button
-        variant="danger"
-        size="sm"
-        onClick={() => inbox.answerContract(item.ref)}
-      >
-        Responder ao agente
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        {busy && (
+          <p className="w-full text-[11px] font-bold text-on-surface-variant">
+            A falar com o agente…
+          </p>
+        )}
+        <Button
+          variant="success"
+          size="sm"
+          disabled={busy}
+          onClick={() => inbox.answerContract(item.ref, true)}
+        >
+          Aceitar
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={busy}
+          title="Se recusares, o jogador vai a leilão"
+          onClick={() => inbox.answerContract(item.ref, false)}
+        >
+          Recusar
+        </Button>
+      </div>
     );
   }
   if (item.kind === "job") {

@@ -4,8 +4,8 @@
  * Junta numa só lista: pedidos de renovação (bandeira vermelha), convites
  * de clubes (bandeira vermelha), avisos da direção, sorteio da Taça, humor
  * pós-jogo, lesões/castigos do plantel e as notícias da época. Os itens
- * acionáveis reutilizam os fluxos existentes (GameDialog de contratos,
- * emits de convite) — o hub só os revela e ordena.
+ * acionáveis reutilizam os emits existentes (contrato, convite) — o hub só
+ * os revela e ordena.
  *
  * Lido/não lido persiste em localStorage por treinador+sala e é partilhado por
  * todas as instâncias (ver `inboxReadStore`), para que o badge do Jornal no
@@ -20,7 +20,6 @@ import {
   INBOX_CATS,
   boardCovered,
   buildMoodNewsArticle,
-  contractCovered,
   cupDrawCovered,
   cupDrawListParts,
   formatInboxDate,
@@ -53,7 +52,7 @@ import {
  *   selectNextUnread: () => void,
  *   hasNextUnread: boolean,
  *   markAllRead: () => void,
- *   answerContract: (playerId: number) => void,
+ *   answerContract: (playerId: number, accepted: boolean) => void,
  *   answerJobOffer: (accepted: boolean) => void,
  *   ackBoard: () => void,
  *   jobOffer: object|null,
@@ -67,8 +66,8 @@ import {
  */
 export function useInbox() {
   const {
-    contractQueue,
-    focusContractDialog,
+    contractAnswering,
+    respondContractRequest,
     jobOfferModal,
     setJobOfferModal,
     boardWarning,
@@ -156,26 +155,30 @@ export function useInbox() {
   // versão).
   const items = useMemo(() => {
     const list = [];
+    const answering = new Set(
+      (contractAnswering || []).map((x) => Number(x)),
+    );
 
-    for (const d of contractQueue || []) {
-      if (contractCovered(newsRows, d.playerId)) continue;
-      const squadPlayer = (mySquad || []).find(
-        (p) => Number(p?.id) === Number(d.playerId),
-      );
-      const label =
-        squadPlayer?.name ||
-        String(d.title || "").split("—").pop().trim() ||
-        "O jogador";
+    // Transitórios: pendentes no plantel sem par gravado (BDs anteriores à
+    // notícia `contract_request`). Respondem na hora como os persistidos.
+    const persistedContractIds = new Set(
+      newsRows
+        .filter((n) => String(n?.type || "") === "contract_request")
+        .map((n) => Number(n?.player_id)),
+    );
+    for (const p of mySquad || []) {
+      if (!p?.contract_request_pending) continue;
+      if (persistedContractIds.has(Number(p.id))) continue;
       const player = {
-        id: d.playerId,
-        label,
-        photo: squadPlayer?.photo ?? null,
-        position: squadPlayer?.position || "ATA",
+        id: p.id,
+        label: p.name || "O jogador",
+        photo: p.photo ?? null,
+        position: p.position || "ATA",
       };
-      const title = `🚩 ${d.title || "Pedido de renovação"}`;
-      const body = d.description || "";
+      const title = `🚩 Pedido de renovação — ${player.label}`;
+      const body = `O agente de ${player.label} exige resposta antes do próximo jogo.`;
       list.push({
-        id: `contract-${d.playerId}`,
+        id: `contract-${p.id}`,
         cat: "club",
         date: currentDate,
         title,
@@ -185,7 +188,11 @@ export function useInbox() {
         media: { player, teams: [] },
         redFlag: true,
         kind: "contract",
-        ref: d.playerId,
+        ref: p.id,
+        extra: {
+          requestedWage: Number(p.contract_requested_wage) || null,
+          answering: answering.has(Number(p.id)),
+        },
       });
     }
 
@@ -348,7 +355,9 @@ export function useInbox() {
     // Linhas persistidas acionáveis: identidade e data da BD, pendência e
     // ação do estado vivo (fila de renovações, modal de convite/aviso).
     const pendingContractIds = new Set(
-      (contractQueue || []).map((d) => Number(d.playerId)),
+      (mySquad || [])
+        .filter((p) => p?.contract_request_pending)
+        .map((p) => Number(p?.id)),
     );
     const pendingJobToId =
       jobOfferModal?.toTeam?.id != null ? String(jobOfferModal.toTeam.id) : null;
@@ -363,6 +372,10 @@ export function useInbox() {
         if (pending) {
           it.title = `🚩 ${it.title}`;
           it.titleParts = [partText("🚩 "), ...(it.titleParts || [])];
+          it.extra = {
+            requestedWage: it.facts?.requestedWage ?? null,
+            answering: answering.has(Number(pid)),
+          };
         }
       } else if (it.newsType === "job_offer") {
         const toId = it.media?.teams?.[0]?.id;
@@ -397,7 +410,7 @@ export function useInbox() {
 
     return list;
   }, [
-    contractQueue,
+    contractAnswering,
     jobOfferModal,
     boardWarning,
     cupDraw,
@@ -477,12 +490,16 @@ export function useInbox() {
     [items, storeKey, emitMark],
   );
 
-  // ── Ações (reutilizam os fluxos existentes) ─────────────────────────────
+  // ── Ações (reutilizam os emits existentes) ───────────────────────────────
   const answerContract = useCallback(
-    (playerId) => {
-      focusContractDialog(playerId);
+    (playerId, accepted) => {
+      const pid = Number(playerId);
+      const it = items.find(
+        (x) => x?.kind === "contract" && Number(x?.ref) === pid,
+      );
+      respondContractRequest(pid, accepted, it?.extra?.requestedWage ?? null);
     },
-    [focusContractDialog],
+    [items, respondContractRequest],
   );
 
   const answerJobOffer = useCallback(

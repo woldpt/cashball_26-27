@@ -111,10 +111,14 @@ export function GameProvider({
 	const [refereePopup, setRefereePopup] = useState(null);
 	const [gameDialog, setGameDialog] = useState(null);
 	const [contractQueue, setContractQueue] = useState([]);
-	// Fila FIFO de pedidos do agente: cada `contractRequest` entra aqui e o
-	// modal mostra sempre a cabeça — sem isto, 2 pedidos seguidos faziam o
-	// segundo esmagar o primeiro (slot único) e o Aceitar renovava o jogador
-	// errado. Sem duplicados por playerId (o servidor re-emite pendentes).
+	// Respostas a pedidos enviadas na notícia, à espera do desfecho (festa /
+	// malas / contra-proposta): os botões desativam até o plantel limpar o
+	// pendente (o `renewContract` do servidor não tem guarda anti-duplo).
+	const [contractAnswering, setContractAnswering] = useState([]);
+	// Fila FIFO de desfechos de contrato (festa/malas/contra-proposta): o
+	// modal mostra sempre a cabeça — sem isto, 2 desfechos seguidos faziam o
+	// segundo esmagar o primeiro (slot único). Os pedidos respondem-se na
+	// notícia do Jornal; nunca entram aqui.
 	// Convite de sala recebido (de um colega que nos quer na sala dele).
 	const [pendingRoomInvite, setPendingRoomInvite] = useState(null);
 	const [cupDraw, setCupDraw] = useState(null);
@@ -257,6 +261,7 @@ export function GameProvider({
 	const tacticRef = useRef({ positions: {} });
 	const gameDialogRef = useRef(null);
 	const contractQueueRef = useRef([]);
+	const contractAnsweringRef = useRef([]);
 	const goalFlashRefSetter = useRef(setGoalFlashRef);
 	// Chaves de eventos já notificados (som/flash) no `liveMinute` corrente —
 	// evita repetir a notificação quando `matchResults` volta a mudar no mesmo
@@ -374,6 +379,20 @@ export function GameProvider({
 	useEffect(() => {
 		contractQueueRef.current = contractQueue;
 	}, [contractQueue]);
+	// Poda o "a responder" quando o pendente sai do plantel (o desfecho
+	// chega por evento e o plantel é refrescado a seguir).
+	useEffect(() => {
+		const stillPending = new Set(
+			(mySquad || [])
+				.filter((p) => p?.contract_request_pending)
+				.map((p) => Number(p?.id)),
+		);
+		const kept = (contractAnsweringRef.current || []).filter((pid) =>
+			stillPending.has(Number(pid)),
+		);
+		contractAnsweringRef.current = kept;
+		setContractAnswering(kept);
+	}, [mySquad]);
 	// Snapshot da tática para sobreviver à morte da tab (throttle 500ms).
 	// O restauro dá-se no handler de gameState (só a meio de jogo).
 	useEffect(() => {
@@ -865,25 +884,29 @@ year: seasonYear,
 		setContractQueue((q) => [...q, dialog]);
 	}, []);
 
-	// Caixa de entrada: traz o pedido de renovação de um jogador para o ecrã
-	// (o GameDialog continua a ser a UI de resposta — Aceitar/Leilão).
-	// Se já estiver visível, não faz nada; senão troca com o atual (o atual
-	// volta à cabeça da fila, sem se perder).
-	const focusContractDialog = useCallback((playerId) => {
-		const pid = Number(playerId);
-		if (!Number.isFinite(pid)) return;
-		if (Number(gameDialogRef.current?.playerId) === pid) return;
-		const queued = (contractQueueRef.current || []).find(
-			(d) => Number(d.playerId) === pid,
-		);
-		if (!queued) return;
-		const cur = gameDialogRef.current;
-		setContractQueue((q) => {
-			const rest = q.filter((d) => Number(d.playerId) !== pid);
-			return cur?.kind === "contract" ? [cur, ...rest] : rest;
-		});
-		setGameDialog(queued);
-	}, []);
+	// Caixa de entrada: responde ao pedido de renovação direto da notícia
+	// (Aceitar = renova pelo valor pedido; Recusar = dispensa e vai a leilão).
+	// Guarda anti-duplo por jogador até o desfecho limpar o pendente.
+	const respondContractRequest = useCallback(
+		(playerId, accepted, offeredWage) => {
+			const pid = Number(playerId);
+			if (!Number.isFinite(pid)) return;
+			if (
+				(contractAnsweringRef.current || []).some(
+					(id) => Number(id) === pid,
+				)
+			)
+				return;
+			contractAnsweringRef.current = [
+					...(contractAnsweringRef.current || []),
+					pid,
+				];
+			setContractAnswering(contractAnsweringRef.current);
+			if (accepted) queueEmit("renewContract", { playerId: pid, offeredWage });
+			else queueEmit("declineContractRequest", { playerId: pid });
+		},
+		[],
+	);
 
 	// ── Socket listeners ────────────────────────────────────────────────────
 	useSocketListeners(
@@ -1648,7 +1671,8 @@ year: seasonYear,
 		gameDialog,
 		setGameDialog,
 		contractQueue,
-		focusContractDialog,
+		contractAnswering,
+		respondContractRequest,
 		pendingRoomInvite,
 		setPendingRoomInvite,
 		onAcceptRoomInvite,
