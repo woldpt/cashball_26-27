@@ -1,3 +1,13 @@
+## Auditoria e fixes ao redesign do Jornal (2026-09-18)
+
+- Auditoria ao `e704a01b` (redesign do `JournalTab.jsx`): 5 bugs + 4 menores, fix em `6ef53d68` (só `JournalTab.jsx`).
+- `select(null)` no Esc não limpa — `useInbox.selected` recai sempre para a mais antiga por ler/`items[0]`; removidos atalho Esc e `EmptyState` inalcançável.
+- `RichParagraphs` sem `whitespace-pre-line` colapsava os `\n` simples do sorteio (`cupDrawListParts`) e da classificação final (`leagueFinalArticle`); reposta a classe.
+- Highlight divergia do filtro nos acentos (`camara` casava `Câmara` sem pintar); agora índice normalizado→original sem regex (reproduzido em node antes/depois).
+- Enter/Espaço global com `preventDefault` sequestrava botões (Espaço no Aceitar saltava de notícia); agora ignora focos interativos e Ctrl/Meta/Alt; `selectNextUnread` desestruturado (deps estáveis, sem re-subscrição por render).
+- `ArticleMeta` mostrava id cru (`⚽ club`); passa a label (`O Meu Clube`); variantes do Badge corrigidas (squad→`sold`, competitions→`cooldown`); progresso `sticky`; removida animação ineficaz da lista (`initial`+`layout` sem efeito, custo por render); cruft fora (`formatDateRelative`, `listRef`, `selectedId`).
+- Checks: eslint limpo no ficheiro, `check:types` OK; mobile portrait/landscape iguais ao baseline (falhas pré-existentes: tablist + `label sr-only`).
+
 ## Renovações com cor verde do filtro Plantel (2026-09-18)
 
 - Pedido: as notícias de renovação de contrato (pedidos + confirmadas) devem ter a cor verde do filtro Plantel.
