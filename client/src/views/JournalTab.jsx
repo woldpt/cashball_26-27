@@ -34,6 +34,9 @@ const FILTER_TONES = {
     active: "bg-surface-container-high text-on-surface",
     row: "bg-surface-container/40 hover:bg-surface-container-high",
     selected: "bg-surface-container-high/80 ring-1 ring-inset ring-outline-variant/50",
+    bar: "bg-on-surface-variant/40",
+    badge: "neutral",
+    dot: "bg-on-surface-variant/40",
   },
   club: {
     idle: "bg-amber-500/10 text-amber-300/80 hover:bg-amber-500/20",
@@ -50,7 +53,7 @@ const FILTER_TONES = {
     row: "bg-sky-500/10 hover:bg-sky-500/15",
     selected: "bg-sky-500/20 ring-1 ring-inset ring-sky-400/40",
     bar: "bg-sky-500",
-    badge: "info",
+    badge: "cooldown",
     dot: "bg-sky-400",
   },
   squad: {
@@ -59,7 +62,7 @@ const FILTER_TONES = {
     row: "bg-emerald-500/10 hover:bg-emerald-500/15",
     selected: "bg-emerald-500/20 ring-1 ring-inset ring-emerald-400/40",
     bar: "bg-emerald-500",
-    badge: "injured",
+    badge: "sold",
     dot: "bg-emerald-400",
   },
   market: {
@@ -96,15 +99,6 @@ function estimateReadTime(text) {
 }
 
 /**
- * Formata a data relativa (ex: "há 2 dias", "hoje", "amanhã").
- * A data vem no formato "S5/2026" — como não temos a data real,
- * mantemos o formato original mas com melhor apresentação.
- */
-function formatDateRelative(dateStr) {
-  return dateStr || "";
-}
-
-/**
  * Extrai o snippet do corpo (primeiros 80 chars).
  */
 function getSnippet(body) {
@@ -114,25 +108,47 @@ function getSnippet(body) {
 }
 
 /**
- * Destaca um termo de pesquisa num texto, envolvido em <mark>.
+ * Destaca o termo pesquisado com <mark>. O match é insensível a acentos
+ * e caixa (como o filtro, que usa `searchText`), mas pinta o texto
+ * original. Sem regex: índice normalizado -> índice original, porque os
+ * acentos mudam o comprimento da string.
  */
 function highlightText(text, query) {
-  if (!query || !text) return text;
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(`(${escaped})`, "gi");
-  const parts = String(text).split(regex);
-  return parts.map((part, i) =>
-    regex.test(part) ? (
+  const original = String(text ?? "");
+  const needle = searchText(query).trim();
+  if (!needle) return original;
+  const normChars = [];
+  const indexMap = [];
+  for (let i = 0; i < original.length; i++) {
+    const norm = searchText(original[i]);
+    for (let j = 0; j < norm.length; j++) {
+      normChars.push(norm[j]);
+      indexMap.push(i);
+    }
+  }
+  const haystack = normChars.join("");
+  const out = [];
+  let pos = 0;
+  let key = 0;
+  for (;;) {
+    const found = haystack.indexOf(needle, pos);
+    if (found === -1) break;
+    const start = indexMap[found];
+    const end = indexMap[found + needle.length - 1] + 1;
+    if (start > pos) out.push(original.slice(pos, start));
+    out.push(
       <mark
-        key={i}
+        key={key++}
         className="bg-tertiary/30 text-on-surface rounded px-0.5 font-black"
       >
-        {part}
-      </mark>
-    ) : (
-      part
-    ),
-  );
+        {original.slice(start, end)}
+      </mark>,
+    );
+    pos = end;
+  }
+  if (pos === 0) return original;
+  out.push(original.slice(pos));
+  return out;
 }
 
 /**
@@ -218,7 +234,7 @@ function RichParagraphs({
 }) {
   if (!Array.isArray(parts) || parts.length === 0) {
     return (
-      <p className="font-serif text-base short:text-sm leading-relaxed text-on-surface">
+      <p className="font-serif text-base short:text-sm leading-relaxed whitespace-pre-line text-on-surface">
         {fallback}
       </p>
     );
@@ -226,7 +242,7 @@ function RichParagraphs({
   const paragraphs = splitPartsByParagraphs(parts);
   if (paragraphs.length === 0) {
     return (
-      <p className="font-serif text-base short:text-sm leading-relaxed text-on-surface">
+      <p className="font-serif text-base short:text-sm leading-relaxed whitespace-pre-line text-on-surface">
         {fallback}
       </p>
     );
@@ -236,7 +252,7 @@ function RichParagraphs({
       {paragraphs.map((paraParts, i) => (
         <p
           key={i}
-          className="font-serif text-base short:text-sm leading-relaxed text-on-surface"
+          className="font-serif text-base short:text-sm leading-relaxed whitespace-pre-line text-on-surface"
         >
           <RichNewsText
             parts={paraParts}
@@ -274,13 +290,15 @@ function ReadingProgressBar({ containerRef }) {
   }, [containerRef]);
 
   return (
-    <div className="h-1 w-full overflow-hidden rounded-full bg-surface-container-high/50">
-      <motion.div
-        className="h-full bg-primary"
-        style={{ width: `${progress}%` }}
-        transition={{ duration: 0.15, ease: "easeOut" }}
-        aria-hidden
-      />
+    <div className="sticky top-0 z-10 bg-surface-container pb-1.5">
+      <div className="h-1 w-full overflow-hidden rounded-full bg-surface-container-high/50">
+        <motion.div
+          className="h-full bg-primary"
+          style={{ width: `${progress}%` }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          aria-hidden
+        />
+      </div>
     </div>
   );
 }
@@ -544,20 +562,20 @@ function CategoryAccentBar({ category }) {
 /**
  * Metadados do artigo — categoria, data e tempo de leitura.
  */
-function ArticleMeta({ item }) {
-  const catLabel = item ? (
+function ArticleMeta({ item, catLabel }) {
+  const badge = item ? (
     <Badge variant={FILTER_TONES[item.cat]?.badge || "neutral"} size="sm">
-      {CATEGORY_EMOJIS[item.cat] || "📰"} {item.cat}
+      {CATEGORY_EMOJIS[item.cat] || "📰"} {catLabel || item.cat}
     </Badge>
   ) : null;
   const readTime = item ? estimateReadTime(item.body) : null;
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-on-surface-variant">
-      {catLabel}
+      {badge}
       {item?.date && (
         <span className="flex items-center gap-1">
-          📅 {formatDateRelative(item.date)}
+          📅 {item.date}
         </span>
       )}
       {readTime && (
@@ -576,13 +594,11 @@ export function JournalTab({
   onOpenCupBracket,
 }) {
   const inbox = useInbox();
-  const { selected, isUnread, select } = inbox;
+  const { selected, isUnread, select, selectNextUnread } = inbox;
   const initialReadRef = useRef(false);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
   const detailRef = useRef(null);
-  const listRef = useRef(null);
 
   // Seleção automática da primeira não lida ao montar
   useEffect(() => {
@@ -593,22 +609,26 @@ export function JournalTab({
     }
   }, [isUnread, select, selected]);
 
-  // Atalhos de teclado: Enter = próxima não lida, Esc = limpar seleção
+  // Atalho de teclado: Enter/Espaço fora de controlos = próxima não lida.
+  // Dentro de botões/links/inputs o teclado comporta-se nativamente
+  // (senão o Espaço no "Aceitar" saltava de notícia em vez de aceitar).
   const handleKeyDown = useCallback(
     (e) => {
-      if (searchFocused && e.key !== "Escape") return;
-      if (e.key === "Escape") {
-        if (selected) select(null);
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const target = e.target;
+      if (
+        target instanceof Element &&
+        target.closest(
+          "button, a, input, select, textarea, [role='button'], [contenteditable]",
+        )
+      )
         return;
-      }
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        if (inbox.hasNextUnread) {
-          inbox.selectNextUnread();
-        }
+        selectNextUnread();
       }
     },
-    [searchFocused, selected, select, inbox],
+    [selectNextUnread],
   );
 
   useEffect(() => {
@@ -637,9 +657,6 @@ export function JournalTab({
   const hasUnreadNonFlag = inbox.items.some(
     (item) => !item.redFlag && inbox.isUnread(item),
   );
-
-  // Animação de entrada para a notícia selecionada (highlight de nova)
-  const selectedId = selected?.id;
 
   const tabBtn = (id) => {
     const tone = FILTER_TONES[id] || FILTER_TONES.all;
@@ -702,7 +719,7 @@ export function JournalTab({
       <div className="grid gap-2 lg:flex-1 lg:min-h-0 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-stretch">
         {/* ── Coluna esquerda: Tópicos ───────────────────────────────── */}
         <section aria-label="Tópicos" className="min-w-0 space-y-2 rounded-sm bg-surface-container/40 p-2 lg:flex lg:min-h-0 lg:flex-col">
-          <div className={`rounded-sm bg-surface-container-high/50 px-2 py-1.5 transition-colors ${searchFocused ? "bg-surface-container-high" : ""}`}>
+          <div className="rounded-sm bg-surface-container-high/50 px-2 py-1.5 transition-colors focus-within:bg-surface-container-high">
             <label htmlFor="journal-topic-search" className="sr-only">
               Pesquisar notícias
             </label>
@@ -711,8 +728,6 @@ export function JournalTab({
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
               placeholder="Pesquisar notícias (jogadores, equipas)…"
               className="w-full bg-transparent text-xs font-bold text-on-surface outline-none placeholder:text-on-surface-variant/70"
             />
@@ -738,26 +753,15 @@ export function JournalTab({
               }
             />
           ) : (
-            <ol
-              ref={listRef}
-              className="max-h-64 short:max-h-44 overflow-y-auto rounded-sm border border-outline-variant/20 bg-surface-container-low divide-y divide-outline-variant/15 lg:max-h-none lg:min-h-0 lg:flex-1"
-            >
-              <AnimatePresence initial={false}>
+            <ol className="max-h-64 short:max-h-44 overflow-y-auto rounded-sm border border-outline-variant/20 bg-surface-container-low divide-y divide-outline-variant/15 lg:max-h-none lg:min-h-0 lg:flex-1">
                 {visible.map((it) => {
                   const active = inbox.selected?.id === it.id;
                   const unread = inbox.isUnread(it);
                   const tone = FILTER_TONES[it.cat] || FILTER_TONES.all;
                   const snippet = getSnippet(it.body);
-                  const isNew = active && unread;
 
                   return (
-                    <motion.li
-                      key={it.id}
-                      initial={isNew ? { opacity: 0, x: -20 } : false}
-                      animate={isNew ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }}
-                      transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
-                      layout
-                    >
+                    <li key={it.id}>
                       <button
                         type="button"
                         onClick={() => inbox.select(it.id)}
@@ -812,10 +816,9 @@ export function JournalTab({
                           />
                         )}
                       </button>
-                    </motion.li>
+                    </li>
                   );
                 })}
-              </AnimatePresence>
             </ol>
           )}
 
@@ -832,7 +835,7 @@ export function JournalTab({
             <Button
               variant="secondary"
               size="sm"
-              onClick={inbox.selectNextUnread}
+              onClick={selectNextUnread}
               disabled={!inbox.hasNextUnread}
             >
               Ler próxima
@@ -856,7 +859,7 @@ export function JournalTab({
           <AnimatePresence mode="wait">
             {inbox.selected && (
               <motion.section
-                key={selectedId}
+                key={selected?.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
@@ -872,7 +875,7 @@ export function JournalTab({
                 <CategoryAccentBar category={inbox.selected.cat} />
 
                 {/* Metadados: categoria, data, tempo de leitura */}
-                <ArticleMeta item={inbox.selected} />
+                <ArticleMeta item={inbox.selected} catLabel={labelOf(inbox.selected.cat)} />
 
                 {/* Título */}
                 <h2 className="mt-1.5 font-headline text-base short:text-sm font-black tracking-tight text-tertiary text-left">
@@ -924,15 +927,6 @@ export function JournalTab({
               </motion.section>
             )}
           </AnimatePresence>
-
-          {/* Estado vazio quando não há seleção */}
-          {!inbox.selected && (
-            <EmptyState
-              emoji="👈"
-              title="Seleciona uma notícia"
-              description="Escolhe um tópico na lista para ler o artigo completo."
-            />
-          )}
         </section>
       </div>
     </div>
