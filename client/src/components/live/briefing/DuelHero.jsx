@@ -61,17 +61,7 @@ export const DuelHero = memo(function DuelHero({ vm, onOpenTeamSquad }) {
         {vm.ptsDiff > 0 ? "▲" : "▼"} {Math.abs(vm.ptsDiff)} pts
       </span>
     ) : null;
-  const metaLine = [
-    vm.venue === "Jamor"
-      ? "Neutro — Jamor"
-      : vm.isHome
-        ? "Jogas em casa"
-        : "Jogas fora",
-    vm.referee?.name ? `Árbitro: ${vm.referee.name}` : null,
-    vm.weather ? `${vm.weather.emoji} ${vm.weather.label}` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const metaLine = vm.weather ? `${vm.weather.emoji} ${vm.weather.label}` : "";
 
   return (
     <section
@@ -133,7 +123,7 @@ export const DuelHero = memo(function DuelHero({ vm, onOpenTeamSquad }) {
         <p className="flex-1 min-w-0 text-[11px] short:text-[10px] font-bold text-gray-300 leading-snug">
           <span aria-hidden>📣</span> <span className="text-white">Flash:</span> {vm.headline}
         </p>
-        <p className="shrink-0 text-[9px] font-bold text-gray-500">{metaLine}</p>
+        {metaLine && <p className="shrink-0 text-[9px] font-bold text-gray-500">{metaLine}</p>}
       </div>
     </section>
   );
