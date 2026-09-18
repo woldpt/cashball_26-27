@@ -1,3 +1,11 @@
+## Final da Taça espera por todos; classificação final no Jornal (2026-09-18)
+
+- Queixa: após o 14.º jogo da liga (fim da S19) o jogo saltava logo para a final da Taça e ninguém via a classificação final. Causa em cadeia: o lobby da final só contava as 2 finalistas (`requiredTeamIds`), por isso com final só-NPC o primeiro clique em «Avançar para Taça» arrancava logo o jogo; a final corre a ritmo de espetador e o `applySeasonEnd` faz reset aos pontos — a tabela desaparecia em ~1 min.
+- Fix 1 (quórum): `requiredTeamIds` (`server/roomStateHelpers.ts`) no lobby da final (ronda 5) devolve todos os assentos `member` com equipa — quórum e congelamento passam a esperar por todos; liga, meias e jogo corrido intactos (sonda tsx 4/4).
+- Fix 2 (Jornal): `logLeagueFinalStandings` (`server/weeklyFlowHelpers.ts`) grava no fecho da jornada 14 uma linha `league_final` por equipa (tabela da divisão em JSON, idempotente via `logClubNewsOnce`); cliente com artigo novo em `inboxItems.js` + tabela `LeagueFinalTable` no detalhe (`JournalTab.jsx`), `club_news` persiste entre épocas.
+- Sem mobile-resp-check: sem view/tab/modal nem componente partilhado novo (tabela contida no detalhe com `overflow-x-auto`).
+- Checks: server `typecheck` OK, `audit:socketio` 0 erros (97 avisos pré-existentes), `audit:gamestate TST148` 0/0/0, `test:session-freeze` 11/11; client `lint` só os 2 erros pré-existentes, `check:types` OK, `test:journaldb` (R8 novo, 7/7), `test:inboxreads`, `test:boardnewsid`, build Vite OK.
+
 ## Jornal com histórico entre épocas, paginado por época (2026-09-18)
 
 - Queixa: ao mudar de época o Jornal esvaziava. Causa: a BD guarda tudo, mas o `getGlobalNews` (`server/socketNewsHandlers.ts`) filtrava `cn.year`/`th.year` do ano corrente — parecia eliminação, era filtro.

@@ -345,9 +345,20 @@ export function clearSeatPositions(game: ActiveGame): void {
  * Equipas humanas que a fase em curso obriga a estar presentes.
  * - Fase de jogo: equipas nas fixtures em curso.
  * - Lobby: equipas dos treinadores bloqueados (a semana não arranca sem eles).
+ * - Lobby da final da Taça (ronda 5): TODOS os treinadores com equipa — a
+ *   final só-NPC arrancava ao primeiro clique porque só as finalistas
+ *   contavam (a jornada 14 ficava sem momento de tabela). Espetadores
+ *   continuam sem validação de 11 (isLobbyStarter), só o arranque espera.
  */
 export function requiredTeamIds(game: ActiveGame): Set<number> {
   const ids = new Set<number>();
+  const event = game.currentEvent as any;
+  if (game.gamePhase === "lobby" && event?.type === "cup" && event?.round === 5) {
+    for (const seat of Object.values(game.seats)) {
+      if (seat.status === "member" && seat.teamId != null) ids.add(seat.teamId);
+    }
+    return ids;
+  }
   const fixtures = game.currentFixtures || [];
   if (fixtures.length > 0) {
     for (const f of fixtures) {
