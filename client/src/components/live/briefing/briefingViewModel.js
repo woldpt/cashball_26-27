@@ -158,7 +158,6 @@ export function buildBriefingViewModel(s, teamInfo) {
       label: s.difficulty?.label ?? "Equilibrado",
     },
     myName,
-    ptsDiff: myPts - oppPts,
     compare: {
       position: orderedPair(
         isHome,

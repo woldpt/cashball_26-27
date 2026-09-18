@@ -49,18 +49,6 @@ const DuelSlot = memo(function DuelSlot({ slot, side, onOpenTeamSquad }) {
  */
 export const DuelHero = memo(function DuelHero({ vm, onOpenTeamSquad }) {
   const [home, away] = vm.slots;
-  const ptsChip =
-    vm.hasOpponent && vm.ptsDiff !== 0 ? (
-      <span
-        className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full tabular-nums ${
-          vm.ptsDiff > 0
-            ? "bg-emerald-500/15 text-emerald-400"
-            : "bg-red-500/15 text-red-400"
-        }`}
-      >
-        {vm.ptsDiff > 0 ? "▲" : "▼"} {Math.abs(vm.ptsDiff)} pts
-      </span>
-    ) : null;
   const metaLine = vm.weather ? `${vm.weather.emoji} ${vm.weather.label}` : "";
 
   return (
@@ -92,7 +80,6 @@ export const DuelHero = memo(function DuelHero({ vm, onOpenTeamSquad }) {
               <span aria-hidden>🎯</span> {vm.stakes}
             </span>
           )}
-          {ptsChip}
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <div className="hidden sm:block w-32 lg:w-40">

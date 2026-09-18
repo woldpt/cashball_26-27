@@ -103,7 +103,6 @@ check(
 
 /* ── S2: pontos ──────────────────────────────────────────────────────── */
 const vmHome = buildBriefingViewModel(baseSummary, teamInfo);
-check(vmHome.ptsDiff === -3, `S2: ptsDiff 15-18 = -3 (obteve ${vmHome?.ptsDiff})`);
 check(
   vmHome.compare.points[0] === 15 && vmHome.compare.points[1] === 18,
   "S2b: pontos ordenados [eu, adv] em casa",

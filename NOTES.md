@@ -1,3 +1,9 @@
+## Briefing: chip de pts fora do topo do herói (2026-09-18)
+
+- Pedido: remover a menção aos pontos do topo do briefing (ex. `(▼ 6 pts)`).
+- `DuelHero.jsx`: chip `ptsChip` (▲/▼ N pts) eliminado da barra de etiquetas. `briefingViewModel.js`: campo morto `ptsDiff` removido (`myPts`/`oppPts` continuam em `compare.points` — o radar mostra os pontos). Check `S2: ptsDiff` removido do `briefingViewModelRegression.mjs` (S2b intacto).
+- Checks: client `check:types` OK, `lint` só os 2 erros pré-existentes, regression do view-model íntegra. Sem mobile-resp-check (remoção pontual num chip, sem mudança estrutural de layout).
+
 ## Final da Taça espera por todos; classificação final no Jornal (2026-09-18)
 
 - Queixa: após o 14.º jogo da liga (fim da S19) o jogo saltava logo para a final da Taça e ninguém via a classificação final. Causa em cadeia: o lobby da final só contava as 2 finalistas (`requiredTeamIds`), por isso com final só-NPC o primeiro clique em «Avançar para Taça» arrancava logo o jogo; a final corre a ritmo de espetador e o `applySeasonEnd` faz reset aos pontos — a tabela desaparecia em ~1 min.
