@@ -4,7 +4,8 @@
  * `getGlobalNews` devolve as notícias da equipa do treinador actual para a tab
  * "Jornal":
  *   - news:    club_news da equipa + transferências em que ela participa,
- *              fundidas e ordenadas (jornada desc, created_at desc, id desc), cap 200.
+ *              de TODAS as épocas (o Jornal pagina por época no cliente),
+ *              fundidas e ordenadas (ano desc, jornada desc, created_at desc, id desc), cap 600.
  *   - results: todas as partidas jogadas da época (Liga + Taça) com o MOM
  *              de cada equipa (match_moms).
  *
@@ -17,7 +18,7 @@ interface NewsHandlerDeps {
   getGameBySocket: (socketId: string) => ActiveGame | null;
 }
 
-const NEWS_LIMIT = 200;
+const NEWS_LIMIT = 600;
 
 export function registerNewsSocketHandlers(
   socket: any,
@@ -55,9 +56,9 @@ export function registerNewsSocketHandlers(
          FROM club_news cn
          LEFT JOIN teams t ON t.id = cn.team_id
          LEFT JOIN players p ON p.id = cn.player_id
-         WHERE cn.year = ? AND cn.team_id = ?
+         WHERE cn.team_id = ?
            AND cn.type NOT IN ('weekly_income', 'wages', 'stadium_upkeep', 'ticket_revenue')`,
-        [year, teamId],
+        [teamId],
         (newsErr: Error | null, clubRows: any[] | null) => {
           if (newsErr || !clubRows) {
             if (newsErr)
@@ -82,8 +83,8 @@ export function registerNewsSocketHandlers(
                     th.amount, th.matchweek, th.year, th.created_at,
                     th.buyer_team_name AS team_name, NULL AS division
              FROM transfer_history th
-             WHERE th.year = ? AND (th.seller_team_id = ? OR th.buyer_team_id = ?)`,
-            [year, teamId, teamId],
+             WHERE th.seller_team_id = ? OR th.buyer_team_id = ?`,
+            [teamId, teamId],
             (trErr: Error | null, transferRows: any[] | null) => {
               if (trErr) {
                 console.warn(
@@ -94,6 +95,7 @@ export function registerNewsSocketHandlers(
               }
               const newsRows = [...(clubRows || []), ...(transferRows || [])].sort(
                 (a, b) =>
+                  (b.year || 0) - (a.year || 0) ||
                   (b.matchweek || 0) - (a.matchweek || 0) ||
                   String(b.created_at || "").localeCompare(
                     String(a.created_at || ""),

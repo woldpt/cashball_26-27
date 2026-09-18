@@ -448,6 +448,17 @@ export function JournalTab({
               Ler próxima
             </Button>
           </div>
+          {inbox.hasOlderSeasons && (
+            <div className="flex justify-center">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={inbox.showOlderSeason}
+              >
+                Mostrar época {inbox.newsYears[inbox.visibleYears.length] ?? "anterior"} ↓
+              </Button>
+            </div>
+          )}
         </section>
 
         <section aria-label="Corpo da notícia" className="min-w-0 space-y-2 lg:flex lg:min-h-0 lg:flex-col">

@@ -812,13 +812,16 @@ export function cupDrawCovered(rows, season, round) {
     return Number(f?.season) === Number(season) && Number(f?.round) === Number(round);
   });
 }
-export function medicalCovered(rows, kind, playerId, until) {
-  return (Array.isArray(rows) ? rows : []).some(
-    (n) =>
-      String(n?.type || "") === kind &&
-      Number(n?.player_id) === Number(playerId) &&
-      Number(n?.amount) === Number(until),
-  );
+export function medicalCovered(rows, kind, playerId, until, year = null) {
+  return (Array.isArray(rows) ? rows : []).some((n) => {
+    if (String(n?.type || "") !== kind) return false;
+    if (Number(n?.player_id) !== Number(playerId)) return false;
+    if (Number(n?.amount) !== Number(until)) return false;
+    // Só a época corrente cobre (linhas de épocas antigas não escondem o
+    // transitório atual; year 0/null de BDs antigas conta como coringa).
+    const rowYear = Number(n?.year) || 0;
+    return rowYear === 0 || year == null || rowYear === Number(year);
+  });
 }
 
 export function newsRowsToItems(rows, fallbackDate, viewerTeamId = null) {
@@ -868,7 +871,7 @@ function dealKey(n) {
     DEAL_CLUB_TYPES.has(String(n.type || ""));
   if (!isDeal) return null;
   if (n.player_id == null || n.matchweek == null) return null;
-  return `${n.player_id}|${n.matchweek}`;
+  return `${n.player_id}|${n.year ?? "?"}|${n.matchweek}`;
 }
 
 /**
@@ -891,7 +894,7 @@ function dealToItem(t, fallbackDate) {
     related: seller,
   });
   return {
-    id: `deal-${t.player_id}-${t.matchweek}`,
+    id: `deal-${t.player_id}-${t.year ?? "?"}-${t.matchweek}`,
     cat: "market",
     date: formatNewsDate(t, fallbackDate),
     ...article,

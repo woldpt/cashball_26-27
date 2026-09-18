@@ -1,3 +1,11 @@
+## Jornal com histórico entre épocas, paginado por época (2026-09-18)
+
+- Queixa: ao mudar de época o Jornal esvaziava. Causa: a BD guarda tudo, mas o `getGlobalNews` (`server/socketNewsHandlers.ts`) filtrava `cn.year`/`th.year` do ano corrente — parecia eliminação, era filtro.
+- Servidor: sem filtro de ano, ordenação ano desc primeiro, `NEWS_LIMIT` 200 → 600 (várias épocas num só fetch; paginação local, sem protocolo novo).
+- Cliente: `useInbox` deriva `newsYears` das linhas (sem ano cai na época atual, como o `ClubTab`), mostra a mais recente e revela uma a pedido (`hasOlderSeasons`/`showOlderSeason`, reinicia ao trocar de treinador/sala); `JournalTab` ganha botão «Mostrar época XXXX ↓» no rodapé dos tópicos.
+- Colisões entre épocas corrigidas: `dealKey`/id do negócio inclui o ano (mesmo jogador/jornada em anos distintos fundia em 1 — provado: agora 2 itens); `medicalCovered` só cobre na época corrente (year 0/null de BDs antigas conta como coringa).
+- Checks: server `typecheck` OK, `audit:socketio` 0 erros (97 avisos pré-existentes), client eslint limpo + `check:types` OK, `test:journaldb`/`test:inboxreads`/`test:boardnewsid` OK. `audit:gamestate` fica para a próxima sala viva (sem sala). Botão pontual sem mudança de grelha → sem mobile-resp-check.
+
 ## Opções da sala no dropdown do utilizador (2026-09-17)
 
 - O botão `speed` no header não agradou: saiu da barra e as definições da sala passaram a um item «Opções» no dropdown do utilizador (`GameLayout.jsx`, a seguir a «A minha conta», abre o mesmo `RoomSettings`). Efeito lateral: o dropdown bloqueia durante o direto, por isso o ritmo só se muda fora de jogo — coerente com "vale do próximo jogo em diante".

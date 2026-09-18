@@ -59,6 +59,10 @@ import {
  *   jobOffer: object|null,
  *   board: object|null,
  *   draw: object|null,
+ *   newsYears: Array,
+ *   visibleYears: Array,
+ *   hasOlderSeasons: boolean,
+ *   showOlderSeason: () => void,
  * }}
  */
 export function useInbox() {
@@ -117,12 +121,41 @@ export function useInbox() {
 
   const currentDate = formatInboxDate((calendarIndex ?? 0) + 1, seasonYear);
 
+  // ── Paginação por época: mostra a mais recente, revela uma a pedido ────
+  // (o servidor envia todas as épocas; linhas sem ano caem na época atual).
+  const allNewsRows = globalNews?.news;
+  const newsYears = useMemo(() => {
+    const years = new Set();
+    for (const n of Array.isArray(allNewsRows) ? allNewsRows : []) {
+      const y = Number(n?.year) || seasonYear || 0;
+      if (y) years.add(y);
+    }
+    return [...years].sort((a, b) => b - a);
+  }, [allNewsRows, seasonYear]);
+  // A contagem reinicia ao trocar de treinador/sala (ajuste durante o
+  // render — padrão React para estado derivado de chave).
+  const [pageState, setPageState] = useState({ key: storeKey, count: 1 });
+  if (pageState.key !== storeKey) {
+    setPageState({ key: storeKey, count: 1 });
+  }
+  const visibleSeasons = pageState.key === storeKey ? pageState.count : 1;
+  const visibleYears = useMemo(
+    () => newsYears.slice(0, Math.max(1, visibleSeasons)),
+    [newsYears, visibleSeasons],
+  );
+  const newsRows = useMemo(() => {
+    const set = new Set(visibleYears);
+    return (Array.isArray(allNewsRows) ? allNewsRows : []).filter((n) =>
+      set.has(Number(n?.year) || seasonYear || 0),
+    );
+  }, [allNewsRows, visibleYears, seasonYear]);
+
   // ── Construção da lista (acionáveis primeiro, resto por ordem) ──────────
-  // As linhas persistidas (BD, data fixa) são a fonte; os transitórios só
-  // aparecem sem par gravado (pendências anteriores a esta versão).
+  // As linhas persistidas visíveis (BD, data fixa) são a fonte; os
+  // transitórios só aparecem sem par gravado (pendências anteriores a esta
+  // versão).
   const items = useMemo(() => {
     const list = [];
-    const newsRows = globalNews?.news;
 
     for (const d of contractQueue || []) {
       if (contractCovered(newsRows, d.playerId)) continue;
@@ -277,7 +310,7 @@ export function useInbox() {
 
     // O rescaldo transitório esconde-se quando a linha persistida do mesmo
     // jogo já chegou (evita o último jogo em duplicado no Jornal).
-    const savedMoodKeys = persistedMoodKeys(globalNews?.news);
+    const savedMoodKeys = persistedMoodKeys(newsRows);
     if (postMatchMood && !savedMoodKeys.has(postMatchMood.key)) {
       const article = buildMoodNewsArticle(postMatchMood);
       list.push({
@@ -304,6 +337,7 @@ export function useInbox() {
           m[1] === "inj" ? "injury" : "suspension",
           Number(m[2]),
           Number(m[3]),
+          seasonYear,
         )
       )
         continue;
@@ -369,7 +403,7 @@ export function useInbox() {
     cupDraw,
     postMatchMood,
     mySquad,
-    globalNews,
+    newsRows,
     calendarIndex,
     seasonYear,
     currentDate,
@@ -480,5 +514,13 @@ export function useInbox() {
     jobOffer: jobOfferModal,
     board: boardWarning,
     draw: cupDraw,
+    newsYears,
+    visibleYears,
+    hasOlderSeasons: visibleSeasons < newsYears.length,
+    showOlderSeason: () =>
+      setPageState((p) => ({
+        key: storeKey,
+        count: (p.key === storeKey ? p.count : 0) + 1,
+      })),
   };
 }
