@@ -36,20 +36,16 @@ const NEWS_ICONS = {
 };
 
 function NewsRow({ news }) {
+  const { bg, text, icon } =
+    NEWS_ICONS[news?.type] ?? NEWS_ICONS.default;
   return (
     <div className="px-4 short:px-3 py-3 short:py-1.5 flex items-center gap-3 short:gap-2 hover:bg-white/[0.03] transition-colors">
       {/* Icon */}
-      {(() => {
-        const { bg, text, icon } =
-          NEWS_ICONS[news.type] ?? NEWS_ICONS.default;
-        return (
-          <div className={`w-8 h-8 short:w-6 short:h-6 rounded flex items-center justify-center shrink-0 ${bg}`}>
-            <span className={`material-symbols-outlined text-sm ${text}`}>
-              {icon}
-            </span>
-          </div>
-        );
-      })()}
+      <div className={`w-8 h-8 short:w-6 short:h-6 rounded flex items-center justify-center shrink-0 ${bg}`}>
+        <span className={`material-symbols-outlined text-sm ${text}`}>
+          {icon}
+        </span>
+      </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
@@ -113,7 +109,11 @@ export function ClubTab({
   palmares,
   clubNews,
 }) {
-  const [crestFailed, setCrestFailed] = useState(false);
+  // Guarda o URL que falhou (não um booleano) para o fallback fazer reset
+  // sozinho quando o escudo mudar — sem useEffect dedicado.
+  const [failedCrest, setFailedCrest] = useState(null);
+  const crestFailed =
+    teamInfo?.crest != null && failedCrest === teamInfo.crest;
 
   const morale = teamInfo?.morale ?? 50;
   const moraleLabel = getMoraleLabel(morale).toUpperCase();
@@ -208,7 +208,7 @@ export function ClubTab({
               <img
                 src={teamInfo.crest}
                 alt={teamInfo?.name || "crest"}
-                onError={() => setCrestFailed(true)}
+                onError={() => setFailedCrest(teamInfo.crest)}
                 className={`w-12 h-12 sm:w-16 sm:h-16 short:w-10 short:h-10 rounded-lg object-contain bg-white p-1.5 short:p-1 shrink-0 border border-white/10 ${
                   crestFailed ? "hidden" : "inline"
                 }`}
