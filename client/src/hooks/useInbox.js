@@ -179,7 +179,7 @@ export function useInbox() {
       const body = `O agente de ${player.label} exige resposta antes do próximo jogo.`;
       list.push({
         id: `contract-${p.id}`,
-        cat: "club",
+        cat: "squad",
         date: currentDate,
         title,
         body,

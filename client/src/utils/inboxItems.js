@@ -226,18 +226,23 @@ export function newsCategory(n) {
     return "market";
   if (
     t === "welcome" ||
-    t === "renegotiation" ||
     t === "ticket_revenue" ||
     t === "stadium_build" ||
     t === "cost_cut" ||
     t === "postmatch" ||
-    t === "contract_request" ||
     t === "job_offer" ||
     t === "board_warning"
   )
     return "club";
   if (t === "cup_draw") return "competitions";
-  if (t === "academy" || t === "injury" || t === "suspension") return "squad";
+  if (
+    t === "academy" ||
+    t === "injury" ||
+    t === "suspension" ||
+    t === "renegotiation" ||
+    t === "contract_request"
+  )
+    return "squad";
   return "competitions";
 }
 

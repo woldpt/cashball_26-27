@@ -1,3 +1,9 @@
+## Renovações com cor verde do filtro Plantel (2026-09-18)
+
+- Pedido: as notícias de renovação de contrato (pedidos + confirmadas) devem ter a cor verde do filtro Plantel.
+- `newsCategory()` (`inboxItems.js`): `contract_request` e `renegotiation` saem do ramo "club" (âmbar) para "squad" (esmeralda); itens transitórios de renovação em `useInbox.js` passam de `cat: "club"` para `cat: "squad"`. Pendentes 🚩 continuam vermelhos até serem respondidos (o `redFlag` tem prioridade sobre o tom).
+- Checks: client `check:types` OK, `lint` só os 2 erros pré-existentes. Tweaks de cor/filtro → sem mobile-resp-check.
+
 ## Briefing: chip de pts fora do topo do herói (2026-09-18)
 
 - Pedido: remover a menção aos pontos do topo do briefing (ex. `(▼ 6 pts)`).
