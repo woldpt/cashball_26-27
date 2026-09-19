@@ -1,3 +1,11 @@
+## Jornal: entrar seleciona a mais antiga sem a marcar como lida (2026-09-19)
+
+- Queixa: após o jogo, o Jornal abria na notícia mais recente com tudo marcado como lido. Pretendido: entrar seleciona a não-lida mais antiga e as não-lidas ficam por ler até seleção explícita.
+- Causa: o efeito de montagem (`initialReadRef` no `JournalTab.jsx`, regra "notícia inicial fica logo lida" de 2026-09-15) chamava `select(selected.id)` sem clique; cada entrada na tab consumia uma não-lida em silêncio e o fallback caía em `items[0]` (mais recente) quando já não havia não-lidas.
+- Fix só no cliente: removido o efeito + destruturados mortos (`isUnread`, `select`, `initialReadRef`); a seleção derivada (mais antiga por ler) mantém-se como apresentação. Decisões via perguntas: "Ler próxima"/Enter-Espaço continuam a marcar atual+próxima; 🚩 sem exceção (mais antiga por ler, com o aviso no topo a denunciar a pendência). `useInbox.js` intocado.
+- Harness `journal-resp-test` estava vermelho no master desde o redesign/paginação (confirmado com stash): fixture sem `seasonYear` excluía as linhas sem ano; asserts liam só o primeiro `<p>` (corpo agora multi-parágrafo); esperas de 60ms perdiam para a animação do detalhe (~180ms saída+entrada). Reparação mínima: `seasonYear: 2026` na fixture, helper `detailBody()` (todos os `<p>`), esperas 60→500ms nos cliques de detalhe, `checkSharedReads` a exigir selecionada-mas-por-ler (`font-black`, badge só baixa no clique).
+- Checks: client `lint` só os 2 erros pré-existentes, `check:types` OK, harness Jornal retrato `5/5` + paisagem `6/6`. Sem mudança de layout → sem `mobile-resp-check` completo (o runner do harness cobre-o).
+
 ## Skill verify-before-done (2026-09-19)
 
 - Nova skill `.pi/skills/verify-before-done/SKILL.md`: matriz mínima mudança → checks (typecheck, connect-smoke p/ `index.ts`, audits, session-freeze, lint, check:types, mobile-resp-check, regressões) + regras (só saída real conta, salto legítimo regista-se, falha pré-existente confirma-se com stash, NOTES.md antes do commit). Escolhida via perguntas: verificação pré-feito primeiro, âmbito mínimo, com NOTES.md.

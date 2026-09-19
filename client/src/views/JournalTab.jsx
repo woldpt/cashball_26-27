@@ -3,7 +3,9 @@
  *
  * Tópicos à esquerda e detalhe à direita no desktop, uma só linha de filtros:
  * Todas, O Meu Clube, Competições, Plantel, Mercado. A notícia mais antiga
- * por ler fica seleccionada e a lista tem «Ler próxima».
+ * por ler fica seleccionada (sem a marcar como lida) e a lista tem
+ * «Ler próxima». Só o clique na linha, o «Ler próxima» ou o Enter/Espaço
+ * marcam como lida.
  *
  * Os pedidos de renovação e os convites de clubes entram como linhas com
  * bandeira vermelha 🚩 e bloqueiam o Pronto até serem respondidos. As
@@ -594,20 +596,10 @@ export function JournalTab({
   onOpenCupBracket,
 }) {
   const inbox = useInbox();
-  const { selected, isUnread, select, selectNextUnread } = inbox;
-  const initialReadRef = useRef(false);
+  const { selected, selectNextUnread } = inbox;
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const detailRef = useRef(null);
-
-  // Seleção automática da primeira não lida ao montar
-  useEffect(() => {
-    if (initialReadRef.current || !selected) return;
-    initialReadRef.current = true;
-    if (!selected.redFlag && isUnread(selected)) {
-      select(selected.id);
-    }
-  }, [isUnread, select, selected]);
 
   // Atalho de teclado: Enter/Espaço fora de controlos = próxima não lida.
   // Dentro de botões/links/inputs o teclado comporta-se nativamente

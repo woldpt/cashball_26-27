@@ -195,6 +195,7 @@ const globalNews = {
 };
 
 const gameValue = {
+  seasonYear: 2026,
   me,
   contractQueue,
   focusContractDialog: noop,
@@ -272,16 +273,23 @@ async function checkQuickSearch() {
   };
 }
 
+/** Texto completo do detalhe (o corpo sai em vários <p> desde o redesign). */
+const detailBody = () =>
+  [...
+    document.querySelectorAll('section[aria-label="Corpo da notícia"] p'),
+  ]
+    .map((p) => p.textContent)
+    .join("\n\n");
+
 /** A reacção pós-jogo deve ter contexto editorial completo. */
 async function checkMoodArticle() {
   const row = [...document.querySelectorAll("ol button")].find((b) =>
     b.textContent.includes("Derrota Vergonhosa 0–3"),
   );
   row?.click();
-  await new Promise((r) => setTimeout(r, 60));
-  const body = document.querySelector(
-    'section[aria-label="Corpo da notícia"] p',
-  )?.textContent;
+  // O detalhe anima saída+entrada (~180ms cada, AnimatePresence mode="wait")
+  await new Promise((r) => setTimeout(r, 500));
+  const body = detailBody();
   const transientOk =
     !!row &&
     (body?.length || 0) > 500 &&
@@ -294,10 +302,8 @@ async function checkMoodArticle() {
     b.textContent.includes("Vitória! 2–1"),
   );
   savedRow?.click();
-  await new Promise((r) => setTimeout(r, 60));
-  const savedBody = document.querySelector(
-    'section[aria-label="Corpo da notícia"] p',
-  )?.textContent;
+  await new Promise((r) => setTimeout(r, 500));
+  const savedBody = detailBody();
   const savedOk =
     !!savedRow &&
     (savedBody?.length || 0) > 500 &&
@@ -317,10 +323,8 @@ async function checkDrawDate() {
   );
   const date = row?.querySelector("span")?.textContent;
   row?.click();
-  await new Promise((r) => setTimeout(r, 60));
-  const body = document.querySelector(
-    'section[aria-label="Corpo da notícia"] p',
-  )?.textContent;
+  await new Promise((r) => setTimeout(r, 500));
+  const body = detailBody();
   const listsAll =
     (body || "").includes("O seu jogo:") &&
     (body || "").includes("Sporting Clube do Alentejo Central") &&
@@ -338,10 +342,11 @@ async function checkSharedReads() {
   const initialRow = [...document.querySelectorAll("ol button")].find((b) =>
     b.textContent.includes("Contas bancárias"),
   );
-  // A notícia mais antiga começa seleccionada e já deve estar lida.
-  const initialWasRead = initialRow
+  // A notícia mais antiga começa seleccionada mas continua por ler
+  // (só o clique marca como lida).
+  const initialIsUnread = initialRow
     ?.querySelector("span.min-w-0")
-    ?.className.includes("font-medium");
+    ?.className.includes("font-black");
   // Uma linha seguinte sem bandeira vermelha — clicar nela deve baixar o
   // badge partilhado entre o Jornal e o GameLayout.
   const row = [...document.querySelectorAll("ol button")].find((b) =>
@@ -353,9 +358,9 @@ async function checkSharedReads() {
   return {
     before,
     after,
-    initialWasRead,
+    initialIsUnread,
     clicked: !!row,
-    ok: initialWasRead && !!row && before > 0 && after === before - 1,
+    ok: initialIsUnread && !!row && before > 0 && after === before - 1,
   };
 }
 
