@@ -1,10 +1,10 @@
 # CRASH.md — Crash Recovery & Backups
 
-> Referência on-demand (ver `AGENTS.md`). Teste E2E: `cd server && npm run test:crash-recovery` — clona uma sala real para `game_CRASHT.db` (descartável, limpa ao final); origem via `CRASHTEST_ROOM=XXXX`. Valida cobrança única do `weekly_finance` com reaplicação pós-restart e `recoverFinalizedSlot`/`checkAllReady` a avançar sem re-simular/re-cobrar em slots de liga e Taça já finalizados.
+> Referência on-demand (ver `AGENTS.md`). Teste E2E: `cd server && npm run test:crash-recovery` — clona uma sala real para `game_CRASHT.db` (descartável, limpa ao final); origem via `CRASHTEST_ROOM=XXXX`. Valida cobrança única do `weekly_finance` com reaplicação pós-restart, `recoverFinalizedSlot`/`checkAllReady` a avançar sem re-simular/re-cobrar em slots de liga e Taça já finalizados, e a volta ao lobby sem tática após quebra a meio do jogo.
 
-## Replay seguro pós-restart
+## Volta ao lobby pós-restart
 
-- **Jogo a meio:** já não se descarta. `matchCheckpoint` (gravado por minuto em `roomStateHelpers.saveMatchCheckpoint`) repõe golos/eventos/lineups/posse e `resumeInterruptedMatch` (`weeklyFlowHelpers`) retoma no minuto seguinte àquele em que caiu. A fase transitória **não** volta a `lobby` no load. `resetPartialMatchState` foi removido.
+- **Quebra a meio do jogo:** o jogo parado é sempre descartado. Qualquer fase de jogo (`match_first_half`, `match_halftime`, `match_second_half`, `match_et_gate`, `match_extra_time`, `match_finalizing`) volta ao `lobby` do mesmo slot depois do replay de eventos — sem retoma no minuto, sem tática gravada (`resetAllReady` + `clearSeatPositions`). A ronda rejoga-se do minuto 0 quando todos derem Pronto, igual para liga, Taça e amigável. Chaves legadas `matchCheckpoint` são limpas no load e nunca lidas.
 - `applied_weeks` (em cada `game_*.db`) limita a aplicação por `(season, slot)`:
   - `weekly_finance` — rendimentos/salários/empréstimo aplicados no máximo 1×.
   - `finalized` — slot da liga/Taça já liquidado: o restart **avança o calendário** em vez de re-simular/re-cobrar (`recoverFinalizedSlot`).

@@ -1,3 +1,10 @@
+## Quebra do servidor volta sempre ao lobby, sem tática (2026-09-19)
+
+- Decisão por brainstorming: a retoma no minuto era a maior fonte de instabilidade (checkpoint/segmento a meio, payloads de intervalo, ready+tática partidos). Quebra a meio → lobby do slot, jogo descartado, sem tática; rejoga-se do 0. Igual para liga/Taça/amigável; só slot já finalizado avança (`recoverFinalizedSlot`).
+- Servidor: `gameManager` dobra qualquer fase de jogo para lobby DEPOIS do replay de eventos (o replay podia repor `match_first_half`), com `resetAllReady` + `clearSeatPositions` + `saveGameState`; removidos `resumeInterruptedMatch` (+ fiação em `index.ts`/`socketSessionHandlers.ts`), `save/applyMatchCheckpoint` e `lastSimulatedMinute`; chaves legadas limpas no load. Congelamento por ausência (`waitForPresence`) intocado.
+- Testes: `crashRecoveryRegression` ganha S5 (quebra em `match_second_half` com Pronto+11 → lobby, minuto/fixtures/payloads limpos, 11 apagado no assento e na projeção, fase persistida); `sessionFreezeRegression` F8 passa a `clearSeatPositions`, F9/F10 do checkpoint saem, `resetAllReady` vira F9. Docs: `CRASH.md` + `CLAUDE.md`.
+- Checks: server `typecheck` OK, `test:session-freeze` 9/9, `test:crash-recovery` OK (S0–S5), `test:connect-smoke` OK, `audit:socketio` 0 erros (97 avisos pré-existentes), `audit:gamestate TST148` 0/0/0. Cliente intocado → sem lint/mobile-resp-check.
+
 ## Corpo das notícias em registo de imprensa clássica (2026-09-19)
 
 - Queixa: o corpo parecia «jornal da escola primária» — manchete com o mesmo tamanho do texto corrido, parágrafos todos iguais, sem hierarquia. Decisões via perguntas: imprensa clássica sem texturas, detalhe completo (media+tabela+ações), entrada com capitular, emojis 📅⏱️ mantidos.

@@ -14,6 +14,9 @@
  *       tocar no matchweek da liga.
  *  S4 — checkAllReady (entrypoint real): com o mesmo estado de crash, o dispatch
  *       de produção escolhe a recovery (marcador presente) em vez de replay.
+ *  S5 — quebra a meio do jogo: volta ao lobby do slot SEM tática gravada
+ *       (fase/intervalo/minuto/fixtures/checkpoint descartados, Pronto + 11
+ *       invalidados).
  *
  * Run: cd server && npm run test:crash-recovery
  * Env opcional: CRASHTEST_ROOM=XXXX  (fonte da cópia; default = primeira game_*.db)
@@ -416,6 +419,47 @@ async function main(): Promise<void> {
     );
     ok((await sumBudget()) === Bpre4, "SEM re-cobrança via entrypoint real");
     ok(game.gamePhase === "lobby", "fase volta a lobby após recovery");
+
+    // ── S5 — quebra a meio do jogo: lobby do slot, sem tática ───────────────
+    console.log("\nS5 · crash mid-match → lobby sem tática");
+    const coach5 = [...game.lockedCoaches][0];
+    ok(!!coach5, "setup: coach humano para o assento");
+    const team5 = game.seats[coach5]?.teamId ?? 1;
+    await closeRoom(game); // ← processo "morre" a meio do jogo
+    await kvSet("gamePhase", "match_second_half");
+    await kvSet("liveMinute", "63");
+    await kvSet(
+      "currentFixtures",
+      JSON.stringify([
+        { homeTeamId: 1, awayTeamId: 2, finalHomeGoals: 2, finalAwayGoals: 1, events: [], homeLineup: [], awayLineup: [] },
+      ]),
+    );
+    await kvSet("matchCheckpoint", JSON.stringify({ season, calendarIndex: 5, liveMinute: 63, phase: "match_second_half", fixtures: [] }));
+    await kvSet("cupHalftimePayload", JSON.stringify({ bogus: true }));
+    await kvSet("lastHalftimePayload", JSON.stringify({ bogus: true }));
+    // Assento com Pronto + 11 confirmados antes da quebra.
+    await rawExec(
+      dstPath,
+      `INSERT INTO room_seats (coach_name, team_id, seat_epoch, device_id, last_seen_at, intent, status)
+       VALUES (?, ?, 1, 'dev', ?, ?, 'member')
+       ON CONFLICT(coach_name) DO UPDATE SET team_id = excluded.team_id, intent = excluded.intent, status = 'member'`,
+      [coach5, team5, Date.now(), JSON.stringify({ ready: true, formation: "4-4-2", positions: { 1: 101, 9: 109 } })],
+    );
+
+    game = await loadRoom(); // ← restart: volta ao lobby, nunca retoma no minuto
+    ok(game.gamePhase === "lobby", "fase volta a lobby após quebra a meio");
+    ok(game.liveMinute == null, "minuto descartado");
+    ok(game.currentFixtures.length === 0, "fixtures do jogo descartadas");
+    ok(game.cupHalftimePayload == null && game.lastHalftimePayload == null, "payloads de intervalo descartados");
+    const seat5 = game.seats[coach5];
+    ok(seat5?.intent.ready === false, "Pronto pré-crash invalidado");
+    ok(Object.keys(seat5?.intent.positions || {}).length === 0, "11 pré-crash apagado no assento");
+    ok(
+      Object.keys(game.playersByName[coach5]?.tactic?.positions || {}).length === 0,
+      "11 pré-crash apagado na projeção",
+    );
+    ok(await waitForKv("gamePhase", "lobby"), "disco: fase persistida = lobby");
+    ok((await kvGet("matchCheckpoint")) === "null", "chave legada matchCheckpoint limpa");
   } finally {
     if (activeGames[TEST_ROOM]) {
       await closeRoom(activeGames[TEST_ROOM]);

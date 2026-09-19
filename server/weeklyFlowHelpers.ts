@@ -43,11 +43,9 @@ import {
   clearSeatPositions,
   computeAbsentees,
   isSeatPresent,
-  lastSimulatedMinute,
   resetAllReady,
   logCalendarAdvance,
   requiredTeamIds,
-  saveMatchCheckpoint,
   waitForPresence,
 } from "./roomStateHelpers";
 
@@ -794,11 +792,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         }
         if ((game.gamePhase as string) === "lobby") return;
 
-        // Track current live minute for reconnection recovery
+        // Minuto em direto para o relógio do cliente. Sem checkpoint
+        // durável: uma quebra volta ao lobby e a ronda rejoga-se do 0.
         game.liveMinute = minute;
-        // Ponto de controlo durável: um restart a meio retoma neste minuto em
-        // vez de recomeçar 0-0.
-        saveMatchCheckpoint(game);
 
         // Emit per-minute update so the client clock stays in sync
         io.to(game.roomCode).emit("matchMinuteUpdate", {
@@ -1013,75 +1009,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     // segmentRunning is now false; safe to auto-advance if all coaches were dismissed.
     if ((game.gamePhase as string) === "lobby") {
       checkAllReady(game);
-    }
-  }
-
-  // ─── RETOMA DE PARTIDA INTERROMPIDA (restart/deploy a meio) ──────────────
-  // Antes: a fase transitória voltava a lobby e o jogo recomeçava 0-0. Agora
-  // retoma no minuto persistido. A espera de presença no início garante que a
-  // retoma não joga um único minuto sem os treinadores da ronda.
-  async function resumeInterruptedMatch(game: ActiveGame): Promise<void> {
-    if (game._resumeHandled) return;
-    const phase: string = game.gamePhase;
-    const resumable = [
-      "match_first_half",
-      "match_second_half",
-      "match_extra_time",
-      "match_finalizing",
-    ];
-    if (!resumable.includes(phase)) return;
-    // Um segmento já a correr nesta memória significa que NÃO houve restart —
-    // é um reconnect normal e não se retoma nada (senão corria a dobrar).
-    if (segmentRunning[game.roomCode]) return;
-    game._resumeHandled = true;
-
-    const entry = game.currentEvent as CalendarEntry | null;
-    if (!entry) {
-      console.warn(
-        `[${game.roomCode}] ⚠ Retoma sem evento de calendário — volta a lobby`,
-      );
-      game.gamePhase = "lobby";
-      saveGameState(game);
-      return;
-    }
-    console.log(
-      `[${game.roomCode}] ⏯ Retoma de partida interrompida | fase=${phase} | minuto=${game.liveMinute}`,
-    );
-    appendRoomEvent(game, io, "match_resumed", {
-      phase,
-      liveMinute: game.liveMinute,
-    });
-
-    await waitForPresence(game, io);
-    if ((game.gamePhase as string) !== phase) return; // já resolvido por outro caminho
-
-    if (phase === "match_finalizing") {
-      if (entry.type === "cup") await finalizeCupRound(game);
-      else if (entry.type === "friendly") await finalizeFriendly(game);
-      else await finalizeLeagueEvent(game);
-      return;
-    }
-
-    // Fallback pelo próprio estado: se o cursor `liveMinute` se perdeu, o
-    // último minuto marcado nas fixtures diz onde retomar. Sem isto começava
-    // em 1 com os minutos todos marcados — a partida não jogava nada.
-    const resumedFrom = game.liveMinute ?? lastSimulatedMinute(game);
-    const from = Math.max(1, resumedFrom + 1);
-    const to =
-      phase === "match_first_half" ? 45 : phase === "match_second_half" ? 90 : 120;
-    segmentRunning[game.roomCode] = true;
-    try {
-      if (from > to) {
-        // O segmento terminou mas a transição não chegou a ser gravada.
-        if (phase === "match_first_half") game.gamePhase = "match_halftime";
-        checkAllReady(game);
-        return;
-      }
-      await runMatchSegment(game, from, to);
-    } catch (resumeErr) {
-      console.error(`[${game.roomCode}] ❌ Retoma falhou:`, resumeErr);
-    } finally {
-      segmentRunning[game.roomCode] = false;
     }
   }
 
@@ -1791,10 +1718,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
     saveGameState(game);
 
-    // NOTA: o descarte do estado parcial (resetPartialMatchState) foi removido.
-    // Uma interrupção a meio já não recomeça 0-0: o `matchCheckpoint` repõe
-    // golos/eventos/lineups e `resumeInterruptedMatch` retoma no minuto
-    // seguinte. Aqui só se arranca uma semana nova a partir do lobby, com
+    // NOTA: uma interrupção a meio recomeça sempre 0-0: a quebra volta ao
+    // lobby do slot (sem tática gravada) e a ronda rejoga-se do início.
+    // Aqui só se arranca uma semana nova a partir do lobby, com
     // fixtures frescas (currentFixtures = [] no finalize).
     appendRoomEvent(game, io, "week_started", {
       calendarIndex: game.calendarIndex,
@@ -2086,7 +2012,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
   return {
     checkAllReady,
     runMatchSegment,
-    resumeInterruptedMatch,
     // Superfície de teste (crashRecoveryRegression.mts): acesso direto às ações
     // críticas de idempotência — aplicação das finanças semanais e recovery de
     // slot já finalizado. Não usadas pelo fluxo normal (index.ts).

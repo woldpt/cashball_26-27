@@ -7,8 +7,8 @@ import { currentEpoch, getSeasonEndMatchweek } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { getOfflineCoaches } from "./presenceHelpers";
 import {
-  applyMatchCheckpoint,
   backfillSeats,
+  clearSeatPositions,
   ensureRoomStateTables,
   loadEventSeq,
   loadSeats,
@@ -1163,9 +1163,9 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
               }
 
               // Game phase (new key first; derive from legacy if absent).
-              // Fases transitórias JÁ NÃO voltam a lobby: a partida retoma no
-              // ponto em que ficou (`matchCheckpoint` + `resumeInterruptedMatch`).
-              // Recomeçar 0-0 era a perda que se via a meio de um deploy.
+              // Uma fase de jogo aqui é sempre dobrada para lobby a seguir ao
+              // replay de eventos (ver backfillSeats abaixo): a quebra do
+              // servidor nunca retoma no minuto.
               if (st["gamePhase"]) {
                 game.gamePhase = st["gamePhase"] as GamePhase;
                 console.log(
@@ -1176,34 +1176,6 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                   st["matchState"] || "idle",
                   st["cupState"] || "idle",
                 );
-              }
-
-              // Ponto de controlo do jogo em curso (retoma no mesmo minuto).
-              // Restaurado DEPOIS de currentFixtures (ver abaixo).
-
-
-              // Halftime payload (for reconnect during match_halftime)
-              if (game.gamePhase === "match_halftime") {
-                if (st["cupHalftimePayload"]) {
-                  try {
-                    game.cupHalftimePayload = JSON.parse(
-                      st["cupHalftimePayload"],
-                    );
-                  } catch (_) {}
-                  game.lastHalftimePayload = game.cupHalftimePayload;
-                } else if (st["lastHalftimePayload"]) {
-                  try {
-                    game.lastHalftimePayload = JSON.parse(
-                      st["lastHalftimePayload"],
-                    );
-                  } catch (_) {}
-                } else if (st["cupRuntime"]) {
-                  try {
-                    const parsed = JSON.parse(st["cupRuntime"]);
-                    if (parsed?.halftimePayload)
-                      game.lastHalftimePayload = parsed.halftimePayload;
-                  } catch (_) {}
-                }
               }
 
               // Phase token
@@ -1251,30 +1223,13 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                 }
               }
 
-              // Ponto de controlo do jogo em curso: repõe golos/eventos/lineups
-              // e o estado transitório mínimo para o segmento retomar no minuto
-              // seguinte em vez de recomeçar 0-0. Só se o checkpoint for desta
-              // jornada e destes jogos — um checkpoint velho aplicado às
-              // fixtures novas marcava minutos nunca jogados e a partida era
-              // ignorada minuto a minuto (ver roomStateHelpers.applyMatchCheckpoint).
+              // Sem retoma no minuto: um checkpoint de build anterior é lixo —
+              // limpa-se a chave para não envenenar arranques futuros.
               if (st["matchCheckpoint"] && st["matchCheckpoint"] !== "null") {
-                try {
-                  const cp = JSON.parse(st["matchCheckpoint"]);
-                  if (applyMatchCheckpoint(game, cp)) {
-                    console.log(
-                      `[gameManager] ⏱ Checkpoint restaurado (room ${roomCode}): minuto=${cp.liveMinute} fase=${cp.phase}`,
-                    );
-                  } else {
-                    console.warn(
-                      `[gameManager] ⏱ Checkpoint descartado (room ${roomCode}): não é desta jornada/jogos (checkpoint época=${cp?.season ?? "—"} slot=${cp?.calendarIndex ?? "—"} vs sala ${game.season}/${game.calendarIndex})`,
-                    );
-                  }
-                } catch (cpErr: any) {
-                  console.error(
-                    `[gameManager] matchCheckpoint ilegível (room ${roomCode}):`,
-                    cpErr?.message,
-                  );
-                }
+                db.run(
+                  "INSERT OR REPLACE INTO game_state (key, value) VALUES ('matchCheckpoint', 'null')",
+                  () => {},
+                );
               }
 
               // Sem jogo em curso o cursor não significa nada — e um 41 residual
@@ -1667,20 +1622,45 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                           }
                           // Assentos + numeração de eventos: carregar antes de
                           // marcar inicializado — o primeiro join precisa dos
-                          // assentos para saber quem falta (a presença fica a
-                          // null, por isso uma retoma a meio começa em pausa).
+                          // assentos para saber quem falta.
                           loadEventSeq(game, () => {
                             // Eventos posteriores ao último snapshot (janela de
                             // crash) são reaplicados antes de projetar assentos.
                             replayEventsSince(game, game.snapshotSeq, () => {
                               loadSeats(game, () => {
                                 backfillSeats(game, () => {
-                                  // Pronto pré-crash não vale em lobby: o 11 passa a
-                                  // sobreviver ao restart e o treinador reconfirma-o
-                                  // com um clique (gate do 11+7). Sem isto, o jogo
-                                  // arrancava com positions vazias e o intervalo
-                                  // ficava sem listas.
-                                  if (game.gamePhase === "lobby") resetAllReady(game);
+                                  // Quebra a meio do jogo volta SEMPRE ao lobby do
+                                  // slot (corre DEPOIS do replay de eventos, que
+                                  // pode ter reposto uma fase de jogo): o jogo
+                                  // parado é descartado e rejoga-se do minuto 0
+                                  // — sem retoma no minuto, sem tática gravada.
+                                  // Exceção: slot já finalizado, que o ramo lobby
+                                  // do `checkAllReady` avança em vez de rejogar.
+                                  const ph: string = game.gamePhase;
+                                  if (
+                                    ph === "match_first_half" ||
+                                    ph === "match_halftime" ||
+                                    ph === "match_second_half" ||
+                                    ph === "match_et_gate" ||
+                                    ph === "match_extra_time" ||
+                                    ph === "match_finalizing"
+                                  ) {
+                                    console.log(
+                                      `[${roomCode}] ⏮ Quebra a meio do jogo: fase=${ph} → lobby do slot ${game.calendarIndex} (jogo descartado, sem tática)`,
+                                    );
+                                    game.gamePhase = "lobby";
+                                    game.liveMinute = null;
+                                    game.currentFixtures = [];
+                                    game.cupHalftimePayload = null;
+                                    game.lastHalftimePayload = null;
+                                    resetAllReady(game);
+                                    clearSeatPositions(game);
+                                    saveGameState(game);
+                                  } else if (game.gamePhase === "lobby") {
+                                    // Pronto pré-crash não vale em lobby: o
+                                    // treinador reconfirma-o com um clique.
+                                    resetAllReady(game);
+                                  }
                                   // Depois do backfill: o log tem de dizer quantos
                                   // assentos a sala tem (dizia 0 e logo 2).
                                   console.log(

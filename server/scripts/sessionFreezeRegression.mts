@@ -1,8 +1,8 @@
 /**
  * Regression — congelamento da sala por treinador ausente + durabilidade.
  *
- * Sem sockets nem servidor: exercita a lógica pura dos assentos/pausa e a
- * gravação do ponto de controlo. É o teste que FALHA se alguém voltar a fazer
+ * Sem sockets nem servidor: exercita a lógica pura dos assentos/pausa. É o
+ * teste que FALHA se alguém voltar a fazer
  * o servidor avançar (ou decidir) por conta de um treinador que não está lá —
  * o bug reportado: "o jogo avança para a próxima jornada automaticamente"
  * enquanto o telemóvel estava offline.
@@ -14,12 +14,9 @@
  *   F5 — waitForPresence: resolve logo se ninguém falta
  *   F6 — waitForPresence: bloqueia e resolve quando todos voltam
  *   F7 — room_events: append numerado + replay reconstrói fase/cursor
- *   F8 — saveMatchCheckpoint: golos/minuto sobrevivem ao round-trip
- *   F9 — applyMatchCheckpoint: checkpoint de OUTRA jornada/jogos é recusado
- *        (era este o bug do dilúvio de "minuto N já simulado": o checkpoint
- *        velho era colado às fixtures novas e a partida não jogava nada)
- *   F10 — lastSimulatedMinute: fallback do cursor de retoma
- *   F11 — resetAllReady: limpa o intent do assento E a projeção (um intent
+ *   F8 — clearSeatPositions: quebra apaga o 11 do assento E da projeção
+ *        (a retoma é sempre ao lobby, sem tática gravada)
+ *   F9 — resetAllReady: limpa o intent do assento E a projeção (um intent
  *        obsoleto a `true` fazia a sala avançar sem ninguém clicar Pronto)
  *
  * Run: cd server && npm run test:session-freeze
@@ -39,9 +36,7 @@ const {
   loadEventSeq,
   replayEventsSince,
   applyRoomEvent,
-  saveMatchCheckpoint,
-  applyMatchCheckpoint,
-  lastSimulatedMinute,
+  clearSeatPositions,
   resetAllReady,
   ensureRoomStateTables,
   PRESENCE_GRACE_MS,
@@ -224,140 +219,29 @@ test("F7 — room_events numera e o replay repõe fase/cursor", async () => {
 });
 
 // ── F8 ──────────────────────────────────────────────────────────────────────
-test("F8 — saveMatchCheckpoint guarda minuto/golos para retomar", async () => {
-  const db = await openDb();
-  await run(db, "CREATE TABLE game_state (key TEXT PRIMARY KEY, value TEXT)");
-  const game: any = makeGame({ db });
-  game.currentFixtures = [
-    {
-      homeTeamId: HOME,
-      awayTeamId: AWAY,
-      finalHomeGoals: 2,
-      finalAwayGoals: 1,
-      events: [{ minute: 12, type: "goal" }],
-      homeLineup: [{ id: 1 }],
-      awayLineup: [{ id: 2 }],
-      _t1: { formation: "4-4-2" },
-      _t2: { formation: "4-3-3" },
-      // Formatos REAIS do engine: amarelos são objeto, expulsos são Set.
-      // Trocar isto rebenta a gravação (`_yellowCards is not iterable`).
-      _yellowCards: { 1: 1, 7: 2 },
-      _subbedOut: new Set([3, 4]),
-      _simulatedMinutes: new Set([1, 2, 3]),
-    },
-  ];
-  game.liveMinute = 27;
+test("F8 — clearSeatPositions apaga o 11 e preserva o resto", () => {
+  const writes: string[] = [];
+  const game: any = makeGame({
+    db: { run: (sql: string) => writes.push(sql) },
+  });
+  const a = seat("A", HOME);
+  a.intent = { ready: true, formation: "4-3-3", positions: { 1: 101, 9: 109 } };
+  game.seats = { A: a };
+  game.playersByName = {
+    A: { name: "A", teamId: HOME, socketId: "s1", tactic: { positions: { 1: 101 } } },
+  };
 
-  saveMatchCheckpoint(game);
-  await new Promise((r) => setTimeout(r, 30));
+  clearSeatPositions(game);
 
-  const row = await get(db, "SELECT value FROM game_state WHERE key = 'matchCheckpoint'");
-  assert.ok(row, "checkpoint gravado");
-  const cp = JSON.parse(row.value);
-  assert.equal(cp.liveMinute, 27);
-  assert.equal(cp.fixtures[0].finalHomeGoals, 2);
-  assert.equal(cp.fixtures[0].events.length, 1);
-  assert.equal(cp.fixtures[0]._t2.formation, "4-3-3");
-  assert.deepEqual(cp.fixtures[0]._yellowCards, { 1: 1, 7: 2 });
-  assert.deepEqual(cp.fixtures[0]._subbedOut, [3, 4]);
-
-  // Round-trip: o checkpoint gravado aplica-se à mesma jornada sem rebentar.
-  const reloaded: any = makeGame({ db, calendarIndex: game.calendarIndex });
-  reloaded.currentFixtures = [
-    { homeTeamId: HOME, awayTeamId: AWAY },
-  ];
-  assert.equal(applyMatchCheckpoint(reloaded, cp), true);
-  assert.deepEqual(reloaded.currentFixtures[0]._yellowCards, { 1: 1, 7: 2 });
-  assert.equal(reloaded.currentFixtures[0]._subbedOut.has(4), true);
-  assert.equal(reloaded.currentFixtures[0]._simulatedMinutes.has(3), true);
-  db.close();
+  assert.deepEqual(game.seats.A.intent.positions, {}, "positions do assento limpas");
+  assert.equal(game.seats.A.intent.ready, true, "ready do assento intacto");
+  assert.equal(game.seats.A.intent.formation, "4-3-3", "formação intacta");
+  assert.deepEqual(game.playersByName.A.tactic.positions, {}, "projeção limpa");
+  assert.equal(writes.length, 1, "só o assento com 11 é persistido");
 });
 
 // ── F9 ──────────────────────────────────────────────────────────────────────
-test("F9 — checkpoint de outra jornada/jogos é recusado", () => {
-  const cpOf = (season: number, slot: number) => ({
-    season,
-    calendarIndex: slot,
-    liveMinute: 45,
-    phase: "match_first_half",
-    fixtures: [
-      {
-        homeTeamId: HOME,
-        awayTeamId: AWAY,
-        finalHomeGoals: 2,
-        finalAwayGoals: 1,
-        events: [{ minute: 12, type: "goal" }],
-        _simulatedMinutes: Array.from({ length: 45 }, (_, i) => i + 1),
-      },
-    ],
-  });
-
-  // Jornada seguinte: fixtures novas (mesmo par, mas outro slot).
-  const game: any = makeGame({ calendarIndex: 4, season: 1 });
-  game.currentFixtures = [{ homeTeamId: HOME, awayTeamId: AWAY }];
-  assert.equal(
-    applyMatchCheckpoint(game, cpOf(1, 3)),
-    false,
-    "slot diferente não pode aplicar",
-  );
-  assert.equal(
-    (game.currentFixtures[0] as any)._simulatedMinutes,
-    undefined,
-    "minutos da jornada nova ficam limpos",
-  );
-  assert.equal(game.liveMinute, 27, "cursor da jornada nova intacto");
-
-  // Outra época.
-  assert.equal(applyMatchCheckpoint(game, cpOf(2, 4)), false);
-
-  // Jogos diferentes (troca de adversário) no mesmo slot.
-  const otherPair = cpOf(1, 4);
-  otherPair.fixtures[0].awayTeamId = 999;
-  assert.equal(applyMatchCheckpoint(game, otherPair), false);
-
-  // Checkpoint DESTA jornada e DESTES jogos: aplica.
-  assert.equal(applyMatchCheckpoint(game, cpOf(1, 4)), true);
-  assert.equal((game.currentFixtures[0] as any).finalHomeGoals, 2);
-  assert.equal((game.currentFixtures[0] as any)._simulatedMinutes.size, 45);
-  assert.equal(game.liveMinute, 45);
-
-  // Formato antigo (sem season/calendarIndex) é recusado mesmo com os jogos a
-  // coincidir: é o caso real do log em produção, e aceitá-lo reintroduzia o
-  // dilúvio quando o sorteio volta a dar o mesmo par noutra jornada.
-  const legacy: any = cpOf(1, 4);
-  delete legacy.season;
-  delete legacy.calendarIndex;
-  const fresh: any = makeGame({ calendarIndex: 4, season: 1 });
-  fresh.currentFixtures = [{ homeTeamId: HOME, awayTeamId: AWAY }];
-  assert.equal(applyMatchCheckpoint(fresh, legacy), false, "sem identidade: recusado");
-  assert.equal(
-    (fresh.currentFixtures[0] as any)._simulatedMinutes,
-    undefined,
-    "fixtures da sala ficam intocadas",
-  );
-
-  // Lixo não rebenta.
-  assert.equal(applyMatchCheckpoint(game, null), false);
-  assert.equal(applyMatchCheckpoint(game, { fixtures: "nope" }), false);
-});
-
-// ── F10 ─────────────────────────────────────────────────────────────────────
-test("F10 — lastSimulatedMinute alimenta o cursor de retoma", () => {
-  const game: any = makeGame({ liveMinute: null });
-  game.currentFixtures = [
-    { homeTeamId: HOME, awayTeamId: AWAY, _simulatedMinutes: new Set([1, 2, 3]) },
-    { homeTeamId: 30, awayTeamId: 40, _simulatedMinutes: new Set([1, 2, 3, 4, 5]) },
-    { homeTeamId: 50, awayTeamId: 60 },
-  ];
-  assert.equal(lastSimulatedMinute(game), 5);
-  // Retoma: nunca começa em 1 com o segmento todo marcado.
-  const from = Math.max(1, (game.liveMinute ?? lastSimulatedMinute(game)) + 1);
-  assert.equal(from, 6);
-  assert.equal(lastSimulatedMinute(makeGame()), 0);
-});
-
-// ── F11 ─────────────────────────────────────────────────────────────────────
-test("F11 — resetAllReady limpa assento e projeção", () => {
+test("F9 — resetAllReady limpa assento e projeção", () => {
   const writes: string[] = [];
   const game: any = makeGame({
     db: { run: (sql: string) => writes.push(sql) },

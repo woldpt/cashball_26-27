@@ -1055,7 +1055,6 @@ const weeklyFlowHelpers = createWeeklyFlowHelpers({
 });
 
 const checkAllReady = weeklyFlowHelpers.checkAllReady;
-const resumeInterruptedMatch = weeklyFlowHelpers.resumeInterruptedMatch;
 
 /** Sala Socket.io dos coaches dentro de uma sala (presença/estado pós-join). */
 const GLOBAL_ROOM = "__global__";
@@ -1137,7 +1136,6 @@ io.on("connection", (socket) => {
 		emitAwaitingCoaches,
 		emitPresence,
 		checkAllReady,
-		resumeInterruptedMatch,
 		runAll,
 		runGet,
 		buildNextMatchSummary,

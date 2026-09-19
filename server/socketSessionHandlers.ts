@@ -96,7 +96,6 @@ interface SessionHandlerDeps {
 	emitAwaitingCoaches: (game: ActiveGame) => void;
 	emitPresence: (game: ActiveGame) => void;
 	checkAllReady: (game: ActiveGame) => void | Promise<void>;
-	resumeInterruptedMatch: (game: ActiveGame) => Promise<void>;
 	runAll: RunAll;
 	runGet: RunGet;
 	buildNextMatchSummary: (game: ActiveGame, teamId: number) => Promise<any>;
@@ -239,7 +238,6 @@ export function registerSessionSocketHandlers(
 		ensurePhaseTimeout,
 		emitPresence,
 		checkAllReady,
-		resumeInterruptedMatch,
 		runAll,
 		runGet,
 		buildNextMatchSummary,
@@ -417,11 +415,6 @@ export function registerSessionSocketHandlers(
 
 			// Presença mudou: a sala pode descongelar.
 			emitPresencePause(game, io);
-			// Retoma de partida interrompida (restart/deploy a meio). No-op quando
-			// não há segmento por retomar nesta memória.
-			resumeInterruptedMatch(game).catch((err: any) =>
-				console.error(`[${roomCode}] resumeInterruptedMatch falhou:`, err),
-			);
 
 			// If halftime is already waiting and all coaches are now ready (e.g. safety
 			// timeout fired while this coach was offline), advance without waiting for
