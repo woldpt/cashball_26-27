@@ -10,9 +10,8 @@ import { freshGoalFlashes } from "../../live/liveHelpers.js";
  * direto no teu jogo. Renderizado via portal para o <body> como `fixed
  * inset-0` (o pai LiveMatchHero tem overflow-hidden, que encerraria o
  * festejo ao card):
- *   - marcas TU  → explosão de confete + "GOLO!" com glow na cor da equipa;
- *   - golo ADVERSÁRIO (e és participante) → flash sóbrio vermelho + shake,
- *     sem festejo — o teu marcador não celebra.
+ *   - marcas TU → explosão de confete + "GOLO!" com glow verde;
+ *   - golo ADVERSÁRIO → o mesmo festejo com wash vermelho + shake.
  *
  * É alimentado pelo `goalFlashRef` do GameContext ({ ts, n } por fixture+lado,
  * apenas atualizado durante isPlayingMatch), o MESMO sinal que já faz o flash
@@ -25,8 +24,8 @@ import { freshGoalFlashes } from "../../live/liveHelpers.js";
  * Variante `card` (cards de jogos com treinador humano no `LiveFixtureRow`):
  * a mesma fila, mas renderizada inline (`absolute inset-0`, sem portal) e em
  * ponto pequeno — wash + carimbo "GOLO!" quando marca o lado do humano,
- * variante sóbria vermelha quando marca o NPC. Sem confete: o
- * `CelebrationBurst` voa 90–210px, grande demais para um card de ~60px.
+ * variante vermelha quando marca o NPC. Com `CelebrationBurst` compacto
+ * (`showChampagne={false}`, cortado pelo overflow-hidden do card).
  * ─────────────────────────────────────────────────────────────────────────
  *
  * @param {Object} props
@@ -117,21 +116,22 @@ export function GoalFlashOverlay({
             transition={{ duration: 1.9, times: [0, 0.2, 0.8, 1] }}
           />
         )}
-        {mine && (
-          <motion.span
-            className="relative font-headline font-black uppercase tracking-tight leading-none"
-            style={{
-              fontSize: "clamp(1rem, 4vw, 1.4rem)",
-              color,
-              textShadow: `0 0 14px ${color}`,
-            }}
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1.15, 1, 1.08] }}
-            transition={{ duration: 1.9, times: [0, 0.16, 0.8, 1] }}
-          >
-            GOLO!
-          </motion.span>
-        )}
+        <div className="absolute inset-0">
+          <CelebrationBurst seed={`${moment.side}-${moment.ts}-${moment.seq}`} showChampagne={false} />
+        </div>
+        <motion.span
+          className="relative font-headline font-black uppercase tracking-tight leading-none"
+          style={{
+            fontSize: "clamp(1rem, 4vw, 1.4rem)",
+            color,
+            textShadow: `0 0 14px ${color}`,
+          }}
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1.15, 1, 1.08] }}
+          transition={{ duration: 1.9, times: [0, 0.16, 0.8, 1] }}
+        >
+          GOLO!
+        </motion.span>
       </div>
     );
   }
@@ -165,36 +165,32 @@ export function GoalFlashOverlay({
         />
       )}
 
-      {/* Confete quando marcas tu */}
-      {mine && (
-        <motion.div
-          className="absolute inset-0"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: [0, 1, 1, 0] }}
-          transition={{ duration: 1.95, times: [0, 0.15, 0.82, 1] }}
-        >
-          <CelebrationBurst seed={`${moment.side}-${moment.ts}-${moment.seq}`} />
-        </motion.div>
-      )}
+      {/* Confete em todos os golos (o wash verde/vermelho distingue quem marcou) */}
+      <motion.div
+        className="absolute inset-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 1, 1, 0] }}
+        transition={{ duration: 1.95, times: [0, 0.15, 0.82, 1] }}
+      >
+        <CelebrationBurst seed={`${moment.side}-${moment.ts}-${moment.seq}`} />
+      </motion.div>
 
-      {/* Só o golo nosso mantém a palavra de celebração; o adversário fica em artefactos. */}
-      {mine && (
-        <div className="absolute inset-0 flex items-center justify-center px-4">
-          <motion.span
-            className="font-headline font-black uppercase tracking-tight leading-none text-center"
-            style={{
-              fontSize: "clamp(3rem, 14vw, 6rem)",
-              color,
-              textShadow: `0 0 30px ${color}`,
-            }}
-            initial={{ opacity: 0, scale: 0.5, y: 6 }}
-            animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1.18, 1.02, 1.1], y: [6, 0, 0, -4] }}
-            transition={{ duration: 1.9, times: [0, 0.16, 0.8, 1] }}
-          >
-            GOLO!
-          </motion.span>
-        </div>
-      )}
+      {/* Palavra de celebração em todos os golos, na cor de quem marcou. */}
+      <div className="absolute inset-0 flex items-center justify-center px-4">
+        <motion.span
+          className="font-headline font-black uppercase tracking-tight leading-none text-center"
+          style={{
+            fontSize: "clamp(3rem, 14vw, 6rem)",
+            color,
+            textShadow: `0 0 30px ${color}`,
+          }}
+          initial={{ opacity: 0, scale: 0.5, y: 6 }}
+          animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1.18, 1.02, 1.1], y: [6, 0, 0, -4] }}
+          transition={{ duration: 1.9, times: [0, 0.16, 0.8, 1] }}
+        >
+          GOLO!
+        </motion.span>
+      </div>
     </div>
   );
 

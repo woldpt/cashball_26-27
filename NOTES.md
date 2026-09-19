@@ -1289,3 +1289,7 @@ Plano C1+C2 (quando fizer):
 - Agora: `hasEt` só se empate nos 90'; `hasPen` só se empate após prolongamento + penáltis desiguais (shootout real nunca é 0–0). Sem migração de esquema.
 - Caso que motivou: sala E3AQ4G — último confronto real era Portimonense 2–1 Malveira (90', época 1); o "0–0 após prolongamento" era a ficha do próximo jogo (época 2, `played=0`), não um resultado.
 - Checks: server typecheck OK (exit 0); predicados validados por SQL em todas as salas — 0 jogos decididos nos 90' com g.p. restante, 0 shootouts reais sem sufixo.
+
+## Festejo de golo em todos os golos (2026-09-19)
+- `GoalFlashOverlay.jsx` (único ficheiro): removidas as portas `mine` do `<CelebrationBurst/>` e do carimbo "GOLO!" nas variantes `page` e `card`; o wash verde/vermelho (`color`) continua a distinguir quem marcou. Card leva burst compacto (`showChampagne={false}`, cortado pelo `overflow-hidden`). Motivo: diagnóstico mostrou que 1–2 confetes/partida era by-design (só golos próprios; motor dá ~30 oportunidades/jogo → 1–2 golos teus) — o utilizador quer festejo em todos os golos do seu jogo e nos cards de humanos.
+- Checks: client `check:types` OK; `lint` só com os 2 erros pré-existentes (confirmados via stash); `test:mobile` 155/155 + `test:mobile:landscape` 186/186.
