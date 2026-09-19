@@ -1,3 +1,8 @@
+## Skill verify-before-done (2026-09-19)
+
+- Nova skill `.pi/skills/verify-before-done/SKILL.md`: matriz mínima mudança → checks (typecheck, connect-smoke p/ `index.ts`, audits, session-freeze, lint, check:types, mobile-resp-check, regressões) + regras (só saída real conta, salto legítimo regista-se, falha pré-existente confirma-se com stash, NOTES.md antes do commit). Escolhida via perguntas: verificação pré-feito primeiro, âmbito mínimo, com NOTES.md.
+- Só docs → sem typecheck/lint.
+
 ## Auditoria e fixes ao redesign do Jornal (2026-09-18)
 
 - Auditoria ao `e704a01b` (redesign do `JournalTab.jsx`): 5 bugs + 4 menores, fix em `6ef53d68` (só `JournalTab.jsx`).
