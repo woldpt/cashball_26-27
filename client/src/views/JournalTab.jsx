@@ -10,6 +10,9 @@
  * Os pedidos de renovação e os convites de clubes entram como linhas com
  * bandeira vermelha 🚩 e bloqueiam o Pronto até serem respondidos. As
  * respostas reutilizam os fluxos existentes (diálogo do agente, emits).
+ *
+ * O detalhe segue registo de imprensa clássica: manchete em tinta forte,
+ * entrada com capitular, filetes a separar corpo e ações.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -39,6 +42,7 @@ const FILTER_TONES = {
     bar: "bg-on-surface-variant/40",
     badge: "neutral",
     dot: "bg-on-surface-variant/40",
+    cap: "text-on-surface",
   },
   club: {
     idle: "bg-amber-500/10 text-amber-300/80 hover:bg-amber-500/20",
@@ -48,6 +52,7 @@ const FILTER_TONES = {
     bar: "bg-amber-500",
     badge: "warning",
     dot: "bg-amber-400",
+    cap: "text-amber-300",
   },
   competitions: {
     idle: "bg-sky-500/10 text-sky-300/80 hover:bg-sky-500/20",
@@ -57,6 +62,7 @@ const FILTER_TONES = {
     bar: "bg-sky-500",
     badge: "cooldown",
     dot: "bg-sky-400",
+    cap: "text-sky-300",
   },
   squad: {
     idle: "bg-emerald-500/10 text-emerald-300/80 hover:bg-emerald-500/20",
@@ -66,6 +72,7 @@ const FILTER_TONES = {
     bar: "bg-emerald-500",
     badge: "sold",
     dot: "bg-emerald-400",
+    cap: "text-emerald-300",
   },
   market: {
     idle: "bg-violet-500/10 text-violet-300/80 hover:bg-violet-500/20",
@@ -75,6 +82,7 @@ const FILTER_TONES = {
     bar: "bg-violet-500",
     badge: "junior",
     dot: "bg-violet-400",
+    cap: "text-violet-300",
   },
 };
 
@@ -224,47 +232,57 @@ function RichNewsText({
 }
 
 /**
- * Corpo da notícia partido em parágrafos visíveis.
- * @param {{ parts?: Array, fallback?: string, teams: Array, onOpenTeamSquad?: Function, onOpenPlayerHistory?: Function }} props
+ * Corpo da notícia partido em parágrafos visíveis, em registo de imprensa
+ * clássica: o primeiro parágrafo é a entrada (maior, com capitular na cor
+ * da categoria) e os restantes correm em corpo uniforme. A capitular exige
+ * uma entrada com algum fôlego — em avisos de uma linha ficaria
+ * desproporcional.
+ * @param {{ parts?: Array, fallback?: string, teams: Array, onOpenTeamSquad?: Function, onOpenPlayerHistory?: Function, category?: string }} props
  */
+const LEAD_MIN_CHARS = 140;
+
 function RichParagraphs({
   parts,
   fallback = "",
   teams,
   onOpenTeamSquad,
   onOpenPlayerHistory,
+  category,
 }) {
+  const cap = (FILTER_TONES[category] || FILTER_TONES.all).cap;
+  const bodyCls =
+    "font-serif text-base short:text-sm leading-relaxed whitespace-pre-line text-on-surface";
+  const leadCls = `font-serif text-lg short:text-base leading-relaxed whitespace-pre-line first-letter:float-left first-letter:mr-2 first-letter:mt-1.5 first-letter:font-headline first-letter:text-6xl first-letter:font-black first-letter:leading-[0.8] ${cap}`;
   if (!Array.isArray(parts) || parts.length === 0) {
-    return (
-      <p className="font-serif text-base short:text-sm leading-relaxed whitespace-pre-line text-on-surface">
-        {fallback}
-      </p>
-    );
+    const longEnough = String(fallback ?? "").length >= LEAD_MIN_CHARS;
+    return <p className={longEnough ? leadCls : bodyCls}>{fallback}</p>;
   }
   const paragraphs = splitPartsByParagraphs(parts);
   if (paragraphs.length === 0) {
-    return (
-      <p className="font-serif text-base short:text-sm leading-relaxed whitespace-pre-line text-on-surface">
-        {fallback}
-      </p>
-    );
+    const longEnough = String(fallback ?? "").length >= LEAD_MIN_CHARS;
+    return <p className={longEnough ? leadCls : bodyCls}>{fallback}</p>;
   }
   return (
-    <div className="space-y-3">
-      {paragraphs.map((paraParts, i) => (
-        <p
-          key={i}
-          className="font-serif text-base short:text-sm leading-relaxed whitespace-pre-line text-on-surface"
-        >
-          <RichNewsText
-            parts={paraParts}
-            fallback={fallback}
-            teams={teams}
-            onOpenTeamSquad={onOpenTeamSquad}
-            onOpenPlayerHistory={onOpenPlayerHistory}
-          />
-        </p>
-      ))}
+    <div className="space-y-4">
+      {paragraphs.map((paraParts, i) => {
+        const text = paraParts
+          .map((p) =>
+            typeof p.value === "string" ? p.value : (p.label ?? ""),
+          )
+          .join(" ");
+        const isLead = i === 0 && text.length >= LEAD_MIN_CHARS;
+        return (
+          <p key={i} className={isLead ? leadCls : bodyCls}>
+            <RichNewsText
+              parts={paraParts}
+              fallback={fallback}
+              teams={teams}
+              onOpenTeamSquad={onOpenTeamSquad}
+              onOpenPlayerHistory={onOpenPlayerHistory}
+            />
+          </p>
+        );
+      })}
     </div>
   );
 }
@@ -322,15 +340,15 @@ function NewsMedia({ media, teams, onOpenTeamSquad, onOpenPlayerHistory }) {
         key={`${label}-${ref.id}`}
         type="button"
         aria-label={`${label}: ${ref.label}`}
-        className="flex min-w-20 max-w-32 flex-col items-center gap-1 rounded-sm border border-outline-variant/20 bg-surface-container-low px-2 py-1 text-center hover:bg-surface-container-high transition-colors"
+        className="flex min-w-24 max-w-36 flex-col items-center gap-1.5 rounded border border-outline-variant/25 bg-surface-container-low px-3 py-2 text-center shadow-sm shadow-black/30 hover:bg-surface-container-high transition-colors"
         onClick={() => team?.id && onOpenTeamSquad?.(team)}
         disabled={!team?.id || !onOpenTeamSquad}
       >
-        <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant">
+        <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
           {label}
         </span>
-        <TeamCrest team={team} size="sm" />
-        <span className="w-full truncate text-[10px] font-black text-primary">
+        <TeamCrest team={team} size="md" />
+        <span className="w-full truncate text-xs font-black text-primary">
           {ref.label}
         </span>
       </button>
@@ -339,23 +357,23 @@ function NewsMedia({ media, teams, onOpenTeamSquad, onOpenPlayerHistory }) {
 
   return (
     <div
-      className={`mt-2 flex items-center justify-center ${
+      className={`mt-3 flex items-center justify-center ${
         isTransfer ? "flex-col gap-2" : "flex-wrap gap-3"
       }`}
     >
       {media.player && (
         <button
           type="button"
-          className="flex items-center gap-2 rounded-sm border border-outline-variant/20 bg-surface-container-low px-2 py-1 text-left hover:bg-surface-container-high transition-colors"
+          className="flex items-center gap-3 rounded border border-outline-variant/25 bg-surface-container-low px-3 py-2 text-left shadow-sm shadow-black/30 hover:bg-surface-container-high transition-colors"
           onClick={() => onOpenPlayerHistory?.(media.player)}
         >
           <PlayerAvatar
             seed={media.player.id}
             position={media.player.position}
             photo={media.player.photo}
-            size="mdR"
+            size="md"
           />
-          <span className="max-w-32 truncate text-[10px] font-black text-primary">
+          <span className="max-w-40 truncate text-xs font-black text-primary">
             {media.player.label}
           </span>
         </button>
@@ -383,12 +401,12 @@ function NewsMedia({ media, teams, onOpenTeamSquad, onOpenPlayerHistory }) {
             <button
               key={ref.id}
               type="button"
-              className="flex items-center gap-2 rounded-sm border border-outline-variant/20 bg-surface-container-low px-2 py-1 text-left hover:bg-surface-container-high transition-colors"
+              className="flex items-center gap-3 rounded border border-outline-variant/25 bg-surface-container-low px-3 py-2 text-left shadow-sm shadow-black/30 hover:bg-surface-container-high transition-colors"
               onClick={() => team?.id && onOpenTeamSquad?.(team)}
               disabled={!team?.id || !onOpenTeamSquad}
             >
-              <TeamCrest team={team} size="sm" />
-              <span className="max-w-32 truncate text-[10px] font-black text-primary">
+              <TeamCrest team={team} size="md" />
+              <span className="max-w-40 truncate text-xs font-black text-primary">
                 {ref.label}
               </span>
             </button>
@@ -408,10 +426,10 @@ function NewsMedia({ media, teams, onOpenTeamSquad, onOpenPlayerHistory }) {
 function LeagueFinalTable({ rows, teams, onOpenTeamSquad }) {
   if (!Array.isArray(rows) || rows.length === 0) return null;
   return (
-    <div className="mt-2 overflow-x-auto rounded-sm border border-outline-variant/20">
-      <table className="w-full max-w-md border-collapse text-sm text-on-surface">
+    <div className="mt-3 overflow-x-auto rounded-sm border border-outline-variant/20">
+      <table className="w-full max-w-md border-collapse text-sm tabular-nums text-on-surface">
         <thead>
-          <tr className="text-[11px] uppercase tracking-wider text-on-surface-variant bg-surface-container-high/60">
+          <tr className="bg-surface-container-high/60 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
             <th className="px-2 py-1.5 text-right">#</th>
             <th className="px-2 py-1.5 text-left">Equipa</th>
             <th className="px-2 py-1.5 text-right">J</th>
@@ -870,7 +888,7 @@ export function JournalTab({
                 <ArticleMeta item={inbox.selected} catLabel={labelOf(inbox.selected.cat)} />
 
                 {/* Título */}
-                <h2 className="mt-1.5 font-headline text-base short:text-sm font-black tracking-tight text-tertiary text-left">
+                <h2 className="mt-2 font-headline text-xl short:text-lg font-black tracking-tight text-balance text-left text-on-surface">
                   <RichNewsText
                     parts={inbox.selected.titleParts}
                     fallback={inbox.selected.title.replace(/^🚩\s*/, "")}
@@ -888,15 +906,18 @@ export function JournalTab({
                   onOpenPlayerHistory={onOpenPlayerHistory}
                 />
 
-                {/* Corpo do artigo (parágrafos visíveis) */}
+                {/* Corpo do artigo (entrada + parágrafos) */}
                 {inbox.selected.body && (
-                  <RichParagraphs
-                    parts={inbox.selected.bodyParts}
-                    fallback={inbox.selected.body}
-                    teams={teams}
-                    onOpenTeamSquad={onOpenTeamSquad}
-                    onOpenPlayerHistory={onOpenPlayerHistory}
-                  />
+                  <div className="mt-3 space-y-3 border-t border-outline-variant/25 pt-3">
+                    <RichParagraphs
+                      parts={inbox.selected.bodyParts}
+                      fallback={inbox.selected.body}
+                      teams={teams}
+                      category={inbox.selected.cat}
+                      onOpenTeamSquad={onOpenTeamSquad}
+                      onOpenPlayerHistory={onOpenPlayerHistory}
+                    />
+                  </div>
                 )}
 
                 {/* Tabela de classificação final */}
@@ -908,14 +929,18 @@ export function JournalTab({
                   />
                 )}
 
-                {/* Botões de ação */}
-                <div className="mt-3">
-                  <InboxActions
-                    item={inbox.selected}
-                    inbox={inbox}
-                    onOpenCupBracket={onOpenCupBracket}
-                  />
-                </div>
+                {/* Botões de ação, sob filete */}
+                {["contract", "job", "board", "cupdraw"].includes(
+                  inbox.selected.kind,
+                ) && (
+                  <div className="mt-4 border-t border-outline-variant/25 pt-3">
+                    <InboxActions
+                      item={inbox.selected}
+                      inbox={inbox}
+                      onOpenCupBracket={onOpenCupBracket}
+                    />
+                  </div>
+                )}
               </motion.section>
             )}
           </AnimatePresence>

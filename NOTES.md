@@ -1,3 +1,11 @@
+## Corpo das notícias em registo de imprensa clássica (2026-09-19)
+
+- Queixa: o corpo parecia «jornal da escola primária» — manchete com o mesmo tamanho do texto corrido, parágrafos todos iguais, sem hierarquia. Decisões via perguntas: imprensa clássica sem texturas, detalhe completo (media+tabela+ações), entrada com capitular, emojis 📅⏱️ mantidos.
+- Só `client/src/views/JournalTab.jsx`: manchete `text-base tertiary` → `text-xl on-surface` com `text-balance`; primeiro parágrafo vira entrada (`text-lg` + capitular `first-letter:` na cor da categoria via novo `cap` em `FILTER_TONES`, só com ≥140 carateres — avisos de uma linha ficam uniformes); `space-y-3` → `space-y-4`; filetes (`border-t`) entre media/corpo e antes das ações (o bloco de ações só renderiza com `kind` acionável — acaba a `div` vazia); media como cartão-figura (avatar `mdR`→`md` 64px, crest `sm`→`md`, legendas `text-xs`); tabela com cabeçalho em caps + `tabular-nums`.
+- Peripécias: a edição ao comentário de topo comeu o `*/` (45 erros `no-undef`, imports dentro do comentário — fix de uma linha); `text-on-surface` + cor da categoria no mesmo `<p>` anulava a capitular colorida (o token vencia no cascade — saiu o `text-on-surface` do lead; `all` já resolve para `text-on-surface` via `cap`). Captura enganadora despistada por evidência: o harness auto-clica linhas (~2.5s), por isso screenshots tardios mostram a seleção dele e não a do script — cliques cedo ou leitura do `h2` para despistar.
+- CSS do fanzine `jp-*` continua morto no `index.css` (0 ocorrências em `src/`) — fica para outra conversa o vesti-lo ou removê-lo.
+- Checks: eslint limpo, `check:types` OK, build gera `first-letter:` + `text-balance`, harness retrato `5/5` + paisagem `6/6`, screenshots 390/1024 revistos (entrada âmbar com capitular, cartão-jogador, ações sob filete).
+
 ## Jornal: entrar seleciona a mais antiga sem a marcar como lida (2026-09-19)
 
 - Queixa: após o jogo, o Jornal abria na notícia mais recente com tudo marcado como lido. Pretendido: entrar seleciona a não-lida mais antiga e as não-lidas ficam por ler até seleção explícita.
