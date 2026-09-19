@@ -18,6 +18,8 @@
  *        (a retoma é sempre ao lobby, sem tática gravada)
  *   F9 — resetAllReady: limpa o intent do assento E a projeção (um intent
  *        obsoleto a `true` fazia a sala avançar sem ninguém clicar Pronto)
+ *   F10 — kick a meio da ronda: libertar o assento resolve a espera pendente
+ *        (é o contrato que o kickCoach usa fora do lobby para destravar)
  *
  * Run: cd server && npm run test:session-freeze
  */
@@ -37,6 +39,7 @@ const {
   replayEventsSince,
   applyRoomEvent,
   clearSeatPositions,
+  releaseSeat,
   resetAllReady,
   ensureRoomStateTables,
   PRESENCE_GRACE_MS,
@@ -270,5 +273,36 @@ test("F9 — resetAllReady limpa assento e projeção", () => {
   assert.equal(
     Object.values(game.seats).every((x: any) => !x.intent.ready),
     true,
+  );
+});
+
+// ── F10 ─────────────────────────────────────────────────────────────────────
+test("F10 — kick a meio da ronda resolve a espera pendente", async () => {
+  const writes: any[] = [];
+  const game: any = makeGame({
+    db: { run: (sql: string, params: any[]) => writes.push([sql, params]) },
+  });
+  game.seats["A"] = seat("A", HOME);
+  game.seats["B"] = seat("B", AWAY);
+  game.playersByName["B"] = { name: "B", teamId: AWAY, socketId: "s2" };
+  const io = ioStub();
+
+  // A ausente congela a ronda (barreira de minuto / intervalo à espera).
+  let resolved = false;
+  const pending = waitForPresence(game, io).then(() => {
+    resolved = true;
+  });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(resolved, false, "não pode avançar com A ausente");
+
+  // O admin expulsa A a meio do jogo: o assento libertado destrava a espera.
+  releaseSeat(game, "A", "kicked");
+  emitPresencePause(game, io);
+  await pending;
+  assert.equal(resolved, true);
+  assert.ok(io.emitted.some((e: any) => e.evt === "roomResumed"));
+  assert.ok(
+    writes.some(([, params]: any[]) => params?.[0] === "A" && params?.[6] === "kicked"),
+    "assento persistido como kicked",
   );
 });

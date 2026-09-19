@@ -1,3 +1,10 @@
+## Kick do admin a meio do jogo destrava congelamento (2026-09-19)
+
+- Decisão de brainstorming: treinador desaparecido de vez a meio da simulação deixava a sala congelada sem prazo (kick só valia em lobby). Agora o `kickCoach` vale em qualquer fase — desbloqueio sempre por decisão humana explícita. Tolerância 25s e espera sem limite no intervalo mantêm-se.
+- Só `server/socketGameplayHandlers.ts`: saiu o gate `gamePhase !== "lobby"`; janelas de decisão pendentes da equipa finalizadas com fallback `"auto"` (sem isto, o relógio da janela rearmava-se para sempre porque a presença de um expulso nunca volta); `checkAllReady` pós-kick alargado a `match_halftime`/`match_et_gate` (a barreira de minuto já destravava via `emitPresencePause`).
+- Teste: `sessionFreezeRegression` ganha F10 (assento libertado resolve `waitForPresence` pendente + persiste `kicked`).
+- Checks: `typecheck` OK, `test:session-freeze` 10/10, `test:connect-smoke` OK, `audit:socketio` 0 erros (97 avisos pré-existentes).
+
 ## Quebra do servidor volta sempre ao lobby, sem tática (2026-09-19)
 
 - Decisão por brainstorming: a retoma no minuto era a maior fonte de instabilidade (checkpoint/segmento a meio, payloads de intervalo, ready+tática partidos). Quebra a meio → lobby do slot, jogo descartado, sem tática; rejoga-se do 0. Igual para liga/Taça/amigável; só slot já finalizado avança (`recoverFinalizedSlot`).

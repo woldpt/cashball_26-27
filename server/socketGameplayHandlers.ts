@@ -276,7 +276,9 @@ export function registerGameplaySocketHandlers(
   socket.on("kickCoach", ({ targetName }: { targetName: string }) => {
     const game = getGameBySocket(socket.id);
     if (!game) return;
-    if (game.gamePhase !== "lobby") return;
+    // Sem gate de fase: o kick é a saída de emergência do congelamento em
+    // qualquer altura (um treinador desaparecido de vez a meio do jogo não
+    // tem outra forma de ser destravado pela sala).
 
     const requesterName = game.socketToName[socket.id];
     if (!requesterName || requesterName !== game.roomCreator) return;
@@ -294,6 +296,20 @@ export function registerGameplaySocketHandlers(
     }
 
     // Remover coach da sala (sessão runtime + presença exigida)
+    const kickedTeamId = target?.teamId ?? game.seats[targetName]?.teamId ?? null;
+    if (kickedTeamId != null) {
+      for (const pendingAction of listTeamMatchActions(game, kickedTeamId)) {
+        takePendingMatchAction(game, pendingAction.actionId);
+        try {
+          pendingAction.finalize(pendingAction.fallback?.(), "auto");
+        } catch (err) {
+          console.error(
+            `[${game.roomCode}] kickCoach: erro ao finalizar pendingMatchAction:`,
+            err,
+          );
+        }
+      }
+    }
     if (target) {
       delete game.playersByName[targetName];
     }
@@ -324,8 +340,10 @@ export function registerGameplaySocketHandlers(
     emitGlobalPlayerUpdate?.();
     emitPresencePause(game, io);
 
-    // Se o expulso era o único bloqueio (estava offline), a semana pode avançar.
-    if (game.gamePhase === "lobby") {
+    // Se o expulso era o único bloqueio, a sala pode avançar sem ele — no
+    // lobby arranca a semana, no intervalo arranca a 2.ª parte / prolongamento.
+    const unblockedPhases = ["lobby", "match_halftime", "match_et_gate"];
+    if (unblockedPhases.includes(game.gamePhase)) {
       checkAllReady(game);
     }
 
