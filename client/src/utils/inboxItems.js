@@ -262,7 +262,7 @@ function formatNewsDate(news, fallbackDate) {
     : fallbackDate || formatInboxDate();
 }
 
-export const partText = (value) => ({ type: "text", value: String(value ?? "") });
+export const partText = (value, opts) => ({ type: "text", value: String(value ?? ""), ...(opts?.bold ? { bold: true } : {}) });
 export const partPlayer = (player) => ({ type: "player", ...player });
 export const partTeam = (team) => ({ type: "team", ...team });
 
@@ -444,7 +444,7 @@ export function cupDrawListParts(pairs, viewerTeamId) {
     const home = { id: f.homeId, label: f.homeName || "?" };
     const away = { id: f.awayId, label: f.awayName || "?" };
     if (idx > 0) bodyParts.push(partText("\n"));
-    if (idx === 0 && mine) bodyParts.push(partText("O seu jogo: "));
+    if (idx === 0 && mine) bodyParts.push(partText("O seu jogo: ", { bold: true }));
     bodyParts.push(partTeam(home), partText(" – "), partTeam(away));
   });
   if (ordered.length === 0) bodyParts.push(partText("Sorteio por anunciar."));
@@ -481,7 +481,7 @@ function cupDrawArticle(n, viewerTeamId) {
         : [partText(title)],
       bodyParts,
       null,
-      home && away ? [home, away] : [],
+      [],
       null,
     ),
     title,

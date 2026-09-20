@@ -227,7 +227,7 @@ function RichNewsText({
         </button>
       );
     }
-    return <span key={key}>{part.value}</span>;
+    return <span key={key} className={part.bold ? "font-black" : undefined}>{part.value}</span>;
   });
 }
 
@@ -248,18 +248,19 @@ function RichParagraphs({
   onOpenTeamSquad,
   onOpenPlayerHistory,
   category,
+  noLead,
 }) {
   const cap = (FILTER_TONES[category] || FILTER_TONES.all).cap;
   const bodyCls =
     "font-serif text-base short:text-sm leading-relaxed whitespace-pre-line text-on-surface";
   const leadCls = `font-serif text-lg short:text-base leading-relaxed whitespace-pre-line first-letter:float-left first-letter:mr-2 first-letter:mt-1.5 first-letter:font-headline first-letter:text-6xl first-letter:font-black first-letter:leading-[0.8] ${cap}`;
   if (!Array.isArray(parts) || parts.length === 0) {
-    const longEnough = String(fallback ?? "").length >= LEAD_MIN_CHARS;
+    const longEnough = !noLead && String(fallback ?? "").length >= LEAD_MIN_CHARS;
     return <p className={longEnough ? leadCls : bodyCls}>{fallback}</p>;
   }
   const paragraphs = splitPartsByParagraphs(parts);
   if (paragraphs.length === 0) {
-    const longEnough = String(fallback ?? "").length >= LEAD_MIN_CHARS;
+    const longEnough = !noLead && String(fallback ?? "").length >= LEAD_MIN_CHARS;
     return <p className={longEnough ? leadCls : bodyCls}>{fallback}</p>;
   }
   return (
@@ -270,7 +271,7 @@ function RichParagraphs({
             typeof p.value === "string" ? p.value : (p.label ?? ""),
           )
           .join(" ");
-        const isLead = i === 0 && text.length >= LEAD_MIN_CHARS;
+        const isLead = !noLead && i === 0 && text.length >= LEAD_MIN_CHARS;
         return (
           <p key={i} className={isLead ? leadCls : bodyCls}>
             <RichNewsText
@@ -916,6 +917,7 @@ export function JournalTab({
                       category={inbox.selected.cat}
                       onOpenTeamSquad={onOpenTeamSquad}
                       onOpenPlayerHistory={onOpenPlayerHistory}
+                      noLead={inbox.selected.kind === "cupdraw"}
                     />
                   </div>
                 )}

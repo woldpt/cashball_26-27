@@ -308,7 +308,7 @@ export function useInbox() {
               ]
             : [partText(title)],
         bodyParts,
-        media: { player: null, teams: home && away ? [home, away] : [] },
+        media: { player: null, teams: [] },
         redFlag: false,
         kind: "cupdraw",
         ref: null,
