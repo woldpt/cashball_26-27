@@ -404,12 +404,14 @@ export const MATCH_TUNING = {
   // Posse (hatrick-style): médios decidem a repartição das chances, fixada
   // no apito inicial. 50% ± diferença de médios × possePorPonto + estilo.
   chancesTotal: 30, // chances/jogo no total, divididas pela posse
-  possePerPoint: 0.0075, // 10 pts de diferença de médios ≈ 7.5pp de posse
+  possePerPoint: 0.014, // 10 pts de diferença de médios ≈ 14pp de posse (antes 7.5pp — o gap de qualidade não se via nas chances)
   posseStyleDefensiva: 0.02, // estilo inclina: DEFENSIVO + / OFENSIVO −
   // Conversão de chance: p = base × ATA/(ATA + defWeight×(DEF+GR)).
   // Médias → o nº de jogadores não pesa; defWeight é a "parede".
-  chanceGoalBase: 0.175,
-  chanceDefWeight: 1.2,
+  // Parede 1.2→1.6: o gap de qualidade abre mais o marcador; base 0.175→0.21
+  // compensa para o total de golos da liga não se mover (~2.5/jogo).
+  chanceGoalBase: 0.21,
+  chanceDefWeight: 1.6,
   chanceGoalMin: 0.06,
   chanceGoalMax: 0.32,
   // Chance sem golo: repartição (cumulativo) GR defende · poste · resto ao lado.
@@ -473,9 +475,10 @@ export const MATCH_TUNING = {
   // de coaches). Lido da BD no arranque do jogo → estável em replays/crashes.
   injuryLoadSoftener: 0.5,
   // Fadiga: a cada intervalo de minutos jogados, -1 skill efetiva, com
-  // escape por resistência (por ponto). Alvo: titulares cansados no fim.
+  // escape por resistência (por ponto). 0.00816→0.012: resistência máxima
+  // evita ~60% do desgaste (antes ~40%) — a resistência nota-se mais.
   fatigueIntervalMinutes: 15,
-  fatigueSkipPerResPoint: 0.00816,
+  fatigueSkipPerResPoint: 0.012,
   // GR cansam-se muito menos que jogadores de campo: bónus extra de escape
   // (soma-se ao skipChance) para quem joga como GR (posição "GR", incl. GR
   // improvisado). +0.50 ≈ metade do desgaste de um jogador de campo médio.

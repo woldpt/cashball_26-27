@@ -1,3 +1,10 @@
+## Zebras: skill e forma máxima pesam mais no motor (2026-09-21)
+
+- Queixa: equipas de skill mais baixa venciam com facilidade, mesmo com forma e resistência no máximo. Sonda sintética (`/tmp/sonda-baseline.mts`, 4000 jogos, removida) confirmou: skill 35 vs 25 dava só 55,7% de vitórias; forma máxima vs neutra (skill igual) só +4pp (39,8% vs 32,9% derrotas). Causas: ataque = só média dos avançados, forma com teto 0,85–1,15 (+15% no máximo), resistência sem efeito direto na força (só escape de fadiga/lesão), 30 chances com conversão estreita.
+- Fix só com pesos (âmbito aprovado: sem rever o modelo ATA-vs-DEF): `formFactor` 0,85–1,15 → 0,75–1,35 (`matchCalculations.ts`); `MATCH_TUNING` (`gameConstants.ts`): `possePerPoint` 0,0075 → 0,014 (gap de médios vira chances), `chanceDefWeight` 1,2 → 1,6 + `chanceGoalBase` 0,175 → 0,21 (gap abre o marcador, total parado), `fatigueSkipPerResPoint` 0,00816 → 0,012 (resistência máxima evita ~60% do desgaste, antes ~40%).
+- Depois: skill 35 + forma máxima vs 25 → 72,1% V; gap puro → 65,3% V; forma máxima (skill igual) → 46,5% V / 26,9% D (+19,6pp de spread, era +6,9pp); gap pequeno 35 vs 30 fica ~50% (moeda honesta). Total de golos estável (~2,4–2,8/jogo, banda-alvo 2,5–3,5).
+- Checks: server `typecheck` OK, `test:engine-unit` 19/19, `audit:socketio` 0 erros (97 avisos pré-existentes). `audit:gamestate` fica para a próxima sala viva (sem código de sala no reporte). Sonda era temporária em /tmp (removida).
+
 ## Kick do admin a meio do jogo destrava congelamento (2026-09-19)
 
 - Decisão de brainstorming: treinador desaparecido de vez a meio da simulação deixava a sala congelada sem prazo (kick só valia em lobby). Agora o `kickCoach` vale em qualquer fase — desbloqueio sempre por decisão humana explícita. Tolerância 25s e espera sem limite no intervalo mantêm-se.

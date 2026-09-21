@@ -399,7 +399,9 @@ export function computeSidePower(
   const moraleDefenseFactor = 1 + (morale - 50) * MATCH_TUNING.moraleDefensePerPoint;
 
   const avgForm = average(squad.map((p) => p.form ?? FORM_NEUTRAL));
-  const formFactor = Math.max(0.85, Math.min(1.15, avgForm / FORM_NEUTRAL));
+  // Forma (1–50, neutro 32): de 0.75 (em baixo de forma) a 1.35 (no auge).
+  // Antes 0.85–1.15 — a forma máxima notava-se a mal (~+4pp de vitórias).
+  const formFactor = Math.max(0.75, Math.min(1.35, avgForm / FORM_NEUTRAL));
 
   // Hatrick-style: o ataque é o dos avançados (médios contam só via posse,
   // ver computePossession). A defesa mantém a parede DEF+GR — médias, para o
