@@ -16,6 +16,9 @@ import { useState } from "react";
  * @param {boolean} [props.secret] - true para input de palavra-passe com toggle.
  * @param {boolean} [props.invalid] - true para pintar a borda de erro.
  * @param {import("react").ReactNode} [props.hint] - Mensagem de validação sob o campo.
+ * @param {import("react").ReactNode} [props.placeholderComponent] - Placeholder
+ *   personalizado (ex: carrossel animado). Quando existe, substitui o
+ *   `placeholder` nativo e esconde-se automaticamente quando o input tem valor.
  * @returns {JSX.Element}
  */
 const AuthField = ({
@@ -28,6 +31,7 @@ const AuthField = ({
 	secret = false,
 	invalid = false,
 	hint = null,
+	placeholderComponent = null,
 }) => {
 	const [visible, setVisible] = useState(false);
 	const type = secret && visible ? "text" : secret ? "password" : "text";
@@ -51,9 +55,14 @@ const AuthField = ({
 					autoComplete={autoComplete}
 					className={`w-full bg-white/[0.04] p-4 short:py-1 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 ${stateClass} ${secret ? "pr-12" : ""}`}
 					value={value}
-					placeholder={placeholder}
+					placeholder={placeholderComponent ? "" : placeholder}
 					onChange={(e) => onChange(e.target.value)}
 				/>
+				{placeholderComponent && value === "" && (
+					<div className="absolute inset-0 pointer-events-none flex items-center p-4 short:py-1">
+						{placeholderComponent}
+					</div>
+				)}
 				{secret && (
 					<button
 						type="button"

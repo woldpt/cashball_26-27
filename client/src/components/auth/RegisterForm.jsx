@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import AuthField from "./AuthField.jsx";
+import { exampleNames } from "./exampleNames.js";
+import useNameCarousel from "./useNameCarousel.js";
 
 /**
  * Formulário de criação de conta (fase `register`). Valida no cliente o
@@ -34,6 +36,8 @@ const RegisterForm = ({
 	onSubmit,
 	onBack,
 }) => {
+	const { current: exampleName } = useNameCarousel(exampleNames);
+
 	const registerPasswordMismatch =
 		confirmPassword !== "" && password !== confirmPassword;
 	const passwordTooShort = password !== "" && password.length < 3;
@@ -85,7 +89,17 @@ const RegisterForm = ({
 						id="register-name"
 						label="Nome de Treinador"
 						autoComplete="username"
-						placeholder="Ex: Amorim"
+						placeholderComponent={
+							<motion.span
+								key={exampleName}
+								initial={{ opacity: 0 }}
+								animate={{ opacity: 1 }}
+								transition={{ duration: 0.3 }}
+								className="text-white/20 text-lg font-black truncate"
+							>
+								Ex: {exampleName}
+							</motion.span>
+						}
 						value={name}
 						onChange={(v) => {
 							setName(v);

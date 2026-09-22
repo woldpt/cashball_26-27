@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import AuthField from "./AuthField.jsx";
+import { exampleNames } from "./exampleNames.js";
+import useNameCarousel from "./useNameCarousel.js";
 
 /**
  * Formulário de entrada na conta (fase `login`). Usa `<form onSubmit>` para que
@@ -30,7 +32,10 @@ const LoginForm = ({
 	onClearError,
 	onSubmit,
 	onCreateAccount,
-}) => (
+}) => {
+	const { current: exampleName } = useNameCarousel(exampleNames);
+
+	return (
 	<motion.div
 		key="login"
 		initial={{ opacity: 0, x: -20 }}
@@ -65,7 +70,17 @@ const LoginForm = ({
 					id="login-name"
 					label="Nome de Treinador"
 					autoComplete="username"
-					placeholder="Ex: Cobra"
+					placeholderComponent={
+						<motion.span
+							key={exampleName}
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							transition={{ duration: 0.3 }}
+							className="text-white/20 text-lg font-black truncate"
+						>
+							Ex: {exampleName}
+						</motion.span>
+					}
 					value={name}
 					onChange={(v) => {
 						setName(v);
@@ -112,6 +127,7 @@ const LoginForm = ({
 			</p>
 		)}
 	</motion.div>
-);
+	);
+};
 
 export default LoginForm;
