@@ -364,6 +364,13 @@ export function useSocketListeners(handlers, refs) {
 			// sorteio, fica pendente e o GameContext abre o popup assim que o
 			// jogo termina.
 			handlers.setCupDraw(data);
+			// O sorteio já está gravado na BD neste ponto: o resumo pedido
+			// antes (via seasonState) pode ter chegado antes do sorteio e
+			// ficado com opponent=null (falso «eliminado»). Refetch para
+			// trazer o adversário real — vale também com replay a correr.
+			const myTeamId = refs.meRef.current?.teamId;
+			if (myTeamId != null)
+				socket.emit("requestNextMatchSummary", { teamId: myTeamId });
 			if (refs.isPlayingMatchRef.current) {
 				refs.pendingCupDrawRef.current = true;
 				return;

@@ -1339,3 +1339,8 @@ Plano C1+C2 (quando fizer):
 ## Festejo de golo em todos os golos (2026-09-19)
 - `GoalFlashOverlay.jsx` (único ficheiro): removidas as portas `mine` do `<CelebrationBurst/>` e do carimbo "GOLO!" nas variantes `page` e `card`; o wash verde/vermelho (`color`) continua a distinguir quem marcou. Card leva burst compacto (`showChampagne={false}`, cortado pelo `overflow-hidden`). Motivo: diagnóstico mostrou que 1–2 confetes/partida era by-design (só golos próprios; motor dá ~30 oportunidades/jogo → 1–2 golos teus) — o utilizador quer festejo em todos os golos do seu jogo e nos cards de humanos.
 - Checks: client `check:types` OK; `lint` só com os 2 erros pré-existentes (confirmados via stash); `test:mobile` 155/155 + `test:mobile:landscape` 186/186.
+
+## Falso «eliminado da Taça» ao carregar JOGAR (2026-09-22)
+- Corrida: `seasonState` (fim da liga) dispara `requestNextMatchSummary` antes do sorteio (`startCupRound` corre no fim da cadeia pós-jogo) → `buildNextMatchSummary` não encontra `cup_matches` da ronda → `opponent: null` → `TacticsView` mostra o cartão de eliminado. `cupDrawStart` não invalidava o resumo, ficava preso até ao refresh.
+- Fix (`client/src/hooks/useSocketListeners.js`, handler `cupDrawStart`): após `setCupDraw`, emite `requestNextMatchSummary` com `meRef.current?.teamId` (sorteio já gravado nesse ponto; vale também com replay a correr, pois fica antes do early-return).
+- Checks: `check:types` OK; `lint` só com os 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx` — ficheiros não tocados).
