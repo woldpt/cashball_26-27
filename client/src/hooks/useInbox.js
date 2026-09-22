@@ -308,6 +308,17 @@ export function useInbox() {
               ]
             : [partText(title)],
         bodyParts,
+        // Pares para a tabela do detalhe (mesmo shape dos facts persistidos);
+        // viewerTeamId marca o jogo do treinador na linha.
+        facts: {
+          fixtures: (cupDraw.fixtures || []).map((f) => ({
+            homeTeamId: f.homeTeam?.id,
+            homeName: f.homeTeam?.name,
+            awayTeamId: f.awayTeam?.id,
+            awayName: f.awayTeam?.name,
+          })),
+          viewerTeamId: me?.teamId ?? null,
+        },
         media: { player: null, teams: [] },
         redFlag: false,
         kind: "cupdraw",

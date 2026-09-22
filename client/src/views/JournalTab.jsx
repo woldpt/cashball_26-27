@@ -252,8 +252,8 @@ function RichParagraphs({
 }) {
   const cap = (FILTER_TONES[category] || FILTER_TONES.all).cap;
   const bodyCls =
-    "font-serif text-base short:text-sm leading-relaxed whitespace-pre-line text-on-surface";
-  const leadCls = `font-serif text-lg short:text-base leading-relaxed whitespace-pre-line first-letter:float-left first-letter:mr-2 first-letter:mt-1.5 first-letter:font-headline first-letter:text-6xl first-letter:font-black first-letter:leading-[0.8] ${cap}`;
+    "font-newsreader text-base short:text-sm leading-relaxed whitespace-pre-line text-justify text-on-surface";
+  const leadCls = `font-newsreader text-lg short:text-base leading-relaxed whitespace-pre-line text-justify first-letter:float-left first-letter:mr-2 first-letter:mt-1.5 first-letter:font-newsreader first-letter:text-6xl first-letter:font-black first-letter:leading-[0.8] ${cap}`;
   if (!Array.isArray(parts) || parts.length === 0) {
     const longEnough = !noLead && String(fallback ?? "").length >= LEAD_MIN_CHARS;
     return <p className={longEnough ? leadCls : bodyCls}>{fallback}</p>;
@@ -479,6 +479,72 @@ function LeagueFinalTable({ rows, teams, onOpenTeamSquad }) {
                 <td className="px-2 py-1.5 text-right">{r.gf}</td>
                 <td className="px-2 py-1.5 text-right">{r.gs}</td>
                 <td className="px-2 py-1.5 text-right font-black">{r.p}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * Tabela do sorteio da Taça: pares por ordem do sorteio, equipas clicáveis,
+ * o jogo do treinador marcado com 📍 e tinta dourada.
+ * @param {{ fixtures?: Array, viewerTeamId?: number|string|null, teams: Array, onOpenTeamSquad?: Function }} props
+ * @returns {JSX.Element|null}
+ */
+function CupDrawTable({ fixtures, viewerTeamId, teams, onOpenTeamSquad }) {
+  if (!Array.isArray(fixtures) || fixtures.length === 0) return null;
+  const vId = viewerTeamId == null ? null : String(viewerTeamId);
+  const teamCell = (id, label, mine) => {
+    const team = teamFromRef(teams, { id, label });
+    return (
+      <td className={`px-2 py-1.5 text-left ${mine ? "font-black" : ""}`}>
+        <button
+          type="button"
+          className={`font-black text-primary underline decoration-primary/40 underline-offset-2 hover:text-on-surface transition-colors ${
+            mine ? "text-tertiary" : ""
+          }`}
+          onClick={() => team?.id && onOpenTeamSquad?.(team)}
+          disabled={!team?.id || !onOpenTeamSquad}
+        >
+          {label}
+        </button>
+      </td>
+    );
+  };
+  return (
+    <div className="mt-3 overflow-x-auto rounded-sm border border-outline-variant/20">
+      <table className="w-full max-w-md border-collapse text-sm tabular-nums text-on-surface">
+        <thead>
+          <tr className="bg-surface-container-high/60 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+            <th className="px-2 py-1.5 text-right">Jogo</th>
+            <th className="px-2 py-1.5 text-left">Casa</th>
+            <th className="px-2 py-1.5 text-left">Fora</th>
+          </tr>
+        </thead>
+        <tbody>
+          {fixtures.map((f, i) => {
+            const mine =
+              vId != null &&
+              (String(f.homeTeamId) === vId || String(f.awayTeamId) === vId);
+            return (
+              <tr
+                key={i}
+                className={`border-t border-outline-variant/15 transition-colors hover:bg-surface-container/20 ${
+                  mine
+                    ? "bg-tertiary/15"
+                    : i % 2 === 1
+                      ? "bg-surface-container/15"
+                      : ""
+                }`}
+              >
+                <td className="px-2 py-1.5 text-right text-on-surface-variant">
+                  {mine ? "📍" : i + 1}
+                </td>
+                {teamCell(f.homeTeamId, f.homeName, mine)}
+                {teamCell(f.awayTeamId, f.awayName, mine)}
               </tr>
             );
           })}
@@ -907,9 +973,21 @@ export function JournalTab({
                   onOpenPlayerHistory={onOpenPlayerHistory}
                 />
 
-                {/* Corpo do artigo (entrada + parágrafos) */}
-                {inbox.selected.body && (
-                  <div className="mt-3 space-y-3 border-t border-outline-variant/25 pt-3">
+                {/* Corpo do artigo (entrada + parágrafos) — ou a tabela do
+                    sorteio da Taça, em vez da lista seca */}
+                {inbox.selected.kind === "cupdraw" &&
+                Array.isArray(inbox.selected.facts?.fixtures) &&
+                inbox.selected.facts.fixtures.length > 0 ? (
+                  <div className="mt-3 border-t border-outline-variant/25 pt-3">
+                    <CupDrawTable
+                      fixtures={inbox.selected.facts.fixtures}
+                      viewerTeamId={inbox.selected.facts.viewerTeamId}
+                      teams={teams}
+                      onOpenTeamSquad={onOpenTeamSquad}
+                    />
+                  </div>
+                ) : inbox.selected.body && (
+                  <div className="mt-3 lg:px-6 space-y-3 border-t border-outline-variant/25 pt-3">
                     <RichParagraphs
                       parts={inbox.selected.bodyParts}
                       fallback={inbox.selected.body}

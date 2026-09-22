@@ -316,7 +316,8 @@ async function checkMoodArticle() {
   };
 }
 
-/** O sorteio mostra a semana em que saiu + a listagem de todos os pares. */
+/** O sorteio mostra a semana em que saiu + a tabela de todos os pares
+ * (o jogo do treinador marcado com 📍). */
 async function checkDrawDate() {
   const row = [...document.querySelectorAll("ol button")].find((b) =>
     b.textContent.includes("Sorteio:"),
@@ -324,13 +325,21 @@ async function checkDrawDate() {
   const date = row?.querySelector("span")?.textContent;
   row?.click();
   await new Promise((r) => setTimeout(r, 500));
-  const body = detailBody();
+  const table = document.querySelector(
+    'section[aria-label="Corpo da notícia"] table',
+  );
+  const txt = table?.textContent || "";
+  const rowCount = table ? table.querySelectorAll("tbody tr").length : 0;
   const listsAll =
-    (body || "").includes("O seu jogo:") &&
-    (body || "").includes("Sporting Clube do Alentejo Central") &&
-    (body || "").includes("Clube Desportivo do Litoral");
+    rowCount === 2 &&
+    txt.includes("Real Desportivo Atlético de Santa Maria da Feira") &&
+    txt.includes("F.C. Atlântico Norte") &&
+    txt.includes("Sporting Clube do Alentejo Central") &&
+    txt.includes("Clube Desportivo do Litoral") &&
+    txt.includes("📍");
   return {
     date: date || null,
+    rowCount,
     listsAll,
     ok: !!row && date === "S5/2026" && listsAll,
   };

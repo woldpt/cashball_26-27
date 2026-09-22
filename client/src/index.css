@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@700;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@700;900&family=Newsreader:opsz,wght@8..28,400..700&display=swap");
 @import "tailwindcss";
 
 /* Viewports baixos (telemóvel landscape): compactação vertical de modais/cards.
@@ -65,6 +65,7 @@
   --font-sans: "Inter", system-ui, sans-serif;
   --font-headline: "Space Grotesk", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
+  --font-newsreader: "Newsreader", "Georgia", serif;
 }
 
 :root {

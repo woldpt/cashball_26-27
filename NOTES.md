@@ -1,3 +1,13 @@
+## Corpo do Jornal em Newsreader + sorteio da Taça em tabela (2026-09-22)
+
+- Queixa: o corpo das notícias parecia feio (serif por defeito, sem justificação, a tocar as bordas) e o mail do sorteio da Taça mostrava uma lista seca.
+- `index.css`: importa Newsreader (serif do Google para leitura longa) + token `--font-newsreader` no `@theme` (o build gera a utility `font-newsreader`).
+- `JournalTab.jsx`: wrapper do corpo + `RichParagraphs` passam a `font-newsreader` + `text-justify` + `lg:px-6` (margens laterais de 1.5rem só no desktop); capitular também em Newsreader (`first-letter:`).
+- Novo `CupDrawTable` no `JournalTab.jsx`: colunas Jogo · Casa · Fora, equipas clicáveis, linha do jogo do treinador destacada (📍 + tinta dourada), mesmo padrão da `LeagueFinalTable`; renderiza no detalhe em vez da lista quando `facts.fixtures` existe — o texto do corpo fica guardado para a pesquisa.
+- `useInbox.js`: o item live do sorteio passa a carregar `facts: { fixtures, viewerTeamId }` (mesmo shape do item persistido) para a tabela saber qual é o jogo do treinador.
+- Harness `journal-resp-test`: `checkDrawDate` atualizado para o contrato novo (tabela com 2 linhas, 4 nomes, 📍) — o antigo assertava a lista no corpo.
+- Checks: `lint` só os 2 erros pré-existentes, `check:types` OK, portrait 155/155, landscape 186/186, build Vite OK.
+
 ## Datas do Jornal = semana do calendário, não jornada da liga (2026-09-21)
 
 - Queixa: datas erradas nas notícias. Levantamento: `club_news.matchweek`/`transfer_history.matchweek` é a jornada da liga — só avança nas jornadas e só no fim delas (`weeklyFlowHelpers.ts`), por isso a semana de Taça herda o número da jornada seguinte. Evidência em `game_FGPQH6.db` (`weekly_income`, época 2031): `1,2,3,4,4,5,6,7,7,8,9,10,10,11,12,12,13,14,15` — Taça dos 16 avos e J4 ambas «S4», final da Taça em «S15»; 718 linhas com `matchweek=15`. A UI misturava ainda escalas: persistidas `S{matchweek}` vs transitórias + cabeçalho (`GameLayout`) `S{calendarIndex+1}`.
