@@ -1,3 +1,9 @@
+## Treino posicional mais rápido só para humanos (2026-09-22)
+
+- Pedido: fazer do treino uma fonte de receita (viveirismo) com treino posicional mais rápido. Diagnóstico: o travão real é o teto de potencial (seed: skill +0..3, craques +4..8 — um miúdo 5→8 numa semana e depois para), não a velocidade; decidido via perguntas: só velocidade (ganho 5→8), todo o plantel, só humanos, teto intocado.
+- Só `server/trainingHelpers.ts`: `humanTeamIds` (via `playersByName`, mesma técnica do foco NPC) e `gainBase` 8 vs 5 no ganho posicional; Forma/Resistência e tetos iguais para todos.
+- Checks: server `typecheck` OK, `audit:socketio` 0 erros (97 avisos pré-existentes). Sem cliente → sem lint/mobile. Nota: com o teto mantido, cada jogador chega ao mesmo teto ~1 semana mais cedo — o lucro por jogador não muda; viveirismo a sério exigiria margem de potencial nos jovens.
+
 ## Economia das divisões baixas: tese + 5 medidas (2026-09-22)
 
 - Tese pedida pelo dono: números reais da `base.db` mostravam a D5 como única divisão em défice estrutural (−120k€/época, colchão inicial de 500k), com os mesmos custos da D4 (mesma skill, mesmos salários, mesmo estádio 5k) mas metade da receita; campeão distrital ganhava 0€ (CHAMPION_PRIZE só 1–4); Taça winner-takes-all; visitante com 0€; prestação fixa 35k/sem = 3 mesadas na D5; manutenção 1,5€/lugar = 62% da mesada D5.

@@ -16,6 +16,8 @@ import {
  *  - Position focus (GR/Defesas/Médios/Avançados): skill gain with diminishing
  *    returns — the closer to potential the slower, high form boosts learning,
  *    and each skill point costs more progress as skill rises (ceil(skill/10)).
+ *    Human-coached teams gain faster (base 8 vs 5 for NPCs) so training can
+ *    be a farming source; the potential ceiling still caps everyone.
  *  - Forma:        +6 form (direct, INTEGER column tolerates this)
  *  - Resistência:  +4.9 resistance (accumulator, 1.0 = 1 ponto)
  *
@@ -75,6 +77,14 @@ export async function applyTrainingBonuses(
           resolve();
           return;
         }
+
+        // Equipas humanas treinam o skill mais depressa (viveirismo); os NPCs
+        // mantêm o ritmo base — a vantagem é de quem gere, não da liga toda.
+        const humanTeamIds = new Set<number>(
+          Object.values(game.playersByName || {})
+            .map((p: any) => p?.teamId)
+            .filter((id: any) => id != null),
+        );
 
         // Collect ids of players that appeared in a fixture (positive ids only,
         // junior GRs use negative ids) — these receive the training bonus.
@@ -193,7 +203,8 @@ export async function applyTrainingBonuses(
                       1.15,
                       Math.max(0.5, 0.5 + 0.5 * ((player.form ?? FORM_NEUTRAL) / FORM_NEUTRAL)),
                     );
-                    const gain = 5 * potentialFactor * formFactor;
+                    const gainBase = humanTeamIds.has(player.team_id) ? 8 : 5;
+                    const gain = gainBase * potentialFactor * formFactor;
                     // Quanto maior o skill, mais progresso é preciso por ponto.
                     const progressNeeded = Math.max(1, Math.ceil(oldSkill / 10));
 
