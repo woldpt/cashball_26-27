@@ -257,6 +257,12 @@ export function formatInboxDate(week, year) {
 }
 
 function formatNewsDate(news, fallbackDate) {
+  // Data fixa da linha: a semana do calendário (`slot`, 1..20) — o `matchweek`
+  // só existe nas linhas anteriores a essa coluna e repete-se nas semanas de
+  // Taça (não identifica uma semana).
+  if (news?.slot != null && Number(news.year) > 0) {
+    return formatInboxDate(news.slot, news.year);
+  }
   return news?.matchweek != null && Number(news.year) > 0
     ? formatInboxDate(news.matchweek, news.year)
     : fallbackDate || formatInboxDate();

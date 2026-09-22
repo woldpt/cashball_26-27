@@ -343,6 +343,17 @@ export const SEASON_CALENDAR: CalendarEntry[] = [
   { type: "cup",    round: 5, roundName: "Final",            teamsIn: 2,  calendarIndex: 19 },
 ];
 
+/**
+ * Semana do calendário (1..20) de uma jornada da liga. `matchweek` não é uma
+ * data: repete-se nas semanas de Taça que o seguem (ver SEASON_CALENDAR).
+ */
+export function slotForLeagueMatchweek(matchweek: number): number {
+  const entry = SEASON_CALENDAR.find(
+    (e) => e.type === "league" && (e as any).matchweek === Number(matchweek),
+  );
+  return (entry?.calendarIndex ?? 0) + 1;
+}
+
 // ---------------------------------------------------------------------------
 // Regras de substituições (aplica-se a todas as fases da partida: jogo normal,
 // intervalo, taça e prolongamento).

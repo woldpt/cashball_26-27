@@ -11,6 +11,7 @@ import {
   logClubNews,
   logClubNewsOnce,
   getTeamsWithCoachNames,
+  currentSlot,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { upcomingMatchweek } from "./game/lineupReady";
@@ -1030,13 +1031,14 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     // ao novo team_id, por isso o filtro do Jornal troca de contexto sem
     // apagar o histórico antigo da sala.
     game.db.run(
-      `INSERT INTO club_news (team_id, type, title, description, matchweek, year)
-       VALUES (?, 'welcome', ?, ?, ?, ?)`,
+      `INSERT INTO club_news (team_id, type, title, description, matchweek, slot, year)
+       VALUES (?, 'welcome', ?, ?, ?, ?, ?)`,
       [
         team.id,
         `👋 Novo treinador no ${team.name}`,
         `A direcção entrega o projecto a ${coachName}. O plantel aguarda novas ideias e a bancada quer resultados.`,
         game.matchweek,
+        currentSlot(game),
         game.year,
       ],
       (newsErr: any) => {

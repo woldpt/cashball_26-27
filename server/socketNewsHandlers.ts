@@ -51,7 +51,7 @@ export function registerNewsSocketHandlers(
                 cn.team_id, cn.player_id, cn.player_name,
                 p.photo AS player_photo, p.position AS player_position,
                 cn.related_team_id, cn.related_team_name,
-                cn.amount, cn.matchweek, cn.year, cn.created_at,
+                cn.amount, cn.matchweek, cn.slot, cn.year, cn.created_at,
                 t.name AS team_name, t.division
          FROM club_news cn
          LEFT JOIN teams t ON t.id = cn.team_id
@@ -80,7 +80,7 @@ export function registerNewsSocketHandlers(
                     th.seller_team_id, th.seller_team_name,
                     th.buyer_team_id AS related_team_id, th.buyer_team_name AS related_team_name,
                     th.buyer_team_id AS team_id, th.buyer_team_name AS buyer_team_name,
-                    th.amount, th.matchweek, th.year, th.created_at,
+                    th.amount, th.matchweek, th.slot, th.year, th.created_at,
                     th.buyer_team_name AS team_name, NULL AS division
              FROM transfer_history th
              WHERE th.seller_team_id = ? OR th.buyer_team_id = ?`,
@@ -96,7 +96,9 @@ export function registerNewsSocketHandlers(
               const newsRows = [...(clubRows || []), ...(transferRows || [])].sort(
                 (a, b) =>
                   (b.year || 0) - (a.year || 0) ||
-                  (b.matchweek || 0) - (a.matchweek || 0) ||
+                  // Semana do calendário: o matchweek repete-se nas semanas de Taça.
+                  ((b.slot ?? b.matchweek) || 0) -
+                    ((a.slot ?? a.matchweek) || 0) ||
                   String(b.created_at || "").localeCompare(
                     String(a.created_at || ""),
                   ) ||

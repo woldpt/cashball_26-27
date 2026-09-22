@@ -1,5 +1,5 @@
 import type { ActiveGame } from "./types";
-import { FORM_MATCH_MIN, FORM_MAX, SEASON_CALENDAR } from "./gameConstants";
+import { FORM_MATCH_MIN, FORM_MAX, SEASON_CALENDAR, slotForLeagueMatchweek } from "./gameConstants";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { persistMoms } from "./momHelpers";
 import { computeMatchOdds } from "./game/commentary";
@@ -1052,6 +1052,9 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
     matchweek: number,
     onDone?: () => void,
   ) {
+    // O fecho da jornada avança o calendário antes desta chamada: a semana das
+    // notícias do jogo (rescaldo, lesões) sai do matchweek jogado, não do relógio.
+    const slot = slotForLeagueMatchweek(matchweek);
     // Match fatigue is live-only. Keep the historical lineup skill snapshot,
     // but do not carry minutes/fatigue badges into the next match or history.
     const historicalLineup = (lineup: any[] = []) =>
@@ -1224,6 +1227,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                     opponentRank: away.rank,
                     opponentTeamCount: away.count,
                     matchweek,
+                    slot,
                   });
                   logPostMatchRecap(game, {
                     teamId: match.awayTeamId,
@@ -1242,6 +1246,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                     opponentRank: home.rank,
                     opponentTeamCount: home.count,
                     matchweek,
+                    slot,
                   });
                 } catch (recapErr: any) {
                   console.warn(
@@ -1251,8 +1256,8 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                 }
                 // Lesões/castigos novos com data fixa (a jornada do jogo).
                 try {
-                  logMatchMedicalNews(game, match.homeTeamId, matchweek);
-                  logMatchMedicalNews(game, match.awayTeamId, matchweek);
+                  logMatchMedicalNews(game, match.homeTeamId, matchweek, undefined, slot);
+                  logMatchMedicalNews(game, match.awayTeamId, matchweek, undefined, slot);
                 } catch (medErr: any) {
                   console.warn(
                     `[persistMatchResults] medical failed (matchweek ${matchweek}):`,

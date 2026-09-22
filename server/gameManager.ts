@@ -957,6 +957,10 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
           },
         );
         const continueAfterMigrations = () => {
+          // Semana do calendário (1..20) das notícias — substitui o matchweek
+          // como data do Jornal (o matchweek repete-se nas semanas de Taça).
+          db.run("ALTER TABLE club_news ADD COLUMN slot INTEGER", () => {});
+          db.run("ALTER TABLE transfer_history ADD COLUMN slot INTEGER", () => {});
           db.run("ALTER TABLE players ADD COLUMN photo TEXT", () => {});
           db.run("ALTER TABLE players ADD COLUMN zerozero_id INTEGER", () => {});
           db.run("ALTER TABLE managers ADD COLUMN photo TEXT", () => {});

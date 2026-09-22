@@ -10,6 +10,7 @@ import {
   DEFAULT_MS_PER_MINUTE,
   remainingSubstitutions,
   incrementSubCount,
+  slotForLeagueMatchweek,
 } from "./gameConstants";
 import {
   getAllTeamForms,
@@ -1062,6 +1063,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           {
             description: facts,
             matchweek: completedMatchweek,
+            // Esta chamada corre depois de o calendário avançar (a semana da
+            // classificação final é a da última jornada, não a seguinte).
+            slot: slotForLeagueMatchweek(completedMatchweek),
             year: game.year || 0,
           },
           io,

@@ -1,5 +1,5 @@
 import type { ActiveGame, PlayerSession } from "./types";
-import { runExec, getTeamsWithCoachNames, logClubNews } from "./coreHelpers";
+import { runExec, getTeamsWithCoachNames, logClubNews, currentSlot } from "./coreHelpers";
 
 interface FinanceHandlerDeps {
   io: any;
@@ -58,8 +58,8 @@ export function registerFinanceSocketHandlers(
       }
       await runExec(
         game.db,
-        "INSERT INTO club_news (team_id, type, title, description, amount, matchweek) VALUES (?, 'stadium_build', 'Expansão do Estádio', '+5000 lugares construídos', ?, ?)",
-        [playerState.teamId, cost, matchweek],
+        "INSERT INTO club_news (team_id, type, title, description, amount, matchweek, slot, year) VALUES (?, 'stadium_build', 'Expansão do Estádio', '+5000 lugares construídos', ?, ?, ?, ?)",
+        [playerState.teamId, cost, matchweek, currentSlot(game), game.year || 0],
       );
       await runExec(game.db, "COMMIT");
     } catch (err) {

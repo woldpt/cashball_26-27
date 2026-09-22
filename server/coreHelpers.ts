@@ -631,14 +631,16 @@ export function logClubNews(
     /** Override opcional do ano/jornada a registar (por omissão usa game). */
     year?: number;
     matchweek?: number;
+    /** Semana do calendário (1..20); por omissão, a semana em curso. */
+    slot?: number;
   },
   io?: any,
   extra?: Record<string, any>,
 ) {
   const description = data.description || null;
   game.db.run(
-    `INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek, year)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek, slot, year)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       teamId,
       type,
@@ -650,6 +652,7 @@ export function logClubNews(
       data.related_team_name || null,
       data.amount || null,
       data.matchweek ?? game.matchweek,
+      data.slot ?? currentSlot(game),
       (data.year ?? game.year) || 0,
     ],
     () => {
@@ -672,7 +675,7 @@ export function logClubNews(
 
 /**
  * logClubNewsOnce — como logClubNews mas idempotente por semana: se já
- * existir linha do mesmo tipo/equipa nesta jornada e época, não insere.
+ * existir linha do mesmo tipo/equipa nesta semana e época, não insere.
  * Para eventos que podem re-emitir (aviso da direção após crash, sorteios).
  */
 export function logClubNewsOnce(
@@ -689,18 +692,23 @@ export function logClubNewsOnce(
     description?: string;
     year?: number;
     matchweek?: number;
+    slot?: number;
   },
   io?: any,
   extra?: Record<string, any>,
 ) {
   const matchweek = data.matchweek ?? game.matchweek;
+  const slot = data.slot ?? currentSlot(game);
   const year = (data.year ?? game.year) || 0;
   game.db.get(
-    `SELECT id FROM club_news WHERE team_id = ? AND type = ? AND matchweek = ? AND year = ? LIMIT 1`,
-    [teamId, type, matchweek, year],
+    // A chave é a semana (`slot`), não o matchweek: nas semanas de Taça o
+    // matchweek ainda é o da jornada da liga anterior. Linhas antigas (slot
+    // NULL) continuam a desduplicar pelo matchweek.
+    `SELECT id FROM club_news WHERE team_id = ? AND type = ? AND year = ? AND (slot = ? OR (slot IS NULL AND matchweek = ?)) LIMIT 1`,
+    [teamId, type, year, slot, matchweek],
     (err: any, row: any) => {
       if (err || row) return;
-      logClubNews(game, type, title, teamId, data, io, extra);
+      logClubNews(game, type, title, teamId, { ...data, slot }, io, extra);
     },
   );
 }
@@ -720,6 +728,7 @@ export function logMedicalNews(
   matchweek: number,
   year?: number,
   io?: any,
+  slot?: number,
 ) {
   game.db.get(
     `SELECT id FROM club_news WHERE team_id = ? AND type = ? AND player_id = ? AND amount = ? LIMIT 1`,
@@ -742,6 +751,7 @@ export function logMedicalNews(
         }),
         matchweek,
         year,
+        slot,
       }, io);
     },
   );
@@ -758,6 +768,7 @@ export function logMatchMedicalNews(
   teamId: number,
   matchweek: number,
   io?: any,
+  slot?: number,
 ) {
   game.db.all(
     `SELECT id, name, position, skill, injury_until_matchweek, suspension_until_matchweek
@@ -775,7 +786,7 @@ export function logMatchMedicalNews(
             name: p.name,
             position: p.position ?? null,
             skill: p.skill ?? null,
-          }, inj, matchweek, undefined, io);
+          }, inj, matchweek, undefined, io, slot);
         }
         if (sus > nowIdx) {
           logMedicalNews(game, teamId, "suspension", {
@@ -783,7 +794,7 @@ export function logMatchMedicalNews(
             name: p.name,
             position: p.position ?? null,
             skill: p.skill ?? null,
-          }, sus, matchweek, undefined, io);
+          }, sus, matchweek, undefined, io, slot);
         }
       }
     },
@@ -807,6 +818,8 @@ export interface PostMatchRecap {
   opponentRank?: number | null;
   opponentTeamCount?: number | null;
   matchweek: number;
+  /** Semana do calendário (1..20); por omissão, a semana em curso. */
+  slot?: number;
   year?: number;
 }
 
@@ -849,6 +862,9 @@ export function logPostMatchRecap(game: ActiveGame, recap: PostMatchRecap) {
         description: JSON.stringify(payload),
         matchweek: recap.matchweek,
         year: recap.year,
+        // O fecho da jornada já pode ter avançado o calendário: a semana da
+        // notícia tem de vir de quem finalizou o jogo, não do relógio.
+        slot: recap.slot ?? currentSlot(game),
       }),
   );
 }
@@ -921,6 +937,7 @@ interface TransferRecord {
  */
 export function recordTransfer(game: ActiveGame, info: TransferRecord, io?: any) {
   const matchweek = game.matchweek || 0;
+  const slot = currentSlot(game);
   const year = game.year || 0;
 
   const finish = (
@@ -943,14 +960,15 @@ export function recordTransfer(game: ActiveGame, info: TransferRecord, io?: any)
       amount: info.amount || 0,
       source: info.source,
       matchweek,
+      slot,
       year,
     };
     game.db.run(
       `INSERT INTO transfer_history
         (player_id, player_name, position, skill, is_star, photo, seller_team_id,
          seller_team_name, buyer_team_id, buyer_team_name, amount, source,
-         matchweek, year)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         matchweek, slot, year)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.player_id,
         payload.player_name,
@@ -965,6 +983,7 @@ export function recordTransfer(game: ActiveGame, info: TransferRecord, io?: any)
         payload.amount,
         payload.source,
         payload.matchweek,
+        payload.slot,
         payload.year,
       ],
       (err: Error | null) => {

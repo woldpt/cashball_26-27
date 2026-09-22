@@ -142,6 +142,11 @@ CREATE TABLE IF NOT EXISTS club_news (
   related_team_name TEXT,
   amount INTEGER,
   matchweek INTEGER,
+  -- Semana do calendário em que a notícia foi emitida (game.calendarIndex + 1,
+  -- 1..20, anda também nas semanas de Taça/amigável). `matchweek` é a jornada
+  -- da liga e repete-se nas semanas de Taça — não serve de data do Jornal.
+  -- NULL nas linhas anteriores a esta coluna: o cliente cai no matchweek.
+  slot INTEGER,
   year INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(team_id) REFERENCES teams(id),
@@ -237,7 +242,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_skill_snapshots_unique ON player_skill_sna
 
 -- Histórico de transferências concluídas (mercado + leilões + cláusulas + NPC).
 -- Um registo por negócio, com ambas as partes resolvidas por nome para a UI.
--- "matchweek" guarda game.calendarIndex (igual club_news); "year" é a época.
+-- "matchweek" é a jornada da liga; "slot" é a semana do calendário
+-- (game.calendarIndex + 1) em que o negócio fechou; "year" é a época.
 CREATE TABLE IF NOT EXISTS transfer_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   player_id INTEGER,
@@ -253,6 +259,7 @@ CREATE TABLE IF NOT EXISTS transfer_history (
   amount INTEGER NOT NULL,
   source TEXT NOT NULL,
   matchweek INTEGER,
+  slot INTEGER,
   year INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(player_id) REFERENCES players(id),
