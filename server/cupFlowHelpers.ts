@@ -4,6 +4,7 @@ import type { CalendarEntry } from "./gameConstants";
 import {
   SEASON_CALENDAR,
   SPONSOR_REVENUE_BY_DIVISION,
+  AWAY_TICKET_SHARE,
   FORM_NEUTRAL,
   FRIENDLY_ROUND,
   FRIENDLY_ROUND_NAME,
@@ -36,6 +37,17 @@ import {
   resetAllReady,
   waitForPresence,
 } from "./roomStateHelpers";
+
+/**
+ * Prémio por ultrapassar cada eliminatória da Taça (ronda → €).
+ * A final (ronda 5) não entra aqui: mantém o prémio próprio de 500K€.
+ */
+const CUP_ROUND_PRIZE: Record<number, number> = {
+	1: 25000,
+	2: 50000,
+	3: 100000,
+	4: 200000,
+};
 
 interface CupFlowDeps {
 	io: any;
@@ -244,7 +256,11 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			2: 1000000,
 			3: 500000,
 			4: 250000,
+			5: 125000,
 		};
+
+		/** Bónus de subida de divisão: 100K€ a cada equipa promovida. */
+		const PROMOTION_BONUS = 100000;
 
 		const iLigaWinner = byDiv[1] && byDiv[1][0];
 		if (iLigaWinner) {
@@ -288,7 +304,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			});
 		}
 
-		for (const div of [2, 3, 4]) {
+		for (const div of [2, 3, 4, 5]) {
 			const winner = byDiv[div] && byDiv[div][0];
 			if (winner) {
 				const coachInfo = await runGet(
@@ -472,6 +488,13 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					promotion.toDiv,
 					promotion.teamId,
 				]);
+				// Quem sobe leva o bónus de subida no mesmo movimento atómico.
+				if (promotion.toDiv < promotion.fromDiv) {
+					await dbRun("UPDATE teams SET budget = budget + ? WHERE id = ?", [
+						PROMOTION_BONUS,
+						promotion.teamId,
+					]);
+				}
 			}
 			await dbRun(
 				"UPDATE teams SET points=0, wins=0, draws=0, losses=0, goals_for=0, goals_against=0",
@@ -493,6 +516,24 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		} catch (txErr) {
 			await dbRun("ROLLBACK").catch(() => {});
 			throw txErr;
+		}
+
+		// Jornal + anúncio do bónus de subida (fora da transação: o dinheiro
+		// já foi creditado acima; aqui é só a notícia, como nos outros prémios).
+		const promotedNews = promotions.filter((p) => p.toDiv < p.fromDiv);
+		for (const p of promotedNews) {
+			logClubNews(game, "prize", "Bónus de Subida", p.teamId, {
+				amount: PROMOTION_BONUS,
+				description: `Subida a ${DIVISION_NAMES[p.toDiv] || `Divisão ${p.toDiv}`} na época ${year}`,
+				year: year + 1,
+				matchweek: 1,
+			});
+		}
+		if (promotedNews.length > 0) {
+			io.to(game.roomCode).emit("systemMessage", {
+				text: `⬆️ ${promotedNews.length} equipas subiram de divisão (+100.000€ cada)!`,
+				broadcast: true,
+			});
 		}
 
 		// ── Evolução da massa adepta ─────────────────────────────────────
@@ -650,7 +691,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		io.to(game.roomCode).emit("teamForms", {}); // Reset form display for new season
 
 		// Build season-end summary for the modal
-		const divisionChampions = ([1, 2, 3, 4] as number[])
+		const divisionChampions = ([1, 2, 3, 4, 5] as number[])
 			.map((div) => {
 				const winner = byDiv[div]?.[0];
 				if (!winner) return null;
@@ -1516,12 +1557,20 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 		try {
 		for (const { fixture, t1, t2, goals90Home, goals90Away } of setups) {
-			// ── Bilheteira da Taça (tarifa da equipa da casa, como na liga)
+			// ── Bilheteira da Taça (tarifa da equipa da casa, como na liga),
+			// com 15% para o visitante (AWAY_TICKET_SHARE).
 			const cupTicketPrice = (fixture as any)._ticketPrice || 15;
 			const cupRevenue = (fixture.attendance || 0) * cupTicketPrice;
-			if (cupRevenue > 0) {
+			const cupAwayShare = Math.floor(cupRevenue * AWAY_TICKET_SHARE);
+			const cupHomeShare = cupRevenue - cupAwayShare;
+			if (cupHomeShare > 0) {
 				await new Promise<void>((resolve) => {
-					game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [cupRevenue, fixture.homeTeamId], () => resolve());
+					game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [cupHomeShare, fixture.homeTeamId], () => resolve());
+				});
+			}
+			if (cupAwayShare > 0) {
+				await new Promise<void>((resolve) => {
+					game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [cupAwayShare, fixture.awayTeamId], () => resolve());
 				});
 			}
 			// Persiste attendance + receita faturada mesmo quando 0 (auditoria e finances)
@@ -1535,6 +1584,19 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			const winnerId =
 				fixture._winnerId ??
 				(goals90Home > goals90Away ? fixture.homeTeamId : fixture.awayTeamId);
+
+			// Prémio por ultrapassar a eliminatória: a Taça paga a quem lá vai,
+			// não só a quem a levanta (a final tem o prémio próprio de 500K€).
+			const roundPrize = CUP_ROUND_PRIZE[round] || 0;
+			if (roundPrize > 0) {
+				await new Promise<void>((resolve) => {
+					game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [roundPrize, winnerId], () => resolve());
+				});
+				logClubNews(game, "prize", `Prémio da Taça — ${roundLabel}`, winnerId, {
+					amount: roundPrize,
+					description: `Apuramento na ${roundLabel} (época ${season})`,
+				});
+			}
 
 			// Memória táctica (Taça) — +1 estrela por jogo para todas as equipas
 			const updateCupFamiliarity = (
@@ -1700,7 +1762,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					source: "cup",
 					roundLabel,
 					key: cupKey,
-					ticketRevenue: cupRevenue,
+					ticketRevenue: cupHomeShare,
 					myDivision: cHome?.division ?? null,
 					opponentDivision: cAway?.division ?? null,
 					matchweek: game.matchweek,
@@ -1716,7 +1778,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					source: "cup",
 					roundLabel,
 					key: cupKey,
-					ticketRevenue: 0,
+					ticketRevenue: cupAwayShare,
 					myDivision: cAway?.division ?? null,
 					opponentDivision: cHome?.division ?? null,
 					matchweek: game.matchweek,
@@ -1735,8 +1797,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				homeTeam: fixture.homeTeam || null,
 				awayTeam: fixture.awayTeam || null,
 				homeGoals: fixture.finalHomeGoals,
-				homeTicketRevenue: cupRevenue,
-				awayTicketRevenue: 0,
+				homeTicketRevenue: cupHomeShare,
+				awayTicketRevenue: cupAwayShare,
 				awayGoals: fixture.finalAwayGoals,
 				winnerId,
 				wentToET:

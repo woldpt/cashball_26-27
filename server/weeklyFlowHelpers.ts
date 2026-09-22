@@ -3,8 +3,11 @@ import type { CalendarEntry } from "./gameConstants";
 import {
   SEASON_CALENDAR,
   DIVISION_NAMES,
-  LOAN_WEEKLY_INSTALLMENT,
+  LOAN_INSTALLMENT_BY_DIVISION,
+  loanInstallment,
   STADIUM_UPKEEP_PER_SEAT_WEEK,
+  STADIUM_UPKEEP_EXEMPT_SEATS,
+  AWAY_TICKET_SHARE,
   WEEKLY_BASE_INCOME,
   CUP_FINAL_SPECTATOR_MS_PER_MINUTE,
   DEFAULT_MS_PER_MINUTE,
@@ -12,6 +15,14 @@ import {
   incrementSubCount,
   slotForLeagueMatchweek,
 } from "./gameConstants";
+
+/**
+ * Prestação do empréstimo por divisão dentro do SQL (números nossos,
+ * sem input de utilizador — interpolar é seguro e evita 10 parâmetros).
+ */
+const LOAN_DIV_CASE = `CASE division ${[1, 2, 3, 4]
+  .map((d) => `WHEN ${d} THEN ${LOAN_INSTALLMENT_BY_DIVISION[d]}`)
+  .join(" ")} ELSE ${LOAN_INSTALLMENT_BY_DIVISION[5]} END`;
 import {
   getAllTeamForms,
   getStandingsRows,
@@ -1134,15 +1145,24 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         // ── BILHETERIA — moved inside the transaction so ticket revenue commits
         // atomically with the standings updates (previously ran after COMMIT,
         // outside any transaction, which left a crash window). Same per-week value:
-        // attendance × preço do bilhete da equipa da casa for each fixture.
+        // attendance × preço do bilhete da equipa da casa for each fixture,
+        // com 15% para o visitante (AWAY_TICKET_SHARE).
         for (const match of fixtures) {
           const ticketPrice = (match as any)._ticketPrice || 15;
           const revenue = (match.attendance || 0) * ticketPrice;
           if (revenue > 0) {
+            const awayShare = Math.floor(revenue * AWAY_TICKET_SHARE);
+            const homeShare = revenue - awayShare;
             game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [
-              revenue,
+              homeShare,
               match.homeTeamId,
             ]);
+            if (awayShare > 0) {
+              game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [
+                awayShare,
+                match.awayTeamId,
+              ]);
+            }
           }
         }
 
@@ -1174,11 +1194,13 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           );
 
           // Emit match results
-          const fullTimeFixtures = fixtures.map((fixture) => ({
+          const fullTimeFixtures = fixtures.map((fixture) => {
+            const total = (fixture.attendance || 0) * ((fixture as any)._ticketPrice || 15);
+            const awayTicketRevenue = Math.floor(total * AWAY_TICKET_SHARE);
+            return {
             ...fixture,
-            homeTicketRevenue:
-              (fixture.attendance || 0) * ((fixture as any)._ticketPrice || 15),
-            awayTicketRevenue: 0,
+            homeTicketRevenue: total - awayTicketRevenue,
+            awayTicketRevenue,
             mom: computeMoms(
               fixture.events || [],
               fixture.homeLineup || [],
@@ -1190,7 +1212,8 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               fixture.awayTeamId,
               completedMatchweek,
             ),
-          }));
+            };
+          });
 
           // Store in history
           game.allMatchResults = game.allMatchResults ?? {};
@@ -1534,25 +1557,31 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             // this SELECT fills preLoan before the UPDATE executes, and the marker +
             // COMMIT run strictly after the financial updates.
             const preLoan: Record<number, number> = {};
+            const preDiv: Record<number, number> = {};
             game.db.all(
-              `SELECT id, loan_amount FROM teams`,
+              `SELECT id, loan_amount, division FROM teams`,
               (preErr: any, preRows: any[]) => {
                 if (!preErr)
-                  for (const r of preRows || []) preLoan[r.id] = r.loan_amount || 0;
+                  for (const r of preRows || []) {
+                    preLoan[r.id] = r.loan_amount || 0;
+                    preDiv[r.id] = r.division ?? 5;
+                  }
 
                 // Deduct weekly wages + loan interest + principal installment (same for
                 // cup and league weeks). The installment abates the loan principal so the
-                // visible debt shrinks week over week. Stadium upkeep scales with
-                // capacity: giant stadiums cost millions per season (anti-snowball).
+                // visible debt shrinks week over week, and scales with the division's
+                // base income (a flat fee was 3 weekly incomes for Distritais). Stadium
+                // upkeep spares the first STADIUM_UPKEEP_EXEMPT_SEATS seats: giant
+                // stadiums still cost millions per season (anti-snowball), small ones breathe.
                 game.db.run(
                   `UPDATE teams SET
-                    loan_amount = MAX(0, loan_amount - ?),
+                    loan_amount = MAX(0, loan_amount - (${LOAN_DIV_CASE})),
                     budget = budget
                       - CAST((loan_amount * 0.015) AS INTEGER)
                       - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
-                      - CAST((COALESCE(stadium_capacity, 0) * ?) AS INTEGER)
-                      - MIN(?, loan_amount)`,
-                  [LOAN_WEEKLY_INSTALLMENT, STADIUM_UPKEEP_PER_SEAT_WEEK, LOAN_WEEKLY_INSTALLMENT],
+                      - CAST((MAX(0, COALESCE(stadium_capacity, 0) - ?) * ?) AS INTEGER)
+                      - MIN((${LOAN_DIV_CASE}), loan_amount)`,
+                  [STADIUM_UPKEEP_EXEMPT_SEATS, STADIUM_UPKEEP_PER_SEAT_WEEK],
                   (expErr: any) => {
                     if (expErr) {
                       console.error(
@@ -1577,7 +1606,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                         for (const team of teams || []) {
                           const oldLoan = preLoan[team.id] || 0;
                           const interest = Math.floor(oldLoan * 0.015);
-                          const installment = Math.min(LOAN_WEEKLY_INSTALLMENT, oldLoan);
+                          const installment = Math.min(loanInstallment(preDiv[team.id] ?? 5), oldLoan);
                           if (interest > 0)
                             logClubNews(game, "loan_interest", "Juros Bancários", team.id, {
                               amount: interest,

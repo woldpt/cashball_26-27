@@ -39,7 +39,7 @@ const dstPath = path.join(savesDir, `game_${TEST_ROOM}.db`);
 const { getGame, saveGameState, activeGames } = require("../gameManager") as any;
 const { generateFixturesForDivision, applyPostMatchQualityEvolution } =
   require("../game/engine") as any;
-const { SEASON_CALENDAR, LOAN_WEEKLY_INSTALLMENT, STADIUM_UPKEEP_PER_SEAT_WEEK } =
+const { SEASON_CALENDAR, LOAN_INSTALLMENT_BY_DIVISION, STADIUM_UPKEEP_PER_SEAT_WEEK, STADIUM_UPKEEP_EXEMPT_SEATS } =
   require("../gameConstants") as any;
 
 // Espelho de applyWeeklyFinancesOnce (weeklyFlowHelpers.ts): o delta da 1ª
@@ -47,7 +47,10 @@ const { SEASON_CALENDAR, LOAN_WEEKLY_INSTALLMENT, STADIUM_UPKEEP_PER_SEAT_WEEK }
 // teste falha.
 const WEEKLY_BASE_INCOME_SQL = `CASE division
   WHEN 1 THEN 80000 WHEN 2 THEN 50000 WHEN 3 THEN 35000
-  WHEN 4 THEN 25000 WHEN 5 THEN 12000 ELSE 0 END`;
+  WHEN 4 THEN 25000 WHEN 5 THEN 20000 ELSE 0 END`;
+const LOAN_DIV_CASE_SQL = `CASE division
+  WHEN 1 THEN ${LOAN_INSTALLMENT_BY_DIVISION[1]} WHEN 2 THEN ${LOAN_INSTALLMENT_BY_DIVISION[2]} WHEN 3 THEN ${LOAN_INSTALLMENT_BY_DIVISION[3]}
+  WHEN 4 THEN ${LOAN_INSTALLMENT_BY_DIVISION[4]} ELSE ${LOAN_INSTALLMENT_BY_DIVISION[5]} END`;
 const expectedWeeklyDelta = () =>
   rawGet(
     dstPath,
@@ -55,8 +58,8 @@ const expectedWeeklyDelta = () =>
        ${WEEKLY_BASE_INCOME_SQL}
        - CAST((loan_amount * 0.015) AS INTEGER)
        - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
-       - MIN(${LOAN_WEEKLY_INSTALLMENT}, loan_amount)
-       - CAST((COALESCE(stadium_capacity, 0) * ${STADIUM_UPKEEP_PER_SEAT_WEEK}) AS INTEGER)
+       - MIN(${LOAN_DIV_CASE_SQL}, loan_amount)
+       - CAST((MAX(0, COALESCE(stadium_capacity, 0) - ${STADIUM_UPKEEP_EXEMPT_SEATS}) * ${STADIUM_UPKEEP_PER_SEAT_WEEK}) AS INTEGER)
      ) AS delta FROM teams`,
   ).then((r) => r[0]?.delta ?? 0);
 const { createWeeklyFlowHelpers } = require("../weeklyFlowHelpers") as any;

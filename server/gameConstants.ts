@@ -180,7 +180,7 @@ export const SPONSOR_REVENUE_BY_DIVISION: Record<number, number> = {
   2: 1500000,
   3: 1000000,
   4: 500000,
-  5: 250000,
+  5: 400000,
 };
 
 /**
@@ -193,7 +193,7 @@ export const WEEKLY_BASE_INCOME: Record<number, number> = {
   2: 50000,
   3: 35000,
   4: 25000,
-  5: 12000,
+  5: 20000,
 };
 
 /** Número de eventos (semanas de jogo) por época = SEASON_CALENDAR.length (1 amigável + 14 liga + 5 taça). */
@@ -254,13 +254,36 @@ export const NPC_WAGE_CUT_PER_EVENT = 2;
 export const AUCTION_BID_STEP = 10000;
 
 /**
- * Amortização semanal do empréstimo bancário (pagamento de capital).
- * A cada semana de jogo (liga e taça), este valor é debitado do orçamento e
- * abatido ao principal (loan_amount), independentemente dos juros. Assim a
- * dívida visível diminui semana a semana até a zero.
- * 35K/sem → um empréstimo de 500K (1 LOAN_STEP) é liquidado em ~14 semanas.
+ * Amortização semanal do empréstimo bancário (pagamento de capital),
+ * escalonada por divisão: a prestação fixa única (35K/sem) valia 3 mesadas
+ * para uma Distrital e meia para a 1.ª Liga. Cada divisão paga à medida
+ * da sua mesada; a dívida visível diminui semana a semana até a zero.
  */
-export const LOAN_WEEKLY_INSTALLMENT = 35000;
+export const LOAN_INSTALLMENT_BY_DIVISION: Record<number, number> = {
+  1: 50000,
+  2: 40000,
+  3: 30000,
+  4: 20000,
+  5: 15000,
+};
+
+/** Prestação semanal do empréstimo para uma divisão (fallback: D5). */
+export function loanInstallment(division: number): number {
+  return LOAN_INSTALLMENT_BY_DIVISION[division] ?? 15000;
+}
+
+/**
+ * Lugares isentos da manutenção semanal do estádio: os primeiros 3000
+ * lugares não pagam. Um estádio de 5 mil (divisões baixas) poupa ~90K€/época;
+ * os gigantes continuam a pagar milhões — o luxo paga-se, a base respira.
+ */
+export const STADIUM_UPKEEP_EXEMPT_SEATS = 3000;
+
+/**
+ * Quinhão do visitante na bilheteira (liga e Taça): 15% da receita vai
+ * para a equipa de fora. Jogar num estádio cheio deixa de render zero.
+ */
+export const AWAY_TICKET_SHARE = 0.15;
 
 /**
  * Duração de um contrato em slots de calendário (1 época = 20 semanas).

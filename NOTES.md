@@ -1,3 +1,11 @@
+## Economia das divisões baixas: tese + 5 medidas (2026-09-22)
+
+- Tese pedida pelo dono: números reais da `base.db` mostravam a D5 como única divisão em défice estrutural (−120k€/época, colchão inicial de 500k), com os mesmos custos da D4 (mesma skill, mesmos salários, mesmo estádio 5k) mas metade da receita; campeão distrital ganhava 0€ (CHAMPION_PRIZE só 1–4); Taça winner-takes-all; visitante com 0€; prestação fixa 35k/sem = 3 mesadas na D5; manutenção 1,5€/lugar = 62% da mesada D5.
+- Medidas (só servidor, sem cliente/layout): 1) mesada D5 12k→20k + patrocínio D5 250k→400k (`gameConstants`); 2) `CHAMPION_PRIZE[5]=125k` (loops `[2,3,4]`→`[2,3,4,5]`, resumo `[1..5]`) + bónus de subida 100k por promovida (mesma transação + notícia `prize` + systemMessage); 3) `CUP_ROUND_PRIZE` 25k/50k/100k/200k (R1–R4, a final mantém 500k) a quem avança; 4) `AWAY_TICKET_SHARE=0,15` na liga (`weeklyFlowHelpers` + rescaldo `matchSummaryHelpers`) e na Taça; 5) `STADIUM_UPKEEP_EXEMPT_SEATS=3000` + `LOAN_INSTALLMENT_BY_DIVISION` 50k/40k/30k/20k/15k (CASE no SQL, diário via `loanInstallment`). `npcStructuralBreakEvenFolha` herda as receitas novas sem mexer.
+- Novo balanço garantido/época (antes de bilheteira/prémios): D1 −95k, D2 +254k, D3 +404k, D4 +517k, D5 +325k — hierarquia preservada, D5 viável mas ainda a mais pobre a seguir à D1 (que vive da bilheteira gigante).
+- Espelho do `crashRecoveryRegression.mts` atualizado (mesada D5, CASE do empréstimo, isenção) — sem isto o E2E falhava.
+- Checks: server `typecheck` OK, `audit:socketio` 0 erros (97 avisos pré-existentes), `test:crash-recovery` OK. `audit:gamestate` fica para a próxima sala viva. Cliente intocado → sem lint/mobile-resp-check.
+
 ## Corpo do Jornal em Newsreader + sorteio da Taça em tabela (2026-09-22)
 
 - Queixa: o corpo das notícias parecia feio (serif por defeito, sem justificação, a tocar as bordas) e o mail do sorteio da Taça mostrava uma lista seca.

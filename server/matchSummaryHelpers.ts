@@ -1,5 +1,5 @@
 import type { ActiveGame } from "./types";
-import { FORM_MATCH_MIN, FORM_MAX, SEASON_CALENDAR, slotForLeagueMatchweek } from "./gameConstants";
+import { FORM_MATCH_MIN, FORM_MAX, SEASON_CALENDAR, AWAY_TICKET_SHARE, slotForLeagueMatchweek } from "./gameConstants";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { persistMoms } from "./momHelpers";
 import { computeMatchOdds } from "./game/commentary";
@@ -1208,6 +1208,9 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                   const away = snapshot(match.awayTeamId);
                   const homeRevenue =
                     (match.attendance || 0) * ((match as any)._ticketPrice || 15);
+                  // 15% da bilheteira para o visitante (como no crédito semanal).
+                  const awayShare = Math.floor(homeRevenue * AWAY_TICKET_SHARE);
+                  const homeShare = homeRevenue - awayShare;
                   const key = `league:${game.season}:${matchweek}`;
                   const roundLabel = `Jornada ${matchweek}`;
                   logPostMatchRecap(game, {
@@ -1221,7 +1224,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                     source: "league",
                     roundLabel,
                     key,
-                    ticketRevenue: homeRevenue,
+                    ticketRevenue: homeShare,
                     myDivision: home.division,
                     opponentDivision: away.division,
                     opponentRank: away.rank,
@@ -1240,7 +1243,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                     source: "league",
                     roundLabel,
                     key,
-                    ticketRevenue: 0,
+                    ticketRevenue: awayShare,
                     myDivision: away.division,
                     opponentDivision: home.division,
                     opponentRank: home.rank,
