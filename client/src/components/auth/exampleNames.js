@@ -5,7 +5,8 @@
  */
 export const exampleNames = [
 	"Cobra",
-	"Amorim",
-	// Adiciona os teus amigos aqui, um por linha:
-	// "Nome do Amigo",
+	"Rossi",
+	"Broly",
+	"Lipslide",
+	"SaoCipriano",
 ];
