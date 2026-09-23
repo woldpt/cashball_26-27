@@ -3,6 +3,7 @@ import { GameContext } from "../../contexts/GameContext.jsx";
 import { slotLabel } from "../../utils/slotLabel.js";
 import { formatCurrency, seasonToYear } from "../../utils/formatters.js";
 import { AggBadge } from "../shared/AggBadge.jsx";
+import { Stars } from "../shared/Stars.jsx";
 import { Badge } from "../shared/Badge.jsx";
 import { Button } from "../shared/Button.jsx";
 import { ModalShell } from "../shared/ModalShell.jsx";
@@ -408,6 +409,16 @@ export function PlayerHistoryModal({
                       value={player.form}
                       color={formHex}
                     />
+                  )}
+                  {player.last_rating != null && (
+                    <div className="flex justify-between items-end">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+                        Última classificação
+                      </span>
+                      <span className="font-black font-headline text-base text-amber-400">
+                        <Stars value={player.last_rating} />
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>

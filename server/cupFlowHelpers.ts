@@ -28,6 +28,7 @@ import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { serializeActiveAuctions } from "./auctionHelpers";
 import { persistMoms } from "./momHelpers";
 import { computeMoms } from "./game/mom";
+import { computeMatchRatings, persistLastRatings } from "./game/ratings";
 import {
   appendRoomEvent,
   clearMatchCheckpoint,
@@ -1669,6 +1670,17 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				);
 			}
 
+			// Classificação 1–5★ do último jogo por participante (mantém quem
+			// não jogou). Idempotente → seguro no replay da ronda.
+			try {
+				persistLastRatings(game.db, fixture);
+			} catch (ratingErr: any) {
+				console.warn(
+					`[continueFromEtGate] last_rating persistence failed (round ${round}):`,
+					ratingErr?.message,
+				);
+			}
+
 			// Cup upset drama by division gap: the lower-division team that
 			// advances gets an extra morale spike and the higher-division team
 			// it eliminates takes a matching extra hit.
@@ -1752,6 +1764,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				const cHome = cupDivOf.get(Number(fixture.homeTeamId));
 				const cAway = cupDivOf.get(Number(fixture.awayTeamId));
 				const cupKey = `cup:${season}:${round}`;
+				const cupRatings = computeMatchRatings(fixture);
 				logPostMatchRecap(game, {
 					teamId: fixture.homeTeamId,
 					teamName: cHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
@@ -1763,6 +1776,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					source: "cup",
 					roundLabel,
 					key: cupKey,
+					ratings: cupRatings.home,
 					ticketRevenue: cupHomeShare,
 					myDivision: cHome?.division ?? null,
 					opponentDivision: cAway?.division ?? null,
@@ -1779,6 +1793,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					source: "cup",
 					roundLabel,
 					key: cupKey,
+					ratings: cupRatings.away,
 					ticketRevenue: cupAwayShare,
 					myDivision: cAway?.division ?? null,
 					opponentDivision: cHome?.division ?? null,
@@ -2073,6 +2088,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					const fHome = friendlyTeamOf.get(Number(fixture.homeTeamId));
 					const fAway = friendlyTeamOf.get(Number(fixture.awayTeamId));
 					const friendlyKey = `friendly:${season}:${game.matchweek}`;
+					const friendlyRatings = computeMatchRatings(fixture);
+					persistLastRatings(game.db, fixture);
 					logPostMatchRecap(game, {
 						teamId: fixture.homeTeamId,
 						teamName: fHome?.name ?? (fixture.homeTeam as any)?.name ?? null,
@@ -2084,6 +2101,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						source: "friendly",
 						roundLabel: "Amigável",
 						key: friendlyKey,
+						ratings: friendlyRatings.home,
 						ticketRevenue: homeShare,
 						myDivision: fHome?.division ?? null,
 						opponentDivision: fAway?.division ?? null,
@@ -2100,6 +2118,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						source: "friendly",
 						roundLabel: "Amigável",
 						key: friendlyKey,
+						ratings: friendlyRatings.away,
 						ticketRevenue: awayShare,
 						myDivision: fAway?.division ?? null,
 						opponentDivision: fHome?.division ?? null,

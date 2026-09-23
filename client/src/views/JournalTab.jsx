@@ -23,6 +23,7 @@ import { Button } from "../components/shared/Button.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
 import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
 import { TeamCrest } from "../components/live/TeamCrest.jsx";
+import { PostMatchPitch } from "../components/shared/PostMatchPitch.jsx";
 
 const FILTERS = ["all", "club", "competitions", "squad", "market"];
 
@@ -999,6 +1000,12 @@ export function JournalTab({
                     />
                   </div>
                 )}
+
+                {/* Pitch com as classificações 1–5★ (fim do corpo do rescaldo) */}
+                {Array.isArray(inbox.selected.pitch) &&
+                  inbox.selected.pitch.length > 0 && (
+                    <PostMatchPitch players={inbox.selected.pitch} />
+                  )}
 
                 {/* Tabela de classificação final */}
                 {inbox.selected.newsType === "league_final" && (

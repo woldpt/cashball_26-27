@@ -174,6 +174,20 @@ const globalNews = {
         opponentDivision: 2,
         opponentRank: 5,
         opponentTeamCount: 8,
+        ratings: [
+          { id: 101, name: "Alberto Sequeira", position: "GR", stars: 4, starter: true },
+          { id: 102, name: "Nuno Bento", position: "DEF", stars: 3, starter: true },
+          { id: 103, name: "Ivan Kováč", position: "DEF", stars: 5, starter: true },
+          { id: 104, name: "Marcos Aleixo", position: "DEF", stars: 2, starter: true },
+          { id: 105, name: "Tiago Correia de Matos", position: "DEF", stars: 3, starter: true },
+          { id: 106, name: "Hélder Sousa", position: "MED", stars: 4, starter: true },
+          { id: 107, name: "Bruno Faustino", position: "MED", stars: 3, starter: true },
+          { id: 108, name: "Alexandre Gonçalves Ferraz", position: "MED", stars: 1, starter: true },
+          { id: 109, name: "Paulo Mota", position: "MED", stars: 4, starter: true },
+          { id: 110, name: "Ricardo Nunes Delgado", position: "ATA", stars: 5, starter: true },
+          { id: 111, name: "Joaquim Chissano", position: "ATA", stars: 3, starter: true },
+          { id: 112, name: "Vítor Baía Júnior", position: "MED", stars: 3, starter: false },
+        ],
       }),
       related_team_id: 4,
       related_team_name: "F.C. Atlântico Norte",
@@ -256,13 +270,13 @@ async function checkQuickSearch() {
     "value",
   ).set;
   const initialCount = document.querySelectorAll("ol button").length;
-  setValue.call(input, "Contas bancárias");
+  setValue.call(input, "Crédito");
   input.dispatchEvent(new Event("input", { bubbles: true }));
   await new Promise((r) => setTimeout(r, 60));
   const filteredRows = [...document.querySelectorAll("ol button")];
   const filtered =
     filteredRows.length === 1 &&
-    filteredRows[0].textContent.includes("Contas bancárias");
+    filteredRows[0].textContent.includes("Crédito");
   setValue.call(input, "");
   input.dispatchEvent(new Event("input", { bubbles: true }));
   await new Promise((r) => setTimeout(r, 60));
@@ -348,11 +362,11 @@ async function checkDrawDate() {
 /** Abrir uma notícia no JournalTab tem de baixar o badge no outro consumidor. */
 async function checkSharedReads() {
   const before = badgeText();
-  const initialRow = [...document.querySelectorAll("ol button")].find((b) =>
-    b.textContent.includes("Contas bancárias"),
-  );
   // A notícia mais antiga começa seleccionada mas continua por ler
-  // (só o clique marca como lida).
+  // (só o clique marca como lida). Selecionada = aria-current na linha.
+  const initialRow = [...document.querySelectorAll("ol button")].find(
+    (b) => b.getAttribute("aria-current") === "true",
+  );
   const initialIsUnread = initialRow
     ?.querySelector("span.min-w-0")
     ?.className.includes("font-black");
@@ -419,10 +433,13 @@ function measure() {
 
 setTimeout(async () => {
   const report = measure();
+  // Ordem importa: o clique numa linha marca-a como lida, por isso o
+  // check do estado inicial (seleccionada + por ler) corre antes dos
+  // checks que seleccionam notícias.
   report.quickSearch = await checkQuickSearch();
+  report.inboxBadge = await checkSharedReads();
   report.moodArticle = await checkMoodArticle();
   report.drawDate = await checkDrawDate();
-  report.inboxBadge = await checkSharedReads();
   if (
     !report.quickSearch.ok ||
     !report.moodArticle.ok ||

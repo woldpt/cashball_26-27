@@ -1,3 +1,12 @@
+## Classificação 1–5★ pós-jogo: modal, Plantel e pitch no rescaldo (2026-09-23)
+
+- Pedido: estrelas da **última classificação** visíveis no modal do jogador, na lista do Plantel e no fim do corpo da notícia de rescaldo (pitch com titulares + entrados). Escala 1–5 inteiros; quem não joga mantém a última nota.
+- Backend: novo `server/game/ratings.ts` — base 3★ + pesos `MOM_WEIGHTS` (agora exportado de `mom.ts`), conversão `score/15` → clamp 1–5; participantes = snapshot do lineup ∪ entrados (`substitution`/`halftime_sub`) ∪ saídos ao intervalo (`outPlayerId`); juniores (id<0) excluídos. `persistLastRatings` grava `players.last_rating` (coluna nova, migração no loop do `gameManager.ts`) em ≤5 UPDATEs por equipa, idempotente → replay-safe. Amigáveis também gravam (modal/notícia coerentes), apesar de fora das estatísticas de jogador.
+- Rescaldo: campo opcional `ratings` no JSON `v:1` de `logPostMatchRecap` (`coreHelpers.ts`); 6 call sites (2 liga em `matchSummaryHelpers`, 2 taça + 2 amigável em `cupFlowHelpers`). Notícias antigas sem `ratings` → artigo simples, sem pitch.
+- Frontend: `Stars.jsx` (novo, partilhado) · `PlayerHistoryModal` linha "Última classificação" em Atributos · `PlayerRow.showLastRating` ativado só em `PlayersTab` · `PostMatchPitch.jsx` (novo) reusa `PitchFormation` (mostra `player.rating` no placard quando definido) + linha "Entraram: …" · `JournalTab` renderiza `article.pitch` após o corpo como campo separado (o splitter de parágrafos engoliria uma part).
+- Harnesses: `journal-resp-test` — expectativa pré-existente obsoleta corrigida (título "Contas bancárias" → variante atual "Crédito"; falhava já no HEAD, confirmado via stash) e `inboxBadge` movido para antes dos checks que clicam (clique marca como lida); fixture de postmatch ganhou `ratings` (exercita o pitch). `mobile-resp-test`: fixture com `last_rating` 5/1/4/ausente.
+- Checks: server `typecheck` exit 0 · novo `npm run test:ratings` (12 asserts) PASS · `audit:socketio` 0 erros (97 warnings pré-existentes) · `audit:gamestate TST148` 0 erros · client `check:types` OK · `lint` só os 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx` — não tocados, eslint é por-ficheiro) · mobile retrato **155/155** + paisagem **186/186** · screenshots vistos (Plantel ★★★★★, pitch em retrato e paisagem).
+
 ## Lesões no Jornal: gravidade + total de semanas (2026-09-23)
 
 - As notícias de lesão agora indicam gravidade (grave = 3+ sem, leve = 1) e o total de semanas de baixa, com regresso previsto (`until + 1`).

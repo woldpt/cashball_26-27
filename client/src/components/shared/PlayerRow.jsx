@@ -6,12 +6,14 @@
  * comportamento de cada contexto:
  *  - `onOpenPlayerHistory`: torna a linha clicável (histórico do jogador);
  *  - `showContractBadges`: mostra "Renovado" / "À venda" (só na própria equipa);
- *  - `showProposalCol`: coluna de proposta para equipas NPC.
+ *  - `showProposalCol`: coluna de proposta para equipas NPC;
+ *  - `showLastRating`: estrelas da última classificação a seguir ao nome.
  */
 import { AggBadge } from "./AggBadge.jsx";
 import { PlayerAvatar } from "./PlayerAvatar.jsx";
 import { PlayerLink } from "./PlayerLink.jsx";
 import { PlayerStatusBadges, StarMark } from "./PlayerStatusBadges.jsx";
+import { Stars } from "./Stars.jsx";
 import {
   FLAG_TO_COUNTRY,
   POSITION_TEXT_CLASS,
@@ -34,6 +36,7 @@ import { getPlayerStat } from "../../utils/playerHelpers.js";
  *   dim?: boolean,
  *   showContractBadges?: boolean,
  *   showProposalCol?: boolean,
+ *   showLastRating?: boolean,
  *   myBudget?: number,
  *   onProposal?: (data: { player: object, suggestedPrice: number }) => void,
  *   actions?: import("react").ReactNode,
@@ -48,6 +51,7 @@ export function PlayerRow({
   dim = false,
   showContractBadges = false,
   showProposalCol = false,
+  showLastRating = false,
   myBudget = 0,
   onProposal,
   actions,
@@ -143,6 +147,12 @@ export function PlayerRow({
             showContractBadges={showContractBadges}
             season={season}
           />
+          {showLastRating && player.last_rating != null && (
+            <Stars
+              value={player.last_rating}
+              className="text-amber-400 text-[11px] shrink-0"
+            />
+          )}
         </div>
       </div>
 

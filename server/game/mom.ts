@@ -25,7 +25,7 @@ export interface MomResult {
  * MOM "rápido": um golo domina, cartões/lesões penalizam, falhanças e o
  * GR de emergência dão um bónus modesto.
  */
-const MOM_WEIGHTS: Record<string, number> = {
+export const MOM_WEIGHTS: Record<string, number> = {
   goal: 30,
   penalty_goal: 30,
   near_miss: 8,

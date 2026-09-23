@@ -191,6 +191,7 @@ export function PlayersTab({
                               matchweekCount={matchweekCount}
                               season={season}
                               showContractBadges
+                              showLastRating
                               onOpenPlayerHistory={onOpenPlayerHistory}
                             />
                           </motion.li>

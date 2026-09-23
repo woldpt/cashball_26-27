@@ -2,6 +2,7 @@ import { memo, useMemo } from "react";
 import { POSITION_SHORT_LABELS, POSITION_ACCENT_HEX } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS, filterMatchEvents } from "../matchConstants.js";
 import { PlayerAvatar } from "../../shared/PlayerAvatar.jsx";
+import { Stars } from "../../shared/Stars.jsx";
 import { FatigueIndicator } from "./FatigueIndicator.jsx";
 
 /* ── Relvado broadcast ───────────────────────────────────────────────────
@@ -125,7 +126,11 @@ export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badg
         )}
       </div>
       <span className={`font-black tabular-nums text-amber-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${skillCls}`}>
-        {player.skill ?? "-"}
+        {player.rating != null ? (
+          <Stars value={player.rating} className="text-amber-300" />
+        ) : (
+          (player.skill ?? "-")
+        )}
       </span>
       {showFatigue && (
         <FatigueIndicator player={player} compact className="max-w-full truncate text-[7px]" />

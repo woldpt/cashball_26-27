@@ -45,6 +45,7 @@ const squad = [
     skill: 36,
     wage: 7200,
     value: 180000,
+    last_rating: 5,
   }),
   mk(2, "GR", "Rui Pinto", { skill: 30, wage: 5800, isJunior: true }),
   mk(3, "GR", "Tomás Silva", {
@@ -86,6 +87,7 @@ const squad = [
     resistance: 5,
     form: 82,
     prev_skill: 41,
+    last_rating: 1,
   }),
   mk(10, "MED", "André", {
     skill: 48,
@@ -119,6 +121,7 @@ const squad = [
     is_star: true,
     goals: 21,
     form: 115,
+    last_rating: 4,
   }),
   mk(16, "ATA", "Hugo", {
     skill: 46,

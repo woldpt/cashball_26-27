@@ -2,6 +2,7 @@ import type { ActiveGame } from "./types";
 import { FORM_MATCH_MIN, FORM_MAX, SEASON_CALENDAR, AWAY_TICKET_SHARE, slotForLeagueMatchweek } from "./gameConstants";
 import { updateTacticFamiliarity } from "./game/tacticFamiliarity";
 import { persistMoms } from "./momHelpers";
+import { computeMatchRatings, persistLastRatings } from "./game/ratings";
 import { computeMatchOdds } from "./game/commentary";
 import { getWeatherForFixture } from "./game/matchCalculations";
 import { explainAttendance, logMatchMedicalNews, logPostMatchRecap } from "./coreHelpers";
@@ -1155,6 +1156,17 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                 applyFormDelta(homeLineupIds, homeWon);
                 applyFormDelta(awayLineupIds, awayWon);
 
+                // Classificação 1–5★ do último jogo por participante (mantém
+                // quem não jogou). Idempotente → seguro no replay.
+                try {
+                  persistLastRatings(game.db, match);
+                } catch (ratingErr: any) {
+                  console.warn(
+                    `[persistMatchResults] last_rating persistence failed (matchweek ${matchweek}):`,
+                    ratingErr?.message,
+                  );
+                }
+
                 // Registra táctica para cada equipa (humana ou NPC) nos fixtures
                 const recordTacticHistory = (
                   teamId: number,
@@ -1213,6 +1225,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                   const homeShare = homeRevenue - awayShare;
                   const key = `league:${game.season}:${matchweek}`;
                   const roundLabel = `Jornada ${matchweek}`;
+                  const ratings = computeMatchRatings(match);
                   logPostMatchRecap(game, {
                     teamId: match.homeTeamId,
                     teamName: home.name,
@@ -1224,6 +1237,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                     source: "league",
                     roundLabel,
                     key,
+                    ratings: ratings.home,
                     ticketRevenue: homeShare,
                     myDivision: home.division,
                     opponentDivision: away.division,
@@ -1243,6 +1257,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                     source: "league",
                     roundLabel,
                     key,
+                    ratings: ratings.away,
                     ticketRevenue: awayShare,
                     myDivision: away.division,
                     opponentDivision: home.division,
