@@ -193,6 +193,8 @@ export function parsePostMatchRecap(n) {
       oppGoals: r.oppGoals,
       roundLabel: r.roundLabel,
       ticketRevenue: r.ticketRevenue,
+      // Classificação 1–5★ por participante (notícias antigas: null → sem pitch).
+      ratings: Array.isArray(r.ratings) ? r.ratings : null,
     };
     return { mood, key: r.key };
   } catch {
@@ -219,7 +221,7 @@ export function persistedMoodKeys(rows) {
 /**
  * Artigo da reação pós-jogo com o adversário clicável (título e corpo).
  * @param {object} mood contexto final do jogo
- * @returns {object} `{ title, body, titleParts, bodyParts, media }`
+ * @returns {object} `{ title, body, titleParts, bodyParts, media, pitch }`
  */
 export function buildMoodNewsArticle(mood) {
   const headline =
@@ -241,6 +243,11 @@ export function buildMoodNewsArticle(mood) {
       ? linkFirstMention(body, partTeam(opponent))
       : [partText(body)],
     media: { player: null, teams: opponent ? [opponent] : [] },
+    // Pitch de classificações no fim do corpo (null quando não há dados).
+    pitch:
+      Array.isArray(mood?.ratings) && mood.ratings.length > 0
+        ? mood.ratings
+        : null,
   };
 }
 
@@ -568,6 +575,29 @@ function leagueFinalArticle(n) {
   };
 }
 /**
+ * Textos de lesão com gravidade e total de semanas (engine: grave = 3+ sem).
+ * @returns {{title: string, body: string}}
+ */
+function injuryTexts(variant, name, detail, weeks, until) {
+  const sev = weeks >= 3 ? "grave" : "leve";
+  const w = weeks === 1 ? "1 semana" : `${weeks} semanas`;
+  const titles = [
+    `🩹 Lesão ${sev}: ${name}`,
+    `🩹 ${name} vai ficar fora por ${w}`,
+    `🩹 ${name} lesionado — ${w} de baixa`,
+  ];
+  const bodies = [
+    `${name}${detail} ficou com lesão ${sev} e ficará ${w} de fora, com regresso previsto para a jornada ${until + 1}. O departamento médico acompanha a recuperação.`,
+    `Lesão ${sev} confirmada para ${name}${detail}: ${w} de baixa, de volta na jornada ${until + 1}. O treinador terá de reorganizar o plantel.`,
+    `${name}${detail} saiu lesionado e o diagnóstico aponta ${w} de recuperação. Regresso marcado para a jornada ${until + 1}.`,
+  ];
+  return {
+    title: titles[variant % titles.length],
+    body: bodies[variant % bodies.length],
+  };
+}
+
+/**
  * Artigo de lesão/castigo persistido (factos em JSON, `amount` = until).
  * @param {object} n linha `injury`/`suspension`
  */
@@ -586,12 +616,22 @@ function medicalArticle(n) {
     .filter(Boolean)
     .join(" · ");
   const detail = profile ? ` (${profile})` : "";
-  const title =
-    kind === "injury" ? `🩹 ${player.label} lesionado` : `🟥 ${player.label} castigado`;
-  const body =
-    kind === "injury"
-      ? `${player.label}${detail} de fora até à jornada ${until + 1}. O departamento médico acompanha a recuperação e o treinador terá de reorganizar o plantel.`
-      : `${player.label}${detail} suspenso até à jornada ${until + 1}. O castigo obriga o treinador a mexer nas contas da próxima convocatória.`;
+  let title;
+  let body;
+  if (kind === "suspension") {
+    title = `🟥 ${player.label} castigado`;
+    body = `${player.label}${detail} suspenso até à jornada ${until + 1}. O castigo obriga o treinador a mexer nas contas da próxima convocatória.`;
+  } else {
+    // until - slot = semanas totais (slot = semana em que a lesão aconteceu).
+    const weeks = Number(n?.slot) > 0 ? until - Number(n.slot) : 0;
+    if (weeks >= 1) {
+      ({ title, body } = injuryTexts(newsVariant(n, 3), player.label, detail, weeks, until));
+    } else {
+      // Linhas antigas sem slot: só a jornada de regresso é fiável.
+      title = `🩹 ${player.label} lesionado`;
+      body = `${player.label}${detail} de fora até à jornada ${until + 1}. O departamento médico acompanha a recuperação e o treinador terá de reorganizar o plantel.`;
+    }
+  }
   return {
     ...makeArticle(
       linkFirstMention(title, p),
@@ -1340,8 +1380,10 @@ export function squadToMedicalItems(squad, nowIdx, dateLabel) {
       position: p.position,
     };
     if (inj > nowIdx) {
+      const weeks = inj - nowIdx;
+      const w = weeks === 1 ? "1 semana" : `${weeks} semanas`;
       const title = `🩹 ${p.name} lesionado`;
-      const body = `${p.name}${detail} de fora até à jornada ${inj + 1}.`;
+      const body = `${p.name}${detail} de fora até à jornada ${inj + 1} — ${w} de baixa.`;
       items.push({
         id: `inj-${p.id}-${inj}`,
         cat: "squad",

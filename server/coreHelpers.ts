@@ -7,6 +7,7 @@ import {
   SEASON_CALENDAR,
 } from "./gameConstants";
 import { getWeatherForFixture } from "./game/matchCalculations";
+import type { RatingRow } from "./game/ratings";
 
 type Db = any;
 type AnyRow = Record<string, any>;
@@ -751,7 +752,9 @@ export function logMedicalNews(
         }),
         matchweek,
         year,
-        slot,
+        // Sem slot explícito (semanas de Taça), a semana em curso é a da lesão:
+        // o cliente deriva o total de semanas por until - slot.
+        slot: slot ?? currentSlot(game),
       }, io);
     },
   );
@@ -821,6 +824,8 @@ export interface PostMatchRecap {
   /** Semana do calendário (1..20); por omissão, a semana em curso. */
   slot?: number;
   year?: number;
+  /** Classificação 1–5★ dos participantes (pitch do artigo no Jornal). */
+  ratings?: RatingRow[];
 }
 
 /**
@@ -848,6 +853,9 @@ export function logPostMatchRecap(game: ActiveGame, recap: PostMatchRecap) {
     opponentDivision: recap.opponentDivision ?? null,
     opponentRank: recap.opponentRank ?? null,
     opponentTeamCount: recap.opponentTeamCount ?? null,
+    // Omitido quando vazio: JSON.stringify dropa `undefined` e as notícias
+    // antigas (sem ratings) caem no render simples do cliente.
+    ratings: recap.ratings?.length ? recap.ratings : undefined,
   };
   const title =
     `Rescaldo: ${recap.teamName || "A equipa"} ${recap.myGoals}–${recap.oppGoals} ${recap.opponentName || ""}`.trim();

@@ -1,3 +1,13 @@
+## Lesões no Jornal: gravidade + total de semanas (2026-09-23)
+
+- As notícias de lesão agora indicam gravidade (grave = 3+ sem, leve = 1) e o total de semanas de baixa, com regresso previsto (`until + 1`).
+- Fórmula: `semanas = until - slot` (slot = semana em que a lesão aconteceu; engine grava `injury_until = currentMatchweek + injuryWeeks` e `currentMatchweek = slot`).
+- `server/coreHelpers.ts` (`logMedicalNews`): `slot: slot ?? currentSlot(game)` — lesões de semanas de Taça guardavam slot NULL e o total não era derivável.
+- `client/src/utils/inboxItems.js`: helper `injuryTexts` (3 pares título/corpo, `newsVariant(n, 3)`); `medicalArticle` usa-o quando `until - slot >= 1`, senão fallback ao texto antigo (linhas legadas sem slot).
+- Item transitório (`squadToMedicalItems`): acrescenta "N semanas de baixa" (semanas restantes, sempre verdadeiro).
+- Suspensões intocadas (castigo fixo de 2 jornadas, nada a acrescentar).
+- Checks: server `typecheck` OK, client `lint` só os 2 erros pré-existentes, `check:types` OK, smoke test node (grave/leve/legado/variantes/suspensão/transitório) OK.
+
 ## Eliminado da Taça: sem briefing, só cartão 🏆 (2026-09-23)
 
 - Queixa: em semana de Taça sem jogo próprio, o JOGAR mostrava o briefing espião antes do cartão de eliminado.
