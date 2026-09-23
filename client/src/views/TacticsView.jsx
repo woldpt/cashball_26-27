@@ -424,19 +424,18 @@ export function TacticsView() {
   const isEliminatedCupSpectator =
     nextMatchSummary?.isCup && !nextMatchOpponent;
   // Fase 1 — Briefing. Saltado em situações de jogo ativo (intervalo, a jogar)
-  // e para espectadores sem espião; com jogos da ronda há briefing espião.
-  const hasSpyGames = (nextMatchSummary?.roundFixtures?.length ?? 0) > 0;
+  // e para espectadores eliminados da Taça (só veem o cartão 🏆).
   const showBriefing =
     prepPhase === "briefing" &&
     !isHalftime &&
-    (!isEliminatedCupSpectator || hasSpyGames) &&
+    !isEliminatedCupSpectator &&
     !isPlayingMatch &&
     !!nextMatchSummary;
   const canPlay = isEliminatedCupSpectator || isHalftime || isLineupComplete;
   const showBackToBriefing =
     prepPhase === "tactics" &&
     !isHalftime &&
-    (!isEliminatedCupSpectator || hasSpyGames) &&
+    !isEliminatedCupSpectator &&
     !isPlayingMatch;
   const playLabel = myReady
     ? "⏳ A aguardar..."

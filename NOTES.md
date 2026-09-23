@@ -1,3 +1,9 @@
+## Eliminado da Taça: sem briefing, só cartão 🏆 (2026-09-23)
+
+- Queixa: em semana de Taça sem jogo próprio, o JOGAR mostrava o briefing espião antes do cartão de eliminado.
+- Só `client/src/views/TacticsView.jsx`: `showBriefing` e `showBackToBriefing` perderam a exceção `|| hasSpyGames` (variável removida, só lá era usada) — o espectador eliminado cai direto no cartão 🏆 + "Ver jogos da Taça".
+- Checks: client `lint` só os 2 erros pré-existentes (confirmado via `git stash`), `check:types` OK. Sem mudança estrutural → sem `mobile-resp-check`.
+
 ## Fix crash Taça: `roundLabel` indefinido em `continueFromEtGate` (2026-09-23)
 
 - Erro no docker (`backend-1`): `ReferenceError: roundLabel is not defined` em `continueFromEtGate` (via `finalizeCupRound`), transação da Taça rebentava a meio.
