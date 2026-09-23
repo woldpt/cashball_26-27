@@ -92,6 +92,14 @@ export function GoalFlashOverlay({
 
   // Variante card: festejo contido no card (sem portal, sem confete).
   if (variant === "card") {
+    // Confete por portal para o <body>: o card tem overflow-hidden, que cortava
+    // o festejo. O wash + "GOLO!" ficam contidos no card; só o confete escapa.
+    const confete = createPortal(
+      <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden">
+        <CelebrationBurst seed={`${moment.side}-${moment.ts}-${moment.seq}`} showChampagne={false} />
+      </div>,
+      document.body,
+    );
     return (
       <div
         key={`${moment.side}-${moment.ts}-${moment.seq}`}
@@ -116,9 +124,7 @@ export function GoalFlashOverlay({
             transition={{ duration: 1.9, times: [0, 0.2, 0.8, 1] }}
           />
         )}
-        <div className="absolute inset-0">
-          <CelebrationBurst seed={`${moment.side}-${moment.ts}-${moment.seq}`} showChampagne={false} />
-        </div>
+        {confete}
         <motion.span
           className="relative font-headline font-black uppercase tracking-tight leading-none"
           style={{
