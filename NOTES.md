@@ -1,3 +1,12 @@
+## Textos do Jornal: mais variação por notícia (2026-09-23)
+
+- Pedido: melhorar todos os textos que aparecem no Jornal (`JournalTab.jsx`) e acrescentar mais variações para as mesmas notícias.
+- Só `client/src/utils/inboxItems.js` (as notícias são geradas no cliente; o servidor só grava `type`/`title`/`description`/`amount`).
+- `MOOD_COPY`: 2 → 4 parágrafos por mood (16 textos novos, tom editorial CM2001). `buildMoodNewsBody` agora escolhe 2 parágrafos diferentes por seed determinística (`roundLabel|variant|marcador`) em vez de `copy[0]+copy[1]` fixos; frase final também varia. Sem seed aleatória → o mesmo rescaldo persistido mantém o mesmo texto.
+- `newsVariant(n, count)` (seed `Math.abs(id) % count`) estendido a todos os ramos de `newsArticle` que tinham texto único: financeiros semanais (3 títulos + 3 corpos), empréstimos (3), estádio/academia/renegociação/corte/taça/prémio/bem-vindo/fallback (3 corpos cada). `transfer_in` (4), `transfer_out` (3) e `auction_failed` (2) já variavam.
+- `useInbox.js` intocado: os itens transitórios (pedido de contrato, convite, aviso) são prompts funcionais curtos ligados a botões, sem id estável para variação — ficam como estão.
+- Checks: client `lint` limpo no ficheiro (só os 2 erros pré-existentes em `GameContext.jsx`), `check:types` OK, smoke test: variantes determinísticas por id, ciclo correto, todos os ramos novos exercitados.
+
 ## Treino posicional mais rápido só para humanos (2026-09-22)
 
 - Pedido: fazer do treino uma fonte de receita (viveirismo) com treino posicional mais rápido. Diagnóstico: o travão real é o teto de potencial (seed: skill +0..3, craques +4..8 — um miúdo 5→8 numa semana e depois para), não a velocidade; decidido via perguntas: só velocidade (ganho 5→8), todo o plantel, só humanos, teto intocado.

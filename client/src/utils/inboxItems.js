@@ -50,40 +50,71 @@ const MOOD_COPY = {
   win: [
     "A vitória devolve tranquilidade à bancada e confirma que o grupo soube responder quando era preciso. Não foi apenas uma linha no resultado: foi uma noite em que o clube voltou a sentir que o trabalho da semana tem uma recompensa concreta.",
     "Entre aplausos e comentários à saída, os adeptos deixam um pedido simples: mais noites assim. O triunfo dá margem para preparar a próxima jornada com confiança, sem apagar a exigência que acompanha cada camisola.",
+    "A bancada saiu a assobiar canções que já nem se lembrava. Três pontos, sim, mas sobretudo a confirmação de que o plantel sabe jogar quando a pressão aperta e o resultado começa a contar de verdade.",
+    "Houve quem entrasse desconfiado e saísse convencido. A vitória não resolve tudo, mas devolve ao clube o que faltava: a sensação de que os fins de semana voltaram a ter sentido.",
   ],
   win_big: [
     "A bancada recebeu o resultado como uma declaração de força. Vencer um adversário do topo transforma três pontos numa mensagem para toda a divisão e dá ao balneário uma memória capaz de alimentar a confiança durante várias jornadas.",
     "A euforia não vem apenas do marcador: vem da sensação de que o clube esteve à altura de um teste grande. Os adeptos saem a discutir esta noite como uma possível viragem na época, embora saibam que a consistência será agora a prova seguinte.",
+    "Os números do marcador vão ser repetidos durante semanas nas conversas à porta do estádio. Bater um candidato ao título não é apenas somar pontos: é provar que o clube pode sonhar com mais do que a sobrevivência.",
+    "A bancada ficou em pé ao apito final, e não era para menos. Vencer à frente de uma equipa desta dimensão deixa cicatrizes no adversário e deposita no balneário uma convicção que nenhum treino consegue fabricar.",
   ],
   win_upset: [
     "Foi uma daquelas vitórias que fazem a cidade parar para olhar. O favoritismo estava do outro lado, mas a bancada encontrou razões para acreditar e acabou por festejar uma noite que pode ficar entre as melhores recordações desta época.",
     "Os adeptos já transformaram o triunfo numa história para contar: um clube menos cotado bateu a porta grande e entrou sem pedir licença. A direção ganha entusiasmo, o balneário ganha crédito e a próxima jornada será disputada sob uma expectativa renovada.",
+    "Ninguém acreditava, e é por isso que a noite pesa tanto. A surpresa não veio do marcador, veio da forma como o plantel ignorou as quotas e decidiu que aquele jogo tinha dono.",
+    "A taça da banca de trás virou taça de campeão durante noventa minutos. Derrotar quem todos davam como vencedor é o tipo de memória que mantém um clube vivo nos dias em que o calendário apertar.",
   ],
   loss: [
     "A derrota deixa desilusão, mas não provoca uma rutura com a equipa. A bancada reconhece que o resultado ficou aquém do desejado e espera uma resposta rápida, sobretudo na forma como o grupo vai reagir ao primeiro obstáculo da próxima semana.",
     "À saída do estádio, o ambiente é de silêncio e análise. Os adeptos não querem dramatizar uma noite isolada, mas também não escondem que a camisola exige mais: a próxima jornada terá de mostrar se este foi apenas um tropeção ou o início de um problema.",
+    "Houve quem saísse a discutir o árbitro e quem saísse a discutir o treinador. O resultado é inegociável, mas a bancada prefere ler esta noite como um aviso do calendário e não como um diagnóstico.",
+    "A desilusão está presente, mas controlada. Os adeptos sabem que as épocas têm destas curvas e pedem apenas que a resposta venha depressa, antes que a derrota se habitue a aparecer com esta frequência.",
   ],
   loss_shameful: [
     "A bancada não esconde a revolta. Perder já seria difícil de aceitar; sair com este resultado frente a um adversário que estava ao alcance transforma a noite numa ferida aberta e aumenta a pressão sobre todos os que têm de explicar o que aconteceu.",
     "Os assobios no final dizem mais do que qualquer comunicado. Os adeptos esperavam atitude, concentração e respeito pelo emblema, e agora exigem uma resposta à altura. O próximo jogo deixou de ser apenas mais uma jornada: tornou-se a primeira oportunidade para reparar a confiança perdida.",
+    "Nunca se viu tanta gente a sair antes do fim. A vergonha não vem só do marcador: vem da sensação de que a equipa ofereceu menos do que o emblema exige, e a bancada não está disposta a pagar o silêncio para sempre.",
+    "As palavras de ordem à saída são as mais duras da época. Não há espaço para explicações longas: a bancada quer ver atitude já na próxima semana, antes que a raiva se converta em desinteresse.",
   ],
   loss_expected: [
     "A derrota custa, mas a bancada sabe reconhecer o tamanho do desafio. O adversário confirmou o seu estatuto e os adeptos não confundem um resultado difícil com falta de ambição: esperam antes que a equipa retire lições e volte a discutir pontos com os rivais directos.",
     "O ambiente é de frustração controlada. Ninguém gosta de perder, mas a expectativa estava condicionada pela força do adversário. A exigência mantém-se intacta e passa agora por recuperar o foco, proteger a confiança do grupo e não deixar que uma noite complicada defina a época.",
+    "Perder à frente de um gigante não desonra ninguém, e a bancada sabe-o. O que fica é a lição de como se joga contra equipas destas e a esperança de que, na revanchia da época, o resultado seja mais justo.",
+    "A bancada saiu a admitir o óbvio: este era o jogo em que se perdoa quase tudo. Ainda assim, o caderno de lições está aberto, porque a próxima vez que o calendário juntar estes dois plantéis já não haverá desculpas.",
   ],
   draw: [
     "O empate deixa a bancada dividida entre o ponto conquistado e a sensação de que havia espaço para mais. A equipa evita a derrota, mas os adeptos querem ver maior coragem e clareza quando chegar a próxima oportunidade para fechar um jogo.",
     "No final, as conversas prolongam-se porque o resultado não oferece uma resposta simples. Há motivos para aceitar o ponto, mas também a convicção de que o clube precisa de transformar boas intenções em vitórias se quiser subir na tabela.",
+    "Um ponto é pouco para quem queria três e demasiado para quem receava perder. A bancada fica no meio: satisfeita com a defesa, insatisfeita com o ataque.",
+    "O resultado partiu o jogo ao meio, e a bancada ficou também dividida ao meio. Houve luta, houve empate, mas a sensação dominante é a de que faltou um passo para transformar o ponto em algo mais.",
   ],
   draw_honorable: [
     "A bancada recebe o empate com respeito. Travar um adversário de topo confirma que a equipa pode competir ao mais alto nível e dá aos adeptos uma razão séria para acreditar, mesmo que a vitória tenha escapado nos detalhes.",
     "O ponto sabe a prova superada. Não há festa de vitória, mas há aplausos para uma equipa que não se escondeu perante um teste exigente. O desafio passa agora por repetir esta personalidade contra adversários de todas as dimensões.",
+    "Sair de um campo destes com um ponto no bolso é resultado que se enquadra nas molduras. A bancada saiu a bater palmas, não por euforia, mas por reconhecimento.",
+    "Empatar onde muitos perdem é o tipo de resultado que constrói épocas. Os adeptos guardam esta noite como evidência de que o clube sabe estar à altura quando o teste é grande.",
   ],
   draw_bitter: [
     "O empate é recebido como uma oportunidade desperdiçada. Contra um adversário que a bancada esperava vergar, deixar escapar a vitória pesa quase como uma derrota e reacende a discussão sobre a capacidade do clube para assumir os jogos que tem obrigação de controlar.",
     "As bancadas saem inquietas, não por falta de luta, mas porque o calendário oferecia uma ocasião importante. O ponto entra nas contas, mas não apaga a sensação de que a equipa precisava de mais e terá de provar isso já na próxima jornada.",
+    "Houve quem saísse a fazer as contas ao calendário e a ficar pior do que entrou. Deixar escapar três pontos frente a quem se esperava vencer é o tipo de noite que os adeptos revêm durante dias.",
+    "O ponto ficou, a indignação ficou também. A bancada não aceita que jogos destes se percam por detalhes e espera que a próxima oportunidade seja tratada com outra seriedade.",
   ],
 };
+
+/**
+ * Seed determinística do rescaldo: o mesmo jogo dá sempre o mesmo texto,
+ * jogos diferentes dão textos diferentes.
+ * @param {object} mood contexto do jogo
+ * @returns {number}
+ */
+function moodSeed(mood) {
+  const raw = `${mood?.roundLabel || ""}|${mood?.variant || mood?.outcome || ""}|${mood?.myGoals ?? 0}-${mood?.oppGoals ?? 0}`;
+  let h = 0;
+  for (let i = 0; i < raw.length; i++) h = (h * 31 + raw.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
 
 /**
  * Cria o corpo editorial da reação pós-jogo sem inventar estatísticas.
@@ -96,15 +127,22 @@ export function buildMoodNewsBody(mood) {
   const score = `${mood?.myGoals ?? 0}–${mood?.oppGoals ?? 0}`;
   const opponent = mood?.opponentName || "o adversário";
   const round = mood?.roundLabel || "O último jogo";
+  const seed = moodSeed(mood);
+  const first = copy[seed % copy.length];
+  const second = copy[(seed + 1) % copy.length];
+  const closing =
+    seed % 2 === 0
+      ? "O Jornal regista o estado de espírito da massa adepta depois do apito final. A reacção não desaparece com o fim do jogo: vai acompanhar os treinos, as decisões do treinador e a expectativa em torno do próximo desafio."
+      : "O Jornal regista o estado de espírito da bancada após o apito final. A reacção fica guardada e vai acompanhar os treinos, as decisões do treinador e o peso do próximo desafio.";
   const revenue =
     mood?.ticketRevenue != null
       ? ` A bilheteira rendeu ${formatCurrency(mood.ticketRevenue)}, uma ajuda concreta para preparar a próxima jornada.`
       : " A tesouraria fica agora com a responsabilidade de transformar este resultado em margem para o trabalho da próxima jornada.";
 
   return [
-    `${round} terminou com um ${score} frente a ${opponent}. ${copy[0]}`,
-    copy[1],
-    `O Jornal regista o estado de espírito da massa adepta depois do apito final. A reacção não desaparece com o fim do jogo: vai acompanhar os treinos, as decisões do treinador e a expectativa em torno do próximo desafio.${revenue}`,
+    `${round} terminou com um ${score} frente a ${opponent}. ${first}`,
+    second,
+    `${closing}${revenue}`,
   ].join("\n\n");
 }
 
@@ -686,130 +724,420 @@ function newsArticle(n, { owner, related, seller, buyer, viewerTeamId } = {}) {
             partText(". A ausência de uma proposta vencedora mantém o jogador no circuito e deixa o próximo movimento entregue ao mercado."),
           ];
   } else if (type === "ticket_revenue") {
-    titleParts = [partText("Bilheteira de "), o];
-    bodyParts = [
-      o,
-      partText(` abriu as portas e arrecadou ${value}. `),
-      partText(description || "A receita ajuda a financiar a próxima jornada."),
-      partText(" Cada jogo em casa é mais do que noventa minutos: é uma oportunidade para aproximar a bancada e dar fôlego à tesouraria."),
-    ];
+    const v = newsVariant(n, 3);
+    titleParts =
+      v === 0
+        ? [partText("Bilheteira de "), o]
+        : v === 1
+          ? [partText("A casa encheu: "), o]
+          : [partText("Receitas da bilheteira: "), o];
+    bodyParts =
+      v === 0
+        ? [
+            o,
+            partText(` abriu as portas e arrecadou ${value}. `),
+            partText(description || "A receita ajuda a financiar a próxima jornada."),
+            partText(" Cada jogo em casa é mais do que noventa minutos: é uma oportunidade para aproximar a bancada e dar fôlego à tesouraria."),
+          ]
+        : v === 1
+          ? [
+              o,
+              partText(` encheu o estádio e recolheu ${value} na bilheteira. `),
+              partText(description || "A bancada respondeu à chamada."),
+              partText(" A casa cheia é o melhor investimento: cada bilhete vendido é um adepto a puxar pela equipa e um euro a reforçar o caixa."),
+            ]
+          : [
+              o,
+              partText(` transformou a presença da bancada em ${value}. `),
+              partText(description || "A receita entra no caixa a tempo da próxima jornada."),
+              partText(" O público comprou o jogo e o clube fica com mais margem para trabalhar em silêncio."),
+            ];
   } else if (type === "weekly_income") {
-    titleParts = [partText("Rendimento de "), o];
-    bodyParts = [
-      o,
-      partText(` recebeu ${value} de rendimento base. `),
-      partText("Não é uma manchete de mercado, mas é este fluxo regular que mantém o clube a trabalhar entre jornadas e dá margem para preparar o próximo desafio."),
-    ];
+    const v = newsVariant(n, 3);
+    titleParts =
+      v === 0
+        ? [partText("Rendimento de "), o]
+        : v === 1
+          ? [partText("Entradas da semana: "), o]
+          : [partText("O caixa de "), o];
+    bodyParts =
+      v === 0
+        ? [
+            o,
+            partText(` recebeu ${value} de rendimento base. `),
+            partText("Não é uma manchete de mercado, mas é este fluxo regular que mantém o clube a trabalhar entre jornadas e dá margem para preparar o próximo desafio."),
+          ]
+        : v === 1
+          ? [
+              o,
+              partText(` garantiu ${value} em rendimento base. `),
+              partText("Dinheiro sem manchete, mas é precisamente este fluxo constante que mantém o clube de pé entre jogos e financia o trabalho invisível da estrutura."),
+            ]
+          : [
+              o,
+              partText(` registou ${value} de rendimento base esta semana. `),
+              partText("Nada de bombástico, apenas a rotina saudável de um clube que paga as contas à medida que as semanas passam."),
+            ];
   } else if (type === "wages") {
-    titleParts = [partText("Folha salarial: "), o];
-    bodyParts = [
-      partText("A semana fecha com "),
-      o,
-      partText(` a pagar ${value} em salários. `),
-      partText("É o preço de manter um balneário competitivo, mas também um lembrete de que cada decisão no mercado tem consequências para as contas do clube."),
-    ];
+    const v = newsVariant(n, 3);
+    titleParts =
+      v === 0
+        ? [partText("Folha salarial: "), o]
+        : v === 1
+          ? [partText("Salários de "), o]
+          : [partText("A folha de "), o];
+    bodyParts =
+      v === 0
+        ? [
+            partText("A semana fecha com "),
+            o,
+            partText(` a pagar ${value} em salários. `),
+            partText("É o preço de manter um balneário competitivo, mas também um lembrete de que cada decisão no mercado tem consequências para as contas do clube."),
+          ]
+        : v === 1
+          ? [
+              partText("A folha salarial de "),
+              o,
+              partText(` custou ${value} esta semana. `),
+              partText("O balneário é competitivo e os contratos não perdoam: cada euro pago aqui é um euro que deixa de estar disponível para o mercado."),
+            ]
+          : [
+              o,
+              partText(` liquidou ${value} em salários. `),
+              partText("O preço da ambição desportiva tem nome e aparece na conta bancária todas as semanas, sem folga para arrependimentos."),
+            ];
   } else if (type === "stadium_upkeep") {
-    titleParts = [partText("Manutenção em "), o];
-    bodyParts = [
-      o,
-      partText(` investiu ${value} na manutenção do estádio. `),
-      partText("A bancada raramente vê este trabalho, mas sente a diferença quando a casa está pronta para receber mais uma jornada e proteger a receita do clube."),
-    ];
+    const v = newsVariant(n, 3);
+    titleParts =
+      v === 0
+        ? [partText("Manutenção em "), o]
+        : v === 1
+          ? [partText("O estádio de "), o]
+          : [partText("Obra na casa de "), o];
+    bodyParts =
+      v === 0
+        ? [
+            o,
+            partText(` investiu ${value} na manutenção do estádio. `),
+            partText("A bancada raramente vê este trabalho, mas sente a diferença quando a casa está pronta para receber mais uma jornada e proteger a receita do clube."),
+          ]
+        : v === 1
+          ? [
+              o,
+              partText(` gastou ${value} a manter o estádio em condições. `),
+              partText("Trabalho invisível para a bancada, essencial para que a casa continue a receber jogos, receitas e a confiança de quem paga bilhete."),
+            ]
+          : [
+              o,
+              partText(` aplicou ${value} na manutenção da sua casa. `),
+              partText("Não é uma despesa que aplaude, mas é a diferença entre uma bancada cheia e uma estrutura em risco."),
+            ];
   } else if (
     type === "loan_interest" ||
     type === "loan_principal" ||
     type === "loan_take" ||
     type === "loan_pay"
   ) {
-    titleParts = [partText("Contas bancárias: "), o];
+    const v = newsVariant(n, 3);
+    titleParts =
+      v === 0
+        ? [partText("Contas bancárias: "), o]
+        : v === 1
+          ? [partText("O banco de "), o]
+          : [partText("Crédito: "), o];
     bodyParts =
       type === "loan_take"
-        ? [
-            o,
-            partText(` assegurou ${value} através de um novo empréstimo. `),
-            partText(description || "O dinheiro entra agora, mas a dívida passa a fazer parte do orçamento semanal."),
-            partText(" É oxigénio imediato para o clube, não dinheiro grátis: cada prestação futura vai condicionar a margem para investir no plantel."),
-          ]
-        : type === "loan_pay"
+        ? v === 0
           ? [
               o,
-              partText(` reduziu a dívida em ${value}. `),
-              partText(description || "O pagamento devolve algum controlo à tesouraria."),
-              partText(" A factura ainda pode não estar fechada, mas o clube fica um passo mais perto de respirar sem a pressão do banco."),
+              partText(` assegurou ${value} através de um novo empréstimo. `),
+              partText(description || "O dinheiro entra agora, mas a dívida passa a fazer parte do orçamento semanal."),
+              partText(" É oxigénio imediato para o clube, não dinheiro grátis: cada prestação futura vai condicionar a margem para investir no plantel."),
+            ]
+          : v === 1
+            ? [
+                o,
+                partText(` recorreu ao banco e levantou ${value}. `),
+                partText(description || "O crédito foi aprovado."),
+                partText(" O dinheiro resolve o agora, mas a dívida passa a ser um inquilino permanente do orçamento semanal."),
+              ]
+            : [
+                o,
+                partText(` fez entrar ${value} através de um empréstimo. `),
+                partText(description || "A tesouraria pediu ajuda ao banco."),
+                partText(" Alívio imediato para as contas, com o lembrete de que cada prestação futura será cobrada com juros."),
+              ]
+        : type === "loan_pay"
+          ? v === 0
+            ? [
+                o,
+                partText(` reduziu a dívida em ${value}. `),
+                partText(description || "O pagamento devolve algum controlo à tesouraria."),
+                partText(" A factura ainda pode não estar fechada, mas o clube fica um passo mais perto de respirar sem a pressão do banco."),
+              ]
+            : v === 1
+              ? [
+                  o,
+                  partText(` pagou ${value} ao banco e aliviou a dívida. `),
+                  partText(description || "Prestação liquidada."),
+                  partText(" Menos peso no orçamento é menos medo no futuro; a conta continua aberta, mas com menos margem para sufocar."),
+                ]
+              : [
+                  o,
+                  partText(` abateu ${value} da dívida bancária. `),
+                  partText(description || "O banco recebeu o seu pagamento."),
+                  partText(" O banco agradece e o clube respira, ainda que a liquidação completa continue a exigir paciência e liquidez."),
+                ]
+          : v === 0
+            ? [
+                o,
+                partText(` pagou ${value} em ${type === "loan_interest" ? "juros" : "capital do empréstimo"}. `),
+                partText(description || "A dívida continua a pesar no orçamento semanal."),
+                partText(" A tesouraria ganha tempo, mas o compromisso fica registado e terá de ser acomodado nas próximas decisões."),
+              ]
+            : [
+                o,
+                partText(` liquidou ${value} em ${type === "loan_interest" ? "juros" : "capital do empréstimo"}. `),
+                partText(description || "Pagamento ao banco feito."),
+                partText(" O banco cobra o seu preço e a tesouraria continua a gerir o resto; o compromisso mantém-se e voltará a bater à porta."),
+              ];
+  } else if (type === "stadium_build") {
+    const v = newsVariant(n, 3);
+    titleParts =
+      v === 0
+        ? [partText("A casa cresce: "), o]
+        : v === 1
+          ? [partText("O estádio de "), o, partText(" ganha corpo")]
+          : [partText("Mais bancadas para "), o];
+    bodyParts =
+      v === 0
+        ? [
+            o,
+            partText(` ganhou mais lugares com um investimento de ${value}. `),
+            partText(description || "Mais bancadas significam mais margem para a receita de bilheteira."),
+            partText(" É uma aposta para os dias grandes, quando a ambição do clube precisar de mais vozes nas bancadas e de uma receita à altura."),
+          ]
+        : v === 1
+          ? [
+              o,
+              partText(` avança na obra do estádio com ${value} de investimento. `),
+              partText(description || "Mais lugares para os dias em que a equipa pedir uma casa cheia."),
+              partText(" A ideia é simples: quando o projecto crescer, a casa vai crescendo para o acompanhar."),
             ]
           : [
               o,
-              partText(` pagou ${value} em ${type === "loan_interest" ? "juros" : "capital do empréstimo"}. `),
-              partText(description || "A dívida continua a pesar no orçamento semanal."),
-              partText(" A tesouraria ganha tempo, mas o compromisso fica registado e terá de ser acomodado nas próximas decisões."),
+              partText(` investiu ${value} em novas bancadas. `),
+              partText(description || "Mais lugares significam mais bilheteira nos jogos grandes."),
+              partText(" É uma obra para o futuro, não para a próxima semana, e a tesouraria aceita o peso em troca de margem futura."),
             ];
-  } else if (type === "stadium_build") {
-    titleParts = [partText("A casa cresce: "), o];
-    bodyParts = [
-      o,
-      partText(` ganhou mais lugares com um investimento de ${value}. `),
-      partText(description || "Mais bancadas significam mais margem para a receita de bilheteira."),
-      partText(" É uma aposta para os dias grandes, quando a ambição do clube precisar de mais vozes nas bancadas e de uma receita à altura."),
-    ];
   } else if (type === "academy") {
-    titleParts = [partText("Nova aposta: "), p];
-    bodyParts = [
-      p,
-      partText(" sobe da academia de "),
-      o,
-      partText(` e chega com margem para crescer${amount ? ` após um investimento de ${value}` : ""}. `),
-      partText("É o primeiro passo de um percurso que vai exigir paciência, minutos certos e espaço para o talento se transformar em rendimento pela equipa principal."),
-    ];
+    const v = newsVariant(n, 3);
+    titleParts =
+      v === 0
+        ? [partText("Nova aposta: "), p]
+        : v === 1
+          ? [partText("Da academia para o plantel: "), p]
+          : [partText("Nova promessa: "), p];
+    bodyParts =
+      v === 0
+        ? [
+            p,
+            partText(" sobe da academia de "),
+            o,
+            partText(` e chega com margem para crescer${amount ? ` após um investimento de ${value}` : ""}. `),
+            partText("É o primeiro passo de um percurso que vai exigir paciência, minutos certos e espaço para o talento se transformar em rendimento pela equipa principal."),
+          ]
+        : v === 1
+          ? [
+              p,
+              partText(" chega do plantel júnior de "),
+              o,
+              partText(` e entra com espaço para crescer${amount ? ` após um investimento de ${value}` : ""}. `),
+              partText("A aposta é no processo: minutos medidos, paciência e a certeza de que o talento precisa de campo para virar rendimento."),
+            ]
+          : [
+              p,
+              partText(" é o mais recente produto da academia de "),
+              o,
+              partText(`, agora no plantel${amount ? ` após um investimento de ${value}` : ""}. `),
+              partText("É cedo para promessas grandes, mas é exactamente o investimento que os clubes fazem para não comprar caro amanhã."),
+            ];
   } else if (type === "renegotiation") {
-    titleParts = [p, partText(" renova com "), o];
-    bodyParts = [
-      p,
-      partText(" prolonga a ligação a "),
-      o,
-      partText(". O agente conseguiu melhores condições para manter o jogador focado e o clube protegeu uma peça que continua a fazer parte dos seus planos."),
-    ];
+    const v = newsVariant(n, 3);
+    titleParts =
+      v === 0
+        ? [p, partText(" renova com "), o]
+        : v === 1
+          ? [p, partText(" fica em "), o]
+          : [partText("Renovação em "), o, partText(": "), p];
+    bodyParts =
+      v === 0
+        ? [
+            p,
+            partText(" prolonga a ligação a "),
+            o,
+            partText(". O agente conseguiu melhores condições para manter o jogador focado e o clube protegeu uma peça que continua a fazer parte dos seus planos."),
+          ]
+        : v === 1
+          ? [
+              p,
+              partText(" renovou com "),
+              o,
+              partText(" e prolongou a ligação. "),
+              partText(description || "O agente arrancou melhores condições."),
+              partText(" O clube aceitou o aumento para evitar que o mercado ficasse com uma peça pronta a usar."),
+            ]
+          : [
+              p,
+              partText(" e "),
+              o,
+              partText(" prolongaram a relação. "),
+              partText(description || "Queda de braço com o agente terminada."),
+              partText(" Contrato assinado, discussão encerrada, o resto fica para dentro das quatro linhas."),
+            ];
   } else if (type === "cost_cut") {
-    titleParts = [partText("Corte no plantel: "), p];
-    bodyParts = [
-      o,
-      partText(" libertou "),
-      p,
-      partText(" para aliviar a folha salarial. "),
-      partText(description || "A tesouraria falou mais alto."),
-      partText(" É uma decisão fria, tomada para devolver margem de manobra ao clube antes que o desequilíbrio passe a pesar no balneário."),
-    ];
+    const v = newsVariant(n, 3);
+    titleParts =
+      v === 0
+        ? [partText("Corte no plantel: "), p]
+        : v === 1
+          ? [p, partText(" sai de "), o]
+          : [partText("Folha salarial: "), p, partText(" vai de saída")];
+    bodyParts =
+      v === 0
+        ? [
+            o,
+            partText(" libertou "),
+            p,
+            partText(" para aliviar a folha salarial. "),
+            partText(description || "A tesouraria falou mais alto."),
+            partText(" É uma decisão fria, tomada para devolver margem de manobra ao clube antes que o desequilíbrio passe a pesar no balneário."),
+          ]
+        : v === 1
+          ? [
+              o,
+              partText(" colocou "),
+              p,
+              partText(" à venda para aliviar a folha salarial. "),
+              partText(description || "Decisão de caixa, não de balneário."),
+              partText(" O clube precisa de margem antes de pensar em ambição, e o salário era o primeiro lugar para a encontrar."),
+            ]
+          : [
+              o,
+              partText(" cortou "),
+              p,
+              partText(" da folha salarial. "),
+              partText(description || "A tesouraria falou mais alto."),
+              partText(" O mercado dirá se há interessados; a tesouraria agradece logo."),
+            ];
   } else if (type === "cup_upset") {
-    titleParts = [o, partText(" elimina "), r];
-    bodyParts = [
-      o,
-      partText(" assinou a surpresa da ronda frente a "),
-      r,
-      partText(description ? `. ${description}. ` : ". O favoritismo ficou pelo caminho. "),
-      partText("Durante uma noite, a diferença de estatuto deixou de contar e a competição ganhou uma história que a bancada vai repetir durante muito tempo."),
-    ];
+    const v = newsVariant(n, 3);
+    titleParts =
+      v === 0
+        ? [o, partText(" elimina "), r]
+        : v === 1
+          ? [partText("Surpresa na taça: "), o, partText(" elimina "), r]
+          : [r, partText(" cai diante de "), o];
+    bodyParts =
+      v === 0
+        ? [
+            o,
+            partText(" assinou a surpresa da ronda frente a "),
+            r,
+            partText(description ? `. ${description}. ` : ". O favoritismo ficou pelo caminho. "),
+            partText("Durante uma noite, a diferença de estatuto deixou de contar e a competição ganhou uma história que a bancada vai repetir durante muito tempo."),
+          ]
+        : v === 1
+          ? [
+              o,
+              partText(" fez o que ninguém esperava e mandou "),
+              r,
+              partText(" para casa. "),
+              partText(description || "O favoritismo ficou pelo caminho."),
+              partText(" A taça tem destas noites em que o estatuto não pesa e o resultado manda."),
+            ]
+          : [
+              o,
+              partText(" viveu a grande noite e eliminou "),
+              r,
+              partText(". "),
+              partText(description || "O favoritismo ficou pelo caminho."),
+              partText(" Durante noventa minutos, a diferença entre as duas divisões desapareceu do mapa."),
+            ];
   } else if (type === "prize") {
-    titleParts = [partText("Prémio para "), o];
-    bodyParts = [
-      o,
-      partText(` recebe ${value}. `),
-      partText(description || "O mérito desportivo também se sente nas contas do clube."),
-      partText(" A recompensa chega depois do trabalho feito e dá ao clube mais espaço para preparar o que vem a seguir."),
-    ];
+    const v = newsVariant(n, 3);
+    titleParts =
+      v === 0
+        ? [partText("Prémio para "), o]
+        : v === 1
+          ? [o, partText(" recebe "), partText(value)]
+          : [partText("Recompensa: "), partText(value), partText(" para "), o];
+    bodyParts =
+      v === 0
+        ? [
+            o,
+            partText(` recebe ${value}. `),
+            partText(description || "O mérito desportivo também se sente nas contas do clube."),
+            partText(" A recompensa chega depois do trabalho feito e dá ao clube mais espaço para preparar o que vem a seguir."),
+          ]
+        : v === 1
+          ? [
+              o,
+              partText(` embolsou ${value}. `),
+              partText(description || "O mérito desportivo também se sente nas contas do clube."),
+              partText(" Dinheiro que chega por mérito e dá fôlego ao orçamento da próxima fase."),
+            ]
+          : [
+              o,
+              partText(` viu ${value} entrar nas contas do clube. `),
+              partText(description || "O mérito desportivo também se sente nas contas do clube."),
+              partText(" É o desporto a pagar o que o trabalho fez."),
+            ];
   } else if (type === "welcome") {
+    const v = newsVariant(n, 3);
     titleParts = [partText(n?.title || "Bem-vindo ao clube")];
-    bodyParts = [
-      o,
-      partText(" abre as portas ao novo treinador. "),
-      partText(description || "A sala está pronta, o plantel espera e a época começa agora."),
-      partText(" Este é o primeiro capítulo de uma história que será escrita jornada a jornada, dentro e fora do campo."),
-    ];
+    bodyParts =
+      v === 0
+        ? [
+            o,
+            partText(" abre as portas ao novo treinador. "),
+            partText(description || "A sala está pronta, o plantel espera e a época começa agora."),
+            partText(" Este é o primeiro capítulo de uma história que será escrita jornada a jornada, dentro e fora do campo."),
+          ]
+        : v === 1
+          ? [
+              o,
+              partText(" tem novo treinador e nova página a abrir. "),
+              partText(description || "A sala está pronta, o plantel espera e a época começa agora."),
+              partText(" O plantel está apresentado, o orçamento está em mãos e a voz alta passa a ser outra."),
+            ]
+          : [
+              o,
+              partText(" dá as boas-vindas ao novo treinador. "),
+              partText(description || "A sala está pronta, o plantel espera e a época começa agora."),
+              partText(" O resto é história, e começa a ser contada já na próxima jornada."),
+            ];
   } else {
+    const v = newsVariant(n, 3);
     titleParts = player && owner ? [p, partText(" — "), o] : [partText(n?.title || "Notícia")];
-    bodyParts = [
-      owner ? o : player ? p : partText("O clube"),
-      partText(description ? `: ${description}. ` : ". "),
-      partText("O Jornal regista o acontecimento e deixa a próxima palavra entregue ao trabalho da equipa."),
-    ];
+    bodyParts =
+      v === 0
+        ? [
+            owner ? o : player ? p : partText("O clube"),
+            partText(description ? `: ${description}. ` : ". "),
+            partText("O Jornal regista o acontecimento e deixa a próxima palavra entregue ao trabalho da equipa."),
+          ]
+        : v === 1
+          ? [
+              owner ? o : player ? p : partText("O clube"),
+              partText(description ? `: ${description}. ` : ". "),
+              partText("O jornal regista e segue em frente; o resto fica para os próximos capítulos."),
+            ]
+          : [
+              owner ? o : player ? p : partText("O clube"),
+              partText(description ? `: ${description}. ` : ". "),
+              partText("Nota registada no jornal do clube, sem comentários adicionais da redacção."),
+            ];
   }
 
   return makeArticle(titleParts, bodyParts, player, teams, transfer);
