@@ -1,3 +1,10 @@
+## Tática desktop: controlos em faixa de topo + botão Jogar centrado (2026-09-23)
+
+- Pedido: em `xl`, os elementos da 1.ª coluna (Moral + Formação + Mentalidade) passam para o topo em linha, um cartão por coluna (Titulares | Suplentes | Pitch); redesenhar o botão Jogar (descentrado/feio).
+- Só `client/src/views/TacticsView.jsx`: COL1 passa a `xl:hidden` (mobile intocado); nova faixa `hidden xl:flex` com TOPO 1 Formação (reutiliza os chips horizontais + estrelas do mobile, mais o blurb da ativa), TOPO 2 Mentalidade (pill, verbatim) e TOPO 3 Moral (verbatim); linha de baixo `flex-1 flex-col md:flex-row xl:gap-3` com Titulares (`flex-1`) | Suplentes (`flex-1`) | COL3 (`xl:w-72.5`) — mesmos fatores flex + mesmo `gap-3` => colunas alinhadas; `data-tour="tactic-lineup"` e `animate-heartbeat-border` mudam para o TOPO 1. Botão Jogar: `inline-flex items-center justify-center` + ícone ▶ (só quando clicável) + label em `span.relative` por cima do overlay.
+- Armadilhas: `edit` falha match com backtick/`${` no `oldText` (sonda com `X` revertida a seguir) — cirurgia via script python por âncoras; faltou 1 fecho `</div>` do contentor exterior (esbuild apanhou); bloco mobile da Formação foi movido em vez de duplicado na 1.ª tentativa (mobile sem seletor) — revertido e refeito a duplicar.
+- Checks: eslint limpo no ficheiro (os 2 erros do `lint` são pré-existentes noutros ficheiros, confirmado via stash) · `check:types` OK · portrait **155/155** + landscape **186/186** (harness `tactics-resp-test` incluído) · screenshots vistos (390, 667 e 1280; a Moral não aparece a 1280 porque o harness não tem `nextMatchSummary` — injeta uma carta look-alike só no mobile; TOPO 3 é transplante verbatim do bloco que renderizava).
+
 ## Classificação 1–5★ pós-jogo: modal, Plantel e pitch no rescaldo (2026-09-23)
 
 - Pedido: estrelas da **última classificação** visíveis no modal do jogador, na lista do Plantel e no fim do corpo da notícia de rescaldo (pitch com titulares + entrados). Escala 1–5 inteiros; quem não joga mantém a última nota.
