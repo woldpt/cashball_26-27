@@ -1,3 +1,9 @@
+## Tática desktop: Moral ↔ Mentalidade trocadas de coluna (2026-09-23)
+
+- Pedido (screenshot anotado): o Moral vai para o meio (sobre os Suplentes), a Mentalidade para a 3.ª coluna (sobre o JOGAR/Campo), e o JOGAR sobe para o topo da 3.ª coluna.
+- Só `client/src/views/TacticsView.jsx`: na faixa de topo desktop (`hidden xl:flex`) trocados os blocos TOPO 2/TOPO 3, mantendo a largura de cada slot (meio `flex-1`, direita `xl:w-72.5`) — o JOGAR já estava no topo da COL 3 e sobe sozinho. Mobile intocado (o mobile já era Moral | Mentalidade, o desktop fica consistente).
+- Checks: eslint do ficheiro limpo (os 2 erros do `lint` são pré-existentes noutros ficheiros), `check:types` OK, portrait 155/155 + landscape 186/186.
+
 ## Tática desktop: controlos em faixa de topo + botão Jogar centrado (2026-09-23)
 
 - Pedido: em `xl`, os elementos da 1.ª coluna (Moral + Formação + Mentalidade) passam para o topo em linha, um cartão por coluna (Titulares | Suplentes | Pitch); redesenhar o botão Jogar (descentrado/feio).

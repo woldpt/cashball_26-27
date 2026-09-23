@@ -732,8 +732,39 @@ export function TacticsView() {
               </div>
             </div>
 
-            {/* TOPO 2 — Mentalidade (sobre Suplentes) */}
-            <div className="flex-1 min-w-0 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+            {/* TOPO 2 — Moral (sobre Suplentes) */}
+            {nextMatchSummary && (
+              <div className="flex-1 min-w-0 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+                {(() => {
+                  const morale = teamInfo?.morale ?? 50;
+                  const { text: textColor, bar: fillColor } = getMoraleClasses(morale);
+                  const label = getMoraleLabel(morale);
+                  return (
+                    <div className="px-4 short:px-3 py-2.5 short:py-1.5">
+                      <div className="flex items-center justify-between mb-1.5 short:mb-1">
+                        <span className="text-[9px] uppercase tracking-widest text-gray-600 font-bold">
+                          Moral
+                        </span>
+                        <span
+                          className={`text-[9px] font-black uppercase ${textColor}`}
+                        >
+                          {label}
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-surface-container-low/60 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
+                          style={{ width: `${morale}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* TOPO 3 — Mentalidade (sobre Pitch) */}
+            <div className="xl:w-72.5 shrink-0 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
               <div className="px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
                 <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
                   Mentalidade
@@ -795,37 +826,6 @@ export function TacticsView() {
                 })()}
               </div>
             </div>
-
-            {/* TOPO 3 — Moral (sobre Pitch) */}
-            {nextMatchSummary && (
-              <div className="xl:w-72.5 shrink-0 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
-                {(() => {
-                  const morale = teamInfo?.morale ?? 50;
-                  const { text: textColor, bar: fillColor } = getMoraleClasses(morale);
-                  const label = getMoraleLabel(morale);
-                  return (
-                    <div className="px-4 short:px-3 py-2.5 short:py-1.5">
-                      <div className="flex items-center justify-between mb-1.5 short:mb-1">
-                        <span className="text-[9px] uppercase tracking-widest text-gray-600 font-bold">
-                          Moral
-                        </span>
-                        <span
-                          className={`text-[9px] font-black uppercase ${textColor}`}
-                        >
-                          {label}
-                        </span>
-                      </div>
-                      <div className="h-1.5 bg-surface-container-low/60 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
-                          style={{ width: `${morale}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
           </div>
 
           {/* LINHA DE BAIXO — Titulares | Suplentes | Pitch */}
