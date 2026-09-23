@@ -1,3 +1,10 @@
+## Fix crash Taça: `roundLabel` indefinido em `continueFromEtGate` (2026-09-23)
+
+- Erro no docker (`backend-1`): `ReferenceError: roundLabel is not defined` em `continueFromEtGate` (via `finalizeCupRound`), transação da Taça rebentava a meio.
+- Causa: a função define `roundName` mas 4 usos referenciam `roundLabel` (prémio da Taça 2x + shorthand `roundLabel` em 2x `logPostMatchRecap`). O `typecheck` não apanhou (check frouxo no ficheiro).
+- Fix (1 linha, só `server/cupFlowHelpers.ts`): `const roundLabel = roundName;` a seguir a `roundName` — corrige os 4 usos de uma vez, incluindo o shorthand esperado pelo `logPostMatchRecap`.
+- Checks: server `typecheck` OK, `build` OK (`dist/cupFlowHelpers.js` com `roundLabel` definido). Sem sala viva → `audit:gamestate`/`audit:socketio` ficam para a próxima sala. Sem cliente → sem lint/mobile.
+
 ## Textos do Jornal: mais variação por notícia (2026-09-23)
 
 - Pedido: melhorar todos os textos que aparecem no Jornal (`JournalTab.jsx`) e acrescentar mais variações para as mesmas notícias.

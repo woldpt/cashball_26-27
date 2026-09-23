@@ -1164,6 +1164,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		const season = game.season;
 		const fixtures = game.currentFixtures;
 		const roundName = CUP_ROUND_NAMES[round] || `Ronda ${round}`;
+		const roundLabel = roundName;
 		const results: any[] = [];
 
 		try {
