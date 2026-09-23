@@ -350,6 +350,37 @@ function newsVariant(n, count) {
   return Math.abs(seed) % count;
 }
 
+/**
+ * Expectativas dos adeptos e objetivos da direção por escalão (boas-vindas).
+ * A `division` já vem no feed do Jornal (JOIN em socketNewsHandlers).
+ * @param {number|string|null} div escalão da equipa
+ * @returns {{ fans: string, board: string }}
+ */
+function welcomeBrief(div) {
+  switch (Number(div)) {
+    case 1:
+      return {
+        fans: "Na bancada, a exigência é máxima: casa cheia, futebol ambicioso e luta pelos lugares europeus — os adeptos não perdoam deslizes nos jogos que há obrigação de vencer.",
+        board: "A direção aponta à metade superior da tabela e à candidatura aos lugares europeus, com o orçamento sempre equilibrado e o plantel valorizado.",
+      };
+    case 2:
+      return {
+        fans: "Os adeptos sonham com a subida à Primeira Liga e prometem empurrar a equipa nos jogos grandes — esperam um onze que assuma o jogo e não se esconda.",
+        board: "A direção define como objetivo lutar pelos lugares de subida, mantendo as contas controladas e o plantel competitivo até ao fim.",
+      };
+    case 3:
+      return {
+        fans: "A bancada pede ambição e identidade: uma equipa que lute pela subida e transforme os jogos em casa numa fortaleza.",
+        board: "A direção quer a equipa na luta pela subida, com gestão rigorosa do plantel e das contas ao longo da época.",
+      };
+    default:
+      return {
+        fans: "Os adeptos pedem entrega total e futebol de ataque: subir de escalão é o sonho que enche a bancada e uma época morna não será perdoada.",
+        board: "A direção é clara: lutar pela subida, lançar e valorizar jogadores, e nunca deixar as contas cair no vermelho.",
+      };
+  }
+}
+
 function makeArticle(titleParts, bodyParts, player, teams, transfer) {
   return {
     title: plainParts(titleParts),
@@ -1136,27 +1167,33 @@ function newsArticle(n, { owner, related, seller, buyer, viewerTeamId } = {}) {
   } else if (type === "welcome") {
     const v = newsVariant(n, 3);
     titleParts = [partText(n?.title || "Bem-vindo ao clube")];
-    bodyParts =
+    const brief = welcomeBrief(n?.division);
+    const timing =
+      (Number(n?.matchweek) || 0) > 4
+        ? " Chega com a época já em andamento, por isso há pouco tempo para impor ideias e cada jornada conta a dobrar."
+        : " Com a época ainda no arranque, há margem para moldar a equipa antes que a tabela comece a apertar.";
+    const opening =
       v === 0
         ? [
             o,
             partText(" abre as portas ao novo treinador. "),
             partText(description || "A sala está pronta, o plantel espera e a época começa agora."),
-            partText(" Este é o primeiro capítulo de uma história que será escrita jornada a jornada, dentro e fora do campo."),
           ]
         : v === 1
           ? [
               o,
               partText(" tem novo treinador e nova página a abrir. "),
               partText(description || "A sala está pronta, o plantel espera e a época começa agora."),
-              partText(" O plantel está apresentado, o orçamento está em mãos e a voz alta passa a ser outra."),
             ]
           : [
               o,
               partText(" dá as boas-vindas ao novo treinador. "),
               partText(description || "A sala está pronta, o plantel espera e a época começa agora."),
-              partText(" O resto é história, e começa a ser contada já na próxima jornada."),
             ];
+    bodyParts = [
+      ...opening,
+      partText(` ${brief.fans} ${brief.board}${timing}`),
+    ];
   } else {
     const v = newsVariant(n, 3);
     titleParts = player && owner ? [p, partText(" — "), o] : [partText(n?.title || "Notícia")];
