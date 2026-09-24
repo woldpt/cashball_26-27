@@ -298,6 +298,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				description: `Campeão Nacional da época ${year}`,
 				year: year + 1,
 				matchweek: 1,
+				slot: 1,
 			});
 			io.to(game.roomCode).emit("systemMessage", {
 				text: `🏆 ${iLigaWinner.name} é o Campeão Nacional de ${year}! (+2.000.000€)`,
@@ -340,6 +341,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					description: `Campeão ${DIVISION_NAMES[div]} da época ${year}`,
 					year: year + 1,
 					matchweek: 1,
+					slot: 1,
 				});
 				io.to(game.roomCode).emit("systemMessage", {
 					text: `🥇 ${winner.name} é Campeão ${DIVISION_NAMES[div]} de ${year}! (+${prizeFormatted}€)`,
@@ -364,6 +366,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					description: `Receita anual de patrocinadores (época ${year})`,
 					year: year + 1,
 					matchweek: 1,
+					slot: 1,
 				});
 			}
 		}
@@ -397,6 +400,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				player_name: topScorer.name,
 				year: year + 1,
 				matchweek: 1,
+				slot: 1,
 			});
 			await new Promise((resolve) => {
 				game.db.run(
@@ -528,6 +532,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				description: `Subida a ${DIVISION_NAMES[p.toDiv] || `Divisão ${p.toDiv}`} na época ${year}`,
 				year: year + 1,
 				matchweek: 1,
+				slot: 1,
 			});
 		}
 		if (promotedNews.length > 0) {

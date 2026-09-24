@@ -1,3 +1,10 @@
+## Prémios da época anterior presos no topo do Jornal (2026-09-24)
+
+- Queixa: notícias dos prémios da época anterior no topo das recentes, semana após semana.
+- Causa: `applySeasonEnd` (`server/cupFlowHelpers.ts`) gravava os 5 prémios (Campeão Nacional, Campeões de divisão, Patrocinadores, Melhor Marcador, Bónus de Subida) com `year+1/matchweek 1` mas sem `slot` — o `logClubNews` herdava o slot da última semana da época velha (20). O Jornal ordena por ano/slot desc, por isso na época nova os prémios (ano atual, slot 20) ficavam acima de tudo a época inteira.
+- Fix: `slot: 1` nas 5 chamadas + `UPDATE club_news SET slot = 1 ...` idempotente no arranque de sala (`gameManager.ts`, só `type='prize'` + `matchweek=1` + títulos de fim de época — prémios da Taça a meio da época usam o slot corrente e ficam intactos). Na semana 1 os prémios caem para o fundo (created_at mais antigo) e descem naturalmente.
+- Checks: server `typecheck` OK · prova sqlite da ordenação antes/depois OK. Cliente intocado → sem lint/mobile.
+
 ## Tática desktop: cartões Moral/Mentalidade sem espaço morto (2026-09-24)
 
 - Queixa (screenshot 1578×729): os cartões MORAL e MENTALIDADE da faixa de topo esticavam à altura da Formação com o conteúdo (1 linha) colado ao topo — ~80% espaço morto; 3 estruturas de header diferentes lado a lado; pill da Mentalidade em gradiente "fantasma"; barra da Moral com 6px e sem número.

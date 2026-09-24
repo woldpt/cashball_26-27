@@ -958,6 +958,13 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
           },
         );
         const continueAfterMigrations = () => {
+          // Reparação: prémios de fim de época gravados com o slot herdado
+          // da última semana da época anterior (slot 20) em vez de 1 —
+          // ficavam no topo do Jornal a época nova inteira. Idempotente.
+          db.run(
+            "UPDATE club_news SET slot = 1 WHERE type = 'prize' AND matchweek = 1 AND COALESCE(slot, 0) > 1 AND (title LIKE 'Prémio de Campeão%' OR title IN ('Patrocinadores', 'Prémio de Melhor Marcador', 'Bónus de Subida'))",
+            () => {},
+          );
           // Semana do calendário (1..20) das notícias — substitui o matchweek
           // como data do Jornal (o matchweek repete-se nas semanas de Taça).
           db.run("ALTER TABLE club_news ADD COLUMN slot INTEGER", () => {});
