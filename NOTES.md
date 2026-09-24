@@ -1,3 +1,9 @@
+## StadiumTab: mood dos adeptos só com etiqueta (2026-09-24)
+
+- Pedido: eliminar o valor numérico do cabeçalho do mood dos adeptos, ficando só a etiqueta textual.
+- Fix (1 linha, `client/src/views/StadiumTab.jsx`): o span da direita passou de `{fansMoodLabel} · {fansMood}` → `{fansMoodLabel}`. O valor continua comunicado pela barra de progresso e pelas cores por escalão (≥70/≥45/abaixo).
+- Checks: eslint limpo no ficheiro tocado (`lint` global só os 2 erros pré-existentes) · `check:types` OK. Tweak de texto → sem mobile-resp-check.
+
 ## Assistência Média histórica, sem reset (2026-09-24)
 
 - Pedido: contar todos os jogos em casa (liga + Taça + amigáveis) e sem reset no fim da época. Decisões via perguntas: histórico total acumulado + sub só com o total de jogos.
