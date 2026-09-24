@@ -3,7 +3,8 @@
 - Queixa: o botão de avançar estava feio e descentrado no cartão do briefing.
 - Causa: o `PrimaryCTA` tinha `w-full lg:w-60` — no desktop encolhia para 240px fixos e, dentro do contentor `flex-col items-stretch` do `PrepCtaCard`, encostava à esquerda. O `lg:w-60` era um resto de um contexto antigo; o componente hoje só é usado neste cartão, cuja intenção original era largura cheia.
 - Fix (1 classe, só `client/src/components/shared/PrimaryCTA.jsx`): sai o `lg:w-60`, fica `w-full` sempre.
-- Checks: eslint limpo nos ficheiros tocados (`lint` global só os 2 erros pré-existentes), `check:types` OK. Tweak pontual → sem mobile-resp-check.
+- Animação (pedido seguinte): classe `animate-heartbeat` existente (a mesma do botão Jogar) no `PrimaryCTA` — pulsar em ciclo, sem CSS novo.
+- Checks: eslint limpo nos ficheiros tocados (`lint` global só os 2 erros pré-existentes), `check:types` OK. Tweaks pontuais → sem mobile-resp-check.
 
 ## Tática desktop: Moral ↔ Mentalidade trocadas de coluna (2026-09-23)
 
