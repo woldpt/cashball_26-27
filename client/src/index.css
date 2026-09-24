@@ -31,12 +31,14 @@
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;
   /* ── Stitch: Pitch Master 98 — color tokens ─────────────────── */
-  --color-surface: #131313;
-  --color-surface-container-low: #1c1b1b;
-  --color-surface-container: #201f1f;
-  --color-surface-container-high: #2a2a2a;
-  --color-surface-container-highest: #353534;
-  --color-surface-bright: #393939;
+  --color-surface: color-mix(in srgb, #131313 90%, transparent);
+  /* Painéis com 10% de transparência: a foto da tab sugere-se por trás
+     sem tirar leitura ao texto. Os ~352 usos herdam via tokens. */
+  --color-surface-container-low: color-mix(in srgb, #1c1b1b 90%, transparent);
+  --color-surface-container: color-mix(in srgb, #201f1f 90%, transparent);
+  --color-surface-container-high: color-mix(in srgb, #2a2a2a 90%, transparent);
+  --color-surface-container-highest: color-mix(in srgb, #353534 90%, transparent);
+  --color-surface-bright: color-mix(in srgb, #393939 90%, transparent);
   --color-primary: #95d4b3;
   --color-on-primary: #003824;
   --color-primary-container: #00412b;
@@ -573,12 +575,12 @@ body {
      qualquer patamar (mixing com a própria --jp-sheet). Isto evita a
      inversão de hierarquia que se via entre o amador (cartões mais claros)
      e o pro (quase fundidos com a folha). */
-  --color-surface: var(--jp-sheet);
-  --color-surface-container-low: color-mix(in srgb, #ffffff 14%, var(--jp-sheet));
-  --color-surface-container: color-mix(in srgb, #ffffff 22%, var(--jp-sheet));
-  --color-surface-container-high: color-mix(in srgb, #ffffff 30%, var(--jp-sheet));
-  --color-surface-container-highest: color-mix(in srgb, #ffffff 38%, var(--jp-sheet));
-  --color-surface-bright: color-mix(in srgb, #ffffff 46%, var(--jp-sheet));
+  --color-surface: color-mix(in srgb, var(--jp-sheet) 90%, transparent);
+  --color-surface-container-low: color-mix(in srgb, color-mix(in srgb, #ffffff 14%, var(--jp-sheet)) 90%, transparent);
+  --color-surface-container: color-mix(in srgb, color-mix(in srgb, #ffffff 22%, var(--jp-sheet)) 90%, transparent);
+  --color-surface-container-high: color-mix(in srgb, color-mix(in srgb, #ffffff 30%, var(--jp-sheet)) 90%, transparent);
+  --color-surface-container-highest: color-mix(in srgb, color-mix(in srgb, #ffffff 38%, var(--jp-sheet)) 90%, transparent);
+  --color-surface-bright: color-mix(in srgb, color-mix(in srgb, #ffffff 46%, var(--jp-sheet)) 90%, transparent);
   --color-on-surface: #ece5d3;
   --color-on-surface-variant: #a39c88;
   --color-outline-variant: #4d4a42;
