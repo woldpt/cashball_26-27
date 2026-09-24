@@ -1662,6 +1662,31 @@ export function registerSessionSocketHandlers(
 					if (!String(histErr?.message || "").includes("no such table")) throw histErr;
 				}
 
+				// ── Assistência média histórica (todas as épocas, sem reset) ───
+				// Liga + Taça + amigável (round 0 vive em cup_matches). Sem filtro
+				// de época; os campos por época acima ficam intactos (FinancesTab).
+				let allTimeHomeMatches = homeMatches.length + cupHomeMatches.length;
+				let allTimeTotalAttendance = ticketBreakdown.reduce(
+					(sum, t) => sum + (t.attendance || 0),
+					0,
+				);
+				try {
+					const allLeague: any = await runGet(
+						game.db,
+						`SELECT COUNT(*) AS n, COALESCE(SUM(attendance), 0) AS s FROM matches WHERE home_team_id = ? AND played = 1`,
+						[teamId],
+					);
+					const allCup: any = await runGet(
+						game.db,
+						`SELECT COUNT(*) AS n, COALESCE(SUM(attendance), 0) AS s FROM cup_matches WHERE home_team_id = ? AND played = 1`,
+						[teamId],
+					);
+					allTimeHomeMatches = Number(allLeague?.n || 0) + Number(allCup?.n || 0);
+					allTimeTotalAttendance = Number(allLeague?.s || 0) + Number(allCup?.s || 0);
+				} catch {
+					// DB antiga sem coluna attendance — fica a média da época atual.
+				}
+
 				socket.emit("financeData", {
 					teamId,
 					totalTicketRevenue,
@@ -1674,6 +1699,8 @@ export function registerSessionSocketHandlers(
 					homeMatchesPlayed: homeMatches.length,
 					cupHomeMatchesPlayed: cupHomeMatches.length,
 					totalHomeMatchesPlayed: homeMatches.length + cupHomeMatches.length,
+					allTimeHomeMatches,
+					allTimeTotalAttendance,
 					ticketBreakdown,
 					transferInList,
 					transferOutList,
@@ -1689,6 +1716,8 @@ export function registerSessionSocketHandlers(
 					totalStadiumExpenses: 0,
 					sponsorRevenue: 0,
 					homeMatchesPlayed: 0,
+					allTimeHomeMatches: 0,
+					allTimeTotalAttendance: 0,
 					ticketBreakdown: [],
 					transferInList: [],
 					transferOutList: [],

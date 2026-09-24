@@ -1,3 +1,10 @@
+## Assistência Média histórica, sem reset (2026-09-24)
+
+- Pedido: contar todos os jogos em casa (liga + Taça + amigáveis) e sem reset no fim da época. Decisões via perguntas: histórico total acumulado + sub só com o total de jogos.
+- Servidor (`server/socketSessionHandlers.ts`, `requestFinanceData`): 2 campos novos `allTimeHomeMatches` + `allTimeTotalAttendance` (COUNT+SUM sem filtro de época em `matches` + `cup_matches`; o amigável vive em `cup_matches` round 0 e já conta). Campos por época intactos — o `FinancesTab` não muda. Fallback: DB antiga sem coluna `attendance` mantém a média da época atual; erro global emite os novos campos a 0.
+- Cliente (`client/src/views/StadiumTab.jsx`): média = `round(allTimeTotalAttendance / allTimeHomeMatches)` com fallback para `totalHomeMatchesPlayed`/`homeMatchesPlayed` + soma do `ticketBreakdown`; sub = `N jogo(s) em casa`. De passagem, corrige o divisor antigo (somava liga+Taça e dividia só pela liga).
+- Checks: server `typecheck` OK · client `lint` só os 2 erros pré-existentes · `check:types` OK · `audit:socketio` 0 erros (97 avisos pré-existentes) · prova sintética sqlite: época atual 2 jogos/9500 vs all-time 6 jogos/6667 (inclui amigável) + fallback sem coluna OK. Sem sala viva com jogos → `audit:gamestate` fica para a próxima. Só números → sem mobile-resp-check.
+
 ## Pitch do rescaldo: fotos reais em vez de SVG (2026-09-24)
 
 - Queixa: o pitch do artigo de rescaldo no Jornal desenhava os rostos SVG (avatar gerado) em vez das fotos reais dos jogadores.

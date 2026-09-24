@@ -33,17 +33,22 @@ export function StadiumTab({
   const ticketPrice = teamInfo?.ticket_price || 15;
   const fanbase = teamInfo?.fanbase > 0 ? teamInfo.fanbase : null;
 
+  // Assistência média histórica: todos os jogos em casa de todas as épocas
+  // (liga + Taça + amigável), sem reset. Fallback para a época atual em
+  // salas antigas sem os campos históricos.
   const homeMatches =
-    financeData?.homeMatchesPlayed || 0;
+    financeData?.allTimeHomeMatches ??
+    financeData?.totalHomeMatchesPlayed ??
+    financeData?.homeMatchesPlayed ??
+    0;
+  const totalAttendance =
+    financeData?.allTimeTotalAttendance ??
+    (financeData?.ticketBreakdown || []).reduce(
+      (sum, t) => sum + (t.attendance || 0),
+      0,
+    );
   const avgAttendance =
-    homeMatches > 0
-      ? Math.round(
-          (financeData?.ticketBreakdown || []).reduce(
-            (sum, t) => sum + (t.attendance || 0),
-            0,
-          ) / homeMatches,
-        )
-      : null;
+    homeMatches > 0 ? Math.round(totalAttendance / homeMatches) : null;
 
   const atMaxCapacity = stadiumCapacity >= MAX_CAPACITY;
 
