@@ -1,3 +1,10 @@
+## Briefing: botão «Avançar para a Tática» em largura cheia (2026-09-24)
+
+- Queixa: o botão de avançar estava feio e descentrado no cartão do briefing.
+- Causa: o `PrimaryCTA` tinha `w-full lg:w-60` — no desktop encolhia para 240px fixos e, dentro do contentor `flex-col items-stretch` do `PrepCtaCard`, encostava à esquerda. O `lg:w-60` era um resto de um contexto antigo; o componente hoje só é usado neste cartão, cuja intenção original era largura cheia.
+- Fix (1 classe, só `client/src/components/shared/PrimaryCTA.jsx`): sai o `lg:w-60`, fica `w-full` sempre.
+- Checks: eslint limpo nos ficheiros tocados (`lint` global só os 2 erros pré-existentes), `check:types` OK. Tweak pontual → sem mobile-resp-check.
+
 ## Tática desktop: Moral ↔ Mentalidade trocadas de coluna (2026-09-23)
 
 - Pedido (screenshot anotado): o Moral vai para o meio (sobre os Suplentes), a Mentalidade para a 3.ª coluna (sobre o JOGAR/Campo), e o JOGAR sobe para o topo da 3.ª coluna.
