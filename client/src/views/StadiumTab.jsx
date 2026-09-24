@@ -182,7 +182,7 @@ export function StadiumTab({
                   : "text-red-400"
             }`}
           >
-            {fansMoodLabel} · {fansMood}
+            {fansMoodLabel}
           </span>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-surface-bright">
