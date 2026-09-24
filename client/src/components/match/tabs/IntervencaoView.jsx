@@ -7,7 +7,6 @@ import {
   filterMatchEvents,
   buildPlayerMatchStats,
 } from "../matchConstants.js";
-import { GhostButton, MatchIcon } from "../shared/index.js";
 import { TeamCrest } from "../../live/TeamCrest.jsx";
 import {
   useCompactViewport,
@@ -323,23 +322,6 @@ export function IntervencaoView({
   );
   const referee = fixture.referee;
 
-  /* ── Action title ─────────────────────────────────────────────── */
-  const titleText = isPreExtraTime
-    ? "Pausa antes do prolongamento"
-    : isHalftime
-      ? "Gestão da Equipa"
-      : isEmergencyGk
-        ? "Sem GR — quem vai para a baliza?"
-        : isForcedSwap
-          ? `Substituição obrigatória · ${forceOutPlayer?.name || "jogador"}`
-          : "Pausa para substituição";
-
-  const actionTheme = isForcedSwap
-    ? "from-red-700/20 via-orange-500/10 to-transparent"
-    : isActionSub
-      ? "from-cyan-500/20 via-blue-500/10 to-transparent"
-      : "from-emerald-500/15 via-primary/10 to-transparent";
-
   /* ── Handlers ──────────────────────────────────────────────────── */
   const handlePickOut = useCallback(
     (player) => {
@@ -465,42 +447,14 @@ export function IntervencaoView({
         </div>
       )}
 
-      {/* Title bar — description on the left, reset far right. No mobile de
-       * intervalo fica oculta (o banner intermitente acima ocupa o lugar). */}
-      <div
-        className={`${isHalftime && compact ? "hidden" : "flex"} shrink-0 px-4 sm:px-5 py-3 sm:py-4 border-b border-outline-variant/20 bg-gradient-to-r ${actionTheme} items-center justify-between gap-2 sm:gap-4`}
-      >
-        <div className="min-w-0 flex-1">
-          {/* No truncate: a forced-swap title must never cut the player's name. */}
-          <h2 className="text-base font-bold font-headline tracking-tight text-on-surface uppercase text-left leading-snug">
-            {titleText}
-          </h2>
-          {/* Lesão do último GR com reposição sem GR no banco: o substituto que
-           * entra calça as luvas — aviso em destaque antes de confirmar. */}
-          {matchAction?.incomingBecomesGK && !isEmergencyGk && (
-            <p className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-amber-300/90">
-              <span aria-hidden="true">🧤</span>
-              O substituto vai para a baliza — GR improvisado
-            </p>
-          )}
-        </div>
-
-        {/* Two-tap confirm: destructive action wipes all planned subs. */}
-        {isHalftime && confirmedSubs.length > 0 && (
-          <GhostButton
-            onClick={handleArmResetAll}
-            icon={
-              <MatchIcon
-                name="reset"
-                className="h-3.5 w-3.5 text-rose-400/80"
-              />
-            }
-            className="text-rose-400/80 hover:text-rose-300 hover:bg-rose-500/10 shrink-0"
-          >
-            {confirmResetAll ? "Confirmar?" : "Anular todas"}
-          </GhostButton>
-        )}
-      </div>
+      {/* Lesão do último GR com reposição sem GR no banco: o substituto que
+       * entra calça as luvas — aviso em destaque antes de confirmar. */}
+      {matchAction?.incomingBecomesGK && !isEmergencyGk && (
+        <p className="shrink-0 px-4 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-amber-300 bg-amber-500/10 border-b border-amber-500/20">
+          <span aria-hidden="true">🧤</span>
+          O substituto vai para a baliza — GR improvisado
+        </p>
+      )}
 
       {/* ── Main tab row: Cronologia | Substituições | Adversário ── */}
       {/* Hidden during forced swaps — the other tabs are noise while the

@@ -68,9 +68,9 @@ export function TitularesColumn({
             Titulares
           </h3>
           <div className="flex items-center gap-2">
-            {/* Legenda visível da métrica tripla dos cartões (skill · RES · forma). */}
+            {/* Legenda visível da métrica dos cartões (skill · forma). */}
             <span className="text-[9px] text-on-surface-variant/80 font-semibold uppercase tracking-widest">
-              Skill · RES · Forma
+              Skill · Forma
             </span>
             <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
               {players.length}
@@ -158,9 +158,9 @@ export function SuplentesColumn({
             Suplentes
           </h3>
           <div className="flex items-center gap-2">
-            {/* Legenda visível da métrica tripla dos cartões (skill · RES · forma). */}
+            {/* Legenda visível da métrica dos cartões (skill · forma). */}
             <span className="text-[9px] text-on-surface-variant/80 font-semibold uppercase tracking-widest">
-              Skill · RES · Forma
+              Skill · Forma
             </span>
             <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
               {players.length}

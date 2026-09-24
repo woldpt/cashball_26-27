@@ -59,7 +59,7 @@ export function LiveClock({
     shortPhase = `${cupMatchRoundName}${cupPreMatch ? " · Pré" : cupExtraTimeBadge ? " · Prol." : ""}`;
     longPhase = `taça, ${cupMatchRoundName}`;
   } else if (liveMinute === 45) {
-    time = "⏸";
+    time = "45'";
     shortPhase = "Intervalo";
     longPhase = "intervalo";
   } else {

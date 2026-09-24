@@ -38,7 +38,7 @@ const PEEK_W = 96;
  * Folha da stack de páginas mobile (Titulares/Suplentes). A folha à frente
  * ocupa quase toda a largura; a de trás estaciona deslocada PEEK_W px para a
  * direita — o seu bordo direito fica alinhado ao do container e só a zona das
- * métricas dos cartões (skill │ RES forma) permanece visível na faixa lateral,
+ * métricas dos cartões (skill │ forma) permanece visível na faixa lateral,
  * escurecida.
  *
  * A troca é um deslizamento horizontal curto entre os dois slots: sem 3D, sem
@@ -466,7 +466,7 @@ export function SubsPanel({
         /* ═══ Mobile vertical: stack de páginas Titulares/Suplentes ═══
          * Duas folhas sobrepostas em largura: a folha de trás estaciona com o
          * bordo direito alinhado ao do container, ficando minimamente destapada
-         * na zona das skills (skill │ RES forma). A troca é um deslizamento
+         * na zona das skills (skill │ forma). A troca é um deslizamento
          * horizontal curto entre slots — swipe/tap na faixa lateral ou chip 'Sai'.
          * Cada folha é o próprio scroller vertical → posições de scroll são
          * preservadas entre trocas (sem remount). */

@@ -1,12 +1,11 @@
 import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS, getPosStyle } from "../matchConstants.js";
 import { FatigueIndicator } from "./FatigueIndicator.jsx";
-import { MatchIcon } from "./MatchIcon.jsx";
 
 /**
  * Match player card — always expanded (skill + fatigue).
- * Layout: [bar] [POS] Nome ★  [fatigue] [skill+glow] │ RES [cyan] │ <emoji form> [swap-icon]
- * RES and form are hidden when `hideResForm` is set (opponent players).
+ * Layout: [bar] [POS] Nome ★  [fatigue] [skill+glow] │ <emoji form>
+ * Form is hidden when `hideResForm` is set (opponent players).
  *
  * Visual signals (was previously overlapping):
  *  - Default state: position gradient background + position-colored bar.
@@ -21,7 +20,6 @@ export function MatchPlayerCard({
   selectable = true,
   onPick,
   title,
-  swapIndicator = false,
   showFatigue = true,
   hideResForm = false,
   showMatchStats = false,
@@ -127,7 +125,7 @@ export function MatchPlayerCard({
         {showFatigue && <FatigueIndicator player={player} compact />}
       </span>
 
-      {/* ── Expanded: skill (+ RES + form when shown) ── */}
+      {/* ── Expanded: skill + form ── */}
       <div className="shrink-0 flex items-center mr-2">
         {!hideResForm && (
           <div className="flex items-end gap-2">
@@ -138,33 +136,10 @@ export function MatchPlayerCard({
               {player.skill ?? "—"}
             </span>
             <div className="self-stretch w-px bg-outline-variant/25" />
-            <div className="flex flex-col items-end leading-none">
-              <span className="mb-0.5 text-[8px] uppercase tracking-widest text-on-surface-variant/60 font-semibold">
-                RES
-              </span>
-              <span className="text-xs font-black tabular-nums text-cyan-400 leading-none">
-                {player.resistance ?? "–"}
-              </span>
-            </div>
-            <div className="self-stretch w-px bg-outline-variant/25" />
             <span className={`text-xs font-black tabular-nums leading-none ${formColor}`} title={`Forma: ${form}`}>{player.form ?? "–"}</span>
           </div>
         )}
       </div>
-
-      {/* Swap affordance (halftime mode). Moved to the right end but
-       * rendered as a real SVG swap icon (was `↔` glyph) at a visible
-       * size; on hover the icon shifts to emerald to signal selection. */}
-      {swapIndicator && !disabled && (
-        <span
-          className={`shrink-0 mr-2 flex items-center transition-colors ${
-            selected ? "text-white" : "text-on-surface-variant/70 group-hover:text-emerald-400"
-          }`}
-          aria-label="Disponível para substituição"
-        >
-          <MatchIcon name="swap" className="h-4 w-4" />
-        </span>
-      )}
     </button>
   );
 }
