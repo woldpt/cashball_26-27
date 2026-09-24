@@ -1,3 +1,11 @@
+## Dropdown de divisão na classificação ao vivo (2026-09-25)
+
+- Queixa: o `<select>` nativo do header do painel de classificação virtual (`client/src/components/live/LiveStandings.jsx`) ignorava o tema escuro (popup branco do browser, cortado em baixo, saltava da largura do painel) e truncava a label a `max-w-[7.5rem]`.
+- Fix (1 ficheiro): o `<select>` virou dropdown próprio — button (mesmos tokens: `bg-surface-container-lowest`, `border-primary/30`, `text-primary`, `text-[9px] font-black uppercase`) com caret ▼ e **sem truncagem** (mostra o nome completo da divisão; o título `Virtual · J{n}` já tem `truncate` e cede espaço) + lista `absolute right-0 top-full z-20 w-max min-w-full` no tema (fundo `bg-surface-container`, item ativo `text-primary bg-primary/10`, hover `bg-surface-container-high`) + overlay `fixed inset-0 z-10` para fechar ao clicar fora. Estado `divOpen` (useState); a lógica `selectedDiv`/`viewDiv`/`availableDivs` (sem divisão 5) é intocada.
+- Keyboard mínimo: Escape fecha, Enter/espaço no item focado (`tabIndex=0`) escolhe; `aria-haspopup`/`aria-expanded`/`role=listbox`/`role=option`.
+- Nota: nenhum harness renderiza o `LiveStandingsPanel` (`livehero` só renderiza `LiveMatchHero`) — as 2 passagens mobile não cobrem diretamente esta mudança.
+- Checks: eslint limpo no ficheiro · `check:types` OK · portrait/landscape corridos: tudo PASS exceto 5 falhas em `intervencao-test.html` (clipping +5/+6px no container do `IntervencaoView`) — **WIP de outra feature na árvore** (`IntervencaoView.jsx`, `index.css`, `intervencao.webp` untracked), esse harness não importa o ficheiro alterado.
+
 ## Tática desktop: Moral + Mentalidade empilhadas, JOGAR no topo (2026-09-24)
 
 - Pedido: na mesma célula da Moral, por baixo, a Mentalidade; no slot da Mentalidade, o botão JOGAR JORNADA; o pitch sobe por consequência. Decisões via perguntas: Moral simplificada (sem etiqueta no header, sem N/100, com brilho) + botão com altura própria ao topo + dois sub-cabeçalhos.
