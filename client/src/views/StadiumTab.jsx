@@ -70,6 +70,7 @@ export function StadiumTab({
             capacity={stadiumCapacity}
             primary={teamInfo?.color_primary}
             secondary={teamInfo?.color_secondary}
+            occupancy={occupancyPct != null ? occupancyPct / 100 : undefined}
             className="absolute inset-0 h-full w-full"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />

@@ -23,8 +23,11 @@ import { memo, useId } from "react";
  *   primary?: string|null,
  *   secondary?: string|null,
  *   className?: string,
+ *   occupancy?: number|null,
  * }} props
  */
+
+// `occupancy`: 0..1 (fração da lotação ocupada). `null` = bancada cheia.
 
 // ── Helpers de cor (determinísticos, sem dependências) ──────────────
 const clamp255 = (v) => Math.max(0, Math.min(255, Math.round(v)));
@@ -75,7 +78,7 @@ const PITCH_H = PITCH_BOT - PITCH_TOP;
 const STAND_X0 = 84; // borda esquerda a escala plena (≥50k)
 const STAND_X1 = 716; // borda direita a escala plena (≥50k)
 const CAP_INSET = 24; // profundidade das faces laterais das bancadas
-const PITCH_FAR_HALF = 380; // meia-largura do relvado na linha frontal
+// (a meia-largura do relvado na linha frontal deriva da bancada: `farHalf`)
 const PITCH_NEAR_HALF = 400; // meia-largura na borda próxima
 const STRIPES = 8;
 const GOAL_TOP = 146;
@@ -88,6 +91,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   primary = null,
   secondary = null,
   className = "",
+  occupancy = null,
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const gid = (n) => `s${uid}-${n}`;
@@ -121,6 +125,12 @@ export const StadiumIllustration = memo(function StadiumIllustration({
   // Crescimento subtil do corpo acima dos 50k (até +15% aos 120k).
   const bulk =
     capacity > 50000 ? 1 + ((Math.min(capacity, 120000) - 50000) / 70000) * 0.15 : 1;
+  // Ocupação 0..1 (`null` = bancada cheia, comportamento anterior).
+  const occ = occupancy == null ? 1 : Math.max(0, Math.min(1, occupancy));
+  // Núcleo de claques ao centro (cor do clube, esvazia em último).
+  const claqueHalf = ((standX1 - standX0) / 2) * 0.22;
+  // O topo do relvado acompanha a largura da bancada (perspetiva).
+  const farHalf = (standX1 - standX0) / 2 + CAP_INSET;
 
   // ── Geometria da bancada (vista frontal) ──────────────────────
   /** Topo do anel i (0 = o de baixo). */
@@ -140,8 +150,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
 
   /** Meia-largura do relvado na profundidade y (perspectiva em fuga). */
   const pitchHalf = (y) =>
-    PITCH_FAR_HALF +
-    ((y - PITCH_TOP) / PITCH_H) * (PITCH_NEAR_HALF - PITCH_FAR_HALF);
+    farHalf + ((y - PITCH_TOP) / PITCH_H) * (PITCH_NEAR_HALF - farHalf);
 
   /** Topo da faixa de corte s (foreshortening quadrático p/ a linha frontal). */
   const stripeTop = (i) => PITCH_TOP + PITCH_H * Math.pow(i / STRIPES, 2);
@@ -164,7 +173,16 @@ export const StadiumIllustration = memo(function StadiumIllustration({
     for (let r = 0; r < rows; r += 1) {
       const yBase = yTop + 3 + ((yBot - yTop - 6) * (r + 0.5)) / rows;
       for (let x = standX0 + 4 + (r % 2) * 2.5; x < standX1 - 4; x += 5) {
-        const zone = hash01(seed + Math.floor(x / 34) * 4.7 + r * 0.8);
+        // Lugares vazios: thinning determinístico; a claque central esvazia em último.
+        const inClaque = Math.abs(x - 400) < claqueHalf;
+        const keepP = inClaque ? Math.min(1, occ * 1.5 + 0.2) : occ;
+        if (hash01(seed + 999 + k * 4.31) > keepP) {
+          k += 1;
+          continue;
+        }
+        const zone = inClaque
+          ? hash01(seed + Math.floor(x / 34) * 4.7 + r * 0.8) * 0.5
+          : hash01(seed + Math.floor(x / 34) * 4.7 + r * 0.8);
         const h = hash01(seed + k * 12.9898);
         const fill =
           zone < 0.52
@@ -384,32 +402,12 @@ export const StadiumIllustration = memo(function StadiumIllustration({
         <ellipse cx={452} cy={29} rx={20} ry={7} />
         <ellipse cx={620} cy={44} rx={26} ry={7} />
       </g>
-      {/* Serra ao longe (duas camadas) + haze no horizonte */}
-      <ellipse cx={130} cy={94} rx={230} ry={34} fill="#aebfd0" opacity="0.38" />
-      <ellipse cx={690} cy={94} rx={250} ry={36} fill="#a8bda4" opacity="0.38" />
-      <ellipse cx={130} cy={97} rx={230} ry={28} fill="#8fa8bf" opacity="0.6" />
-      <ellipse cx={690} cy={99} rx={250} ry={30} fill="#93a88f" opacity="0.6" />
+      {/* Colinas ao longe (silhuetas com base escondida atrás do recinto) + haze */}
+      <path d="M -20 164 Q 130 76 280 164 Z" fill="#aebfd0" opacity="0.38" />
+      <path d="M 520 164 Q 690 74 820 164 Z" fill="#a8bda4" opacity="0.38" />
+      <path d="M -20 164 Q 130 88 280 164 Z" fill="#8fa8bf" opacity="0.55" />
+      <path d="M 520 164 Q 690 88 820 164 Z" fill="#93a88f" opacity="0.55" />
       <rect x="0" y="64" width={W} height="32" fill={url("haze")} />
-      {/* Pinheiros nas bermas, assentes no horizonte */}
-      <g>
-        {[
-          [30, 86, 7],
-          [56, 91, 5.5],
-          [744, 89, 6],
-          [770, 83, 7.5],
-        ].map(([x, y, r]) => (
-          <g key={`tree-${x}-${y}`}>
-            <rect x={x - 1.5} y={y + 3} width={3} height={6} fill="#5b4632" />
-            <path d={`M ${x - r} ${y + 4} L ${x + r} ${y + 4} L ${x} ${y - 3} Z`} fill="#166534" />
-            <path d={`M ${x - r * 0.62} ${y - 0.5} L ${x + r * 0.62} ${y - 0.5} L ${x} ${y - r - 2} Z`} fill="#15803d" />
-          </g>
-        ))}
-      </g>
-      {/* Pássaros */}
-      <g stroke="#334155" strokeWidth="1.5" fill="none" opacity="0.55" strokeLinecap="round">
-        <path d="M 250 62 q 6 -6 12 0 q 6 -6 12 0" />
-        <path d="M 560 56 q 5 -5 10 0 q 5 -5 10 0" />
-      </g>
 
       {/* Torres de luz baixas (só nos pequenos, sem cobertura) — mais
           baixas e junto às bancadas, à escala do estádio */}
@@ -475,6 +473,16 @@ export const StadiumIllustration = memo(function StadiumIllustration({
             />
             {rowLines(seatTop, seatBottom)}
             {crowdDots(seatTop, seatBottom, 100 + i * 1000)}
+            {/* Vomitórios: escadas que dividem a bancada em sectores */}
+            {[0.2, 0.4, 0.6, 0.8].map((f) => {
+              const ax = standX0 + f * (standX1 - standX0);
+              return (
+                <g key={`aisle-${i}-${f}`}>
+                  <rect x={ax - 3.5} y={seatTop} width={7} height={seatBottom - seatTop} fill="#0b1220" opacity="0.9" />
+                  <line x1={ax} y1={seatTop + 1} x2={ax} y2={seatBottom - 1} stroke="#475569" strokeWidth="1" strokeDasharray="2 2" opacity="0.8" />
+                </g>
+              );
+            })}
             {/* Passadeira de betão entre anéis + sombra ambiente */}
             <rect x={standX0 - CAP_INSET} y={seatBottom - 3} width={standX1 - standX0 + CAP_INSET * 2} height={6} fill={url("concrete")} opacity="0.9" />
             <rect x={standX0 - CAP_INSET} y={seatBottom + 1} width={standX1 - standX0 + CAP_INSET * 2} height={2.5} fill="#000000" opacity="0.2" />
@@ -530,7 +538,7 @@ export const StadiumIllustration = memo(function StadiumIllustration({
       {/* Sombra das bancadas projetada no relvado */}
       <rect x={standX0 - CAP_INSET} y={PITCH_TOP} width={standX1 - standX0 + CAP_INSET * 2} height={18} fill={url("standShadow")} />
       {/* Linha de fundo */}
-      <line x1={20} y1={PITCH_TOP + 1.5} x2={780} y2={PITCH_TOP + 1.5} stroke="#f8fafc" strokeWidth="1.8" opacity="0.85" />
+      <line x1={standX0 - CAP_INSET} y1={PITCH_TOP + 1.5} x2={standX1 + CAP_INSET} y2={PITCH_TOP + 1.5} stroke="#f8fafc" strokeWidth="1.8" opacity="0.85" />
       {/* Baliza na linha frontal (emolduramento + rede) */}
       <g>
         <polygon
