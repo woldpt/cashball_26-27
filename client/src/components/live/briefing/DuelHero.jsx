@@ -10,7 +10,7 @@ import { DifficultyGauge } from "./DifficultyGauge.jsx";
 const DuelSlot = memo(function DuelSlot({ slot, side, onOpenTeamSquad }) {
   const position = slot.team?.position ? `${slot.team.position}º lugar` : "—";
   return (
-    <div className="flex-1 min-w-0 flex flex-col items-center gap-1 text-center">
+    <div className="relative z-10 flex-1 min-w-0 flex flex-col items-center gap-1 text-center">
       <span
         className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-px rounded border ${
           side === "home"
@@ -89,9 +89,40 @@ export const DuelHero = memo(function DuelHero({ vm, onOpenTeamSquad }) {
       </div>
 
       {/* Frente a frente */}
-      <div className="px-4 short:px-3 py-3 short:py-2 lg:py-5 flex items-center gap-2 lg:gap-6">
+      <div className="relative overflow-hidden px-4 short:px-3 py-3 short:py-2 lg:py-5 flex items-center gap-2 lg:gap-6">
+        {/* marcas de água dos emblemas (laterais, escuras e desvanecidas) */}
+        {home?.team?.crest && (
+          <img
+            src={home.team.crest}
+            alt=""
+            aria-hidden
+            loading="lazy"
+            onError={(e) => { e.currentTarget.style.display = "none"; }}
+            className="absolute -left-6 top-1/2 -translate-y-1/2 w-40 h-40 lg:w-56 lg:h-56 object-contain opacity-[0.13] pointer-events-none select-none hidden sm:block"
+            style={{
+              filter: "brightness(0.45) saturate(0.9)",
+              maskImage: "linear-gradient(to right, black 55%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to right, black 55%, transparent 100%)",
+            }}
+          />
+        )}
+        {away?.team?.crest && (
+          <img
+            src={away.team.crest}
+            alt=""
+            aria-hidden
+            loading="lazy"
+            onError={(e) => { e.currentTarget.style.display = "none"; }}
+            className="absolute -right-6 top-1/2 -translate-y-1/2 w-40 h-40 lg:w-56 lg:h-56 object-contain opacity-[0.13] pointer-events-none select-none hidden sm:block"
+            style={{
+              filter: "brightness(0.45) saturate(0.9)",
+              maskImage: "linear-gradient(to left, black 55%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to left, black 55%, transparent 100%)",
+            }}
+          />
+        )}
         {home && <DuelSlot slot={home} side="home" onOpenTeamSquad={onOpenTeamSquad} />}
-        <div className="shrink-0 flex flex-col items-center gap-1 px-1 lg:px-4">
+        <div className="relative z-10 shrink-0 flex flex-col items-center gap-1 px-1 lg:px-4">
           <span
             aria-hidden
             className="text-[10px] lg:text-xs font-black text-gray-600 px-2.5 py-1 rounded-full border border-outline-variant/25 bg-surface-container-low"

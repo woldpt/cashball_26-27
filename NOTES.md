@@ -1473,3 +1473,7 @@ Plano C1+C2 (quando fizer):
 ## Marcas de água dos emblemas no hero do jogo (2026-09-24)
 - `LiveMatchHero.jsx` (único ficheiro): duas marcas de água decorativas (`aria-hidden`, `pointer-events-none`) — emblema da casa à esquerda, de fora à direita, em zoom (`w-56/sm:w-72`), escuro (`brightness(0.45)`) e desvanecido (`opacity 0.13` + máscara em degradê para o centro). Só com `team.crest` (fallback de 3 letras inalterado), só em `sm+` e com `hideScoreboard=false` (Final fundida sem duplicação); `onError` esconde se o logo falhar.
 - Checks: `check:types` OK; `lint` global só com os 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx` — confirmados via stash). Sem mobile-resp-check (fundo decorativo absoluto, sem grid/flex/larguras).
+
+## Marcas de água no duelo do briefing (2026-09-24)
+- `briefing/DuelHero.jsx` (único ficheiro): mesma receita do hero ao vivo — faixa do frente-a-frente passa a `relative overflow-hidden` com marcas de água dos emblemas (casa esq., fora dir., `brightness(0.45)`, `opacity 0.13`, máscara em degradê, `sm+`); `DuelSlot`s e bloco VS com `relative z-10` para ficarem por cima. `onError` esconde se o logo falhar.
+- Checks: `check:types` OK; `eslint` limpo nos 2 ficheiros tocados (lint global mantém só os 2 erros pré-existentes). Sem mobile-resp-check (fundo decorativo absoluto).
