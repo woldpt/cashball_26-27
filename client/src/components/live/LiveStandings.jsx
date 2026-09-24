@@ -87,6 +87,7 @@ export function LiveStandingsPanel({
     ),
   ].sort((a, b) => a - b);
   const [selectedDiv, setSelectedDiv] = useState(null);
+  const [divOpen, setDivOpen] = useState(false);
   // Sem persistência: ao abrir a simulação vale sempre a tua (null = minha).
   // A escolha só muda a visualização atual; a época nova recarrega a página.
   if (myDiv == null) return null;
@@ -113,19 +114,61 @@ export function LiveStandingsPanel({
         <h3 className="min-w-0 flex-1 font-headline font-extrabold text-[10px] sm:text-[11px] tracking-tighter uppercase text-primary truncate">
           Virtual · J{matchweek}
         </h3>
-        <select
-          value={viewDiv}
-          onChange={(e) => setSelectedDiv(Number(e.target.value))}
-          aria-label={`Escolher divisão (atual: ${divLabel})`}
-          title={divLabel}
-          className="shrink-0 min-w-0 max-w-[7.5rem] bg-surface-container-lowest border border-primary/30 text-primary text-[9px] font-black uppercase rounded-sm px-1 py-0.5 truncate cursor-pointer"
-        >
-          {availableDivs.map((div) => (
-            <option key={div} value={div}>
-              {DIVISION_NAMES[div] || `Div ${div}`}
-            </option>
-          ))}
-        </select>
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => setDivOpen((o) => !o)}
+            aria-haspopup="listbox"
+            aria-expanded={divOpen}
+            aria-label={`Escolher divisão (atual: ${divLabel})`}
+            className="flex items-center gap-1 bg-surface-container-lowest border border-primary/30 text-primary text-[9px] font-black uppercase rounded-sm px-1.5 py-0.5 whitespace-nowrap cursor-pointer"
+          >
+            {divLabel}
+            <span
+              className={`text-[8px] transition-transform ${divOpen ? "rotate-180" : ""}`}
+            >
+              ▼
+            </span>
+          </button>
+          {divOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setDivOpen(false)} />
+              <ul
+                role="listbox"
+                aria-label="Escolher divisão"
+                onKeyDown={(e) => e.key === "Escape" && setDivOpen(false)}
+                className="absolute right-0 top-full mt-1 z-20 w-max min-w-full rounded-sm border border-primary/30 bg-surface-container shadow-lg py-0.5"
+              >
+                {availableDivs.map((div) => (
+                  <li
+                    key={div}
+                    role="option"
+                    tabIndex={0}
+                    aria-selected={div === viewDiv}
+                    onClick={() => {
+                      setSelectedDiv(div);
+                      setDivOpen(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedDiv(div);
+                        setDivOpen(false);
+                      }
+                    }}
+                    className={`px-2 py-1 text-[9px] font-black uppercase whitespace-nowrap cursor-pointer ${
+                      div === viewDiv
+                        ? "text-primary bg-primary/10"
+                        : "text-on-surface hover:bg-surface-container-high"
+                    }`}
+                  >
+                    {DIVISION_NAMES[div] || `Div ${div}`}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Table */}
