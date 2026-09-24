@@ -207,9 +207,9 @@ body {
      texto assenta em cards/painéis próprios — a foto precisa de respirar. */
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--color-surface) 55%, transparent),
-    color-mix(in srgb, var(--color-surface) 35%, transparent) 40%,
-    color-mix(in srgb, var(--color-surface) 70%, transparent)
+    color-mix(in srgb, var(--color-surface) 60%, transparent),
+    color-mix(in srgb, var(--color-surface) 42%, transparent) 40%,
+    color-mix(in srgb, var(--color-surface) 75%, transparent)
   );
 }
 
