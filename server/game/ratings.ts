@@ -32,9 +32,16 @@ function starsFromScore(score: number): number {
 
 /**
  * Classifica todos os jogadores de um lado (`home`/`away`) numa partida.
- * Participantes = snapshot do lineup ∪ suplentes entrados (∪ saídos ao
- * intervalo, já fora do snapshot) — cobre quem entrou em campo em qualquer
- * momento, mesmo sem eventos próprios.
+ * Participantes = XI ∪ suplentes entrados (∪ saídos ao intervalo, já fora
+ * do snapshot) — cobre quem entrou em campo em qualquer momento, mesmo sem
+ * eventos próprios. O banco que não entrou fica de fora (mantém o
+ * `last_rating` anterior).
+ *
+ * O snapshot final é `[...em campo agora, ...banco restante]`: as trocas
+ * substituem no lugar (o suplente herda o slot do titular, o saído some),
+ * por isso o XI original se reconstrói com os eventos — os 11 primeiros do
+ * snapshot, menos quem entrou, mais quem saiu. Marcar todos os membros do
+ * snapshot como titulares colava o plantel inteiro no pitch do rescaldo.
  */
 export function computeSideRatings(
   events: any[],
@@ -42,18 +49,27 @@ export function computeSideRatings(
   side: "home" | "away",
   roster?: any[],
 ): RatingRow[] {
+  const cameOn = new Set<number>();
+  for (const e of events || []) {
+    if (e && e.team === side && SUB_EVENTS.has(e.type) && typeof e.playerId === "number" && e.playerId > 0)
+      cameOn.add(e.playerId);
+  }
   const players = new Map<number, RatingRow>();
   const rosterById = new Map<number, any>();
   for (const p of roster || []) if (p && p.id > 0) rosterById.set(p.id, p);
+  let seen = 0;
   for (const p of lineup || []) {
-    if (p && p.id > 0)
-      players.set(p.id, {
-        id: p.id,
-        name: p.name ?? rosterById.get(p.id)?.name ?? "Jogador",
-        position: p.position ?? rosterById.get(p.id)?.position ?? "",
-        stars: 0,
-        starter: true,
-      });
+    if (!p || p.id <= 0) continue;
+    const inXI = seen < 11;
+    seen += 1;
+    if (!inXI && !cameOn.has(p.id)) continue; // banco que não entrou
+    players.set(p.id, {
+      id: p.id,
+      name: p.name ?? rosterById.get(p.id)?.name ?? "Jogador",
+      position: p.position ?? rosterById.get(p.id)?.position ?? "",
+      stars: 0,
+      starter: inXI && !cameOn.has(p.id),
+    });
   }
   const score = new Map<number, number>();
   for (const e of events || []) {

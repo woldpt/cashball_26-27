@@ -1,3 +1,11 @@
+## Pitch do rescaldo: plantel inteiro no relvado (2026-09-24)
+
+- Queixa (screenshot): o pitch do artigo de rescaldo no Jornal mostrava 17 jogadores (2 GR, 6 DEF, 5 MED, 4 ATA) e a linha "Entramedos" vazia.
+- Causa: `computeSideRatings` (`server/game/ratings.ts`) marcava **todo** o snapshot do lineup (11 titulares + 7 suplentes) com `starter: true`; o `PostMatchPitch` põe no relvado quem tem `starter === true`.
+- Fix (só `ratings.ts`): o snapshot final é `[...em campo agora, ...banco]` — as trocas substituem no lugar (o suplente herda o slot do titular, o saído some). O XI original agora se reconstrói: 11 primeiros do snapshot, menos quem entrou (`playerId` de `substitution`/`halftime_sub`), mais quem saiu (`outPlayerId`, já tratado no ramo de eventos). `starter = inXI && !cameOn`.
+- Efeito colateral (a boa): o banco que não entrou já não recebe 3★ nem `last_rating = 3` — mantinha o que tinha, como a doc do módulo sempre disse.
+- Cobre liga + Taça + amigáveis (todas chamam `computeMatchRatings`). `test:ratings` +3 asserts (XI no relvado, suplente entrado não-titular, banco sem classificação) · server `typecheck` OK. Só server → sem lint/mobile client.
+
 ## Briefing: botão «Avançar para a Tática» em largura cheia (2026-09-24)
 
 - Queixa: o botão de avançar estava feio e descentrado no cartão do briefing.

@@ -25,13 +25,26 @@ function assert(cond: boolean, msg: string) {
 }
 
 const lineup = [
-  // Snapshot final: quem saiu ao intervalo já não está, quem entrou está.
+  // Snapshot final: [...XI (11), ...banco] — quem saiu já não está, quem
+  // entrou herdou o slot do titular (troca no lugar).
   { id: 1, name: "GR Limpo", position: "GR" },
   { id: 2, name: "Defesa Limpo", position: "DEF" },
   { id: 3, name: "Golador", position: "ATA" },
   { id: 5, name: "Amarelado", position: "MED" },
   { id: 6, name: "Expulso", position: "DEF" },
   { id: 9, name: "Reforço HT", position: "MED" },
+  { id: 10, name: "Titular 7", position: "DEF" },
+  { id: 11, name: "Titular 8", position: "DEF" },
+  { id: 12, name: "Titular 9", position: "MED" },
+  { id: 13, name: "Titular 10", position: "ATA" },
+  { id: 14, name: "Titular 11", position: "ATA" },
+  { id: 20, name: "Banco 1", position: "GR" },
+  { id: 21, name: "Banco 2", position: "DEF" },
+  { id: 22, name: "Banco 3", position: "DEF" },
+  { id: 23, name: "Banco 4", position: "MED" },
+  { id: 24, name: "Banco 5", position: "MED" },
+  { id: 25, name: "Banco 6", position: "ATA" },
+  { id: 26, name: "Banco 7", position: "ATA" },
   { id: -7, name: "Júnior GR", position: "GR" },
 ];
 const events = [
@@ -60,6 +73,12 @@ assert(!byId.has(-7), "junior (id negativo) fica de fora");
 assert(byId.has(4), "quem saiu ao intervalo já não está no snapshot mas conta (outPlayerId)");
 assert(byId.has(9), "quem entrou ao intervalo conta via snapshot");
 assert(byId.get(8)?.stars === 3 && byId.get(8)?.starter === false, "suplente entrado conta, marcado como não titular");
+assert(byId.get(1)?.starter === true && byId.get(14)?.starter === true, "XI fica no relvado (starter)");
+assert(byId.get(9)?.starter === false, "suplente entrado (no slot do XI no snapshot) fica marcado como não titular");
+assert(
+  [20, 21, 22, 23, 24, 25, 26].every((id) => !byId.has(id)),
+  "banco que não entrou não tem classificação (mantém last_rating anterior)",
+);
 
 // Clamp: dois golos não passam do teto.
 const two = computeMatchRatings({
