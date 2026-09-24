@@ -194,6 +194,37 @@ export function LiveMatchHero({
         className="absolute inset-0 pointer-events-none"
         style={{ boxShadow: "inset 0 0 90px rgba(0,0,0,0.42)" }}
       />
+      {/* marcas de água dos emblemas (laterais, escuras e desvanecidas) */}
+      {!hideScoreboard && hInfo?.crest && (
+        <img
+          src={hInfo.crest}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          onError={(e) => { e.currentTarget.style.display = "none"; }}
+          className="absolute -left-8 top-1/2 -translate-y-1/2 w-56 h-56 sm:w-72 sm:h-72 object-contain opacity-[0.13] pointer-events-none select-none hidden sm:block"
+          style={{
+            filter: "brightness(0.45) saturate(0.9)",
+            maskImage: "linear-gradient(to right, black 55%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to right, black 55%, transparent 100%)",
+          }}
+        />
+      )}
+      {!hideScoreboard && aInfo?.crest && (
+        <img
+          src={aInfo.crest}
+          alt=""
+          aria-hidden
+          loading="lazy"
+          onError={(e) => { e.currentTarget.style.display = "none"; }}
+          className="absolute -right-8 top-1/2 -translate-y-1/2 w-56 h-56 sm:w-72 sm:h-72 object-contain opacity-[0.13] pointer-events-none select-none hidden sm:block"
+          style={{
+            filter: "brightness(0.45) saturate(0.9)",
+            maskImage: "linear-gradient(to left, black 55%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to left, black 55%, transparent 100%)",
+          }}
+        />
+      )}
 
       <div className="relative z-10 flex flex-col items-center px-4 pt-5 pb-4">
         {/* ── Meta strip (oculta na Final fundida — a faixa cerimonial já a mostra) ── */}
