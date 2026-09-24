@@ -23,6 +23,42 @@ import {
 const LOAN_DIV_CASE = `CASE division ${[1, 2, 3, 4]
   .map((d) => `WHEN ${d} THEN ${LOAN_INSTALLMENT_BY_DIVISION[d]}`)
   .join(" ")} ELSE ${LOAN_INSTALLMENT_BY_DIVISION[5]} END`;
+
+/** Mesma formatação de moeda do cliente (pt-PT, EUR, sem cêntimos). */
+const euro = new Intl.NumberFormat("pt-PT", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
+
+/**
+ * Texto do resumo financeiro semanal (1 notícia por equipa com treinador
+ * humano). `oldLoan` é a dívida ANTES da semana; os restantes valores são
+ * idênticos aos do UPDATE de despesas (mesmas fórmulas do SQL).
+ */
+export function buildWeeklyFinanceSummary(p: {
+  income: number;
+  wages: number;
+  upkeep: number;
+  interest: number;
+  installment: number;
+  oldLoan: number;
+}): string {
+  const f = (v: number) => euro.format(v);
+  const hasLoan = p.oldLoan > 0;
+  const net =
+    p.income - p.wages - p.upkeep - (hasLoan ? p.interest + p.installment : 0);
+  return (
+    `Receitas: ${f(p.income)} · Salários: ${f(p.wages)} · Manutenção do estádio: ${f(p.upkeep)}` +
+    (hasLoan
+      ? ` · Juros: ${f(p.interest)} · Capital do empréstimo: ${f(p.installment)}`
+      : "") +
+    ` · Saldo da semana: ${f(net)}` +
+    (hasLoan && p.installment >= p.oldLoan
+      ? " Empréstimo liquidado esta semana."
+      : "")
+  );
+}
 import {
   getAllTeamForms,
   getStandingsRows,
@@ -1558,13 +1594,24 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             // COMMIT run strictly after the financial updates.
             const preLoan: Record<number, number> = {};
             const preDiv: Record<number, number> = {};
+            const preHuman: Record<number, number> = {};
+            const preWages: Record<number, number> = {};
+            const preSeats: Record<number, number> = {};
             game.db.all(
-              `SELECT id, loan_amount, division FROM teams`,
+              `SELECT t.id, t.loan_amount, t.division, t.stadium_capacity,
+                      m.is_human,
+                      (SELECT COALESCE(SUM(wage), 0)
+                       FROM players WHERE players.team_id = t.id) AS wages
+               FROM teams t
+               LEFT JOIN managers m ON t.manager_id = m.id`,
               (preErr: any, preRows: any[]) => {
                 if (!preErr)
                   for (const r of preRows || []) {
                     preLoan[r.id] = r.loan_amount || 0;
                     preDiv[r.id] = r.division ?? 5;
+                    preHuman[r.id] = r.is_human || 0;
+                    preWages[r.id] = r.wages || 0;
+                    preSeats[r.id] = r.stadium_capacity || 0;
                   }
 
                 // Deduct weekly wages + loan interest + principal installment (same for
@@ -1592,74 +1639,82 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
                       return;
                     }
 
-                    game.db.all(
-                      `SELECT id FROM teams`,
-                      (logErr: any, teams: any[]) => {
-                        if (logErr) {
-                          console.error(
-                            `[${game.roomCode}] ❌ Weekly finance journal SELECT failed:`,
-                            logErr,
-                            );
-                          game.db.run("ROLLBACK", () => resolve(false));
-                          return;
-                        }
-                        for (const team of teams || []) {
-                          const oldLoan = preLoan[team.id] || 0;
-                          const interest = Math.floor(oldLoan * 0.015);
-                          const installment = Math.min(loanInstallment(preDiv[team.id] ?? 5), oldLoan);
-                          if (interest > 0)
-                            logClubNews(game, "loan_interest", "Juros Bancários", team.id, {
-                              amount: interest,
-                              description: "Juros do empréstimo (1,5%)",
-                            });
-                          if (installment > 0)
-                            logClubNews(game, "loan_principal", "Amortização do Empréstimo", team.id, {
-                              amount: installment,
-                              description: "Pagamento de capital do empréstimo",
-                            });
-                        }
+                    // Resumo financeiro semanal: 1 notícia por equipa com
+                    // treinador humano. Os valores são os mesmos do UPDATE
+                    // (loan_amount pré-atualização; idênticas fórmulas do SQL).
+                    for (const teamId of Object.keys(preLoan)) {
+                      const id = Number(teamId);
+                      if (!preHuman[id]) continue;
+                      const oldLoan = preLoan[id];
+                      const div = preDiv[id] ?? 5;
+                      const income = WEEKLY_BASE_INCOME[div] ?? 0;
+                      const wages = preWages[id] || 0;
+                      const upkeep = Math.trunc(
+                        Math.max(
+                          0,
+                          (preSeats[id] || 0) - STADIUM_UPKEEP_EXEMPT_SEATS,
+                        ) *
+                          STADIUM_UPKEEP_PER_SEAT_WEEK,
+                      );
+                      const interest = Math.floor(oldLoan * 0.015);
+                      const installment = Math.min(loanInstallment(div), oldLoan);
+                      logClubNews(
+                        game,
+                        "weekly_finance",
+                        "Resumo Financeiro da Semana",
+                        id,
+                        {
+                          description: buildWeeklyFinanceSummary({
+                            income,
+                            wages,
+                            upkeep,
+                            interest,
+                            installment,
+                            oldLoan,
+                          }),
+                        },
+                      );
+                    }
 
-                        // Marker + COMMIT: reached only after the full financial chain above
-                        // queued successfully. Money moves and the journal commit atomically;
-                        // a crash at any point before this leaves no marker, so replay is safe.
-                        game.db.run(
-                          "INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'weekly_finance')",
-                          [game.season, slot],
-                          () => {
-                            game.db.run("COMMIT", (commitErr: any) => {
-                              if (commitErr) {
-                                console.error(
-                                  `[${game.roomCode}] ❌ Weekly finance COMMIT failed:`,
-                                  commitErr,
-                                );
-                                game.db.run("ROLLBACK", () => resolve(false));
-                                return;
-                              }
-                              // Saldo real pós-descontos (o jogo da semana ainda não
-                              // foi jogado); a finalização atualiza o mesmo slot
-                              // com a bilheteira — o ponto final é de fim de semana.
-                              snapshotBalanceHistory(
-                                game,
-                                game.season,
-                                slot,
-                                game.year || 0,
-                                game.matchweek || 0,
-                              );
-                              resolve(true);
-                            });
-                          },
-                        );
-                          },
-                        );
+                    // Marker + COMMIT: reached only after the full financial chain above
+                    // queued successfully. Money moves and the journal commit atomically;
+                    // a crash at any point before this leaves no marker, so replay is safe.
+                    game.db.run(
+                      "INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'weekly_finance')",
+                      [game.season, slot],
+                      () => {
+                        game.db.run("COMMIT", (commitErr: any) => {
+                          if (commitErr) {
+                            console.error(
+                              `[${game.roomCode}] ❌ Weekly finance COMMIT failed:`,
+                              commitErr,
+                            );
+                            game.db.run("ROLLBACK", () => resolve(false));
+                            return;
+                          }
+                          // Saldo real pós-descontos (o jogo da semana ainda não
+                          // foi jogado); a finalização atualiza o mesmo slot
+                          // com a bilheteira — o ponto final é de fim de semana.
+                          snapshotBalanceHistory(
+                            game,
+                            game.season,
+                            slot,
+                            game.year || 0,
+                            game.matchweek || 0,
+                          );
+                          resolve(true);
+                        });
                       },
                     );
                   },
                 );
-              });
-            },
-          );
-        });
-      }
+              },
+            );
+          });
+        },
+      );
+    });
+  }
 
   // Lobby → start of the current week (league or cup): clear auction queue timers,
   // pause auctions, set phase, apply weekly finance (idempotent), prepare

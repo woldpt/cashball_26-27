@@ -1,3 +1,14 @@
+## Uma única notícia semanal de finanças por equipa (2026-09-24)
+
+- Pedido: as 2 notícias de empréstimo (`loan_interest` + `loan_principal`) viram 1 resumo semanal de finanças, com receitas + gastos além do empréstimo. Escolhas: só equipas com treinador humano; rubricas pormenorizadas; sem `amount` (tudo na `description`); menção "Empréstimo liquidado esta semana." quando a prestação zera a dívida.
+- Fix (`server/weeklyFlowHelpers.ts`, `applyWeeklyFinancesOnce`):
+  - O SELECT pré-atualização (antes `id, loan_amount, division`) agora traz também `stadium_capacity`, `is_human` (JOIN `managers`) e salários por equipa — e a segunda query `SELECT id FROM teams` foi removida (o loop de notícias vive no mesmo callback).
+  - Os 2 `logClubNews` de empréstimo viram 1 `logClubNews(game, "weekly_finance", "Resumo Financeiro da Semana", …, { description })` por equipa com `is_human=1`. O builder puro `buildWeeklyFinanceSummary` (exportado, no topo do ficheiro) formata com o mesmo `Intl` pt-PT EUR do cliente: `Receitas · Salários · Manutenção do estádio [· Juros · Capital do empréstimo] · Saldo da semana [· Empréstimo liquidado esta semana.]`.
+  - Valores idênticos ao UPDATE (mesmas fórmulas: juros 1,5% `floor`, prestação `loanInstallment(div)`, manutenção `trunc((seats-3000)×1.5)`); idempotência mantém-se pela `applied_weeks` (o INSERT da notícia corre dentro da mesma transação, antes do marker).
+- Cliente (`client/src/utils/inboxItems.js`): novo ramo `weekly_finance` no `newsArticle` (3 variantes, usa a `description` como detalhe, sem `value`). Ramos legados `loan_interest`/`loan_principal` mantidos para linhas antigas em BDs existentes.
+- Sem `amount` → o `ClubTab` mostra a linha sem valor (o `INCOME_TYPES` só pinta `amount > 0`); o feed do Jornal já não filtra `weekly_finance` (não está no `NOT IN` de ruído).
+- Checks: server `typecheck` OK · self-check do builder (3 casos: sem dívida, com dívida, liquidação) OK · client `lint` só os 2 erros pré-existentes · `check:types` OK · `test:connect-smoke` OK · `audit:socketio` 0 erros · `audit:gamestate E3AQ4G` 45/20 idênticos ao baseline (pré-existentes na save). Layout intocado → sem mobile-resp-check.
+
 ## Prémios da época anterior presos no topo do Jornal (2026-09-24)
 
 - Queixa: notícias dos prémios da época anterior no topo das recentes, semana após semana.

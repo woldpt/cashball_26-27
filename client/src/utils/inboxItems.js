@@ -903,6 +903,41 @@ function newsArticle(n, { owner, related, seller, buyer, viewerTeamId } = {}) {
               partText(` aplicou ${value} na manutenção da sua casa. `),
               partText("Não é uma despesa que aplaude, mas é a diferença entre uma bancada cheia e uma estrutura em risco."),
             ];
+  } else if (type === "weekly_finance") {
+    const v = newsVariant(n, 3);
+    titleParts =
+      v === 0
+        ? [partText("As contas da semana: "), o]
+        : v === 1
+          ? [partText("Resumo financeiro: "), o]
+          : [o, partText(" fecha a semana nas contas")];
+    bodyParts =
+      v === 0
+        ? [
+            o,
+            partText(" fecha a semana com as contas abertas à bancada. "),
+            partText(description || "Receitas e gastos da semana."),
+            partText(
+              " É o pulso do clube: quem lê entre linhas percebe onde a margem para investir cresce e onde se esgota.",
+            ),
+          ]
+        : v === 1
+          ? [
+              o,
+              partText(" apresentou o resumo financeiro da semana: "),
+              partText(description || "Receitas e gastos da semana."),
+              partText(
+                " Números que a direção lê duas vezes: o saldo é o que sobra para decisões, o resto é história contada em euros.",
+              ),
+            ]
+          : [
+              o,
+              partText(" registou as contas da semana: "),
+              partText(description || "Receitas e gastos da semana."),
+              partText(
+                " A tesouraria prefere que todos conheçam o saldo antes de a próxima jornada pedir reforços.",
+              ),
+            ];
   } else if (
     type === "loan_interest" ||
     type === "loan_principal" ||
