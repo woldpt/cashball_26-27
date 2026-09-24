@@ -1,3 +1,8 @@
+## Fundo de balneário no ecrã de intervenção (2026-09-25)
+
+- Pedido: foto de balneário como fundo do ecrã de pausas. 3 ficheiros: `client/public/backgrounds/intervencao.webp` (novo, 56KB — fila de cacifos com camisolas, Unsplash livre) + camada `aria-hidden` no root do `IntervencaoView.jsx` (só pausas; relato em direto intacto) + `.intervencao-backdrop` no `index.css` (receita escura das tabs com véu mais leve 55/35/70 para a foto respirar; SEM o `scale(1.03)` do `.group-backdrop` — a escala rebentava o scrollWidth do contentor e chumbava o `intervencao-test`). Captura desktop 1280 comprova ambiente + leitura; no mobile as folhas sobrepostas são sólidas (folha transparente causava texto-sobre-texto — testado e revertido), a foto sussurra pelos translúcidos.
+- Checks: eslint limpo no ficheiro · `check:types` OK · `test:mobile` 155/155 + `test:mobile:landscape` 186/186.
+
 ## Dropdown de divisão na classificação ao vivo (2026-09-25)
 
 - Queixa: o `<select>` nativo do header do painel de classificação virtual (`client/src/components/live/LiveStandings.jsx`) ignorava o tema escuro (popup branco do browser, cortado em baixo, saltava da largura do painel) e truncava a label a `max-w-[7.5rem]`.

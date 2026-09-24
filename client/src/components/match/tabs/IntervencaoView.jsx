@@ -363,11 +363,23 @@ export function IntervencaoView({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
-      className="flex flex-col flex-1 min-h-0 overflow-hidden bg-surface-container-low isolate"
+      className="relative flex flex-col flex-1 min-h-0 overflow-hidden bg-surface-container-low isolate"
       style={{
         background: `radial-gradient(ellipse 70% 40% at 50% 0%, ${hInfo?.color_primary || "#333"}12 0%, transparent 70%), var(--color-surface-container-low)`,
       }}
     >
+      {/* Fundo de balneário — receita escura própria (`.intervencao-backdrop`). */}
+      <div
+        aria-hidden
+        className="intervencao-backdrop pointer-events-none absolute inset-0 -z-20"
+      >
+        <img
+          src="/backgrounds/intervencao.webp"
+          alt=""
+          loading="lazy"
+          draggable={false}
+        />
+      </div>
       {/* ── Halftime mobile: intermitência score ↔ título da fase + posse 2px ──
        * Substitui (só no mobile) a barra de score do MatchPage e o bloco de
        * posse de bola; desvanecimento de 5s entre os dois estados. */}
