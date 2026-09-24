@@ -1,3 +1,13 @@
+## Tática desktop: cartões Moral/Mentalidade sem espaço morto (2026-09-24)
+
+- Queixa (screenshot 1578×729): os cartões MORAL e MENTALIDADE da faixa de topo esticavam à altura da Formação com o conteúdo (1 linha) colado ao topo — ~80% espaço morto; 3 estruturas de header diferentes lado a lado; pill da Mentalidade em gradiente "fantasma"; barra da Moral com 6px e sem número.
+- Fix (só `client/src/views/TacticsView.jsx`, ambos os cartões `hidden xl:flex`):
+  - MORAL: header unificado (label + border-b, como os outros) + corpo `flex-1` centrado: label a `text-lg`, barra `h-2`, valor `N/100` em baixo — espelha o cartão mobile.
+  - MENTALIDADE: pill com fill sólido (alpha 0.28, border 0.55–0.6 — sem gradiente fantasma), texto inativo `gray-500→gray-400`, e 1 linha de blurb do estilo ativo ("Bloco baixo, sair a contragolpe." / "Equilíbrio no meio, sem extremos." / "Pressão alta, campo todo a favor.") — preenche a vertical com informação, como o blurb da Formação. As 3 cores semânticas mantêm-se (padrão já usado no mobile e em `TacticsButtons.jsx` do dia de jogo).
+  - Ambos os wrappers ganharam `flex flex-col` para o corpo `flex-1` preencher.
+- Harness `tactics-resp-test.jsx`: a injeção do cartão MORAL look-alike (o fixture não tem `nextMatchSummary`) agora corre nas 2 linhas (mobile + desktop `hidden xl:flex`), com fake desktop fiel ao cartão real — a 1280 a linha de 3 cartões verifica-se por fim.
+- Checks: client `lint` só os 2 erros pré-existentes · `check:types` OK · harness tactics portrait 5/5 PASS + 1280 PASS (overflow=0, clippedRows=0) · screenshot 1280 visto. Só `xl:` (a faixa é `hidden xl:flex`) + tweaks de conteúdo/className → sem passagem de paisagem obrigatória.
+
 ## Pitch do rescaldo: plantel inteiro no relvado (2026-09-24)
 
 - Queixa (screenshot): o pitch do artigo de rescaldo no Jornal mostrava 17 jogadores (2 GR, 6 DEF, 5 MED, 4 ATA) e a linha "Entramedos" vazia.

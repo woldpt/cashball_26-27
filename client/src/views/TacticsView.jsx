@@ -734,43 +734,49 @@ export function TacticsView() {
 
             {/* TOPO 2 — Moral (sobre Suplentes) */}
             {nextMatchSummary && (
-              <div className="flex-1 min-w-0 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+              <div className="flex-1 min-w-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
                 {(() => {
                   const morale = teamInfo?.morale ?? 50;
                   const { text: textColor, bar: fillColor } = getMoraleClasses(morale);
                   const label = getMoraleLabel(morale);
                   return (
-                    <div className="px-4 short:px-3 py-2.5 short:py-1.5">
-                      <div className="flex items-center justify-between mb-1.5 short:mb-1">
-                        <span className="text-[9px] uppercase tracking-widest text-gray-600 font-bold">
+                    <>
+                      <div className="flex items-center justify-between px-4 short:px-3 py-2 border-b border-outline-variant/15">
+                        <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
                           Moral
                         </span>
-                        <span
-                          className={`text-[9px] font-black uppercase ${textColor}`}
-                        >
+                        <span className={`text-[9px] font-black uppercase ${textColor}`}>
                           {label}
                         </span>
                       </div>
-                      <div className="h-1.5 bg-surface-container-low/60 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
-                          style={{ width: `${morale}%` }}
-                        />
+                      <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 short:px-4 pb-3">
+                        <span className={`text-lg leading-none font-black ${textColor}`}>
+                          {label}
+                        </span>
+                        <div className="h-2 w-full bg-surface-container-low/60 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
+                            style={{ width: `${morale}%` }}
+                          />
+                        </div>
+                        <span className="text-[9px] font-black text-gray-500 tabular-nums">
+                          {morale}/100
+                        </span>
                       </div>
-                    </div>
+                    </>
                   );
                 })()}
               </div>
             )}
 
             {/* TOPO 3 — Mentalidade (sobre Pitch) */}
-            <div className="xl:w-72.5 shrink-0 bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+            <div className="xl:w-72.5 shrink-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
               <div className="px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
                 <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
                   Mentalidade
                 </span>
               </div>
-              <div className="px-3 short:px-2 py-3 short:py-1.5">
+              <div className="flex flex-1 flex-col justify-center gap-2 px-3 short:px-2 py-3 short:py-1.5">
                 {(() => {
                   const STYLES = ["Defensive", "Balanced", "Offensive"];
                   const LABELS = {
@@ -778,15 +784,20 @@ export function TacticsView() {
                     Balanced: "Neutro",
                     Offensive: "Ofensivo",
                   };
+                  const BLURBS = {
+                    Defensive: "Bloco baixo, sair a contragolpe.",
+                    Balanced: "Equilíbrio no meio, sem extremos.",
+                    Offensive: "Pressão alta, campo todo a favor.",
+                  };
                   const PILL_COLORS = {
-                    Defensive: "rgba(59,130,246,0.22)",
-                    Balanced: "rgba(74,222,128,0.22)",
-                    Offensive: "rgba(244,63,94,0.22)",
+                    Defensive: "rgba(59,130,246,0.28)",
+                    Balanced: "rgba(74,222,128,0.28)",
+                    Offensive: "rgba(244,63,94,0.28)",
                   };
                   const PILL_BORDERS = {
-                    Defensive: "rgba(59,130,246,0.45)",
-                    Balanced: "rgba(74,222,128,0.35)",
-                    Offensive: "rgba(244,63,94,0.45)",
+                    Defensive: "rgba(59,130,246,0.6)",
+                    Balanced: "rgba(74,222,128,0.55)",
+                    Offensive: "rgba(244,63,94,0.6)",
                   };
                   const TEXT_COLORS = {
                     Defensive: "text-blue-400",
@@ -797,31 +808,36 @@ export function TacticsView() {
                   const safeIdx = idx < 0 ? 1 : idx;
                   const activeStyle = tactic.style ?? "Balanced";
                   return (
-                    <div className="relative flex bg-surface-container-low/60 rounded-full p-0.5">
-                      {/* Pill deslizante */}
-                      <div
-                        className="absolute inset-y-0.5 rounded-full transition-all duration-200 pointer-events-none"
-                        style={{
-                          left: `calc(${safeIdx * 33.333}% + 2px)`,
-                          width: "calc(33.333% - 4px)",
-                          background: `linear-gradient(135deg, ${PILL_COLORS[activeStyle]}, rgba(0,0,0,0))`,
-                          border: `1px solid ${PILL_BORDERS[activeStyle]}`,
-                        }}
-                      />
-                      {STYLES.map((val) => (
-                        <button
-                          key={val}
-                          onClick={() => updateTactic({ style: val })}
-                          className={`relative z-10 flex-1 py-2 text-[9px] font-black uppercase tracking-wide rounded-full transition-colors ${
-                            tactic.style === val
-                              ? TEXT_COLORS[val]
-                              : "text-gray-500 hover:text-gray-300"
-                          }`}
-                        >
-                          {LABELS[val]}
-                        </button>
-                      ))}
-                    </div>
+                    <>
+                      <div className="relative flex bg-surface-container-low/60 rounded-full p-0.5">
+                        {/* Pill deslizante */}
+                        <div
+                          className="absolute inset-y-0.5 rounded-full transition-all duration-200 pointer-events-none"
+                          style={{
+                            left: `calc(${safeIdx * 33.333}% + 2px)`,
+                            width: "calc(33.333% - 4px)",
+                            background: PILL_COLORS[activeStyle],
+                            border: `1px solid ${PILL_BORDERS[activeStyle]}`,
+                          }}
+                        />
+                        {STYLES.map((val) => (
+                          <button
+                            key={val}
+                            onClick={() => updateTactic({ style: val })}
+                            className={`relative z-10 flex-1 py-2 text-[9px] font-black uppercase tracking-wide rounded-full transition-colors ${
+                              tactic.style === val
+                                ? TEXT_COLORS[val]
+                                : "text-gray-400 hover:text-gray-200"
+                            }`}
+                          >
+                            {LABELS[val]}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[9px] text-gray-500 font-semibold leading-snug">
+                        {BLURBS[activeStyle]}
+                      </p>
+                    </>
                   );
                 })()}
               </div>
