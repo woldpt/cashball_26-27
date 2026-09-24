@@ -1,3 +1,11 @@
+## Tática desktop: Moral + Mentalidade empilhadas, JOGAR no topo (2026-09-24)
+
+- Pedido: na mesma célula da Moral, por baixo, a Mentalidade; no slot da Mentalidade, o botão JOGAR JORNADA; o pitch sobe por consequência. Decisões via perguntas: Moral simplificada (sem etiqueta no header, sem N/100, com brilho) + botão com altura própria ao topo + dois sub-cabeçalhos.
+- Só `client/src/views/TacticsView.jsx` (transplantes, lógica intocada): TOPO 2 (`flex-1`) vira célula dupla sempre renderizada — secção Moral (header só «Moral», etiqueta grande com `textShadow currentColor` + barra `h-2.5` com `drop-shadow currentColor`, tudo no tom do escalão; sem etiqueta no header nem número) sob guard `nextMatchSummary`, divisor `border-b`, e secção Mentalidade verbatim (pill + blurb); TOPO 3 (`xl:w-72.5`, `self-start`) recebe o botão verbatim da COL 3 (`data-tour="tactic-play"`, `playLabel`, legendas); COL 3 fica só com o pitch.
+- Harness `tactics-resp-test.jsx`: o fake MORAL desktop saiu (a célula existe sempre — a moral só acrescenta altura, nunca largura); o fake mobile mantém-se (cartão separado, afeta a largura da linha).
+- Peripécias: cirurgia por script python por âncoras (`edit` falha match com backtick/`${}`); o intervalo TOPO2→LINHA engoliu o `</div>` de fecho da faixa (esbuild/eslint apanhou, reposto); o 1.º assert do script estava errado (contava um comentário removido — a cirurgia estava certa).
+- Checks: eslint limpo nos 2 ficheiros · `check:types` OK · portrait **155/155** + landscape **186/186** · screenshot 1280 revisto (Mentalidade no meio, JOGAR em cima à direita, pitch em baixo).
+
 ## StadiumTab: mood dos adeptos só com etiqueta (2026-09-24)
 
 - Pedido: eliminar o valor numérico do cabeçalho do mood dos adeptos, ficando só a etiqueta textual.

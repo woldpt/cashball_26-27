@@ -732,45 +732,44 @@ export function TacticsView() {
               </div>
             </div>
 
-            {/* TOPO 2 — Moral (sobre Suplentes) */}
-            {nextMatchSummary && (
-              <div className="flex-1 min-w-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
-                {(() => {
-                  const morale = teamInfo?.morale ?? 50;
-                  const { text: textColor, bar: fillColor } = getMoraleClasses(morale);
-                  const label = getMoraleLabel(morale);
-                  return (
-                    <>
-                      <div className="flex items-center justify-between px-4 short:px-3 py-2 border-b border-outline-variant/15">
-                        <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
-                          Moral
-                        </span>
-                        <span className={`text-[9px] font-black uppercase ${textColor}`}>
-                          {label}
-                        </span>
-                      </div>
-                      <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 short:px-4 pb-3">
-                        <span className={`text-lg leading-none font-black ${textColor}`}>
-                          {label}
-                        </span>
-                        <div className="h-2 w-full bg-surface-container-low/60 rounded-full overflow-hidden">
+            {/* TOPO 2 — Moral + Mentalidade (sobre Suplentes) */}
+            <div className="flex-1 min-w-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+              {nextMatchSummary && (
+                <div className="border-b border-outline-variant/15">
+                  <div className="px-4 short:px-3 py-2 border-b border-outline-variant/15">
+                    <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
+                      Moral
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center gap-2 px-6 short:px-4 py-3">
+                    {(() => {
+                      const morale = teamInfo?.morale ?? 50;
+                      const { text: textColor, bar: fillColor } = getMoraleClasses(morale);
+                      const label = getMoraleLabel(morale);
+                      return (
+                        <div className={`flex w-full flex-col items-center gap-2 ${textColor}`}>
+                          <span
+                            title={`Moral ${morale}`}
+                            className="text-lg leading-none font-black"
+                            style={{ textShadow: "0 0 14px currentColor" }}
+                          >
+                            {label}
+                          </span>
                           <div
-                            className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
-                            style={{ width: `${morale}%` }}
-                          />
+                            className="h-2.5 w-full bg-surface-container-low/60 rounded-full overflow-hidden"
+                            style={{ filter: "drop-shadow(0 0 6px currentColor)" }}
+                          >
+                            <div
+                              className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
+                              style={{ width: `${morale}%` }}
+                            />
+                          </div>
                         </div>
-                        <span className="text-[9px] font-black text-gray-500 tabular-nums">
-                          {morale}/100
-                        </span>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            )}
-
-            {/* TOPO 3 — Mentalidade (sobre Pitch) */}
-            <div className="xl:w-72.5 shrink-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
               <div className="px-4 short:px-3 py-2 short:py-1 border-b border-outline-variant/15">
                 <span className="text-[9px] uppercase tracking-widest text-gray-500 font-black">
                   Mentalidade
@@ -841,6 +840,42 @@ export function TacticsView() {
                   );
                 })()}
               </div>
+            </div>
+
+            {/* TOPO 3 — Jogar (sobre Pitch) */}
+            <div data-tour="tactic-play" className="xl:w-72.5 shrink-0 self-start">
+              <button
+                onClick={isHalftime ? handleHalftimeReady : handleReady}
+                disabled={myReady || !canPlay}
+                className={`w-full inline-flex items-center justify-center gap-2 text-center px-4 py-4 short:py-2.5 font-black rounded-2xl text-sm short:text-xs uppercase tracking-widest transition-all active:scale-95 relative overflow-hidden ${canPlay && !myReady ? "animate-heartbeat" : ""}
+${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !canPlay ? "bg-surface-container-low/60 text-gray-700 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
+                style={
+                  myReady || !canPlay
+                    ? {}
+                    : {
+                        background:
+                          "linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%)",
+                      }
+                }
+              >
+                {!myReady && canPlay && (
+                  <span className="absolute inset-0 bg-linear-to-r from-white/10 to-transparent pointer-events-none" />
+                )}
+                {!myReady && canPlay && (
+                  <span aria-hidden className="relative text-xs leading-none">▶</span>
+                )}
+                <span className="relative">{playLabel}</span>
+              </button>
+              {!canPlay && !myReady && (
+                <p className="text-[10px] font-bold text-red-400/70 mt-1.5 text-center">
+                  Faltam: 11 titulares (1 GR + 10) + {MAX_BENCH_SIZE} suplentes (1 GR)
+                </p>
+              )}
+              {canPlay && !myReady && (
+                <p className="text-[9px] text-center text-gray-700 mt-1">
+                  A jornada avança quando todos clicarem.
+                </p>
+              )}
             </div>
           </div>
 
@@ -1109,44 +1144,8 @@ export function TacticsView() {
             </div>
             {/* fim coluna direita */}
 
-          {/* COL 3 — CAMPO + JOGAR (desktop only — mobile usa FAB) */}
+          {/* COL 3 — CAMPO (desktop only — mobile usa FAB) */}
           <div className="max-xl:hidden xl:w-72.5 shrink-0 flex flex-col gap-2 short:gap-1.5">
-            {/* Botao JOGAR — desktop */}
-            <div data-tour="tactic-play">
-              <button
-                onClick={isHalftime ? handleHalftimeReady : handleReady}
-                disabled={myReady || !canPlay}
-                className={`w-full inline-flex items-center justify-center gap-2 text-center px-4 py-4 short:py-2.5 font-black rounded-2xl text-sm short:text-xs uppercase tracking-widest transition-all active:scale-95 relative overflow-hidden ${canPlay && !myReady ? "animate-heartbeat" : ""}
-${myReady ? "bg-surface-container-low/60 text-gray-600 cursor-not-allowed" : !canPlay ? "bg-surface-container-low/60 text-gray-700 cursor-not-allowed" : "text-green-950 shadow-xl shadow-green-500/20 hover:brightness-110"}`}
-                style={
-                  myReady || !canPlay
-                    ? {}
-                    : {
-                        background:
-                          "linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%)",
-                      }
-                }
-              >
-                {!myReady && canPlay && (
-                  <span className="absolute inset-0 bg-linear-to-r from-white/10 to-transparent pointer-events-none" />
-                )}
-                {!myReady && canPlay && (
-                  <span aria-hidden className="relative text-xs leading-none">▶</span>
-                )}
-                <span className="relative">{playLabel}</span>
-              </button>
-              {!canPlay && !myReady && (
-                <p className="text-[10px] font-bold text-red-400/70 mt-1.5 text-center">
-                  Faltam: 11 titulares (1 GR + 10) + {MAX_BENCH_SIZE} suplentes (1 GR)
-                </p>
-              )}
-              {canPlay && !myReady && (
-                <p className="text-[9px] text-center text-gray-700 mt-1">
-                  A jornada avança quando todos clicarem.
-                </p>
-              )}
-            </div>
-
             {/* Campo de futebol */}
             <div
               className={`relative w-full rounded-2xl overflow-hidden transition-all duration-200 short:max-h-[38dvh] ${dragPlayerId && dragOverSection === "Titular" && annotatedSquad.find((p) => p.id === dragPlayerId)?.status !== "Titular" ? "ring-2 ring-[#4ade80]/40 shadow-lg shadow-[#4ade80]/10" : ""}`}

@@ -77,26 +77,22 @@ function measure() {
 }
 
 setTimeout(() => {
-  // Reproduce the PRODUCTION rows: in-game the MORAL card sits side-by-side
-  // with the Mentalidade card (both flex-1). The harness has no
-  // nextMatchSummary, so inject a look-alike MORAL card per row before
-  // measuring (mobile row + desktop xl row).
-  const FAKES = {
-    mobile: {
+  // Reproduce the PRODUCTION mobile row: in-game the MORAL card sits
+  // side-by-side with the Mentalidade card (both flex-1). The harness has no
+  // nextMatchSummary, so inject a look-alike MORAL card in the mobile row
+  // before measuring. Desktop needs no fake: the Moral + Mentalidade cell
+  // always renders there — morale only adds height, never width.
+  const FAKE = {
       cls: "flex-1 min-w-0 flex flex-col bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden",
       html: '<div class="shrink-0 flex items-center justify-between px-3 py-2 border-b border-[#1a1a1a]"><span class="text-[9px] uppercase tracking-widest text-gray-500 font-bold">Moral</span><span class="text-[9px] font-black uppercase text-red-400">Baixa</span></div><div class="flex flex-1 flex-col items-center justify-center gap-2.5 px-4 pb-3"><span class="text-[38px] leading-none font-black tabular-nums text-red-400">32</span><div class="h-2 w-full bg-[#1a1a1a] rounded-full overflow-hidden"><div class="h-full w-[32%] bg-red-500 rounded-full"></div></div></div>',
-    },
-    desktop: {
-      cls: "flex-1 min-w-0 flex flex-col bg-[#111] border border-[#1e1e1e] rounded-2xl overflow-hidden",
-      html: '<div class="flex items-center justify-between px-4 py-2 border-b border-[#1a1a1a]"><span class="text-[9px] uppercase tracking-widest text-gray-500 font-black">Moral</span><span class="text-[9px] font-black uppercase text-red-400">Baixa</span></div><div class="flex flex-1 flex-col items-center justify-center gap-2 px-6 pb-3"><span class="text-lg leading-none font-black text-red-400">Baixa</span><div class="h-2 w-full bg-[#1a1a1a] rounded-full overflow-hidden"><div class="h-full w-[32%] bg-red-500 rounded-full"></div></div><span class="text-[9px] font-black text-gray-500 tabular-nums">32/100</span></div>',
-    },
   };
   for (const header of [...document.querySelectorAll("span")]) {
     if (header.textContent?.trim().toLowerCase() !== "mentalidade") continue;
     const card = header.parentElement?.parentElement;
     const row = card?.parentElement;
     if (!card || !row || row.querySelector('[data-morale-fake]')) continue;
-    const fake = FAKES[/hidden xl:flex/.test(row.className) ? "desktop" : "mobile"];
+    if (/hidden xl:flex/.test(row.className)) continue;
+    const fake = FAKE;
     const morale = document.createElement("div");
     morale.setAttribute("data-morale-fake", "1");
     morale.className = fake.cls;
