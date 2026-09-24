@@ -139,7 +139,7 @@ export function MatchPlayerCard({
             </span>
             <div className="self-stretch w-px bg-outline-variant/25" />
             <div className="flex flex-col items-end leading-none">
-              <span className="mb-0.5 text-[8px] uppercase tracking-widest text-on-surface-variant/40 font-semibold">
+              <span className="mb-0.5 text-[8px] uppercase tracking-widest text-on-surface-variant/60 font-semibold">
                 RES
               </span>
               <span className="text-xs font-black tabular-nums text-cyan-400 leading-none">
@@ -158,7 +158,7 @@ export function MatchPlayerCard({
       {swapIndicator && !disabled && (
         <span
           className={`shrink-0 mr-2 flex items-center transition-colors ${
-            selected ? "text-white" : "text-on-surface-variant/60 group-hover:text-emerald-400"
+            selected ? "text-white" : "text-on-surface-variant/70 group-hover:text-emerald-400"
           }`}
           aria-label="Disponível para substituição"
         >

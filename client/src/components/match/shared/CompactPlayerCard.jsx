@@ -160,7 +160,7 @@ export function CompactPlayerCard({
         {swapIndicator && !disabled && (
           <span
             className={`shrink-0 flex items-center transition-colors ${
-              selected ? "text-white" : "text-on-surface-variant/60 group-hover:text-emerald-400"
+              selected ? "text-white" : "text-on-surface-variant/70 group-hover:text-emerald-400"
             }`}
             aria-label="Disponível para substituição"
           >

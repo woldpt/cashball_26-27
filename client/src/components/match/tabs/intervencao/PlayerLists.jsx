@@ -67,9 +67,15 @@ export function TitularesColumn({
             <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
             Titulares
           </h3>
-          <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
-            {players.length}
-          </span>
+          <div className="flex items-center gap-2">
+            {/* Legenda visível da métrica tripla dos cartões (skill · RES · forma). */}
+            <span className="text-[9px] text-on-surface-variant/80 font-semibold uppercase tracking-widest">
+              Skill · RES · Forma
+            </span>
+            <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
+              {players.length}
+            </span>
+          </div>
         </div>
       )}
       {isEmergencyGk && (
@@ -114,7 +120,7 @@ export function TitularesColumn({
           );
         })}
         {players.length === 0 && (
-          <p className="text-center text-on-surface-variant/60 text-xs font-medium py-6">
+          <p className="text-center text-on-surface-variant/70 text-xs font-medium py-6">
             Sem opções em campo
           </p>
         )}
@@ -151,9 +157,15 @@ export function SuplentesColumn({
             <span className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
             Suplentes
           </h3>
-          <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
-            {players.length}
-          </span>
+          <div className="flex items-center gap-2">
+            {/* Legenda visível da métrica tripla dos cartões (skill · RES · forma). */}
+            <span className="text-[9px] text-on-surface-variant/80 font-semibold uppercase tracking-widest">
+              Skill · RES · Forma
+            </span>
+            <span className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-widest">
+              {players.length}
+            </span>
+          </div>
         </div>
       )}
       {isEmergencyGk && (
@@ -188,7 +200,7 @@ export function SuplentesColumn({
           );
         })}
         {players.length === 0 && (
-          <p className="text-center text-on-surface-variant/60 text-xs font-medium py-6">
+          <p className="text-center text-on-surface-variant/70 text-xs font-medium py-6">
             Sem suplentes disponíveis
           </p>
         )}

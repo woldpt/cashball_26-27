@@ -89,11 +89,11 @@ export function SwapControls({
       ) : compact ? (
         // Mobile: 2 colunas — legenda (9px) + chip de uma linha, altura mínima.
         <div className="grid min-w-0 grid-cols-2 items-end gap-x-3 gap-y-1">
-          <span className="text-[9px] font-semibold uppercase tracking-widest text-on-surface-variant/60">
-            Sai
+          <span className="text-[9px] font-semibold uppercase tracking-widest text-on-surface-variant/80">
+            1 · Sai
           </span>
-          <span className="text-right text-[9px] font-semibold uppercase tracking-widest text-on-surface-variant/60">
-            Entra
+          <span className="text-right text-[9px] font-semibold uppercase tracking-widest text-on-surface-variant/80">
+            2 · Entra
           </span>
           <SwapSlot
             tone="rose"
@@ -114,8 +114,8 @@ export function SwapControls({
         </div>
       ) : (
         <div className="grid min-w-0 items-center gap-y-2 sm:gap-x-2 grid-cols-[auto_1fr] sm:grid-cols-[auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
-          <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">
-            Sai
+          <span className="text-[10px] text-on-surface-variant/80 font-semibold uppercase tracking-wide">
+            1 · Sai
           </span>
           <SwapSlot
             tone="rose"
@@ -126,10 +126,10 @@ export function SwapControls({
           <MatchIcon
             name="chevron-right"
             title="Substituição"
-            className="h-4 w-4 shrink-0 col-span-2 justify-self-center rotate-90 sm:col-auto sm:justify-self-start sm:rotate-0 text-on-surface-variant/60"
+            className="h-4 w-4 shrink-0 col-span-2 justify-self-center rotate-90 sm:col-auto sm:justify-self-start sm:rotate-0 text-on-surface-variant/80"
           />
-          <span className="text-[10px] text-on-surface-variant/60 font-semibold uppercase tracking-wide">
-            Entra
+          <span className="text-[10px] text-on-surface-variant/80 font-semibold uppercase tracking-wide">
+            2 · Entra
           </span>
           <SwapSlot
             tone="emerald"
@@ -142,7 +142,8 @@ export function SwapControls({
       {/* Motivo do botão de confirmar desativado — nunca em silêncio. (Lesão
        * sem banco é a exceção: o aviso aparece mesmo com o botão ativo.) */}
       {(noReplacement || !canConfirmSwap) && confirmHint && (
-        <p className="text-[11px] font-semibold text-amber-300/90">
+        <p role="status" className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-200">
+          <span aria-hidden="true">⚠</span>
           {confirmHint}
         </p>
       )}
@@ -246,7 +247,7 @@ function SwapSlot({ tone, player, placeholder, onClick = null, ariaLabel }) {
     return (
       <Tag
         {...tagProps}
-        className={`border border-dashed border-outline-variant/40 text-on-surface-variant/50 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0 ${
+        className={`border border-dashed border-outline-variant/60 text-on-surface-variant/70 text-xs font-semibold px-3 py-1.5 rounded-md truncate min-w-0 ${
           interactive ? "cursor-pointer active:scale-[0.98] transition-transform" : ""
         }`}
       >

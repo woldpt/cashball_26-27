@@ -640,11 +640,11 @@ export function SubsPanel({
 }
 
 /* ── Mentalidade | Substituições column (desktop) ────────────────────────
- * A 3.ª coluna tem dois blocos, cada um com o seu cabeçalho:
+ * A 3.ª coluna tem dois blocos em fluxo contínuo, cada um com o seu cabeçalho:
  *   1. "Mentalidade"    → Estilo de jogo (táticas) — alinhada ao topo
  *   2. "Substituições"  → controlos Sai→Entra + botões + Confirmadas
- *                           — fixa ao fundo (mt-auto), com o espaço vazio
- *                           entre os dois blocos */
+ *                           — logo após a Mentalidade, sem vazio a meio;
+ *                           o scroll é da coluna toda. */
 function MentalidadeColumn({
   isHalftime,
   isUserSubPause = false,
@@ -653,8 +653,10 @@ function MentalidadeColumn({
   onUpdateTactic,
   swapProps,
 }) {
+  // Coluna única em fluxo contínuo: sem buraco entre blocos; o scroll
+  // é da coluna toda em vez de uma zona interna.
   return (
-    <div className="flex flex-col min-h-0 min-w-0 overflow-hidden bg-surface-container-high/30">
+    <div className="flex flex-col min-h-0 min-w-0 overflow-y-auto bg-surface-container-high/30">
       {/* ── Row 1: Mentalidade — altura natural, SEM scroll: os botões nunca
        * podem ficar cortados; o overflow absorve-se na linha de baixo. */}
       <div className="shrink-0 border-b border-outline-variant/15">
@@ -681,7 +683,9 @@ function MentalidadeColumn({
       {/* ── Row 2: Substituições — fixa ao fundo (mt-auto): com espaço sobra,
        * assenta no fim da coluna; se o conteúdo for maior que a coluna,
        * encolhe (min-h-0) e a zona interna faz scroll. */}
-      <div className="mt-auto flex flex-col min-h-0 overflow-hidden border-t border-outline-variant/15">
+      {/* Substituições logo após a Mentalidade — sem `mt-auto`, que abria
+       * um vazio a meio da coluna quando o conteúdo era curto. */}
+      <div className="flex flex-col shrink-0 border-t border-outline-variant/15">
         <div className="shrink-0 px-4 py-3 flex items-center justify-between gap-2 bg-surface-container-high/50 border-b border-outline-variant/15">
           <h3 className="text-sm font-bold font-headline tracking-tight text-tertiary uppercase flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0 shadow-[0_0_8px_rgba(251,113,133,0.5)]" />
@@ -689,10 +693,8 @@ function MentalidadeColumn({
           </h3>
           {(isHalftime || isUserSubPause) && <SubsCounter subsMade={subsMade} />}
         </div>
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-4">
-            <SwapControls {...swapProps} />
-          </div>
+        <div className="p-4">
+          <SwapControls {...swapProps} />
         </div>
       </div>
     </div>

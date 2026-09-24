@@ -12,8 +12,8 @@ function EventList({ events, hInfo, aInfo }) {
   if (events.length === 0) {
     return (
       <div className="rounded-md border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
-        <span className="text-2xl text-on-surface-variant/40">⚽</span>
-        <p className="text-on-surface-variant/60 text-[11px] font-medium">
+        <span className="text-2xl text-on-surface-variant/60">⚽</span>
+        <p className="text-on-surface-variant/70 text-[11px] font-medium">
           Sem eventos
         </p>
       </div>
@@ -239,7 +239,7 @@ function PositionColumn({ posStyle, players, label }) {
           />
         ))}
         {players.length === 0 && (
-          <p className="text-center text-on-surface-variant/40 text-[10px] py-2 font-medium">
+          <p className="text-center text-on-surface-variant/60 text-[10px] py-2 font-medium">
             —
           </p>
         )}
@@ -273,7 +273,7 @@ function BenchChip({ player, posStyle }) {
 function EmptyState({ icon, message }) {
   return (
     <div className="rounded-md border border-outline-variant/25 bg-surface-container py-12 flex flex-col items-center gap-2">
-      <span className="text-3xl text-on-surface-variant/40">{icon}</span>
+      <span className="text-3xl text-on-surface-variant/60">{icon}</span>
       <p className="text-on-surface-variant/80 text-xs font-medium text-center px-4">
         {message}
       </p>
