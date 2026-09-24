@@ -1,3 +1,12 @@
+## Pitch do rescaldo: fotos reais em vez de SVG (2026-09-24)
+
+- Queixa: o pitch do artigo de rescaldo no Jornal desenhava os rostos SVG (avatar gerado) em vez das fotos reais dos jogadores.
+- Causa: `computeSideRatings` (`server/game/ratings.ts`) persistia `RatingRow` **sem** `photo` — o `PlayerAvatar` do `PostMatchPitch` cai no SVG quando `photo` é `null`.
+- Fix (só `ratings.ts`): `RatingRow` ganhou `photo: string | null`; titulares `p.photo ?? rosterById.get(p.id)?.photo ?? null`, suplentes entrados/saídos `rosterById.get(id)?.photo ?? null` (roster = `SELECT * FROM players`, já traz `photo`).
+- Cliente intocado: o `photo` já flui por spread no `PostMatchPitch` → `PitchFormation` → `PlayerMarker` → `PlayerAvatar`.
+- Notas antigas (já persistidas sem `photo`) continuam com SVG — snapshot histórico, sem lookup global de fotos no cliente.
+- Checks: server `typecheck` OK · `test:ratings` PASS. Só server → sem lint/mobile client.
+
 ## Uma única notícia semanal de finanças por equipa (2026-09-24)
 
 - Pedido: as 2 notícias de empréstimo (`loan_interest` + `loan_principal`) viram 1 resumo semanal de finanças, com receitas + gastos além do empréstimo. Escolhas: só equipas com treinador humano; rubricas pormenorizadas; sem `amount` (tudo na `description`); menção "Empréstimo liquidado esta semana." quando a prestação zera a dívida.

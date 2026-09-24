@@ -18,6 +18,8 @@ export interface RatingRow {
   stars: number;
   /** true = no XI que entra em campo (snapshot do lineup); false = suplente entrado. */
   starter: boolean;
+  /** Foto real do jogador (null → o cliente desenha o avatar SVG). */
+  photo: string | null;
 }
 
 const BASE_STARS = 3;
@@ -69,6 +71,7 @@ export function computeSideRatings(
       position: p.position ?? rosterById.get(p.id)?.position ?? "",
       stars: 0,
       starter: inXI && !cameOn.has(p.id),
+      photo: p.photo ?? rosterById.get(p.id)?.photo ?? null,
     });
   }
   const score = new Map<number, number>();
@@ -83,6 +86,7 @@ export function computeSideRatings(
           position: e.position || rosterById.get(id)?.position || "",
           stars: 0,
           starter: false,
+          photo: rosterById.get(id)?.photo ?? null,
         });
       }
       const outId = e.outPlayerId;
@@ -93,6 +97,7 @@ export function computeSideRatings(
           position: rosterById.get(outId)?.position || "",
           stars: 0,
           starter: true,
+          photo: rosterById.get(outId)?.photo ?? null,
         });
       }
       continue;
