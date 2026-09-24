@@ -4,11 +4,11 @@ import { FatigueIndicator } from "./FatigueIndicator.jsx";
 
 /**
  * Compact player card — versão de uma linha do `MatchPlayerCard`, pensada para
- * listas mobile onde a coluna expandida (skill + forma) fica
+ * listas mobile onde a coluna expandida (skill + RES + forma) fica
  * apertada e corta o nome.
  *
  * Preserva TODOS os dados relevantes, mas compridos na mesma linha:
- *   [POS] Nome ★  ⚽n 🟨n  [fadiga] | SKILL · 😩
+ *   [POS] Nome ★  ⚽n 🟨n  [fadiga] | SKILL · RES · 😩
  *
  * Diferenças vs. o card expandido:
  *  - Tudo numa só linha (sem empilhamento nome/estatística/fadiga) → ~60% menos altura.
@@ -22,7 +22,7 @@ import { FatigueIndicator } from "./FatigueIndicator.jsx";
  * @param {boolean} [props.selectable] - Permite pick.
  * @param {Function} [props.onPick] - Callback de seleção.
  * @param {boolean} [props.showFatigue] - Mostrar indicador de fadiga inline.
- * @param {boolean} [props.hideResForm] - Ocultar skill e forma (jogadores adversários).
+ * @param {boolean} [props.hideResForm] - Ocultar RES e forma (jogadores adversários).
  * @param {boolean} [props.forcedOut] - Substitução obrigatória (destaque vermelho).
  * @param {boolean} [props.draggable] - Arrastável (DnD desktop).
  */
@@ -134,7 +134,7 @@ export function CompactPlayerCard({
         {showFatigue && <FatigueIndicator player={player} compact />}
       </span>
 
-      {/* Métricas à direita: skill + forma */}
+      {/* Métricas à direita: skill (+ RES + forma quando visível) */}
       <div className="shrink-0 flex items-center gap-1.5 mr-2">
         {!hideResForm && (
           <>
@@ -146,6 +146,9 @@ export function CompactPlayerCard({
               {player.skill ?? "—"}
             </span>
             <div className="self-stretch w-px bg-outline-variant/25" />
+            <span className="text-[9px] font-bold tabular-nums text-cyan-400 leading-none" title="Resistência">
+              {player.resistance ?? "–"}
+            </span>
             <span className={`text-xs font-black tabular-nums leading-none ${formColor}`} title={`Forma: ${form}`}>
               {player.form ?? "–"}
             </span>

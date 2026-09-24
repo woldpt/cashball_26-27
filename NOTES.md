@@ -1524,3 +1524,8 @@ Plano C1+C2 (quando fizer):
 ## Intervalo: sem barra Gestão, sem RES/setas, relógio com 45' (2026-09-24)
 - 6 ficheiros cliente, só UI: `LiveClock.jsx` mostra `45'` + `Intervalo` no intervalo (antes ⏸ sem minuto); `IntervencaoView.jsx` sem barra de título em todas as vistas de intervenção (aviso de GR improvisado mantido como linha fina; «Anular todas» continua no `SubsPanel`); `MatchPlayerCard.jsx` + `CompactPlayerCard.jsx` sem coluna RES nem ícone de troca (só skill + forma); legendas `PlayerLists.jsx` passam a «Skill · Forma». Motivo: anotações do print — «Eliminar barra», caixas no RES/setas, «Intervalo» ao lado do relógio.
 - Checks: `check:types` OK; `lint` só com os 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx` — confirmados via stash); `test:mobile` 155/155 + `test:mobile:landscape` 186/186.
+
+## RES de volta no intervalo + fim dos contadores 11/7 (2026-09-25)
+- Reversão cirúrgica da parte RES do `1b1e617d`: `MatchPlayerCard.jsx` volta a mostrar etiqueta RES + número cyan entre skill e forma; `CompactPlayerCard.jsx` volta a mostrar o número RES cyan; legenda dos cabeçalhos volta a «Skill · RES · Forma». Barra de título, setas de swap e relógio «45' Intervalo» do slim mantêm-se.
+- `PlayerLists.jsx`: apagados os spans `{players.length}` — cabeçalhos Titulares/Suplentes sem «11»/«7». Contadores mobile/landscape (navegação) e `SUBS n/3` ficam.
+- Checks: `eslint` limpo nos 3 ficheiros; `check:types` OK; `intervencao-test` 5/5 portrait + 6/6 landscape.
