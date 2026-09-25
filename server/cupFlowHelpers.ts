@@ -765,6 +765,21 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 
 	async function generateCupDraw(game: ActiveGame, round: number) {
 		const season = game.season;
+		// Guarda anti-duplicação: um re-sorteio com vencedores já gravados
+		// (ex.: recovery após crash a meio da ronda) duplicava linhas em vez
+		// de falhar alto — o DELETE idempotente abaixo só apaga played=0.
+		// Recusar aqui obriga a reparação manual em vez de corromper a ronda
+		// seguinte com vencedores a mais.
+		const alreadyPlayed = await runGet(
+			game.db,
+			"SELECT COUNT(*) as n FROM cup_matches WHERE season = ? AND round = ? AND played = 1",
+			[season, round],
+		);
+		if ((alreadyPlayed?.n ?? 0) > 0) {
+			throw new Error(
+				`Cup round ${round} already has ${alreadyPlayed.n} played fixture(s) — refusing to re-draw`,
+			);
+		}
 		let teamIds: number[];
 
 		if (round === 1) {
@@ -1500,37 +1515,16 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 						`[${game.roomCode}] 🏆 Penalties: ${shootout.homeGoals}-${shootout.awayGoals} → winner teamId=${fixture._winnerId}`,
 					);
 
-					await new Promise((resolve) => {
-						game.db.run(
-							"UPDATE cup_matches SET home_penalties = ?, away_penalties = ?, played = 1, winner_team_id = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
-							[
-								shootout.homeGoals,
-								shootout.awayGoals,
-								fixture._winnerId,
-								season,
-								round,
-								fixture.homeTeamId,
-								fixture.awayTeamId,
-							],
-							resolve,
-						);
-					});
+					// Escritas adiadas para a Fase 3 (dentro da transação atómica):
+					// este UPDATE marcava played=1 em autocommit antes do BEGIN —
+					// um crash a meio deixava vencedores órfãos que o re-sorteio
+					// (só apaga played=0) duplicava. Ver Fase 3.
 				}
 
-				await new Promise((resolve) => {
-					game.db.run(
-						"UPDATE cup_matches SET home_et_score = ?, away_et_score = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
-						[
-							etGoalsHome,
-							etGoalsAway,
-							season,
-							round,
-							fixture.homeTeamId,
-							fixture.awayTeamId,
-						],
-						resolve,
-					);
-				});
+				// Golos do prolongamento em memória; persistem na Fase 3 dentro da
+				// transação (mesma razão do adiamento dos penáltis acima).
+				fixture._etGoalsHome = etGoalsHome;
+				fixture._etGoalsAway = etGoalsAway;
 			}
 		}
 
@@ -1649,6 +1643,43 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				winnerId === fixture.awayTeamId,
 			);
 
+			// Escritas adiadas da Fase 2 (ET + penáltis): dentro da transação
+			// para que um crash antes do COMMIT não deixe played=1 órfão sem
+			// marker 'finalized' (o re-sorteio só apaga played=0 e duplicava
+			// vencedores — ex.: ronda 3 com 5 em vez de 4). O played=1 sai no
+			// UPDATE do resultado abaixo, para todas as eliminatórias.
+			if (fixture._etGoalsHome != null) {
+				await new Promise((resolve) => {
+					game.db.run(
+						"UPDATE cup_matches SET home_et_score = ?, away_et_score = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
+						[
+							fixture._etGoalsHome,
+							fixture._etGoalsAway,
+							season,
+							round,
+							fixture.homeTeamId,
+							fixture.awayTeamId,
+						],
+						resolve,
+					);
+				});
+			}
+			if (fixture._decidedByPenalties) {
+				await new Promise((resolve) => {
+					game.db.run(
+						"UPDATE cup_matches SET home_penalties = ?, away_penalties = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
+						[
+							fixture._penaltyHomeGoals,
+							fixture._penaltyAwayGoals,
+							season,
+							round,
+							fixture.homeTeamId,
+							fixture.awayTeamId,
+						],
+						resolve,
+					);
+				});
+			}
 			await new Promise((resolve) => {
 				game.db.run(
 					"UPDATE cup_matches SET home_score = ?, away_score = ?, played = 1, winner_team_id = ? WHERE season = ? AND round = ? AND home_team_id = ? AND away_team_id = ?",
