@@ -297,7 +297,7 @@ export interface ActiveGame {
   fixtureSeeds: Record<number, number[]>; // div → [teamId, ...] ordenado por seed
 
   // ── Memória táctica por equipa (estrelas por jogo; persistida em game_state) ──
-  tacticFamiliarity: Record<number, { history: string[] }>;
+  tacticFamiliarity: Record<number, { history: Array<string | { first: string; second: string }> }>;
 
   // ── Histórico de resultados de todas as jornadas ──
   allMatchResults: Record<number, any[]>; // matchweek → [{homeTeamId, awayTeamId, homeGoals, awayGoals, ...}, ...]

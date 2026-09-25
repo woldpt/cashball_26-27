@@ -1172,10 +1172,11 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                   teamId: number,
                   tactic: any,
                   result: string,
+                  firstTactic?: any,
                 ) => {
                   if (!tactic?.formation || !tactic?.style) return;
-                  // Memória táctica: +1 estrela por jogo (liga) para todas as equipas
-                  updateTacticFamiliarity(game, teamId, tactic, matchweek, result);
+                  // Memória táctica: 0.5 estrelas (1.ª parte) + 0.5 (2.ª parte)
+                  updateTacticFamiliarity(game, teamId, firstTactic ?? tactic, tactic, matchweek, result);
                   const playerState = Object.values(game.playersByName).find(
                     (p) => p.teamId === teamId && p.socketId,
                   );
@@ -1198,8 +1199,8 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
 
                 const homeResult = homeWon ? "V" : drew ? "E" : "D";
                 const awayResult = awayWon ? "V" : drew ? "E" : "D";
-                recordTacticHistory(match.homeTeamId, match._t1, homeResult);
-                recordTacticHistory(match.awayTeamId, match._t2, awayResult);
+                recordTacticHistory(match.homeTeamId, match._t1, homeResult, (match as any)._firstHalfT1);
+                recordTacticHistory(match.awayTeamId, match._t2, awayResult, (match as any)._firstHalfT2);
 
                 // MOM por equipa (Jornal Global) — mesmo callback atómico do INSERT
                 try {

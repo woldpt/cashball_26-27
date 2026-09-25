@@ -1,6 +1,7 @@
 // ── Memória Táctica (estrelas por jogo — regra fixa) ────────────────────────
-// Regra fixa: cada jogo atribui uma estrela à formação utilizada. A partir do
-// 5º jogo há sempre 5 estrelas distribuídas pelas últimas 5 formações usadas
+// Regra fixa: cada jogo atribui uma estrela à formação utilizada, dividida em
+// 50% para a escolha da 1.ª parte + 50% para a escolha da 2.ª parte. A partir
+// do 5º jogo há sempre 5 estrelas distribuídas pelas últimas 5 formações usadas
 // (janela rolante; a formação repetida acumula). As estrelas transitam entre
 // épocas e os NPCs também beneficiam delas.
 //
@@ -21,7 +22,9 @@ export const STYLES = ["EQUILIBRADO", "OFENSIVO", "DEFENSIVO"] as const;
 export type StyleKey = (typeof STYLES)[number];
 
 type TeamFamiliarity = {
-  history: string[]; // formação mais recente primeiro, max 5
+  // Entrada por jogo: string legada (1 estrela inteira, antes do split) ou
+  // par 1.ª/2.ª parte (0.5 + 0.5 estrelas). Janela rolante dos últimos 5 jogos.
+  history: Array<string | { first: string; second: string }>;
 };
 
 const round1 = (v: number) => Math.round(v * 10) / 10;
@@ -42,8 +45,8 @@ function ensureTeam(game: ActiveGame, teamId: number): TeamFamiliarity {
 }
 
 /**
- * Estrelas por formação (0..5) — conta de ocorrências na janela das últimas
- * 5 formações utilizadas.
+ * Estrelas por formação (0..5, passos de 0.5) — soma ponderada na janela dos
+ * últimos 5 jogos: entrada legada = 1 estrela; par 1.ª/2.ª parte = 0.5 + 0.5.
  */
 function getFormationStars(
   game: ActiveGame,
@@ -52,8 +55,13 @@ function getFormationStars(
   const stars: Record<string, number> = {};
   for (const formation of ALL_FORMATIONS) stars[formation] = 0;
   const fam = game.tacticFamiliarity?.[teamId];
-  for (const formation of fam?.history ?? []) {
-    if (stars[formation] != null) stars[formation] += 1;
+  for (const entry of fam?.history ?? []) {
+    if (typeof entry === "string") {
+      if (stars[entry] != null) stars[entry] += 1;
+    } else {
+      if (stars[entry.first] != null) stars[entry.first] += 0.5;
+      if (stars[entry.second] != null) stars[entry.second] += 0.5;
+    }
   }
   return stars;
 }
@@ -63,23 +71,53 @@ function bonusForStars(stars: number): number {
 }
 
 /**
- * Regista a formação usada num jogo (liga, Taça ou amigável): +1 estrela para essa
- * formação, mantendo a janela das últimas 5 formações.
- * Síncrono; apenas altera o estado em memória do jogo.
+ * Regista as formações usadas num jogo (liga, Taça ou amigável): 0.5 estrelas
+ * para a escolha da 1.ª parte + 0.5 para a da 2.ª parte, mantendo a janela
+ * dos últimos 5 jogos. Sem 2.ª parte distinta (mesma formação), equivale à
+ * estrela inteira de antes. Síncrono; apenas altera o estado em memória.
  */
 export function updateTacticFamiliarity(
   game: ActiveGame,
   teamId: number,
-  tactic: any,
+  firstTactic: any,
+  secondTactic: any,
   _matchweek: number,
   _result: string,
 ): void {
-  const formation = String(tactic?.formation || "");
-  if (!formation) return;
+  const first = String(firstTactic?.formation || secondTactic?.formation || "");
+  const second = String(secondTactic?.formation || firstTactic?.formation || "");
+  if (!first) return;
 
   const fam = ensureTeam(game, teamId);
-  fam.history.unshift(formation);
+  fam.history.unshift({ first, second });
   if (fam.history.length > MAX_STARS) fam.history.length = MAX_STARS;
+}
+
+/**
+ * Familiaridade dividida 50/50 entre a escolha da 1.ª parte e a da 2.ª parte
+ * (só leitura — a fórmula do bónus se mantém). Sem 2.ª parte distinta, usa a
+ * 1.ª nas duas metades. Síncrono, sem base de dados.
+ */
+export function getSplitFamiliarity(
+  game: ActiveGame,
+  teamId: number,
+  firstTactic: any,
+  secondTactic?: any,
+) {
+  const first = String(firstTactic?.formation || secondTactic?.formation || "");
+  const second = String(secondTactic?.formation || firstTactic?.formation || "");
+  const starsMap = getFormationStars(game, teamId);
+  const firstStars = starsMap[first] ?? 0;
+  const secondStars = starsMap[second] ?? 0;
+  // ponytail: média direta, sem pesos configuráveis — o 50/50 é regra fixa
+  const stars = (firstStars + secondStars) / 2;
+  return {
+    first: { formation: first, stars: firstStars, score: round1(firstStars * 20) },
+    second: { formation: second, stars: secondStars, score: round1(secondStars * 20) },
+    stars,
+    score: round1(stars * 20),
+    bonus: bonusForStars(stars),
+  };
 }
 
 /**

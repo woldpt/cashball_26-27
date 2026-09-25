@@ -1609,17 +1609,19 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				});
 			}
 
-			// Memória táctica (Taça) — +1 estrela por jogo para todas as equipas
+			// Memória táctica (Taça) — 0.5 estrelas (1.ª parte) + 0.5 (2.ª parte)
 			const updateCupFamiliarity = (
 				teamId: number,
 				tactic: any,
 				won: boolean,
+				firstTactic?: any,
 			) => {
 				if (!tactic?.formation || !tactic?.style) return;
 				// Memória táctica: fonte de verdade é a memória do jogo
 				updateTacticFamiliarity(
 					game,
 					teamId,
+					firstTactic ?? tactic,
 					tactic,
 					game.matchweek,
 					won ? "V" : "D",
@@ -1646,11 +1648,13 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				fixture.homeTeamId,
 				t1,
 				winnerId === fixture.homeTeamId,
+				(fixture as any)._firstHalfT1 ?? t1,
 			);
 			updateCupFamiliarity(
 				fixture.awayTeamId,
 				t2,
 				winnerId === fixture.awayTeamId,
+				(fixture as any)._firstHalfT2 ?? t2,
 			);
 
 			// Escritas adiadas da Fase 2 (ET + penáltis): dentro da transação
@@ -2179,10 +2183,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				} catch {}
 				const hG = fixture.finalHomeGoals ?? 0;
 				const aG = fixture.finalAwayGoals ?? 0;
-				// Memória táctica: o amigável conta como liga/Taça (+1 estrela por jogo).
-				const recordFriendlyFamiliarity = (teamId: number, tactic: any, result: string) => {
+				// Memória táctica: o amigável conta como liga/Taça (0.5 + 0.5 por parte).
+				const recordFriendlyFamiliarity = (teamId: number, tactic: any, result: string, firstTactic?: any) => {
 					if (!tactic?.formation || !tactic?.style) return;
-					updateTacticFamiliarity(game, teamId, tactic, game.matchweek, result);
+					updateTacticFamiliarity(game, teamId, firstTactic ?? tactic, tactic, game.matchweek, result);
 					const playerState = Object.values(game.playersByName).find(
 						(p: any) => p.teamId === teamId && p.socketId,
 					);
@@ -2194,8 +2198,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				};
 				const fHomeRes = hG > aG ? "V" : hG < aG ? "D" : "E";
 				const fAwayRes = aG > hG ? "V" : aG < hG ? "D" : "E";
-				recordFriendlyFamiliarity(fixture.homeTeamId, (fixture as any)._t1, fHomeRes);
-				recordFriendlyFamiliarity(fixture.awayTeamId, (fixture as any)._t2, fAwayRes);
+				recordFriendlyFamiliarity(fixture.homeTeamId, (fixture as any)._t1, fHomeRes, (fixture as any)._firstHalfT1);
+				recordFriendlyFamiliarity(fixture.awayTeamId, (fixture as any)._t2, fAwayRes, (fixture as any)._firstHalfT2);
 				results.push({
 					homeTeamId: fixture.homeTeamId,
 					awayTeamId: fixture.awayTeamId,

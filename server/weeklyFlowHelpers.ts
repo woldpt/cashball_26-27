@@ -412,6 +412,23 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
             (game.calendarIndex ?? 0) + 1,
           );
         }
+        // Fotografia da 1.ª parte para a memória táctica (50/50): no arranque
+        // da 2.ª parte, fixture._t1/_t2 ainda trazem o fim da 1.ª parte (com a
+        // adoção live incluída) antes de serem relidos com as escolhas do intervalo.
+        if (startMin === 46) {
+          if (fixture._t1?.formation) {
+            (fixture as any)._firstHalfT1 = {
+              formation: fixture._t1.formation,
+              style: fixture._t1.style,
+            };
+          }
+          if (fixture._t2?.formation) {
+            (fixture as any)._firstHalfT2 = {
+              formation: fixture._t2.formation,
+              style: fixture._t2.style,
+            };
+          }
+        }
         fixture._t1 = t1;
         fixture._t2 = t2;
         return { t1, t2 };
