@@ -34,6 +34,12 @@
 - Peripécia (por evidência, não hipótese): keyframes novos `skill-gold-pulse` no `index.css` chumbavam o `briefing-resp-test` em paisagem (4/4 FAIL, clipping +5–14px no CompareRadar; baseline 4/4 PASS em 8 corridas) sem nenhum elemento do briefing usar a classe; removidos e tudo fica verde. Mecanismo por explicar.
 - Checks: `lint` só os 2 erros pré-existentes · `check:types` OK · portrait 155/155 + landscape 186/186.
 
+## BadgeSkills — nome + tricolor sem label SKILL, número maior, glow só no dígito (2026-09-25)
+
+- Pedido: o badge único chama-se `BadgeSkills`, sem a label `SKILL` e com o número da skill maior; glow dourado só no número, se possível.
+- Novo `client/src/components/shared/BadgeSkills.jsx`: tricolor dourado/azul/verde (skill 18px, 19px em `sm` — era 16/17 — `font-black font-headline`, sem label `SKILL` na célula dourada; delta ▲▼ mantém-se ao lado), `textShadow` mais forte só no `<span>` da skill (`0 0 10px 0.9 + 22px 0.45 + 36px 0.20`, era `12px 0.55 + 22px 0.22`). Sem `@keyframes` novos — os `skill-gold-pulse` anteriores chumbavam o `briefing` em paisagem (4/4 FAIL vs 4/4 PASS baseline). `SkillBadge.jsx` virou re-export (`export { BadgeSkills, SkillBadge }`) para não quebrar os 7 imports existentes. `cellCls` mantém `px-2 py-0.5` para não chumbar o `topwidgets` a 320px (tentativa 20/22 + `px-2.5 py-1` deu 1 FAIL em 155).
+- Checks: `lint` só os 2 erros pré-existentes · `check:types` OK · portrait 155/155 + landscape 186/186.
+
 ## Taça bloqueada: ronda 3 com 5 vencedores (U7ZARI, 2026-09-25)
 
 - Sintoma (produção): `Cup round 4 expected 4 winners, got 5` no slot 15 (Meias-finais) → revert para lobby, sala presa. Diagnóstico cego (sem acesso à BD de produção): a ronda 3 (Quartos, slot 12) ficou com 5 linhas `played=1` em `cup_matches` em vez de 4.
