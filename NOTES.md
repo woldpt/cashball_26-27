@@ -1,3 +1,15 @@
+## Fluxo Taça: fim de jogo suave + ET só para envolvidos (2026-09-25)
+
+- Levantamento semana a semana (Liga vs Taça) + 4 correções mínimas, só lógica (sem layout):
+  1. Fim da Taça sem ET cortava o direto: `cupRoundResults` chega mal o servidor simula o 90' e o efeito limpava `isPlayingMatch` + `matchResults` de imediato (sem os 3 s de apito, `live` vazio antes do Jornal). Agora a limpeza espera pelo apito do cliente (`idle` + minuto ≥90) e mantém o `matchResults` até ao landing, como na liga. Com tudo parado e minuto <45 (recovery por reconnect que recebe `cupRoundResults` sem ter visto o jogo) drena de imediato para não prender estado.
+  2. Arranque da 2.ª parte emitia `cupSecondHalfStart` + `matchSegmentStart(46)` seguidos: o 1.º dispensava o painel (relógio local contava até ao snap aos 45) e sobrescrevia o `matchResults` sem equipas/posse. Agora não dispensa o painel (o 46 fá-lo com live ligada) e só preenche `matchResults` se `prev` for null.
+  3. `cupExtraTimeStart` punha toda a gente no relógio 90→120. Agora só quem tem equipa empatada (`drawnTeamIds` novo no payload, com fallback para o par primário); os outros ficam nos 90' (minutos do ET já eram ignorados sem `isCupExtraTime`).
+  4. Pausa pré-ET (`cupETHalfTime`) com `isPlayingMatch=false` divergia do intervalo e rearmava o efeito do sorteio pendente; agora `true` + guarda `!showHalftimePanel` nos dois ramos do apito dos 90' no Match clock.
+  5. Sorteio pendente abria no commit seguinte ao apito (o landing, efeito filho, corria antes e saltava para o Jornal por baixo do modal): novo `drainPendingCupDraw()` chamado no mesmo batch do apito; o efeito de `isPlayingMatch` fica como fallback.
+  6. Higiene: listener morto `cupPreMatch` removido (servidor nunca emite); `cupHalfTimeResults` ganhou guarda `inRoom()` + `setActiveTab("live")` como o da liga.
+- Ficheiros: `client/src/contexts/GameContext.jsx` + `client/src/hooks/useSocketListeners.js` + `server/cupFlowHelpers.ts` (`SkillBadge.jsx` modificado na árvore é WIP alheio, não tocado).
+- Checks: client `lint` só o erro pré-existente + `check:types` OK · server `typecheck` OK · `audit:socketio` 0 erros (97 avisos pré-existentes). `audit:gamestate` sem sala viva — fica para a próxima. Sem mudança estrutural de layout → sem mobile-resp-check.
+
 ## Badge único de skills SKILL·RES·FORMA (2026-09-25)
 
 - Queixa (3 screenshots): Plantel, Tática e Intervalo mostravam skills com valores/nomes diferentes (QUALIDADE vs n.º grande vs SKILL, cada ecrã com as suas cores). Decisões via perguntas: âmbito todo o lado, conteúdo SKILL·RES·FORMA, pulse dourado sempre ligado, número principal dourado fixo.
