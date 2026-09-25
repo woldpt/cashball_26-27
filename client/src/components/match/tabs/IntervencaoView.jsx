@@ -365,16 +365,8 @@ export function IntervencaoView({
       transition={{ duration: 0.25, ease: "easeOut" }}
       className="relative flex flex-col flex-1 min-h-0 overflow-hidden bg-surface-container-low isolate"
       style={{
+        // Transparência herdada do CSS geral (90%) — sem override local.
         background: `radial-gradient(ellipse 70% 40% at 50% 0%, ${hInfo?.color_primary || "#333"}12 0%, transparent 70%), var(--color-surface-container-low)`,
-        // Janela mais sólida que o resto do jogo (95% em vez de 90%):
-        // os tokens herdam para toda a subárvore. Sem ancestral .jp-*
-        // aqui, por isso os hexes base são seguros.
-        "--color-surface": "color-mix(in srgb, #131313 95%, transparent)",
-        "--color-surface-container-low": "color-mix(in srgb, #1c1b1b 95%, transparent)",
-        "--color-surface-container": "color-mix(in srgb, #201f1f 95%, transparent)",
-        "--color-surface-container-high": "color-mix(in srgb, #2a2a2a 95%, transparent)",
-        "--color-surface-container-highest": "color-mix(in srgb, #353534 95%, transparent)",
-        "--color-surface-bright": "color-mix(in srgb, #393939 95%, transparent)",
       }}
     >
       {/* Fundo de balneário — receita escura própria (`.intervencao-backdrop`). */}
