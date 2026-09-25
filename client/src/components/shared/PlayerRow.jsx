@@ -10,6 +10,7 @@
  *  - `showLastRating`: estrelas da última classificação a seguir ao nome.
  */
 import { AggBadge } from "./AggBadge.jsx";
+import { SkillBadge } from "./SkillBadge.jsx";
 import { PlayerAvatar } from "./PlayerAvatar.jsx";
 import { PlayerLink } from "./PlayerLink.jsx";
 import { PlayerStatusBadges, StarMark } from "./PlayerStatusBadges.jsx";
@@ -60,20 +61,6 @@ export function PlayerRow({
   const star =
     !!player.is_star &&
     (player.position === "MED" || player.position === "ATA");
-
-  const form = player.form ?? 32;
-  const formColor =
-    form >= 38
-      ? "text-green-400"
-      : form >= 26
-        ? "text-yellow-400"
-        : "text-red-400";
-  const resColor =
-    (player.resistance ?? 0) >= 38
-      ? "text-green-400"
-      : (player.resistance ?? 0) >= 26
-        ? "text-yellow-400"
-        : "text-red-400";
 
   const skillDelta =
     player.prev_skill != null && player.prev_skill !== player.skill
@@ -156,23 +143,14 @@ export function PlayerRow({
         </div>
       </div>
 
-      {/* Qualidade - número grande com delta */}
-      <div className="shrink-0 self-center flex items-center justify-center px-1.5 sm:px-2 min-w-[48px] sm:min-w-14">
-        <div className="flex items-center gap-1">
-          {skillDelta !== 0 && (
-            <span
-              className={`text-[10px] font-black leading-none shrink-0 ${skillDelta > 0 ? "text-emerald-400" : "text-red-400"}`}
-            >
-              {skillDelta > 0 ? "▲" : "▼"}
-            </span>
-          )}
-          <div
-            className={`text-2xl font-black font-headline tabular-nums leading-none ${posText}`}
-            style={{ textShadow: "0 0 10px currentColor" }}
-          >
-            {player.skill}
-          </div>
-        </div>
+      {/* Skills — badge único SKILL·RES·FORMA */}
+      <div className="shrink-0 self-center flex items-center px-1.5 sm:px-2">
+        <SkillBadge
+          skill={player.skill}
+          resistance={player.resistance}
+          form={player.form}
+          delta={skillDelta}
+        />
       </div>
 
       {/* CTA de proposta compacto — mobile only, equipas NPC.
@@ -225,31 +203,13 @@ export function PlayerRow({
         </div>
       )}
 
-      {/* Atributos primários (Agr / Res / For) */}
+      {/* Agressividade (Res/For vivem no SkillBadge) */}
       <div className="hidden md:flex items-center gap-2 shrink-0 self-center px-2 border-l border-outline-variant/15 ml-1">
         <div className="flex flex-col items-center justify-center w-10">
           <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
             Agr
           </div>
           <AggBadge value={player.aggressiveness} />
-        </div>
-        <div className="flex flex-col items-center justify-center w-10">
-          <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
-            Res
-          </div>
-          {player.resistance != null ? (
-            <span className={`font-black text-[12px] ${resColor}`}>
-              {player.resistance}
-            </span>
-          ) : (
-            <span className="text-zinc-600 text-xs">—</span>
-          )}
-        </div>
-        <div className="flex flex-col items-center justify-center w-10">
-          <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
-            For
-          </div>
-          <span className={`font-black text-[12px] ${formColor}`}>{player.form ?? "—"}</span>
         </div>
       </div>
 
@@ -328,22 +288,6 @@ export function PlayerRow({
                 Agr
               </span>
               <AggBadge value={player.aggressiveness} />
-            </span>
-            <span className="flex flex-col items-center">
-              <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
-                Res
-              </span>
-              <span className={`font-black text-[12px] leading-none ${resColor}`}>
-                {player.resistance ?? "—"}
-              </span>
-            </span>
-            <span className="flex flex-col items-center">
-              <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
-                For
-              </span>
-              <span className={`text-[12px] font-black leading-none ${formColor}`}>
-                {player.form ?? "—"}
-              </span>
             </span>
             <span className="flex flex-col items-center">
               <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">

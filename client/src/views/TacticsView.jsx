@@ -11,6 +11,7 @@ import { TACTIC_FORMATIONS, MAX_BENCH_SIZE } from "../constants/index.js";
 import { getMoraleLabel, getMoraleClasses } from "../utils/morale.js";
 import { isPostMatchQueueActive } from "../utils/postMatchFlow.js";
 import { PlayerAvatar as PlayerAvatarSVG } from "../components/shared/PlayerAvatar.jsx";
+import { SkillBadge } from "../components/shared/SkillBadge.jsx";
 
 /** Cores por posição */
 const POS_COLORS = {
@@ -214,70 +215,11 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
             );
           })()}
       </span>
-      <div className="flex items-center gap-1.5 shrink-0">
-        {/* Resistência */}
-        <div className="flex flex-col items-end gap-0.5">
-          <span className="text-[7px] uppercase tracking-widest text-gray-500 font-bold leading-none">
-            RES
-          </span>
-          <span
-            className={`text-[13px] font-black tabular-nums leading-none ${
-              (player.resistance ?? 0) >= 38
-                ? "text-green-400"
-                : (player.resistance ?? 0) >= 26
-                  ? "text-yellow-400"
-                  : "text-red-400"
-            }`}
-          >
-            {player.resistance ?? "–"}
-          </span>
-        </div>
-        <div className="w-px h-5 bg-gray-700/60" />
-
-        {/* Forma */}
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-[7px] uppercase tracking-widest text-gray-500 font-bold leading-none">
-            FORMA
-          </span>
-          <span
-            className={`text-[13px] font-black tabular-nums leading-none ${
-              (player.form ?? 0) >= 38
-                ? "text-green-400"
-                : (player.form ?? 0) >= 26
-                  ? "text-yellow-400"
-                  : "text-red-400"
-            }`}
-          >
-            {player.form ?? "–"}
-          </span>
-        </div>
-        <div className="w-px h-5 bg-gray-700/60" />
-
-        {/* Skill */}
-        <div className="flex flex-col items-end gap-0.5">
-          <span className="text-[7px] uppercase tracking-widest text-gray-500 font-bold leading-none">
-            Qualidade
-          </span>
-          <span
-            className={`text-[15px] font-black tabular-nums leading-none px-2 py-0.5 rounded-lg border ${
-              player.skill >= 40
-                ? "bg-green-500/15 text-green-300 border-green-500/30"
-                : player.skill >= 25
-                  ? "bg-yellow-500/15 text-yellow-300 border-yellow-500/30"
-                  : "bg-red-500/15 text-red-300 border-red-500/30"
-            }`}
-            style={{
-              textShadow: player.skill >= 40
-                ? "0 0 10px rgba(34,197,94,0.3)"
-                : player.skill >= 25
-                  ? "0 0 10px rgba(234,179,8,0.3)"
-                  : "0 0 10px rgba(239,68,68,0.3)",
-            }}
-          >
-            {player.skill}
-          </span>
-        </div>
-      </div>
+      <SkillBadge
+        skill={player.skill}
+        resistance={player.resistance}
+        form={player.form}
+      />
       {children}
     </div>
   );

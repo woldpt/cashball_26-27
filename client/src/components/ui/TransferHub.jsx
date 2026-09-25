@@ -15,7 +15,6 @@ import { EmptyState } from "../shared/EmptyState.jsx";
 import { hexToRgba } from "../../utils/colorHelpers.js";
 import {
   FLAG_TO_COUNTRY,
-  POSITION_TEXT_CLASS,
   POSITION_GLOW_CLASS,
   POSITION_BG_GRADIENT_CLASS,
   POSITION_BAR_CLASS,
@@ -193,7 +192,6 @@ function MarketCard({
   const isInjured = (player.injury_until_matchweek ?? 0) > nowIdx;
 
   const posHex = POSITION_ACCENT_HEX[player.position] || "#94a3b8";
-  const posText = POSITION_TEXT_CLASS[player.position] || "text-zinc-400";
   const countryName = FLAG_TO_COUNTRY?.[player.nationality] || player.nationality || "";
 
   const sellerTeam =
@@ -296,8 +294,8 @@ function MarketCard({
             />
           </div>
           <span
-            className={`absolute -bottom-1 -right-3 min-w-9 h-9 px-1.5 rounded-full bg-surface-container border-2 flex items-center justify-center font-headline font-black text-lg leading-none tabular-nums ${posText}`}
-            style={{ borderColor: posHex, textShadow: "0 0 10px currentColor" }}
+            className="absolute -bottom-1 -right-3 min-w-9 h-9 px-1.5 rounded-full bg-surface-container border-2 flex items-center justify-center font-headline font-black text-lg leading-none tabular-nums text-amber-300 animate-fam-glow"
+            style={{ borderColor: posHex }}
             title={`Skill ${player.skill}`}
           >
             {player.skill ?? 0}
@@ -329,10 +327,23 @@ function MarketCard({
       </div>
 
       {/* Mini-stats */}
-      <div className="px-3 short:px-2 mt-2 short:mt-1.5 grid grid-cols-3 gap-1.5 short:gap-1">
+      <div className="px-3 short:px-2 mt-2 short:mt-1.5 grid grid-cols-4 gap-1.5 short:gap-1">
         <StatTile label="Forma">
           <span className={`tabular-nums ${formClass}`}>
             {formMood} {formVal}
+          </span>
+        </StatTile>
+        <StatTile label="RES">
+          <span
+            className={`tabular-nums font-black ${
+              (player.resistance ?? 0) >= 38
+                ? "text-green-400"
+                : (player.resistance ?? 0) >= 26
+                  ? "text-yellow-400"
+                  : "text-red-400"
+            }`}
+          >
+            {player.resistance ?? "–"}
           </span>
         </StatTile>
         <StatTile label="Jogos">

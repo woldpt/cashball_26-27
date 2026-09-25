@@ -1,9 +1,10 @@
 import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS } from "../matchConstants.js";
+import { SkillBadge } from "../../shared/SkillBadge.jsx";
 
 /**
  * Single opponent player row — passivo (sem hover, sem button).
- * Mostra skill + posição + craque + forma/RES (quando visível).
+ * Skills no badge único (SKILL dourado + RES + forma quando visível).
  *
  * @param {object} props - Props do jogador.
  * @param {object} props.player - Dados do jogador (id, name, position, skill, resistance, form, is_star).
@@ -12,9 +13,6 @@ import { POSITION_FULL_LABELS } from "../matchConstants.js";
  */
 export function OpponentGridCard({ player, posStyle, hideResForm = false }) {
   const s = posStyle;
-  const form = player.form ?? 32;
-  const formColor =
-    form >= 38 ? "text-green-400" : form >= 26 ? "text-yellow-400" : "text-red-400";
 
   return (
     <div
@@ -39,25 +37,14 @@ export function OpponentGridCard({ player, posStyle, hideResForm = false }) {
         </span>
       </div>
 
-      {/* RES + forma à direita — oculto para adversário */}
-      {!hideResForm && (
-        <div className="shrink-0 flex items-center gap-1.5">
-          <span className="text-[9px] font-bold tabular-nums text-cyan-400 leading-none">
-            {player.resistance ?? "–"}
-          </span>
-          <span className={`text-xs font-black tabular-nums leading-none ${formColor}`} title={`Forma: ${form}`}>
-            {player.form ?? "–"}
-          </span>
-        </div>
-      )}
-
-      {/* Skill à direita */}
-      <span
-        className={`shrink-0 text-xs font-black font-headline tabular-nums leading-none ${s.badgeText}`}
-        style={{ textShadow: "0 0 6px currentColor" }}
-      >
-        {player.skill ?? "—"}
-      </span>
+      {/* Skills à direita — badge único */}
+      <SkillBadge
+        skill={player.skill}
+        resistance={player.resistance}
+        form={player.form}
+        hideResForm={hideResForm}
+        size="sm"
+      />
     </div>
   );
 }

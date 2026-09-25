@@ -125,7 +125,7 @@ export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badg
           <span className={`ml-0.5 ${starColor}`} title="Craque">★</span>
         )}
       </div>
-      <span className={`font-black tabular-nums text-amber-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${skillCls}`}>
+      <span className={`font-black tabular-nums text-amber-300 animate-fam-glow drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${skillCls}`}>
         {player.rating != null ? (
           <Stars value={player.rating} className="text-amber-300" />
         ) : (

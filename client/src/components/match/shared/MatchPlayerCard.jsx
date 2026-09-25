@@ -1,6 +1,7 @@
 import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS, getPosStyle } from "../matchConstants.js";
 import { FatigueIndicator } from "./FatigueIndicator.jsx";
+import { SkillBadge } from "../../shared/SkillBadge.jsx";
 
 /**
  * Match player card — always expanded (skill + fatigue).
@@ -11,6 +12,7 @@ import { FatigueIndicator } from "./FatigueIndicator.jsx";
  *  - Default state: position gradient background + position-colored bar.
  *  - Selected state: rose tinting only (gradient is suppressed to avoid
  *    two competing color systems on the same row).
+ * Skills: badge único SkillBadge (SKILL dourado + RES + forma).
  */
 export function MatchPlayerCard({
   player,
@@ -35,16 +37,10 @@ export function MatchPlayerCard({
 }) {
   const s = posStyle || getPosStyle(player.position);
 
-  const form = player.form ?? 32;
   const hasStar = !!player.is_star && (player.position === "MED" || player.position === "ATA");
 
-  // Skill color: position-colored (matches PlayersTab/TeamSquadCard which use
-  // POSITION_TEXT_CLASS). Selected state falls back to white — rose
-  // was confused with ATA (avançado) accent colors.
-  const skillColor = selected ? "text-white" : s.badgeText;
-
-  const formColor =
-    form >= 38 ? "text-green-400" : form >= 26 ? "text-yellow-400" : "text-red-400";
+  // Skill se mede em dourado (SkillBadge); o selecionado cai em branco —
+  // o rosa confundia-se com o acento de ATA (avançado).
   const matchStatsLabel = [
     goals > 0 ? `${goals} golo${goals > 1 ? "s" : ""}` : null,
     yellowCards > 0 ? `${yellowCards} cartão amarelo${yellowCards > 1 ? "s" : ""}` : null,
@@ -125,28 +121,14 @@ export function MatchPlayerCard({
         {showFatigue && <FatigueIndicator player={player} compact />}
       </span>
 
-      {/* ── Expanded: skill (+ RES + forma quando visível) ── */}
+      {/* ── Skills: badge único (skill + RES + forma quando visível) ── */}
       <div className="shrink-0 flex items-center mr-2">
         {!hideResForm && (
-          <div className="flex items-end gap-2">
-            <span
-              className={`text-lg font-black font-headline tabular-nums leading-none ${skillColor}`}
-              style={{ textShadow: "0 0 10px currentColor" }}
-            >
-              {player.skill ?? "—"}
-            </span>
-            <div className="self-stretch w-px bg-outline-variant/25" />
-            <div className="flex flex-col items-end leading-none">
-              <span className="mb-0.5 text-[8px] uppercase tracking-widest text-on-surface-variant/60 font-semibold">
-                RES
-              </span>
-              <span className="text-xs font-black tabular-nums text-cyan-400 leading-none">
-                {player.resistance ?? "–"}
-              </span>
-            </div>
-            <div className="self-stretch w-px bg-outline-variant/25" />
-            <span className={`text-xs font-black tabular-nums leading-none ${formColor}`} title={`Forma: ${form}`}>{player.form ?? "–"}</span>
-          </div>
+          <SkillBadge
+            skill={player.skill}
+            resistance={player.resistance}
+            form={player.form}
+          />
         )}
       </div>
     </button>

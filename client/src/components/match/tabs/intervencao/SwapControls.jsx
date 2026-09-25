@@ -273,7 +273,7 @@ function SwapSlot({ tone, player, placeholder, onClick = null, ariaLabel }) {
         {player.position}
       </span>
       <span className="truncate min-w-0">{player.name}</span>
-      <span className="shrink-0 text-[10px] font-black tabular-nums text-on-surface/60">
+      <span className="shrink-0 text-[10px] font-black tabular-nums text-amber-300 animate-fam-glow">
         {player.skill}
       </span>
     </Tag>

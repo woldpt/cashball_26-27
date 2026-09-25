@@ -1,6 +1,7 @@
 import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS } from "../matchConstants.js";
 import { FatigueIndicator } from "./FatigueIndicator.jsx";
+import { SkillBadge } from "../../shared/SkillBadge.jsx";
 
 /* ── Bench player card ──────────────────────────────────────────────────
  * Passive display card (a <div>, not a <button>). No hover elevation so
@@ -29,9 +30,7 @@ export function BenchPlayerCard({ player, posStyle, showSkill = true, showStar =
           <FatigueIndicator player={player} compact />
         </span>
         {showSkill && (
-          <span className="text-[10px] font-semibold tabular-nums text-on-surface-variant/80 shrink-0">
-            {player.skill ?? "—"}
-          </span>
+          <SkillBadge skill={player.skill} hideResForm size="sm" />
         )}
       </div>
     </div>

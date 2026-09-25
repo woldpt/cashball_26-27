@@ -1,3 +1,11 @@
+## Badge único de skills SKILL·RES·FORMA (2026-09-25)
+
+- Queixa (3 screenshots): Plantel, Tática e Intervalo mostravam skills com valores/nomes diferentes (QUALIDADE vs n.º grande vs SKILL, cada ecrã com as suas cores). Decisões via perguntas: âmbito todo o lado, conteúdo SKILL·RES·FORMA, pulse dourado sempre ligado, número principal dourado fixo.
+- Novo `client/src/components/shared/SkillBadge.jsx`: retângulo de cantos arredondados, ordem fixa SKILL (âmbar, negrito, glow estático) | RES | FORMA (semáforo ≥38/≥26), `delta` ▲▼, `hideResForm`, `size md/sm`, tooltip. Pulse reutiliza o `animate-fam-glow` existente — sem keyframes novos.
+- Aplicado em 9 ficheiros: `PlayerRow` (skill+RES+FOR colapsam no badge; AGR e ★ intactos), linha local da `TacticsView`, `MatchPlayerCard`, `CompactPlayerCard`, `OpponentGridCard` (respeita `hideResForm`), herói do `TransferHub` (skill dourado + coluna RES nova nas mini-stats) + `BenchPlayers`/`PitchFormation`/`SwapControls` (só skill dourado, sem espaço para o triplo). `PlayerHistoryModal` (barras) intocado.
+- Peripécia (por evidência, não hipótese): keyframes novos `skill-gold-pulse` no `index.css` chumbavam o `briefing-resp-test` em paisagem (4/4 FAIL, clipping +5–14px no CompareRadar; baseline 4/4 PASS em 8 corridas) sem nenhum elemento do briefing usar a classe; removidos e tudo fica verde. Mecanismo por explicar.
+- Checks: `lint` só os 2 erros pré-existentes · `check:types` OK · portrait 155/155 + landscape 186/186.
+
 ## Taça bloqueada: ronda 3 com 5 vencedores (U7ZARI, 2026-09-25)
 
 - Sintoma (produção): `Cup round 4 expected 4 winners, got 5` no slot 15 (Meias-finais) → revert para lobby, sala presa. Diagnóstico cego (sem acesso à BD de produção): a ronda 3 (Quartos, slot 12) ficou com 5 linhas `played=1` em `cup_matches` em vez de 4.

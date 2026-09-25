@@ -1,6 +1,7 @@
 import { POSITION_SHORT_LABELS } from "../../../constants/index.js";
 import { POSITION_FULL_LABELS, getPosStyle } from "../matchConstants.js";
 import { FatigueIndicator } from "./FatigueIndicator.jsx";
+import { SkillBadge } from "../../shared/SkillBadge.jsx";
 
 /**
  * Compact player card — versão de uma linha do `MatchPlayerCard`, pensada para
@@ -8,7 +9,7 @@ import { FatigueIndicator } from "./FatigueIndicator.jsx";
  * apertada e corta o nome.
  *
  * Preserva TODOS os dados relevantes, mas compridos na mesma linha:
- *   [POS] Nome ★  ⚽n 🟨n  [fadiga] | SKILL · RES · 😩
+ *   [POS] Nome ★  ⚽n 🟨n  [fadiga] | SkillBadge
  *
  * Diferenças vs. o card expandido:
  *  - Tudo numa só linha (sem empilhamento nome/estatística/fadiga) → ~60% menos altura.
@@ -47,13 +48,7 @@ export function CompactPlayerCard({
 }) {
   const s = posStyle || getPosStyle(player.position);
 
-  const form = player.form ?? 32;
   const hasStar = !!player.is_star && (player.position === "MED" || player.position === "ATA");
-
-  const skillColor = selected ? "text-white" : s.badgeText;
-
-  const formColor =
-    form >= 38 ? "text-green-400" : form >= 26 ? "text-yellow-400" : "text-red-400";
 
   // Fundo/estado — mesma linguagem visual do card expandido.
   const cardBg = forcedOut
@@ -134,25 +129,15 @@ export function CompactPlayerCard({
         {showFatigue && <FatigueIndicator player={player} compact />}
       </span>
 
-      {/* Métricas à direita: skill (+ RES + forma quando visível) */}
+      {/* Métricas à direita: badge único de skills */}
       <div className="shrink-0 flex items-center gap-1.5 mr-2">
         {!hideResForm && (
-          <>
-            <span
-              className={`text-base font-black font-headline tabular-nums leading-none ${skillColor}`}
-              style={{ textShadow: "0 0 8px currentColor" }}
-              title="Skill"
-            >
-              {player.skill ?? "—"}
-            </span>
-            <div className="self-stretch w-px bg-outline-variant/25" />
-            <span className="text-[9px] font-bold tabular-nums text-cyan-400 leading-none" title="Resistência">
-              {player.resistance ?? "–"}
-            </span>
-            <span className={`text-xs font-black tabular-nums leading-none ${formColor}`} title={`Forma: ${form}`}>
-              {player.form ?? "–"}
-            </span>
-          </>
+          <SkillBadge
+            skill={player.skill}
+            resistance={player.resistance}
+            form={player.form}
+            size="sm"
+          />
         )}
       </div>
     </button>
