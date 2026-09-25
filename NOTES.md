@@ -1,7 +1,8 @@
 ## Narração: mais humor e variedade de lances (2026-09-25)
 
-- Pools de `server/game/commentary.ts` reescritos com humor e lances concretos (remates de cabeça/calcanhar, faltas, cantos, hipóteses desperdiçadas, defesas, postes, quase-golos, penáltis, VAR, cartões, lesões). Export/assinaturas intactos; chaves `missType` idênticas (`DEFENDEU!`, `AO POSTE!`, `AO LADO!`, `PANENKA FALHADO!`).
-- Verificado: `npm run typecheck` no server OK. (Nota reescrita: o commit original perdeu-se num rebase de trabalho paralelo, mas o conteúdo ficou no HEAD.)
+- Pools finos de `server/game/commentary.ts` reforçados com humor e lances concretos: `bettingPhrase` 8→18, `emergencyGkPhrase` 15→25, `chanceSavedPhrase` 12→28 (cabeçadas, livres, cantos, contra-ataques, apanhas de primeira, chapéus), `chancePostPhrase` 8→19, `chanceOffTargetPhrase` 10→22, `subPhrase` 44→56. Export/assinaturas intactos; chaves `missType` idênticas (`DEFENDEU!`, `AO POSTE!`, `AO LADO!`, `PANENKA FALHADO!`).
+- Nota: o rebase de trabalho paralelo tinha apagado a 1.ª ronda desta melhoria (ficheiro byte-idêntico ao `8dd1b1c3`), por isso o trabalho foi redito em cima do estado atual. Um backtick fechado como `"` num dos newTexts quebrou o typecheck com cascata em linha distante (`finalEndPhrase`) — correção de 1 carácter.
+- Verificado: `npm run typecheck` no server OK.
 
 ## Logout fantasma após escolha do save (2026-09-25)
 
