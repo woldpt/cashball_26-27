@@ -3,7 +3,8 @@
  *
  * Estilo Hattrick: a base é o CONTRIBUTO — skill efetiva (com fadiga, do
  * snapshot do lineup) × forma (fator individual form/32, clamp 0,75–1,35,
- * a mesma curva do motor) × posição (1,0 na origem, 0,7 fora dela) —
+ * a mesma curva do motor) × moral individual (±5%, a mesma curva do
+ * motor) × posição (1,0 na origem, 0,7 fora dela) —
  * dividida por 5 (skill 50 → 10; skill 40 neutro → 8; skill 10 neutro → 2).
  * Os eventos da partida temperam sem dominar (golo +1, amarelo −0,5,
  * vermelho/lesão −2): um skill 10 que marca continua mediano e um skill
@@ -16,7 +17,7 @@
  * Idempotente (sempre o mesmo resultado para o mesmo jogo) → seguro no
  * replay de crash-restart.
  */
-import { FORM_NEUTRAL } from "../gameConstants";
+import { FORM_NEUTRAL, MORALE_NEUTRAL, MATCH_TUNING } from "../gameConstants";
 
 export interface RatingRow {
   id: number;
@@ -63,6 +64,7 @@ function num(v: unknown): number | null {
 function contributionBase(
   skill: number,
   form: number,
+  morale: number,
   naturalPos: string | null,
   playedPos: string | null,
 ): number {
@@ -70,11 +72,14 @@ function contributionBase(
     FORM_MIN,
     Math.min(FORM_MAX, form / FORM_NEUTRAL),
   );
+  // Moral individual (0–100, neutro 50): ±5% — a mesma curva do motor.
+  const moraleFactor =
+    1 + (morale - MORALE_NEUTRAL) * MATCH_TUNING.moralePlayerPerPoint;
   const posFactor =
     naturalPos && playedPos && naturalPos !== playedPos
       ? OUT_OF_POSITION_FACTOR
       : 1;
-  return ((skill ?? 0) * formFactor * posFactor) / SKILL_DIVISOR;
+  return ((skill ?? 0) * formFactor * moraleFactor * posFactor) / SKILL_DIVISOR;
 }
 
 function starsFromValue(value: number): number {
@@ -169,9 +174,10 @@ export function computeSideRatings(
     const r = rosterById.get(id);
     const skill = num(l?.skill) ?? num(r?.skill) ?? 0;
     const form = num(r?.form) ?? num(l?.form) ?? FORM_NEUTRAL;
+    const morale = num(r?.morale) ?? num(l?.morale) ?? MORALE_NEUTRAL;
     const natural = r?.position ?? l?.position ?? row.position ?? null;
     row.stars = starsFromValue(
-      contributionBase(skill, form, natural, row.position || null) +
+      contributionBase(skill, form, morale, natural, row.position || null) +
         (adj.get(id) ?? 0),
     );
   }

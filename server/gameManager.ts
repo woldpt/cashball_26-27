@@ -1032,6 +1032,10 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
             () => {},
           );
           db.run(
+            "ALTER TABLE players ADD COLUMN morale INTEGER DEFAULT 50",
+            () => {},
+          );
+          db.run(
             "ALTER TABLE teams ADD COLUMN fans_mood INTEGER DEFAULT 60",
             () => {},
           );

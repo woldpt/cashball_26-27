@@ -3346,6 +3346,7 @@ export async function applyPostMatchQualityEvolution(
 
     // ── Build individual performance maps from fixture events ─────────
     const playerGoals = new Map<number, number>();
+    const playerOwnGoals = new Map<number, number>();
     const playerRedCards = new Map<number, boolean>();
     const teamCleanSheetWin = new Map<number, boolean>();
     // Players that appeared in any lineup (starters + bench) and those
@@ -3386,6 +3387,12 @@ export async function applyPostMatchQualityEvolution(
           playerGoals.set(
             evt.playerId,
             (playerGoals.get(evt.playerId) || 0) + 1,
+          );
+        }
+        if (evt.type === "own_goal") {
+          playerOwnGoals.set(
+            evt.playerId,
+            (playerOwnGoals.get(evt.playerId) || 0) + 1,
           );
         }
         if (evt.type === "red" || evt.type === "gk_red_card") {
@@ -3601,6 +3608,65 @@ export async function applyPostMatchQualityEvolution(
         `UPDATE players SET prev_skill = skill, skill = CASE id ${skillCases.join(" ")} END, value = CASE id ${valueCases.join(" ")} END WHERE id IN (${ph})`,
         [...skillParams, ...valueParams, ...ids],
       );
+    }
+    // ── Moral individual ─────────────────────────────────────────────
+    // Decaimento para o neutro 50 + deltas por evento (resultado,
+    // titularidade, golos, auto-golos, vermelhos). Batch único como a
+    // moral de equipa acima. Lesionados/suspensos não mexem (não é
+    // descontentamento, é indisponibilidade).
+    // Bloco isolado em try/catch: DBs antigas sem a coluna não podem
+    // partir a evolução pós-jogo (a migração em gameManager.ts trata o
+    // caso geral) — o mesmo precedente do bloco fans_mood acima.
+    try {
+      const moraleRows = await dbAll<{ id: number; morale: number | null }>(
+        "SELECT id, morale FROM players WHERE team_id IS NOT NULL",
+      );
+      const moraleNow = new Map<number, number>(
+        (moraleRows || []).map((r) => [r.id, r.morale ?? 50]),
+      );
+      const moraleCases: string[] = [];
+      const moraleParams: any[] = [];
+      const moraleIds: number[] = [];
+      for (const player of players) {
+        if (!moraleNow.has(player.id)) continue;
+        if ((player.injury_until_matchweek || 0) >= currentMatchweek)
+          continue;
+        if ((player.suspension_until_matchweek || 0) >= currentMatchweek)
+          continue;
+        const m = moraleNow.get(player.id) ?? 50;
+        let nm = m + (50 - m) * MATCH_TUNING.moraleDecayRate;
+        const teamResult = teamResults.get(player.team_id) || "D";
+        if (teamResult === "W") nm += MATCH_TUNING.moralePlayerWinDelta;
+        else if (teamResult === "L") nm += MATCH_TUNING.moralePlayerLossDelta;
+        else nm += MATCH_TUNING.moralePlayerDrawDelta;
+        if (starterIds.has(player.id))
+          nm += MATCH_TUNING.moralePlayerStarterBonus;
+        else if (!appearedIds.has(player.id))
+          nm += MATCH_TUNING.moralePlayerBenchMalus;
+        nm +=
+          (playerGoals.get(player.id) || 0) *
+          MATCH_TUNING.moralePlayerGoalBonus;
+        nm +=
+          (playerOwnGoals.get(player.id) || 0) *
+          MATCH_TUNING.moralePlayerOwnGoalMalus;
+        if (playerRedCards.has(player.id))
+          nm += MATCH_TUNING.moralePlayerRedMalus;
+        nm = Math.max(0, Math.min(100, Math.round(nm)));
+        if (nm !== m) {
+          moraleCases.push("WHEN ? THEN ?");
+          moraleParams.push(player.id, nm);
+          moraleIds.push(player.id);
+        }
+      }
+      if (moraleIds.length > 0) {
+        const ph = moraleIds.map(() => "?").join(",");
+        await dbRun(
+          `UPDATE players SET morale = CASE id ${moraleCases.join(" ")} END WHERE id IN (${ph})`,
+          [...moraleParams, ...moraleIds],
+        );
+      }
+    } catch (moraleErr) {
+      console.error("[engine] player morale skipped:", moraleErr);
     }
     // Snapshot do skill de todos os jogadores para continuidade.
     await dbRun(

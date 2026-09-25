@@ -12,7 +12,7 @@ import { SkillBadge } from "../../shared/SkillBadge.jsx";
  *  - Default state: position gradient background + position-colored bar.
  *  - Selected state: rose tinting only (gradient is suppressed to avoid
  *    two competing color systems on the same row).
- * Skills: badge único SkillBadge (SKILL dourado + RES + forma).
+ * Skills: badge único SkillBadge (SKILL dourado + RES + forma + moral).
  */
 export function MatchPlayerCard({
   player,
@@ -128,6 +128,7 @@ export function MatchPlayerCard({
             skill={player.skill}
             resistance={player.resistance}
             form={player.form}
+            morale={player.morale}
           />
         )}
       </div>

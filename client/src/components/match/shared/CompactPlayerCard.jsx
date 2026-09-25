@@ -136,6 +136,7 @@ export function CompactPlayerCard({
             skill={player.skill}
             resistance={player.resistance}
             form={player.form}
+            morale={player.morale}
             size="sm"
           />
         )}

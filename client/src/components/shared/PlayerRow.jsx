@@ -149,6 +149,7 @@ export function PlayerRow({
           skill={player.skill}
           resistance={player.resistance}
           form={player.form}
+          morale={player.morale}
           delta={skillDelta}
         />
       </div>

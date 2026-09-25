@@ -1,10 +1,10 @@
 /**
- * BadgeSkills — badge único de skills (STYLE.md §5).
+ * BadgeSkills — badge único de skills (STYLE.md §10).
  *
- * Retângulo de cantos arredondados tricolor com os três valores sempre
+ * Retângulo de cantos arredondados com os quatro valores sempre
  * pela mesma ordem: SKILL dourado (maior, negrito, glow só no número)
- * | RES azul | FORMA verde. Uma só receita para Plantel, Tática,
- * intervenção/substituições e mercado.
+ * | RES azul | FORMA verde | MOR violeta. Uma só receita para Plantel,
+ * Tática, intervenção/substituições e mercado.
  *
  * Sem label "Skill" — só o número dourado a negrito com glow.
  */
@@ -14,6 +14,7 @@
  *   skill?: number,
  *   resistance?: number,
  *   form?: number,
+ *   morale?: number,
  *   delta?: number,
  *   hideResForm?: boolean,
  *   size?: "md"|"sm",
@@ -24,6 +25,7 @@ export function BadgeSkills({
   skill,
   resistance,
   form,
+  morale,
   delta = 0,
   hideResForm = false,
   size = "md",
@@ -32,7 +34,10 @@ export function BadgeSkills({
   const sm = size === "sm";
   const skillCls = sm ? "text-[15px]" : "text-[18px] sm:text-[19px]";
   const numCls = sm ? "text-[11px]" : "text-[12px] sm:text-[13px]";
-  const cellCls = sm ? "px-1.5 py-0.5" : "px-2 py-0.5";
+  // Abaixo de 360px o padding encolhe (4.ª célula MOR): a 320px o badge
+  // de 4 células excedia a linha em 25px (topwidgets harness); 360+ passa
+  // com px-2, por isso o breakpoint é 360 e não sm.
+  const cellCls = sm ? "px-1.5 py-0.5" : "px-1 min-[360px]:px-2 py-0.5";
   // Glow só no número — textShadow estático forte (sem keyframes novos
   // para não regressar o briefing em landscape, ver 2262acd986f6).
   const glowStyle = {
@@ -41,7 +46,7 @@ export function BadgeSkills({
   };
   return (
     <div
-      title={`Skill ${skill ?? "—"} · RES ${resistance ?? "—"} · Forma ${form ?? "—"}`}
+      title={`Skill ${skill ?? "—"} · RES ${resistance ?? "—"} · Forma ${form ?? "—"} · Moral ${morale ?? "—"}`}
       className={`flex items-stretch rounded-lg border border-outline-variant/25 overflow-hidden shrink-0 ${className}`}
     >
       <div
@@ -71,12 +76,20 @@ export function BadgeSkills({
               {resistance ?? "–"}
             </span>
           </div>
-          <div className={`flex flex-col items-center justify-center gap-0.5 bg-emerald-500/10 ${cellCls}`}>
+          <div className={`flex flex-col items-center justify-center gap-0.5 bg-emerald-500/10 border-r border-emerald-500/20 ${cellCls}`}>
             <span className="text-[7px] uppercase tracking-widest text-emerald-200/70 font-bold leading-none">
               Forma
             </span>
             <span className={`font-black tabular-nums leading-none text-emerald-400 ${numCls}`}>
               {form ?? "–"}
+            </span>
+          </div>
+          <div className={`flex flex-col items-center justify-center gap-0.5 bg-violet-500/10 ${cellCls}`}>
+            <span className="text-[7px] uppercase tracking-widest text-violet-200/70 font-bold leading-none">
+              Mor
+            </span>
+            <span className={`font-black tabular-nums leading-none text-violet-400 ${numCls}`}>
+              {morale ?? "–"}
             </span>
           </div>
         </>

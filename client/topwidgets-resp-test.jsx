@@ -115,6 +115,7 @@ const mkPlayer = (id, position, name, extra = {}) => ({
   nationality: "PT",
   skill: 70 + (id % 25),
   form: 85,
+  morale: 30 + ((id * 23) % 65),
   wage: 12000,
   value: 400000,
   aggressiveness: 60,

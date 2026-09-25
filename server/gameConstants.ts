@@ -10,6 +10,8 @@ export const FORM_MATCH_MIN = 13;
 export const RES_NEUTRAL = 26;
 export const RES_MIN = 1;
 export const RES_MAX = 50;
+/** Neutro da moral individual (players.morale 0–100). */
+export const MORALE_NEUTRAL = 50;
 /** Referência económica: preserva o fator médio antigo form/90 (100→1,11). */
 export const ECON_FORM_REF = 100 / 90;
 /** Ritmo da simulação ao vivo (ms por minuto de jogo): 2000 com humanos,
@@ -544,6 +546,18 @@ export const MATCH_TUNING = {
   moraleLossDelta: -20,
   moraleDrawDelta: 5,
   moraleDecayRate: 0.1,
+  // Moral individual (players.morale 0–100, neutro 50): deltas por evento
+  // + peso na skill efetiva. Deliberadamente pequeno — como a forma.
+  moralePlayerWinDelta: 3,
+  moralePlayerLossDelta: -3,
+  moralePlayerDrawDelta: 1,
+  moralePlayerStarterBonus: 1,
+  moralePlayerBenchMalus: -2,
+  moralePlayerGoalBonus: 2,
+  moralePlayerOwnGoalMalus: -3,
+  moralePlayerRedMalus: -4,
+  // Média do plantel desvia ataque e defesa ±5% em torno do neutro.
+  moralePlayerPerPoint: 0.001,
   // ── Mood dos adeptos (fans_mood 0–100, coluna teams.fans_mood) ───────
   // Memória emocional da bancada — distinta da moral do plantel. A assistência
   // deriva dela (ver calculateMatchAttendance em coreHelpers).

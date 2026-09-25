@@ -1,7 +1,7 @@
 // ── Match calculation utilities extracted from engine.ts ──────────────────────
 
 import { pickBestPlayer, withJuniorGRs, ensureFullBench, isPlayerAvailable, getEffectiveSkill } from "./playerUtils";
-import { MAX_BENCH_SIZE, FORM_NEUTRAL, MATCH_TUNING } from "../gameConstants";
+import { MAX_BENCH_SIZE, FORM_NEUTRAL, MORALE_NEUTRAL, MATCH_TUNING } from "../gameConstants";
 
 type PlayerRow = any;
 
@@ -403,6 +403,12 @@ export function computeSidePower(
   // Antes 0.85–1.15 — a forma máxima notava-se a mal (~+4pp de vitórias).
   const formFactor = Math.max(0.75, Math.min(1.35, avgForm / FORM_NEUTRAL));
 
+  // Moral individual (0–100, neutro 50): a média do plantel desvia
+  // ataque e defesa ±5%. Pesa menos que a forma — ajusta, não decide.
+  const avgMorale = average(squad.map((p) => p.morale ?? MORALE_NEUTRAL));
+  const playerMoraleFactor =
+    1 + (avgMorale - MORALE_NEUTRAL) * MATCH_TUNING.moralePlayerPerPoint;
+
   // Hatrick-style: o ataque é o dos avançados (médios contam só via posse,
   // ver computePossession). A defesa mantém a parede DEF+GR — médias, para o
   // nº de jogadores não pesar na resolução da chance.
@@ -422,6 +428,7 @@ export function computeSidePower(
       attackBase *
       formationAttack *
       moraleAttackFactor *
+      playerMoraleFactor *
       STYLE_ATTACK_FACTORS[style] *
       formFactor *
       familiarityAttackFactor *
@@ -430,6 +437,7 @@ export function computeSidePower(
       defenseBase *
       formationDefense *
       moraleDefenseFactor *
+      playerMoraleFactor *
       STYLE_DEFENSE_FACTORS[style] *
       formFactor *
       familiarityDefenseFactor *
