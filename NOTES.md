@@ -1,3 +1,8 @@
+## Narração: mais humor e variedade de lances (2026-09-25)
+
+- Pools de `server/game/commentary.ts` reescritos com humor e lances concretos (remates de cabeça/calcanhar, faltas, cantos, hipóteses desperdiçadas, defesas, postes, quase-golos, penáltis, VAR, cartões, lesões). Export/assinaturas intactos; chaves `missType` idênticas (`DEFENDEU!`, `AO POSTE!`, `AO LADO!`, `PANENKA FALHADO!`).
+- Verificado: `npm run typecheck` no server OK. (Nota reescrita: o commit original perdeu-se num rebase de trabalho paralelo, mas o conteúdo ficou no HEAD.)
+
 ## Logout fantasma após escolha do save (2026-09-25)
 
 - Queixa: por vezes, após escolher o save, cair no ecrã de login (vários treinadores, sem mensagem visível).
@@ -1618,3 +1623,10 @@ Plano C1+C2 (quando fizer):
 - UI: `BadgeSkills` com 4.ª célula MOR violeta + `morale={player.morale}` nos 5 chamadores (PlayerRow, TacticsView, MatchPlayerCard, CompactPlayerCard, OpponentGridCard; BenchPlayers usa `hideResForm` e ficou fora); `STYLE.md §10` com a receita; padding do badge compacto abaixo de 360px (`px-1 min-[360px]:px-2`) — sem isto o topwidgets falhava a 320px (+25px, regressão confirmada via stash). Fixtures dos harnesses `mobile/topwidgets` com `morale` variada.
 - Cortado do plano: comentário de narração por moral extrema; MOM como fonte de moral.
 - Checks: `typecheck` OK; `lint` só 2 erros pré-existentes (stash); `check:types` OK; `audit:gamestate 78213E` 0/0/0; `audit:socketio` 0 erros; `test:mobile` 155/155 + `test:mobile:landscape` 186/186; screenshots 390 e 667 vistos. Fumo SQL (migração idempotente + CASE UPDATE) OK. Por verificar em sala viva: deltas aplicados após a próxima jornada.
+
+## Moral em escala 1–50 (2026-09-25)
+- Reescala 0–100 → 1–50, neutro 25 (escolhido pelo utilizador; meio exato). `MORALE_NEUTRAL=25`, deltas a metade (V+2/E+1/D−2, titular+1, banco−1, golo+1, auto-golo−2, vermelho−2), `moralePlayerPerPoint 0.002` (±5% preservados), clamp `1–50`, decay para 25.
+- `schema.sql` DEFAULT 25; `gameManager.ts` migração idempotente (50/NULL→25, >50→metade; re-arranques seguros); `seed.js` e `contractHelpers.ts` (prospetos da academia) com `morale` explícito 25/`MORALE_NEUTRAL` — sem depender do default da coluna em saves antigos. Juniores 25; fixtures dos harnesses em gama 1–50.
+- `matchCalculations.ts`/`ratings.ts`: só comentários (lêem as constantes).
+- Árvore partilhada com outra sessão: 5 ficheiros alheios a meio (`commentary.ts` com erro de parse, `types.ts`+`matchSummaryHelpers.ts` com erro de aridade, `tacticFamiliarity.ts`, `weeklyFlowHelpers.ts`) — não tocados nem commitados; `typecheck` validado com esses 5 em stash (limpo) e com a árvore completa (falha alheia). `socketEventRegistry.json` é gitignored.
+- Checks (só meus): `typecheck` OK; `lint` só 2 erros pré-existentes; `check:types` OK; `audit:gamestate 78213E` 0/0/0; `audit:socketio` 0 erros; harnesses afetados 10/10 portrait + 12/12 landscape (sem mudança de layout aplicacional — só números mais estreitos nas fixtures — por isso suite completa não repetida).

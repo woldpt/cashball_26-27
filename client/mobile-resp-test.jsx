@@ -16,7 +16,7 @@ function mk(id, position, name, extra = {}) {
     age: 24,
     form: 100,
     resistance: 3,
-    morale: 30 + ((id * 23) % 65),
+    morale: 5 + ((id * 17) % 41),
     aggressiveness: 50,
     value: 200000,
     wage: 8000,

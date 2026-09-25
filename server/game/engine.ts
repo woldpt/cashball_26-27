@@ -77,7 +77,7 @@ import {
 } from "./matchCalculations";
 import type { SidePower } from "./matchCalculations";
 import type { Rng } from "./matchCalculations";
-import { recalcPlayerValue, MATCH_TUNING } from "../gameConstants";
+import { recalcPlayerValue, MATCH_TUNING, MORALE_NEUTRAL } from "../gameConstants";
 import { getTacticBonus } from "./tacticFamiliarity";
 
 /**
@@ -3610,7 +3610,7 @@ export async function applyPostMatchQualityEvolution(
       );
     }
     // ── Moral individual ─────────────────────────────────────────────
-    // Decaimento para o neutro 50 + deltas por evento (resultado,
+    // Decaimento para o neutro 25 + deltas por evento (resultado,
     // titularidade, golos, auto-golos, vermelhos). Batch único como a
     // moral de equipa acima. Lesionados/suspensos não mexem (não é
     // descontentamento, é indisponibilidade).
@@ -3622,7 +3622,7 @@ export async function applyPostMatchQualityEvolution(
         "SELECT id, morale FROM players WHERE team_id IS NOT NULL",
       );
       const moraleNow = new Map<number, number>(
-        (moraleRows || []).map((r) => [r.id, r.morale ?? 50]),
+        (moraleRows || []).map((r) => [r.id, r.morale ?? MORALE_NEUTRAL]),
       );
       const moraleCases: string[] = [];
       const moraleParams: any[] = [];
@@ -3633,8 +3633,8 @@ export async function applyPostMatchQualityEvolution(
           continue;
         if ((player.suspension_until_matchweek || 0) >= currentMatchweek)
           continue;
-        const m = moraleNow.get(player.id) ?? 50;
-        let nm = m + (50 - m) * MATCH_TUNING.moraleDecayRate;
+        const m = moraleNow.get(player.id) ?? MORALE_NEUTRAL;
+        let nm = m + (MORALE_NEUTRAL - m) * MATCH_TUNING.moraleDecayRate;
         const teamResult = teamResults.get(player.team_id) || "D";
         if (teamResult === "W") nm += MATCH_TUNING.moralePlayerWinDelta;
         else if (teamResult === "L") nm += MATCH_TUNING.moralePlayerLossDelta;
@@ -3651,7 +3651,7 @@ export async function applyPostMatchQualityEvolution(
           MATCH_TUNING.moralePlayerOwnGoalMalus;
         if (playerRedCards.has(player.id))
           nm += MATCH_TUNING.moralePlayerRedMalus;
-        nm = Math.max(0, Math.min(100, Math.round(nm)));
+        nm = Math.max(1, Math.min(50, Math.round(nm)));
         if (nm !== m) {
           moraleCases.push("WHEN ? THEN ?");
           moraleParams.push(player.id, nm);

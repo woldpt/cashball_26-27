@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS players (
   form INTEGER DEFAULT 32,
   resistance INTEGER DEFAULT 26,
   aggressiveness INTEGER DEFAULT 3,
-  morale INTEGER DEFAULT 50,
+  morale INTEGER DEFAULT 25,
   nationality TEXT,
   value INTEGER,
   wage INTEGER,

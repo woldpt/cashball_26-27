@@ -11,6 +11,7 @@ import {
   NPC_WAGE_CUT_PER_EVENT,
   FORM_NEUTRAL,
   RES_NEUTRAL,
+  MORALE_NEUTRAL,
   RES_MIN,
   RES_MAX,
   ECON_FORM_REF,
@@ -583,8 +584,8 @@ export function createContractHelpers(deps: ContractDeps) {
       });
       const prospectId = await new Promise<number>((resolve) => {
         game.db.run(
-          "INSERT INTO players (name, position, skill, age, form, resistance, aggressiveness, nationality, value, wage, potential, contract_until_matchweek, contract_start_epoch, joined_matchweek, transfer_cooldown_until_matchweek, transfer_status, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'none', ?)",
-          [name, needPos, skill, 17 + Math.floor(Math.random() * 3), FORM_NEUTRAL, RES_NEUTRAL, 3, "🇵🇹", recalcPlayerValue(skill), wage, potential, getSeasonEndMatchweek(game.matchweek), currentEpoch(game), game.matchweek, game.matchweek, team.id],
+          "INSERT INTO players (name, position, skill, age, form, resistance, aggressiveness, morale, nationality, value, wage, potential, contract_until_matchweek, contract_start_epoch, joined_matchweek, transfer_cooldown_until_matchweek, transfer_status, team_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'none', ?)",
+          [name, needPos, skill, 17 + Math.floor(Math.random() * 3), FORM_NEUTRAL, RES_NEUTRAL, 3, MORALE_NEUTRAL, "🇵🇹", recalcPlayerValue(skill), wage, potential, getSeasonEndMatchweek(game.matchweek), currentEpoch(game), game.matchweek, game.matchweek, team.id],
           function (this: any) { resolve(this?.lastID ?? 0); },
         );
       });

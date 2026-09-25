@@ -1032,7 +1032,18 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
             () => {},
           );
           db.run(
-            "ALTER TABLE players ADD COLUMN morale INTEGER DEFAULT 50",
+            "ALTER TABLE players ADD COLUMN morale INTEGER DEFAULT 25",
+            () => {},
+          );
+          // Reescala 0–100 → 1–50 (neutro 25): defaults antigos (50) passam
+          // a neutro; valores reais >50 levam metade. Idempotente — valores
+          // novos nunca excedem 50, por isso re-arranques não corrompem.
+          db.run(
+            "UPDATE players SET morale = 25 WHERE morale = 50 OR morale IS NULL",
+            () => {},
+          );
+          db.run(
+            "UPDATE players SET morale = MAX(1, MIN(50, CAST(ROUND(morale / 2.0) AS INTEGER))) WHERE morale > 50",
             () => {},
           );
           db.run(

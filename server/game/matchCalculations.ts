@@ -403,7 +403,7 @@ export function computeSidePower(
   // Antes 0.85–1.15 — a forma máxima notava-se a mal (~+4pp de vitórias).
   const formFactor = Math.max(0.75, Math.min(1.35, avgForm / FORM_NEUTRAL));
 
-  // Moral individual (0–100, neutro 50): a média do plantel desvia
+  // Moral individual (1–50, neutro 25): a média do plantel desvia
   // ataque e defesa ±5%. Pesa menos que a forma — ajusta, não decide.
   const avgMorale = average(squad.map((p) => p.morale ?? MORALE_NEUTRAL));
   const playerMoraleFactor =

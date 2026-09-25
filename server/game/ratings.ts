@@ -72,7 +72,7 @@ function contributionBase(
     FORM_MIN,
     Math.min(FORM_MAX, form / FORM_NEUTRAL),
   );
-  // Moral individual (0–100, neutro 50): ±5% — a mesma curva do motor.
+  // Moral individual (1–50, neutro 25): ±5% — a mesma curva do motor.
   const moraleFactor =
     1 + (morale - MORALE_NEUTRAL) * MATCH_TUNING.moralePlayerPerPoint;
   const posFactor =
