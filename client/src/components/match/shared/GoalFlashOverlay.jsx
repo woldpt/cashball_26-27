@@ -13,9 +13,11 @@ import { freshGoalFlashes } from "../../live/liveHelpers.js";
  *   - marcas TU → explosão de confete + "GOLO!" com glow verde;
  *   - golo ADVERSÁRIO → o mesmo festejo com wash vermelho + shake.
  *
- * É alimentado pelo `goalFlashRef` do GameContext ({ ts, n } por fixture+lado,
- * apenas atualizado durante isPlayingMatch), o MESMO sinal que já faz o flash
- * vermelho dos números. Só dispara em direto e para jogos onde és participante.
+ * É alimentado pelo `goalFlashRef` do GameContext ({ ts, n } por fixture+lado).
+ * O `freshGoalFlashes` só aceita flashes com menos de ~2s, por isso não há
+ * festejos fora de jogo: golos aos 45'/90' ou revelados pelo suspense do
+ * penálti (3s depois) festejam mesmo com `isPlayingMatch` já a `false`.
+ * Só dispara para jogos onde és participante.
  *
  * Regras de jogo: transform/opacity apenas (GPU), auto-dismiss, pointer-events
  * none (nunca bloqueia input). Animações via framer → reduced-motion é
@@ -34,7 +36,8 @@ import { freshGoalFlashes } from "../../live/liveHelpers.js";
  * @param {number|string} props.awayId
  * @param {boolean} props.homeIsMine
  * @param {boolean} props.awayIsMine
- * @param {boolean} props.isPlayingMatch
+ * @param {boolean} [props.isPlayingMatch] - ignorada (legado dos chiamantes);
+ *   a frescura do flash (~2s) já garante que só celebra em direto.
  * @param {"page"|"card"} [props.variant="page"]
  */
 export function GoalFlashOverlay({
@@ -43,7 +46,6 @@ export function GoalFlashOverlay({
   awayId,
   homeIsMine,
   awayIsMine,
-  isPlayingMatch,
   variant = "page",
 }) {
   // Fila de momentos (um por golo) + o que está no ecrã é sempre a cabeça.
@@ -54,7 +56,6 @@ export function GoalFlashOverlay({
   const seqRef = useRef(0);
 
   useEffect(() => {
-    if (!isPlayingMatch) return; // nunca celebrar fora de direto / replay
     // Só celebramos em jogos onde somos participante.
     if (!homeIsMine && !awayIsMine) return;
     const fresh = freshGoalFlashes(goalFlashRef, homeId, awayId, consumedRef.current);
@@ -74,7 +75,6 @@ export function GoalFlashOverlay({
     awayId,
     homeIsMine,
     awayIsMine,
-    isPlayingMatch,
   ]);
 
   // Auto-dismiss da cabeça da fila (~2s por golo).
@@ -85,7 +85,7 @@ export function GoalFlashOverlay({
   }, [moments]);
 
   const moment = moments[0] || null;
-  if (!moment || !isPlayingMatch) return null;
+  if (!moment) return null;
 
   const mine = moment.mine;
   const color = mine ? "#22c55e" : "#ef4444";
