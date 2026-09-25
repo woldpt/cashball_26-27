@@ -1,3 +1,11 @@
+## Logout fantasma após escolha do save (2026-09-25)
+
+- Queixa: por vezes, após escolher o save, cair no ecrã de login (vários treinadores, sem mensagem visível).
+- Causa (só leitura, sem hipótese): um único `joinError` de sessão apagava logo a credencial válida — o `verifySession` tratava erro de BD como token inválido; o retry dos 10s ficava inutilizado (o `joinGameSuccess` seguinte era descartado com `me` a null); o ecrã «A entrar…» nem mostrava o erro.
+- Fix (3 ficheiros): `server/auth.js` — `verifySession` distingue falha transitória de BD (`transient: true`); `server/socketSessionHandlers.ts` — transitório e token-em-falta emitem mensagens fora do vocabulário de `isAuthError`; `client/src/App.jsx` — ramo transitório re-arma o retry sem limpar nada, `joinGameSuccess` reconstrói do payload em voo (`lastJoinRef`), e a espera mostra o `joinError`.
+- Checks: server `typecheck` OK · `audit:socketio` 0 erros (97 avisos pré-existentes) · `test:connect-smoke` OK (exercitou «Sessão expirada» com token inválido — a invalidez real continua a limpar) · client `lint` limpo no ficheiro + `check:types` OK. Sem layout → sem mobile-resp-check.
+- Por confirmar em produção (`ssh rick`): frequência de «Sessão expirada» vs `[auth] verifySession error` nos logs — diz se o gatilho era BD ou expiração real.
+
 ## Golos de todo o campo: MED e DEF marcam em jogo corrido (2026-09-25)
 
 - Queixa: só os avançados apareciam nos comentários das chances. Causa: a pool do rematador em `server/game/engine.ts` era `position === "ATA"` (o mesmo jogador marca ou falha); o near-miss 🥅 era `ATA+MED`. Decisões via perguntas: pool todos os jogadores de campo, ATA domina, mesma pool nas falhadas.

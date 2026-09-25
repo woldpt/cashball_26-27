@@ -69,7 +69,7 @@ interface SessionHandlerDeps {
 	io: any;
 	verifySession: (
 		token: string,
-	) => Promise<{ ok: boolean; name?: string; expiresAt?: number }>;
+	) => Promise<{ ok: boolean; transient?: boolean; name?: string; expiresAt?: number }>;
 	getGame: (
 		roomCode: string,
 		onReady?: (game: ActiveGame | null, error?: Error) => void,
@@ -549,7 +549,10 @@ export function registerSessionSocketHandlers(
 			return socket.emit("systemMessage", "Nome de treinador inválido.");
 		}
 		if (!token || typeof token !== "string" || token.trim().length === 0) {
-			return socket.emit("joinError", "Sessão inválida. Volta a iniciar sessão.");
+			// Token em falta no payload: o servidor nada validou, por isso a
+			// mensagem fica fora do vocabulário de `isAuthError` — sem prova de
+			// invalidez, a sessão guardada no cliente não se apaga.
+			return socket.emit("joinError", "Sessão em falta. Volta a tentar entrar na sala.");
 		}
 
 		const trimmedName = name.trim();
@@ -579,6 +582,15 @@ export function registerSessionSocketHandlers(
 		// Autenticação por token de sessão (nunca por password em claro)
 		const session = await verifySession(token.trim());
 		if (!session.ok) {
+			// Falha transitória de verificação (BD): não é credencial inválida.
+			// Mensagem fora do vocabulário de `isAuthError` para o cliente
+			// manter a sessão e o retry automático recuperar sozinho.
+			if (session.transient) {
+				return socket.emit(
+					"joinError",
+					"Sessão temporariamente indisponível. A tentar de novo.",
+				);
+			}
 			return socket.emit("joinError", "Sessão expirada. Volta a iniciar sessão.");
 		}
 		if (session.name.toLowerCase() !== trimmedName.toLowerCase()) {

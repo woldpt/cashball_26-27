@@ -83,6 +83,14 @@ function App() {
 		);
 	};
 
+	// Erro transitório de verificação (o servidor não conseguiu confirmar a
+	// sessão, sem a declarar inválida): nunca apaga a credencial — o retry
+	// automático recupera sozinho.
+	const isTransientError = (msg) => {
+		const lowered = (msg || "").toLowerCase();
+		return lowered.includes("temporariamente indisponível");
+	};
+
 	const isRoomUnavailable = (msg) => {
 		const lowered = (msg || "").toLowerCase();
 		return (
@@ -125,19 +133,31 @@ function App() {
 		const handleJoinError = (msg) => {
 			setJoinError(msg);
 			setJoining(false);
-			if (joinTimerRef.current) {
-				clearTimeout(joinTimerRef.current);
-				joinTimerRef.current = null;
-			}
 
 			if (isAuthError(msg)) {
 				// Só uma credencial inválida termina a sessão. Um erro de rede,
 				// rate-limit ou carregamento da sala não pode desmontar o jogo.
+				if (joinTimerRef.current) {
+					clearTimeout(joinTimerRef.current);
+					joinTimerRef.current = null;
+				}
 				clearSavedAuth();
 				setSavedSession(null);
 				setToken(null);
 				setMe(null);
 				return;
+			}
+
+			if (isTransientError(msg)) {
+				// Manter sessão e `me`; re-armar a rede de segurança para o
+				// próximo retry (10s) recuperar sem intervenção do treinador.
+				armJoinTimeout();
+				return;
+			}
+
+			if (joinTimerRef.current) {
+				clearTimeout(joinTimerRef.current);
+				joinTimerRef.current = null;
 			}
 
 			if (isRoomUnavailable(msg)) {
@@ -181,9 +201,13 @@ function App() {
 			setMe((prev) => {
 				// Reconstruir da sessão guardada se `me` tiver caído entretanto: um
 				// joinGameSuccess atrasado não pode perder-se por causa disso.
+				// Último recurso: o payload em voo (nome+token do join emitido).
 				const saved = savedSessionRef.current;
+				const inFlight = lastJoinRef.current;
 				const base =
-					prev || (saved ? { name: saved.name, token: saved.token } : null);
+					prev ||
+					(saved ? { name: saved.name, token: saved.token } : null) ||
+					(inFlight ? { name: inFlight.name, token: inFlight.token } : null);
 				if (!base) return prev;
 				const updated = { ...base, roomCode, roomName };
 				saveRoomPointer(updated.name, updated.roomCode);
@@ -538,6 +562,11 @@ function App() {
 										<p className="text-xs text-on-surface-variant uppercase tracking-[0.3em] font-bold animate-pulse">
 											A entrar na sala...
 										</p>
+										{joinError ? (
+											<p className="text-xs font-bold text-red-400 px-6">
+												⚠️ {joinError}
+											</p>
+										) : null}
 									</div>
 								</motion.div>
 							) : (

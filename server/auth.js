@@ -887,7 +887,7 @@ function createSession(name, ttlMs = SESSION_TTL_MS) {
  * Expired tokens are deleted lazily.
  *
  * @param {string} token
- * @returns {Promise<{ok: boolean, name?: string, expiresAt?: number}>}
+ * @returns {Promise<{ok: boolean, transient?: boolean, name?: string, expiresAt?: number}>}
  */
 function verifySession(token) {
 	if (!token || typeof token !== "string" || token.length < 16) {
@@ -898,7 +898,13 @@ function verifySession(token) {
 			"SELECT manager_name, expires_at FROM sessions WHERE token = ?",
 			[token],
 			async (err, row) => {
-				if (err || !row) return resolve({ ok: false });
+				// Erro de BD ≠ credencial inválida: um soluço transitório
+				// (SQLITE_BUSY, disco) não pode deitar fora uma sessão válida.
+				if (err) {
+					console.error("[auth] verifySession error:", err.message);
+					return resolve({ ok: false, transient: true });
+				}
+				if (!row) return resolve({ ok: false });
 				if (row.expires_at < Date.now()) {
 					await destroySession(token);
 					return resolve({ ok: false });
