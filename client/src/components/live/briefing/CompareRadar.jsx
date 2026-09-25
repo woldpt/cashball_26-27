@@ -1,17 +1,18 @@
 import { memo } from "react";
 import { getMoraleClasses } from "../../../utils/morale.js";
+import { teamTextColor } from "../liveHelpers.js";
 import { Tile } from "./Tile.jsx";
 import { TeamCrest } from "../TeamCrest.jsx";
 import { FormChips } from "./FormChips.jsx";
 import { RecordText } from "./RecordText.jsx";
+import { orderedPair } from "./orderedPair.js";
 
 /**
  * Extrai golos marcados/sofridos "M:S" do par ordenado por local do jogo.
  * @param {Array<string>} pair par [casa, fora]
- * @param {boolean} isHome sou a equipa da casa
- * @returns {{ mine: { gf: number, ga: number }, theirs: { gf: number, ga: number } }}
+ * @returns {{ home: { gf: number, ga: number }, away: { gf: number, ga: number } }}
  */
-function splitGoals(pair, isHome) {
+function splitGoals(pair) {
   const parse = (s) => {
     const [gf, ga] = String(s ?? "0:0").split(":").map(Number);
     return {
@@ -19,56 +20,60 @@ function splitGoals(pair, isHome) {
       ga: Number.isFinite(ga) ? ga : 0,
     };
   };
-  const [a, b] = [parse(pair?.[0]), parse(pair?.[1])];
-  return isHome ? { mine: a, theirs: b } : { mine: b, theirs: a };
+  return { home: parse(pair?.[0]), away: parse(pair?.[1]) };
 }
 
 /**
- * Barra dupla "eu vs adversário" (eu: esmeralda à esquerda, adversário:
- * azul à direita). Para métricas invertidas (menos é melhor) a quota
- * calcula-se sobre o complementar.
- * @param {{ label: string, mine: number|null, theirs: number|null, mineDisplay: string, theirsDisplay: string, invert?: boolean }} props
+ * Barra dupla casa vs fora (ordem do jogo: casa à esquerda, fora à
+ * direita). Barras na cor principal da equipa; valores em `teamTextColor`
+ * (primária se legível, secundária se escura). Para métricas invertidas
+ * (menos é melhor) a quota calcula-se sobre o complementar.
+ * @param {{ label: string, home: number|null, away: number|null, homeDisplay: string, awayDisplay: string, homeTeam: Object|null, awayTeam: Object|null, invert?: boolean }} props
  * @returns {JSX.Element|null}
  */
 const DualBar = memo(function DualBar({
   label,
-  mine,
-  theirs,
-  mineDisplay,
-  theirsDisplay,
+  home,
+  away,
+  homeDisplay,
+  awayDisplay,
+  homeTeam,
+  awayTeam,
   invert = false,
 }) {
-  if (mine == null && theirs == null) return null;
-  const a = mine ?? 0;
-  const b = theirs ?? 0;
+  if (home == null && away == null) return null;
+  const a = home ?? 0;
+  const b = away ?? 0;
   const total = a + b;
   // Sem golos/pontos ainda (início de época): barras neutras a meio.
-  const rawMine = total > 0 ? a / total : 0.5;
-  const shareMine = invert ? 1 - rawMine : rawMine;
+  const rawHome = total > 0 ? a / total : 0.5;
+  const shareHome = invert ? 1 - rawHome : rawHome;
+  const homeBar = homeTeam?.color_primary || "#34d399";
+  const awayBar = awayTeam?.color_primary || "#38bdf8";
   return (
     <div className="min-w-0">
       <div className="flex items-baseline justify-between gap-1">
-        <span className="text-[10px] font-black tabular-nums text-emerald-400 truncate">
-          {mineDisplay}
+        <span className="text-[10px] font-black tabular-nums truncate" style={{ color: teamTextColor(homeTeam) }}>
+          {homeDisplay}
         </span>
         <span className="shrink-0 text-[8px] uppercase tracking-widest text-gray-500 font-black">
           {label}
         </span>
-        <span className="text-[10px] font-black tabular-nums text-sky-400 truncate">
-          {theirsDisplay}
+        <span className="text-[10px] font-black tabular-nums truncate" style={{ color: teamTextColor(awayTeam) }}>
+          {awayDisplay}
         </span>
       </div>
       <div className="mt-0.5 flex gap-1" aria-hidden>
         <div className="flex-1 h-1 rounded-full bg-black/40 overflow-hidden flex justify-end">
           <div
-            className="h-full rounded-full bg-gradient-to-l from-emerald-400 to-emerald-600"
-            style={{ width: `${Math.round(shareMine * 100)}%` }}
+            className="h-full rounded-full"
+            style={{ width: `${Math.round(shareHome * 100)}%`, background: homeBar }}
           />
         </div>
         <div className="flex-1 h-1 rounded-full bg-black/40 overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-sky-400 to-sky-600"
-            style={{ width: `${Math.round((1 - shareMine) * 100)}%` }}
+            className="h-full rounded-full"
+            style={{ width: `${Math.round((1 - shareHome) * 100)}%`, background: awayBar }}
           />
         </div>
       </div>
@@ -96,10 +101,10 @@ function formStatus(last5) {
 
 /**
  * Cartão de forma de uma equipa (emblema + nome + momento + chips + registo).
- * @param {{ name: string, last5: string, team: Object|null, record: { v: number, e: number, d: number }, isMine?: boolean, onOpenTeamSquad?: (team: Object) => void }} props
+ * @param {{ name: string, last5: string, team: Object|null, record: { v: number, e: number, d: number }, side: "home"|"away", isMine?: boolean, onOpenTeamSquad?: (team: Object) => void }} props
  * @returns {JSX.Element}
  */
-const FormBlock = memo(function FormBlock({ name, last5, team, record, isMine = false, onOpenTeamSquad }) {
+const FormBlock = memo(function FormBlock({ name, last5, team, record, side, isMine = false, onOpenTeamSquad }) {
   const status = formStatus(last5);
   return (
     <div className="min-w-0 rounded-xl border border-outline-variant/25 bg-surface-container-low/60 px-2.5 py-2 flex flex-col gap-1.5">
@@ -120,6 +125,9 @@ const FormBlock = memo(function FormBlock({ name, last5, team, record, isMine = 
             </span>
           )}
         </div>
+        <span className="shrink-0 text-[8px] font-black uppercase tracking-widest text-gray-600">
+          {side === "home" ? "Casa" : "Fora"}
+        </span>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-1">
         <FormChips last5={last5} />
@@ -137,13 +145,17 @@ const FormBlock = memo(function FormBlock({ name, last5, team, record, isMine = 
  * @returns {JSX.Element}
  */
 export const CompareRadar = memo(function CompareRadar({ vm, onOpenTeamSquad }) {
-  const iMine = vm.isHome ? 0 : 1;
-  const iOpp = vm.isHome ? 1 : 0;
-  const goals = splitGoals(vm.compare.goals, vm.isHome);
-  const moraleMine = vm.compare.morale[iMine];
-  const moraleOpp = vm.compare.morale[iOpp];
-  const qualityMine = vm.compare.quality[iMine];
-  const qualityOpp = vm.compare.quality[iOpp];
+  // Ordem do jogo: casa à esquerda, fora à direita. `vm.compare.*` já vem
+  // ordenado [casa, fora] pelo `orderedPair` do view-model; forma e registo
+  // vêm como eu/adversário e ordenam-se aqui com o mesmo helper.
+  const goals = splitGoals(vm.compare.goals);
+  const [moraleHome, moraleAway] = vm.compare.morale;
+  const [qualityHome, qualityAway] = vm.compare.quality;
+  const [formHome, formAway] = orderedPair(vm.isHome, vm.form.mine, vm.form.theirs);
+  const [recordHome, recordAway] = orderedPair(vm.isHome, vm.record.mine, vm.record.theirs);
+  const homeTeam = vm.slots?.[0]?.team ?? null;
+  const awayTeam = vm.slots?.[1]?.team ?? null;
+  const moraleMine = vm.isHome ? moraleHome : moraleAway;
   const lc = vm.lastConfrontation;
 
   return (
@@ -153,39 +165,47 @@ export const CompareRadar = memo(function CompareRadar({ vm, onOpenTeamSquad }) 
           <span aria-hidden>📊</span> Radar comparativo
         </span>
         <span className="text-[8px] uppercase tracking-widest text-gray-600 font-bold truncate">
-          Tu vs {vm.form.theirs.name}
+          {formHome.name} vs {formAway.name}
         </span>
       </div>
 
       <div className="flex-1 px-4 short:px-3 py-3 short:py-2 flex flex-col gap-2.5 short:gap-2">
         <DualBar
           label="Poder de ataque"
-          mine={goals.mine.gf}
-          theirs={goals.theirs.gf}
-          mineDisplay={`${goals.mine.gf} golos`}
-          theirsDisplay={`${goals.theirs.gf} golos`}
+          home={goals.home.gf}
+          away={goals.away.gf}
+          homeDisplay={`${goals.home.gf} golos`}
+          awayDisplay={`${goals.away.gf} golos`}
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
         />
         <DualBar
           label="Rigor defensivo"
-          mine={goals.mine.ga}
-          theirs={goals.theirs.ga}
-          mineDisplay={`${goals.mine.ga} sofridos`}
-          theirsDisplay={`${goals.theirs.ga} sofridos`}
+          home={goals.home.ga}
+          away={goals.away.ga}
+          homeDisplay={`${goals.home.ga} sofridos`}
+          awayDisplay={`${goals.away.ga} sofridos`}
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
           invert
         />
         <DualBar
           label="Moral do balneário"
-          mine={moraleMine.value}
-          theirs={moraleOpp.value}
-          mineDisplay={`${moraleMine.value} · ${moraleMine.label}`}
-          theirsDisplay={`${moraleOpp.label} · ${moraleOpp.value}`}
+          home={moraleHome.value}
+          away={moraleAway.value}
+          homeDisplay={`${moraleHome.value} · ${moraleHome.label}`}
+          awayDisplay={`${moraleAway.label} · ${moraleAway.value}`}
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
         />
         <DualBar
           label="Qualidade geral"
-          mine={qualityMine}
-          theirs={qualityOpp}
-          mineDisplay={qualityMine == null ? "—" : `Nível ${qualityMine}`}
-          theirsDisplay={qualityOpp == null ? "—" : `Nível ${qualityOpp}`}
+          home={qualityHome}
+          away={qualityAway}
+          homeDisplay={qualityHome == null ? "—" : `Nível ${qualityHome}`}
+          awayDisplay={qualityAway == null ? "—" : `Nível ${qualityAway}`}
+          homeTeam={homeTeam}
+          awayTeam={awayTeam}
         />
 
         <div className="pt-1 border-t border-outline-variant/15">
@@ -194,18 +214,21 @@ export const CompareRadar = memo(function CompareRadar({ vm, onOpenTeamSquad }) 
           </span>
           <div className="mt-1 grid grid-cols-2 gap-2">
             <FormBlock
-              name={vm.form.mine.name}
-              last5={vm.form.mine.last5}
-              team={vm.form.mine.team}
-              record={vm.record.mine}
-              isMine
+              name={formHome.name}
+              last5={formHome.last5}
+              team={formHome.team}
+              record={recordHome}
+              side="home"
+              isMine={vm.isHome}
               onOpenTeamSquad={onOpenTeamSquad}
             />
             <FormBlock
-              name={vm.form.theirs.name}
-              last5={vm.form.theirs.last5}
-              team={vm.form.theirs.team}
-              record={vm.record.theirs}
+              name={formAway.name}
+              last5={formAway.last5}
+              team={formAway.team}
+              record={recordAway}
+              side="away"
+              isMine={!vm.isHome}
               onOpenTeamSquad={onOpenTeamSquad}
             />
           </div>
