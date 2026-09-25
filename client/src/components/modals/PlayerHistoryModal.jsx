@@ -179,11 +179,12 @@ export function PlayerHistoryModal({
   const contractEndLabel = contractStart > 0 ? slotLabel(contractEndMatchweek) : "";
   const contractEndYear = contractStart > 0 ? seasonToYear(contractEndSeason) : 0;
   const matchInProgress = isPlayingMatch || showHalftimePanel;
-  // Server uses >= to prevent re-auction in same matchweek (auctionHelpers.ts:459)
-  // Guarda anti-releilão: servidor escreve/lê em matchweek da liga (rótulo).
+  // Server uses >= to prevent re-auction in same calendar slot (startAuction
+  // grava game.calendarIndex em last_auctioned_matchweek). nowIdx =
+  // calendarIndex ?? matchweekCount, espelhando a guarda do servidor.
   const alreadyAuctionedThisWeek =
-    matchweekCount > 0 &&
-    (player.last_auctioned_matchweek || 0) >= matchweekCount;
+    nowIdx > 0 &&
+    (player.last_auctioned_matchweek || 0) >= nowIdx;
 
   // Market purchase — only when player belongs to *another* team and is listed
   const isListedInMarket =

@@ -307,10 +307,11 @@ export function registerTransferSocketHandlers(
           );
 
           if (finalMode === "auction") {
-            const currentMw = game.matchweek || 0;
+            // Slot de calendário, não matchweek (a Taça não o incrementa)
+            const currentSlot = game.calendarIndex || 0;
             if (
-              (player.last_auctioned_matchweek || 0) >= currentMw &&
-              currentMw > 0
+              (player.last_auctioned_matchweek || 0) >= currentSlot &&
+              currentSlot > 0
             ) {
               socket.emit(
                 "systemMessage",

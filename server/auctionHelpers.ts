@@ -522,10 +522,12 @@ export function createAuctionHelpers(deps: AuctionDeps) {
     const existingTimer = game.auctionTimers?.[player.id];
     if (existingTimer) clearTimeout(existingTimer as any);
 
-    const currentMw = game.matchweek || 0;
+    // Slot de calendário, não matchweek: as semanas de Taça/Amigável não
+    // incrementam matchweek, e a guarda anti-releilão compara contra este valor.
+    const currentSlot = game.calendarIndex || 0;
     game.db.run(
       "UPDATE players SET transfer_status = 'auction', transfer_price = ?, last_auctioned_matchweek = ? WHERE id = ?",
-      [startingPrice, currentMw, player.id],
+      [startingPrice, currentSlot, player.id],
       () => {
         if (!game.auctions) game.auctions = {};
         if (!game.auctionTimers) game.auctionTimers = {};
@@ -604,10 +606,10 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           return;
         }
         if (mode === "auction") {
-          const currentMw = game.matchweek || 0;
+          const currentSlot = game.calendarIndex || 0;
           if (
-            (player.last_auctioned_matchweek || 0) >= currentMw &&
-            currentMw > 0
+            (player.last_auctioned_matchweek || 0) >= currentSlot &&
+            currentSlot > 0
           ) {
             if (callback)
               callback(

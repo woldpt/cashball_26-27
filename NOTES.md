@@ -1568,3 +1568,8 @@ Plano C1+C2 (quando fizer):
 ## Intervenção a 95% de opacidade (2026-09-25)
 - `IntervencaoView.jsx` (único ficheiro): raiz redefine os 6 tokens surface a 95% no `style` inline — toda a subárvore (colunas, cartões, controlos, cronologia, adversário) herda; resto do jogo fica nos 90% globais. Sem ancestral `.jp-*` nesta vista (verificado), hexes base seguros.
 - Checks: `eslint` limpo; `check:types` OK; `intervencao-test` 5/5 portrait + 6/6 landscape, screenshot 667 visto.
+
+## Lock de leilão: calendarIndex em vez de matchweek (2026-09-25)
+- A guarda anti-releilão (`last_auctioned_matchweek`) era gravada/comparada com `game.matchweek`, que as semanas de Taça/Amigável **não** incrementam (por design) — jogador leiloado na jornada N de liga ficava bloqueado durante toda a semana de taça seguinte ("já foi a leilão nesta jornada"). Violava a regra permanente "fonte da verdade `game.calendarIndex` — nunca `matchweek`".
+- Mudança (4 localizações, sem migração de BD — a coluna mantém o nome, só muda o valor gravado; stamps antigas desbloqueiam sozinhos porque `calendarIndex >= matchweek`): stamp em `startAuction` + guarda em `listPlayerOnMarket` (`auctionHelpers.ts`); guarda em `listPlayerForTransfer` (`socketTransferHandlers.ts`); badge `alreadyAuctionedThisWeek` no `PlayerHistoryModal.jsx` passa a usar `nowIdx` (=`calendarIndex ?? matchweekCount`). Semântica: 1 leilão por slot de calendário.
+- Checks: `typecheck` OK; `lint` só com os 2 erros pré-existentes (confirmados via stash); `check:types` OK. Sem mobile-resp-check (só lógica, sem layout).
