@@ -1585,3 +1585,8 @@ Plano C1+C2 (quando fizer):
 ## Festejos de golo aos 45'/90' e após penálti (2026-09-25)
 - `GoalFlashOverlay.jsx` (único ficheiro): removidos os dois guards `isPlayingMatch` (efeito + render). O `isPlayingMatch` passa a `false` logo aos 45' (intervalo) e aos 90'/120' (fim), e o reveal do penálti com suspense chega 3s depois via `setTimeout` — o golo entrava na fila mas o render devolvia `null`. A frescura do flash (`freshGoalFlashes` ignora >2,2s) já garante que não há festejos fora de jogo; chiamantes (`LiveMatchHero`, `LiveFixtureRow`) intocados — a prop extra é ignorada.
 - Checks: `check:types` OK; `lint` só com os 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx` — confirmados via stash). Sem mobile-resp-check (só lógica, sem layout). Sem sala viva para `audit:gamestate`/`audit:socketio` (só cliente tocado).
+
+## Comentário de chances na cor da equipa (2026-09-25)
+- `liveHelpers.js`: novo `isDarkColor` (mudido do `CupDrawPopup.jsx` — fonte única) + `teamTextColor(team)` (primária se legível, secundária se escura; sem fallback branco). `CupDrawPopup.jsx` passa a importar de lá.
+- `LiveMatchHero.jsx`: tier `chance` no `COMMENTARY_EFFECTS` (pulse, sem cor estática); no IIFE do comentário: chance → lado via `resolveSide`, cor de texto `teamTextColor(hInfo|aInfo)`, `text-left` (casa) / `text-right` (fora) e `--pulse-color` na cor da equipa a ~45% alpha (`${cor}73`). Demais eventos continuam centrados.
+- Checks: `eslint` limpo nos 3 ficheiros; `check:types` OK; lint global mantém só os 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx`). Sem mobile-resp-check (tweak de className/cor, sem mudança de layout).

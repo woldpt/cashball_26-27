@@ -240,3 +240,32 @@ export function resolveEventSide(event, lineupSideById) {
   }
   return event?.team;
 }
+
+/**
+ * Detecta cores pretas/muito escuras (luminância percebida < ~40/255) para
+ * decidir quando a cor primária de uma equipa não é legível como texto.
+ * @param {string|null|undefined} hex
+ * @returns {boolean}
+ */
+export function isDarkColor(hex) {
+  if (typeof hex !== "string") return false;
+  const m = hex.trim().replace(/^#/, "");
+  if (m.length !== 6) return false;
+  const r = parseInt(m.slice(0, 2), 16);
+  const g = parseInt(m.slice(2, 4), 16);
+  const b = parseInt(m.slice(4, 6), 16);
+  if ([r, g, b].some(Number.isNaN)) return false;
+  return 0.299 * r + 0.587 * g + 0.114 * b < 40;
+}
+
+/**
+ * Cor de texto com identidade de equipa: a primária, se legível; a
+ * secundária, se a primária for muito escura.
+ * @param {{ color_primary?: string, color_secondary?: string }|null|undefined} team
+ * @returns {string}
+ */
+export function teamTextColor(team) {
+  const primary = team?.color_primary;
+  if (primary && !isDarkColor(primary)) return primary;
+  return team?.color_secondary || "#fff";
+}

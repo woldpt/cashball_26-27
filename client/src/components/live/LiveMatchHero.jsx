@@ -4,7 +4,7 @@ import { OddsBadge } from "../shared/OddsBadge.jsx";
 import { PreMatchIntro, KickoffBadge } from "../match/shared/index.js";
 import { GoalFlashOverlay } from "../match/shared/GoalFlashOverlay.jsx";
 import { TeamCrest } from "./TeamCrest.jsx";
-import { FLASH_COLOR, isFlashing, isGoalType, isDrawnAt90, matchEventIcon, parseOdds, resolveEventSide } from "./liveHelpers.js";
+import { FLASH_COLOR, isFlashing, isGoalType, isDrawnAt90, matchEventIcon, parseOdds, resolveEventSide, teamTextColor } from "./liveHelpers.js";
 
 /* Texto do banner de pausa por tipo de decisão (visível aos outros coaches) */
 const PAUSE_TEXT = {
@@ -34,6 +34,7 @@ const COMMENTARY_EFFECTS = {
   red: { className: "text-red-400/90", effect: "shake" },
   penalty_miss: { className: "text-amber-400/80", effect: "pulse", pulseColor: "rgba(251, 191, 36, 0.5)" },
   near_miss: { className: "text-sky-400/80", effect: "pulse", pulseColor: "rgba(56, 189, 248, 0.45)" },
+  chance: { effect: "pulse" },
 };
 
 /* ── LiveMatchHero — painel do meu jogo (scoreboard estilo broadcast) ────
@@ -447,6 +448,12 @@ export function LiveMatchHero({
               .trim();
             if (!phrase) return null;
             const tier = COMMENTARY_EFFECTS[latestWithText.type] || null;
+            // Chance: cor da equipa que criou o lance + alinhamento ao lado dela
+            // (casa → esquerda, fora → direita); o pulse segue a mesma cor.
+            const chanceSide = latestWithText.type === "chance" ? resolveSide(latestWithText) : null;
+            const chanceColor = chanceSide
+              ? teamTextColor(chanceSide === "away" ? aInfo : hInfo)
+              : null;
             const effectCls = tier?.effect
               ? `commentary-effect commentary-effect--${tier.effect}`
               : "";
@@ -459,18 +466,27 @@ export function LiveMatchHero({
                     ? "0.6s"
                     : undefined,
             };
-            if (tier?.effect === "pulse" && tier.pulseColor) {
+            if (chanceColor) {
+              phraseStyle.color = chanceColor;
+              phraseStyle["--pulse-color"] = `${chanceColor}73`;
+            } else if (tier?.effect === "pulse" && tier.pulseColor) {
               phraseStyle["--pulse-color"] = tier.pulseColor;
             }
             return (
               <div
                 key={`${latestWithText.minute}-${latestWithText.type}`}
-                className="w-full text-center pt-3 pb-0.5 px-2"
+                className={`w-full pt-3 pb-0.5 px-2 ${
+                  chanceSide === "home"
+                    ? "text-left"
+                    : chanceSide === "away"
+                      ? "text-right"
+                      : "text-center"
+                }`}
                 style={{ animation: "commentaryFadeIn 0.6s ease" }}
               >
                 <p
                   className={`text-[11px] sm:text-[16px] leading-snug italic font-medium tracking-wide line-clamp-2 ${effectCls} ${
-                    tier?.className || "text-on-surface-variant/55"
+                    chanceColor ? "" : tier?.className || "text-on-surface-variant/55"
                   }`}
                   style={phraseStyle}
                 >
