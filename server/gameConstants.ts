@@ -521,8 +521,9 @@ export const MATCH_TUNING = {
   // Deliberadamente pequeno — a forma ajusta, não decide.
   moraleAttackPerPoint: 0.002,
   moraleDefensePerPoint: 0.001,
-  // Marcador ponderado: peso ATA vs resto, multiplicador craque, clamp de forma.
+  // Marcador ponderado: peso ATA vs resto (DEF raro), multiplicador craque, clamp de forma.
   scorerAtaWeight: 2,
+  scorerDefWeight: 0.3,
   scorerStarMult: 3,
   scorerFormMin: 0.7,
   scorerFormMax: 1.3,

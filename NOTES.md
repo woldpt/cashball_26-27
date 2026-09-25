@@ -1,3 +1,10 @@
+## Golos de todo o campo: MED e DEF marcam em jogo corrido (2026-09-25)
+
+- Queixa: só os avançados apareciam nos comentários das chances. Causa: a pool do rematador em `server/game/engine.ts` era `position === "ATA"` (o mesmo jogador marca ou falha); o near-miss 🥅 era `ATA+MED`. Decisões via perguntas: pool todos os jogadores de campo, ATA domina, mesma pool nas falhadas.
+- Fix (só servidor, 3 ficheiros): `engine.ts` — pool do marcador e do near-miss passam a `position !== "GR"`; `playerUtils.ts` — `weightedPickScorer` ganha peso raro para DEF (`MATCH_TUNING.scorerDefWeight ?? 0.3`); `gameConstants.ts` — novo `scorerDefWeight: 0.3` (ATA mantém 2, MED 1). Total de golos intocado (só o nome no lance muda); penáltis e auto-golos como antes.
+- Sonda determinística (4-3-3 neutro, 20000 sorteios): 58,7% ATA / 29,7% MED / 11,7% DEF / 0 GR — o melhor marcador continua a ser quase sempre avançado.
+- Checks: server `typecheck` OK · `test:engine-unit` 19/19 · `audit:socketio` 0 erros (97 avisos pré-existentes). Sem sala viva → `audit:gamestate` fica para a próxima. Sem cliente → sem lint/mobile.
+
 ## Estrelas estilo Hattrick: contributo 0–10 com meias (2026-09-25)
 
 - Queixa: skill 10 fazia 4★ e skill 40 fazia 3★ — as estrelas eram prémio de eventos (base 3★ + pesos MOM: golo→5★). Decisões via perguntas: híbrido contributo+eventos, escala 0–10 com meias, fatores skill+forma+posição, MOM por eventos intocado.

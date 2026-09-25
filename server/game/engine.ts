@@ -2512,12 +2512,13 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
     const chanceRate = (nChances * getGoalTimeMultiplier(minute)) / 90;
     if (rng() >= chanceRate) return;
 
-    // Chance! O rematador (avançado) é creditado — o mesmo jogador marca ou
-    // falha o lance.
+    // Chance! O rematador (qualquer jogador de campo) é creditado — o mesmo
+    // jogador marca ou falha o lance. O peso por posição (ATA domina, DEF
+    // raro) vive no weightedPickScorer.
     const scoringSquad = isHome ? powers.home.squad : powers.away.squad;
-    const forwards = scoringSquad.filter((p) => p.position === "ATA");
+    const shooters = scoringSquad.filter((p) => p.position !== "GR");
     const scorer =
-      forwards.length > 0 ? weightedPickScorer(forwards, rng) : scoringSquad[0];
+      shooters.length > 0 ? weightedPickScorer(shooters, rng) : scoringSquad[0];
 
     // Ego conflict penalty: 3+ craques no onze titular reduzem probabilidade
     const craquesInXI = scoringSquad.filter(
@@ -2725,9 +2726,7 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
           : "home";
     const nearMissSquad = nearMissSide === "home" ? powers.home.squad : powers.away.squad;
     const oppSquad = nearMissSide === "home" ? powers.away.squad : powers.home.squad;
-    const attackers = nearMissSquad.filter(
-      (p) => p.position === "ATA" || p.position === "MED",
-    );
+    const attackers = nearMissSquad.filter((p) => p.position !== "GR");
     const attacker =
       attackers.length > 0 ? weightedPickScorer(attackers, rng) : nearMissSquad[0];
     if (attacker) {

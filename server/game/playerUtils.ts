@@ -283,7 +283,12 @@ export function pickBestPlayer(players: PlayerRow[] = []) {
 export function weightedPickScorer(players: PlayerRow[] = [], rng: () => number = Math.random) {
   if (!players.length) return null;
   const weights = players.map((p) => {
-    const positionWeight = p.position === "ATA" ? MATCH_TUNING.scorerAtaWeight : 1;
+    const positionWeight =
+      p.position === "ATA"
+        ? MATCH_TUNING.scorerAtaWeight
+        : p.position === "DEF"
+          ? (MATCH_TUNING.scorerDefWeight ?? 0.3)
+          : 1;
     const starMultiplier = p.is_star ? MATCH_TUNING.scorerStarMult : 1;
     const formMultiplier = Math.max(
       MATCH_TUNING.scorerFormMin,
