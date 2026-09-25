@@ -127,7 +127,7 @@ export const PlayerMarker = memo(function PlayerMarker({ player, teamColor, badg
       </div>
       <span className={`font-black tabular-nums text-amber-300 animate-fam-glow drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] ${skillCls}`}>
         {player.rating != null ? (
-          <Stars value={player.rating} className="text-amber-300" />
+          <Stars value={player.rating} hideValue className="text-amber-300" />
         ) : (
           (player.skill ?? "-")
         )}

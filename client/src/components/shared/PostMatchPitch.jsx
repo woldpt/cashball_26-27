@@ -1,5 +1,5 @@
 /**
- * PostMatchPitch — pitch com as classificações 1–5★ do último jogo,
+ * PostMatchPitch — pitch com as classificações 0–10 do último jogo,
  * no fim do corpo do rescaldo (Jornal).
  *
  * Reutiliza o relvado broadcast partilhado (`PitchFormation`): os titulares

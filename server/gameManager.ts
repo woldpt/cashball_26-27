@@ -242,7 +242,7 @@ function ensurePlayerSchema(
       ["games_played", "INTEGER DEFAULT 0"],
       ["aggressiveness", "INTEGER DEFAULT 3"],
       ["prev_skill", "INTEGER DEFAULT NULL"],
-      ["last_rating", "INTEGER DEFAULT NULL"],
+      ["last_rating", "REAL DEFAULT NULL"],
       ["last_auctioned_matchweek", "INTEGER DEFAULT 0"],
       ["potential", "INTEGER DEFAULT NULL"],
       ["last_appearance_matchweek", "INTEGER DEFAULT 0"],
@@ -964,6 +964,27 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
           db.run(
             "UPDATE club_news SET slot = 1 WHERE type = 'prize' AND matchweek = 1 AND COALESCE(slot, 0) > 1 AND (title LIKE 'Prémio de Campeão%' OR title IN ('Patrocinadores', 'Prémio de Melhor Marcador', 'Bónus de Subida'))",
             () => {},
+          );
+          // Escala das estrelas 1–5 → 0–10 (v3, estilo Hattrick): o
+          // histórico (1–5 inteiros) vale o dobro na escala nova.
+          // Idempotente via marcador rating_scale_v3; salas novas (tudo
+          // NULL) passam sem tocar em nada. INTEGER chega para REAL —
+          // o SQLite aceita REAL em coluna INTEGER, a def REAL é só para
+          // salas novas nascerem limpas.
+          db.get(
+            "SELECT value FROM game_state WHERE key = 'rating_scale_v3'",
+            (rsErr: Error | null, rsRow: any) => {
+              if (rsErr || rsRow) return;
+              db.run(
+                "UPDATE players SET last_rating = last_rating * 2 WHERE last_rating IS NOT NULL",
+                () => {
+                  db.run(
+                    "INSERT OR IGNORE INTO game_state (key, value) VALUES ('rating_scale_v3', '1')",
+                    () => {},
+                  );
+                },
+              );
+            },
           );
           // Semana do calendário (1..20) das notícias — substitui o matchweek
           // como data do Jornal (o matchweek repete-se nas semanas de Taça).

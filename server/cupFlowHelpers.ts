@@ -1716,7 +1716,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				);
 			}
 
-			// Classificação 1–5★ do último jogo por participante (mantém quem
+			// Classificação 0–10 do último jogo por participante (mantém quem
 			// não jogou). Idempotente → seguro no replay da ronda.
 			try {
 				persistLastRatings(game.db, fixture);

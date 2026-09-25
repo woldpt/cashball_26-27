@@ -824,7 +824,7 @@ export interface PostMatchRecap {
   /** Semana do calendário (1..20); por omissão, a semana em curso. */
   slot?: number;
   year?: number;
-  /** Classificação 1–5★ dos participantes (pitch do artigo no Jornal). */
+  /** Classificação 0–10 dos participantes (pitch do artigo no Jornal). */
   ratings?: RatingRow[];
 }
 

@@ -193,7 +193,7 @@ export function parsePostMatchRecap(n) {
       oppGoals: r.oppGoals,
       roundLabel: r.roundLabel,
       ticketRevenue: r.ticketRevenue,
-      // Classificação 1–5★ por participante (notícias antigas: null → sem pitch).
+      // Classificação 0–10 por participante (notícias antigas: null → sem pitch).
       ratings: Array.isArray(r.ratings) ? r.ratings : null,
     };
     return { mood, key: r.key };

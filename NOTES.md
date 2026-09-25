@@ -1,3 +1,11 @@
+## Estrelas estilo Hattrick: contributo 0–10 com meias (2026-09-25)
+
+- Queixa: skill 10 fazia 4★ e skill 40 fazia 3★ — as estrelas eram prémio de eventos (base 3★ + pesos MOM: golo→5★). Decisões via perguntas: híbrido contributo+eventos, escala 0–10 com meias, fatores skill+forma+posição, MOM por eventos intocado.
+- `server/game/ratings.ts` (único sítio de lógica): base = skill efetiva do snapshot (com fadiga) × forma (`form/32`, clamp 0,75–1,35, curva do motor) × posição (1,0 na origem, 0,7 fora — cobre GR improvisado) / 5 → skill 40 neutro ≈ 8, skill 10 neutro ≈ 2. Temperos próprios `RATING_EVENT_ADJ` (golo +1, flagrante +0,5, amarelo −0,5, auto-golo −1, vermelho/lesão −2 — `mom.ts` intocado); arredonda a meias, clamp 0–10. `persistLastRatings` agrupa por nota (≤21 valores/equipa).
+- Migração (`server/gameManager.ts`): coluna `last_rating` INTEGER→REAL (só def p/ salas novas — SQLite aceita REAL em coluna INTEGER) + rescale ×2 do histórico (5→10) com marcador `rating_scale_v3`, idempotente (prova sintética node:sqlite OK: 5→10, NULL intacto, 2.ª passagem no-op, 7,5 grava).
+- Cliente: `Stars.jsx` 0–10 com valor exato ao lado (`7,5`, vírgula pt-PT) + `hideValue` p/ o marcador do pitch (104px); `PitchFormation` usa `hideValue`. Notícias antigas (1–5) são snapshot, sem conversão. Comentários "1–5★" atualizados (`PostMatchPitch`, `inboxItems`, `JournalTab`, `coreHelpers`, `cupFlowHelpers`, `matchSummaryHelpers`).
+- Checks: `test:ratings` 21/21 (inclui a propriedade Hattrick: skill 10 limpo < skill 40 apagado) · server `typecheck` OK · client `lint` só os 2 erros pré-existentes · `check:types` OK · `audit:socketio` 0 erros (97 avisos pré-existentes) · `audit:gamestate 6MXK7A` 0/0/0 · portrait 155/155 + landscape 186/186.
+
 ## Fluxo Taça: fim de jogo suave + ET só para envolvidos (2026-09-25)
 
 - Levantamento semana a semana (Liga vs Taça) + 4 correções mínimas, só lógica (sem layout):

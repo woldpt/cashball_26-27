@@ -1001,7 +1001,7 @@ export function JournalTab({
                   </div>
                 )}
 
-                {/* Pitch com as classificações 1–5★ (fim do corpo do rescaldo) */}
+                {/* Pitch com as classificações 0–10 (fim do corpo do rescaldo) */}
                 {Array.isArray(inbox.selected.pitch) &&
                   inbox.selected.pitch.length > 0 && (
                     <PostMatchPitch players={inbox.selected.pitch} />

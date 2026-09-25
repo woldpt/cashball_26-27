@@ -1156,7 +1156,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
                 applyFormDelta(homeLineupIds, homeWon);
                 applyFormDelta(awayLineupIds, awayWon);
 
-                // Classificação 1–5★ do último jogo por participante (mantém
+                // Classificação 0–10 do último jogo por participante (mantém
                 // quem não jogou). Idempotente → seguro no replay.
                 try {
                   persistLastRatings(game.db, match);
