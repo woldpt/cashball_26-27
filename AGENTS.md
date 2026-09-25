@@ -24,6 +24,7 @@
 | Repair job offer | `cd server && npm run repair:joboffer <ROOM_CODE> [--fix]` |
 | Crash-restart E2E (clona p/ `game_CRASHT.db`, limpa ao fim) | `cd server && npm run test:crash-recovery` (origem: `CRASHTEST_ROOM=XXXX`) |
 | Stack completa | `docker compose up --build` |
+| Saves produção | `ssh rick` → ver pasta `/srv/docker/cashball/server/saves/` |
 
 **Reseed:** `entrypoint.sh` → `db/ensureSeeded.js` só re-seeda `base.db` (template) se ausente/esquema velho/fixtures mudadas (hash em `game_state.fixtures_hash`); salas nunca. Produção: `git pull && docker compose up --build`.
 
