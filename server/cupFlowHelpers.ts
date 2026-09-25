@@ -1419,6 +1419,16 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				awayTeamId: primaryDrawn.awayTeamId,
 				homeGoals: primaryDrawn.finalHomeGoals,
 				awayGoals: primaryDrawn.finalAwayGoals,
+				// Todas as equipas em jogos empatados (o cliente só segue o
+				// relógio do ET se a sua equipa estiver aqui).
+				drawnTeamIds: [
+					...new Set(
+						drawnSetups.flatMap(({ fixture }) => [
+							fixture.homeTeamId,
+							fixture.awayTeamId,
+						]),
+					),
+				],
 			});
 
 			console.log(

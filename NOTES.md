@@ -9,6 +9,7 @@
   6. Higiene: listener morto `cupPreMatch` removido (servidor nunca emite); `cupHalfTimeResults` ganhou guarda `inRoom()` + `setActiveTab("live")` como o da liga.
 - Ficheiros: `client/src/contexts/GameContext.jsx` + `client/src/hooks/useSocketListeners.js` + `server/cupFlowHelpers.ts` (`SkillBadge.jsx` modificado na árvore é WIP alheio, não tocado).
 - Checks: client `lint` só o erro pré-existente + `check:types` OK · server `typecheck` OK · `audit:socketio` 0 erros (97 avisos pré-existentes). `audit:gamestate` sem sala viva — fica para a próxima. Sem mudança estrutural de layout → sem mobile-resp-check.
+- Peripécia: após o 1.º `git diff` de confirmação, os 3 ficheiros-fonte apareceram revertidos ao HEAD (mesmo mtime 13:26:20, sem stash pendente; só o `NOTES.md` foi commitado) — reaplicadas as mesmas edições e re-corridos os checks sem `git stash`. Se voltar a acontecer, suspeitar de processo externo a mexer na árvore.
 
 ## Badge único de skills SKILL·RES·FORMA (2026-09-25)
 

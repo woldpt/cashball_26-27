@@ -320,6 +320,23 @@ export function GameProvider({
 	}, [me?.name, backendUrl]);
 
 	// ── Ref sync effects ─────────────────────────────────────────────────────
+	// Abre o sorteio recebido a meio do direto. Chamado no apito final (mesmo
+	// batch do setIsPlayingMatch(false)) para o landing ver o modal aberto;
+	// o efeito de isPlayingMatch abaixo é fallback para os outros caminhos.
+	const drainPendingCupDraw = useCallback(() => {
+		if (!pendingCupDrawRef.current) return;
+		pendingCupDrawRef.current = false;
+		isCupDrawRef.current = true;
+		startTransition(() => {
+			setSelectedAuctionPlayer(null);
+			setAuctionBid("");
+			setMyAuctionBid(null);
+			setAuctionResult(null);
+			setCupDrawRevealIdx(0);
+			setShowCupDrawPopup(true);
+		});
+	}, []);
+
 	useEffect(() => {
 		isPlayingMatchRef.current = isPlayingMatch;
 		if (isPlayingMatch) {
@@ -332,19 +349,10 @@ export function GameProvider({
 			});
 		} else if (pendingCupDrawRef.current) {
 			// Sorteio de taça recebido durante o replay do jogo anterior —
-			// abre agora que o jogo terminou.
-			pendingCupDrawRef.current = false;
-			isCupDrawRef.current = true;
-			startTransition(() => {
-				setSelectedAuctionPlayer(null);
-				setAuctionBid("");
-				setMyAuctionBid(null);
-				setAuctionResult(null);
-				setCupDrawRevealIdx(0);
-				setShowCupDrawPopup(true);
-			});
+			// abre agora que o jogo terminou (fallback; o apito já drena direto).
+			drainPendingCupDraw();
 		}
-	}, [isPlayingMatch]);
+	}, [isPlayingMatch, drainPendingCupDraw]);
 
 	useEffect(() => {
 		isLiveSimulationRef.current = isLiveSimulation;
@@ -460,10 +468,11 @@ export function GameProvider({
 					}, 2000);
 					return () => clearTimeout(timer);
 				}
-				if (liveMinute >= 90 && !isCupExtraTime) {
+				if (liveMinute >= 90 && !isCupExtraTime && !showHalftimePanel) {
 					const timer = setTimeout(() => {
 						setIsPlayingMatch(false);
 						setIsLiveSimulation(false);
+						drainPendingCupDraw();
 						if (isCupMatch) {
 							socket.emit("cupSecondHalfDone");
 						} else {
@@ -495,9 +504,10 @@ export function GameProvider({
 					socket.emit("cupExtraTimeDone");
 				}, 2000);
 				return () => clearTimeout(timer);
-			} else if (liveMinute >= 90 && !isCupExtraTime) {
+			} else if (liveMinute >= 90 && !isCupExtraTime && !showHalftimePanel) {
 				const timer = setTimeout(() => {
 					setIsPlayingMatch(false);
+					drainPendingCupDraw();
 					if (isCupMatch) {
 						socket.emit("cupSecondHalfDone");
 					} else {
@@ -518,6 +528,7 @@ export function GameProvider({
 		isCupExtraTime,
 		isMatchActionPending,
 		isLiveSimulation,
+		drainPendingCupDraw,
 	]);
 
 	// ── Standings staleness safety net ─────────────────────────────────────
@@ -771,6 +782,18 @@ year: seasonYear,
 	useEffect(() => {
 		if (cupPenaltyPopup !== null) return;
 		if (!pendingCupRoundResults) return;
+		// O cupRoundResults chega mal o servidor simula o 90', ainda com o
+		// direto do cliente a correr: esperar pelo apito final (3 s nos 90')
+		// em vez de cortar o jogo de imediato. O matchResults é mantido — o
+		// Jogo mostra o resultado final até ao landing (como na liga).
+		// liveMinute < 45 com tudo parado = cliente que nunca viu o jogo
+		// (recovery por reconnect); aí drena de imediato.
+		const idle =
+			!isPlayingMatch &&
+			!showHalftimePanel &&
+			!matchAction &&
+			!isMatchActionPending;
+		if (!idle || (liveMinute < 90 && liveMinute >= 45)) return;
 		startTransition(() => {
 			setPendingCupRoundResults(null);
 			// Sem salto para o tab Taça: fica no Jogo; o landing leva ao Jornal.
@@ -778,10 +801,16 @@ year: seasonYear,
 			setCupPreMatch(false);
 			setIsCupExtraTime(false);
 			setCupExtraTimeBadge(false);
-			setIsPlayingMatch(false);
-			setMatchResults(null);
 		});
-	}, [cupPenaltyPopup, pendingCupRoundResults]);
+	}, [
+		cupPenaltyPopup,
+		pendingCupRoundResults,
+		isPlayingMatch,
+		showHalftimePanel,
+		matchAction,
+		isMatchActionPending,
+		liveMinute,
+	]);
 
 	// ── Tab-driven data fetches ─────────────────────────────────────────────
 	useEffect(() => {

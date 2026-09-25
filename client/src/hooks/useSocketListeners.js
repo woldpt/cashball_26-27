@@ -384,27 +384,8 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setCupDrawRevealIdx(0);
 			handlers.setShowCupDrawPopup(true);
 		});
-		socket.on("cupPreMatch", (data) => {
-			if (!inRoom()) return;
-			// Safety net: dismiss any lingering cup draw popup before the match starts
-			handlers.setShowCupDrawPopup(false);
-			handlers.setMatchResults({ matchweek: data.season, results: [] });
-			handlers.setShowHalftimePanel(true);
-			handlers.setIsPlayingMatch(false);
-			handlers.setLiveMinute(0);
-			handlers.setSubsMade(0);
-			handlers.setSubbedOut([]);
-			handlers.setConfirmedSubs([]);
-			handlers.setSwapSource(null);
-			handlers.setSwapTarget(null);
-			handlers.setIsCupMatch(true);
-			handlers.setCupPreMatch(true);
-			handlers.setCurrentCupRound(data.round ?? null);
-			handlers.setCupExtraTimeBadge(false);
-			handlers.setCupActiveTeamIds(data.cupTeamIds || []);
-			handlers.setActiveTab("live");
-		});
 		socket.on("cupHalfTimeResults", (data) => {
+			if (!inRoom()) return;
 			try {
 				console.warn("[HALFTIME] cupHalfTimeResults received", data);
 				handlers.setIsMatchActionPending(false);
@@ -431,6 +412,7 @@ export function useSocketListeners(handlers, refs) {
 				})),
 			});
 				handlers.setLiveMinute(45);
+				handlers.setActiveTab("live");
 				// Preservar subsMade/subbedOut do 1.º tempo — substituições a meio
 				// da 1.ª parte contam para o limite de 3 no intervalo.
 				handlers.setConfirmedSubs([]);
@@ -464,7 +446,9 @@ export function useSocketListeners(handlers, refs) {
 			try {
 				handlers.setIsMatchActionPending(false);
 				handlers.setIsLiveSimulation(false);
-				handlers.setIsPlayingMatch(false);
+				// Pausa como o intervalo normal (isPlayingMatch true): o relógio
+				// fica congelado pelo painel aberto (ver guarda no Match clock).
+				handlers.setIsPlayingMatch(true);
 				const fixtures = data.fixtures || [];
 				handlers.setMatchResults({
 					matchweek: data.season,
@@ -518,6 +502,21 @@ export function useSocketListeners(handlers, refs) {
 			// Guard against multiple ET fixtures in the same round resetting the clock/display.
 			const alreadyInET = refs.isCupExtraTimeRef.current;
 			handlers.setShowHalftimePanel(false);
+			// Só quem tem equipa num jogo empatado segue o relógio do
+			// prolongamento. Os outros ficam no resultado final dos 90' a
+			// aguardar o cupRoundResults (os minutos do ET são ignorados —
+			// ver guarda no matchMinuteUpdate).
+			const myId = refs.meRef.current?.teamId;
+			const etTeamIds =
+				data?.drawnTeamIds?.length > 0
+					? data.drawnTeamIds
+					: data
+						? [data.homeTeamId, data.awayTeamId]
+						: [];
+			if (myId == null || !etTeamIds.some((id) => id == myId)) {
+				handlers.setCupExtraTimeBadge(false);
+				return;
+			}
 			handlers.setIsCupExtraTime(true);
 			handlers.setCupExtraTimeBadge(true);
 			if (!alreadyInET) {
@@ -638,8 +637,13 @@ export function useSocketListeners(handlers, refs) {
 		});
 		socket.on("cupSecondHalfStart", (data) => {
 			handlers.setIsMatchActionPending(false);
-			// Identical to matchResults but marks this as a cup second half animation.
-			handlers.setMatchResults({
+			// Nao dispensar o painel de intervalo aqui: o matchSegmentStart(46)
+			// fa-lo ja com a simulacao ligada. Nao sobrescrever o matchResults
+			// do intervalo (traz equipas e posse); so preencher se o cliente
+			// perdeu a 1.a parte (prev null).
+			handlers.setMatchResults((prev) => {
+				if (prev) return prev;
+				return {
 				matchweek: data.season,
 				results: data.results.map((r) => ({
 					homeTeamId: r.homeTeamId,
@@ -653,8 +657,8 @@ export function useSocketListeners(handlers, refs) {
 					_t1: r._t1 || null,
 					_t2: r._t2 || null,
 				})),
+				};
 			});
-			handlers.setShowHalftimePanel(false);
 			handlers.setLiveMinute(45);
 			handlers.setIsPlayingMatch(true);
 			handlers.setIsCupMatch(true);
