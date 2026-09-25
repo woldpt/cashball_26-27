@@ -1533,3 +1533,7 @@ Plano C1+C2 (quando fizer):
 ## Painéis com 10% de transparência (foto por trás) (2026-09-25)
 - `client/src/index.css` (único ficheiro): 6 tokens surface do `@theme` + 6 do override `.jp-*` passam a `color-mix(... 90%, transparent)` — os ~352 usos herdam sem mexer em JSX. Sem `backdrop-blur` (performance) e sem mexer nas fotos (continuam escuras). Painéis sobrepostos acumulam (~81% efetivo), efeito «sugerido» como pedido.
 - Checks: `test:mobile` 155/155 + `test:mobile:landscape` 186/186; screenshots intervencao/club 390 vistos (painéis intactos); CSS servido pelo vite verificado (os 6+5 mixes presentes). Nota: harnesses não renderizam `GroupBackdrop`, por isso o véu da foto só se aprecia na app (`npm run dev`).
+
+## Intervenção a 95% de opacidade (2026-09-25)
+- `IntervencaoView.jsx` (único ficheiro): raiz redefine os 6 tokens surface a 95% no `style` inline — toda a subárvore (colunas, cartões, controlos, cronologia, adversário) herda; resto do jogo fica nos 90% globais. Sem ancestral `.jp-*` nesta vista (verificado), hexes base seguros.
+- Checks: `eslint` limpo; `check:types` OK; `intervencao-test` 5/5 portrait + 6/6 landscape, screenshot 667 visto.
