@@ -58,6 +58,9 @@ export function RoomHub({
   const [systemMessages, setSystemMessages] = useState([]);
   const [copied, setCopied] = useState(false);
   const copiedTimer = useRef(null);
+  // Convites de sala (como no RoomSelectScreen): `${roomCode}:${coach}` → { status, msg }
+  const [inviteState, setInviteState] = useState({});
+  const inviteTimersRef = useRef({});
 
   const copyRoomCode = () => {
     navigator.clipboard
@@ -96,6 +99,34 @@ export function RoomHub({
     };
   }, []);
 
+  // Resposta do servidor a um convite enviado (aceite / recusa).
+  useEffect(() => {
+    const onResult = (res) => {
+      if (!res || typeof res.roomCode !== "string") return;
+      const key = `${res.roomCode}:${res.toCoach}`;
+      setInviteState((prev) => ({
+        ...prev,
+        [key]: { status: res.accepted ? "accepted" : "declined" },
+      }));
+      // Volta a permitir convidar passados alguns segundos após resposta.
+      const delay = res.accepted ? 8000 : 6000;
+      const t = setTimeout(() => {
+        setInviteState((prev) => {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+      }, delay);
+      inviteTimersRef.current[key] = t;
+    };
+    socket.on("roomInviteResult", onResult);
+    return () => {
+      socket.off("roomInviteResult", onResult);
+      Object.values(inviteTimersRef.current).forEach(clearTimeout);
+      inviteTimersRef.current = {};
+    };
+  }, []);
+
   // Carregar histórico ao abrir o hub ou ao trocar de sub-tab.
   // O WaitingCoachesModal só pede histórico no lobby; sem isto, o RoomHub
   // fica vazio durante o jogo (só mostra mensagens recebidas ao vivo).
@@ -121,6 +152,111 @@ export function RoomHub({
       channel: chatSubTab,
       message: text,
     });
+  };
+
+  // Sala atual de um coach online (presença global), ou null se offline.
+  const presenceRoomOf = (coachName) => {
+    const lower = coachName.toLowerCase();
+    for (const p of globalPlayers || []) {
+      if (p.name && p.name.toLowerCase() === lower) return p.roomCode;
+    }
+    return null;
+  };
+
+  // Candidato a convite: membro desta sala (o servidor rejeita os restantes),
+  // online noutra sala, nunca a si próprio.
+  const inviteCandidate = (coachName) => {
+    if (!coachName || coachName === me?.name) return false;
+    const lower = coachName.toLowerCase();
+    const inRoom =
+      players.some((p) => p.name && p.name.toLowerCase() === lower) ||
+      (awaitingCoaches || []).some((n) => n && n.toLowerCase() === lower);
+    if (!inRoom) return false;
+    const room = presenceRoomOf(coachName);
+    return !!room && room !== me?.roomCode;
+  };
+
+  const sendRoomInvite = (toCoach) => {
+    const code = me.roomCode;
+    const key = `${code}:${toCoach}`;
+    setInviteState((prev) => ({ ...prev, [key]: { status: "sending" } }));
+    socket.emit(
+      "sendRoomInvite",
+      {
+        name: me.name,
+        token: me.token,
+        roomCode: code,
+        roomName: me.roomName || code,
+        toCoach,
+      },
+      (res) => {
+        setInviteState((prev) => {
+          if (res && res.ok) {
+            return { ...prev, [key]: { status: "sent" } };
+          }
+          return {
+            ...prev,
+            [key]: { status: "error", msg: res?.error || "Erro ao enviar o convite." },
+          };
+        });
+      },
+    );
+  };
+
+  // Controlos de convite como no RoomSelectScreen (estados + botão).
+  // O chamador envolve-os no contentor flex da linha/pill.
+  const inviteControls = (coachName) => {
+    const key = `${me?.roomCode}:${coachName}`;
+    const inv = inviteState[key];
+    const busy =
+      inv &&
+      ["sending", "sent", "accepted", "declined"].includes(inv.status);
+    return (
+      <>
+        {inv?.status === "sending" && (
+          <span className="shrink-0 text-[10px] font-black uppercase tracking-wider text-white/40">
+            A convidar…
+          </span>
+        )}
+        {inv?.status === "sent" && (
+          <span className="shrink-0 rounded border border-landing-accent-strong/30 bg-landing-accent-strong/15 px-1 py-px text-[9px] font-black uppercase tracking-widest text-landing-accent">
+            Convite enviado
+          </span>
+        )}
+        {inv?.status === "accepted" && (
+          <span className="shrink-0 rounded border border-landing-accent-strong/40 bg-landing-accent-strong/20 px-1 py-px text-[9px] font-black uppercase tracking-widest text-landing-accent">
+            Aceitou ✓
+          </span>
+        )}
+        {inv?.status === "declined" && (
+          <span className="shrink-0 rounded border border-white/10 bg-white/5 px-1 py-px text-[9px] font-black uppercase tracking-widest text-white/40">
+            Recusou
+          </span>
+        )}
+        {inv?.status === "error" && (
+          <span className="shrink-0 max-w-full truncate text-[9px] font-bold text-red-400/90">
+            {inv.msg || "Erro"}
+          </span>
+        )}
+        {!busy && (
+          <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-amber-400/90">
+            Noutra Sala
+          </span>
+        )}
+        {!busy && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              sendRoomInvite(coachName);
+            }}
+            title={`Convidar ${coachName} para esta sala`}
+            className="shrink-0 rounded-md border border-sky-500/30 bg-sky-500/15 px-1.5 py-px text-[9px] font-black uppercase tracking-widest text-sky-300 transition-colors hover:bg-sky-500/25 active:scale-95"
+          >
+            Convidar
+          </button>
+        )}
+      </>
+    );
   };
 
   const formatChatTime = (ts) => {
@@ -294,6 +430,12 @@ export function RoomHub({
                       >
                         {status.label}
                       </p>
+                      {/* Convite: membro desta sala a jogar noutra sala */}
+                      {inviteCandidate(coach.name) && (
+                        <div className="mt-0.5 flex flex-wrap items-center gap-1">
+                          {inviteControls(coach.name)}
+                        </div>
+                      )}
                     </div>
                     {/* Botão kick: só Admin no lobby, não se pode expulsar a si mesmo */}
                     {me.name === roomCreator &&
@@ -363,12 +505,17 @@ export function RoomHub({
                   className="flex flex-wrap gap-1.5 px-3 pb-2 overflow-y-auto"
                   style={{ maxHeight: 72 }}
                 >
-                  {globalPlayers.map((p) => (
+                  {(globalPlayers || []).map((p) => (
                     <span
                       key={p.name}
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-surface-container text-on-surface border border-outline-variant/30"
                     >
-                      {p.name}
+                      <span className="truncate">{p.name}</span>
+                      {inviteCandidate(p.name) && (
+                        <span className="inline-flex items-center gap-1">
+                          {inviteControls(p.name)}
+                        </span>
+                      )}
                     </span>
                   ))}
                 </div>

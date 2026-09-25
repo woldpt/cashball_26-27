@@ -1,3 +1,9 @@
+## Convite no RoomHub para membros noutra sala (2026-09-25)
+
+- Pedido: botão de convite como no `RoomSelectScreen` junto aos nomes no `RoomHub`, quando estão a jogar noutras salas. Decisões via perguntas: âmbito sala + tab Global, com os mesmos estados (`A convidar…`/`Convite enviado`/`Aceitou ✓`/`Recusou`).
+- Só `client/src/components/chat/RoomHub.jsx`: `inviteState` + listener de `roomInviteResult` (cópia do `RoomSelectScreen`, com limpeza por temporizador) + `sendRoomInvite` com `me.name/token/roomCode/roomName`; `presenceRoomOf` cruza `globalPlayers` (`{name, roomCode}`, chega em direto via `__global__`); candidato = membro desta sala (`players` ∪ `awaitingCoaches`) online com `roomCode` diferente, nunca a si próprio (o servidor rejeitaria não-membros, por isso só esses veem botão). Coluna da sala: badge "Noutra Sala" + botão sob o estado do coach; tab Global: pills de candidatos ganham os mesmos controlos inline.
+- Checks: `lint` só os 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx` — não tocados) · `check:types` OK. Botão pontual em linhas existentes → sem mobile-resp-check.
+
 ## Narração: mais humor e variedade de lances (2026-09-25)
 
 - Pools finos de `server/game/commentary.ts` reforçados com humor e lances concretos: `bettingPhrase` 8→18, `emergencyGkPhrase` 15→25, `chanceSavedPhrase` 12→28 (cabeçadas, livres, cantos, contra-ataques, apanhas de primeira, chapéus), `chancePostPhrase` 8→19, `chanceOffTargetPhrase` 10→22, `subPhrase` 44→56. Export/assinaturas intactos; chaves `missType` idênticas (`DEFENDEU!`, `AO POSTE!`, `AO LADO!`, `PANENKA FALHADO!`).
