@@ -1,4 +1,4 @@
-import { SEASON_LABEL } from "../../constants/index.js";
+import { APP_VERSION, SEASON_LABEL } from "../../constants/index.js";
 
 /**
  * Rodapé da página de entrada (marca + versão do build).
@@ -12,7 +12,7 @@ const LandingFooter = () => (
 				<img src="/icon-512.png" alt="Logotipo CashBall" className="w-4 h-4" />
 				CashBall {SEASON_LABEL}
 			</span>
-			<span className="text-xs text-white/45">v1.1a © 2026 by Fábio Silva</span>
+			<span className="text-xs text-white/45">{APP_VERSION} © 2026 by Fábio Silva</span>
 		</div>
 	</footer>
 );

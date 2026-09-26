@@ -55,6 +55,6 @@ export const LANDING_FEATURES = [
 	{
 		icon: "live_tv",
 		label: "Simulação ao Vivo",
-		desc: "Eventos em tempo real. Acompanhe os jogos e notícias à medida que acontecem.",
+		desc: "Eventos em tempo real. Acompanha os jogos e notícias à medida que acontecem.",
 	},
 ];

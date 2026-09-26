@@ -84,3 +84,27 @@ const AuthField = ({
 };
 
 export default AuthField;
+
+/**
+ * Aviso de erro sob os formulários de entrada (login e registo partilham o
+ * mesmo bloco). Mostra o erro de autenticação ou, na falta dele, o aviso de
+ * ligação perdida.
+ *
+ * @param {Object} props
+ * @param {string} props.authError - Erro de autenticação (vazio = sem erro).
+ * @param {boolean} props.disconnected - true quando há perda de ligação.
+ * @returns {JSX.Element|null}
+ */
+export const AuthErrorHint = ({ authError, disconnected }) => {
+	if (authError) {
+		return <p className="text-red-400 text-sm text-center font-bold">⚠️ {authError}</p>;
+	}
+	if (disconnected) {
+		return (
+			<p className="text-red-400 text-sm text-center font-bold">
+				⚠️ Sem ligação ao servidor. Tenta novamente.
+			</p>
+		);
+	}
+	return null;
+};

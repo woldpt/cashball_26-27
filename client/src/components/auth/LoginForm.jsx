@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import AuthField from "./AuthField.jsx";
+import AuthField, { AuthErrorHint } from "./AuthField.jsx";
 import { exampleNames } from "./exampleNames.js";
 import useNameCarousel from "./useNameCarousel.js";
 
@@ -118,14 +118,7 @@ const LoginForm = ({
 			Criar conta
 		</button>
 
-		{authError && (
-			<p className="text-red-400 text-sm text-center font-bold">⚠️ {authError}</p>
-		)}
-		{!authError && disconnected && (
-			<p className="text-red-400 text-sm text-center font-bold">
-				⚠️ Sem ligação ao servidor. Tenta novamente.
-			</p>
-		)}
+		<AuthErrorHint authError={authError} disconnected={disconnected} />
 	</motion.div>
 	);
 };

@@ -1651,3 +1651,10 @@ Plano C1+C2 (quando fizer):
 - `CompareRadar.jsx` (único ficheiro): fim do "eu sempre à esquerda" — barras e blocos de forma seguem a ordem do jogo (casa à esquerda, fora à direita), igual ao `DuelHero`. `vm.compare.*` já vinha ordenado `[casa, fora]`; forma/registo ordenam-se com o helper `orderedPair` existente. `splitGoals` devolve `{home, away}`; `DualBar` recebe `homeTeam/awayTeam`.
 - Cores (pedido do utilizador): cada lado usa a cor principal da equipa — barras na `color_primary` (reserva esmeralda/azul), valores em `teamTextColor` reutilizado do `liveHelpers.js` (primária se legível, secundária se escura). Cabeçalho passa de "Tu vs X" para "{casa} vs {fora}"; `FormBlock` com etiqueta Casa/Fora; mosaico "Ambiente" mantém a moral da minha equipa.
 - Checks: `eslint` limpo no ficheiro; `check:types` OK; lint global mantém só os 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx` — confirmados via stash). Sem mobile-resp-check (reordenação dentro da mesma grelha, sem mudança de layout). View-model intocado (regressão do briefing não afetada).
+
+## Revisão da landing page (2026-09-26)
+- Avaliação pedida: 8,5/10; corrigidos os 4 pontos (OK do utilizador).
+- pt-PT: `landingContent.js` "Acompanhe"→"Acompanha"; `HeroSection.jsx` comentário "Placar"→"Marcador" (regra AGENTS.md).
+- `constants/index.js`: nova `APP_VERSION = "v1.1a"`; `LandingFooter.jsx` usa-a em vez do literal fixo.
+- `AuthField.jsx`: novo export nomeado `AuthErrorHint` (erro de auth ou aviso de ligação); `LoginForm`/`RegisterForm` usam-no — bloco de 7 linhas duplicado eliminado, sem ficheiro novo.
+- Checks: `check:types` OK; `lint` só 2 erros pré-existentes (confirmados via stash); sem mobile-resp-check (saída renderizada idêntica, sem mudança de layout).

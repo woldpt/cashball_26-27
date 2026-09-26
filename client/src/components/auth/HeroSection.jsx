@@ -45,7 +45,7 @@ const HeroSection = () => {
 				</span>
 			</div>
 
-			{/* Placar de balneário — etiqueta de treinador com cronómetro */}
+			{/* Marcador de balneário — etiqueta de treinador com cronómetro */}
 			<div className="mb-5 short:mb-2 flex max-w-full flex-wrap items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
 				<span className="material-symbols-outlined text-landing-accent text-[16px] leading-none">
 					sports_soccer
