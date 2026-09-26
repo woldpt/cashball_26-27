@@ -1990,3 +1990,11 @@ Plano C1+C2 (quando fizer):
 - CSS: removido `min-h-40` em conflito com `min-h-0` no painel do chat.
 - A11y: `aria-label` no input e botão de envio do chat.
 - Checks: eslint limpo no ficheiro (3 erros pré-existentes noutros ficheiros, sem relação); `check:types` OK. Sem `test:mobile` (tweaks) nem audits (sem lógica de jogo/sockets).
+
+## InviteRoomModal — migração ModalShell + tokens + robustez (2026-09-26)
+- Migrado para `ModalShell` (`variant="card"`, `z={MODAL_Z.default}`): corrige `z-[100]` que ficava por baixo de outros modais (ex. `teamSquad:120`) e ganha animação de saída; children com short-circuit (regra `visible={false}`).
+- Tokens `STYLE.md`: `bg-[#0a1410]`/`sky-*` → `surface`/`primary`/`on-surface(-variant)`/`outline-variant`; `tracking-[0.35em]` → `tracking-widest`; botões `type="button"`.
+- Robustez: guarda anti-duplo-clique por `inviteId` (`useRef`); fallbacks `fromName || "Um colega"`, `roomCode` vazio esconde `(código)` e bloqueia aceitar sem sala; Escape = recusar (listener local, `ModalShell` não trata Escape).
+- A11y: `aria-hidden` no ícone, `autoFocus` no "Aceitar", `id`s título/descrição.
+- Não feito (YAGNI): fila de convites (último esmaga anterior, documentado no JSDoc), expiração no cliente, `MODAL_Z` novo (reutiliza `default`).
+- Checks: eslint limpo no ficheiro (2 erros pré-existentes noutros — confirmados com `git stash`); `check:types` OK; `test:mobile` 165/165 + landscape 198/198 PASS. Sem audits (sem lógica de jogo/sockets).
