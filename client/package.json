@@ -19,6 +19,7 @@
     "test:briefing": "node scripts/briefingViewModelRegression.mjs",
     "test:inboxreads": "node scripts/inboxReadStoreRegression.mjs",
     "test:journaldb": "node scripts/journalDbNewsRegression.mjs",
+    "test:postmatchflow": "node scripts/postMatchFlowRegression.mjs",
     "test:boardnewsid": "node scripts/boardNewsIdRegression.mjs",
     "test:breakpoints": "node scripts/breakpointParityRegression.mjs",
     "test:mobile": "node scripts/mobileRespCheck.mjs",

@@ -1,3 +1,9 @@
+## postMatchFlow: review 7,5/10 → DRY + teste (2026-09-26)
+- Avaliação 0–10 pedida → plano aprovado. 3 ficheiros: `postMatchFlow.js`, `postMatchFlowRegression.mjs` (novo, `test:postmatchflow`), `package.json`.
+- `queueBusy` duplicava exatamente `isPostMatchQueueActive` — agora chama-o (primitivo único da tabela de verdade da fila). JSDoc do input triplicado → `@typedef PostMatchInputs` partilhado pelas 2 funções.
+- Teste de regressão no padrão do projeto (7 invariantes: fila vazia, penáltis exclusivo, despedimento aguarda, fim de época sempre o último, espera suprimida/drenada, `isPostMatchQueueActive` ≡ `!showWaiting`). Consumidores (`GameOverlays`, `TacticsView`) intactos.
+- Checks: `test:postmatchflow` 7/7 · lint limpo nos ficheiros tocados (2 erros pré-existentes globais) · `check:types` OK. Sem mudança estrutural → sem mobile-resp-check; client-only → sem audits.
+
 ## CelebrationBurst: seed a sério + auto-desmontar + a11y (2026-09-26)
 - Avaliação 1–10 pedida (global 7,4; a11y 4) → plano completo aprovado (só relatório primeiro, depois "sim" para executar). Só `client/src/components/shared/CelebrationBurst.jsx`.
 - `seed` só entrava na `key` — o leque era sempre igual: novo `hashSeed` (×31, barato, determinístico) alimenta o `jitter`, `useMemo` com deps `[seed]` (acaba o aviso de lint). Mesmo seed = mesmo leque.

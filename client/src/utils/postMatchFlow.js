@@ -29,12 +29,13 @@
  * (As surpresas da Taça deixaram de ser modal: são notícia persistente
  * `cup_upset` com tira própria no Jornal.)
  *
- * @param {{
- *   seasonEndModal: object|null,
- *   cupPenaltyPopup: object|null,
- *   dismissalModal: object|null,
- *   waitingWantsShow?: boolean,
- * }} inputs Estados brutos dos modais.
+ * @typedef {object} PostMatchInputs
+ * @property {object|null} seasonEndModal Estado bruto do modal de fim de época.
+ * @property {object|null} cupPenaltyPopup Estado bruto das grandes penalidades.
+ * @property {object|null} dismissalModal Estado bruto do despedimento.
+ * @property {boolean} [waitingWantsShow] Espera multiplayer quer mostrar-se.
+ *
+ * @param {PostMatchInputs} inputs Estados brutos dos modais.
  * @returns {{
  *   showDismissal: boolean,
  *   showSeasonEnd: boolean,
@@ -61,7 +62,11 @@ export function computePostMatchFlow({
   const showSeasonEnd = afterDismiss && seasonEnd;
 
   // A espera multiplayer só ocupa o ecrã com a fila drenada.
-  const queueBusy = penalties || dismiss || seasonEnd;
+  const queueBusy = isPostMatchQueueActive({
+    seasonEndModal,
+    cupPenaltyPopup,
+    dismissalModal,
+  });
   const showWaiting = !!waitingWantsShow && !queueBusy;
 
   return {
@@ -76,11 +81,7 @@ export function computePostMatchFlow({
  * do GameOverlays (ex.: a espera pré-jogo na TacticsView) sem duplicar
  * a lógica da fila.
  *
- * @param {{
- *   seasonEndModal: object|null,
- *   cupPenaltyPopup: object|null,
- *   dismissalModal: object|null,
- * }} inputs Estados brutos dos modais.
+ * @param {PostMatchInputs} inputs Estados brutos dos modais.
  * @returns {boolean}
  */
 export function isPostMatchQueueActive({
