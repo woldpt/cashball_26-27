@@ -448,7 +448,7 @@ async function computeAttendance(
 
   // ── Entusiasmo (0..~1): mood pesa mais que forma, tabela desempatia ───
   const enthusiasm =
-    0.45 * (fansMood / 100) + 0.35 * formPoints + 0.2 * homeRank01;
+    0.45 * (fansMood / 50) + 0.35 * formPoints + 0.2 * homeRank01;
   const faithfulFloor =
     T.faithfulFloorByDivision[homeDiv] ?? 0.25;
   let occupancyRatio = faithfulFloor + (1 - faithfulFloor) * enthusiasm;
@@ -574,9 +574,9 @@ async function computeAttendance(
     mult *= desert;
     reasons.push({ label: "deserção em crise", impact: 0.35 });
   }
-  if (fansMood >= 85 && formPoints >= 0.8)
+  if (fansMood >= 43 && formPoints >= 0.8)
     reasons.push({ label: "equipa em chamas", impact: 0.15 });
-  else if (fansMood <= 25)
+  else if (fansMood <= 13)
     reasons.push({ label: "adeptos descontentes", impact: 0.15 });
 
   const raw = Math.round(effectiveCap * occupancyRatio * mult);

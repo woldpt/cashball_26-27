@@ -3233,7 +3233,7 @@ export async function applyPostMatchQualityEvolution(
           .map(([div, base]) => `WHEN ${Number(div)} THEN ${Number(base)}`)
           .join(" ");
         await dbRun(
-          `UPDATE teams SET fans_mood = MAX(0, MIN(100, CAST(fans_mood + ((CASE division ${baseCase} ELSE 50 END) - fans_mood) * ${T.fansMoodDecayRate} AS INTEGER)))`,
+          `UPDATE teams SET fans_mood = MAX(1, MIN(50, CAST(fans_mood + ((CASE division ${baseCase} ELSE 25 END) - fans_mood) * ${T.fansMoodDecayRate} AS INTEGER)))`,
         );
         const fanCases: string[] = [];
         const fanParams: any[] = [];
@@ -3286,8 +3286,8 @@ export async function applyPostMatchQualityEvolution(
                 d *= T.fansCupRoundMultiplier[cupRound] ?? 1;
             }
             const next = Math.max(
-              0,
-              Math.min(100, (fanMoodNow.get(side.teamId) ?? T.fansMoodDefault) + Math.round(d)),
+              1,
+              Math.min(50, (fanMoodNow.get(side.teamId) ?? T.fansMoodDefault) + Math.round(d)),
             );
             fanMoodNow.set(side.teamId, next);
             fanCases.push("WHEN ? THEN ?");

@@ -598,23 +598,23 @@ export const MATCH_TUNING = {
   moralePlayerRedMalus: -2,
   // Média do plantel desvia ataque e defesa ±5% em torno do neutro.
   moralePlayerPerPoint: 0.002,
-  // ── Mood dos adeptos (fans_mood 0–100, coluna teams.fans_mood) ───────
+  // ── Mood dos adeptos (fans_mood 1–50, coluna teams.fans_mood; migração v5)
   // Memória emocional da bancada — distinta da moral do plantel. A assistência
   // deriva dela (ver calculateMatchAttendance em coreHelpers).
-  fansMoodDefault: 60, // valor de arranque (época 1 / clubes novos)
+  fansMoodDefault: 30, // valor de arranque (época 1 / clubes novos)
   fansMoodDecayRate: 0.15, // decaimento semanal para a base de fidelidade
   // Base de fidelidade por divisão (para onde o mood regride sem resultados):
   // clubes grandes mantêm o apoio, clubes pequenos vivem do momento.
-  fansBaseByDivision: { 1: 65, 2: 60, 3: 55, 4: 50, 5: 45 } as Record<number, number>,
-  fansWinDelta: 9, // vitória base
-  fansLossDelta: -9, // derrota base
-  fansDrawDelta: 2, // empate base
+  fansBaseByDivision: { 1: 33, 2: 30, 3: 28, 4: 25, 5: 23 } as Record<number, number>,
+  fansWinDelta: 5, // vitória base
+  fansLossDelta: -5, // derrota base
+  fansDrawDelta: 1, // empate base
   fansHomeWinBonus: 1, // ganhar em casa sabe melhor
-  fansHomeLossMalus: -3, // perder em casa dói mais
-  fansMarginPerGoal: 2, // por golo de margem além do 1º (goleada/humilhação)
-  fansUpsetBonus: 4, // vencer equipa de escalão superior (divisão menor)
-  fansShameMalus: -5, // perder com equipa de escalão inferior (vergonha)
-  fansExpectedLossSoftener: 5, // derrota esperada com mais fortes dói menos
+  fansHomeLossMalus: -2, // perder em casa dói mais
+  fansMarginPerGoal: 1, // por golo de margem além do 1º (goleada/humilhação)
+  fansUpsetBonus: 2, // vencer equipa de escalão superior (divisão menor)
+  fansShameMalus: -3, // perder com equipa de escalão inferior (vergonha)
+  fansExpectedLossSoftener: 3, // derrota esperada com mais fortes dói menos
   fansDerbyMultiplier: 2, // dérbi (mesma divisão): emoções a dobrar
   fansCupRoundMultiplier: { 1: 1, 2: 1.1, 3: 1.25, 4: 1.5, 5: 1.8 } as Record<number, number>,
   // ── Assistências (calculateMatchAttendance) ──────────────────────────
@@ -623,8 +623,8 @@ export const MATCH_TUNING = {
   attendanceAbsoluteMinRatio: 0.12, // nunca abaixo de 12% (pessoal, erros, curiosos)
   attendanceJitter: 0.1, // variação natural por jogo ±10%
   attendanceMagicNightChance: 0.05, // "noite mágica": +8..15% (raro)
-  attendanceDesertChance: 0.12, // "deserção" em crise (mood<25, 3+ sem ganhar)
-  attendanceDesertMoodMax: 25,
+  attendanceDesertChance: 0.12, // "deserção" em crise (mood<13, 3+ sem ganhar)
+  attendanceDesertMoodMax: 13,
   // Preço do bilhete: procura reage ao desvio face aos 15€ base.
   ticketBasePrice: 15,
   ticketDemandPerEuro: 0.014, // mult = 1 − (preço−15) × 0.014

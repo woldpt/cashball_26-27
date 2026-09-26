@@ -54,16 +54,16 @@ export function getMoraleClasses(morale) {
 /**
  * Etiqueta do mood dos adeptos (bancada) — escala própria, mais emocional
  * que a moral do plantel. Partilhada por StadiumTab e MatchBriefing.
- * @param {number} mood Valor 0–100 (qualquer número é limitado à escala)
+ * @param {number} mood Valor 1–50, neutro 30 (migração v5; limites antigos ÷2)
  * @returns {string} Etiqueta com humor
  */
 export function getFansMoodLabel(mood) {
-  const v = Math.max(0, Math.min(100, Number(mood) || 0));
-  if (v < 15) return "Furiosos";
-  if (v < 30) return "Zangados";
-  if (v < 45) return "Desconfiados";
-  if (v < 60) return "Mornos";
-  if (v < 75) return "Confiantes";
-  if (v < 90) return "Eufóricos";
+  const v = Math.max(1, Math.min(50, Number(mood) || 0));
+  if (v < 8) return "Furiosos";
+  if (v < 15) return "Zangados";
+  if (v < 23) return "Desconfiados";
+  if (v < 30) return "Mornos";
+  if (v < 38) return "Confiantes";
+  if (v < 45) return "Eufóricos";
   return "Em Êxtase";
 }

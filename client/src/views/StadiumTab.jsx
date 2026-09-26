@@ -28,7 +28,7 @@ export function StadiumTab({
 }) {
   const stadiumCapacity = teamInfo?.stadium_capacity || 10000;
   const division = teamInfo?.division || 1;
-  const fansMood = teamInfo?.fans_mood ?? 60;
+  const fansMood = teamInfo?.fans_mood ?? 30;
   const fansMoodLabel = getFansMoodLabel(fansMood).toUpperCase();
   const ticketPrice = teamInfo?.ticket_price || 15;
   const fanbase = teamInfo?.fanbase > 0 ? teamInfo.fanbase : null;
@@ -177,9 +177,9 @@ export function StadiumTab({
               </span>
               <span
                 className={`text-[10px] font-black uppercase tracking-widest ${
-                  fansMood >= 70
+                  fansMood >= 35
                     ? "text-tertiary"
-                    : fansMood >= 45
+                    : fansMood >= 23
                       ? "text-primary"
                       : "text-red-400"
                 }`}
@@ -190,19 +190,19 @@ export function StadiumTab({
             <div className="h-2 w-full overflow-hidden rounded-full bg-surface-bright">
               <div
                 className={`h-full rounded-full transition-all duration-700 ${
-                  fansMood >= 70
+                  fansMood >= 35
                     ? "bg-gradient-to-r from-tertiary/60 to-tertiary"
-                    : fansMood >= 45
+                    : fansMood >= 23
                       ? "bg-gradient-to-r from-primary/50 to-primary"
                       : "bg-gradient-to-r from-red-500/60 to-red-500"
                 }`}
-                style={{ width: `${Math.max(0, Math.min(100, fansMood))}%` }}
+                style={{ width: `${Math.max(0, Math.min(50, fansMood) * 2)}%` }}
               />
             </div>
             <p className="mt-1.5 text-[10px] uppercase tracking-wider text-on-surface-variant/50">
-              {fansMood >= 70
+              {fansMood >= 35
                 ? "Bancada contigo — as assistências sobem"
-                : fansMood >= 45
+                : fansMood >= 23
                   ? "Bancada expectante — ganha e eles voltam"
                   : "Bancada contra ti — o estádio vai esvaziar"}
             </p>

@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS teams (
   color_secondary TEXT,
   crest TEXT,
   morale INTEGER DEFAULT 25,
-  fans_mood INTEGER DEFAULT 60,
+  fans_mood INTEGER DEFAULT 30,
   ticket_price INTEGER DEFAULT 15,
   fanbase INTEGER DEFAULT 0,
   FOREIGN KEY(manager_id) REFERENCES managers(id)

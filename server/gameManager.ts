@@ -1047,7 +1047,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
             () => {},
           );
           db.run(
-            "ALTER TABLE teams ADD COLUMN fans_mood INTEGER DEFAULT 60",
+            "ALTER TABLE teams ADD COLUMN fans_mood INTEGER DEFAULT 30",
             () => {},
           );
           db.run(
@@ -1779,6 +1779,43 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                                   () => {},
                                 );
                               },
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+
+        // Migração v5 — mood dos adeptos 0–100 → 1–50 (÷2, neutro 30).
+        // Idempotente via marcador scale_v5 (mesmo padrão v4): o marcador é
+        // inserido no 1.º load de cada sala, e as regras por valor só tocam
+        // valores inequívocos da escala antiga (NULL, =50, <1, >50) — a faixa
+        // ambígua 1–49 fica intacta (salas novas) e re-equilibra sozinha pelo
+        // decaimento semanal para a base da divisão (23–33).
+        db.get(
+          "SELECT value FROM game_state WHERE key = 'scale_v5'",
+          (v5Err: Error | null, v5Row: any) => {
+            if (v5Err || v5Row) return; // já migrada
+            db.run(
+              "UPDATE teams SET fans_mood = 30 WHERE fans_mood IS NULL",
+              () => {
+                db.run(
+                  "UPDATE teams SET fans_mood = 25 WHERE fans_mood = 50",
+                  () => {
+                    db.run(
+                      "UPDATE teams SET fans_mood = 1 WHERE fans_mood < 1",
+                      () => {
+                        db.run(
+                          "UPDATE teams SET fans_mood = MAX(1, MIN(50, CAST(ROUND(fans_mood / 2.0) AS INTEGER))) WHERE fans_mood > 50",
+                          () => {
+                            db.run(
+                              "INSERT OR IGNORE INTO game_state (key, value) VALUES ('scale_v5', '1')",
+                              () => {},
                             );
                           },
                         );
