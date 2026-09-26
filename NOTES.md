@@ -1856,3 +1856,9 @@ Plano C1+C2 (quando fizer):
 - `CupTab.jsx` reescrito na apresentação (lógica de filtros intacta): `EmptyState` / `Panel` / `TabBar` / `Badge` (§10), tokens em vez de `zinc/white` hardcoded, tipografia com `font-headline`, cartão de resultado em linha horizontal (brasão ao lado do nome) sem `truncate` agressivo (`title` nos nomes), vencedor com nome completo (não `split(" ")[0]`), etiqueta "Final" sem duplicação, "O meu jogo" uniformizado, `me?.teamId`, `key` estável, `teams.find` → `Map` + `useMemo`.
 - `CupDrawPopup.jsx`: `TeamCrestIcon` local apagado, usa `TeamCrest` (resto do popup intocado — fora do âmbito).
 - Checks: `check:types`/JSDoc OK; lint limpo nos 3 ficheiros (2 erros pré-existentes noutros, confirmados em ficheiros não tocados); `test:mobile` 165/165 e `test:mobile:landscape` 198/198 PASS.
+
+## GameLayout — refatoração Fase 0+1: extrair GameHeader (2026-09-26)
+- Fase 0 baseline (sem alterações): `check:types` OK; lint 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx`); `test:mobile` FAIL 5–10/165 e `:landscape` FAIL 12–32/198 — só harnesses isolados (`useGame` fora de provider, `TOTAL_MATCHWEEKS`), flaky entre passagens (ver nota do flake do harness acima).
+- Fase 1: header (marca, LiveClock, RoomHub+chatPeek, dropdown utilizador, efeito Escape) movido para `client/src/components/layout/GameHeader.jsx` (lê `useGame()` direto; props só `handleLogout`/`setAuthPhase`/`scrollToTop`); `GameLayout.jsx` 1450→1090 linhas.
+- WIP alheio na árvore (não tocado): `LeagueStandings.jsx` modificado com 3 erros de lint (confirmado via `git stash` que são pré-existentes); baseline do lint foi corrida com cache e não os mostrou.
+- Checks: eslint limpo nos 2 ficheiros tocados; `check:types` OK.
