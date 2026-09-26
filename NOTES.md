@@ -2105,3 +2105,8 @@ Plano C1+C2 (quando fizer):
 - `zerozeroScrape.ts`: helper `mediaExists()` (existe e >0B); fotos de jogadores passam a usá-lo (antes só `existsSync`).
 - `fetchZerozeroTUI.ts`: emblema e foto de treinador saltam quando o ficheiro já existe (`já existe, salto` no relatório e no dry-run); nome do treinador continua a atualizar-se mesmo com salto; `--renew` no `CliOpts`+`USAGE`. Plantel (top-up) e cores intocados.
 - Checks: `typecheck` verde; dry-run Bragança com tudo → `emblema: já existe, salto`, `treinador: … (já existe, salto)`, `fotos: 0 novas + 22 já tinham`; dry-run com `--renew` → mostra o que voltaria a buscar. Sem `test:mobile` (sem layout) nem audits (só scripts de fetch).
+
+## zerozero TUI — datas de nascimento (2026-09-26)
+- Nova chave `--info=datasNasc`: extrai a DOB (ISO) da bio (`nascido/a em YYYY-MM-DD`, com sanidade 1950–ano atual) nas páginas de jogador e treinador; campo `dob` aditivo em ambos os tipos (idade e seed intocados).
+- Partilha o HTML com `fotoJogadores`/`fotoTreinador`: o salto passa a ser "foto OK e DOB OK"; relatório `datasNasc: N novas`, treinador marca `+DOB`; `--renew` força releitura.
+- Checks: `typecheck` verde; dry-run Bragança → `datasNasc: 22 novas` (só cache, nada gravado). Sem audits (só fetch).

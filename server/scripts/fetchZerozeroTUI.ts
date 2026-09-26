@@ -31,6 +31,7 @@ import {
   extractPlayers,
   extractCoach,
   extractCoachPhoto,
+  extractDob,
   extractOgImage,
   extractHeaderColor,
   downloadImage,
@@ -81,7 +82,7 @@ function closestName(target: string, names: string[]): string | null {
   return bestD <= 3 ? best : null;
 }
 
-const ALL_INFO = ["plantel", "cores", "emblema", "fotoJogadores", "fotoTreinador"] as const;
+const ALL_INFO = ["plantel", "cores", "emblema", "fotoJogadores", "fotoTreinador", "datasNasc"] as const;
 type InfoKey = (typeof ALL_INFO)[number];
 
 interface CliOpts {
@@ -315,6 +316,7 @@ async function main() {
         { value: "emblema", label: "Emblema (og:image equipa)" },
         { value: "fotoJogadores", label: "Fotos jogadores (og:image /jogador/...)" },
         { value: "fotoTreinador", label: "Foto treinador (/treinador/...)" },
+        { value: "datasNasc", label: "Datas de nascimento (bio /jogador + /treinador)" },
       ],
       initialValues: [],
       required: true,
@@ -397,13 +399,15 @@ async function main() {
           teamNotes.push("emblema: sem og:image de equipa");
         }
       }
-      if (want.has("fotoTreinador")) {
+      if (want.has("fotoTreinador") || want.has("datasNasc")) {
         const coach = extractCoach(html);
         if (coach) {
           const mAny = team.manager as Record<string, unknown>;
           const cid = coach.href.match(/\/([0-9]+)$/)?.[1];
           const knownPhoto = typeof mAny.photo === "string" && mAny.photo ? mAny.photo : null;
-          if (!cli.renew && knownPhoto && mediaExists(path.join(PUBLIC, knownPhoto))) {
+          const needPhotoT = want.has("fotoTreinador") && !(knownPhoto && mediaExists(path.join(PUBLIC, knownPhoto)));
+          const needDobT = want.has("datasNasc") && !mAny.dob;
+          if (!cli.renew && !needPhotoT && !needDobT) {
             if (!dryRun && team.manager.name !== coach.name) team.manager.name = coach.name;
             teamNotes.push(`treinador: ${coach.name} (já existe, salto)`);
           } else if (dryRun) {
@@ -412,7 +416,15 @@ async function main() {
             if (team.manager.name !== coach.name) team.manager.name = coach.name;
             if (cid) {
               const coachHtml = await fetchHtml(`${BASE}${coach.href}`, `coach_${coach.href.replace(/\W/g, "_")}`, cli.refresh);
-              const cphoto = extractCoachPhoto(coachHtml); // og:image é placeholder; foto real está no <img>
+              let dobMark = "";
+              if (needDobT || cli.renew) {
+                const cdob = extractDob(coachHtml);
+                if (cdob && (!mAny.dob || cli.renew)) {
+                  dobMark = " +DOB";
+                  if (!dryRun) mAny.dob = cdob;
+                }
+              }
+              const cphoto = needPhotoT || cli.renew ? extractCoachPhoto(coachHtml) : null; // og:image é placeholder; foto real está no <img>
               const ext = cphoto && cphoto.includes(".png") ? ".png" : ".jpg";
               const photoPath = typeof mAny.photo === "string" && mAny.photo ? mAny.photo : `/coaches/${cid}${ext}`;
               const dest = path.join(PUBLIC, photoPath);
@@ -420,12 +432,14 @@ async function main() {
                 if (await downloadImage(cphoto, dest)) {
                   mAny.zerozeroId = Number(cid);
                   mAny.photo = photoPath;
-                  teamNotes.push(`treinador: ${coach.name} → ${photoPath}`);
+                  teamNotes.push(`treinador: ${coach.name} → ${photoPath}${dobMark}`);
                 } else {
-                  teamNotes.push(`treinador: ${coach.name} (download falhou)`);
+                  teamNotes.push(`treinador: ${coach.name} (download falhou)${dobMark}`);
                 }
-              } else {
-                teamNotes.push(`treinador: ${coach.name} (sem foto na página)`);
+              } else if (needPhotoT) {
+                teamNotes.push(`treinador: ${coach.name} (sem foto na página)${dobMark}`);
+              } else if (dobMark) {
+                teamNotes.push(`treinador: ${coach.name} (${dobMark.trim()})`);
               }
               await sleep(THROTTLE_JOGADOR + jitter());
             }
@@ -434,23 +448,39 @@ async function main() {
           teamNotes.push("treinador: não encontrado");
         }
       }
-      if (want.has("fotoJogadores")) {
+      if (want.has("fotoJogadores") || want.has("datasNasc")) {
+        const wantPhoto = want.has("fotoJogadores");
+        const wantDob = want.has("datasNasc");
         const scraped = extractPlayers(html);
         const byId = new Map(scraped.map((pl) => [pl.id, pl]));
         const byNorm = new Map(scraped.map((pl) => [normName(pl.name), pl]));
         let photos = 0;
         let skipped = 0;
+        let dobs = 0;
         for (const fp of team.players) {
           // A5: ID primeiro, nome só como fallback
           let hit = fp.zerozeroId ? byId.get(String(fp.zerozeroId)) : null;
           if (!hit) hit = byNorm.get(normName(fp.name)) || null;
           if (!hit) continue;
           fp.zerozeroId = Number(hit.id);
-          if (fp.photo && mediaExists(path.join(PUBLIC, fp.photo))) { skipped++; continue; } // já descarregado
+          const needPhoto = wantPhoto && !(fp.photo && mediaExists(path.join(PUBLIC, fp.photo)));
+          const needDob = wantDob && !fp.dob;
+          if (!cli.renew && !needPhoto && !needDob) { skipped++; continue; } // já completo
 
           const pkey = `player_${hit.id}`;
           const ph = dryRun ? cachedHtml(pkey) : await fetchHtml(`${BASE}${hit.href}`, pkey, cli.refresh);
           if (!ph) continue; // dry-run só conta o que está em cache
+          if (needDob || cli.renew) {
+            const pdob = extractDob(ph);
+            if (pdob && (!fp.dob || cli.renew)) {
+              dobs++;
+              if (!dryRun) fp.dob = pdob;
+            }
+          }
+          if (!needPhoto && !cli.renew) {
+            if (!dryRun) await sleep(THROTTLE_JOGADOR + jitter());
+            continue;
+          }
           const ppg = extractOgImage(ph);
           if (!ppg || !ppg.includes("/img/jogadores/")) continue;
           const ext = ppg.includes(".png") ? ".png" : ".jpg";
@@ -465,7 +495,8 @@ async function main() {
             await sleep(THROTTLE_JOGADOR + jitter()); // throttle mesmo quando falha
           }
         }
-        teamNotes.push(`fotos jogadores: ${photos} novas + ${skipped} já tinham (${scraped.length} na página)`);
+        if (wantPhoto) teamNotes.push(`fotos jogadores: ${photos} novas + ${skipped} já tinham (${scraped.length} na página)`);
+        if (wantDob) teamNotes.push(`datasNasc: ${dobs} novas`);
       }
 
       ok++;

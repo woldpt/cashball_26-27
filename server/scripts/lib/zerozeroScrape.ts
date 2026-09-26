@@ -213,6 +213,15 @@ export function mediaExists(absPath: string): boolean {
   }
 }
 
+/** Data de nascimento (ISO) a partir da bio: "nascido em 1997-06-02, em …" / "nascida em …". */
+export function extractDob(html: string): string | null {
+  const m = html.match(/nascid[oa] em (\d{4})-(\d{2})-(\d{2})/i);
+  if (!m) return null;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  if (y < 1950 || y > new Date().getFullYear() || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  return `${m[1]}-${m[2]}-${m[3]}`;
+}
+
 export function isoToEmoji(cc: string | null | undefined): string | null {
   if (!cc || cc.length !== 2) return null;
   try {

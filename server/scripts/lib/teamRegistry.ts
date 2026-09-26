@@ -9,11 +9,11 @@ export interface TeamEntry {
   skillRange: [number, number];
   colors: { primary: string; secondary: string };
   stadium: { name: string; capacity: number };
-  manager: { name: string; photo?: string | null; zerozeroId?: number | null };
+  manager: { name: string; photo?: string | null; zerozeroId?: number | null; dob?: string | null };
   crest?: string | null;
   colors_secondary?: string;
   zerozeroUrl?: string;
-  players: Array<{ name: string; country: string; position: string; age: number | null; zerozeroId?: number | null; photo?: string | null }>;
+  players: Array<{ name: string; country: string; position: string; age: number | null; zerozeroId?: number | null; photo?: string | null; dob?: string | null }>;
 }
 
 export function loadTeams(): { teams: TeamEntry[] } {
