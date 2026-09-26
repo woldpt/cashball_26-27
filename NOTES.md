@@ -1,3 +1,10 @@
+## StadiumTab: review 7/10 → correções (2026-09-26)
+
+- Avaliação 1–10 pedida (código 7,5 · UX 7). Fixes no diálogo de expansão: usava `SEATS_PER_BUILD * 15` (preço hardcodado, mentia com bilhete ≠15€) e título/descrição com «300.000€»/«5.000» fixos — agora `ticketPrice` + `formatCurrency(EXPANSION_COST)`/`SEATS_PER_BUILD`. Fallback hex `#4ade80` → classe `text-primary`. pt-PT: «Actual»→«Atual» (AO90), «Mood»→«Moral dos adeptos».
+- UX decidido por perguntas: 3º KPI (Assistência Média) full-width no mobile via `className="col-span-2 lg:col-span-1"` no SummaryWidget (era órfão a meia largura); «· X lugares» removido do hero (estava em 3 sítios); `aria-label` + `aria-pressed` nos botões de preço. Re-indentados os blocos das 2 colunas (filhos abaixo do pai — colados de um layout flat antigo). Declarado fora: helper das 3 barras (YAGNI), pending do botão Expandir (trava no servidor).
+- **stadiumtab-resp-test** novo (`client/stadiumtab-resp-test.{html,jsx}`): o harness `stadium-resp-test` só cobria `StadiumIllustration` — StadiumTab não era renderizado por nenhum. Fixture com extremos (nome longo, divisão 4, 115k lugares, mood 30, bilhete 30€).
+- Checks: `lint` só os 2 erros pré-existentes · `check:types` OK · `test:mobile`/`:landscape` 5/5 + 6/6 no harness novo (screenshots vistos: 320/390 portrait, 667 landscape — ligaduras de ícones tipo "CONFIRMATION_NUMBER" são artefacto do harness, a fonte Material não carrega lá).
+
 ## TrainingPage: timeout-fallback nos emits + agrupamento único (2026-09-26)
 
 - Review 8/10 do `client/src/components/ui/TrainingPage.jsx` → dois fixes de código (UI intocada). Novo helper `emitWithTimeout(event, args, ms)` local: se o servidor nunca ackar, resolve `null` em vez de pendurar — usado nos 3 emits (`getTrainingFocus`, `getTrainingHistory`, `setTrainingFocus`), apagando o fallback ad-hoc de 4 s que só existia no set. Os dois gets tinham esse buraco: servidor morto = página eterna em «Nenhum»/vazio sem erro.
