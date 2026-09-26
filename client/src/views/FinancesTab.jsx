@@ -448,7 +448,9 @@ export function FinancesTab({
                   Patrocinadores
                 </p>
                 <p className="text-[10px] opacity-40 uppercase">
-                  Receita anual por divisão
+                  {financeData?.sponsorName
+                    ? `${financeData.sponsorName}${financeData?.sponsorProfile ? ` · perfil ${financeData.sponsorProfile}` : ""}`
+                    : "Receita anual por divisão"}
                 </p>
               </div>
               <span className="font-headline text-sm font-bold">

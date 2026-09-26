@@ -1078,6 +1078,17 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
               } catch {}
             },
           );
+          // Mercado de patrocinadores (escolha pré-época): pendência e 3
+          // ofertas em JSON, escolha e tranches por clube/época. Idempotente.
+          db.run("ALTER TABLE teams ADD COLUMN sponsor_pending INTEGER DEFAULT 0", () => {});
+          db.run("ALTER TABLE teams ADD COLUMN sponsor_offers TEXT", () => {});
+          db.run("ALTER TABLE teams ADD COLUMN sponsor_id TEXT", () => {});
+          db.run("ALTER TABLE teams ADD COLUMN sponsor_profile TEXT", () => {});
+          db.run("ALTER TABLE teams ADD COLUMN sponsor_season INTEGER DEFAULT 0", () => {});
+          db.run("ALTER TABLE teams ADD COLUMN sponsor_upfront INTEGER DEFAULT 0", () => {});
+          db.run("ALTER TABLE teams ADD COLUMN sponsor_weekly INTEGER DEFAULT 0", () => {});
+          db.run("ALTER TABLE teams ADD COLUMN sponsor_second_half INTEGER DEFAULT 0", () => {});
+          db.run("ALTER TABLE teams ADD COLUMN sponsor_paid_second INTEGER DEFAULT 0", () => {});
           db.run(
             "ALTER TABLE matches ADD COLUMN attendance INTEGER DEFAULT 0",
             () => {},

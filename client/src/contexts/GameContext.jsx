@@ -164,6 +164,7 @@ export function GameProvider({
 	const [clubNews, setClubNews] = useState([]);
 	const [playerHistoryModal, setPlayerHistoryModal] = useState(null);
 	const [financeData, setFinanceData] = useState(null);
+	const [sponsorState, setSponsorState] = useState({ pending: false, offers: [], chosen: null });
 	const [showTransferSales, setShowTransferSales] = useState(false);
 	const [showTransferPurchases, setShowTransferPurchases] = useState(false);
 	const [showTicketBreakdown, setShowTicketBreakdown] = useState(false);
@@ -832,6 +833,11 @@ year: seasonYear,
 	}, [activeTab, me?.teamId, matchweekCount]);
 
 	useEffect(() => {
+		if (!me?.teamId) return;
+		socket.emit("requestSponsorOffers", { teamId: me.teamId });
+	}, [me?.teamId, seasonYear]);
+
+	useEffect(() => {
 		if (activeTab !== "tactic" || !me?.teamId) return;
 		startTransition(() => setNextMatchSummaryLoading(true));
 		socket.emit("requestNextMatchSummary", { teamId: me.teamId });
@@ -1005,6 +1011,7 @@ year: seasonYear,
 			setClubNews,
 			setPlayerHistoryModal,
 			setFinanceData,
+			setSponsorState,
 			setLockedCoaches,
 			setAwaitingCoaches,
 			setRoomCreator,
@@ -1617,6 +1624,7 @@ year: seasonYear,
 		setSeasonYear(2026);
 		setClubNews([]);
 		setFinanceData(null);
+		setSponsorState({ pending: false, offers: [], chosen: null });
 		setJobOfferModal(null);
 		setSeasonEndModal(null);
 		setPenaltySuspense(null);
@@ -1768,6 +1776,8 @@ year: seasonYear,
 		playerHistoryModal,
 		setPlayerHistoryModal,
 		financeData,
+		sponsorState,
+		setSponsorState,
 		showTransferSales,
 		setShowTransferSales,
 		showTransferPurchases,

@@ -538,6 +538,23 @@ export function cupDrawListParts(pairs, viewerTeamId) {
  * @param {object} n linha `cup_draw`
  * @param {number|string|null} viewerTeamId equipa do treinador
  */
+/** Notícia persistida da escolha do patrocinador (pendência com 🚩). */
+function sponsorOfferArticle(n) {
+  const facts = parseNewsFacts(n) || {};
+  const offers = Array.isArray(facts.offers) ? facts.offers : [];
+  const title = "Escolhe o patrocinador da época";
+  const body =
+    offers.length > 0
+      ? `Três marcas do teu escalão querem o clube — ${offers.map((o) => `${o?.name || "?"} (perfil ${o?.profile || "?"}, total ${formatCurrency(o?.total || 0)})`).join(" · ")}. Fecha a escolha antes do próximo jogo: sem patrocinador não há Pronto.`
+      : "Fecha a escolha do patrocinador antes do próximo jogo: sem patrocinador não há Pronto.";
+  return {
+    ...makeArticle([partText(title)], [partText(body)], null, [], null),
+    title,
+    body,
+    facts: { ...facts, teamId: Number(n?.team_id) || null },
+  };
+}
+
 function cupDrawArticle(n, viewerTeamId) {
   const facts = parseNewsFacts(n) || {};
   const fixtures = Array.isArray(facts.fixtures) ? facts.fixtures : [];
@@ -744,6 +761,7 @@ function newsArticle(n, { owner, related, seller, buyer, viewerTeamId } = {}) {
   if (String(n?.type || "") === "job_offer") return jobOfferArticle(n);
   if (String(n?.type || "") === "board_warning") return boardWarningArticle(n);
   if (String(n?.type || "") === "cup_draw") return cupDrawArticle(n, viewerTeamId);
+  if (String(n?.type || "") === "sponsor_offer") return sponsorOfferArticle(n);
   if (String(n?.type || "") === "league_final") return leagueFinalArticle(n);
   if (String(n?.type || "") === "weekly_finance") return weeklyFinanceArticle(n);
   if (String(n?.type || "") === "injury" || String(n?.type || "") === "suspension")

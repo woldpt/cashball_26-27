@@ -24,6 +24,7 @@ import { Badge } from "../components/shared/Badge.jsx";
 import { PlayerAvatar } from "../components/shared/PlayerAvatar.jsx";
 import { TeamCrest } from "../components/live/TeamCrest.jsx";
 import { PostMatchPitch } from "../components/shared/PostMatchPitch.jsx";
+import { SponsorChooseModal } from "../components/shared/SponsorChooseModal.jsx";
 
 const FILTERS = ["all", "club", "competitions", "squad", "market"];
 
@@ -583,9 +584,21 @@ function WeeklyFinanceTable({ facts }) {
 
 /**
  * Botões de ação por tipo de notícia.
- * @param {{ item: object, inbox: object, onOpenCupBracket?: Function }} props
+ * @param {{ item: object, inbox: object, onOpenCupBracket?: Function, onOpenSponsor?: Function }} props
  */
-function InboxActions({ item, inbox, onOpenCupBracket }) {
+function InboxActions({ item, inbox, onOpenCupBracket, onOpenSponsor }) {
+  if (item.kind === "sponsor") {
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="w-full text-[11px] text-on-surface-variant">
+          Sem escolha não há Pronto. A marca é única por sala e época.
+        </p>
+        <Button variant="primary" size="sm" onClick={() => onOpenSponsor?.()}>
+          Escolher patrocinador
+        </Button>
+      </div>
+    );
+  }
   if (item.kind === "contract") {
     const busy = !!item.extra?.answering;
     return (
@@ -698,6 +711,7 @@ export function JournalTab({
 }) {
   const inbox = useInbox();
   const { selected, selectNextUnread } = inbox;
+  const [sponsorOpen, setSponsorOpen] = useState(false);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const detailRef = useRef(null);
@@ -1038,7 +1052,7 @@ export function JournalTab({
                 )}
 
                 {/* Botões de ação, sob filete */}
-                {["contract", "job", "board", "cupdraw"].includes(
+                {["contract", "job", "board", "cupdraw", "sponsor"].includes(
                   selected.kind,
                 ) && (
                   <div className="mt-4 border-t border-outline-variant/25 pt-3">
@@ -1046,6 +1060,7 @@ export function JournalTab({
                       item={selected}
                       inbox={inbox}
                       onOpenCupBracket={onOpenCupBracket}
+                      onOpenSponsor={() => setSponsorOpen(true)}
                     />
                   </div>
                 )}
@@ -1054,6 +1069,7 @@ export function JournalTab({
           </AnimatePresence>
         </section>
       </div>
+      <SponsorChooseModal open={sponsorOpen} onClose={() => setSponsorOpen(false)} />
     </div>
   );
 }

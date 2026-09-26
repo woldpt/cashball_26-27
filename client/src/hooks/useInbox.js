@@ -100,6 +100,7 @@ export function useInbox() {
     me,
     calendarIndex,
     seasonYear,
+    sponsorState,
   } = useGame();
 
   const storeKey = inboxReadKey(me?.roomCode, me?.name);
@@ -140,6 +141,11 @@ export function useInbox() {
   );
 
   const currentDate = formatInboxDate((calendarIndex ?? 0) + 1, seasonYear);
+
+  // Primitivo fora do useMemo: o compilador preserva a memoização manual
+  // com deps primitivas (objeto inteiro chumbava o lint).
+  const sponsorPending = sponsorState?.pending === true;
+  const myTeamId = me?.teamId;
 
   // ── Paginação por época: mostra a mais recente, revela uma a pedido ────
   // (o servidor envia todas as épocas; linhas sem ano caem na época atual).
@@ -393,6 +399,31 @@ export function useInbox() {
     );
     const pendingJobToId =
       jobOfferModal?.toTeam?.id != null ? String(jobOfferModal.toTeam.id) : null;
+    // Transitório: escolha de patrocinador pendente sem par gravado
+    // visível (época antiga paginada ou linha ainda a chegar). Igual às
+    // renovações: 🚩 até o clique registar.
+    const hasPersistedSponsor = newsRows.some(
+      (n) => String(n?.type || "") === "sponsor_offer" && Number(n?.team_id) === Number(myTeamId),
+    );
+    if (sponsorPending && myTeamId != null && !hasPersistedSponsor) {
+      const title = "🚩 Patrocinador da época";
+      list.push({
+        id: `sponsor-${myTeamId}`,
+        cat: "club",
+        date: currentDate,
+        title,
+        body: "Três marcas do teu escalão querem o clube. Fecha a escolha antes do próximo jogo: sem patrocinador não há Pronto.",
+        titleParts: [partText(title)],
+        bodyParts: [partText("Três marcas do teu escalão querem o clube. Fecha a escolha antes do próximo jogo: sem patrocinador não há Pronto.")],
+        media: { player: null, teams: [] },
+        redFlag: true,
+        kind: "sponsor",
+        ref: null,
+        newsType: "sponsor_offer",
+        facts: { teamId: Number(myTeamId) },
+      });
+    }
+
     for (const it of list) {
       if (!it.facts || !it.newsType) continue;
       if (it.newsType === "contract_request") {
@@ -408,6 +439,14 @@ export function useInbox() {
             requestedWage: it.facts?.requestedWage ?? null,
             answering: answering.has(Number(pid)),
           };
+        }
+      } else if (it.newsType === "sponsor_offer") {
+        const pending = sponsorPending && Number(it.facts?.teamId) === Number(myTeamId);
+        it.redFlag = pending;
+        it.kind = pending ? "sponsor" : "info";
+        if (pending) {
+          it.title = withFlag(it.title, it.titleParts).title;
+          it.titleParts = withFlag(it.title, it.titleParts).parts;
         }
       } else if (it.newsType === "job_offer") {
         const toId = it.media?.teams?.[0]?.id;
@@ -452,6 +491,8 @@ export function useInbox() {
     calendarIndex,
     seasonYear,
     currentDate,
+    sponsorPending,
+    myTeamId,
     me?.teamId,
   ]);
 

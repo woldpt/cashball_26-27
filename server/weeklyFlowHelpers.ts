@@ -1,5 +1,6 @@
 import type { ActiveGame, PlayerSession, Tactic } from "./types";
 import type { CalendarEntry } from "./gameConstants";
+import { SPONSOR_SECOND_TRANCHE_SLOT, sponsorById } from "./game/sponsors";
 import {
   SEASON_CALENDAR,
   DIVISION_NAMES,
@@ -1645,6 +1646,41 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           [income, Number(div)],
         );
       }
+
+      // Patrocinadores: prestação semanal do perfil B + 2.ª tranche do
+      // perfil C na semana 10. Cada crédito tem linha `sponsor` no Jornal
+      // para a reconciliação do gráfico não esmagar valores (bug antigo
+      // dos prémios creditados sem diário). Salas antigas sem as colunas
+      // caem no catch com lista vazia.
+      try {
+        const sponsorRows: any[] = await dbAll(
+          game.db,
+          `SELECT id, sponsor_id, sponsor_weekly, sponsor_second_half, sponsor_paid_second
+           FROM teams WHERE sponsor_season = ? AND (sponsor_weekly > 0 OR (sponsor_second_half > 0 AND sponsor_paid_second = 0))`,
+          [game.season],
+        );
+        for (const t of sponsorRows) {
+          const sName = sponsorById(String(t.sponsor_id || ""))?.name || "Patrocinador";
+          if ((t.sponsor_weekly || 0) > 0) {
+            await dbRun(game.db, "UPDATE teams SET budget = budget + ? WHERE id = ?", [t.sponsor_weekly, t.id]);
+            logClubNews(game, "sponsor", `${sName} — prestação semanal`, t.id, {
+              amount: t.sponsor_weekly,
+              description: `Patrocínio ${sName} (época ${game.year})`,
+            });
+          }
+          if (slot === SPONSOR_SECOND_TRANCHE_SLOT && (t.sponsor_second_half || 0) > 0 && !t.sponsor_paid_second) {
+            await dbRun(
+              game.db,
+              "UPDATE teams SET budget = budget + ?, sponsor_paid_second = 1 WHERE id = ?",
+              [t.sponsor_second_half, t.id],
+            );
+            logClubNews(game, "sponsor", `${sName} — 2.ª tranche`, t.id, {
+              amount: t.sponsor_second_half,
+              description: `Patrocínio ${sName}, segunda metade (época ${game.year})`,
+            });
+          }
+        }
+      } catch {}
 
       // Dívida/capacidade/salários ANTES dos descontos — os mesmos valores
       // alimentam o UPDATE de despesas e o resumo do Jornal. Em erro de

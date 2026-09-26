@@ -141,7 +141,22 @@ export function registerGameplaySocketHandlers(
       game.gamePhase === "lobby" &&
       isLobbyStarter((game as any).currentFixtures, playerState.teamId)
     ) {
-      game.db.all(
+      // Patrocinador por escolher (🚩 no Jornal) bloqueia o Pronto como as
+      // renovações. Salas antigas sem a coluna: fail-open (tRow a null).
+      game.db.get(
+        "SELECT sponsor_pending FROM teams WHERE id = ?",
+        [playerState.teamId],
+        (_sErr: any, tRow: any) => {
+          if (tRow?.sponsor_pending === 1) {
+            console.warn(
+              `[${game.roomCode}] ⛔ ${playerState.name} ready recusado: sponsor pendente`,
+            );
+            socket.emit("systemMessage", {
+              text: "⛔ Tens o patrocinador da época por escolher no Jornal.",
+            });
+            return;
+          }
+          game.db.all(
         "SELECT * FROM players WHERE team_id = ?",
         [playerState.teamId],
         (err: any, rows: any[]) => {
@@ -193,6 +208,8 @@ export function registerGameplaySocketHandlers(
           );
           emitPresence(game);
           checkAllReady(game);
+        },
+      );
         },
       );
       return;

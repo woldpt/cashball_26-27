@@ -59,6 +59,14 @@ export function registerNewsListeners(handlers, refs, ctx) {
 		});
 	});
 	socket.on("financeData", (data) => handlers.setFinanceData(data));
+	socket.on("sponsorState", (data) => {
+		if (!ctx.inRoom()) return;
+		handlers.setSponsorState(
+			data && typeof data === "object"
+				? { pending: !!data.pending, offers: Array.isArray(data.offers) ? data.offers : [], chosen: data.chosen ?? null, taken: !!data.taken }
+				: { pending: false, offers: [], chosen: null },
+		);
+	});
 	socket.on("stadiumBuilt", ({ teamId }) => {
 			// Re-pedir financeData se somos o clube em questão
 		const currentMe = refs.meRef.current;
@@ -76,6 +84,7 @@ export function registerNewsListeners(handlers, refs, ctx) {
 		socket.off("playerHistoryData");
 		socket.off("playerSearchResults");
 		socket.off("financeData");
+		socket.off("sponsorState");
 		socket.off("stadiumBuilt");
 	};
 }

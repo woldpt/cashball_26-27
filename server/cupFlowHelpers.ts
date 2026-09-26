@@ -21,6 +21,7 @@ import {
   incrementSubCount,
 } from "./gameConstants";
 import { clearPhaseTimer } from "./matchFlowHelpers";
+import { drawNpcChoice, drawOffers, drawOffersAny } from "./game/sponsors";
 import { generateAITactic } from "./game/matchCalculations";
 import { getEffectiveSkill, getMatchFatigueSnapshot, queueMatchDeltaWrites } from "./game/engine";
 import { getTeamsWithCoachNames, logClubNews, logClubNewsOnce, logMatchMedicalNews, logPostMatchRecap, snapshotBalanceHistory } from "./coreHelpers";
@@ -351,7 +352,12 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 	}
 
 	async function paySponsorRevenue(game: ActiveGame, allTeams: any[], year: number) {
+		// Transição: equipas que já escolheram patrocinador nesta época
+		// (sponsor_season = época finda) receberam via mercado (upfront +
+		// semanais) e saltam o valor fixo antigo — sem duplo pagamento.
+		const season = (game as any).season;
 		for (const team of allTeams) {
+			if ((team.sponsor_season || 0) === season) continue;
 			const sponsorAmount = SPONSOR_REVENUE_BY_DIVISION[team.division] || 0;
 			if (sponsorAmount > 0) {
 				await new Promise((resolve) => {
@@ -374,6 +380,77 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			text: "📺 Receitas de patrocinadores distribuídas.",
 			broadcast: true,
 		});
+	}
+
+	/**
+	 * Abre o mercado de patrocinadores da nova época (pós-promoções).
+	 * NPC escolhem logo ao acaso; humanos recebem 3 ofertas + notícia
+	 * `sponsor_offer` com 🚩 bloqueante (como as renovações) e escolhem no
+	 * Jornal. A marca é única por sala/época (reserva no clique, com
+	 * regeneração em caso de colisão).
+	 * // ponytail: NPC primeiro + regen no clique em vez de draft sequencial;
+	 * // draft a sério (ordem inversa, espera por todos) se as colisões
+	 * // em salas cheias de humanos o pedirem.
+	 */
+	async function openSponsorMarket(game: ActiveGame, allTeams: any[]) {
+		const season = (game as any).season;
+		const taken = new Set<string>();
+		const coaches = Object.values((game as any).playersByName || {}) as any[];
+		const run = (sql: string, params: any[] = []) =>
+			new Promise<void>((resolve) => {
+				(game.db as any).run(sql, params, () => resolve());
+			});
+		// Limpa a época anterior: tudo recomeça a zeros.
+		await run(
+			"UPDATE teams SET sponsor_pending = 0, sponsor_offers = NULL, sponsor_id = NULL, sponsor_profile = NULL, sponsor_season = 0, sponsor_upfront = 0, sponsor_weekly = 0, sponsor_second_half = 0, sponsor_paid_second = 0",
+		);
+		const humans = allTeams.filter((t: any) => (t as any).coach_is_human === 1);
+		const npcs = allTeams.filter((t: any) => (t as any).coach_is_human !== 1);
+		for (const team of npcs) {
+			const choice = drawNpcChoice(team.division, taken) ?? drawOffersAny(taken, 1)[0] ?? null;
+			if (!choice) continue;
+			taken.add(choice.sponsorId);
+			await run(
+				"UPDATE teams SET sponsor_id = ?, sponsor_profile = ?, sponsor_season = ?, sponsor_upfront = ?, sponsor_weekly = ?, sponsor_second_half = ?, sponsor_pending = 0 WHERE id = ?",
+				[choice.sponsorId, choice.profile, season, choice.upfront, choice.weekly, choice.secondHalf, team.id],
+			);
+			if (choice.upfront > 0) {
+				await run("UPDATE teams SET budget = budget + ? WHERE id = ?", [choice.upfront, team.id]);
+			}
+			try {
+				logClubNews(game, "sponsor", `${choice.name} patrocina o clube`, team.id, {
+					amount: choice.upfront > 0 ? choice.upfront : choice.total,
+					description: `Patrocinador da época (perfil ${choice.profile}, total ${choice.total}€)`,
+					year: (game as any).year,
+					matchweek: 1,
+					slot: 1,
+				}, io);
+			} catch {}
+		}
+		for (const team of humans) {
+			let offers = drawOffers(team.division, taken, 3);
+			if (offers.length === 0) offers = drawOffersAny(taken, 3);
+			// Reserva frouxa: as ofertas não bloqueiam o pote (só o clique
+			// reserva); em colisão o clique regenera a oferta.
+			await run("UPDATE teams SET sponsor_pending = 1, sponsor_offers = ?, sponsor_season = ? WHERE id = ?", [
+				JSON.stringify(offers),
+				season,
+				team.id,
+			]);
+			try {
+				logClubNews(game, "sponsor_offer", `Escolhe o patrocinador da época`, team.id, {
+					description: JSON.stringify({ v: 1, offers }),
+					year: (game as any).year,
+					matchweek: 1,
+					slot: 1,
+				}, io);
+			} catch {}
+			const coach = coaches.find((p: any) => p.teamId === team.id && p.socketId);
+			if (coach?.socketId) {
+				io.to(coach.socketId).emit("sponsorState", { pending: true, offers, chosen: null });
+			}
+		}
+		io.to(game.roomCode).emit("globalNewsUpdated");
 	}
 
 	async function payTopScorerPrize(game: ActiveGame, year: number) {
@@ -690,6 +767,8 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			);
 		}
 		saveGameState(game);
+
+		await openSponsorMarket(game, updatedTeams);
 
 		io.to(game.roomCode).emit("teamsData", updatedTeams);
 		io.to(game.roomCode).emit("topScorers", []); // Reset top scorers for new season

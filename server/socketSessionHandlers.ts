@@ -1,6 +1,7 @@
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory, logClubNews } from "./coreHelpers";
 import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES, FRIENDLY_ROUND_NAME, SEASON_CALENDAR } from "./gameConstants";
+import { drawOffers, drawOffersAny, sponsorById } from "./game/sponsors";
 import { getGlobalMessages, CHAT_RETENTION_MS } from "./db/globalDatabase";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { upcomingMatchweek } from "./game/lineupReady";
@@ -1564,6 +1565,102 @@ export function registerSessionSocketHandlers(
 		);
 	});
 
+	/** Estado do patrocinador de um clube para o `sponsorState` (Jornal + modal). */
+	async function buildSponsorState(game: ActiveGame, teamId: number) {
+		const row = await runGet(game.db, "SELECT sponsor_pending, sponsor_offers, sponsor_id, sponsor_profile, sponsor_upfront, sponsor_weekly, sponsor_second_half FROM teams WHERE id = ?", [teamId]);
+		const pending = (row?.sponsor_pending || 0) === 1;
+		const offers = pending ? safeParse<any[]>(row?.sponsor_offers, []) : [];
+		const brand = row?.sponsor_id ? sponsorById(String(row.sponsor_id)) : undefined;
+		return {
+			pending,
+			offers: Array.isArray(offers) ? offers : [],
+			chosen: brand ? {
+				sponsorId: brand.id,
+				name: brand.name,
+				sector: brand.sector,
+				profile: row?.sponsor_profile || null,
+				bg: brand.bg,
+				fg: brand.fg,
+				glyph: brand.glyph,
+				shape: brand.shape,
+				total: (Number(row?.sponsor_upfront) || 0) + (Number(row?.sponsor_weekly) || 0) * 20 + (Number(row?.sponsor_second_half) || 0),
+			} : null,
+		};
+	}
+
+	socket.on("requestSponsorOffers", async ({ teamId }: { teamId?: number } = {}) => {
+		const game = getGameBySocket(socket.id);
+		if (!game || !teamId) return;
+		try {
+			socket.emit("sponsorState", await buildSponsorState(game, teamId));
+		} catch {
+			socket.emit("sponsorState", { pending: false, offers: [], chosen: null });
+		}
+	});
+
+	/**
+	 * Escolha do patrocinador (clique no Jornal). Reserva a marca por
+	 * sala/época em transação: em colisão com outro clube, regenera só
+	 * essa oferta e devolve `taken: true` para o modal refrescar.
+	 */
+	socket.on("chooseSponsor", async ({ teamId, sponsorId }: { teamId?: number; sponsorId?: string } = {}) => {
+		const game = getGameBySocket(socket.id);
+		const player = game ? getPlayerBySocket(game, socket.id) : null;
+		if (!game || !player || !teamId || !sponsorId) return;
+		if (player.teamId !== teamId) return;
+		const dbRunRaw = (sql: string, params: any[] = []) =>
+			new Promise<void>((resolve, reject) => {
+				(game.db as any).run(sql, params, (err: any) => (err ? reject(err) : resolve()));
+			});
+		try {
+			const team = await runGet(game.db, "SELECT division, sponsor_pending, sponsor_offers, sponsor_season FROM teams WHERE id = ?", [teamId]);
+			if (!team || !team.sponsor_pending) {
+				socket.emit("sponsorState", await buildSponsorState(game, teamId));
+				return;
+			}
+			const offers = safeParse<any[]>(team.sponsor_offers, []);
+			const offer = (Array.isArray(offers) ? offers : []).find((o: any) => o?.sponsorId === sponsorId);
+			if (!offer) {
+				socket.emit("sponsorState", await buildSponsorState(game, teamId));
+				return;
+			}
+			const clash = await runGet(game.db, "SELECT id FROM teams WHERE sponsor_season = ? AND sponsor_id = ? AND id != ?", [game.season, sponsorId, teamId]);
+			if (clash) {
+				const takenRows = await runAll(game.db, "SELECT sponsor_id FROM teams WHERE sponsor_season = ? AND sponsor_id IS NOT NULL", [game.season]);
+				const taken = new Set((takenRows || []).map((r: any) => String(r.sponsor_id)));
+				const fresh = drawOffers(team.division, taken, 1)[0] ?? drawOffersAny(taken, 1)[0] ?? null;
+				const next = (Array.isArray(offers) ? offers : []).map((o: any) => (o?.sponsorId === sponsorId && fresh ? fresh : o));
+				await dbRunRaw("UPDATE teams SET sponsor_offers = ? WHERE id = ?", [JSON.stringify(next), teamId]);
+				socket.emit("sponsorState", { pending: true, offers: next, chosen: null, taken: true });
+				return;
+			}
+			await dbRunRaw("BEGIN TRANSACTION");
+			try {
+				await dbRunRaw(
+					"UPDATE teams SET sponsor_id = ?, sponsor_profile = ?, sponsor_pending = 0, sponsor_upfront = ?, sponsor_weekly = ?, sponsor_second_half = ?, sponsor_paid_second = 0, sponsor_season = ? WHERE id = ?",
+					[offer.sponsorId, offer.profile, offer.upfront || 0, offer.weekly || 0, offer.secondHalf || 0, game.season, teamId],
+				);
+				if ((offer.upfront || 0) > 0) {
+					await dbRunRaw("UPDATE teams SET budget = budget + ? WHERE id = ?", [offer.upfront, teamId]);
+				}
+				await dbRunRaw(
+					`INSERT INTO club_news (team_id, type, title, description, player_id, player_name, related_team_id, related_team_name, amount, matchweek, slot, year)
+					 VALUES (?, 'sponsor', ?, ?, NULL, NULL, NULL, NULL, ?, ?, ?, ?)`,
+					[teamId, `${offer.name} é o novo patrocinador`, `Escolha do treinador (perfil ${offer.profile}, total ${offer.total}€)`, offer.upfront > 0 ? offer.upfront : offer.total, game.matchweek, 1, game.year],
+				);
+				await dbRunRaw("COMMIT");
+			} catch (txErr) {
+				await dbRunRaw("ROLLBACK").catch(() => {});
+				throw txErr;
+			}
+			socket.emit("sponsorState", await buildSponsorState(game, teamId));
+			io.to(game.roomCode).emit("globalNewsUpdated");
+		} catch (chooseErr: any) {
+			console.error(`[${game.roomCode}] chooseSponsor error:`, chooseErr?.message || chooseErr);
+			socket.emit("systemMessage", { text: "⛔ Não foi possível registar o patrocinador. Tenta de novo." });
+		}
+	});
+
 	socket.on(
 		"requestFinanceData",
 		async ({ teamId }: { teamId?: number } = {}) => {
@@ -1690,11 +1787,20 @@ export function registerSessionSocketHandlers(
 
 				const team = await runGet(
 					game.db,
-					"SELECT division, budget FROM teams WHERE id = ?",
+					"SELECT division, budget, sponsor_id, sponsor_profile FROM teams WHERE id = ?",
 					[teamId],
 				);
-				const sponsorRevenue =
-					SPONSOR_REVENUE_BY_DIVISION[team?.division || 4] || 0;
+				// Patrocínio real recebido (upfront + tranches com linhas `sponsor`
+				// no diário); sem linhas, o fixo antigo por divisão (salas e
+				// épocas anteriores ao mercado).
+				let sponsorRevenue = SPONSOR_REVENUE_BY_DIVISION[team?.division || 4] || 0;
+				try {
+					const paid = await runGet(game.db, "SELECT COALESCE(SUM(amount), 0) AS s FROM club_news WHERE team_id = ? AND type = 'sponsor' AND year = ?", [teamId, currentYear]);
+					if (paid && Number(paid.s) > 0) sponsorRevenue = Number(paid.s);
+				} catch {
+					// Mantém o fixo.
+				}
+				const sponsorChosen = team?.sponsor_id ? sponsorById(String(team.sponsor_id)) : undefined;
 
 				// ── Balance history ──────────────────────────────────────────────
 				// Saldo real de fim de semana, gravado em team_balance_history
@@ -1771,6 +1877,8 @@ export function registerSessionSocketHandlers(
 					totalTransferExpenses,
 					totalStadiumExpenses,
 					sponsorRevenue,
+					sponsorName: sponsorChosen?.name || null,
+					sponsorProfile: team?.sponsor_profile || null,
 					homeMatchesPlayed: homeMatches.length,
 					cupHomeMatchesPlayed: cupHomeMatches.length,
 					totalHomeMatchesPlayed: homeMatches.length + cupHomeMatches.length,
