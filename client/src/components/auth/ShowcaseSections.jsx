@@ -1,3 +1,4 @@
+import { FormDots } from "../shared/FormDots.jsx";
 import { Panel } from "../shared/Panel.jsx";
 import { PlayerRow } from "../shared/PlayerRow.jsx";
 import { SummaryWidget } from "../shared/SummaryWidget.jsx";
@@ -7,26 +8,6 @@ import {
 	SHOWCASE_TABLE,
 	SHOWCASE_WIDGETS,
 } from "./landingShowcase.js";
-
-/**
- * Pontinhos de forma (V=vitória, E=empate, resto=derrota), como nas
- * tabelas do jogo.
- *
- * @param {{ form?: string }} props
- * @returns {JSX.Element}
- */
-const FormDots = ({ form = "" }) => (
-	<span className="inline-flex justify-end gap-1">
-		{form.split("").map((r, i) => (
-			<span
-				key={i}
-				className={`w-2 h-2 rounded-full ${
-					r === "V" ? "bg-emerald-500" : r === "E" ? "bg-amber-500" : "bg-red-500"
-				}`}
-			/>
-		))}
-	</span>
-);
 
 /**
  * Secções-montra sob o hero: widgets, plantel, mini-classificação e jornal —

@@ -1,53 +1,17 @@
-import { useState } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
+import { DIVISION_NAMES, SEASON_JORNADAS } from "../../constants/index.js";
+import { EmptyState } from "../shared/EmptyState.jsx";
+import { FormDots } from "../shared/FormDots.jsx";
+import { initialsFromName } from "../../utils/initials.js";
 import { PlayerLink } from "../shared/PlayerLink.jsx";
 import { TrendArrow } from "../shared/TrendArrow.jsx";
 import { rankStandings } from "../../utils/standingsRank.js";
 import { staggerFadeProps } from "../../motion.js";
 
-const DIVISION_NAMES = {
-  1: "Primeira Liga",
-  2: "Segunda Liga",
-  3: "Liga 3",
-  4: "Campeonato de Portugal",
-  5: "Distritais",
-};
-
-const TOTAL_MATCHWEEKS = 14;
-
 // Returns "01", "02", ... "10", "11"
 function padPos(n) {
   return String(n).padStart(2, "0");
-}
-
-// Returns up to 2 initials ("José Maria Silva" -> "JM")
-function getInitials(name = "") {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => (w[0] || "").toUpperCase())
-    .join("");
-}
-
-// Renders 5 colored dots for form (most recent last = rightmost)
-function FormDots({ form = "" }) {
-  // form is a string like "VVDEL" (V=win, D=draw, others=loss)
-  const chars = form.split("").slice(-5);
-  // pad to 5
-  while (chars.length < 5) chars.unshift(null);
-  return (
-    <div className="flex justify-end gap-0.75">
-      {chars.map((r, i) => {
-        let cls = "w-2 h-2 rounded-full ";
-        if (r === "V") cls += "bg-emerald-500";
-        else if (r === "E") cls += "bg-amber-500";
-        else if (r === null) cls += "bg-surface-container-high";
-        else cls += "bg-red-500"; // D = derrota
-        return <span key={i} className={cls} />;
-      })}
-    </div>
-  );
 }
 
 function DivisionTable({
@@ -60,23 +24,19 @@ function DivisionTable({
   coachNames,
   onTeamClick,
 }) {
-  const divTeams = teams
-    .filter((t) => t.division === div)
-    .sort(
-      (a, b) =>
-        (b.points || 0) - (a.points || 0) ||
-        (b.goals_for || 0) -
-          (b.goals_against || 0) -
-          ((a.goals_for || 0) - (a.goals_against || 0)) ||
-        (b.goals_for || 0) - (a.goals_for || 0) ||
-        String(a.name || "").localeCompare(String(b.name || "")),
-    );
+  // Mesmo comparador do servidor, via rankStandings (fonte única de ordem).
+  const divTeams = useMemo(
+    () => rankStandings(teams.filter((t) => t.division === div)),
+    [teams, div],
+  );
 
   // Posições da jornada anterior (para as setinhas de subida/descida).
-  const prevRanked = rankStandings(
-    (prevStandings || []).filter((t) => t.division === div),
-  );
-  const prevIndex = new Map(prevRanked.map((t, i) => [String(t.id), i]));
+  const prevIndex = useMemo(() => {
+    const prevRanked = rankStandings(
+      (prevStandings || []).filter((t) => t.division === div),
+    );
+    return new Map(prevRanked.map((t, i) => [String(t.id), i]));
+  }, [prevStandings, div]);
 
   if (!divTeams.length) return null;
 
@@ -153,6 +113,13 @@ function DivisionTable({
                   key={t.id}
                   {...staggerFadeProps(idx)}
                   onClick={() => onTeamClick(t)}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onTeamClick(t);
+                    }
+                  }}
                   className={`cursor-pointer transition-colors ${rowBg} ${leftBorder}`}
                 >
                   {/* Position */}
@@ -194,7 +161,7 @@ function DivisionTable({
                           title={coachNames[t.id]}
                           className="shrink-0 px-1 sm:px-1.5 py-px bg-amber-400/15 text-amber-400 text-[8px] font-black rounded-sm border border-amber-400/30 whitespace-nowrap"
                         >
-                          <span className="sm:hidden">{getInitials(coachNames[t.id])}</span>
+                          <span className="sm:hidden">{initialsFromName(coachNames[t.id])}</span>
                           <span className="hidden sm:inline">{coachNames[t.id]}</span>
                         </span>
                       )}
@@ -263,6 +230,14 @@ function DivisionTable({
 }
 
 function MatchweekResults({ allMatchResults, completedJornada, teams }) {
+  const teamMap = useMemo(() => {
+    const map = {};
+    teams.forEach((t) => {
+      map[t.id] = t;
+    });
+    return map;
+  }, [teams]);
+
   const matchweeks = Object.keys(allMatchResults)
     .map(Number)
     .filter((mw) => mw <= completedJornada)
@@ -270,15 +245,10 @@ function MatchweekResults({ allMatchResults, completedJornada, teams }) {
 
   if (!matchweeks.length) return null;
 
-  const teamMap = {};
-  teams.forEach((t) => {
-    teamMap[t.id] = t;
-  });
-
   return (
     <section className="bg-surface-container rounded-md overflow-hidden">
       <div className="px-4 py-2.5 bg-surface-container-high border-b border-outline-variant/20 flex items-center gap-2">
-        <span className="text-on-surface-variant/60">📋</span>
+        <span className="material-symbols-outlined text-[14px] text-on-surface-variant/60" aria-hidden>receipt_long</span>
         <h3 className="font-headline font-black text-xs tracking-tight uppercase text-on-surface-variant/60">
           Resultados das Jornadas
         </h3>
@@ -298,8 +268,6 @@ function MatchweekResults({ allMatchResults, completedJornada, teams }) {
 }
 
 function MatchweekRow({ matchweek, matches, teamMap }) {
-  const [expanded, setExpanded] = useState(false);
-
   // Agrupar jogos por divisão
   const byDivision = {};
   matches.forEach((match) => {
@@ -310,11 +278,8 @@ function MatchweekRow({ matchweek, matches, teamMap }) {
   const divisionOrder = Object.keys(byDivision).map(Number).sort((a, b) => a - b);
 
   return (
-    <div className="transition-colors hover:bg-surface-container-high/40">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-4 py-2.5 text-left"
-      >
+    <details className="group transition-colors hover:bg-surface-container-high/40">
+      <summary className="w-full flex items-center justify-between px-4 py-2.5 text-left cursor-pointer list-none [&::-webkit-details-marker]:hidden">
         <div className="flex items-center gap-3">
           <span className="text-on-surface-variant/40 text-[10px] font-black uppercase tracking-widest">
             J{matchweek}
@@ -323,14 +288,11 @@ function MatchweekRow({ matchweek, matches, teamMap }) {
             {matches.length} jogos
           </span>
         </div>
-        <span
-          className={`text-[10px] text-on-surface-variant/30 transition-transform ${expanded ? "rotate-90" : ""}`}
-        >
-          ▶
+        <span className="material-symbols-outlined text-[12px] text-on-surface-variant/30 transition-transform group-open:rotate-90">
+          chevron_right
         </span>
-      </button>
-      {expanded && (
-        <div className="pb-2.5">
+      </summary>
+      <div className="pb-2.5">
           {divisionOrder.map((div) => (
             <div key={div}>
               <div className="px-4 py-1 bg-surface-container-low/50 border-y border-outline-variant/10">
@@ -375,9 +337,8 @@ function MatchweekRow({ matchweek, matches, teamMap }) {
               </div>
             </div>
           ))}
-        </div>
-      )}
-    </div>
+      </div>
+    </details>
   );
 }
 
@@ -387,7 +348,7 @@ function GoldenBootSidebar({ topScorers, myTeamId }) {
   return (
     <section className="bg-surface-container rounded-md overflow-hidden">
       <div className="px-4 py-2.5 bg-tertiary/20 border-b border-tertiary/20 flex items-center gap-2">
-        <span className="text-tertiary text-sm">⚽</span>
+        <span className="material-symbols-outlined text-[14px] text-tertiary" aria-hidden>sports_soccer</span>
         <h3 className="font-headline font-black text-xs tracking-tight uppercase text-tertiary">
           Corrida ao Título de Goleador
         </h3>
@@ -472,7 +433,7 @@ function AllTimeChampions({ allChampions }) {
   return (
     <section className="bg-surface-container rounded-md overflow-hidden">
       <div className="px-4 py-2.5 bg-surface-container-high border-b border-outline-variant/20 flex items-center gap-2">
-        <span className="text-tertiary">🏆</span>
+        <span className="material-symbols-outlined text-[14px] text-tertiary" aria-hidden>emoji_events</span>
         <h3 className="font-headline font-black text-xs tracking-tight uppercase text-on-surface">
           Palco de Honra — Todos os Campeões
         </h3>
@@ -546,14 +507,31 @@ export function LeagueStandings({
   standingsStale = false,
   prevStandings = [],
 }) {
-  const humanTeamIds = new Set(
-    players.filter((p) => p.teamId != null).map((p) => String(p.teamId)),
+  const humanTeamIds = useMemo(
+    () =>
+      new Set(
+        players.filter((p) => p.teamId != null).map((p) => String(p.teamId)),
+      ),
+    [players],
   );
-  const coachNames = {};
-  if (teams?.length) {
-    teams.forEach((t) => {
-      if (t.coach_name) coachNames[t.id] = t.coach_name;
+  const coachNames = useMemo(() => {
+    const map = {};
+    (teams || []).forEach((t) => {
+      if (t.coach_name) map[t.id] = t.coach_name;
     });
+    return map;
+  }, [teams]);
+
+  if (!teams?.length) {
+    return (
+      <div className="space-y-4">
+        <EmptyState
+          emoji="📊"
+          title="Época ainda não iniciada"
+          description="As classificações aparecem quando a época arrancar."
+        />
+      </div>
+    );
   }
 
   return (
@@ -566,7 +544,7 @@ export function LeagueStandings({
           </h2>
           <p className="text-xs text-on-surface-variant font-medium mt-0.5">
             {completedJornada > 0
-              ? `Jornada ${completedJornada} de ${TOTAL_MATCHWEEKS} concluída`
+              ? `Jornada ${completedJornada} de ${SEASON_JORNADAS} concluída`
               : "Época ainda não iniciada"}
           </p>
         </div>
@@ -606,8 +584,6 @@ export function LeagueStandings({
         {/* Sidebar */}
         <div className="xl:col-span-3 flex flex-col gap-4">
           <GoldenBootSidebar topScorers={topScorers} myTeamId={myTeamId} />
-
-
         </div>
       </div>
 

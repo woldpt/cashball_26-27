@@ -2,6 +2,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { DIVISION_NAMES } from "../../constants/index.js";
 import { computeVirtualStandings } from "./liveHelpers.js";
+import { FormDots } from "../shared/FormDots.jsx";
+import { initialsFromName } from "../../utils/initials.js";
 import { TrendArrow } from "../shared/TrendArrow.jsx";
 
 /* Template de colunas (espelha as larguras da tabela original):
@@ -25,41 +27,6 @@ const SWAP_TRANSITION = { type: "spring", stiffness: 320, damping: 32, mass: 0.9
  * depois de o servidor reenviar teamsData com a classificação final (evita
  * contar a jornada duas vezes).
  */
-
-/* ── FormDots (compacto, estilo LeagueStandings) ───────────────────────── */
-
-function FormDots({ form = "" }) {
-  const chars = form.split("").slice(-5);
-  while (chars.length < 5) chars.unshift(null);
-  return (
-    <div className="flex justify-end gap-0.75">
-      {chars.map((r, i) => {
-        let cls = "w-1.5 h-1.5 rounded-full ";
-        if (r === "V") cls += "bg-emerald-500";
-        else if (r === "E") cls += "bg-amber-500";
-        else if (r === null) cls += "bg-surface-container-high";
-        else cls += "bg-red-500";
-        return <span key={i} className={cls} />;
-      })}
-    </div>
-  );
-}
-
-/* Iniciais do nome do treinador (ex.: "João Silva" → "JS", "Paulo" → "P"). */
-/**
- * @param {string} name
- * @returns {string}
- */
-function coachInitials(name) {
-  const clean = String(name ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
-  if (!clean) return "";
-  const parts = clean.split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0][0].toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
 
 /* ── LiveStandingsPanel ─────────────────────────────────────────────────── */
 
@@ -258,7 +225,7 @@ export function LiveStandingsPanel({
                         title={t.coach_name}
                         className="shrink-0 px-1 py-px bg-amber-400/15 text-amber-400 text-[7px] font-black rounded-sm border border-amber-400/30 leading-tight"
                       >
-                        {coachInitials(t.coach_name)}
+                        {initialsFromName(t.coach_name)}
                       </span>
                     )}
                   </div>
@@ -284,7 +251,7 @@ export function LiveStandingsPanel({
                   {row.points}
                 </div>
                 <div className="relative pr-2.5 pl-1 py-1.5">
-                  <FormDots form={row.form} />
+                  <FormDots form={row.form} size="sm" />
                 </div>
               </motion.div>
             );
