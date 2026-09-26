@@ -193,8 +193,8 @@ export const CompareRadar = memo(function CompareRadar({ vm, onOpenTeamSquad }) 
           label="Moral do balneário"
           home={moraleHome.value}
           away={moraleAway.value}
-          homeDisplay={`${moraleHome.value} · ${moraleHome.label}`}
-          awayDisplay={`${moraleAway.label} · ${moraleAway.value}`}
+          homeDisplay={moraleHome.label}
+          awayDisplay={moraleAway.label}
           homeTeam={homeTeam}
           awayTeam={awayTeam}
         />

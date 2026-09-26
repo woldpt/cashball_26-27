@@ -1,3 +1,9 @@
+## Radar: moral só com etiqueta (2026-09-26)
+
+- Pedido: no `CompareRadar` (briefing pré-jogo), o eixo «Moral do balneário» ficava `72 · Bom` — pedido para ficar só a etiqueta («Bom»), oculto o valor.
+- `client/src/components/live/briefing/CompareRadar.jsx`: `homeDisplay`/`awayDisplay` do `DualBar` da moral passam a só `label` (o valor 0–100 continua a alimentar a largura da barra e o dot no rodapé, que já mostrava só etiqueta).
+- Checks: `lint` só os 2 erros pré-existentes (`landing-resp-test.jsx`, `GameContext.jsx`) · `check:types` OK. Tweaks de texto → sem mobile-resp-check.
+
 ## Convite no RoomHub para membros noutra sala (2026-09-25)
 
 - Pedido: botão de convite como no `RoomSelectScreen` junto aos nomes no `RoomHub`, quando estão a jogar noutras salas. Decisões via perguntas: âmbito sala + tab Global, com os mesmos estados (`A convidar…`/`Convite enviado`/`Aceitou ✓`/`Recusou`).
