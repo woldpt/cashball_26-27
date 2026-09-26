@@ -1,5 +1,8 @@
 import { useState, useMemo, useEffect, startTransition } from "react";
 import { readableColor } from "../../utils/colorHelpers.js";
+import { TeamCrest } from "../shared/TeamCrest.jsx";
+import { Panel } from "../shared/Panel.jsx";
+import { TabBar } from "../shared/TabBar.jsx";
 
 const ROUND_NAMES = [
   "",
@@ -93,15 +96,7 @@ function BracketTeamRow({ team, isWinner, played, score, onOpenTeam }) {
       }`}
       style={{ height: BK_CARD_H / 2 - 1 }}
     >
-      <div
-        className="w-[18px] h-[18px] rounded-full shrink-0 flex items-center justify-center text-[8px] font-black leading-none"
-        style={{
-          background: team ? team.color_primary || "#27272a" : "#27272a",
-          color: team ? team.color_secondary || "#fff" : "#555",
-        }}
-      >
-        {team ? team.name?.[0] || "?" : ""}
-      </div>
+      <TeamCrest team={team} size="w-[18px] h-[18px] text-[8px]" />
       <TeamName
         team={team}
         onOpenTeam={onOpenTeam}
@@ -146,14 +141,13 @@ function BracketCard({ match, myTeamId, onOpenTeam }) {
     <div
       className={`rounded-md border overflow-hidden relative transition-all ${
         isMyMatch
-          ? "border-amber-500/40 bg-amber-950/25 shadow shadow-amber-500/10"
+          ? "border-primary/40 bg-primary/10"
           : "border-outline-variant/25 bg-surface-container-high"
       }`}
       style={{ width: BK_CARD_W, height: BK_CARD_H }}
     >
       <BracketTeamRow
         team={homeTeam}
-        isHome
         isWinner={homeWins}
         played={played}
         score={finalHome}
@@ -162,7 +156,6 @@ function BracketCard({ match, myTeamId, onOpenTeam }) {
       <div className="h-px bg-outline-variant/15 mx-2" />
       <BracketTeamRow
         team={awayTeam}
-        isHome={false}
         isWinner={awayWins}
         played={played}
         score={finalAway}
@@ -332,15 +325,11 @@ function BracketTree({ rounds, myTeamId, onOpenTeam }) {
               >
                 emoji_events
               </span>
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black border-2 border-amber-500/50 shadow-lg shadow-amber-500/20"
-                style={{
-                  background: winner.color_primary,
-                  color: winner.color_secondary,
-                }}
-              >
-                {winner.name?.[0]}
-              </div>
+              <TeamCrest
+                team={winner}
+                size="w-9 h-9 text-sm"
+                className="border-2 border-amber-500/50 shadow-lg shadow-amber-500/20"
+              />
               <div>
                 <TeamName
                   team={winner}
@@ -409,7 +398,7 @@ function MatchRow({ match, myTeamId, players, onOpenTeam }) {
     <div
       className={`relative flex items-center gap-3 px-4 py-3 rounded-md border border-outline-variant/25 bg-surface-container transition-all duration-200 hover:-translate-y-px hover:shadow-lg shadow-sm shadow-black/30 ${
         isMyMatch
-          ? "border-amber-500/45 bg-amber-950/20"
+          ? "border-primary/40 bg-primary/10"
           : ""
       }`}
     >
@@ -437,21 +426,14 @@ function MatchRow({ match, myTeamId, players, onOpenTeam }) {
           )}
         </div>
         <div
-          className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 border ${
-            played && homeWins ? "border-[2px] shadow-sm" : "border-outline-variant/20"
-          }`}
-          style={{
-            background: homeTeam?.color_primary,
-            color: homeTeam?.color_secondary || "#fff",
-            borderColor:
-              played && homeWins ? homeTeam?.color_primary : undefined,
-            boxShadow:
-              played && homeWins
-                ? `0 0 8px ${homeTeam?.color_primary}50`
-                : undefined,
-          }}
+          className="shrink-0 rounded-full"
+          style={
+            played && homeWins
+              ? { boxShadow: `0 0 8px ${homeTeam?.color_primary}50` }
+              : undefined
+          }
         >
-          {homeTeam?.name?.[0] || "?"}
+          <TeamCrest team={homeTeam} size="w-8 h-8 text-xs" />
         </div>
       </div>
 
@@ -485,21 +467,14 @@ function MatchRow({ match, myTeamId, players, onOpenTeam }) {
         className={`flex-1 flex items-center gap-2 min-w-0 ${played && !awayWins ? "opacity-40" : ""}`}
       >
         <div
-          className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 border ${
-            played && awayWins ? "border-[2px] shadow-sm" : "border-outline-variant/20"
-          }`}
-          style={{
-            background: awayTeam?.color_primary,
-            color: awayTeam?.color_secondary || "#fff",
-            borderColor:
-              played && awayWins ? awayTeam?.color_primary : undefined,
-            boxShadow:
-              played && awayWins
-                ? `0 0 8px ${awayTeam?.color_primary}50`
-                : undefined,
-          }}
+          className="shrink-0 rounded-full"
+          style={
+            played && awayWins
+              ? { boxShadow: `0 0 8px ${awayTeam?.color_primary}50` }
+              : undefined
+          }
         >
-          {awayTeam?.name?.[0] || "?"}
+          <TeamCrest team={awayTeam} size="w-8 h-8 text-xs" />
         </div>
         <div className="min-w-0">
           <TeamName
@@ -595,49 +570,21 @@ export function CupBracketPage({
     const fn = rounds.find((r) => r.round === 5);
     return fn ? winnerOf(fn.matches?.[0]) : null;
   })();
+  const hasQF = (rounds.find((r) => r.round === 3)?.matches?.length || 0) > 0;
 
   return (
     <div className="space-y-5">
       {/* ── HEADER ──────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-md bg-surface-container border border-amber-900/25">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-amber-500/7 blur-3xl" />
-          <div className="absolute -bottom-6 -left-6 w-40 h-40 rounded-full bg-amber-500/5 blur-2xl" />
-        </div>
-        <div className="relative px-5 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <span
-              className="material-symbols-outlined text-amber-400"
-              style={{
-                fontSize: 32,
-                filter: champion
-                  ? "drop-shadow(0 0 10px rgba(245,158,11,0.7))"
-                  : undefined,
-              }}
-            >
-              emoji_events
-            </span>
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-[0.25em] text-amber-400/70">
-                Taça de Portugal · Temporada {bracketData.season}
-              </p>
-              <h2 className="font-headline font-black text-xl text-on-surface leading-tight">
-                Árvore de Knockout
-              </h2>
-            </div>
-          </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
+      <Panel
+        icon="emoji_events"
+        title="Árvore de Knockout"
+        meta={`Taça de Portugal · Temporada ${bracketData.season}`}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-1.5">
             {champion ? (
-              <div className="flex items-center gap-1.5">
-                <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black"
-                  style={{
-                    background: champion.color_primary,
-                    color: champion.color_secondary,
-                  }}
-                >
-                  {champion.name?.[0]}
-                </div>
+              <>
+                <TeamCrest team={champion} size="w-5 h-5 text-[9px]" />
                 <TeamName
                   team={champion}
                   onOpenTeam={onOpenTeamSquad}
@@ -647,65 +594,67 @@ export function CupBracketPage({
                 <span className="text-[8px] text-amber-400/60 font-bold">
                   Campeão
                 </span>
-              </div>
+              </>
             ) : (
               <span className="text-[9px] text-on-surface-variant/40 font-bold uppercase tracking-wider">
                 Em curso
               </span>
             )}
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalRounds }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`rounded-full transition-all ${
-                    i < completedRounds
-                      ? "bg-amber-400 w-2 h-2"
-                      : i === completedRounds
-                        ? "bg-amber-400/40 w-2 h-2 animate-pulse"
-                        : "bg-outline-variant/30 w-1.5 h-1.5"
-                  }`}
-                />
-              ))}
-            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalRounds }).map((_, i) => (
+              <div
+                key={i}
+                className={`rounded-full transition-all ${
+                  i < completedRounds
+                    ? "bg-amber-400 w-2 h-2"
+                    : i === completedRounds
+                      ? "bg-amber-400/40 w-2 h-2 animate-pulse"
+                      : "bg-outline-variant/30 w-1.5 h-1.5"
+                }`}
+              />
+            ))}
           </div>
         </div>
-      </div>
+      </Panel>
 
-      {/* ── ROUND PILLS ─────────────────────────────────────────────────────── */}
-      <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
-        {[1, 2, 3, 4, 5].map((r) => {
+      {/* ── ROUND TABS ──────────────────────────────────────────────────────── */}
+      <TabBar
+        tabs={[1, 2, 3, 4, 5].map((r) => {
           const rd = rounds.find((x) => x.round === r);
           const hasData = (rd?.matches?.length || 0) > 0;
           const allPlayed = hasData && rd.matches.every((m) => m.played);
-          const isActive = currentRound === r;
-          const isFuture = !hasData;
-
-          return (
-            <button
-              key={r}
-              onClick={() => hasData && setSelectedRound(r)}
-              disabled={isFuture}
-              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
-                isActive
-                  ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20"
-                  : isFuture
-                    ? "bg-surface-container/50 text-on-surface-variant/20 cursor-not-allowed"
-                    : "bg-surface-container-high text-on-surface-variant hover:bg-surface-bright hover:text-on-surface"
-              }`}
-            >
-              {allPlayed && !isActive && (
-                <span className="material-symbols-outlined text-[10px] leading-none text-primary/60">
-                  check
-                </span>
-              )}
-              {ROUND_SHORT[r]}
-            </button>
-          );
+          return {
+            key: String(r),
+            label: (
+              <span className="inline-flex items-center gap-1">
+                {allPlayed && currentRound !== r && (
+                  <span className="material-symbols-outlined text-[10px] leading-none text-primary/60">
+                    check
+                  </span>
+                )}
+                {ROUND_SHORT[r]}
+              </span>
+            ),
+          };
         })}
-      </div>
+        active={String(currentRound)}
+        onChange={(k) => {
+          const n = Number(k);
+          if ((rounds.find((x) => x.round === n)?.matches?.length || 0) > 0) {
+            setSelectedRound(n);
+          }
+        }}
+        disabledKeys={[1, 2, 3, 4, 5]
+          .filter(
+            (r) => (rounds.find((x) => x.round === r)?.matches?.length || 0) === 0,
+          )
+          .map(String)}
+        className="overflow-x-auto hide-scrollbar [&>button]:shrink-0"
+      />
 
       {/* ── DESKTOP BRACKET TREE (rounds 3-5 only) ──────────────────────────── */}
-      {currentRound >= 3 && (
+      {currentRound >= 3 && hasQF && (
         <div className="hidden lg:block">
           <div className="bg-surface-container rounded-md border border-outline-variant/15 px-6 pt-3 pb-6">
             <BracketTree

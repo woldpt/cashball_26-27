@@ -21,10 +21,11 @@ import { SPRING } from "../../motion.js";
  *   onChange: (key: string) => void,
  *   size?: "sm"|"md",
  *   expand?: boolean,
+ *   disabledKeys?: string[],
  *   className?: string,
  * }} props
  */
-export function TabBar({ tabs, active, onChange, size = "sm", expand = false, className = "" }) {
+export function TabBar({ tabs, active, onChange, size = "sm", expand = false, disabledKeys = [], className = "" }) {
   // `expand` = segmented control: items partilham a largura (sem scroll);
   // tracking/padding reduzidos para caber labels longos em telas pequenas.
   // useId por instância: cada TabBar tem o seu próprio layoutId, evitando
@@ -49,14 +50,18 @@ export function TabBar({ tabs, active, onChange, size = "sm", expand = false, cl
     >
       {tabs.map((tab) => {
         const isActive = active === tab.key;
+        const isDisabled = disabledKeys.includes(tab.key);
         return (
           <button
             key={tab.key}
-            onClick={() => onChange(tab.key)}
+            disabled={isDisabled}
+            onClick={() => !isDisabled && onChange(tab.key)}
             className={`relative ${itemClass} ${expandClass}rounded font-black uppercase transition-colors ${
               isActive
                 ? "text-white"
-                : "text-on-surface-variant hover:text-on-surface"
+                : isDisabled
+                  ? "text-on-surface-variant/20 cursor-not-allowed"
+                  : "text-on-surface-variant hover:text-on-surface"
             }`}
           >
             {isActive && (
