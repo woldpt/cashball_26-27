@@ -2170,3 +2170,8 @@ Plano C1+C2 (quando fizer):
 - Cliente (`JournalTab.jsx`): novo `WeeklyFinanceTable` no padrão `TABLE_*_CLS` (Rendimento/Salários/Manutenção + Juros/Capital só com empréstimo, Saldo em destaque dourado/vermelho, nota de empréstimo liquidado); `facts.v !== 1` → null.
 - Peripécia: edição intermédia comeu o `/**` do JSDoc de `injuryTexts` (apanhado pelo `node --check`, reposto).
 - Checks: server `typecheck` OK · eslint limpo nos tocados · `check:types` OK · fumo node 4 cenários (lucro/prejuízo/zeros/dívida liquidada: corpo sem dígitos, facts intactos) + legado OK · `test:journaldb` 2 falhas pré-existentes (confirmadas via stash) · `test:mobile` 165/165 + landscape 198/198.
+
+## Modo por omissão na seleção de sala (2026-09-26)
+- Após login/registo (e regresso de sessão guardada com sala morta), a fase "mode" com `joinMode === null` dispara um efeito em `useAuth` que vai buscar `/saves` e decide: houver salas → tab "Continuar" com a mais recente (`lastPlayedAt`) ativa; senão → "Novo Jogo". Join manual falhado e "Mudar de Jogo" não re-disparam (fase já é "mode"). Guard `joinModeRef` nunca pisa escolha feita entretanto.
+- Default do efeito de saves (`!roomCode`) deixou de ser `data[0]` — é o `mostRecentSave`. Helper de módulo partilhado.
+- Verificado com login real no browser (fetch de `/auth/login` + `/saves` simulado): COM saves → Continuar + XYZ9 + CTA pronto; SEM saves → Novo Jogo. eslint + check:types verdes. Versão → `v26.09.8`.

@@ -15,6 +15,17 @@ import {
 	saveSavedAuth,
 } from "../utils/localStorage.js";
 
+/** Sala guardada mais recente (pelo `lastPlayedAt`); null se nenhuma tiver data. */
+const mostRecentSave = (saves) =>
+	saves.reduce(
+		(best, s) =>
+			s.lastPlayedAt &&
+			(!best || new Date(s.lastPlayedAt) > new Date(best.lastPlayedAt))
+				? s
+				: best,
+		null,
+	);
+
 /**
  * @typedef {Object} AuthState
  * @property {string} authPhase "login" | "register" | "mode"
@@ -71,6 +82,49 @@ export function useAuth({ backendUrl, roomCode, setRoomCode }) {
 		setJoinMode(mode);
 		setRoomCode(joinCodesRef.current[mode] || "");
 	};
+
+	// Espelho do joinMode para o guard da pré-seleção (leitura síncrona
+	// dentro do fetch assíncrono, onde o estado já estaria obsoleto).
+	const joinModeRef = useRef(null);
+	useEffect(() => {
+		joinModeRef.current = joinMode;
+	}, [joinMode]);
+
+	// ── Modo por omissão ao entrar na seleção de sala ─────────────────
+	// Dispara na transição para a fase "mode" sem escolha do jogador: após
+	// o login/registo e no regresso de sessão guardada cuja sala desapareceu
+	// (onRoomGone). Continuar (sala mais recente ativa) se houver salas;
+	// Novo Jogo caso contrário. Um join manual falhado não re-dispara — a
+	// fase já era "mode" — nem "Mudar de Jogo" (setState com o mesmo valor).
+	useEffect(() => {
+		if (authPhase !== "mode" || !name || !token || joinMode !== null) {
+			return;
+		}
+		const controller = new AbortController();
+		const apply = async () => {
+			let saves;
+			try {
+				const res = await fetch(
+					`${backendUrl}/saves?name=${encodeURIComponent(name)}&token=${encodeURIComponent(token)}`,
+					{ signal: controller.signal },
+				);
+				const data = await res.json();
+				saves = Array.isArray(data) ? data : [];
+			} catch {
+				if (controller.signal.aborted) return;
+				saves = [];
+			}
+			// Nunca pisar uma escolha que o jogador fez entretanto.
+			if (joinModeRef.current !== null) return;
+			const last = mostRecentSave(saves) || saves[0] || null;
+			setAvailableSaves(saves);
+			setJoinMode(last ? "saved-game" : "new-game");
+			setRoomCode(last ? last.code : "");
+		};
+		apply();
+		return () => controller.abort();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [authPhase, name, token]);
 
 	const resetAuthFlow = () => {
 		setAuthPhase("login");
@@ -161,7 +215,9 @@ export function useAuth({ backendUrl, roomCode, setRoomCode }) {
 					.then((r) => r.json())
 					.then((data) => {
 						setAvailableSaves(Array.isArray(data) ? data : []);
-						if (data.length > 0 && !roomCode) setRoomCode(data[0].code);
+						if (data.length > 0 && !roomCode) {
+							setRoomCode((mostRecentSave(data) || data[0]).code);
+						}
 					})
 					.catch(() => {});
 			}, 400);
