@@ -38,6 +38,7 @@ const SIZE_CLASSES = {
  *   onClick?: (e: import("react").MouseEvent) => void,
  *   type?: string,
  *   title?: string,
+ *   autoFocus?: boolean,
  *   "aria-label"?: string,
  * }} props
  */
@@ -52,6 +53,7 @@ export function Button({
   onClick,
   type = "button",
   title,
+  autoFocus = false,
   "aria-label": ariaLabel,
 }) {
   return (
@@ -60,6 +62,7 @@ export function Button({
       onClick={onClick}
       disabled={disabled}
       title={title}
+      autoFocus={autoFocus}
       aria-label={ariaLabel}
       className={`inline-flex items-center justify-center gap-1.5 rounded-md font-black transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed ${
         uppercase ? "uppercase tracking-widest" : "tracking-wide"

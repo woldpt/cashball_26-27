@@ -39,6 +39,7 @@ const MAX_WIDTH = {
  *   backdropClassName?: string,
  *   cardClassName?: string,
  *   dismissable?: boolean,
+ *   labelledBy?: string,
  *   children: import("react").ReactNode,
  * }} props
  */
@@ -52,6 +53,7 @@ export function ModalShell({
   backdropClassName = "",
   cardClassName = "",
   dismissable = false,
+  labelledBy,
   children,
 }) {
   const isTransparent = variant === "transparent";
@@ -75,6 +77,7 @@ export function ModalShell({
           key="modal-backdrop"
           role="dialog"
           aria-modal="true"
+          aria-labelledby={labelledBy}
           className={backdropClasses}
           style={{ zIndex: z, ...backdropStyle }}
           initial={{ opacity: 0 }}

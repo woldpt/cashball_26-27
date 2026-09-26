@@ -1,3 +1,10 @@
+## SigningCelebrationModal: review 7,5/10 → correções (2026-09-26)
+- Avaliação 0–10 pedida → plano completo aprovado e executado. 4 ficheiros: `SigningCelebrationModal.jsx`, `ModalShell.jsx` (+`labelledBy`→`aria-labelledby`), `Button.jsx` (+passthrough `autoFocus`), `CelebrationBurst.jsx` (`aria-hidden` nas partículas).
+- Robustez: `name/position/skill/age` com `?? "—"`, linha do preço só se `Number.isFinite(price)` (antes "NaN €"), fallback do accent `#d97706`→`#eab308` (alinhado com `GR`); `badgeStyle` extraído (era 3 objetos inline).
+- Hooks: `onClose` em `onCloseRef` (efeito só depende de `signing`) — elimina o `eslint-disable` e o stale closure da arrow inline de `GameOverlays`; som só se `!document.hidden`; `useReducedMotion` salta burst e spring (`initial={false}`).
+- A11y/estilo: `useId` + `labelledBy` no diálogo, foco inicial no Continuar, nome `text-white`→`text-on-surface`, comentário EN→pt-PT.
+- Checks: eslint limpo nos 4 ficheiros (2 erros pré-existentes globais, confirmados via stash) · `check:types` OK. Sem mudança estrutural → sem mobile-resp-check; client-only → sem audits.
+
 ## CoachMarketModal: review 7,5/10 → correções (2026-09-26)
 - Mapa `REASON_TEXT` duplicado eliminado: agora exportado do `DismissalModal` (fonte única com os 3 reasons do servidor — o ternário local deixava `relegation` cair em "Má série de resultados"); linha do motivo mostrada com `(reason || detail)` + disable `react-refresh/only-export-components` (mesmo padrão de `GameContext`/`TacticsContext`).
 - `motion.div` duplo removido: o `ModalShell` já anima o card — `flex flex-col max-h-[85vh]` passou a `cardClassName`; `import { motion }` eliminado (padrão dos irmãos `DismissalModal`/`SeasonEndModal`).

@@ -1,5 +1,5 @@
-import { useMemo, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { useMemo, useEffect, useRef, useId } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
 import { Button } from "../shared/Button.jsx";
@@ -27,25 +27,37 @@ const SOURCE_LABEL = {
  */
 export function SigningCelebrationModal({ signing, onClose, teams, me }) {
   const autoClosedRef = useRef(false);
+  const onCloseRef = useRef(onClose);
+  const titleId = useId();
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   const myTeam = useMemo(
     () => teams?.find((t) => Number(t.id) === Number(me?.teamId)),
     [teams, me],
   );
   const teamColor = myTeam?.color_primary || myTeam?.colorPrimary || "#27272a";
-  const accent = POSITION_ACCENT_HEX[signing?.position] || "#d97706";
+  const accent = POSITION_ACCENT_HEX[signing?.position] || "#eab308";
+  const badgeStyle = {
+    background: `${accent}22`,
+    color: accent,
+    borderColor: `${accent}44`,
+  };
 
   useEffect(() => {
     if (!signing) {
       autoClosedRef.current = false;
       return;
     }
-    playSigningSound();
+    if (!document.hidden) playSigningSound();
     const t = setTimeout(() => {
-      if (!autoClosedRef.current) onClose();
+      if (!autoClosedRef.current) onCloseRef.current();
     }, 5000);
     return () => clearTimeout(t);
-  }, [signing]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [signing]);
 
   if (!signing) return null;
 
@@ -61,6 +73,7 @@ export function SigningCelebrationModal({ signing, onClose, teams, me }) {
       z={MODAL_Z.signing}
       variant="card"
       cardClassName="!bg-surface overflow-hidden"
+      labelledBy={titleId}
     >
       <div
         className="relative px-6 py-8 text-center overflow-hidden"
@@ -68,8 +81,8 @@ export function SigningCelebrationModal({ signing, onClose, teams, me }) {
           background: `radial-gradient(ellipse at top, ${accent}33 0%, rgba(15,19,32,0) 60%)`,
         }}
       >
-        {/* ── Champagne particle burst ─────────────────────────────── */}
-        <CelebrationBurst seed={signing.playerId} />
+        {/* ── Explosão de partículas de festejo ───────────────────────── */}
+        {!reduceMotion && <CelebrationBurst seed={signing.playerId} />}
 
         <span
           className="inline-block text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm mb-4"
@@ -90,63 +103,51 @@ export function SigningCelebrationModal({ signing, onClose, teams, me }) {
         </div>
 
         <motion.h2
+          id={titleId}
           className="font-headline font-black text-3xl tracking-tight text-on-surface uppercase"
-          initial={{ scale: 0.6, opacity: 0 }}
+          initial={reduceMotion ? false : { scale: 0.6, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.15 }}
         >
           Contratado!
         </motion.h2>
 
-        <p className="mt-2 font-headline font-black text-lg tracking-tight text-white">
-          {signing.name}
+        <p className="mt-2 font-headline font-black text-lg tracking-tight text-on-surface">
+          {signing.name ?? "—"}
         </p>
 
         <div className="mt-3 flex items-center justify-center gap-3">
           <span
             className="text-[10px] font-black px-2 py-0.5 rounded-sm border"
-            style={{
-              background: `${accent}22`,
-              color: accent,
-              borderColor: `${accent}44`,
-            }}
+            style={badgeStyle}
           >
-            {signing.position}
+            {signing.position ?? "—"}
           </span>
           <span
             className="text-[10px] font-black px-2 py-0.5 rounded-sm border"
-            style={{
-              background: `${accent}22`,
-              color: accent,
-              borderColor: `${accent}44`,
-            }}
+            style={badgeStyle}
           >
-            Força {signing.skill}
+            Força {signing.skill ?? "—"}
           </span>
           <span
             className="text-[10px] font-black px-2 py-0.5 rounded-sm border"
-            style={{
-              background: `${accent}22`,
-              color: accent,
-              borderColor: `${accent}44`,
-            }}
+            style={badgeStyle}
           >
-            {signing.age} anos
+            {signing.age ?? "—"} anos
           </span>
         </div>
 
-        <p className="mt-4 text-sm font-bold text-on-surface-variant">
-          Contrato por{" "}
-          <span
-            className="font-black font-headline"
-            style={{ color: accent }}
-          >
-            {formatCurrency(signing.price)}
-          </span>
-        </p>
+        {Number.isFinite(signing.price) && (
+          <p className="mt-4 text-sm font-bold text-on-surface-variant">
+            Contrato por{" "}
+            <span className="font-black font-headline" style={{ color: accent }}>
+              {formatCurrency(signing.price)}
+            </span>
+          </p>
+        )}
 
         <div className="mt-6">
-          <Button onClick={handleClose} variant="primary" full>
+          <Button onClick={handleClose} variant="primary" full autoFocus>
             Continuar
           </Button>
         </div>
