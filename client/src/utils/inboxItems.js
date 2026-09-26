@@ -606,6 +606,68 @@ function leagueFinalArticle(n) {
   };
 }
 /**
+ * Resumo financeiro semanal: manchete em tom de jornal (cor conforme o
+ * saldo), um parágrafo da tesouraria SEM valores e os números numa tabela
+ * (`WeeklyFinanceTable`, a partir de `facts`). Notícias antigas, com a
+ * descrição em texto corrido, caem no fallback com o título guardado.
+ * @param {object} n linha `weekly_finance`
+ */
+function weeklyFinanceArticle(n) {
+  const facts = parseNewsFacts(n);
+  const owner = newsTeam(n?.team_id, n?.team_name);
+  const o = owner ? partTeam(owner) : partText(n?.team_name || "O clube");
+  if (!facts) {
+    const title = n?.title || "As contas da semana";
+    const body = String(n?.description || "Receitas e gastos da semana.");
+    return {
+      ...makeArticle([partText(title)], [partText(body)], null, owner ? [owner] : [], null),
+      title,
+      body,
+      facts: {},
+    };
+  }
+  const net = Number(facts.net) || 0;
+  const v = newsVariant(n, 3);
+  const titleParts =
+    net > 0
+      ? v === 0
+        ? [partText("Tesouraria sorri: "), o]
+        : v === 1
+          ? [partText("Semana no verde para "), o]
+          : [o, partText(" fecha a semana a sorrir")]
+      : net < 0
+        ? v === 0
+          ? [partText("Aperto na tesouraria: "), o]
+          : v === 1
+            ? [partText("Semana no vermelho para "), o]
+            : [o, partText(" fecha a semana no vermelho")]
+        : v === 0
+          ? [partText("Contas equilibradas: "), o]
+          : v === 1
+            ? [partText("Semana sem folga nem aperto para "), o]
+            : [o, partText(" fecha a semana a zeros")];
+  const verdict =
+    net > 0
+      ? "fecha uma semana de contas positivas e a tesouraria recomenda transformar a folga em margem de manobra"
+      : net < 0
+        ? "fecha a semana no vermelho e a tesouraria pede contenção até à próxima jornada"
+        : "fecha uma semana de contas equilibradas e a tesouraria recomenda prudência para manter o equilíbrio";
+  const body =
+    `${owner?.label || n?.team_name || "O clube"} ${verdict}: ` +
+    "a próxima decisão — mercado, reforços, gestão do plantel — deve proteger o saldo antes de a jornada seguinte pedir soluções." +
+    (facts.loanPaidOff ? " A dívida ao banco ficou liquidada esta semana." : "");
+  return {
+    ...makeArticle(
+      titleParts,
+      owner ? linkFirstMention(body, o) : [partText(body)],
+      null,
+      owner ? [owner] : [],
+      null,
+    ),
+    facts,
+  };
+}
+/**
  * Textos de lesão com gravidade e total de semanas (engine: grave = 3+ sem).
  * @returns {{title: string, body: string}}
  */
@@ -683,6 +745,7 @@ function newsArticle(n, { owner, related, seller, buyer, viewerTeamId } = {}) {
   if (String(n?.type || "") === "board_warning") return boardWarningArticle(n);
   if (String(n?.type || "") === "cup_draw") return cupDrawArticle(n, viewerTeamId);
   if (String(n?.type || "") === "league_final") return leagueFinalArticle(n);
+  if (String(n?.type || "") === "weekly_finance") return weeklyFinanceArticle(n);
   if (String(n?.type || "") === "injury" || String(n?.type || "") === "suspension")
     return medicalArticle(n);
   const player = newsPlayer(n);
@@ -903,41 +966,6 @@ function newsArticle(n, { owner, related, seller, buyer, viewerTeamId } = {}) {
               partText(` aplicou ${value} na manutenção da sua casa. `),
               partText("Não é uma despesa que aplaude, mas é a diferença entre uma bancada cheia e uma estrutura em risco."),
             ];
-  } else if (type === "weekly_finance") {
-    const v = newsVariant(n, 3);
-    titleParts =
-      v === 0
-        ? [partText("As contas da semana: "), o]
-        : v === 1
-          ? [partText("Resumo financeiro: "), o]
-          : [o, partText(" fecha a semana nas contas")];
-    bodyParts =
-      v === 0
-        ? [
-            o,
-            partText(" fecha a semana com as contas abertas à bancada. "),
-            partText(description || "Receitas e gastos da semana."),
-            partText(
-              " É o pulso do clube: quem lê entre linhas percebe onde a margem para investir cresce e onde se esgota.",
-            ),
-          ]
-        : v === 1
-          ? [
-              o,
-              partText(" apresentou o resumo financeiro da semana: "),
-              partText(description || "Receitas e gastos da semana."),
-              partText(
-                " Números que a direção lê duas vezes: o saldo é o que sobra para decisões, o resto é história contada em euros.",
-              ),
-            ]
-          : [
-              o,
-              partText(" registou as contas da semana: "),
-              partText(description || "Receitas e gastos da semana."),
-              partText(
-                " A tesouraria prefere que todos conheçam o saldo antes de a próxima jornada pedir reforços.",
-              ),
-            ];
   } else if (
     type === "loan_interest" ||
     type === "loan_principal" ||
@@ -949,7 +977,7 @@ function newsArticle(n, { owner, related, seller, buyer, viewerTeamId } = {}) {
       v === 0
         ? [partText("Contas bancárias: "), o]
         : v === 1
-          ? [partText("O banco de "), o]
+          ? [partText("Tesouraria de "), o]
           : [partText("Crédito: "), o];
     bodyParts =
       type === "loan_take"

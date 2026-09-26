@@ -518,6 +518,70 @@ function CupDrawTable({ fixtures, viewerTeamId, teams, onOpenTeamSquad }) {
 }
 
 /**
+ * Tabela do resumo financeiro semanal (notícia `weekly_finance`, valores em
+ * `facts`): rendimento, salários e manutenção, mais juros e capital só com
+ * empréstimo, com o saldo em destaque. Notícias antigas (sem factos)
+ * mostram a descrição em texto e não renderizam tabela.
+ * @param {{ facts?: object }} props
+ * @returns {JSX.Element|null}
+ */
+function WeeklyFinanceTable({ facts }) {
+  if (!facts || facts.v !== 1) return null;
+  const net = Number(facts.net) || 0;
+  const rows = [
+    { label: "Rendimento base", value: facts.income },
+    { label: "Salários", value: facts.wages },
+    { label: "Manutenção do estádio", value: facts.upkeep },
+    ...(facts.hasLoan
+      ? [
+          { label: "Juros do empréstimo", value: facts.interest },
+          { label: "Capital do empréstimo", value: facts.installment },
+        ]
+      : []),
+  ];
+  return (
+    <div className={TABLE_WRAP_CLS}>
+      <table className={TABLE_CLS}>
+        <thead>
+          <tr className={THEAD_ROW_CLS}>
+            <th className="px-2 py-1.5 text-left">Rubrica</th>
+            <th className="px-2 py-1.5 text-right">Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr
+              key={r.label}
+              className="border-t border-outline-variant/15 odd:bg-surface-container/15"
+            >
+              <td className="px-2 py-1.5 text-left">{r.label}</td>
+              <td className="px-2 py-1.5 text-right tabular-nums">
+                {formatCurrency(r.value ?? 0)}
+              </td>
+            </tr>
+          ))}
+          <tr className="border-t border-outline-variant/15 bg-tertiary/10 font-black">
+            <td className="px-2 py-1.5 text-left">Saldo da semana</td>
+            <td
+              className={`px-2 py-1.5 text-right tabular-nums ${
+                net >= 0 ? "text-tertiary" : "text-error"
+              }`}
+            >
+              {formatCurrency(net)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      {facts.loanPaidOff && (
+        <p className="px-2 py-1.5 text-[11px] font-bold text-tertiary">
+          Empréstimo liquidado esta semana.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
  * Botões de ação por tipo de notícia.
  * @param {{ item: object, inbox: object, onOpenCupBracket?: Function }} props
  */
@@ -966,6 +1030,11 @@ export function JournalTab({
                     teams={teams}
                     onOpenTeamSquad={onOpenTeamSquad}
                   />
+                )}
+
+                {/* Tabela do resumo financeiro semanal */}
+                {selected.newsType === "weekly_finance" && (
+                  <WeeklyFinanceTable facts={selected.facts} />
                 )}
 
                 {/* Botões de ação, sob filete */}

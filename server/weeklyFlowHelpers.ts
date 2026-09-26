@@ -24,13 +24,6 @@ const LOAN_DIV_CASE = `CASE division ${[1, 2, 3, 4]
   .map((d) => `WHEN ${d} THEN ${LOAN_INSTALLMENT_BY_DIVISION[d]}`)
   .join(" ")} ELSE ${LOAN_INSTALLMENT_BY_DIVISION[5]} END`;
 
-/** Mesma formatação de moeda do cliente (pt-PT, EUR, sem cêntimos). */
-const euro = new Intl.NumberFormat("pt-PT", {
-  style: "currency",
-  currency: "EUR",
-  maximumFractionDigits: 0,
-});
-
 /** Promisificados mínimos sobre a API callback do sqlite (mesma conexão
  *  serializada — `await` preserva a ordem exata das cadeias por callbacks). */
 function dbGet(db: any, sql: string, params: any[] = []): Promise<any> {
@@ -110,11 +103,14 @@ function buildFullTimeFixtures(
 }
 
 /**
- * Texto do resumo financeiro semanal (1 notícia por equipa com treinador
- * humano). `oldLoan` é a dívida ANTES da semana; os restantes valores são
- * idênticos aos do UPDATE de despesas (mesmas fórmulas do SQL).
+ * Factos do resumo financeiro semanal (1 notícia por equipa com treinador
+ * humano), em JSON `v: 1` na coluna `description` — o padrão das notícias
+ * da Taça/classificação final. `oldLoan` é a dívida ANTES da semana; os
+ * restantes valores são idênticos aos do UPDATE de despesas (mesmas
+ * fórmulas do SQL). O cliente renderiza o parágrafo + tabela; notícias
+ * antigas (texto corrido) caem no fallback em `inboxItems`.
  */
-export function buildWeeklyFinanceSummary(p: {
+export function buildWeeklyFinanceFacts(p: {
   income: number;
   wages: number;
   upkeep: number;
@@ -122,20 +118,20 @@ export function buildWeeklyFinanceSummary(p: {
   installment: number;
   oldLoan: number;
 }): string {
-  const f = (v: number) => euro.format(v);
   const hasLoan = p.oldLoan > 0;
   const net =
     p.income - p.wages - p.upkeep - (hasLoan ? p.interest + p.installment : 0);
-  return (
-    `Receitas: ${f(p.income)} · Salários: ${f(p.wages)} · Manutenção do estádio: ${f(p.upkeep)}` +
-    (hasLoan
-      ? ` · Juros: ${f(p.interest)} · Capital do empréstimo: ${f(p.installment)}`
-      : "") +
-    ` · Saldo da semana: ${f(net)}` +
-    (hasLoan && p.installment >= p.oldLoan
-      ? " Empréstimo liquidado esta semana."
-      : "")
-  );
+  return JSON.stringify({
+    v: 1,
+    income: p.income,
+    wages: p.wages,
+    upkeep: p.upkeep,
+    interest: hasLoan ? p.interest : 0,
+    installment: hasLoan ? p.installment : 0,
+    net,
+    hasLoan,
+    loanPaidOff: hasLoan && p.installment >= p.oldLoan,
+  });
 }
 import {
   getAllTeamForms,
@@ -1716,7 +1712,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
         const interest = Math.floor(oldLoan * 0.015);
         const installment = Math.min(loanInstallment(div), oldLoan);
         logClubNews(game, "weekly_finance", "Resumo Financeiro da Semana", id, {
-          description: buildWeeklyFinanceSummary({
+          description: buildWeeklyFinanceFacts({
             income,
             wages,
             upkeep,
