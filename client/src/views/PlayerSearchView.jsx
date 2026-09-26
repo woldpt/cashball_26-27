@@ -4,10 +4,12 @@ import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Button } from "../components/shared/Button.jsx";
 import { PlayerRow } from "../components/shared/PlayerRow.jsx";
+import { AuctionBidModal } from "../components/modals/AuctionBidModal.jsx";
 import {
   DIVISION_NAMES,
   TRANSFER_CLAUSE_MULT,
   TRANSFER_LISTED_PRICE_MULT,
+  AUCTION_BID_STEP,
 } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
 import { isSameTeamId, normalizeTeamId } from "../utils/teamHelpers.js";
@@ -58,8 +60,8 @@ function inputClass() {
  *   setTransferProposalModal: function,
  *   setGameDialog: function,
  *   buyPlayer: function,
- *   openAuctionBid: function,
  *   onOpenPlayerHistory: (player: object) => void,
+ *   openAuctionBid: function,
  * }} props
  */
 export function PlayerSearchView({
@@ -74,8 +76,8 @@ export function PlayerSearchView({
   setTransferProposalModal,
   setGameDialog,
   buyPlayer,
-  openAuctionBid,
   onOpenPlayerHistory,
+  openAuctionBid,
 }) {
   const {
     results: playerSearchResults,
@@ -97,6 +99,8 @@ export function PlayerSearchView({
   const [onlyAvailable, setOnlyAvailable] = useState(false);
   const [sort, setSort] = useState("quality-desc");
   const [searched, setSearched] = useState(false);
+  // Lance inline: modal local — só a scout o abre, não precisa de estado global.
+  const [bidModalPlayer, setBidModalPlayer] = useState(null);
 
   const humanTeamIds = useMemo(
     () => new Set(players.map((p) => normalizeTeamId(p.teamId))),
@@ -138,13 +142,23 @@ export function PlayerSearchView({
     }
 
     if (status === "auction") {
+      const hasBid = player.auction_high_bid_team_id != null;
+      const minBid = hasBid
+        ? player.auction_high_bid + AUCTION_BID_STEP
+        : (player.auction_starting_price || player.transfer_price || 0);
+      const affordable = myBudget >= minBid;
       return (
         <button
           type="button"
-          onClick={() => openAuctionBid()}
-          className="px-3 py-1.5 rounded text-xs font-black uppercase bg-amber-600 hover:bg-amber-500 text-white border border-amber-500 transition-colors whitespace-nowrap"
+          disabled={!affordable}
+          onClick={() => setBidModalPlayer(player)}
+          className={`px-3 py-1.5 rounded text-xs font-black uppercase transition-colors whitespace-nowrap ${
+            affordable
+              ? "bg-amber-600 hover:bg-amber-500 text-white border border-amber-500"
+              : "bg-surface-container-high text-on-surface-variant/40 border border-outline-variant/20 cursor-not-allowed"
+          }`}
         >
-          Licitar
+          {affordable ? "Licitar" : "Sem saldo"}
         </button>
       );
     }
@@ -430,6 +444,15 @@ export function PlayerSearchView({
           </div>
         )}
       </Panel>
+
+      <AuctionBidModal
+        player={bidModalPlayer}
+        me={me}
+        myBudget={myBudget}
+        socket={socket}
+        onClose={() => setBidModalPlayer(null)}
+        onGoToAuctions={openAuctionBid}
+      />
     </div>
   );
 }

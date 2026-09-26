@@ -91,7 +91,7 @@ export function serializeActiveAuctions(game: ActiveGame): any[] {
  * Empate: só substitui por estritamente maior — quem liderava primeiro fica.
  * Sem lances: amount 0 e teamId null (o startAuction emite 0 na abertura).
  */
-function currentHighBidOf(auction: any): { amount: number; teamId: number | null } {
+export function currentHighBidOf(auction: any): { amount: number; teamId: number | null } {
   let amount = -1;
   let teamId: number | null = null;
   for (const [tid, val] of Object.entries(auction?.bids || {})) {

@@ -3,6 +3,7 @@ import {
 	CONTRACT_LENGTH_MATCHWEEKS,
 } from "./gameConstants";
 import { currentEpoch } from "./coreHelpers";
+import { currentHighBidOf } from "./auctionHelpers";
 
 type AnyRow = Record<string, any>;
 
@@ -188,7 +189,21 @@ export function registerScoutSocketHandlers(
 				[epoch, epoch, ...params, SEARCH_LIMIT],
 			);
 
-			const results = rows || [];
+			// Estado de leilão ao vivo (lance atual/mínimo) para o modal de lance
+			// inline na scout — mesma fonte de verdade que a tab de leilões.
+			const results = (rows || []).map((row: any) => {
+				if (row.transfer_status !== "auction") return row;
+				const auction = (game.auctions as any)?.[row.id];
+				if (!auction) return row;
+				const high = currentHighBidOf(auction);
+				return {
+					...row,
+					auction_starting_price: auction.startingPrice ?? row.transfer_price ?? 0,
+					auction_high_bid: high.amount,
+					auction_high_bid_team_id: high.teamId,
+					auction_paused: auction.status === "paused",
+				};
+			});
 			const truncated = total > results.length;
 
 			socket.emit("playerSearchResults", {

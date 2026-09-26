@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import { GameContext } from "../../contexts/GameContext.jsx";
 import { formatCurrency } from "../../utils/formatters.js";
+import { BidForm } from "./BidForm.jsx";
 import {
   FLAG_TO_COUNTRY,
   AUCTION_BID_STEP,
@@ -16,7 +17,6 @@ import { StarMark } from "../shared/PlayerStatusBadges.jsx";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
 import { StatTile } from "../shared/StatTile.jsx";
 import { hexToRgba } from "../../utils/colorHelpers.js";
-import { emitComAck } from "../../socket.js";
 
 function useCountdown(endsAt) {
   const [secs, setSecs] = useState(null);
@@ -49,8 +49,6 @@ function formatSecs(secs) {
  * A cor de destaque deriva sempre da posição (POSITION_*).
  */
 export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, socket, onOpenDetails }) {
-  const [bidError, setBidError] = useState("");
-  const [bidSuccess, setBidSuccess] = useState(false);
   const nowIdx = useContext(GameContext)?.calendarIndex ?? matchweekCount;
 
   const secs = useCountdown(auction.closed || auction.paused ? null : auction.endsAt);
@@ -72,41 +70,6 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
   const minBid = hasBid
     ? auction.currentHighBid + AUCTION_BID_STEP
     : auction.startingPrice;
-
-  const [bidInput, setBidInput] = useState(() => String(minBid));
-
-  const handleBid = useCallback(() => {
-    const amount = Number(bidInput);
-    if (!Number.isFinite(amount) || amount < minBid) {
-      setBidError(`Lance mínimo: ${formatCurrency(minBid)}`);
-      return;
-    }
-    if (teamInfo && amount > (teamInfo.budget || 0)) {
-      setBidError("Orçamento insuficiente.");
-      return;
-    }
-    setBidError("");
-    if (!socket?.connected) {
-      // Sem rede: o lance fica em fila e é enviado ao reconectar (com
-      // __actionId anti-duplicado no servidor). Feedback imediato.
-      setBidError("Sem ligação — lance em fila para enviar.");
-    }
-    emitComAck(
-      "placeAuctionBid",
-      { playerId: auction.playerId, bidAmount: amount },
-      {
-        onOk: () => {
-          setBidError("");
-          setBidSuccess(true);
-          setTimeout(() => setBidSuccess(false), 3000);
-        },
-        onError: (err) => {
-          setBidError(err?.message || "Erro ao processar o lance.");
-          setTimeout(() => setBidError(""), 3000);
-        },
-      },
-    );
-  }, [bidInput, minBid, auction.playerId, teamInfo, socket]);
 
   const sellerTeam = (teams || []).find((t) => Number(t.id) === Number(auction.sellerTeamId)) || null;
   const sellerCrest = sellerTeam?.crest || auction.team_crest || null;
@@ -330,50 +293,14 @@ export function AuctionCard({ auction, me, teams, teamInfo, matchweekCount, sock
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-1.5">
-            <div
-              className="flex items-center rounded-lg overflow-hidden border bg-surface/60"
-              style={{ borderColor: hexToRgba(posHex, 0.4) }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span className="material-symbols-outlined text-base px-2.5 shrink-0" style={{ color: posHex }}>
-                currency_exchange
-              </span>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={minBid}
-                value={bidInput}
-                onClick={(e) => e.stopPropagation()}
-                onFocus={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  setBidInput(e.target.value);
-                  setBidError("");
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.stopPropagation();
-                    handleBid();
-                  }
-                }}
-                className="flex-1 min-w-0 bg-transparent py-2 pr-3 text-white font-mono text-xs outline-none"
-                aria-label="Valor do lance"
-              />
-            </div>
-            {bidError && (
-              <p className="text-[10px] text-red-400 font-bold">{bidError}</p>
-            )}
-            {bidSuccess && (
-              <p className="text-[10px] text-emerald-400 font-bold">Lance registado!</p>
-            )}
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); handleBid(); }}
-              className="w-full py-2 rounded-lg font-headline font-black uppercase text-xs tracking-wide transition-all active:scale-95 hover:brightness-110"
-              style={{ background: posHex, color: "#0d0d14" }}
-            >
-              Licitar · mín. {formatCurrency(minBid)}
-            </button>
+          <div onClick={(e) => e.stopPropagation()}>
+            <BidForm
+              playerId={auction.playerId}
+              minBid={minBid}
+              budget={teamInfo?.budget || 0}
+              socket={socket}
+              accentHex={posHex}
+            />
           </div>
         )}
       </div>
