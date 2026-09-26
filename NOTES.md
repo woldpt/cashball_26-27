@@ -1949,3 +1949,8 @@ Plano C1+C2 (quando fizer):
 - Linha de vencedor "🏆 X passa à próxima eliminatória" derivada no cliente (`homeGoals > awayGoals`, sem payload novo); botão "Saltar" (ghost) que avança `kickIdx` para o fim — temporizador do `GameContext` intacto.
 - JSDoc movido para cima do componente; indentação do cabeçalho normalizada.
 - Checks: eslint limpo no ficheiro (2 erros pré-existentes noutros: `landing-resp-test`, `GameContext`); `check:types` OK. Sem `test:mobile` (sem mudança estrutural) nem audits (sem lógica de servidor).
+
+## PenaltyShootoutPopup — ronda a11y (2026-09-26)
+- Região viva `role="status"` + `sr-only`: anuncia cada remate ("Remate N: nome — golo/falha") e o resultado final com o vencedor.
+- `animate-pulse` → `motion-safe:animate-pulse` no marcador em revelação e no "A rematar…" (utilizadores com `prefers-reduced-motion` veem texto estático).
+- Checks: eslint limpo no ficheiro; `check:types` OK.

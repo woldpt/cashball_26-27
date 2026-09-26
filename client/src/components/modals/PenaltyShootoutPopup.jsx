@@ -36,6 +36,13 @@ export function PenaltyShootoutPopup({
       ? null
       : (finalHome > finalAway ? homeTeam : awayTeam)?.name ?? null;
 
+  const lastKick = visibleKicks[visibleKicks.length - 1];
+  const liveMessage = allRevealed
+    ? `Fim: ${finalHome} – ${finalAway}${winnerName ? `. ${winnerName} passa à próxima eliminatória.` : ""}`
+    : lastKick
+      ? `Remate ${visibleKicks.length}: ${lastKick.playerName ?? "?"} — ${lastKick.scored ? "golo" : "falha"}.`
+      : "Desempate por grandes penalidades a começar.";
+
   const rounds = [];
   for (let i = 0; i < kicks.length; i += 2) {
     rounds.push({
@@ -47,6 +54,9 @@ export function PenaltyShootoutPopup({
 
   return (
     <ModalShell visible={!!cupPenaltyPopup} z={MODAL_Z.penalty} variant="md">
+      <p className="sr-only" role="status">
+        {liveMessage}
+      </p>
       <div className="bg-amber-900/20 px-6 py-4 border-b border-amber-800/30 text-center">
         <p className="text-[10px] text-amber-400 uppercase font-black tracking-widest">
           Taça de Portugal
@@ -68,7 +78,7 @@ export function PenaltyShootoutPopup({
             className={`text-2xl font-black px-4 py-1 rounded border ${
               allRevealed
                 ? "text-white bg-surface border-outline-variant/30"
-                : "text-zinc-500 bg-surface border-outline-variant/20 animate-pulse"
+                : "text-zinc-500 bg-surface border-outline-variant/20 motion-safe:animate-pulse"
             }`}
           >
             {allRevealed
@@ -161,7 +171,7 @@ export function PenaltyShootoutPopup({
           </table>
           {!allRevealed && (
             <div className="flex flex-col items-center gap-1 py-3">
-              <span className="animate-pulse text-amber-400 text-xs font-black uppercase tracking-widest">
+              <span className="motion-safe:animate-pulse text-amber-400 text-xs font-black uppercase tracking-widest">
                 A rematar…
               </span>
               <Button
