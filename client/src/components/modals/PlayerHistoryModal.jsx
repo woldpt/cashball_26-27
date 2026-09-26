@@ -4,30 +4,25 @@ import { slotLabel } from "../../utils/slotLabel.js";
 import { formatCurrency, seasonToYear } from "../../utils/formatters.js";
 import { AggBadge } from "../shared/AggBadge.jsx";
 import { Stars } from "../shared/Stars.jsx";
-import { Badge } from "../shared/Badge.jsx";
 import { Button } from "../shared/Button.jsx";
+import { EmptyState } from "../shared/EmptyState.jsx";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
+import { PlayerStatusBadges, StarMark } from "../shared/PlayerStatusBadges.jsx";
 import { aggLabel } from "../../utils/playerHelpers.js";
 import { SkillLineChart } from "./SkillLineChart.jsx";
-import { POS_BAR } from "./positionConstants.js";
 import {
   POSITION_TEXT_CLASS,
   POSITION_BORDER_CLASS,
+  POSITION_LABEL_MAP,
+  POSITION_FULL_LABEL_MAP,
+  POSITION_ACCENT_HEX,
+  SEASON_WEEKS,
   MODAL_Z,
 } from "../../constants/index.js";
 
-// Position config
-const POS_LABEL = { GR: "GR", DEF: "DEF", MED: "MED", ATA: "ATA" };
-const POS_FULL = {
-  GR: "Guarda-redes",
-  DEF: "Defesa",
-  MED: "Médio",
-  ATA: "Avançado",
-};
 
-
-function SkillBar({ label, value, maxValue = 50, color, valueLabel }) {
+function SkillBar({ label, value, maxValue = 50, color, barClass, textClass, valueLabel }) {
   const pct = Math.min(100, Math.round((value / maxValue) * 100));
   return (
     <div>
@@ -35,14 +30,14 @@ function SkillBar({ label, value, maxValue = 50, color, valueLabel }) {
         <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
           {label}
         </span>
-        <span className="font-black font-headline text-base" style={{ color }}>
+        <span className={`font-black font-headline text-base ${textClass || ""}`} style={textClass ? undefined : { color }}>
           {valueLabel ?? value}
         </span>
       </div>
       <div className="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-700"
-          style={{ width: `${pct}%`, backgroundColor: color, opacity: 0.85 }}
+          className={`h-full rounded-full transition-all duration-700 ${barClass || ""}`}
+          style={{ width: `${pct}%`, backgroundColor: barClass ? undefined : color, opacity: 0.85 }}
         />
       </div>
     </div>
@@ -123,7 +118,7 @@ export function PlayerHistoryModal({
   if (!player) return null;
 
   const pos = player.position;
-  const barColor = POS_BAR[pos] || "#95d4b3";
+  const barColor = POSITION_ACCENT_HEX[pos] || POSITION_ACCENT_HEX.MED;
   const isStar = player.is_star === 1;
   const skill = player.skill ?? 0;
 
@@ -134,8 +129,11 @@ export function PlayerHistoryModal({
     typeof player.aggressiveness === "number"
       ? Math.max(1, Math.min(50, Math.round(player.aggressiveness)))
       : Math.max(1, AGG_ORDER.indexOf(aggKey) + 1);
+  // Agressividade por etiqueta vive em 1–5; numérica em 0–50.
+  const aggIsLabelScale = typeof player.aggressiveness !== "number";
   const formVal = player.form ?? 32;
-  const formHex = formVal >= 41 ? "#34d399" : formVal <= 22 ? "#fb7185" : "#71717a";
+  const formBar = formVal >= 41 ? "bg-emerald-400" : formVal <= 22 ? "bg-rose-400" : "bg-zinc-500";
+  const formText = formVal >= 41 ? "text-emerald-400" : formVal <= 22 ? "text-rose-400" : "text-zinc-500";
 
   // Season stats
   const sGames = player.games_played ?? 0;
@@ -168,13 +166,13 @@ export function PlayerHistoryModal({
     player.team_id != null &&
     Number(myTeamId) === Number(player.team_id);
   const nowIdx = ctxIdx ?? matchweekCount;
-  const currentEpoch = (Math.max(1, season) - 1) * 20 + Math.min(20, nowIdx + 1);
+  const currentEpoch = (Math.max(1, season) - 1) * SEASON_WEEKS + Math.min(SEASON_WEEKS, nowIdx + 1);
   const contractStart = player.contract_start_epoch || 0;
-  const isLocked = contractStart > 0 && currentEpoch < contractStart + 20;
-  const contractEndEpoch = contractStart > 0 ? contractStart + 20 : 0;
-  const contractEndSeason = contractStart > 0 ? Math.ceil(contractEndEpoch / 20) : 0;
+  const isLocked = contractStart > 0 && currentEpoch < contractStart + SEASON_WEEKS;
+  const contractEndEpoch = contractStart > 0 ? contractStart + SEASON_WEEKS : 0;
+  const contractEndSeason = contractStart > 0 ? Math.ceil(contractEndEpoch / SEASON_WEEKS) : 0;
   const contractEndMatchweek = contractStart > 0
-    ? contractEndEpoch - (contractEndSeason - 1) * 20
+    ? contractEndEpoch - (contractEndSeason - 1) * SEASON_WEEKS
     : 0;
   const contractEndLabel = contractStart > 0 ? slotLabel(contractEndMatchweek) : "";
   const contractEndYear = contractStart > 0 ? seasonToYear(contractEndSeason) : 0;
@@ -194,23 +192,7 @@ export function PlayerHistoryModal({
   const marketPrice = player.marketPrice ?? player.value ?? 0;
   const canAfford = myBudget >= marketPrice;
 
-  // Availability badge
-  let availBadge = null;
-  if ((player.suspension_until_matchweek ?? 0) > nowIdx) {
-    const jLeft = player.suspension_until_matchweek - nowIdx + 1;
-    availBadge = (
-      <Badge variant="suspended" size="md">
-        🟥 Suspenso · {jLeft}J
-      </Badge>
-    );
-  } else if ((player.injury_until_matchweek ?? 0) > nowIdx) {
-    const jLeft = player.injury_until_matchweek - nowIdx + 1;
-    availBadge = (
-      <Badge variant="injured" size="md">
-        🩹 Lesionado · {jLeft}J
-      </Badge>
-    );
-  }
+  // Disponibilidade (suspensão/lesão) — insígnias partilhadas no cabeçalho.
 
   return (
     <ModalShell
@@ -242,7 +224,7 @@ export function PlayerHistoryModal({
               <div
                 className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-sm bg-surface-bright border-l-2 ${POSITION_BORDER_CLASS[pos] || "border-zinc-500"} ${POSITION_TEXT_CLASS[pos] || "text-zinc-300"} text-[10px] sm:text-xs font-black uppercase tracking-wider`}
               >
-                {POS_LABEL[pos] || pos}
+                {POSITION_LABEL_MAP[pos] || pos}
               </div>
             </div>
 
@@ -251,15 +233,15 @@ export function PlayerHistoryModal({
                 <h2 className="font-black font-headline text-lg sm:text-2xl tracking-tight text-on-surface uppercase leading-none">
                   {player.name}
                 </h2>
-                {isStar && (
-                  <span className="text-amber-400 text-sm" title="Craque">
-                    ★
-                  </span>
-                )}
-                {availBadge}
+                {isStar && <StarMark className="text-sm" />}
+                <PlayerStatusBadges
+                  player={player}
+                  matchweekCount={matchweekCount}
+                  season={season}
+                />
               </div>
               <p className="text-on-surface-variant text-[10px] sm:text-xs font-medium mt-0.5 sm:mt-1 tracking-wide">
-                {POS_FULL[pos] || pos}
+                {POSITION_FULL_LABEL_MAP[pos] || pos}
                 {player.nationality ? ` · ${player.nationality}` : ""}
               </p>
               <div className="flex items-center gap-1 sm:gap-2 mt-0.5 sm:mt-1 flex-wrap">
@@ -269,7 +251,7 @@ export function PlayerHistoryModal({
                 ) : player.team_name ? (
                   <span className="w-5 h-5 rounded-sm flex items-center justify-center text-[8px] font-black shrink-0 border border-white/10" style={{ background: player.team_color_primary || player.color_primary || "#333", color: player.team_color_secondary || player.color_secondary || "#fff" }}>{player.team_name[0]}</span>
                 ) : null}
-                <span className="font-bold text-tertiary text-xs">
+                <span className="font-bold text-tertiary text-xs" title={player.team_name || undefined}>
                   {player.team_name
                     ? player.transfer_status === "auction" && player.isExClub
                       ? `ex-${player.team_name}`
@@ -283,8 +265,12 @@ export function PlayerHistoryModal({
               variant="secondary"
               size="sm"
               onClick={closeModal}
+              title="Voltar"
             >
-              ← Voltar
+              <span className="sm:hidden" aria-hidden="true">
+                ✕
+              </span>
+              <span className="hidden sm:inline">← Voltar</span>
             </Button>
           </div>
         </div>
@@ -393,7 +379,7 @@ export function PlayerHistoryModal({
                   <SkillBar
                     label="Agressividade"
                     value={aggNum}
-                    maxValue={50}
+                    maxValue={aggIsLabelScale ? 5 : 50}
                     color={barColor}
                     valueLabel={<AggBadge value={player.aggressiveness} />}
                   />
@@ -401,14 +387,16 @@ export function PlayerHistoryModal({
                     <SkillBar
                       label="Resistência"
                       value={player.resistance}
-                      color="#22d3ee"
+                      barClass="bg-cyan-400"
+                      textClass="text-cyan-400"
                     />
                   )}
                   {player.form != null && (
                     <SkillBar
                       label="Forma"
                       value={player.form}
-                      color={formHex}
+                      barClass={formBar}
+                      textClass={formText}
                     />
                   )}
                   {player.last_rating != null && (
@@ -568,9 +556,7 @@ export function PlayerHistoryModal({
               Prémios Individuais
             </p>
             {awards.length === 0 ? (
-              <p className="text-on-surface-variant text-sm italic">
-                Sem prémios individuais registados.
-              </p>
+              <EmptyState emoji="🏆" title="Sem prémios individuais registados." />
             ) : (
               <div className="flex flex-wrap gap-2">
                 {awards.map((a, i) => (
@@ -601,9 +587,7 @@ export function PlayerHistoryModal({
               Historial de Transferências
             </p>
             {transfers.length === 0 ? (
-              <p className="text-on-surface-variant text-sm italic">
-                Sem transferências registadas.
-              </p>
+              <EmptyState emoji="🔄" title="Sem transferências registadas." />
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
@@ -631,10 +615,10 @@ export function PlayerHistoryModal({
                               <span className="opacity-50"> J{t.matchweek}</span>
                             ) : null}
                           </td>
-                          <td className="px-3 py-2.5 text-on-surface-variant text-xs truncate max-w-22.5">
+                          <td className="px-3 py-2.5 text-on-surface-variant text-xs truncate max-w-22.5" title={fromTeam || undefined}>
                             {fromTeam || "—"}
                           </td>
-                          <td className="px-3 py-2.5 font-bold text-on-surface truncate max-w-22.5">
+                          <td className="px-3 py-2.5 font-bold text-on-surface truncate max-w-22.5" title={toTeam || undefined}>
                             {toTeam || "?"}
                           </td>
                           <td className="px-3 py-2.5 text-right text-tertiary font-black text-xs tabular-nums">

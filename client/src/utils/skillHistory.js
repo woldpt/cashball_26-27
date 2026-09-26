@@ -3,8 +3,9 @@
  *
  * O `matchweek` nos snapshots é POR ÉPOCA (1..14 em cada época). Para ordenar
  * e posicionar cronologicamente pontos de várias épocas é preciso um epoch
- * global: `(season - 1) * 14 + matchweek` — a mesma convenção de
- * `contractEpoch()` do servidor (gameConstants.ts).
+ * global: `(season - 1) * MATCHWEEKS_PER_SEASON + matchweek` (só jogos de
+ * liga). Não confundir com os contratos, que usam SEASON_WEEKS = 20 (slots
+ * do relógio único) — ver `contractEpoch()` no servidor (gameConstants.ts).
  */
 
 export const MATCHWEEKS_PER_SEASON = 14;

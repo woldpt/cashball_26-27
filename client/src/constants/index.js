@@ -312,6 +312,13 @@ export const POSITION_LABEL_MAP = {
 	ATA: "ATA",
 };
 
+export const POSITION_FULL_LABEL_MAP = {
+	GR: "Guarda-redes",
+	DEF: "Defesa",
+	MED: "Médio",
+	ATA: "Avançado",
+};
+
 export const MAX_MATCH_SUBS = 3;
 /** Número máximo de jogadores no banco de suplentes (pré-jogo) */
 export const MAX_BENCH_SIZE = 7;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { POS_BAR } from "./positionConstants.js";
+import { POSITION_ACCENT_HEX } from "../../constants/index.js";
 import {
   MATCHWEEKS_PER_SEASON,
   buildSkillChartPoints,
@@ -22,7 +22,7 @@ import {
  * @param {{ skillHistory: Array<{matchweek: number, season?: number, skill: number}>, skill: number, position: string }} props
  */
 export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" }) {
-  const barColor = POS_BAR[position] || "#eab308";
+  const barColor = POSITION_ACCENT_HEX[position] || POSITION_ACCENT_HEX.MED;
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
   // Ordenar cronologicamente por epoch global (preserva a época) e filtrar
@@ -130,7 +130,9 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
   const hovered = hoveredIdx != null ? cleanHistory[hoveredIdx] : null;
 
   // Posição do tooltip em % do viewBox para funcionar com width="100%"
-  const hoveredX = hovered ? (getX(hovered.epoch) / chartWidth) * 100 : 0;
+  const hoveredXRaw = hovered ? (getX(hovered.epoch) / chartWidth) * 100 : 0;
+  // Contenção lateral: com -translate-x-1/2 o tooltip cortava nas margens.
+  const hoveredX = Math.min(80, Math.max(20, hoveredXRaw));
   const hoveredY = hovered ? (getY(hovered.skill) / chartHeight) * 100 : 0;
   // Se o ponto estiver perto do topo, mostra o tooltip por baixo
   const tooltipBelow = hovered ? getY(hovered.skill) < 34 : false;
@@ -148,7 +150,7 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
             width="100%"
             height="100"
             viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-            className="overflow-visible"
+            className="overflow-visible text-zinc-600"
           >
             {/* Grid lines + Y-axis labels */}
             {yLevels.map((level) => (
@@ -158,7 +160,7 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
                   y1={getY(level)}
                   x2={chartWidth - padding}
                   y2={getY(level)}
-                  stroke="#333"
+                  stroke="currentColor"
                   strokeWidth="0.5"
                   strokeDasharray="2,2"
                 />
@@ -167,7 +169,7 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
                   y={getY(level) + 3}
                   textAnchor="end"
                   fontSize="6"
-                  fill="#888"
+                  fill="currentColor"
                 >
                   {level}
                 </text>
@@ -185,7 +187,7 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
                   y={chartHeight - 4}
                   textAnchor="middle"
                   fontSize="6"
-                  fill="#888"
+                  fill="currentColor"
                 >
                   {skillLabel(p, multiSeason)}
                 </text>
@@ -218,11 +220,12 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
                     cy={cy}
                     r={isHovered ? 7 : isLast ? 6 : 4}
                     fill={barColor}
-                    stroke="#000"
+                    stroke="currentColor"
                     strokeWidth={isHovered || isLast ? 2 : 1}
-                    className="cursor-pointer"
+                    className="cursor-pointer text-zinc-950"
                     onMouseEnter={() => setHoveredIdx(i)}
                     onMouseLeave={() => setHoveredIdx(null)}
+                    onClick={() => setHoveredIdx(hoveredIdx === i ? null : i)}
                   />
                   {isLast && (
                     <circle
@@ -287,7 +290,7 @@ export function SkillLineChart({ skillHistory = [], skill = 0, position = "MED" 
         </div>
         <div className="flex items-center gap-1">
           <span className="inline-block w-3 h-3 rounded-full border border-current" />
-          <span>Actual ({cleanHistory.length} ponto{cleanHistory.length !== 1 ? "s" : ""})</span>
+          <span>Atual ({cleanHistory.length} ponto{cleanHistory.length !== 1 ? "s" : ""})</span>
         </div>
       </div>
     </div>

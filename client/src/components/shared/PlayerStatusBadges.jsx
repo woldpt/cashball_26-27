@@ -9,6 +9,7 @@
 import { useContext } from "react";
 import { Badge } from "./Badge.jsx";
 import { GameContext } from "../../contexts/GameContext.jsx";
+import { SEASON_WEEKS } from "../../constants/index.js";
 import { slotLabel } from "../../utils/slotLabel.js";
 
 /**
@@ -38,8 +39,8 @@ export function PlayerStatusBadges({
     !isSuspended && !isInjured && cooldown > 0 && cooldown > nowIdx;
 
   const contractStart = player.contract_start_epoch || 0;
-  const currentEpoch = (Math.max(1, season) - 1) * 20 + Math.min(20, nowIdx + 1);
-  const isLocked = contractStart > 0 && currentEpoch < contractStart + 20;
+  const currentEpoch = (Math.max(1, season) - 1) * SEASON_WEEKS + Math.min(SEASON_WEEKS, nowIdx + 1);
+  const isLocked = contractStart > 0 && currentEpoch < contractStart + SEASON_WEEKS;
   const isUnderContract = contractStart > 0;
   const isListed =
     player.transfer_status && player.transfer_status !== "none";
