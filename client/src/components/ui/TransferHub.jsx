@@ -12,6 +12,7 @@ import { Badge } from "../shared/Badge.jsx";
 import { StarMark } from "../shared/PlayerStatusBadges.jsx";
 import { StatTile } from "../shared/StatTile.jsx";
 import { Panel } from "../shared/Panel.jsx";
+import { TabBar } from "../shared/TabBar.jsx";
 import { EmptyState } from "../shared/EmptyState.jsx";
 import { hexToRgba } from "../../utils/colorHelpers.js";
 import {
@@ -28,6 +29,8 @@ function statusConfig(status) {
   if (status === "fixed") return { label: "À Venda", variant: "sold" };
   return { label: "Sem Lista", variant: "neutral" };
 }
+
+const POSITIONS = ["GR", "DEF", "MED", "ATA"];
 
 // Rótulo curto por origem do negócio no histórico (uma linha por negócio).
 const SOURCE_LABEL = {
@@ -439,7 +442,8 @@ export function TransferHub({
   matchweekCount = 0,
 }) {
   const [search, setSearch] = useState("");
-  const nowIdx = useContext(GameContext)?.calendarIndex ?? matchweekCount;
+  const game = useContext(GameContext);
+  const nowIdx = game?.calendarIndex ?? matchweekCount;
 
   const teamColorById = useMemo(() => {
     const map = new Map();
@@ -458,6 +462,31 @@ export function TransferHub({
     return list.filter((rec) => rec.source !== "auction");
   }, [transferHistory]);
 
+  // Contagens por posição para os chips (padrão PlayersTab): base não filtrada
+  // por posição (marketPairs do contexto) com as mesmas regras da lista
+  // (sem leilões + regra dos próprios à venda).
+  const posCounts = useMemo(() => {
+    const base = (game?.marketPairs ?? players).filter(
+      (p) =>
+        p.transfer_status !== "auction" &&
+        (p.team_id !== me?.teamId ||
+          (showOwnMarketPlayers && p.transfer_status === "fixed")),
+    );
+    const counts = { all: base.length, GR: 0, DEF: 0, MED: 0, ATA: 0 };
+    for (const p of base) {
+      if (counts[p.position] != null) counts[p.position] += 1;
+    }
+    return counts;
+  }, [game?.marketPairs, players, me?.teamId, showOwnMarketPlayers]);
+
+  const posTabs = useMemo(
+    () => [
+      { key: "all", label: `Todas · ${posCounts.all}` },
+      ...POSITIONS.map((pos) => ({ key: pos, label: `${pos} · ${posCounts[pos]}` })),
+    ],
+    [posCounts],
+  );
+
   const visible = useMemo(() => {
     const filtered = players.filter((p) => p.transfer_status !== "auction");
     if (!search.trim()) return filtered;
@@ -475,6 +504,14 @@ export function TransferHub({
     <Panel title="Mercado de Transferências" meta={`${visible.length} jogador${visible.length !== 1 ? "es" : ""} · ${formatCurrency(budget)}`}>
       <div className="p-3 md:p-4 short:p-2">
         {/* Search + filters */}
+        <TabBar
+          size="sm"
+          expand
+          tabs={posTabs}
+          active={marketPositionFilter}
+          onChange={setMarketPositionFilter}
+          className="mb-2 short:mb-1.5"
+        />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2 short:gap-1.5 mb-4 short:mb-2">
           <div className="relative md:col-span-2">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 text-sm select-none pointer-events-none">
@@ -490,26 +527,16 @@ export function TransferHub({
           </div>
           <select
             className="bg-surface border border-outline-variant/30 rounded-sm px-3 py-2.5 short:py-1.5 text-[11px] font-bold text-on-surface focus:ring-1 focus:ring-primary focus:outline-none"
-            value={marketPositionFilter}
-            onChange={(e) => setMarketPositionFilter(e.target.value)}
-          >
-            <option value="all">Posição: Todas</option>
-            <option value="GR">Guarda-Redes</option>
-            <option value="DEF">Defesa</option>
-            <option value="MED">Médio</option>
-            <option value="ATA">Avançado</option>
-          </select>
-          <select
-            className="bg-surface border border-outline-variant/30 rounded-sm px-3 py-2.5 short:py-1.5 text-[11px] font-bold text-on-surface focus:ring-1 focus:ring-primary focus:outline-none"
             value={marketSort}
             onChange={(e) => setMarketSort(e.target.value)}
+            aria-label="Ordenar mercado"
           >
             <option value="quality-desc">Qualidade ↓</option>
             <option value="quality-asc">Qualidade ↑</option>
             <option value="price-asc">Preço ↑</option>
             <option value="price-desc">Preço ↓</option>
           </select>
-          <label className="flex items-center gap-2 px-3 py-2.5 short:py-1.5 text-[11px] font-bold text-on-surface-variant cursor-pointer select-none md:col-span-2">
+          <label className="flex items-center gap-2 px-3 py-2.5 short:py-1.5 text-[11px] font-bold text-on-surface-variant cursor-pointer select-none">
             <input
               type="checkbox"
               checked={!!showOwnMarketPlayers}

@@ -1807,3 +1807,17 @@ Plano C1+C2 (quando fizer):
 - Forma sem emojis (só número + cor semântica; `BadgeSkills` completo duplicaria skill/RES já visíveis).
 - UX: orçamento no `meta` do Panel; histórico limitado às últimas 12 com scroll (`max-h-80`).
 - Checks: `check:types` OK; `lint` só os 2 erros pré-existentes (confirmado via `git stash`); `test:mobile` portrait 160/160 e landscape 192/192 PASS.
+
+## TransferHub — filtros em chips TabBar (2026-09-26)
+- 2.ª ronda: select de posição → `TabBar` (`expand`, padrão `PlayersTab`) com contagens (`Todas · N`, `GR · N`, …); contagens do `marketPairs` do contexto (não filtrado por posição) com as regras da lista (sem leilões + próprios à venda); grelha passa a TabBar full-width + pesquisa (span 2) + ordenação + checkbox.
+- Select de ordenação mantido nativo (precedente `PlayersTab`: só posição é TabBar). `POSITIONS` local (o export de `playerHelpers.js` do NOTES não existe nesta árvore).
+- Checks: `check:types` OK; `lint` limpo no ficheiro (2 erros pré-existentes noutros); portrait 160/160; landscape `transfer` 6/6 — o FAIL do `briefing` no passe completo foi flake (passa isolado com e sem a mudança; outra sessão edita ficheiros partilhados em paralelo).
+
+## Migração v5 — fans_mood em 1–50 (2026-09-26)
+- Pedido: unificar também o mood dos adeptos (ficou 0–100 na v4) na escala 1–50.
+- Migração `scale_v5` em `gameManager.ts` (arranque de cada sala, mesmo padrão v4): `NULL→30`, `=50→25`, `<1→1`, `>50→÷2` clamp 1–50; marcador em `game_state`. A faixa ambígua 1–49 fica intacta (senão corria uma sala nova no 1.º load) e re-equilibra sozinha pelo decaimento semanal para a base da divisão — a prova sintética apanhou o defeito simétrico da v4: conversão integral sem guarda corria salas novas (mood 30 → 15).
+- Parâmetros preservados (efeitos idênticos, valores ÷2): `fansMoodDefault` 60→30; `fansBaseByDivision` 65/60/55/50/45 → 33/30/28/25/23; deltas 9/-9/2 → 5/-5/1; bónus 1/-3/2/4/-5/5 → 1/-2/1/2/-3/3 (mult. dérbi/taça e taxa de decaimento 0.15 inalterados — multiplicativos/proporcionais); `attendanceDesertMoodMax` 25→13; "noite mágica" ≥85→≥43; entusiasmo `fansMood/100`→`/50` (ratio 0–1 idêntico).
+- `cupFlowHelpers` (reset de época) lê `fansBaseByDivision` das constantes — sem改动 próprio. `schema.sql` + `ALTER TABLE` de BDs antigas: default 60→30.
+- Cliente: `getFansMoodLabel` (morale.js) limiares 15/30/45/60/75/90 → 8/15/23/30/38/45; `StadiumTab` default 30, limiares 70→35 / 45→23, barra `mood*2`.
+- Evidência: typecheck OK; lint/check:types OK (2 erros pré-existentes em ficheiros não tocados); prova sintética 3x (8 casos 0–100 + NULL, 2.ª passagem no-op, sala nova intangível no 1.º load, mood 50 protegido pelo marcador após restart); `audit:gamestate V5AUDIT` 0 erros/0 warnings; `audit:socketio` 0 erros (97 warnings pré-existentes).
+- Nota: `constants/index.js` tem WIP de outra sessão (scout/TransferHub) — `APP_VERSION` não foi bumpada neste commit para não arrastar esse WIP.
