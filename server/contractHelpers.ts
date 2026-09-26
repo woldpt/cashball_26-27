@@ -15,6 +15,7 @@ import {
   RES_MIN,
   RES_MAX,
   ECON_FORM_REF,
+  CONTRACT_REQUEST_RESET_SQL,
 } from "./gameConstants";
 import {
   currentEpoch,
@@ -358,7 +359,7 @@ export function createContractHelpers(deps: ContractDeps) {
           const seasonEnd = getSeasonEndMatchweek(game.matchweek);
           await new Promise<void>((resolve) => {
             game.db.run(
-              "UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0, transfer_status = 'none', transfer_price = 0 WHERE id = ?",
+              `UPDATE players SET wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, ${CONTRACT_REQUEST_RESET_SQL}, transfer_status = 'none', transfer_price = 0 WHERE id = ?`,
               [fairWage, seasonEnd, now, game.matchweek, player.id],
               () => resolve(),
             );
@@ -375,7 +376,7 @@ export function createContractHelpers(deps: ContractDeps) {
       );
       await new Promise<void>((resolve) => {
         game.db.run(
-          "UPDATE players SET contract_start_epoch = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ?",
+          `UPDATE players SET contract_start_epoch = 0, ${CONTRACT_REQUEST_RESET_SQL} WHERE id = ?`,
           [player.id],
           () => {
             startAuction(game, player, auctionPrice, resolve, true);
@@ -504,7 +505,7 @@ export function createContractHelpers(deps: ContractDeps) {
       );
       await new Promise<void>((resolve) => {
         game.db.run(
-          "UPDATE players SET contract_start_epoch = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ?",
+          `UPDATE players SET contract_start_epoch = 0, ${CONTRACT_REQUEST_RESET_SQL} WHERE id = ?`,
           [player.id],
           () => {
             startAuction(game, player, auctionPrice, resolve, true);

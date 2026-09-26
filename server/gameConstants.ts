@@ -297,6 +297,15 @@ export const AWAY_TICKET_SHARE = 0.15;
 export const CONTRACT_LENGTH_MATCHWEEKS = 20;
 
 /**
+ * Fragmento SQL partilhado: limpa o estado de pedido do agente ao
+ * assinar/renovar/libertar um contrato. Usado nos UPDATEs de contrato do
+ * leilão, compra NPC, renovação NPC e expiração — um único sítio evita
+ * divergências de colunas entre caminhos.
+ */
+export const CONTRACT_REQUEST_RESET_SQL =
+  "contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0";
+
+/**
  * Época absoluta (1-based) derivada de (season, slot).
  * O slot é 1-based (1..20) e reseta no fim de época — monótono por época.
  */

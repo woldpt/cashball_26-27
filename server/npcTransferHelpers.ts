@@ -1,6 +1,6 @@
 import type { ActiveGame } from "./types";
 import { logClubNews, recordTransfer, getTeamsWithCoachNames, currentEpoch } from "./coreHelpers";
-import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_MATCHWEEKS, NPC_BUY_FLOOR_MARGIN } from "./gameConstants";
+import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_MATCHWEEKS, NPC_BUY_FLOOR_MARGIN, CONTRACT_REQUEST_RESET_SQL } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
 
@@ -111,7 +111,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
         // This prevents a double-sale when two NPC teams share the same marketPlayers snapshot.
         const changes = await new Promise<number>((resolve) => {
           game.db.run(
-            "UPDATE players SET team_id = ?, wage = ?, transfer_status = 'none', transfer_price = 0, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ? AND transfer_status = 'fixed' AND (contract_start_epoch = 0 OR contract_start_epoch + ? <= ?)",
+            `UPDATE players SET team_id = ?, wage = ?, transfer_status = 'none', transfer_price = 0, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, ${CONTRACT_REQUEST_RESET_SQL} WHERE id = ? AND transfer_status = 'fixed' AND (contract_start_epoch = 0 OR contract_start_epoch + ? <= ?)`,
             [
               npcTeam.id,
               signingWage(player),

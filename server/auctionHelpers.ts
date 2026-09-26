@@ -12,7 +12,7 @@ import {
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { upcomingMatchweek } from "./game/lineupReady";
-import { signingWage, AUCTION_BID_STEP, getAgentName, FORM_NEUTRAL, RES_NEUTRAL } from "./gameConstants";
+import { signingWage, AUCTION_BID_STEP, getAgentName, FORM_NEUTRAL, RES_NEUTRAL, CONTRACT_REQUEST_RESET_SQL } from "./gameConstants";
 
 interface AuctionDeps {
   io: any;
@@ -86,6 +86,24 @@ export function serializeActiveAuctions(game: ActiveGame): any[] {
   return out;
 }
 
+/**
+ * Lance mais alto do leilão (inclui lances legados no formato numérico).
+ * Empate: só substitui por estritamente maior — quem liderava primeiro fica.
+ * Sem lances: amount 0 e teamId null (o startAuction emite 0 na abertura).
+ */
+function currentHighBidOf(auction: any): { amount: number; teamId: number | null } {
+  let amount = -1;
+  let teamId: number | null = null;
+  for (const [tid, val] of Object.entries(auction?.bids || {})) {
+    const b = Number((typeof val === "object" ? (val as any).amount : val) || 0);
+    if (b > amount) {
+      amount = b;
+      teamId = parseInt(tid, 10);
+    }
+  }
+  return amount >= 0 ? { amount, teamId } : { amount: 0, teamId: null };
+}
+
 export function createAuctionHelpers(deps: AuctionDeps) {
   const {
     io,
@@ -107,15 +125,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           const decorated = rows.map((row) => {
             const auction = game.auctions?.[row.id] as any;
             if (!auction) return row;
-            let currentHighBid = -1;
-            let currentHighBidTeamId: number | null = null;
-            for (const [tid, val] of Object.entries(auction.bids || {})) {
-              const b = Number((typeof val === 'object' ? (val as any).amount : val) || 0);
-              if (b > currentHighBid) {
-                currentHighBid = b;
-                currentHighBidTeamId = parseInt(tid, 10);
-              }
-            }
+            const currentHigh = currentHighBidOf(auction);
             // Construir histórico de licitações com nomes das equipas
             const bidHistory = Object.entries(auction.bids || {}).map(([tid, val]: [string, any]) => {
               const bidVal = typeof val === 'object' ? (val as any).amount : val;
@@ -133,8 +143,8 @@ export function createAuctionHelpers(deps: AuctionDeps) {
               isExClub: !!auction.isExClub,
               auction_ends_at: auction.endsAt,
               auction_starting_price: auction.startingPrice,
-              auction_high_bid: currentHighBid,
-              auction_high_bid_team_id: currentHighBidTeamId,
+              auction_high_bid: currentHigh.amount,
+              auction_high_bid_team_id: currentHigh.teamId,
               auction_bid_history: bidHistory,
             };
           });
@@ -194,21 +204,13 @@ export function createAuctionHelpers(deps: AuctionDeps) {
       }, remainingMs);
 
       // Recalculate current high bid
-      let currentHighBid = -1;
-      let currentHighBidTeamId: number | null = null;
-      for (const [tid, val] of Object.entries(auction.bids || {})) {
-        const b = Number((typeof val === 'object' ? (val as any).amount : val) || 0);
-        if (b > currentHighBid) {
-          currentHighBid = b;
-          currentHighBidTeamId = parseInt(tid, 10);
-        }
-      }
+      const currentHigh = currentHighBidOf(auction);
 
       io.to(game.roomCode).emit("auctionResumed", {
         playerId,
         endsAt: auction.endsAt,
-        currentHighBid,
-        currentHighBidTeamId,
+        currentHighBid: currentHigh.amount,
+        currentHighBidTeamId: currentHigh.teamId,
       });
 
       scheduleNpcAuctionBids(game, playerId);
@@ -382,7 +384,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
       );
       await runExec(
         game.db,
-        "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ?",
+        `UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, ${CONTRACT_REQUEST_RESET_SQL} WHERE id = ?`,
         [
           buyerTeamId,
           signingWage(player),
@@ -674,16 +676,9 @@ export function createAuctionHelpers(deps: AuctionDeps) {
       });
     }
 
-    // Calculate current high bid
-    let currentHighBid = -1;
-    let currentHighBidTeamId: number | null = null;
-    for (const [tid, amount] of Object.entries(auction.bids || {})) {
-      const bid = Number((typeof amount === 'object' ? (amount as any).amount : amount) || 0);
-      if (bid > currentHighBid) {
-        currentHighBid = bid;
-        currentHighBidTeamId = parseInt(tid, 10);
-      }
-    }
+    const currentHigh = currentHighBidOf(auction);
+    const currentHighBid = currentHigh.amount;
+    const currentHighBidTeamId = currentHigh.teamId;
 
     // Leader cannot rebid
     if (currentHighBidTeamId === teamId) {
@@ -720,15 +715,9 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           auction.bids[teamId] = { amount, timestamp: Date.now() };
 
           // Recalculate high bid after placing
-          let newHighBid = -1;
-          let newHighBidTeamId: number | null = null;
-          for (const [tid, val] of Object.entries(auction.bids || {})) {
-            const b = Number((typeof val === 'object' ? (val as any).amount : val) || 0);
-            if (b > newHighBid) {
-              newHighBid = b;
-              newHighBidTeamId = parseInt(tid, 10);
-            }
-          }
+          const newHigh = currentHighBidOf(auction);
+          const newHighBid = newHigh.amount;
+          const newHighBidTeamId = newHigh.teamId;
 
           // Construir histórico atualizado de licitações
           const bidHistory = Object.entries(auction.bids).map(([tid, val]: [string, any]) => ({
