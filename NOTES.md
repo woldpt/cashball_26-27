@@ -2080,3 +2080,8 @@ Plano C1+C2 (quando fizer):
 - `seedEcon.js` incluído no `fixtures_hash` (seed) e `templateHash()` (ensureSeeded) — base.db re-seeda sozinho.
 - Detetado: fixtures dos 3 grandes têm `skillRange [39,54]` → ~18 jogadores/seed clampados a 50 (escala unificada 1–50), visível no warn; economia equivalente à seed antiga (agregados por divisão desviam <3%, budgets/contagens idênticos).
 - Checks: `typecheck` + `build` OK; paridade seedEcon↔gameConstants (src e dist) OK; `SEED=42` 2× → md5 idêntico; seed aleatória OK (60 equipas/1320 jogadores); `audit:socketio` 0 erros (97 warnings pré-existentes, sem handlers tocados). Client intocado.
+
+## Avatares — correção completa (2026-09-26)
+- Avaliação pedida: 7/10 (variedade 8, legibilidade em pequeno 8, encaixe cabelo↔rosto 5, detalhes 6). Plano aprovado (tudo de uma vez) e executado só em `client/src/components/shared/PlayerAvatar.jsx`.
+- Fixes: base frontal por estilo (acaba com testa careca; buzz/crewcut excluídos por terem hairline própria); spikes frontais com corpo varridos para o lado + pontas de trás baixadas (fim das velas); `irisShift` a 0 (ambas para dentro = vesgo); fita em arco de têmpora a têmpora com nó e ponta pendente; olhos `focused` fechados com pestanas + sobrancelha bold forçada; crewcut com hairline serrilhada (fim do ar de boné).
+- Checks: galeria temporária + screenshots Playwright antes/depois (16 casos XL, apagada no fim); eslint sem erros no ficheiro (3 erros pré-existentes noutros, confirmados com `git stash`); `check:types` OK. Sem `test:mobile` (tweak interno de SVG) nem audits (sem lógica de jogo).

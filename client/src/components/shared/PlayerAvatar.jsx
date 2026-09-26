@@ -522,12 +522,12 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
     if (hairStyle === "spiky") {
       // Intentional spikes sweeping up-right, like wind-blown anime hair
       const sx = [
-        { bx: headLeft + 4,  tipX: headLeft + 8,  tipY: face.top - 2  },
-        { bx: headLeft + 18, tipX: headLeft + 22, tipY: face.top - 14 },
-        { bx: centerX - 14,  tipX: centerX - 10,  tipY: face.top - 20 },
-        { bx: centerX + 2,   tipX: centerX + 6,   tipY: face.top - 16 },
-        { bx: centerX + 18,  tipX: centerX + 22,  tipY: face.top - 10 },
-        { bx: headRight - 14,tipX: headRight - 10, tipY: face.top - 4  },
+        { bx: headLeft + 4,  tipX: headLeft + 8,  tipY: face.top - 1  },
+        { bx: headLeft + 18, tipX: headLeft + 22, tipY: face.top - 10 },
+        { bx: centerX - 14,  tipX: centerX - 10,  tipY: face.top - 13 },
+        { bx: centerX + 2,   tipX: centerX + 6,   tipY: face.top - 11 },
+        { bx: centerX + 18,  tipX: centerX + 22,  tipY: face.top - 8  },
+        { bx: headRight - 14,tipX: headRight - 10, tipY: face.top - 2  },
       ];
       return (
         <g fill={hair.base} stroke={hairStroke} strokeWidth="1.8" strokeLinejoin="round">
@@ -753,12 +753,12 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
     if (hairStyle === "spiky") {
       // Backbone line down each spike
       const sx = [
-        { tx: headLeft + 8,  ty: face.top - 2,  bx: headLeft + 4 },
-        { tx: headLeft + 22, ty: face.top - 14, bx: headLeft + 18 },
-        { tx: centerX - 10,  ty: face.top - 20, bx: centerX - 14 },
-        { tx: centerX + 6,   ty: face.top - 16, bx: centerX + 2 },
-        { tx: centerX + 22,  ty: face.top - 10, bx: centerX + 18 },
-        { tx: headRight - 10,ty: face.top - 4,  bx: headRight - 14 },
+        { tx: headLeft + 8,  ty: face.top - 1,  bx: headLeft + 4 },
+        { tx: headLeft + 22, ty: face.top - 10, bx: headLeft + 18 },
+        { tx: centerX - 10,  ty: face.top - 13, bx: centerX - 14 },
+        { tx: centerX + 6,   ty: face.top - 11, bx: centerX + 2 },
+        { tx: centerX + 22,  ty: face.top - 8,  bx: centerX + 18 },
+        { tx: headRight - 10,ty: face.top - 2,  bx: headRight - 14 },
       ];
       return (
         <g stroke={hair.shine} strokeWidth="1.5" fill="none" strokeLinecap="round" opacity={hairShineOpacity}>
@@ -884,6 +884,15 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
             strokeWidth="1.6"
             strokeLinejoin="round"
           />
+          {/* Hairline serrilhada — desfaz o ar de boné */}
+          <path
+            d={`M${headLeft + 6} ${face.top + 8}
+                l4 5 4 -5 4 5 4 -5 4 5 4 -5 4 5 4 -5 4 5 4 -5 4 5 4 -5 Z`}
+            fill={hair.base}
+            stroke={hairStroke}
+            strokeWidth="1.2"
+            strokeLinejoin="round"
+          />
           {/* Short bristle strokes */}
           <g stroke={hexToRgba(hair.shine, 0.3)} strokeWidth="0.9" fill="none" strokeLinecap="round">
             <path d={`M${headLeft + 12} ${face.top + 7} L${headLeft + 12} ${face.top + 5}`} />
@@ -975,24 +984,24 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
     }
 
     if (hairStyle === "spiky") {
-      // 6 well-defined spike shapes on the forehead
+      // 6 spikes com corpo, varridos para o lado e enraizados na base frontal
       const spikes = [
-        { bx: headLeft + 6,  tipX: headLeft + 10, tipY: face.top - 4 },
-        { bx: headLeft + 16, tipX: headLeft + 24, tipY: face.top - 18 },
-        { bx: centerX - 14,  tipX: centerX - 8,  tipY: face.top - 24 },
-        { bx: centerX,        tipX: centerX + 8,  tipY: face.top - 20 },
-        { bx: centerX + 18,  tipX: centerX + 24, tipY: face.top - 12 },
-        { bx: headRight - 16,tipX: headRight - 8, tipY: face.top - 6 },
+        { bx: headLeft + 6,  tipX: headLeft + 14, tipY: face.top + 1 },
+        { bx: headLeft + 16, tipX: headLeft + 26, tipY: face.top - 9 },
+        { bx: centerX - 14,  tipX: centerX - 4,  tipY: face.top - 13 },
+        { bx: centerX,        tipX: centerX + 12,  tipY: face.top - 10 },
+        { bx: centerX + 18,  tipX: centerX + 28, tipY: face.top - 5 },
+        { bx: headRight - 16,tipX: headRight - 6, tipY: face.top },
       ];
       return (
         <g fill={hair.base} stroke={hairStroke} strokeWidth="1.8" strokeLinejoin="round">
           {spikes.map((s, i) => (
             <path
               key={i}
-              d={`M${s.bx} ${face.top + 4}
+              d={`M${s.bx - 2} ${face.top + 10}
                   Q${(s.bx + s.tipX) / 2} ${s.tipY - 2} ${s.tipX} ${s.tipY}
-                  Q${(s.bx + s.tipX) / 2 + 3} ${s.tipY + 4} ${s.bx + 6} ${face.top + 8}
-                  Q${s.bx + 3} ${face.top + 16} ${s.bx} ${face.top + 4} Z`}
+                  Q${(s.bx + s.tipX) / 2 + 4} ${s.tipY + 5} ${s.bx + 9} ${face.top + 12}
+                  Q${s.bx + 4} ${face.top + 18} ${s.bx - 2} ${face.top + 10} Z`}
             />
           ))}
         </g>
@@ -1247,7 +1256,7 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
       );
     }
 
-    if (browStyle === "bold") {
+    if (browStyle === "bold" || (eyeStyle === "sharp" && expression === "focused")) {
       // Sobrancelhas grossas como traço de pincel - Hyuga / Wakashimazu
       return (
         <g fill={OUTLINE} stroke="none">
@@ -1281,7 +1290,7 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
     const asianScale = isAsian ? 0.85 : 1.0;
     const localEyeRx = eyeRx * asianScale;
     const lidLift = (eyeStyle === "sharp" ? 4 + angryTilt * 0.4 : eyeStyle === "hero" ? 7.5 : 6.5) + profile.lidBoost;
-    const irisShift = direction === "left" ? 1.2 : -1.2;
+    const irisShift = 0; // íris centradas — deslocar ambas para dentro parecia vesgo
     const isClosed = eyeStyle === "sharp" && expression === "focused";
 
     if (isClosed) {
@@ -1291,16 +1300,23 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
             d={`M${x - localEyeRx} ${eyeY + 1}
                 Q${x} ${eyeY - lidLift * 0.5} ${x + localEyeRx} ${eyeY + 1}`}
             stroke={OUTLINE}
-            strokeWidth="3.5"
+            strokeWidth="4"
             fill="none"
             strokeLinecap="round"
           />
           <path
-            d={`M${x - localEyeRx + 2} ${eyeY + 3} L${x + localEyeRx - 2} ${eyeY + 3}`}
+            d={`M${x - localEyeRx + 3} ${eyeY + 4}
+                Q${x} ${eyeY + 6.5} ${x + localEyeRx - 3} ${eyeY + 4}`}
             stroke={OUTLINE}
             strokeWidth="2"
+            fill="none"
             strokeLinecap="round"
           />
+          {/* Pestanas inferiores — dão expressão ao olho cerrado */}
+          <g stroke={OUTLINE} strokeWidth="1.6" strokeLinecap="round" fill="none">
+            <path d={`M${x - localEyeRx + 5} ${eyeY + 5.5} l-1.5 2.5`} />
+            <path d={`M${x + localEyeRx - 5} ${eyeY + 5.5} l1.5 2.5`} />
+          </g>
         </g>
       );
     }
@@ -1781,6 +1797,16 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
           fill={hexToRgba(skin.blush, expression === "smile" || expression === "grin" ? cheekAlpha + 0.1 : cheekAlpha)}
         />
 
+        {/* Base frontal — liga a massa de trás às madeixas, sem testa careca */}
+        {hairStyle !== "bald" && hairStyle !== "buzz" && hairStyle !== "crewcut" && (
+          <path
+            d={`M${headLeft + 2} ${face.top + 22}
+                C${headLeft + 1} ${face.top + 6} ${headLeft + 10} ${face.top - 1} ${centerX} ${face.top - 1}
+                C${headRight - 10} ${face.top - 1} ${headRight - 1} ${face.top + 6} ${headRight - 2} ${face.top + 22}
+                Q${centerX} ${face.top + 15} ${headLeft + 2} ${face.top + 22} Z`}
+            fill={hair.base}
+          />
+        )}
         {/* Cabelo da frente */}
         {renderFrontHair()}
         {renderHairShine()}
@@ -1795,36 +1821,54 @@ function PlayerAvatarInner({ seed, position, teamColor, nationality, size = "lg"
           />
         )}
 
-        {/* Faixa */}
+        {/* Faixa — arco de têmpora a têmpora, por cima do cabelo */}
         {headband && (
           <g>
-            <rect
-              x={headLeft + 6}
-              y={browY - 9}
-              width={headWidth - 12}
-              height="9"
-              rx="1.5"
+            <path
+              d={`M${headLeft + 2} ${browY - 3}
+                  Q${centerX} ${browY - 13} ${headRight - 2} ${browY - 3}
+                  L${headRight - 2} ${browY + 3}
+                  Q${centerX} ${browY - 7} ${headLeft + 2} ${browY + 3} Z`}
               fill={shirtLight}
               stroke={OUTLINE}
               strokeWidth="1.6"
+              strokeLinejoin="round"
             />
-            <rect
-              x={headLeft + 6}
-              y={browY - 6}
-              width={headWidth - 12}
-              height="3"
-              fill={shirt}
-              opacity="0.55"
+            <path
+              d={`M${headLeft + 6} ${browY - 5}
+                  Q${centerX} ${browY - 11} ${headRight - 6} ${browY - 5}`}
+              stroke={shirt}
+              strokeWidth="2"
+              fill="none"
+              opacity="0.6"
+              strokeLinecap="round"
             />
-            {/* Nó da faixa de lado */}
+            {/* Nó com ponta pendente */}
             <path
               d={`M${headRight - 4} ${browY - 8}
-                  L${headRight + 6} ${browY - 12}
-                  L${headRight + 8} ${browY - 4}
-                  L${headRight - 2} ${browY - 1} Z`}
+                  L${headRight + 7} ${browY - 11}
+                  L${headRight + 9} ${browY - 3}
+                  L${headRight - 2} ${browY} Z`}
               fill={shirt}
               stroke={OUTLINE}
               strokeWidth="1.4"
+              strokeLinejoin="round"
+            />
+            <path
+              d={`M${headRight + 6} ${browY - 4}
+                  Q${headRight + 9} ${browY + 4} ${headRight + 5} ${browY + 10}`}
+              stroke={OUTLINE}
+              strokeWidth="2.4"
+              fill="none"
+              strokeLinecap="round"
+            />
+            <path
+              d={`M${headRight + 6} ${browY - 4}
+                  Q${headRight + 9} ${browY + 4} ${headRight + 5} ${browY + 10}`}
+              stroke={shirtLight}
+              strokeWidth="1.2"
+              fill="none"
+              strokeLinecap="round"
             />
           </g>
         )}
