@@ -2131,3 +2131,7 @@ Plano C1+C2 (quando fizer):
 - Fix: helper `checkpoint()` (saveTeams+saveState, no-op em dry-run) chamado após cada mutação — emblema, cada foto/DOB de jogador, foto/DOB de treinador — e no fim da equipa. Retoma salta o já feito pelo modo inteligente.
 - Prova: `--equipas="Bragança" --info=fotoJogadores --renew` (22 re-downloads, mesmos bytes) + audit 0 erros; `.bak` atualizado. Checks: typecheck verde.
 - Lição: nunca correr a TUI com `| head`; usar `> ficheiro.log`.
+
+## At. Reguengos — troca parcial (2026-09-26)
+- Página só tem 18 (16 dos nossos fora dela): 14 saem, 12 entram com foto/DOB; ficam Thallis Mota (GR) e Titico (ATA, primeiros listados, sem idade nos dados) como stopgaps → 20, mínimos 3/6/6/5 OK, audit verde. Página sem secção de treinador (manager intocado).
+- Corrida TUI: 13 fotos (12 novos + João Cosme) + 18 DOBs. Nota: o `--renew` de verificação no Bragança preencheu 22 DOBs como efeito lateral (vão neste commit).

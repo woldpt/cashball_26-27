@@ -4757,7 +4757,8 @@
           "position": "GR",
           "age": 23,
           "zerozeroId": 890572,
-          "photo": "/players/890572.webp"
+          "photo": "/players/890572.webp",
+          "dob": "2003-07-15"
         },
         {
           "name": "André Reis",
@@ -4765,7 +4766,8 @@
           "position": "GR",
           "age": 31,
           "zerozeroId": 300060,
-          "photo": "/players/300060.webp"
+          "photo": "/players/300060.webp",
+          "dob": "1995-08-20"
         },
         {
           "name": "José Costa",
@@ -4773,7 +4775,8 @@
           "position": "GR",
           "age": 17,
           "zerozeroId": 1119305,
-          "photo": "/players/1119305.webp"
+          "photo": "/players/1119305.webp",
+          "dob": "2009-06-22"
         },
         {
           "name": "Hélder Silva",
@@ -4781,7 +4784,8 @@
           "position": "DEF",
           "age": 21,
           "zerozeroId": 645680,
-          "photo": "/players/645680.webp"
+          "photo": "/players/645680.webp",
+          "dob": "2004-12-09"
         },
         {
           "name": "Lucas Moreira",
@@ -4789,7 +4793,8 @@
           "position": "DEF",
           "age": 22,
           "zerozeroId": 1005870,
-          "photo": "/players/1005870.webp"
+          "photo": "/players/1005870.webp",
+          "dob": "2004-05-18"
         },
         {
           "name": "Ivaldino Santos",
@@ -4797,7 +4802,8 @@
           "position": "DEF",
           "age": 21,
           "zerozeroId": 1393338,
-          "photo": "/players/1393338.webp"
+          "photo": "/players/1393338.webp",
+          "dob": "2005-03-28"
         },
         {
           "name": "Rorke Bishop",
@@ -4805,7 +4811,8 @@
           "position": "DEF",
           "age": 21,
           "zerozeroId": 3507207,
-          "photo": "/players/3507207.webp"
+          "photo": "/players/3507207.webp",
+          "dob": "2005-04-18"
         },
         {
           "name": "Jorge Passas",
@@ -4813,7 +4820,8 @@
           "position": "DEF",
           "age": 25,
           "zerozeroId": 643986,
-          "photo": "/players/643986.webp"
+          "photo": "/players/643986.webp",
+          "dob": "2001-02-03"
         },
         {
           "name": "Eddy",
@@ -4821,7 +4829,8 @@
           "position": "DEF",
           "age": 25,
           "zerozeroId": 931901,
-          "photo": "/players/931901.webp"
+          "photo": "/players/931901.webp",
+          "dob": "2000-10-04"
         },
         {
           "name": "Gabriel Mesquita",
@@ -4829,7 +4838,8 @@
           "position": "MED",
           "age": 17,
           "zerozeroId": 1119274,
-          "photo": "/players/1119274.webp"
+          "photo": "/players/1119274.webp",
+          "dob": "2009-07-31"
         },
         {
           "name": "Diogo Dinis",
@@ -4837,7 +4847,8 @@
           "position": "MED",
           "age": 17,
           "zerozeroId": 1119269,
-          "photo": "/players/1119269.webp"
+          "photo": "/players/1119269.webp",
+          "dob": "2008-11-17"
         },
         {
           "name": "Mariano Varela",
@@ -4845,7 +4856,8 @@
           "position": "MED",
           "age": 25,
           "zerozeroId": 560879,
-          "photo": "/players/560879.webp"
+          "photo": "/players/560879.webp",
+          "dob": "2001-05-19"
         },
         {
           "name": "Kika",
@@ -4853,7 +4865,8 @@
           "position": "MED",
           "age": 30,
           "zerozeroId": 369835,
-          "photo": "/players/369835.webp"
+          "photo": "/players/369835.webp",
+          "dob": "1996-07-30"
         },
         {
           "name": "Rúben Ferreira",
@@ -4861,7 +4874,8 @@
           "position": "MED",
           "age": 28,
           "zerozeroId": 485814,
-          "photo": "/players/485814.webp"
+          "photo": "/players/485814.webp",
+          "dob": "1998-05-18"
         },
         {
           "name": "Jaílson",
@@ -4869,7 +4883,8 @@
           "position": "MED",
           "age": 26,
           "zerozeroId": 646975,
-          "photo": "/players/646975.webp"
+          "photo": "/players/646975.webp",
+          "dob": "1999-12-23"
         },
         {
           "name": "Victoire Ushindi",
@@ -4877,7 +4892,8 @@
           "position": "ATA",
           "age": 23,
           "zerozeroId": 1251967,
-          "photo": "/players/1251967.webp"
+          "photo": "/players/1251967.webp",
+          "dob": "2003-01-15"
         },
         {
           "name": "Gonçalo Monteiro",
@@ -4885,7 +4901,8 @@
           "position": "ATA",
           "age": 25,
           "zerozeroId": 560820,
-          "photo": "/players/560820.webp"
+          "photo": "/players/560820.webp",
+          "dob": "2001-02-19"
         },
         {
           "name": "Danilson Mendes",
@@ -4893,7 +4910,8 @@
           "position": "ATA",
           "age": 22,
           "zerozeroId": 903549,
-          "photo": "/players/903549.webp"
+          "photo": "/players/903549.webp",
+          "dob": "2003-10-31"
         },
         {
           "name": "Mateus Teixeira",
@@ -4901,7 +4919,8 @@
           "position": "ATA",
           "age": 18,
           "zerozeroId": 1119505,
-          "photo": "/players/1119505.webp"
+          "photo": "/players/1119505.webp",
+          "dob": "2008-02-04"
         },
         {
           "name": "Baboucarr Gaye",
@@ -4909,7 +4928,8 @@
           "position": "ATA",
           "age": 18,
           "zerozeroId": 2504574,
-          "photo": "/players/2504574.webp"
+          "photo": "/players/2504574.webp",
+          "dob": "2007-12-12"
         },
         {
           "name": "Pipo Marques",
@@ -4917,7 +4937,8 @@
           "position": "DEF",
           "age": 24,
           "zerozeroId": 301769,
-          "photo": "/players/301769.webp"
+          "photo": "/players/301769.webp",
+          "dob": "2002-01-17"
         },
         {
           "name": "Marco Trigo",
@@ -4925,7 +4946,8 @@
           "position": "MED",
           "age": 25,
           "zerozeroId": 530438,
-          "photo": "/players/530438.webp"
+          "photo": "/players/530438.webp",
+          "dob": "2001-03-18"
         }
       ],
       "crest": "/logos/braganca.webp",
@@ -6907,7 +6929,8 @@
           "position": "GR",
           "age": 22,
           "zerozeroId": 967171,
-          "photo": "/players/967171.webp"
+          "photo": "/players/967171.webp",
+          "dob": "2004-02-23"
         },
         {
           "name": "Pedro Balixa",
@@ -6915,7 +6938,8 @@
           "position": "DEF",
           "age": 28,
           "zerozeroId": 542151,
-          "photo": "/players/542151.webp"
+          "photo": "/players/542151.webp",
+          "dob": "1998-04-07"
         },
         {
           "name": "Diogo Catronga",
@@ -6923,7 +6947,8 @@
           "position": "DEF",
           "age": 22,
           "zerozeroId": 917533,
-          "photo": "/players/917533.webp"
+          "photo": "/players/917533.webp",
+          "dob": "2003-12-08"
         },
         {
           "name": "Rodrigo Ferreira",
@@ -6931,7 +6956,8 @@
           "position": "MED",
           "age": 19,
           "zerozeroId": 1129069,
-          "photo": "/players/1129069.webp"
+          "photo": "/players/1129069.webp",
+          "dob": "2007-07-19"
         },
         {
           "name": "Duarte Conde",
@@ -6939,7 +6965,8 @@
           "position": "MED",
           "age": 19,
           "zerozeroId": 1013082,
-          "photo": "/players/1013082.webp"
+          "photo": "/players/1013082.webp",
+          "dob": "2006-12-25"
         },
         {
           "name": "Thallis Mota",
@@ -6947,54 +6974,12 @@
           "position": "GR"
         },
         {
-          "name": "Luís Rosado",
-          "country": "🇵🇹",
-          "position": "GR"
-        },
-        {
           "name": "João Cosme",
           "country": "🇵🇹",
-          "position": "DEF"
-        },
-        {
-          "name": "Rodrigo Rodeia",
-          "country": "🇵🇹",
-          "position": "DEF"
-        },
-        {
-          "name": "Bernardo Júnior",
-          "country": "🇵🇹",
-          "position": "DEF"
-        },
-        {
-          "name": "Luís Coelho",
-          "country": "🇵🇹",
-          "position": "DEF"
-        },
-        {
-          "name": "Luís Quintas",
-          "country": "🇵🇹",
-          "position": "DEF"
-        },
-        {
-          "name": "Santiago Santinha",
-          "country": "🇵🇹",
-          "position": "MED"
-        },
-        {
-          "name": "Bubacar Embaló",
-          "country": "🇬🇼",
-          "position": "MED"
-        },
-        {
-          "name": "Miguel Rainha",
-          "country": "🇵🇹",
-          "position": "MED"
-        },
-        {
-          "name": "Gonçalo Piçarra",
-          "country": "🇵🇹",
-          "position": "MED"
+          "position": "DEF",
+          "zerozeroId": 1023289,
+          "dob": "2008-08-05",
+          "photo": "/players/1023289.jpg"
         },
         {
           "name": "Titico",
@@ -7002,30 +6987,112 @@
           "position": "ATA"
         },
         {
-          "name": "Ivonildo Sá",
+          "name": "Santiago Ramalho",
           "country": "🇵🇹",
-          "position": "ATA"
+          "position": "GR",
+          "age": 17,
+          "zerozeroId": 1132211,
+          "photo": "/players/1132211.jpg",
+          "dob": "2009-06-01"
         },
         {
-          "name": "Anssumane Sanhá",
+          "name": "Estimotio Sá",
           "country": "🇬🇼",
-          "position": "ATA"
+          "position": "DEF",
+          "age": 20,
+          "zerozeroId": 2492712,
+          "photo": "/players/2492712.png",
+          "dob": "2006-03-23"
         },
         {
-          "name": "Tomás Ramalho",
+          "name": "Pedro Queimado",
           "country": "🇵🇹",
-          "position": "ATA"
+          "position": "DEF",
+          "age": 28,
+          "zerozeroId": 526109,
+          "photo": "/players/526109.jpg",
+          "dob": "1998-02-20"
         },
         {
-          "name": "Marvin Freira",
+          "name": "Hugo Cebola",
           "country": "🇵🇹",
-          "position": "ATA"
+          "position": "DEF",
+          "age": 25,
+          "zerozeroId": 728064,
+          "photo": "/players/728064.jpg",
+          "dob": "2001-07-02"
         },
         {
-          "name": "Carlos Reguengos",
+          "name": "Júnior Essesso",
+          "country": "🇨🇲",
+          "position": "MED",
+          "age": 24,
+          "zerozeroId": 1929410,
+          "photo": "/players/1929410.png",
+          "dob": "2001-12-31"
+        },
+        {
+          "name": "Matheus Santos",
+          "country": "🇧🇷",
+          "position": "MED",
+          "age": 28,
+          "zerozeroId": 2490238,
+          "photo": "/players/2490238.jpg",
+          "dob": "1998-02-05"
+        },
+        {
+          "name": "Lucas Sousa",
+          "country": "🇧🇷",
+          "position": "MED",
+          "age": 23,
+          "zerozeroId": 1920062,
+          "photo": "/players/1920062.jpg",
+          "dob": "2003-05-14"
+        },
+        {
+          "name": "André Furtado",
           "country": "🇵🇹",
           "position": "MED",
-          "age": 22
+          "age": 19,
+          "zerozeroId": 2511479,
+          "photo": "/players/2511479.jpg",
+          "dob": "2007-01-23"
+        },
+        {
+          "name": "Fernandes Miguel",
+          "country": "🇦🇴",
+          "position": "ATA",
+          "age": 33,
+          "zerozeroId": 746048,
+          "photo": "/players/746048.png",
+          "dob": "1993-02-11"
+        },
+        {
+          "name": "Vasco Perdiz",
+          "country": "🇵🇹",
+          "position": "ATA",
+          "age": 19,
+          "zerozeroId": 918454,
+          "photo": "/players/918454.jpg",
+          "dob": "2007-07-11"
+        },
+        {
+          "name": "Pedro Valadas",
+          "country": "🇵🇹",
+          "position": "ATA",
+          "age": 17,
+          "zerozeroId": 1132324,
+          "photo": "/players/1132324.jpg",
+          "dob": "2008-11-20"
+        },
+        {
+          "name": "Hernâni Alberto",
+          "country": "🇦🇴",
+          "position": "ATA",
+          "age": 19,
+          "zerozeroId": 1109848,
+          "photo": "/players/1109848.jpg",
+          "dob": "2007-06-14"
         }
       ],
       "crest": "/logos/at-reguengos.webp",
