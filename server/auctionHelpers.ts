@@ -7,6 +7,8 @@ import {
   isContractLocked,
   contractEndInfo,
   seasonToYear,
+  runExec,
+  runGet,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { upcomingMatchweek } from "./game/lineupReady";
@@ -65,7 +67,7 @@ export function serializeActiveAuctions(game: ActiveGame): any[] {
       red_cards: row.red_cards || 0,
       injuries: row.injuries || 0,
       games_played: row.games_played || 0,
-      aggressiveness: row.aggressiveness ?? 3,
+      aggressiveness: row.aggressiveness ?? 30,
       is_star: row.is_star || 0,
       startingPrice: row.auction_starting_price ?? auction?.startingPrice ?? 0,
       endsAt: row.auction_ends_at ?? auction?.endsAt ?? null,
@@ -235,278 +237,273 @@ export function createAuctionHelpers(deps: AuctionDeps) {
     );
   };
 
-  const finalizeAuction = (game: ActiveGame, playerId: number) => {
+  const finalizeAuction = async (game: ActiveGame, playerId: number) => {
+    // Nunca rejeita: os chamadores (timers e deps tipadas `=> void`) não
+    // apanham promessas — qualquer erro é registado e o leilão fecha.
+    try {
+      await runFinalizeAuction(game, playerId);
+    } catch (err) {
+      console.error(`[${game.roomCode}] ❌ finalizeAuction:`, err);
+    }
+  };
+
+  const runFinalizeAuction = async (game: ActiveGame, playerId: number) => {
     if (!game.auctions || !game.auctions[playerId]) return;
     const auction = game.auctions[playerId] as any;
     const timer = game.auctionTimers?.[playerId];
     if (timer) clearTimeout(timer as any);
 
-    const bidEntries = Object.entries(auction.bids || {});
-    let winnerTeamId: number | null = null;
-    let winnerBid = -1;
-    for (const [teamId, amount] of bidEntries) {
-      const bid = Number((typeof amount === 'object' ? (amount as any).amount : amount) || 0);
-      // Só substitui se for estritamente superior — em caso de empate, fica quem já liderava
-      if (bid > winnerBid) {
-        winnerBid = bid;
-        winnerTeamId = parseInt(teamId, 10);
-      }
-    }
-
-    game.db.get(
+    const player = await runGet<any>(
+      game.db,
       "SELECT p.*, COALESCE(t.name, '?') as team_name FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.id = ?",
       [playerId],
-      (err: Error | null, player: any) => {
-        if (err || !player) {
+    );
+    if (!player) {
+      delete game.auctions![playerId];
+      delete game.auctionTimers?.[playerId];
+      refreshMarket(game);
+      return;
+    }
+
+    const recentBase = {
+      playerId,
+      name: player.name,
+      position: player.position,
+      photo: player.photo || null,
+      skill: player.skill,
+      is_star: player.is_star || 0,
+      team_name: player.team_name || null,
+      sellerTeamId: auction.sellerTeamId,
+      isExClub: !!auction.isExClub,
+    };
+
+    const closeUnsold = (title: string, description: string) => {
+      game.db.run(
+        "UPDATE players SET transfer_status = 'none', transfer_price = 0 WHERE id = ?",
+        [playerId],
+        () => {
+          // Sem toast: o Jornal regista uma notícia por evento.
+          logClubNews(
+            game,
+            "auction_failed",
+            title,
+            auction.sellerTeamId,
+            {
+              player_name: player.name,
+              player_id: playerId,
+              description,
+            },
+            io,
+            { isAuction: true },
+          );
+          recordRecentAuction(game, {
+            ...recentBase,
+            result: { playerId, playerName: player.name, sold: false },
+          });
           delete game.auctions![playerId];
           delete game.auctionTimers?.[playerId];
           refreshMarket(game);
-          return;
-        }
+          io.to(game.roomCode).emit("auctionClosed", {
+            playerId,
+            playerName: player.name,
+            sold: false,
+          });
+        },
+      );
+    };
 
-        if (!winnerTeamId) {
-          game.db.run(
-            "UPDATE players SET transfer_status = 'none', transfer_price = 0 WHERE id = ?",
-            [playerId],
-            () => {
-              // Sem toast: o Jornal regista uma notícia por evento.
-              // Log club news for failed auction
-              logClubNews(
-                game,
-                "auction_failed",
-                `${player.name} não vendido em leilão`,
-                auction.sellerTeamId,
-                {
-                  player_name: player.name,
-                  player_id: playerId,
-                  description: "Nenhum lance recebido",
-                },
-                io,
-                { isAuction: true },
-              );
+    // Candidatos por lance desc (estável: empate mantém a ordem de inserção,
+    // como antes — quem liderava primeiro fica com a vitória).
+    const candidates = Object.entries(auction.bids || {})
+      .map(([teamId, val]) => ({
+        teamId: parseInt(teamId, 10),
+        amount: Number((typeof val === "object" ? (val as any).amount : val) || 0),
+      }))
+      .sort((a, b) => b.amount - a.amount);
 
-              recordRecentAuction(game, {
-                playerId,
-                name: player.name,
-                position: player.position,
-                photo: player.photo || null,
-                skill: player.skill,
-                is_star: player.is_star || 0,
-                team_name: player.team_name || null,
-                sellerTeamId: auction.sellerTeamId,
-                isExClub: !!auction.isExClub,
-                result: { playerId, playerName: player.name, sold: false },
-              });
-              delete game.auctions![playerId];
-              delete game.auctionTimers?.[playerId];
-              refreshMarket(game);
-              io.to(game.roomCode).emit("auctionClosed", {
-                playerId,
-                playerName: player.name,
-                sold: false,
-              });
-            },
-          );
-          return;
-        }
+    // O orçamento só era validado no momento do lance; entre o lance e o
+    // fecho pode ter sido gasto noutro leilão — revalida e passa ao
+    // licitante seguinte (empate/insolvência nunca deixam o clube negativo).
+    let winner: { teamId: number; amount: number } | null = null;
+    for (const cand of candidates) {
+      const team = await runGet<{ budget?: number }>(
+        game.db,
+        "SELECT budget FROM teams WHERE id = ?",
+        [cand.teamId],
+      );
+      if (team && (team.budget || 0) >= cand.amount) {
+        winner = cand;
+        break;
+      }
+    }
 
-        const buyerTeamId = winnerTeamId;
-        const finalBid = winnerBid;
+    if (!winner) {
+      closeUnsold(
+        `${player.name} não vendido em leilão`,
+        candidates.length === 0
+          ? "Nenhum lance recebido"
+          : "Nenhum lance com orçamento suficiente",
+      );
+      return;
+    }
 
-        if (isContractLocked(player, game)) {
-          const end = contractEndInfo(player);
-          game.db.run(
-            "UPDATE players SET transfer_status = 'none', transfer_price = 0 WHERE id = ?",
-            [playerId],
-            () => {
-              // Sem toast: o bloqueio do agente fica registado no Jornal.
-              logClubNews(
-                game,
-                "auction_failed",
-                `${player.name} retirado do leilão`,
-                auction.sellerTeamId,
-                {
-                  player_name: player.name,
-                  player_id: playerId,
-                  description: `${getAgentName(player.id)} bloqueou: contrato até ${seasonToYear(end.season)}, jornada ${end.matchweek}.`,
-                },
-                io,
-                { isAuction: true },
-              );
-              recordRecentAuction(game, {
-                playerId,
-                name: player.name,
-                position: player.position,
-                photo: player.photo || null,
-                skill: player.skill,
-                is_star: player.is_star || 0,
-                team_name: player.team_name || null,
-                sellerTeamId: auction.sellerTeamId,
-                isExClub: !!auction.isExClub,
-                result: { playerId, playerName: player.name, sold: false },
-              });
-              delete game.auctions![playerId];
-              delete game.auctionTimers?.[playerId];
-              refreshMarket(game);
-              io.to(game.roomCode).emit("auctionClosed", {
-                playerId,
-                playerName: player.name,
-                sold: false,
-              });
-            },
-          );
-          return;
-        }
+    if (isContractLocked(player, game)) {
+      const end = contractEndInfo(player);
+      closeUnsold(
+        `${player.name} retirado do leilão`,
+        `${getAgentName(player.id)} bloqueou: contrato até ${seasonToYear(end.season)}, jornada ${end.matchweek}.`,
+      );
+      return;
+    }
 
-        game.db.get(
-          "SELECT name FROM teams WHERE id = ?",
-          [buyerTeamId],
-          (errT: Error | null, buyerTeam: any) => {
-            const buyerTeamName = buyerTeam ? buyerTeam.name : "?";
-
-            game.db.run(
-              "UPDATE teams SET budget = budget + ? WHERE id = ?",
-              [finalBid, auction.sellerTeamId],
-              () => {
-                game.db.run(
-                  "UPDATE teams SET budget = budget - ? WHERE id = ?",
-                  [finalBid, buyerTeamId],
-                  () => {
-                    game.db.run(
-                      "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ?",
-                      [
-                        buyerTeamId,
-                        signingWage(player),
-                        getSeasonEndMatchweek(game.matchweek),
-                        currentEpoch(game),
-                        game.matchweek,
-                        game.matchweek,
-                        playerId,
-                      ],
-                      () => {
-                        const buyerCoach = (
-                          Object.values(game.playersByName) as PlayerSession[]
-                        ).find((p) => p.teamId === buyerTeamId && p.socketId);
-                        if (buyerCoach) {
-                          io.to(buyerCoach.socketId as string).emit(
-                            "playerSigned",
-                            {
-                              playerId: player.id,
-                              name: player.name,
-                              position: player.position,
-                              photo: player.photo || null,
-                              skill: player.skill,
-                              age: player.age,
-                              nationality: player.nationality,
-                              price: finalBid,
-                              source: "auction",
-                            },
-                          );
-                        }
-                        // Sem toast ao vendedor: o negócio aparece uma vez no Jornal.
-                        // Log club news for buyer (transfer_in)
-                        logClubNews(
-                          game,
-                          "transfer_in",
-                          `${player.name} contratado em leilão`,
-                          buyerTeamId,
-                          {
-                            player_name: player.name,
-                            player_id: playerId,
-                            related_team_name: player.team_name,
-                            related_team_id: auction.sellerTeamId,
-                            amount: finalBid,
-                          },
-                          io,
-                          { isAuction: true },
-                        );
-
-                        // Log club news for seller (transfer_out)
-                        logClubNews(
-                          game,
-                          "transfer_out",
-                          `${player.name} vendido em leilão`,
-                          auction.sellerTeamId,
-                          {
-                            player_name: player.name,
-                            player_id: playerId,
-                            related_team_name: buyerTeamName,
-                            related_team_id: buyerTeamId,
-                            amount: finalBid,
-                          },
-                          io,
-                          { isAuction: true },
-                        );
-
-                        // Registo no histórico global de transferências (leilão)
-                        recordTransfer(
-                          game,
-                          {
-                            playerId,
-                            playerName: player.name,
-                            position: player.position,
-                            skill: player.skill,
-                            isStar: player.is_star,
-                            photo: player.photo || null,
-                            sellerTeamId: auction.sellerTeamId,
-                            sellerTeamName: player.team_name || null,
-                            buyerTeamId,
-                            buyerTeamName,
-                            amount: finalBid,
-                            source: "auction",
-                          },
-                          io,
-                        );
-
-                        recordRecentAuction(game, {
-                          playerId,
-                          name: player.name,
-                          position: player.position,
-                          photo: player.photo || null,
-                          skill: player.skill,
-                          is_star: player.is_star || 0,
-                          team_name: player.team_name || null,
-                          sellerTeamId: auction.sellerTeamId,
-                          isExClub: !!auction.isExClub,
-                          result: {
-                            playerId,
-                            playerName: player.name,
-                            sold: true,
-                            buyerTeamId,
-                            buyerTeamName,
-                            finalBid,
-                          },
-                        });
-                        delete game.auctions?.[playerId];
-                        delete game.auctionTimers?.[playerId];
-                        refreshMarket(game);
-                        getTeamsWithCoachNames(game.db)
-                          .then((teams) => {
-                            io.to(game.roomCode).emit("teamsData", teams);
-                            emitSquadForPlayer(game, buyerTeamId);
-                            if (auction.sellerTeamId !== buyerTeamId) {
-                              emitSquadForPlayer(game, auction.sellerTeamId);
-                            }
-                            io.to(game.roomCode).emit("auctionClosed", {
-                              playerId,
-                              playerName: player.name,
-                              sold: true,
-                              buyerTeamId,
-                              buyerTeamName,
-                              finalBid,
-                            });
-                          })
-                          .catch(() => {});
-                      },
-                    );
-                  },
-                );
-              },
-            );
-          },
-        );
-      },
+    const buyerTeamId = winner.teamId;
+    const finalBid = winner.amount;
+    const buyerTeam = await runGet<{ name?: string }>(
+      game.db,
+      "SELECT name FROM teams WHERE id = ?",
+      [buyerTeamId],
     );
+    const buyerTeamName = buyerTeam?.name ?? "?";
+
+    // Dinheiro + transferência numa transação (mesmo padrão de
+    // socketTransferHandlers): crash a meio não deixa orçamentos movidos
+    // sem o jogador transferido, nem vice-versa.
+    await runExec(game.db, "BEGIN");
+    try {
+      await runExec(
+        game.db,
+        "UPDATE teams SET budget = budget + ? WHERE id = ?",
+        [finalBid, auction.sellerTeamId],
+      );
+      await runExec(
+        game.db,
+        "UPDATE teams SET budget = budget - ? WHERE id = ?",
+        [finalBid, buyerTeamId],
+      );
+      await runExec(
+        game.db,
+        "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ?",
+        [
+          buyerTeamId,
+          signingWage(player),
+          getSeasonEndMatchweek(game.matchweek),
+          currentEpoch(game),
+          game.matchweek,
+          game.matchweek,
+          playerId,
+        ],
+      );
+      await runExec(game.db, "COMMIT");
+    } catch (txErr) {
+      await runExec(game.db, "ROLLBACK").catch(() => {});
+      console.error(
+        `[${game.roomCode}] ❌ finalizeAuction: transação falhou, leilão fechado sem venda`,
+        txErr,
+      );
+      closeUnsold(
+        `${player.name} não vendido em leilão`,
+        "Falha técnica no fecho do leilão",
+      );
+      return;
+    }
+
+    const buyerCoach = (
+      Object.values(game.playersByName) as PlayerSession[]
+    ).find((p) => p.teamId === buyerTeamId && p.socketId);
+    if (buyerCoach) {
+      io.to(buyerCoach.socketId as string).emit("playerSigned", {
+        playerId: player.id,
+        name: player.name,
+        position: player.position,
+        photo: player.photo || null,
+        skill: player.skill,
+        age: player.age,
+        nationality: player.nationality,
+        price: finalBid,
+        source: "auction",
+      });
+    }
+    // Sem toast ao vendedor: o negócio aparece uma vez no Jornal.
+    logClubNews(
+      game,
+      "transfer_in",
+      `${player.name} contratado em leilão`,
+      buyerTeamId,
+      {
+        player_name: player.name,
+        player_id: playerId,
+        related_team_name: player.team_name,
+        related_team_id: auction.sellerTeamId,
+        amount: finalBid,
+      },
+      io,
+      { isAuction: true },
+    );
+    logClubNews(
+      game,
+      "transfer_out",
+      `${player.name} vendido em leilão`,
+      auction.sellerTeamId,
+      {
+        player_name: player.name,
+        player_id: playerId,
+        related_team_name: buyerTeamName,
+        related_team_id: buyerTeamId,
+        amount: finalBid,
+      },
+      io,
+      { isAuction: true },
+    );
+    // Registo no histórico global de transferências (leilão)
+    recordTransfer(
+      game,
+      {
+        playerId,
+        playerName: player.name,
+        position: player.position,
+        skill: player.skill,
+        isStar: player.is_star,
+        photo: player.photo || null,
+        sellerTeamId: auction.sellerTeamId,
+        sellerTeamName: player.team_name || null,
+        buyerTeamId,
+        buyerTeamName,
+        amount: finalBid,
+        source: "auction",
+      },
+      io,
+    );
+    recordRecentAuction(game, {
+      ...recentBase,
+      result: {
+        playerId,
+        playerName: player.name,
+        sold: true,
+        buyerTeamId,
+        buyerTeamName,
+        finalBid,
+      },
+    });
+    delete game.auctions?.[playerId];
+    delete game.auctionTimers?.[playerId];
+    refreshMarket(game);
+    getTeamsWithCoachNames(game.db)
+      .then((teams) => {
+        io.to(game.roomCode).emit("teamsData", teams);
+        emitSquadForPlayer(game, buyerTeamId);
+        if (auction.sellerTeamId !== buyerTeamId) {
+          emitSquadForPlayer(game, auction.sellerTeamId);
+        }
+        io.to(game.roomCode).emit("auctionClosed", {
+          playerId,
+          playerName: player.name,
+          sold: true,
+          buyerTeamId,
+          buyerTeamName,
+          finalBid,
+        });
+      })
+      .catch(() => {});
   };
 
   const startAuction = (
@@ -565,7 +562,7 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           red_cards: player.red_cards || 0,
           injuries: player.injuries || 0,
           games_played: player.games_played || 0,
-          aggressiveness: player.aggressiveness ?? 3,
+          aggressiveness: player.aggressiveness ?? 30,
           is_star: player.is_star || 0,
           startingPrice,
           endsAt: now + actualDurationMs,
