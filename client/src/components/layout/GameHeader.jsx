@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { socket } from "../socket.js";
-import { useGame } from "../contexts/GameContext.jsx";
-import { CoachAvatar } from "./shared/CoachAvatar.jsx";
-import { coachAvatarSeed } from "../utils/coachAvatar.js";
-import { LiveClock } from "./shared/LiveClock.jsx";
-import { isAdminCoach } from "./admin/adminApi.js";
-import { useMobileLandscape } from "../hooks/useIsMobile.js";
+import { socket } from "../../socket.js";
+import { useGame } from "../../contexts/GameContext.jsx";
+import { CoachAvatar } from "../shared/CoachAvatar.jsx";
+import { coachAvatarSeed } from "../../utils/coachAvatar.js";
+import { LiveClock } from "../shared/LiveClock.jsx";
+import { isAdminCoach } from "../admin/adminApi.js";
+import { useMobileLandscape } from "../../hooks/useIsMobile.js";
 
 /**
  * Barra superior do jogo: marca, relógio de direto, sala/chat e menu do utilizador.

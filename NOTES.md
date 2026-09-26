@@ -2135,3 +2135,13 @@ Plano C1+C2 (quando fizer):
 ## At. Reguengos — troca parcial (2026-09-26)
 - Página só tem 18 (16 dos nossos fora dela): 14 saem, 12 entram com foto/DOB; ficam Thallis Mota (GR) e Titico (ATA, primeiros listados, sem idade nos dados) como stopgaps → 20, mínimos 3/6/6/5 OK, audit verde. Página sem secção de treinador (manager intocado).
 - Corrida TUI: 13 fotos (12 novos + João Cosme) + 18 DOBs. Nota: o `--renew` de verificação no Bragança preencheu 22 DOBs como efeito lateral (vão neste commit).
+
+## Release v26.09.6 — maior atualização antes de produção (2026-09-26)
+- 95 commits à frente de `origin/master` desde `v26.09.1` (refactors de sockets/fluxos, fixes de Taça/leilões/scout, landing com pele do jogo, rosters zerozero).
+- `APP_VERSION` → `v26.09.6`; removido `server/db/global_chat.db*` versionado (recriado em arranque por `globalDatabase.ts`, artefacto de runtime).
+- Checks: typecheck + lint + check:types + `docker compose up --build` local antes do push de `master + tag`.
+
+## Release v26.09.6 — fix de build (2026-09-26)
+- `GameHeader.jsx` (extraído em `0d87aec9`) tinha os 7 imports com um nível a menos (`../`→`../../`, `./`→`../`) — o `vite build` chumbava e o push levava produção partida. Corrigidos, `docker compose build` verde (frontend+backend); backend standalone responde `/health OK`.
+- `docker compose up` completo impossível localmente: rede externa `cftunnel` (IP fixo de produção) não existe nesta máquina — ambiental, não código.
+- `eslint` limpo nos ficheiros tocados; `check:types` OK.
