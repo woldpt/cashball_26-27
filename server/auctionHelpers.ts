@@ -602,6 +602,19 @@ export function createAuctionHelpers(deps: AuctionDeps) {
           if (callback) callback(false, "Jogador já está sem contrato.");
           return;
         }
+        // Ponto único de passagem de TODAS as listagens (leilão e fixa).
+        // Um jogador com lock de agente não pode sair por mercado — sem isto,
+        // o leilão corria 2 min e falhava no finalize (e a listagem fixa
+        // ficava visível para compra humana, contornando o lock).
+        if (isContractLocked(player, game)) {
+          const end = contractEndInfo(player);
+          if (callback)
+            callback(
+              false,
+              `O agente bloqueou a saída: contrato até ${seasonToYear(end.season)}, jornada ${end.matchweek}.`,
+            );
+          return;
+        }
         if (mode === "auction") {
           const currentSlot = game.calendarIndex || 0;
           if (
