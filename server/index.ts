@@ -1175,6 +1175,7 @@ io.on("connection", (socket) => {
 		io,
 		getGameBySocket,
 		getPlayerBySocket,
+		isMatchInProgress,
 	});
 
 	registerGameplaySocketHandlers(socket, {

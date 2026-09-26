@@ -11,6 +11,10 @@ const RATE_LIMIT_MS = 1000;
 // Per-socket in-memory rate limit tracker (cleared on disconnect)
 const lastMessageTimes = new Map<string, number>();
 
+// Expurgo da retenção: corria um DELETE em CADA mensagem; agora no máximo 1/h por sala.
+const lastPurgeByRoom = new Map<string, number>();
+const PURGE_INTERVAL_MS = 60 * 60 * 1000;
+
 interface ChatHandlerDeps {
   io: any;
   getGameBySocket: (socketId: string) => ActiveGame | null;
@@ -63,9 +67,12 @@ export function registerChatHandlers(
 
       if (channel === "room") {
         // Keep the table bounded: drop messages outside the 2-day window
-        game.db.run("DELETE FROM chat_messages WHERE timestamp < ?", [
-          now - CHAT_RETENTION_MS,
-        ]);
+        if (now - (lastPurgeByRoom.get(roomCode) ?? 0) > PURGE_INTERVAL_MS) {
+          lastPurgeByRoom.set(roomCode, now);
+          game.db.run("DELETE FROM chat_messages WHERE timestamp < ?", [
+            now - CHAT_RETENTION_MS,
+          ]);
+        }
         game.db.run(
           "INSERT INTO chat_messages (coach_name, message, timestamp) VALUES (?, ?, ?)",
           [coachName, trimmed, timestamp],

@@ -56,8 +56,14 @@ function toInt(value: unknown): number | null {
 function sanitizeLike(value: unknown): string | null {
 	if (typeof value !== "string") return null;
 	const trimmed = value.trim();
-	return trimmed.length > 0 ? trimmed : null;
+	if (trimmed.length === 0) return null;
+	// Caracteres curinga do LIKE escapados (a query usa ESCAPE '\\').
+	return trimmed.replace(/[%_\\]/g, "\\$&");
 }
+
+// Limite de ritmo da pesquisa (o COUNT por keystroke é a query mais cara do lote).
+const lastSearchAt = new Map<string, number>();
+const SEARCH_THROTTLE_MS = 400;
 
 export function registerScoutSocketHandlers(
 	socket: any,
@@ -65,9 +71,17 @@ export function registerScoutSocketHandlers(
 ) {
 	const { getGameBySocket, getPlayerBySocket, runAll } = deps;
 
+	socket.on("disconnect", () => {
+		lastSearchAt.delete(socket.id);
+	});
+
 	socket.on("requestPlayerSearch", async (filters: PlayerSearchFilters) => {
 		const game = getGameBySocket(socket.id);
 		if (!game) return;
+
+		const now = Date.now();
+		if (now - (lastSearchAt.get(socket.id) ?? 0) < SEARCH_THROTTLE_MS) return;
+		lastSearchAt.set(socket.id, now);
 
 		const f: PlayerSearchFilters = filters && typeof filters === "object" ? filters : {};
 
@@ -76,7 +90,7 @@ export function registerScoutSocketHandlers(
 
 		const name = sanitizeLike(f.name);
 		if (name) {
-			where.push("p.name LIKE ?");
+			where.push("p.name LIKE ? ESCAPE '\\'");
 			params.push(`%${name}%`);
 		}
 

@@ -4,6 +4,17 @@ interface TrainingHandlersDeps {
   io: any;
 }
 
+// Focos aceites pelo servidor (espelho de TRAINING_META no cliente).
+// Sem isto, qualquer string ia parar à BD e ao relatório de treino.
+const VALID_TRAINING_FOCUS = new Set([
+  "GR",
+  "Defesas",
+  "Médios",
+  "Avançados",
+  "Forma",
+  "Resistência",
+]);
+
 export function createTrainingHandlers(deps: TrainingHandlersDeps) {
   const { io } = deps;
 
@@ -20,6 +31,10 @@ export function createTrainingHandlers(deps: TrainingHandlersDeps) {
     const player = game.playersByName[playerId];
     if (!player || player.teamId == null) {
       if (done) done(new Error("no team"));
+      return;
+    }
+    if (!VALID_TRAINING_FOCUS.has(trainingFocus)) {
+      if (done) done(new Error("invalid focus"));
       return;
     }
     const calendarIndex = game.calendarIndex;

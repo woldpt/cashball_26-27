@@ -15,7 +15,7 @@ interface CupHandlerDeps {
 }
 
 export function registerCupSocketHandlers(socket: any, deps: CupHandlerDeps) {
-  const { getGameBySocket, runAll } = deps;
+  const { getGameBySocket, getPlayerBySocket, runAll } = deps;
 
   // ── Cup bracket data ─────────────────────────────────────────────────────
   socket.on("requestCupBracket", async () => {
@@ -87,6 +87,8 @@ export function registerCupSocketHandlers(socket: any, deps: CupHandlerDeps) {
   socket.on("cupExtraTimeDone", () => {
     const game = getGameBySocket(socket.id);
     if (!game || !game._cupETAnimHandler) return;
+    // Só treinadores vinculados à sala alimentam o gate (acks de fora não contam).
+    if (!getPlayerBySocket(game, socket.id)) return;
     game._cupETAnimHandler(socket.id);
   });
 

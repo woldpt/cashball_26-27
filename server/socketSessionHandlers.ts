@@ -155,7 +155,7 @@ function safeParse<T>(json: string | null | undefined, fallback: T): T {
  * Se divergirem, o cliente que perdeu eventos fica com um estado diferente do
  * que recebeu ao ligar. Um só construtor resolve isso por construção.
  */
-function buildGameStatePayload(game: ActiveGame, name: string) {
+function buildGameStatePayload(game: ActiveGame, name: string, overrides: Record<string, any> = {}) {
 	return {
 		// Sequência do log da sala: o cliente guarda-a e pede resync quando
 		// deteta um salto (evento perdido durante um flape).
@@ -186,6 +186,7 @@ function buildGameStatePayload(game: ActiveGame, name: string) {
 		roomCreator: game.roomCreator || "",
 		msPerMinute: game.msPerMinute ?? null,
 		activeAuctions: serializeActiveAuctions(game),
+		...overrides,
 	};
 }
 
@@ -716,26 +717,15 @@ export function registerSessionSocketHandlers(
 											})
 											.catch(() => {});
 
-										socket.emit("gameState", {
-											gamePhase: game.gamePhase,
-											calendarIndex: game.calendarIndex,
-											currentEvent: game.currentEvent,
-											liveMinute: game.liveMinute ?? null,
-											matchweek: game.matchweek,
-											matchState: legacyMatchState(game.gamePhase),
-											cupState: legacyCupState(game),
-											cupRound:
-												game.currentEvent?.type === "cup"
-													? (game.currentEvent as any).round
-													: 0,
-											year: game.year,
-											tactic: null,
-											lockedCoaches: [...game.lockedCoaches],
-											lastHalfTimePayload: null,
-											roomCreator: game.roomCreator || "",
-											msPerMinute: game.msPerMinute ?? null,
-											activeAuctions: serializeActiveAuctions(game),
-										});
+										// Mesmo construtor do join/resync: sem equipa não há tática
+										// nem painel de intervalo para este treinador.
+										socket.emit(
+											"gameState",
+											buildGameStatePayload(game, trimmedName, {
+												tactic: null,
+												lastHalfTimePayload: null,
+											}),
+										);
 
 										emitPresence(game);
 										emitGlobalPlayerUpdate?.();

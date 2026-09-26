@@ -8,19 +8,33 @@ interface FinanceHandlerDeps {
     game: ActiveGame,
     socketId: string,
   ) => PlayerSession | null;
+  isMatchInProgress: (game: ActiveGame) => boolean;
 }
 
 export function registerFinanceSocketHandlers(
   socket: any,
   deps: FinanceHandlerDeps,
 ) {
-  const { io, getGameBySocket, getPlayerBySocket } = deps;
+  const { io, getGameBySocket, getPlayerBySocket, isMatchInProgress } = deps;
+
+  // Dinheiro parado durante o jogo — mesma regra das transferências.
+  function guardMatchPaused(game: ActiveGame, socket: any): boolean {
+    if (isMatchInProgress(game)) {
+      socket.emit(
+        "systemMessage",
+        "Não é possível gerir as finanças durante uma partida.",
+      );
+      return true;
+    }
+    return false;
+  }
 
   socket.on("buildStadium", async () => {
     const game = getGameBySocket(socket.id);
     if (!game) return;
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
+    if (guardMatchPaused(game, socket)) return;
 
     const team: any = await new Promise((resolve) => {
       game.db.get(
@@ -86,6 +100,7 @@ export function registerFinanceSocketHandlers(
     if (!game) return;
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
+    if (guardMatchPaused(game, socket)) return;
 
     const TIERS = [10, 15, 20, 25, 30];
     const tier = Number(price);
@@ -114,6 +129,7 @@ export function registerFinanceSocketHandlers(
     if (!game) return;
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
+    if (guardMatchPaused(game, socket)) return;
 
     const result = await runExec(
       game.db,
@@ -142,6 +158,7 @@ export function registerFinanceSocketHandlers(
     if (!game) return;
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
+    if (guardMatchPaused(game, socket)) return;
 
     const result = await runExec(
       game.db,
@@ -167,6 +184,7 @@ export function registerFinanceSocketHandlers(
     if (!game) return;
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
+    if (guardMatchPaused(game, socket)) return;
 
     const team: any = await new Promise((resolve) => {
       game.db.get(
