@@ -2120,3 +2120,8 @@ Plano C1+C2 (quando fizer):
 - Nfanseu (MED, sem foto) já fora do plantel da página do zerozero; único MED novo era Carlinhos Augusto (22a, GW, id 1177883) — troca direta mantém 3/8/6/5. Foto buscada pela TUI (`/players/1177883.png`).
 - Nota: `all_teams.json` ainda guarda o URL antigo do Penafiel (`fc-penafiel/30`), que a TUI prefere ao `teamsSource.ts` — reconciliação P1 contornada para equipas com URL persistido. A tratar.
 - Checks: seed tmp + audit 0 erros/warnings.
+
+## Cabrela — troca completa do plantel (2026-09-26)
+- Página atual (gd-cabrela/11054) tem 22 jogadores com zero sobreposição com os nossos 20 sem ID (só Cruz e Fadista coincidiam): 20 saem, 19 entram (3/7/5/4 + 2 mantidos = 21; Gonçalo Bernardo "Universal"/futsal excluído). Ficha real: ID, idade, país, foto e DOB.
+- Corrida `fetch:tui -- --equipas="Cabrela" --info=fotoJogadores,datasNasc`: 19 fotos + 21 DOBs; bónus: nome/DOB reais do treinador (Gonçalo Alcácer, 1986-04-23; era "Mister Cabrela").
+- Fica com 21/22 — o 22.º fica como falta. Checks: seed + audit 0 erros/warnings (verificação da TUI).

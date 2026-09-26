@@ -10962,7 +10962,8 @@
         "capacity": 1200
       },
       "manager": {
-        "name": "Mister Cabrela"
+        "name": "Gonçalo Alcácer",
+        "dob": "1986-04-23"
       },
       "players": [
         {
@@ -10971,7 +10972,8 @@
           "position": "MED",
           "age": 20,
           "zerozeroId": 913481,
-          "photo": "/players/913481.webp"
+          "photo": "/players/913481.webp",
+          "dob": "2006-08-11"
         },
         {
           "name": "João Fadista",
@@ -10979,127 +10981,179 @@
           "position": "ATA",
           "age": 36,
           "zerozeroId": 157826,
-          "photo": "/players/157826.webp"
+          "photo": "/players/157826.webp",
+          "dob": "1990-05-15"
         },
         {
-          "name": "Sérgio Oliveira",
+          "name": "João Piteira",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 31
+          "age": 23,
+          "zerozeroId": 1064531,
+          "photo": "/players/1064531.jpg",
+          "dob": "2003-05-10"
         },
         {
-          "name": "David Reis",
+          "name": "Guilherme Varanda",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 27
+          "age": 17,
+          "zerozeroId": 1132592,
+          "photo": "/players/1132592.jpg",
+          "dob": "2008-12-05"
         },
         {
-          "name": "Bruno Almeida",
+          "name": "Tiago Grilo",
           "country": "🇵🇹",
           "position": "GR",
-          "age": 25
+          "age": 25,
+          "zerozeroId": 796755,
+          "photo": "/players/796755.jpg",
+          "dob": "2001-05-28"
         },
         {
-          "name": "Vítor Martins",
+          "name": "Miguel Bolas",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 32
+          "age": 22,
+          "zerozeroId": 677981,
+          "photo": "/players/677981.jpg",
+          "dob": "2003-10-08"
         },
         {
-          "name": "Rui Correia",
+          "name": "João Costa",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 20
+          "age": 22,
+          "zerozeroId": 658849,
+          "photo": "/players/658849.jpg",
+          "dob": "2004-04-12"
         },
         {
-          "name": "Paulo Silva",
+          "name": "Rodrigo Patoleia",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 32
+          "age": 27,
+          "zerozeroId": 664875,
+          "photo": "/players/664875.png",
+          "dob": "1998-12-26"
         },
         {
-          "name": "Hugo Ribeiro",
+          "name": "Luís Bicho",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 19
+          "age": 32,
+          "zerozeroId": 252617,
+          "photo": "/players/252617.png",
+          "dob": "1994-01-06"
         },
         {
-          "name": "António Correia",
+          "name": "Diogo Silva",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 31
+          "age": 25,
+          "zerozeroId": 674767,
+          "photo": "/players/674767.png",
+          "dob": "2000-11-16"
         },
         {
-          "name": "Pedro Ferreira",
-          "country": "🇪🇸",
-          "position": "DEF",
-          "age": 33
-        },
-        {
-          "name": "Rui Campos",
+          "name": "Gonçalo Vilhais",
           "country": "🇵🇹",
           "position": "DEF",
-          "age": 31
+          "age": 27,
+          "zerozeroId": 489874,
+          "photo": "/players/489874.jpg",
+          "dob": "1999-04-07"
         },
         {
-          "name": "Marco Ribeiro",
-          "country": "🇨🇻",
-          "position": "MED",
-          "age": 21
-        },
-        {
-          "name": "Hugo Campos",
+          "name": "Nuno Chaleta",
           "country": "🇵🇹",
-          "position": "MED",
-          "age": 32
+          "position": "DEF",
+          "age": 22,
+          "zerozeroId": 658796,
+          "photo": "/players/658796.jpg",
+          "dob": "2004-09-11"
         },
         {
-          "name": "Jorge Almeida",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 23
-        },
-        {
-          "name": "Luís Fernandes",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 29
-        },
-        {
-          "name": "Rui Freitas",
-          "country": "🇵🇹",
-          "position": "MED",
-          "age": 24
-        },
-        {
-          "name": "Rafael Marques",
-          "country": "🇨🇻",
-          "position": "MED",
-          "age": 24
-        },
-        {
-          "name": "Daniel Rodrigues",
+          "name": "Arthur Pinheiro",
           "country": "🇧🇷",
-          "position": "ATA",
-          "age": 30
+          "position": "MED",
+          "age": 19,
+          "zerozeroId": 1290932,
+          "photo": "/players/1290932.jpg",
+          "dob": "2007-05-09"
         },
         {
-          "name": "Fernando Campos",
+          "name": "Carlos Miguens",
           "country": "🇵🇹",
-          "position": "ATA",
-          "age": 28
+          "position": "MED",
+          "age": 32,
+          "zerozeroId": 407208,
+          "photo": "/players/407208.png",
+          "dob": "1994-02-04"
         },
         {
-          "name": "Tiago Sousa",
+          "name": "Guilherme Borralheira",
+          "country": "🇵🇹",
+          "position": "MED",
+          "age": 22,
+          "zerozeroId": 658850,
+          "photo": "/players/658850.jpg",
+          "dob": "2004-05-20"
+        },
+        {
+          "name": "Júlio Fonseca",
           "country": "🇧🇷",
-          "position": "ATA",
-          "age": 27
+          "position": "MED",
+          "age": 20,
+          "zerozeroId": 913482,
+          "photo": "/players/913482.jpg",
+          "dob": "2006-01-14"
         },
         {
-          "name": "Bruno Nunes",
+          "name": "António Bastos",
+          "country": "🇵🇹",
+          "position": "MED",
+          "age": 21,
+          "zerozeroId": 818441,
+          "photo": "/players/818441.jpg",
+          "dob": "2005-02-24"
+        },
+        {
+          "name": "Joel Silva",
           "country": "🇵🇹",
           "position": "ATA",
-          "age": 24
+          "age": 21,
+          "zerozeroId": 658851,
+          "photo": "/players/658851.jpg",
+          "dob": "2005-04-18"
+        },
+        {
+          "name": "David Cruz",
+          "country": "🇵🇹",
+          "position": "ATA",
+          "age": 27,
+          "zerozeroId": 674768,
+          "photo": "/players/674768.png",
+          "dob": "1999-03-13"
+        },
+        {
+          "name": "Tomás Martins",
+          "country": "🇵🇹",
+          "position": "ATA",
+          "age": 24,
+          "zerozeroId": 677996,
+          "photo": "/players/677996.png",
+          "dob": "2002-01-05"
+        },
+        {
+          "name": "João Amado",
+          "country": "🇵🇹",
+          "position": "ATA",
+          "age": 29,
+          "zerozeroId": 760470,
+          "photo": "/players/760470.jpg",
+          "dob": "1997-04-19"
         }
       ],
       "crest": "/logos/cabrela.webp",
