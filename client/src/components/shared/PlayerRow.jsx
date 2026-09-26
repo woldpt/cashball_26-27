@@ -9,7 +9,6 @@
  *  - `showProposalCol`: coluna de proposta para equipas NPC;
  *  - `showLastRating`: estrelas da última classificação a seguir ao nome.
  */
-import { AggBadge } from "./AggBadge.jsx";
 import { SkillBadge } from "./SkillBadge.jsx";
 import { PlayerAvatar } from "./PlayerAvatar.jsx";
 import { PlayerLink } from "./PlayerLink.jsx";
@@ -150,6 +149,7 @@ export function PlayerRow({
           resistance={player.resistance}
           form={player.form}
           morale={player.morale}
+          aggressiveness={player.aggressiveness}
           delta={skillDelta}
         />
       </div>
@@ -203,16 +203,6 @@ export function PlayerRow({
           )}
         </div>
       )}
-
-      {/* Agressividade (Res/For vivem no SkillBadge) */}
-      <div className="hidden md:flex items-center gap-2 shrink-0 self-center px-2 border-l border-outline-variant/15 ml-1">
-        <div className="flex flex-col items-center justify-center w-10">
-          <div className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
-            Agr
-          </div>
-          <AggBadge value={player.aggressiveness} />
-        </div>
-      </div>
 
       {/* Stats inline (Jogos / Golos / Verm / Lesões - época / carreira) */}
       <div className="hidden xl:flex items-center gap-3 shrink-0 self-center px-2 border-l border-outline-variant/15 ml-1 text-[10px] tabular-nums">
@@ -284,12 +274,6 @@ export function PlayerRow({
         {/* Linha extra em mobile: atributos + golos + salário (escondidos ≥md) */}
         <div className="md:hidden flex items-center justify-between gap-2 px-2 py-1.5 border-t border-outline-variant/10">
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="flex flex-col items-center">
-              <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
-                Agr
-              </span>
-              <AggBadge value={player.aggressiveness} />
-            </span>
             <span className="flex flex-col items-center">
               <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-black mb-0.5">
                 Golos

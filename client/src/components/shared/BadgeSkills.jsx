@@ -1,9 +1,13 @@
+import { AGG_TIERS } from "../../constants/index.js";
+import { aggLabel } from "../../utils/playerHelpers.js";
+
 /**
  * BadgeSkills — badge único de skills (STYLE.md §10).
  *
- * Retângulo de cantos arredondados com os quatro valores sempre
+ * Retângulo de cantos arredondados com os valores sempre
  * pela mesma ordem: SKILL dourado (maior, negrito, glow só no número)
- * | RES azul | FORMA verde | MOR violeta. Uma só receita para Plantel,
+ * | RES azul | FORMA verde | MOR violeta | AGR vermelha (só md+,
+ * escondida com hideResForm). Uma só receita para Plantel,
  * Tática, intervenção/substituições e mercado.
  *
  * Sem label "Skill" — só o número dourado a negrito com glow.
@@ -15,6 +19,7 @@
  *   resistance?: number,
  *   form?: number,
  *   morale?: number,
+ *   aggressiveness?: number|string,
  *   delta?: number,
  *   hideResForm?: boolean,
  *   size?: "md"|"sm",
@@ -26,12 +31,22 @@ export function BadgeSkills({
   resistance,
   form,
   morale,
+  aggressiveness,
   delta = 0,
   hideResForm = false,
   size = "md",
   className = "",
 }) {
   const sm = size === "sm";
+  // AGR: número 10–50 pintado com a cor do tier; etiqueta só no tooltip.
+  // Célula só em md+ (mobile não tem largura) e escondida com hideResForm.
+  const hasAgg = aggressiveness != null;
+  const aggKey = hasAgg ? aggLabel(aggressiveness) : null;
+  const aggColor = (aggKey && AGG_TIERS[aggKey]?.color) || "text-zinc-400";
+  const aggNum =
+    typeof aggressiveness === "number"
+      ? Math.max(1, Math.min(50, Math.round(aggressiveness)))
+      : "–";
   const skillCls = sm ? "text-[15px]" : "text-[18px] sm:text-[19px]";
   const numCls = sm ? "text-[11px]" : "text-[12px] sm:text-[13px]";
   // Abaixo de 360px o padding encolhe (4.ª célula MOR): a 320px o badge
@@ -46,7 +61,7 @@ export function BadgeSkills({
   };
   return (
     <div
-      title={`Skill ${skill ?? "—"} · RES ${resistance ?? "—"} · Forma ${form ?? "—"} · Moral ${morale ?? "—"}`}
+      title={`Skill ${skill ?? "—"} · RES ${resistance ?? "—"} · Forma ${form ?? "—"} · Moral ${morale ?? "—"} · AGR ${hasAgg ? `${aggNum} ${aggKey}` : "—"}`}
       className={`flex items-stretch rounded-lg border border-outline-variant/25 overflow-hidden shrink-0 ${className}`}
     >
       <div
@@ -84,12 +99,20 @@ export function BadgeSkills({
               {form ?? "–"}
             </span>
           </div>
-          <div className={`flex flex-col items-center justify-center gap-0.5 bg-violet-500/10 ${cellCls}`}>
+          <div className={`flex flex-col items-center justify-center gap-0.5 bg-violet-500/10 border-r border-violet-500/20 ${cellCls}`}>
             <span className="text-[7px] uppercase tracking-widest text-violet-200/70 font-bold leading-none">
               Mor
             </span>
             <span className={`font-black tabular-nums leading-none text-violet-400 ${numCls}`}>
               {morale ?? "–"}
+            </span>
+          </div>
+          <div className={`hidden md:flex flex-col items-center justify-center gap-0.5 bg-red-500/10 ${cellCls}`}>
+            <span className="text-[7px] uppercase tracking-widest text-red-200/70 font-bold leading-none">
+              Agr
+            </span>
+            <span className={`font-black tabular-nums leading-none ${aggColor} ${numCls}`}>
+              {hasAgg ? aggNum : "–"}
             </span>
           </div>
         </>

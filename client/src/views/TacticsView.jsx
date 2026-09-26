@@ -326,6 +326,7 @@ ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"}
         resistance={player.resistance}
         form={player.form}
         morale={player.morale}
+        aggressiveness={player.aggressiveness}
       />
       {children}
     </div>

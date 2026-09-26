@@ -43,6 +43,7 @@ export function OpponentGridCard({ player, posStyle, hideResForm = false }) {
         resistance={player.resistance}
         form={player.form}
         morale={player.morale}
+        aggressiveness={player.aggressiveness}
         hideResForm={hideResForm}
         size="sm"
       />
