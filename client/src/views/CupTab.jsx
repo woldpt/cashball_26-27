@@ -14,6 +14,7 @@ const CREST_SIZE = "w-9 h-9 text-xs sm:w-11 sm:h-11 sm:text-base";
  */
 function ResultCard({ r, roundName, isFinal, hInfo, aInfo, isMyMatch }) {
   const winnerInfo = r.winnerId === r.homeTeamId ? hInfo : aInfo;
+  const winnerName = winnerInfo?.name || r.winnerId || "?";
   const finalNote = r.decidedByPenalties
     ? "Decidido nos penáltis"
     : r.wentToET
@@ -69,11 +70,11 @@ function ResultCard({ r, roundName, isFinal, hInfo, aInfo, isMyMatch }) {
           </Badge>
           {finalNote && <Badge variant="warning">{finalNote}</Badge>}
           {isFinal ? (
-            <Badge variant="warning">🏆 Campeão — {winnerInfo?.name}</Badge>
+            <Badge variant="warning">🏆 Campeão — {winnerName}</Badge>
           ) : (
             r.winnerId && (
-              <Badge variant="info" title={winnerInfo?.name}>
-                ✓ {winnerInfo?.name}
+              <Badge variant="info" title={winnerName}>
+                ✓ {winnerName}
               </Badge>
             )
           )}
@@ -99,7 +100,7 @@ export function CupTab({
   me,
   teams = [],
   cupResultsFilter = "all",
-  setCupResultsFilter,
+  setCupResultsFilter = () => {},
 }) {
   // Lookup O(1) em vez de `teams.find` dentro do map.
   const teamById = useMemo(
@@ -177,8 +178,10 @@ export function CupTab({
         >
           <div className="space-y-3">
             {(cupDraw.fixtures || []).map((fixture, idx) => {
-              const hInfo = fixture.homeTeam;
-              const aInfo = fixture.awayTeam;
+              const hInfo =
+                fixture.homeTeam || teamById.get(fixture.homeTeamId);
+              const aInfo =
+                fixture.awayTeam || teamById.get(fixture.awayTeamId);
               const isMine =
                 hInfo?.id === myTeamId || aInfo?.id === myTeamId;
               return (
