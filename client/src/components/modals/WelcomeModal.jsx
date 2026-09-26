@@ -1,4 +1,4 @@
- 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { DIVISION_NAMES, MODAL_Z } from "../../constants/index.js";
 import { formatCurrency } from "../../utils/formatters.js";
@@ -9,6 +9,52 @@ import {
 } from "../../utils/localStorage.js";
 
 /**
+ * Cartão estático da grelha bento (sem hover — não é clicável).
+ * @param {{ label: string, children: import("react").ReactNode, className?: string }} props
+ */
+function StatCard({ label, children, className = "" }) {
+  return (
+    <div
+      className={`bg-zinc-800/60 rounded-lg p-2.5 short:p-1.5 border border-emerald-900/20 ${className}`}
+    >
+      <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-1">
+        {label}
+      </p>
+      <p className="text-white font-black text-sm short:text-xs short:tracking-tight">
+        {children}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Emblema com fallback por estado (sem manipulação do DOM).
+ * @param {{ crest?: string, teamName?: string, accent: string }} props
+ */
+function Crest({ crest, teamName, accent }) {
+  const [failed, setFailed] = useState(false);
+  if (crest && !failed) {
+    return (
+      <img
+        src={crest}
+        alt={`Emblema do ${teamName}`}
+        className="relative w-20 h-20 sm:w-24 sm:h-24 short:w-16 short:h-16 object-contain drop-shadow-xl bg-white rounded-xl p-1.5 border-2 border-white/20"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return (
+    <div
+      aria-hidden="true"
+      className="relative w-14 h-14 sm:w-20 sm:h-20 short:w-14 short:h-14 rounded-lg border-2 border-white/20 shadow-xl flex items-center justify-center text-3xl sm:text-4xl short:text-3xl"
+      style={{ backgroundColor: accent }}
+    >
+      ⚽
+    </div>
+  );
+}
+
+/**
  * @param {{ welcomeModal: object, me: object, setWelcomeModal: function, onNewWelcomeClose?: function }} props
  */
 export function WelcomeModal({
@@ -17,6 +63,36 @@ export function WelcomeModal({
   setWelcomeModal,
   onNewWelcomeClose,
 }) {
+  const [copied, setCopied] = useState(false);
+
+  // Só aceita hex de 6 dígitos — evita concatenar alfa ("60"/"18") em cor inválida.
+  const rawColor = welcomeModal?.colorPrimary;
+  const isHex =
+    typeof rawColor === "string" && /^#[0-9a-f]{6}$/i.test(rawColor);
+  const accent = isHex ? rawColor : "#2d6a4f";
+  const accentBright = isHex ? rawColor : "#95d4b3";
+
+  const copyInvite = async () => {
+    const code = me?.roomCode;
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = code;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+      } catch {
+        /* sem clipboard — mostra na mesma o código no ecrã */
+      }
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1600);
+  };
+
   return (
     <ModalShell
       visible={!!welcomeModal && !!me?.teamId}
@@ -52,39 +128,20 @@ export function WelcomeModal({
             <div
               className="sm:w-2/5 flex flex-col items-center justify-center gap-3 short:gap-2 p-5 sm:p-8 short:p-4 border-b sm:border-b-0 sm:border-r border-emerald-900/30"
               style={{
-                background: welcomeModal.colorPrimary
-                  ? `linear-gradient(160deg, ${welcomeModal.colorPrimary}22 0%, rgba(10,10,10,0.6) 100%)`
-                  : "linear-gradient(160deg, rgba(45,106,79,0.15) 0%, rgba(10,10,10,0.6) 100%)",
+                background: `linear-gradient(160deg, ${accent}22 0%, rgba(10,10,10,0.6) 100%)`,
               }}
             >
               {/* Crest / colour swatch */}
               <div className="relative flex items-center justify-center">
                 <div
                   className="absolute w-20 h-20 sm:w-28 sm:h-28 rounded-full blur-3xl opacity-30"
-                  style={{
-                    backgroundColor: welcomeModal.colorPrimary || "#2d6a4f",
-                  }}
+                  style={{ backgroundColor: accent }}
                 />
-                {welcomeModal.crest ? (
-                  <img
-                    src={welcomeModal.crest}
-                    alt={welcomeModal.teamName}
-                    className="relative w-20 h-20 sm:w-24 sm:h-24 short:w-16 short:h-16 object-contain drop-shadow-xl bg-white rounded-xl p-1.5 border-2 border-white/20"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                      const fb = e.currentTarget.nextElementSibling;
-                      if (fb) fb.style.display = "flex";
-                    }}
-                  />
-                ) : null}
-                <div
-                  className={`relative w-14 h-14 sm:w-20 sm:h-20 short:w-14 short:h-14 rounded-lg border-2 border-white/20 shadow-xl items-center justify-center text-3xl sm:text-4xl short:text-3xl ${welcomeModal.crest ? "hidden" : "flex"}`}
-                  style={{
-                    backgroundColor: welcomeModal.colorPrimary || "#2d6a4f",
-                  }}
-                >
-                  ⚽
-                </div>
+                <Crest
+                  crest={welcomeModal.crest}
+                  teamName={welcomeModal.teamName}
+                  accent={accent}
+                />
               </div>
 
               {/* Team name */}
@@ -99,11 +156,9 @@ export function WelcomeModal({
                   <span
                     className="inline-block mt-2 px-3 py-1 rounded border text-[10px] font-black tracking-widest uppercase"
                     style={{
-                      borderColor:
-                        (welcomeModal.colorPrimary || "#2d6a4f") + "60",
-                      color: welcomeModal.colorPrimary || "#95d4b3",
-                      backgroundColor:
-                        (welcomeModal.colorPrimary || "#2d6a4f") + "18",
+                      borderColor: `${accent}60`,
+                      color: accentBright,
+                      backgroundColor: `${accent}18`,
                     }}
                   >
                     {DIVISION_NAMES[welcomeModal.division] ||
@@ -148,64 +203,37 @@ export function WelcomeModal({
               {/* Bento stats grid */}
               {welcomeModal.isNew ? (
                 <div className="grid grid-cols-2 gap-2 mb-3 short:mb-2">
-                  <div className="bg-zinc-800/60 rounded-lg p-2.5 short:p-1.5 border border-emerald-900/20 hover:border-emerald-500/30 transition-colors">
-                    <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-1">
-                      Orçamento Inicial
-                    </p>
-                    <p className="text-white font-black text-sm short:text-xs short:tracking-tight">
-                      {formatCurrency(welcomeModal.budget ?? 0)}
-                    </p>
-                  </div>
+                  <StatCard
+                    label="Orçamento Inicial"
+                    className={welcomeModal.stadiumCapacity > 0 ? "" : "col-span-2"}
+                  >
+                    {formatCurrency(welcomeModal.budget ?? 0)}
+                  </StatCard>
                   {welcomeModal.stadiumCapacity > 0 && (
-                    <div className="bg-zinc-800/60 rounded-lg p-2.5 short:p-1.5 border border-emerald-900/20 hover:border-emerald-500/30 transition-colors">
-                      <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-1">
-                        Estádio
-                      </p>
-                      <p className="text-white font-black text-sm short:text-xs short:tracking-tight">
-                        {(welcomeModal.stadiumCapacity ?? 0).toLocaleString(
-                          "pt-PT",
-                        )}{" "}
-                        lug.
-                      </p>
-                    </div>
+                    <StatCard label="Estádio">
+                      {(welcomeModal.stadiumCapacity ?? 0).toLocaleString(
+                        "pt-PT",
+                      )}{" "}
+                      lug.
+                    </StatCard>
                   )}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 short:grid-cols-4 gap-2 short:gap-1.5 mb-3 short:mb-2">
-                  <div className="bg-zinc-800/60 rounded-lg p-2.5 short:p-1.5 border border-emerald-900/20 hover:border-emerald-500/30 transition-colors">
-                    <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-1">
-                      Pontos
-                    </p>
-                    <p className="text-white font-black text-sm short:text-xs short:tracking-tight">
-                      {welcomeModal.points ?? 0} pts
-                    </p>
-                  </div>
-                  <div className="bg-zinc-800/60 rounded-lg p-2.5 short:p-1.5 border border-emerald-900/20 hover:border-emerald-500/30 transition-colors">
-                    <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-1">
-                      V / E / D
-                    </p>
-                    <p className="text-white font-black text-sm short:text-xs short:tracking-tight">
-                      {welcomeModal.wins ?? 0} / {welcomeModal.draws ?? 0} /{" "}
-                      {welcomeModal.losses ?? 0}
-                    </p>
-                  </div>
-                  <div className="bg-zinc-800/60 rounded-lg p-2.5 short:p-1.5 border border-emerald-900/20 hover:border-emerald-500/30 transition-colors">
-                    <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-1">
-                      Golos
-                    </p>
-                    <p className="text-white font-black text-sm short:text-xs short:tracking-tight">
-                      {welcomeModal.goalsFor ?? 0} –{" "}
-                      {welcomeModal.goalsAgainst ?? 0}
-                    </p>
-                  </div>
-                  <div className="bg-zinc-800/60 rounded-lg p-2.5 short:p-1.5 border border-emerald-900/20 hover:border-emerald-500/30 transition-colors">
-                    <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-1">
-                      Orçamento
-                    </p>
-                    <p className="text-white font-black text-sm short:text-xs short:tracking-tight">
-                      {formatCurrency(welcomeModal.budget ?? 0)}
-                    </p>
-                  </div>
+                  <StatCard label="Pontos">
+                    {welcomeModal.points ?? 0} pts
+                  </StatCard>
+                  <StatCard label="V / E / D">
+                    {welcomeModal.wins ?? 0} / {welcomeModal.draws ?? 0} /{" "}
+                    {welcomeModal.losses ?? 0}
+                  </StatCard>
+                  <StatCard label="Golos">
+                    {welcomeModal.goalsFor ?? 0} –{" "}
+                    {welcomeModal.goalsAgainst ?? 0}
+                  </StatCard>
+                  <StatCard label="Orçamento">
+                    {formatCurrency(welcomeModal.budget ?? 0)}
+                  </StatCard>
                 </div>
               )}
 
@@ -223,13 +251,12 @@ export function WelcomeModal({
 
               <button
                 type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(me.roomCode);
-                }}
+                onClick={copyInvite}
+                aria-label="Copiar código de convite"
                 className="w-full flex items-center justify-between gap-3 bg-zinc-800/60 rounded-lg p-2.5 short:p-2 border border-emerald-900/30 hover:border-emerald-500/50 transition-colors mb-3 short:mb-2 cursor-pointer"
               >
                 <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
-                  Código de Convite:
+                  {copied ? "Copiado ✓" : "Código de Convite:"}
                 </span>
                 <span className="font-black text-emerald-400 text-lg tracking-widest">
                   {me.roomCode}
@@ -238,21 +265,23 @@ export function WelcomeModal({
 
               {/* Action button */}
               <button
+                type="button"
+                autoFocus
                 onClick={() => {
                   const wasNew = !!welcomeModal.isNew;
                   if (wasNew) {
-                    markWelcomeSeen(me.name, me.roomCode);
+                    markWelcomeSeen(me?.name ?? "", me?.roomCode ?? "");
                   } else {
-                    markWelcomeSeenThisSession(me.name, me.roomCode);
+                    markWelcomeSeenThisSession(me?.name ?? "", me?.roomCode ?? "");
                   }
                   setWelcomeModal(null);
                   if (wasNew) onNewWelcomeClose?.();
                 }}
-                className="w-full font-black py-2.5 short:py-2 rounded-lg text-sm uppercase tracking-widest transition-all active:scale-95 hover:-translate-y-px shadow-lg"
+                className="w-full font-black py-2.5 short:py-2 rounded-lg text-sm uppercase tracking-widest transition-all active:scale-95 shadow-lg"
                 style={{
-                  backgroundColor: welcomeModal.colorPrimary || "#95d4b3",
+                  backgroundColor: accentBright,
                   color: welcomeModal.colorSecondary || "#003824",
-                  boxShadow: `0 8px 24px ${welcomeModal.colorPrimary || "#95d4b3"}30`,
+                  boxShadow: `0 8px 24px ${accentBright}30`,
                 }}
               >
                 {welcomeModal.isNew ? "Vamos lá! 🚀" : "Continuar 🎯"}

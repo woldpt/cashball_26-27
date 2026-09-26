@@ -1954,3 +1954,11 @@ Plano C1+C2 (quando fizer):
 - Região viva `role="status"` + `sr-only`: anuncia cada remate ("Remate N: nome — golo/falha") e o resultado final com o vencedor.
 - `animate-pulse` → `motion-safe:animate-pulse` no marcador em revelação e no "A rematar…" (utilizadores com `prefers-reduced-motion` veem texto estático).
 - Checks: eslint limpo no ficheiro; `check:types` OK.
+
+## WelcomeModal — correções avaliação 7,3 (2026-09-26)
+- `accent`/`accentBright` validados (só hex de 6 dígitos) antes de concatenar alfa; elimina ~6 fallbacks repetidos.
+- `StatCard` interno (sem hover falso) + `col-span-2` no Orçamento quando não há estádio (grelha orfã).
+- `Crest` interno com fallback por estado (`onError` → `setFailed`), `alt="Emblema do X"`, ⚽ com `aria-hidden`.
+- Convite com feedback ("Copiado ✓", 1,6s) + fallback `textarea/execCommand`, `aria-label`, guarda `me?.roomCode`.
+- CTA com `type="button"`, `autoFocus`, sem `hover:-translate-y`; fecho com `me?.` opcional.
+- Checks: eslint limpo no ficheiro (2 erros pré-existentes noutros: `landing-resp-test`, `GameContext` — confirmados com `git stash`); `check:types` OK; `test:mobile` PASS 165/165 e `:landscape` PASS 198/198 (`welcome-resp-test` PASS em todas); screenshots 390 + 667 verificados.
