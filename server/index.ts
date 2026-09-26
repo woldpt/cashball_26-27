@@ -1206,6 +1206,7 @@ io.on("connection", (socket) => {
 
 	registerNewsSocketHandlers(socket, {
 		getGameBySocket,
+		runAll,
 	});
 
 	registerAdminSocketHandlers(socket, {
