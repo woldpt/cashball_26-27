@@ -231,16 +231,32 @@ export function UserList({ users, loading = false, selectedName = null, onSelect
             <thead className="sticky top-0 bg-surface-container z-0">
               <tr className="text-left text-[10px] uppercase tracking-widest text-on-surface-variant border-b border-outline-variant/15">
                 <th
-                  className="px-3 py-2 font-black cursor-pointer select-none hover:text-on-surface"
-                  onClick={() => toggleSort("name")}
+                  scope="col"
+                  aria-sort={sortKey === "name" ? (sortDir > 0 ? "ascending" : "descending") : "none"}
+                  className="px-3 py-2 font-black"
                 >
-                  Nome{sortIndicator("name")}
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("name")}
+                    aria-label="Ordenar por nome"
+                    className="uppercase tracking-widest cursor-pointer select-none hover:text-on-surface"
+                  >
+                    Nome{sortIndicator("name")}
+                  </button>
                 </th>
                 <th
-                  className="w-24 px-3 py-2 text-center font-black cursor-pointer select-none hover:text-on-surface"
-                  onClick={() => toggleSort("rooms")}
+                  scope="col"
+                  aria-sort={sortKey === "rooms" ? (sortDir > 0 ? "ascending" : "descending") : "none"}
+                  className="w-24 px-3 py-2 text-center font-black"
                 >
-                  Salas{sortIndicator("rooms")}
+                  <button
+                    type="button"
+                    onClick={() => toggleSort("rooms")}
+                    aria-label="Ordenar por número de salas"
+                    className="uppercase tracking-widest cursor-pointer select-none hover:text-on-surface"
+                  >
+                    Salas{sortIndicator("rooms")}
+                  </button>
                 </th>
                 <th className="w-12" />
               </tr>

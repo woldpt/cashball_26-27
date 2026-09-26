@@ -3,7 +3,7 @@
 - **Seleção por nome**: `selectedUser` (snapshot obsoleto após rename/refresh) → `selectedName` + lookup no `adminUsers`; `handleRenamed` faz `fetchUsers` para o lookup voltar a acertar. Funções subidas para cima do `detailContent` (estavam após o uso).
 - **Early-return `!open`**: com o modal fechado já não monta `detailContent` (antes avaliava tudo com `visible={false}`).
 - **A11y**: `aria-label` nos botões só-ícone (Voltar/Fechar) — o `Button` não repassava a prop, agora aceita e aplica `aria-label`; `aria-live="polite"` nos erros da lista (mobile + desktop).
-- Checks: eslint limpo nos 2 ficheiros (`lint` global com 5 erros noutros ficheiros — WIP alheio, `LeagueStandings` na árvore) · `check:types` OK. Sem mudança estrutural → sem mobile-resp-check. Adiado: `th` clicável do `UserList` sem teclado.
+- Checks: eslint limpo nos 2 ficheiros (`lint` global com 5 erros noutros ficheiros — WIP alheio, `LeagueStandings` na árvore) · `check:types` OK. Sem mudança estrutural → sem mobile-resp-check. Adicionado depois: `th` ordenáveis do `UserList` com botão nativo + `scope="col"` + `aria-sort` (eram `th` com `onClick`, sem teclado).
 ## RoomHub: review 6,8/10 → correções (2026-09-26)
 - Avaliação 1–10 pedida → plano completo aprovado (4 decisões: contexto direto, manter 🖕, badges nas tabs, tokens) e executado. `RoomHub.jsx` passa a consumir `GameContext` diretamente; `GameOverlays.jsx` só monta `<RoomHub />` (~35 linhas de props/destructure apagadas).
 - Fixes: kick guard `matchweekCount === 0` → `calendarIndex === 0` (Taça/amigável avança o calendário sem mexer na jornada — o kick ficava permitido com época a decorrer); `systemMessages` com teto 50; anti-duplo-Enter (300ms); `clipboard` com fallback `execCommand` para HTTP; keys de coach estáveis.
