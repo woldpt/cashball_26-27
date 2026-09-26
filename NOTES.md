@@ -1658,3 +1658,8 @@ Plano C1+C2 (quando fizer):
 - `constants/index.js`: nova `APP_VERSION = "v1.1a"`; `LandingFooter.jsx` usa-a em vez do literal fixo.
 - `AuthField.jsx`: novo export nomeado `AuthErrorHint` (erro de auth ou aviso de ligação); `LoginForm`/`RegisterForm` usam-no — bloco de 7 linhas duplicado eliminado, sem ficheiro novo.
 - Checks: `check:types` OK; `lint` só 2 erros pré-existentes (confirmados via stash); sem mobile-resp-check (saída renderizada idêntica, sem mudança de layout).
+
+## Versão por data — rolling release (2026-09-26)
+- Regra permanente (decisão do utilizador): CalVer `vAA.MM.N` para sempre, sem congelar em `v1.0`. Ex.: `v26.09.1` = ano 26, mês 09, 1.º build do mês.
+- Fonte única: `APP_VERSION` em `client/src/constants/index.js`, visível no rodapé da landing (`LandingFooter.jsx`).
+- Manutenção: a cada alteração commitada incrementa-se N; ao virar o mês, N volta a 1.
