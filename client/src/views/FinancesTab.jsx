@@ -17,6 +17,85 @@ import {
 } from "../constants/index.js";
 
 /**
+ * Rubrica financeira: rótulo + subtítulo à esquerda, valor à direita. Com
+ * `onToggle`, a linha é um botão acessível (Enter/Espaço) que expande a
+ * lista em `children`; sem `onToggle` é uma linha estática.
+ * @param {{
+ *   label: string,
+ *   sub: import("react").ReactNode,
+ *   value: import("react").ReactNode,
+ *   expanded?: boolean,
+ *   onToggle?: (() => void)|null,
+ *   accent?: "primary"|"error",
+ *   children?: import("react").ReactNode,
+ * }} props
+ */
+function ExpandableRow({
+  label,
+  sub,
+  value,
+  expanded = false,
+  onToggle = null,
+  accent = "primary",
+  children = null,
+}) {
+  const clickable = !!onToggle;
+  const hasList = Array.isArray(children)
+    ? children.length > 0
+    : children != null;
+  return (
+    <li className="space-y-1">
+      <div
+        {...(clickable
+          ? {
+              role: "button",
+              tabIndex: 0,
+              "aria-expanded": expanded,
+              onClick: onToggle,
+              onKeyDown: (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onToggle();
+                }
+              },
+            }
+          : {})}
+        className={`flex justify-between items-center gap-2 rounded-sm ${clickable ? "cursor-pointer group outline-none focus-visible:ring-1 focus-visible:ring-primary/60" : ""}`}
+      >
+        <div className="min-w-0">
+          <p
+            className={`text-sm text-on-surface-variant ${clickable ? "group-hover:text-on-surface transition-colors" : ""}`}
+          >
+            {label}
+          </p>
+          <p className="text-[10px] opacity-40 uppercase flex items-center gap-1">
+            {clickable && (
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: "10px" }}
+              >
+                {expanded ? "expand_less" : "expand_more"}
+              </span>
+            )}
+            {sub}
+          </p>
+        </div>
+        <span className="font-headline text-sm font-bold shrink-0">
+          {value}
+        </span>
+      </div>
+      {expanded && hasList && (
+        <ul
+          className={`pl-3 space-y-1 border-l-2 ml-1 mt-1 ${accent === "error" ? "border-error/20" : "border-primary/20"}`}
+        >
+          {children}
+        </ul>
+      )}
+    </li>
+  );
+}
+
+/**
  * @param {{
  *   financeData: object|null,
  *   totalWeeklyWage: number,
@@ -57,6 +136,8 @@ export function FinancesTab({
   setGameDialog,
 }) {
   const weeksElapsed = elapsedWeeks ?? completedJornada;
+  const interestPct = (LOAN_INTEREST_RATE * 100).toLocaleString("pt-PT");
+  const loanStepK = `${LOAN_STEP / 1000}K`;
   const {
     totalSeasonIncome,
     totalSeasonExpenses,
@@ -207,7 +288,7 @@ export function FinancesTab({
                 : "trending_down"}
             </span>
             <span className="text-[9px] sm:text-[10px] leading-tight text-on-surface-variant font-medium font-label uppercase">
-              {completedJornada} / 14 jornadas concluídas
+              {completedJornada} / {SEASON_JORNADAS} jornadas concluídas
             </span>
           </div>
         </SummaryWidget>
@@ -234,10 +315,11 @@ export function FinancesTab({
       </div>
 
       {/* ── EVOLUÇÃO DO SALDO ─────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-4 short:gap-2 lg:grid-cols-6">
       <Panel
         title="Evolução do Saldo"
         icon="show_chart"
-        className="short:[&>div:first-child]:!py-2"
+        className="order-1 self-start lg:col-span-4 lg:row-start-1 short:[&>div:first-child]:!py-2"
         bodyClassName="short:!p-2"
         meta={
           <span
@@ -247,15 +329,15 @@ export function FinancesTab({
           </span>
         }
       >
-        <div className="mx-auto w-full max-w-3xl">
-          <BalanceLineChart data={financeData?.balanceHistory || []} />
-        </div>
+        <BalanceLineChart data={financeData?.balanceHistory || []} />
       </Panel>
 
       {/* ── RECEITAS / DESPESAS / CONTROLO ────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 short:gap-2">
+        {/* lg: 6 colunas — gráfico (span 4) + Controlo (span 2) em cima;
+            Receitas e Despesas a 50/50 por baixo. No phone, order-* mantém a
+            ordem original: gráfico → receitas → despesas → controlo. */}
         {/* Receitas */}
-        <div className="bg-surface-container-low rounded-lg p-3 sm:p-5 short:p-2.5 flex flex-col space-y-3 short:space-y-2">
+        <div className="order-2 lg:col-start-1 lg:col-span-3 lg:row-start-2 bg-surface-container-low rounded-lg p-3 sm:p-5 short:p-2.5 flex flex-col space-y-3 short:space-y-2">
           <div className="flex justify-between items-center pb-2 short:pb-1 border-b border-outline-variant/15">
             <h3 className="font-headline text-base short:text-sm uppercase tracking-tight flex items-center gap-2 min-w-0 truncate">
               <span className="material-symbols-outlined text-primary text-base short:text-sm shrink-0">
@@ -275,7 +357,6 @@ export function FinancesTab({
                     key={s.label}
                     className={`h-full ${s.bg}`}
                     style={{ width: `${s.pct}%` }}
-                    title={`${s.label}: ${Math.round(s.pct)}%`}
                   />
                 ))}
               </div>
@@ -296,89 +377,53 @@ export function FinancesTab({
             </div>
           )}
           <ul className="space-y-3 short:space-y-2">
-            {(financeData?.ticketBreakdown?.length || 0) > 0 ? (
-              <li className="space-y-1">
-                <div
-                  className="flex justify-between items-center cursor-pointer group"
-                  onClick={() =>
-                    setShowTicketBreakdown((v) => !v)
-                  }
-                >
-                  <div>
-                    <p className="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">
-                      Bilheteiras
-                    </p>
-                    <p className="text-[10px] opacity-40 uppercase flex items-center gap-1">
-                      <span
-                        className="material-symbols-outlined"
-                        style={{ fontSize: "10px" }}
-                      >
-                        {showTicketBreakdown
-                          ? "expand_less"
-                          : "expand_more"}
-                      </span>
-                      {(financeData.totalHomeMatchesPlayed ?? financeData.homeMatchesPlayed ?? 0)}{" "}
-                      jogos em casa
-                      {(financeData.cupHomeMatchesPlayed || 0) > 0 && (
-                        <span className="opacity-60"> · {financeData.homeMatchesPlayed || 0} Liga + {financeData.cupHomeMatchesPlayed} Taça</span>
-                      )}
-                    </p>
-                  </div>
-                  <span className="font-headline text-sm font-bold">
-                    {formatCurrency(
-                      financeData.totalTicketRevenue || 0,
-                    )}
-                  </span>
-                </div>
-                {showTicketBreakdown &&
-                  (financeData.ticketBreakdown?.length || 0) > 0 && (
-                    <ul className="pl-3 space-y-1 border-l-2 border-primary/20 ml-1 mt-1">
-                      {financeData.ticketBreakdown.map((t) => {
-                        const isCup = t.competition === "cup";
-                        const key = isCup ? `cup-${t.round}` : `league-${t.matchweek}`;
-                        return (
-                          <li
-                            key={key}
-                            className="flex justify-between items-center"
-                          >
-                            <div>
-                              <p className="text-xs text-on-surface-variant/80">
-                                {isCup ? `Taça · ${t.roundName}` : `J${t.matchweek}`}
-                              </p>
-                              <p className="text-[10px] opacity-30 uppercase">
-                                vs {t.away_team_name || "—"} · {t.attendance.toLocaleString("pt-PT")} esp.
-                              </p>
-                            </div>
-                            <span className="text-xs font-bold">
-                              {formatCurrency(t.revenue)}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
+            <ExpandableRow
+              label="Bilheteiras"
+              sub={
+                <>
+                  {(financeData?.totalHomeMatchesPlayed ??
+                    financeData?.homeMatchesPlayed ??
+                    0)}{" "}
+                  jogos em casa
+                  {(financeData?.cupHomeMatchesPlayed || 0) > 0 && (
+                    <span className="opacity-60">
+                      {" "}· {financeData?.homeMatchesPlayed || 0} Liga +{" "}
+                      {financeData?.cupHomeMatchesPlayed} Taça
+                    </span>
                   )}
-              </li>
-            ) : (
-              <li className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-on-surface-variant">
-                    Bilheteiras
-                  </p>
-                  <p className="text-[10px] opacity-40 uppercase">
-                    {(financeData?.totalHomeMatchesPlayed ?? financeData?.homeMatchesPlayed ?? 0)}{" "}
-                    jogos em casa
-                    {(financeData?.cupHomeMatchesPlayed || 0) > 0 && (
-                      <span className="opacity-60"> · {financeData.homeMatchesPlayed || 0} Liga + {financeData.cupHomeMatchesPlayed} Taça</span>
-                    )}
-                  </p>
-                </div>
-                <span className="font-headline text-sm font-bold">
-                  {formatCurrency(
-                    financeData?.totalTicketRevenue || 0,
-                  )}
-                </span>
-              </li>
-            )}
+                </>
+              }
+              value={formatCurrency(financeData?.totalTicketRevenue || 0)}
+              expanded={showTicketBreakdown}
+              onToggle={
+                (financeData?.ticketBreakdown?.length || 0) > 0
+                  ? () => setShowTicketBreakdown((v) => !v)
+                  : null
+              }
+            >
+              {financeData?.ticketBreakdown?.map((t) => {
+                const isCup = t.competition === "cup";
+                const key = isCup ? `cup-${t.round}` : `league-${t.matchweek}`;
+                return (
+                  <li
+                    key={key}
+                    className="flex justify-between items-center"
+                  >
+                    <div>
+                      <p className="text-xs text-on-surface-variant/80">
+                        {isCup ? `Taça · ${t.roundName}` : `J${t.matchweek}`}
+                      </p>
+                      <p className="text-[10px] opacity-30 uppercase">
+                        vs {t.away_team_name || "—"} · {t.attendance.toLocaleString("pt-PT")} esp.
+                      </p>
+                    </div>
+                    <span className="text-xs font-bold">
+                      {formatCurrency(t.revenue)}
+                    </span>
+                  </li>
+                );
+              })}
+            </ExpandableRow>
             <li className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-on-surface-variant">
@@ -394,78 +439,43 @@ export function FinancesTab({
                 )}
               </span>
             </li>
-            {(financeData?.totalTransferIncome || 0) >
-              0 && (
-              <li className="space-y-1">
-                <div
-                  className="flex justify-between items-center cursor-pointer group"
-                  onClick={() =>
-                    setShowTransferSales((v) => !v)
-                  }
-                >
-                  <div>
-                    <p className="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">
-                      Vendas de Jogadores
-                    </p>
-                    <p className="text-[10px] opacity-40 uppercase flex items-center gap-1">
-                      <span
-                        className="material-symbols-outlined"
-                        style={{ fontSize: "10px" }}
-                      >
-                        {showTransferSales
-                          ? "expand_less"
-                          : "expand_more"}
-                      </span>
-                      {financeData.transferOutList
-                        ?.length || 0}{" "}
-                      transferência(s)
-                    </p>
-                  </div>
-                  <span className="font-headline text-sm font-bold">
-                    {formatCurrency(
-                      financeData.totalTransferIncome,
-                    )}
-                  </span>
-                </div>
-                {showTransferSales &&
-                  (financeData.transferOutList?.length ||
-                    0) > 0 && (
-                    <ul className="pl-3 space-y-1 border-l-2 border-primary/20 ml-1 mt-1">
-                      {financeData.transferOutList.map(
-                        (t, i) => (
-                          <li
-                            key={i}
-                            className="flex justify-between items-center"
-                          >
-                            <div>
-                              <p className="text-xs text-on-surface-variant/80">
-                                {t.player_name || "Jogador"}
-                                <span className="opacity-40 mx-1">
-                                  →
-                                </span>
-                                {t.related_team_name || "—"}
-                              </p>
-                              {t.matchweek != null && (
-                                <p className="text-[10px] opacity-30 uppercase">
-                                  J{t.matchweek}
-                                </p>
-                              )}
-                            </div>
-                            <span className="text-xs font-bold">
-                              {formatCurrency(t.amount)}
-                            </span>
-                          </li>
-                        ),
+            {(financeData?.totalTransferIncome || 0) > 0 && (
+              <ExpandableRow
+                label="Vendas de Jogadores"
+                sub={`${financeData?.transferOutList?.length || 0} transferência(s)`}
+                value={formatCurrency(financeData.totalTransferIncome)}
+                expanded={showTransferSales}
+                onToggle={() => setShowTransferSales((v) => !v)}
+              >
+                {financeData?.transferOutList?.map((t) => (
+                  <li
+                    key={`${t.player_name || "jogador"}-${t.amount}-${t.matchweek ?? "x"}`}
+                    className="flex justify-between items-center"
+                  >
+                    <div>
+                      <p className="text-xs text-on-surface-variant/80">
+                        {t.player_name || "Jogador"}
+                        <span className="opacity-40 mx-1">→</span>
+                        {t.related_team_name || "—"}
+                      </p>
+                      {t.matchweek != null && (
+                        <p className="text-[10px] opacity-30 uppercase">
+                          J{t.matchweek}
+                        </p>
                       )}
-                    </ul>
-                  )}
-              </li>
+                    </div>
+                    <span className="text-xs font-bold">
+                      {formatCurrency(t.amount)}
+                    </span>
+                  </li>
+                ))}
+              </ExpandableRow>
             )}
           </ul>
         </div>
 
         {/* Despesas */}
-        <div className="bg-surface-container-low rounded-lg p-3 sm:p-5 short:p-2.5 flex flex-col space-y-3 short:space-y-2">
+        <div className="order-3 lg:col-start-4 lg:col-span-3 lg:row-start-2 bg-surface-container-low rounded-lg p-3 sm:p-5 short:p-2.5 flex flex-col space-y-3 short:space-y-2">
           <div className="flex justify-between items-center pb-2 short:pb-1 border-b border-outline-variant/15">
             <h3 className="font-headline text-base short:text-sm uppercase tracking-tight flex items-center gap-2 min-w-0 truncate">
               <span className="material-symbols-outlined text-error text-base short:text-sm shrink-0">
@@ -490,7 +500,7 @@ export function FinancesTab({
               </div>
               <span className="font-headline text-sm font-bold">
                 {formatCurrency(
-                  totalWeeklyWage * completedJornada,
+                  totalWeeklyWage * weeksElapsed,
                 )}
               </span>
             </li>
@@ -501,82 +511,48 @@ export function FinancesTab({
                     Juros Bancários
                   </p>
                   <p className="text-[10px] opacity-40 uppercase">
-                    1,5% da dívida / jornada
+                    {interestPct}% da dívida / jornada
                   </p>
                 </div>
                 <span className="font-headline text-sm font-bold">
                   {formatCurrency(
-                    loanInterestPerWeek * completedJornada,
+                    loanInterestPerWeek * weeksElapsed,
                   )}
                 </span>
               </li>
             )}
-            {(financeData?.totalTransferExpenses || 0) >
-              0 && (
-              <li className="space-y-1">
-                <div
-                  className="flex justify-between items-center cursor-pointer group"
-                  onClick={() =>
-                    setShowTransferPurchases((v) => !v)
-                  }
-                >
-                  <div>
-                    <p className="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">
-                      Compras de Jogadores
-                    </p>
-                    <p className="text-[10px] opacity-40 uppercase flex items-center gap-1">
-                      <span
-                        className="material-symbols-outlined"
-                        style={{ fontSize: "10px" }}
-                      >
-                        {showTransferPurchases
-                          ? "expand_less"
-                          : "expand_more"}
-                      </span>
-                      {financeData.transferInList?.length ||
-                        0}{" "}
-                      transferência(s)
-                    </p>
-                  </div>
-                  <span className="font-headline text-sm font-bold">
-                    {formatCurrency(
-                      financeData.totalTransferExpenses,
-                    )}
-                  </span>
-                </div>
-                {showTransferPurchases &&
-                  (financeData.transferInList?.length ||
-                    0) > 0 && (
-                    <ul className="pl-3 space-y-1 border-l-2 border-error/20 ml-1 mt-1">
-                      {financeData.transferInList.map(
-                        (t, i) => (
-                          <li
-                            key={i}
-                            className="flex justify-between items-center"
-                          >
-                            <div>
-                              <p className="text-xs text-on-surface-variant/80">
-                                {t.player_name || "Jogador"}
-                                <span className="opacity-40 mx-1">
-                                  ←
-                                </span>
-                                {t.related_team_name || "—"}
-                              </p>
-                              {t.matchweek != null && (
-                                <p className="text-[10px] opacity-30 uppercase">
-                                  J{t.matchweek}
-                                </p>
-                              )}
-                            </div>
-                            <span className="text-xs font-bold">
-                              {formatCurrency(t.amount)}
-                            </span>
-                          </li>
-                        ),
+            {(financeData?.totalTransferExpenses || 0) > 0 && (
+              <ExpandableRow
+                label="Compras de Jogadores"
+                sub={`${financeData?.transferInList?.length || 0} transferência(s)`}
+                value={formatCurrency(financeData.totalTransferExpenses)}
+                expanded={showTransferPurchases}
+                onToggle={() => setShowTransferPurchases((v) => !v)}
+                accent="error"
+              >
+                {financeData?.transferInList?.map((t) => (
+                  <li
+                    key={`${t.player_name || "jogador"}-${t.amount}-${t.matchweek ?? "x"}`}
+                    className="flex justify-between items-center"
+                  >
+                    <div>
+                      <p className="text-xs text-on-surface-variant/80">
+                        {t.player_name || "Jogador"}
+                        <span className="opacity-40 mx-1">←</span>
+                        {t.related_team_name || "—"}
+                      </p>
+                      {t.matchweek != null && (
+                        <p className="text-[10px] opacity-30 uppercase">
+                          J{t.matchweek}
+                        </p>
                       )}
-                    </ul>
-                  )}
-              </li>
+                    </div>
+                    <span className="text-xs font-bold">
+                      {formatCurrency(t.amount)}
+                    </span>
+                  </li>
+                ))}
+              </ExpandableRow>
             )}
             {(financeData?.totalStadiumExpenses || 0) >
               0 && (
@@ -605,7 +581,7 @@ export function FinancesTab({
         </div>
 
         {/* Centro de Controlo */}
-        <div className="space-y-4 short:space-y-2">
+        <div className="order-4 lg:col-start-5 lg:col-span-2 lg:row-start-1 space-y-4 short:space-y-2">
           {/* Folha Salarial */}
           <div
             className={`bg-surface-container rounded-lg p-3 sm:p-5 short:p-2.5 border-l-4 ${wageSharePct > 75 ? "border-error" : wageSharePct > 50 ? "border-tertiary" : "border-primary"} relative overflow-hidden`}
@@ -732,7 +708,7 @@ export function FinancesTab({
                       <span className="material-symbols-outlined text-[11px]">
                         warning
                       </span>
-                      Juros 1,5% / jornada
+                      Juros {interestPct}% / jornada
                     </p>
                   ) : (
                     <p className="mt-0.5 text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-emerald-300/90">
@@ -772,14 +748,14 @@ export function FinancesTab({
                 onClick={() => socket.emit("payLoan")}
                 disabled={loanAmount < LOAN_STEP || currentBudget < LOAN_STEP}
               >
-                Pagar -500K
+                Pagar {loanStepK}
               </Button>
               <Button
                 variant="secondary"
                 onClick={() => {
                   setGameDialog({
                     mode: "confirm",
-                    title: "Pedir Empréstimo de 500.000€",
+                    title: `Pedir Empréstimo de ${formatCurrency(LOAN_STEP)}`,
                     description: `Juros semanais: ${formatCurrency(Math.round((loanAmount + LOAN_STEP) * LOAN_INTEREST_RATE))}. Dívida total após: ${formatCurrency(loanAmount + LOAN_STEP)}.`,
                     confirmLabel: "Confirmar Empréstimo",
                     danger: true,
@@ -790,7 +766,7 @@ export function FinancesTab({
                 disabled={loanAmount >= LOAN_MAX}
                 className="bg-surface-bright hover:brightness-110 border border-outline-variant/30"
               >
-                Pedir +500K
+                Pedir +{loanStepK}
               </Button>
             </div>
             {loanAmount > 0 && (
@@ -800,7 +776,7 @@ export function FinancesTab({
                   setGameDialog({
                     mode: "confirm",
                     title: "Liquidar a Dívida Bancária",
-                    description: `Vais pagar o valor total em dívida: ${formatCurrency(loanAmount)}. Ficas com saldo de ${formatCurrency(currentBudget - loanAmount)} e deixas de pagar juros (1,5%/jornada).`,
+                    description: `Vais pagar o valor total em dívida: ${formatCurrency(loanAmount)}. Ficas com saldo de ${formatCurrency(currentBudget - loanAmount)} e deixas de pagar juros ({interestPct}%/jornada).`,
                     confirmLabel: "Pagar Dívida",
                     danger: true,
                     onConfirm: () => socket.emit("payAllLoan"),

@@ -1726,3 +1726,11 @@ Plano C1+C2 (quando fizer):
 - Pedido: aplicar o padrão `execQuiet` ao ficheiro. Investigação concluiu que NÃO se aplica: `persistSeat` é chamado em 14 sítios síncronos (5 ficheiros, hot paths de socket) e o ficheiro declara-se "best-effort" por desenho — o driver sqlite serializa por ordem e a janela de crash é coberta por snapshot+replay (`docs/CRASH.md`). Await total seria ripple sem ganho real.
 - Feito em vez disso: os dois únicos callbacks silenciosos (`deleteSeat`, `clearMatchCheckpoint`) passam a registar erro como os irmãos (`persistSeat`, `appendRoomEvent`).
 - Checks: `typecheck` OK; `test:session-freeze` 10/10.
+
+## FinancesTab — review aplicada + layout desktop (2026-09-26)
+- Review 6.5/10 código, 7.5/10 UX → correções todas aplicadas.
+- Desktop: uma única grid `lg:grid-cols-6` — gráfico (span 4) + Controlo (span 2) em cima, Receitas/Despesas 50/50 por baixo; phone mantém ordem original via `order-*`. Wrapper `max-w-3xl` do gráfico removido (o span-4 nunca fica demasiado largo).
+- `ExpandableRow` local (a11y: `role=button`, `tabIndex`, Enter/Espaço, `aria-expanded`) substitui as 3 rubricas expansíveis e a duplicação do "Bilheteiras" (fallback sem breakdown = `onToggle=null`). 821 → ~800 linhas.
+- Constantes: `14`→`SEASON_JORNADAS`; "500K"→`LOAN_STEP/1000`; "1,5%"→`LOAN_INTEREST_RATE` (`interestPct`); Folha/Juros usam `weeksElapsed` (coerente com os totais); `key={i}`→chave composta; `title` redundante da barra segmentada removido.
+- Pré-existente (não mexido): eixo Y mostra "undefined" com dados mock do harness (ponto sem `matchweek`); clipping do "jornadas concluídas" no hero do harness é artefato da fonte de ícones não carregada.
+- Checks: eslint limpo no ficheiro (2 erros pré-existentes noutros); `check:types` OK; mobile portrait 160/160 + landscape 192/192 PASS; harness `finances-resp-test` 390 + 1023 + 1280 PASS, screenshots vistos.
