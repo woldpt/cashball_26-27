@@ -1694,3 +1694,11 @@ Plano C1+C2 (quando fizer):
 - `RoomHub.jsx`: 5 pontos nos badges de convite (mesmo mapeamento do RoomSelect: primary/error/outline). `index.css`: bloco `--color-landing-*` e `.glass-card` mortos removidos — zero referências em JSX/JS.
 - O re-skin partiu o `landing-resp-test`: contava cartões via `[class*="rounded-2xl"]`; passa a `[class*="cursor-pointer"]` (só os cartões têm).
 - Checks: `eslint` limpo nos tocados (o erro do harness é o pré-existente); `check:types` OK; suite completa portrait 155/155 + landscape 186/186 PASS; screenshots roomhub 390/667 vistos. Versão → `v26.09.4`.
+
+## coachDismissalHelpers — revisão 7/10 e correção (2026-09-26)
+- Avaliação pedida do ficheiro: 7/10 (OK do utilizador para correção completa + helper de emits).
+- Bug real: `dismissHumanCoach` apaga o assento e `autoAssignDismissedCoach` não o recriava — a sala não congelava na ausência do realocado e um restart perdia-lhe a equipa. Fix: `setSeatTeamId(game, coachName, team.id)` (`seatOf` recria com status member e pronto a false).
+- `emitTeamAssigned(game, coachName, team, isNew)` extraído (auto-assign `true`, aceitar-convite `false`) — dois blocos de ~45 linhas eliminados.
+- Folha salarial NPC: um `GROUP BY team_id` em vez de um `SUM` por clube; `warn` nos dois `catch` dos espelhos do Jornal (`board_warning`, `job_offer`).
+- Não mexido: `db.run` fire-and-forget (o driver sqlite serializa por ordem de chamada; promisificar tudo fica para quando houver teste de crash dedicado) e `Db = any`/`io: any` (refactor de tipos à parte).
+- Checks: `typecheck` OK; `test:session-freeze` 10/10; `audit:socketio` 0 erros (97 warnings pré-existentes).

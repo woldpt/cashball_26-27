@@ -97,6 +97,64 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       .catch(() => {});
   }
 
+  /**
+   * Emite teamAssigned + mySquad para um treinador (partilhado pelo
+   * auto-assign pós-despedimento e pelo aceitar de convite).
+   */
+  function emitTeamAssigned(
+    game: ActiveGame,
+    coachName: string,
+    team: AnyRow,
+    isNew: boolean,
+  ): void {
+    const player = game.playersByName[coachName];
+    if (!player?.socketId) return;
+    const socketId: string = player.socketId;
+
+    getRoomCoaches(game.roomCode, coachName)
+      .catch((): string[] => [])
+      .then(async (coaches) => {
+        const coachAvatars = await getCoachAvatars(coaches).catch(() => ({}));
+        io.to(socketId).emit("teamAssigned", {
+          teamName: team.name,
+          teamId: team.id,
+          division: team.division,
+          budget: team.budget ?? 0,
+          points: team.points ?? 0,
+          wins: team.wins ?? 0,
+          draws: team.draws ?? 0,
+          losses: team.losses ?? 0,
+          goalsFor: team.goals_for ?? 0,
+          goalsAgainst: team.goals_against ?? 0,
+          colorPrimary: team.color_primary ?? "#888888",
+          colorSecondary: team.color_secondary ?? "#ffffff",
+          crest: team.crest ?? null,
+          stadiumCapacity: team.stadium_capacity ?? 0,
+          stadiumName: team.stadium_name ?? "",
+          coaches,
+          coachAvatars,
+          isNew,
+        });
+      });
+
+    game.db.all(
+      "SELECT * FROM players WHERE team_id = ?",
+      [team.id],
+      (err: any, squad: any[]) => {
+        if (!err) {
+          io.to(socketId).emit(
+            "mySquad",
+            ensureFullBench(
+              withJuniorGRs(squad || [], team.id, upcomingMatchweek(game)),
+              team.id,
+              upcomingMatchweek(game),
+            ),
+          );
+        }
+      },
+    );
+  }
+
   // ── Probability tables ─────────────────────────────────────────────────────
   const DISMISSAL_BY_LOSSES: Record<number, number> = {
     3: 0.1,
@@ -410,7 +468,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
         },
         io,
       );
-    } catch {}
+    } catch (e) {
+      console.warn(`[${game.roomCode}] job_offer news failed:`, (e as Error)?.message);
+    }
     io.to(player.socketId).emit("jobOffer", payload);
   }
 
@@ -566,6 +626,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       team.id,
     ]);
     player.teamId = team.id;
+    // Recriar o assento (apagado no despedimento) com o novo clube: sem isto
+    // a sala não congela na ausência dele e um restart perde-lhe a equipa.
+    setSeatTeamId(game, coachName, team.id);
     delete game.dismissedCoachSince[coachName];
 
     // Reiniciar carência, streak de orçamento e aviso da direcção: o treinador
@@ -575,50 +638,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     game.boardBudgetWarned[team.id] = 0;
 
     // Notify coach
-    if (player.socketId) {
-      getRoomCoaches(game.roomCode, coachName)
-        .catch((): string[] => [])
-        .then(async (coaches) => {
-          const coachAvatars = await getCoachAvatars(coaches).catch(() => ({}));
-          io.to(player.socketId as string).emit("teamAssigned", {
-            teamName: team.name,
-            teamId: team.id,
-            division: team.division,
-            budget: team.budget ?? 0,
-            points: team.points ?? 0,
-            wins: team.wins ?? 0,
-            draws: team.draws ?? 0,
-            losses: team.losses ?? 0,
-            goalsFor: team.goals_for ?? 0,
-            goalsAgainst: team.goals_against ?? 0,
-            colorPrimary: team.color_primary ?? "#888888",
-            colorSecondary: team.color_secondary ?? "#ffffff",
-            crest: team.crest ?? null,
-            stadiumCapacity: team.stadium_capacity ?? 0,
-            stadiumName: team.stadium_name ?? "",
-            coaches,
-            coachAvatars,
-            isNew: true,
-          });
-        });
-
-      game.db.all(
-        "SELECT * FROM players WHERE team_id = ?",
-        [team.id],
-        (err: any, squad: any[]) => {
-          if (!err && player.socketId) {
-            io.to(player.socketId as string).emit(
-              "mySquad",
-              ensureFullBench(
-                withJuniorGRs(squad || [], team.id, upcomingMatchweek(game)),
-                team.id,
-                upcomingMatchweek(game),
-              ),
-            );
-          }
-        },
-      );
-    }
+    emitTeamAssigned(game, coachName, team, true);
 
     await recordMarketEvent(game, {
       type: "hiring",
@@ -780,7 +800,9 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
               },
               io,
             );
-          } catch {}
+          } catch (e) {
+            console.warn(`[${game.roomCode}] board_warning news failed:`, (e as Error)?.message);
+          }
         };
         if (warned < 1 && streak >= 1) {
           game.boardBudgetWarned[teamId] = 1;
@@ -853,6 +875,15 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       game.db,
       "SELECT t.*, m.is_human AS coach_is_human FROM teams t LEFT JOIN managers m ON t.manager_id = m.id",
     );
+    // Folha salarial de todas as equipas numa só query (evita um SUM por clube).
+    const folhaByTeam = new Map<number, number>(
+      (
+        await runAll<{ team_id: number; w: number }>(
+          game.db,
+          "SELECT team_id, COALESCE(SUM(wage), 0) AS w FROM players GROUP BY team_id",
+        )
+      ).map((r) => [r.team_id, r.w]),
+    );
     for (const team of npcTeams) {
       if (team.coach_is_human !== 0) continue; // só treinadores NPC (skip humanos/órfãos)
       if (team.division === 5) continue; // pool interno, invisível
@@ -863,12 +894,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       // transitório (folha ≤ break-even, recuperável no patrocínio de fim de
       // época) NÃO conta — só corta quem perde dinheiro com garantia.
       const breakEven = npcStructuralBreakEvenFolha(team.division ?? 4);
-      const folhaRow = await runGet<{ w: number }>(
-        game.db,
-        "SELECT COALESCE(SUM(wage), 0) AS w FROM players WHERE team_id = ?",
-        [team.id],
-      );
-      const folha = folhaRow?.w ?? 0;
+      const folha = folhaByTeam.get(team.id) ?? 0;
       if ((team.budget ?? 0) < 0 && folha > breakEven) {
         game.npcNegativeBudgetStreak[team.id] =
           (game.npcNegativeBudgetStreak[team.id] ?? 0) + 1;
@@ -1050,50 +1076,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       },
     );
 
-    if (player.socketId) {
-      getRoomCoaches(game.roomCode, coachName)
-        .catch((): string[] => [])
-        .then(async (coaches) => {
-          const coachAvatars = await getCoachAvatars(coaches).catch(() => ({}));
-          io.to(player.socketId as string).emit("teamAssigned", {
-            teamName: team.name,
-            teamId: team.id,
-            division: team.division,
-            budget: team.budget ?? 0,
-            points: team.points ?? 0,
-            wins: team.wins ?? 0,
-            draws: team.draws ?? 0,
-            losses: team.losses ?? 0,
-            goalsFor: team.goals_for ?? 0,
-            goalsAgainst: team.goals_against ?? 0,
-            colorPrimary: team.color_primary ?? "#888888",
-            colorSecondary: team.color_secondary ?? "#ffffff",
-            crest: team.crest ?? null,
-            stadiumCapacity: team.stadium_capacity ?? 0,
-            stadiumName: team.stadium_name ?? "",
-            coaches,
-            coachAvatars,
-            isNew: false,
-          });
-        });
-
-      game.db.all(
-        "SELECT * FROM players WHERE team_id = ?",
-        [toTeamId],
-        (err: any, squad: any[]) => {
-          if (!err && player.socketId) {
-            io.to(player.socketId as string).emit(
-              "mySquad",
-              ensureFullBench(
-                withJuniorGRs(squad || [], toTeamId, upcomingMatchweek(game)),
-                toTeamId,
-                upcomingMatchweek(game),
-              ),
-            );
-          }
-        },
-      );
-    }
+    emitTeamAssigned(game, coachName, team, false);
 
     io.to(game.roomCode).emit("systemMessage", {
       text: `${coachName} aceitou o convite de ${team.name}.`,
