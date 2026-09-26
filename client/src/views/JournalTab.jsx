@@ -4,7 +4,7 @@
  * Tópicos à esquerda e detalhe à direita no desktop, uma só linha de filtros:
  * Todas, O Meu Clube, Competições, Plantel, Mercado. A notícia mais antiga
  * por ler fica seleccionada (sem a marcar como lida) e a lista tem
- * «Ler próxima». Só o clique na linha, o «Ler próxima» ou o Enter/Espaço
+ * «Ler próxima». Só o clique na linha, o «Ler próxima» ou o Enter
  * marcam como lida.
  *
  * Os pedidos de renovação e os convites de clubes entram como linhas com
@@ -95,27 +95,28 @@ const CATEGORY_EMOJIS = {
   market: "💰",
 };
 
+/** Link de entidade clicável (jogador/equipa) no corpo das notícias. */
+const LINK_CLS =
+  "font-black text-primary underline decoration-primary/40 underline-offset-2 hover:text-on-surface transition-colors";
+
+/** Invólucro, tabela e cabeçalho das tabelas do Jornal (Taça, classificação). */
+const TABLE_WRAP_CLS =
+  "mt-3 overflow-x-auto rounded-sm border border-outline-variant/20";
+const TABLE_CLS =
+  "w-full max-w-md border-collapse text-sm tabular-nums text-on-surface";
+const THEAD_ROW_CLS =
+  "bg-surface-container-high/60 text-[10px] font-black uppercase tracking-widest text-on-surface-variant";
+
 function teamFromRef(teams, ref) {
   return teams.find((team) => String(team.id) === String(ref?.id)) || ref;
 }
 
 /**
- * Estima o tempo de leitura em minutos (1 min ≈ 230 palavras).
- */
-function estimateReadTime(text) {
-  if (!text) return "1 min";
-  const words = String(text).split(/\s+/).filter(Boolean).length;
-  const mins = Math.max(1, Math.ceil(words / 230));
-  return `${mins} min`;
-}
-
-/**
- * Extrai o snippet do corpo (primeiros 80 chars).
+ * Normaliza o corpo para uma linha (o `truncate` do CSS trata do corte).
  */
 function getSnippet(body) {
   if (!body) return "";
-  const clean = body.replace(/\n/g, " ");
-  return clean.length > 80 ? clean.slice(0, 80) + "…" : clean;
+  return body.replace(/\n/g, " ");
 }
 
 /**
@@ -203,16 +204,16 @@ function RichNewsText({
   return parts.map((part, index) => {
     const key = `${part.type}-${part.id ?? index}`;
     if (part.type === "player") {
-      const content = (
+      return (
         <button
+          key={key}
           type="button"
-          className="font-black text-primary underline decoration-primary/40 underline-offset-2 hover:text-on-surface transition-colors"
+          className={LINK_CLS}
           onClick={() => onOpenPlayerHistory?.(part)}
         >
           {part.label}
         </button>
       );
-      return <span key={key}>{content}</span>;
     }
     if (part.type === "team") {
       const team = teamFromRef(teams, part);
@@ -220,7 +221,7 @@ function RichNewsText({
         <button
           key={key}
           type="button"
-          className="font-black text-primary underline decoration-primary/40 underline-offset-2 hover:text-on-surface transition-colors"
+          className={LINK_CLS}
           onClick={() => team?.id && onOpenTeamSquad?.(team)}
           disabled={!team?.id || !onOpenTeamSquad}
         >
@@ -255,11 +256,10 @@ function RichParagraphs({
   const bodyCls =
     "font-newsreader text-base short:text-sm leading-relaxed whitespace-pre-line text-justify text-on-surface";
   const leadCls = `font-newsreader text-lg short:text-base leading-relaxed whitespace-pre-line text-justify first-letter:float-left first-letter:mr-2 first-letter:mt-1.5 first-letter:font-newsreader first-letter:text-6xl first-letter:font-black first-letter:leading-[0.8] ${cap}`;
-  if (!Array.isArray(parts) || parts.length === 0) {
-    const longEnough = !noLead && String(fallback ?? "").length >= LEAD_MIN_CHARS;
-    return <p className={longEnough ? leadCls : bodyCls}>{fallback}</p>;
-  }
-  const paragraphs = splitPartsByParagraphs(parts);
+  const paragraphs =
+    Array.isArray(parts) && parts.length > 0
+      ? splitPartsByParagraphs(parts)
+      : [];
   if (paragraphs.length === 0) {
     const longEnough = !noLead && String(fallback ?? "").length >= LEAD_MIN_CHARS;
     return <p className={longEnough ? leadCls : bodyCls}>{fallback}</p>;
@@ -285,42 +285,6 @@ function RichParagraphs({
           </p>
         );
       })}
-    </div>
-  );
-}
-
-/**
- * Barra de progresso de leitura — preenche conforme o utilizador scrola
- * o painel de detalhe.
- */
-function ReadingProgressBar({ containerRef }) {
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const el = containerRef?.current;
-    if (!el) return;
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = el;
-      const pct = scrollHeight > clientHeight
-        ? scrollTop / (scrollHeight - clientHeight)
-        : 0;
-      setProgress(Math.min(1, Math.max(0, pct)) * 100);
-    };
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, [containerRef]);
-
-  return (
-    <div className="sticky top-0 z-10 bg-surface-container pb-1.5">
-      <div className="h-1 w-full overflow-hidden rounded-full bg-surface-container-high/50">
-        <motion.div
-          className="h-full bg-primary"
-          style={{ width: `${progress}%` }}
-          transition={{ duration: 0.15, ease: "easeOut" }}
-          aria-hidden
-        />
-      </div>
     </div>
   );
 }
@@ -428,10 +392,10 @@ function NewsMedia({ media, teams, onOpenTeamSquad, onOpenPlayerHistory }) {
 function LeagueFinalTable({ rows, teams, onOpenTeamSquad }) {
   if (!Array.isArray(rows) || rows.length === 0) return null;
   return (
-    <div className="mt-3 overflow-x-auto rounded-sm border border-outline-variant/20">
-      <table className="w-full max-w-md border-collapse text-sm tabular-nums text-on-surface">
+    <div className={TABLE_WRAP_CLS}>
+      <table className={TABLE_CLS}>
         <thead>
-          <tr className="bg-surface-container-high/60 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+          <tr className={THEAD_ROW_CLS}>
             <th className="px-2 py-1.5 text-right">#</th>
             <th className="px-2 py-1.5 text-left">Equipa</th>
             <th className="px-2 py-1.5 text-right">J</th>
@@ -464,7 +428,7 @@ function LeagueFinalTable({ rows, teams, onOpenTeamSquad }) {
                 <td className="px-2 py-1.5 text-left">
                   <button
                     type="button"
-                    className={`font-black text-primary underline decoration-primary/40 underline-offset-2 hover:text-on-surface transition-colors ${
+                    className={`${LINK_CLS} ${
                       isChampion ? "text-tertiary" : ""
                     }`}
                     onClick={() => team?.id && onOpenTeamSquad?.(team)}
@@ -504,9 +468,7 @@ function CupDrawTable({ fixtures, viewerTeamId, teams, onOpenTeamSquad }) {
       <td className={`px-2 py-1.5 text-left ${mine ? "font-black" : ""}`}>
         <button
           type="button"
-          className={`font-black text-primary underline decoration-primary/40 underline-offset-2 hover:text-on-surface transition-colors ${
-            mine ? "text-tertiary" : ""
-          }`}
+          className={`${LINK_CLS} ${mine ? "text-tertiary" : ""}`}
           onClick={() => team?.id && onOpenTeamSquad?.(team)}
           disabled={!team?.id || !onOpenTeamSquad}
         >
@@ -516,10 +478,10 @@ function CupDrawTable({ fixtures, viewerTeamId, teams, onOpenTeamSquad }) {
     );
   };
   return (
-    <div className="mt-3 overflow-x-auto rounded-sm border border-outline-variant/20">
-      <table className="w-full max-w-md border-collapse text-sm tabular-nums text-on-surface">
+    <div className={TABLE_WRAP_CLS}>
+      <table className={TABLE_CLS}>
         <thead>
-          <tr className="bg-surface-container-high/60 text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+          <tr className={THEAD_ROW_CLS}>
             <th className="px-2 py-1.5 text-right">Jogo</th>
             <th className="px-2 py-1.5 text-left">Casa</th>
             <th className="px-2 py-1.5 text-left">Fora</th>
@@ -560,7 +522,6 @@ function CupDrawTable({ fixtures, viewerTeamId, teams, onOpenTeamSquad }) {
  * @param {{ item: object, inbox: object, onOpenCupBracket?: Function }} props
  */
 function InboxActions({ item, inbox, onOpenCupBracket }) {
-  if (!item) return null;
   if (item.kind === "contract") {
     const busy = !!item.extra?.answering;
     return (
@@ -648,7 +609,7 @@ function CategoryAccentBar({ category }) {
 }
 
 /**
- * Metadados do artigo — categoria, data e tempo de leitura.
+ * Metadados do artigo — categoria e data.
  */
 function ArticleMeta({ item, catLabel }) {
   const badge = item ? (
@@ -656,21 +617,11 @@ function ArticleMeta({ item, catLabel }) {
       {CATEGORY_EMOJIS[item.cat] || "📰"} {catLabel || item.cat}
     </Badge>
   ) : null;
-  const readTime = item ? estimateReadTime(item.body) : null;
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-on-surface-variant">
       {badge}
-      {item?.date && (
-        <span className="flex items-center gap-1">
-          📅 {item.date}
-        </span>
-      )}
-      {readTime && (
-        <span className="flex items-center gap-1">
-          ⏱ {readTime} de leitura
-        </span>
-      )}
+      {item?.date && <span>{item.date}</span>}
     </div>
   );
 }
@@ -687,12 +638,13 @@ export function JournalTab({
   const [search, setSearch] = useState("");
   const detailRef = useRef(null);
 
-  // Atalho de teclado: Enter/Espaço fora de controlos = próxima não lida.
-  // Dentro de botões/links/inputs o teclado comporta-se nativamente
-  // (senão o Espaço no "Aceitar" saltava de notícia em vez de aceitar).
+  // Atalho de teclado: Enter fora de controlos = próxima não lida.
+  // Dentro de botões/links/inputs o teclado comporta-se nativamente.
+  // Com um modal aberto, o Enter é do modal.
   const handleKeyDown = useCallback(
     (e) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (document.querySelector('[aria-modal="true"]')) return;
       const target = e.target;
       if (
         target instanceof Element &&
@@ -701,7 +653,7 @@ export function JournalTab({
         )
       )
         return;
-      if (e.key === "Enter" || e.key === " ") {
+      if (e.key === "Enter") {
         e.preventDefault();
         selectNextUnread();
       }
@@ -787,7 +739,7 @@ export function JournalTab({
 
       {/* ── Filtros (uma só linha) ──────────────────────────────────── */}
       <div
-        role="tablist"
+        role="group"
         aria-label="Filtrar notícias"
         className="flex gap-px overflow-x-auto rounded-sm bg-surface-container-low border border-outline-variant/20"
       >
@@ -833,7 +785,7 @@ export function JournalTab({
           ) : (
             <ol className="max-h-64 short:max-h-44 overflow-y-auto rounded-sm border border-outline-variant/20 bg-surface-container-low divide-y divide-outline-variant/15 lg:max-h-none lg:min-h-0 lg:flex-1">
                 {visible.map((it) => {
-                  const active = inbox.selected?.id === it.id;
+                  const active = selected?.id === it.id;
                   const unread = inbox.isUnread(it);
                   const tone = FILTER_TONES[it.cat] || FILTER_TONES.all;
                   const snippet = getSnippet(it.body);
@@ -842,7 +794,12 @@ export function JournalTab({
                     <li key={it.id}>
                       <button
                         type="button"
-                        onClick={() => inbox.select(it.id)}
+                        onClick={() => {
+                          inbox.select(it.id);
+                          if (!window.matchMedia("(min-width: 1024px)").matches) {
+                            detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                          }
+                        }}
                         aria-current={active}
                         className={`flex w-full items-start gap-2 px-2 py-1.5 text-left transition-colors ${
                           active
@@ -890,7 +847,7 @@ export function JournalTab({
                         {unread && !active && (
                           <span
                             aria-label="Não lida"
-                            className={`mt-1 h-2 w-2 shrink-0 rounded-full ${tone.dot} animate-pulse`}
+                            className={`mt-1 h-2 w-2 shrink-0 rounded-full ${tone.dot}`}
                           />
                         )}
                       </button>
@@ -933,33 +890,28 @@ export function JournalTab({
         </section>
 
         {/* ── Coluna direita: Detalhe do artigo ──────────────────────── */}
-        <section aria-label="Corpo da notícia" className="min-w-0 space-y-2 lg:flex lg:min-h-0 lg:flex-col">
+        <section ref={detailRef} aria-label="Corpo da notícia" className="min-w-0 space-y-2 lg:flex lg:min-h-0 lg:flex-col">
           <AnimatePresence mode="wait">
-            {inbox.selected && (
+            {selected && (
               <motion.section
-                key={selected?.id}
+                key={selected.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.18, ease: [0.25, 0.46, 0.45, 0.94] }}
-                aria-live="polite"
-                ref={detailRef}
                 className="relative rounded-sm border border-outline-variant/20 bg-surface-container px-3 py-2.5 short:py-2 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col overflow-y-auto"
               >
-                {/* Barra de progresso de leitura */}
-                <ReadingProgressBar containerRef={detailRef} />
-
                 {/* Acento lateral de cor por categoria */}
-                <CategoryAccentBar category={inbox.selected.cat} />
+                <CategoryAccentBar category={selected.cat} />
 
-                {/* Metadados: categoria, data, tempo de leitura */}
-                <ArticleMeta item={inbox.selected} catLabel={labelOf(inbox.selected.cat)} />
+                {/* Metadados: categoria e data */}
+                <ArticleMeta item={selected} catLabel={labelOf(selected.cat)} />
 
                 {/* Título */}
                 <h2 className="mt-2 font-headline text-xl short:text-lg font-black tracking-tight text-balance text-left text-on-surface">
                   <RichNewsText
-                    parts={inbox.selected.titleParts}
-                    fallback={inbox.selected.title.replace(/^🚩\s*/, "")}
+                    parts={selected.titleParts}
+                    fallback={selected.title.replace(/^🚩\s*/, "")}
                     teams={teams}
                     onOpenTeamSquad={onOpenTeamSquad}
                     onOpenPlayerHistory={onOpenPlayerHistory}
@@ -968,7 +920,7 @@ export function JournalTab({
 
                 {/* Media (jogador/equipa/transferência) */}
                 <NewsMedia
-                  media={inbox.selected.media}
+                  media={selected.media}
                   teams={teams}
                   onOpenTeamSquad={onOpenTeamSquad}
                   onOpenPlayerHistory={onOpenPlayerHistory}
@@ -976,41 +928,41 @@ export function JournalTab({
 
                 {/* Corpo do artigo (entrada + parágrafos) — ou a tabela do
                     sorteio da Taça, em vez da lista seca */}
-                {inbox.selected.kind === "cupdraw" &&
-                Array.isArray(inbox.selected.facts?.fixtures) &&
-                inbox.selected.facts.fixtures.length > 0 ? (
+                {selected.kind === "cupdraw" &&
+                Array.isArray(selected.facts?.fixtures) &&
+                selected.facts.fixtures.length > 0 ? (
                   <div className="mt-3 border-t border-outline-variant/25 pt-3">
                     <CupDrawTable
-                      fixtures={inbox.selected.facts.fixtures}
-                      viewerTeamId={inbox.selected.facts.viewerTeamId}
+                      fixtures={selected.facts.fixtures}
+                      viewerTeamId={selected.facts.viewerTeamId}
                       teams={teams}
                       onOpenTeamSquad={onOpenTeamSquad}
                     />
                   </div>
-                ) : inbox.selected.body && (
+                ) : selected.body && (
                   <div className="mt-3 lg:px-6 space-y-3 border-t border-outline-variant/25 pt-3">
                     <RichParagraphs
-                      parts={inbox.selected.bodyParts}
-                      fallback={inbox.selected.body}
+                      parts={selected.bodyParts}
+                      fallback={selected.body}
                       teams={teams}
-                      category={inbox.selected.cat}
+                      category={selected.cat}
                       onOpenTeamSquad={onOpenTeamSquad}
                       onOpenPlayerHistory={onOpenPlayerHistory}
-                      noLead={inbox.selected.kind === "cupdraw"}
+                      noLead={selected.kind === "cupdraw"}
                     />
                   </div>
                 )}
 
                 {/* Pitch com as classificações 0–10 (fim do corpo do rescaldo) */}
-                {Array.isArray(inbox.selected.pitch) &&
-                  inbox.selected.pitch.length > 0 && (
-                    <PostMatchPitch players={inbox.selected.pitch} />
+                {Array.isArray(selected.pitch) &&
+                  selected.pitch.length > 0 && (
+                    <PostMatchPitch players={selected.pitch} />
                   )}
 
                 {/* Tabela de classificação final */}
-                {inbox.selected.newsType === "league_final" && (
+                {selected.newsType === "league_final" && (
                   <LeagueFinalTable
-                    rows={inbox.selected.facts?.rows}
+                    rows={selected.facts?.rows}
                     teams={teams}
                     onOpenTeamSquad={onOpenTeamSquad}
                   />
@@ -1018,11 +970,11 @@ export function JournalTab({
 
                 {/* Botões de ação, sob filete */}
                 {["contract", "job", "board", "cupdraw"].includes(
-                  inbox.selected.kind,
+                  selected.kind,
                 ) && (
                   <div className="mt-4 border-t border-outline-variant/25 pt-3">
                     <InboxActions
-                      item={inbox.selected}
+                      item={selected}
                       inbox={inbox}
                       onOpenCupBracket={onOpenCupBracket}
                     />

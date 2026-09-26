@@ -142,33 +142,11 @@ Paddings: `p-3 md:p-4`; widgets: `grid-cols-1 sm:grid-cols-3`. Navegação: grup
 
 **Utilitários:** `formatCurrency`, `getPlayerStat` · `FLAG_TO_COUNTRY`.
 
-## 11. Jornal — folha escura (JournalTab)
+## 11. Jornal — caixa de entrada (JournalTab)
 
-A tab Jornal é uma **folha escura** (fanzine de bancada) sobre o fundo escuro
-da app, com aspeto que evolui com o clube. Implementação em `index.css`
-(seção `JORNAL — "quadro-negro" (JP)`) + `JournalTab.jsx`; a 5.ª divisão não
-é jogável (irrelevante).
-
-| Patamar | Divisão | Classe | Folha | Ornamentos |
-|---|---|---|---|---|
-| Amador (fotocópia) | 3-4 | `.jp-amador` | ardósia quente | pó de giz forte, tapes, rotações, masthead a preto-e-branco (`.jp-photocopy`) |
-| Semi (caseiro) | 2 | `.jp-semi` | ardósia neutra | pó de giz leve, tapes, pouca rotação |
-| Profissional | 1 | `.jp-pro` | ardósia fria | grelha direita: sem tapes/rotações/padrão de pontos — a voz gozona mantém-se |
-
-**Como funciona:** `.jp-paper` redefine **scoped** os tokens do `@theme`
-(`--color-surface…`, `--color-on-surface…`, `--color-outline-variant`,
-acessórios de impressão como `--color-error`/`emerald`/`amber`/`zinc-950` e
-`--color-primary/tertiary`). Como o Tailwind emite `var(--color-…)`, todos os
-utilitários dos componentes do jornal passam a giz claro sobre ardósia sem
-tocar no resto da app. `--color-zinc-950` fica escuro de propósito (é a tinta
-dos chips coloridos, não do texto corrido). Hex aqui permitido: é a paleta de
-impressão do jornal (análoga à paleta de posição). Pó de giz: `--jp-grain`
-(noise SVG claro por patamar) renderizado por `.jp-grain` (overlay acima do
-conteúdo, como tinta sobre ardósia); cor da folha: `--jp-sheet`.
-
-**Regras:** nunca usar `Math.random` para as decorações (flicker entre
-renders — capa determinística); rotações/tapes/filtros vivem no JSX por
-patamar (`amateur`/`crafty`/`tierCls`), as classes arbitrárias (ex.
-`sm:rotate-[0.15deg]`) têm de estar como literais no ficheiro para o scanner
-do Tailwind as gerar; `PaperSheet` é o envoltório (sobreposições `jp-stain` /
-`jp-crease` só amador).
+A tab Jornal é a **caixa de entrada do treinador** (hub estilo CM2001):
+tópicos à esquerda e detalhe à direita no desktop, uma só linha de filtros
+(Todas, O Meu Clube, Competições, Plantel, Mercado). O detalhe segue registo
+de imprensa clássica: manchete em tinta forte, entrada com capitular
+(só a partir de 140 caracteres) e filetes a separar corpo e ações.
+As cores por categoria vivem em `FILTER_TONES` no `JournalTab.jsx`.

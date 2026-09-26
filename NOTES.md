@@ -1,3 +1,10 @@
+## Limpeza do JournalTab (2026-09-26)
+
+- Plano `docs/plans/journaltab-cleanup.md` executado na íntegra. Só `client/src/views/JournalTab.jsx` (1038→990 linhas): fora `estimateReadTime`, `ReadingProgressBar`, `animate-pulse`, `aria-live` e emojis 📅⏱️; `LINK_CLS` + `TABLE_WRAP/CLS` + `THEAD_ROW_CLS` eliminam as classes repetidas; `RichParagraphs` com um só ramo de fallback; `getSnippet` sem corte aos 80; `selected` desestruturado em todo o detalhe.
+- Filtros `role="tablist"`→`role="group"` (sem `TabBar`: perdia as cores por categoria). Atalho passa a só Enter (Espaço volta ao scroll) e ignora com modal aberto (`[aria-modal="true"]`); `ModalShell` + `InviteRoomModal` (montado no `GameOverlays`, cobre qualquer tab) ganham `role="dialog" aria-modal="true"`. Mobile: tocar na linha faz `scrollIntoView` do detalhe.
+- Morto removido: secção JP do `index.css` (−104 linhas), §11 do `STYLE.md` reescrito como caixa de entrada, linha 278 deste NOTES apagada.
+- Checks: `lint` só os 2 erros pré-existentes · `check:types` OK · `test:journaldb` 2 falhas pré-existentes (confirmadas via `stash`: «renovação → club», «duas equipas na media» — lado dos dados, fora do âmbito) · `test:mobile` 155/155 + landscape 186/186 · build OK.
+
 ## Radar: moral só com etiqueta (2026-09-26)
 
 - Pedido: no `CompareRadar` (briefing pré-jogo), o eixo «Moral do balneário» ficava `72 · Bom` — pedido para ficar só a etiqueta («Bom»), oculto o valor.
@@ -275,7 +282,6 @@
 - Queixa: o corpo parecia «jornal da escola primária» — manchete com o mesmo tamanho do texto corrido, parágrafos todos iguais, sem hierarquia. Decisões via perguntas: imprensa clássica sem texturas, detalhe completo (media+tabela+ações), entrada com capitular, emojis 📅⏱️ mantidos.
 - Só `client/src/views/JournalTab.jsx`: manchete `text-base tertiary` → `text-xl on-surface` com `text-balance`; primeiro parágrafo vira entrada (`text-lg` + capitular `first-letter:` na cor da categoria via novo `cap` em `FILTER_TONES`, só com ≥140 carateres — avisos de uma linha ficam uniformes); `space-y-3` → `space-y-4`; filetes (`border-t`) entre media/corpo e antes das ações (o bloco de ações só renderiza com `kind` acionável — acaba a `div` vazia); media como cartão-figura (avatar `mdR`→`md` 64px, crest `sm`→`md`, legendas `text-xs`); tabela com cabeçalho em caps + `tabular-nums`.
 - Peripécias: a edição ao comentário de topo comeu o `*/` (45 erros `no-undef`, imports dentro do comentário — fix de uma linha); `text-on-surface` + cor da categoria no mesmo `<p>` anulava a capitular colorida (o token vencia no cascade — saiu o `text-on-surface` do lead; `all` já resolve para `text-on-surface` via `cap`). Captura enganadora despistada por evidência: o harness auto-clica linhas (~2.5s), por isso screenshots tardios mostram a seleção dele e não a do script — cliques cedo ou leitura do `h2` para despistar.
-- CSS do fanzine `jp-*` continua morto no `index.css` (0 ocorrências em `src/`) — fica para outra conversa o vesti-lo ou removê-lo.
 - Checks: eslint limpo, `check:types` OK, build gera `first-letter:` + `text-balance`, harness retrato `5/5` + paisagem `6/6`, screenshots 390/1024 revistos (entrada âmbar com capitular, cartão-jogador, ações sob filete).
 
 ## Jornal: entrar seleciona a mais antiga sem a marcar como lida (2026-09-19)

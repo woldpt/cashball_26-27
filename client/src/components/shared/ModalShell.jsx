@@ -73,6 +73,8 @@ export function ModalShell({
       {visible && (
         <motion.div
           key="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
           className={backdropClasses}
           style={{ zIndex: z, ...backdropStyle }}
           initial={{ opacity: 0 }}

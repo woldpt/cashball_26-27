@@ -33,6 +33,8 @@ export function InviteRoomModal() {
 		<motion.div
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
+			role="dialog"
+			aria-modal="true"
 			className="fixed inset-0 z-[100] flex items-end justify-center bg-black/70 p-4 pb-6 backdrop-blur-sm sm:items-center"
 		>
 			<motion.div
