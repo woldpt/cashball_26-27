@@ -2125,3 +2125,9 @@ Plano C1+C2 (quando fizer):
 - Página atual (gd-cabrela/11054) tem 22 jogadores com zero sobreposição com os nossos 20 sem ID (só Cruz e Fadista coincidiam): 20 saem, 19 entram (3/7/5/4 + 2 mantidos = 21; Gonçalo Bernardo "Universal"/futsal excluído). Ficha real: ID, idade, país, foto e DOB.
 - Corrida `fetch:tui -- --equipas="Cabrela" --info=fotoJogadores,datasNasc`: 19 fotos + 21 DOBs; bónus: nome/DOB reais do treinador (Gonçalo Alcácer, 1986-04-23; era "Mister Cabrela").
 - Fica com 21/22 — o 22.º fica como falta. Checks: seed + audit 0 erros/warnings (verificação da TUI).
+
+## zerozero TUI — checkpoint por jogador (2026-09-26)
+- Causa da "morte muda" do Cabrela: o meu próprio `| head -n 6` fechou o cano → SIGPIPE matou o Node a meio da equipa e o `saveTeams` só gravava no fim. Reproduzido com `| head -n 3` (morre sem relatório).
+- Fix: helper `checkpoint()` (saveTeams+saveState, no-op em dry-run) chamado após cada mutação — emblema, cada foto/DOB de jogador, foto/DOB de treinador — e no fim da equipa. Retoma salta o já feito pelo modo inteligente.
+- Prova: `--equipas="Bragança" --info=fotoJogadores --renew` (22 re-downloads, mesmos bytes) + audit 0 erros; `.bak` atualizado. Checks: typecheck verde.
+- Lição: nunca correr a TUI com `| head`; usar `> ficheiro.log`.

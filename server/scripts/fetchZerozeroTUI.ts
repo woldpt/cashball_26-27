@@ -347,6 +347,15 @@ async function main() {
   const errors: string[] = [];
   const report: Array<{ team: string; notes: string[] }> = [];
 
+  // Grava progresso de imediato (não só no fim da equipa): se o processo
+  // for morto a meio (SIGPIPE de `| head`, Ctrl-C), o feito até aqui persiste
+  // e a retoma salta-o pelo modo inteligente. No-op em dry-run.
+  const checkpoint = (lastTeam: string) => {
+    if (dryRun) return;
+    saveTeams({ teams });
+    saveState({ lastTeam, ok, errors, at: new Date().toISOString(), dryRun });
+  };
+
   const logWarn = (msg: string) => {
     s.stop();
     p.log.warn(msg);
@@ -392,6 +401,7 @@ async function main() {
           } else if (await downloadImage(og, dest)) {
             team.crest = crestPath;
             teamNotes.push(`emblema: → ${crestPath}`);
+            checkpoint(team.name);
           } else {
             teamNotes.push("emblema: download falhou (placeholder/sem imagem?)");
           }
@@ -425,6 +435,8 @@ async function main() {
                 }
               }
               const cphoto = needPhotoT || cli.renew ? extractCoachPhoto(coachHtml) : null; // og:image é placeholder; foto real está no <img>
+              const prevPhoto = mAny.photo;
+              const prevDob = mAny.dob;
               const ext = cphoto && cphoto.includes(".png") ? ".png" : ".jpg";
               const photoPath = typeof mAny.photo === "string" && mAny.photo ? mAny.photo : `/coaches/${cid}${ext}`;
               const dest = path.join(PUBLIC, photoPath);
@@ -441,6 +453,7 @@ async function main() {
               } else if (dobMark) {
                 teamNotes.push(`treinador: ${coach.name} (${dobMark.trim()})`);
               }
+              if (!dryRun && (mAny.photo !== prevPhoto || mAny.dob !== prevDob)) checkpoint(team.name);
               await sleep(THROTTLE_JOGADOR + jitter());
             }
           }
@@ -466,6 +479,7 @@ async function main() {
           const needPhoto = wantPhoto && !(fp.photo && mediaExists(path.join(PUBLIC, fp.photo)));
           const needDob = wantDob && !fp.dob;
           if (!cli.renew && !needPhoto && !needDob) { skipped++; continue; } // já completo
+          let changed = false;
 
           const pkey = `player_${hit.id}`;
           const ph = dryRun ? cachedHtml(pkey) : await fetchHtml(`${BASE}${hit.href}`, pkey, cli.refresh);
@@ -474,15 +488,16 @@ async function main() {
             const pdob = extractDob(ph);
             if (pdob && (!fp.dob || cli.renew)) {
               dobs++;
-              if (!dryRun) fp.dob = pdob;
+              if (!dryRun) { fp.dob = pdob; changed = true; }
             }
           }
           if (!needPhoto && !cli.renew) {
+            if (changed) checkpoint(team.name);
             if (!dryRun) await sleep(THROTTLE_JOGADOR + jitter());
             continue;
           }
           const ppg = extractOgImage(ph);
-          if (!ppg || !ppg.includes("/img/jogadores/")) continue;
+          if (!ppg || !ppg.includes("/img/jogadores/")) { if (changed) checkpoint(team.name); continue; }
           const ext = ppg.includes(".png") ? ".png" : ".jpg";
           const pDest = path.join(PUBLIC, fp.photo || `/players/${hit.id}${ext}`);
           if (dryRun) {
@@ -491,7 +506,9 @@ async function main() {
             if (await downloadImage(ppg, pDest)) {
               fp.photo = `/players/${path.basename(pDest)}`;
               photos++;
+              changed = true;
             }
+            if (changed) checkpoint(team.name);
             await sleep(THROTTLE_JOGADOR + jitter()); // throttle mesmo quando falha
           }
         }
@@ -500,8 +517,7 @@ async function main() {
       }
 
       ok++;
-      if (!dryRun) saveTeams({ teams }); // grava progressivamente — retoma real
-      saveState({ lastTeam: team.name, ok, errors, at: new Date().toISOString(), dryRun });
+      checkpoint(team.name); // grava progressivamente — retoma real
       report.push({ team: team.name, notes: teamNotes });
       s.message(`${team.name} ✓`);
     } catch (e: unknown) {
