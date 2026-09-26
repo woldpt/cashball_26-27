@@ -2115,3 +2115,8 @@ Plano C1+C2 (quando fizer):
 - Varrimento: 0 equipas <22 jogadores; 68 jogadores sem foto (12 com zerozeroId buscáveis, 56 sem ID quase todos D5 distrital).
 - Corrida `fetch:tui -- --equipas="Rio Ave,Alverca,Moreirense,Lus. Lourosa,Penafiel" --info=fotoJogadores`: 10 fotos novas (Rio Ave 6, Alverca 2, Moreirense 1, Lourosa 1), 4 equipas a COMPLETO. Penafiel/Nfanseu sem foto — já fora do plantel da página (saída provável).
 - Verificação automática da TUI: typecheck + seed + audit 0 erros/warnings.
+
+## Penafiel — Nfanseu por Carlinhos Augusto (2026-09-26)
+- Nfanseu (MED, sem foto) já fora do plantel da página do zerozero; único MED novo era Carlinhos Augusto (22a, GW, id 1177883) — troca direta mantém 3/8/6/5. Foto buscada pela TUI (`/players/1177883.png`).
+- Nota: `all_teams.json` ainda guarda o URL antigo do Penafiel (`fc-penafiel/30`), que a TUI prefere ao `teamsSource.ts` — reconciliação P1 contornada para equipas com URL persistido. A tratar.
+- Checks: seed tmp + audit 0 erros/warnings.
