@@ -21,7 +21,12 @@ export function loadTeams(): { teams: TeamEntry[] } {
 }
 
 export function saveTeams(data: { teams: TeamEntry[] }) {
-  fs.writeFileSync(FIXTURES, JSON.stringify(data, null, 2) + "\n", "utf-8");
+  const tmp = FIXTURES + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2) + "\n", "utf-8");
+  try {
+    if (fs.existsSync(FIXTURES)) fs.copyFileSync(FIXTURES, FIXTURES + ".bak");
+  } catch {}
+  fs.renameSync(tmp, FIXTURES);
 }
 
 export function parseZerozeroUrl(input: string): string | null {

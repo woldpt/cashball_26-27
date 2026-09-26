@@ -12,6 +12,12 @@ export const BASE = "https://www.zerozero.pt";
 export const SEASON_DEFAULT = "156";
 
 const CACHE_DIR = path.join(process.cwd(), ".cache", "zerozero");
+/** TTL do cache de HTML — 7 dias; passar noCache=true (--refresh) para ignorar. */
+export const CACHE_TTL_MS = 7 * 24 * 3600 * 1000;
+/** Throttles partilhados — não baixar sem necessidade (anti-ban). */
+export const THROTTLE_EQUIPA = 2800;
+export const THROTTLE_JOGADOR = 1600;
+export const jitter = () => 400 + Math.floor(Math.random() * 900); // 400-1300ms extra
 
 function ensureCache() {
   if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
@@ -29,7 +35,10 @@ export function isPlaceholderImage(url: string | null | undefined): boolean {
 export async function fetchHtml(url: string, cacheKey?: string, noCache = false): Promise<string> {
   ensureCache();
   const p = cacheKey ? path.join(CACHE_DIR, cacheKey + ".html") : null;
-  if (p && !noCache && fs.existsSync(p)) return fs.readFileSync(p, "utf-8");
+  if (p && !noCache && fs.existsSync(p)) {
+    const age = Date.now() - fs.statSync(p).mtimeMs;
+    if (age < CACHE_TTL_MS) return fs.readFileSync(p, "utf-8");
+  }
   const res = await fetch(url, {
     headers: { "User-Agent": UA, "Accept-Language": "pt-PT,pt;q=0.9" },
     signal: AbortSignal.timeout(30000),
@@ -71,7 +80,7 @@ export function extractHeaderColor(html: string): string | null {
     return `#${toHex(Number(rgb[1]))}${toHex(Number(rgb[2]))}${toHex(Number(rgb[3]))}`;
   }
   if (/^#[0-9a-f]{3,8}$/i.test(raw)) return raw.toUpperCase();
-  return raw;
+  return null;
 }
 
 /** Foto do treinador: a og:image das páginas /treinador/ é o placeholder
@@ -184,7 +193,7 @@ export function extractPlayers(html: string): ScrapePlayer[] {
 export async function downloadImage(url: string, dest: string): Promise<boolean> {
   // skip placeholder ANTES de bater no CDN
   if (isPlaceholderImage(url)) return false;
-  const res = await fetch(url, { headers: { "User-Agent": UA } });
+  const res = await fetch(url, { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(30000) });
   if (!res.ok) return false;
   const ct = res.headers.get("content-type") || "";
   if (!ct.startsWith("image/")) return false;

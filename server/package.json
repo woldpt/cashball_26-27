@@ -15,6 +15,7 @@
     "audit:session": "tsx scripts/sessionAudit.ts",
     "audit:socketio": "tsx scripts/socketioContractValidator.ts",
     "fetch:zerozero": "tsx scripts/fetchZerozeroSquads.ts",
+    "fetch:logos": "tsx scripts/fetchZerozeroLogos.ts",
     "fetch:tui": "tsx scripts/fetchZerozeroTUI.ts",
     "repair:joboffer": "tsx scripts/repairDuplicateJobOffer.ts",
     "test:training-report": "tsx scripts/trainingReportRegression.mts",

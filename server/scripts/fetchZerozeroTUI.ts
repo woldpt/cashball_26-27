@@ -18,9 +18,14 @@ import * as p from "@clack/prompts";
 import fs from "fs";
 import path from "path";
 import { loadTeams, saveTeams, parseZerozeroUrl, teamLabel } from "./lib/teamRegistry";
+import { TEAMS as SOURCE_TEAMS } from "./lib/teamsSource";
 import {
   BASE,
   SEASON_DEFAULT,
+  CACHE_TTL_MS,
+  THROTTLE_EQUIPA,
+  THROTTLE_JOGADOR,
+  jitter,
   fetchHtml,
   cachedHtml,
   extractPlayers,
@@ -37,11 +42,43 @@ import {
 
 const PUBLIC = path.join(process.cwd(), "..", "client", "public");
 const STATE_PATH = path.join(process.cwd(), ".cache", "zerozero", "tui_state.json");
+const CACHE_DIR = path.join(process.cwd(), ".cache", "zerozero");
 const SQUAD_MIN: Record<Pos, number> = { GR: 3, DEF: 6, MED: 6, ATA: 5 };
 const SQUAD_TOTAL = 22;
-const THROTTLE_EQUIPA = 2800; // anti-ban — não baixar sem necessidade
-const THROTTLE_JOGADOR = 1600;
-const jitter = () => 400 + Math.floor(Math.random() * 900); // 400-1300ms extra
+
+/** true quando o HTML em cache existe e está dentro do TTL (pedido não bate na rede). */
+function isCacheFresh(key: string): boolean {
+  try {
+    const p = path.join(CACHE_DIR, key + ".html");
+    return Date.now() - fs.statSync(p).mtimeMs < CACHE_TTL_MS;
+  } catch {
+    return false;
+  }
+}
+
+/** distância de edição simples para sugerir nomes próximos em --equipas. */
+function closestName(target: string, names: string[]): string | null {
+  const dist = (a: string, b: string): number => {
+    const dp: number[] = Array.from({ length: b.length + 1 }, (_, i) => i);
+    for (let i = 1; i <= a.length; i++) {
+      let prev = dp[0];
+      dp[0] = i;
+      for (let j = 1; j <= b.length; j++) {
+        const cur = dp[j];
+        dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
+        prev = cur;
+      }
+    }
+    return dp[b.length];
+  };
+  let best: string | null = null;
+  let bestD = Infinity;
+  for (const n of names) {
+    const d = dist(target, normName(n));
+    if (d < bestD) { bestD = d; best = n; }
+  }
+  return bestD <= 3 ? best : null;
+}
 
 const ALL_INFO = ["plantel", "cores", "emblema", "fotoJogadores", "fotoTreinador"] as const;
 type InfoKey = (typeof ALL_INFO)[number];
@@ -98,21 +135,14 @@ function saveState(s: unknown) {
   fs.writeFileSync(STATE_PATH, JSON.stringify(s, null, 2));
 }
 
-/** Mapa de URLs por equipa, lido de fetchZerozeroSquads.ts (TEAMS) + fixtures. */
+/** Mapa de URLs por equipa: fonte única teamsSource.ts + zerozeroUrl já persistido. */
 function buildTeamUrlMap(teams: ReturnType<typeof loadTeams>["teams"]): Map<string, string> {
   const map = new Map<string, string>();
+  for (const t of SOURCE_TEAMS) map.set(normName(t.name), t.url);
   for (const t of teams) {
     const tAny = t as unknown as Record<string, unknown>;
     if (typeof tAny.zerozeroUrl === "string") map.set(normName(t.name), tAny.zerozeroUrl);
   }
-  try {
-    const txt = fs.readFileSync(path.join(process.cwd(), "scripts", "fetchZerozeroSquads.ts"), "utf-8");
-    const re = /\{\s*name:\s*"([^"]+)"[\s\S]*?url:\s*"([^"]+)"/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(txt))) {
-      if (!map.has(normName(m[1]))) map.set(normName(m[1]), m[2]);
-    }
-  } catch {}
   return map;
 }
 
@@ -213,7 +243,10 @@ async function main() {
     for (const name of cli.equipas) {
       const n = normName(name);
       const idxs = teams.map((t, i) => ({ t, i })).filter(({ t }) => normName(t.name) === n);
-      if (idxs.length !== 1) throw new Error(`--equipas: "${name}" não corresponde exactamente a 1 equipa`);
+      if (idxs.length !== 1) {
+        const sug = closestName(n, teams.map((t) => t.name));
+        throw new Error(`--equipas: "${name}" não corresponde exactamente a 1 equipa${sug ? ` (querias dizer "${sug}"?)` : ""}`);
+      }
       targetIndices.push(idxs[0].i);
     }
   } else {
@@ -440,7 +473,8 @@ async function main() {
         break;
       }
     }
-    await sleep(THROTTLE_EQUIPA + jitter());
+    // throttle só quando houve pedido real à rede (hit de cache não consome)
+    if (!(!cli.refresh && isCacheFresh(teamCacheKey))) await sleep(THROTTLE_EQUIPA + jitter());
   }
 
   s.stop(`Feito: ${ok}/${targetIndices.length} equipa(s) OK${errors.length ? `, ${errors.length} erro(s)` : ""}.`);
@@ -463,9 +497,13 @@ async function main() {
       try {
         execSync("npx tsx scripts/gameStateAudit.ts base 2>&1 | tail -8", { stdio: "inherit" });
       } finally {
-        try { fs.unlinkSync("db/game_base.db"); } catch {}
+        try { fs.unlinkSync("db/game_base.db"); } catch { /* limpeza best-effort */ }
       }
-    } catch {}
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      p.log.error(`Verificação falhou (typecheck/seed/audit): ${msg}`);
+      process.exitCode = 1;
+    }
   } else if (dryRun) {
     p.log.info("Dry-run — nada foi gravado. Corre de novo sem --dry-run para aplicar.");
   }

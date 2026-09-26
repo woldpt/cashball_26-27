@@ -2090,3 +2090,12 @@ Plano C1+C2 (quando fizer):
 - `CupTab.jsx` avaliado a 8,3/10; corrigidas 3 arestas: fallback `winnerName` (Badge nunca mostra vazio), sorteio com fallback `teamById` (fixtures trazem `homeTeamId/awayTeamId` + objetos), default `noop` em `setCupResultsFilter`.
 - `CupBracketPage.jsx` (plano completo aprovado): `TeamCrest` nos 4 pontos com inicial, "o meu jogo" em tokens `primary` (igual ao CupTab), guard `hasQF` no contentor da árvore, props `isHome` mortas removidas, pílulas → `TabBar` (nova prop retrocompatível `disabledKeys`), cabeçalho herói → `Panel` (mantém campeão/progresso).
 - Checks: eslint 0 nos ficheiros (2 erros pré-existentes no GameContext, confirmados com stash); `check:types` OK; `test:mobile` 165/165 + landscape 198/198 (TabBar partilhada tocada). Sem audits (sem lógica de jogo).
+
+## zerozero — unificação e correção (2026-09-26)
+- Novo `server/scripts/lib/teamsSource.ts`: lista única das 60 equipas (nome, divisão, url, slug); reconciliadas 9 URLs que divergiam entre Squads e Logos — ficam as de `candidates_2026_27.json` (todas `complete`, ≥23 jogadores). Squads/Logos/TUI importam daqui.
+- `fetchZerozeroSquads.ts`: usa a lib (apaga `POS_MAP`/`extractPlayers`/`parseValue` locais — o local não tinha "Guarda-Redes"/"Meio-Campo" e perdia GRs); cache com TTL + `--refresh`; `require`→`import` no cabeçalho (mantido um `require` pontual no `main`).
+- `fetchZerozeroLogos.ts`: usa a lib (`extractOgImage` bidirecional, `downloadImage` com validação placeholder/tipo/tamanho); só aceita `/img/logos/equipas/`; salta ficheiros existentes; throttle igual à TUI; novo script `fetch:logos`.
+- `zerozeroScrape.ts`: `CACHE_TTL_MS` (7 dias), `THROTTLE_*`+`jitter` partilhados, `downloadImage` com timeout, `extractHeaderColor` devolve `null` em vez de lixo.
+- `teamRegistry.ts`: `saveTeams` atómica (temp+rename) com `.bak`.
+- `fetchZerozeroTUI.ts`: sem regex ao `.ts` vizinho; `--equipas` sugere nome próximo; sem `sleep` em hit de cache; verificação final com erro visível (`exitCode=1`, sem `catch {}` vazio).
+- Diff: +141/−285. Checks: `typecheck` verde; dry-run `Bragança --info=plantel` só com cache OK (22/24 actualizados); `TEAMS` 60 sem duplicados; seed tmp + `audit:gamestate base` 0 erros/warnings. Sem `test:mobile` (sem layout) nem `audit:socketio`.
