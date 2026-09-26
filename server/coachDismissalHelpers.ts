@@ -1,4 +1,5 @@
 import type { ActiveGame, CoachMarketEvent } from "./types";
+import type { Server as SocketServer, Socket } from "socket.io";
 import {
   NPC_NEGATIVE_BUDGET_WARN_STREAK,
   NPC_NEGATIVE_BUDGET_CUT_STREAK,
@@ -12,12 +13,30 @@ import {
   logClubNewsOnce,
   getTeamsWithCoachNames,
   currentSlot,
+  runExec,
 } from "./coreHelpers";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { upcomingMatchweek } from "./game/lineupReady";
 import { deleteSeat, setSeatTeamId } from "./roomStateHelpers";
 
-type Db = any;
+/** Subconjunto da API sqlite3 usado neste helper (o projeto não tem @types/sqlite3). */
+interface Db {
+  run(
+    sql: string,
+    params?: any[],
+    callback?: (this: any, err: Error | null) => void,
+  ): unknown;
+  all(
+    sql: string,
+    params?: any[],
+    callback?: (err: Error | null, rows: any[]) => void,
+  ): unknown;
+  get(
+    sql: string,
+    params?: any[],
+    callback?: (err: Error | null, row: any) => void,
+  ): unknown;
+}
 type AnyRow = Record<string, any>;
 
 type RunAll = <T extends AnyRow = AnyRow>(
@@ -32,7 +51,7 @@ type RunGet = <T extends AnyRow = AnyRow>(
 ) => Promise<T | undefined>;
 
 interface CoachDismissalDeps {
-  io: any;
+  io: SocketServer;
   runAll: RunAll;
   runGet: RunGet;
   saveGameState: (game: ActiveGame) => void;
@@ -101,12 +120,12 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
    * Emite teamAssigned + mySquad para um treinador (partilhado pelo
    * auto-assign pós-despedimento e pelo aceitar de convite).
    */
-  function emitTeamAssigned(
+  async function emitTeamAssigned(
     game: ActiveGame,
     coachName: string,
     team: AnyRow,
     isNew: boolean,
-  ): void {
+  ): Promise<void> {
     const player = game.playersByName[coachName];
     if (!player?.socketId) return;
     const socketId: string = player.socketId;
@@ -137,22 +156,43 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
         });
       });
 
-    game.db.all(
-      "SELECT * FROM players WHERE team_id = ?",
-      [team.id],
-      (err: any, squad: any[]) => {
-        if (!err) {
-          io.to(socketId).emit(
-            "mySquad",
-            ensureFullBench(
-              withJuniorGRs(squad || [], team.id, upcomingMatchweek(game)),
-              team.id,
-              upcomingMatchweek(game),
-            ),
-          );
-        }
-      },
-    );
+    try {
+      const squad = await runAll<AnyRow>(
+        game.db,
+        "SELECT * FROM players WHERE team_id = ?",
+        [team.id],
+      );
+      io.to(socketId).emit(
+        "mySquad",
+        ensureFullBench(
+          withJuniorGRs(squad, team.id, upcomingMatchweek(game)),
+          team.id,
+          upcomingMatchweek(game),
+        ),
+      );
+    } catch (e) {
+      console.warn(`[${game.roomCode}] mySquad failed:`, (e as Error)?.message);
+    }
+  }
+
+  /**
+   * Escrita esperada que nunca rebenta o fluxo: `unhandledRejection` desliga
+   * o servidor, por isso a falha fica em warn em vez de propagar.
+   */
+  async function execQuiet(
+    game: ActiveGame,
+    sql: string,
+    params: any[] = [],
+  ): Promise<void> {
+    try {
+      await runExec(game.db, sql, params);
+    } catch (e) {
+      console.warn(
+        `[${game.roomCode}] db write failed:`,
+        (e as Error)?.message,
+        sql,
+      );
+    }
   }
 
   // ── Probability tables ─────────────────────────────────────────────────────
@@ -224,7 +264,11 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     game.lockedCoaches.delete(coachName);
 
     // Free the old team in the DB
-    game.db.run("UPDATE teams SET manager_id = NULL WHERE id = ?", [oldTeamId]);
+    await execQuiet(
+      game,
+      "UPDATE teams SET manager_id = NULL WHERE id = ?",
+      [oldTeamId],
+    );
 
     await recordMarketEvent(game, {
       type: "dismissal",
@@ -301,7 +345,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
       manager = { id: insertedId, name };
     }
 
-    game.db.run("UPDATE teams SET manager_id = ? WHERE id = ?", [
+    await execQuiet(game, "UPDATE teams SET manager_id = ? WHERE id = ?", [
       manager.id,
       team.id,
     ]);
@@ -349,7 +393,11 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     );
     const coachName = mgr?.name ?? "Treinador";
 
-    game.db.run("UPDATE teams SET manager_id = NULL WHERE id = ?", [team.id]);
+    await execQuiet(
+      game,
+      "UPDATE teams SET manager_id = NULL WHERE id = ?",
+      [team.id],
+    );
     logClubNews(
       game,
       "manager_dismissed",
@@ -481,7 +529,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
    */
   async function resendPendingJobOffer(
     game: ActiveGame,
-    toSocket: any,
+    toSocket: Socket,
     coachName: string,
   ): Promise<boolean> {
     const pending = game.pendingJobOffers[coachName];
@@ -511,7 +559,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
    */
   async function resendBoardWarning(
     game: ActiveGame,
-    toSocket: any,
+    toSocket: Socket,
     teamId: number,
   ): Promise<boolean> {
     const level = game.boardBudgetWarned[teamId] ?? 0;
@@ -621,7 +669,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     }
 
     // Assign in DB and state
-    game.db.run("UPDATE teams SET manager_id = ? WHERE id = ?", [
+    await execQuiet(game, "UPDATE teams SET manager_id = ? WHERE id = ?", [
       mgr.id,
       team.id,
     ]);
@@ -638,7 +686,7 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     game.boardBudgetWarned[team.id] = 0;
 
     // Notify coach
-    emitTeamAssigned(game, coachName, team, true);
+    await emitTeamAssigned(game, coachName, team, true);
 
     await recordMarketEvent(game, {
       type: "hiring",
@@ -1023,13 +1071,15 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     }
 
     // Update DB
-    game.db.run("UPDATE teams SET manager_id = ? WHERE id = ?", [
+    await execQuiet(game, "UPDATE teams SET manager_id = ? WHERE id = ?", [
       mgr.id,
       toTeamId,
     ]);
-    game.db.run("UPDATE teams SET manager_id = NULL WHERE id = ?", [
-      fromTeamId,
-    ]);
+    await execQuiet(
+      game,
+      "UPDATE teams SET manager_id = NULL WHERE id = ?",
+      [fromTeamId],
+    );
 
     // Update in-memory state
     player.teamId = toTeamId;
@@ -1056,27 +1106,29 @@ export function createCoachDismissalHelpers(deps: CoachDismissalDeps) {
     // O clube novo recebe uma notícia de boas-vindas persistente. Fica ligada
     // ao novo team_id, por isso o filtro do Jornal troca de contexto sem
     // apagar o histórico antigo da sala.
-    game.db.run(
-      `INSERT INTO club_news (team_id, type, title, description, matchweek, slot, year)
-       VALUES (?, 'welcome', ?, ?, ?, ?, ?)`,
-      [
-        team.id,
-        `👋 Novo treinador no ${team.name}`,
-        `A direcção entrega o projecto a ${coachName}. O plantel aguarda novas ideias e a bancada quer resultados.`,
-        game.matchweek,
-        currentSlot(game),
-        game.year,
-      ],
-      (newsErr: any) => {
-        if (newsErr) {
-          console.warn(`[${game.roomCode}] welcome news failed:`, newsErr.message);
-          return;
-        }
-        io.to(game.roomCode).emit("globalNewsUpdated");
-      },
-    );
+    try {
+      await runExec(
+        game.db,
+        `INSERT INTO club_news (team_id, type, title, description, matchweek, slot, year)
+         VALUES (?, 'welcome', ?, ?, ?, ?, ?)`,
+        [
+          team.id,
+          `👋 Novo treinador no ${team.name}`,
+          `A direcção entrega o projecto a ${coachName}. O plantel aguarda novas ideias e a bancada quer resultados.`,
+          game.matchweek,
+          currentSlot(game),
+          game.year,
+        ],
+      );
+      io.to(game.roomCode).emit("globalNewsUpdated");
+    } catch (e) {
+      console.warn(
+        `[${game.roomCode}] welcome news failed:`,
+        (e as Error)?.message,
+      );
+    }
 
-    emitTeamAssigned(game, coachName, team, false);
+    await emitTeamAssigned(game, coachName, team, false);
 
     io.to(game.roomCode).emit("systemMessage", {
       text: `${coachName} aceitou o convite de ${team.name}.`,

@@ -1702,3 +1702,9 @@ Plano C1+C2 (quando fizer):
 - Folha salarial NPC: um `GROUP BY team_id` em vez de um `SUM` por clube; `warn` nos dois `catch` dos espelhos do Jornal (`board_warning`, `job_offer`).
 - Não mexido: `db.run` fire-and-forget (o driver sqlite serializa por ordem de chamada; promisificar tudo fica para quando houver teste de crash dedicado) e `Db = any`/`io: any` (refactor de tipos à parte).
 - Checks: `typecheck` OK; `test:session-freeze` 10/10; `audit:socketio` 0 erros (97 warnings pré-existentes).
+
+## coachDismissalHelpers — follow-ups: escritas esperadas + tipos (2026-09-26)
+- Escritas `game.db.run/all` fire-and-forget → `await execQuiet` (usa o `runExec` de `coreHelpers`, sem código novo de promisificação). Ordem garantida antes do `saveGameState`; `mySquad` passa a `runAll` com `try/catch`.
+- Decisão de segurança: `unhandledRejection` faz `fatalShutdown`, por isso `execQuiet` regista `warn` em vez de propagar — um `SQLITE_BUSY` transitório não pode matar o servidor. Semântica de falha igual à anterior, mas visível.
+- Tipos: `Db = any` → interface estrutural mínima (sem `@types/sqlite3`); `io`/`toSocket` com os tipos que o `socket.io` já traz. Zero dependências novas.
+- Checks: `typecheck` OK; `test:session-freeze` 10/10; `audit:socketio` 0 erros.
