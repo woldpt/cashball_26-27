@@ -2152,3 +2152,4 @@ Plano C1+C2 (quando fizer):
 - `.gitignore`: `server/db/global_chat.db*` (a BD viva nunca mais é versionada).
 - Verificação: typecheck + `tsc build` OK; repro de diretoria vazia (sem `global_chat.db` → save/get funcionam, tabela criada primeiro, WAL correcto). Sala 034IM2 intacta (`game_state` com 42 linhas).
 - Recuperação produção: apagar `global_chat.db` de 0 bytes + `-journal`, pull, `up --build`, vigiar logs.
+- Recuperação (23:08): pull abortou — produção tinha `.gitignore` local (linhas `server/saves/`, nunca commitadas) em conflito com o `.gitignore` do fix. Resolução: `stash push -- .gitignore`, pull até `b533848d`, repostas as linhas de saves, `stash drop`. Apagados `global_chat.db` (0 bytes) + `-journal`. `up --build`: backend Healthy, boot limpo sem exceções; `global_chat.db` recria-se lazy ao primeiro uso do chat (comportamento previsto).
