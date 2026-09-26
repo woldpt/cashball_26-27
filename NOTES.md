@@ -1678,3 +1678,8 @@ Plano C1+C2 (quando fizer):
 - Apagados `ParticleCanvas.jsx`/`FeaturesStrip.jsx`/`landingContent.js`; `ReconnectScreen` sem partículas e com pele do jogo (tinha import pendurado do canvas — partia o harness).
 - Auth (`AuthCard`, formulários, header, footer) com pele do jogo; lógica intacta. `RoomSelectScreen` continua com tokens `landing-*` (ficam no CSS) — follow-up.
 - Checks: `eslint` limpo; `check:types` OK; `landing-resp-test` portrait 5/5 + landscape 6/6 PASS; screenshots 390/667/detalhe vistos. Versão → `v26.09.2`.
+
+## RoomSelect com pele do jogo (2026-09-26)
+- `RoomSelectScreen.jsx` (669 linhas): só classes — `landing-*`→0 ocorrências; primary no nome/modos/seleção, tertiary dourado no CTA "Continuar", error no Sair/erros, sky/amber de badges intactos (STYLE.md §5); `rounded-xl/2xl`→`rounded-md`; glows esmeralda removidos. Lógica, socket de presença e estrutura (harness valida) intactos.
+- Harness `roomselect-resp-test.jsx`: fundo `bg-bg text-on-surface`.
+- Checks: `eslint` limpo; `check:types` OK; `roomselect-resp-test` portrait 5/5 + landscape 6/6 PASS; screenshots 390/667 vistos. Versão → `v26.09.3`.

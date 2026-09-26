@@ -181,12 +181,12 @@ const RoomSelectScreen = ({
 				className="flex flex-wrap items-center justify-between gap-2 sm:gap-4"
 			>
 				<div className="short:min-w-0 short:flex-1">
-					<p className="mb-1 text-[10px] font-black uppercase tracking-[0.4em] text-landing-accent/60 short:hidden">
+					<p className="mb-1 text-[10px] font-black uppercase tracking-[0.4em] text-primary/70 short:hidden">
 						Sessão autenticada
 					</p>
-					<h2 className="font-headline text-2xl font-black leading-none tracking-tight text-white sm:text-3xl lg:text-4xl short:text-2xl short:truncate">
+					<h2 className="font-headline text-2xl font-black leading-none tracking-tight text-on-surface sm:text-3xl lg:text-4xl short:text-2xl short:truncate">
 						Olá,{" "}
-						<span className="text-landing-accent drop-shadow-[0_0_12px_rgba(52,211,153,0.5)]">
+						<span className="text-primary">
 							{name}
 						</span>
 					</h2>
@@ -194,7 +194,7 @@ const RoomSelectScreen = ({
 				<div className="flex items-center gap-2 sm:gap-3">
 					<button
 						onClick={resetAuthFlow}
-						className="flex items-center gap-1 rounded-full border border-white/[0.08] px-3 py-1.5 sm:px-4 sm:py-2 short:py-1.5 text-[10px] font-black uppercase tracking-widest text-white/40 transition-colors hover:border-white/20 hover:text-white/70"
+						className="flex items-center gap-1 rounded-full border border-outline-variant/25 px-3 py-1.5 sm:px-4 sm:py-2 short:py-1.5 text-[10px] font-black uppercase tracking-widest text-on-surface-variant/70 transition-colors hover:border-outline-variant/40 hover:text-on-surface-variant"
 					>
 						<span className="material-symbols-outlined text-[13px] leading-none">
 							swap_horiz
@@ -203,7 +203,7 @@ const RoomSelectScreen = ({
 					</button>
 					<button
 						onClick={handleLogout}
-						className="flex items-center gap-1 rounded-full border border-red-500/10 px-3 py-1.5 sm:px-4 sm:py-2 short:py-1.5 text-[10px] font-black uppercase tracking-widest text-red-400/50 transition-colors hover:border-red-500/30 hover:text-red-400"
+						className="flex items-center gap-1 rounded-full border border-error/20 px-3 py-1.5 sm:px-4 sm:py-2 short:py-1.5 text-[10px] font-black uppercase tracking-widest text-error/60 transition-colors hover:border-error/40 hover:text-error"
 						title="Terminar sessão completamente"
 					>
 						<span className="material-symbols-outlined text-[13px] leading-none">
@@ -219,14 +219,14 @@ const RoomSelectScreen = ({
 					initial={{ opacity: 0, y: 10 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.35, delay: 0.12 }}
-					className="mt-4 flex items-start gap-2 self-start rounded-xl border border-landing-accent-strong/20 bg-landing-accent-strong/10 px-4 py-3 short:hidden"
+					className="mt-4 flex items-start gap-2 self-start rounded-md border border-primary/25 bg-primary/[0.08] px-4 py-3 short:hidden"
 				>
-					<span className="material-symbols-outlined mt-0.5 text-base leading-tight text-landing-accent">
+					<span className="material-symbols-outlined mt-0.5 text-base leading-tight text-primary">
 						check_circle
 					</span>
-					<p className="text-xs font-bold text-landing-accent/80">
+					<p className="text-xs font-bold text-primary/80">
 						Conta criada com sucesso! Bem-vindo,{" "}
-						<span className="text-landing-accent">{name}</span>. Escolhe o modo e
+						<span className="text-primary">{name}</span>. Escolhe o modo e
 						comemça a época.
 					</p>
 				</motion.div>
@@ -243,15 +243,15 @@ const RoomSelectScreen = ({
 					<button
 						key={mode}
 						onClick={() => selectJoinMode(mode)}
-						className={`flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3 rounded-xl border px-2 py-3 sm:px-5 sm:py-4 short:flex-row short:gap-2 short:py-2 text-left transition-all duration-200 ${
+						className={`flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3 rounded-md border px-2 py-3 sm:px-5 sm:py-4 short:flex-row short:gap-2 short:py-2 text-left transition-all duration-200 ${
 							joinMode === mode
-								? "border-landing-accent-strong/40 bg-landing-accent-strong/10 shadow-[0_0_20px_rgba(52,211,153,0.08)]"
-								: "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
+								? "border-primary/40 bg-primary/[0.08]"
+								: "border-outline-variant/25 bg-surface-container-low/60 hover:border-outline-variant/40 hover:bg-surface-container-low"
 						}`}
 					>
 						<span
 							className={`material-symbols-outlined shrink-0 text-[20px] sm:text-[24px] short:text-[20px] leading-none ${
-								joinMode === mode ? "text-landing-accent" : "text-white/30"
+								joinMode === mode ? "text-primary" : "text-on-surface-variant/40"
 							}`}
 						>
 							{icon}
@@ -259,17 +259,17 @@ const RoomSelectScreen = ({
 						<div className="min-w-0 flex-1">
 							<p
 								className={`text-xs sm:text-sm font-black leading-tight text-center sm:text-left ${
-									joinMode === mode ? "text-landing-accent" : "text-white/70"
+									joinMode === mode ? "text-primary" : "text-on-surface/70"
 								}`}
 							>
 								{label}
 							</p>
-							<p className="mt-0.5 hidden sm:block short:hidden text-[10px] leading-tight text-white/30">
+							<p className="mt-0.5 hidden sm:block short:hidden text-[10px] leading-tight text-on-surface-variant/60">
 								{sub}
 							</p>
 						</div>
 						{joinMode === mode && (
-							<span className="material-symbols-outlined text-[18px] leading-none text-landing-accent">
+							<span className="material-symbols-outlined text-[18px] leading-none text-primary">
 								check_circle
 							</span>
 						)}
@@ -286,22 +286,22 @@ const RoomSelectScreen = ({
 								initial={{ opacity: 0, y: 14 }}
 								animate={{ opacity: 1, y: 0 }}
 								transition={{ duration: 0.35, delay: 0.2 }}
-								className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-6 py-16 short:py-8 text-center"
+								className="flex flex-col items-center justify-center gap-4 rounded-md border border-outline-variant/25 bg-surface-container-low/60 px-6 py-16 short:py-8 text-center"
 							>
-								<span className="material-symbols-outlined text-5xl short:text-3xl text-white/15">
+								<span className="material-symbols-outlined text-5xl short:text-3xl text-on-surface-variant/30">
 									folder_open
 								</span>
 								<div>
-									<p className="font-headline text-lg font-black text-white">
+									<p className="font-headline text-lg font-black text-on-surface">
 										Nenhuma sala gravada
 									</p>
-									<p className="mt-1 text-sm text-white/40">
+									<p className="mt-1 text-sm text-on-surface-variant">
 										Ainda não tens épocas guardadas com este treinador.
 									</p>
 								</div>
 								<button
 									onClick={() => selectJoinMode("new-game")}
-									className="rounded-xl bg-landing-accent-strong px-6 py-3 text-xs font-black uppercase tracking-[0.2em] text-black shadow-[0_4px_20px_rgba(52,211,153,0.25)] transition-all hover:bg-landing-accent"
+									className="rounded-md bg-primary px-6 py-3 text-xs font-black uppercase tracking-[0.2em] text-on-primary transition-all hover:brightness-110"
 								>
 									Criar novo jogo
 								</button>
@@ -323,10 +323,10 @@ const RoomSelectScreen = ({
 												delay: Math.min(0.2 + i * 0.05, 0.7),
 											}}
 											onClick={() => setRoomCode(save.code)}
-											className={`group relative flex cursor-pointer flex-col gap-1.5 rounded-2xl border p-3 short:p-2.5 transition-all duration-200 ${
+											className={`group relative flex cursor-pointer flex-col gap-1.5 rounded-md border p-3 short:p-2.5 transition-all duration-200 ${
 												selected
-													? "border-landing-accent-strong/50 bg-landing-accent-strong/[0.08] shadow-[0_0_30px_rgba(52,211,153,0.15)]"
-													: "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]"
+													? "border-primary/50 bg-primary/[0.08]"
+													: "border-outline-variant/25 bg-surface-container-low/60 hover:border-outline-variant/40 hover:bg-surface-container-low"
 											}`}
 										>
 											<div className="flex items-start justify-between gap-3">
@@ -334,28 +334,28 @@ const RoomSelectScreen = ({
 													<p
 														className={`font-headline truncate text-sm font-black uppercase tracking-tight ${
 															selected
-																? "text-white"
-																: "text-white/80"
+																? "text-on-surface"
+																: "text-on-surface/80"
 														}`}
 													>
 														{save.name}
 													</p>
-													<span className="font-mono text-[10px] text-white/35">
+													<span className="font-mono text-[10px] text-on-surface-variant/60">
 														{save.code}
 													</span>
 												</div>
 												<div className="flex shrink-0 items-center gap-2">
 													{save.isMultiplayer && (
 														<span
-															className={`inline-flex items-center gap-1 rounded border px-1 py-px text-[9px] font-black uppercase tracking-widest ${save.isAdmin ? "border-sky-500/30 bg-sky-500/20 text-sky-400" : "border-white/10 bg-white/5 text-white/40"}`}
+															className={`inline-flex items-center gap-1 rounded border px-1 py-px text-[9px] font-black uppercase tracking-widest ${save.isAdmin ? "border-sky-500/30 bg-sky-500/20 text-sky-400" : "border-outline-variant/25 bg-surface-container-low text-on-surface-variant/60"}`}
 															title={save.isAdmin ? "És o Admin desta sala" : "Sala multijogador — só o Admin pode apagá-la"}
 														>
 															{save.isAdmin ? "Admin" : `${save.coachCount || 2} treinadores`}
 														</span>
 													)}
 													{isLastPlayed && (
-														<span className="inline-flex items-center gap-1 rounded border border-landing-accent-strong/30 bg-landing-accent-strong/20 px-1 py-px text-[9px] font-black uppercase tracking-widest text-landing-accent">
-															<span className="h-1 w-1 animate-pulse rounded-full bg-landing-accent" />
+														<span className="inline-flex items-center gap-1 rounded border border-primary/30 bg-primary/20 px-1 py-px text-[9px] font-black uppercase tracking-widest text-primary">
+															<span className="h-1 w-1 animate-pulse rounded-full bg-primary" />
 															Última jogada
 														</span>
 													)}
@@ -378,46 +378,46 @@ const RoomSelectScreen = ({
 													return (
 														<div
 															key={coach}
-															className="flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] px-1.5 py-1"
+															className="flex items-center gap-1.5 rounded-lg border border-outline-variant/15 bg-surface-container-low/60 px-1.5 py-1"
 														>
 															<span
-																	className={`h-1.5 w-1.5 shrink-0 rounded-full ${room ? "bg-landing-accent shadow-[0_0_6px_rgba(52,211,153,0.8)]" : "bg-white/15"}`}
+																	className={`h-1.5 w-1.5 shrink-0 rounded-full ${room ? "bg-primary" : "bg-on-surface/15"}`}
 																title={room ? "Online" : "Offline"}
 															/>
-															<span className="min-w-0 flex-1 truncate text-[11px] font-bold text-white/75">
+															<span className="min-w-0 flex-1 truncate text-[11px] font-bold text-on-surface/75">
 																{coach}
 															</span>
 
 															{/* Estado fixo (convite em curso / resposta) */}
 															{inv?.status === "sending" && (
-																<span className="shrink-0 text-[10px] font-black uppercase tracking-wider text-white/40">
+																<span className="shrink-0 text-[10px] font-black uppercase tracking-wider text-on-surface-variant/60">
 																	A convidar…
 																</span>
 															)}
 															{inv?.status === "sent" && (
-																<span className="shrink-0 rounded border border-landing-accent-strong/30 bg-landing-accent-strong/15 px-1 py-px text-[9px] font-black uppercase tracking-widest text-landing-accent">
+																<span className="shrink-0 rounded border border-primary/30 bg-primary/15 px-1 py-px text-[9px] font-black uppercase tracking-widest text-primary">
 																	Convite enviado
 																</span>
 															)}
 															{inv?.status === "accepted" && (
-																<span className="shrink-0 rounded border border-landing-accent-strong/40 bg-landing-accent-strong/20 px-1 py-px text-[9px] font-black uppercase tracking-widest text-landing-accent">
+																<span className="shrink-0 rounded border border-primary/40 bg-primary/20 px-1 py-px text-[9px] font-black uppercase tracking-widest text-primary">
 																	Aceitou ✓
 																</span>
 															)}
 															{inv?.status === "declined" && (
-																<span className="shrink-0 rounded border border-white/10 bg-white/5 px-1 py-px text-[9px] font-black uppercase tracking-widest text-white/40">
+																<span className="shrink-0 rounded border border-outline-variant/25 bg-surface-container-low px-1 py-px text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">
 																	Recusou
 																</span>
 															)}
 															{inv?.status === "error" && (
-																<span className="shrink-0 truncate text-[9px] font-bold text-red-400/90">
+																<span className="shrink-0 truncate text-[9px] font-bold text-error/90">
 																	{inv.msg || "Erro"}
 																</span>
 															)}
 
 															{/* Sem convite em curso: estado de presença + botão */}
 															{!busy && inThis && (
-																<span className="shrink-0 rounded border border-landing-accent-strong/30 bg-landing-accent-strong/15 px-1 py-px text-[9px] font-black uppercase tracking-widest text-landing-accent">
+																<span className="shrink-0 rounded border border-primary/30 bg-primary/15 px-1 py-px text-[9px] font-black uppercase tracking-widest text-primary">
 																	A Jogar
 																</span>
 															)}
@@ -427,7 +427,7 @@ const RoomSelectScreen = ({
 																</span>
 															)}
 															{!busy && !room && (
-																<span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-white/25">
+																<span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/40">
 																	Offline
 																</span>
 															)}
@@ -451,17 +451,17 @@ const RoomSelectScreen = ({
 
 											<div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
 												{save.teamName && (
-													<span className="text-[10px] text-white/35">
+													<span className="text-[10px] text-on-surface-variant/60">
 														🏟️ {save.teamName}
 													</span>
 												)}
 												{save.year && (
-													<span className="text-[10px] text-white/35">
+													<span className="text-[10px] text-on-surface-variant/60">
 														📅 {save.year}
 													</span>
 												)}
 												{formatMatchDate(save.lastPlayedAt) && (
-													<span className="text-[10px] text-white/35">
+													<span className="text-[10px] text-on-surface-variant/60">
 														⚽ Última partida:{" "}
 														{formatMatchDate(save.lastPlayedAt)}
 													</span>
@@ -471,7 +471,7 @@ const RoomSelectScreen = ({
 											<div className="mt-auto flex items-center justify-between">
 												<span
 													className={`text-[9px] font-black uppercase tracking-widest ${
-														selected ? "text-landing-accent" : "text-white/20"
+														selected ? "text-primary" : "text-on-surface-variant/40"
 													}`}
 												>
 													{selected ? "● Selecionada" : "Tocar para selecionar"}
@@ -523,7 +523,7 @@ const RoomSelectScreen = ({
 																),
 															);
 													}}
-													className="rounded-lg p-1 text-white/20 transition-colors hover:bg-red-500/10 hover:text-red-400"
+													className="rounded-lg p-1 text-on-surface-variant/40 transition-colors hover:bg-error/10 hover:text-error"
 													title={
 														!save.isMultiplayer || save.isAdmin
 															? save.isMultiplayer
@@ -552,8 +552,8 @@ const RoomSelectScreen = ({
 						transition={{ duration: 0.35, delay: 0.2 }}
 						className="mx-auto max-w-xl"
 					>
-						<div className="space-y-3 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 short:p-4">
-							<label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-landing-accent/70">
+						<div className="space-y-3 rounded-md border border-outline-variant/25 bg-surface-container-low/60 p-6 short:p-4">
+							<label className="block text-[10px] font-bold uppercase tracking-[0.3em] text-primary/70">
 								{joinMode === "new-game"
 									? "Nome do novo jogo"
 									: "Código da Sala"}
@@ -561,11 +561,7 @@ const RoomSelectScreen = ({
 							<input
 								type="text"
 								autoComplete="off"
-								className={`w-full rounded-xl border bg-white/[0.04] p-4 short:py-3 text-center text-xl font-black uppercase tracking-widest text-white outline-none transition-all placeholder:text-white/20 focus:ring-1 ${
-									joinMode === "new-game"
-										? "border-landing-accent-strong/30 focus:border-landing-accent-strong/60 focus:ring-landing-accent-strong/30"
-										: "border-emerald-400/20 focus:border-emerald-400/60 focus:ring-emerald-400/30"
-								}`}
+								className="w-full rounded-md border border-primary/30 bg-surface-bright/40 p-4 short:py-3 text-center text-xl font-black uppercase tracking-widest text-on-surface outline-none transition-all placeholder:text-on-surface/20 focus:border-primary/60"
 								value={roomCode}
 								placeholder="INVERNO"
 								onChange={(e) =>
@@ -575,7 +571,7 @@ const RoomSelectScreen = ({
 									if (e.key === "Enter") handleJoin();
 								}}
 							/>
-							<p className="text-center text-xs text-white/35">
+							<p className="text-center text-xs text-on-surface-variant/60">
 								{joinMode === "new-game"
 									? "Recebes um clube aleatório da 4ª Divisão."
 									: "Pede o código ao teu amigo que criou a sala."}
@@ -589,15 +585,15 @@ const RoomSelectScreen = ({
 						initial={{ opacity: 0, y: 14 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.35, delay: 0.2 }}
-						className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-6 py-16 short:py-8 text-center"
+						className="flex flex-col items-center justify-center gap-3 rounded-md border border-outline-variant/25 bg-surface-container-low/60 px-6 py-16 short:py-8 text-center"
 					>
-						<span className="material-symbols-outlined text-5xl short:text-3xl text-white/15">
+						<span className="material-symbols-outlined text-5xl short:text-3xl text-on-surface-variant/30">
 							sports_esports
 						</span>
-						<p className="font-headline text-lg font-black text-white">
+						<p className="font-headline text-lg font-black text-on-surface">
 							Como queres jogar hoje?
 						</p>
-						<p className="text-sm text-white/40">
+						<p className="text-sm text-on-surface-variant">
 							Escolhe um modo acima — novo jogo, época guardada ou sala de
 							amigos.
 						</p>
@@ -612,22 +608,22 @@ const RoomSelectScreen = ({
 				transition={{ duration: 0.4, ease: "easeOut", delay: 0.25 }}
 				className="mt-3 sm:mt-4 shrink-0 short:mt-2"
 			>
-				<div className="flex flex-col gap-2 sm:gap-3 rounded-2xl border border-white/[0.08] bg-[#0a1410]/85 p-3 sm:p-4 backdrop-blur-xl shadow-[0_-8px_40px_rgba(0,0,0,0.35)] sm:flex-row sm:items-center sm:justify-between short:flex-row short:items-center short:justify-between short:gap-1.5 short:px-2 short:py-1.5">
+				<div className="flex flex-col gap-2 sm:gap-3 rounded-md border border-outline-variant/25 bg-surface-container/90 p-3 sm:p-4 backdrop-blur-xl shadow-[0_-8px_40px_rgba(0,0,0,0.35)] sm:flex-row sm:items-center sm:justify-between short:flex-row short:items-center short:justify-between short:gap-1.5 short:px-2 short:py-1.5">
 					<div className="min-w-0 flex-1">
 						{roomCode ? (
 							<div className="flex items-center gap-2.5">
-								<span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-landing-accent shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
+								<span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-primary" />
 								<div className="min-w-0 short:flex short:items-baseline short:gap-x-2">
-									<p className="shrink-0 text-[9px] font-black uppercase tracking-widest text-white/35 leading-none">
+									<p className="shrink-0 text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60 leading-none">
 										Sala selecionada
 									</p>
-									<p className="font-headline truncate text-lg font-black uppercase tracking-tight text-white leading-tight short:min-w-0">
+									<p className="font-headline truncate text-lg font-black uppercase tracking-tight text-on-surface leading-tight short:min-w-0">
 										{roomCode}
 									</p>
 								</div>
 							</div>
 						) : (
-							<p className="text-xs text-white/35 font-bold">
+							<p className="text-xs text-on-surface-variant/60 font-bold">
 								{!joinMode
 									? "Escolhe um modo para continuar."
 									: joinMode === "saved-game"
@@ -636,12 +632,12 @@ const RoomSelectScreen = ({
 							</p>
 						)}
 						{joinError && (
-							<p className="mt-1 text-xs sm:text-sm font-bold leading-tight text-red-400">
+							<p className="mt-1 text-xs sm:text-sm font-bold leading-tight text-error">
 								⚠️ {joinError}
 							</p>
 						)}
 						{!joinError && disconnected && (
-							<p className="mt-1 text-xs sm:text-sm font-bold leading-tight text-red-400">
+							<p className="mt-1 text-xs sm:text-sm font-bold leading-tight text-error">
 								⚠️ Sem ligação ao servidor. Tenta novamente.
 							</p>
 						)}
@@ -650,10 +646,10 @@ const RoomSelectScreen = ({
 						<button
 							onClick={handleJoin}
 							disabled={!roomCode || joining}
-							className={`relative overflow-hidden disabled:bg-white/[0.06] disabled:text-white/30 py-3 sm:py-4 short:py-2 px-6 sm:px-8 rounded-xl font-black text-sm uppercase tracking-[0.2em] transition-all active:scale-[0.98] group sm:w-auto w-full short:w-auto ${
+							className={`relative overflow-hidden disabled:bg-surface-bright disabled:text-on-surface-variant/40 py-3 sm:py-4 short:py-2 px-6 sm:px-8 rounded-md font-black text-sm uppercase tracking-[0.2em] transition-all active:scale-[0.98] group sm:w-auto w-full short:w-auto ${
 								joinMode === "saved-game"
-									? "bg-cyan-500 hover:bg-cyan-400 text-black shadow-[0_4px_20px_rgba(6,182,212,0.25)] hover:shadow-[0_4px_30px_rgba(6,182,212,0.4)]"
-									: "bg-landing-accent-strong hover:bg-landing-accent text-black shadow-[0_4px_20px_rgba(52,211,153,0.25)] hover:shadow-[0_4px_30px_rgba(52,211,153,0.4)]"
+									? "bg-tertiary hover:brightness-110 text-on-tertiary"
+									: "bg-primary hover:brightness-110 text-on-primary"
 							}`}
 						>
 							<span className="relative z-10">{ctaLabel}</span>

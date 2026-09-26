@@ -69,7 +69,7 @@ function screen(inst, props) {
 
 const root = createRoot(document.getElementById("root"));
 root.render(
-	<div className="min-h-screen bg-[#060b08] text-white">
+	<div className="min-h-screen bg-bg text-on-surface">
 		{/* 1 — saved-game: full grid, first card selected */}
 		{screen("saved-game", {
 			joinMode: "saved-game",
