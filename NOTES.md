@@ -1,3 +1,10 @@
+## CelebrationBurst: seed a sério + auto-desmontar + a11y (2026-09-26)
+- Avaliação 1–10 pedida (global 7,4; a11y 4) → plano completo aprovado (só relatório primeiro, depois "sim" para executar). Só `client/src/components/shared/CelebrationBurst.jsx`.
+- `seed` só entrava na `key` — o leque era sempre igual: novo `hashSeed` (×31, barato, determinístico) alimenta o `jitter`, `useMemo` com deps `[seed]` (acaba o aviso de lint). Mesmo seed = mesmo leque.
+- Auto-desmonta aos 2200ms (`done` → `null`; animação 1,6s + delay máx. 0,3s + margem): `Signing`/`SeasonEnd`/`GameDialog` acumulavam 8 nós invisíveis. Reset por seed via ajuste de estado no render (padrão documentado — `setState` síncrono no efeito chumba o lint `set-state-in-effect`).
+- `aria-hidden="true"` nas partículas/garrafas; `✨` duplicado → `🎊`. Reduced-motion já coberto pelo `MotionConfig reducedMotion="user"` no `main.jsx`. Chamadores intactos (4).
+- Checks: eslint limpo no ficheiro · `check:types` OK. Tweaks pontuais → sem mobile-resp-check.
+
 ## SigningCelebrationModal: review 7,5/10 → correções (2026-09-26)
 - Avaliação 0–10 pedida → plano completo aprovado e executado. 4 ficheiros: `SigningCelebrationModal.jsx`, `ModalShell.jsx` (+`labelledBy`→`aria-labelledby`), `Button.jsx` (+passthrough `autoFocus`), `CelebrationBurst.jsx` (`aria-hidden` nas partículas).
 - Robustez: `name/position/skill/age` com `?? "—"`, linha do preço só se `Number.isFinite(price)` (antes "NaN €"), fallback do accent `#d97706`→`#eab308` (alinhado com `GR`); `badgeStyle` extraído (era 3 objetos inline).

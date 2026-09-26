@@ -29,13 +29,20 @@ function hashSeed(seed) {
 
 export function CelebrationBurst({ seed, showChampagne = true }) {
   // Auto-desmonta após a festa (~2,2s): os modais que o usam ficam abertos
-  // e acumulariam nós invisíveis (opacity 0) no DOM.
+  // e acumulariam nós invisíveis (opacity 0) no DOM. O reset vive no render
+  // (padrão documentado do React), não no efeito — lint proíbe setState
+  // síncrono em efeitos.
+  const [prevSeed, setPrevSeed] = useState(seed);
   const [done, setDone] = useState(false);
-  useEffect(() => {
+  if (!Object.is(prevSeed, seed)) {
+    setPrevSeed(seed);
     setDone(false);
+  }
+  useEffect(() => {
+    if (done) return;
     const t = window.setTimeout(() => setDone(true), 2200);
     return () => window.clearTimeout(t);
-  }, [seed]);
+  }, [done, seed]);
 
   const particles = useMemo(() => {
     const base = hashSeed(seed);
