@@ -5,6 +5,8 @@ import {
   runExec,
   runGet,
   runAll,
+  renewalDemandedWage,
+  renewalAuctionPrice,
   validatePositiveInt,
   validateNonNegativeInt,
   getTeamsWithCoachNames,
@@ -17,7 +19,7 @@ import {
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { upcomingMatchweek } from "./game/lineupReady";
 import { claimActionId } from "./actionDedup";
-import { signingWage, getAgentName, fairWeeklyWage } from "./gameConstants";
+import { signingWage, getAgentName } from "./gameConstants";
 
 interface TransferHandlerDeps {
   io: any;
@@ -403,11 +405,7 @@ export function registerTransferSocketHandlers(
       (err, player) => {
         if (err || !player) return;
 
-        const fairWage = fairWeeklyWage(player.skill);
-        const demandedWage = Math.max(
-          fairWage,
-          Math.round((player.wage || 0) * 1.05),
-        );
+        const demandedWage = renewalDemandedWage(player);
         const acceptedWage = Math.max(0, Math.round(offeredWage || 0));
         const seasonEnd = getSeasonEndMatchweek(game.matchweek);
 
@@ -444,10 +442,7 @@ export function registerTransferSocketHandlers(
           // Counter-offer: inform manager of demanded wage before going to auction
           if (!game.pendingRenewalCounterOffers)
             game.pendingRenewalCounterOffers = {};
-          const auctionPrice = Math.max(
-            Math.round(player.value * 0.65),
-            demandedWage * 12,
-          );
+          const auctionPrice = renewalAuctionPrice(player.value, demandedWage);
 
           const sendToAuction = async () => {
             delete game.pendingRenewalCounterOffers?.[playerId];
@@ -525,15 +520,8 @@ export function registerTransferSocketHandlers(
         if (!player.contract_request_pending) return;
 
         const value = player.value || (player.skill || 0) * 20000;
-        const fairWage = fairWeeklyWage(player.skill);
-        const demandedWage = Math.max(
-          fairWage,
-          Math.round((player.wage || 0) * 1.05),
-        );
-        const auctionPrice = Math.max(
-          Math.round(value * 0.65),
-          demandedWage * 12,
-        );
+        const demandedWage = renewalDemandedWage(player);
+        const auctionPrice = renewalAuctionPrice(value, demandedWage);
 
         listPlayerOnMarket(game, playerId, "auction", auctionPrice, () => {
           game.db.run(
@@ -717,230 +705,243 @@ export function registerTransferSocketHandlers(
       });
   });
 
-  socket.on("makeTransferProposal", ({ playerId }) => {
+  socket.on("makeTransferProposal", async ({ playerId }) => {
     const game = getGameBySocket(socket.id);
     if (!game) return;
     const playerState = getPlayerBySocket(game, socket.id);
     if (!playerState) return;
 
-    game.db.get(
-      "SELECT * FROM players WHERE id = ?",
-      [playerId],
-      (err, player) => {
-        if (err || !player) {
-          socket.emit("transferProposalResult", {
-            ok: false,
-            message: "Jogador não encontrado.",
-          });
-          return;
-        }
-        if (isContractLocked(player, game)) {
-          const end = contractEndInfo(player);
-          socket.emit("transferProposalResult", {
-            ok: false,
-            message: `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até ${seasonToYear(end.season)}, ${end.label}. Ninguém mexe no menino dele.`,
-          });
-          return;
-        }
-        if (Number(player.team_id) === Number(playerState.teamId)) {
-          socket.emit("transferProposalResult", {
-            ok: false,
-            message: "Este jogador já pertence à tua equipa!",
-          });
-          return;
-        }
-        if (player.contract_request_pending) {
-          socket.emit("transferProposalResult", {
-            ok: false,
-            message: `${getAgentName(player.id)} tem uma renovação em aberto com o clube atual. Espera pela decisão.`,
-          });
-          return;
-        }
-        // Só propostas a equipas sem treinador humano (esteve na sala =
-        // humano, mesmo offline — mesmo discriminador do resto do servidor).
-        // Sem isto, um contrato expirado podia ser comprado por cláusula
-        // antes de o agente ter feito o pedido de renovação.
-        const targetTeamHasHuman = Object.values(game.playersByName).some(
-          (p: any) => Number(p.teamId) === Number(player.team_id),
+    const validPlayerId = validatePositiveInt(playerId);
+    if (!validPlayerId) {
+      socket.emit("transferProposalResult", {
+        ok: false,
+        message: "Jogador não encontrado.",
+      });
+      return;
+    }
+
+    try {
+      const player = await runGet<any>(game.db, "SELECT * FROM players WHERE id = ?", [
+        validPlayerId,
+      ]);
+      if (!player) {
+        socket.emit("transferProposalResult", {
+          ok: false,
+          message: "Jogador não encontrado.",
+        });
+        return;
+      }
+      if (isContractLocked(player, game)) {
+        const end = contractEndInfo(player);
+        socket.emit("transferProposalResult", {
+          ok: false,
+          message: `🔒 ${getAgentName(player.id)} riu-se: ${player.name} tem contrato até ${seasonToYear(end.season)}, ${end.label}. Ninguém mexe no menino dele.`,
+        });
+        return;
+      }
+      if (Number(player.team_id) === Number(playerState.teamId)) {
+        socket.emit("transferProposalResult", {
+          ok: false,
+          message: "Este jogador já pertence à tua equipa!",
+        });
+        return;
+      }
+      if (player.contract_request_pending) {
+        socket.emit("transferProposalResult", {
+          ok: false,
+          message: `${getAgentName(player.id)} tem uma renovação em aberto com o clube atual. Espera pela decisão.`,
+        });
+        return;
+      }
+      // Só propostas a equipas sem treinador humano (esteve na sala =
+      // humano, mesmo offline — mesmo discriminador do resto do servidor).
+      // Sem isto, um contrato expirado podia ser comprado por cláusula
+      // antes de o agente ter feito o pedido de renovação.
+      const targetTeamHasHuman = Object.values(game.playersByName).some(
+        (p: any) => Number(p.teamId) === Number(player.team_id),
+      );
+      if (targetTeamHasHuman) {
+        socket.emit("transferProposalResult", {
+          ok: false,
+          message:
+            "Não podes fazer propostas a equipas controladas por outros treinadores.",
+        });
+        return;
+      }
+      // Premium price: 35% above market value
+      const proposalPrice = Math.round((player.value || 0) * 1.35);
+      const sellerTeamId = player.team_id ?? null;
+      const wage = signingWage(player);
+      const seasonEnd = getSeasonEndMatchweek(game.matchweek);
+      const epoch = currentEpoch(game);
+      const slot = currentSlot(game);
+
+      // Transação única: sem isto, um crash entre o débito e o registo do
+      // jogador fazia o dinheiro desaparecer (era o único caminho de dinheiro
+      // fora de transação — ver buyPlayer para o padrão).
+      await runExec(game.db, "BEGIN");
+      try {
+        const debit = await runExec(
+          game.db,
+          "UPDATE teams SET budget = budget - ? WHERE id = ? AND budget >= ?",
+          [proposalPrice, playerState.teamId, proposalPrice],
         );
-        if (targetTeamHasHuman) {
-          socket.emit("transferProposalResult", {
-            ok: false,
-            message:
-              "Não podes fazer propostas a equipas controladas por outros treinadores.",
-          });
-          return;
+        if (debit.changes === 0) throw new Error("insufficient_budget");
+        if (sellerTeamId != null) {
+          await runExec(
+            game.db,
+            "UPDATE teams SET budget = budget + ? WHERE id = ?",
+            [proposalPrice, sellerTeamId],
+          );
         }
-        // Premium price: 35% above market value
-        const proposalPrice = Math.round((player.value || 0) * 1.35);
-        game.db.get(
-          "SELECT budget FROM teams WHERE id = ?",
-          [playerState.teamId],
-          (err2, team) => {
-            if (err2 || !team) {
-              socket.emit("transferProposalResult", {
-                ok: false,
-                message: "Erro ao verificar orçamento.",
-              });
-              return;
-            }
-            if ((team as any).budget < proposalPrice) {
-              socket.emit("transferProposalResult", {
-                ok: false,
-                message: `Orçamento insuficiente. São necessários €${proposalPrice.toLocaleString("pt-PT")}.`,
-              });
-              return;
-            }
-            game.db.run(
-              "UPDATE teams SET budget = budget - ? WHERE id = ?",
-              [proposalPrice, playerState.teamId],
-              (errBudget) => {
-                if (errBudget) {
-                  socket.emit("transferProposalResult", {
-                    ok: false,
-                    message: "Erro ao processar transferência.",
-                  });
-                  return;
-                }
-                if (player.team_id) {
-                  game.db.run(
-                    "UPDATE teams SET budget = budget + ? WHERE id = ?",
-                    [proposalPrice, player.team_id],
-                    (errRefund: Error | null) => {
-                      if (errRefund)
-                        console.error(
-                          "[makeTransferProposal:refund] Error:",
-                          errRefund,
-                        );
-                    },
-                  );
-                }
-                game.db.run(
-                  "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ?",
-                  [
-                    playerState.teamId,
-                    signingWage(player),
-                    getSeasonEndMatchweek(game.matchweek),
-                    currentEpoch(game),
-                    currentSlot(game),
-                    currentSlot(game),
-                    playerId,
-                  ],
-                  (errPlayer) => {
-                    if (errPlayer) {
-                      socket.emit("transferProposalResult", {
-                        ok: false,
-                        message: "Erro ao registar jogador.",
-                      });
-                      return;
-                    }
-                    // Log transfer news
-                    game.db.get(
-                      "SELECT name FROM teams WHERE id = ?",
-                      [playerState.teamId],
-                      (errTeam, buyingTeam) => {
-                        game.db.get(
-                          "SELECT name FROM teams WHERE id = ?",
-                          [player.team_id],
-                          (errOldTeam, oldTeam) => {
-                            logClubNews(
-                              game,
-                              "transfer_in",
-                              `${player.name} contratado por Cláusula`,
-                              playerState.teamId,
-                              {
-                                player_name: player.name,
-                                player_id: playerId,
-                                related_team_id: player.team_id,
-                                related_team_name: oldTeam?.name,
-                                amount: proposalPrice,
-                                description: `${player.name} foi contratado por cláusula de rescisão por €${proposalPrice}.`,
-                              },
-                              io,
-                            );
-                            if (player.team_id) {
-                              logClubNews(
-                                game,
-                                "transfer_out",
-                                `${player.name} vendido por Cláusula`,
-                                player.team_id,
-                                {
-                                  player_name: player.name,
-                                  player_id: playerId,
-                                  related_team_id: playerState.teamId,
-                                  related_team_name: buyingTeam?.name,
-                                  amount: proposalPrice,
-                                  description: `${player.name} foi transferido por €${proposalPrice}.`,
-                                },
-                                io,
-                              );
-                            }
-                            // Registo no histórico global de transferências
-                            recordTransfer(
-                              game,
-                              {
-                                playerId,
-                                playerName: player.name,
-                                position: player.position,
-                                skill: player.skill,
-                                isStar: player.is_star,
-                                photo: player.photo || null,
-                                sellerTeamId: player.team_id,
-                                sellerTeamName: oldTeam?.name || null,
-                                buyerTeamId: playerState.teamId,
-                                buyerTeamName: buyingTeam?.name || null,
-                                amount: proposalPrice,
-                                source: "proposal",
-                              },
-                              io,
-                            );
-                          },
-                        );
-                      },
-                    );
-                    refreshMarket(game);
-                    getTeamsWithCoachNames(game.db)
-                      .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
-                      .catch(() => {});
-                    game.db.all(
-                      "SELECT * FROM players WHERE team_id = ?",
-                      [playerState.teamId],
-                      (_e2, squad) =>
-                        socket.emit(
-                          "mySquad",
-                          ensureFullBench(
-                            withJuniorGRs(
-                              squad || [],
-                              playerState.teamId as number,
-                              upcomingMatchweek(game),
-                            ),
-                            playerState.teamId as number,
-                            upcomingMatchweek(game),
-                          ),
-                        ),
-                    );
-                    socket.emit("transferProposalResult", {
-                      ok: true,
-                      message: `Contrataste ${player.name} por €${proposalPrice.toLocaleString("pt-PT")}!`,
-                    });
-                    socket.emit("playerSigned", {
-                      playerId: player.id,
-                      name: player.name,
-                      position: player.position,
-                      photo: player.photo || null,
-                      skill: player.skill,
-                      age: player.age,
-                      nationality: player.nationality,
-                      price: proposalPrice,
-                      source: "proposal",
-                    });
-                  },
-                );
-              },
-            );
+        // Guarda anti-concorrência: o jogador tem de continuar no clube vendedor.
+        const moved =
+          sellerTeamId != null
+            ? await runExec(
+                game.db,
+                "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ? AND team_id = ?",
+                [
+                  playerState.teamId,
+                  wage,
+                  seasonEnd,
+                  epoch,
+                  slot,
+                  slot,
+                  validPlayerId,
+                  sellerTeamId,
+                ],
+              )
+            : await runExec(
+                game.db,
+                "UPDATE players SET team_id = ?, wage = ?, contract_until_matchweek = ?, contract_start_epoch = ?, joined_matchweek = ?, transfer_cooldown_until_matchweek = ?, transfer_status = 'none', transfer_price = 0, contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0 WHERE id = ? AND team_id IS NULL",
+                [
+                  playerState.teamId,
+                  wage,
+                  seasonEnd,
+                  epoch,
+                  slot,
+                  slot,
+                  validPlayerId,
+                ],
+              );
+        if (moved.changes === 0) throw new Error("player_moved");
+        await runExec(game.db, "COMMIT");
+      } catch (txErr) {
+        await runExec(game.db, "ROLLBACK").catch(() => {});
+        throw txErr;
+      }
+
+      // Notícias e histórico (não-críticos, fora da transação)
+      const buyingTeam = await runGet<any>(game.db, "SELECT name FROM teams WHERE id = ?", [
+        playerState.teamId,
+      ]);
+      const oldTeam =
+        sellerTeamId != null
+          ? await runGet<any>(game.db, "SELECT name FROM teams WHERE id = ?", [sellerTeamId])
+          : null;
+      logClubNews(
+        game,
+        "transfer_in",
+        `${player.name} contratado por Cláusula`,
+        playerState.teamId,
+        {
+          player_name: player.name,
+          player_id: validPlayerId,
+          related_team_id: sellerTeamId,
+          related_team_name: oldTeam?.name,
+          amount: proposalPrice,
+          description: `${player.name} foi contratado por cláusula de rescisão por €${proposalPrice}.`,
+        },
+        io,
+      );
+      if (sellerTeamId != null) {
+        logClubNews(
+          game,
+          "transfer_out",
+          `${player.name} vendido por Cláusula`,
+          sellerTeamId,
+          {
+            player_name: player.name,
+            player_id: validPlayerId,
+            related_team_id: playerState.teamId,
+            related_team_name: buyingTeam?.name,
+            amount: proposalPrice,
+            description: `${player.name} foi transferido por €${proposalPrice}.`,
           },
+          io,
         );
-      },
-    );
+      }
+      recordTransfer(
+        game,
+        {
+          playerId: validPlayerId,
+          playerName: player.name,
+          position: player.position,
+          skill: player.skill,
+          isStar: player.is_star,
+          photo: player.photo || null,
+          sellerTeamId,
+          sellerTeamName: oldTeam?.name || null,
+          buyerTeamId: playerState.teamId,
+          buyerTeamName: buyingTeam?.name || null,
+          amount: proposalPrice,
+          source: "proposal",
+        },
+        io,
+      );
+
+      refreshMarket(game);
+      getTeamsWithCoachNames(game.db)
+        .then((teams) => io.to(game.roomCode).emit("teamsData", teams))
+        .catch(() => {});
+      const squad = await runAll(game.db, "SELECT * FROM players WHERE team_id = ?", [
+        playerState.teamId,
+      ]);
+      socket.emit(
+        "mySquad",
+        ensureFullBench(
+          withJuniorGRs(squad, playerState.teamId as number, upcomingMatchweek(game)),
+          playerState.teamId as number,
+          upcomingMatchweek(game),
+        ),
+      );
+      socket.emit("transferProposalResult", {
+        ok: true,
+        message: `Contrataste ${player.name} por €${proposalPrice.toLocaleString("pt-PT")}!`,
+      });
+      socket.emit("playerSigned", {
+        playerId: player.id,
+        name: player.name,
+        position: player.position,
+        photo: player.photo || null,
+        skill: player.skill,
+        age: player.age,
+        nationality: player.nationality,
+        price: proposalPrice,
+        source: "proposal",
+      });
+    } catch (err: any) {
+      // Orçamento insuficiente na corrida (o saldo mudou entre a leitura e o
+      // débito) não é erro de sistema: mensagem normal, sem stack no log.
+      if (err?.message === "insufficient_budget") {
+        socket.emit("transferProposalResult", {
+          ok: false,
+          message: "Orçamento insuficiente para concluir a transferência.",
+        });
+        return;
+      }
+      if (err?.message === "player_moved") {
+        socket.emit("transferProposalResult", {
+          ok: false,
+          message: "O jogador já não está disponível.",
+        });
+        return;
+      }
+      console.error("[makeTransferProposal] Error:", err);
+      socket.emit("transferProposalResult", {
+        ok: false,
+        message: "Erro ao processar transferência.",
+      });
+    }
   });
 }

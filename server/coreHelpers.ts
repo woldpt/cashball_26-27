@@ -5,6 +5,7 @@ import {
   CONTRACT_LENGTH_MATCHWEEKS,
   contractEpoch,
   SEASON_CALENDAR,
+  fairWeeklyWage,
 } from "./gameConstants";
 import { getWeatherForFixture } from "./game/matchCalculations";
 import type { RatingRow } from "./game/ratings";
@@ -210,6 +211,23 @@ export function runGet<T extends AnyRow = AnyRow>(
       resolve(row || null);
     });
   });
+}
+
+/**
+ * Salário exigido pelo agente numa renovação: o maior entre o salário justo
+ * da skill e +5% sobre o atual. Fonte única — usada nos 3 caminhos que mandam
+ * o jogador a leilão por recusar renovar (renewContract/decline/acceptCounter).
+ */
+export function renewalDemandedWage(player: AnyRow): number {
+  return Math.max(
+    fairWeeklyWage(player.skill),
+    Math.round((player.wage || 0) * 1.05),
+  );
+}
+
+/** Preço-base do leilão de quem recusou renovar: max(65% do valor, 12× exigido). */
+export function renewalAuctionPrice(value: number, demandedWage: number): number {
+  return Math.max(Math.round(value * 0.65), demandedWage * 12);
 }
 
 export function validatePositiveInt(val: unknown): number | null {
