@@ -1872,3 +1872,7 @@ Plano C1+C2 (quando fizer):
 - Maquinaria do badge voador apagada (refs de medição, 2 timers, `transferLanded`, crossfade ~150 linhas): soma no TRANSF esconde com o fly-up aberto, badges individuais com render simples (o painel já anima com `sheetUp`).
 - Armadilha: o corte engoliu `contentRef` + reset de scroll — reposto e verificado com lint.
 - Checks: eslint limpo nos ficheiros tocados; `check:types` OK.
+
+## GameLayout — refatoração Fase 5: extrair SystemOverlays (2026-09-26)
+- Toasts, flash de reconnect, erro fatal e sessão deslocada movidos para `client/src/components/layout/SystemOverlays.jsx` (sem props); `GameLayout.jsx` 335→225 linhas. `WelcomeModal`, tutorial, `roomBlocked` e banners ficam no shell (estão presos à lógica do tutorial e ao fluxo do `main`).
+- Checks: eslint limpo nos ficheiros tocados; `check:types` OK.
