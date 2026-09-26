@@ -37,14 +37,14 @@ const AuthField = ({
 	const type = secret && visible ? "text" : secret ? "password" : "text";
 
 	const stateClass = invalid
-		? "border border-red-500/60 focus:border-red-500/60 focus:ring-red-500/30"
-		: "border border-white/[0.08] focus:border-landing-accent-strong/50 focus:ring-landing-accent-strong/30 focus:bg-landing-accent-strong/[0.03]";
+		? "border border-error/60 focus:border-error/60"
+		: "border border-outline-variant/25 focus:border-primary/50 focus:bg-primary/[0.03]";
 
 	return (
 		<div>
 			<label
 				htmlFor={id}
-				className="block text-[10px] uppercase text-white/55 mb-2 font-bold tracking-wider"
+				className="block text-[10px] uppercase text-on-surface-variant mb-2 font-bold tracking-wider"
 			>
 				{label}
 			</label>
@@ -53,7 +53,7 @@ const AuthField = ({
 					id={id}
 					type={type}
 					autoComplete={autoComplete}
-					className={`w-full bg-white/[0.04] p-4 short:py-1 rounded-xl text-white text-lg font-black outline-none transition-all placeholder:text-white/20 focus:ring-1 ${stateClass} ${secret ? "pr-12" : ""}`}
+					className={`w-full bg-surface-bright/50 p-4 short:py-1 rounded-md text-on-surface text-lg font-black outline-none transition-all placeholder:text-on-surface/20 ${stateClass} ${secret ? "pr-12" : ""}`}
 					value={value}
 					placeholder={placeholderComponent ? "" : placeholder}
 					onChange={(e) => onChange(e.target.value)}
@@ -69,7 +69,7 @@ const AuthField = ({
 						onClick={() => setVisible((s) => !s)}
 						aria-label={visible ? "Ocultar palavra-passe" : "Mostrar palavra-passe"}
 						aria-pressed={visible}
-						className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/70 transition-colors p-1"
+						className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 hover:text-on-surface transition-colors p-1"
 						title={visible ? "Ocultar palavra-passe" : "Mostrar palavra-passe"}
 					>
 						<span className="material-symbols-outlined text-[18px] leading-none">
@@ -97,11 +97,11 @@ export default AuthField;
  */
 export const AuthErrorHint = ({ authError, disconnected }) => {
 	if (authError) {
-		return <p className="text-red-400 text-sm text-center font-bold">⚠️ {authError}</p>;
+		return <p className="text-error text-sm text-center font-bold">⚠️ {authError}</p>;
 	}
 	if (disconnected) {
 		return (
-			<p className="text-red-400 text-sm text-center font-bold">
+			<p className="text-error text-sm text-center font-bold">
 				⚠️ Sem ligação ao servidor. Tenta novamente.
 			</p>
 		);

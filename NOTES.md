@@ -1664,3 +1664,11 @@ Plano C1+C2 (quando fizer):
 - Fonte única: `APP_VERSION` em `client/src/constants/index.js`, visível no rodapé da landing (`LandingFooter.jsx`).
 - Manutenção: a cada alteração commitada incrementa-se N; ao virar o mês, N volta a 1.
 - Tags: cada versão leva tag anotada homónima no GitHub (`v26.09.1` criada e pushed em 2026-09-26). N incrementa em commits com código; docs-notas sozinhas não contam.
+
+## Landing com cara de jogo (2026-09-26)
+- Pedido: landing "muito distante do jogo". Decisões do utilizador: mesma pele + conteúdo real, montra estática, página toda.
+- Novo `auth/landingShowcase.js`: plantel fictício (IDs negativos → `PlayerLink` desliga-se sozinho, montra só leitura), direto simulado, mini-tabela, manchetes, widgets.
+- `HeroSection`: "O balneário é teu." + cartão de direto com minuto a tiquetaque (parado com reduced-motion). `ShowcaseSections` (ex-`FeaturesStrip`): `SummaryWidget` mini, `PlayerRow` reais, mini-tabela, jornal em Newsreader — tudo tokens do jogo.
+- Apagados `ParticleCanvas.jsx`/`FeaturesStrip.jsx`/`landingContent.js`; `ReconnectScreen` sem partículas e com pele do jogo (tinha import pendurado do canvas — partia o harness).
+- Auth (`AuthCard`, formulários, header, footer) com pele do jogo; lógica intacta. `RoomSelectScreen` continua com tokens `landing-*` (ficam no CSS) — follow-up.
+- Checks: `eslint` limpo; `check:types` OK; `landing-resp-test` portrait 5/5 + landscape 6/6 PASS; screenshots 390/667/detalhe vistos. Versão → `v26.09.2`.

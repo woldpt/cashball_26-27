@@ -1,6 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
 import RoomSelectScreen from "./RoomSelectScreen.jsx";
-import ParticleCanvas from "./ParticleCanvas.jsx";
 import LandingBackground from "./LandingBackground.jsx";
 import LandingHeader from "./LandingHeader.jsx";
 import HeroSection from "./HeroSection.jsx";
@@ -8,7 +7,7 @@ import AuthCard from "./AuthCard.jsx";
 import LoginForm from "./LoginForm.jsx";
 import RegisterForm from "./RegisterForm.jsx";
 import ReconnectScreen from "./ReconnectScreen.jsx";
-import FeaturesStrip from "./FeaturesStrip.jsx";
+import ShowcaseSections from "./ShowcaseSections.jsx";
 import LandingFooter from "./LandingFooter.jsx";
 
 /**
@@ -100,13 +99,11 @@ const LandingPage = ({
 
 	return (
 		<div
-			className={`min-h-screen bg-landing-bg text-white flex flex-col relative ${
+			className={`min-h-screen bg-bg text-on-surface flex flex-col relative ${
 				isMode ? "" : "pb-16 short:pb-0"
 			}`}
 		>
-			<ParticleCanvas />
-
-			{/* Background layers — relvado de noite + quadro tático */}
+			{/* Fundo do jogo — brilhos primary/tertiary + giz */}
 			<LandingBackground />
 
 			<LandingHeader />
@@ -190,7 +187,7 @@ const LandingPage = ({
 							</motion.div>
 						</div>
 
-						<FeaturesStrip />
+						<ShowcaseSections />
 						<LandingFooter />
 					</motion.div>
 				)}

@@ -45,14 +45,14 @@ const LoginForm = ({
 		className="p-8 space-y-5 short:p-2.5 short:space-y-1"
 	>
 		<div className="space-y-1 text-center mb-4 short:mb-1">
-			<p className="flex items-center justify-center gap-1.5 text-[10px] text-landing-accent/60 uppercase font-black tracking-[0.4em]">
+			<p className="flex items-center justify-center gap-1.5 text-[10px] text-primary/70 uppercase font-black tracking-[0.4em]">
 				<span className="material-symbols-outlined text-[14px] leading-none">badge</span>
 				Painel do Treinador
 			</p>
-			<h2 className="text-2xl font-headline font-black text-white tracking-tight short:text-base">
+			<h2 className="text-2xl font-headline font-black text-on-surface tracking-tight short:text-base">
 				Acede à tua conta
 			</h2>
-			<p className="text-xs text-white/40 short:hidden">
+			<p className="text-xs text-on-surface-variant short:hidden">
 				Depois escolhes novo jogo, época guardada ou amigos.
 			</p>
 		</div>
@@ -76,7 +76,7 @@ const LoginForm = ({
 							initial={{ opacity: 0 }}
 							animate={{ opacity: 1 }}
 							transition={{ duration: 0.3 }}
-							className="text-white/20 text-lg font-black truncate"
+							className="text-on-surface/20 text-lg font-black truncate"
 						>
 							Ex: {exampleName}
 						</motion.span>
@@ -103,7 +103,7 @@ const LoginForm = ({
 			<button
 				type="submit"
 				disabled={!name.trim() || !password || authSubmitting}
-				className="w-full relative overflow-hidden bg-landing-accent-strong hover:bg-landing-accent disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-1.5 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(52,211,153,0.25)] hover:shadow-[0_4px_30px_rgba(52,211,153,0.4)] group"
+				className="w-full relative overflow-hidden bg-primary hover:brightness-110 disabled:bg-surface-bright disabled:text-on-surface-variant/40 text-on-primary py-4 short:py-1.5 rounded-md font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] group"
 			>
 				<span className="relative z-10">{authSubmitting ? "A VALIDAR..." : "ENTRAR"}</span>
 				<div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
@@ -113,7 +113,7 @@ const LoginForm = ({
 		<button
 			type="button"
 			onClick={onCreateAccount}
-			className="w-full border border-landing-accent-strong/30 bg-landing-accent-strong/[0.03] hover:border-landing-accent-strong/60 hover:bg-landing-accent-strong/[0.08] text-landing-accent/90 hover:text-landing-accent py-3 short:py-1 rounded-xl font-black text-xs uppercase tracking-[0.2em] transition-all"
+			className="w-full border border-primary/30 bg-primary/[0.05] hover:border-primary/60 hover:bg-primary/[0.1] text-primary/90 hover:text-primary py-3 short:py-1 rounded-md font-black text-xs uppercase tracking-[0.2em] transition-all"
 		>
 			Criar conta
 		</button>

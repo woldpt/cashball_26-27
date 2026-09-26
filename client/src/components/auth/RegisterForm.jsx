@@ -57,20 +57,20 @@ const RegisterForm = ({
 				<button
 					type="button"
 					onClick={onBack}
-					className="text-xs text-white/30 hover:text-white/70 font-black uppercase tracking-widest flex items-center gap-1 transition-colors short:order-2 short:shrink-0"
+					className="text-xs text-on-surface-variant/60 hover:text-on-surface font-black uppercase tracking-widest flex items-center gap-1 transition-colors short:order-2 short:shrink-0"
 				>
 					← Voltar
 				</button>
-				<h2 className="hidden short:block min-w-0 truncate short:text-base font-headline font-black text-white tracking-tight">
+				<h2 className="hidden short:block min-w-0 truncate short:text-base font-headline font-black text-on-surface tracking-tight">
 					Cria a tua conta de treinador
 				</h2>
 			</div>
 			<div className="space-y-1 text-center short:hidden">
-				<p className="flex items-center justify-center gap-1.5 text-[10px] text-landing-accent/60 uppercase font-black tracking-[0.4em]">
+				<p className="flex items-center justify-center gap-1.5 text-[10px] text-primary/70 uppercase font-black tracking-[0.4em]">
 					<span className="material-symbols-outlined text-[14px] leading-none">badge</span>
 					Nova conta
 				</p>
-				<h2 className="text-2xl font-headline font-black text-white tracking-tight">
+				<h2 className="text-2xl font-headline font-black text-on-surface tracking-tight">
 					Cria a tua conta de treinador
 				</h2>
 			</div>
@@ -95,7 +95,7 @@ const RegisterForm = ({
 								initial={{ opacity: 0 }}
 								animate={{ opacity: 1 }}
 								transition={{ duration: 0.3 }}
-								className="text-white/20 text-lg font-black truncate"
+								className="text-on-surface/20 text-lg font-black truncate"
 							>
 								Ex: {exampleName}
 							</motion.span>
@@ -160,7 +160,7 @@ const RegisterForm = ({
 						authSubmitting ||
 						registerPasswordMismatch
 					}
-					className="w-full relative overflow-hidden bg-landing-accent-strong hover:bg-landing-accent disabled:bg-white/[0.06] disabled:text-white/30 text-black py-4 short:py-1.5 rounded-xl font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_4px_20px_rgba(52,211,153,0.25)] hover:shadow-[0_4px_30px_rgba(52,211,153,0.4)] group"
+					className="w-full relative overflow-hidden bg-primary hover:brightness-110 disabled:bg-surface-bright disabled:text-on-surface-variant/40 text-on-primary py-4 short:py-1.5 rounded-md font-black text-base uppercase tracking-[0.2em] transition-all active:scale-[0.98] group"
 				>
 					<span className="relative z-10">
 						{authSubmitting ? "A CRIAR CONTA..." : "CRIAR CONTA"}
