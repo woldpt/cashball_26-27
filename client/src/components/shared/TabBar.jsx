@@ -3,7 +3,7 @@
  *
  * Container canónico: `flex items-center gap-1 bg-surface-container-high
  * rounded-lg p-1` com item ativo `bg-primary text-white shadow`.
- * Substitui as variações em CalendarioTab, TeamSquadView, TeamSquadModal
+ * Substitui as variações em CalendarioTab, TeamSquadView
  * e MatchView (tamanhos sm/md).
  *
  * O fundo do item ativo é um indicador deslizante (layoutId) — o mesmo

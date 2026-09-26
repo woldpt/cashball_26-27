@@ -1962,3 +1962,8 @@ Plano C1+C2 (quando fizer):
 - Convite com feedback ("Copiado ✓", 1,6s) + fallback `textarea/execCommand`, `aria-label`, guarda `me?.roomCode`.
 - CTA com `type="button"`, `autoFocus`, sem `hover:-translate-y`; fecho com `me?.` opcional.
 - Checks: eslint limpo no ficheiro (2 erros pré-existentes noutros: `landing-resp-test`, `GameContext` — confirmados com `git stash`); `check:types` OK; `test:mobile` PASS 165/165 e `:landscape` PASS 198/198 (`welcome-resp-test` PASS em todas); screenshots 390 + 667 verificados.
+
+## TeamSquadModal — removido (código morto) (2026-09-26)
+- `client/src/components/modals/TeamSquadModal.jsx` apagado: zero imports em todo o repo; o apresentado é `TeamSquadView.jsx` (via `handleOpenTeamSquad` em `GameRoutes`).
+- Comentários atualizados em `PlayerRow.jsx` e `TabBar.jsx` (removida a menção ao modal). Menções em entradas antigas deste NOTES mantidas como histórico.
+- Checks: eslint limpo nos ficheiros tocados (2 erros pré-existentes noutros — `GameContext` — confirmados com `git stash`); `check:types` OK. Sem `test:mobile` (sem mudança de layout) nem audits (sem lógica de servidor).
