@@ -3,7 +3,7 @@ import path from "path";
 import sqlite3 from "sqlite3";
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { SEASON_CALENDAR, FRIENDLY_ROUND, fairWeeklyWage, signingWage, FANBASE_BY_DIVISION, DEFAULT_MS_PER_MINUTE, SIM_SPEED_PRESETS } from "./gameConstants";
-import { currentEpoch, getSeasonEndMatchweek } from "./coreHelpers";
+import { currentEpoch, getSeasonEndMatchweek, isContractLocked, runGet, runExec } from "./coreHelpers";
 import { migrateTacticFamiliarityFromHistory } from "./game/tacticFamiliarity";
 import { getOfflineCoaches } from "./presenceHelpers";
 import {
@@ -1591,37 +1591,58 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                             });
                             return;
                           }
-                          // Com lances: finaliza inline (merge mínimo de auctionHelpers.finalizeAuction) para não deixar órfão
-                          let winnerTeamId: number | null = null;
-                          let winnerBid = -1;
-                          for (const [tid2, val] of Object.entries(auc.bids || {})) {
-                            const b = Number((typeof val === 'object' ? (val as any).amount : val) || 0);
-                            if (b > winnerBid) { winnerBid = b; winnerTeamId = parseInt(tid2, 10); }
-                          }
-                          if (!winnerTeamId) {
-                            db.run("UPDATE players SET transfer_status='none', transfer_price=0 WHERE id=?", [pid]);
-                            delete (game.auctions as any)[pid];
-                            delete (game.auctionTimers as any)[pid];
-                            return;
-                          }
-                          db.get("SELECT p.*, COALESCE(t.name, '?') as team_name FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.id=?", [pid], (_e: any, player: any) => {
+                          // Com lances: finaliza inline (merge de auctionHelpers.finalizeAuction,
+                          // com as mesmas garantias: revalida orçamento — o valor só era
+                          // verificado no lance —, respeita o lock do agente e movimenta
+                          // dinheiro/transferência numa transação).
+                          (async () => {
+                            const closeUnsold = async () => {
+                              const pl = await runGet<any>(db, "SELECT p.*, COALESCE(t.name, '?') as team_name FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.id=?", [pid]);
+                              if (pl) pushRecent(pl, { playerId: pid, playerName: pl.name, sold: false });
+                              db.run("UPDATE players SET transfer_status='none', transfer_price=0 WHERE id=?", [pid]);
+                              delete (game.auctions as any)[pid];
+                              delete (game.auctionTimers as any)[pid];
+                            };
+                            const bidsDesc = Object.entries(auc.bids || {})
+                              .map(([tid2, val]) => ({
+                                teamId: parseInt(tid2, 10),
+                                amount: Number((typeof val === 'object' ? (val as any).amount : val) || 0),
+                              }))
+                              .sort((x, y) => y.amount - x.amount);
+                            // O orçamento só era validado no lance; entre o lance e o
+                            // fecho pode ter sido gasto noutro leilão — passa ao seguinte.
+                            let winner: { teamId: number; amount: number } | null = null;
+                            for (const cand of bidsDesc) {
+                              const buyer = await runGet<any>(db, "SELECT budget FROM teams WHERE id=?", [cand.teamId]);
+                              if (buyer && (buyer.budget || 0) >= cand.amount) { winner = cand; break; }
+                            }
+                            if (!winner) { await closeUnsold(); return; }
+                            const player = await runGet<any>(db, "SELECT p.*, COALESCE(t.name, '?') as team_name FROM players p LEFT JOIN teams t ON p.team_id = t.id WHERE p.id=?", [pid]);
                             if (!player) { delete (game.auctions as any)[pid]; delete (game.auctionTimers as any)[pid]; return; }
-                            const buyerTeamId = winnerTeamId as number;
-                            const finalBid = winnerBid;
-                            db.get("SELECT name FROM teams WHERE id=?", [buyerTeamId], (_e2: any, buyerTeam: any) => {
-                              pushRecent(player, { playerId: pid, playerName: player.name, sold: true, buyerTeamId, buyerTeamName: buyerTeam?.name ?? "?", finalBid });
-                            });
-                            db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [finalBid, auc.sellerTeamId], () => {
-                              db.run("UPDATE teams SET budget = budget - ? WHERE id = ?", [finalBid, buyerTeamId], () => {
-                                const seasonEndMw = getSeasonEndMatchweek(game.matchweek || 1);
-                                const wage = signingWage(player);
-                                const epoch = currentEpoch(game as any);
-                                db.run("UPDATE players SET team_id=?, wage=?, contract_until_matchweek=?, contract_start_epoch=?, joined_matchweek=?, transfer_cooldown_until_matchweek=?, transfer_status='none', transfer_price=0, contract_request_pending=0, contract_requested_wage=0, contract_request_is_renegotiation=0 WHERE id=?", [buyerTeamId, wage, seasonEndMw, epoch, game.matchweek, game.matchweek, pid], () => {
-                                  delete (game.auctions as any)[pid];
-                                  delete (game.auctionTimers as any)[pid];
-                                });
-                              });
-                            });
+                            if (isContractLocked(player, game as any)) { await closeUnsold(); return; }
+                            const buyerTeamId = winner.teamId;
+                            const finalBid = winner.amount;
+                            await runExec(db, "BEGIN");
+                            try {
+                              await runExec(db, "UPDATE teams SET budget = budget + ? WHERE id = ?", [finalBid, auc.sellerTeamId]);
+                              await runExec(db, "UPDATE teams SET budget = budget - ? WHERE id = ?", [finalBid, buyerTeamId]);
+                              const seasonEndMw = getSeasonEndMatchweek(game.matchweek || 1);
+                              await runExec(
+                                db,
+                                "UPDATE players SET team_id=?, wage=?, contract_until_matchweek=?, contract_start_epoch=?, joined_matchweek=?, transfer_cooldown_until_matchweek=?, transfer_status='none', transfer_price=0, contract_request_pending=0, contract_requested_wage=0, contract_request_is_renegotiation=0 WHERE id=?",
+                                [buyerTeamId, signingWage(player), seasonEndMw, currentEpoch(game as any), game.matchweek, game.matchweek, pid],
+                              );
+                              await runExec(db, "COMMIT");
+                            } catch (txErr) {
+                              await runExec(db, "ROLLBACK").catch(() => {});
+                              console.error(`[${roomCode}] ❌ finalizeAuction (crash-recovery): transação falhou, leilão fechado sem venda`, txErr);
+                              await closeUnsold();
+                              return;
+                            }
+                            const buyerTeam = await runGet<any>(db, "SELECT name FROM teams WHERE id=?", [buyerTeamId]);
+                            pushRecent(player, { playerId: pid, playerName: player.name, sold: true, buyerTeamId, buyerTeamName: buyerTeam?.name ?? "?", finalBid });
+                          })().catch((err) => {
+                            console.error(`[${roomCode}] ❌ finalizeAuction (crash-recovery):`, err);
                           });
                         }, timerMs) as unknown as any;
                         // unref para não bloquear shutdown
