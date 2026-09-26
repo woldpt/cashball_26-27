@@ -54,8 +54,8 @@ const HeroSection = () => {
 			</h1>
 
 			<p className="text-base text-on-surface-variant leading-relaxed mb-6 max-w-md short:hidden">
-				Escolhe o clube, gere o plantel e o orçamento, monta a tática —
-				depois sofre os 90 minutos com os outros treinadores.
+				O sorteio dá-te o clube — gere o plantel e o orçamento, monta a
+				tática e depois sofre os 90 minutos com os outros treinadores.
 			</p>
 
 			{/* Direto da montra — cartão de jogo com pele do jogo */}
