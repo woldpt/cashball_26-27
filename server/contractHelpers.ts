@@ -339,9 +339,11 @@ export function createContractHelpers(deps: ContractDeps) {
         [player.team_id],
       );
       if (team) {
+        // Só o plantel principal (id > 0) conta para as necessidades —
+        // juniores (ids negativos) não mascaram carências reais.
         const posCounts = await runAll(
           game.db,
-          "SELECT position, COUNT(*) as cnt FROM players WHERE team_id = ? GROUP BY position",
+          "SELECT position, COUNT(*) as cnt FROM players WHERE team_id = ? AND id > 0 GROUP BY position",
           [player.team_id],
         );
         const posMap: Record<string, number> = {};

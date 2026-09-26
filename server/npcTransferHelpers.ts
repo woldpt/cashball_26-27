@@ -304,9 +304,14 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
                         return;
                       }
 
-                      // Contar jogadores por posição
+                      // Contar jogadores por posição — só o plantel principal
+                      // (id > 0); juniores (ids negativos) não contam para
+                      // necessidades (o avgSkill abaixo já os exclui).
+                      const seniorRows = squadRows.filter(
+                        (p: any) => (p as any).id > 0,
+                      );
                       const posCounts: Record<string, number> = { GR: 0, DEF: 0, MED: 0, ATA: 0 };
-                      for (const p of squadRows) {
+                      for (const p of seniorRows) {
                         if (posCounts[p.position] !== undefined) posCounts[p.position]++;
                       }
 
@@ -315,7 +320,7 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
                       const posMin = POS_MIN[playerPosition] ?? 3;
                       const posCount = posCounts[playerPosition] ?? 0;
                       const hasUrgentNeed = posCount < posMin;
-                      const hasModerateNeed = posCount >= posMin && squadRows.length < 20;
+                      const hasModerateNeed = posCount >= posMin && seniorRows.length < 20;
 
                       // Calcular nível médio do plantel pelos 14 melhores — NPC só compra
                       // se o jogador estiver à altura (piso: nível − margem, sem teto).
