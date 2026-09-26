@@ -354,10 +354,10 @@ function createManager(name, password) {
 	if (!normalizedName || !normalizedPassword) {
 		return Promise.resolve({ ok: false, error: "Credenciais inválidas." });
 	}
-	if (normalizedPassword.length < 3) {
+	if (normalizedPassword.length < 6) {
 		return Promise.resolve({
 			ok: false,
-			error: "A palavra-passe deve ter pelo menos 3 caracteres.",
+			error: "A palavra-passe deve ter pelo menos 6 caracteres.",
 		});
 	}
 
@@ -483,10 +483,10 @@ function changePassword(name, currentPassword, newPassword) {
 	if (!normalizedName || !normalizedCurrent || !normalizedNew) {
 		return Promise.resolve({ ok: false, error: "Credenciais inválidas." });
 	}
-	if (normalizedNew.length < 3) {
+	if (normalizedNew.length < 6) {
 		return Promise.resolve({
 			ok: false,
-			error: "A nova palavra-passe deve ter pelo menos 3 caracteres.",
+			error: "A nova palavra-passe deve ter pelo menos 6 caracteres.",
 		});
 	}
 
@@ -998,10 +998,10 @@ function adminChangePassword(name, newPassword) {
 	if (!normalizedName || !normalizedNew) {
 		return Promise.resolve({ ok: false, error: "Credenciais inválidas." });
 	}
-	if (normalizedNew.length < 3) {
+	if (normalizedNew.length < 6) {
 		return Promise.resolve({
 			ok: false,
-			error: "A palavra-passe deve ter pelo menos 3 caracteres.",
+			error: "A palavra-passe deve ter pelo menos 6 caracteres.",
 		});
 	}
 

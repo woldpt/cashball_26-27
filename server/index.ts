@@ -603,9 +603,9 @@ app.post("/auth/register", apiLimiter, async (req, res) => {
 			typeof req.body?.password === "string" ? req.body.password : "";
 		if (!name || !password)
 			return res.status(400).json({ error: "Credenciais inválidas." });
-		if (password.length < 3)
+		if (password.length < 6)
 			return res.status(400).json({
-				error: "A palavra-passe deve ter pelo menos 3 caracteres.",
+				error: "A palavra-passe deve ter pelo menos 6 caracteres.",
 			});
 		const authResult = await createManager(name, password);
 		if (!authResult.ok)
@@ -698,11 +698,11 @@ app.post("/auth/change-password", apiLimiter, async (req, res) => {
 			return res
 				.status(400)
 				.json({ error: "Todos os campos são obrigatórios." });
-		if (newPassword.length < 3)
+		if (newPassword.length < 6)
 			return res
 				.status(400)
 				.json({
-					error: "A nova palavra-passe deve ter pelo menos 3 caracteres.",
+					error: "A nova palavra-passe deve ter pelo menos 6 caracteres.",
 				});
 		const result = await changePassword(name, currentPassword, newPassword);
 		if (!result.ok) return res.status(400).json({ error: result.error });

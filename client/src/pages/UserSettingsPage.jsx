@@ -1,10 +1,27 @@
 import { useState, useEffect, useRef } from "react";
 import { CoachAvatar } from "../components/shared/CoachAvatar.jsx";
+import { ModalShell } from "../components/shared/ModalShell.jsx";
 import { processAvatarFile } from "../utils/avatarUpload.js";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { Badge } from "../components/shared/Badge.jsx";
 import { Button } from "../components/shared/Button.jsx";
+
+const MIN_PASSWORD_LENGTH = 6;
+const MIN_BIRTH_YEAR = 1940;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Helper simples partilhado pelos pedidos desta página: POST/DELETE JSON
+// com parse seguro (resposta não-JSON devolve {} em vez de rebentar).
+async function sendJSON(url, body, method = "POST") {
+	const res = await fetch(url, {
+		method,
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(body),
+	});
+	const data = await res.json().catch(() => ({}));
+	return { res, data };
+}
 
 export function UserSettingsPage({
 	me,
@@ -26,6 +43,7 @@ export function UserSettingsPage({
 	const [rooms, setRooms] = useState([]);
 	const [roomsLoading, setRoomsLoading] = useState(true);
 	const [deletingAccount, setDeletingAccount] = useState(false);
+	const [deleteAccountMsg, setDeleteAccountMsg] = useState(null);
 	const [email, setEmail] = useState("");
 	const [birthYear, setBirthYear] = useState("");
 	const [profileSaving, setProfileSaving] = useState(false);
@@ -45,17 +63,12 @@ export function UserSettingsPage({
 		setAvatarImgMsg(null);
 		try {
 			const { dataBase64, mime } = await processAvatarFile(file);
-			const res = await fetch(`${backendUrl}/auth/avatar`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					name: me.name,
-					token: me.token,
-					dataBase64,
-					mime,
-				}),
+			const { res, data } = await sendJSON(`${backendUrl}/auth/avatar`, {
+				name: me.name,
+				token: me.token,
+				dataBase64,
+				mime,
 			});
-			const data = await res.json().catch(() => ({}));
 			if (!res.ok) throw new Error(data?.error || "Erro ao carregar a foto.");
 			setCoachAvatars((prev) => ({ ...prev, [me.name]: data.version }));
 			setAvatarImgMsg({ type: "success", text: "Foto carregada." });
@@ -72,12 +85,10 @@ export function UserSettingsPage({
 	async function handleRemoveAvatar() {
 		if (!me?.name) return;
 		try {
-			const res = await fetch(`${backendUrl}/auth/avatar/delete`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ name: me.name, token: me.token }),
-			});
-			const data = await res.json().catch(() => ({}));
+			const { res, data } = await sendJSON(
+				`${backendUrl}/auth/avatar/delete`,
+				{ name: me.name, token: me.token },
+			);
 			if (!res.ok) throw new Error(data?.error || "Erro ao remover a foto.");
 			setCoachAvatars((prev) => {
 				const next = { ...prev };
@@ -92,39 +103,92 @@ export function UserSettingsPage({
 			});
 		}
 	}
-	const [deletingRoom, setDeletingRoom] = useState(null); // null | { roomCode, password }
+
+	async function handleRegenerateAvatar() {
+		if (!me?.name) return;
+		const newSeed =
+			typeof crypto !== "undefined" &&
+			typeof crypto.randomUUID === "function"
+				? crypto.randomUUID()
+				: Math.random().toString(36).slice(2, 10);
+		onAvatarSeedChange(newSeed);
+		try {
+			const { res } = await sendJSON(`${backendUrl}/auth/avatar-seed`, {
+				name: me.name,
+				token: me.token,
+				seed: newSeed,
+			});
+			if (!res.ok) throw new Error("Erro ao guardar o avatar.");
+		} catch {
+			setAvatarImgMsg({
+				type: "error",
+				text: "Avatar gerado, mas não foi guardado.",
+			});
+		}
+	}
+	const [deletingRoom, setDeletingRoom] = useState(null); // null | { roomCode, leaving }
 	const [deletingRoomLoading, setDeletingRoomLoading] = useState(false);
 
 	useEffect(() => {
-		if (!me?.name) return;
-		fetch(`${backendUrl}/auth/manager-info?name=${encodeURIComponent(me.name)}`)
+		if (!me?.name) {
+			return;
+		}
+		const controller = new AbortController();
+		fetch(
+			`${backendUrl}/auth/manager-info?name=${encodeURIComponent(me.name)}`,
+			{ signal: controller.signal },
+		)
 			.then((r) => r.json())
 			.then((data) => {
 				if (Array.isArray(data?.rooms)) setRooms(data.rooms);
 				if (data?.email !== undefined) setEmail(data.email);
 				if (data?.birthYear) setBirthYear(String(data.birthYear));
 			})
-			.catch(() => {
-				/* ignorar */
+			.catch((err) => {
+				if (err?.name !== "AbortError") {
+					/* ignorar */
+				}
 			})
-			.finally(() => setRoomsLoading(false));
+			.finally(() => {
+				if (!controller.signal.aborted) setRoomsLoading(false);
+			});
+		return () => controller.abort();
 	}, [me?.name, backendUrl]);
 
 	const handleSaveProfile = async () => {
 		setProfileMsg(null);
+		const trimmedEmail = email?.trim() || "";
+		if (trimmedEmail && !EMAIL_RE.test(trimmedEmail)) {
+			setProfileMsg({ type: "error", text: "Email inválido." });
+			return;
+		}
+		let parsedBirthYear;
+		if (birthYear) {
+			parsedBirthYear = parseInt(birthYear, 10);
+			const currentYear = new Date().getFullYear();
+			if (
+				Number.isNaN(parsedBirthYear) ||
+				parsedBirthYear < MIN_BIRTH_YEAR ||
+				parsedBirthYear > currentYear
+			) {
+				setProfileMsg({
+					type: "error",
+					text: `Ano entre ${MIN_BIRTH_YEAR} e ${currentYear}.`,
+				});
+				return;
+			}
+		}
 		setProfileSaving(true);
 		try {
 			const body = { name: me.name, token: me.token };
-			if (email?.trim()) body.email = email.trim();
-			if (birthYear) body.birthYear = parseInt(birthYear, 10);
-			const res = await fetch(`${backendUrl}/auth/update-profile`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(body),
-			});
-			const data = await res.json();
+			if (trimmedEmail) body.email = trimmedEmail;
+			if (parsedBirthYear !== undefined) body.birthYear = parsedBirthYear;
+			const { data } = await sendJSON(
+				`${backendUrl}/auth/update-profile`,
+				body,
+			);
 			if (data.ok) {
-				setProfileMsg({ type: "success", text: "Perfil actualizado!" });
+				setProfileMsg({ type: "success", text: "Perfil atualizado!" });
 			} else {
 				setProfileMsg({
 					type: "error",
@@ -146,10 +210,10 @@ export function UserSettingsPage({
 			setPasswordMsg({ type: "error", text: "Preenche todos os campos." });
 			return;
 		}
-		if (newPassword.length < 3) {
+		if (newPassword.length < MIN_PASSWORD_LENGTH) {
 			setPasswordMsg({
 				type: "error",
-				text: "A nova palavra-passe deve ter pelo menos 3 caracteres.",
+				text: `A nova palavra-passe deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`,
 			});
 			return;
 		}
@@ -163,16 +227,14 @@ export function UserSettingsPage({
 
 		setChangingPassword(true);
 		try {
-			const res = await fetch(`${backendUrl}/auth/change-password`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
+			const { data } = await sendJSON(
+				`${backendUrl}/auth/change-password`,
+				{
 					name: me.name,
 					currentPassword,
 					newPassword,
-				}),
-			});
-			const data = await res.json();
+				},
+			);
 			if (!data.ok) {
 				setPasswordMsg({
 					type: "error",
@@ -187,8 +249,7 @@ export function UserSettingsPage({
 				setNewPassword("");
 				setConfirmPassword("");
 			}
-		} catch (_b) {
-			_b && undefined; /* ignorar */
+		} catch {
 			setPasswordMsg({ type: "error", text: "Erro de ligação ao servidor." });
 		} finally {
 			setChangingPassword(false);
@@ -210,12 +271,11 @@ export function UserSettingsPage({
 		const { roomCode, leaving } = deletingRoom;
 		setDeletingRoomLoading(true);
 		try {
-			const res = await fetch(`${backendUrl}/saves/${roomCode}`, {
-				method: "DELETE",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ name: me.name, token: me.token }),
-			});
-			const data = await res.json();
+			const { res, data } = await sendJSON(
+				`${backendUrl}/saves/${roomCode}`,
+				{ name: me.name, token: me.token },
+				"DELETE",
+			);
 			if (data.ok || res.ok) {
 				setRooms((prev) => prev.filter((r) => r.roomCode !== roomCode));
 				setDeletingRoom(null);
@@ -237,19 +297,17 @@ export function UserSettingsPage({
 
 	const handleSwitchRoom = (roomCode) => {
 		if (typeof window !== "undefined") {
-			if (me?.roomCode) {
-				try {
-					window.localStorage.setItem(
-						"cashballSession",
-						JSON.stringify({
-							name: me.name,
-							token: me.token,
-							roomCode,
-						}),
-					);
-				} catch (_e) {
-					_e && undefined; /* ignorar */
-				}
+			try {
+				window.localStorage.setItem(
+					"cashballSession",
+					JSON.stringify({
+						name: me.name,
+						token: me.token,
+						roomCode,
+					}),
+				);
+			} catch {
+				/* localStorage indisponível: entra na mesma, mas a sessão não persiste */
 			}
 			window.location.reload();
 		}
@@ -257,14 +315,13 @@ export function UserSettingsPage({
 
 	const handleDeleteAccount = async () => {
 		setDeletingAccount("loading");
+		setDeleteAccountMsg(null);
 		try {
-			const res = await fetch(`${backendUrl}/auth/delete-account`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ name: me.name, token: me.token }),
-			});
-			const data = await res.json();
-			if (data.ok) {
+			const { res, data } = await sendJSON(
+				`${backendUrl}/auth/delete-account`,
+				{ name: me.name, token: me.token },
+			);
+			if (res.ok && data.ok) {
 				try {
 					window.localStorage.removeItem("cashballSession");
 				} catch {
@@ -272,23 +329,38 @@ export function UserSettingsPage({
 				}
 				window.location.reload();
 			} else {
-				setDeletingAccount(false);
+				setDeletingAccount("confirm");
+				setDeleteAccountMsg({
+					type: "error",
+					text: data?.error || "Erro ao apagar conta.",
+				});
 			}
 		} catch {
-			setDeletingAccount(false);
+			setDeletingAccount("confirm");
+			setDeleteAccountMsg({ type: "error", text: "Erro de ligação ao servidor." });
 		}
 	};
 
 	const trophies = palmares?.trophies || [];
 
+	// Todos os clubes das salas do treinador (deduplicados).
 	const trainedTeams = Array.from(
-		new Set(
-			rooms
-				.filter((r) => r.roomCode === me?.roomCode)
-				.map((r) => r.teamName)
-				.filter(Boolean),
-		),
+		new Set(rooms.map((r) => r.teamName).filter(Boolean)),
 	);
+
+	// Sala pendente de confirmação (sair/apagar). Guard contra
+	// ModalShell: children avaliados mesmo com visible={false}, por isso
+	// o modal só é montado quando deletingRoom != null e tudo usa ?.
+	const pendingRoom =
+		deletingRoom != null
+			? rooms.find((r) => r.roomCode === deletingRoom.roomCode)
+			: undefined;
+	const pendingRoomName =
+		pendingRoom?.roomName || deletingRoom?.roomCode || "";
+
+	const currentYear = new Date().getFullYear();
+	const birthYearOptions = [];
+	for (let y = currentYear; y >= MIN_BIRTH_YEAR; y--) birthYearOptions.push(y);
 
 	return (
 		<div className="space-y-4 short:space-y-2">
@@ -337,6 +409,7 @@ export function UserSettingsPage({
 							<button
 								onClick={handleRemoveAvatar}
 								disabled={avatarBusy}
+								aria-label="Remover foto de perfil"
 								className="flex items-center gap-1 min-w-[44px] text-[9px] font-black uppercase px-1.5 py-1 rounded bg-error/20 text-error border border-error/30 tracking-widest hover:bg-error/30 transition-colors disabled:opacity-50"
 							>
 								<span className="material-symbols-outlined text-[12px] leading-none">
@@ -346,21 +419,8 @@ export function UserSettingsPage({
 							</button>
 						) : (
 							<button
-								onClick={() => {
-									const newSeed = Math.random().toString(36).slice(2, 10);
-									onAvatarSeedChange(newSeed);
-									fetch(`${backendUrl}/auth/avatar-seed`, {
-										method: "POST",
-											headers: { "Content-Type": "application/json" },
-											body: JSON.stringify({
-												name: me.name,
-												token: me.token,
-												seed: newSeed,
-											}),
-										}).catch(() => {
-											/* ignorar */
-										});
-									}}
+								onClick={handleRegenerateAvatar}
+								aria-label="Gerar novo avatar"
 								className="flex items-center gap-1 min-w-[44px] text-[9px] font-black uppercase px-1.5 py-1 rounded bg-primary/20 text-primary border border-primary/30 tracking-widest hover:bg-primary/30 transition-colors"
 							>
 								<span className="material-symbols-outlined text-[12px] leading-none">
@@ -379,6 +439,7 @@ export function UserSettingsPage({
 					/>
 					{avatarImgMsg && (
 						<span
+							role={avatarImgMsg.type === "success" ? "status" : "alert"}
 							className={`text-[9px] font-black uppercase px-1.5 py-px rounded tracking-widest ${
 								avatarImgMsg.type === "success"
 									? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
@@ -397,27 +458,37 @@ export function UserSettingsPage({
 							SALA: {me?.roomName || me?.roomCode || "—"}
 						</p>
 						<div className="flex flex-wrap gap-3 short:gap-2 mt-3 short:mt-1.5">
-							<input
-								type="email"
-								value={email}
-								onChange={(e) => setEmail(e.target.value)}
-								placeholder="Email (opcional)"
-								className="flex-1 min-w-[200px] bg-surface border border-outline-variant/30 rounded-md px-3 py-2 text-[10px] font-black uppercase tracking-widest text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
-							/>
-							<select
-								value={birthYear}
-								onChange={(e) => setBirthYear(e.target.value)}
-								className="w-28 bg-surface border border-outline-variant/30 rounded-md px-3 py-2 text-[10px] font-black uppercase tracking-widest text-on-surface focus:outline-none focus:border-primary/60 transition-colors"
-							>
-								<option value="">Ano</option>
-								{Array.from({ length: 71 }, (_, i) => 1940 + i)
-									.reverse()
-									.map((y) => (
+							<div className="flex-1 min-w-[200px]">
+								<label htmlFor="profile-email" className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant block mb-1">
+									Email
+								</label>
+								<input
+									id="profile-email"
+									type="email"
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									placeholder="Email (opcional)"
+									className="w-full bg-surface border border-outline-variant/30 rounded-md px-3 py-2 text-[10px] font-black uppercase tracking-widest text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 transition-colors"
+								/>
+							</div>
+							<div className="w-28">
+								<label htmlFor="profile-birth-year" className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant block mb-1">
+									Ano nasc.
+								</label>
+								<select
+									id="profile-birth-year"
+									value={birthYear}
+									onChange={(e) => setBirthYear(e.target.value)}
+									className="w-full bg-surface border border-outline-variant/30 rounded-md px-3 py-2 text-[10px] font-black uppercase tracking-widest text-on-surface focus:outline-none focus:border-primary/60 transition-colors"
+								>
+									<option value="">Ano</option>
+									{birthYearOptions.map((y) => (
 										<option key={y} value={y}>
 											{y}
 										</option>
 									))}
-							</select>
+								</select>
+							</div>
 						</div>
 						<div className="flex items-center gap-2 mt-2">
 							<button
@@ -429,6 +500,7 @@ export function UserSettingsPage({
 							</button>
 							{profileMsg && (
 								<span
+									role={profileMsg.type === "success" ? "status" : "alert"}
 									className={`text-[9px] font-black uppercase px-1.5 py-px rounded ${
 										profileMsg.type === "success"
 											? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 tracking-widest"
@@ -457,7 +529,7 @@ export function UserSettingsPage({
 					<div className="space-y-2">
 						{trophies.map((t, i) => (
 							<div
-								key={i}
+								key={`${t.season}-${t.achievement}-${i}`}
 								className="flex items-center gap-3 py-2 px-3 rounded-md bg-gradient-to-r from-amber-500/4 via-surface-container/70 to-surface/30 border border-outline-variant/10"
 							>
 								<span className="text-xl">🏆</span>
@@ -485,9 +557,9 @@ export function UserSettingsPage({
 					<EmptyState emoji="⚽" title="Ainda sem clubes treinados" />
 				) : (
 					<div className="space-y-2">
-						{trainedTeams.map((team, i) => (
+						{trainedTeams.map((team) => (
 							<div
-								key={i}
+								key={team}
 								className="flex items-center gap-3 py-2 px-3 rounded-md bg-gradient-to-r from-blue-500/4 via-surface-container/70 to-surface/30 border border-outline-variant/10"
 							>
 								<span className="text-xl">⚽</span>
@@ -506,10 +578,11 @@ export function UserSettingsPage({
 			<Panel title="Palavra-Passe" icon="lock">
 				<div className="p-3 md:p-4 short:p-2 space-y-4 short:space-y-2">
 					<div>
-						<label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant block mb-1">
-							Palavra-passe actual
+						<label htmlFor="pw-current" className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant block mb-1">
+							Palavra-passe atual
 						</label>
 						<input
+							id="pw-current"
 							type="password"
 							value={currentPassword}
 							onChange={(e) => setCurrentPassword(e.target.value)}
@@ -518,10 +591,11 @@ export function UserSettingsPage({
 						/>
 					</div>
 					<div>
-						<label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant block mb-1">
-							Nova palavra-passe
+						<label htmlFor="pw-new" className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant block mb-1">
+							Nova palavra-passe (mín. {MIN_PASSWORD_LENGTH} caracteres)
 						</label>
 						<input
+							id="pw-new"
 							type="password"
 							value={newPassword}
 							onChange={(e) => setNewPassword(e.target.value)}
@@ -530,10 +604,11 @@ export function UserSettingsPage({
 						/>
 					</div>
 					<div>
-						<label className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant block mb-1">
+						<label htmlFor="pw-confirm" className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant block mb-1">
 							Confirmar nova palavra-passe
 						</label>
 						<input
+							id="pw-confirm"
 							type="password"
 							value={confirmPassword}
 							onChange={(e) => setConfirmPassword(e.target.value)}
@@ -544,6 +619,7 @@ export function UserSettingsPage({
 
 					{passwordMsg && (
 						<div
+							role={passwordMsg.type === "success" ? "status" : "alert"}
 							className={`text-[9px] font-black uppercase px-4 py-2 rounded-md border tracking-widest ${
 								passwordMsg.type === "success"
 									? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
@@ -635,11 +711,12 @@ export function UserSettingsPage({
 											disabled={isActive}
 											onClick={() => handleSwitchRoom(r.roomCode)}
 										>
-											{isActive ? "Actual" : "Entrar"}
+											{isActive ? "Atual" : "Entrar"}
 										</Button>
 										{!isActive && (
 											<button
 												onClick={() => handleDeleteRoom(r)}
+												aria-label={canDelete ? `Eliminar sala ${r.roomName}` : `Sair da sala ${r.roomName}`}
 												className="text-[9px] font-black uppercase px-2 py-1 rounded border border-red-500/15 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
 												title={canDelete ? "Eliminar sala" : "Sair da sala (multijogador: só o Admin pode apagar)"}
 											>
@@ -649,52 +726,6 @@ export function UserSettingsPage({
 											</button>
 										)}
 									</div>
-									{deletingRoom?.roomCode === r.roomCode && (
-										<div className="absolute inset-0 bg-surface/90 backdrop-blur-sm rounded-md flex flex-col items-center justify-center gap-2 z-10">
-											<p className="text-[9px] font-black uppercase text-red-400 text-center px-4 tracking-widest">
-												{deletingRoom?.leaving ? (
-													<>
-													Vais sair da sala<br />
-													<strong className="text-on-surface">{r.roomName}</strong>. A sala continua para os outros treinadores.
-													</>
-												) : r.isMultiplayer ? (
-													<>
-													Tem a certeza que deseja eliminar a sala<br />
-													<strong className="text-on-surface">{r.roomName}</strong>? É o Admin: será apagada para TODOS os treinadores.
-													</>
-												) : (
-													<>
-													Tem a certeza que deseja eliminar a sala<br />
-													<strong className="text-on-surface">{r.roomName}</strong>? Esta acção é irreversível.
-													</>
-												)}
-											</p>
-											<div className="flex gap-2">
-												<Button
-													variant="secondary"
-													size="sm"
-													disabled={deletingRoomLoading}
-													onClick={(e) => {
-														e.stopPropagation();
-														setDeletingRoom(null);
-													}}
-												>
-													Cancelar
-												</Button>
-												<Button
-													variant="dangerSoft"
-													size="sm"
-													disabled={deletingRoomLoading}
-													onClick={(e) => {
-														e.stopPropagation();
-														confirmDeleteRoom();
-													}}
-												>
-													{deletingRoomLoading ? (deletingRoom?.leaving ? "A sair..." : "A eliminar...") : deletingRoom?.leaving ? "Sim, sair" : "Sim, eliminar"}
-												</Button>
-											</div>
-										</div>
-									)}
 								</div>
 							);
 						})}
@@ -721,7 +752,10 @@ export function UserSettingsPage({
 							size="lg"
 							full
 							className="bg-transparent border border-error/15 text-error/60 hover:text-error hover:bg-error/5"
-							onClick={() => setDeletingAccount("confirm")}
+							onClick={() => {
+								setDeletingAccount("confirm");
+								setDeleteAccountMsg(null);
+							}}
 						>
 							<span className="material-symbols-outlined text-[18px]">
 								delete_forever
@@ -731,8 +765,13 @@ export function UserSettingsPage({
 					) : (
 						<div className="bg-error/5 border border-error/20 rounded-md p-4 space-y-3">
 							<p className="text-[9px] font-black uppercase text-error text-center tracking-widest">
-								Tens a certeza? Esta acção é irreversível.
+								Tens a certeza? Esta ação é irreversível.
 							</p>
+							{deleteAccountMsg && (
+								<p role="alert" className="text-[9px] font-black uppercase text-error text-center tracking-widest">
+									{deleteAccountMsg.text}
+								</p>
+							)}
 							<div className="flex gap-2">
 								<Button
 									variant="secondary"
@@ -756,6 +795,65 @@ export function UserSettingsPage({
 					)}
 			</Panel>
 		</div>
+
+		{/* Confirmar sair/apagar sala (só montado com sala pendente) */}
+		{deletingRoom != null && (
+			<ModalShell
+				visible
+				variant="card"
+				dismissable
+				onClose={() => {
+					if (!deletingRoomLoading) setDeletingRoom(null);
+				}}
+			>
+				<div className="p-4 space-y-3">
+					<p role="alert" className="text-[10px] font-black uppercase text-red-400 text-center tracking-widest">
+						{deletingRoom.leaving ? (
+							<>
+								Vais sair da sala<br />
+								<strong className="text-on-surface">{pendingRoomName}</strong>. A sala continua para os outros treinadores.
+							</>
+						) : pendingRoom?.isMultiplayer ? (
+							<>
+								Tem a certeza que deseja eliminar a sala<br />
+								<strong className="text-on-surface">{pendingRoomName}</strong>? És o Admin: será apagada para TODOS os treinadores.
+							</>
+						) : (
+							<>
+								Tem a certeza que deseja eliminar a sala<br />
+								<strong className="text-on-surface">{pendingRoomName}</strong>? Esta ação é irreversível.
+							</>
+						)}
+					</p>
+					<div className="flex gap-2">
+						<Button
+							variant="secondary"
+							size="sm"
+							className="flex-1"
+							disabled={deletingRoomLoading}
+							onClick={() => setDeletingRoom(null)}
+						>
+							Cancelar
+						</Button>
+						<Button
+							variant="dangerSoft"
+							size="sm"
+							className="flex-1"
+							disabled={deletingRoomLoading}
+							onClick={confirmDeleteRoom}
+						>
+							{deletingRoomLoading
+								? deletingRoom.leaving
+									? "A sair..."
+									: "A eliminar..."
+								: deletingRoom.leaving
+									? "Sim, sair"
+									: "Sim, eliminar"}
+						</Button>
+					</div>
+				</div>
+			</ModalShell>
+		)}
 	</div>
 );
 }

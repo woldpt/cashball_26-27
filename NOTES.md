@@ -1912,3 +1912,12 @@ Plano C1+C2 (quando fizer):
 - `Button variant="accent"` em vez de `motion.button` cru (import estava morto); `DIVISION_NAMES` importado de `constants`; `TeamBadge` local apagado → `TeamCrest` partilhado com índice `Map` memoizado (corrige ainda fallback preso em `crestFailed` e `find` por linha).
 - `fmt` com instância `Intl` única; `myPromotion` derivado da lista filtrada; chaves `${teamId}-${fromDiv}-${toDiv}`; emoji `🏆` → `material-symbols`; `aria-hidden`/`aria-label`; `MotionConfig reducedMotion="user"`; título `text-xl` + tracking menor em xs.
 - Checks: eslint limpo no ficheiro; `check:types` OK. Sem `test:mobile` (sem mudança estrutural).
+
+## UserSettingsPage — correções avaliação 6,3 (2026-09-26)
+- `trainedTeams` de todas as salas (estava filtrado à sala atual); chaves de troféus/clubes estáveis em vez de índice.
+- Palavra-passe mínima 3→6 no cliente e no servidor (`server/index.ts` register/change-password + `server/auth.js` create/change/admin-change); rename de treinador (mín. 2) intacto.
+- Perfil: valida email (regex) e ano (1940–ano atual; select gerado até ao ano atual, antes preso em 2010); apagar-conta mostra erro em vez de falhar em silêncio.
+- Robustez: helper `sendJSON` com parse seguro para os 7 pedidos; `AbortController` no `manager-info`; `crypto.randomUUID` no seed de avatar com erro visível; `handleSwitchRoom` sem condição `me.roomCode`; código morto `_b && undefined` removido.
+- Confirmação sair/apagar via `ModalShell` (só montado com sala pendente + guards, contra a regressão dos children); `labels` em email/ano/palavras-passe, `aria-label` nos botões de ícone, `role=alert/status` nas mensagens; novo acordo ("atual", "ação").
+- Saltado de propósito: migrar `location.reload` do switch/delete para navegação por estado (padrão atual da app, arrastava troca de sessão); `useMemo` na lista de anos (~86 itens).
+- Checks: eslint limpo no ficheiro; `check:types` OK; server `typecheck` OK; `test:connect-smoke` OK; `test:mobile` 5/165 e `:landscape` 6/198 — só `roomhub-resp-test` pré-existente (useGame fora de Provider), `settings-resp-test` PASS em todas as larguras.
