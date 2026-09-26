@@ -2,8 +2,10 @@ import { DIVISION_NAMES, MODAL_Z } from "../../constants/index.js";
 import { formatCurrency } from "../../utils/formatters.js";
 import { ModalShell } from "../shared/ModalShell.jsx";
 
-/** Texto por reason — os 3 valores que o servidor emite (coachDismissalHelpers.ts). */
-const REASON_TEXT = {
+/** Texto por reason — os 3 valores que o servidor emite (coachDismissalHelpers.ts).
+ *  Partilhado com CoachMarketModal (resumo semanal do mercado). */
+// eslint-disable-next-line react-refresh/only-export-components
+export const REASON_TEXT = {
 	budget: "Insolvência financeira",
 	relegation: "Despromoção do Campeonato de Portugal",
 	results: "Má série de resultados",

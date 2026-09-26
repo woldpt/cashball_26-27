@@ -1,3 +1,9 @@
+## CoachMarketModal: review 7,5/10 → correções (2026-09-26)
+- Mapa `REASON_TEXT` duplicado eliminado: agora exportado do `DismissalModal` (fonte única com os 3 reasons do servidor — o ternário local deixava `relegation` cair em "Má série de resultados"); linha do motivo mostrada com `(reason || detail)` + disable `react-refresh/only-export-components` (mesmo padrão de `GameContext`/`TacticsContext`).
+- `motion.div` duplo removido: o `ModalShell` já anima o card — `flex flex-col max-h-[85vh]` passou a `cardClassName`; `import { motion }` eliminado (padrão dos irmãos `DismissalModal`/`SeasonEndModal`).
+- A11y: `aria-hidden` nos 3 ícones `material-symbols-outlined`. Cosméticos: `key={idx}` (template com idx era redundante) e destruturação uniforme em `EventRow` (`type`/`detail`/`coachPhoto`).
+- Checks: lint limpo nos 2 ficheiros (2 erros pré-existentes globais); `check:types` OK; `test:mobile` 165/165 + landscape 198/198 PASS (mudança flex em modal). Sem audits (sem lógica de jogo/sockets).
+
 ## PenaltySuspensePopup: review 6,9/10 → fila de penáltis (2026-09-26)
 - Avaliação 1–10 pedida → plano aprovado e executado. 6 ficheiros: `PenaltySuspensePopup.jsx`, `useSocketListeners.js`, `liveHelpers.js` (novo `computePenaltySteps`), `constants/index.js` (`PENALTY_SUSPENSE_REVEAL_MS=1500`/`PENALTY_SUSPENSE_DISPLAY_MS=3000`), `penaltySuspenseRegression.mjs` (novo, `test:penaltysuspense`), `package.json`.
 - Root causes: 2 penáltis no mesmo minuto sobrescreviam-se no hook (só o último aparecia) e o setTimeout de clear do minuto antigo matava o penálti do minuto novo (timers não canceláveis). Fix: fila `computePenaltySteps(events, displayMs)` — N shows escalonados de 3s + UMA revelação atómica no fim — agendada em `penaltyTimersRef` (useRef local do hook), cancelada a cada tick novo com suspense.

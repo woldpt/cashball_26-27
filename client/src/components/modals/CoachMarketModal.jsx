@@ -1,6 +1,6 @@
-import { motion } from "framer-motion";
 import { DIVISION_NAMES, MODAL_Z } from "../../constants/index.js";
 import { ModalShell } from "../shared/ModalShell.jsx";
+import { REASON_TEXT } from "./DismissalModal.jsx";
 import { CoachAvatar } from "../shared/CoachAvatar.jsx";
 import { coachAvatarSeed } from "../../utils/coachAvatar.js";
 
@@ -16,16 +16,19 @@ import { coachAvatarSeed } from "../../utils/coachAvatar.js";
  */
 function EventRow({ event, meName, coachAvatars, backendUrl }) {
 	const {
+		type,
 		coachName,
 		teamName,
 		division,
 		reason,
+		detail,
 		isHuman,
 		colorPrimary,
 		colorSecondary,
+		coachPhoto,
 	} = event;
 
-	const color = colorPrimary || (event.type === "dismissal" ? "#dc2626" : "#10b981");
+	const color = colorPrimary || (type === "dismissal" ? "#dc2626" : "#10b981");
 
 	return (
 		<div
@@ -48,7 +51,7 @@ function EventRow({ event, meName, coachAvatars, backendUrl }) {
 				size="sm"
 				coachAvatars={coachAvatars}
 				backendUrl={backendUrl}
-				photo={event.coachPhoto || null}
+				photo={coachPhoto || null}
 			/>
 			<div className="min-w-0 flex-1">
 				<p className="text-white font-bold text-sm truncate leading-tight">
@@ -60,12 +63,9 @@ function EventRow({ event, meName, coachAvatars, backendUrl }) {
 				>
 					{teamName}
 				</p>
-				{event.type === "dismissal" && reason && (
+				{(reason || detail) && (
 					<p className="text-[9px] font-bold uppercase tracking-widest text-red-400/80 mt-0.5 truncate">
-						{event.detail ||
-							(reason === "budget"
-								? "Insolvência financeira"
-								: "Má série de resultados")}
+						{detail || REASON_TEXT[reason] || REASON_TEXT.results}
 					</p>
 				)}
 			</div>
@@ -105,6 +105,7 @@ function EventList({ events, type, meName, coachAvatars, backendUrl }) {
 		<section className="px-5 pt-4">
 			<div className="flex items-center gap-2 mb-2">
 				<span
+					aria-hidden
 					className="material-symbols-outlined"
 					style={{ fontSize: "1.15rem", color: accent }}
 				>
@@ -128,9 +129,7 @@ function EventList({ events, type, meName, coachAvatars, backendUrl }) {
 			</div>
 			<div className="flex flex-col gap-1.5">
 				{events.map((event, idx) => (
-					<EventRow
-						key={`${event.coachName}-${event.teamName}-${idx}`}
-						event={event}
+					<EventRow key={idx} event={event}
 						meName={meName}
 						coachAvatars={coachAvatars}
 						backendUrl={backendUrl}
@@ -151,20 +150,16 @@ export function CoachMarketModal({ report, onClose, meName, coachAvatars, backen
 			visible={!!report}
 			z={MODAL_Z.coachMarket}
 			variant="md"
+			cardClassName="flex flex-col max-h-[85vh]"
 			backdropClassName="p-4"
 		>
 			{report && (
-				<motion.div
-					className="flex flex-col max-h-[85vh]"
-					initial={{ scale: 0.94, y: 20 }}
-					animate={{ scale: 1, y: 0 }}
-					exit={{ scale: 0.94, y: 20 }}
-					transition={{ type: "spring", stiffness: 320, damping: 28 }}
-				>
+				<>
 					{/* Header (shrink-0: ver nota em PlayerHistoryModal — o flex-shrink
 					    do container max-height encolhe o header abaixo do conteúdo) */}
 					<div className="shrink-0 flex items-center gap-3 px-5 pt-5 pb-4 border-b border-outline-variant/20">
 						<span
+							aria-hidden
 							className="material-symbols-outlined text-2xl"
 							style={{ color: "#fbbf24" }}
 						>
@@ -210,7 +205,7 @@ export function CoachMarketModal({ report, onClose, meName, coachAvatars, backen
 							Continuar
 						</button>
 					</div>
-				</motion.div>
+				</>
 			)}
 		</ModalShell>
 	);
