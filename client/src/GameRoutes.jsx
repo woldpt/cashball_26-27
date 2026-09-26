@@ -117,6 +117,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
     playerSearchData,
     playerSearchLoading,
     setPlayerSearchLoading,
+    nextPlayerSearchId,
     selectedTeam,
     selectedTeamSquad,
     selectedTeamLoading,
@@ -617,11 +618,10 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                         players={players}
                         myBudget={currentBudget}
                         matchweekCount={matchweekCount}
-                        season={season}
-                        currentSlot={(calendarIndex ?? 0) + 1}
                         playerSearchData={playerSearchData}
                         playerSearchLoading={playerSearchLoading}
                         setPlayerSearchLoading={setPlayerSearchLoading}
+                        nextPlayerSearchId={nextPlayerSearchId}
                         setTransferProposalModal={setTransferProposalModal}
                         setGameDialog={setGameDialog}
                         buyPlayer={buyPlayer}

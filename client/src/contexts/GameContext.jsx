@@ -178,6 +178,9 @@ export function GameProvider({
 		truncated: false,
 	});
 	const [playerSearchLoading, setPlayerSearchLoading] = useState(false);
+	// Anti-race: só a resposta da última pesquisa é aceite (eco do servidor).
+	const playerSearchIdRef = useRef(0);
+	const nextPlayerSearchId = useCallback(() => ++playerSearchIdRef.current, []);
 	const [cupBracketData, setCupBracketData] = useState(null);
 	const [calendarData, setCalendarData] = useState(null);
 	const [calFilter, setCalFilter] = useState("all");
@@ -1021,6 +1024,7 @@ year: seasonYear,
 			setSigningCelebration,
 			setPlayerSearchData,
 			setPlayerSearchLoading,
+			nextPlayerSearchId,
 			setMe,
 			setCoachAvatars,
 			setRoomCode,
@@ -1042,6 +1046,7 @@ year: seasonYear,
 			setStandingsStale,
 		},
 		{
+			playerSearchIdRef,
 			isPlayingMatchRef,
 			showHalftimePanelRef,
 			matchActionRef,
@@ -1774,6 +1779,7 @@ year: seasonYear,
 		setPlayerSearchData,
 		playerSearchLoading,
 		setPlayerSearchLoading,
+		nextPlayerSearchId,
 		cupBracketData,
 		calendarData,
 		calFilter,

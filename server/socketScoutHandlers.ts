@@ -34,6 +34,7 @@ interface PlayerSearchFilters {
 	isStar?: boolean;
 	onlyAvailable?: boolean;
 	sort?: string;
+	searchId?: number | null;
 }
 
 /**
@@ -172,21 +173,26 @@ export function registerScoutSocketHandlers(
 			);
 			const total = Number(countRow?.total ?? 0);
 
+			// Época contratual atual — mesma fonte do filtro onlyAvailable (coreHelpers),
+			// para o client não duplicar a regra de contratos.
+			const epoch = currentEpoch(game);
 			const rows = await runAll<any>(
 				game.db,
-				`SELECT p.*, t.name AS team_name, t.division, t.color_primary, t.color_secondary
+				`SELECT p.*, t.name AS team_name, t.division, t.color_primary, t.color_secondary,
+					CAST(p.contract_start_epoch > 0 AND p.contract_start_epoch + ? > ? AS INTEGER) AS contract_locked
 				 FROM players p
 				 LEFT JOIN teams t ON p.team_id = t.id
 				 ${whereSql}
 				 ORDER BY ${orderBy}
 				 LIMIT ?`,
-				[...params, SEARCH_LIMIT],
+				[epoch, epoch, ...params, SEARCH_LIMIT],
 			);
 
 			const results = rows || [];
 			const truncated = total > results.length;
 
 			socket.emit("playerSearchResults", {
+				searchId: typeof f.searchId === "number" ? f.searchId : null,
 				results,
 				total,
 				truncated,
@@ -194,6 +200,7 @@ export function registerScoutSocketHandlers(
 		} catch (err) {
 			console.error("[requestPlayerSearch] Error:", err);
 			socket.emit("playerSearchResults", {
+				searchId: typeof f.searchId === "number" ? f.searchId : null,
 				results: [],
 				total: 0,
 				truncated: false,

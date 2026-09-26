@@ -6,8 +6,6 @@ import { Button } from "../components/shared/Button.jsx";
 import { PlayerRow } from "../components/shared/PlayerRow.jsx";
 import {
   DIVISION_NAMES,
-  SEASON_JORNADAS,
-  SEASON_WEEKS,
   TRANSFER_CLAUSE_MULT,
   TRANSFER_LISTED_PRICE_MULT,
 } from "../constants/index.js";
@@ -53,11 +51,10 @@ function inputClass() {
  *   players: Array,
  *   myBudget: number,
  *   matchweekCount: number,
- *   season?: number,
- *   currentSlot?: number,
  *   playerSearchData: { results: Array, total: number, truncated: boolean },
  *   playerSearchLoading: boolean,
  *   setPlayerSearchLoading: function,
+ *   nextPlayerSearchId: function,
  *   setTransferProposalModal: function,
  *   setGameDialog: function,
  *   buyPlayer: function,
@@ -70,11 +67,10 @@ export function PlayerSearchView({
   players,
   myBudget = 0,
   matchweekCount = 0,
-  season = 1,
-  currentSlot = 0,
   playerSearchData = { results: [], total: 0, truncated: false },
   playerSearchLoading = false,
   setPlayerSearchLoading,
+  nextPlayerSearchId = () => 0,
   setTransferProposalModal,
   setGameDialog,
   buyPlayer,
@@ -111,6 +107,7 @@ export function PlayerSearchView({
     setSearched(true);
     setPlayerSearchLoading(true);
     socket.emit("requestPlayerSearch", {
+      searchId: nextPlayerSearchId(),
       name,
       position,
       skillMin: toNumOrNull(skillMin),
@@ -190,18 +187,9 @@ export function PlayerSearchView({
       );
     }
 
-    const contractStart = player.contract_start_epoch || 0;
-    // Mesma escala do servidor (contractEpoch: época em 20 slots).
-    const currentEpoch =
-      currentSlot > 0
-        ? (Math.max(1, season) - 1) * SEASON_WEEKS +
-          Math.min(SEASON_WEEKS, currentSlot)
-        : (Math.max(1, season) - 1) * SEASON_JORNADAS +
-          Math.min(SEASON_JORNADAS, matchweekCount + 1);
-    const contractLength = currentSlot > 0 ? SEASON_WEEKS : SEASON_JORNADAS;
-    const contractLocked =
-      contractStart > 0 && currentEpoch < contractStart + contractLength;
-    if (contractLocked) {
+    // contract_locked é calculado pelo servidor (mesma regra de contratos
+    // do filtro onlyAvailable) — o client não duplica a matemática.
+    if (player.contract_locked) {
       return (
         <span className="text-[10px] text-on-surface-variant/50 font-bold uppercase whitespace-nowrap">
           🔒 Contrato

@@ -1,3 +1,9 @@
+## Scout — race de pesquisa + contrato decidido no servidor (2026-09-26)
+- `PlayerSearchView` avaliado (código 7.5, UI/UX 8) → 2 correções planeadas e aprovadas.
+- **Race anti-flash**: resposta A de uma pesquisa antiga chegava depois da pesquisa B e substituía resultados frescos. Fix: client gera `searchId` incremental (`playerSearchIdRef`/`nextPlayerSearchId` no `GameContext`), envia no `requestPlayerSearch`, servidor ecoa; listener em `useSocketListeners.js` descarta respostas com `searchId` ≠ ref atual.
+- **Lógica de contrato duplicada (e divergente)**: o client recalculava `contractLocked` com fórmula própria (branch `currentSlot > 0` com 14/20) que divergia do servidor (`coreHelpers.currentEpoch` usa `contractCutoverSeason` com 14 jornadas para épocas antigas). Fix: servidor calcula `contract_locked` (CAST 0/1) no SELECT da pesquisa, mesmo `currentEpoch` do filtro `onlyAvailable`; client apagou as ~12 linhas de matemática (imports `SEASON_*` e props `season`/`currentSlot` removidos do `PlayerSearchView`).
+- "Licitar" → navegação para tab leilões mantida (padrão consistente no repo: TransferHub e PlayerHistoryModal fazem igual); `tabular-nums`/filtros colapsáveis ficam para tarefa própria.
+- Checks: server `typecheck` OK; client `lint` (2 erros pré-existentes, confirmados via stash) + `check:types` OK; `audit:socketio` 0 erros (warning `playerSearchResults` pré-existente — listener dinâmico invisível ao analisador).
 ## StadiumTab: review 7/10 → correções (2026-09-26)
 
 - Avaliação 1–10 pedida (código 7,5 · UX 7). Fixes no diálogo de expansão: usava `SEATS_PER_BUILD * 15` (preço hardcodado, mentia com bilhete ≠15€) e título/descrição com «300.000€»/«5.000» fixos — agora `ticketPrice` + `formatCurrency(EXPANSION_COST)`/`SEATS_PER_BUILD`. Fallback hex `#4ade80` → classe `text-primary`. pt-PT: «Actual»→«Atual» (AO90), «Mood»→«Moral dos adeptos».

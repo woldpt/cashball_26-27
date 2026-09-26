@@ -693,6 +693,9 @@ export function useSocketListeners(handlers, refs) {
 			handlers.setPlayerHistoryModal(data),
 		);
 		socket.on("playerSearchResults", (data) => {
+			// Anti-race: ignora respostas de pesquisas antigas (searchId ecoado pelo
+			// servidor) — só a última pesquisa feita pode atualizar os resultados.
+			if (data?.searchId != null && data.searchId !== refs.playerSearchIdRef?.current) return;
 			handlers.setPlayerSearchLoading(false);
 			handlers.setPlayerSearchData({
 				results: data?.results || [],
