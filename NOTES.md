@@ -1,3 +1,8 @@
+## URLs zerozero: 5 clubes corrigidos (2026-09-27)
+- Âmbito "só URLs" aprovado. `teamsSource.ts` + `candidates_2026_27.json`: lusitano-evora/4270→lusitano-gc/2173, oliveira-hospital/3598→fc-oliv-hospital/3618, alcochetense/3592→alcochetense/3548, o-elvas/3604→o-elvas/2180, sintrense/3590→sintrense/3655 (apontavam para Randers/Lourinhanense/Infesta/Maria da Fonte/Gondomar).
+- Cache envenenado apagado (5 HTML + 5 fotos); `fetchZerozeroKits.ts` re-sacou as fotos certas (59/60, escouralense esperado) e os `<title>` confirmam os clubes. Brasões e plantéis em jogo estavam e continuam certos; plantéis nem se auditaram (fora do âmbito).
+- Checks: server `typecheck` OK. Sem lógica/cliente → sem audits.
+
 ## Camisolas SVG das 60 equipas (2026-09-27)
 - Pedido: adivinhar as camisolas via zerozero.pt e gerar um SVG por equipa. Âmbito decidido por perguntas: 60 equipas, paramétrico simples, ficheiros em `client/public/kits/<slug>.svg`.
 - zerozero tem foto do equipamento em cada página de equipa (`<img src="..._shirt_...">`); sacados 59/60 para `server/.cache/kits/` (só referência, gitignored) e classificados a olho numa folha de contacto numerada por slug.
