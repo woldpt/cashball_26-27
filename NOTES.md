@@ -2145,3 +2145,10 @@ Plano C1+C2 (quando fizer):
 - `GameHeader.jsx` (extraído em `0d87aec9`) tinha os 7 imports com um nível a menos (`../`→`../../`, `./`→`../`) — o `vite build` chumbava e o push levava produção partida. Corrigidos, `docker compose build` verde (frontend+backend); backend standalone responde `/health OK`.
 - `docker compose up` completo impossível localmente: rede externa `cftunnel` (IP fixo de produção) não existe nesta máquina — ambiental, não código.
 - `eslint` limpo nos ficheiros tocados; `check:types` OK.
+
+## Hotfix pós-v26.09.6 — crash-loop global_chat (2026-09-26)
+- Produção em crash-loop (exit 139): `git pull` removeu o `global_chat.db` versionado e o `openGlobalDb()` recriava o ficheiro com `CREATE TABLE` em fire-and-forget — ficou com 0 bytes, sem tabela; o primeiro acesso ao chat global atirava `no such table`, `fatalShutdown()` corria o flush contra BDs a fechar (o `upsert` na stack é secundário) e o processo segfaultava antes do restart.
+- Fix: `server/db/globalDatabase.ts` — setup do schema (PRAGMAs + CREATE + prune) serializado num `schemaReady` aguardado por `saveGlobalMessage`/`getGlobalMessages`; falha de schema rejeita alto (chamadores já degradam com histórico vazio) em vez de crashar.
+- `.gitignore`: `server/db/global_chat.db*` (a BD viva nunca mais é versionada).
+- Verificação: typecheck + `tsc build` OK; repro de diretoria vazia (sem `global_chat.db` → save/get funcionam, tabela criada primeiro, WAL correcto). Sala 034IM2 intacta (`game_state` com 42 linhas).
+- Recuperação produção: apagar `global_chat.db` de 0 bytes + `-journal`, pull, `up --build`, vigiar logs.

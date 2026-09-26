@@ -3,6 +3,7 @@ node_modules/
 dist/
 game.db
 server/db/accounts.db
+server/db/global_chat.db*
 server/server.log
 .vscode/mcp.json
 server/db/base.db
