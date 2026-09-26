@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { DIVISION_NAMES } from "../constants/index.js";
 import { formatCurrency } from "../utils/formatters.js";
+import { TabBar } from "../components/shared/TabBar.jsx";
 
 const EVENT_META = {
   transfer_in: {
@@ -40,6 +42,24 @@ const EVENT_META = {
   },
 };
 
+const EVENT_GROUPS = {
+  market: ["transfer_in", "transfer_out", "auction_won"],
+  managers: ["manager_dismissed", "manager_hired"],
+  prize: ["prize"],
+};
+
+const GAME_CHIP = {
+  league: "bg-primary/20 text-primary",
+  cup: "bg-amber-500/20 text-amber-400",
+  friendly: "bg-sky-500/20 text-sky-400",
+};
+
+const GAME_LABEL = {
+  league: "Liga",
+  cup: "Taça",
+  friendly: "Amigável",
+};
+
 /**
  * @param {{
  *   selectedTeam: object|null,
@@ -48,6 +68,12 @@ const EVENT_META = {
  * }} props
  */
 export function TeamHistoryView({ selectedTeam, clubHistory, clubHistoryTeamId }) {
+  const [gamesFilter, setGamesFilter] = useState("all");
+  const [eventFilter, setEventFilter] = useState("all");
+  const crest = selectedTeam?.crest ?? null;
+  const [badCrest, setBadCrest] = useState(null);
+  const crestOk = Boolean(crest) && badCrest !== crest;
+
   if (!clubHistory || clubHistoryTeamId !== selectedTeam?.id) {
     return (
       <div className="p-8 text-center text-on-surface-variant font-bold">
@@ -56,29 +82,23 @@ export function TeamHistoryView({ selectedTeam, clubHistory, clubHistoryTeamId }
     );
   }
 
-  const { trophies = [], events = [], seasonRecords = [] } = clubHistory;
+  const { trophies = [], events = [], seasonRecords = [], games = [] } = clubHistory;
   const hasAnything =
-    trophies.length > 0 || events.length > 0 || seasonRecords.length > 0;
-
-  if (!hasAnything) {
-    return (
-      <div className="p-12 text-center">
-        <span
-          className="material-symbols-outlined text-on-surface-variant/30 text-4xl mb-2"
-          style={{ fontVariationSettings: "'FILL' 0" }}
-        >
-          history
-        </span>
-        <p className="text-zinc-500 font-bold">
-          Sem histórico registado para esta equipa.
-        </p>
-      </div>
-    );
-  }
+    trophies.length > 0 ||
+    events.length > 0 ||
+    seasonRecords.length > 0 ||
+    games.length > 0;
 
   const bestSeason = [...seasonRecords].sort(
     (a, b) => a.position - b.position || b.season - a.season,
   )[0];
+
+  const filteredGames =
+    gamesFilter === "all" ? games : games.filter((g) => g.kind === gamesFilter);
+  const filteredEvents =
+    eventFilter === "all"
+      ? events
+      : events.filter((e) => (EVENT_GROUPS[eventFilter] || []).includes(e.type));
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -91,7 +111,7 @@ export function TeamHistoryView({ selectedTeam, clubHistory, clubHistoryTeamId }
       >
         {/* Brilho ambiente */}
         <div
-          className="pointer-events-none absolute -top-16 -left-16 w-80 h-80 rounded-full blur-[100px] opacity-15"
+          className="pointer-events-none absolute -top-16 left-0 w-full h-80 rounded-full blur-[100px] opacity-15"
           style={{ background: selectedTeam?.color_secondary || "#e9c349" }}
         />
         <div
@@ -103,24 +123,26 @@ export function TeamHistoryView({ selectedTeam, clubHistory, clubHistoryTeamId }
           }}
         />
         <div className="relative flex items-center gap-3 sm:gap-4">
-          {selectedTeam?.crest ? (
+          {crestOk ? (
             <img
-              src={selectedTeam.crest}
+              key={selectedTeam?.id}
+              src={crest}
               alt={selectedTeam.name}
-              onError={(e) => { e.currentTarget.style.display = "none"; const fb = e.currentTarget.nextElementSibling; if (fb) fb.style.display = "flex"; }}
+              onError={() => setBadCrest(crest)}
               className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-contain bg-white p-1.5 shrink-0 shadow-lg border border-white/10"
               loading="lazy"
             />
-          ) : null}
-          <div
-            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl items-center justify-center text-xl sm:text-2xl font-black shrink-0 shadow-lg border border-white/10 ${selectedTeam?.crest ? "hidden" : "flex"}`}
-            style={{
-              background: selectedTeam?.color_secondary || "#201f1f",
-              color: selectedTeam?.color_primary || "#fff",
-            }}
-          >
-            {selectedTeam?.name?.[0] || "?"}
-          </div>
+          ) : (
+            <div
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center text-xl sm:text-2xl font-black shrink-0 shadow-lg border border-white/10"
+              style={{
+                background: selectedTeam?.color_secondary || "#201f1f",
+                color: selectedTeam?.color_primary || "#fff",
+              }}
+            >
+              {selectedTeam?.name?.[0] || "?"}
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <p
               className="text-[10px] uppercase tracking-widest font-black mb-0.5 truncate"
@@ -163,6 +185,20 @@ export function TeamHistoryView({ selectedTeam, clubHistory, clubHistoryTeamId }
         </dl>
       </header>
 
+      {!hasAnything && (
+        <div className="p-12 text-center">
+          <span
+            className="material-symbols-outlined text-on-surface-variant/30 text-4xl mb-2"
+            style={{ fontVariationSettings: "'FILL' 0" }}
+          >
+            history
+          </span>
+          <p className="text-zinc-500 font-bold">
+            Sem histórico registado para esta equipa.
+          </p>
+        </div>
+      )}
+
       {/* ── ÉPOCA A ÉPOCA ─────────────────────────────────────── */}
       {seasonRecords.length > 0 && (
         <section>
@@ -172,8 +208,7 @@ export function TeamHistoryView({ selectedTeam, clubHistory, clubHistoryTeamId }
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {seasonRecords.map((rec) => {
-              const isBest =
-                bestSeason && rec.season === bestSeason.season;
+              const isBest = bestSeason != null && rec === bestSeason;
               return (
                 <div
                   key={rec.season}
@@ -222,6 +257,101 @@ export function TeamHistoryView({ selectedTeam, clubHistory, clubHistoryTeamId }
         </section>
       )}
 
+      {/* ── JOGOS ─────────────────────────────────────────────── */}
+      {games.length > 0 && (
+        <section>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">sports_soccer</span>
+              Jogos
+            </h3>
+            <TabBar
+              tabs={[
+                { key: "all", label: "Todos" },
+                { key: "league", label: "Liga" },
+                { key: "cup", label: "Taça" },
+                { key: "friendly", label: "Amigáveis" },
+              ]}
+              active={gamesFilter}
+              onChange={setGamesFilter}
+              expand
+              className="w-full sm:w-auto"
+            />
+          </div>
+          {filteredGames.length === 0 ? (
+            <p className="text-[11px] text-on-surface-variant/70 font-bold px-1">
+              Sem jogos de {GAME_LABEL[gamesFilter]} no histórico.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {filteredGames.map((g, idx) => {
+                const teamId = selectedTeam?.id;
+                const imHome = g.homeTeamId === teamId;
+                const opponent = imHome ? g.awayName : g.homeName;
+                const myScore = imHome ? g.homeScore : g.awayScore;
+                const opScore = imHome ? g.awayScore : g.homeScore;
+                const hasPen =
+                  (g.homePenalties || 0) > 0 || (g.awayPenalties || 0) > 0;
+                const myPen = imHome ? g.homePenalties : g.awayPenalties;
+                const opPen = imHome ? g.awayPenalties : g.homePenalties;
+                const won =
+                  g.kind === "cup" && g.winnerTeamId != null
+                    ? g.winnerTeamId === teamId
+                    : myScore > opScore;
+                const drew =
+                  g.kind === "cup" && g.winnerTeamId != null
+                    ? false
+                    : myScore === opScore;
+                const detail =
+                  g.kind === "league"
+                    ? `Jornada ${g.matchweek} · Época ${g.year}`
+                    : `${g.roundName} · Época ${g.year}`;
+                return (
+                  <div
+                    key={`${g.kind}-${g.season}-${g.matchweek ?? g.round}-${g.homeTeamId}-${g.awayTeamId}-${idx}`}
+                    className="flex items-center gap-3 rounded-lg bg-surface-container px-4 py-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-black text-on-surface truncate">
+                          {opponent} {imHome ? "(C)" : "(F)"}
+                        </p>
+                        <span
+                          className={`shrink-0 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${GAME_CHIP[g.kind] || "bg-surface-bright text-on-surface-variant/70"}`}
+                        >
+                          {GAME_LABEL[g.kind] || g.kind}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-on-surface-variant/40 font-black uppercase tracking-widest">
+                        {detail}
+                      </p>
+                    </div>
+                    <div className="shrink-0 flex flex-col items-end gap-0.5">
+                      <span
+                        className={`text-sm font-black tabular-nums ${
+                          won
+                            ? "text-emerald-400"
+                            : drew
+                              ? "text-amber-400"
+                              : "text-red-400"
+                        }`}
+                      >
+                        {myScore}–{opScore}
+                      </span>
+                      {hasPen && (
+                        <span className="text-[9px] text-amber-400 font-bold tabular-nums">
+                          {myPen}–{opPen} gp
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* ── PALMARÉS ─────────────────────────────────────────── */}
       {trophies.length > 0 && (
         <section>
@@ -239,7 +369,7 @@ export function TeamHistoryView({ selectedTeam, clubHistory, clubHistoryTeamId }
               const isTopScorer = trophy.achievement.includes("Melhor Marcador");
               return (
                 <div
-                  key={idx}
+                  key={`${trophy.season}-${trophy.achievement}-${idx}`}
                   className="flex items-center gap-2 px-3 py-2 rounded border border-amber-500/20 bg-amber-500/5"
                 >
                   <span
@@ -273,69 +403,91 @@ export function TeamHistoryView({ selectedTeam, clubHistory, clubHistoryTeamId }
       {/* ── LINHA DO TEMPO ───────────────────────────────────── */}
       {events.length > 0 && (
         <section>
-          <h3 className="text-[10px] font-black uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
-            <span className="material-symbols-outlined text-sm">history</span>
-            Linha do tempo
-          </h3>
-          <div className="flex flex-col gap-1.5">
-            {events.map((evt, idx) => {
-              const meta = EVENT_META[evt.type] || {
-                icon: "info",
-                color: "text-on-surface-variant",
-                chip: "bg-surface-bright text-on-surface-variant/70",
-                label: evt.type,
-              };
-              const subtitle =
-                evt.player_name ||
-                (evt.type === "manager_hired" || evt.type === "manager_dismissed"
-                  ? evt.related_team_name
-                  : evt.related_team_name
-                    ? `De ${evt.related_team_name}`
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">history</span>
+              Linha do tempo
+            </h3>
+            <TabBar
+              tabs={[
+                { key: "all", label: "Todos" },
+                { key: "market", label: "Mercado" },
+                { key: "managers", label: "Treinadores" },
+                { key: "prize", label: "Prémios" },
+              ]}
+              active={eventFilter}
+              onChange={setEventFilter}
+              expand
+              className="w-full sm:w-auto"
+            />
+          </div>
+          {filteredEvents.length === 0 ? (
+            <p className="text-[11px] text-on-surface-variant/70 font-bold px-1">
+              Sem eventos nesta categoria.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {filteredEvents.map((evt, idx) => {
+                const meta = EVENT_META[evt.type] || {
+                  icon: "info",
+                  color: "text-on-surface-variant",
+                  chip: "bg-surface-bright text-on-surface-variant/70",
+                  label: evt.type,
+                };
+                const isManagerEvt =
+                  evt.type === "manager_hired" || evt.type === "manager_dismissed";
+                const subtitle =
+                  evt.player_name ||
+                  (evt.related_team_name
+                    ? isManagerEvt
+                      ? evt.related_team_name
+                      : `De ${evt.related_team_name}`
                     : "");
-              return (
-                <div
-                  key={`${evt.year}-${evt.matchweek}-${evt.id ?? idx}`}
-                  className="flex items-center gap-3 rounded-lg bg-surface-container px-4 py-3"
-                >
-                  <span
-                    className={`shrink-0 w-8 h-8 rounded flex items-center justify-center ${meta.chip}`}
+                return (
+                  <div
+                    key={`${evt.year}-${evt.matchweek}-${evt.id ?? idx}`}
+                    className="flex items-center gap-3 rounded-lg bg-surface-container px-4 py-3"
                   >
                     <span
-                      className="material-symbols-outlined text-[16px]"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
+                      className={`shrink-0 w-8 h-8 rounded flex items-center justify-center ${meta.chip}`}
                     >
-                      {meta.icon}
-                    </span>
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-black text-on-surface truncate">
-                        {evt.title || meta.label}
-                      </p>
                       <span
-                        className={`shrink-0 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${meta.chip}`}
+                        className="material-symbols-outlined text-[16px]"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
                       >
-                        {meta.label}
+                        {meta.icon}
                       </span>
-                    </div>
-                    {subtitle && (
-                      <p className="text-[11px] text-on-surface-variant/70 font-bold truncate">
-                        {subtitle}
-                      </p>
-                    )}
-                    <p className="text-[10px] text-on-surface-variant/40 font-black uppercase tracking-widest">
-                      Jornada {evt.matchweek ?? "—"} · Ano {evt.year ?? "—"}
-                    </p>
-                  </div>
-                  {evt.amount > 0 && (
-                    <span className="shrink-0 text-xs text-tertiary font-black tabular-nums">
-                      {formatCurrency(evt.amount)}
                     </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-black text-on-surface truncate">
+                          {evt.title || meta.label}
+                        </p>
+                        <span
+                          className={`shrink-0 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded ${meta.chip}`}
+                        >
+                          {meta.label}
+                        </span>
+                      </div>
+                      {subtitle && (
+                        <p className="text-[11px] text-on-surface-variant/70 font-bold truncate">
+                          {subtitle}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-on-surface-variant/40 font-black uppercase tracking-widest">
+                        Jornada {evt.matchweek ?? "—"} · Ano {evt.year ?? "—"}
+                      </p>
+                    </div>
+                    {evt.amount > 0 && (
+                      <span className="shrink-0 text-xs text-tertiary font-black tabular-nums">
+                        {formatCurrency(evt.amount)}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
       )}
     </div>

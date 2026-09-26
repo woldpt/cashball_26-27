@@ -1,6 +1,6 @@
 import type { ActiveGame, GamePhase, PlayerSession } from "./types";
 import { getAllTeamForms, getTeamsWithCoachNames, buildSkillHistory, logClubNews } from "./coreHelpers";
-import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES, SEASON_CALENDAR } from "./gameConstants";
+import { SPONSOR_REVENUE_BY_DIVISION, CUP_ROUND_NAMES, FRIENDLY_ROUND_NAME, SEASON_CALENDAR } from "./gameConstants";
 import { getGlobalMessages, CHAT_RETENTION_MS } from "./db/globalDatabase";
 import { withJuniorGRs, ensureFullBench } from "./game/engine";
 import { upcomingMatchweek } from "./game/lineupReady";
@@ -1091,11 +1091,86 @@ export function registerSessionSocketHandlers(
 				}
 				seasonRecords.sort((a, b) => b.season - a.season);
 
+				// Lista completa de jogos do clube (Liga + Taça + amigável de
+				// pré-época). Só épocas concluídas e jogos realizados.
+				const leagueRows = await runAll(
+					game.db,
+					`SELECT m.season, m.matchweek, m.home_team_id, m.away_team_id,
+					        m.home_score, m.away_score,
+					        ht.name AS home_name, at.name AS away_name
+					 FROM matches m
+					 JOIN teams ht ON ht.id = m.home_team_id
+					 JOIN teams at ON at.id = m.away_team_id
+					 WHERE m.played = 1
+					   AND m.season != ?
+					   AND (m.home_team_id = ? OR m.away_team_id = ?)
+					 ORDER BY m.season DESC, m.matchweek DESC
+					 LIMIT 200`,
+					[currentSeason, teamId, teamId],
+				);
+				const cupRows = await runAll(
+					game.db,
+					`SELECT c.season, c.round, c.home_team_id, c.away_team_id,
+					        c.home_score, c.away_score, c.home_penalties, c.away_penalties,
+					        c.winner_team_id,
+					        ht.name AS home_name, at.name AS away_name
+					 FROM cup_matches c
+					 JOIN teams ht ON ht.id = c.home_team_id
+					 JOIN teams at ON at.id = c.away_team_id
+					 WHERE c.played = 1
+					   AND c.season != ?
+					   AND (c.home_team_id = ? OR c.away_team_id = ?)
+					 ORDER BY c.season DESC, c.round DESC
+					 LIMIT 100`,
+					[currentSeason, teamId, teamId],
+				);
+				const games = [
+					...(leagueRows || []).map((r: any) => ({
+						kind: "league",
+						season: r.season,
+						year: baseYear + r.season,
+						matchweek: r.matchweek,
+						round: null,
+						roundName: null,
+						homeTeamId: r.home_team_id,
+						awayTeamId: r.away_team_id,
+						homeName: r.home_name,
+						awayName: r.away_name,
+						homeScore: r.home_score,
+						awayScore: r.away_score,
+						homePenalties: 0,
+						awayPenalties: 0,
+						winnerTeamId: null,
+					})),
+					...(cupRows || []).map((r: any) => ({
+						kind: Number(r.round) === 0 ? "friendly" : "cup",
+						season: r.season,
+						year: baseYear + r.season,
+						matchweek: null,
+						round: r.round,
+						roundName:
+							Number(r.round) === 0
+								? FRIENDLY_ROUND_NAME
+								: (CUP_ROUND_NAMES[Number(r.round)] || `Ronda ${r.round}`),
+						homeTeamId: r.home_team_id,
+						awayTeamId: r.away_team_id,
+						homeName: r.home_name,
+						awayName: r.away_name,
+						homeScore: r.home_score,
+						awayScore: r.away_score,
+						homePenalties: r.home_penalties || 0,
+						awayPenalties: r.away_penalties || 0,
+						winnerTeamId: r.winner_team_id ?? null,
+					})),
+				];
+				games.sort((a: any, b: any) => b.season - a.season || (b.matchweek ?? 99) - (a.matchweek ?? 99) || (b.round ?? -1) - (a.round ?? -1));
+
 				socket.emit("clubHistoryData", {
 					teamId,
 					trophies: trophies || [],
 					events: events || [],
 					seasonRecords,
+					games,
 				});
 			} catch (err) {
 				console.error(`[${game.roomCode}] requestClubHistory error:`, err);
@@ -1104,6 +1179,7 @@ export function registerSessionSocketHandlers(
 					trophies: [],
 					events: [],
 					seasonRecords: [],
+					games: [],
 				});
 			}
 		},
