@@ -77,6 +77,14 @@ function withFlag(title, parts) {
   return { title: `🚩 ${title}`, parts: [partText("🚩 "), ...(parts ?? [])] };
 }
 
+/**
+ * Seleção automática ao abrir (a mais antiga por ler, ou a mais recente):
+ * partilhada entre o `selected` e o efeito que a materializa como lida.
+ */
+function defaultSelected(items, isUnread) {
+  return items.slice().reverse().find(isUnread) || items[0] || null;
+}
+
 export function useInbox() {
   const {
     contractAnswering,
@@ -464,9 +472,7 @@ export function useInbox() {
   const selected = useMemo(
     () =>
       items.find((it) => it.id === selectedId) ||
-      items.slice().reverse().find(isUnread) ||
-      items[0] ||
-      null,
+      defaultSelected(items, isUnread),
     [items, selectedId, isUnread],
   );
 
@@ -480,6 +486,17 @@ export function useInbox() {
     },
     [markRead],
   );
+
+  // A seleção automática (primeira abertura) materializa-se via `select`
+  // para ficar marcada como lida — senão mostrava selecionada no detalhe
+  // mas continuava nova e o contador não mexia. Só corre sem seleção
+  // manual; paginar épocas ou receber notícias novas não re-marca nada.
+  useEffect(() => {
+    if (selectedId != null || items.length === 0) return;
+    const first = defaultSelected(items, isUnread);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- corre 1x (fica pinada em selectedId); sem isto a seleção saltava sozinha para a próxima não lida
+    if (first) select(first.id);
+  }, [items, selectedId, isUnread, select]);
 
   const nextUnread = useMemo(() => {
     const unread = items.filter(isUnread);
