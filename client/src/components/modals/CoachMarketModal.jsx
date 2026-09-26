@@ -1,82 +1,102 @@
 import { DIVISION_NAMES, MODAL_Z } from "../../constants/index.js";
 import { ModalShell } from "../shared/ModalShell.jsx";
-import { REASON_TEXT } from "./DismissalModal.jsx";
 import { CoachAvatar } from "../shared/CoachAvatar.jsx";
 import { coachAvatarSeed } from "../../utils/coachAvatar.js";
+import { REASON_TEXT } from "./DismissalModal.jsx";
+import { pairCoachMarketEvents } from "../../utils/coachMarketPairs.js";
 
 /**
- * Resumo semanal do mercado de treinadores: despedimentos e contratações
- * (NPCs e humanos) que ocorreram após cada jornada.
+ * Resumo semanal do mercado de treinadores: feed de transições por jornada.
+ *
+ * Cada cartão conta uma história (emparelhamento client-side exato — ver
+ * `utils/coachMarketPairs.js`; o servidor grava despedimento + contratação
+ * do substituto no mesmo fluxo):
+ *  - Transição no clube: "X despedido → Para o seu lugar foi contratado Y";
+ *  - Nova era: "X despedido do A → Assinou para o B";
+ *  - Standalone: despedimento sem sequência (ex. despromoção) ou contratação.
  *
  * @param {{ report: { matchweek: number, events: Array<object> }|null, onClose: function, meName?: string|null, coachAvatars?: object, backendUrl?: string }} props
  */
 
-/**
- * @param {{ event: { type: string, coachName: string, teamName: string, division: number, reason?: string, isHuman: boolean, colorPrimary?: string, colorSecondary?: string, coachPhoto?: string|null }, meName?: string|null, coachAvatars?: object, backendUrl?: string }} props
- */
-function EventRow({ event, meName, coachAvatars, backendUrl }) {
-	const {
-		type,
-		coachName,
-		teamName,
-		division,
-		reason,
-		detail,
-		isHuman,
-		colorPrimary,
-		colorSecondary,
-		coachPhoto,
-	} = event;
+const OUT_COLOR = "#f87171";
+const IN_COLOR = "#34d399";
 
-	const color = colorPrimary || (type === "dismissal" ? "#dc2626" : "#10b981");
+/** Cor do clube com fallback por tipo (as cores do servidor podem faltar). */
+function clubColor(event) {
+	return event.colorPrimary || (event.type === "dismissal" ? "#dc2626" : "#10b981");
+}
+
+/** Motivo do despedimento: detail do servidor → mapa partilhado → genérico. */
+function dismissalReason(event) {
+	return event.detail || REASON_TEXT[event.reason] || REASON_TEXT.results;
+}
+
+/**
+ * Linha de um cartão: treinador sai (vermelho) ou entra (verde); o nome do
+ * clube só aparece quando o cartão não tem cabeçalho de clube.
+ *
+ * @param {{ name: string, teamName?: string|null, division?: number|null, photo?: string|null, clubColor: string, tone: "out"|"in", label: string, reason?: string|null, isHuman?: boolean, meName?: string|null, coachAvatars?: object, backendUrl?: string }} props
+ */
+function MarketRow({
+	name,
+	teamName,
+	division,
+	photo,
+	clubColor,
+	tone,
+	label,
+	reason,
+	isHuman,
+	meName,
+	coachAvatars,
+	backendUrl,
+}) {
+	const accent = tone === "out" ? OUT_COLOR : IN_COLOR;
 
 	return (
-		<div
-			className="flex items-center gap-3 px-4 py-3 rounded-lg border"
-			style={{
-				borderColor: (colorSecondary || "#27272a") + "55",
-				background: `linear-gradient(120deg, ${color}14 0%, transparent 100%)`,
-			}}
-		>
-			{/* Acento de cor do clube */}
-			<div
-				className="w-1.5 self-stretch rounded-full shrink-0"
-				style={{ backgroundColor: color }}
-			/>
+		<div className="flex items-center gap-3 py-1.5">
 			{/* Foto do treinador (enviada > real > procedural) */}
 			<CoachAvatar
-				name={coachName}
-				seed={coachAvatarSeed(coachName, meName)}
-				teamColor={colorPrimary || color}
+				name={name}
+				seed={coachAvatarSeed(name, meName)}
+				teamColor={clubColor}
 				size="sm"
 				coachAvatars={coachAvatars}
 				backendUrl={backendUrl}
-				photo={coachPhoto || null}
+				photo={photo || null}
 			/>
 			<div className="min-w-0 flex-1">
 				<p className="text-white font-bold text-sm truncate leading-tight">
-					{coachName}
+					{name}
 				</p>
-				<p
-					className="text-[11px] font-semibold truncate leading-tight mt-0.5"
-					style={{ color }}
-				>
-					{teamName}
-				</p>
-				{(reason || detail) && (
+				{teamName && (
+					<p
+						className="text-[11px] font-semibold truncate leading-tight mt-0.5"
+						style={{ color: clubColor }}
+					>
+						{teamName}
+					</p>
+				)}
+				{reason && (
 					<p className="text-[9px] font-bold uppercase tracking-widest text-red-400/80 mt-0.5 truncate">
-						{detail || REASON_TEXT[reason] || REASON_TEXT.results}
+						{reason}
 					</p>
 				)}
 			</div>
 			<div className="flex flex-col items-end gap-1 shrink-0">
+				<span
+					className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest"
+					style={{ color: accent, backgroundColor: accent + "18" }}
+				>
+					{label}
+				</span>
 				{division != null && (
 					<span
 						className="px-1.5 py-0.5 rounded border text-[9px] font-black tracking-widest uppercase"
 						style={{
-							borderColor: color + "55",
-							color,
-							backgroundColor: color + "12",
+							borderColor: clubColor + "55",
+							color: clubColor,
+							backgroundColor: clubColor + "12",
 						}}
 					>
 						{DIVISION_NAMES[division] || `Div ${division}`}
@@ -92,58 +112,158 @@ function EventRow({ event, meName, coachAvatars, backendUrl }) {
 	);
 }
 
-/**
- * @param {{ events: Array<object>, type: "dismissal"|"hiring", meName?: string|null, coachAvatars?: object, backendUrl?: string }} props
- */
-function EventList({ events, type, meName, coachAvatars, backendUrl }) {
-	if (!events || events.length === 0) return null;
-
-	const isDismissal = type === "dismissal";
-	const accent = isDismissal ? "#f87171" : "#34d399";
-
+/** Conector narrativo entre a saída e a entrada (alinhado com o avatar). */
+function Connector({ children }) {
 	return (
-		<section className="px-5 pt-4">
-			<div className="flex items-center gap-2 mb-2">
-				<span
-					aria-hidden
-					className="material-symbols-outlined"
-					style={{ fontSize: "1.15rem", color: accent }}
-				>
-					{isDismissal ? "person_off" : "person_add"}
-				</span>
-				<p
-					className="text-[10px] font-black uppercase tracking-widest"
-					style={{ color: accent }}
-				>
-					{isDismissal ? "Despedimentos" : "Contratações"}
-				</p>
-				<span
-					className="ml-auto text-[9px] font-black tabular-nums px-1.5 py-0.5 rounded-full"
-					style={{
-						color: accent,
-						backgroundColor: accent + "18",
-					}}
-				>
-					{events.length}
-				</span>
+		<div className="flex items-center gap-1.5 pl-10 py-1">
+			<span
+				aria-hidden
+				className="material-symbols-outlined"
+				style={{ fontSize: "0.85rem", color: IN_COLOR }}
+			>
+				south
+			</span>
+			<p className="text-[9px] font-black uppercase tracking-widest text-emerald-300/90">
+				{children}
+			</p>
+		</div>
+	);
+}
+
+/**
+ * Cartão do feed: transição no clube (header do clube + sai/entra), nova era
+ * (assinou noutro clube) ou movimentação standalone.
+ *
+ * @param {{ card: { dismissal?: object, replacement?: object, nextClub?: object, hiring?: object }, meName?: string|null, coachAvatars?: object, backendUrl?: string }} props
+ */
+function MarketCard({ card, meName, coachAvatars, backendUrl }) {
+	const { dismissal, replacement, nextClub, hiring } = card;
+	const pass = { meName, coachAvatars, backendUrl };
+
+	// Contratação standalone (sem despedimento associado no reporte).
+	if (!dismissal) {
+		const c = clubColor(hiring);
+		return (
+			<div
+				className="rounded-lg border px-4 py-2"
+				style={{
+					borderColor: (hiring.colorSecondary || "#27272a") + "55",
+					background: `linear-gradient(120deg, ${c}14 0%, transparent 100%)`,
+				}}
+			>
+				<MarketRow
+					name={hiring.coachName}
+					teamName={hiring.teamName}
+					division={hiring.division}
+					photo={hiring.coachPhoto}
+					clubColor={c}
+					tone="in"
+					label="Contratado"
+					isHuman={hiring.isHuman}
+					{...pass}
+				/>
 			</div>
-			<div className="flex flex-col gap-1.5">
-				{events.map((event, idx) => (
-					<EventRow key={idx} event={event}
-						meName={meName}
-						coachAvatars={coachAvatars}
-						backendUrl={backendUrl}
+		);
+	}
+
+	const c = clubColor(dismissal);
+	const reason = dismissalReason(dismissal);
+
+	// Transição no mesmo clube: header do clube + sai → entra.
+	if (replacement) {
+		return (
+			<div
+				className="flex gap-3 rounded-lg border px-4 py-3"
+				style={{
+					borderColor: (dismissal.colorSecondary || "#27272a") + "55",
+					background: `linear-gradient(120deg, ${c}14 0%, transparent 100%)`,
+				}}
+			>
+				{/* Acento de cor do clube */}
+				<div
+					className="w-1.5 self-stretch rounded-full shrink-0"
+					style={{ backgroundColor: c }}
+				/>
+				<div className="min-w-0 flex-1">
+					<div className="flex items-center gap-2 pb-2 mb-1 border-b border-white/5">
+						<p className="text-white font-black text-sm truncate leading-tight">
+							{dismissal.teamName}
+						</p>
+						<span
+							className="ml-auto shrink-0 px-1.5 py-0.5 rounded border text-[9px] font-black tracking-widest uppercase"
+							style={{
+								borderColor: c + "55",
+								color: c,
+								backgroundColor: c + "12",
+							}}
+						>
+							{DIVISION_NAMES[dismissal.division] || `Div ${dismissal.division}`}
+						</span>
+					</div>
+					<MarketRow
+						name={dismissal.coachName}
+						photo={dismissal.coachPhoto}
+						clubColor={c}
+						tone="out"
+						label="Despedida"
+						reason={reason}
+						{...pass}
 					/>
-				))}
+					<Connector>Para o seu lugar foi contratado</Connector>
+					<MarketRow
+						name={replacement.coachName}
+						photo={replacement.coachPhoto}
+						clubColor={c}
+						tone="in"
+						label="Contratado"
+						{...pass}
+					/>
+				</div>
 			</div>
-		</section>
+		);
+	}
+
+	// Despedimento sem substituto (humano órfão, despromoção), com assinatura
+	// noutro clube quando o próprio treinador apareceu no reporte.
+	return (
+		<div
+			className="rounded-lg border px-4 py-2"
+			style={{
+				borderColor: (dismissal.colorSecondary || "#27272a") + "55",
+				background: `linear-gradient(120deg, ${c}14 0%, transparent 100%)`,
+			}}
+		>
+			<MarketRow
+				name={dismissal.coachName}
+				teamName={dismissal.teamName}
+				division={dismissal.division}
+				photo={dismissal.coachPhoto}
+				clubColor={c}
+				tone="out"
+				label="Despedida"
+				reason={reason}
+				isHuman={dismissal.isHuman}
+				{...pass}
+			/>
+			{nextClub && (
+				<>
+					<Connector>Assinou para o {nextClub.teamName}</Connector>
+					<MarketRow
+						name={nextClub.coachName}
+						photo={nextClub.coachPhoto}
+						clubColor={clubColor(nextClub)}
+						tone="in"
+						label="Contratado"
+						{...pass}
+					/>
+				</>
+			)}
+		</div>
 	);
 }
 
 export function CoachMarketModal({ report, onClose, meName, coachAvatars, backendUrl }) {
-	const events = report?.events;
-	const dismissals = (events || []).filter((e) => e?.type === "dismissal");
-	const hirings = (events || []).filter((e) => e?.type === "hiring");
+	const cards = pairCoachMarketEvents(report?.events);
 
 	return (
 		<ModalShell
@@ -177,17 +297,24 @@ export function CoachMarketModal({ report, onClose, meName, coachAvatars, backen
 
 					{/* Corpo scrollável */}
 					<div className="overflow-y-auto pb-2">
-						{dismissals.length === 0 && hirings.length === 0 ? (
+						{cards.length === 0 ? (
 							<div className="px-5 py-8 text-center">
 								<p className="text-sm text-on-surface-variant">
 									Sem movimentações no mercado de treinadores esta jornada.
 								</p>
 							</div>
 						) : (
-							<>
-								<EventList events={dismissals} type="dismissal" meName={meName} coachAvatars={coachAvatars} backendUrl={backendUrl} />
-								<EventList events={hirings} type="hiring" meName={meName} coachAvatars={coachAvatars} backendUrl={backendUrl} />
-							</>
+							<div className="flex flex-col gap-2 px-5 pt-4">
+								{cards.map((card, idx) => (
+									<MarketCard
+										key={idx}
+										card={card}
+										meName={meName}
+										coachAvatars={coachAvatars}
+										backendUrl={backendUrl}
+									/>
+								))}
+							</div>
 						)}
 					</div>
 

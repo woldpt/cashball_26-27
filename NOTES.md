@@ -12,6 +12,12 @@
 - A11y/estilo: `useId` + `labelledBy` no diálogo, foco inicial no Continuar, nome `text-white`→`text-on-surface`, comentário EN→pt-PT.
 - Checks: eslint limpo nos 4 ficheiros (2 erros pré-existentes globais, confirmados via stash) · `check:types` OK. Sem mudança estrutural → sem mobile-resp-check; client-only → sem audits.
 
+## CoachMarketModal: redesenho em feed de transições (2026-09-26)
+- Pedido: despedimento seguido de "para o seu lugar foi contratado". Estudo do servidor (`coachDismissalHelpers.ts`): despedimento NPC é seguido ATOMICAMENTE por `hireNpcManager` no mesmo clube (par exato por `teamName`); despedimento humano é seguido pela assinatura do próprio noutro clube (`autoAssignDismissedCoach`, clube origem fica órfão); despromoção nunca tem substituto. Só 4 pontos de `recordMarketEvent` — contratações só nascem desses dois fluxos, logo pairing client-side é exato e o servidor fica intacto.
+- Novo `utils/coachMarketPairs.js`: `pairCoachMarketEvents(events)` — consome o array por ordem; despedimento procura substituto (mesmo clube) e novo clube (mesmo treinador), consumidos uma única vez; contratações soltas ficam standalone. `coachMarketPairs.test.mjs` (node, 6 casos: par NPC, humano→novo clube, misto, standalone, clube repetido, vazio/null).
+- Modal redesenhado: feed único cronológico de cartões (acabaram as secções "Despedimentos"/"Contratações"). Cartão de transição = header do clube (cores + divisão) + linha vermelha "Despedida" + conector "Para o seu lugar foi contratado" + linha verde "Contratado"; despedimento humano com assinatura = "Assinou para o {clube}"; standalone sem sequência (ex. despromoção). Header/Jornada/empty state/Continuar intactos.
+- Checks: `node coachMarketPairs.test.mjs` 6/6 · lint limpo nos 3 ficheiros (2 erros pré-existentes globais) · `check:types` OK · `test:mobile` 165/165 + landscape 198/198 PASS (redesign estrutural). Sem audits (sem lógica de jogo/sockets — servidor intocado).
+
 ## CoachMarketModal: review 7,5/10 → correções (2026-09-26)
 - Mapa `REASON_TEXT` duplicado eliminado: agora exportado do `DismissalModal` (fonte única com os 3 reasons do servidor — o ternário local deixava `relegation` cair em "Má série de resultados"); linha do motivo mostrada com `(reason || detail)` + disable `react-refresh/only-export-components` (mesmo padrão de `GameContext`/`TacticsContext`).
 - `motion.div` duplo removido: o `ModalShell` já anima o card — `flex flex-col max-h-[85vh]` passou a `cardClassName`; `import { motion }` eliminado (padrão dos irmãos `DismissalModal`/`SeasonEndModal`).
