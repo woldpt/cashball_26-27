@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { formatCurrency } from "../../utils/formatters.js";
 import { AUCTION_BID_STEP } from "../../constants/index.js";
 import { emitComAck } from "../../socket.js";
@@ -17,10 +17,23 @@ import { emitComAck } from "../../socket.js";
  *   socket: object,
  *   accentHex?: string,
  *   onPlaced?: function,
+ *   autoFocus?: boolean,
  * }} props
  */
-export function BidForm({ playerId, minBid, budget, socket, accentHex = "#94a3b8", onPlaced }) {
+export function BidForm({ playerId, minBid, budget, socket, accentHex = "#94a3b8", onPlaced, autoFocus = false }) {
 	const [bidInput, setBidInput] = useState(() => String(minBid));
+	const inputRef = useRef(null);
+	// O mínimo pode subir enquanto o form está aberto (outro lance ao vivo)
+	// — ajuste no render (padrão documentado de estado derivado), sem efeito.
+	const [prevMinBid, setPrevMinBid] = useState(minBid);
+	if (prevMinBid !== minBid) {
+		setPrevMinBid(minBid);
+		const n = Number(bidInput);
+		if (!Number.isFinite(n) || n < minBid) setBidInput(String(minBid));
+	}
+	useEffect(() => {
+		if (autoFocus) inputRef.current?.focus();
+	}, [autoFocus, playerId]);
 	const [bidError, setBidError] = useState("");
 	const [bidSuccess, setBidSuccess] = useState(false);
 
@@ -68,6 +81,7 @@ export function BidForm({ playerId, minBid, budget, socket, accentHex = "#94a3b8
 					currency_exchange
 				</span>
 				<input
+					ref={inputRef}
 					type="number"
 					inputMode="numeric"
 					min={minBid}

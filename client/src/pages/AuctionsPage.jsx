@@ -16,12 +16,21 @@ import { EmptyState } from "../components/shared/EmptyState.jsx";
 import { TabBar } from "../components/shared/TabBar.jsx";
 import { getTeamColor } from "../utils/teamHelpers.js";
 import { POSITIONS } from "../utils/playerHelpers.js";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { staggerItemProps } from "../motion.js";
 
-export function AuctionsPage({ activeAuctions = [], me, teams = [], teamInfo, matchweekCount = 0, socket, onOpenPlayerHistory }) {
+export function AuctionsPage({ activeAuctions = [], highlightAuctionId = null, me, teams = [], teamInfo, matchweekCount = 0, socket, onOpenPlayerHistory }) {
   const [positionFilter, setPositionFilter] = useState("all");
+
+  // Navegação com contexto (ex.: fallback do modal da scout): leva o cromo
+  // correspondente para a vista e destaca-o com um anel âmbar.
+  useEffect(() => {
+    if (highlightAuctionId == null) return;
+    document
+      .getElementById(`auction-${highlightAuctionId}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightAuctionId, activeAuctions.length]);
 
   const matchesPos = (a) => positionFilter === "all" || a.position === positionFilter;
   const live = activeAuctions.filter((a) => !a.closed && matchesPos(a));
@@ -84,7 +93,12 @@ export function AuctionsPage({ activeAuctions = [], me, teams = [], teamInfo, ma
             <Panel title="Em curso" meta={`${live.length} ${live.length === 1 ? "leilão" : "leilões"}`}>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 short:gap-2">
                 {live.map((auction, i) => (
-                  <motion.div key={auction.playerId} {...staggerItemProps(i)}>
+                  <motion.div
+                    key={auction.playerId}
+                    id={`auction-${auction.playerId}`}
+                    className={Number(auction.playerId) === Number(highlightAuctionId) ? "rounded-xl ring-2 ring-amber-400 scroll-mt-4" : undefined}
+                    {...staggerItemProps(i)}
+                  >
                     <AuctionCard
                       auction={auction}
                       me={me}

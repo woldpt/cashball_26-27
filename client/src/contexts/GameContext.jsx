@@ -103,6 +103,7 @@ export function GameProvider({
 	const [myAuctionBid, setMyAuctionBid] = useState(null);
 	const [auctionResult, setAuctionResult] = useState(null);
 	const [activeAuctions, setActiveAuctions] = useState([]);
+	const [highlightedAuctionId, setHighlightedAuctionId] = useState(null);
 	const [transferHistory, setTransferHistory] = useState([]);
 	// Jornal Global: agregado da época (news + results) vindo do server.
 	const [globalNews, setGlobalNews] = useState({ news: [], results: [] });
@@ -1397,7 +1398,14 @@ year: seasonYear,
 		});
 	}, []);
 
-	const openAuctionBid = useCallback(() => {
+	// Aceita id de jogador ou objeto ({playerId|id}) para destacar o cromo
+	// correspondente na tab de leilões; sem argumento, só navega.
+	const openAuctionBid = useCallback((target = null) => {
+		const id =
+			target != null && typeof target === "object"
+				? (target.playerId ?? target.id ?? null)
+				: (target ?? null);
+		setHighlightedAuctionId(id != null ? Number(id) : null);
 		setActiveTab("leiloes");
 		window.scrollTo(0, 0);
 	}, []);
@@ -1693,6 +1701,8 @@ year: seasonYear,
 		setMyAuctionBid,
 		auctionResult,
 		activeAuctions,
+		highlightedAuctionId,
+		setHighlightedAuctionId,
 		transferHistory,
 		globalNews,
 		nextMatchSummary,

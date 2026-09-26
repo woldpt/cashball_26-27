@@ -114,6 +114,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
     removeFromTransferList,
     openAuctionBid,
     activeAuctions,
+    highlightedAuctionId,
     playerSearchData,
     playerSearchLoading,
     setPlayerSearchLoading,
@@ -599,6 +600,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                     {activeTab === "leiloes" && (
                       <AuctionsPage
                         activeAuctions={activeAuctions}
+                        highlightAuctionId={highlightedAuctionId}
                         me={me}
                         teams={teams}
                         teamInfo={teamInfo}
@@ -626,6 +628,7 @@ export function GameRoutes({ handleLogout, setAuthPhase, replayTutorial }) {
                         setGameDialog={setGameDialog}
                         buyPlayer={buyPlayer}
                         openAuctionBid={openAuctionBid}
+                        activeAuctions={activeAuctions}
                         onOpenPlayerHistory={(player) =>
                           socket.emit("requestPlayerHistory", {
                             playerId: player.id,

@@ -1975,3 +1975,11 @@ Plano C1+C2 (quando fizer):
 - A11y: `aria-hidden` nos ícones (`person_off`, ⚽, glow) e `autoFocus` no CTA "Assumir o comando" (precedente WelcomeModal).
 - `import { motion }` removido (lint apanhou).
 - Checks: eslint limpo no ficheiro (erros pré-existentes noutros: `GameContext`, `BidForm`, `PlayerSearchView` — confirmados com `git stash`); `check:types` OK. Sem `test:mobile` (sem mudança estrutural) nem audits (sem lógica de jogo/sockets).
+
+## AuctionBidModal — modal acompanha o leilão ao vivo (2026-09-26)
+- Nova prop `liveAuction` (item de `activeAuctions` via `PlayerSearchView`): lance atual/mínimo/líder/pausa passam a vir do estado vivo; snapshot da pesquisa fica só como fallback. Novo estado `isClosed` com fallback "já encerrou".
+- `BidForm`: ajuste no render (padrão de estado derivado) — se `minBid` subir acima do input, o input acompanha; + prop `autoFocus` (só o modal usa, `AuctionCard` intacto).
+- Modal fecha ~1s após lance registado (`onPlaced`); "Abrir leilões" passa `player.id`.
+- `openAuctionBid(id|obj?)` em `GameContext` + `highlightedAuctionId`: a tab de leilões faz scroll suave e anel âmbar no cromo correspondente (também serve o botão "Licitar no Leilão" do `PlayerHistoryModal`, que já passava o objeto).
+- Desistências (lint `react-hooks` proíbe ref-no-render e setState-em-efeito): sem preservação do último jogador para a animação de saída — saída vazia como antes.
+- Checks: eslint limpo nos 6 ficheiros tocados; `GameContext` mantém 1 erro pré-existente (`react-refresh`); `check:types` OK. Sem `test:mobile` (sem mudança estrutural: só anel/id) nem audits (sem lógica de servidor).

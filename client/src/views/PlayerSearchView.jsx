@@ -62,6 +62,7 @@ function inputClass() {
  *   buyPlayer: function,
  *   onOpenPlayerHistory: (player: object) => void,
  *   openAuctionBid: function,
+ *   activeAuctions: Array,
  * }} props
  */
 export function PlayerSearchView({
@@ -78,6 +79,7 @@ export function PlayerSearchView({
   buyPlayer,
   onOpenPlayerHistory,
   openAuctionBid,
+  activeAuctions = [],
 }) {
   const {
     results: playerSearchResults,
@@ -101,6 +103,10 @@ export function PlayerSearchView({
   const [searched, setSearched] = useState(false);
   // Lance inline: modal local — só a scout o abre, não precisa de estado global.
   const [bidModalPlayer, setBidModalPlayer] = useState(null);
+  const liveAuction = useMemo(
+    () => activeAuctions.find((a) => Number(a.playerId) === Number(bidModalPlayer?.id)) ?? null,
+    [activeAuctions, bidModalPlayer],
+  );
 
   const humanTeamIds = useMemo(
     () => new Set(players.map((p) => normalizeTeamId(p.teamId))),
@@ -447,6 +453,7 @@ export function PlayerSearchView({
 
       <AuctionBidModal
         player={bidModalPlayer}
+        liveAuction={liveAuction}
         me={me}
         myBudget={myBudget}
         socket={socket}
