@@ -1882,3 +1882,6 @@ Plano C1+C2 (quando fizer):
 - Saltado de propósito: `disabled` real nos botões da sidebar (está `hidden` em jogo — guards quase mortos; trocar arrastava comportamento de focus/tooltip) e `useMemo` nos filtros de badges (arrays de dezenas de itens, sem regressão vs monólito).
 - Verificação: eslint limpo nos 5 ficheiros; `check:types` OK; `test:mobile` 10/165 e `:landscape` 12/198 — idênticos ao baseline (mesmos 4 harnesses pré-existentes: room-settings, roomhub, stadiumtab, standings; `overflow=0` em tudo); `game-landscape-test` PASS nas duas passagens + screenshots 390/667 vistos (pill AO VIVO sem tapar conteúdo).
 - Resultado: `GameLayout.jsx` 1450→~220 linhas; `layout/` com `GameHeader`, `Sidebar`, `MobileNav`, `SystemOverlays`.
+
+## Armadilha: pkill do vite órfão mata o próprio shell (2026-09-26)
+- `pkill -f "bin/vite"` faz match à própria linha de comando do bash (a string está nela) → o shell recebe SIGTERM (exit 143). Usar sempre `pkill -f "[b]in/vite"`.
