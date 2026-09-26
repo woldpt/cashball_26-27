@@ -31,6 +31,84 @@ const euro = new Intl.NumberFormat("pt-PT", {
   maximumFractionDigits: 0,
 });
 
+/** Promisificados mínimos sobre a API callback do sqlite (mesma conexão
+ *  serializada — `await` preserva a ordem exata das cadeias por callbacks). */
+function dbGet(db: any, sql: string, params: any[] = []): Promise<any> {
+  return new Promise((resolve, reject) => {
+    db.get(sql, params, (err: any, row: any) =>
+      err ? reject(err) : resolve(row),
+    );
+  });
+}
+function dbAll(db: any, sql: string, params: any[] = []): Promise<any[]> {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err: any, rows: any[]) =>
+      err ? reject(err) : resolve(rows || []),
+    );
+  });
+}
+function dbRun(db: any, sql: string, params: any[] = []): Promise<void> {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, (err: any) => (err ? reject(err) : resolve()));
+  });
+}
+
+/** Pontos e V/E/D de um marcador (casa e fora). */
+function pointsForScore(
+  hG: number,
+  aG: number,
+): {
+  hPts: number;
+  hW: number;
+  hD: number;
+  hL: number;
+  aPts: number;
+  aW: number;
+  aD: number;
+  aL: number;
+} {
+  if (hG > aG)
+    return { hPts: 3, hW: 1, hD: 0, hL: 0, aPts: 0, aW: 0, aD: 0, aL: 1 };
+  if (hG < aG)
+    return { hPts: 0, hW: 0, hD: 0, hL: 1, aPts: 3, aW: 1, aD: 0, aL: 0 };
+  return { hPts: 1, hW: 0, hD: 1, hL: 0, aPts: 1, aW: 0, aD: 1, aL: 0 };
+}
+
+/** Payload de fim de jogo: bilheteira por equipa + MOM + árbitro. */
+function buildFullTimeFixtures(
+  game: ActiveGame,
+  fixtures: any[],
+  completedMatchweek: number,
+  pickRefereeSummary: (
+    roomCode: string,
+    teamId: number,
+    opponentId: number,
+    matchweek: number,
+  ) => { name: string },
+): any[] {
+  return fixtures.map((fixture) => {
+    const total =
+      (fixture.attendance || 0) * ((fixture as any)._ticketPrice || 15);
+    const awayTicketRevenue = Math.floor(total * AWAY_TICKET_SHARE);
+    return {
+      ...fixture,
+      homeTicketRevenue: total - awayTicketRevenue,
+      awayTicketRevenue,
+      mom: computeMoms(
+        fixture.events || [],
+        fixture.homeLineup || [],
+        fixture.awayLineup || [],
+      ),
+      referee: pickRefereeSummary(
+        game.roomCode,
+        fixture.homeTeamId,
+        fixture.awayTeamId,
+        completedMatchweek,
+      ),
+    };
+  });
+}
+
 /**
  * Texto do resumo financeiro semanal (1 notícia por equipa com treinador
  * humano). `oldLoan` é a dívida ANTES da semana; os restantes valores são
@@ -82,6 +160,7 @@ import {
   createMinuteBarrier,
 } from "./game/engine";
 import { generateAITactic } from "./game/matchCalculations";
+import { halftimeSubPhrase } from "./game/commentary";
 import { computeMoms } from "./game/mom";
 import {
   appendRoomEvent,
@@ -97,6 +176,211 @@ import {
 
 const MAX_NPC_HALFTIME_SUBS = 2;
 const NPC_FRESHNESS_SKILL_BUFFER = 2;
+
+// NPCs use the fatigue accumulated by the actual cached XI, rather
+// than the permanent DB skill used by generateAITactic. They only
+// replace a tired outfield player when a same-position bench player
+// is close enough to that player's current match skill for freshness
+// to make up the difference.
+function planNpcHalftimeSubs(
+  fixture: any,
+  squad: any[] | undefined,
+  tactic: any,
+  fullRoster: any[] | undefined,
+  teamSide: "home" | "away",
+): void {
+  if (!squad || !tactic?.positions || !fullRoster) return;
+
+  const positions: Record<number, string> = tactic.positions;
+  const currentIds = new Set(squad.map((p: any) => p.id));
+  const unavailableIds = new Set(
+    (fixture.events || [])
+      .filter(
+        (e: any) =>
+          (e.type === "injury" || e.type === "red") &&
+          e.team === teamSide &&
+          e.playerId,
+      )
+      .map((e: any) => e.playerId),
+  );
+  const bench = fullRoster.filter(
+    (p: any) =>
+      !currentIds.has(p.id) &&
+      positions[p.id] === "Suplente" &&
+      !unavailableIds.has(p.id),
+  );
+
+  const tiredPlayers = squad
+    .filter(
+      (p: any) => p.position !== "GR" && positions[p.id] !== "Suplente",
+    )
+    .map((player: any) => ({
+      player,
+      fatigue: getMatchFatigueSnapshot(fixture, teamSide, player.id),
+    }))
+    .filter(
+      ({ fatigue }) => fatigue.matchMinutes >= 45 && fatigue.fatigueLoss >= 2,
+    )
+    .sort(
+      (a, b) =>
+        b.fatigue.fatigueLoss - a.fatigue.fatigueLoss ||
+        b.fatigue.matchMinutes - a.fatigue.matchMinutes,
+    );
+
+  const usedBenchIds = new Set<number>();
+  let planned = 0;
+  for (const { player: outgoing } of tiredPlayers) {
+    if (planned >= MAX_NPC_HALFTIME_SUBS) break;
+
+    const replacement = bench
+      .filter(
+        (p: any) =>
+          !usedBenchIds.has(p.id) &&
+          p.position === outgoing.position &&
+          Number(p.skill || 0) + NPC_FRESHNESS_SKILL_BUFFER >=
+            Number(outgoing.skill || 0),
+      )
+      .sort((a: any, b: any) => (b.skill || 0) - (a.skill || 0))[0];
+
+    if (!replacement) continue;
+
+    positions[outgoing.id] = "Suplente";
+    positions[replacement.id] = "Titular";
+    usedBenchIds.add(replacement.id);
+    planned += 1;
+  }
+}
+
+function applyHalftimeSubs(
+  fixture: any,
+  squad: any[] | undefined,
+  tactic: any,
+  fullRoster: any[] | undefined,
+  teamSide: "home" | "away",
+): void {
+  if (!squad || !tactic?.positions || !fullRoster) return;
+  const positions: Record<number, string> = tactic.positions;
+  const currentIds = new Set(squad.map((p: any) => p.id));
+
+  // Players in the current squad who are now marked as Suplente (subbed out at halftime)
+  const toRemoveIds = squad
+    .filter((p: any) => positions[p.id] === "Suplente")
+    .map((p: any) => p.id);
+
+  // Players not in squad who are now marked as Titular (subbed in at halftime)
+  let toAddIds = Object.entries(positions)
+    .filter(
+      ([id, status]) => status === "Titular" && !currentIds.has(Number(id)),
+    )
+    .map(([id]) => Number(id));
+
+  // Filter out injured and red-carded players from incoming substitutions
+  const injuredIds = new Set(
+    (fixture.events || [])
+      .filter(
+        (e: any) =>
+          (e.type === "injury" || e.type === "red") && e.team === teamSide && e.playerId,
+      )
+      .map((e: any) => e.playerId),
+  );
+  toAddIds = toAddIds.filter((id) => !injuredIds.has(id));
+
+  // Quem já foi substituído no 1.º tempo não volta (espelho de
+  // applyETSubs) — mesmo que um payload stale o volte a marcar
+  // "Titular" na tática.
+  const subbedOut = fixture._subbedOut as Set<number> | undefined;
+  if (subbedOut) toAddIds = toAddIds.filter((id) => !subbedOut.has(id));
+
+  if (toRemoveIds.length === 0 && toAddIds.length === 0) return;
+
+  // Limitado ao número de substituições ainda possíveis na partida.
+  // Cada "saída + entrada" conta como uma substituição e esgota o limite
+  // por equipa (MAX_SUBSTITUTIONS), que inclui intervalos e alongamentos.
+  const teamId =
+    teamSide === "home" ? fixture.homeTeamId : fixture.awayTeamId;
+  const maxPairs = Math.min(
+    toRemoveIds.length,
+    toAddIds.length,
+    remainingSubstitutions(fixture, teamId),
+  );
+  if (maxPairs <= 0) return;
+
+  // Limitar às substituições ainda permitidas (ordem de declaração).
+  const limitedOutIds = toRemoveIds.slice(0, maxPairs);
+  const limitedInIds = toAddIds.slice(0, maxPairs);
+
+  // Snapshot outgoing/incoming players BEFORE modifying the squad
+  const outPlayers = limitedOutIds
+    .map((id: number) => squad.find((p: any) => p.id === id))
+    .filter(Boolean);
+  const inPlayers = limitedInIds
+    .map((id: number) => fullRoster.find((p: any) => p.id === id))
+    .filter(Boolean);
+
+  // Remove subbed-out players
+  for (const id of limitedOutIds) {
+    const idx = squad.findIndex((p: any) => p.id === id);
+    if (idx > -1) squad.splice(idx, 1);
+    (fixture._subbedOut ??= new Set<number>()).add(id);
+  }
+
+  // Add subbed-in players from the full roster
+  for (const player of inPlayers) {
+    squad.push(player);
+  }
+
+  // Cada substituição feita conta para o limite de substituições da partida.
+  for (let i = 0; i < maxPairs; i++) {
+    incrementSubCount(fixture, teamId);
+  }
+
+  // Update the lineup snapshot to reflect the new squad composition
+  if (teamSide === "home") {
+    fixture.homeLineup = buildLineupSnapshot(
+      fixture,
+      squad,
+      tactic,
+      fixture._homeFullRoster,
+      "home",
+    );
+  } else {
+    fixture.awayLineup = buildLineupSnapshot(
+      fixture,
+      squad,
+      tactic,
+      fixture._awayFullRoster,
+      "away",
+    );
+  }
+
+  // Emit halftime_sub events so the client lineup display reflects the changes
+  const remainingInPlayers = [...inPlayers];
+  for (const outPlayer of outPlayers) {
+    const matchingIndex = remainingInPlayers.findIndex(
+      (inPlayer: any) => inPlayer.position === outPlayer.position,
+    );
+    const inPlayer =
+      matchingIndex >= 0
+        ? remainingInPlayers.splice(matchingIndex, 1)[0]
+        : remainingInPlayers.shift();
+    if (!inPlayer) break;
+
+    const phrase = halftimeSubPhrase(outPlayer.name, inPlayer.name);
+    fixture.events = fixture.events || [];
+    fixture.events.push({
+      minute: 45,
+      type: "halftime_sub",
+      team: teamSide,
+      emoji: "🔁",
+      outPlayerId: outPlayer.id,
+      outPlayerName: outPlayer.name,
+      playerId: inPlayer.id,
+      playerName: inPlayer.name,
+      position: inPlayer.position,
+      text: `[HT] 🔁 ${phrase}`,
+    });
+  }
+}
 
 interface WeeklyFlowDeps {
   io: any;
@@ -464,231 +748,9 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
               (p: any) => Number(p.teamId) === Number(teamId),
             );
 
-          // NPCs use the fatigue accumulated by the actual cached XI, rather
-          // than the permanent DB skill used by generateAITactic. They only
-          // replace a tired outfield player when a same-position bench player
-          // is close enough to that player's current match skill for freshness
-          // to make up the difference.
-          const planNpcHalftimeSubs = (
-            squad: any[] | undefined,
-            tactic: any,
-            fullRoster: any[] | undefined,
-            teamSide: "home" | "away",
-          ) => {
-            if (!squad || !tactic?.positions || !fullRoster) return;
-
-            const positions: Record<number, string> = tactic.positions;
-            const currentIds = new Set(squad.map((p: any) => p.id));
-            const unavailableIds = new Set(
-              (fixture.events || [])
-                .filter(
-                  (e: any) =>
-                    (e.type === "injury" || e.type === "red") &&
-                    e.team === teamSide &&
-                    e.playerId,
-                )
-                .map((e: any) => e.playerId),
-            );
-            const bench = fullRoster.filter(
-              (p: any) =>
-                !currentIds.has(p.id) &&
-                positions[p.id] === "Suplente" &&
-                !unavailableIds.has(p.id),
-            );
-
-            const tiredPlayers = squad
-              .filter(
-                (p: any) =>
-                  p.position !== "GR" && positions[p.id] !== "Suplente",
-              )
-              .map((player: any) => ({
-                player,
-                fatigue: getMatchFatigueSnapshot(fixture, teamSide, player.id),
-              }))
-              .filter(
-                ({ fatigue }) =>
-                  fatigue.matchMinutes >= 45 && fatigue.fatigueLoss >= 2,
-              )
-              .sort(
-                (a, b) =>
-                  b.fatigue.fatigueLoss - a.fatigue.fatigueLoss ||
-                  b.fatigue.matchMinutes - a.fatigue.matchMinutes,
-              );
-
-            const usedBenchIds = new Set<number>();
-            let planned = 0;
-            for (const { player: outgoing } of tiredPlayers) {
-              if (planned >= MAX_NPC_HALFTIME_SUBS) break;
-
-              const replacement = bench
-                .filter(
-                  (p: any) =>
-                    !usedBenchIds.has(p.id) &&
-                    p.position === outgoing.position &&
-                    Number(p.skill || 0) + NPC_FRESHNESS_SKILL_BUFFER >=
-                      Number(outgoing.skill || 0),
-                )
-                .sort((a: any, b: any) => (b.skill || 0) - (a.skill || 0))[0];
-
-              if (!replacement) continue;
-
-              positions[outgoing.id] = "Suplente";
-              positions[replacement.id] = "Titular";
-              usedBenchIds.add(replacement.id);
-              planned += 1;
-            }
-          };
-
-          const applyHalftimeSubs = (
-            squad: any[] | undefined,
-            tactic: any,
-            fullRoster: any[] | undefined,
-            teamSide: "home" | "away",
-          ) => {
-            if (!squad || !tactic?.positions || !fullRoster) return;
-            const positions: Record<number, string> = tactic.positions;
-            const currentIds = new Set(squad.map((p: any) => p.id));
-
-            // Players in the current squad who are now marked as Suplente (subbed out at halftime)
-            const toRemoveIds = squad
-              .filter((p: any) => positions[p.id] === "Suplente")
-              .map((p: any) => p.id);
-
-            // Players not in squad who are now marked as Titular (subbed in at halftime)
-            let toAddIds = Object.entries(positions)
-              .filter(
-                ([id, status]) =>
-                  status === "Titular" && !currentIds.has(Number(id)),
-              )
-              .map(([id]) => Number(id));
-
-            // Filter out injured and red-carded players from incoming substitutions
-            const injuredIds = new Set(
-              (fixture.events || [])
-                .filter(
-                  (e: any) =>
-                    (e.type === "injury" || e.type === "red") && e.team === teamSide && e.playerId,
-                )
-                .map((e: any) => e.playerId),
-            );
-            toAddIds = toAddIds.filter((id) => !injuredIds.has(id));
-
-            // Quem já foi substituído no 1.º tempo não volta (espelho de
-            // applyETSubs) — mesmo que um payload stale o volte a marcar
-            // "Titular" na tática.
-            const subbedOut = fixture._subbedOut as Set<number> | undefined;
-            if (subbedOut) toAddIds = toAddIds.filter((id) => !subbedOut.has(id));
-
-            if (toRemoveIds.length === 0 && toAddIds.length === 0) return;
-
-            // Limitado ao número de substituições ainda possíveis na partida.
-            // Cada "saída + entrada" conta como uma substituição e esgota o limite
-            // por equipa (MAX_SUBSTITUTIONS), que inclui intervalos e alongamentos.
-            const teamId =
-              teamSide === "home" ? fixture.homeTeamId : fixture.awayTeamId;
-            const maxPairs = Math.min(
-              toRemoveIds.length,
-              toAddIds.length,
-              remainingSubstitutions(fixture, teamId),
-            );
-            if (maxPairs <= 0) return;
-
-            // Limitar às substituições ainda permitidas (ordem de declaração).
-            const limitedOutIds = toRemoveIds.slice(0, maxPairs);
-            const limitedInIds = toAddIds.slice(0, maxPairs);
-
-            // Snapshot outgoing/incoming players BEFORE modifying the squad
-            const outPlayers = limitedOutIds
-              .map((id: number) => squad.find((p: any) => p.id === id))
-              .filter(Boolean);
-            const inPlayers = limitedInIds
-              .map((id: number) => fullRoster.find((p: any) => p.id === id))
-              .filter(Boolean);
-
-            // Remove subbed-out players
-            for (const id of limitedOutIds) {
-              const idx = squad.findIndex((p: any) => p.id === id);
-              if (idx > -1) squad.splice(idx, 1);
-              (fixture._subbedOut ??= new Set<number>()).add(id);
-            }
-
-            // Add subbed-in players from the full roster
-            for (const player of inPlayers) {
-              squad.push(player);
-            }
-
-            // Cada substituição feita conta para o limite de substituições da partida.
-            for (let i = 0; i < maxPairs; i++) {
-              incrementSubCount(fixture, teamId);
-            }
-
-            // Update the lineup snapshot to reflect the new squad composition
-            if (teamSide === "home") {
-              fixture.homeLineup = buildLineupSnapshot(
-                fixture,
-                squad,
-                tactic,
-                fixture._homeFullRoster,
-                "home",
-              );
-            } else {
-              fixture.awayLineup = buildLineupSnapshot(
-                fixture,
-                squad,
-                tactic,
-                fixture._awayFullRoster,
-                "away",
-              );
-            }
-
-            // Emit halftime_sub events so the client lineup display reflects the changes
-            const htSubPhrases = [
-              (o: string, i: string) =>
-                `${o} ficou no balneário. ${i} começa a segunda parte.`,
-              (o: string, i: string) =>
-                `Mudança ao intervalo: ${i} entra para o lugar de ${o}. Recado recebido.`,
-              (o: string, i: string) =>
-                `${o} não convenceu. ${i} tem a segunda parte para provar o seu valor.`,
-              (o: string, i: string) =>
-                `O treinador não esperou: ${o} sai, ${i} entra. Mensagem clara.`,
-              (o: string, i: string) =>
-                `Substituição ao intervalo. ${i} substitui ${o} — hora de fazer a diferença.`,
-              (o: string, i: string) =>
-                `${o} foi substituído no intervalo. ${i} vai tentar mudar o rumo da partida.`,
-            ];
-            const remainingInPlayers = [...inPlayers];
-            for (const outPlayer of outPlayers) {
-              const matchingIndex = remainingInPlayers.findIndex(
-                (inPlayer: any) => inPlayer.position === outPlayer.position,
-              );
-              const inPlayer =
-                matchingIndex >= 0
-                  ? remainingInPlayers.splice(matchingIndex, 1)[0]
-                  : remainingInPlayers.shift();
-              if (!inPlayer) break;
-
-              const phrasePool = htSubPhrases;
-              const phrase = phrasePool[
-                Math.floor(Math.random() * phrasePool.length)
-              ](outPlayer.name, inPlayer.name);
-              fixture.events = fixture.events || [];
-              fixture.events.push({
-                minute: 45,
-                type: "halftime_sub",
-                team: teamSide,
-                emoji: "🔁",
-                outPlayerId: outPlayer.id,
-                outPlayerName: outPlayer.name,
-                playerId: inPlayer.id,
-                playerName: inPlayer.name,
-                position: inPlayer.position,
-                text: `[HT] 🔁 ${phrase}`,
-              });
-            }
-          };
-
           if (!hasCoachForTeam(fixture.homeTeamId)) {
             planNpcHalftimeSubs(
+              fixture,
               fixture._homeSquad,
               t1,
               fixture._homeFullRoster,
@@ -698,6 +760,7 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           }
           if (!hasCoachForTeam(fixture.awayTeamId)) {
             planNpcHalftimeSubs(
+              fixture,
               fixture._awaySquad,
               t2,
               fixture._awayFullRoster,
@@ -707,12 +770,14 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           }
 
           applyHalftimeSubs(
+            fixture,
             fixture._homeSquad,
             t1,
             fixture._homeFullRoster,
             "home",
           );
           applyHalftimeSubs(
+            fixture,
             fixture._awaySquad,
             t2,
             fixture._awayFullRoster,
@@ -1148,82 +1213,74 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     );
 
     return new Promise<void>((resolveOuter) => {
-      game.db.serialize(() => {
-        game.db.run("BEGIN TRANSACTION");
+      // Transação linear com awaits (conexão serializada: mesma ordem da
+      // cadeia antiga por callbacks). Falha aqui → ROLLBACK + lobby, sem COMMIT.
+      void (async () => {
+        try {
+          await dbRun(game.db, "BEGIN TRANSACTION");
 
-        // Deltas do jogo (golos, cartões, lesões, presenças) acumulados em
-        // memória pela engine — comitados atomicamente com classificações +
-        // receita + marker 'finalized' (janela de crash fechada).
-        queueMatchDeltaWrites(game.db, fixtures);
+          // Deltas do jogo (golos, cartões, lesões, presenças) acumulados em
+          // memória pela engine — comitados atomicamente com classificações +
+          // receita + marker 'finalized' (janela de crash fechada).
+          queueMatchDeltaWrites(game.db, fixtures);
 
-        for (const match of fixtures) {
-          const hG = match.finalHomeGoals;
-          const aG = match.finalAwayGoals;
-          let hPts = 0,
-            aPts = 0,
-            hW = 0,
-            hD = 0,
-            hL = 0,
-            aW = 0,
-            aD = 0,
-            aL = 0;
-          if (hG > aG) {
-            hPts = 3;
-            hW = 1;
-            aL = 1;
-          } else if (hG < aG) {
-            aPts = 3;
-            aW = 1;
-            hL = 1;
-          } else {
-            hPts = 1;
-            aPts = 1;
-            hD = 1;
-            aD = 1;
+          for (const match of fixtures) {
+            const hG = match.finalHomeGoals;
+            const aG = match.finalAwayGoals;
+            const pts = pointsForScore(hG, aG);
+            await dbRun(
+              game.db,
+              `UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?`,
+              [pts.hPts, pts.hW, pts.hD, pts.hL, hG, aG, match.homeTeamId],
+            );
+            await dbRun(
+              game.db,
+              `UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?`,
+              [pts.aPts, pts.aW, pts.aD, pts.aL, aG, hG, match.awayTeamId],
+            );
           }
 
-          game.db.run(
-            `UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?`,
-            [hPts, hW, hD, hL, hG, aG, match.homeTeamId],
-          );
-          game.db.run(
-            `UPDATE teams SET points=points+?, wins=wins+?, draws=draws+?, losses=losses+?, goals_for=goals_for+?, goals_against=goals_against+? WHERE id=?`,
-            [aPts, aW, aD, aL, aG, hG, match.awayTeamId],
-          );
-        }
-
-        // ── BILHETERIA — moved inside the transaction so ticket revenue commits
-        // atomically with the standings updates (previously ran after COMMIT,
-        // outside any transaction, which left a crash window). Same per-week value:
-        // attendance × preço do bilhete da equipa da casa for each fixture,
-        // com 15% para o visitante (AWAY_TICKET_SHARE).
-        for (const match of fixtures) {
-          const ticketPrice = (match as any)._ticketPrice || 15;
-          const revenue = (match.attendance || 0) * ticketPrice;
-          if (revenue > 0) {
-            const awayShare = Math.floor(revenue * AWAY_TICKET_SHARE);
-            const homeShare = revenue - awayShare;
-            game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [
-              homeShare,
-              match.homeTeamId,
-            ]);
-            if (awayShare > 0) {
-              game.db.run("UPDATE teams SET budget = budget + ? WHERE id = ?", [
-                awayShare,
-                match.awayTeamId,
-              ]);
+          // ── BILHETEIRA — dentro da transação para comitar atomicamente
+          // com as classificações (antes corria após o COMMIT, fora de
+          // transação — janela de crash). Mesmo valor semanal: attendance ×
+          // preço do bilhete da casa, com 15% para o visitante (AWAY_TICKET_SHARE).
+          for (const match of fixtures) {
+            const ticketPrice = (match as any)._ticketPrice || 15;
+            const revenue = (match.attendance || 0) * ticketPrice;
+            if (revenue > 0) {
+              const awayShare = Math.floor(revenue * AWAY_TICKET_SHARE);
+              const homeShare = revenue - awayShare;
+              await dbRun(
+                game.db,
+                "UPDATE teams SET budget = budget + ? WHERE id = ?",
+                [homeShare, match.homeTeamId],
+              );
+              if (awayShare > 0) {
+                await dbRun(
+                  game.db,
+                  "UPDATE teams SET budget = budget + ? WHERE id = ?",
+                  [awayShare, match.awayTeamId],
+                );
+              }
             }
           }
-        }
 
-        // Recovery marker for crash recovery: committed atomically with standings +
-        // ticket revenue. If a process dies after this COMMIT but before the
-        // calendar advances, restart sees the row and advances state instead of
-        // replaying the week (see recoverFinalizedSlot in checkAllReady's lobby).
-        game.db.run(
-          "INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
-          [game.season, completedCalendarIndex],
-        );
+          // Recovery marker for crash recovery: committed atomically with standings +
+          // ticket revenue. If a process dies after this COMMIT but before the
+          // calendar advances, restart sees the row and advances state instead of
+          // replaying the week (see recoverFinalizedSlot in checkAllReady's lobby).
+          await dbRun(
+            game.db,
+            "INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'finalized')",
+            [game.season, completedCalendarIndex],
+          );
+        } catch (txErr) {
+          console.error(`[${game.roomCode}] Standings update error:`, txErr);
+          await dbRun(game.db, "ROLLBACK").catch(() => {});
+          game.gamePhase = "lobby";
+          resolveOuter();
+          return;
+        }
 
         game.db.run("COMMIT", async (err: any) => {
           if (err) {
@@ -1244,26 +1301,12 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
           );
 
           // Emit match results
-          const fullTimeFixtures = fixtures.map((fixture) => {
-            const total = (fixture.attendance || 0) * ((fixture as any)._ticketPrice || 15);
-            const awayTicketRevenue = Math.floor(total * AWAY_TICKET_SHARE);
-            return {
-            ...fixture,
-            homeTicketRevenue: total - awayTicketRevenue,
-            awayTicketRevenue,
-            mom: computeMoms(
-              fixture.events || [],
-              fixture.homeLineup || [],
-              fixture.awayLineup || [],
-            ),
-            referee: pickRefereeSummary(
-              game.roomCode,
-              fixture.homeTeamId,
-              fixture.awayTeamId,
-              completedMatchweek,
-            ),
-            };
-          });
+          const fullTimeFixtures = buildFullTimeFixtures(
+            game,
+            fixtures,
+            completedMatchweek,
+            pickRefereeSummary,
+          );
 
           // Store in history
           game.allMatchResults = game.allMatchResults ?? {};
@@ -1570,164 +1613,156 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
   // is never charged twice for the same (season, slot).
   async function applyWeeklyFinancesOnce(game: ActiveGame): Promise<boolean> {
     const slot = game.calendarIndex;
-    return new Promise<boolean>((resolve) => {
-      game.db.get(
+    const rollback = () => dbRun(game.db, "ROLLBACK").catch(() => {});
+    try {
+      const charged = await dbGet(
+        game.db,
         "SELECT 1 AS done FROM applied_weeks WHERE season = ? AND slot = ? AND kind = 'weekly_finance'",
         [game.season, slot],
-        (chkErr: any, row: any) => {
-          if (chkErr) {
-            console.error(
-              `[${game.roomCode}] ⚠ applied_weeks('weekly_finance') read error — applying without marker protection:`,
-              chkErr.message,
-            );
-          } else if (row) {
-            // Already charged in a previous attempt for this slot.
-            return resolve(true);
-          }
+      ).catch((chkErr: any) => {
+        console.error(
+          `[${game.roomCode}] ⚠ applied_weeks('weekly_finance') read error — applying without marker protection:`,
+          chkErr.message,
+        );
+        return null;
+      });
+      if (charged) {
+        // Already charged in a previous attempt for this slot.
+        return true;
+      }
 
-          game.db.run("BEGIN TRANSACTION", (begErr: any) => {
-            if (begErr) {
-              console.error(
-                `[${game.roomCode}] ❌ Weekly finance BEGIN failed:`,
-                begErr,
-              );
-              return resolve(false);
-            }
+      try {
+        await dbRun(game.db, "BEGIN TRANSACTION");
+      } catch (begErr) {
+        console.error(
+          `[${game.roomCode}] ❌ Weekly finance BEGIN failed:`,
+          begErr,
+        );
+        return false;
+      }
 
-            // Weekly base income by division (keeps lower-division teams viable)
-            for (const [div, income] of Object.entries(WEEKLY_BASE_INCOME)) {
-              game.db.run(
-                "UPDATE teams SET budget = budget + ? WHERE division = ?",
-                [income, Number(div)],
-              );
-            }
+      // Weekly base income by division (keeps lower-division teams viable)
+      for (const [div, income] of Object.entries(WEEKLY_BASE_INCOME)) {
+        await dbRun(
+          game.db,
+          "UPDATE teams SET budget = budget + ? WHERE division = ?",
+          [income, Number(div)],
+        );
+      }
 
-            // We read the pre-update loan amounts first. Each statement below is queued
-            // only after the previous step's callback ran, so ordering is guaranteed:
-            // this SELECT fills preLoan before the UPDATE executes, and the marker +
-            // COMMIT run strictly after the financial updates.
-            const preLoan: Record<number, number> = {};
-            const preDiv: Record<number, number> = {};
-            const preHuman: Record<number, number> = {};
-            const preWages: Record<number, number> = {};
-            const preSeats: Record<number, number> = {};
-            game.db.all(
-              `SELECT t.id, t.loan_amount, t.division, t.stadium_capacity,
+      // Dívida/capacidade/salários ANTES dos descontos — os mesmos valores
+      // alimentam o UPDATE de despesas e o resumo do Jornal. Em erro de
+      // leitura, segue com mapas vazios (comportamento anterior).
+      const preLoan: Record<number, number> = {};
+      const preDiv: Record<number, number> = {};
+      const preHuman: Record<number, number> = {};
+      const preWages: Record<number, number> = {};
+      const preSeats: Record<number, number> = {};
+      const preRows: any[] = await dbAll(
+        game.db,
+        `SELECT t.id, t.loan_amount, t.division, t.stadium_capacity,
                       m.is_human,
                       (SELECT COALESCE(SUM(wage), 0)
                        FROM players WHERE players.team_id = t.id) AS wages
                FROM teams t
                LEFT JOIN managers m ON t.manager_id = m.id`,
-              (preErr: any, preRows: any[]) => {
-                if (!preErr)
-                  for (const r of preRows || []) {
-                    preLoan[r.id] = r.loan_amount || 0;
-                    preDiv[r.id] = r.division ?? 5;
-                    preHuman[r.id] = r.is_human || 0;
-                    preWages[r.id] = r.wages || 0;
-                    preSeats[r.id] = r.stadium_capacity || 0;
-                  }
+      ).catch(() => []);
+      for (const r of preRows) {
+        preLoan[r.id] = r.loan_amount || 0;
+        preDiv[r.id] = r.division ?? 5;
+        preHuman[r.id] = r.is_human || 0;
+        preWages[r.id] = r.wages || 0;
+        preSeats[r.id] = r.stadium_capacity || 0;
+      }
 
-                // Deduct weekly wages + loan interest + principal installment (same for
-                // cup and league weeks). The installment abates the loan principal so the
-                // visible debt shrinks week over week, and scales with the division's
-                // base income (a flat fee was 3 weekly incomes for Distritais). Stadium
-                // upkeep spares the first STADIUM_UPKEEP_EXEMPT_SEATS seats: giant
-                // stadiums still cost millions per season (anti-snowball), small ones breathe.
-                game.db.run(
-                  `UPDATE teams SET
+      // Deduct weekly wages + loan interest + principal installment (same for
+      // cup and league weeks). The installment abates the loan principal so the
+      // visible debt shrinks week over week, and scales with the division's
+      // base income (a flat fee was 3 weekly incomes for Distritais). Stadium
+      // upkeep spares the first STADIUM_UPKEEP_EXEMPT_SEATS seats: giant
+      // stadiums still cost millions per season (anti-snowball), small ones breathe.
+      try {
+        await dbRun(
+          game.db,
+          `UPDATE teams SET
                     loan_amount = MAX(0, loan_amount - (${LOAN_DIV_CASE})),
                     budget = budget
                       - CAST((loan_amount * 0.015) AS INTEGER)
                       - (SELECT COALESCE(SUM(wage), 0) FROM players WHERE players.team_id = teams.id)
                       - CAST((MAX(0, COALESCE(stadium_capacity, 0) - ?) * ?) AS INTEGER)
                       - MIN((${LOAN_DIV_CASE}), loan_amount)`,
-                  [STADIUM_UPKEEP_EXEMPT_SEATS, STADIUM_UPKEEP_PER_SEAT_WEEK],
-                  (expErr: any) => {
-                    if (expErr) {
-                      console.error(
-                        `[${game.roomCode}] ❌ Weekly expense DB error:`,
-                        expErr,
-                      );
-                      game.db.run("ROLLBACK", () => resolve(false));
-                      return;
-                    }
+          [STADIUM_UPKEEP_EXEMPT_SEATS, STADIUM_UPKEEP_PER_SEAT_WEEK],
+        );
+      } catch (expErr) {
+        console.error(`[${game.roomCode}] ❌ Weekly expense DB error:`, expErr);
+        await rollback();
+        return false;
+      }
 
-                    // Resumo financeiro semanal: 1 notícia por equipa com
-                    // treinador humano. Os valores são os mesmos do UPDATE
-                    // (loan_amount pré-atualização; idênticas fórmulas do SQL).
-                    for (const teamId of Object.keys(preLoan)) {
-                      const id = Number(teamId);
-                      if (!preHuman[id]) continue;
-                      const oldLoan = preLoan[id];
-                      const div = preDiv[id] ?? 5;
-                      const income = WEEKLY_BASE_INCOME[div] ?? 0;
-                      const wages = preWages[id] || 0;
-                      const upkeep = Math.trunc(
-                        Math.max(
-                          0,
-                          (preSeats[id] || 0) - STADIUM_UPKEEP_EXEMPT_SEATS,
-                        ) *
-                          STADIUM_UPKEEP_PER_SEAT_WEEK,
-                      );
-                      const interest = Math.floor(oldLoan * 0.015);
-                      const installment = Math.min(loanInstallment(div), oldLoan);
-                      logClubNews(
-                        game,
-                        "weekly_finance",
-                        "Resumo Financeiro da Semana",
-                        id,
-                        {
-                          description: buildWeeklyFinanceSummary({
-                            income,
-                            wages,
-                            upkeep,
-                            interest,
-                            installment,
-                            oldLoan,
-                          }),
-                        },
-                      );
-                    }
+      // Resumo financeiro semanal: 1 notícia por equipa com
+      // treinador humano. Os valores são os mesmos do UPDATE
+      // (loan_amount pré-atualização; idênticas fórmulas do SQL).
+      for (const teamId of Object.keys(preLoan)) {
+        const id = Number(teamId);
+        if (!preHuman[id]) continue;
+        const oldLoan = preLoan[id];
+        const div = preDiv[id] ?? 5;
+        const income = WEEKLY_BASE_INCOME[div] ?? 0;
+        const wages = preWages[id] || 0;
+        const upkeep = Math.trunc(
+          Math.max(0, (preSeats[id] || 0) - STADIUM_UPKEEP_EXEMPT_SEATS) *
+            STADIUM_UPKEEP_PER_SEAT_WEEK,
+        );
+        const interest = Math.floor(oldLoan * 0.015);
+        const installment = Math.min(loanInstallment(div), oldLoan);
+        logClubNews(game, "weekly_finance", "Resumo Financeiro da Semana", id, {
+          description: buildWeeklyFinanceSummary({
+            income,
+            wages,
+            upkeep,
+            interest,
+            installment,
+            oldLoan,
+          }),
+        });
+      }
 
-                    // Marker + COMMIT: reached only after the full financial chain above
-                    // queued successfully. Money moves and the journal commit atomically;
-                    // a crash at any point before this leaves no marker, so replay is safe.
-                    game.db.run(
-                      "INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'weekly_finance')",
-                      [game.season, slot],
-                      () => {
-                        game.db.run("COMMIT", (commitErr: any) => {
-                          if (commitErr) {
-                            console.error(
-                              `[${game.roomCode}] ❌ Weekly finance COMMIT failed:`,
-                              commitErr,
-                            );
-                            game.db.run("ROLLBACK", () => resolve(false));
-                            return;
-                          }
-                          // Saldo real pós-descontos (o jogo da semana ainda não
-                          // foi jogado); a finalização atualiza o mesmo slot
-                          // com a bilheteira — o ponto final é de fim de semana.
-                          snapshotBalanceHistory(
-                            game,
-                            game.season,
-                            slot,
-                            game.year || 0,
-                            game.matchweek || 0,
-                          );
-                          resolve(true);
-                        });
-                      },
-                    );
-                  },
-                );
-              },
-            );
-          });
-        },
+      // Marker + COMMIT: dinheiro e Jornal comitam atomicamente; um crash
+      // antes daqui deixa tudo sem marker, por isso rejogar é seguro.
+      await dbRun(
+        game.db,
+        "INSERT OR IGNORE INTO applied_weeks (season, slot, kind) VALUES (?, ?, 'weekly_finance')",
+        [game.season, slot],
       );
-    });
+      try {
+        await dbRun(game.db, "COMMIT");
+      } catch (commitErr) {
+        console.error(
+          `[${game.roomCode}] ❌ Weekly finance COMMIT failed:`,
+          commitErr,
+        );
+        await rollback();
+        return false;
+      }
+      // Saldo real pós-descontos (o jogo da semana ainda não
+      // foi jogado); a finalização atualiza o mesmo slot
+      // com a bilheteira — o ponto final é de fim de semana.
+      snapshotBalanceHistory(
+        game,
+        game.season,
+        slot,
+        game.year || 0,
+        game.matchweek || 0,
+      );
+      return true;
+    } catch (unexpected) {
+      console.error(
+        `[${game.roomCode}] ❌ Weekly finance unexpected error:`,
+        unexpected,
+      );
+      await rollback();
+      return false;
+    }
   }
 
   // Lobby → start of the current week (league or cup): clear auction queue timers,

@@ -655,6 +655,18 @@ function subPhrase(outName: string, inName: string): string {
   ]);
 }
 
+/** Substituição ao intervalo (evento halftime_sub, minuto 45). */
+function halftimeSubPhrase(outName: string, inName: string): string {
+  return pickPhrase([
+    `${outName} ficou no balneário. ${inName} começa a segunda parte.`,
+    `Mudança ao intervalo: ${inName} entra para o lugar de ${outName}. Recado recebido.`,
+    `${outName} não convenceu. ${inName} tem a segunda parte para provar o seu valor.`,
+    `O treinador não esperou: ${outName} sai, ${inName} entra. Mensagem clara.`,
+    `Substituição ao intervalo. ${inName} substitui ${outName} — hora de fazer a diferença.`,
+    `${outName} foi substituído no intervalo. ${inName} vai tentar mudar o rumo da partida.`,
+  ]);
+}
+
 /** Chance sem golo (log hatrick-style): GR defendeu. */
 function chanceSavedPhrase(attacker: string, grName: string): string {
   return pickPhrase([
@@ -1206,6 +1218,7 @@ export {
   redPhrase,
   injuryPhrase,
   subPhrase,
+  halftimeSubPhrase,
   emergencyGkPhrase,
   nearMissPhrase,
   chanceSavedPhrase,

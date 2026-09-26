@@ -1,3 +1,10 @@
+## weeklyFlowHelpers: classificação 0–10 → refactor (2026-09-26)
+- Classificação de qualidade pedida → plano completo aprovado e executado. 2 ficheiros: `server/weeklyFlowHelpers.ts`, `server/game/commentary.ts` (+`halftimeSubPhrase`).
+- Extração: `planNpcHalftimeSubs` + `applyHalftimeSubs` saíram de dentro do `runMatchSegment` para o nível do módulo (param `fixture` novo, chamadas atualizadas); 6 frases HT para `commentary.halftimeSubPhrase` (narração só lá).
+- Achatamento: `applyWeeklyFinancesOnce` de pirâmide de callbacks para `async/await` linear (helpers `dbGet/dbAll/dbRun`; mesma ordem/SQL, contrato "nunca rejeita" mantido com rede de ROLLBACK); `finalizeLeagueEvent` com transação linear por awaits (fora `serialize`, `pointsForScore` + `buildFullTimeFixtures` extraídos) — cauda pós-COMMIT intacta de propósito (risco no caminho do dinheiro).
+- Checks: server `typecheck` OK · `audit:socketio` 0 erros (97 avisos pré-existentes) · `test:crash-recovery` PASS. Sem sala viva → `audit:gamestate` fica para a próxima. Só servidor → sem lint/mobile.
+- WIP alheio na árvore intocado (`cupFlowHelpers.ts`, `index.ts`, `socketSessionHandlers.ts` + saves untracked) — commit só dos 2 ficheiros da tarefa.
+
 ## postMatchFlow: review 7,5/10 → DRY + teste (2026-09-26)
 - Avaliação 0–10 pedida → plano aprovado. 3 ficheiros: `postMatchFlow.js`, `postMatchFlowRegression.mjs` (novo, `test:postmatchflow`), `package.json`.
 - `queueBusy` duplicava exatamente `isPostMatchQueueActive` — agora chama-o (primitivo único da tabela de verdade da fila). JSDoc do input triplicado → `@typedef PostMatchInputs` partilhado pelas 2 funções.
