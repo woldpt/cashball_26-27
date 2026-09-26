@@ -1862,3 +1862,7 @@ Plano C1+C2 (quando fizer):
 - Fase 1: header (marca, LiveClock, RoomHub+chatPeek, dropdown utilizador, efeito Escape) movido para `client/src/components/layout/GameHeader.jsx` (lê `useGame()` direto; props só `handleLogout`/`setAuthPhase`/`scrollToTop`); `GameLayout.jsx` 1450→1090 linhas.
 - WIP alheio na árvore (não tocado): `LeagueStandings.jsx` modificado com 3 erros de lint (confirmado via `git stash` que são pré-existentes); baseline do lint foi corrida com cache e não os mostrou.
 - Checks: eslint limpo nos 2 ficheiros tocados; `check:types` OK.
+
+## GameLayout — refatoração Fase 2: extrair Sidebar (2026-09-26)
+- Sidebar desktop (`renderSidebarTab`, bola de encolher, JOGAR fixo) movida para `client/src/components/layout/Sidebar.jsx` (deriva do contexto os badges/myReady; prop só `scrollToTop`); `GameLayout.jsx` 1090→859 linhas.
+- Checks: eslint limpo nos ficheiros tocados; `check:types` OK.
