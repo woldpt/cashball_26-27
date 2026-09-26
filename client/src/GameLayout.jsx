@@ -18,13 +18,12 @@ import { GameOverlays } from "./GameOverlays.jsx";
 import { GroupBackdrop } from "./components/shared/GroupBackdrop.jsx";
 
 /**
- * Renders the entire game UI. All state comes from useGame().
- * No props — fully self-contained within the context providers.
+ * Shell do jogo: compõe header, navegação, conteúdo e overlays.
+ * O estado vem do `useGame()`; `handleLogout`/`setAuthPhase` vêm da App.
  */
 export function GameLayout({ handleLogout, setAuthPhase }) {
   // ── All game state from GameContext ─────────────────────────────────────
   const {
-    // State
     players,
     activeTab,
     welcomeModal,
@@ -32,7 +31,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
     dismissalModal,
     setMobileSubMenu,
     sidebarCollapsed,
-    // Refs
     // Auth
     me,
     // Handlers
@@ -87,12 +85,6 @@ export function GameLayout({ handleLogout, setAuthPhase }) {
   // e a cadeia grid → item → motion.div têm de passar min-h-0 para baixo,
   // senão a árvore fica à altura do conteúdo e o scroll interno nunca ocorre.
   const isFullBleedTab = activeTab === "squad" || activeTab === "leiloes";
-
-  // Sequência central dos modais pós-jogo: penalties → mood → surpresas taça
-  // → avisos/renovações → fim de época (seasonEnd POR ÚLTIMO). Decide quais
-  // estão visíveis em cada render para nunca se sobreporem; os restantes
-  // aguardam o fecho do atual (os dados continuam guardados).
-
 
   return (
     <div className="h-dvh overflow-hidden bg-surface text-on-surface font-body tracking-tight flex flex-col relative isolate">

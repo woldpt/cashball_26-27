@@ -122,7 +122,7 @@ function PlayButton({ scrollToTop }) {
       {/* glow halo */}
       {!isActive && !myReady && (
         <span
-          className="absolute bottom-2 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full blur-lg opacity-40 pointer-events-none"
+          className="absolute bottom-2 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full opacity-40 pointer-events-none"
           style={{ background: "var(--color-primary, #a8e6b0)" }}
         />
       )}
@@ -138,7 +138,7 @@ function PlayButton({ scrollToTop }) {
             socket.emit("requestAllTacticFamiliarity");
           }
         }}
-        className={`relative flex flex-col items-center justify-center gap-0.5 w-14 h-14 rounded-full font-black text-[9px] uppercase tracking-wider transition-all overflow-hidden shadow-lg ${!isActive && !myReady ? "animate-heartbeat" : ""} ${
+        className={`relative flex flex-col items-center justify-center gap-0.5 w-14 h-14 rounded-full font-black text-[9px] uppercase tracking-wider transition-all overflow-hidden shadow-lg ${
           isActive
             ? "bg-primary text-on-primary shadow-primary/40"
             : "bg-primary text-on-primary shadow-primary/30"

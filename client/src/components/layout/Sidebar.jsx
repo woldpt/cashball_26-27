@@ -205,7 +205,7 @@ export function Sidebar({ scrollToTop }) {
           {/* glow halo behind button (idle only) */}
           {!isMatchInProgress && activeTab !== "tactic" && !myReady && (
             <span
-              className="absolute inset-1 rounded-lg blur-md opacity-30 pointer-events-none"
+              className="absolute inset-1 rounded-lg opacity-30 pointer-events-none"
               style={{ background: "var(--color-primary, #a8e6b0)" }}
             />
           )}
@@ -227,7 +227,7 @@ export function Sidebar({ scrollToTop }) {
                   : "JOGAR"
                 : undefined
             }
-            className={`relative w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest rounded-lg overflow-hidden ${sidebarCollapsed ? "justify-center" : ""} ${!isMatchInProgress && activeTab !== "tactic" && !myReady ? "animate-heartbeat" : ""} ${
+            className={`relative w-full flex items-center gap-3 px-2 py-3.5 text-sm font-black uppercase tracking-widest rounded-lg overflow-hidden ${sidebarCollapsed ? "justify-center" : ""} ${
               isMatchInProgress
                 ? "bg-red-500/15 text-red-400 border border-red-500/30 cursor-not-allowed"
                 : activeTab === "tactic"
@@ -239,31 +239,9 @@ export function Sidebar({ scrollToTop }) {
               {isMatchInProgress ? "sensors" : "strategy"}
             </span>
             {!sidebarCollapsed && (
-              <>
-                <span className="flex-1 text-left relative z-10">
-                  {isMatchInProgress ? "AO VIVO" : "JOGAR"}
-                </span>
-                <span className="relative flex h-2 w-2 shrink-0 z-10">
-                  <span
-                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                      isMatchInProgress
-                        ? "bg-red-500"
-                        : activeTab === "tactic"
-                          ? "bg-on-primary/40"
-                          : "bg-primary"
-                    }`}
-                  />
-                  <span
-                    className={`relative inline-flex rounded-full h-2 w-2 ${
-                      isMatchInProgress
-                        ? "bg-red-500"
-                        : activeTab === "tactic"
-                          ? "bg-on-primary/60"
-                          : "bg-primary"
-                    }`}
-                  />
-                </span>
-              </>
+              <span className="flex-1 text-left relative z-10">
+                {isMatchInProgress ? "AO VIVO" : "JOGAR"}
+              </span>
             )}
           </button>
         </div>

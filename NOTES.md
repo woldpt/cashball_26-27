@@ -1876,3 +1876,9 @@ Plano C1+C2 (quando fizer):
 ## GameLayout — refatoração Fase 5: extrair SystemOverlays (2026-09-26)
 - Toasts, flash de reconnect, erro fatal e sessão deslocada movidos para `client/src/components/layout/SystemOverlays.jsx` (sem props); `GameLayout.jsx` 335→225 linhas. `WelcomeModal`, tutorial, `roomBlocked` e banners ficam no shell (estão presos à lógica do tutorial e ao fluxo do `main`).
 - Checks: eslint limpo nos ficheiros tocados; `check:types` OK.
+
+## GameLayout — refatoração Fase 6: higiene + verificação final (2026-09-26)
+- Removidos `animate-heartbeat`/`animate-ping`/glow `blur` dos dois JOGAR (botão estático, cores intactas); mantidos staggers, `layoutId`, `sheetUp`/`fadeSlide` (custo zero, sem refs/timers). Docstring do shell corrigida (tem props) e comentário órfão da sequência de modais removido.
+- Saltado de propósito: `disabled` real nos botões da sidebar (está `hidden` em jogo — guards quase mortos; trocar arrastava comportamento de focus/tooltip) e `useMemo` nos filtros de badges (arrays de dezenas de itens, sem regressão vs monólito).
+- Verificação: eslint limpo nos 5 ficheiros; `check:types` OK; `test:mobile` 10/165 e `:landscape` 12/198 — idênticos ao baseline (mesmos 4 harnesses pré-existentes: room-settings, roomhub, stadiumtab, standings; `overflow=0` em tudo); `game-landscape-test` PASS nas duas passagens + screenshots 390/667 vistos (pill AO VIVO sem tapar conteúdo).
+- Resultado: `GameLayout.jsx` 1450→~220 linhas; `layout/` com `GameHeader`, `Sidebar`, `MobileNav`, `SystemOverlays`.
