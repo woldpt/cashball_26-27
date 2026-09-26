@@ -2037,3 +2037,13 @@ Plano C1+C2 (quando fizer):
 - A11y: `aria-hidden` no ícone, `autoFocus` no "Aceitar", `id`s título/descrição.
 - Não feito (YAGNI): fila de convites (último esmaga anterior, documentado no JSDoc), expiração no cliente, `MODAL_Z` novo (reutiliza `default`).
 - Checks: eslint limpo no ficheiro (2 erros pré-existentes noutros — confirmados com `git stash`); `check:types` OK; `test:mobile` 165/165 + landscape 198/198 PASS. Sem audits (sem lógica de jogo/sockets).
+
+## cupFlowHelpers — refatoração pausada a meio (2026-09-26)
+- Plano aprovado e executado até à Fase 3 (só `server/cupFlowHelpers.ts`, `server/index.ts`, `server/socketSessionHandlers.ts`; sem commit).
+- Fase 1: removido `ensurePhaseTimeout` (no-op) dos 3 ficheiros — `rg` a zero, `typecheck` + `test:connect-smoke` + `audit:socketio` (0 erros) OK.
+- Fase 2: novos `applyPostRoundTrainingAndEvolution` + `advanceCalendarToLobby`, usados por `continueFromEtGate` e `finalizeFriendly` (−39 linhas).
+- Fase 3: `applySeasonEnd` agora orquestrador (payChampionPrizes, paySponsorRevenue, payTopScorerPrize, applyPromotionsAndRelegations, evolveFanbase, persistAvgAttendance, resetPlayerSeasonStats, startNewSeasonState, emitSeasonEndSummary) + `dbRunOn`/`Promotion`/consts ao nível do closure.
+- Fase 4 (completa após retoma): `setupCupFixtures`, `playExtraTimeAndPenalties` e `commitCupRoundResults` extraídos; `continueFromEtGate` é orquestrador (guardas + 3 chamadas + gate de animação + avanço). Splice da Phase 2 revisto e íntegro (contagens: applyETSubs 4, cupExtraTimeStart 2× comentário+emit, drawnSetups só no helper). Tail (anim gate + avanço) ficou inline de propósito — já só chama os helpers da Fase 2.
+- Fase 5: `generateCupDraw` com 1 INSERT em lote (como o amigável); `catch {}` do espelho do sorteio no Jornal passa a `console.error`; `catch {}` médicos (2×) mantidos — silêncio intencional.
+- Pausa intermédia: edição concorrente noutros ficheiros (commit e4b5df20) — retomado após confirmação de árvore limpa.
+- Checks finais: `typecheck` OK, `audit:gamestate V5AUDIT` 0 erros, `audit:socketio` 0 erros + `test:connect-smoke` OK (Fase 1).

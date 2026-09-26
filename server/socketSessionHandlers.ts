@@ -92,7 +92,6 @@ interface SessionHandlerDeps {
 	getPlayerList: (game: ActiveGame) => PlayerSession[];
 	saveGameState: (game: ActiveGame) => void;
 	emitCurrentPhaseToSocket: (game: ActiveGame, socket: any) => void;
-	ensurePhaseTimeout: (game: ActiveGame) => void;
 	emitAwaitingCoaches: (game: ActiveGame) => void;
 	emitPresence: (game: ActiveGame) => void;
 	checkAllReady: (game: ActiveGame) => void | Promise<void>;
@@ -235,7 +234,6 @@ export function registerSessionSocketHandlers(
 		unbindSocket,
 		saveGameState,
 		emitCurrentPhaseToSocket,
-		ensurePhaseTimeout,
 		emitPresence,
 		checkAllReady,
 		runAll,
@@ -364,7 +362,6 @@ export function registerSessionSocketHandlers(
 				// «lido» do localStorage vale e nada duplica).
 				resendPendingJobOffer?.(game, socket, name)?.catch(() => {});
 				resendBoardWarning?.(game, socket, team.id)?.catch(() => {});
-				ensurePhaseTimeout(game);
 
 			// Ações pendentes da equipa que sobreviveram ao disconnect (flape rápido:
 			// o join novo fez bind antes do disconnect do socket velho, que por isso

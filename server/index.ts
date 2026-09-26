@@ -1017,7 +1017,6 @@ const startCupRound = cupFlowHelpers.startCupRound;
 const finalizeCupRound = cupFlowHelpers.finalizeCupRound;
 const continueFromEtGate = cupFlowHelpers.continueFromEtGate;
 const emitCurrentPhaseToSocket = cupFlowHelpers.emitCurrentPhaseToSocket;
-const ensurePhaseTimeout = cupFlowHelpers.ensurePhaseTimeout;
 
 // ── WEEKLY FLOW ────────────────────────────────────────────────────────────────
 
@@ -1131,7 +1130,6 @@ io.on("connection", (socket) => {
 		getPlayerList,
 		saveGameState,
 		emitCurrentPhaseToSocket,
-		ensurePhaseTimeout,
 		emitAwaitingCoaches,
 		emitPresence,
 		checkAllReady,

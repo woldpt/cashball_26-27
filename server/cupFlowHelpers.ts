@@ -234,35 +234,33 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 	}
 
 	// ─── SEASON END ────────────────────────────────────────────────────────────
+	// Prelude partilhado do fim de época (antes só vivia dentro de applySeasonEnd).
 
-	async function applySeasonEnd(game: ActiveGame) {
-		const season = game.season;
-		const year = game.year;
-		const allTeams = await runAll(
-			game.db,
-			"SELECT * FROM teams ORDER BY division, id",
+	const CHAMPION_PRIZE: Record<number, number> = {
+		1: 2000000,
+		2: 1000000,
+		3: 500000,
+		4: 250000,
+		5: 125000,
+	};
+
+	/** Bónus de subida de divisão: 100K€ a cada equipa promovida. */
+	const PROMOTION_BONUS = 100000;
+
+	interface Promotion {
+		teamId: number;
+		toDiv: number;
+		fromDiv: number;
+		teamName: string;
+	}
+
+	function dbRunOn(game: ActiveGame, sql: string, params: any[] = []) {
+		return new Promise<void>((resolve, reject) =>
+			game.db.run(sql, params, (err: any) => (err ? reject(err) : resolve())),
 		);
+	}
 
-		const byDiv: Record<number, any[]> = {};
-		for (const team of allTeams) {
-			if (!byDiv[team.division]) byDiv[team.division] = [];
-			byDiv[team.division].push(team);
-		}
-		for (const div in byDiv) {
-			byDiv[Number(div)] = getStandingsRows(byDiv[Number(div)]);
-		}
-
-		const CHAMPION_PRIZE: Record<number, number> = {
-			1: 2000000,
-			2: 1000000,
-			3: 500000,
-			4: 250000,
-			5: 125000,
-		};
-
-		/** Bónus de subida de divisão: 100K€ a cada equipa promovida. */
-		const PROMOTION_BONUS = 100000;
-
+	async function payChampionPrizes(game: ActiveGame, byDiv: Record<number, any[]>, year: number) {
 		const iLigaWinner = byDiv[1] && byDiv[1][0];
 		if (iLigaWinner) {
 			const coachInfo = await runGet(
@@ -349,8 +347,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				});
 			}
 		}
+		return iLigaWinner;
+	}
 
-		// Sponsor revenue by division
+	async function paySponsorRevenue(game: ActiveGame, allTeams: any[], year: number) {
 		for (const team of allTeams) {
 			const sponsorAmount = SPONSOR_REVENUE_BY_DIVISION[team.division] || 0;
 			if (sponsorAmount > 0) {
@@ -374,8 +374,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			text: "📺 Receitas de patrocinadores distribuídas.",
 			broadcast: true,
 		});
+	}
 
-		// Best scorer prize
+	async function payTopScorerPrize(game: ActiveGame, year: number) {
 		const topScorer = await runGet(
 			game.db,
 			`SELECT p.id, p.name, p.team_id, p.goals, t.name as team_name
@@ -421,18 +422,13 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				broadcast: true,
 			});
 		}
+		return topScorer;
+	}
 
-		// Jornal do Clube persiste entre épocas — não apagar club_news.
-		// As notícias são agregadas por ano no frontend (ClubTab.jsx) para evitar lista infinita.
+	async function applyPromotionsAndRelegations(game: ActiveGame, byDiv: Record<number, any[]>, allTeams: any[], year: number) {
+		const promotions: Promotion[] = [];
 
-		const promotions: Array<{
-			teamId: number;
-			toDiv: number;
-			fromDiv: number;
-			teamName: string;
-		}> = [];
-
-		// Equipas despromovidas do CP (div 4) — usadas no fim da função para o
+		// Equipas despromovidas do CP (div 4) — usadas no fim para o
 		// despedimento obrigatório de treinadores humanos.
 		const relegatedFromDiv4: number[] = [];
 
@@ -481,33 +477,28 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			});
 		}
 
-		const dbRun = (sql: string, params: any[] = []) =>
-			new Promise<void>((resolve, reject) =>
-				game.db.run(sql, params, (err: any) => (err ? reject(err) : resolve())),
-			);
-
-		await dbRun("BEGIN");
+		await dbRunOn(game, "BEGIN");
 		try {
 			for (const promotion of promotions) {
-				await dbRun("UPDATE teams SET division = ? WHERE id = ?", [
+				await dbRunOn(game, "UPDATE teams SET division = ? WHERE id = ?", [
 					promotion.toDiv,
 					promotion.teamId,
 				]);
 				// Quem sobe leva o bónus de subida no mesmo movimento atómico.
 				if (promotion.toDiv < promotion.fromDiv) {
-					await dbRun("UPDATE teams SET budget = budget + ? WHERE id = ?", [
+					await dbRunOn(game, "UPDATE teams SET budget = budget + ? WHERE id = ?", [
 						PROMOTION_BONUS,
 						promotion.teamId,
 					]);
 				}
 			}
-			await dbRun(
+			await dbRunOn(game,
 				"UPDATE teams SET points=0, wins=0, draws=0, losses=0, goals_for=0, goals_against=0",
 			);
 			// Reset emocional de época nova: moral neutra para todos e adeptos
 			// à base de fidelidade da (nova) divisão — sem herdar euforias nem crises.
-			await dbRun("UPDATE teams SET morale = 25");
-			await dbRun(
+			await dbRunOn(game, "UPDATE teams SET morale = 25");
+			await dbRunOn(game,
 				"UPDATE teams SET fans_mood = CASE division WHEN 1 THEN ? WHEN 2 THEN ? WHEN 3 THEN ? WHEN 4 THEN ? ELSE ? END",
 				[
 					MATCH_TUNING.fansBaseByDivision[1],
@@ -517,9 +508,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					MATCH_TUNING.fansBaseByDivision[5],
 				],
 			);
-			await dbRun("COMMIT");
+			await dbRunOn(game, "COMMIT");
 		} catch (txErr) {
-			await dbRun("ROLLBACK").catch(() => {});
+			await dbRunOn(game, "ROLLBACK").catch(() => {});
 			throw txErr;
 		}
 
@@ -541,8 +532,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				broadcast: true,
 			});
 		}
+		return { promotions, relegatedFromDiv4 };
+	}
 
-		// ── Evolução da massa adepta ─────────────────────────────────────
+	async function evolveFanbase(game: ActiveGame, byDiv: Record<number, any[]>, allTeams: any[], promotions: Promotion[]) {
 		// byDiv tem as classificações finais (divisões antigas); promotions
 		// diz a divisão nova. Campeão/promovido cresce até +20%, meio da
 		// tabela +5%, despromovido −20%, com teto suave da nova divisão:
@@ -569,13 +562,15 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					const base = team.fanbase > 0 ? team.fanbase : (FANBASE_BY_DIVISION[team.division] ?? 7000);
 					const cap = FANBASE_DIV_CAP[newDiv] ?? 8000;
 					const updated = Math.max(1000, Math.min(cap, Math.round(base * (1 + growth))));
-					await dbRun("UPDATE teams SET fanbase = ? WHERE id = ?", [updated, team.id]);
+					await dbRunOn(game, "UPDATE teams SET fanbase = ? WHERE id = ?", [updated, team.id]);
 				}
 			}
 		} catch (fbErr) {
 			console.error(`[${game.roomCode}] fanbase evolution failed:`, (fbErr as any)?.message || fbErr);
 		}
+	}
 
+	async function persistAvgAttendance(game: ActiveGame, allTeams: any[]) {
 		// Persist avg_attendance per team (rolling average: blend previous + this season)
 		for (const team of allTeams) {
 			const homeMatches = await runAll<{ attendance: number }>(
@@ -600,31 +595,36 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				});
 			}
 		}
+	}
+
+	async function resetPlayerSeasonStats(game: ActiveGame) {
 		// ── Off-season decay & idleness (age-free) ─────────────────────
 		// Runs BEFORE stats reset so games_played is still available
 		await applyOffSeasonDecay(game);
 
-		await dbRun("BEGIN");
+		await dbRunOn(game, "BEGIN");
 		try {
 			// career_goals/reds/injuries já são acumulados por jogo no flush transacional
 			// (queueMatchDeltaWrites → `career_goals = career_goals + ?`). Soma-los aqui de novo
 			// duplicaria a carreira (2× por época) — ver repro E2E: 9 golos época → carreira 18.
 			// Só career_games é escrito exclusivamente aqui (NÃO é incrementado por jogo).
-			await dbRun(
+			await dbRunOn(game,
 				"UPDATE players SET career_games = career_games + games_played",
 			);
-			await dbRun(
-				// last_appearance_matchweek stores calendar slots (0-based); it must reset with
-        // the season or the engine's per-slot replay guard blocks slot 0 of the new
-        // season for players who appeared late in the previous one.
-        "UPDATE players SET goals = 0, red_cards = 0, injuries = 0, games_played = 0, suspension_games = 0, suspension_until_matchweek = 0, injury_until_matchweek = 0, transfer_cooldown_until_matchweek = 0, last_appearance_matchweek = 0",
+			await dbRunOn(game,
+			// last_appearance_matchweek stores calendar slots (0-based); it must reset with
+			// the season or the engine's per-slot replay guard blocks slot 0 of the new
+			// season for players who appeared late in the previous one.
+			"UPDATE players SET goals = 0, red_cards = 0, injuries = 0, games_played = 0, suspension_games = 0, suspension_until_matchweek = 0, injury_until_matchweek = 0, transfer_cooldown_until_matchweek = 0, last_appearance_matchweek = 0",
 			);
-			await dbRun("COMMIT");
+			await dbRunOn(game, "COMMIT");
 		} catch (txErr) {
-			await dbRun("ROLLBACK").catch(() => {});
+			await dbRunOn(game, "ROLLBACK").catch(() => {});
 			throw txErr;
 		}
+	}
 
+	async function startNewSeasonState(game: ActiveGame) {
 		// Carregar equipas com as NOVAS divisões (pós-promoção/despromoção)
 		// antes de resetar o estado do jogo, para que o saveGameState abaixo
 		// já persista os fixtureSeeds corretos e elimine a janela onde seeds
@@ -694,7 +694,14 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		io.to(game.roomCode).emit("teamsData", updatedTeams);
 		io.to(game.roomCode).emit("topScorers", []); // Reset top scorers for new season
 		io.to(game.roomCode).emit("teamForms", {}); // Reset form display for new season
+		return updatedTeams;
+	}
 
+	async function emitSeasonEndSummary(game: ActiveGame, opts: {
+		season: number; year: number; byDiv: Record<number, any[]>;
+		iLigaWinner: any; promotions: Promotion[]; topScorer: any;
+	}) {
+		const { season, year, byDiv, iLigaWinner, promotions, topScorer } = opts;
 		// Build season-end summary for the modal
 		const divisionChampions = ([1, 2, 3, 4, 5] as number[])
 			.map((div) => {
@@ -746,6 +753,51 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				: null,
 		});
 		io.to(game.roomCode).emit("globalNewsUpdated");
+	}
+
+	async function applySeasonEnd(game: ActiveGame) {
+		const season = game.season;
+		const year = game.year;
+		const allTeams = await runAll(
+			game.db,
+			"SELECT * FROM teams ORDER BY division, id",
+		);
+
+		const byDiv: Record<number, any[]> = {};
+		for (const team of allTeams) {
+			if (!byDiv[team.division]) byDiv[team.division] = [];
+			byDiv[team.division].push(team);
+		}
+		for (const div in byDiv) {
+			byDiv[Number(div)] = getStandingsRows(byDiv[Number(div)]);
+		}
+
+		const iLigaWinner = await payChampionPrizes(game, byDiv, year);
+
+		await paySponsorRevenue(game, allTeams, year);
+
+		const topScorer = await payTopScorerPrize(game, year);
+
+		// Jornal do Clube persiste entre épocas — não apagar club_news.
+		// As notícias são agregadas por ano no frontend (ClubTab.jsx) para evitar lista infinita.
+
+		const { promotions, relegatedFromDiv4 } = await applyPromotionsAndRelegations(game, byDiv, allTeams, year);
+
+		await evolveFanbase(game, byDiv, allTeams, promotions);
+
+		await persistAvgAttendance(game, allTeams);
+		await resetPlayerSeasonStats(game);
+
+		const updatedTeams = await startNewSeasonState(game);
+
+		await emitSeasonEndSummary(game, {
+			season,
+			year,
+			byDiv,
+			iLigaWinner,
+			promotions,
+			topScorer,
+		});
 
 		// Despedimento obrigatório de treinadores humanos despromovidos do
 		// Campeonato de Portugal: a sua equipa caiu para o pool invisível da
@@ -827,18 +879,25 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				resolve,
 			);
 		});
+		// 1 INSERT com todos os pares em vez de N round-trips (como no amigável).
+		const drawPlaceholders: string[] = [];
+		const drawParams: any[] = [];
 		for (let i = 0; i < teamIds.length; i += 2) {
 			const homeId = teamIds[i];
 			const awayId = teamIds[i + 1];
 			if (!homeId || !awayId) continue;
+			fixtures.push({ homeTeamId: homeId, awayTeamId: awayId });
+			drawPlaceholders.push("(?, ?, ?, ?)");
+			drawParams.push(season, round, homeId, awayId);
+		}
+		if (drawPlaceholders.length > 0) {
 			await new Promise((resolve) => {
 				game.db.run(
-					"INSERT INTO cup_matches (season, round, home_team_id, away_team_id) VALUES (?, ?, ?, ?)",
-					[season, round, homeId, awayId],
+					`INSERT INTO cup_matches (season, round, home_team_id, away_team_id) VALUES ${drawPlaceholders.join(",")}`,
+					drawParams,
 					resolve,
 				);
 			});
-			fixtures.push({ homeTeamId: homeId, awayTeamId: awayId });
 		}
 
 		game.cupTeamIds = teamIds;
@@ -1062,7 +1121,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					description: facts,
 				}, io);
 			}
-		} catch {}
+		} catch (drawNewsErr) {
+			console.error(`[${game.roomCode}] cup draw journal mirror failed (round ${round}):`, (drawNewsErr as any)?.message || drawNewsErr);
+		}
 
 		// Emit draw so clients can show the animation in the lobby
 		io.to(game.roomCode).emit("cupDrawStart", drawPayload);
@@ -1071,6 +1132,78 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		for (const player of connectedPlayers) {
 			game.cupDrawSeenBy.add(player.name);
 		}
+	}
+
+	// ─── SHARED POST-ROUND HELPERS ──────────────────────────────────────────
+	// Treino + evolução + avanço de calendário: idênticos na Taça e no amigável
+	// (só mudam o rótulo dos logs e a razão do avanço). Correm pós-marker,
+	// idempotentes por época/slot — extraídos para um só sítio.
+
+	async function applyPostRoundTrainingAndEvolution(
+		game: ActiveGame,
+		fixtures: any[],
+		label: string,
+	) {
+		const completedCalendarIndex = game.calendarIndex;
+		try {
+			await applyTrainingBonuses(game, fixtures, completedCalendarIndex);
+		} catch (trainErr) {
+			console.error(
+				`[${game.roomCode}] training (${label}): error applying bonuses:`,
+				trainErr,
+			);
+		}
+		try {
+			await applyPostMatchQualityEvolution(
+				game.db,
+				fixtures,
+				completedCalendarIndex + 1,
+				game.season || 1,
+				completedCalendarIndex,
+			);
+		} catch (evolveErr) {
+			console.error(
+				`[${game.roomCode}] evolution (${label}): error applying quality evolution:`,
+				evolveErr,
+			);
+		}
+	}
+
+	// Avanço de calendário para o lobby. O chamador trata do que difere:
+	// a Taça verifica fim de época, o amigável emite presença.
+	function advanceCalendarToLobby(
+		game: ActiveGame,
+		reason: string,
+		logMessage: string,
+	) {
+		game.calendarIndex += 1;
+		clearMatchCheckpoint(game);
+		logCalendarAdvance(game, io, reason, "week_end");
+		game.lastPlayedAt = new Date().toISOString();
+		game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
+		game.currentFixtures = [];
+		game.cupHalftimePayload = null;
+		game.lastHalftimePayload = null;
+		game._etSimCompleted = false;
+		game.cupResultsPayload = null;
+		game.gamePhase = "lobby";
+		resetAllReady(game);
+		clearSeatPositions(game);
+		console.log(
+			`[${game.roomCode}] ${logMessage} | calendarIndex=${game.calendarIndex} | nextEvent=${game.currentEvent?.type ?? "none"}`,
+		);
+		// A taça e o amigável não incrementam matchweek, mas o calendarIndex
+		// avança — sem este broadcast o cliente ficava com o nextMatchSummary
+		// stale (o refetch nunca disparava após a ronda).
+		io.to(game.roomCode).emit("seasonState", {
+			matchweek: game.matchweek,
+			calendarIndex: game.calendarIndex,
+			season: game.season,
+			year: game.year,
+		});
+		saveGameState(game);
+		// Retomar leilões pausados durante o jogo
+		resumeAllPausedAuctions(game);
 	}
 
 	// ─── CUP ROUND FINALIZATION (ET + PENALTIES) ────────────────────────────────
@@ -1143,62 +1276,22 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		await continueFromEtGate(game);
 	}
 
-	/**
-	 * Runs the cup round after the extra-time gate (or directly when no gate is
-	 * needed). State-machine driven: called by checkAllReady once all coaches in
-	 * drawn fixtures are ready, or inline by finalizeCupRound — so an orphaned
-	 * promise can never strand the round.
-	 */
-	async function continueFromEtGate(game: ActiveGame) {
-		if (game._etGateRunning) {
-			console.warn(
-				`[${game.roomCode}] ⚠ continueFromEtGate already running — skipping`,
-			);
-			return;
-		}
-		if (
-			game.gamePhase !== "match_et_gate" &&
-			game.gamePhase !== "match_finalizing"
-		) {
-			console.warn(
-				`[${game.roomCode}] ⚠ continueFromEtGate skipped | phase=${game.gamePhase} (not in ET gate)`,
-			);
-			return;
-		}
-		game._etGateRunning = true;
+	// ─── CUP ET GATE HELPERS ───────────────────────────────────────────────
+	// continueFromEtGate partida em 3 peças (guardas e try/finally ficam no
+	// orquestrador). Ordem e SQL inalterados — só moção de código.
 
-		// Congelamento: o prolongamento não começa com um treinador das equipas
-		// empatadas ausente.
-		if (computeAbsentees(game).length > 0) {
-			game._etGateRunning = false;
-			void waitForPresence(game, io).then(() => {
-				continueFromEtGate(game).catch((err: any) =>
-					console.error(`[${game.roomCode}] continueFromEtGate (pós-pausa):`, err),
-				);
-			});
-			return;
-		}
+	type FixtureSetup = {
+		fixture: any;
+		t1: any;
+		t2: any;
+		ctx: any;
+		goals90Home: number;
+		goals90Away: number;
+	};
 
-		const entry = game.currentEvent as any;
-		const round = entry?.round;
-		const season = game.season;
-		const fixtures = game.currentFixtures;
-		const roundName = CUP_ROUND_NAMES[round] || `Ronda ${round}`;
-		const roundLabel = roundName;
-		const results: any[] = [];
-
-		try {
-
-		// ── Phase 1: Setup tactics and snapshot 90-min scores ────────────────────
-		type FixtureSetup = {
-			fixture: any;
-			t1: any;
-			t2: any;
-			ctx: any;
-			goals90Home: number;
-			goals90Away: number;
-		};
-		const setups: FixtureSetup[] = await Promise.all(
+	// Phase 1: carrega táticas (ao vivo ou IA) e fotografa o marcador dos 90'.
+	async function setupCupFixtures(game: ActiveGame, fixtures: any[]): Promise<FixtureSetup[]> {
+		return Promise.all(
 			fixtures.map(async (fixture) => {
 				const p1 = Object.values(game.playersByName).find(
 					(p: any) => p.teamId === fixture.homeTeamId,
@@ -1239,8 +1332,11 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				};
 			}),
 		);
+	}
 
-		// ── Phase 2: Extra time — all drawn fixtures batched ─────────────────────
+	// Phase 2: prolongamento + penáltis dos jogos empatados aos 90'.
+	// Devolve se houve algum prolongamento (para o gate de animação).
+	async function playExtraTimeAndPenalties(game: ActiveGame, setups: FixtureSetup[], round: number, roundName: string): Promise<boolean> {
 		const drawnSetups = setups.filter((s) => s.goals90Home === s.goals90Away);
 		const hasAnyET = drawnSetups.length > 0;
 
@@ -1536,8 +1632,18 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				fixture._etGoalsAway = etGoalsAway;
 			}
 		}
+		return hasAnyET;
+	}
 
-		// ── Phase 3: DB updates, morale, and results for all fixtures ────────────
+	// Phase 3: transação atómica (bilheteira + prémios + resultados + marker).
+	// Devolve { results, upsets } ou null se a transação falhar.
+	async function commitCupRoundResults(
+		game: ActiveGame,
+		setups: FixtureSetup[],
+		opts: { round: number; season: number; roundName: string; roundLabel: string },
+	): Promise<{ results: any[]; upsets: any[] } | null> {
+		const { round, season, roundName, roundLabel } = opts;
+		const results: any[] = [];
 		// Bilheteira da Taça: credita attendance × preço do bilhete da casa de cada
 		// eliminatória e persiste attendance + receita faturada em cup_matches.
 		// Executado antes dos resultados para garantir que receita e attendance fazem
@@ -1949,7 +2055,70 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			console.error(`[${game.roomCode}] ❌ Cup transaction failed:`, cupTxErr);
 			await new Promise<void>((resolve) => game.db.run("ROLLBACK", () => resolve()));
 		}
-		if (cupTxFailed) return;
+		if (cupTxFailed) return null;
+		return { results, upsets };
+	}
+
+	/**
+	 * Runs the cup round after the extra-time gate (or directly when no gate is
+	 * needed). State-machine driven: called by checkAllReady once all coaches in
+	 * drawn fixtures are ready, or inline by finalizeCupRound — so an orphaned
+	 * promise can never strand the round.
+	 */
+	async function continueFromEtGate(game: ActiveGame) {
+		if (game._etGateRunning) {
+			console.warn(
+				`[${game.roomCode}] ⚠ continueFromEtGate already running — skipping`,
+			);
+			return;
+		}
+		if (
+			game.gamePhase !== "match_et_gate" &&
+			game.gamePhase !== "match_finalizing"
+		) {
+			console.warn(
+				`[${game.roomCode}] ⚠ continueFromEtGate skipped | phase=${game.gamePhase} (not in ET gate)`,
+			);
+			return;
+		}
+		game._etGateRunning = true;
+
+		// Congelamento: o prolongamento não começa com um treinador das equipas
+		// empatadas ausente.
+		if (computeAbsentees(game).length > 0) {
+			game._etGateRunning = false;
+			void waitForPresence(game, io).then(() => {
+				continueFromEtGate(game).catch((err: any) =>
+					console.error(`[${game.roomCode}] continueFromEtGate (pós-pausa):`, err),
+				);
+			});
+			return;
+		}
+
+		const entry = game.currentEvent as any;
+		const round = entry?.round;
+		const season = game.season;
+		const fixtures = game.currentFixtures;
+		const roundName = CUP_ROUND_NAMES[round] || `Ronda ${round}`;
+		const roundLabel = roundName;
+
+		try {
+
+		// ── Phase 1: Setup tactics and snapshot 90-min scores ────────────────────
+		const setups = await setupCupFixtures(game, fixtures);
+
+		// ── Phase 2: Extra time — all drawn fixtures batched ─────────────────────
+		const hasAnyET = await playExtraTimeAndPenalties(game, setups, round, roundName);
+
+		// ── Phase 3: DB updates, morale, and results for all fixtures ────────────
+		const cupOutcome = await commitCupRoundResults(game, setups, {
+			round,
+			season,
+			roundName,
+			roundLabel,
+		});
+		if (!cupOutcome) return;
+		const { results, upsets } = cupOutcome;
 
 		// ET animation gate: wait for all connected coaches to ack before advancing
 		// Os resultados já estão construídos — guardá-los permite a um coach que
@@ -1977,32 +2146,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		io.to(game.roomCode).emit("cupRoundResults", game.cupResultsPayload);
 		io.to(game.roomCode).emit("globalNewsUpdated");
 
-		// Apply training bonuses for this completed calendar event (cup round)
-		const completedCalendarIndex = game.calendarIndex;
-		try {
-			await applyTrainingBonuses(game, fixtures, completedCalendarIndex);
-		} catch (trainErr) {
-			console.error(
-				`[${game.roomCode}] training (cup): error applying bonuses:`,
-				trainErr,
-			);
-		}
-
-		// Apply quality evolution for cup matches (same as league matches)
-		try {
-			await applyPostMatchQualityEvolution(
-				game.db,
-				fixtures,
-				completedCalendarIndex + 1,
-				game.season || 1,
-				completedCalendarIndex,
-			);
-		} catch (evolveErr) {
-			console.error(
-				`[${game.roomCode}] evolution (cup): error applying quality evolution:`,
-				evolveErr,
-			);
-		}
+		await applyPostRoundTrainingAndEvolution(game, fixtures, "cup");
 
 		// Reduzir timers de indisponibilidade para equipas que jogaram esta ronda
 		if (game.cupTeamIds.length > 0) {
@@ -2025,35 +2169,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		// (ver transacção acima) — não reinserir aqui. Training/timers correm pós-marker
 		// como na liga, idempotentes por época/slot.
 
-		// Advance calendar
-		game.calendarIndex += 1;
-		clearMatchCheckpoint(game);
-		logCalendarAdvance(game, io, "cup_round_finalized", "week_end");
-		game.lastPlayedAt = new Date().toISOString();
-		game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
-		game.currentFixtures = [];
-		game.cupHalftimePayload = null;
-		game.lastHalftimePayload = null;
-		game._etSimCompleted = false;
-		game.cupResultsPayload = null;
-		game.gamePhase = "lobby";
-		resetAllReady(game);
-		clearSeatPositions(game);
-		console.log(
-			`[${game.roomCode}] ↩ Cup round ${round} finalized → lobby | calendarIndex=${game.calendarIndex} | nextEvent=${game.currentEvent?.type ?? "none"}`,
-		);
-		// Estado de época para a sala: a taça não incrementa matchweek, mas o
-		// calendarIndex avança — sem este broadcast o cliente ficava com o
-		// nextMatchSummary stale (refetch nunca disparava após uma ronda).
-		io.to(game.roomCode).emit("seasonState", {
-			matchweek: game.matchweek,
-			calendarIndex: game.calendarIndex,
-			season: game.season,
-			year: game.year,
-		});
-		saveGameState(game);
-		// Retomar leilões pausados durante o jogo de Taça
-		resumeAllPausedAuctions(game);
+		advanceCalendarToLobby(game, "cup_round_finalized", `↩ Cup round ${round} finalized → lobby`);
 
 		// Season end if past calendar
 		if (game.calendarIndex >= SEASON_CALENDAR.length) {
@@ -2257,53 +2373,9 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		io.to(game.roomCode).emit("cupRoundResults", game.cupResultsPayload);
 		io.to(game.roomCode).emit("globalNewsUpdated");
 
-		const completedCalendarIndex = game.calendarIndex;
-		try {
-			await applyTrainingBonuses(game, fixtures, completedCalendarIndex);
-		} catch (trainErr) {
-			console.error(
-				`[${game.roomCode}] training (friendly): error applying bonuses:`,
-				trainErr,
-			);
-		}
-		try {
-			await applyPostMatchQualityEvolution(
-				game.db,
-				fixtures,
-				completedCalendarIndex + 1,
-				game.season || 1,
-				completedCalendarIndex,
-			);
-		} catch (evolveErr) {
-			console.error(
-				`[${game.roomCode}] evolution (friendly): error applying quality evolution:`,
-				evolveErr,
-			);
-		}
+		await applyPostRoundTrainingAndEvolution(game, fixtures, "friendly");
 
-		game.calendarIndex += 1;
-		clearMatchCheckpoint(game);
-		logCalendarAdvance(game, io, "friendly_finalized", "week_end");
-		game.lastPlayedAt = new Date().toISOString();
-		game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
-		game.currentFixtures = [];
-		game.cupHalftimePayload = null;
-		game.lastHalftimePayload = null;
-		game.cupResultsPayload = null;
-		game.gamePhase = "lobby";
-		resetAllReady(game);
-		clearSeatPositions(game);
-		console.log(
-			`[${game.roomCode}] Friendly finalized, lobby | calendarIndex=${game.calendarIndex} | nextEvent=${game.currentEvent?.type ?? "none"}`,
-		);
-		io.to(game.roomCode).emit("seasonState", {
-			matchweek: game.matchweek,
-			calendarIndex: game.calendarIndex,
-			season: game.season,
-			year: game.year,
-		});
-		saveGameState(game);
-		resumeAllPausedAuctions(game);
+		advanceCalendarToLobby(game, "friendly_finalized", "Friendly finalized, lobby");
 		emitPresence(game);
 	}
 
@@ -2509,14 +2581,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		}
 	}
 
-	/**
-	 * No phase timers needed for cup lobby — coaches ready up same as league.
-	 * Kept for API compatibility; no-op unless there's a timer already set.
-	 */
-	function ensurePhaseTimeout(_game: ActiveGame) {
-		// Cup now uses the same lobby Ready flow as league — no separate timers.
-	}
-
 	return {
 		applySeasonEnd,
 		prepareFriendlyFixtures,
@@ -2525,6 +2589,5 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		finalizeCupRound,
 		continueFromEtGate,
 		emitCurrentPhaseToSocket,
-		ensurePhaseTimeout,
 	};
 }
