@@ -1866,3 +1866,9 @@ Plano C1+C2 (quando fizer):
 ## GameLayout — refatoração Fase 2: extrair Sidebar (2026-09-26)
 - Sidebar desktop (`renderSidebarTab`, bola de encolher, JOGAR fixo) movida para `client/src/components/layout/Sidebar.jsx` (deriva do contexto os badges/myReady; prop só `scrollToTop`); `GameLayout.jsx` 1090→859 linhas.
 - Checks: eslint limpo nos ficheiros tocados; `check:types` OK.
+
+## GameLayout — refatoração Fases 3+4: extrair MobileNav, apagar badge voador (2026-09-26)
+- Nav mobile (barra/rail, 3 fly-ups unificados num `GroupFlyUp` genérico sobre `NAV_GROUPS`, pill AO VIVO) movida para `client/src/components/layout/MobileNav.jsx`; `GameLayout.jsx` 859→335 linhas.
+- Maquinaria do badge voador apagada (refs de medição, 2 timers, `transferLanded`, crossfade ~150 linhas): soma no TRANSF esconde com o fly-up aberto, badges individuais com render simples (o painel já anima com `sheetUp`).
+- Armadilha: o corte engoliu `contentRef` + reset de scroll — reposto e verificado com lint.
+- Checks: eslint limpo nos ficheiros tocados; `check:types` OK.
