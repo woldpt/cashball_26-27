@@ -269,3 +269,26 @@ export function teamTextColor(team) {
   if (primary && !isDarkColor(primary)) return primary;
   return team?.color_secondary || "#fff";
 }
+
+/**
+ * Fila de penáltis com suspense: N eventos → N shows escalonados (cada um
+ * ocupa `displayMs`) + 1 revelação atómica no fim. O consumidor agenda cada
+ * step com `setTimeout(fn, step.atMs)` — timers canceláveis por tick novo.
+ * Lista vazia → [] (nada agendado); entradas nulas são ignoradas.
+ *
+ * @param {Array<Object|null|undefined>} events eventos com `penaltySuspense`
+ * @param {number} displayMs janela de cada penálti
+ * @returns {Array<{atMs: number, action: "show"|"reveal", event?: Object>}
+ */
+export function computePenaltySteps(events, displayMs) {
+  const list = (events || []).filter(Boolean);
+  if (!list.length) return [];
+  return [
+    ...list.map((event, i) => ({
+      atMs: i * displayMs,
+      action: "show",
+      event,
+    })),
+    { atMs: list.length * displayMs, action: "reveal" },
+  ];
+}

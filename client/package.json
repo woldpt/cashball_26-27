@@ -15,6 +15,7 @@
     "test:squadnav": "node scripts/squadNavigationRegression.mjs",
     "test:owngoalside": "node scripts/ownGoalSideRegression.mjs",
     "test:goalflash": "node scripts/goalFlashQueueRegression.mjs",
+    "test:penaltysuspense": "node scripts/penaltySuspenseRegression.mjs",
     "test:briefing": "node scripts/briefingViewModelRegression.mjs",
     "test:inboxreads": "node scripts/inboxReadStoreRegression.mjs",
     "test:journaldb": "node scripts/journalDbNewsRegression.mjs",

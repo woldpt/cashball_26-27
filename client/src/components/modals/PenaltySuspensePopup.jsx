@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ModalShell } from "../shared/ModalShell.jsx";
-import { MODAL_Z } from "../../constants/index.js";
+import { MODAL_Z, PENALTY_SUSPENSE_REVEAL_MS } from "../../constants/index.js";
 
 /**
  * @param {{ penaltySuspense: object|null }} props
@@ -14,7 +14,10 @@ export function PenaltySuspensePopup({ penaltySuspense }) {
 
   useEffect(() => {
     if (!penaltySuspense) return;
-    const timer = setTimeout(() => setRevealedFor(penaltySuspense), 2000);
+    const timer = setTimeout(
+      () => setRevealedFor(penaltySuspense),
+      PENALTY_SUSPENSE_REVEAL_MS,
+    );
     return () => clearTimeout(timer);
   }, [penaltySuspense]);
 
@@ -27,7 +30,13 @@ export function PenaltySuspensePopup({ penaltySuspense }) {
       z={MODAL_Z.penalty}
       variant="transparent"
     >
-      <div className="bg-surface-container border-2 border-amber-500/50 rounded-xl px-8 py-6 text-center shadow-2xl animate-bounce">
+      <div
+        role="status"
+        aria-live="assertive"
+        className={`bg-surface-container border-2 border-amber-500/50 rounded-xl px-8 py-6 text-center shadow-2xl ${
+          showResult ? "" : "animate-bounce"
+        }`}
+      >
         <p className="text-xs text-amber-400 uppercase font-black tracking-widest mb-2">
           Penálti
         </p>
@@ -37,9 +46,7 @@ export function PenaltySuspensePopup({ penaltySuspense }) {
         {showResult ? (
           <p
             className={`text-3xl font-black ${
-              penaltySuspense.result === "GOLO!!!"
-                ? "text-emerald-400"
-                : "text-red-400"
+              penaltySuspense.isGoal ? "text-emerald-400" : "text-red-400"
             }`}
           >
             {penaltySuspense.result}

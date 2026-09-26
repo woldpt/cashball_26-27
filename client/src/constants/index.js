@@ -339,6 +339,12 @@ export const MODAL_Z = {
 	dismissal: 9999,
 };
 
+// ── PENÁLTI COM SUSPENSE ────────────────────────────────────────────────
+/** Delay (ms) até revelar o resultado dentro do popup ("..." → "GOLO!!!"). */
+export const PENALTY_SUSPENSE_REVEAL_MS = 1500;
+/** Janela (ms) de cada penálti na fila do hook — revelação/flash no fim. */
+export const PENALTY_SUSPENSE_DISPLAY_MS = 3000;
+
 // ── CUP FINAL VENUE ──────────────────────────────────────────────────────────
 export const CUP_FINAL_STADIUM = "Estádio do Jamor";
 
