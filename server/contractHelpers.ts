@@ -16,6 +16,12 @@ import {
   RES_MAX,
   ECON_FORM_REF,
   CONTRACT_REQUEST_RESET_SQL,
+  AGENT_RENEGOTIATION_WAGE_FLOOR,
+  NPC_RENEW_MIN_BUDGET,
+  AUCTION_PRICE_FLOOR_RATE,
+  AUCTION_PRICE_FLOOR_MIN_SKILL,
+  AUCTION_PRICE_FLOOR_WEEKS,
+  AUCTION_PRICE_FLOOR_VALUE_RATIO,
 } from "./gameConstants";
 import {
   currentEpoch,
@@ -89,6 +95,17 @@ export function createContractHelpers(deps: ContractDeps) {
   const fairWageOf = (player: any): number => {
     return fairWeeklyWage(player.skill);
   };
+
+  /** Preço de abertura de leilão ex-clube (contrato expirado ou corte de
+   * folha NPC): 65% do valor efetivo com piso anti-preço-simbólico. */
+  const exClubAuctionPrice = (player: any): number =>
+    Math.max(
+      Math.round(effectiveValue(player) * AUCTION_PRICE_FLOOR_VALUE_RATIO),
+      Math.max(
+        Math.round((player.skill || 0) * AUCTION_PRICE_FLOOR_RATE),
+        AUCTION_PRICE_FLOOR_MIN_SKILL,
+      ) * AUCTION_PRICE_FLOOR_WEEKS,
+    );
 
   /**
    * Dispara um pedido de renovação do "Agente do Jogador".
@@ -261,7 +278,7 @@ export function createContractHelpers(deps: ContractDeps) {
       const wage = player.wage || 0;
       if (wage <= 0) continue;
       // Só agentes de jogadores muito subvalorizados se mexem (e com calma)
-      if (wage >= fairWageOf(player) * 0.7) continue;
+      if (wage >= fairWageOf(player) * AGENT_RENEGOTIATION_WAGE_FLOOR) continue;
       if (Math.random() > 0.12) continue;
 
       // Só equipas humanas recebem negociações (NPCs não têm treinador
@@ -352,7 +369,7 @@ export function createContractHelpers(deps: ContractDeps) {
         const posCount = posMap[player.position] ?? 0;
         const posMin = POS_MIN[player.position] ?? 3;
         const isNeeded = posCount < posMin;
-        const isAffordable = (team as any).budget > 5000;
+        const isAffordable = (team as any).budget > NPC_RENEW_MIN_BUDGET;
 
         if (isNeeded && isAffordable) {
           const fairWage = fairWageOf(player);
@@ -370,10 +387,7 @@ export function createContractHelpers(deps: ContractDeps) {
 
       // Auction path: NPC surplus/unaffordable
       const agent = getAgentName(player.id);
-      const auctionPrice = Math.max(
-        Math.round(effectiveValue(player) * 0.65),
-        Math.max(Math.round((player.skill || 0) * 40), 500) * 12,
-      );
+      const auctionPrice = exClubAuctionPrice(player);
       await new Promise<void>((resolve) => {
         game.db.run(
           `UPDATE players SET contract_start_epoch = 0, ${CONTRACT_REQUEST_RESET_SQL} WHERE id = ?`,
@@ -499,10 +513,7 @@ export function createContractHelpers(deps: ContractDeps) {
     const toRelease = surplus.slice(0, NPC_WAGE_CUT_PER_EVENT);
     let released = 0;
     for (const player of toRelease) {
-      const auctionPrice = Math.max(
-        Math.round(effectiveValue(player) * 0.65),
-        Math.max(Math.round((player.skill || 0) * 40), 500) * 12,
-      );
+      const auctionPrice = exClubAuctionPrice(player);
       await new Promise<void>((resolve) => {
         game.db.run(
           `UPDATE players SET contract_start_epoch = 0, ${CONTRACT_REQUEST_RESET_SQL} WHERE id = ?`,

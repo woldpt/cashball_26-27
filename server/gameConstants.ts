@@ -306,6 +306,35 @@ export const CONTRACT_REQUEST_RESET_SQL =
   "contract_request_pending = 0, contract_requested_wage = 0, contract_request_is_renegotiation = 0";
 
 /**
+ * Renegociação de agente: só para salários muito abaixo do justo (< 70%).
+ */
+export const AGENT_RENEGOTIATION_WAGE_FLOOR = 0.7;
+
+/** NPC só renova contrato a jogador necessário se a equipa tiver orçamento
+ * acima deste piso (nunca insolvência por renovação). */
+export const NPC_RENEW_MIN_BUDGET = 5000;
+
+/**
+ * Piso anti-preço-simbólico no leilão ex-clube (contrato expirado ou corte
+ * de folha NPC): preço mínimo = max(skill × FLOOR_RATE, FLOOR_MIN_SKILL) ×
+ * FLOOR_WEEKS — garante que nem jogadores baratos saem a preço de pele.
+ */
+export const AUCTION_PRICE_FLOOR_RATE = 40;
+export const AUCTION_PRICE_FLOOR_MIN_SKILL = 500;
+export const AUCTION_PRICE_FLOOR_WEEKS = 12;
+/** Rácio mínimo sobre o valor efetivo no leilão ex-clube. */
+export const AUCTION_PRICE_FLOOR_VALUE_RATIO = 0.65;
+
+/**
+ * NPC coloca jogadores no mercado por plantel cheio: probabilidade semanal
+ * do 1.º limiar de tamanho de plantel cumprido (desc).
+ */
+export const NPC_LIST_SQUAD_THRESHOLDS = [
+  { size: 16, chance: 0.4 },
+  { size: 12, chance: 0.15 },
+] as const;
+
+/**
  * Época absoluta (1-based) derivada de (season, slot).
  * O slot é 1-based (1..20) e reseta no fim de época — monótono por época.
  */

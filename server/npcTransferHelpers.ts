@@ -1,6 +1,6 @@
 import type { ActiveGame } from "./types";
 import { logClubNews, recordTransfer, getTeamsWithCoachNames, currentEpoch } from "./coreHelpers";
-import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_MATCHWEEKS, NPC_BUY_FLOOR_MARGIN, CONTRACT_REQUEST_RESET_SQL } from "./gameConstants";
+import { signingWage, AUCTION_BID_STEP, CONTRACT_LENGTH_MATCHWEEKS, NPC_BUY_FLOOR_MARGIN, CONTRACT_REQUEST_RESET_SQL, NPC_LIST_SQUAD_THRESHOLDS } from "./gameConstants";
 
 type AnyRow = Record<string, any>;
 
@@ -217,7 +217,8 @@ export function createNpcTransferHelpers(deps: NpcTransferDeps) {
         [npcTeam.id, CONTRACT_LENGTH_MATCHWEEKS, currentEpoch(game)],
       );
 
-      const listChance = squad.length > 16 ? 0.4 : squad.length > 12 ? 0.15 : 0;
+      const listChance =
+        NPC_LIST_SQUAD_THRESHOLDS.find((t) => squad.length > t.size)?.chance ?? 0;
       if (listChance === 0 || Math.random() > listChance) continue;
 
       const candidate = squad[0];
