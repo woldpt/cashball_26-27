@@ -1683,3 +1683,8 @@ Plano C1+C2 (quando fizer):
 - `RoomSelectScreen.jsx` (669 linhas): só classes — `landing-*`→0 ocorrências; primary no nome/modos/seleção, tertiary dourado no CTA "Continuar", error no Sair/erros, sky/amber de badges intactos (STYLE.md §5); `rounded-xl/2xl`→`rounded-md`; glows esmeralda removidos. Lógica, socket de presença e estrutura (harness valida) intactos.
 - Harness `roomselect-resp-test.jsx`: fundo `bg-bg text-on-surface`.
 - Checks: `eslint` limpo; `check:types` OK; `roomselect-resp-test` portrait 5/5 + landscape 6/6 PASS; screenshots 390/667 vistos. Versão → `v26.09.3`.
+
+## RoomHub sem landing-* e tokens mortos removidos (2026-09-26)
+- `RoomHub.jsx`: 5 pontos nos badges de convite (mesmo mapeamento do RoomSelect: primary/error/outline). `index.css`: bloco `--color-landing-*` e `.glass-card` mortos removidos — zero referências em JSX/JS.
+- O re-skin partiu o `landing-resp-test`: contava cartões via `[class*="rounded-2xl"]`; passa a `[class*="cursor-pointer"]` (só os cartões têm).
+- Checks: `eslint` limpo nos tocados (o erro do harness é o pré-existente); `check:types` OK; suite completa portrait 155/155 + landscape 186/186 PASS; screenshots roomhub 390/667 vistos. Versão → `v26.09.4`.

@@ -214,27 +214,27 @@ export function RoomHub({
     return (
       <>
         {inv?.status === "sending" && (
-          <span className="shrink-0 text-[10px] font-black uppercase tracking-wider text-white/40">
+          <span className="shrink-0 text-[10px] font-black uppercase tracking-wider text-on-surface-variant/60">
             A convidar…
           </span>
         )}
         {inv?.status === "sent" && (
-          <span className="shrink-0 rounded border border-landing-accent-strong/30 bg-landing-accent-strong/15 px-1 py-px text-[9px] font-black uppercase tracking-widest text-landing-accent">
+          <span className="shrink-0 rounded border border-primary/30 bg-primary/15 px-1 py-px text-[9px] font-black uppercase tracking-widest text-primary">
             Convite enviado
           </span>
         )}
         {inv?.status === "accepted" && (
-          <span className="shrink-0 rounded border border-landing-accent-strong/40 bg-landing-accent-strong/20 px-1 py-px text-[9px] font-black uppercase tracking-widest text-landing-accent">
+          <span className="shrink-0 rounded border border-primary/40 bg-primary/20 px-1 py-px text-[9px] font-black uppercase tracking-widest text-primary">
             Aceitou ✓
           </span>
         )}
         {inv?.status === "declined" && (
-          <span className="shrink-0 rounded border border-white/10 bg-white/5 px-1 py-px text-[9px] font-black uppercase tracking-widest text-white/40">
+          <span className="shrink-0 rounded border border-outline-variant/25 bg-surface-container-low px-1 py-px text-[9px] font-black uppercase tracking-widest text-on-surface-variant/60">
             Recusou
           </span>
         )}
         {inv?.status === "error" && (
-          <span className="shrink-0 max-w-full truncate text-[9px] font-bold text-red-400/90">
+          <span className="shrink-0 max-w-full truncate text-[9px] font-bold text-error/90">
             {inv.msg || "Erro"}
           </span>
         )}

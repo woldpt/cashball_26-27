@@ -171,7 +171,7 @@ const measure = () => {
           ? Math.round(bar.getBoundingClientRect().bottom - root.getBoundingClientRect().bottom)
           : null,
       bodyInputs: body ? body.querySelectorAll("input").length : 0,
-      bodyCards: body ? body.querySelectorAll('[class*="rounded-2xl"]').length : 0,
+      bodyCards: body ? body.querySelectorAll('[class*="cursor-pointer"]').length : 0,
     };
     out.instances[id] = rec;
     if (!root) out.errors.push(`${id}: room-select root not found`);
