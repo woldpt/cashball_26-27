@@ -270,86 +270,94 @@ export function PlayerSearchView({
             </select>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                className={`${inputClass()} flex-1 min-w-0`}
-                placeholder="Skill mín"
-                value={skillMin}
-                onChange={(e) => setSkillMin(e.target.value)}
-                min="0"
-              />
-              <input
-                type="number"
-                className={`${inputClass()} flex-1 min-w-0`}
-                placeholder="Skill máx"
-                value={skillMax}
-                onChange={(e) => setSkillMax(e.target.value)}
-                min="0"
-              />
+          <details className="group">
+            <summary className="flex items-center gap-1.5 cursor-pointer select-none text-[10px] font-black uppercase tracking-widest text-on-surface-variant hover:text-on-surface w-fit">
+              <span className="material-symbols-outlined text-sm transition-transform group-open:rotate-180">
+                expand_more
+              </span>
+              Filtros avançados
+            </summary>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  className={`${inputClass()} flex-1 min-w-0`}
+                  placeholder="Skill mín"
+                  value={skillMin}
+                  onChange={(e) => setSkillMin(e.target.value)}
+                  min="0"
+                />
+                <input
+                  type="number"
+                  className={`${inputClass()} flex-1 min-w-0`}
+                  placeholder="Skill máx"
+                  value={skillMax}
+                  onChange={(e) => setSkillMax(e.target.value)}
+                  min="0"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  className={`${inputClass()} flex-1 min-w-0`}
+                  placeholder="Idade mín"
+                  value={ageMin}
+                  onChange={(e) => setAgeMin(e.target.value)}
+                  min="0"
+                />
+                <input
+                  type="number"
+                  className={`${inputClass()} flex-1 min-w-0`}
+                  placeholder="Idade máx"
+                  value={ageMax}
+                  onChange={(e) => setAgeMax(e.target.value)}
+                  min="0"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  className={`${inputClass()} flex-1 min-w-0`}
+                  placeholder="Preço mín (€)"
+                  value={priceMin}
+                  onChange={(e) => setPriceMin(e.target.value)}
+                  min="0"
+                  title={PRICE_INPUT_TITLE}
+                />
+                <input
+                  type="number"
+                  className={`${inputClass()} flex-1 min-w-0`}
+                  placeholder="Preço máx (€)"
+                  value={priceMax}
+                  onChange={(e) => setPriceMax(e.target.value)}
+                  min="0"
+                  title={PRICE_INPUT_TITLE}
+                />
+              </div>
+              <select
+                className={inputClass()}
+                value={transferStatus}
+                onChange={(e) => setTransferStatus(e.target.value)}
+              >
+                {TRANSFER_STATUS_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                className={inputClass()}
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+              >
+                {SORTS.map((o, i) => (
+                  <option key={o.value} value={o.value}>
+                    {i === 0 ? `Ordenar por: ${o.label}` : o.label}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                className={`${inputClass()} flex-1 min-w-0`}
-                placeholder="Idade mín"
-                value={ageMin}
-                onChange={(e) => setAgeMin(e.target.value)}
-                min="0"
-              />
-              <input
-                type="number"
-                className={`${inputClass()} flex-1 min-w-0`}
-                placeholder="Idade máx"
-                value={ageMax}
-                onChange={(e) => setAgeMax(e.target.value)}
-                min="0"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                className={`${inputClass()} flex-1 min-w-0`}
-                placeholder="Preço mín (€)"
-                value={priceMin}
-                onChange={(e) => setPriceMin(e.target.value)}
-                min="0"
-                title={PRICE_INPUT_TITLE}
-              />
-              <input
-                type="number"
-                className={`${inputClass()} flex-1 min-w-0`}
-                placeholder="Preço máx (€)"
-                value={priceMax}
-                onChange={(e) => setPriceMax(e.target.value)}
-                min="0"
-                title={PRICE_INPUT_TITLE}
-              />
-            </div>
-            <select
-              className={inputClass()}
-              value={transferStatus}
-              onChange={(e) => setTransferStatus(e.target.value)}
-            >
-              {TRANSFER_STATUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-            <select
-              className={inputClass()}
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-            >
-              {SORTS.map((o, i) => (
-                <option key={o.value} value={o.value}>
-                  {i === 0 ? `Ordenar por: ${o.label}` : o.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          </details>
 
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-4 flex-wrap">
