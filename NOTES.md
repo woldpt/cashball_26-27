@@ -1766,3 +1766,16 @@ Plano C1+C2 (quando fizer):
 - Causa real: fixture do `finances-resp-test.jsx` usava `jornada` em vez de `matchweek` (contrato do chart é `{x, matchweek, balance, label}`; produção envia sempre assim — `socketSessionHandlers.ts`). `px(p)`→undefined → NaN → dots colapsados em x=0 e rótulo "Jundefined".
 - Fix: fixture corrigido + guard no `clean` do chart (`Number.isFinite(px(p))`) — dados malformados caem fora em vez de renderizar lixo; `px` movido para antes do filtro (TDZ).
 - Checks: eslint + `check:types` OK; harness finances portrait 390 + landscape 6/6 + desktop 1280 PASS; screenshot 1280 confirma linha/área/rótulos corretos.
+
+## Página de Leilões — filtros em chips + contexto temporal (2026-09-26)
+- `AuctionsPage.jsx`: select de posição discreto → chips `TabBar` (padrão PlayersTab) com contagem por posição (`Todas · N`, `GR · N`, …); Recentes ordenados por `closedMatchweek` desc (defesa — ordem do servidor é de inserção); `(teams || [])` removido (`teams` é sempre array no GameContext; `teamInfo?.budget || 0` mantido — `teamInfo` pode ser `undefined` antes de `me` chegar).
+- `playerHelpers.js`: `POSITIONS = ["GR","DEF","MED","ATA"]` exportado (fonte única); só o loop do lineup foi migrado — os literais restantes no codebase (PlayersTab `POS_ORDER`, TeamSquadModal/View, TrainingPage) ficam para outro passe.
+- `AuctionResultRow.jsx`: mostra "fechou nesta jornada / há N jornada(s)" — usa `closedMatchweek` (game.matchweek no fecho) vs `currentMatchweek` = `matchweekCount + 1` (mapeamento verificado em `useSocketListeners.js`: gameState faz `matchweek - 1`).
+- **Adiado (5-B):** `closedAt: Date.now()` no `recentBase` de `auctionHelpers.ts` para mostrar tempo real "terminou há Xh" — 1 linha + persistência do game state, quando se voltar ao leilões.
+- Checks: `lint` + `check:types` + `test:mobile` portrait/landscape (a executar neste passe).
+
+## FinancesTab — ponto "Agora" com saldo actual no gráfico (2026-09-26)
+- Pedido: comprar jogador → o gráfico mostra a queda imediatamente (sem esperar pelo snapshot semanal).
+- `chartData` useMemo no FinancesTab: se `currentBudget` divergir do último snapshot do `balanceHistory`, acrescenta ponto sintético "Agora" (`x = último.x + 1`, `label: "Agora"`, `balance: currentBudget`). Igual → sem ponto (sem ruído flat). Frontend-only; nada persistido; `BalanceLineChart` só é usado aqui.
+- Snapshot de fim de semana (`team_balance_history`) fica preservado no ponto anterior.
+- Checks: eslint + `check:types` OK; harness finances portrait 390/1280 + landscape 6/6 PASS; screenshot 1280 confirma o ponto "Agora" e VARIAÇÃO coerente.

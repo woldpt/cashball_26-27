@@ -237,6 +237,24 @@ export function FinancesTab({
     return parts.map((p) => ({ ...p, pct: (p.v / totalSeasonIncome) * 100 }));
   }, [totalSeasonIncome, financeData]);
 
+  // O ponto mais recente do gráfico é sempre o saldo actual: se divergir do
+  // último snapshot (transfers/obras a meio da semana), acrescenta um ponto
+  // sintético "Agora" — sem tocar no histórico persistido.
+  const chartData = useMemo(() => {
+    const hist = financeData?.balanceHistory || [];
+    const last = hist[hist.length - 1];
+    if (!last || last.balance === currentBudget) return hist;
+    return [
+      ...hist,
+      {
+        x: (last.x ?? last.matchweek ?? 0) + 1,
+        matchweek: (last.matchweek ?? 0) + 1,
+        label: "Agora",
+        balance: currentBudget,
+      },
+    ];
+  }, [financeData, currentBudget]);
+
   return (
     <div className="space-y-4 short:space-y-2">
       {/* ── HERO ──────────────────────────────────────────────────────── */}
@@ -329,7 +347,7 @@ export function FinancesTab({
           </span>
         }
       >
-        <BalanceLineChart data={financeData?.balanceHistory || []} />
+        <BalanceLineChart data={chartData} />
       </Panel>
 
       {/* ── RECEITAS / DESPESAS / CONTROLO ────────────────────────────── */}
