@@ -1,3 +1,11 @@
+## Sockets: análise 1–10 → plano completo executado (2026-09-26)
+- Análise pedida (12 ficheiros: 10 handlers servidor + 2 cliente) → plano completo aprovado e executado em 4 fases, 1 commit por fase. Notas: `socket.js` 9, gameplay 8, scout 8, session/admin/finance/chat/cup 7, transfer 6, news 5, `useSocketListeners` 5.
+- Fase 1 (`socketTransferHandlers.ts` + `coreHelpers.ts`): `makeTransferProposal` em transação única `BEGIN/COMMIT/ROLLBACK` (era o único caminho de dinheiro sem transação) com `UPDATE` guardados (orçamento + posse do vendedor, ramo `IS NULL` para livres); helpers `renewalDemandedWage`/`renewalAuctionPrice` eliminam a fórmula 3×.
+- Fase 2 (`socketNewsHandlers.ts` + `index.ts`): `getGlobalNews` de 4 callbacks para `async/await` sobre o `runAll` partilhado; erros emitem motivo em vez de vazio silencioso; lookup do treinador 1× em vez de 2×.
+- Fase 3 (6 fixes cirúrgicos): session reutiliza `buildGameStatePayload` (com `overrides`) no ramo despedido; scout escapa `%_\` (`ESCAPE`) + throttle 400ms; training valida foco no servidor; finance pausa dinheiro em jogo; chat expurga retenção 1×/h por sala; cup exige vínculo à sala no ack de ET.
+- Fase 4 (cliente): `useSocketListeners.js` (1969 linhas) → `hooks/socket/{core,market,news,cup,session,match,coach,chat}.js` + `helpers.js`, corte verbatim (76 `on` preservados), compositor fino no hook.
+- Checks: server `typecheck` OK ×3 · `audit:socketio` 0 erros (97 avisos pré-existentes) · `test:connect-smoke` PASS ×2 (index.ts tocado) · client `lint` limpo nos ficheiros tocados (2 erros pré-existentes globais, confirmados via stash) · `check:types` OK. Sem mudança visual → sem mobile-resp-check. Sem sala viva → `audit:gamestate` fica para a próxima.
+
 ## weeklyFlowHelpers: classificação 0–10 → refactor (2026-09-26)
 - Classificação de qualidade pedida → plano completo aprovado e executado. 2 ficheiros: `server/weeklyFlowHelpers.ts`, `server/game/commentary.ts` (+`halftimeSubPhrase`).
 - Extração: `planNpcHalftimeSubs` + `applyHalftimeSubs` saíram de dentro do `runMatchSegment` para o nível do módulo (param `fixture` novo, chamadas atualizadas); 6 frases HT para `commentary.halftimeSubPhrase` (narração só lá).
