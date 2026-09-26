@@ -34,6 +34,7 @@ import {
   extractOgImage,
   extractHeaderColor,
   downloadImage,
+  mediaExists,
   sleep,
   isoToEmoji,
   normName,
@@ -88,10 +89,11 @@ interface CliOpts {
   info: InfoKey[] | null;
   dryRun: boolean;
   refresh: boolean;
+  renew: boolean;
 }
 
 function parseArgs(argv: string[]): CliOpts {
-  const opts: CliOpts = { equipas: null, info: null, dryRun: false, refresh: false };
+  const opts: CliOpts = { equipas: null, info: null, dryRun: false, refresh: false, renew: false };
   for (const a of argv) {
     if (a === "--help" || a === "-h") {
       console.log(USAGE);
@@ -111,15 +113,17 @@ function parseArgs(argv: string[]): CliOpts {
       opts.info = keys;
     } else if (a === "--dry-run") opts.dryRun = true;
     else if (a === "--refresh") opts.refresh = true;
+    else if (a === "--renew") opts.renew = true;
   }
   return opts;
 }
 
-const USAGE = `Uso: npm run fetch:tui [-- --equipas="A,B" --info=a,b --dry-run --refresh]
+const USAGE = `Uso: npm run fetch:tui [-- --equipas="A,B" --info=a,b --dry-run --refresh --renew]
   --equipas=<nomes>  equipas por nome, ex: "Marítimo,Porto" (salta a TUI)
   --info=<keys>       ${ALL_INFO.join("|")}
   --dry-run           só mostrar o que faria, sem gravar
   --refresh           ignora o cache de HTML em .cache/zerozero
+  --renew             volta a descarregar tudo, mesmo o que já existe em disco
 Sem flags abre a TUI interativa.`;
 
 function loadState(): { lastTeam?: string; ok: number; errors: string[]; at: string; dryRun?: boolean } | null {
@@ -377,7 +381,9 @@ async function main() {
       if (want.has("emblema")) {
         const og = extractOgImage(html);
         const crestPath = team.crest || `/logos/${team.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}.png`;
-        if (og && og.includes("/img/logos/equipas/")) {
+        if (!cli.renew && mediaExists(path.join(PUBLIC, crestPath))) {
+          teamNotes.push("emblema: já existe, salto");
+        } else if (og && og.includes("/img/logos/equipas/")) {
           const dest = path.join(PUBLIC, crestPath);
           if (dryRun) {
             teamNotes.push(`emblema: ${og} → ${crestPath}`);
@@ -394,16 +400,20 @@ async function main() {
       if (want.has("fotoTreinador")) {
         const coach = extractCoach(html);
         if (coach) {
-          if (dryRun) {
+          const mAny = team.manager as Record<string, unknown>;
+          const cid = coach.href.match(/\/([0-9]+)$/)?.[1];
+          const knownPhoto = typeof mAny.photo === "string" && mAny.photo ? mAny.photo : null;
+          if (!cli.renew && knownPhoto && mediaExists(path.join(PUBLIC, knownPhoto))) {
+            if (!dryRun && team.manager.name !== coach.name) team.manager.name = coach.name;
+            teamNotes.push(`treinador: ${coach.name} (já existe, salto)`);
+          } else if (dryRun) {
             teamNotes.push(`treinador: ${coach.name}`);
           } else {
             if (team.manager.name !== coach.name) team.manager.name = coach.name;
-            const cid = coach.href.match(/\/([0-9]+)$/)?.[1];
             if (cid) {
               const coachHtml = await fetchHtml(`${BASE}${coach.href}`, `coach_${coach.href.replace(/\W/g, "_")}`, cli.refresh);
               const cphoto = extractCoachPhoto(coachHtml); // og:image é placeholder; foto real está no <img>
               const ext = cphoto && cphoto.includes(".png") ? ".png" : ".jpg";
-              const mAny = team.manager as Record<string, unknown>;
               const photoPath = typeof mAny.photo === "string" && mAny.photo ? mAny.photo : `/coaches/${cid}${ext}`;
               const dest = path.join(PUBLIC, photoPath);
               if (cphoto) {
@@ -436,7 +446,7 @@ async function main() {
           if (!hit) hit = byNorm.get(normName(fp.name)) || null;
           if (!hit) continue;
           fp.zerozeroId = Number(hit.id);
-          if (fp.photo && fs.existsSync(path.join(PUBLIC, fp.photo))) { skipped++; continue; } // já descarregado
+          if (fp.photo && mediaExists(path.join(PUBLIC, fp.photo))) { skipped++; continue; } // já descarregado
 
           const pkey = `player_${hit.id}`;
           const ph = dryRun ? cachedHtml(pkey) : await fetchHtml(`${BASE}${hit.href}`, pkey, cli.refresh);

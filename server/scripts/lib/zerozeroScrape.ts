@@ -204,6 +204,15 @@ export async function downloadImage(url: string, dest: string): Promise<boolean>
   return true;
 }
 
+/** ficheiro de media válido em disco (existe e não está vazio). */
+export function mediaExists(absPath: string): boolean {
+  try {
+    return fs.statSync(absPath).size > 0;
+  } catch {
+    return false;
+  }
+}
+
 export function isoToEmoji(cc: string | null | undefined): string | null {
   if (!cc || cc.length !== 2) return null;
   try {

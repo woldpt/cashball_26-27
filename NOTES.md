@@ -2099,3 +2099,9 @@ Plano C1+C2 (quando fizer):
 - `teamRegistry.ts`: `saveTeams` atómica (temp+rename) com `.bak`.
 - `fetchZerozeroTUI.ts`: sem regex ao `.ts` vizinho; `--equipas` sugere nome próximo; sem `sleep` em hit de cache; verificação final com erro visível (`exitCode=1`, sem `catch {}` vazio).
 - Diff: +141/−285. Checks: `typecheck` verde; dry-run `Bragança --info=plantel` só com cache OK (22/24 actualizados); `TEAMS` 60 sem duplicados; seed tmp + `audit:gamestate base` 0 erros/warnings. Sem `test:mobile` (sem layout) nem `audit:socketio`.
+
+## zerozero TUI — modo inteligente (2026-09-26)
+- Pedido: só ir buscar dados em falta (ex.: 2 fotos do Braga → só esses 2). Sempre inteligente por defeito; `--renew` força tudo de novo (`--refresh` continua a ser só o cache de HTML).
+- `zerozeroScrape.ts`: helper `mediaExists()` (existe e >0B); fotos de jogadores passam a usá-lo (antes só `existsSync`).
+- `fetchZerozeroTUI.ts`: emblema e foto de treinador saltam quando o ficheiro já existe (`já existe, salto` no relatório e no dry-run); nome do treinador continua a atualizar-se mesmo com salto; `--renew` no `CliOpts`+`USAGE`. Plantel (top-up) e cores intocados.
+- Checks: `typecheck` verde; dry-run Bragança com tudo → `emblema: já existe, salto`, `treinador: … (já existe, salto)`, `fotos: 0 novas + 22 já tinham`; dry-run com `--renew` → mostra o que voltaria a buscar. Sem `test:mobile` (sem layout) nem audits (só scripts de fetch).
