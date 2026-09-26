@@ -1,5 +1,9 @@
 import { AGG_TIERS, MAX_BENCH_SIZE } from "../constants/index.js";
 
+// Posições canónicas do jogo — fonte única para contagens por posição
+// (escalções, filtros de UI, juniores).
+export const POSITIONS = ["GR", "DEF", "MED", "ATA"];
+
 export function getPlayerStat(player, keys, fallback = 0) {
   for (const key of keys) {
     const value = player?.[key];
@@ -64,7 +68,7 @@ export function buildAutoPositions(
 
   // Passe 2: se alguma posição obrigatória ficou sem jogadores (ex: todos os GRs
   // suspensos/lesionados), preencher com os melhores restantes de qualquer posição
-  for (const pos of ["GR", "DEF", "MED", "ATA"]) {
+  for (const pos of POSITIONS) {
     while (usedByPosition[pos] < requiredByPosition[pos]) {
       const best = sortedPlayers.find((p) => !lineup.includes(p));
       if (!best) break;

@@ -48,29 +48,44 @@ function TeamMark({ team, name }) {
  * com origem → destino (brasão + nome: vendedor → comprador), valor final à
  * direita. Sem cards: os Recentes são leitura rápida, não ação.
  *
- * @param {{ auction: object, teams?: Array, onOpenPlayer?: (auction: object) => void }} props
+ * @param {{ auction: object, teams?: Array, currentMatchweek?: number, onOpenPlayer?: (auction: object) => void }} props
  */
-export function AuctionResultRow({ auction, teams = [], onOpenPlayer }) {
+export function AuctionResultRow({ auction, teams = [], currentMatchweek = 0, onOpenPlayer }) {
   const posHex = POSITION_ACCENT_HEX[auction.position] || "#94a3b8";
   const sold = !!auction.result?.sold;
 
   // Origem (vendedor): mesma regra do AuctionCard — resolve por teams,
   // fallback para team_name do snapshot do leilão; "ex-" em ex-clubes.
   const sellerTeam =
-    (teams || []).find((t) => Number(t.id) === Number(auction.sellerTeamId)) || null;
+    teams.find((t) => Number(t.id) === Number(auction.sellerTeamId)) || null;
   const originName = sellerTeam?.name || auction.team_name || "Sem clube";
   const originLabel = auction.isExClub ? `ex-${originName}` : originName;
 
   // Destino (comprador): só quando vendido — buyerTeamId vem do auctionClosed.
   const buyerName = sold ? auction.result.buyerTeamName : null;
   const buyerTeam = sold
-    ? (teams || []).find((t) => Number(t.id) === Number(auction.result?.buyerTeamId)) || null
+    ? teams.find((t) => Number(t.id) === Number(auction.result?.buyerTeamId)) || null
     : null;
 
   // IDs negativos (juniors efémeros) não têm página de jogador.
   const canOpen = auction.playerId != null && auction.playerId >= 0;
   const star =
     !!auction.is_star && (auction.position === "MED" || auction.position === "ATA") && <StarMark />;
+
+  // Jornadas desde o fecho (closedMatchweek = game.matchweek no fecho;
+  // currentMatchweek = matchweekCount + 1). Null se o payload não trouxer o campo.
+  const elapsed =
+    auction.closedMatchweek != null && currentMatchweek > 0
+      ? Math.max(0, currentMatchweek - auction.closedMatchweek)
+      : null;
+  const elapsedLabel =
+    elapsed == null
+      ? null
+      : elapsed === 0
+        ? "fechou nesta jornada"
+        : elapsed === 1
+          ? "fechou há 1 jornada"
+          : `fechou há ${elapsed} jornadas`;
 
   return (
     <div className="relative flex items-center gap-2.5 short:gap-1.5 rounded-lg overflow-hidden border border-outline-variant/15 bg-surface-container/60 pl-3 short:pl-2 pr-3 short:pr-2 py-2 short:py-1.5">
@@ -122,6 +137,11 @@ export function AuctionResultRow({ auction, teams = [], onOpenPlayer }) {
             </>
           ) : (
             <span className="shrink-0 text-zinc-600">· sem licitações</span>
+          )}
+          {elapsedLabel && (
+            <span className="shrink-0 text-zinc-600" title={elapsedLabel}>
+              · {elapsedLabel}
+            </span>
           )}
         </p>
       </div>

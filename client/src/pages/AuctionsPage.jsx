@@ -13,19 +13,34 @@ import { AuctionResultRow } from "../components/auctions/AuctionResultRow.jsx";
 import { SummaryWidget } from "../components/shared/SummaryWidget.jsx";
 import { Panel } from "../components/shared/Panel.jsx";
 import { EmptyState } from "../components/shared/EmptyState.jsx";
+import { TabBar } from "../components/shared/TabBar.jsx";
 import { getTeamColor } from "../utils/teamHelpers.js";
+import { POSITIONS } from "../utils/playerHelpers.js";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { staggerItemProps } from "../motion.js";
 
-export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchweekCount = 0, socket, onOpenPlayerHistory }) {
+export function AuctionsPage({ activeAuctions = [], me, teams = [], teamInfo, matchweekCount = 0, socket, onOpenPlayerHistory }) {
   const [positionFilter, setPositionFilter] = useState("all");
 
-  const live = activeAuctions.filter((a) => !a.closed && (positionFilter === "all" || a.position === positionFilter));
-  const closed = activeAuctions.filter((a) => a.closed && (positionFilter === "all" || a.position === positionFilter));
+  const matchesPos = (a) => positionFilter === "all" || a.position === positionFilter;
+  const live = activeAuctions.filter((a) => !a.closed && matchesPos(a));
+  // Recentes: mais recentes primeiro (defesa — a ordem do servidor é de
+  // inserção, que já é cronológica, mas não contractual).
+  const closed = activeAuctions
+    .filter((a) => a.closed && matchesPos(a))
+    .sort((a, b) => (b.closedMatchweek ?? 0) - (a.closedMatchweek ?? 0));
+
+  const positionTabs = [
+    { key: "all", label: `Todas · ${activeAuctions.length}` },
+    ...POSITIONS.map((pos) => ({
+      key: pos,
+      label: `${pos} · ${activeAuctions.filter((a) => a.position === pos).length}`,
+    })),
+  ];
 
   const teamColorById = new Map(
-    (teams || []).map((t) => [Number(t.id), t.color_primary ?? getTeamColor(t.id)])
+    teams.map((t) => [Number(t.id), t.color_primary ?? getTeamColor(t.id)])
   );
 
   return (
@@ -55,20 +70,10 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
         />
       </div>
 
-      {/* ── Position filter ─────────────────────────────────────────────── */}
+      {/* ── Filtro de posição: chips (padrão TabBar, como PlayersTab) ───── */}
       {activeAuctions.length > 0 && (
         <div className="px-2 sm:px-4 short:px-2 pb-1.5 short:pb-1 shrink-0">
-          <select
-            className="bg-surface border border-outline-variant/30 rounded-sm px-1.5 sm:px-3 py-[3px] sm:py-1 text-[9px] sm:text-[10px] font-bold text-on-surface focus:ring-1 focus:ring-primary focus:outline-none"
-            value={positionFilter}
-            onChange={(e) => setPositionFilter(e.target.value)}
-          >
-            <option value="all">Posição: Todas</option>
-            <option value="GR">Guarda-Redes</option>
-            <option value="DEF">Defesa</option>
-            <option value="MED">Médio</option>
-            <option value="ATA">Avançado</option>
-          </select>
+          <TabBar tabs={positionTabs} active={positionFilter} onChange={setPositionFilter} expand />
         </div>
       )}
 
@@ -101,7 +106,12 @@ export function AuctionsPage({ activeAuctions = [], me, teams, teamInfo, matchwe
               <div className="flex flex-col gap-1.5">
                 {closed.map((auction, i) => (
                   <motion.div key={auction.playerId} {...staggerItemProps(i)}>
-                    <AuctionResultRow auction={auction} teams={teams} onOpenPlayer={onOpenPlayerHistory} />
+                    <AuctionResultRow
+                      auction={auction}
+                      teams={teams}
+                      currentMatchweek={matchweekCount + 1}
+                      onOpenPlayer={onOpenPlayerHistory}
+                    />
                   </motion.div>
                 ))}
               </div>

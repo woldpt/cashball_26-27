@@ -1777,7 +1777,7 @@ Plano C1+C2 (quando fizer):
 - `playerHelpers.js`: `POSITIONS = ["GR","DEF","MED","ATA"]` exportado (fonte única); só o loop do lineup foi migrado — os literais restantes no codebase (PlayersTab `POS_ORDER`, TeamSquadModal/View, TrainingPage) ficam para outro passe.
 - `AuctionResultRow.jsx`: mostra "fechou nesta jornada / há N jornada(s)" — usa `closedMatchweek` (game.matchweek no fecho) vs `currentMatchweek` = `matchweekCount + 1` (mapeamento verificado em `useSocketListeners.js`: gameState faz `matchweek - 1`).
 - **Adiado (5-B):** `closedAt: Date.now()` no `recentBase` de `auctionHelpers.ts` para mostrar tempo real "terminou há Xh" — 1 linha + persistência do game state, quando se voltar ao leilões.
-- Checks: `lint` + `check:types` + `test:mobile` portrait/landscape (a executar neste passe).
+- Checks: `lint` + `check:types` OK (2 erros pré-existentes noutros ficheiros); `test:mobile` portrait 160/160 + landscape 192/192 PASS (após limpar vite órfão — ver nota do flake abaixo).
 
 ## FinancesTab — ponto "Agora" com saldo actual no gráfico (2026-09-26)
 - Pedido: comprar jogador → o gráfico mostra a queda imediatamente (sem esperar pelo snapshot semanal).
@@ -1821,3 +1821,4 @@ Plano C1+C2 (quando fizer):
 - Cliente: `getFansMoodLabel` (morale.js) limiares 15/30/45/60/75/90 → 8/15/23/30/38/45; `StadiumTab` default 30, limiares 70→35 / 45→23, barra `mood*2`.
 - Evidência: typecheck OK; lint/check:types OK (2 erros pré-existentes em ficheiros não tocados); prova sintética 3x (8 casos 0–100 + NULL, 2.ª passagem no-op, sala nova intangível no 1.º load, mood 50 protegido pelo marcador após restart); `audit:gamestate V5AUDIT` 0 erros/0 warnings; `audit:socketio` 0 erros (97 warnings pré-existentes).
 - Nota: `constants/index.js` tem WIP de outra sessão (scout/TransferHub) — `APP_VERSION` não foi bumpada neste commit para não arrastar esse WIP.
+- **Flake do harness mobile (pré-existente):** correr `test:mobile*` com um vite órfão vivo de run anterior (o `ensureServer` reutiliza/porta ocupada, e um run abortado deixa órfão — ex. porta 5201) produz falhas em cascata sem relação com o código: `ERR_CONNECTION_REFUSED`, `ReferenceError` de identificadores fantasma (`BidForm`, `POS_BAR` — nem existem) em harnesses não tocados, resErr pontuais. Limpar órfãos (`pkill -f "bin/vite"`) e correr de novo antes de diagnosticar layout. Isolar um harness: `node scripts/mobileRespCheck.mjs auctions-resp-test --widths 568,667,736 --height 375` (nome inclui `-resp-test`).
