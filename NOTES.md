@@ -1779,3 +1779,8 @@ Plano C1+C2 (quando fizer):
 - `chartData` useMemo no FinancesTab: se `currentBudget` divergir do último snapshot do `balanceHistory`, acrescenta ponto sintético "Agora" (`x = último.x + 1`, `label: "Agora"`, `balance: currentBudget`). Igual → sem ponto (sem ruído flat). Frontend-only; nada persistido; `BalanceLineChart` só é usado aqui.
 - Snapshot de fim de semana (`team_balance_history`) fica preservado no ponto anterior.
 - Checks: eslint + `check:types` OK; harness finances portrait 390/1280 + landscape 6/6 PASS; screenshot 1280 confirma o ponto "Agora" e VARIAÇÃO coerente.
+
+## Contratos & leilões — crash-recovery endurecido + juniores efémeros (2026-09-26)
+- `gameManager.ts` (restauro de leilões pós-crash): o merge inline do finalize ganhou as mesmas garantias do `auctionHelpers.finalizeAuction` — revalidação de orçamento por ordem de lance desc, lock do agente respeitado, dinheiro+transferência em transação (`runExec` BEGIN/COMMIT/ROLLBACK), close-unsold com `pushRecent` e nunca rejeita (`catch` no IIFE). Commit `3f6fb6fa`.
+- **Juniores são efémeros (só em memória)**: `generateJuniorGR` (playerUtils) usa IDs negativos e nunca são INSERTed — a única inserção de players no server é o prospeto da academia. Logo os achados "NPC lista juniores" e "cap squad ≥ 24 inclui juniores" eram **falsos positivos** (queries à BD nunca devolvem juniores). Os filtros `id > 0` do P0.4 (`5b0e400d`) ficam como defesa passiva, não como fix real.
+- Checks: `typecheck` OK; `CRASHTEST_ROOM=TST148 npm run test:crash-recovery` — todos os cenários PASS; `test:connect-smoke` OK; `audit:socketio` 0 erros.
