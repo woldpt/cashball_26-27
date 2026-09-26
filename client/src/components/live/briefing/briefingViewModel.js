@@ -125,8 +125,8 @@ export function buildBriefingViewModel(s, teamInfo) {
   const oppPts = opp?.points ?? 0;
   const myGF = teamInfo?.goals_for ?? 0;
   const myGA = teamInfo?.goals_against ?? 0;
-  const myMorale = teamInfo?.morale ?? 50;
-  const oppMorale = opp?.morale ?? 50;
+  const myMorale = teamInfo?.morale ?? 25;
+  const oppMorale = opp?.morale ?? 25;
   const myAvg = teamInfo?.avgSkill ?? myTeam.avgSkill ?? null;
   const oppAvg = opp?.avgSkill ?? null;
 

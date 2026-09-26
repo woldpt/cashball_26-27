@@ -113,26 +113,28 @@ export function normaliseStyle(style: unknown) {
 
 export function getAggressivenessValue(player: PlayerRow) {
   if (typeof player?.aggressiveness === "number") {
-    return Math.max(1, Math.min(5, Math.round(player.aggressiveness)));
+    const v = Math.round(player.aggressiveness);
+    // Valores 1–5 são da escala antiga (pré-migração v4) — ×10.
+    return v <= 5 ? Math.min(50, v * 10) : Math.max(1, Math.min(50, v));
   }
 
   const AGG_TIER_VALUES = {
-    Acólito: 1,
-    Tranquilo: 2,
-    Zen: 3,
-    Lenhador: 4,
-    Triturador: 5,
+    Acólito: 10,
+    Tranquilo: 20,
+    Zen: 30,
+    Lenhador: 40,
+    Triturador: 50,
     // Aliases legados (nomes anteriores) — salas antigas podem ter strings
-    Santinho: 1,
-    Escuteiro: 2,
-    Cordeirinho: 1,
-    Cavalheiro: 2,
-    "Fair Play": 3,
-    Caneleiro: 4,
-    Caceteiro: 5,
+    Santinho: 10,
+    Escuteiro: 20,
+    Cordeirinho: 10,
+    Cavalheiro: 20,
+    "Fair Play": 30,
+    Caneleiro: 40,
+    Caceteiro: 50,
   };
 
-  return AGG_TIER_VALUES[player?.aggressiveness] ?? 3;
+  return AGG_TIER_VALUES[player?.aggressiveness] ?? 30;
 }
 
 export function average(values: number[] = []) {
@@ -393,10 +395,10 @@ export function computeSidePower(
   const formationAttack = FORMATION_ATTACK_FACTORS[formation] ?? 1.0;
   const formationDefense = FORMATION_DEFENSE_FACTORS[formation] ?? 1.0;
 
-  // Moral (0-100): desvia o ataque ±10% e a defesa ±5% em torno de 50.
-  // Deliberadamente pequeno — a forma ajusta, não decide.
-  const moraleAttackFactor = 1 + (morale - 50) * MATCH_TUNING.moraleAttackPerPoint;
-  const moraleDefenseFactor = 1 + (morale - 50) * MATCH_TUNING.moraleDefensePerPoint;
+  // Moral de equipa (1–50, neutro 25): desvia o ataque ±10% e a defesa ±5%
+  // em torno de 25. Deliberadamente pequeno — a forma ajusta, não decide.
+  const moraleAttackFactor = 1 + (morale - 25) * MATCH_TUNING.moraleAttackPerPoint;
+  const moraleDefenseFactor = 1 + (morale - 25) * MATCH_TUNING.moraleDefensePerPoint;
 
   const avgForm = average(squad.map((p) => p.form ?? FORM_NEUTRAL));
   // Forma (1–50, neutro 32): de 0.75 (em baixo de forma) a 1.35 (no auge).

@@ -240,7 +240,7 @@ function ensurePlayerSchema(
       ["career_injuries", "INTEGER DEFAULT 0"],
       ["career_games", "INTEGER DEFAULT 0"],
       ["games_played", "INTEGER DEFAULT 0"],
-      ["aggressiveness", "INTEGER DEFAULT 3"],
+      ["aggressiveness", "INTEGER DEFAULT 30"],
       ["prev_skill", "INTEGER DEFAULT NULL"],
       ["last_rating", "REAL DEFAULT NULL"],
       ["last_auctioned_matchweek", "INTEGER DEFAULT 0"],
@@ -395,7 +395,7 @@ function ensurePlayerSchema(
               ) {
                 backfillSteps.push((next) => {
                   db.run(
-                    `UPDATE players SET aggressiveness = 1 + (ABS(RANDOM()) % 5)`,
+                    `UPDATE players SET aggressiveness = 10 + (ABS(RANDOM()) % 4) * 10`,
                     (backfillErr) => {
                       if (backfillErr)
                         console.warn(
@@ -1028,7 +1028,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
             } catch {}
           });
           db.run(
-            "ALTER TABLE teams ADD COLUMN morale INTEGER DEFAULT 50",
+            "ALTER TABLE teams ADD COLUMN morale INTEGER DEFAULT 25",
             () => {},
           );
           db.run(
@@ -1730,9 +1730,49 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
           );
         };
 
+        // Migração v4 — escalas unificadas em 1–50 (agressividade 1–5 ×10;
+        // moral de equipa 0–100 ÷2, neutro 25). Idempotente via marcador
+        // scale_v4 em game_state (moral 100 → 50, que seria re-aliciado a 25
+        // numa 2.ª passagem sem o marcador).
+        db.get(
+          "SELECT value FROM game_state WHERE key = 'scale_v4'",
+          (v4Err: Error | null, v4Row: any) => {
+            if (v4Err || v4Row) return; // já migrada
+            db.run(
+              "UPDATE players SET aggressiveness = aggressiveness * 10 WHERE aggressiveness BETWEEN 1 AND 5",
+              () => {
+                db.run(
+                  "UPDATE players SET aggressiveness = CASE aggressiveness WHEN 'Acólito' THEN 10 WHEN 'Tranquilo' THEN 20 WHEN 'Zen' THEN 30 WHEN 'Lenhador' THEN 40 WHEN 'Triturador' THEN 50 WHEN 'Santinho' THEN 10 WHEN 'Escuteiro' THEN 20 WHEN 'Cordeirinho' THEN 10 WHEN 'Cavalheiro' THEN 20 WHEN 'Fair Play' THEN 30 WHEN 'Caneleiro' THEN 40 WHEN 'Caceteiro' THEN 50 ELSE aggressiveness END WHERE typeof(aggressiveness) = 'text'",
+                  () => {
+                    db.run(
+                      "UPDATE teams SET morale = 25 WHERE morale = 50 OR morale IS NULL",
+                      () => {
+                        db.run(
+                          "UPDATE teams SET morale = 1 WHERE morale < 1",
+                          () => {
+                            db.run(
+                              "UPDATE teams SET morale = MAX(1, MIN(50, CAST(ROUND(morale / 2.0) AS INTEGER))) WHERE morale > 50",
+                              () => {
+                                db.run(
+                                  "INSERT OR IGNORE INTO game_state (key, value) VALUES ('scale_v4', '1')",
+                                  () => {},
+                                );
+                              },
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+
         // One-time migration: fix aggressiveness if all-default or out-of-range
         db.get(
-          "SELECT COUNT(*) AS total, SUM(CASE WHEN aggressiveness = 3 THEN 1 ELSE 0 END) AS allThree, SUM(CASE WHEN aggressiveness < 1 OR aggressiveness > 5 THEN 1 ELSE 0 END) AS outOfRange FROM players",
+          "SELECT COUNT(*) AS total, SUM(CASE WHEN aggressiveness = 30 THEN 1 ELSE 0 END) AS allThree, SUM(CASE WHEN aggressiveness < 10 OR aggressiveness > 50 THEN 1 ELSE 0 END) AS outOfRange FROM players",
           (
             aggCheckErr: Error | null,
             aggRow: {
@@ -1751,7 +1791,7 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                 `[gameManager] Backfilling aggressiveness for room ${roomCode}`,
               );
               db.run(
-                `UPDATE players SET aggressiveness = 1 + (ABS(RANDOM()) % 5)`,
+                `UPDATE players SET aggressiveness = 10 + (ABS(RANDOM()) % 4) * 10`,
                 () => {
                   continueAfterMigrations();
                 },

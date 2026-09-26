@@ -173,7 +173,7 @@ export function getAvailablePositionCounts(squad = [], currentMatchweek = 1) {
 export function aggLabel(value) {
   if (typeof value === "number") {
     const tiers = ["Acólito", "Tranquilo", "Zen", "Lenhador", "Triturador"];
-    const idx = Math.max(0, Math.min(4, Math.round(value) - 1));
+    const idx = Math.max(0, Math.min(4, Math.round(value / 10) - 1));
     return tiers[idx];
   }
   if (AGG_TIERS[value]) return value;

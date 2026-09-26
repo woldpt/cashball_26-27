@@ -506,7 +506,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 			);
 			// Reset emocional de época nova: moral neutra para todos e adeptos
 			// à base de fidelidade da (nova) divisão — sem herdar euforias nem crises.
-			await dbRun("UPDATE teams SET morale = 50");
+			await dbRun("UPDATE teams SET morale = 25");
 			await dbRun(
 				"UPDATE teams SET fans_mood = CASE division WHEN 1 THEN ? WHEN 2 THEN ? WHEN 3 THEN ? WHEN 4 THEN ? ELSE ? END",
 				[
@@ -1751,10 +1751,10 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 				: (homeDiv?.division ?? 5);
 			if (loserDiv < winnerDiv) {
 				const divDiff = winnerDiv - loserDiv;
-				const upsetMorale = Math.min(30, divDiff * 10);
+				const upsetMorale = Math.min(15, divDiff * 5);
 				await new Promise((resolve) => {
 					game.db.run(
-						"UPDATE teams SET morale = MIN(100, morale + ?) WHERE id = ?",
+						"UPDATE teams SET morale = MIN(50, morale + ?) WHERE id = ?",
 						[upsetMorale, winnerId],
 						resolve,
 					);
@@ -1764,7 +1764,7 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 					: fixture.homeTeamId;
 				await new Promise((resolve) => {
 					game.db.run(
-						"UPDATE teams SET morale = MAX(0, morale - ?) WHERE id = ?",
+						"UPDATE teams SET morale = MAX(1, morale - ?) WHERE id = ?",
 						[upsetMorale, loserId],
 						resolve,
 					);

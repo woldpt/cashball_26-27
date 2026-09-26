@@ -459,7 +459,7 @@ export function TacticsView() {
               {nextMatchSummary && (
                 <div className="flex-1 min-w-0 flex flex-col bg-surface-container border border-outline-variant/25 rounded-2xl overflow-hidden">
                   {(() => {
-                    const morale = teamInfo?.morale ?? 50;
+                    const morale = teamInfo?.morale ?? 25;
                     const { text: textColor, bar: fillColor } = getMoraleClasses(morale);
                     const label = getMoraleLabel(morale);
                     return (
@@ -484,7 +484,7 @@ export function TacticsView() {
                           <div className="h-2 w-full bg-surface-container-low/60 rounded-full overflow-hidden">
                             <div
                               className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
-                              style={{ width: `${morale}%` }}
+                              style={{ width: `${morale * 2}%` }}
                             />
                           </div>
                         </div>
@@ -686,7 +686,7 @@ export function TacticsView() {
                   </div>
                   <div className="flex flex-col items-center justify-center gap-2 px-6 short:px-4 py-3">
                     {(() => {
-                      const morale = teamInfo?.morale ?? 50;
+                      const morale = teamInfo?.morale ?? 25;
                       const { text: textColor, bar: fillColor } = getMoraleClasses(morale);
                       const label = getMoraleLabel(morale);
                       return (
@@ -704,7 +704,7 @@ export function TacticsView() {
                           >
                             <div
                               className={`h-full rounded-full transition-all duration-700 ${fillColor}`}
-                              style={{ width: `${morale}%` }}
+                              style={{ width: `${morale * 2}%` }}
                             />
                           </div>
                         </div>

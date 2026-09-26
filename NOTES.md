@@ -1734,3 +1734,14 @@ Plano C1+C2 (quando fizer):
 - Constantes: `14`→`SEASON_JORNADAS`; "500K"→`LOAN_STEP/1000`; "1,5%"→`LOAN_INTEREST_RATE` (`interestPct`); Folha/Juros usam `weeksElapsed` (coerente com os totais); `key={i}`→chave composta; `title` redundante da barra segmentada removido.
 - Pré-existente (não mexido): eixo Y mostra "undefined" com dados mock do harness (ponto sem `matchweek`); clipping do "jornadas concluídas" no hero do harness é artefato da fonte de ícones não carregada.
 - Checks: eslint limpo no ficheiro (2 erros pré-existentes noutros); `check:types` OK; mobile portrait 160/160 + landscape 192/192 PASS; harness `finances-resp-test` 390 + 1023 + 1280 PASS, screenshots vistos.
+
+## Migração v4 — agressividade e moral de equipa em 1–50 (2026-09-26)
+- Pedido: fim da "salada de escalas" — unificar agressividade (1–5) e moral de equipa (0–100) na escala 1–50 dos atributos. Estrelas 0–10 mantêm-se (modelo de ratings à parte).
+- Mapeamento: agressividade ×10 (1→10 … 5→50, âncora 3→30; strings de tiers/aliases → 10–50); moral ÷2 (neutro 50→25; NULL/50→25; <1→1; >50→ROUND(÷2) clamp 1–50).
+- Migração v4 em `gameManager.ts` no arranque de cada sala, **idempotente via marcador `scale_v4` em `game_state`** — a prova sintética apanhou o defeito do padrão "só por valores" (moral 100→50 seria re-aliciado a 25 numa 2.ª passagem); o marcador resolve.
+- Parâmetros preservam os efeitos: `cardAggPerPoint` 0.1→0.01 (âncora 30); `moraleAttackPerPoint` 0.002→0.004 / `moraleDefensePerPoint` 0.001→0.002 (±10% ataque / ±5% defesa em torno de 25); deltas de resultado 25/−20/5 → 12/−10/2; upset Taça `MIN(30, divDiff*10)` → `MIN(15, divDiff*5)`.
+- Servidor: `gameConstants.ts`, `engine.ts` (cartões, decaimento/updates de moral, defaults `?? 25`), `matchCalculations.ts` (`getAggressivenessValue` com guard ×10 para restos 1–5), `playerUtils.ts` (juniores 3→30), `auctionHelpers.ts`, `matchSummaryHelpers.ts`, `cupFlowHelpers.ts` (reset de época 50→25), `gameManager.ts` (defaults schema, backfills, migração), `seed.js` (`randomAggressiveness` 10–50), `schema.sql`.
+- Cliente: `utils/morale.js` (limiares antigos ÷2: 8/15/23/30/38/45), `utils/playerHelpers.js` (`aggLabel` com `value/10`), `ClubTab`/`TacticsView` (defaults `?? 25`, largura de barra `morale*2`), `briefingViewModel.js` (`?? 25`), `PlayerHistoryModal` (SkillBar `maxValue={50}`).
+- `fans_mood` (0–100) fora do âmbito — mantido.
+- Checks: `typecheck` OK; `eslint` OK nos tocados (2 erros pré-existentes em ficheiros não tocados); `check:types` OK. Prova sintética node:sqlite (17 valores de agressividade + 7 de moral, 2.ª passagem no-op) PASS. Sala real `game_TST148` copiada → migrada → `audit:gamestate V4AUDIT` 0 erros/0 warnings; `audit:socketio` 0 erros (97 warnings pré-existentes, nenhum em morale/aggressiveness).
+- Versão → `v26.09.5`.

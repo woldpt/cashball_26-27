@@ -2078,8 +2078,8 @@ export async function simulateMatchSegment(
     // Em erro de DB, moral neutra 50 (comportamento anterior).
     const moraleOrNeutral = (teamId: number) =>
       dbGetAsync(db, "SELECT morale FROM teams WHERE id = ?", [teamId]).then(
-        (row) => (row && row.morale != null ? row.morale : 50),
-        () => 50,
+        (row) => (row && row.morale != null ? row.morale : 25),
+        () => 25,
       );
     [homeMorale, awayMorale] = await Promise.all([
       moraleOrNeutral(fixture.homeTeamId),
@@ -2954,10 +2954,10 @@ export async function processMatchMinute(tick: MinuteTickContext): Promise<void>
 
   const homeCardProb =
     MATCH_TUNING.cardBaseRate *
-    (1 + (homeAggAvg - 3) * MATCH_TUNING.cardAggPerPoint);
+    (1 + (homeAggAvg - 30) * MATCH_TUNING.cardAggPerPoint);
   const awayCardProb =
     MATCH_TUNING.cardBaseRate *
-    (1 + (awayAggAvg - 3) * MATCH_TUNING.cardAggPerPoint);
+    (1 + (awayAggAvg - 30) * MATCH_TUNING.cardAggPerPoint);
   // No último minuto regulamentar da liga não disparar cartões — um vermelho
   // ao GR abriria a janela obrigatória de substituição após o apito final
   if (!isLastLeagueMinute && !isFriendly && rng() < homeCardProb) await emitCard(true);
@@ -3159,12 +3159,12 @@ export async function applyPostMatchQualityEvolution(
     }
 
     // ── Moral por equipa ───────────────────────────────────────────────
-    // Decaimento semanal para o neutro 50 (uma vez por evento do calendário)
+    // Decaimento semanal para o neutro 25 (uma vez por evento do calendário)
     // para a moral refletir a forma recente em vez de histórico acumulado.
     // Depois o delta do resultado — tudo com await (antes era fire-and-forget
     // com race entre o decaimento global e os updates por equipa).
     await dbRun(
-      `UPDATE teams SET morale = MAX(0, MIN(100, CAST(morale + (50 - morale) * ${MATCH_TUNING.moraleDecayRate} AS INTEGER)))`,
+      `UPDATE teams SET morale = MAX(1, MIN(50, CAST(morale + (25 - morale) * ${MATCH_TUNING.moraleDecayRate} AS INTEGER)))`,
     );
 
     const moraleUpdates: Array<{ teamId: number; delta: number }> = [];
@@ -3184,7 +3184,7 @@ export async function applyPostMatchQualityEvolution(
         moraleUpdates.map((u) => u.teamId),
       );
       const current = new Map<number, number>(
-        rows.map((row) => [row.id, row.morale ?? 50]),
+        rows.map((row) => [row.id, row.morale ?? 25]),
       );
       // Batch único em vez de SELECT + N UPDATEs.
       const cases: string[] = [];
@@ -3193,8 +3193,8 @@ export async function applyPostMatchQualityEvolution(
       for (const { teamId, delta } of moraleUpdates) {
         if (!current.has(teamId)) continue;
         const newMorale = Math.max(
-          0,
-          Math.min(100, (current.get(teamId) ?? 50) + delta),
+          1,
+          Math.min(50, (current.get(teamId) ?? 25) + delta),
         );
         cases.push("WHEN ? THEN ?");
         params.push(teamId, newMorale);

@@ -1,34 +1,34 @@
 /**
  * Etiqueta de moral do plantel com humor (pt-PT).
  * Escala única partilhada por TacticsView, ClubTab e MatchBriefing.
- * @param {number} morale Valor 0–100 (qualquer número é limitado à escala)
+ * @param {number} morale Valor 1–50, neutro 25 (migração v4; limites antigos ÷2)
  * @returns {string} Etiqueta com humor
  */
 export function getMoraleLabel(morale) {
-  const v = Math.max(0, Math.min(100, Number(morale) || 0));
-  if (v < 15) return "Na Lama";
-  if (v < 30) return "De Rasto";
-  if (v < 45) return "Razoável";
-  if (v < 60) return "Animados";
-  if (v < 75) return "Bom";
-  if (v < 90) return "Em Chamas";
+  const v = Math.max(1, Math.min(50, Number(morale) || 0));
+  if (v < 8) return "Na Lama";
+  if (v < 15) return "De Rasto";
+  if (v < 23) return "Razoável";
+  if (v < 30) return "Animados";
+  if (v < 38) return "Bom";
+  if (v < 45) return "Em Chamas";
   return "Excelente";
 }
 
 /**
  * Tom semântico da moral — mesmos limiares do getMoraleLabel (7 níveis),
  * para a etiqueta nunca vestir cor de outro escalão (ex. "Animados" de vermelho).
- * @param {number} morale Valor 0–100 (qualquer número é limitado à escala)
+ * @param {number} morale Valor 1–50, neutro 25 (migração v4; limites antigos ÷2)
  * @returns {string} tom ("red"|"orange"|"amber"|"yellow"|"lime"|"green"|"emerald")
  */
 export function getMoraleColor(morale) {
-  const v = Math.max(0, Math.min(100, Number(morale) || 0));
-  if (v < 15) return "red";
-  if (v < 30) return "orange";
-  if (v < 45) return "amber";
-  if (v < 60) return "yellow";
-  if (v < 75) return "lime";
-  if (v < 90) return "green";
+  const v = Math.max(1, Math.min(50, Number(morale) || 0));
+  if (v < 8) return "red";
+  if (v < 15) return "orange";
+  if (v < 23) return "amber";
+  if (v < 30) return "yellow";
+  if (v < 38) return "lime";
+  if (v < 45) return "green";
   return "emerald";
 }
 
@@ -44,7 +44,7 @@ const MORALE_TONE_CLASSES = {
 
 /**
  * Classes Tailwind do tom da moral (texto, barra e dot partilham o tom).
- * @param {number} morale Valor 0–100
+ * @param {number} morale Valor 1–50, neutro 25
  * @returns {{ text: string, bar: string, dot: string }} classes do tom
  */
 export function getMoraleClasses(morale) {

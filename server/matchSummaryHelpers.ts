@@ -746,7 +746,7 @@ export function createMatchSummaryHelpers(deps: MatchSummaryDeps) {
       color_primary: opponent.color_primary || null,
       color_secondary: opponent.color_secondary || null,
       crest: opponent.crest || null,
-      morale: opponent.morale ?? 50,
+      morale: opponent.morale ?? 25,
       wins: opponent.wins || 0,
       draws: opponent.draws || 0,
       losses: opponent.losses || 0,

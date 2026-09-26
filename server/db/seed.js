@@ -36,7 +36,7 @@ if (!allTeamsData || allTeamsData.length === 0) {
 // antes do CREATE TABLE (sem serialize) e rebentar com erro não-apanhado.
 
 function randomAggressiveness() {
-  return 1 + Math.floor(Math.random() * 5);
+  return 10 + Math.floor(Math.random() * 4) * 10;
 }
 const skillRanges = {
   1: [36, 50],

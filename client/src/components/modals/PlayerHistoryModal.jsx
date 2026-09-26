@@ -132,7 +132,7 @@ export function PlayerHistoryModal({
   const AGG_ORDER = ["Acólito", "Tranquilo", "Zen", "Lenhador", "Triturador"];
   const aggNum =
     typeof player.aggressiveness === "number"
-      ? Math.max(1, Math.min(5, Math.round(player.aggressiveness)))
+      ? Math.max(1, Math.min(50, Math.round(player.aggressiveness)))
       : Math.max(1, AGG_ORDER.indexOf(aggKey) + 1);
   const formVal = player.form ?? 32;
   const formHex = formVal >= 41 ? "#34d399" : formVal <= 22 ? "#fb7185" : "#71717a";
@@ -393,7 +393,7 @@ export function PlayerHistoryModal({
                   <SkillBar
                     label="Agressividade"
                     value={aggNum}
-                    maxValue={5}
+                    maxValue={50}
                     color={barColor}
                     valueLabel={<AggBadge value={player.aggressiveness} />}
                   />

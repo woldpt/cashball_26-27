@@ -118,7 +118,7 @@ export function ClubTab({
   const crestFailed =
     teamInfo?.crest != null && failedCrest === teamInfo.crest;
 
-  const morale = teamInfo?.morale ?? 50;
+  const morale = teamInfo?.morale ?? 25;
   const moraleLabel = getMoraleLabel(morale).toUpperCase();
   const moraleTone = getMoraleClasses(morale);
 
@@ -275,7 +275,7 @@ export function ClubTab({
                 <div className="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${moraleTone.bar}`}
-                    style={{ width: `${morale}%` }}
+                    style={{ width: `${morale * 2}%` }}
                   />
                 </div>
               </div>

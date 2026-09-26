@@ -1,5 +1,6 @@
 /**
- * Escala unificada 1–50 para forma e resistência (migração v2).
+ * Escala unificada 1–50: forma/resistência (migração v2), agressividade e
+ * moral de equipa (migração v4).
  * Neutros são a imagem linear dos antigos: forma 100→32, resistência 3→26.
  */
 export const FORM_NEUTRAL = 32;
@@ -483,9 +484,9 @@ export const MATCH_TUNING = {
   nearMissPerMinute: 0.018,
   bigSaveShare: 0.45,
   // Cartões: ~1.5% por minuto por equipa, modulado pela agressividade média
-  // (escala 1–5, âncora 3). Alvo: um vermelho direto é raro.
+  // (escala 1–50, âncora 30). Alvo: um vermelho direto é raro.
   cardBaseRate: 0.015,
-  cardAggPerPoint: 0.1,
+  cardAggPerPoint: 0.01,
   secondYellowRedShare: 0.15,
   directRedShare: 0.005,
   // Lesões: ~0.3% por minuto (antes do multiplicador de clima). Alvo: poucas
@@ -519,10 +520,10 @@ export const MATCH_TUNING = {
   // (soma-se ao skipChance) para quem joga como GR (posição "GR", incl. GR
   // improvisado). +0.50 ≈ metade do desgaste de um jogador de campo médio.
   fatigueGRSkipBonus: 0.5,
-  // Moral (0–100): desvia o ataque ±10% e a defesa ±5% em torno de 50.
-  // Deliberadamente pequeno — a forma ajusta, não decide.
-  moraleAttackPerPoint: 0.002,
-  moraleDefensePerPoint: 0.001,
+  // Moral de equipa (1–50, neutro 25): desvia o ataque ±10% e a defesa ±5%
+  // em torno de 25. Deliberadamente pequeno — a forma ajusta, não decide.
+  moraleAttackPerPoint: 0.004,
+  moraleDefensePerPoint: 0.002,
   // Marcador ponderado: peso ATA vs resto (DEF raro), multiplicador craque, clamp de forma.
   scorerAtaWeight: 2,
   scorerDefWeight: 0.3,
@@ -541,10 +542,11 @@ export const MATCH_TUNING = {
   // lesões, GR improvisado/expulso), 12s para penáltis (não travar o jogo).
   actionTimeoutMs: 60000,
   penaltyActionTimeoutMs: 12000,
-  // Moral: delta por resultado + decaimento semanal para o neutro 50.
-  moraleWinDelta: 25,
-  moraleLossDelta: -20,
-  moraleDrawDelta: 5,
+  // Moral de equipa (1–50): delta por resultado + decaimento semanal para
+  // o neutro 25. Metade dos deltas antigos (25/−20/5) — empate 2,5→2.
+  moraleWinDelta: 12,
+  moraleLossDelta: -10,
+  moraleDrawDelta: 2,
   moraleDecayRate: 0.1,
   // Moral individual (players.morale 1–50, neutro 25): deltas por evento
   // + peso na skill efetiva. Deliberadamente pequeno — como a forma.
