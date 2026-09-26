@@ -91,7 +91,7 @@ export function WaitingCoachesModal({
     // Offline ou estado desconhecido (incluído em lockedCoaches mas não em players)
     return {
       name: coachName,
-      teamName: awaitingCoaches.includes(coachName) ? "Desconectado" : "Ausente",
+      teamName: (awaitingCoaches ?? []).includes(coachName) ? "Desconectado" : "Ausente",
       teamColor: null,
       status: "offline",
       isMe: coachName === me?.name,
@@ -113,7 +113,7 @@ export function WaitingCoachesModal({
   const allReady = readyCount === totalHuman;
 
   const STATUS_MAP = {
-    ready: { label: "Ready ✅", dot: "bg-emerald-400", text: "text-emerald-400" },
+    ready: { label: "Pronto ✅", dot: "bg-emerald-400", text: "text-emerald-400" },
     thinking: {
       label: "Queimando Neurónios 🧠",
       dot: "bg-amber-400",
@@ -236,7 +236,7 @@ export function WaitingCoachesModal({
             </div>
 
             {/* Chat rápido da sala */}
-            <div className="flex-1 min-h-0 min-h-40 max-h-[45vh] min-[560px]:max-h-[60vh] min-[560px]:flex-none min-[560px]:w-72 min-[560px]:shrink-0 flex flex-col bg-surface-container-high border-t border-outline-variant/15 min-[560px]:border-t-0 min-[560px]:border-l">
+            <div className="flex-1 min-h-0 max-h-[45vh] min-[560px]:max-h-[60vh] min-[560px]:flex-none min-[560px]:w-72 min-[560px]:shrink-0 flex flex-col bg-surface-container-high border-t border-outline-variant/15 min-[560px]:border-t-0 min-[560px]:border-l">
               <div className="shrink-0 flex items-center gap-1.5 px-4 pt-2 pb-1">
                 <span className="text-xs">💬</span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant/70">
@@ -260,7 +260,7 @@ export function WaitingCoachesModal({
                       const isNewDay =
                         !prev || !isSameDay(prev.timestamp, msg.timestamp);
                       return (
-                        <div key={msg.id} className="flex flex-col gap-0.5">
+                        <div key={msg.id ?? i} className="flex flex-col gap-0.5">
                           {isNewDay && (
                             <div className="flex justify-center py-1.5">
                               <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-surface-container text-on-surface-variant truncate max-w-full">
@@ -312,6 +312,7 @@ export function WaitingCoachesModal({
                 <div className="shrink-0 flex items-center gap-2 py-2">
                   <input
                     type="text"
+                    aria-label="Mensagem do chat da sala"
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -323,6 +324,7 @@ export function WaitingCoachesModal({
                   />
                   <button
                     onClick={sendChat}
+                    aria-label="Enviar mensagem"
                     disabled={!(chatInput || "").trim()}
                     className="shrink-0 p-1.5 rounded-lg bg-primary text-on-primary disabled:opacity-30 hover:opacity-90 transition-opacity"
                   >
@@ -340,7 +342,7 @@ export function WaitingCoachesModal({
               <p className="text-[10px] text-on-surface-variant/60 font-bold text-center">
                 {allReady
                   ? "Todos prontos! O jogo vai começar..."
-                  : "O jogo começa quando todos estiverem Ready."}
+                  : "O jogo começa quando todos estiverem prontos."}
               </p>
               {canCancel ? (
                 <button

@@ -1983,3 +1983,10 @@ Plano C1+C2 (quando fizer):
 - `openAuctionBid(id|obj?)` em `GameContext` + `highlightedAuctionId`: a tab de leilões faz scroll suave e anel âmbar no cromo correspondente (também serve o botão "Licitar no Leilão" do `PlayerHistoryModal`, que já passava o objeto).
 - Desistências (lint `react-hooks` proíbe ref-no-render e setState-em-efeito): sem preservação do último jogador para a animação de saída — saída vazia como antes.
 - Checks: eslint limpo nos 6 ficheiros tocados; `GameContext` mantém 1 erro pré-existente (`react-refresh`); `check:types` OK. Sem `test:mobile` (sem mudança estrutural: só anel/id) nem audits (sem lógica de servidor).
+
+## WaitingCoachesModal — polimento avaliação 7,3 (2026-09-26)
+- pt-PT: `Ready ✅` → `Pronto ✅`, rodapé "estiverem Ready" → "estiverem prontos".
+- Robustez: `(awaitingCoaches ?? []).includes(...)`, `key={msg.id ?? i}`.
+- CSS: removido `min-h-40` em conflito com `min-h-0` no painel do chat.
+- A11y: `aria-label` no input e botão de envio do chat.
+- Checks: eslint limpo no ficheiro (3 erros pré-existentes noutros ficheiros, sem relação); `check:types` OK. Sem `test:mobile` (tweaks) nem audits (sem lógica de jogo/sockets).
