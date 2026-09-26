@@ -1755,3 +1755,8 @@ Plano C1+C2 (quando fizer):
 - P1.6 (`969017e2`): regras inline → constantes em `gameConstants.ts` (`AGENT_RENEGOTIATION_WAGE_FLOOR`, `NPC_RENEW_MIN_BUDGET`, `AUCTION_PRICE_FLOOR_*`, `NPC_LIST_SQUAD_THRESHOLDS`); fórmula de preço ex-clube extraída para `exClubAuctionPrice`.
 - Segue fora de âmbito: `gameManager.ts` tem merge inline do finalize no crash-recovery SEM revalidação de orçamento nem lock cedo (mesma classe dos P0.1/0.3); `npcListings` NPC pode listar juniores (query sem `id>0`); cap `squad >= 24` inclui juniores. `makeTransferProposal` (97 warnings) é pré-existente.
 - Checks: `typecheck` OK; `test:connect-smoke` OK (após P0.1+0.2, P0.3, P1.5, P1.6); `audit:gamestate TST148` 0/0; `audit:socketio` 0 erros (97 warnings pré-existentes).
+
+## BalanceLineChart — "undefined" no eixo (2026-09-26)
+- Causa real: fixture do `finances-resp-test.jsx` usava `jornada` em vez de `matchweek` (contrato do chart é `{x, matchweek, balance, label}`; produção envia sempre assim — `socketSessionHandlers.ts`). `px(p)`→undefined → NaN → dots colapsados em x=0 e rótulo "Jundefined".
+- Fix: fixture corrigido + guard no `clean` do chart (`Number.isFinite(px(p))`) — dados malformados caem fora em vez de renderizar lixo; `px` movido para antes do filtro (TDZ).
+- Checks: eslint + `check:types` OK; harness finances portrait 390 + landscape 6/6 + desktop 1280 PASS; screenshot 1280 confirma linha/área/rótulos corretos.

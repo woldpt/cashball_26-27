@@ -38,8 +38,24 @@ export function BalanceLineChart({ data = [] }) {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  /**
+   * Posição global no eixo X. Com histórico de 2 épocas o matchweek repete-se
+   * (0..14 em cada época), por isso posicionamos pelo índice global `x`
+   * (fallback para matchweek em dados antigos).
+   * @param {{x?: number, matchweek: number}} p
+   * @returns {number}
+   */
+  const px = (p) => (typeof p.x === "number" ? p.x : p.matchweek);
+
   const clean = (data || [])
-    .filter((p) => p.balance != null && Number.isFinite(p.balance))
+    // px(p) = posição no eixo X; sem x/matchweek finitos o ponto é lixo
+    // (renderizaria colapsado em x=0 com rótulo "Jundefined").
+    .filter(
+      (p) =>
+        p.balance != null &&
+        Number.isFinite(p.balance) &&
+        Number.isFinite(px(p)),
+    )
     .sort((a, b) => (a.x ?? a.matchweek) - (b.x ?? b.matchweek));
 
   if (clean.length === 0) {
@@ -52,14 +68,6 @@ export function BalanceLineChart({ data = [] }) {
     );
   }
 
-  /**
-   * Posição global no eixo X. Com histórico de 2 épocas o matchweek repete-se
-   * (0..14 em cada época), por isso posicionamos pelo índice global `x`
-   * (fallback para matchweek em dados antigos).
-   * @param {{x?: number, matchweek: number}} p
-   * @returns {number}
-   */
-  const px = (p) => (typeof p.x === "number" ? p.x : p.matchweek);
   const pointCount = clean.length;
   const firstX = px(clean[0]);
   const lastX = px(clean[pointCount - 1]);

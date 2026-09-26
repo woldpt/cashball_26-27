@@ -10,12 +10,12 @@ import { FinancesTab } from "./src/views/FinancesTab.jsx";
 // - dívida alta (loanPct > 75 → border error) e folha > 75% (warning icon)
 // - nomes longos em bilheteiras/transfers (risco de overflow)
 const balanceHistory = [
-  { jornada: 1, balance: 1500000 },
-  { jornada: 2, balance: 1420000 },
-  { jornada: 3, balance: -80000 },
-  { jornada: 4, balance: 240000 },
-  { jornada: 5, balance: 1150000 },
-  { jornada: 6, balance: 980000 },
+  { matchweek: 1, balance: 1500000 },
+  { matchweek: 2, balance: 1420000 },
+  { matchweek: 3, balance: -80000 },
+  { matchweek: 4, balance: 240000 },
+  { matchweek: 5, balance: 1150000 },
+  { matchweek: 6, balance: 980000 },
 ];
 
 const financeData = {
