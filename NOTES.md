@@ -1905,3 +1905,10 @@ Plano C1+C2 (quando fizer):
 - `ThreatGrid`: key `${role}-${i}` contra papéis repetidos; `BriefingSkeleton`: fora a faixa de amigável, grelha `lg:grid-cols-3` como a real.
 - Saltado de propósito: embrulhar `MarketPanel` em div (fragmento chega dentro do flex-col com gap do pai).
 - Checks: eslint limpo nos 4 ficheiros; `check:types` OK; `test:mobile` 5/165 e `:landscape` 6/198 — só falha pré-existente `roomhub-resp-test` (useGame fora de Provider).
+
+## SeasonEndModal — correções avaliação 5,9→~8 (2026-09-26)
+- Reveal por `data.year` em vez de `===` por referência (o modal ficava invisível se o pai recriasse o objeto); sem `setState` síncrono no efeito (exige o lint).
+- `handleContinue` sem `window.location.reload()` — o evento `seasonEnd` já repôs época/calendário no contexto; reload destruía o socket.
+- `Button variant="accent"` em vez de `motion.button` cru (import estava morto); `DIVISION_NAMES` importado de `constants`; `TeamBadge` local apagado → `TeamCrest` partilhado com índice `Map` memoizado (corrige ainda fallback preso em `crestFailed` e `find` por linha).
+- `fmt` com instância `Intl` única; `myPromotion` derivado da lista filtrada; chaves `${teamId}-${fromDiv}-${toDiv}`; emoji `🏆` → `material-symbols`; `aria-hidden`/`aria-label`; `MotionConfig reducedMotion="user"`; título `text-xl` + tracking menor em xs.
+- Checks: eslint limpo no ficheiro; `check:types` OK. Sem `test:mobile` (sem mudança estrutural).

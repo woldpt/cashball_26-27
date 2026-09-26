@@ -1,73 +1,38 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useMemo } from "react";
+import { motion, MotionConfig, useReducedMotion } from "framer-motion";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { Button } from "../shared/Button.jsx";
+import { TeamCrest } from "../shared/TeamCrest.jsx";
 import { CelebrationBurst } from "../shared/CelebrationBurst.jsx";
-import { MODAL_Z } from "../../constants/index.js";
+import { DIVISION_NAMES, MODAL_Z } from "../../constants/index.js";
 
-const DIVISION_NAMES = {
-  1: "Primeira Liga",
-  2: "Segunda Liga",
-  3: "Liga 3",
-  4: "Campeonato de Portugal",
-  5: "Distritais",
-};
+const eurFmt = new Intl.NumberFormat("pt-PT", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
 
 function fmt(value) {
-  return new Intl.NumberFormat("pt-PT", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
+  return eurFmt.format(value);
 }
 
-/**
- * @param {{teamId: number|string, teamName?: string, teams: array, size?: "lg"|"sm"}} props
- */
-function TeamBadge({ teamId, teamName, teams, size = "lg" }) {
-  const team = teams?.find((t) => t.id === teamId || t.id === Number(teamId));
-  const [crestFailed, setCrestFailed] = useState(false);
-  const sz = size === "sm" ? "w-5 h-5 text-[9px]" : "w-8 h-8 text-xs";
-  if (team?.crest && !crestFailed) {
-    return (
-      <img
-        src={team.crest}
-        alt={teamName || "crest"}
-        onError={() => setCrestFailed(true)}
-        className={`${sz} rounded-full object-contain bg-white p-0.5 border border-white/10 shrink-0`}
-        loading="lazy"
-      />
-    );
-  }
-  return (
-    <div
-      className={`${sz} rounded-full flex items-center justify-center font-black shrink-0 border border-white/10`}
-      style={{
-        background: team?.color_primary || "#27272a",
-        color: team?.color_secondary || "#fff",
-      }}
-    >
-      {teamName?.[0] || "?"}
-    </div>
-  );
-}
 
 /**
  * @param {{ data: object|null, teams: array, me: object, onClose: function }} props
  */
 export function SeasonEndModal({ data, teams, me, onClose }) {
-  // Identidade do `data` para o qual o reveal já disparou — evita o reset
-  // síncrono dentro do useEffect (cascading render). Quando `data` muda,
-  // revealedFor ainda aponta para o valor anterior → revealed fica false.
-  const [revealedFor, setRevealedFor] = useState(null);
+  // Reveal por chave estável (`year`): comparar o objeto `data` por
+  // referência partia-se quando o pai o recriava — o modal ficava
+  // invisível para sempre.
+  const [revealed, setRevealed] = useState(false);
+  const reduceMotion = useReducedMotion();
+  const dataYear = data?.year;
 
   useEffect(() => {
-    if (!data) return;
-    const t = setTimeout(() => setRevealedFor(data), 250);
+    if (dataYear == null) return undefined;
+    const t = setTimeout(() => setRevealed(true), reduceMotion ? 0 : 250);
     return () => clearTimeout(t);
-  }, [data]);
-
-  const revealed = revealedFor === data;
+  }, [dataYear, reduceMotion]);
 
   const myTeamId = me?.teamId;
 
@@ -76,8 +41,19 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
     teamId === Number(myTeamId) ||
     String(teamId) === String(myTeamId);
 
-  const myPromotion = data?.promotions?.find((p) => isMyTeam(p.teamId));
-  const isPromotion = myPromotion && myPromotion.toDiv < myPromotion.fromDiv;
+  // Índice estável para o TeamCrest partilhado (aceita objeto equipa).
+  const teamById = useMemo(() => {
+    const m = new Map();
+    for (const t of teams || []) {
+      m.set(t.id, t);
+      m.set(Number(t.id), t);
+      m.set(String(t.id), t);
+    }
+    return m;
+  }, [teams]);
+
+  const crestFor = (teamId, teamName) =>
+    teamById.get(teamId) || (teamName ? { name: teamName } : null);
 
   // ── Cena de troféu: quando a MINHA equipa vence o campeonato da sua
   // divisão ou a Taça de Portugal ───────────────────────────────────────────
@@ -99,10 +75,16 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
     (p) => p.toDiv !== 5 || p.fromDiv === 4,
   );
 
+  // Destaque da minha equipa derivado da lista FILTRADA — antes usava a
+  // lista sem filtro e mostrava "desces" para movimentos ocultos acima.
+  const myPromotion = visiblePromotions.find((p) => isMyTeam(p.teamId));
+  const isPromotion = myPromotion && myPromotion.toDiv < myPromotion.fromDiv;
+
   const displayYear = data?.year ?? 0;
+  // Sem reload: o evento `seasonEnd` já repôs época/calendário/resultados
+  // no contexto; recarregar destruía o socket e forçava boot completo.
   const handleContinue = () => {
     onClose();
-    window.location.reload();
   };
 
   return (
@@ -113,10 +95,12 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
       variant="fullscreen"
     >
       {data && (
+      <MotionConfig reducedMotion="user">
       <div className="w-full max-w-lg sm:max-w-xl my-auto">
         {/* ── Header ─────────────────────────────────────────────────── */}
             <div className="text-center mb-6">
               <motion.span
+                aria-hidden="true"
                 className="material-symbols-outlined text-amber-400 block mb-3"
                 style={{
                   fontSize: 56,
@@ -177,8 +161,10 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                   />
                 )}
                 <motion.span
-                  className="block text-[64px] leading-none mb-2"
+                  aria-hidden="true"
+                  className="material-symbols-outlined block leading-none mb-2 text-amber-400"
                   style={{
+                    fontSize: 64,
                     filter:
                       "drop-shadow(0 0 26px rgba(245,158,11,0.6)) drop-shadow(0 8px 14px rgba(0,0,0,0.4))",
                   }}
@@ -191,10 +177,10 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                     damping: 14,
                   }}
                 >
-                  🏆
+                  emoji_events
                 </motion.span>
                 <motion.p
-                  className="text-2xl sm:text-3xl font-headline font-black text-amber-400 uppercase tracking-[0.25em]"
+                  className="text-xl sm:text-3xl font-headline font-black text-amber-400 uppercase tracking-[0.15em] sm:tracking-[0.25em]"
                   style={{ textShadow: "0 0 22px rgba(245,158,11,0.55)" }}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -247,6 +233,7 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                       transition={{ delay: 0.1 + i * 0.07 }}
                     >
                       <span
+                        aria-hidden="true"
                         className="material-symbols-outlined text-amber-400 shrink-0"
                         style={{ fontSize: 20 }}
                       >
@@ -254,10 +241,9 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                           ? "workspace_premium"
                           : "military_tech"}
                       </span>
-                      <TeamBadge
-                        teamId={champ.teamId}
-                        teamName={champ.teamName}
-                        teams={teams}
+                      <TeamCrest
+                        team={crestFor(champ.teamId, champ.teamName)}
+                        size="w-8 h-8 text-xs"
                       />
                       <div className="flex-1 min-w-0">
                         <p className="font-black text-sm text-on-surface truncate">
@@ -295,15 +281,18 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                     transition={{ delay: 0.42 }}
                   >
                     <span
+                      aria-hidden="true"
                       className="material-symbols-outlined text-amber-400 shrink-0"
                       style={{ fontSize: 20 }}
                     >
                       emoji_events
                     </span>
-                    <TeamBadge
-                      teamId={data.cupWinner.teamId}
-                      teamName={data.cupWinner.teamName}
-                      teams={teams}
+                    <TeamCrest
+                      team={crestFor(
+                        data.cupWinner.teamId,
+                        data.cupWinner.teamName,
+                      )}
+                      size="w-8 h-8 text-xs"
                     />
                     <div className="flex-1 min-w-0">
                       <p className="font-black text-sm text-on-surface truncate">
@@ -340,15 +329,18 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                     transition={{ delay: 0.52 }}
                   >
                     <span
+                      aria-hidden="true"
                       className="material-symbols-outlined text-emerald-400 shrink-0"
                       style={{ fontSize: 20 }}
                     >
                       sports_soccer
                     </span>
-                    <TeamBadge
-                      teamId={data.topScorer.teamId}
-                      teamName={data.topScorer.teamName}
-                      teams={teams}
+                    <TeamCrest
+                      team={crestFor(
+                        data.topScorer.teamId,
+                        data.topScorer.teamName,
+                      )}
+                      size="w-8 h-8 text-xs"
                     />
                     <div className="flex-1 min-w-0">
                       <p className="font-black text-sm text-on-surface truncate">
@@ -377,7 +369,7 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                       const isMe = isMyTeam(p.teamId);
                       return (
                         <motion.div
-                          key={i}
+                          key={`${p.teamId}-${p.fromDiv}-${p.toDiv}`}
                           className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg ${
                             isMe
                               ? goingUp
@@ -392,16 +384,15 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
                           transition={{ delay: 0.6 + i * 0.04 }}
                         >
                           <span
+                            aria-hidden="true"
                             className="material-symbols-outlined shrink-0"
                             style={{ fontSize: 14 }}
                           >
                             {goingUp ? "arrow_upward" : "arrow_downward"}
                           </span>
-                          <TeamBadge
-                            teamId={p.teamId}
-                            teamName={p.teamName}
-                            teams={teams}
-                            size="sm"
+                          <TeamCrest
+                            team={crestFor(p.teamId, p.teamName)}
+                            size="w-5 h-5 text-[9px]"
                           />
                           <span className="font-bold flex-1 truncate">
                             {p.teamName}
@@ -448,16 +439,25 @@ export function SeasonEndModal({ data, teams, me, onClose }) {
             )}
 
             {/* ── Continue button ─────────────────────────────────────────── */}
-            <motion.button
-              onClick={handleContinue}
-              className="mt-4 w-full bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black font-black text-sm py-4 rounded-md transition-colors shadow-lg shadow-amber-500/25 uppercase tracking-widest"
+            <motion.div
+              className="mt-4"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: revealed ? 1 : 0, y: revealed ? 0 : 16 }}
               transition={{ delay: 0.85 }}
             >
-              Continuar para a Época {(data?.year ?? 0) + 1}
-            </motion.button>
+              <Button
+                variant="accent"
+                size="lg"
+                full
+                onClick={handleContinue}
+                aria-label={`Continuar para a época ${displayYear + 1}`}
+                className="shadow-lg shadow-amber-500/25"
+              >
+                Continuar para a Época {displayYear + 1}
+              </Button>
+            </motion.div>
       </div>
+      </MotionConfig>
       )}
     </ModalShell>
   );
