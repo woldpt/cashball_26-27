@@ -2,14 +2,13 @@ import { useContext, useEffect, useRef } from "react";
 import { GameContext } from "../../contexts/GameContext.jsx";
 import { slotLabel } from "../../utils/slotLabel.js";
 import { formatCurrency, seasonToYear } from "../../utils/formatters.js";
-import { AggBadge } from "../shared/AggBadge.jsx";
+import { BadgeSkills } from "../shared/BadgeSkills.jsx";
 import { Stars } from "../shared/Stars.jsx";
 import { Button } from "../shared/Button.jsx";
 import { EmptyState } from "../shared/EmptyState.jsx";
 import { ModalShell } from "../shared/ModalShell.jsx";
 import { PlayerAvatar } from "../shared/PlayerAvatar.jsx";
 import { PlayerStatusBadges, StarMark } from "../shared/PlayerStatusBadges.jsx";
-import { aggLabel } from "../../utils/playerHelpers.js";
 import { SkillLineChart } from "./SkillLineChart.jsx";
 import {
   POSITION_TEXT_CLASS,
@@ -20,29 +19,6 @@ import {
   SEASON_WEEKS,
   MODAL_Z,
 } from "../../constants/index.js";
-
-
-function SkillBar({ label, value, maxValue = 50, color, barClass, textClass, valueLabel }) {
-  const pct = Math.min(100, Math.round((value / maxValue) * 100));
-  return (
-    <div>
-      <div className="flex justify-between items-end mb-1.5">
-        <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
-          {label}
-        </span>
-        <span className={`font-black font-headline text-base ${textClass || ""}`} style={textClass ? undefined : { color }}>
-          {valueLabel ?? value}
-        </span>
-      </div>
-      <div className="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-700 ${barClass || ""}`}
-          style={{ width: `${pct}%`, backgroundColor: barClass ? undefined : color, opacity: 0.85 }}
-        />
-      </div>
-    </div>
-  );
-}
 
 /**
  * @param {{
@@ -121,19 +97,10 @@ export function PlayerHistoryModal({
   const barColor = POSITION_ACCENT_HEX[pos] || POSITION_ACCENT_HEX.MED;
   const isStar = player.is_star === 1;
   const skill = player.skill ?? 0;
-
-  // Atributos — agressividade numa escala de 1–5, o resto em 0–50
-  const aggKey = aggLabel(player.aggressiveness);
-  const AGG_ORDER = ["Acólito", "Tranquilo", "Zen", "Lenhador", "Triturador"];
-  const aggNum =
-    typeof player.aggressiveness === "number"
-      ? Math.max(1, Math.min(50, Math.round(player.aggressiveness)))
-      : Math.max(1, AGG_ORDER.indexOf(aggKey) + 1);
-  // Agressividade por etiqueta vive em 1–5; numérica em 0–50.
-  const aggIsLabelScale = typeof player.aggressiveness !== "number";
-  const formVal = player.form ?? 32;
-  const formBar = formVal >= 41 ? "bg-emerald-400" : formVal <= 22 ? "bg-rose-400" : "bg-zinc-500";
-  const formText = formVal >= 41 ? "text-emerald-400" : formVal <= 22 ? "text-rose-400" : "text-zinc-500";
+  const skillDelta =
+    player.prev_skill != null && player.prev_skill !== skill
+      ? skill - player.prev_skill
+      : 0;
 
   // Season stats
   const sGames = player.games_played ?? 0;
@@ -375,30 +342,14 @@ export function PlayerHistoryModal({
                   Atributos
                 </p>
                 <div className="flex flex-col gap-4">
-                  <SkillBar label="Qualidade" value={skill} color={barColor} />
-                  <SkillBar
-                    label="Agressividade"
-                    value={aggNum}
-                    maxValue={aggIsLabelScale ? 5 : 50}
-                    color={barColor}
-                    valueLabel={<AggBadge value={player.aggressiveness} />}
+                  <BadgeSkills
+                    skill={skill}
+                    resistance={player.resistance}
+                    form={player.form}
+                    morale={player.morale}
+                    aggressiveness={player.aggressiveness}
+                    delta={skillDelta}
                   />
-                  {player.resistance != null && (
-                    <SkillBar
-                      label="Resistência"
-                      value={player.resistance}
-                      barClass="bg-cyan-400"
-                      textClass="text-cyan-400"
-                    />
-                  )}
-                  {player.form != null && (
-                    <SkillBar
-                      label="Forma"
-                      value={player.form}
-                      barClass={formBar}
-                      textClass={formText}
-                    />
-                  )}
                   {player.last_rating != null && (
                     <div className="flex justify-between items-end">
                       <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
