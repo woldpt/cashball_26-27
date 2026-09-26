@@ -858,8 +858,6 @@ year: seasonYear,
 	useEffect(() => {
 		if (!roomHubOpen) return;
 		startTransition(() => {
-			setUnreadRoom(0);
-			setUnreadGlobal(0);
 			setChatPeekState(null);
 		});
 	}, [roomHubOpen]);
@@ -1827,6 +1825,8 @@ year: seasonYear,
 		setGlobalPlayers,
 		unreadRoom,
 		unreadGlobal,
+		setUnreadRoom,
+		setUnreadGlobal,
 		chatInput,
 		setChatInput,
 		mobileSubMenu,

@@ -29,16 +29,10 @@ import { AdminPanel } from "./components/admin/AdminPanel.jsx";
  */
 export function GameOverlays() {
   const {
-    activeChatTabRef,
     activeTab,
     adminPanelOpen,
-    avatarSeed,
-    awaitingCoaches,
     backendUrl,
     buyPlayer,
-    chatInput,
-    chatMessagesRef,
-    chatOpenRef,
     coachAvatars,
     coachMarketReport,
     cupDraw,
@@ -52,8 +46,6 @@ export function GameOverlays() {
     currentJornada,
     dismissalModal,
     gameDialog,
-    globalMessages,
-    globalPlayers,
     handleCloseMatch,
     handleHalftimeReady,
     handleResolveMatchAction,
@@ -85,15 +77,11 @@ export function GameOverlays() {
     removeFromTransferList,
     renewPlayerContract,
     roomCreator,
-    roomHubOpen,
-    roomHubRef,
-    roomMessages,
     roomSettingsOpen,
     simSpeed,
     season,
     seasonEndModal,
     setAdminPanelOpen,
-    setChatInput,
     setCoachMarketReport,
     setCupDrawRevealIdx,
     setCupPenaltyKickIdx,
@@ -101,7 +89,6 @@ export function GameOverlays() {
     setDismissalModal,
     setGameDialog,
     setPlayerHistoryModal,
-    setRoomHubOpen,
     setRoomSettingsOpen,
     setSeasonEndModal,
     setShowCupDrawPopup,
@@ -113,8 +100,6 @@ export function GameOverlays() {
     teamInfo,
     teams,
     transferProposalModal,
-    unreadGlobal,
-    unreadRoom,
   } = useGame();
 
   // A espera multiplayer quer mostrar-se ao intervalo (pronto, sala com
@@ -345,30 +330,7 @@ export function GameOverlays() {
         setGameDialog={setGameDialog}
       />
 
-      <RoomHub
-        me={me}
-        roomHubRef={roomHubRef}
-        roomHubOpen={roomHubOpen}
-        setRoomHubOpen={setRoomHubOpen}
-        roomMessages={roomMessages}
-        globalMessages={globalMessages}
-        globalPlayers={globalPlayers}
-        players={players}
-        teams={teams}
-        roomCreator={roomCreator}
-        matchweekCount={matchweekCount}
-        unreadRoom={unreadRoom}
-        unreadGlobal={unreadGlobal}
-        chatInput={chatInput}
-        setChatInput={setChatInput}
-        avatarSeed={avatarSeed}
-        coachAvatars={coachAvatars}
-        backendUrl={backendUrl}
-        chatMessagesRef={chatMessagesRef}
-        awaitingCoaches={awaitingCoaches}
-        chatOpenRef={chatOpenRef}
-        activeChatTabRef={activeChatTabRef}
-      />
+      <RoomHub />
 
       <AdminPanel
         open={adminPanelOpen}
