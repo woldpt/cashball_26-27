@@ -68,10 +68,8 @@ import {
   snapshotBalanceHistory,
 } from "./coreHelpers";
 import {
-  finalizeAllRunningAuctions,
   pauseAllRunningAuctions,
   clearPhaseTimer,
-  makePhaseToken,
 } from "./matchFlowHelpers";
 import {
   withJuniorGRs,
@@ -1037,7 +1035,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
 
     pauseAllRunningAuctions(game, io);
     game.gamePhase = "match_second_half";
-    game.phaseToken = makePhaseToken(game);
     saveGameState(game);
 
     // For cup/friendly matches, emit animation before second half starts
@@ -1748,7 +1745,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     segmentRunning[game.roomCode] = true;
     game.gamePhase = "match_first_half";
     game.currentEvent = entry;
-    game.phaseToken = makePhaseToken(game);
     game._lastCompletedSegment = null;
 
     console.log(
@@ -1926,7 +1922,6 @@ export function createWeeklyFlowHelpers(deps: WeeklyFlowDeps) {
     game.lastPlayedAt = new Date().toISOString();
     game.currentEvent = SEASON_CALENDAR[game.calendarIndex] ?? null;
     game.currentFixtures = [];
-    game.phaseToken = makePhaseToken(game);
     game.gamePhase = "lobby";
     game.lastHalftimePayload = null;
     resetAllReady(game);

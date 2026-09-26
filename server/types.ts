@@ -257,7 +257,6 @@ export interface ActiveGame {
   currentFixtures: any[]; // active fixture objects (league or cup)
 
   // ── Single phase timer + ack set (replaces 5 separate timeouts + ack sets) ──
-  phaseToken: string;
   phaseTimer: ReturnType<typeof setTimeout> | null;
   phaseAcks: Set<string>;
 

@@ -677,7 +677,6 @@ export function createCupFlowHelpers(deps: CupFlowDeps) {
 		game.boardBudgetWarned = {};
 		clearPhaseTimer(game);
 		game.phaseAcks = new Set();
-		game.phaseToken = "";
 		// Epocas novas correm em slots - corta a avaliacao de contratos na escala velha.
 		game.contractCutoverSeason = null;
 		// Slot 0 = amigavel: sorteio invisivel ja no arranque para o lobby o

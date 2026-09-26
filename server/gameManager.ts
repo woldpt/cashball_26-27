@@ -733,7 +733,6 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
     liveMinute: null,
 
     // Single phase timer + ack set
-    phaseToken: "",
     phaseTimer: null,
     phaseAcks: new Set<string>(),
 
@@ -1226,8 +1225,6 @@ function getGame(roomCode: string, onReady?: OnReady, creatorName?: string): Act
                 );
               }
 
-              // Phase token
-              if (st["phaseToken"]) game.phaseToken = st["phaseToken"];
               if (st["snapshotSeq"])
                 game.snapshotSeq = parseInt(st["snapshotSeq"], 10) || 0;
 
@@ -1891,7 +1888,6 @@ function saveGameState(game: ActiveGame): void {
     game.contractCutoverSeason != null ? String(game.contractCutoverSeason) : "null",
   );
   upsert("gamePhase", game.gamePhase);
-  upsert("phaseToken", game.phaseToken || "");
   // Sequência do último snapshot: o log de eventos serve para re-sincronizar o
   // cliente (seq) e para auditoria; a projeção do snapshot continua a mandar.
   game.snapshotSeq = game.eventSeq || 0;

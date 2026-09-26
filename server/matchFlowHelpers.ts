@@ -16,23 +16,6 @@ export function isMatchInProgress(game: ActiveGame) {
   );
 }
 
-export function finalizeAllRunningAuctions(
-  game: ActiveGame,
-  finalizeAuction: (game: ActiveGame, playerId: number) => void,
-) {
-  if (!game.auctions) return;
-  const playerIds = Object.keys(game.auctions);
-  if (playerIds.length === 0) return;
-
-  for (const playerId of playerIds) {
-    if (game.auctionTimers?.[playerId]) {
-      clearTimeout(game.auctionTimers[playerId] as any);
-      delete game.auctionTimers[playerId];
-    }
-    finalizeAuction(game, Number(playerId));
-  }
-}
-
 /**
  * Pausa todos os leilões em curso: cancela os timers mas preserva game.auctions.
  * Emite "auctionPaused" para a sala para cada leilão pausado.
@@ -72,11 +55,4 @@ export function clearPhaseTimer(game: ActiveGame) {
     clearTimeout(game.phaseTimer);
     game.phaseTimer = null;
   }
-}
-
-/**
- * Generate a phase token — used to detect stale timer callbacks after state transitions.
- */
-export function makePhaseToken(game: ActiveGame): string {
-  return `${game.season}:${game.calendarIndex}:${game.gamePhase}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
 }

@@ -92,7 +92,6 @@ const { DIVISION_NAMES, CUP_ROUND_NAMES, CUP_TEAMS_BY_ROUND, SEASON_CALENDAR } =
 	require("./gameConstants") as typeof import("./gameConstants");
 const {
 	isMatchInProgress,
-	finalizeAllRunningAuctions,
 	pauseAllRunningAuctions,
 } = require("./matchFlowHelpers") as typeof import("./matchFlowHelpers");
 const { createAuctionHelpers } =
