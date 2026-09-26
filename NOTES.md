@@ -1967,3 +1967,11 @@ Plano C1+C2 (quando fizer):
 - `client/src/components/modals/TeamSquadModal.jsx` apagado: zero imports em todo o repo; o apresentado é `TeamSquadView.jsx` (via `handleOpenTeamSquad` em `GameRoutes`).
 - Comentários atualizados em `PlayerRow.jsx` e `TabBar.jsx` (removida a menção ao modal). Menções em entradas antigas deste NOTES mantidas como histórico.
 - Checks: eslint limpo nos ficheiros tocados (2 erros pré-existentes noutros — `GameContext` — confirmados com `git stash`); `check:types` OK. Sem `test:mobile` (sem mudança de layout) nem audits (sem lógica de servidor).
+
+## DismissalModal — polimento avaliação 7,3 (2026-09-26)
+- Cartão duplicado removido: o `motion.div` interior reproduzia exatamente o cartão do `ModalShell` (mesmas classes e `initial/animate/exit`) — agora guard `{dismissalModal && (<>…</>)}` + `cardClassName="flex flex-col"`, ~12 linhas menos.
+- Fallbacks de cor unificados em `colorPrimary`/`colorSecondary` (antes hex inline repetido 4×, dois fallbacks diferentes para o mesmo campo); badge de divisão mantém cor primária.
+- Mapa `REASON_TEXT` com os 3 reasons reais do servidor (`budget`/`relegation`/`results`, ver `coachDismissalHelpers.ts:229`) — antes `relegation` aparecia como "Má série de resultados".
+- A11y: `aria-hidden` nos ícones (`person_off`, ⚽, glow) e `autoFocus` no CTA "Assumir o comando" (precedente WelcomeModal).
+- `import { motion }` removido (lint apanhou).
+- Checks: eslint limpo no ficheiro (erros pré-existentes noutros: `GameContext`, `BidForm`, `PlayerSearchView` — confirmados com `git stash`); `check:types` OK. Sem `test:mobile` (sem mudança estrutural) nem audits (sem lógica de jogo/sockets).
